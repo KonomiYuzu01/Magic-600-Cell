@@ -31,8 +31,10 @@ internal static partial class Program
         foreach (ThemeFamily theme in themes)
         {
             var tokens = new TokenSet(Design, theme, Design.ShippedDensity, 1);
-            string[] strip = Design.Roles.Values.Where(r => r.Group == "encoding").Select(r => tokens.Colour(r.Id).Hex).ToArray();
-            Equal(strip.Distinct().Count(), strip.Length, "relationship strip classes share a colour in " + theme.Id);
+            string[] strip = Design.Roles.Values.Where(r => r.Id.StartsWith("strip.cell.", StringComparison.Ordinal)).Select(r => tokens.Colour(r.Id).Hex).ToArray();
+            // An anchor has the colour of its strip item on purpose; the seven items differ.
+            Equal(strip.Distinct().Count(), strip.Length, "relationship strip classes share a colour in " + theme.Id); Equal(strip.Length, 7);
+            Check(new[] { "target", "buffer_a", "buffer_b", "wanted" }.All(x => tokens.Colour("anchor." + x).Hex == tokens.Colour("strip.cell." + x).Hex), "an anchor does not have its item's colour in " + theme.Id);
         }
         Check(Design.Roles.Values.Where(r => r.Group is "state" or "encoding").All(r => !string.IsNullOrWhiteSpace(r.Cue)), "a state role has no cue");
     }

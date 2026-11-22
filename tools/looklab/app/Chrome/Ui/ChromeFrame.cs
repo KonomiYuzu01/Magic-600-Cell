@@ -172,6 +172,11 @@ public sealed partial class ChromeFrame : Control
     public void SetTopStrip(Control control) { topStrip = control; dirty = true; }
     // One slim strip under the views and above the bottom dock: the commit bar (ADR-D01.11).
     public void SetStrip(Control control) { strip = control; dirty = true; }
+    // One control on the shared edge of the locked pair: the relationship strip (ADR-D01.62). It adds no dock.
+    public void SetSeam(Control? control) { seam = control; dirty = true; }
+    private Control? seam;
+    // Whether Global and Local sit side by side, so the seam runs down.
+    public bool PairSideBySide => Model.PairArrangement == "side";
     // Replaces the content of a dock panel or of a pane, keeping its place.
     public void SetContent(string id, Control content)
     {
@@ -317,7 +322,7 @@ public sealed partial class ChromeFrame : Control
         dirty = false; HoveredView = null;
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
-        ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip);
+        ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip); ChromeWidgets.Detach(seam);
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
@@ -460,7 +465,14 @@ public sealed partial class ChromeFrame : Control
         SplitContainer split = side ? new HSplitContainer() : new VSplitContainer();
         split.Name = "MainPair"; split.SizeFlagsVertical = SizeFlags.ExpandFill; split.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         Global.SizeFlagsStretchRatio = (float)Model.PairRatio; Local.SizeFlagsStretchRatio = (float)(1 - Model.PairRatio);
-        split.AddChild(Global); split.AddChild(Local);
+        split.AddChild(Global);
+        if (seam != null)
+        {
+            BoxContainer edge = (BoxContainer)Tight(side ? new HBoxContainer() : new VBoxContainer()); edge.Name = "PairSeam";
+            edge.SizeFlagsHorizontal = SizeFlags.ExpandFill; edge.SizeFlagsVertical = SizeFlags.ExpandFill; edge.SizeFlagsStretchRatio = (float)(1 - Model.PairRatio);
+            (seam as IPairSeam)?.Arrange(side); edge.AddChild(seam); edge.AddChild(Local); split.AddChild(edge);
+        }
+        else split.AddChild(Local);
         split.DragEnded += () => { if (!Model.SetPairArrangement(Model.PairArrangement, Math.Clamp(Ratio(split), .2, .8))) dirty = true; };
         int icon = Tokens.Px("icon.small");
         Button arrange = ChromeWidgets.Tool("", side ? "Stack Global over Local" : "Put Global and Local side by side"); ChromeIcons.Apply(arrange, side ? "pair.stacked" : "pair.side", icon);

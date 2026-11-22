@@ -22,6 +22,8 @@ internal static class LabFrame
     public static LabInspect InspectOf(ChromeFrame frame) => Inspects.TryGetValue(frame, out LabInspect? inspect) ? inspect : throw new InvalidOperationException("the frame has no lab inspector");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabScripts> AllScripts = new();
     public static LabScripts ScriptsOf(ChromeFrame frame) => AllScripts.TryGetValue(frame, out LabScripts? scripts) ? scripts : throw new InvalidOperationException("the frame has no lab scripts");
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabSolve> Solves = new();
+    public static LabSolve SolveOf(ChromeFrame frame) => Solves.TryGetValue(frame, out LabSolve? solve) ? solve : throw new InvalidOperationException("the frame has no solving surface");
     public static LabDemo DemoOf(ChromeFrame frame) => Demos.TryGetValue(frame, out LabDemo? demo) ? demo : throw new InvalidOperationException("the frame has no lab session");
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
@@ -113,6 +115,8 @@ internal static class LabFrame
         // Commands: the registry is the command table, the keymap and the palette are generated from it. The
         // lab has no engine, so only the commands the frame itself carries out are available here.
         var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(root, "docs/progress/1.0/command-table.json")));
+        // The lab shows the solving commands in the owner's words; the table's ids and labels are not edited.
+        registry.Relabel(File.ReadAllText(Path.Combine(folder, "command-labels.json")));
         Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         LabScripts scripts = null!;
         // The component gallery: a pane of its own workspace, drawn from the tokens in force.
@@ -151,7 +155,7 @@ internal static class LabFrame
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
-            _ when LabDemo.Handles(command) => null,
+            _ when LabDemo.Handles(command) || LabSolve.Handles(command) => null,
             _ => NotInSample,
         };
         var commands = new PaletteModel(registry, keymap, Unavailable);
@@ -167,7 +171,7 @@ internal static class LabFrame
         find.Pressed += palette.Open; help.Pressed += sheet.Open;
         frame.BarTools.AddChild(find); frame.BarTools.AddChild(help);
         string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
-        LabDemo demo = null!; LabInspect inspect = null!;
+        LabDemo demo = null!; LabInspect inspect = null!; LabSolve solve = null!;
         void Execute(string command, string? argument)
         {
             if (Unavailable(command, argument) is { } why) { frame.Say($"{registry.Commands[command].Label}: {why}", true); return; }
@@ -201,6 +205,7 @@ internal static class LabFrame
                 case "theme.select": appearance.Edit(a => a.SetTheme(Next(themes.Select(t => t.Id).ToArray(), a.Theme)), true, true); break;
                 case "density.preset.set": appearance.Edit(a => a.SetDensity(Next(design.Densities, a.Density)), true, false); break;
                 case var sample when LabDemo.Handles(sample): demo.Execute(command, argument); break;
+                case var solving when LabSolve.Handles(solving): solve.Execute(command, argument, registry.Commands[command].Label); break;
                 default: frame.Say(registry.Commands[command].Label + ": nothing to do for " + argument, true); break;
             }
         }
@@ -211,6 +216,8 @@ internal static class LabFrame
         demo = new LabDemo(frame, keymap, Execute); Demos.Add(frame, demo);
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
         inspect = new LabInspect(app, frame, demo); Inspects.Add(frame, inspect);
+        // The solving surface on the pair's body: the relationship strip on the seam, anchors in both views.
+        solve = new LabSolve(frame, root, id => motions.Seconds(id, design, look.ReducedMotion), Execute); Solves.Add(frame, solve);
         app.ViewParts["frame.bindings"] = (() => inspect.Inspector.Store(), v => inspect.Inspector.Restore(v));
         // Scripts: editor, Scripts dock, console line, panel slots, canvas and the solver's own key bindings.
         scripts = new LabScripts(frame, demo, inspect, registry, keymap, root, Execute, k =>
@@ -325,6 +332,9 @@ internal static class LabFrame
             ("the five states of a pane", () => Page("panes")),
             ("pick layers; the other layers dimmed", () => { Home(); layers["global"].SetPick("stickers"); if (layers["global"].Inactive == InactiveMode.Normal) layers["global"].Cycle(); }),
             ("a radial menu", () => { Home(); Execute("radial.view", null); }),
+            ("the relationship strip on the seam, mid-solve: Wanted is in A", () => { Home(); solve.Demo.Show("mid"); if (!solve.Strip.Expanded) solve.Strip.ToggleResidual(); }),
+            ("the strip at the last buffer of the endgame", () => { Home(); solve.Demo.Show("endgame"); }),
+            ("the strip after a fresh scramble: nothing is set", () => { Home(); solve.Demo.Show("fresh"); }),
             ("the script workspace in the new body", () => { frame.SelectWorkspace("script"); scripts.Editor.SetWrap(true); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }),
         };
         frame.HostKeys["F9"] = () =>

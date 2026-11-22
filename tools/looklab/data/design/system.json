@@ -105,6 +105,11 @@
         10,
         11
       ],
+      "relation.width": [
+        38,
+        42,
+        46
+      ],
       "scrollbar.width": [
         2,
         2.5,
@@ -240,6 +245,10 @@
       "group": "chrome",
       "meaning": "A docked panel or bar."
     },
+    "strip.ground": {
+      "group": "chrome",
+      "meaning": "The ground of the relationship strip and the orbit rail."
+    },
     "surface.control": {
       "group": "chrome",
       "meaning": "A control at rest."
@@ -351,35 +360,75 @@
       "meaning": "Done without a problem.",
       "cue": "check mark"
     },
-    "strip.destination": {
+    "strip.cell.target": {
       "group": "encoding",
-      "meaning": "Relationship strip: the destination.",
-      "cue": "first place in the strip and a target glyph"
+      "meaning": "Relationship strip: the Target, a position.",
+      "cue": "a ring with a centre"
     },
-    "strip.occupant": {
+    "strip.cell.occupant": {
       "group": "encoding",
-      "meaning": "Relationship strip: the current occupant.",
-      "cue": "second place in the strip and a filled-cell glyph"
+      "meaning": "Relationship strip: the Occupant of a position.",
+      "cue": "a filled cell"
     },
-    "strip.wanted": {
+    "strip.cell.wanted": {
       "group": "encoding",
-      "meaning": "Relationship strip: the wanted piece.",
-      "cue": "third place in the strip and an outlined-cell glyph"
+      "meaning": "Relationship strip: the Wanted piece.",
+      "cue": "an outlined diamond"
     },
-    "strip.buffer": {
+    "strip.cell.buffer_a": {
       "group": "encoding",
-      "meaning": "Relationship strip: a buffer.",
-      "cue": "fourth place in the strip and a bracket glyph"
+      "meaning": "Relationship strip: Buffer A, a position.",
+      "cue": "a single bracket"
     },
-    "strip.frame": {
+    "strip.cell.buffer_b": {
       "group": "encoding",
-      "meaning": "Relationship strip: the frame.",
-      "cue": "fifth place in the strip and an axes glyph"
+      "meaning": "Relationship strip: Buffer B, a position.",
+      "cue": "a double bracket"
     },
-    "strip.residual": {
+    "strip.cell.target_frame": {
       "group": "encoding",
-      "meaning": "Relationship strip: the residual.",
-      "cue": "last place in the strip and a delta glyph"
+      "meaning": "Relationship strip: the Target frame, Home or Captured.",
+      "cue": "two axes"
+    },
+    "strip.cell.residual": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the working orbit's Residual.",
+      "cue": "a delta"
+    },
+    "strip.next": {
+      "group": "encoding",
+      "meaning": "Relationship strip: the Next bookmark, apart from the relation.",
+      "cue": "a bookmark at the strip's end"
+    },
+    "strip.link": {
+      "group": "encoding",
+      "meaning": "The link from a strip item to its anchor in a view.",
+      "cue": "a thin line and a ring"
+    },
+    "anchor.target": {
+      "group": "encoding",
+      "meaning": "Anchor on a position: the Target.",
+      "cue": "a ring with a centre"
+    },
+    "anchor.buffer_a": {
+      "group": "encoding",
+      "meaning": "Anchor on a position: Buffer A.",
+      "cue": "a single bracket"
+    },
+    "anchor.buffer_b": {
+      "group": "encoding",
+      "meaning": "Anchor on a position: Buffer B.",
+      "cue": "a double bracket"
+    },
+    "anchor.wanted": {
+      "group": "encoding",
+      "meaning": "Anchor on a piece: the Wanted piece. It follows the piece.",
+      "cue": "an outlined diamond around the place"
+    },
+    "anchor.next": {
+      "group": "encoding",
+      "meaning": "Anchor on a piece: the Next bookmark. It follows the piece.",
+      "cue": "a bookmark around the place"
     },
     "syntax.keyword": {
       "group": "syntax",
@@ -530,32 +579,72 @@
       "minimum": 3
     },
     {
-      "text": "strip.destination",
+      "text": "strip.cell.target",
       "surface": "surface.panel",
       "minimum": 3
     },
     {
-      "text": "strip.occupant",
+      "text": "strip.cell.occupant",
       "surface": "surface.panel",
       "minimum": 3
     },
     {
-      "text": "strip.wanted",
+      "text": "strip.cell.wanted",
       "surface": "surface.panel",
       "minimum": 3
     },
     {
-      "text": "strip.buffer",
+      "text": "strip.cell.buffer_a",
       "surface": "surface.panel",
       "minimum": 3
     },
     {
-      "text": "strip.frame",
+      "text": "strip.cell.buffer_b",
       "surface": "surface.panel",
       "minimum": 3
     },
     {
-      "text": "strip.residual",
+      "text": "strip.cell.target_frame",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.cell.residual",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.next",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "strip.link",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.target",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.buffer_a",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.buffer_b",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.wanted",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "anchor.next",
       "surface": "surface.panel",
       "minimum": 3
     },

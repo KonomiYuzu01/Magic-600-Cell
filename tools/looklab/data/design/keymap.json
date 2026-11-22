@@ -230,6 +230,50 @@
       "command": "theme.select",
       "argument": "preset.next",
       "label": "Theme: next of the six presets"
+    },
+    {
+      "key": "E",
+      "context": "global",
+      "command": "target.current.set"
+    },
+    {
+      "key": "A",
+      "context": "global",
+      "command": "buffer.assign",
+      "argument": "A",
+      "label": "Buffer A: the following unfinished position"
+    },
+    {
+      "key": "B",
+      "context": "global",
+      "command": "buffer.assign",
+      "argument": "B",
+      "label": "Buffer B: the following unfinished position"
+    },
+    {
+      "key": "H",
+      "context": "global",
+      "command": "target.frame.set"
+    },
+    {
+      "key": "O",
+      "context": "global",
+      "command": "orbit.switch"
+    },
+    {
+      "key": "N",
+      "context": "global",
+      "command": "target.next.activate"
+    },
+    {
+      "key": "Shift+N",
+      "context": "global",
+      "command": "target.next.set"
+    },
+    {
+      "key": "Alt+N",
+      "context": "global",
+      "command": "target.next.clear"
     }
   ]
 }

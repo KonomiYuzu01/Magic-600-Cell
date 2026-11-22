@@ -27,6 +27,18 @@ public sealed class CommandRegistry
         order.Add(command.Id);
     }
 
+    // A host's own display words for commands: {"labels": {id: label}}. Ids, kinds and contexts stay the table's.
+    public void Relabel(string text)
+    {
+        using JsonDocument d = J.Parse(text);
+        foreach (JsonProperty label in d.RootElement.GetProperty("labels").EnumerateObject())
+        {
+            if (!commands.TryGetValue(label.Name, out ChromeCommand? command)) throw J.Error(label.Name, "a label for an unknown command");
+            string words = label.Value.GetString() ?? ""; if (string.IsNullOrWhiteSpace(words)) throw J.Error(label.Name, "an empty label");
+            commands[label.Name] = command with { Label = words };
+        }
+    }
+
     public static string Location(string id) => id.Contains('.') ? id.Substring(0, id.IndexOf('.')) : id;
 
     // Reads id, label, kind, contexts and note of every row of the command table.

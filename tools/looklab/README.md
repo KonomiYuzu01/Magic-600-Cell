@@ -1048,3 +1048,22 @@ shell's build. Three members exist for a host whose picture lies beneath a trans
 (the ground is painted everywhere but the Global view), `ChromeFrame.Opening` (that rectangle) and
 `ChromeFrame.Claims` (whether the chrome takes a key). Look Lab sets none of them. See `renderer/shell/README.md`,
 "The frame (A5 stage 9)".
+
+### A5 stage 10, point 1: the relationship strip
+
+The strip sits on the shared edge of the locked pair (`ChromeFrame.SetSeam`), never in a dock: Target with its
+Occupant, the Wanted piece with where it sits now, Buffer A and Buffer B with their Occupants, the Target frame
+(Home or Captured) and the working orbit's Residual, which expands in place into its exact classes. Next is a quiet
+bookmark at the strip's end. Each item has an anchor in Local and a marker in Global; a hovered item is linked to
+them. An ill-formed tuple is shown as invalid and is never corrected.
+
+- Orbit ids, piece counts, orientation groups, the stage order and the seed dependencies are read from
+  `assets/seed_atlas.json`. Everything else is demo data and is marked so on the strip: three demo states (mid-solve,
+  the endgame at the last buffer, a fresh scramble), switched with F11 or the chip at the strip's head. The places
+  of the anchors on the pictures are demo places too: the lab has no engine that knows where a position is drawn.
+- Keys: E steps the Target through the unfinished positions (position-id order), A and B move a buffer, H changes
+  the Target frame, O goes to the following orbit of the rail, Shift+N sets Next, Alt+N clears it, N activates it.
+- The commands keep the ids of the command table; the lab's display words for them are in
+  `data/design/command-labels.json`.
+- Token slots: `strip.ground`, `strip.cell.*`, `strip.link`, `strip.next`, `anchor.*`; motion row `strip.change`.
+- Not shown: the stale state of an item (the demo has no commit that makes one stale).

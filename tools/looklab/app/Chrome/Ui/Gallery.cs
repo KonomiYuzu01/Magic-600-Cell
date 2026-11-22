@@ -364,7 +364,7 @@ public sealed partial class ComponentGallery : VBoxContainer
         chips.AddChild(new GalleryDraw("lamp", "severity.ok", 1, tokens) { TooltipText = "Lamp: ready" });
         chips.AddChild(new GalleryDraw("lamp", "severity.warning", 1, tokens) { TooltipText = "Lamp: waiting" });
         chips.AddChild(new GalleryDraw("ring", "accent.base", .62, tokens) { TooltipText = "Progress ring: 62%" });
-        chips.AddChild(new GalleryDraw("cell", "strip.wanted", .4, tokens) { TooltipText = "Relationship-strip cell" });
+        chips.AddChild(new GalleryDraw("cell", "strip.cell.wanted", .4, tokens) { TooltipText = "Relationship-strip cell" });
         chips.AddChild(new ProgressBar { Value = 62, CustomMinimumSize = new Vector2(t.Px("control.height") * 4, 0), SizeFlagsVertical = SizeFlags.ShrinkCenter, TooltipText = "Progress bar: 62%" });
         body.AddChild(new HSeparator());
         Heading("table, tree and the script frame");

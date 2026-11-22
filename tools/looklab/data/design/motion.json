@@ -81,6 +81,54 @@
       "curve": "enter",
       "static": "The changed mark.",
       "cue": "cue.milestone"
+    },
+    {
+      "id": "strip.change",
+      "meaning": "A strip item that changed shows its edge once.",
+      "duration": "flash",
+      "curve": "standard",
+      "static": "The item shows its new value.",
+      "cue": "cue.strip"
+    },
+    {
+      "id": "orbit.complete",
+      "meaning": "An orbit's cell takes its solved mark in place. Nothing travels to another cell.",
+      "duration": "settle",
+      "curve": "enter",
+      "static": "The solved mark on the cell.",
+      "cue": "cue.orbit"
+    },
+    {
+      "id": "next.activate",
+      "meaning": "The Next bookmark becomes the Target: the bookmark empties as the Target fills.",
+      "duration": "flash",
+      "curve": "standard",
+      "static": "The Target shows the piece's home and Next is unset.",
+      "cue": "cue.next"
+    },
+    {
+      "id": "lock.set",
+      "meaning": "A lock closes on a rail cell.",
+      "duration": "flash",
+      "curve": "enter",
+      "static": "The lock mark, partial or whole.",
+      "cue": "cue.lock"
+    },
+    {
+      "id": "lock.release",
+      "meaning": "A lock opens on a rail cell.",
+      "duration": "flash",
+      "curve": "standard",
+      "static": "No lock mark.",
+      "cue": "cue.lock"
+    },
+    {
+      "id": "route.switch",
+      "meaning": "The Draft or Direct mark changes sides and the grip marker changes pattern.",
+      "duration": "flash",
+      "curve": "standard",
+      "static": "The mark on its new side.",
+      "cue": "cue.route"
     }
   ]
 }
