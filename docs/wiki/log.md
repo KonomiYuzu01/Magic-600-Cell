@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] decision | ADR-D01 and the frozen clauses
+The owner decided that LP3 freezes without waiting for the design-system ADR, that ADR-D01 (revision 3, content approved, still a draft until A7) wins over the frozen clauses it conflicts with without a versioned-change review, and that its command-table rows come after the freeze: view and workspace rows as ordinary edits, commit rows as separate work with KN5 boundary attack tests ([record](decisions/owner-decisions-2026-11-22-adr-d01-overrules.md)).
+
 ## [2026-11-22] decision | LX bars at 100 ms and the exits on the existing candidates
 After the C9 sitting the owner took every recommended option with no new measurement: LX-2's and LX-4's latency bars move to 100 ms, LX-4 uses E2's counting and U4's W3 summary, alloc_metered's kernel_cost limit end counts, the renderer gate is not required in the four faults that lose the runtime, alloc_ceiling's 84 echo samples are accepted, and LP3 and LP2 exit on 013900ff and 0260e6b1 with the recorded U7 and U8 data analysed again ([record](decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)).
 
