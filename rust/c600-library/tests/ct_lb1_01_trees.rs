@@ -7,6 +7,10 @@
 //! to `tests/fixtures/trees-reference.json`, which records the two pins, and this test checks that the pinned files are
 //! still those bytes. Every answer must equal the reference exactly: factors coefficient for coefficient, not up to
 //! scale. A pass is source and fixture evidence.
+//!
+//! CT-LB1-01 (source, part: quaternion factor reconstruction and tree outputs against trees.py's pinned answers; not
+//! run here: F2 and F5 ranks and solutions and exact Q(√5) signs, in `ct_lb1_01.rs`, which with this file is the
+//! whole by union).
 
 mod common;
 

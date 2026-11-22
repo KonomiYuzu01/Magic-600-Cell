@@ -133,10 +133,11 @@ fn output(run: &Run) -> &str {
     std::str::from_utf8(run.output.as_deref().expect("a completed run")).expect("UTF-8")
 }
 
-/// CT-LB1-02 (part: LG2.18's jumbling half, on a synthetic menu): a maximal run of adjacent letters at one grip is one
-/// token, the grip and the exact product of the run's items in chronological order, so `[c, x] [c, y]` holds `M_y M_x`.
-/// A token is kept when its product is the identity, a product outside the menu stays an exact element, and runs at
-/// distinct grips are neither swapped nor merged.
+/// CT-LB1-02 (part: LG2.18's jumbling half, on a synthetic menu; not run here: the key and kernel halves on M5's
+/// states, in `c600-jumble-tool/tests/lb3.rs`, and the 600-cell-Full half, in `c600-tools/tests/ct_lb1_02.rs`): a
+/// maximal run of adjacent letters at one grip is one token, the grip and the exact product of the run's items in
+/// chronological order, so `[c, x] [c, y]` holds `M_y M_x`. A token is kept when its product is the identity, a product
+/// outside the menu stays an exact element, and runs at distinct grips are neither swapped nor merged.
 #[test]
 fn ct_lb1_02_a_run_at_one_grip_is_one_token_of_its_exact_product_in_chronological_order() {
     let alpha = alphabet();

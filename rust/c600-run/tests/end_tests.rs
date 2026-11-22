@@ -69,10 +69,11 @@ fn canonical(v: &Value) -> Vec<u8> {
     out
 }
 
-/// CT-LG2-09 (part: unknown cannot pass as false at run time, for LB3.2's end tests' verdicts; LP2 draft: a match
-/// picks the arm of the verdict's outcome, and `unestablished` never reaches the arm of `fails`; not run: the IR's
-/// domain families of partial projections and goals, and KN0.5's general verdict, M4) and CT-LB3-01 (part: each end
-/// test's row is asked for with its own verdict type and answers it; not run: the kernel's facts, LP3's `lb3.rs`).
+/// CT-LG2-09 (part: unknown cannot pass as false at run time, for LB3.2's end tests' verdicts; LP2 draft: a match picks
+/// the arm of the verdict's outcome, and `unestablished` never reaches the arm of `fails`; not run: the IR's domain
+/// families of partial projections and goals, and KN0.5's general verdict, M4) and CT-LB3-01 (part: each end test's row
+/// is asked for with its own verdict type and answers it; not run here: the kernel's facts, in
+/// `c600-jumble-tool/tests/lb3.rs`).
 #[test]
 fn a_verdict_is_read_from_its_test_row_and_matched_on_its_outcome() {
     let (_, loaded) = build(&[&m(PROGRAM)]);
@@ -90,10 +91,11 @@ fn a_verdict_is_read_from_its_test_row_and_matched_on_its_outcome() {
     }
 }
 
-/// CT-LB3-01 (part: a verdict leaves a run with its test and its outcome, LB3.2; LP2 draft; not run: the kernel's
-/// facts). Its canonical form is a record of its outcome's tag and its test's row, in key order, and the line's end;
-/// the record lies within the value's retained bound, which leaves the line's end to the encoding pass. Each of the
-/// nine verdicts has an encoding of its own, and a verdict equals only itself, never the status tag of its outcome.
+/// CT-LB3-01 (part: a verdict leaves a run with its test and its outcome, LB3.2; LP2 draft; not run here: the kernel's
+/// facts, in `c600-jumble-tool/tests/lb3.rs`). Its canonical form is a record of its outcome's tag and its test's row,
+/// in key order, and the line's end; the record lies within the value's retained bound, which leaves the line's end to
+/// the encoding pass. Each of the nine verdicts has an encoding of its own, and a verdict equals only itself, never the
+/// status tag of its outcome.
 #[test]
 fn a_verdict_leaves_a_run_with_its_test_and_outcome() {
     let mut seen = Vec::new();

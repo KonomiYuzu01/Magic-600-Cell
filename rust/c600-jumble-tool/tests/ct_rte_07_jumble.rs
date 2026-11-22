@@ -32,6 +32,11 @@
 //! the rows read is never changed (the bridge reads a clone where a row classifies caps).
 //!
 //! Evidence kind: source and fixture, on M5's real model through the headless engine; nothing here measures time.
+//!
+//! CT-RTE-07 (source, part: the six jumbling keys on M5's rows; not run here: the other keys, in
+//! `c600-module/tests/ct_rte_07_full.rs` and the files it names, B12's cold run, which has no test on this commit,
+//! B12's other five cache states, not applicable by the owner's decision of 20 November 2026 item 1 and no pass, and
+//! the Linux run).
 
 mod common;
 

@@ -1,6 +1,9 @@
-//! The checker half of CT-LB3-07, as far as `c600-check`'s public API decides it on 600 Cell Script source (LP3,
-//! C5's next piece, the last item). The fixtures are programs of this test, not tools of the crate. The other half
-//! (the facts themselves, per revision and per named cap) waits for M5's jumbling engine (C8).
+//! The checker half of CT-LB3-07, as far as `c600-check`'s public API decides it on 600 Cell Script source (LP3, C5's
+//! next piece, the last item). The fixtures are programs of this test, not tools of the crate. The other half (the
+//! facts themselves, per revision and per named cap) runs in `c600-jumble-tool` (C8: `tests/ct_lb3_07.rs`).
+//! CT-LB3-07 (part: the checker half, on `c600-check`'s public API; not run here: the jumbling half, in
+//! `c600-jumble-tool/tests/ct_lb3_07.rs`, `lb3.rs`, `rows.rs`, `jumble_layer_verdicts.rs` and
+//! `jumble_on_derivation.rs`).
 //!
 //! CT-LB3-01's checker half, LB3.2's typed end-test verdicts, is LP2's draft in `c600-check` and is tested there and
 //! in `c600-syntax` and `c600-run` (`end_tests.rs`), so it is not built here.

@@ -3,6 +3,17 @@
 //! through the bridge onto `c600-command`; its views are built by `c600_tools::views` and installed in `c600-view`'s
 //! view model and in `c600-display`'s host over the mock backend. Every result is a source or synthetic fixture
 //! outcome: no device, renderer or timing is involved, and every ceiling is a declared fixture value.
+//! CT-EV3-01 (synthetic, whole: `ct_ev3_01_*` runs source to node to instance to canonical ID and back to the
+//! producing digest, with one canonical identity for the duplicated instances).
+//! CT-EV3-02 (synthetic, whole: `ct_ev3_02_*` runs a burst of commits, the newest bundle at once, stale output and
+//! skipped evaluations).
+//! CT-EV3-03 (source, whole: `ct_ev3_03_*` runs the derived display's derivation and base and the imported plan's
+//! lineage `imported` with its comparison base; the import is a fixture record because no import row exists).
+//! CT-EV3-04 (synthetic, whole: `ct_ev3_04_*` runs `EV3:stale.display_pick` before navigation, `EV3:stale.source_link`
+//! and the producing version staying open).
+//! CT-BND-19 (source, part: the tool's views hold a word's values only for the word the solver named, in
+//! `ct_bnd_19_the_tools_view_*`; not run here: the live twist through the input router, in
+//! `c600-input/tests/twist.rs`, which with this file is the whole by union).
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};

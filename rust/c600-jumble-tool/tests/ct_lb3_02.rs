@@ -12,6 +12,10 @@
 //!
 //! Not run here: the crossing as a commit row of the command layer (ONE.54, ONE.80), which waits for LP2's KN5. A pass
 //! is source and fixture evidence.
+//!
+//! CT-LB3-02 (whole: the two `ct_lb3_02_*` tests of this file, on the pose and label halves of centre piece 0, run
+//! both modes and both protection policies at M8's levels and the kernel's; `c600-jumble`'s `tests/crossing.rs` runs
+//! the kernel facts beneath as CT-KN2-03).
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};

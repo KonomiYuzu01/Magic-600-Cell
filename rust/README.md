@@ -30,7 +30,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice through M8's slot action of K⁺, the relation `jumble-locality/1` for LB1.10's trace keys, LB3's ν and drafted correction-set entry on F2 and F5 (`jumble_nu`), the repair list at a named cap under the built-in column's repair-list exception (`jumble_repair`), the three end tests read as their own verdict types (`jumble_end_tests`), the jumbling rows' host bridge (`rows`: KN2.4's jumbling rows and `seam_facts` as snapshot reads, also at the command layer's head with Jumble on), and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests on M8's levels and repair list, with oracle equality through Jumble on in the command layer (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 | `c600-library` | The base library's first entries as 600 Cell Script, with their catalogue rows: LB1's literal words (`words.power` in `words.6cs`); LB1.8's F2 and F5 ranks and solutions (the module `linalg` in `linalg.6cs`), exact Q(√5) signs (`quadratic`) and quaternion factors and tree outputs (`trees`), CT-LB1-01's parts, and its word equality keys (`word_keys`), CT-LB1-02's 600-cell-Full half on the model's relation in `c600-tools`' tests; LB2's exact completion (`completion.exact_completion` in `completion.6cs`), recipes and reports (`recipes`), Net and Strict protection (`protection`), guarded setups and buffers (`guarded_setups` in `setups.6cs`), named macro analysis and comparison (`macros`), seeds with their collateral stage order (`seeds`) and the orbit catalogue, progress per orbit and residuals (`orbits`), whose entries that read state run whole through the tool's host bridge in `c600-tools`' tests (CT-LB2-04, CT-LB2-01, CT-LB2-02 and CT-BND-18 among them); and CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
-| `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026). std only |
+| `c600-platform` | The platform layer (RPI.52), the one member that calls an operating system's own API: the session lock file's open, which on Windows denies delete sharing so that a held `lock` keeps its name (E1, the owner's reading of 18 November 2026), and the start of a console program without a console window of its own (`no_console_window`, for `c600-runtime`'s child). std only |
 | `c600-build` | The language evidence builder and its build cache: the scoped output grant, sealed builds on the caller's thread, and the fail-closed cache (DET.44 to DET.46; M2) |
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests, and user stages as HLSL under `m600-stage-hlsl/1` with their binary32 CPU reference; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
@@ -188,8 +188,8 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   parameter in a `display_if` branch and is passed a function that reaches the helper again, is admitted.
 - Not in M1, because they need the runtime (M2, M3): the fixed acknowledgement of BND.43, the saved-word half of
   CT-LG3-07, the undo half of CT-LG3-03 and research output that never becomes a solving preview (BND.61). M3 builds
-  the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 stays
-  open.
+  the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 runs in
+  `c600-command` since LP2's reading 18 (the job output, below).
 - Lists and word operations (LP2 drafts until the IR freeze, PHS.49). `List<T>` is a finite sequence in written
   order, built by the IR's collection form; `length`, `index`, `push` and `concat` work on it. A list with a display
   element is display-qualified as a whole, so its length, an element or an equality cannot extract an exact result
@@ -1564,7 +1564,11 @@ run or not applicable is no pass (PHS.63).
   CT-RPI-01); 121 part; none named only; none missing; 1 waiting (CT-LI-14), with what it waits for in
   `docs/progress/1.0/lp2-ct-index-notes.md`. That is the count on LP2's exit candidate `0260e6b1`. With the owner's
   readings of 22 November 2026 in those notes (LP2 plan section 12), the tool prints 126 whole (32 by union), none
-  part, 7 not applicable, 8 waiting and 107 indexed elsewhere; none of these 122 is a pass (PHS.63).
+  part, 7 not applicable, 8 waiting and 107 indexed elsewhere; none of these 122 is a pass (PHS.63). After LP2's exit,
+  reading 18's undo fix (pull request 416, in LP3's pull request 417) makes CT-LG3-03 and CT-LB7-01 whole by union,
+  and the owner's exit sign-off of the same day moves reading 17's owner-machine halves to the post-freeze on-screen
+  line (its reading (a)): the tool now prints 128 whole (34 by union), 7 not applicable, 8 waiting and 105 indexed
+  elsewhere, and on `0260e6b1` still the exit count.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 run there too, in the J1 job (PHS.19's
@@ -1841,12 +1845,14 @@ run or not applicable is no pass (PHS.63).
   is the value's own digest when there are no views and no records. Only a workspace row's job writes records; a record
   from any other row fails the job with `LG3:capability.not_granted`. The host's provenance reader checks every
   record's block, as for `workspace.set`. A job whose output fails a check writes nothing. A workspace row's records are
-  written in its completion's one durable action and kept in the journal (`Transaction::records`). For a stored row
-  whose undo class is `workspace` (`filter.apply`, `operation.phase.edit`) the completion is a workspace inverse: its
-  undo writes back what each record held before, absent ones included, and its redo writes the records again. No undo
-  reaches any other row's records, so earlier writes of the same records leave the undo and redo stacks, and so,
-  beneath an action that leaves, do the actions that wrote one of its other records. A replay
-  decides from H-08's table, since rows are served after the open. Tests: `c600-command/tests/job_output.rs` and
+  written in its completion's one durable action and kept in the journal (`Transaction::records`). For a row whose
+  undo class is `workspace`, every language-defined workspace row (LG3.5, LB7.2; LP2's reading 18) and a stored row
+  such as `filter.apply` or `operation.phase.edit`, the completion is a workspace inverse: its undo writes back what
+  each record held before, absent ones included, and its redo writes the records again. No undo reaches the records
+  of a stored row whose undo class is `none`, so earlier writes of the same records leave the undo and redo stacks,
+  and so, beneath an action that leaves, do the actions that wrote one of its other records. A replay decides from the
+  table it opens with, since rows are served and registered after the open: a stored row's undo class is H-08's, and
+  a row the table does not hold is a language-defined one. Tests: `c600-command/tests/job_output.rs` and
   `c600-command/tests/filter_apply.rs`.
 - Saved sets (LP3's C6, `set.save`; U1-057, U4-037; LP2's pull request 337; the drafts are in the crate
   documentation). `set.save`'s entry writes the one record `set.save`, `{kind, members, name}`, and in the
@@ -2295,6 +2301,8 @@ run or not applicable is no pass (PHS.63).
   `c600-run`, and forwards every host call (`tariff`, `perform`, `sink`) to the parent. The parent starts the child,
   answers its calls from the caller's host and returns the run's end or a typed fault. `run_in_process` is the same
   path in one process, the reference the tests hold the child to.
+- On Windows the parent starts the child without a console window of its own (`CREATE_NO_WINDOW`, through the
+  platform layer `c600-platform`): the shell has no console, and the parent starts a new child after every fault.
 - Protocol draft `c600-rt1-wire-1`: length-prefixed frames of at most 16 MiB either way, one protocol byte, six
   message kinds, and a canonical value encoding that refuses every noncanonical form on both sides. The parent
   answers a repeated, unacknowledged call from its record and never calls the host twice for one call, and a new

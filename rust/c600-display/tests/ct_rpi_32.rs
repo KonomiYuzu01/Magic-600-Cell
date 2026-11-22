@@ -1,11 +1,12 @@
-//! CT-RPI-32 (source), the headless part, on stages that LP2's stage checker admits (`c600_check::admit_stage`) and
-//! the display takes up (`stage::take_up`): a fragment stage writes opaque RGB only, with no discard, depth, stencil
-//! or coverage output; host statuses composite after user stages; a preview shown through a user stage has no
-//! presented-preview identity and binds no commit token (RPI.68, RPI.69, RPI.75, RPI.76). Every refusal the checker
-//! gives for a stage used here comes back with the checker's code. One test runs the display's own output rule
-//! (`stage::check_outputs`) on stage descriptions built directly, the rule that `c600-repr`'s chart path also calls.
-//! Not run: compiling a stage and compositing on a device need a backend (C9), and the host still reports F05 and F26
-//! unsupported, so no user stage reaches its frames.
+//! CT-RPI-32 (source, part: the headless part; not run: compiling a stage and compositing on a device, which need a
+//! backend, on the owner's machine (C9)). The headless part runs on stages that LP2's stage checker admits
+//! (`c600_check::admit_stage`) and the display takes up (`stage::take_up`): a fragment stage writes opaque RGB only,
+//! with no discard, depth, stencil or coverage output; host statuses composite after user stages; a preview shown
+//! through a user stage has no presented-preview identity and binds no commit token (RPI.68, RPI.69, RPI.75, RPI.76).
+//! Every refusal the checker gives for a stage used here comes back with the checker's code. One test runs the
+//! display's own output rule (`stage::check_outputs`) on stage descriptions built directly, the rule that
+//! `c600-repr`'s chart path also calls. The host still reports F05 and F26 unsupported, so no user stage reaches its
+//! frames.
 
 mod common;
 

@@ -215,10 +215,11 @@ class ShellProject(unittest.TestCase):
         for block in re.findall(r'json\.WriteString\("t", "(\w+)"\);(.*?)\}\)', log, re.S):
             written[block[0]] = re.findall(r'json\.Write\w+\("(\w+)"', block[1])
         self.assertEqual(written["presented"], list(key_to_frame.FIELDS["presented"]))
-        self.assertEqual(written["frame"], [*key_to_frame.FIELDS["frame"], "engine_revision", "publication_revision"])
-        # A key row: seq and qpc, then frame_id as a number or as null.
+        self.assertEqual(written["frame"], [*key_to_frame.FIELDS["frame"], "engine_revision", "publication_revision",
+                                            "returned_qpc"])
+        # A key row: seq and qpc, the QPC when m6h_key_down returned, then frame_id as a number or as null.
         self.assertEqual(written["key"][:2], list(key_to_frame.FIELDS["key"]))
-        self.assertEqual(written["key"][2:], ["frame_id", "frame_id"])
+        self.assertEqual(written["key"][2:], ["handled_qpc", "frame_id", "frame_id"])
         self.assertIn('json.WriteNull("frame_id");', log)
         run = written["run"]
         for field in ("format", "run_id", "build_identity", "qpc_frequency", "synthetic", "foreground_throughout",
@@ -233,7 +234,20 @@ class ShellProject(unittest.TestCase):
         self.assertIn('json.WriteBoolean("synthetic", false);', log)
         # A press waits for a frame that draws its revision over a publication of it; the rest close without one.
         self.assertIn("f.EngineRevision >= press.Revision && f.PublicationRevision >= press.Revision", log)
-        self.assertIn("WriteKey(press.Qpc, null);", log)
+        self.assertIn("WriteKey(press.Qpc, press.Handled, null);", log)
+        # handled_qpc and returned_qpc are read as m6h_key_down and m6h_frame return, before anything else, so a slow
+        # core call shows in the log apart from a slow present.
+        shell = text(PROJECT / "Shell.cs")
+        turn = shell[shell.index("private void Turn("):shell.index("private void CreateEcho()")]
+        self.assertLess(turn.index("library.KeyDown(_host, chord, key.Echo, out var result);"),
+                        turn.index("var handled = EventLog.Now();"))
+        self.assertLess(turn.index("var handled = EventLog.Now();"), turn.index("if (answer != HostLibrary.Ok)"))
+        self.assertEqual(turn.count("_log?.Press(qpc, handled, "), 2)
+        process = shell[shell.index("public override void _Process"):shell.index("private void OnFramePreDraw")]
+        self.assertLess(process.index("library.Frame(_host, out var frame);"),
+                        process.index("var returned = EventLog.Now();"))
+        self.assertLess(process.index("var returned = EventLog.Now();"), process.index("if (code == HostLibrary.Ok)"))
+        self.assertIn("_log?.Frame(frame, submitted, returned);", process)
 
     def test_the_event_log_writes_the_rows_the_ui_skew_tool_reads(self):
         sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))

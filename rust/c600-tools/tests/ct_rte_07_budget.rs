@@ -20,6 +20,11 @@
 //! rest of the 600-cell-Full subset is in `c600-module/tests/ct_rte_07_full.rs`.
 //!
 //! Evidence kind: source and synthetic.
+//!
+//! CT-RTE-07 (source, part: B13 and B14 at the command layer on the tool's row; not run here: the other keys, in
+//! `c600-module/tests/ct_rte_07_full.rs` and the files it names, B12's cold run, which has no test on this commit,
+//! B12's other five cache states, not applicable by the owner's decision of 20 November 2026 item 1 and no pass, and
+//! the Linux run).
 
 mod process_support;
 

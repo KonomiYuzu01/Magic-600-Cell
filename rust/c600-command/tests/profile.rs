@@ -222,8 +222,8 @@ fn a_comparison_admits_the_sheets_word_only_in_a_solving_session() {
 /// engine preview and no token, and the session's snapshot digest and revision are unchanged; the capture is
 /// `c600-run`'s).
 /// CT-LB7-01 (part: a run in a research or authoring session gets no engine preview, so its output cannot become an
-/// interim solving preview; save/load and import run in `c600-run`; not run: the undo of a language-defined workspace
-/// command).
+/// interim solving preview; save/load and import run in `c600-run`, and the undo of an invoked workspace command in
+/// `tests/job_output.rs` and `tests/filter_apply.rs`).
 /// BND.16's table by profile, chapter 07 section 8 (draft): a run in a `tool_authoring` or `research` session may not
 /// invoke `operation.preview` (BND.60: its `propose` goes to a capture), so an entry that requires the row is
 /// unavailable there, while the solver's own preview is admitted in every profile. In a solving session the run's

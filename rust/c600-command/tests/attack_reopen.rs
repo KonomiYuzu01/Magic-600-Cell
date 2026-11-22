@@ -15,7 +15,11 @@ use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
 
 const SECRET: [u8; 32] = [7; 32];
+/// A language-defined workspace row: its job's record write is an undoable action of its own (LP2's reading 18).
 const NOTE_ROW: &str = "tool.note";
+/// A stored workspace row whose undo class is `none`: no undo reaches its job's record write, which takes the earlier
+/// actions that wrote the record off both stacks (the layer's history cut).
+const PLAY_ROW: &str = "recording.play";
 const NAMES: [&str; 3] = ["a", "b", "c"];
 
 fn repository() -> PathBuf {
@@ -66,6 +70,7 @@ enum Op {
     Protect(u8),
     Policy(bool),
     Job(usize, i64),
+    Play(usize, i64),
     CommitRecord(usize),
 }
 
@@ -90,7 +95,8 @@ fn ops(seed: u64, count: usize) -> Vec<Op> {
             8..=10 => Op::Write(rng.next(3) as usize, [1 + rng.next(6) as i64, 1 + rng.next(6) as i64]),
             11 => Op::Protect(rng.next(8) as u8),
             12 => Op::Policy(rng.next(2) == 0),
-            13..=14 => Op::Job(rng.next(3) as usize, 1 + rng.next(6) as i64),
+            13 => Op::Job(rng.next(3) as usize, 1 + rng.next(6) as i64),
+            14 => Op::Play(rng.next(3) as usize, 1 + rng.next(6) as i64),
             _ => Op::CommitRecord(rng.next(3) as usize),
         })
         .collect()
@@ -106,6 +112,7 @@ fn equip(mut layer: CommandLayer, prefix: &str) -> Session {
     layer.set_provenance(Box::new(Reader));
     // ADR-D01.9's settle interval is tested in tests/settle.rs; these sessions commit on the first presented press.
     layer.set_settle(Duration::ZERO);
+    layer.serve_row(PLAY_ROW, Overlay { module: "recordings".into(), entry: "play".into() }).unwrap();
     let overlay = Overlay { module: "notes".into(), entry: "note".into() };
     layer.register_overlay(NOTE_ROW, Kind::Workspace, &[], overlay).unwrap();
     Session { layer, shell: Shell::new(Secret::fixed(SECRET), prefix), frames: HeadlessFrames::new() }
@@ -150,6 +157,17 @@ impl Session {
         answer(self.shell.invoke(&mut self.layer, row, args))
     }
 
+    /// A press of workspace row `row` whose job's output writes `letter` to record `NAMES[name]`.
+    fn job(&mut self, row: &str, args: Value, name: usize, letter: i64) -> String {
+        let receipt = self.shell.invoke(&mut self.layer, row, args);
+        let Ok(Receipt { status: Status::Running(job), .. }) = receipt else { return answer(receipt) };
+        self.layer.take_program_job().expect("the job the press started");
+        let value = RecordValue { payload: letters(&[letter]), provenance: "run".into() };
+        let output =
+            JobOutput { value: Value::Null, views: Vec::new(), records: [(NAMES[name].to_owned(), value)].into() };
+        answer(self.layer.finish_program_job_with(job, Ok(output)).ok_or_else(|| Error::new("none", "no receipt")))
+    }
+
     fn apply(&mut self, op: &Op) -> String {
         match op {
             Op::Commit(letter) => self.execute(draft_args(&word(&[*letter]))),
@@ -175,19 +193,10 @@ impl Session {
                 ]);
                 answer(self.shell.invoke(&mut self.layer, POLICY_ROW, args))
             }
-            Op::Job(name, letter) => {
-                let receipt = self.shell.invoke(&mut self.layer, NOTE_ROW, json::object([]));
-                let Ok(Receipt { status: Status::Running(job), .. }) = receipt else { return answer(receipt) };
-                self.layer.take_program_job().expect("the job the press started");
-                let value = RecordValue { payload: letters(&[*letter]), provenance: "run".into() };
-                let output = JobOutput {
-                    value: Value::Null,
-                    views: Vec::new(),
-                    records: [(NAMES[*name].to_owned(), value)].into(),
-                };
-                answer(
-                    self.layer.finish_program_job_with(job, Ok(output)).ok_or_else(|| Error::new("none", "no receipt")),
-                )
+            Op::Job(name, letter) => self.job(NOTE_ROW, json::object([]), *name, *letter),
+            Op::Play(name, letter) => {
+                let args = json::object([("from", Value::Int(0)), ("recording", text("r1"))]);
+                self.job(PLAY_ROW, args, *name, *letter)
             }
             Op::CommitRecord(name) => {
                 self.execute(json::object([("draft", json::object([("record", text(NAMES[*name]))]))]))
@@ -276,7 +285,8 @@ fn difference(seed: u64, count: usize, fork: usize) -> Option<String> {
 
 /// Guard (classes F and B, attacker 3: a reopen in the middle). KN5.19 [B], ONE.50 [B], ONE.53 [D], KN4's replay: for
 /// seeded lists of the solver's actions (word commits, record-draft commits, undo, redo, record writes, protection
-/// and policy changes, a tool row's record write), a reopen in the middle and a reopen at the end are the same session
+/// and policy changes, and the record writes of a language-defined row's job and of a job of a stored row whose undo
+/// class is `none`), a reopen in the middle and a reopen at the end are the same session
 /// as the live layer: the same answers to the same later actions, the same revision counters, state, protected set,
 /// policy, records and record versions, and the same undo and redo targets all the way back and forward.
 #[test]
@@ -291,28 +301,36 @@ fn a_reopen_in_the_middle_is_the_same_session() {
 }
 
 /// The seeded lists are not vacuous: over the ten seeds every kind of action is answered `committed` or `completed`
-/// at least once, and a tool row's record write lands while an earlier write of the same record is the undo target
-/// (the layer's history cut) at least once.
+/// at least once; every completed job of the language-defined row becomes the undo target; and a job of the stored
+/// row whose undo class is `none` lands while an earlier write of the same record is the undo target, which takes
+/// that target off (the layer's history cut), at least once.
 #[test]
 fn the_seeded_lists_reach_every_action() {
     let mut reached = std::collections::BTreeMap::new();
     let mut cuts = 0;
+    let top = |live: &Session| live.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
     for seed in 1..=10 {
         let mut live = fresh();
         for op in ops(seed, 36) {
-            let before = live.layer.undo_hint(Direction::Undo);
+            let before = top(&live);
             let answered = live.apply(&op);
             if answered.starts_with("committed") || answered.starts_with("completed") {
                 let kind = format!("{op:?}");
                 *reached.entry(kind.split('(').next().unwrap().to_owned()).or_insert(0) += 1;
-                if matches!(op, Op::Job(..)) && before.is_some() && live.layer.undo_hint(Direction::Undo) != before {
-                    cuts += 1;
+                let after = top(&live);
+                match op {
+                    Op::Job(..) => {
+                        assert!(after.is_some() && after != before, "seed {seed}: {op:?} took no undo entry")
+                    }
+                    Op::Play(..) if before.is_some() && after != before => cuts += 1,
+                    _ => {}
                 }
             }
         }
     }
     let kinds: Vec<&str> = reached.keys().map(String::as_str).collect();
-    assert_eq!(kinds, ["Commit", "CommitRecord", "Job", "Policy", "Protect", "Redo", "Undo", "Write"], "{reached:?}");
-    assert!(cuts > 0, "no tool write cut an undo target: {reached:?}");
+    let all = ["Commit", "CommitRecord", "Job", "Play", "Policy", "Protect", "Redo", "Undo", "Write"];
+    assert_eq!(kinds, all, "{reached:?}");
+    assert!(cuts > 0, "no job of a row whose undo class is `none` cut an undo target: {reached:?}");
     eprintln!("reached {reached:?}, history cuts {cuts}");
 }

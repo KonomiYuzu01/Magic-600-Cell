@@ -26,8 +26,11 @@ const SECRET: [u8; 32] = [7; 32];
 const LAYER: &str = "structure.layer";
 const PREVIEW: &str = "filter.preview";
 const APPLY: &str = "filter.apply";
-/// A language-defined workspace row the tests register: no undo reaches its job's writes.
+/// A language-defined workspace row the tests register: its job's completion is an undoable action of its own (LP2's
+/// reading 18).
 const NOTE: &str = "tool.full.note";
+/// A stored workspace row whose undo class is `none`, which the tests serve: no undo reaches its job's writes.
+const PLAY: &str = "recording.play";
 
 /// The record the test's predicate job writes, and the record its apply job writes.
 const PREDICATE: &str = "layer";
@@ -131,7 +134,8 @@ struct Fixture {
 }
 
 /// A session at the solved state that protects nothing, on H-08's table with the layer's drafts (`workspace.set`), with
-/// the predicate row, `filter.preview` and `filter.apply` served, and the test reader.
+/// the predicate row, `filter.preview`, `filter.apply` and `recording.play` served, the language-defined row
+/// registered, and the test reader.
 fn fixture() -> Fixture {
     let k = kernel();
     let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
@@ -147,6 +151,7 @@ fn serve(layer: &mut CommandLayer) {
     layer.serve_row(LAYER, overlay("layer_predicate")).unwrap();
     layer.serve_row(PREVIEW, overlay("filter_counts")).unwrap();
     layer.serve_row(APPLY, overlay("apply_filter")).unwrap();
+    layer.serve_row(PLAY, overlay("play")).unwrap();
     layer.register_overlay(NOTE, Kind::Workspace, &[], overlay("note")).unwrap();
 }
 
@@ -213,9 +218,10 @@ impl Fixture {
         self.finish(job, output(Value::Null, &[(FILTERED, payload)]))
     }
 
-    /// A job of the language-defined row whose output writes `payload` to `name`: no undo reaches the write.
-    fn note(&mut self, name: &str, payload: Value) -> Receipt {
-        let job = self.start(NOTE, json::object([]));
+    /// A job of `recording.play`, a stored row whose undo class is `none`, whose output writes `payload` to `name`: no
+    /// undo reaches the write.
+    fn play(&mut self, name: &str, payload: Value) -> Receipt {
+        let job = self.start(PLAY, json::object([("from", Value::Int(0)), ("recording", text("r1"))]));
         self.finish(job, output(Value::Null, &[(name, payload)]))
     }
 
@@ -515,13 +521,15 @@ fn an_apply_that_writes_no_record_takes_no_undo_entry() {
 }
 
 /// A predicate row's completion is an undoable action of its own: H-08 gives `structure.layer` the undo class
-/// `workspace` (LB7.2, since the command table's freeze). When a predicate job writes a record an applied filter
-/// wrote, the apply keeps its place beneath it: the predicate job's undo gives back the apply's value, and the apply's
-/// undo the value before it. With the apply undone first, the predicate job's action clears the redo stack, as every
-/// new undoable action does, and its undo gives back the empty record. A reopen offers the same undo and redo.
+/// `workspace` (LB7.2, since the command table's freeze). So is a language-defined workspace row's (LG3.5, LB7.2; LP2's
+/// reading 18). When a job of either writes a record an applied filter wrote, the apply keeps its place beneath it:
+/// the job's undo gives back the apply's value, and the apply's undo the value before it. With the apply undone first,
+/// the job's action clears the redo stack, as every new undoable action does, and its undo gives back the empty
+/// record. A reopen, which replays the language-defined row's completion before the host registers the row again,
+/// offers the same undo and redo.
 #[test]
-fn a_predicate_that_writes_over_an_applied_filter_is_its_own_undo_entry() {
-    for undone in [false, true] {
+fn a_job_that_writes_over_an_applied_filter_is_its_own_undo_entry() {
+    for (writer, undone) in [(LAYER, false), (LAYER, true), (NOTE, false), (NOTE, true)] {
         let mut f = fixture();
         assert!(completed(&f.write("w", letters(&[1]))));
         let predicate = f.predicate(letters(&[1]));
@@ -532,28 +540,30 @@ fn a_predicate_that_writes_over_an_applied_filter_is_its_own_undo_entry() {
             assert!(committed(&f.step(Direction::Undo)));
             assert!(f.layer.undo_hint(Direction::Redo).is_some());
         }
-        let job = f.start(LAYER, layer_args(1, 2));
+        let args = if writer == LAYER { layer_args(1, 2) } else { json::object([]) };
+        let job = f.start(writer, args);
         assert!(completed(&f.finish(job, output(Value::Null, &[(FILTERED, letters(&[9]))]))));
-        assert_eq!(f.record(FILTERED).1, Some(letters(&[9])), "{undone}");
-        assert!(f.layer.undo_hint(Direction::Redo).is_none(), "{undone}");
+        assert_eq!(f.record(FILTERED).1, Some(letters(&[9])), "{writer} {undone}");
+        assert!(f.layer.undo_hint(Direction::Redo).is_none(), "{writer} {undone}");
         let g = reopen(&f.layer);
         for direction in [Direction::Undo, Direction::Redo] {
-            assert_eq!(g.undo_hint(direction), f.layer.undo_hint(direction), "{undone} {direction:?}");
+            assert_eq!(g.undo_hint(direction), f.layer.undo_hint(direction), "{writer} {undone} {direction:?}");
         }
         assert!(committed(&f.step(Direction::Undo)));
         let applied = if undone { None } else { Some(letters(&[7])) };
-        assert_eq!(f.record(FILTERED).1, applied, "{undone}: the predicate job's undo");
+        assert_eq!(f.record(FILTERED).1, applied, "{writer} {undone}: the job's undo");
         if !undone {
             assert!(committed(&f.step(Direction::Undo)));
-            assert_eq!(f.record(FILTERED).1, None, "the apply's undo");
+            assert_eq!(f.record(FILTERED).1, None, "{writer}: the apply's undo");
         }
-        assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), below, "{undone}");
-        assert_eq!(f.record("w").1, Some(letters(&[1])), "{undone}");
+        assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), below, "{writer} {undone}");
+        assert_eq!(f.record("w").1, Some(letters(&[1])), "{writer} {undone}");
     }
 }
 
 /// The cut runs on through the other records of an apply it drops. The apply writes `filtered` and `b`, after
-/// earlier writes of `w` and `b`, and a job of a language-defined row, which no undo reaches, then writes `filtered`:
+/// earlier writes of `w` and `b`, and a job of `recording.play`, a stored row whose undo class is `none` and so one no
+/// undo reaches, then writes `filtered`:
 /// - The apply leaves the undo stack, and so does the earlier write of `b`: its undo would write over the apply's `b`,
 ///   which no step reaches now. The write of `w` keeps its place, and so does the predicate's completion beneath it.
 /// - A write of `b` after the apply keeps its place: its undo gives back the apply's `b`.
@@ -588,7 +598,7 @@ fn a_cut_runs_on_through_the_other_records_of_an_applied_filter() {
             }
             _ => {}
         }
-        assert!(completed(&f.note(FILTERED, letters(&[9]))));
+        assert!(completed(&f.play(FILTERED, letters(&[9]))));
         assert!(f.layer.undo_hint(Direction::Redo).is_none(), "{case}");
         let g = reopen(&f.layer);
         for direction in [Direction::Undo, Direction::Redo] {
@@ -617,9 +627,9 @@ fn a_cut_runs_on_through_the_other_records_of_an_applied_filter() {
 }
 
 /// The cut runs on through the redo stack too. An apply that wrote `filtered` and `z` and a later write of `z` are
-/// both undone. A write of `filtered` by a job of a language-defined row then drops the apply from the redo stack, and
-/// with it the later write of `z` beneath it: that write's redo would start from the apply's `z`, which no redo brings
-/// back now. The undo stack keeps its place, and a reopen offers the same undo and redo.
+/// both undone. A write of `filtered` by a job of `recording.play`, whose undo class is `none`, then drops the apply
+/// from the redo stack, and with it the later write of `z` beneath it: that write's redo would start from the apply's
+/// `z`, which no redo brings back now. The undo stack keeps its place, and a reopen offers the same undo and redo.
 #[test]
 fn the_cut_runs_on_through_the_redo_stack() {
     let mut f = fixture();
@@ -635,7 +645,7 @@ fn the_cut_runs_on_through_the_redo_stack() {
     assert!(committed(&f.step(Direction::Undo)));
     assert_eq!((f.record("z").1, f.record(FILTERED).1), (None, None));
     assert!(f.layer.undo_hint(Direction::Redo).is_some());
-    assert!(completed(&f.note(FILTERED, letters(&[9]))));
+    assert!(completed(&f.play(FILTERED, letters(&[9]))));
     assert!(f.layer.undo_hint(Direction::Redo).is_none(), "both undone actions leave the redo stack");
     assert_eq!(top(&f), below);
     let g = reopen(&f.layer);
@@ -645,8 +655,7 @@ fn the_cut_runs_on_through_the_redo_stack() {
 }
 
 /// CT-LG3-03 and CT-LB7-01 (part: an invoked workspace change of a stored row, `filter.apply`, is one undoable action
-/// whose undo and redo each move the workspace revision once; not run: the same for a language-defined workspace row,
-/// to whose writes no undo reaches by the draft ruling in `src/lib.rs`).
+/// whose undo and redo each move the workspace revision once; a language-defined row's is in `tests/job_output.rs`).
 /// The workspace inverse (H-08: `filter.apply` undoes in the workspace): an undo writes back what each record held
 /// before the apply, absent ones included, and a redo writes the apply's records again; each moves every written
 /// record's version and the workspace revision once. An earlier record write keeps its place on the stack beneath

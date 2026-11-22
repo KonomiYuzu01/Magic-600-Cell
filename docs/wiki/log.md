@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] decision | LP3's exit (C10) and LP2's exit signed
+The owner signed both exits on one card: LP3 on `013900ff`, whose index at the comment-only commit `798dc877` reads 61 whole, 11 part and 10 missing of 82, and LP2 on `0260e6b1`. The four readings of the tests that did not run whole take the recommended options ([decision](decisions/owner-decisions-2026-11-22-c10-lp2-exit.md)).
+
 ## [2026-11-22] update | ADR-D01's overrules noted in the chapters
 Thirteen clauses that ADR-D01 overrules now carry a note citing the owner's decision, in chapters 01, 02, 04, 08 and 09 and ADR-L11. Chapter 07 is a file of the frozen format candidate, so BND.15 and BND.84 stay unnoted and the decision page is their record. Chapter 01's pin and the packet's input commit are refreshed under FP.1 ([record](decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), "What follows").
 

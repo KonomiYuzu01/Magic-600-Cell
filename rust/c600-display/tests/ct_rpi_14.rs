@@ -1,4 +1,4 @@
-//! CT-RPI-14 (synthetic), the whole definition over this crate's drafted repertoire: at exact camera poses an exact
+//! CT-RPI-14 (synthetic, whole definition over this crate's drafted repertoire): at exact camera poses an exact
 //! region test or a cited reduction decides declared chart properties, and a vertex test only refutes them;
 //! intervening float poses cannot create exact verdicts (RPI.29, RPI.30, RPI.34; LB4.2). The repertoire stays RPI.34
 //! [O]: here it is the stereographic chart over convex hulls of exact 600-cell vertices in Q(√5).

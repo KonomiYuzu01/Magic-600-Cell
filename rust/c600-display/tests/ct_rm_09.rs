@@ -1,6 +1,7 @@
-//! CT-RM-09 (source), the rows of RM.40's table that need a user stage: rows 3 to 6 (the raster bound U against a
-//! frame's allowance), row 8 (a later frame's stop keeps the publication's receipt) and row 10 (a chain's stages
-//! quarantine together). The stages are admitted by LP2's stage checker and taken up by the display (`common::stages`);
+//! CT-RM-09 (source, part: rows 3 to 6, 8 and 10 without a device; not run: their device parts, listed below, C9),
+//! the rows of RM.40's table that need a user stage: rows 3 to 6 (the raster bound U against a frame's allowance),
+//! row 8 (a later frame's stop keeps the publication's receipt) and row 10 (a chain's stages quarantine together).
+//! The stages are admitted by LP2's stage checker and taken up by the display (`common::stages`);
 //! U is RPI.72's formula over placed triangles (`raster`); the stop, the quarantine and the frame reports are
 //! `stage::Quarantine`'s (RPI.72 step 4, RPI.77, RM.41). Every limit and surface is a declared fixture value (RM.40).
 //! Rows 1, 2, 7 and 9 run in `c600-view`'s `view_rows.rs`.

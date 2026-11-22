@@ -263,11 +263,11 @@ impl Fixture {
 /// CT-LG2-16 (part: a menu drag resolves through KN3.8's kernel call into the journaled rotation, and the twist
 /// commits the retained word of its menu item; not run: the language half, because the IR has no rotation request).
 /// CT-EV4-04 (part: the twist leg in the command layer, a twist admitted and committed once with no preview and no
-/// job; not run: held-key repeats, which are the shell's and LP3's `c600-input`), CT-ONE-03 (part: a live twist
+/// job; not run here: held-key repeats, which run in `c600-input/tests/repeat.rs`), CT-ONE-03 (part: a live twist
 /// commits with no preview object), CT-BND-19 (part: the layer holds nothing for a twist before its press commits,
-/// neither a preview nor a job nor a revision change; not run: the view
-/// model's fields, which are LP3's), KN3.8, JI.35. A menu item resolves to its retained word at the binding's cap, and
-/// the commit journals the resolution's record as `rotation` (draft).
+/// neither a preview nor a job nor a revision change; not run here: the view model's fields, in
+/// `c600-input/tests/twist.rs` and `c600-tools/tests/views.rs`), KN3.8, JI.35. A menu item resolves to its retained
+/// word at the binding's cap, and the commit journals the resolution's record as `rotation` (draft).
 #[test]
 fn a_twist_commits_the_retained_word_of_its_menu_item() {
     let k = kernel();

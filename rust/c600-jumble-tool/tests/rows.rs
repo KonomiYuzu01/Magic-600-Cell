@@ -503,6 +503,9 @@ fn the_repair_list_row_serves_the_named_caps_list_only() {
 /// command layer's exit reads it. At solved the sticker test says yes; after twelve records it says no. Each entry of
 /// `jumble_end_tests` reads its own row once through the bridge and answers its test's verdict type with the outcome
 /// alone: yes `holds`, no `fails`, unknown `unestablished`.
+/// CT-LB3-01 (part: the library entries over the three end-test rows, `jumble_end_tests`, each answering its own
+/// verdict type; not run here: the kernel's facts, in `tests/lb3.rs`, and the checker half, LP2's, in `c600-syntax`
+/// and `c600-run`, `tests/end_tests.rs`).
 #[test]
 fn the_end_test_rows_serve_each_verdict_with_its_evidence() {
     let fixture = Fixture::load("I_a");

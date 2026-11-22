@@ -510,8 +510,8 @@ enum Change {
         before: Option<RecordValue>,
         after: Option<RecordValue>,
     },
-    /// A workspace completion of a stored row whose undo class is `workspace` (draft; LP3's C6): its records' values
-    /// before and after it, in the order of their names.
+    /// A workspace completion of a row whose undo class is `workspace`, a language-defined row or a stored one (draft;
+    /// LP3's C6, LP2's reading 18): its records' values before and after it, in the order of their names.
     Records {
         before: Vec<RecordWrite>,
         after: Vec<RecordWrite>,
@@ -559,8 +559,8 @@ enum Tree {
     LayoutPush(Change),
     LayoutUndo,
     LayoutRedo,
-    /// A workspace completion that no undo reaches: a language-defined row's, or a stored row's whose undo class is
-    /// `none`.
+    /// A workspace completion that no undo reaches: a stored row's whose undo class is `none`, or one that writes no
+    /// record.
     None,
 }
 
@@ -4236,10 +4236,11 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// A workspace row's job completion: one durable action that advances the workspace revision, writes the job's
-    /// records and keeps the state, the preview slot and the jobs (KN5.23). A stored row whose undo class is
-    /// `workspace` makes an undoable action, which `session.undo` and `session.redo` invert and repeat as a workspace
-    /// inverse ([`Change::Records`]), when it writes a record: one that writes none changes nothing an undo could
-    /// restore, so it takes no undo entry. No undo reaches any other row's completion (draft).
+    /// records and keeps the state, the preview slot and the jobs (KN5.23). A row whose undo class is `workspace`, a
+    /// language-defined row or a stored one ([`Self::workspace_undoable`]), makes an undoable action, which
+    /// `session.undo` and `session.redo` invert and repeat as a workspace inverse ([`Change::Records`]), when it writes
+    /// a record: one that writes none changes nothing an undo could restore, so it takes no undo entry. No undo reaches
+    /// the completion of a stored row whose undo class is `none` (draft).
     fn workspace_adoption(
         &self,
         meta: Meta,
@@ -4294,15 +4295,14 @@ impl<S: Store> CommandLayer<S> {
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
     }
 
-    /// The history a completion of workspace row `row` is undone in: the move history for a stored row whose undo class
-    /// is `workspace`, the layout history for one whose undo class is `layout` (ADR-D01.14), none otherwise. A replay
-    /// reads the same answer before the host serves its rows again, since H-08's table holds the stored rows; a
-    /// language-defined row's completion is never undoable (draft).
+    /// The history a completion of workspace row `row` is undone in: the move history when its row's undo class is
+    /// `workspace`, the layout history when it is `layout` (ADR-D01.14), none otherwise. Every language-defined
+    /// workspace row's class is `workspace` ([`Table::register_overlay`]; LG3.5, LB7.2, LP2's reading 18), and a stored
+    /// row's is H-08's. A replay runs before the host registers its language-defined rows again, so a row the table
+    /// does not hold is one of them, and the replay reads the same answer as the completion did.
     fn workspace_undoable(&self, row: &str) -> Option<History> {
-        if self.table.language_defined(row) {
-            return None;
-        }
         match self.table.row(row) {
+            None => Some(History::Moves),
             Some(row) if row.kind == Kind::Workspace && row.undo == UndoClass::Workspace => Some(History::Moves),
             Some(row) if row.kind == Kind::Workspace && row.undo == UndoClass::Layout => Some(History::Layout),
             _ => None,
@@ -5403,7 +5403,8 @@ impl<S: Store> CommandLayer<S> {
     /// `workspace.set` (PS1.16), and a row that takes the gate `fresh_filter_preview` must pass it again, or the job
     /// fails with `KN5:stale.filter_preview` (KN0.9). A job whose output fails a check fails with that error and leaves
     /// nothing written. A workspace row's records are written in its completion's one durable action, which
-    /// `session.undo` reaches only for a stored row whose undo class is `workspace`. A completed `filter.preview` job's
+    /// `session.undo` reaches for a row whose undo class is `workspace`, every language-defined workspace row's
+    /// included, and never for a stored row whose undo class is `none`. A completed `filter.preview` job's
     /// result is kept as a filter preview ([`CommandLayer::filter_preview`]).
     pub fn finish_program_job_with(&mut self, job: u64, result: Result<JobOutput, Error>) -> Option<Receipt> {
         // A fenced runner's report releases its row's runner slot; its result never publishes (LI.23).

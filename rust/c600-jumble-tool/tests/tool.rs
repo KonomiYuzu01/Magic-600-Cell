@@ -146,8 +146,8 @@ fn ct_lb6_03_the_declared_class_matches_each_exact_entry_definition() {
 
 /// CT-LB6-03 (part, the jumbling tool: LX-3's correction-solve, state-based target selection and storage-laundering
 /// cases, written as entries of this tool's module, are refused under chapter 07's selected mechanism, capability
-/// separation, and never run. Not run: the frozen LX-3 corpus itself, which is C4's, and the cases the IR draft
-/// cannot express: it has no word operations, so a word chosen from state is a word read from state).
+/// separation, and never run. Not run: the frozen LX-3 corpus itself, which is C4's, with the cases that need
+/// word operations, which the IR draft has since pull request 176 and C4 takes up next; BM5's review and its record).
 ///
 /// - Correction solve: an entry reads the state-derived correction combination and proposes it.
 /// - State-based target selection: an entry picks its target, or one of two words the solver named, by a state read.

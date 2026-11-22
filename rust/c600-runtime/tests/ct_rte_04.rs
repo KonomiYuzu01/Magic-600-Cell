@@ -1,7 +1,10 @@
-//! CT-RTE-04, in part: "one frozen abstract trace preserves exact results, charges, stopping points and source
-//! associations across admitted executors". The executors here are the interpreter in process and the runtime in its
-//! own process (route RT1); the traces are DET.65's frozen vectors. Source and synthetic evidence only: no timing is
-//! measured, and no instruction count takes part.
+//! CT-RTE-04, for the 32 vectors in LP3's run: "one frozen abstract trace preserves exact results, charges, stopping
+//! points and source associations across admitted executors". The executors here are the interpreter in process and
+//! the runtime in its own process (route RT1); the traces are DET.65's frozen vectors. Source and synthetic evidence
+//! only: no timing is measured, and no instruction count takes part.
+//!
+//! CT-RTE-04 (whole: 32 of DET.65's 40 traces on both executors; the other eight are out of LP3's run under PHS.52,
+//! owner, 20 November 2026, items 3 and 4, and stay on record in DET.65's vectors, listed below with their reasons).
 //!
 //! # The logical mapping
 //!
@@ -1063,9 +1066,9 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) -> En
     end
 }
 
-/// CT-RTE-04 in part: 32 DET.65 traces realised as programs keep their exact results, charges, stopping points,
-/// child records and source associations on both executors; the other 8 are listed with the reason they are not
-/// realised.
+/// CT-RTE-04 (whole: 32 DET.65 traces realised as programs keep their exact results, charges, stopping points,
+/// child records and source associations on both executors; the other 8 are out of LP3's run under PHS.52 and are
+/// listed with the reason they are not realised).
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {
     let text_of = std::fs::read_to_string(VECTORS).unwrap_or_else(|e| panic!("cannot read {VECTORS}: {e}"));

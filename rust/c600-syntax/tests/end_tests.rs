@@ -149,9 +149,10 @@ fn ct_lg2_09_a_boolean_never_stands_for_a_verdict() {
     }
 }
 
-/// CT-LB3-01 (part: only an end test's own row answers its verdict, LB3.2; LP2 draft; not run: the kernel's facts). A
-/// read of another row that declares a verdict type is `LG2:type.mismatch`, with or without an argument, so no row's
-/// answer passes for a test's verdict; a list of verdicts from another row stays the row's own declaration.
+/// CT-LB3-01 (part: only an end test's own row answers its verdict, LB3.2; LP2 draft; not run here: the kernel's facts,
+/// in `c600-jumble-tool/tests/lb3.rs`). A read of another row that declares a verdict type is `LG2:type.mismatch`, with
+/// or without an argument, so no row's answer passes for a test's verdict; a list of verdicts from another row stays
+/// the row's own declaration.
 #[test]
 fn ct_lb3_01_only_an_end_tests_row_answers_its_verdict() {
     for read in [

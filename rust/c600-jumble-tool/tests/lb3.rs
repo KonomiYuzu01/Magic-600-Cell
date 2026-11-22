@@ -577,9 +577,9 @@ fn evidence<'a>(verdict: &'a Verdict, key: &str) -> Option<&'a str> {
 
 /// CT-LB3-01 (part: the kernel half of "separate fixtures distinguish retained checkpoint, label checkpoint and sticker
 /// test" and of "an imported table without reachability stays unestablished", on M8's `levels` end tests; the library
-/// entry is not written as language code yet. The next test runs the kernel half of "a reachable nonzero-ν lattice
-/// state fails the label checkpoint". The checker half, the end tests' typed verdicts, is LP2's (`c600-check`, pull
-/// request 213)).
+/// entry `jumble_end_tests` runs through `tests/rows.rs`. The next test runs the kernel half of "a reachable nonzero-ν
+/// lattice state fails the label checkpoint". The checker half, the end tests' typed verdicts, is LP2's (`c600-check`,
+/// pull request 213)).
 ///
 /// Ten fixtures in the pinned I_a menu, each read by the sticker test, the retained checkpoint and the label
 /// checkpoint: solved under its witnessed claim (yes, yes, yes); a raw table with a centre turned by a third-turn about
@@ -748,8 +748,8 @@ fn nu_of(snapshot: &Snapshot) -> NuVector {
 }
 
 /// CT-LB3-01 (part: the kernel half of "a reachable nonzero-ν lattice state fails the label checkpoint", on M8's
-/// `levels` end tests with ν from LP2's `nu` row; the library entry is not written as language code yet. The checker
-/// half, the end tests' typed verdicts, is LP2's (`c600-check`, pull request 213)).
+/// `levels` end tests with ν from LP2's `nu` row; the library entry `jumble_end_tests` runs through `tests/rows.rs`.
+/// The checker half, the end tests' typed verdicts, is LP2's (`c600-check`, pull request 213)).
 ///
 /// The retained word [1, 3, −5] followed by correction 2 of LP2's catalogue, played from solved under I_a, is a
 /// lattice configuration that its journal witnesses. Its ν, from the `nu` row, is correction 2's row (b34 = 1), and
@@ -1377,9 +1377,9 @@ const LEAKS: [&str; 9] = ["recommend", "suggest", "next", "skip", "best", "rank"
 
 /// CT-LB3-07 (part: the jumbling half, on the kernel: "named-word checks answer only their named word; no
 /// recommendation, next-cap skip or correction combination leaks", checked on the whole-word check the tool's entries
-/// reach and on the per-revision height and unit facts; the inspector library entries are not written as language
-/// code yet. The correction part runs in the last test of this file. Not run: the per-revision rim and survey rows'
-/// "no all-items outcome table", not taken up yet).
+/// reach and on the per-revision height and unit facts; the inspector library entries run as language code in
+/// `tests/ct_lb3_07.rs`. The correction part runs in the last test of this file. Not run here: the per-revision rim
+/// and survey rows' "no all-items outcome table", which `tests/ct_lb3_07.rs` runs).
 ///
 /// A run of each entry proposes the word the solver named once, as given; read as literal letters, the kernel's check
 /// answers for that word: its digest and length are the named word's, the cap is the named cap (cap 0 for the word,
@@ -1471,7 +1471,7 @@ fn ct_lb3_07_a_named_word_check_answers_only_its_named_word() {
 
 /// CT-LB3-07 (part: the correction part, on the kernel: "no correction combination leaks through the inspector
 /// entries", checked on LP2's `nu` and `correction_set_check` rows, the label checkpoint and the whole-word check the
-/// tool's entries reach; the inspector library entries are not written as language code yet).
+/// tool's entries reach; the inspector library entries run as language code in `tests/ct_lb3_07.rs`).
 ///
 /// The base is the retained word [1, 3, −5] followed by correction 2 under I_a, a witnessed lattice configuration whose
 /// ν is correction 2's row. The solver selects correction 2 by its id, and a run of the word entry proposes its

@@ -146,7 +146,7 @@ fn permutations(items: Vec<BundlePart>) -> Vec<Vec<BundlePart>> {
     out
 }
 
-// ----- CT-RPI-03
+// ----- CT-RPI-03 (synthetic, whole)
 
 /// CT-RPI-03, first half: every order of the arrays of revisions 12 and 13 is offered to adoption after each arrival,
 /// once as the newest array of each kind (which can mix revisions) and once as the arrays of one revision. Only
@@ -232,7 +232,7 @@ fn ct_rpi_03_stalled_program_view_does_not_block_adoption() {
     assert_eq!(model.shown_revision(&v), Some(rev(13, 1, 1, 13)));
 }
 
-// ----- CT-RPI-06
+// ----- CT-RPI-06 (source, whole)
 
 /// CT-RPI-06: a hidden view runs no program and rebuilds nothing while revisions pass; showing it checks its
 /// dependencies once and runs once, at the newest revision (RPI.11, RPI.12, RM.25).
@@ -326,7 +326,7 @@ fn ct_rpi_06_a_burst_runs_once_at_the_newest_revision() {
     assert_eq!(model.counters(&v).map(|counters| counters.program_runs), Some(2));
 }
 
-// ----- CT-RPI-07
+// ----- CT-RPI-07 (synthetic, whole)
 
 /// CT-RPI-07: adoption makes mismatched output stale. It is drawn only as its view's stale presentation naming its
 /// base, never as output over the new revision, and a publication bound to the old base cannot attach (RPI.13,
@@ -407,11 +407,11 @@ fn ct_rpi_07_every_d2_status_has_typed_data() {
     assert_eq!(model.status(&current), Some(ViewStatus::Stale { base, adopted: r12, refresh, source_lag: None }));
 }
 
-// ----- CT-RPI-22, limit half
+// ----- CT-RPI-22 (source, part: the limit half; the chart half is in c600-display's tests/ct_rpi_22.rs)
 
 /// CT-RPI-22, limit half: a plan one over a ceiling installs nothing, standalone or scheduled; the adopted bundle
 /// stays as it was, the view keeps its earlier output, and a view without output shows an error, never an empty
-/// result (RPI.48 to RPI.50, RM.12). The chart half needs the display-plan validator and is not built.
+/// result (RPI.48 to RPI.50, RM.12). The chart half is in c600-display's tests/ct_rpi_22.rs.
 #[test]
 fn ct_rpi_22_one_over_limit_plan_installs_nothing() {
     let mut model = model_at(profile(&[("instances", 4)]), rev(11, 1, 1, 11));
@@ -441,7 +441,7 @@ fn ct_rpi_22_one_over_limit_plan_installs_nothing() {
     assert!(model.installed(&w).is_none());
 }
 
-// ----- CT-RPI-23
+// ----- CT-RPI-23 (source, whole)
 
 fn built_in(name: &str) -> ViewSource {
     ViewSource::BuiltIn { name: name.to_string() }
@@ -555,7 +555,8 @@ fn ct_rpi_23_built_in_output_keeps_the_interim_boundary_under_either_chart_evalu
     }
 }
 
-// ----- CT-RPI-26, counter half
+// ----- CT-RPI-26 (performance, part: the counter half; not run: charter E2 with program views active and the R-19
+// gate captures, on the owner's machine (C9))
 
 /// CT-RPI-26, the counter half: hidden and unchanged views add no rebuilds while program views are active (RPI.11,
 /// RPI.62, RM.25). Each frame adopts a new state revision, runs what is due and takes the frame input. The visible
@@ -624,7 +625,7 @@ fn ct_rpi_26_counter_half_hidden_and_unchanged_views_add_no_rebuilds() {
     assert_eq!(grown(model.counters(&hidden).expect("open"), before), vec![1; 4]);
 }
 
-// ----- CT-RPI-36
+// ----- CT-RPI-36 (source, part: the view model's half; the layer half is in c600-command's tests/view_rows.rs)
 
 /// CT-RPI-36: `view.open` and `view.close` need a solver-invoked command; a recomputation holds no permission;
 /// Global and Local cannot be closed; both EV3 codes (RPI.81, RPI.83).
@@ -670,7 +671,7 @@ fn ct_rpi_36_view_rows_need_a_solver_command_and_global_and_local_stay_open() {
     assert!(generation > model.generation(&ViewId::local()).expect("open"));
 }
 
-// ----- CT-RPI-37
+// ----- CT-RPI-37 (synthetic, whole)
 
 /// CT-RPI-37: RM.40's view vectors. Hidden views add no vertex evaluations; hidden allocations stay charged until
 /// safe release; opening or showing past a ceiling is refused with `display_plan_ceiling`, and nothing is queued
@@ -712,7 +713,7 @@ fn ct_rpi_37_view_budget_vectors() {
     assert_eq!(model.usage().adapter_gpu_bytes, 40);
 }
 
-// ----- CT-RM-02
+// ----- CT-RM-02 (source, whole)
 
 /// CT-RM-02, instances: ceiling 4 passes 4. Five are refused at standalone admission with A left pending, and fail
 /// the original scheduled invocation, which superseded A, with the same field and counts (RM.11, RM.12, RM.35).
@@ -825,7 +826,8 @@ fn ct_rm_02_output_allowance_admits_100_and_cuts_off_101() {
     assert_eq!(outcomes[0], outcomes[1], "compression changed an outcome");
 }
 
-// ----- CT-RM-09, accounting rows
+// ----- CT-RM-09 (source, part: RM.40 rows 1, 2, 7 and 9; rows 3 to 6, 8 and 10 run without a device in
+// c600-display's tests/ct_rm_09.rs; not run: the device parts of those rows, on the owner's machine (C9))
 
 /// CT-RM-09, RM.40 row 1: with `adapter_gpu_bytes` ceiling 100, a hidden view retains 70 and opening another view
 /// that needs 70 is refused at 140 until retirement completes; hiding freed nothing (RPI.82, RM.39).
@@ -946,7 +948,7 @@ fn ct_rm_09_row_9_resize_recharges_frame_work() {
     assert_eq!(stage(&model), Some(StageUse::User));
 }
 
-// ----- CT-ONE-30
+// ----- CT-ONE-30 (source, whole)
 
 /// CT-ONE-30: a further view keeps its one-revision base, its `ViewId` and its source linkage (source and source
 /// maps) after adoption until it is republished, while Global and Local both show the new revision (ONE.65, RPI.81).
@@ -989,7 +991,8 @@ fn ct_one_30_further_view_keeps_its_base_identity_and_source() {
     assert_eq!(model.shown_revision(&ViewId::global()), model.shown_revision(&ViewId::local()));
 }
 
-// ----- CT-EV3-08, admission semantics
+// ----- CT-EV3-08 (source, part: the admission semantics; not run: RM.39's measured ceilings on the selected
+// renderer, on the owner's machine (C9))
 
 /// A view-lane receipt status. The match is exhaustive, so a commit status or completion kind would not compile here
 /// (RPI.14, RPI.81).
