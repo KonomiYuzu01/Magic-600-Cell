@@ -92,6 +92,29 @@ public static class ViewStates
         kept.DefaultDigest == currentDefaultDigest ? kept.Preset : currentDefault;
 }
 
+// The values the interactive lab opens with, over the default preset. Checks, stills and shots do not read it.
+public static class OpeningLook
+{
+    public static Preset Apply(Preset preset, string text, ParameterSchema schema)
+    {
+        using var document = Json.Parse(text);
+        JsonElement root = document.RootElement;
+        Json.Keys(root, "format", "version", "params");
+        Json.Header(root, "magic600-look-opening");
+        JsonElement values = Json.Get(root, "params");
+        if (values.ValueKind != JsonValueKind.Object) throw Json.Error("params", "expected an object");
+        ParameterSet result = preset.Params;
+        foreach (JsonProperty entry in values.EnumerateObject())
+        {
+            ParameterDefinition p = schema[entry.Name];
+            ParameterValue value = ParameterSchema.ReadValue(p, entry.Value);
+            ParameterSchema.ValidateValue(p, value);
+            result = result.With(entry.Name, value);
+        }
+        return preset with { Params = result };
+    }
+}
+
 // One poll of the data files Look Lab reloads: path to length and write time.
 public sealed class DataWatch
 {

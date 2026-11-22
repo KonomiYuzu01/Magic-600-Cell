@@ -29,7 +29,7 @@ internal sealed partial class LiveSession : Control
     public LiveSession(string root, string stateFolder)
     {
         this.root = root; stateFile = Path.Combine(stateFolder, "view.json");
-        Build = r => new LabApp(r);
+        Build = r => new LabApp(r, opening: true);
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         App = Build(root); AddChild(App);
         Notice = new Label { Name = "LiveNotice", Visible = false, MouseFilter = MouseFilterEnum.Ignore, Position = new Vector2(8, 6) };

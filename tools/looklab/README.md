@@ -932,7 +932,10 @@ and across a restart in `work/loop-memory/looklab/view.json` (format
 of the default preset the look was edited from as `defaultPreset`, the look as
 `preset`, and panel state as strings under `ui`). The file is written at most
 once a second and when the window closes. When `presets/default.json` changes
-on disk, the new default is shown instead of the kept look. A panel adds its
+on disk, the new default is shown instead of the kept look. The interactive lab
+opens with the values of `tools/looklab/data/opening.json` (format
+`magic600-look-opening`) over the default preset: smaller cells and stickers,
+so the structure is easier to read. Checks, stills and shots do not read it. A panel adds its
 state through `LabApp.ViewParts`.
 
 `python tools/looklab/check.py --godot` adds one result line,

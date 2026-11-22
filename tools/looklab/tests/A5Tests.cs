@@ -43,6 +43,19 @@ internal static partial class Program
         Check(ReferenceEquals(ViewStates.Resolve(view, current, new string('0', 64)), current), "kept look hid a changed default");
     }
 
+    private static void A5OpeningLookAppliesInRangeValuesOnly()
+    {
+        var preset = new Preset("Default", null, null, Schema.Defaults);
+        string text = Read("data/opening.json");
+        Preset opened = OpeningLook.Apply(preset, text, Schema);
+        Check(opened.Params.Number("gap") > preset.Params.Number("gap") && opened.Params.Number("stickerShrink") < preset.Params.Number("stickerShrink"),
+            "the opening look does not make cells and stickers smaller");
+        Equal(opened.Params.Values.Count(v => !Equals(v.Value, preset.Params.Values[v.Key])), 2);
+        Refuse(() => OpeningLook.Apply(preset, text.Replace("0.3", "0.31"), Schema), "gap");
+        Refuse(() => OpeningLook.Apply(preset, text.Replace("\"gap\"", "\"mystery\""), Schema), "mystery");
+        Refuse(() => OpeningLook.Apply(preset, text.Replace("magic600-look-opening", "magic600-look-preset"), Schema), "format");
+    }
+
     private static void A5DataWatchReportsAddedChangedAndRemoved()
     {
         using var folder = new TestFolder();

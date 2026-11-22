@@ -96,6 +96,7 @@ internal static partial class Program
             ("A5ViewStateRoundTripAndRefusals", A5ViewStateRoundTripAndRefusals),
             ("A5KeptLookFollowsTheDefaultOnDisk", A5KeptLookFollowsTheDefaultOnDisk),
             ("A5DataWatchReportsAddedChangedAndRemoved", A5DataWatchReportsAddedChangedAndRemoved),
+            ("A5OpeningLookAppliesInRangeValuesOnly", A5OpeningLookAppliesInRangeValuesOnly),
             ("LayoutValidationRefusals", LayoutRefusals),
             ("LL6PairedLayoutRulesAndStageRouting", PairedLayoutRefusals),
             ("LL6ArrangementSingleSplitAndInset", LL6Arrangement),

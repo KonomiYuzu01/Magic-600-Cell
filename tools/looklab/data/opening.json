@@ -1,0 +1,8 @@
+{
+  "format": "magic600-look-opening",
+  "version": 1,
+  "params": {
+    "gap": 0.3,
+    "stickerShrink": 0.55
+  }
+}

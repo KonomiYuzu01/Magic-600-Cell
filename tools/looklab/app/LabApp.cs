@@ -27,12 +27,20 @@ internal sealed partial class LabApp : Control
     internal System.Collections.Generic.SortedDictionary<string, (Func<string> Get, Action<string> Set)> ViewParts { get; } = new(StringComparer.Ordinal);
     public string DefaultDigest { get; }
 
-    public LabApp(string root)
+    public LabApp(string root, bool opening = false)
     {
         var schema = ParameterSchema.Load(System.IO.Path.Combine(root, "tools/looklab/data/parameters.json"));
         byte[] defaultBytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(root, "tools/looklab/presets/default.json"));
+        Preset initial = Presets.Parse(System.Text.Encoding.UTF8.GetString(defaultBytes), schema);
+        string openingPath = System.IO.Path.Combine(root, "tools/looklab/data/opening.json");
+        if (opening && System.IO.File.Exists(openingPath))
+        {
+            byte[] openingBytes = System.IO.File.ReadAllBytes(openingPath);
+            initial = OpeningLook.Apply(initial, System.Text.Encoding.UTF8.GetString(openingBytes), schema);
+            defaultBytes = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(defaultBytes, openingBytes));
+        }
         DefaultDigest = ViewStates.Digest(defaultBytes);
-        State = new LookState(schema, Presets.Parse(System.Text.Encoding.UTF8.GetString(defaultBytes), schema));
+        State = new LookState(schema, initial);
         View = new LookViewport(root, State);
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Theme = new Theme();
