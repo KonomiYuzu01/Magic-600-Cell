@@ -245,6 +245,19 @@ internal static class LiveChecks
         string theme = frame.Tokens.Theme.Id;
         Require(frame.Press("T") && frame.Tokens.Theme.Id != theme && frame.Press("T") && frame.Tokens.Theme.Id == theme, fault, "the theme key did not step the families");
         Require(frame.Press("Ctrl+Z") && frame.Notice.Visible && frame.Notice.Text.Contains("no engine", StringComparison.Ordinal), fault, "an unavailable key gave no reason in place");
+        // The shortcut sheet lists every binding of the keymap; while it is open only closing keys act.
+        var sheet = (ShortcutSheet)frame.Overlays.FindChild("ShortcutSheet", true, false);
+        Require(frame.Press("Shift+Slash") && sheet.IsOpen && sheet.Shown == frame.Keys!.Bindings.Count && sheet.Shown > 15, fault, "the shortcut sheet does not list the keymap");
+        Require(!frame.Press("2") && frame.Workspace == "solve" && frame.Press("F1") && palette.IsOpen && !sheet.IsOpen, fault, "two overlays were open, or a key acted under one");
+        Require(frame.Press("Shift+Slash") && sheet.IsOpen && !palette.IsOpen && frame.Press("Escape") && frame.OpenOverlay == null, fault, "Esc did not close the sheet");
+        frame.Flush();
+        Button second = frame.FindChildren("*", "Button", true, false).Cast<Button>().Single(b => b.HasMeta("workspace") && b.GetMeta("workspace").AsString() == "script");
+        Require(second.TooltipText.EndsWith("(2)", StringComparison.Ordinal), fault, "a button's tooltip does not name its key");
+        // A radial menu opens on its key around the pointer; a number picks an entry and closes it.
+        var radial = (RadialOverlay)frame.Overlays.FindChild("RadialOverlay", true, false);
+        Require(frame.Press("W") && radial.IsOpen && radial.Menu!.Id == "radial.workspace" && radial.Entries.Count == radial.Menu.Entries.Count && radial.Entries.Count >= 4, fault, "the radial menu did not open");
+        Require(radial.Entries.Select(b => b.Position).Distinct().Count() == radial.Entries.Count && frame.Press("2") && !radial.IsOpen && frame.Workspace == "script", fault, "a radial entry was not chosen by its number");
+        Require(frame.Press("W") && frame.Press("Escape") && !radial.IsOpen && frame.Workspace == "script" && frame.Press("1") && frame.Workspace == "solve", fault, "Esc did not close the radial menu");
         Require(app.CaptureView().Ui["frame.palette"].Contains("use|workspace.set|layout:analyse|1|", StringComparison.Ordinal), fault, "palette use is not kept");
         string before = frame.Model.Store();
         bool refused = !frame.Model.Drop("editor", FrameModel.Pair, DropZone.Tab) && !frame.Model.Close(FrameModel.Pair);

@@ -119,7 +119,13 @@ public sealed partial class ChromeFrame : Control
     private string? focusedContext;
     // In-window overlays (palette, shortcut sheet, radial menus) live above the frame and survive its rebuilds.
     public Control Overlays { get; } = new() { Name = "Overlays", MouseFilter = MouseFilterEnum.Ignore };
-    public Keymap? Keys { get; set; }
+    private Keymap? keys;
+    public Keymap? Keys { get => keys; set { keys = value; dirty = true; } }
+    public ChromeOverlay? OpenOverlay => Overlays.GetChildren().OfType<ChromeOverlay>().LastOrDefault(o => o.IsOpen);
+    // The commands that still act while an overlay is open; every other key waits until it is closed.
+    public ISet<string> OverlayCommands { get; } = new HashSet<string>(StringComparer.Ordinal);
+    private string Hint(string tooltip, string command, string? argument) =>
+        keys?.KeysFor(command, argument) is { Length: > 0 } bound ? $"{tooltip} ({bound})" : tooltip;
     public event Action<Binding>? KeyCommand;
 
     public ChromeFrame(TokenSet tokens, WorkspaceSet workspaces)
@@ -200,7 +206,10 @@ public sealed partial class ChromeFrame : Control
 
     public bool Press(string key)
     {
+        ChromeOverlay? overlay = OpenOverlay;
+        if (overlay != null && overlay.Key(key)) return true;
         if (Keys?.Resolve(key, KeyContexts()) is not { } binding) return false;
+        if (overlay != null && !OverlayCommands.Contains(binding.Command)) return false;
         KeyCommand?.Invoke(binding);
         return true;
     }
@@ -259,7 +268,7 @@ public sealed partial class ChromeFrame : Control
         foreach (string id in Workspaces.Order)
         {
             bool modified = id == Workspace && WorkspaceModified;
-            Button tab = ChromeWidgets.Tool(Workspaces.Names[id] + (modified ? " •" : ""), "Workspace: " + Workspaces.Names[id] + (modified ? " (rearranged)" : ""), true, "TabButton");
+            Button tab = ChromeWidgets.Tool(Workspaces.Names[id] + (modified ? " •" : ""), Hint("Workspace: " + Workspaces.Names[id] + (modified ? " (rearranged)" : ""), "workspace.set", "layout:" + id), true, "TabButton");
             tab.SetPressedNoSignal(id == Workspace); tab.SetMeta("workspace", id);
             tab.Pressed += () => { if (!SelectWorkspace(id)) dirty = true; };
             row.AddChild(tab);
@@ -356,9 +365,9 @@ public sealed partial class ChromeFrame : Control
         int icon = Tokens.Px("icon.small");
         Button arrange = ChromeWidgets.Tool("", side ? "Stack Global over Local" : "Put Global and Local side by side"); ChromeIcons.Apply(arrange, side ? "pair.stacked" : "pair.side", icon);
         arrange.Pressed += () => Model.SetPairArrangement(side ? "stacked" : "side", Model.PairRatio);
-        Button maximise = ChromeWidgets.Tool("", Model.PairMaximised ? "Restore the other panes" : "Maximise the pair", true); ChromeIcons.Apply(maximise, Model.PairMaximised ? "pair.restore" : "pair.maximise", icon);
+        Button maximise = ChromeWidgets.Tool("", Hint(Model.PairMaximised ? "Restore the other panes" : "Maximise the pair", "workspace.set", "layout:maximise"), true); ChromeIcons.Apply(maximise, Model.PairMaximised ? "pair.restore" : "pair.maximise", icon);
         maximise.SetPressedNoSignal(Model.PairMaximised); maximise.Pressed += () => Model.SetPairMaximised(!Model.PairMaximised);
-        Button focus = ChromeWidgets.Tool("", Model.FocusMode ? "Leave focus mode" : "Focus mode: only the pair", true); ChromeIcons.Apply(focus, "pair.focus", icon);
+        Button focus = ChromeWidgets.Tool("", Hint(Model.FocusMode ? "Leave focus mode" : "Focus mode: only the pair", "workspace.set", "layout:focus"), true); ChromeIcons.Apply(focus, "pair.focus", icon);
         focus.SetPressedNoSignal(Model.FocusMode); focus.Pressed += () => Model.SetFocusMode(!Model.FocusMode);
         Local.Tools.AddChild(arrange); Local.Tools.AddChild(maximise); Local.Tools.AddChild(focus);
         return split;

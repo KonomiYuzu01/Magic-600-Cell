@@ -102,6 +102,12 @@ public static class ChromeTheme
             theme.SetColor("font_color", name, dim); theme.SetColor("font_pressed_color", name, text); theme.SetColor("font_hover_color", name, text);
         }
 
+        // An entry of a radial menu: a raised box that takes the accent border under the pointer.
+        theme.SetTypeVariation("RadialButton", "Button");
+        theme.SetStylebox("normal", "RadialButton", Box(t, "popup.background", "panel.border", "radius.control", s2));
+        theme.SetStylebox("hover", "RadialButton", Box(t, "control.hover", "accent.base", "radius.control", s2));
+        theme.SetStylebox("pressed", "RadialButton", Box(t, "control.pressed", "accent.base", "radius.control", s2));
+
         foreach (string type in new[] { "LineEdit", "TextEdit", "CodeEdit" })
         {
             theme.SetStylebox("normal", type, Box(t, "field.background", "control.border"));

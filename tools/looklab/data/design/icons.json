@@ -95,6 +95,10 @@
     "palette.pin": {
       "glyph": "pin",
       "fallback": "*"
+    },
+    "help.keys": {
+      "glyph": "keyboard",
+      "fallback": "K"
     }
   }
 }

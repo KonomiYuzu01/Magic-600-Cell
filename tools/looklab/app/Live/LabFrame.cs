@@ -93,13 +93,23 @@ internal static class LabFrame
         Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         string? Unavailable(string command, string? argument) => command switch
         {
-            "command.find" or "transient.close" => null,
+            "command.find" or "transient.close" or "help.open" => null,
+            _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
             _ => "Look Lab has no engine; this command runs in the product",
         };
         var commands = new PaletteModel(registry, keymap, Unavailable);
         var palette = new CommandPalette(commands, () => frame.Tokens);
         frame.Overlays.AddChild(palette);
+        var sheet = new ShortcutSheet(registry, keymap, () => frame.Tokens); frame.Overlays.AddChild(sheet);
+        var radial = new RadialOverlay(registry, Unavailable, () => frame.Tokens); frame.Overlays.AddChild(radial);
+        frame.OverlayCommands.Add("transient.close"); frame.OverlayCommands.Add("help.open"); frame.OverlayCommands.Add("command.find");
+        Button find = ChromeWidgets.Tool("", $"Find a command ({keymap.KeysFor("command.find", null)})"); find.Name = "FindButton";
+        Button help = ChromeWidgets.Tool("", $"Keyboard shortcuts ({keymap.KeysFor("help.open", null)})"); help.Name = "ShortcutsButton";
+        void Glyphs() { ChromeIcons.Apply(find, "search", frame.Tokens.Px("icon.small")); ChromeIcons.Apply(help, "help.keys", frame.Tokens.Px("icon.small")); }
+        Glyphs(); frame.Rebuilt += Glyphs;
+        find.Pressed += palette.Open; help.Pressed += sheet.Open;
+        frame.BarTools.AddChild(find); frame.BarTools.AddChild(help);
         string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
         void Execute(string command, string? argument)
         {
@@ -107,8 +117,10 @@ internal static class LabFrame
             switch (command)
             {
                 case "command.find": palette.Open(); break;
+                case var menu when keymap.Radials.ContainsKey(menu): radial.Open(keymap.Radials[menu], frame.GetLocalMousePosition()); break;
+                case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
                 case "transient.close":
-                    if (palette.IsOpen) palette.Close();
+                    if (frame.OpenOverlay is { } open) open.Close();
                     else if (frame.Model.FocusMode) frame.Model.SetFocusMode(false);
                     else if (frame.Model.PairMaximised) frame.Model.SetPairMaximised(false);
                     break;
@@ -123,6 +135,7 @@ internal static class LabFrame
             }
         }
         palette.Run += row => Execute(row.Command, row.Argument);
+        radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap; frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
         app.ViewParts["frame.palette"] = (() => commands.Store(), v => { try { commands.Restore(v); } catch (FormatException) { } });
         // The token specimen in the left dock follows every change of the appearance.

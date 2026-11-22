@@ -25,7 +25,14 @@ public abstract partial class ChromeOverlay : Control
         Panel.GrowVertical = GrowDirection.End;
     }
 
-    public virtual void Open() { Visible = true; MoveToFront(); }
+    // One overlay at a time: opening one closes the others.
+    public virtual void Open()
+    {
+        if (GetParent() is { } parent) foreach (ChromeOverlay other in parent.GetChildren().OfType<ChromeOverlay>()) if (other != this) other.Close();
+        Visible = true; MoveToFront();
+    }
+    // A key pressed while the overlay is open and no text field holds the focus; true when the overlay used it.
+    public virtual bool Key(string key) => false;
     public void Close() { if (!Visible) return; Visible = false; Closed?.Invoke(); }
 }
 
@@ -52,14 +59,14 @@ public sealed partial class CommandPalette : ChromeOverlay
         column.AddChild(Query); column.AddChild(list); column.AddChild(new HSeparator()); column.AddChild(Help); column.AddChild(count);
         list.AddThemeConstantOverride("separation", 0);
         Query.TextChanged += _ => { Selected = 0; Refresh(); };
-        Query.GuiInput += Key;
+        Query.GuiInput += Typed;
     }
 
     public override void Open() { base.Open(); Query.Text = ""; Selected = 0; Refresh(); Query.GrabFocus(); }
 
     public void Type(string text) { Query.Text = text; Selected = 0; Refresh(); }
 
-    private void Key(InputEvent e)
+    private void Typed(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true } key) return;
         if (key.Keycode == Godot.Key.Down) Move(1);
