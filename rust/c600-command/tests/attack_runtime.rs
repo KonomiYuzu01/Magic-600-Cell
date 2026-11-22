@@ -319,7 +319,8 @@ fn b3_a_run_alone_causes_no_durable_action() {
 /// Observed on 4c20ce30: after the run's job `undo_hint(Undo)` is `None`, the record holds the run's letters at
 /// version 2, and `Ctrl+Z` answers `KN5:stale.undo_superseded` ("no eligible target").
 ///
-/// Fixed with B3: the run's invocation is refused, so no job writes `macro` and the history is not cut.
+/// Fixed with B3: the run's invocation is refused, so no job writes `macro` and the history is not cut. (Since LP2's
+/// reading 18 a language-defined row's job that the solver invokes is an undoable action of its own and cuts nothing.)
 #[test]
 fn b4_a_run_cannot_take_the_solvers_record_write_out_of_the_undo_order() {
     let mut f = fixture();
