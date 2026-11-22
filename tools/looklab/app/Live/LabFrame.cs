@@ -12,7 +12,7 @@ namespace LookLab.App.Live;
 // chrome library; only this file knows about the lab.
 internal static class LabFrame
 {
-    public const string Tune = "tune", Greybox = "greybox", Look = "appearance";
+    public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
     {
         (DockSide.Left, "history", "History", "H", "Puzzle history and layout history appear here."),
@@ -67,6 +67,11 @@ internal static class LabFrame
             appearance.Edit(a => a.SetTheme(themes[next].Id), true, true);
         };
         appearance.Changed += ApplyLook;
+        // The token specimen in the left dock follows every change of the appearance.
+        var specimen = new TokenSpecimen();
+        frame.AddDockPanel(DockSide.Left, Tokens, "Tokens", "D", specimen);
+        void ShowTokens() { if (GodotObject.IsInstanceValid(specimen)) specimen.Show(frame.Tokens); }
+        frame.Rebuilt += ShowTokens; frame.Recoloured += ShowTokens;
         app.ViewParts["frame.appearance"] = (() => look.Store(), v =>
         {
             try { look = Appearance.Parse(v, design, themes); appearance.Show(look); ApplyLook(true, false); }

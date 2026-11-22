@@ -161,7 +161,7 @@ internal static class LiveChecks
         var restarted = new LiveSession(root, folder); host.AddChild(restarted);
         Same(before, restarted.App.CaptureView(), first.State.Schema, fault, "restart");
         Framed(restarted, fault);
-        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=4");
+        GD.Print($"LOOKLAB_A5_LIVE_PASS reloads={session.Reloads} refusals={session.Refusals} restart=kept parts={before.Ui.Count} checks=5");
     }
 
     // The window frame around the lab: both main views in the locked pair, the lab's panel in the right dock,
@@ -203,6 +203,14 @@ internal static class LiveChecks
         Require(panel.Edit(a => a.SetSceneLook("celebrating"), false, true) &&
             app.State.Preset.Params.Number("bgHue") == frame.Tokens.Theme.Scenes["celebrating"]["bgHue"].GetDouble(), fault, "the scene look was not applied");
         Require(panel.Edit(a => { a.SetDensity("compact"); a.SetDisplayScale(1); a.HighContrast = false; a.ResetKnobs(); }, true, false) && !panel.Look.Tuned, fault, "the appearance was not reset");
+        // The token specimen: three type roles with the face in use, every ramp step and every colour role.
+        Require(frame.Model.ToggleDock(DockSide.Left, LabFrame.Tokens), fault, "the Tokens panel is not in the left dock");
+        frame.Flush();
+        var specimen = (TokenSpecimen)frame.FindChild("TokenSpecimen", true, false) ?? throw new Exception("a5-live: no token specimen");
+        int swatches = frame.Tokens.Theme.Ramps.Count * ThemeFamily.Steps + frame.Tokens.System.Roles.Count;
+        Require(specimen.Swatches == swatches && specimen.Faces.Count == 3 && specimen.Faces.All(f => frame.Tokens.System.Type[f.Key].Faces.Contains(f.Value)),
+            fault, "the token specimen does not show every ramp step, role and type role");
+        Require(frame.Model.ToggleDock(DockSide.Left, LabFrame.Tokens), fault, "the Tokens panel did not close");
         Require(frame.Model.ToggleDock(DockSide.Right, LabFrame.Tune), fault, "the Tune panel did not come back");
         frame.Flush();
         string before = frame.Model.Store();
