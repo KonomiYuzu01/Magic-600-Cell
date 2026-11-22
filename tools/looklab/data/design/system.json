@@ -123,6 +123,14 @@
         "IBM Plex Sans",
         "Segoe UI"
       ],
+      "files": {
+        "400": [
+          "ibm-plex-sans/node_modules/@ibm/plex-sans/fonts/complete/woff2/IBMPlexSans-Regular.woff2"
+        ],
+        "600": [
+          "ibm-plex-sans/node_modules/@ibm/plex-sans/fonts/complete/woff2/IBMPlexSans-SemiBold.woff2"
+        ]
+      },
       "ramp": {
         "micro": 10,
         "small": 11,
@@ -137,6 +145,14 @@
         "IBM Plex Serif",
         "Georgia"
       ],
+      "files": {
+        "400": [
+          "ibm-plex-serif/node_modules/@ibm/plex-serif/fonts/complete/woff2/IBMPlexSerif-Regular.woff2"
+        ],
+        "600": [
+          "ibm-plex-serif/node_modules/@ibm/plex-serif/fonts/complete/woff2/IBMPlexSerif-SemiBold.woff2"
+        ]
+      },
       "ramp": {
         "small": 12,
         "body": 13,
@@ -150,6 +166,22 @@
         "Lilex",
         "Consolas"
       ],
+      "files": {
+        "400": [
+          "lilex/node_modules/@fontsource/lilex/files/lilex-latin-400-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-latin-ext-400-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-greek-400-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-symbols2-400-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-cyrillic-400-normal.woff2"
+        ],
+        "600": [
+          "lilex/node_modules/@fontsource/lilex/files/lilex-latin-600-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-latin-ext-600-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-greek-600-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-symbols2-600-normal.woff2",
+          "lilex/node_modules/@fontsource/lilex/files/lilex-cyrillic-600-normal.woff2"
+        ]
+      },
       "ramp": {
         "small": 11,
         "body": 12,

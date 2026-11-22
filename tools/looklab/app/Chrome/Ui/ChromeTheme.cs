@@ -19,6 +19,8 @@ public static class ChromeTheme
     public static Font Face(TokenSet t, string role, bool bold = false)
     {
         TypeRole type = t.System.Type[role];
+        if (ChromeFonts.Face(type, bold) is { } installed)
+            return type.Tabular ? new FontVariation { BaseFont = installed, OpentypeFeatures = new Godot.Collections.Dictionary { { TextServerManager.GetPrimaryInterface().NameToTag("tnum"), 1 } } } : installed;
         var system = new SystemFont { FontNames = type.Faces.ToArray(), FontWeight = bold ? 600 : 400, AllowSystemFallback = true,
             Antialiasing = TextServer.FontAntialiasing.Gray, Hinting = TextServer.Hinting.Light, SubpixelPositioning = TextServer.SubpixelPositioning.Auto };
         if (!type.Tabular) return system;

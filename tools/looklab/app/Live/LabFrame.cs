@@ -30,8 +30,22 @@ internal static class LabFrame
         ("reference", "Reference", "Pinned references and nexus cards appear here."),
     };
 
+    // Installed packages are looked for in this checkout and, from a linked worktree, in its main checkout.
+    public static string[] PackageFolders(string root)
+    {
+        var folders = new System.Collections.Generic.List<string> { Path.Combine(root, "tools/node") };
+        string link = Path.Combine(root, ".git");
+        if (File.Exists(link))
+        {
+            string text = File.ReadAllText(link).Trim(); int cut = text.Replace('\\', '/').IndexOf("/.git/worktrees/", StringComparison.Ordinal);
+            if (text.StartsWith("gitdir: ", StringComparison.Ordinal) && cut > 8) folders.Add(Path.Combine(text.Substring(8, cut - 8), "tools/node"));
+        }
+        return folders.ToArray();
+    }
+
     public static ChromeFrame Attach(LabApp app, string root)
     {
+        ChromeFonts.SetRoots(PackageFolders(root));
         string folder = Path.Combine(root, "tools/looklab/data/design");
         DesignSystem design = DesignSystem.Load(Path.Combine(folder, "system.json"));
         ThemeFamily[] themes = Directory.GetFiles(Path.Combine(folder, "themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal)

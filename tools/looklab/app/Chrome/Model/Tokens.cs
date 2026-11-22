@@ -110,7 +110,10 @@ internal static class J
 // A semantic colour role shared by every theme. A state or encoding role also has a cue that is not colour
 // (shape, label or position); a theme or an override may change the colour and never the cue (ADR-D01.4 item 7).
 public sealed record ColourRole(string Id, string Group, string Meaning, string? Cue);
-public sealed record TypeRole(string Id, IReadOnlyList<string> Faces, IReadOnlyDictionary<string, double> Ramp, bool Tabular);
+// Files: the face's font files by weight, relative to a folder of installed packages; the first file of a weight
+// is the face and the others are its further Unicode subsets.
+public sealed record TypeRole(string Id, IReadOnlyList<string> Faces, IReadOnlyDictionary<string, double> Ramp, bool Tabular,
+    IReadOnlyDictionary<string, IReadOnlyList<string>> Files);
 public sealed record ContrastRule(string Text, string Surface, double Minimum);
 
 // The part of the design system that every theme shares: density table, type roles, motion, roles and component tokens.
@@ -155,7 +158,16 @@ public sealed class DesignSystem
         var type = new SortedDictionary<string, TypeRole>(StringComparer.Ordinal);
         foreach (JsonProperty p in J.Map(root.GetProperty("type"), "type"))
         {
-            J.Keys(p.Value, p.Name, "faces", "ramp", "tabular");
+            J.Keys(p.Value, p.Name, "faces", "files", "ramp", "tabular");
+            var files = new SortedDictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+            foreach (JsonProperty weight in J.Map(p.Value.GetProperty("files"), p.Name))
+            {
+                string[] names = J.Strings(weight.Value, p.Name);
+                if (names.Length == 0 || names.Any(n => n.Contains("..", StringComparison.Ordinal) || n.Contains('\\') || n.StartsWith('/') || n.Contains(':') || !n.EndsWith(".woff2", StringComparison.Ordinal)))
+                    throw J.Error(p.Name + ".files", "relative .woff2 paths with forward slashes required");
+                files.Add(weight.Name, Array.AsReadOnly(names));
+            }
+            if (!files.ContainsKey("400") || files.Keys.Any(k => k != "400" && k != "600")) throw J.Error(p.Name + ".files", "weight 400 required, weight 600 optional");
             var ramp = new SortedDictionary<string, double>(StringComparer.Ordinal);
             foreach (JsonProperty step in J.Map(p.Value.GetProperty("ramp"), p.Name))
             {
@@ -166,7 +178,7 @@ public sealed class DesignSystem
             if (!ramp.ContainsKey("body")) throw J.Error(p.Name, "a ramp with a body step required");
             JsonElement tabular = p.Value.GetProperty("tabular");
             if (tabular.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) throw J.Error(p.Name, "tabular must be true or false");
-            type.Add(p.Name, new TypeRole(p.Name, Array.AsReadOnly(J.Strings(p.Value.GetProperty("faces"), p.Name)), ramp, tabular.GetBoolean()));
+            type.Add(p.Name, new TypeRole(p.Name, Array.AsReadOnly(J.Strings(p.Value.GetProperty("faces"), p.Name)), ramp, tabular.GetBoolean(), files));
         }
         if (!type.Keys.SequenceEqual(new[] { "code", "content", "ui" })) throw J.Error("type", "exactly the roles ui, content and code required");
         Type = type;

@@ -208,6 +208,9 @@ internal static class LiveChecks
         frame.Flush();
         var specimen = (TokenSpecimen)frame.FindChild("TokenSpecimen", true, false) ?? throw new Exception("a5-live: no token specimen");
         int swatches = frame.Tokens.Theme.Ramps.Count * ThemeFamily.Steps + frame.Tokens.System.Roles.Count;
+        if (ChromeFonts.Roots.Any(r => File.Exists(Path.Combine(r, frame.Tokens.System.Type["ui"].Files["400"][0]))))
+            Require(specimen.Faces["ui"] == "IBM Plex Sans" && frame.Theme.DefaultFont is FontVariation { BaseFont: FontFile }, fault, "the installed UI face is not in use");
+        GD.Print("LOOKLAB_A5_FACES " + string.Join(", ", specimen.Faces.Select(f => f.Key + "=" + f.Value)));
         Require(specimen.Swatches == swatches && specimen.Faces.Count == 3 && specimen.Faces.All(f => frame.Tokens.System.Type[f.Key].Faces.Contains(f.Value)),
             fault, "the token specimen does not show every ramp step, role and type role");
         Require(frame.Model.ToggleDock(DockSide.Left, LabFrame.Tokens), fault, "the Tokens panel did not close");

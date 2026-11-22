@@ -31,8 +31,9 @@ public sealed partial class TokenSpecimen : ScrollContainer
     // The first face of the role's chain that this machine has; the last one is the fallback of the chain.
     public static string FaceInUse(TokenSet tokens, string role)
     {
-        string[] installed = OS.GetSystemFonts();
         IReadOnlyList<string> faces = tokens.System.Type[role].Faces;
+        if (ChromeFonts.Installed(tokens.System.Type[role])) return faces[0];
+        string[] installed = OS.GetSystemFonts();
         return faces.FirstOrDefault(f => installed.Contains(f, StringComparer.OrdinalIgnoreCase)) ?? faces[^1];
     }
 

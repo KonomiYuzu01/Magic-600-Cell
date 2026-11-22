@@ -49,6 +49,8 @@ internal static partial class Program
         Sequence(Design.Type.Keys, new[] { "code", "content", "ui" });
         Equal(Design.Type["ui"].Faces[0], "IBM Plex Sans"); Equal(Design.Type["content"].Faces[0], "IBM Plex Serif"); Equal(Design.Type["code"].Faces[0], "Lilex");
         Check(Design.Type["ui"].Tabular && Design.Type["code"].Tabular, "number fields need tabular figures");
+        Check(Design.Type.Values.All(r => r.Files["400"].Count > 0 && r.Files["600"].Count == r.Files["400"].Count), "a type role names no font files");
+        Check(Design.Type["ui"].Files["600"][0].EndsWith("IBMPlexSans-SemiBold.woff2", StringComparison.Ordinal) && Design.Type["code"].Files["400"][0].Contains("lilex-latin-400", StringComparison.Ordinal), "font files");
     }
 
     private static void A5TokensKnobsMoveSeedsInsideTheirRanges()
@@ -123,6 +125,8 @@ internal static partial class Program
         string system = Read("data/design/system.json"), theme = File.ReadAllText(Directory.GetFiles(FileAt("data/design/themes"), "*.json").OrderBy(p => p, StringComparer.Ordinal).First());
         Refuse(() => DesignSystem.Parse(system.Replace("\"shipped\": \"compact\"", "\"shipped\": \"dense\"")), "shipped");
         Refuse(() => DesignSystem.Parse(system.Replace("\"unit\": 4", "\"unit\": 0")), "unit");
+        Refuse(() => DesignSystem.Parse(system.Replace("\"ibm-plex-sans/node_modules", "\"../ibm-plex-sans/node_modules")), "ui.files");
+        Refuse(() => DesignSystem.Parse(system.Replace("IBMPlexSerif-Regular.woff2", "IBMPlexSerif-Regular.ttf")), "content.files");
         Refuse(() => DesignSystem.Parse(system.Replace("\"ui\": {", "\"display\": {")), "type");
         Refuse(() => DesignSystem.Parse(system.Replace("\"cue\": \"lock glyph\"", "\"meaning2\": \"x\"")), "meaning2");
         Refuse(() => DesignSystem.Parse(system.Replace("\"window.background\": \"surface.window\"", "\"window.background\": \"surface.nowhere\"")), "window.background");
