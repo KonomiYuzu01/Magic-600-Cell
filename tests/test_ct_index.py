@@ -117,7 +117,27 @@ class NotesTests(unittest.TestCase):
         plain = {row["id"]: row["state"] for row in ct_index.build_index(IDS, scan, {})}
         self.assertEqual((plain["CT-KN1-01"], plain["CT-ONE-01"], plain["CT-KN1-03"]), ("part", "named", "missing"))
         line = ct_index.summary_line("LP2", list(rows.values()))
-        self.assertIn("2 whole, of which 1 by union; 0 part; 0 named only; 1 missing; 1 not applicable; 1 waiting", line)
+        self.assertIn(
+            "2 whole, of which 1 by union; 0 part; 0 named only; 1 missing; 1 not applicable; 1 waiting; "
+            "0 indexed elsewhere", line)
+
+    def test_waiting_and_indexed_elsewhere_override_part_but_never_whole(self):
+        part = {"whole": [], "part": ["a.rs"], "named": [], "not_run": [("a.rs", "the rest")]}
+        scan = {"CT-KN1-01": part, "CT-KN1-02": dict(part), "CT-KN1-03": {**part, "whole": ["c.rs"]}}
+        notes = {
+            "CT-KN1-01": ("waiting", "LQ2"),
+            "CT-KN1-02": ("indexed elsewhere", "LP3's host"),
+            "CT-KN1-03": ("indexed elsewhere", "LP3's host"),
+            "CT-ONE-01": ("indexed elsewhere", "LP4"),
+        }
+        rows = {row["id"]: row for row in ct_index.build_index(IDS, scan, notes)}
+        self.assertEqual(
+            [rows[i]["state"] for i in ("CT-KN1-01", "CT-KN1-02", "CT-KN1-03", "CT-ONE-01")],
+            ["waiting", "indexed elsewhere", "whole", "indexed elsewhere"])
+        # the marker's not-run text stays beside the note
+        self.assertEqual(rows["CT-KN1-02"]["not_run_or_waiting_for"], "LP3's host | the rest (a.rs)")
+        self.assertEqual(rows["CT-KN1-01"]["not_run_or_waiting_for"], "LQ2 | the rest (a.rs)")
+        self.assertIn("1 waiting; 2 indexed elsewhere", ct_index.summary_line("LP2", list(rows.values())))
 
 
 class RepositoryTests(unittest.TestCase):
