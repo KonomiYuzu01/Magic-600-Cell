@@ -256,11 +256,6 @@
       "command": "target.frame.set"
     },
     {
-      "key": "O",
-      "context": "global",
-      "command": "orbit.switch"
-    },
-    {
       "key": "N",
       "context": "global",
       "command": "target.next.activate"

@@ -11,6 +11,7 @@ internal sealed class LabSolve
 {
     public SolvingDemo Demo { get; }
     public RelationStrip Strip { get; }
+    public OrbitRail Rail { get; }
     public AnchorLayer? GlobalAnchors { get; private set; }
     public AnchorLayer? LocalAnchors { get; private set; }
     private readonly ChromeFrame frame;
@@ -24,14 +25,15 @@ internal sealed class LabSolve
         Demo = new SolvingDemo(OrbitAtlas.Parse(File.ReadAllText(Path.Combine(root, "assets/seed_atlas.json"))));
         Strip = new RelationStrip(Demo, () => frame.Tokens, seconds);
         Strip.Command += run; Strip.DemoNext += Demo.NextState;
-        frame.SetSeam(Strip); frame.HostKeys["F11"] = Demo.NextState;
-        frame.Rebuilt += Attach; frame.Recoloured += Strip.Recolour;
+        Rail = new OrbitRail(Demo, () => frame.Tokens); Rail.Command += run;
+        frame.SetSeam(Strip); frame.SetPairHead(Rail); frame.HostKeys["F11"] = Demo.NextState;
+        frame.Rebuilt += Attach; frame.Recoloured += () => { Strip.Recolour(); Rail.Recolour(); };
     }
 
     // The view borders are built again with the frame, so the anchors are laid over the new ones.
     private void Attach()
     {
-        Strip.Recolour();
+        Strip.Recolour(); Rail.Recolour();
         GlobalAnchors = new AnchorLayer(Strip, () => frame.Tokens, true, () => frame.PairSideBySide ? new Vector2(1, .5f) : new Vector2(.5f, 1));
         LocalAnchors = new AnchorLayer(Strip, () => frame.Tokens, false, () => frame.PairSideBySide ? new Vector2(0, .5f) : new Vector2(.5f, 0));
         frame.Global.Slot.AddChild(GlobalAnchors); frame.Local.Slot.AddChild(LocalAnchors);

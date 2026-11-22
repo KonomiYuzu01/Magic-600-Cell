@@ -345,3 +345,39 @@ public sealed class SolvingDemo
         Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); return null;
     }
 }
+
+// One cell of the orbit rail (ADR-D01.64). Solved, lock and working are three separate marks.
+public sealed record RailCell(int Orbit, string Id, string Group, double? Level, bool Solved, OrbitLock Lock, bool Working, bool Next, string Status);
+
+public static class OrbitRailModel
+{
+    public const string OrderLabel = "one admissible order";
+
+    // The order never depends on the state: the seed stage order, or orbit-id order as a setting.
+    public static IReadOnlyList<int> Order(OrbitAtlas atlas, bool byId) => byId ? Enumerable.Range(0, OrbitAtlas.Count).ToArray() : atlas.StageOrder;
+
+    public static IReadOnlyList<RailCell> Cells(SolvingState state, bool byId) => Order(state.Atlas, byId).Select(id =>
+    {
+        OrbitFacts facts = state.Atlas.Orbits[id]; OrbitResidual r = state.Residuals[id];
+        string status = !r.Known || r.UnknownFrames > 0 ? "unknown_frame" : r.ExactlySolved ? "solved" : r.LastBuffer == "permitted" ? "permitted_residual" : "open";
+        return new RailCell(id, OrbitAtlas.Name(id), facts.Orientation, r.Level(facts.Pieces), r.ExactlySolved, r.Lock, id == state.Orbit, state.Next is { } n && n.Orbit == id, status);
+    }).ToArray();
+}
+
+// The typed orbit jump: a held orbit key followed by two digits.
+public sealed class OrbitJump
+{
+    public bool Held { get; private set; }
+    public string Typed { get; private set; } = "";
+    public void Hold() { Held = true; Typed = ""; }
+    public void Release() { Held = false; Typed = ""; }
+    // Returns the orbit when two digits name one; a pair that names none is dropped.
+    public int? Digit(int digit)
+    {
+        if (!Held || digit < 0 || digit > 9) return null;
+        Typed += (char)('0' + digit);
+        if (Typed.Length < 2) return null;
+        int orbit = int.Parse(Typed, CultureInfo.InvariantCulture); Typed = "";
+        return orbit < OrbitAtlas.Count ? orbit : null;
+    }
+}

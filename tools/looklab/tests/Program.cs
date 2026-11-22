@@ -116,6 +116,7 @@ internal static partial class Program
             ("A5GalleryPalettesIconsAndTokenLint", A5GalleryPalettesIconsAndTokenLint),
             ("A5GalleryFocusLayersAndVirtualRows", A5GalleryFocusLayersAndVirtualRows),
             ("A5SolvingStripFactsAndInvalidTuple", A5SolvingStripFactsAndInvalidTuple),
+            ("A5SolvingRailOrderMarksAndJump", A5SolvingRailOrderMarksAndJump),
             ("A5FrameLockedPairRefusesHidingAMainView", A5FrameLockedPairRefusesHidingAMainView),
             ("A5FrameStoredArrangementRoundTripAndWorkspaces", A5FrameStoredArrangementRoundTripAndWorkspaces),
             ("LayoutValidationRefusals", LayoutRefusals),

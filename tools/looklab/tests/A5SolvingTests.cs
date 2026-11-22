@@ -55,4 +55,34 @@ internal static partial class Program
         Check(registry.Commands["target.current.set"].Label == "Set Target" && registry.Commands["input.destination.set"].Label == "Draft or Direct" && registry.Commands["operation.phase.select"].Label == "Select phase Prepare / Core / Cleanup", "the owner's words for the solving commands");
         Refuse(() => registry.Relabel("{\"labels\":{\"no.such\":\"x\"}}"), "unknown command");
     }
+
+    // The orbit rail (ADR-D01.64): the order never depends on the state, and the marks are separate.
+    private static void A5SolvingRailOrderMarksAndJump()
+    {
+        OrbitAtlas atlas = Atlas; var demo = new SolvingDemo(atlas);
+        foreach (bool byId in new[] { false, true })
+        {
+            int[][] orders = demo.States.Select(s => OrbitRailModel.Cells(s, byId).Select(c => c.Orbit).ToArray()).ToArray();
+            Check(orders.All(o => o.SequenceEqual(orders[0])) && orders[0].Length == 35 && orders[0].SequenceEqual(OrbitRailModel.Order(atlas, byId)), "the rail's order depends on the state");
+        }
+        Check(OrbitRailModel.Order(atlas, false).SequenceEqual(atlas.StageOrder) && OrbitRailModel.Order(atlas, true).SequenceEqual(Enumerable.Range(0, 35)) && OrbitRailModel.OrderLabel == "one admissible order", "the default order is not the seed stage order");
+        // The order is the same after the working orbit, the Target and Next change.
+        int[] before = OrbitRailModel.Cells(demo.State, false).Select(c => c.Orbit).ToArray();
+        demo.SwitchOrbit("O05"); demo.SetTarget(null); demo.SetNext(null);
+        Sequence(OrbitRailModel.Cells(demo.State, false).Select(c => c.Orbit), before);
+        var cells = OrbitRailModel.Cells(demo.State, false);
+        Check(cells.Count(c => c.Working) == 1 && cells.Single(c => c.Working).Orbit == 5 && cells.Count(c => c.Next) == 1, "the working mark or the Next glyph");
+        // Solved, lock and working are three separate marks: each combination that the demo holds is kept apart.
+        Check(cells.Any(c => c.Solved && c.Lock == OrbitLock.None) && cells.Any(c => c.Solved && c.Lock == OrbitLock.Partial) && cells.Any(c => c.Solved && c.Lock == OrbitLock.Whole) && cells.Any(c => !c.Solved && c.Lock == OrbitLock.Partial), "solved and lock are one mark");
+        RailCell unknown = cells.Single(c => c.Level == null);
+        Check(unknown.Status == "unknown_frame" && !unknown.Solved && cells.Where(c => c.Solved).All(c => c.Level == 0 && c.Status == "solved"), "unknown is drawn as zero");
+        Check(cells.All(c => c.Id == OrbitAtlas.Name(c.Orbit) && OrbitAtlas.Groups.Contains(c.Group)) && cells.Select(c => c.Group).Distinct().Count() == 5, "ids or groups");
+        Check(OrbitRailModel.Cells(demo.States[1], false).Single(c => c.Working).Status == "permitted_residual", "the endgame at the last buffer");
+        // A held orbit key followed by two digits; digits without the key do nothing.
+        var jump = new OrbitJump();
+        Check(jump.Digit(1) == null && !jump.Held, "a digit without the orbit key");
+        jump.Hold(); Check(jump.Digit(0) == null && jump.Typed == "0" && jump.Digit(7) == 7 && jump.Typed == "", "O then 07");
+        Check(jump.Digit(9) == null && jump.Digit(9) == null && jump.Digit(3) == null && jump.Digit(4) == 34, "O then 99 names no orbit");
+        jump.Digit(1); jump.Release(); Check(!jump.Held && jump.Typed == "" && jump.Digit(2) == null, "releasing the key");
+    }
 }

@@ -333,10 +333,12 @@ internal static class LabFrame
             ("pick layers; the other layers dimmed", () => { Home(); layers["global"].SetPick("stickers"); if (layers["global"].Inactive == InactiveMode.Normal) layers["global"].Cycle(); }),
             ("a radial menu", () => { Home(); Execute("radial.view", null); }),
             ("the relationship strip on the seam, mid-solve: Wanted is in A", () => { Home(); solve.Demo.Show("mid"); if (!solve.Strip.Expanded) solve.Strip.ToggleResidual(); }),
-            ("the strip at the last buffer of the endgame", () => { Home(); solve.Demo.Show("endgame"); }),
+            ("the orbit rail: 35 cells in one admissible order, the working cell opened in place", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(solve.Demo.State.Orbit); }),
+            ("the strip and the rail at the last buffer of the endgame", () => { Home(); solve.Demo.Show("endgame"); solve.Rail.Expand(null); }),
             ("the strip after a fresh scramble: nothing is set", () => { Home(); solve.Demo.Show("fresh"); }),
             ("the script workspace in the new body", () => { frame.SelectWorkspace("script"); scripts.Editor.SetWrap(true); scripts.Open("sweep", scripts.Find("script.sweep.reach")!.Line); }),
         };
+        frame.HostKeysOverOverlays.Add("F9");
         frame.HostKeys["F9"] = () =>
         {
             frame.OpenOverlay?.Close();

@@ -1067,3 +1067,22 @@ them. An ill-formed tuple is shown as invalid and is never corrected.
   `data/design/command-labels.json`.
 - Token slots: `strip.ground`, `strip.cell.*`, `strip.link`, `strip.next`, `anchor.*`; motion row `strip.change`.
 - Not shown: the stale state of an item (the demo has no commit that makes one stale).
+
+### A5 stage 10, point 2: the orbit rail
+
+The rail lies along the head of the locked pair (`ChromeFrame.SetPairHead`), never in a dock: 35 cells, each with
+the orbit id, the orientation-group glyph (one kind per group type), the residual level drawn as a length, and
+three separate marks in three fixed places (solved, lock, Next); the working orbit has a border and a bar.
+
+- The order never depends on the state: the seed stage order, labelled "one admissible order", or orbit-id order
+  with the button at the rail's end. No cell is emphasised for being unfinished and nothing moves at idle.
+- A click selects the working orbit; a click on the working cell opens it in place into the exact residual classes
+  with exact numerals ("unknown" is hatched on the cell and spelled out, never zero) and the unfinished positions in
+  position-id order. Hold O and type two digits to select an orbit; the rail shows what is typed.
+- On hover a cell marks the orbits its seed touches (a line above) and the orbits whose seeds touch it (a line
+  below), from the seed atlas; they are never lit from the state.
+- Token slots: `rail.ground`, `rail.cell.*`, `rail.lock.*`, `rail.status.*`, `rail.moment.complete`; motion rows
+  `orbit.complete`, `lock.set`, `lock.release`.
+- Not shown: setting a lock on a cell, and the completion moment (no demo action completes an orbit). The list of
+  unfinished positions shows the first 120 and counts the rest.
+- The tour key now also works while a radial menu is open.

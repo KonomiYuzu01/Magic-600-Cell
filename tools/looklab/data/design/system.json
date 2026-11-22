@@ -110,6 +110,11 @@
         42,
         46
       ],
+      "rail.height": [
+        13,
+        15,
+        17
+      ],
       "scrollbar.width": [
         2,
         2.5,
@@ -430,6 +435,85 @@
       "meaning": "Anchor on a piece: the Next bookmark. It follows the piece.",
       "cue": "a bookmark around the place"
     },
+    "rail.ground": {
+      "group": "chrome",
+      "meaning": "The ground of the orbit rail."
+    },
+    "rail.cell.id": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the orbit id, O00 to O34.",
+      "cue": "the id in the code face"
+    },
+    "rail.cell.group": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the orientation-group glyph.",
+      "cue": "one glyph per group type"
+    },
+    "rail.cell.residual_level": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the residual level, a quantity drawn as a length.",
+      "cue": "a bar whose length is the quantity"
+    },
+    "rail.cell.solved": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the solved mark, stated only when exactly solved.",
+      "cue": "a check mark"
+    },
+    "rail.cell.lock": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the lock.",
+      "cue": "a padlock, open for partial and closed for whole"
+    },
+    "rail.cell.working": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the working orbit.",
+      "cue": "a border and a bar under the cell"
+    },
+    "rail.cell.next": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the Next bookmark lies in this orbit.",
+      "cue": "a bookmark"
+    },
+    "rail.lock.none": {
+      "group": "encoding",
+      "meaning": "Orbit rail lock: none.",
+      "cue": "no mark"
+    },
+    "rail.lock.partial": {
+      "group": "encoding",
+      "meaning": "Orbit rail lock: partial.",
+      "cue": "an open padlock"
+    },
+    "rail.lock.whole": {
+      "group": "encoding",
+      "meaning": "Orbit rail lock: the whole orbit.",
+      "cue": "a closed, filled padlock"
+    },
+    "rail.status.open": {
+      "group": "encoding",
+      "meaning": "Orbit rail status: open.",
+      "cue": "a residual bar"
+    },
+    "rail.status.solved": {
+      "group": "encoding",
+      "meaning": "Orbit rail status: exactly solved.",
+      "cue": "a check mark and an empty track"
+    },
+    "rail.status.permitted_residual": {
+      "group": "encoding",
+      "meaning": "Orbit rail status: a permitted residual at the last buffer.",
+      "cue": "a short bar with a tick"
+    },
+    "rail.status.unknown_frame": {
+      "group": "encoding",
+      "meaning": "Orbit rail status: unknown, which is never zero.",
+      "cue": "a hatched track"
+    },
+    "rail.moment.complete": {
+      "group": "encoding",
+      "meaning": "Orbit rail: the completion moment, in place on its own cell.",
+      "cue": "the solved mark appears on the cell"
+    },
     "syntax.keyword": {
       "group": "syntax",
       "meaning": "A 600 Cell Script keyword."
@@ -645,6 +729,31 @@
     },
     {
       "text": "anchor.next",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.id",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.residual_level",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.solved",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.lock",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "rail.cell.working",
       "surface": "surface.panel",
       "minimum": 3
     },

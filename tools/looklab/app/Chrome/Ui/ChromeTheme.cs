@@ -71,6 +71,7 @@ public static class ChromeTheme
         theme.SetTypeVariation("FrameGround", "PanelContainer"); theme.SetStylebox("panel", "FrameGround", Box(t, "window.background", null, "radius.panel", 0));
         theme.SetTypeVariation("ViewFrame", "PanelContainer"); theme.SetStylebox("panel", "ViewFrame", Box(t, "window.background", "panel.border", "radius.panel", 0));
         theme.SetTypeVariation("StripGround", "PanelContainer"); theme.SetStylebox("panel", "StripGround", Box(t, "strip.ground", "panel.border", "radius.panel", 0, t.Px("border.width")));
+        theme.SetTypeVariation("RailGround", "PanelContainer"); theme.SetStylebox("panel", "RailGround", Box(t, "rail.ground", "panel.border", "radius.panel", 0, t.Px("border.width")));
         theme.SetTypeVariation("FrameOpen", "PanelContainer"); theme.SetStylebox("panel", "FrameOpen", new StyleBoxEmpty());
         foreach ((string open, string edge) in new[] { ("ViewFrameOpen", "panel.border"), ("ViewFrameOpenFocus", "control.focus") })
         {

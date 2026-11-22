@@ -175,6 +175,9 @@ public sealed partial class ChromeFrame : Control
     // One control on the shared edge of the locked pair: the relationship strip (ADR-D01.62). It adds no dock.
     public void SetSeam(Control? control) { seam = control; dirty = true; }
     private Control? seam;
+    // One control along the head of the locked pair, over both views: the orbit rail (ADR-D01.64). It adds no dock.
+    public void SetPairHead(Control? control) { pairHead = control; dirty = true; }
+    private Control? pairHead;
     // Whether Global and Local sit side by side, so the seam runs down.
     public bool PairSideBySide => Model.PairArrangement == "side";
     // Replaces the content of a dock panel or of a pane, keeping its place.
@@ -271,6 +274,8 @@ public sealed partial class ChromeFrame : Control
     public Action<string>? KeyCapture { get; set; }
 
     // Keys of the host itself, outside the command table: a lab uses them for its compare and tour keys.
+    // Host keys that also work while an overlay is open (a tour key that closes the overlay itself).
+    public ISet<string> HostKeysOverOverlays { get; } = new HashSet<string>(StringComparer.Ordinal);
     public IDictionary<string, Action> HostKeys { get; } = new Dictionary<string, Action>(StringComparer.Ordinal);
 
     // A host whose picture lies beneath a transparent window (the product shell on route B) opens the ground over
@@ -289,7 +294,7 @@ public sealed partial class ChromeFrame : Control
     public bool Press(string key)
     {
         if (KeyCapture is { } capture) { KeyCapture = null; capture(key); return true; }
-        if (OpenOverlay == null && HostKeys.TryGetValue(key, out Action? host)) { Safe.Raise(host); return true; }
+        if ((OpenOverlay == null || HostKeysOverOverlays.Contains(key)) && HostKeys.TryGetValue(key, out Action? host)) { Safe.Raise(host); return true; }
         ChromeOverlay? overlay = OpenOverlay;
         if (overlay != null && overlay.Key(key)) return true;
         if (Keys?.Resolve(key, KeyContexts()) is not { } binding) return false;
@@ -322,7 +327,7 @@ public sealed partial class ChromeFrame : Control
         dirty = false; HoveredView = null;
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
-        ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip); ChromeWidgets.Detach(seam);
+        ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip); ChromeWidgets.Detach(seam); ChromeWidgets.Detach(pairHead);
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
@@ -482,7 +487,10 @@ public sealed partial class ChromeFrame : Control
         Button focus = ChromeWidgets.Tool("", Hint(Model.FocusMode ? "Leave focus mode" : "Focus mode: only the pair", "workspace.set", "layout:focus"), true); ChromeIcons.Apply(focus, "pair.focus", icon);
         focus.SetPressedNoSignal(Model.FocusMode); focus.Pressed += () => Model.SetFocusMode(!Model.FocusMode);
         Local.Tools.AddChild(arrange); Local.Tools.AddChild(maximise); Local.Tools.AddChild(focus);
-        return split;
+        if (pairHead == null) return split;
+        var body = (VBoxContainer)Tight(new VBoxContainer { Name = "PairBody", SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill });
+        body.AddChild(pairHead); body.AddChild(split);
+        return body;
     }
 
     private Control Node(PaneNode node)
