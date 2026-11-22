@@ -8,6 +8,7 @@
   python tools/agents/codex_review.py --kind review --packet <file> --model gpt-6-astra
   python tools/agents/codex_review.py --kind review --packet <file> --speed fast
   python tools/agents/codex_review.py --kind review --packet <file> --model gpt-6-astra --effort ultra --gate day7-go-no-go
+  python tools/agents/codex_review.py --kind review --packet <file> --model gpt-6.2-astra
 
 The wrapper passes the model, effort and speed tier explicitly and accepts no
 other Codex arguments. Plan checks and reviews use the read-only sandbox. An
@@ -51,9 +52,13 @@ LEDGER = ROOT / "work" / "loop-memory" / "ledgers" / "codex.jsonl"
 WORKTREES = ROOT / "work" / "worktrees"
 CRITICAL_PATHS = ROOT / "tools" / "agents" / "critical_paths.json"
 
-MODELS = ("gpt-6.1-sol", "gpt-6-astra")
+MODELS = ("gpt-6.1-sol", "gpt-6-astra", "gpt-6.2-sol", "gpt-6.2-astra")
 DEFAULT_MODEL = "gpt-6.1-sol"
-EFFORTS = ("high", "max", "ultra")
+EFFORTS = ("high", "xhigh", "max", "ultra")
+DEFAULT_EFFORT = "max"
+# Owner, 19 November 2026: the 6.2 models keep the owner's default thinking levels, Astra "Extra" (xhigh) and Sol
+# "Max". Every other model defaults to max. The resolved effort is always passed to Codex explicitly.
+MODEL_DEFAULT_EFFORTS = {"gpt-6.2-astra": "xhigh", "gpt-6.2-sol": "max"}
 GATES = ("day7-go-no-go", "migration-format-freeze", "architecture-freeze")
 # Every run sets the tier explicitly so an inherited user preference cannot change it.
 SPEEDS = {"standard": "default", "fast": "fast"}
@@ -596,11 +601,13 @@ def main(argv=None) -> int:
     parser.add_argument("--packet", type=Path)
     parser.add_argument("--cleanup", nargs="+", metavar="CALL_ID", help="remove finished implementation worktrees and their codex/<call-id> branches")
     parser.add_argument("--model", default=DEFAULT_MODEL, choices=MODELS)
-    parser.add_argument("--effort", default="max", choices=EFFORTS)
+    parser.add_argument("--effort", choices=EFFORTS, help="defaults to the model's entry in MODEL_DEFAULT_EFFORTS, else max")
     parser.add_argument("--speed", choices=sorted(SPEEDS), default="standard", help="fast for scoped verification rounds, plan re-checks and other latency-sensitive calls; never for gate rulings")
     parser.add_argument("--gate", choices=GATES)
     parser.add_argument("--timeout", type=int, default=3600, help="seconds (60-7200)")
     args = parser.parse_args(argv)
+    if args.effort is None:
+        args.effort = MODEL_DEFAULT_EFFORTS.get(args.model, DEFAULT_EFFORT)
     if args.cleanup:
         if args.kind or args.packet:
             parser.error("--cleanup takes only call IDs")

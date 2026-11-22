@@ -89,7 +89,12 @@ class RuleSyncTests(unittest.TestCase):
 
     def test_wrapper_models_and_gates_match_the_rules(self):
         self.assertEqual(codex_review.DEFAULT_MODEL, "gpt-6.1-sol")
-        self.assertEqual(set(codex_review.MODELS), {"gpt-6.1-sol", "gpt-6-astra"})
+        self.assertEqual(set(codex_review.MODELS), {"gpt-6.1-sol", "gpt-6-astra", "gpt-6.2-sol", "gpt-6.2-astra"})
+        for model in codex_review.MODELS:
+            with self.subTest(model=model):
+                self.assertIn(f"`{model}`", CLAUDE + AGENTS + BRIEFING)
+        self.assertLessEqual(set(codex_review.MODEL_DEFAULT_EFFORTS), set(codex_review.MODELS))
+        self.assertLessEqual(set(codex_review.MODEL_DEFAULT_EFFORTS.values()), set(codex_review.EFFORTS))
         for gate in codex_review.GATES:
             self.assertIn(gate, BRIEFING)
 
