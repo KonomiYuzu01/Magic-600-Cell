@@ -32,6 +32,9 @@ ROW_FIELDS = {"id", "label", "kind", "inventory", "gates", "lane", "preview", "u
 UNDO_ROWS = {"session.undo", "session.redo"}
 # ADR-D01.14's layout history: its own undo and redo rows, which only the layout undo class reaches.
 LAYOUT_UNDO_ROWS = {"layout.undo", "layout.redo"}
+# ADR-D01.15's partial undo: a live commit inside the head's journal entry, with the protection recheck.
+PARTIAL_UNDO_ROW = "session.undo.partial"
+PARTIAL_UNDO_ARGUMENTS = {"entry": "ActionNumber", "move": "Nat", "token": "UserActionToken"}
 # CM.15 and JI.32/JI.33: required names, independent of the generating delta.
 # Optional parameters remain in the delta's full schemas.
 DELTA_REQUIRED_ARGUMENTS = {
@@ -64,6 +67,7 @@ DELTA_REQUIRED_ARGUMENTS = {
     "recording.play": {"recording"},
     "recording.convert": {"recording", "target"},
     "twist.apply": {"cap", "rotation", "token"},
+    "session.undo.partial": {"entry", "move", "token"},
     "workspace.set": {"record", "payload", "provenance"},
     "set.save": {"members", "kind", "name"},
     "theme.select": set(),
@@ -806,6 +810,11 @@ def validate_rows(candidate, inventory_ids):
             raise TableError(f"{name}: layout undo/redo must be ungated with ActionHint and the layout undo class")
         if row["undo"] == "layout" and row["kind"] != "workspace" and name not in LAYOUT_UNDO_ROWS:
             raise TableError(f"{name}: only a workspace row is a layout-history step (ADR-D01.14)")
+        if name == PARTIAL_UNDO_ROW and (row["kind"] != "commit" or row["lane"] != "commit" or row["preview"] != "none"
+                                         or row["undo"] != "journal" or row["gates"] != ["protection"]
+                                         or arguments != PARTIAL_UNDO_ARGUMENTS or "action_guard" in row
+                                         or row.get("slot_map", "preserve") != "preserve"):
+            raise TableError(f"{name}: partial undo must be a live journal commit with the protection gate (ADR-D01.15)")
         if name in {"workspace.undo", "workspace.redo", "jumble.preview.scrub"}:
             raise TableError(f"{name}: duplicate purpose; use the shared session or view entry")
         if name == "twist.apply" and (row["preview"] != "none" or row["undo"] != "journal" or "protection" not in row["gates"]):

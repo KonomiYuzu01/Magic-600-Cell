@@ -50,6 +50,33 @@
       },
       "action_guard": "action_hint",
       "slot_map": "preserve"
+    },
+    {
+      "id": "session.undo.partial",
+      "label": "Step back inside entry",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [
+        "protection"
+      ],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "journal",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Steps back inside the head's journal entry, a commit or a partial undo of one, so that its first move literal moves stay applied (ADR-D01.15). A live commit with no preview: the token binds the state and protection revisions, and the head hash and the protected orbits are checked again under the policy in force. Its recipe is the inverses of the undone moves, last first, and it journals as a retained move whose row and request name the entry and the move, so nothing is rewritten; session.undo undoes it as any commit. An entry that is not the head, or a move that is not one of its applied moves, has no eligible target. No default key.",
+      "source": "ADR-D01 (owner, 22 Nov 2026)",
+      "arguments": {
+        "entry": "ActionNumber",
+        "move": "Nat",
+        "token": "UserActionToken"
+      },
+      "slot_map": "preserve"
     }
   ],
   "amend": [

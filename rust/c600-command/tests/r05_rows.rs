@@ -165,11 +165,12 @@ impl Fixture {
 
 /// CT-KN5-10 (whole): R-05 against the command layer, beside the session's rows in
 /// `c600-session/tests/conformance_rows.rs` and the layer's entry-point allowlist in `tests/kn5.rs`. With every orbit
-/// protected, each of the H-08 table's 193 rows is delivered from the shell, with its token where it takes one, and on
+/// protected, each of the H-08 table's 196 rows is delivered from the shell, with its token where it takes one, and on
 /// a run's channel, with arguments of the forms the layer knows. No delivery changes the labels' digest or the
-/// protected set. The table's `protection` gate names the four rows the restriction blocks: `operation.execute` and
-/// `twist.apply` are refused with the protection code for a word that would move an orbit, and `session.practice` and
-/// `jumble.twist.menu` change nothing. Every path that releases protection asks for confirmation: a release by
+/// protected set. The table's `protection` gate names the five rows the restriction blocks: `operation.execute` and
+/// `twist.apply` are refused with the protection code for a word that would move an orbit, `session.undo.partial` has
+/// no entry to step back inside at the start (its protection refusal is in `tests/partial_undo.rs`), and
+/// `session.practice` and `jumble.twist.menu` change nothing. Every path that releases protection asks for confirmation: a release by
 /// `protection.orbit.set`, a weaker policy by `protection.policy.set`, and the undo of the change that protected the
 /// last orbit; a run reaches no commit row and no protection row. `jumble.on` crosses with the set kept, and the way
 /// back restores the labels. A row the layer does not build answers `row_not_built` and changes nothing, so a row built
@@ -186,7 +187,10 @@ fn every_table_row_from_the_shell_and_a_run_keeps_every_protected_orbit() {
     // The restriction table: the rows the `protection` gate names.
     let gated: Vec<&str> =
         f.layer.table().rows().filter(|row| row.has_gate("protection")).map(|row| row.id.as_str()).collect();
-    assert_eq!(gated, ["jumble.twist.menu", "operation.execute", "session.practice", "twist.apply"]);
+    assert_eq!(
+        gated,
+        ["jumble.twist.menu", "operation.execute", "session.practice", "session.undo.partial", "twist.apply"]
+    );
 
     // operation.execute: a preview of a word that would move an orbit is shown, and its press is refused.
     let p = {
@@ -201,6 +205,10 @@ fn every_table_row_from_the_shell_and_a_run_keeps_every_protected_orbit() {
     // twist.apply: menu item 1's retained word moves every orbit.
     let press = f.shell.prepare(&f.layer, TWIST_ROW, twist_args(1)).unwrap();
     f.refused(&Caller::Shell, press, code::ORBIT_WOULD_MOVE, "twist.apply");
+    // session.undo.partial: the start is no entry to step back inside.
+    let start = json::object([("entry", Value::Int(0)), ("move", Value::Int(0))]);
+    let press = f.shell.prepare(&f.layer, "session.undo.partial", start).unwrap();
+    f.refused(&Caller::Shell, press, code::UNDO_SUPERSEDED, "session.undo.partial");
 
     // The release paths: each needs its confirmation, and a run may not take them.
     let release = f.shell.prepare(&f.layer, "protection.orbit.set", json::object([("orbits", orbits(&[]))])).unwrap();
@@ -218,7 +226,7 @@ fn every_table_row_from_the_shell_and_a_run_keeps_every_protected_orbit() {
     assert!(matches!(started.status, Status::Running(_)), "the tool's row: {:?}", started.status);
     let runtime = Caller::Runtime { run: f.layer.take_program_job().expect("the tool's job").run() };
     let rows: Vec<Row> = f.layer.table().rows().filter(|row| row.overlay.is_none()).cloned().collect();
-    assert_eq!(rows.len(), 195);
+    assert_eq!(rows.len(), 196);
     let mut tally: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (n, row) in rows.iter().enumerate() {
         let args = formed(row, &f.layer.revision().to_json());

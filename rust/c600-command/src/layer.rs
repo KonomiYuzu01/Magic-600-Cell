@@ -154,6 +154,13 @@ pub const LAYOUT_UNDO_ROW: &str = "layout.undo";
 pub const LAYOUT_REDO_ROW: &str = "layout.redo";
 /// ADR-D01.39's explore state (draft): while it is on, the commit rows of the move history are paused.
 pub const EXPLORE_ROW: &str = "explore.set";
+/// ADR-D01.15's partial undo (owner, 22 November 2026, item 4; draft): a commit that steps back inside the head's
+/// journal entry to one of its moves, recorded as its own action naming the entry and the move, so nothing is
+/// rewritten.
+pub const PARTIAL_UNDO_ROW: &str = "session.undo.partial";
+/// 0.4's word limit: a partial undo's inverse enters the kernel in word steps of at most this many letters, since an
+/// entry's expansion may be longer than one word step allows.
+const WORD_CHUNK: usize = 100_000;
 /// Whether a run's preview is admitted only inside a command the solver invoked (finding B2 of the KN5 boundary attack,
 /// ONE.34; the owner's reading of 18 November 2026). The check is on, so a host must start its runs through a tool row
 /// the shell invokes, as LP3's host does on both its hosts.
@@ -428,6 +435,9 @@ struct Node {
     /// which is not the start. The journal query reads the node's kind from these alone ([`CommandLayer::journal`]),
     /// since an exit's change leaves `changes` with the redo stack.
     exit: Option<String>,
+    /// A partial undo's place (ADR-D01.15; draft): the action order of the journal entry it steps back inside and how
+    /// many of that entry's literal moves stay applied; `None` for every other node.
+    partial: Option<(u64, usize)>,
     digest: String,
     depth: u64,
 }
@@ -830,8 +840,15 @@ impl<S: Store> CommandLayer<S> {
         protected: ProtectedSet,
     ) -> CommandLayer<S> {
         let identity = digest(&identity_json(&kernel.identity()));
-        let start =
-            Node { parent: 0, recipe: None, twist: None, exit: None, digest: initial.digest().to_owned(), depth: 0 };
+        let start = Node {
+            parent: 0,
+            recipe: None,
+            twist: None,
+            exit: None,
+            partial: None,
+            digest: initial.digest().to_owned(),
+            depth: 0,
+        };
         CommandLayer {
             kernel,
             table: table.with_drafts(),
@@ -1062,6 +1079,10 @@ impl<S: Store> CommandLayer<S> {
                     return Err(unadmitted("a commit whose caller is not the shell"));
                 }
                 let recipe = self.kernel.recipe(&stored.recipe)?;
+                // A partial undo steps back inside the head's entry, as the live path builds it (ADR-D01.15).
+                if stored.row == PARTIAL_UNDO_ROW && !self.steps_back_inside(&recipe) {
+                    return Err(unadmitted("a partial undo that does not step back inside the head's entry"));
+                }
                 match self.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
                     Derivation::Derived(d) => self.commit_adoption(meta, recipe, d.state, d.word, None),
                     Derivation::Refused(r) => {
@@ -1654,6 +1675,53 @@ impl<S: Store> CommandLayer<S> {
         self.explore
     }
 
+    /// The journal entry that the head is inside, with how many of its literal moves stay applied (ADR-D01.15; draft):
+    /// the entry and the bound of the move that `session.undo.partial` names. `None` when the head is the start, a
+    /// crossing, a pose move or an exit.
+    pub fn head_entry(&self) -> Option<(u64, usize)> {
+        self.inside(self.head)
+    }
+
+    /// The journal entry that node `node` leaves the head inside, with how many of its literal moves stay applied: a
+    /// partial undo's own place, or a commit's whole recipe; `None` for the start, a crossing, a pose move and an exit.
+    fn inside(&self, node: u64) -> Option<(u64, usize)> {
+        let found = &self.nodes[&node];
+        match (found.partial, &found.recipe) {
+            (Some(place), _) => Some(place),
+            (None, Some(recipe)) => Some((node, recipe.primitive_count())),
+            (None, None) => None,
+        }
+    }
+
+    /// The recipe that steps back inside `entry`, whose first `applied` literal moves are applied, to its first `keep`:
+    /// the inverses of the moves from `keep` to `applied`, last first, in word steps of at most [`WORD_CHUNK`] letters.
+    fn partial_recipe(&self, entry: u64, applied: usize, keep: usize) -> Result<Recipe, Error> {
+        let detail = "the entry holds no retained recipe";
+        let recipe = self.nodes[&entry].recipe.as_ref().ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, detail))?;
+        let letters = self.kernel.letters(recipe)?;
+        if keep >= applied || applied > letters.len() {
+            return Err(Error::new(code::UNDO_SUPERSEDED, "the move is not an applied move of the entry"));
+        }
+        let inverse: Vec<Value> = letters[keep..applied].iter().rev().map(|&m| Value::Int(-(m as i64))).collect();
+        let word = |moves: &[Value]| {
+            json::object([("kind", Value::String("word".into())), ("moves", Value::Array(moves.to_vec()))])
+        };
+        let steps: Vec<Value> = inverse.chunks(WORD_CHUNK).map(word).collect();
+        Ok(self.kernel.recipe(&Value::Array(steps))?)
+    }
+
+    /// Whether a stored partial undo's `recipe` steps back inside the head's entry: the one word the live path builds
+    /// for the moves it undoes.
+    fn steps_back_inside(&self, recipe: &Recipe) -> bool {
+        let Some((entry, applied)) = self.inside(self.head) else {
+            return false;
+        };
+        let Some(keep) = applied.checked_sub(recipe.primitive_count()) else {
+            return false;
+        };
+        self.partial_recipe(entry, applied, keep).is_ok_and(|expected| expected == *recipe)
+    }
+
     /// Whether the explore state pauses `row`: every commit row but the layout history's undo and redo, which commit
     /// no puzzle state (ADR-D01.39).
     fn paused(&self, row: &Row) -> bool {
@@ -2079,6 +2147,16 @@ impl<S: Store> CommandLayer<S> {
                 }
             }
             EXPLORE_ROW => Ok(()),
+            PARTIAL_UNDO_ROW => {
+                if self.commit_held {
+                    return Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight"));
+                }
+                self.retained_mode()?;
+                match self.head_entry() {
+                    Some((_, applied)) if applied > 0 => Ok(()),
+                    _ => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
+                }
+            }
             TWIST_ROW => match (&self.twists, self.commit_held) {
                 (None, _) => {
                     Err(Error::new(code::ROW_NOT_BUILT, format!("`{TWIST_ROW}` needs the host's pinned twist menu")))
@@ -2354,6 +2432,7 @@ impl<S: Store> CommandLayer<S> {
             LAYOUT_UNDO_ROW => self.undo(caller, invocation, request, History::Layout, Direction::Undo),
             LAYOUT_REDO_ROW => self.undo(caller, invocation, request, History::Layout, Direction::Redo),
             EXPLORE_ROW => self.set_explore(caller, &row, args),
+            PARTIAL_UNDO_ROW => self.partial_undo(caller, invocation, request),
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
@@ -2750,8 +2829,16 @@ impl<S: Store> CommandLayer<S> {
             ..self.revision.clone()
         };
         let depth = self.nodes[&self.head].depth + 1;
+        // A partial undo stays inside the head's entry, with fewer of its moves applied (ADR-D01.15).
+        let partial = match meta.row.as_str() {
+            PARTIAL_UNDO_ROW => {
+                self.inside(self.head).map(|(entry, applied)| (entry, applied.saturating_sub(recipe.primitive_count())))
+            }
+            _ => None,
+        };
         let kept = Some(recipe.clone());
-        let node = Node { parent: self.head, recipe: kept, twist: None, exit: None, digest: post.clone(), depth };
+        let node =
+            Node { parent: self.head, recipe: kept, twist: None, exit: None, partial, digest: post.clone(), depth };
         let transaction = Transaction {
             kind: TransactionKind::Commit,
             event,
@@ -3057,6 +3144,58 @@ impl<S: Store> CommandLayer<S> {
         let meta = Meta::of(caller, invocation, request);
         let mut adoption = self.commit_adoption(meta, recipe, derived.state, derived.word, None);
         adoption.transaction.rotation = Some(resolution.to_json());
+        self.transact(adoption)
+    }
+
+    // ----- session.undo.partial -----
+
+    /// `session.undo.partial {entry, move, token}` (ADR-D01.15; draft): steps back inside the head's journal entry
+    /// `entry`, a commit or a partial undo of one, so that its first `move` literal moves stay applied. The move must be
+    /// one of the entry's applied moves (`KN5:stale.undo_superseded` otherwise, as for an undo with no eligible target).
+    /// It is a commit with no preview whose token binds the state and protection revisions (LI.6), and its recipe is
+    /// one word, the inverses of the undone moves, last first. The commit steps run as `twist.apply`'s do: the token,
+    /// the commit lane, the binding, Jumble off, the revisions, the head hash, the kernel's derivation under the
+    /// protected set and the policy in force (`KN2:protection.orbit_would_move`), the durable transaction and the
+    /// adoption. It journals as a retained move (FP.31) whose row and request name the entry and the move, and
+    /// `session.undo` undoes it as any commit; nothing earlier is rewritten. A partial undo of every move reaches the
+    /// entry's recorded start.
+    fn partial_undo(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let (Some(entry), Some(keep)) = (nat(invocation.args.get("entry")), nat(invocation.args.get("move"))) else {
+            return refused(code::ARGUMENT_FORM, "`entry` is an action number and `move` a natural number");
+        };
+        let binding = self.authenticate(invocation)?;
+        self.commit_lane()?;
+        self.bound(&binding, invocation)?;
+        self.retained_mode()?;
+        // The target before the bound revisions, so a raced press is `undo_superseded`, as an undo's hint is.
+        let Some((_, applied)) = self.head_entry().filter(|&(inside, _)| inside == entry) else {
+            return refused(code::UNDO_SUPERSEDED, format!("the head is not inside entry {entry}"));
+        };
+        let keep = usize::try_from(keep).unwrap_or(usize::MAX);
+        if keep >= applied {
+            return refused(code::UNDO_SUPERSEDED, "the move is not an applied move of the entry");
+        }
+        if binding.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
+        if self.current.digest() != self.nodes[&self.head].digest {
+            return refused(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state");
+        }
+        let recipe = self.partial_recipe(entry, applied, keep)?;
+        let derived = match self.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
+            Derivation::Derived(derived) => derived,
+            Derivation::Refused(refusal) => return Err(refusal.refusal.into()),
+        };
+        if keep == 0 && derived.state.digest() != self.nodes[&self.nodes[&entry].parent].digest {
+            return refused(code::STATE_HASH_MISMATCH, "the partial undo does not reach the entry's recorded start");
+        }
+        let meta = Meta::of(caller, invocation, request);
+        let adoption = self.commit_adoption(meta, recipe, derived.state, derived.word, None);
         self.transact(adoption)
     }
 
@@ -4142,8 +4281,15 @@ impl<S: Store> CommandLayer<S> {
             ..self.revision.clone()
         };
         let depth = self.nodes[&self.head].depth + 1;
-        let node =
-            Node { parent: self.head, recipe: None, twist: None, exit: None, digest: entry.digest.clone(), depth };
+        let node = Node {
+            parent: self.head,
+            recipe: None,
+            twist: None,
+            exit: None,
+            partial: None,
+            digest: entry.digest.clone(),
+            depth,
+        };
         let transaction = Transaction {
             kind: TransactionKind::Crossing,
             event,
@@ -4312,7 +4458,15 @@ impl<S: Store> CommandLayer<S> {
         };
         let depth = self.nodes[&self.head].depth + 1;
         let mark = Some(digest(&exit.record));
-        let node = Node { parent: self.head, recipe: None, twist: None, exit: mark, digest: post.clone(), depth };
+        let node = Node {
+            parent: self.head,
+            recipe: None,
+            twist: None,
+            exit: mark,
+            partial: None,
+            digest: post.clone(),
+            depth,
+        };
         let transaction = Transaction {
             kind: TransactionKind::Exit,
             event,
@@ -4458,7 +4612,8 @@ impl<S: Store> CommandLayer<S> {
         let literal = levels::word_digest(std::slice::from_ref(&twist));
         let depth = self.nodes[&self.head].depth + 1;
         let digest = jumbled.digest.clone();
-        let node = Node { parent: self.head, recipe: None, twist: Some(twist), exit: None, digest, depth };
+        let node =
+            Node { parent: self.head, recipe: None, twist: Some(twist), exit: None, partial: None, digest, depth };
         let transaction = Transaction {
             kind: TransactionKind::JumbleMove,
             event,

@@ -126,6 +126,9 @@
 //!   `accepted` with no job. Without a view model both rows are `KN5:input.row_not_built`.
 //! - `layout.undo`, `layout.redo` and `explore.set` ([`layer`]; ADR-D01.14, ADR-D01.39; owner, 22 November 2026, item
 //!   4; draft): the layout history beside the move history, and the explore state that pauses every other commit row.
+//! - `session.undo.partial` ([`layer`]; ADR-D01.15; draft): a commit that steps back inside the head's journal entry
+//!   to one of its moves, journaled as a retained move that names the entry and the move
+//!   ([`CommandLayer::head_entry`] reads its target).
 //! - Every row this crate does not build yet is refused with `KN5:input.row_not_built`. The loop uses the operation
 //!   rows, which are kernel rows too.
 //! - The session's profile ([`Profile`]: `solving`, `tool_authoring` or `research`; BND.14, BND.15, BND.17, KN5.26):
@@ -587,7 +590,7 @@ pub use journal::{EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT, JOUR
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 pub use layer::{
     Caller, CommandLayer, Invocation, JobOutput, Preview, PreviewState, ProgramJob, EXPLORE_ROW, LAYOUT_REDO_ROW,
-    LAYOUT_UNDO_ROW, POLICY_ROW,
+    LAYOUT_UNDO_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
 };
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
