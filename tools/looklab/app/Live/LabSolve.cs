@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using Godot;
 using Magic600.Chrome;
@@ -31,6 +33,20 @@ internal sealed class LabSolve
         Draft.Changed += Stage;
         session.Preview.Changed += () => { if (staged && session.Preview.Pending == null) { staged = false; Draft.Clear(); } };
         session.Named = preview => preview.Source == "draft" ? ("hand", $"operation ({preview.Moves.Count} twists)") : null;
+        // A parameter of a staged draft belongs to one of its twists: the draft changes and stages itself again.
+        session.Reparam = (preview, index, value) =>
+        {
+            if (preview.Source != "draft") return false;
+            for (int phase = 0, seen = 0; phase < OperationDraft.Phases.Count; phase++)
+                for (int i = 0; i < Draft.Twists(phase).Count; i++)
+                {
+                    string twist = Draft.Twists(phase)[i]; IReadOnlyList<StatementParameter> own = InlineParameters.Find(twist);
+                    if (index >= seen + own.Count) { seen += own.Count; continue; }
+                    string[] twists = Draft.Twists(phase).ToArray(); twists[i] = InlineParameters.With(twist, own[index - seen], value);
+                    Draft.Edit(OperationDraft.Phases[phase] + ": " + string.Join("; ", twists)); return true;
+                }
+            return true;
+        };
         Draft.HeldCleared += () => { Rail!.Jump.Release(); Rail.Refresh(); };
         Draft.Changed += () => { LocalAnchors?.QueueRedraw(); };
         Demo = new SolvingDemo(OrbitAtlas.Parse(File.ReadAllText(Path.Combine(root, "assets/seed_atlas.json"))));

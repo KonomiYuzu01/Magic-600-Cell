@@ -45,6 +45,11 @@ public sealed partial class CommitBar : PanelContainer
     public HBoxContainer Tools { get; } = new();
     public string CommitKeys { get; set; } = "";
     public event Action<string, string?>? Command;
+    // Inline parameters (ADR-D01.11): the numbers of the staged statement, edited in place. The host rebuilds the
+    // preview when one changes; the bar never does.
+    public event Action<int, int>? Parameter;
+    public IReadOnlyList<StatementParameter> Parameters { get; private set; } = Array.Empty<StatementParameter>();
+    public HBoxContainer ParameterRow { get; private set; } = new();
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer row = new();
 
@@ -57,7 +62,7 @@ public sealed partial class CommitBar : PanelContainer
     public void Refresh()
     {
         if (!IsInstanceValid(this)) return;
-        ChromeWidgets.Detach(Tools); SessionWidgets.Clear(row); Scrub = null;
+        ChromeWidgets.Detach(Tools); SessionWidgets.Clear(row); Scrub = null; Parameters = Array.Empty<StatementParameter>(); ParameterRow = new HBoxContainer { Name = "InlineParameters" };
         TokenSet t = tokens();
         CustomMinimumSize = new Vector2(0, t.Px("bar.height"));
         row.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
@@ -76,6 +81,16 @@ public sealed partial class CommitBar : PanelContainer
             State = (Label)chip.GetChild(0);
             Label statement = ChromeWidgets.Text(p.Statement, "CodeLabel", true); statement.TooltipText = p.Statement;
             statement.SizeFlagsHorizontal = SizeFlags.ExpandFill; statement.SizeFlagsStretchRatio = 2; row.AddChild(statement);
+            Parameters = InlineParameters.Find(p.Statement); row.AddChild(ParameterRow);
+            for (int i = 0; i < Math.Min(Parameters.Count, InlineParameters.Shown); i++)
+            {
+                int index = i; StatementParameter q = Parameters[i];
+                var box = new SpinBox { Name = "Parameter" + i, MinValue = q.Min, MaxValue = q.Max, Step = 1, Value = q.Value, Prefix = q.Name, SizeFlagsVertical = SizeFlags.ShrinkCenter,
+                    TooltipText = $"{q.Name}: {q.Min} to {q.Max}. A change rebuilds the preview." };
+                box.ValueChanged += v => { if ((int)v != q.Value) Safe.Raise(Parameter, index, (int)v); };
+                ParameterRow.AddChild(box);
+            }
+            if (Parameters.Count > InlineParameters.Shown) ParameterRow.AddChild(ChromeWidgets.Text($"+{Parameters.Count - InlineParameters.Shown}", "DimLabel"));
             row.AddChild(ChromeWidgets.Text($"{p.Source} · {Model.Scrub}/{p.Moves.Count} moves · #{p.Id}", "DimLabel"));
             if (p.Moves.Count > 0)
             {

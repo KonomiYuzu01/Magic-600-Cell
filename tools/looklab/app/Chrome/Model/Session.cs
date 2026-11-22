@@ -200,3 +200,42 @@ public sealed class LayoutHistory
         return steps[to];
     }
 }
+
+// One number of a staged statement that the commit bar offers for editing in place (ADR-D01.11).
+public sealed record StatementParameter(string Name, int Value, int Start, int Length, int Min, int Max, bool Signed);
+
+// Inline parameters: the numbers of the staged statement, each named by the word before it; a bare signed
+// number is a count of turns. Text inside quotes is never a parameter. The ranges here are sample ranges.
+public static class InlineParameters
+{
+    public const int Shown = 4;
+    public const string Turns = "turns";
+    private static readonly System.Text.RegularExpressions.Regex Pattern = new(@"(?<![\w.])(?:(?<name>[a-z_]+) (?<value>\d+)|(?<signed>[+-]\d+))(?![\w.])", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private static (int Min, int Max) Range(string name) => name switch { "cell" => (0, 599), "axis" => (0, 5), "ring" => (0, 11), Turns => (-2, 2), _ => (0, 999) };
+
+    public static IReadOnlyList<StatementParameter> Find(string statement)
+    {
+        // Quoted text keeps its place and loses its content, so a file name never reads as a number.
+        char[] open = statement.ToCharArray(); bool quoted = false;
+        for (int i = 0; i < open.Length; i++) { if (open[i] == '"') { quoted = !quoted; continue; } if (quoted) open[i] = '_'; }
+        var found = new List<StatementParameter>();
+        foreach (System.Text.RegularExpressions.Match m in Pattern.Matches(new string(open)))
+        {
+            bool signed = m.Groups["signed"].Success; System.Text.RegularExpressions.Group value = signed ? m.Groups["signed"] : m.Groups["value"];
+            if (value.Length > 6) continue;
+            string name = signed ? Turns : m.Groups["name"].Value; (int min, int max) = Range(name);
+            found.Add(new StatementParameter(name, int.Parse(value.Value, System.Globalization.CultureInfo.InvariantCulture), value.Index, value.Length, min, max, signed));
+        }
+        return found;
+    }
+
+    // The statement with one parameter changed. The value stays inside the range; a count of turns is never zero.
+    public static string With(string statement, StatementParameter parameter, int value)
+    {
+        int to = Math.Clamp(value, parameter.Min, parameter.Max);
+        if (parameter.Signed && to == 0) to = parameter.Value > 0 ? -1 : 1;
+        string text = parameter.Signed && to > 0 ? "+" + to.ToString(System.Globalization.CultureInfo.InvariantCulture) : to.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return statement.Substring(0, parameter.Start) + text + statement.Substring(parameter.Start + parameter.Length);
+    }
+}

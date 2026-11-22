@@ -157,4 +157,27 @@ internal static partial class Program
         Check(one.SelectMany(r => r).SequenceEqual(two.SelectMany(r => r)), "a key changed meaning with nothing named");
         foreach (string role in new[] { "bound", "unbound", "held", "out_of_context", "twist" }) Check(Read("data/design/system.json").Contains("\"keymap.key." + role + "\"", StringComparison.Ordinal), "keymap.key." + role);
     }
+
+    // Inline parameters of the commit bar (ADR-D01.11): the numbers of the staged statement, edited in place.
+    private static void A5CommitBarInlineParameters()
+    {
+        var twist = InlineParameters.Find("preview twist(cell 402, axis 1, +1)");
+        Sequence(twist.Select(p => p.Name + "=" + p.Value), new[] { "cell=402", "axis=1", "turns=1" });
+        Check(twist[2].Signed && !twist[0].Signed && twist.All(p => p.Value >= p.Min && p.Value <= p.Max), "ranges");
+        // Quoted text is never a parameter, and a number inside a name is not one.
+        Sequence(InlineParameters.Find("preview run \"sweep 6.6cs\" on ring 4").Select(p => p.Name + "=" + p.Value), new[] { "ring=4" });
+        Check(InlineParameters.Find("preview my.swap2(o7)").Count == 0 && InlineParameters.Find("").Count == 0, "a number inside a name");
+        string s = "preview twist(cell 402, axis 1, +1)";
+        Check(InlineParameters.With(s, twist[0], 9) == "preview twist(cell 9, axis 1, +1)" && InlineParameters.With(s, twist[0], 5000) == "preview twist(cell 599, axis 1, +1)" && InlineParameters.With(s, twist[1], -3) == "preview twist(cell 402, axis 0, +1)", "a value left its range");
+        // A count of turns keeps its sign form and is never zero.
+        Check(InlineParameters.With(s, twist[2], 2) == "preview twist(cell 402, axis 1, +2)" && InlineParameters.With(s, twist[2], 0) == "preview twist(cell 402, axis 1, -1)" && InlineParameters.With(s, twist[2], -9) == "preview twist(cell 402, axis 1, -2)", "turns");
+        string back = InlineParameters.With(s, twist[2], 0); Check(InlineParameters.With(back, InlineParameters.Find(back)[2], 0).EndsWith("+1)", StringComparison.Ordinal), "turns from the other side");
+        // The staged draft's parameters come in the order of its twists.
+        var draft = new OperationDraft(); draft.Edit("prepare: twist(cell 5, axis 0, +1)"); draft.Edit("core: twist(cell 40, axis 2, -1); twist(cell 77, axis 3, +1)");
+        var all = InlineParameters.Find(draft.Statement);
+        Check(all.Count == 9 && all.Count == draft.Word.Sum(t => InlineParameters.Find(t).Count) && all[3].Value == 40 && all[8].Value == 1, "the draft's parameters");
+        // The bar offers them and asks the host; it rebuilds nothing itself.
+        string bar = File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/SessionPanels.cs"));
+        Check(bar.Contains("Safe.Raise(Parameter, index", StringComparison.Ordinal) && bar.Contains("InlineParameters.Find(p.Statement)", StringComparison.Ordinal), "the commit bar has no inline parameters");
+    }
 }

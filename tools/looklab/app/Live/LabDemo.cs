@@ -63,7 +63,7 @@ internal sealed class LabDemo
         Button stage = ChromeWidgets.Tool("Stage", "Stage the next sample preview"); stage.Name = "StageSample";
         stage.Pressed += () => run("operation.preview", null);
         Bar.Tools.AddChild(stage);
-        Bar.Command += run; History.Command += (command, argument) => { if (command == "layout.roll") Restore(Layout.RollTo(int.Parse(argument!, CultureInfo.InvariantCulture))); else run(command, argument); };
+        Bar.Command += run; Bar.Parameter += SetParameter; History.Command += (command, argument) => { if (command == "layout.roll") Restore(Layout.RollTo(int.Parse(argument!, CultureInfo.InvariantCulture))); else run(command, argument); };
         foreach ((string origin, string name, string time, int sample) in new[] { ("hand", "twist(cell 5, axis 0, +1)", "10:02", 2), ("macro", "my.corner_swap(cell 40)", "10:05", 0),
             ("script", "sweep.6cs on ring 1", "10:11", 1), ("hand", "twist(cell 77, axis 3, -1)", "10:12", 2), ("macro", "my.corner_swap(cell 117)", "10:20", 0) })
             Moves.Commit(origin, name, time, "commit " + name, origin == "hand" ? new[] { name } : Samples[sample].Moves);
@@ -126,7 +126,22 @@ internal sealed class LabDemo
         if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right);
     }
 
-    private Sample Of(Preview preview) => Samples.FirstOrDefault(s => preview.Statement.StartsWith(s.Statement, StringComparison.Ordinal)) ?? Samples[^1];
+    private (int Id, Sample Sample)? rebuilt;
+    // A host part that owns a preview's source rebuilds it itself and answers true.
+    public Func<Preview, int, int, bool>? Reparam { get; set; }
+    public const string NotEvaluated = " Parameters changed: the moves and effects are still the sample's (demo data).";
+    public void SetParameter(int index, int value)
+    {
+        if (Preview.Pending is not { } p) return;
+        IReadOnlyList<StatementParameter> all = InlineParameters.Find(p.Statement); if (index < 0 || index >= all.Count) return;
+        string to = InlineParameters.With(p.Statement, all[index], value); if (to == p.Statement) return;
+        if (Reparam?.Invoke(p, index, value) == true) return;
+        Sample from = Of(p);
+        Preview shown = Preview.Show(to, p.Source, p.Moves, p.Status, p.Reason, p.Effects, p.Protection.EndsWith(NotEvaluated, StringComparison.Ordinal) ? p.Protection : p.Protection + NotEvaluated, Clock());
+        rebuilt = (shown.Id, from); frame.Say($"Preview rebuilt: {all[index].Name} {InlineParameters.Find(to)[index].Value} (demo data: the moves are the sample's)");
+    }
+
+    private Sample Of(Preview preview) => rebuilt is { } r && r.Id == preview.Id ? r.Sample : Samples.FirstOrDefault(s => preview.Statement.StartsWith(s.Statement, StringComparison.Ordinal)) ?? Samples[^1];
 
     // A preview that is not one of the samples names its own history entry.
     public Func<Preview, (string Origin, string Name)?>? Named { get; set; }

@@ -1122,3 +1122,16 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
 - Tour stop 18 shows it pinned with the pointer over Local.
 - Not shown: the ordered marks that keycaps share with the Grip frame (no Grip frame is built), key sets per orbit
   (the presets are the two keymap files), and numpad or navigation keys.
+
+### A5 stage 10, point 5: inline parameters on the commit bar
+
+- What was left of the commit bar after the draft line: the scrub and the commit of a prefix were already there, so
+  this point adds inline parameters (ADR-D01.11). The numbers of the staged statement show as small number fields
+  on the bar, each named by the word before it (cell, axis, ring) or as turns for a signed count. Text in quotes is
+  never a parameter. A change rebuilds the preview under a new id, so the settle interval applies again.
+- The bar only asks: the host rebuilds. For a staged draft the changed number goes into the twist of the draft it
+  belongs to, and the draft line shows it. Up to four fields show; more are counted.
+- Demo data: the ranges (cell 0 to 599, axis 0 to 5, ring 0 to 11, turns -2 to 2), and after a change the moves and
+  the effects stay those of the sample, which the preview says.
+- Tour stop 18 shows a typed twist with its three fields.
+- Not shown: parameters that are not whole numbers, and a parameter of a macro's own definition.
