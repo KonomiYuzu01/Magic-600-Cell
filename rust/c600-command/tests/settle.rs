@@ -366,6 +366,51 @@ fn a_recording_never_replaces_a_preview() {
     assert_eq!(g.layer.preview().map(|p| (p.id, p.replaced)), Some((played, None)));
 }
 
+/// A recording does not end the solver's preview to prepare its own in the empty slot: a run inside a
+/// `recording.play` job that cancels a preview it did not ask for is refused with `not_granted`, and the preview stays.
+/// It may still cancel the preview its own run prepared.
+#[test]
+fn a_recording_never_ends_the_solvers_preview() {
+    let mut f = fixture();
+    let playback = f.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let mine = f.solver_preview(&[1]);
+    let cancel = json::object([("preview", Value::Int(mine as i64))]);
+    let refused = f.runtime(&playback, "operation.preview.cancel", cancel);
+    assert_eq!(code_of(&refused), Some(code::NOT_GRANTED), "{:?}", refused.status);
+    assert_eq!(f.layer.preview().map(|p| (p.id, p.state)), Some((mine, PreviewState::Ready)), "the preview stays");
+    let again = f.runtime(&playback, "operation.preview", draft_args(&word(&[2])));
+    assert_eq!(code_of(&again), Some(code::NOT_GRANTED), "{:?}", again.status);
+
+    let mut g = fixture();
+    let playback = g.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let played = g.run_preview(&playback, &[3]);
+    let cancel = json::object([("preview", Value::Int(played as i64))]);
+    let own = g.runtime(&playback, "operation.preview.cancel", cancel);
+    assert!(matches!(own.status, Status::Completed(_)), "its own preview: {:?}", own.status);
+    assert_eq!(g.layer.preview_state(played), Some(PreviewState::Cancelled));
+}
+
+/// The mark names a preview the solver was shown even when that presentation has lapsed before the replacement (a
+/// blank frame): the replacement still carries the mark and waits out the settle interval.
+#[test]
+fn a_lapsed_presentation_still_marks_the_replacement() {
+    let mut f = fixture();
+    let run = f.tool_run();
+    let mine = f.solver_preview(&[1]);
+    f.show(mine);
+    let blank = f.frames.other(None, FrameChain::BuiltIn);
+    assert!(f.shell.present(&mut f.layer, mine, &blank).is_err(), "the frame shows no preview");
+    assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Ready), "the presentation lapsed");
+
+    let theirs = f.run_preview(&run, &[2]);
+    assert_eq!(f.layer.preview().map(|p| (p.id, p.replaced)), Some((theirs, Some(mine))));
+    f.show(theirs);
+    assert_eq!(code_of(&f.chord()), Some(code::PREVIEW_SETTLING));
+    f.clock.advance(SETTLE_DRAFT.as_millis() as u64);
+    assert!(committed(&f.chord()));
+    assert_eq!(f.layer.revision().digest, end_of(&[2]));
+}
+
 /// ADR-D01.12's one-key press commits the solver's own macro while a replacement waits out its interval: it is the
 /// solver's own press on their own record, not the commit key on a preview they may not have seen.
 #[test]

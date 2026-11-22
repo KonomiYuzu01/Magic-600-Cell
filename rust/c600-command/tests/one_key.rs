@@ -223,14 +223,12 @@ fn the_press_replaces_the_pending_preview() {
     f.keep("own", &[1]);
     let shown = f.presented(&[5]);
     assert_eq!(f.layer.preview_state(shown), Some(PreviewState::Presented));
+    let stale = f.shell.prepare(&f.layer, "operation.execute", json::object([("preview", Value::Int(shown as i64))]));
     assert!(committed(&f.one_key("own")));
     assert_eq!(f.layer.preview_state(shown), Some(PreviewState::Replaced));
     let (order, digest) = (f.last_order(), f.digest());
-    assert!(f
-        .shell
-        .prepare(&f.layer, "operation.execute", json::object([("preview", Value::Int(shown as i64))]))
-        .map(|press| f.shell.send(&mut f.layer, press).status.code().is_some())
-        .unwrap_or(true));
+    let refused = f.shell.send(&mut f.layer, stale.unwrap());
+    assert_eq!(code_of(&refused), code::NO_FRESH_PREVIEW, "the replaced preview's press");
     f.unchanged(order, &digest);
     assert_eq!(f.digest(), reached(&[1]));
 }
@@ -256,9 +254,9 @@ fn a_failed_recheck_leaves_the_preview_pending() {
 }
 
 /// The token binds the press and the state and protection revisions (LI.6): a press raced by a commit or by a
-/// protection-policy change is `revision_changed`, and its preview, built at the head, stays pending and commits
-/// through `operation.execute` once the solver is shown it; an edited argument is `token_mismatch` and builds no
-/// preview, and a press sent again answers with its first receipt and commits nothing more.
+/// protection-policy change is `revision_changed` before it builds a preview, so the solver's pending preview stays and
+/// a fresh press commits; an edited argument is `token_mismatch` and builds no preview, and a press sent again answers
+/// with its first receipt and commits nothing more.
 #[test]
 fn the_token_binds_the_press_and_the_revisions() {
     let mut f = fixture(&[]);
@@ -270,9 +268,8 @@ fn the_token_binds_the_press_and_the_revisions() {
     let (order, digest) = (f.last_order(), f.digest());
     assert_eq!(code_of(&f.shell.send(&mut f.layer, raced)), code::REVISION_CHANGED);
     f.unchanged(order, &digest);
-    let pending = f.layer.preview().expect("the raced press's preview").id;
-    f.frames.present(&mut f.shell, &mut f.layer, pending).unwrap();
-    assert!(committed(&f.execute(pending)), "the pending preview commits once shown");
+    assert!(f.layer.preview().is_none(), "a raced press builds no preview");
+    assert!(committed(&f.one_key("own")), "a fresh press commits");
     let mut g = fixture(&[]);
     g.keep("w", &[4, 1, 2]);
     assert!(committed(&g.one_key("w")));
@@ -280,9 +277,11 @@ fn the_token_binds_the_press_and_the_revisions() {
 
     let raced = f.shell.prepare(&f.layer, ONE_KEY_ROW, own("own")).unwrap();
     f.strict();
+    let kept = f.presented(&[3]);
     let (order, digest) = (f.last_order(), f.digest());
     assert_eq!(code_of(&f.shell.send(&mut f.layer, raced)), code::REVISION_CHANGED);
     f.unchanged(order, &digest);
+    assert_eq!(f.layer.preview_state(kept), Some(PreviewState::Presented), "a stale press keeps the solver's preview");
 
     f.keep("other", &[3]);
     let held = f.layer.preview().map(|p| p.id);

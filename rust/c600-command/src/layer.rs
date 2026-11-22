@@ -306,6 +306,9 @@ pub struct Preview {
     /// and the commit waits out the settle interval once a frame shows this one. A preview that replaces an unseen
     /// replacement keeps its mark, since the solver has seen neither. `None` when it replaced nothing the solver saw.
     pub replaced: Option<u64>,
+    /// Whether a frame the layer read has presented it, even if that presentation has lapsed since (a blank frame or
+    /// [`CommandLayer::presentation_unavailable`]): a preview that replaces it takes its ID as the mark.
+    seen: bool,
 }
 
 fn rows_json(rows: &[SupportRow]) -> Value {
@@ -1583,13 +1586,15 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// The mark a preview built now takes from the pending one (ADR-D01.9): the pending preview's ID when the solver is
-    /// shown it, the mark it carries when it is an unseen replacement, and none otherwise.
+    /// The mark a preview built now takes from the pending one (ADR-D01.9): the pending preview's ID when a frame the
+    /// layer read has shown it, also when that presentation has lapsed since, the mark it carries when it is an unseen
+    /// replacement, and none otherwise. The host reports each frame before the input that follows it (RM.26), so a
+    /// preview on screen is one the layer has read.
     fn replacing(&self) -> Option<u64> {
         let pending = self.slot.as_ref()?;
-        match pending.state {
-            PreviewState::Presented => Some(pending.id),
-            _ => pending.replaced,
+        match pending.seen {
+            true => Some(pending.id),
+            false => pending.replaced,
         }
     }
 
@@ -1966,6 +1971,7 @@ impl<S: Store> CommandLayer<S> {
             return;
         };
         if frame.presents(&ShownPreview::of(p)) {
+            p.seen = true;
             if p.state == PreviewState::Ready {
                 p.state = PreviewState::Presented;
                 self.generation += 1;
@@ -2830,6 +2836,7 @@ impl<S: Store> CommandLayer<S> {
                     effect,
                     protection,
                     replaced: self.replacing(),
+                    seen: false,
                 };
                 let result = ResultRef { job: Some(id), digest: digest(&preview.summary()) };
                 if let Some(old) = self.slot.replace(preview) {
@@ -2861,6 +2868,17 @@ impl<S: Store> CommandLayer<S> {
                 code::PREVIEW_SHOWN,
                 format!("preview {id} is shown to the solver; only the solver ends it"),
             );
+        }
+        // A recording never replaces a preview (ADR-D01.9), so it does not end one first either: a run inside a
+        // `recording.play` job cancels only a preview its own run asked for.
+        if let Caller::Runtime { run } = caller {
+            let pending = self.slot.as_ref().filter(|p| p.id == id).map(|p| p.caller.scope());
+            let building = || self.jobs.iter().find(|job| job.id == id && job.previews()).map(|job| job.scope.clone());
+            let owner = pending.or_else(building);
+            if self.in_recording(run) && owner.is_some_and(|scope| scope != caller.scope()) {
+                let detail = format!("a recording never replaces a preview (ADR-D01.9): preview {id} is not its own");
+                return refused(code::NOT_GRANTED, detail);
+            }
         }
         let done = Completion { kind: CompletionKind::Workspace, revision: self.revision.clone(), result: None };
         if self.slot.as_ref().is_some_and(|p| p.id == id) {
@@ -3015,11 +3033,12 @@ impl<S: Store> CommandLayer<S> {
     /// solver's own macro. The draft is `{"record": name}` only (`KN5:input.argument_form` otherwise, before the token
     /// is spent), a record resolved now as `operation.preview` resolves one, so in a solving session the host's
     /// provenance reader admits it (KN5.26): no inline recipe, so no keymap a script supplies commits a word the solver
-    /// never kept. After the token, the commit lane, the binding and Jumble off, the record is resolved and its preview
-    /// built at the head, replacing the pending preview (ADR-D01.9); a draft that does not resolve, or a word the kernel
-    /// refuses, builds none. Then the preview is checked as `operation.execute` checks a presented one
-    /// ([`Self::recheck`]), after the token's state and protection revisions (LI.6), and committed with its preview's
-    /// ID. A failed recheck leaves the preview pending and uncommitted, for the solver to see. No run reaches it, since
+    /// never kept. After the token, the commit lane, the binding, Jumble off and the token's state and protection
+    /// revisions (LI.6), so that a stale press leaves the pending preview in place, the record is resolved and its
+    /// preview built at the head, replacing the pending preview (ADR-D01.9); a draft that does not resolve, or a word
+    /// the kernel refuses, builds none. Then the preview is checked as `operation.execute` checks a presented one
+    /// ([`Self::recheck`]) and committed with its preview's ID. A failed recheck leaves the preview pending and
+    /// uncommitted, for the solver to see. No run reaches it, since
     /// it is a commit row, and the explore state pauses it. A twist's one-key commit is `twist.apply`.
     fn one_key(
         &mut self,
@@ -3036,6 +3055,10 @@ impl<S: Store> CommandLayer<S> {
         self.commit_lane()?;
         self.bound(&binding, invocation)?;
         self.retained_mode()?;
+        // Before the build, so a stale press leaves the solver's pending preview in place.
+        if binding.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
+        }
         let resolved = self.resolve_record(&draft, &name)?;
         let recipe = self.kernel.word(&resolved.letters)?;
         let base = self.current.clone();
@@ -3058,14 +3081,12 @@ impl<S: Store> CommandLayer<S> {
             effect,
             protection,
             replaced: self.replacing(),
+            seen: false,
         };
         if let Some(old) = self.slot.replace(preview) {
             self.history.insert(old.id, PreviewState::Replaced);
         }
         self.generation += 1;
-        if binding.revision != Some((self.revision.state, self.revision.protection)) {
-            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
-        }
         let p = self.slot.as_ref().expect("the slot holds the preview just built");
         let end = self.recheck(p, None)?;
         let (recipe, literal) = (p.recipe.clone(), p.literal.clone());
