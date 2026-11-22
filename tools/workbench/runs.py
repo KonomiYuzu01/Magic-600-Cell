@@ -20,8 +20,8 @@ except ImportError:
     import paths
 
 CODEX_KINDS = ("plan", "review", "implement")
-CODEX_MODELS = ("gpt-6.1-sol", "gpt-6-astra")
-CODEX_EFFORTS = ("high", "max", "ultra")
+CODEX_MODELS = ("gpt-6.1-sol", "gpt-6-astra", "gpt-6.2-sol", "gpt-6.2-astra")
+CODEX_EFFORTS = ("high", "xhigh", "max", "ultra")
 CODEX_SPEEDS = ("standard", "fast")
 CODEX_MODEL_TIMEOUT = 3600
 CODEX_ACCEPTANCE_TIMEOUT = 1800

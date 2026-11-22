@@ -9,8 +9,8 @@ supersedes: []
 claims:
   - {id: harness-results, evidence_kind: fixture, path: work/experiments/codex-mcp-isolation/results/summary.json, sha256: 58057406e7649bc34a4ebd3897f0a32559e2d64e3ce535cd8ce6b30d2ce6e077, checked_at: 2026-10-20}
   - {id: harness-method, evidence_kind: fixture, path: work/experiments/codex-mcp-isolation/README.md, sha256: f7dc1f476fdef6d73ca0cc82674b8d691cbed2c1af05d66059aec14bb8832a09, checked_at: 2026-10-20}
-  - {id: wrapper-disables-features, evidence_kind: source, path: tools/agents/codex_review.py, line: 80, sha256: f588f94cf0ab9e8450f593f02c6a612143aca83bc22c90253d240d37b8647abb, checked_at: 2026-10-20}
-  - {id: tests-require-the-flags, evidence_kind: fixture, path: tests/test_codex_review.py, sha256: 8adf3edc2c184d0c18fbc959ce36ae390ec24ebd606a63ad113f6d99032937d9, checked_at: 2026-10-20}
+  - {id: wrapper-disables-features, evidence_kind: source, path: tools/agents/codex_review.py, line: 85, sha256: ce68ac8ba327fc5a7733f444ac8f7b81dabc97ab14d313a4d57867574faf68e3, checked_at: 2026-11-22}
+  - {id: tests-require-the-flags, evidence_kind: fixture, path: tests/test_codex_review.py, sha256: c7a122ec60bb73653d98b289e3cd5594de9d425ea73b3242802b7624094660ad, checked_at: 2026-11-22}
 ---
 
 # Codex MCP isolation
