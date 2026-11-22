@@ -30,14 +30,16 @@ internal static class LabFrame
         ("reference", "Reference", "Pinned references and nexus cards appear here."),
     };
 
-    // Installed packages are looked for in this checkout and, from a linked worktree, in its main checkout.
+    // Installed packages are looked for under tools/node of this checkout, of every folder above it (a copy of
+    // the tree exported inside another checkout) and, from a linked worktree, of its main checkout.
     public static string[] PackageFolders(string root)
     {
-        var folders = new System.Collections.Generic.List<string> { Path.Combine(root, "tools/node") };
+        var folders = new System.Collections.Generic.List<string>();
+        for (DirectoryInfo? at = new DirectoryInfo(Path.GetFullPath(root)); at != null; at = at.Parent) folders.Add(Path.Combine(at.FullName, "tools/node"));
         string link = Path.Combine(root, ".git");
         if (File.Exists(link))
         {
-            string text = File.ReadAllText(link).Trim(); int cut = text.Replace('\\', '/').IndexOf("/.git/worktrees/", StringComparison.Ordinal);
+            string text = File.ReadAllText(link).Trim().Replace((char)92, '/'); int cut = text.IndexOf("/.git/worktrees/", StringComparison.Ordinal);
             if (text.StartsWith("gitdir: ", StringComparison.Ordinal) && cut > 8) folders.Add(Path.Combine(text.Substring(8, cut - 8), "tools/node"));
         }
         return folders.ToArray();
