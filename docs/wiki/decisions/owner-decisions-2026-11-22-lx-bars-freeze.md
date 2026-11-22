@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-22-lx-bars-freeze
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 22 November 2026 after the C9 sitting, all on the integrator's recommended option - LX-2's and LX-4's latency bars move to 100 ms, LX-4 counts a sample without a confirmed frame as E2 counts a key and cites U4's W3 summary as its gate reference, alloc_metered's kernel_cost limit end counts, the renderer gate is not required in the fault windows where the runtime is lost, alloc_ceiling's 84 echo samples are accepted, LP3 and LP2 exit on their existing candidates with no new sitting, kernel_cost stays 2^40, LP2's exit readings take their recommended options, and the product hosts keep no per-operation job rows.
+summary: Owner answers of 22 November 2026 after the C9 sitting, all on the integrator's recommended option - LX-2's and LX-4's latency bars move to 100 ms, LX-4 counts a sample without a confirmed frame as E2 counts a key and cites U4's W3 summary as its gate reference, alloc_metered's kernel_cost limit end counts, the renderer gate is not required in the fault windows where the runtime is lost, alloc_ceiling's 84 echo samples are accepted, LP3 and LP2 exit on their existing candidates with no new sitting, kernel_cost stays 2^40, LP2's exit readings take their recommended options, and the product hosts keep no per-operation job rows; after the re-analysis, a sample without a confirmed frame is counted apart as a known limit (the confirmation gap) and the bars are judged on confirmed samples, so LQ9 does not reopen.
 related: [owner-decisions-2026-11-21-ceilings-e3, owner-decisions-2026-11-20-lp3-exit, owner-decisions-2026-11-16-time-saving, owner-decisions-2026-11-14-language-route, c9-sitting-results]
 supersedes: []
 claims:
@@ -16,6 +16,7 @@ claims:
   - {id: kernel-cost-kept, evidence_kind: decision, checked_at: 2026-11-22}
   - {id: lp2-exit-readings, evidence_kind: decision, checked_at: 2026-11-22}
   - {id: product-hosts-no-job-rows, evidence_kind: decision, checked_at: 2026-11-22}
+  - {id: lx-confirmation-gap-apart, evidence_kind: decision, checked_at: 2026-11-22}
 ---
 
 # Owner decision, 22 November 2026: LX bars at 100 ms and the exits on the existing candidates
@@ -47,7 +48,8 @@ answers in English. It edits no frozen text and accepts no ADR.
    is unchanged.
 2. **LX-4's counting and gate reference (R2).**
    - A sample without a confirmed frame counts as one failed sample, and the run stays valid. This is the rule that
-     charter E2 uses for a key without a confirmed frame (owner, 20 November 2026, item 2).
+     charter E2 uses for a key without a confirmed frame (owner, 20 November 2026, item 2). Item 10 replaced this
+     point after the re-analysis.
    - U8's LX-4 runs may cite U4's W3 summary as their renderer gate reference. It comes from the same build on the
      same night, and it was met. This answers the open item in
      [owner-decisions-2026-11-21-ceilings-e3](owner-decisions-2026-11-21-ceilings-e3.md) ("What follows").
@@ -100,16 +102,42 @@ answers in English. It edits no frozen text and accepts no ADR.
    recommended option. The tool's two product hosts, the process host (`job_under`) and the in-process host (`run_under`),
    keep no per-operation rows (`record: false`). The counters and stops of the run stay. Pull request 404 makes the change.
 
+10. **Samples without a confirmed frame (answered after the re-analysis).** The C9 tools analysed U7 and U8 again
+    under items 1 to 5 (pull request 411). Every timed p95 and p99 was within 100 ms. LX-2 and LX-4 still read not met,
+    only because some samples had no confirmed frame: the frame was drawn, but the core received no confirmation that
+    it was displayed.
+    - LX-4: 16 of 10,800 samples. Counted as E2 counts them, they put two cells' p99 on a failed sample: Jumble on,
+      series 1, syntax at S; and Jumble off, series 2, syntax at L.
+    - LX-2's echo: 8 of 110 samples in forced_kill, 26 of 110 in alloc_ceiling and 13 of 201 in loop_native, all
+      faults that lose the runtime; and 1 of 212 in recursion_metered.
+
+    The integrator offered three options:
+    1. count these samples apart;
+    2. count them as E2 does, so that LQ9 reopens;
+    3. fix the gap and run U7 and U8 again.
+
+    The owner chose option 1:
+    - In LX-2 and LX-4, a sample without a confirmed frame is counted apart. It is published as a known limit, the
+      confirmation gap, with its count per fault, cell and run. The latency bars are judged on the samples that have
+      a confirmed frame. This replaces item 2's first point and also applies to LX-2's echo bar.
+    - The gap does not reopen LQ9, and RT1 stays. The integrator's reading, an inference, is that the gap lies in the
+      display confirmation path and not in the route. It also appears with no fault and no program running: 1 of 602
+      keys in U8 and 77 of 32,254 UI frames in U3.
+    - The cost is on record: in alloc_ceiling about a quarter of the echo samples are not judged.
+    - Closing the gap is product work after the freeze, together with the stutter fix (item 4).
+    - Charter E2 keeps its own rule: a key without a confirmed frame counts as a failed key.
+
 ## What follows
 
-- The C9 tools take items 1 to 5, and the recorded U7 and U8 data is analysed again:
+- The C9 tools take items 1 to 5 and item 10, and the recorded U7 and U8 data is analysed again:
   - `lx2.py` and `lx4.py` use the 100 ms bars;
-  - `lx4.py` uses E2's counting and U4's W3 summary;
+  - `lx4.py` uses U4's W3 summary;
+  - both count samples without a confirmed frame apart (item 10);
   - `lx2.py` adds the kernel_cost limit end and drops the gate inside the four faults' windows.
 
-  The results page is updated. If a 100 ms bar is still missed, LX-2 or LX-4 fails, LQ9 reopens (RTE.21) and the
-  numbers go to the owner.
-- Chapter 11's RTE.42, RTE.49 and RTE.53 receive a PHS.52 amendment that cites this page, with the format packet's
+  The results page is updated. If a 100 ms bar is still missed on the confirmed samples, LX-2 or LX-4 fails, LQ9
+  reopens (RTE.21) and the numbers go to the owner.
+- Chapter 11's RTE.42, RTE.49 and RTE.53 receive a PHS.52 amendment that cites this page, item 10 included, with the format packet's
   pin refresh (FP.1) if the chapter is pinned.
 - The LP2 line writes LP2's exit record on `0260e6b1` with the index changes of item 8.
 - LP3 checks C10's list on `013900ff` and prepares C10's sign-off.

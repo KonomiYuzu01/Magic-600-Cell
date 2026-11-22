@@ -211,6 +211,25 @@ class CodexReviewTests(unittest.TestCase):
         self.assertEqual(entry["requested"]["model"], "gpt-6-astra")
         self.assertIsNone(entry["gate"])
 
+    def test_6_2_models_use_the_owners_default_efforts(self):
+        cases = [(["--model", "gpt-6.2-astra"], "gpt-6.2-astra", "xhigh"),
+                 (["--model", "gpt-6.2-sol"], "gpt-6.2-sol", "max"),
+                 (["--model", "gpt-6.2-astra", "--effort", "max"], "gpt-6.2-astra", "max"),
+                 (["--model", "gpt-6-astra"], "gpt-6-astra", "max")]
+        for extra, model, effort in cases:
+            with self.subTest(extra=extra):
+                code, _ = self.run_wrapper("pass", *extra)
+                self.assertEqual(code, 0)
+                entry = self.last_ledger()
+                self.assertEqual(entry["requested"]["model"], model)
+                self.assertEqual(entry["requested"]["effort"], effort)
+                self.assertEqual(entry["resolved"]["effort"], effort)
+
+    def test_gates_stay_on_gpt_6_astra(self):
+        code, err = self.run_wrapper("pass", "--model", "gpt-6.2-astra", "--effort", "ultra", "--gate", "architecture-freeze")
+        self.assertEqual(code, 2)
+        self.assertIn("refused", err)
+
     def test_policy_refusals_are_not_ledgered_as_model_calls(self):
         code, _ = self.run_wrapper("pass", "--gate", "day7-go-no-go", "--effort", "ultra")  # gate without Astra
         self.assertEqual(code, 2)
