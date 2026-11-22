@@ -464,12 +464,15 @@ LQ9 selected RT1 (RTE.21). Sections 3 to 5 record the alternatives and bind noth
   frame, with an existing session and runtime loaded, in each of three cold runs, within charter E3's proposed 3 s.
   E3 remains a proposal until the owner sets it. This rule feeds LQ9.
   Amended under PHS.52 after LP3's C9 sitting (owner,
-  [22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1 and 4): in
-  condition 3 the LX-4 echo bar is 100 ms at p95 and at p99 (RTE.49 as amended). The renderer gate is not required
-  inside the fault windows of the four faults in which the runtime process dies and is restarted (in the C9 records:
+  [22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1, 4 and 10):
+  in condition 3 the LX-4 echo bar is 100 ms at p95 and at p99 (RTE.49 as amended). An echo sample without a
+  confirmed frame is counted apart and published as a known limit, the confirmation gap, with its count per fault and
+  run; the echo bar is judged on the samples that have a confirmed frame. The renderer gate is not required inside
+  the fault windows of the four faults in which the runtime process dies and is restarted (in the C9 records:
   `forced_kill`, `alloc_ceiling`, `recursion_native` and `loop_native`); the gate's figures there are recorded as a
   known limit. In those windows the echo bar and conditions 1, 2 and 4 still apply. The gate still applies in the
-  faults that the meter stops and everywhere outside fault windows.
+  faults that the meter stops and everywhere outside fault windows. Charter E2 in condition 4 keeps its own rule: a
+  key without a confirmed frame counts as one failed key.
 - **RTE.43 [D]** "Unchanged" in KN7.13 concerns the fault's effect, not the absence of legitimate solver commits
   during the test (ONE.70, DET.43). RTE.42 therefore compares the same command sequence with and without the fault.
   Each durable receipt still means committed. Charter E2 uses the full key-to-first-correct-frame interval; LP3
@@ -598,11 +601,12 @@ LQ9 selected RT1 (RTE.21). Sections 3 to 5 record the alternatives and bind noth
   run miss the gate or E2, the route fails at any size. No bar is relaxed without the owner. This rule feeds LQ9;
   an L-only miss is reported under the specific escalation sentence and cannot be called an all-bars pass.
   Amended under PHS.52 after LP3's C9 sitting (owner,
-  [22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1 and 2): the
-  bars are RTE.49's as amended. A sample without a confirmed frame counts as one failed sample, and its run stays
-  valid, as charter E2 counts a key without a confirmed frame (owner, 20 November 2026, item 2). The renderer gate's
-  reference for these runs may be a met W3 summary of the same build from the same night, in place of a gate result
-  from the same runs. Charter E2 still holds in the same runs.
+  [22 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), items 1, 2 and 10):
+  the bars are RTE.49's as amended. A sample without a confirmed frame is counted apart and published as a known
+  limit, the confirmation gap, with its count per cell and run; the bars are judged on the samples that have a
+  confirmed frame. The renderer gate's reference for these runs may be a met W3 summary of the same build from the
+  same night, in place of a gate result from the same runs. Charter E2 still holds in the same runs and keeps its own
+  rule: a key without a confirmed frame counts as one failed key (owner, 20 November 2026, item 2).
 
 ## 17. LX-5: exact arithmetic
 
