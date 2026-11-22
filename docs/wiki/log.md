@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] decision | Samples without a confirmed frame in LX-2 and LX-4
+After the re-analysis of U7 and U8 found every timed p95 and p99 within 100 ms, the owner chose to count samples without a confirmed frame apart, as a published known limit (the confirmation gap), and to judge the LX bars on confirmed samples, so LQ9 does not reopen and RT1 stays; the gap is closed after the freeze ([record](decisions/owner-decisions-2026-11-22-lx-bars-freeze.md), item 10).
+
 ## [2026-11-22] decision | ADR-D01 and the frozen clauses
 The owner decided that LP3 freezes without waiting for the design-system ADR, that ADR-D01 (revision 3, content approved, still a draft until A7) wins over the frozen clauses it conflicts with without a versioned-change review, and that its command-table rows come after the freeze: view and workspace rows as ordinary edits, commit rows as separate work with KN5 boundary attack tests ([record](decisions/owner-decisions-2026-11-22-adr-d01-overrules.md)).
 
