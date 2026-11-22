@@ -36,11 +36,35 @@ public sealed partial class Readout : PanelContainer
     private readonly Label value = new() { ThemeTypeVariation = "ReadoutLabel", VerticalAlignment = VerticalAlignment.Center };
     private readonly string glyph; private readonly Func<TokenSet> tokens;
     public string Value => value.Text;
+    // The expanded state: a click (or Expand) opens a second line of words beside the value.
+    private readonly Label detail = new() { ThemeTypeVariation = "DimLabel", VerticalAlignment = VerticalAlignment.Center, Visible = false };
+    private readonly Control lamp = new() { MouseFilter = MouseFilterEnum.Ignore };
+    private readonly string about;
+    public LampState Lamp { get; private set; }
+    public bool Expanded => detail.Visible;
+    public string Detail => detail.Text;
+    public void Expand(bool open) { detail.Visible = open && detail.Text.Length > 0; }
+    public void Show(ReadoutFact fact)
+    {
+        Set(fact.Value); if (detail.Text != fact.Detail) detail.Text = fact.Detail;
+        string tip = $"{about}\n{fact.Detail}\nLamp: {fact.LampSays}. Click to open or close the detail."; if (TooltipText != tip) TooltipText = tip;
+        if (Lamp != fact.Lamp) { Lamp = fact.Lamp; lamp.QueueRedraw(); }
+    }
+    // The lamp is told apart by shape: a ring when idle, filled when active, filled inside a ring for attention.
+    private void DrawLamp()
+    {
+        TokenSet t = tokens(); Vector2 c = lamp.Size / 2; float r = Math.Min(lamp.Size.X, lamp.Size.Y) * .3f;
+        if (Lamp == LampState.Idle) { lamp.DrawArc(c, r, 0, Mathf.Tau, 16, t.C("lamp.idle"), 1, true); return; }
+        Color lit = t.C(Lamp == LampState.Active ? "lamp.active" : "lamp.attention"); lamp.DrawCircle(c, r * (Lamp == LampState.Active ? 1 : .6f), lit);
+        if (Lamp == LampState.Attention) lamp.DrawArc(c, r * 1.25f, 0, Mathf.Tau, 16, lit, 1, true);
+    }
 
     public Readout(string name, string glyph, string tooltip, Func<TokenSet> tokens)
     {
-        Name = name; this.glyph = glyph; this.tokens = tokens; ThemeTypeVariation = "ReadoutCell"; TooltipText = tooltip; SizeFlagsVertical = SizeFlags.ShrinkCenter;
-        var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; AddChild(row); row.AddChild(icon); row.AddChild(value);
+        Name = name; this.glyph = glyph; this.tokens = tokens; about = tooltip; ThemeTypeVariation = "ReadoutCell"; TooltipText = tooltip; SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        var row = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; AddChild(row); lamp.CustomMinimumSize = new Vector2(12, 12); lamp.Draw += DrawLamp;
+        row.AddChild(lamp); row.AddChild(icon); row.AddChild(value); row.AddChild(detail);
+        MouseDefaultCursorShape = CursorShape.PointingHand; GuiInput += e => { if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Expand(!Expanded); };
         Dress();
     }
     public void Dress() => ChromeIcons.Apply(icon, glyph, tokens().Px("icon.small"));

@@ -133,6 +133,8 @@ public sealed partial class ChromeFrame : Control
     private string? focusedContext;
     // In-window overlays (palette, shortcut sheet, radial menus) live above the frame and survive its rebuilds.
     public Control Overlays { get; } = new() { Name = "Overlays", MouseFilter = MouseFilterEnum.Ignore };
+    // The state of each dock panel: empty, loading, error, stale or busy (ADR-D01.33).
+    public PanelStates PanelStates { get; } = new();
     private Keymap? keys;
     public Keymap? Keys { get => keys; set { keys = value; dirty = true; } }
     public ChromeOverlay? OpenOverlay => Overlays.GetChildren().OfType<ChromeOverlay>().LastOrDefault(o => o.IsOpen);
@@ -185,7 +187,7 @@ public sealed partial class ChromeFrame : Control
     {
         content.SizeFlagsVertical = SizeFlags.ExpandFill; content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         int at = dockPanels.FindIndex(p => p.Id == id); Control old;
-        if (at >= 0) { old = dockPanels[at].Content; dockPanels[at] = dockPanels[at] with { Content = content }; }
+        if (at >= 0) { old = dockPanels[at].Content; dockPanels[at] = dockPanels[at] with { Content = new PanelStateBox(id, content, PanelStates, () => Tokens) }; }
         else if (panes.TryGetValue(id, out Pane? pane)) { old = pane.Content; panes[id] = pane with { Content = content }; }
         else throw new ArgumentException("no panel or pane is named " + id);
         ChromeWidgets.Detach(old); old.QueueFree(); dirty = true;
@@ -207,7 +209,7 @@ public sealed partial class ChromeFrame : Control
     {
         Model.AddDockPanel(side, id);
         content.SizeFlagsVertical = SizeFlags.ExpandFill; content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        dockPanels.Add(new DockPanel(side, id, title, glyph, content)); dirty = true;
+        dockPanels.Add(new DockPanel(side, id, title, glyph, new PanelStateBox(id, content, PanelStates, () => Tokens))); dirty = true;
     }
 
     public IReadOnlyList<string> PaneIds => panes.Keys.ToArray();

@@ -248,4 +248,50 @@ internal static partial class Program
         Check(registry.Commands.ContainsKey("session.branch.select") && lab.Contains("if (!confirmed) {", StringComparison.Ordinal), "the branch switch has no command or no gate");
         Check(System.Text.RegularExpressions.Regex.Matches(panel, "Send\\(\"session.branch.select\"").Count == 1 && panel.Contains("\"confirm \" + at", StringComparison.Ordinal), "the panel switches without the confirm gate");
     }
+
+    // Stage 10 points 9 to 11: palette aliases and typed arguments, readout facts with lamps, the five panel states.
+    private static void A5PaletteReadoutsAndPanelStates()
+    {
+        CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        Keymap keys = Keymap.Parse(Read("data/design/keymap.json"), registry);
+        var palette = new PaletteModel(registry, keys, (_, _) => null);
+        string[] order = palette.Rows("").Select(r => r.Id).ToArray();
+        PaletteRow target = palette.Rows("").First(r => r.Command == "target.current.set"), undo = palette.Rows("").First(r => r.Command == "session.undo");
+        // An alias is found by a query, shows on its row and never reorders the rows.
+        palette.Alias(target, "  zqaim | here\n"); Check(palette.Rows("zqaim").Single().Id == target.Id && palette.Rows("zqaim")[0].Alias == "zqaim   here" && palette.Rows("").Select(r => r.Id).SequenceEqual(order), "the alias");
+        palette.Alias(undo, "zqback"); palette.Pin(undo, true);
+        // Pins and aliases are kept and restored; an empty alias takes it away.
+        var again = new PaletteModel(registry, keys, (_, _) => null); again.Restore(palette.Store());
+        Check(again.Rows("zqback").Single().Pinned && again.Rows("zqaim").Single().Id == target.Id && again.Rows("")[0].Id == undo.Id && again.Store() == palette.Store(), "pins and aliases were not kept");
+        again.Alias(target, " "); Check(again.Rows("zqaim").Count == 0 && !again.Store().Contains("zqaim", StringComparison.Ordinal), "an empty alias stayed");
+        Refuse(() => again.Restore("alias|target.current.set||"), "unreadable");
+        // Typed mode: a command with an argument of the solver's own is a row; an unknown command is none.
+        PaletteRow? typed = palette.Typed("orbit.switch", "O05");
+        Check(typed != null && typed.Command == "orbit.switch" && typed.Argument == "O05" && typed.Label.EndsWith(": O05", StringComparison.Ordinal) && palette.Typed("no.such.command", "x") == null, "typed mode");
+        string overlay = File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/CommandPalette.cs"));
+        foreach (string part in new[] { "MenuPin", "MenuAlias", "MenuBind", "Godot.Key.Menu", "MouseButton.Right" }) Check(overlay.Contains(part, StringComparison.Ordinal), "the row menu lost " + part);
+
+        // Readouts: the value, the expanded line and the lamp follow the history.
+        var h = new MoveHistory(); h.Commit("hand", "a", "10:00", "commit a", new[] { "x", "y", "z" }); h.Commit("hand", "b", "10:01", "commit b", new[] { "x" });
+        ReadoutFact revision = HistoryReadouts.Revision(h, 1200), position = HistoryReadouts.Position(h);
+        Check(revision.Value == "r 1202" && revision.Lamp == LampState.Idle && revision.Detail == "head t-0002, whole" && position.Value == "2/2" && position.Lamp == LampState.Idle && position.Detail == "2 applied of 2 kept, 0 branches", revision.Detail + " / " + position.Detail);
+        h.Undo(); h.StepBack(); revision = HistoryReadouts.Revision(h, 1200); position = HistoryReadouts.Position(h);
+        Check(revision.Value == "r 1201" && revision.Lamp == LampState.Attention && revision.Detail == "head t-0001, 1 of its 3 moves undone" && position.Value == "1/2" && position.Lamp == LampState.Active, revision.Detail);
+        Check(HistoryReadouts.Queue(0).Lamp == LampState.Idle && HistoryReadouts.Queue(2).Lamp == LampState.Active && HistoryReadouts.Queue(2).Value == "2", "the queue readout");
+        foreach (ReadoutFact fact in new[] { revision, position, HistoryReadouts.Queue(0), HistoryReadouts.Queue(1) }) Check(fact.LampSays.Length > 8 && fact.Detail.Length > 8, "a lamp without words");
+
+        // Panel states: five besides ready, each with a reason; three take the content's place, two keep it.
+        var states = new PanelStates(); int changes = 0; states.Changed += () => changes++; states.Register("history"); states.Register("look");
+        Check(PanelStates.Five.Count == 5 && PanelStates.Five.Distinct().Count() == 5 && !PanelStates.Five.Contains(PanelCondition.Ready) && states.Of("history").Condition == PanelCondition.Ready, "the five states");
+        Sequence(PanelStates.Five.Where(PanelStates.HidesContent), new[] { PanelCondition.Empty, PanelCondition.Loading, PanelCondition.Error });
+        Check(PanelStates.Action(PanelCondition.Error) == "retry" && PanelStates.Action(PanelCondition.Stale) == "refresh" && PanelStates.Action(PanelCondition.Busy) == null, "what a panel offers");
+        Refuse(() => states.Set("history", PanelCondition.Error, " "), "says why");
+        states.Set("history", PanelCondition.Error, "the file is missing"); states.Set("look", PanelCondition.Stale, "older than r 1202");
+        Check(states.Of("history") == new PanelState(PanelCondition.Error, "the file is missing") && states.Of("look").Condition == PanelCondition.Stale && states.Of("other").Condition == PanelCondition.Ready && changes == 2, "set");
+        string? asked = null; states.Asked += (id, action) => asked = id + ":" + action; states.Ask("history", "retry");
+        states.Set("history", PanelCondition.Ready); states.Clear(); states.Clear();
+        Check(asked == "history:retry" && states.Of("look").Condition == PanelCondition.Ready && changes == 4 && states.Known.SequenceEqual(new[] { "history", "look" }), "ask and clear");
+        string box = File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/PanelStateBox.cs"));
+        foreach (PanelCondition c in PanelStates.Five) Check(box.Contains("case PanelCondition." + c + ":", StringComparison.Ordinal), c + " has no glyph");
+    }
 }

@@ -172,7 +172,7 @@ internal static class LabFrame
         // The key map: shown while the help key is held, pinned by a short press or by this button.
         var keys = new KeyMapPanel(frame, registry); frame.Overlays.AddChild(keys); keys.List += sheet.Open; KeyMaps.Add(frame, keys);
         foreach ((string key, string label) in new[] { ("O", "Orbit jump: hold, then two digits"), ("F4", "Command bar"), ("F7", "Compare"), ("F8", "Compare"), ("F9", "Tour: next stop"), ("F10", "Inactive cells"),
-            ("F11", "Next demo state"), ("6", "Pick layer"), ("7", "Pick layer"), ("8", "Pick layer"), ("9", "Pick layer"), ("0", "Pick layer") }) keys.Host[key] = label;
+            ("F11", "Next demo state"), ("F12", "Panel states (demo)"), ("6", "Pick layer"), ("7", "Pick layer"), ("8", "Pick layer"), ("9", "Pick layer"), ("0", "Pick layer") }) keys.Host[key] = label;
         find.Pressed += palette.Open; help.Pressed += () => keys.Shown.Pin(!keys.Shown.Pinned);
         frame.BarTools.AddChild(find); frame.BarTools.AddChild(help);
         string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
@@ -215,6 +215,23 @@ internal static class LabFrame
             }
         }
         palette.Run += row => Execute(row.Command, row.Argument);
+        palette.Bind += row => scripts.Capture(row.Command);
+        // The five panel states, on every dock panel at once: demo states, said so in their words.
+        (PanelCondition Condition, string Text)[] demoStates =
+        {
+            (PanelCondition.Empty, "Nothing is here yet (demo state)"), (PanelCondition.Loading, "Reading the session (demo state)"),
+            (PanelCondition.Error, "The file could not be read (demo state)"), (PanelCondition.Stale, "Older than the committed state (demo state)"), (PanelCondition.Busy, "A run is working here (demo state)"),
+        };
+        int demoState = -1;
+        void ShowPanelState(int index)
+        {
+            demoState = index;
+            if (index < 0 || index >= demoStates.Length) { demoState = -1; frame.PanelStates.Clear(); frame.Say("Panels: ready"); return; }
+            foreach (string id in frame.PanelStates.Known.ToArray()) frame.PanelStates.Set(id, demoStates[index].Condition, demoStates[index].Text);
+            frame.Say($"Panels: {PanelStates.Word(demoStates[index].Condition).ToLowerInvariant()} (demo state, F12 for the next)");
+        }
+        frame.HostKeys["F12"] = () => ShowPanelState(demoState + 1);
+        frame.PanelStates.Asked += (id, action) => { frame.PanelStates.Set(id, PanelCondition.Ready); frame.Say($"{id}: {action} asked (demo state cleared)"); };
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap; frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
         // The sample session: commit bar under the views, the preview view and the History dock.
@@ -263,7 +280,7 @@ internal static class LabFrame
         {
             if (!GodotObject.IsInstanceValid(revision)) return;
             var plain = System.Globalization.CultureInfo.InvariantCulture;
-            revision.Set("r " + (1200 + demo.Moves.Cursor).ToString("0000", plain)); position.Set($"{demo.Moves.Cursor}/{demo.Moves.Entries.Count}"); waiting.Set(scripts.Queue.Active.Count().ToString(plain));
+            revision.Show(HistoryReadouts.Revision(demo.Moves, 1200)); position.Show(HistoryReadouts.Position(demo.Moves)); waiting.Show(HistoryReadouts.Queue(scripts.Queue.Active.Count()));
         }
         var clock = new Godot.Timer { WaitTime = .25, Autostart = true }; clock.Timeout += Readouts; frame.AddChild(clock);
         frame.Rebuilt += () => { foreach (Readout cell in new[] { revision, position, waiting }) if (GodotObject.IsInstanceValid(cell)) cell.Dress(); };
@@ -320,7 +337,7 @@ internal static class LabFrame
         frame.HostKeys["F4"] = () => Execute("script.bar", null);
         // The tour key steps through the screens this showing changed.
         int tour = 0;
-        void Home() { frame.SelectWorkspace(frame.Workspaces.Order[0]); }
+        void Home() { frame.SelectWorkspace(frame.Workspaces.Order[0]); if (demoState >= 0) ShowPanelState(-1); foreach (Readout cell in new[] { revision, position, waiting }) cell.Expand(false); }
         void Preset(string theme, string scene, bool contrast = false) => appearance.Edit(x => { x.SetTheme(theme); x.SetSceneLook(scene); x.HighContrast = contrast; }, true, true);
         void Page(string page) { frame.SelectWorkspace(GalleryPane); gallery.ShowPage(page); }
         string dark = themes[0].Id, light = themes[^1].Id;
@@ -347,6 +364,10 @@ internal static class LabFrame
             ("History in full: a partial undo inside an entry, and a kept branch with Replay and Switch (Switch waits while an entry is partly undone, and asks first)", () => { Home(); solve.Draft.Clear(); demo.Preview.Discard();
                 if (demo.Moves.Branches.Count == 0) { demo.Moves.RollTo(Math.Max(0, demo.Moves.Entries.Count - 1)); demo.CommitDirect("twist(cell 7, axis 1, +1)"); }
                 demo.History.Show(false); demo.History.Ask(-1); demo.Moves.RollTo(Math.Min(3, demo.Moves.Entries.Count)); demo.Moves.StepBack(); demo.Moves.StepBack(); }),
+            ("top bar readouts opened, with lamps: the history is behind its newest entry and one entry is partly undone", () => { Home(); demo.Preview.Discard(); demo.Moves.RollTo(Math.Min(3, demo.Moves.Entries.Count)); demo.Moves.StepBack();
+                Readouts(); foreach (Readout cell in new[] { revision, position, waiting }) cell.Expand(true); }),
+            ("panel states: the docks are stale, with the word, the glyph, the reason and Refresh (F12 steps through all five)", () => { Home(); demo.Moves.RollTo(demo.Moves.Entries.Count); ShowPanelState(3); }),
+            ("the palette row menu: pin, alias and bind, and a row found by its alias", () => { Home(); palette.Open(); palette.Type("target"); palette.Model.Alias(palette.Rows[0], "aim"); palette.Type("aim"); palette.OpenMenu(0); }),
             ("inline parameters on the commit bar: the numbers of the staged statement, edited in place", () => { Home(); solve.Draft.Clear(); demo.Moves.RollTo(demo.Moves.Entries.Count); demo.History.Ask(-1); demo.Stage(2); demo.SetParameter(1, 3); }),
             ("the key map, pinned: what each key does with the pointer over Local, and the active key set", () => { Home(); solve.Demo.Show("mid"); solve.Rail.Expand(null); solve.Draft.Clear(); keys.ContextsOverride = new[] { "local-view", "global" }; keys.Shown.Pin(true); }),
             ("the strip and the rail at the last buffer of the endgame", () => { Home(); keys.ContextsOverride = null; keys.Shown.Pin(false); solve.Demo.Show("endgame"); solve.Rail.Expand(null); }),

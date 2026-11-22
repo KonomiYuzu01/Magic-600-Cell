@@ -152,6 +152,8 @@ public sealed class Keymap
 public sealed record PaletteRow(string Command, string? Argument, string Label, string Location, string Keys, string? Unavailable, string Help, bool Pinned)
 {
     public string Id => Command + "|" + (Argument ?? "");
+    // The solver's own second name for the row; a query matches it too.
+    public string? Alias { get; init; }
 }
 
 // The palette's rows (ADR-D01.18). A query only filters; the order comes from the solver's own pins, recency
@@ -165,6 +167,7 @@ public sealed class PaletteModel
     private readonly Func<string, string?, string?> unavailable;
     private readonly Dictionary<string, (int Count, long Last)> uses = new(StringComparer.Ordinal);
     private readonly SortedSet<string> pins = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> aliases = new(StringComparer.Ordinal);
     private long clock;
 
     public PaletteModel(CommandRegistry registry, Keymap keymap, Func<string, string?, string?> unavailable)
@@ -176,7 +179,7 @@ public sealed class PaletteModel
     {
         ChromeCommand c = registry.Commands[command];
         string id = command + "|" + (argument ?? "");
-        return new PaletteRow(command, argument, label ?? c.Label, CommandRegistry.Location(command), keymap.KeysFor(command, argument), unavailable(command, argument), c.Help, pins.Contains(id));
+        return new PaletteRow(command, argument, label ?? c.Label, CommandRegistry.Location(command), keymap.KeysFor(command, argument), unavailable(command, argument), c.Help, pins.Contains(id)) { Alias = aliases.TryGetValue(id, out string? alias) ? alias : null };
     }
 
     public IReadOnlyList<PaletteRow> Rows(string query)
@@ -187,7 +190,7 @@ public sealed class PaletteModel
         foreach (RadialEntry e in keymap.Bindings.Select(b => new RadialEntry(b.Command, b.Argument, b.Label)).Concat(keymap.Radials.Values.SelectMany(r => r.Entries)))
             if (e.Argument != null && seen.Add(e.Command + "|" + e.Argument)) rows.Add(Row(e.Command, e.Argument, e.Label));
         string[] terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        bool Matches(PaletteRow r) => terms.All(t => r.Label.Contains(t, StringComparison.OrdinalIgnoreCase) || r.Command.Contains(t, StringComparison.OrdinalIgnoreCase));
+        bool Matches(PaletteRow r) => terms.All(t => r.Label.Contains(t, StringComparison.OrdinalIgnoreCase) || r.Command.Contains(t, StringComparison.OrdinalIgnoreCase) || (r.Alias?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false));
         return rows.Where(Matches).Select((row, index) => (row, index))
             .OrderByDescending(x => x.row.Pinned)
             .ThenByDescending(x => uses.TryGetValue(x.row.Id, out var u) ? u.Last : 0)
@@ -197,24 +200,35 @@ public sealed class PaletteModel
 
     public void Used(PaletteRow row) { uses[row.Id] = ((uses.TryGetValue(row.Id, out var u) ? u.Count : 0) + 1, ++clock); }
     public void Pin(PaletteRow row, bool pinned) { if (pinned) pins.Add(row.Id); else pins.Remove(row.Id); }
+    // An alias is one line of the solver's own words; an empty one takes it away. It never reorders the rows.
+    public void Alias(PaletteRow row, string text)
+    {
+        string clean = text.Replace('|', ' ').Replace('\n', ' ').Replace('\r', ' ').Trim();
+        if (clean.Length == 0) aliases.Remove(row.Id); else aliases[row.Id] = clean;
+    }
+    // Typed mode names a command and an argument of the solver's own: a row that is in no list.
+    public PaletteRow? Typed(string command, string? argument) =>
+        registry.Commands.ContainsKey(command) ? Row(command, argument, argument == null ? null : registry.Commands[command].Label + ": " + argument) : null;
 
-    public string Store() => string.Join("\n", pins.Select(p => "pin|" + p)
+    public string Store() => string.Join("\n", pins.Select(p => "pin|" + p).Concat(aliases.OrderBy(a => a.Key, StringComparer.Ordinal).Select(a => "alias|" + a.Key + "|" + a.Value))
         .Concat(uses.OrderBy(u => u.Key, StringComparer.Ordinal).Select(u => $"use|{u.Key}|{u.Value.Count.ToString(CultureInfo.InvariantCulture)}|{u.Value.Last.ToString(CultureInfo.InvariantCulture)}")));
 
     // Rows of commands this build no longer has are dropped; a malformed line refuses the whole text.
     public void Restore(string stored)
     {
-        var newUses = new Dictionary<string, (int, long)>(StringComparer.Ordinal); var newPins = new List<string>(); long newest = 0;
+        var newUses = new Dictionary<string, (int, long)>(StringComparer.Ordinal); var newPins = new List<string>(); var newAliases = new Dictionary<string, string>(StringComparer.Ordinal); long newest = 0;
         foreach (string line in stored.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
             string[] p = line.Split('|');
             if (p[0] == "pin" && p.Length == 3) { if (registry.Commands.ContainsKey(p[1])) newPins.Add(p[1] + "|" + p[2]); }
             else if (p[0] == "use" && p.Length == 5 && int.TryParse(p[3], NumberStyles.None, CultureInfo.InvariantCulture, out int count) && long.TryParse(p[4], NumberStyles.None, CultureInfo.InvariantCulture, out long last) && count > 0)
             { if (registry.Commands.ContainsKey(p[1])) newUses[p[1] + "|" + p[2]] = (count, last); newest = Math.Max(newest, last); }
+            else if (p[0] == "alias" && p.Length == 4 && p[3].Trim().Length > 0) { if (registry.Commands.ContainsKey(p[1])) newAliases[p[1] + "|" + p[2]] = p[3]; }
             else throw J.Error("palette", "unreadable line");
         }
         uses.Clear(); foreach (var u in newUses) uses[u.Key] = u.Value;
         pins.Clear(); foreach (string pin in newPins) pins.Add(pin);
+        aliases.Clear(); foreach (var a in newAliases) aliases[a.Key] = a.Value;
         clock = newest;
     }
 }

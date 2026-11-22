@@ -1165,3 +1165,24 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
 - Demo data: the entries and moves are the sample session's; the puzzle state does not follow the history.
 - Not shown: names for branches, a tree drawing of more than one level, and restoring a named version. Replay has
   no command of its own (it is a button only).
+
+### A5 stage 10, points 9 to 11: the palette's row menu, readouts with lamps, the five panel states
+
+Done together at the owner's request.
+
+- Palette (ADR-D01.18). Pins and typed mode were there. New: a row menu, opened by a right click or by the Menu key
+  or `Shift+F10` on the highlighted row, with Pin (`P`), Alias (`A`) and Bind a key (`B`). An alias is a second
+  name of your own: a query finds the row by it, the row shows it, and it never changes the order of the rows. It
+  is typed after `=` and kept with the pins. Bind uses the same "press the key" step as the Scripts dock and binds
+  the command without its argument. Typed mode now also takes an argument of your own, as in `> orbit.switch O05`.
+- Top bar readouts. Each of the three cells (revision, history position, run queue) has a lamp and opens on a click
+  to a second line of words. The lamp is told apart by shape: a ring at rest, filled when the history is behind its
+  newest entry or runs wait, filled inside a ring when an entry is partly undone. Token slots `lamp.idle`,
+  `lamp.active`, `lamp.attention`. No Timer and no Session cell.
+- Panel states (ADR-D01.33). Every dock panel sits in a box that can show one of five states besides ready, each
+  with a word, a glyph of its own shape and the reason: Empty, Loading and Error take the content's place; Stale
+  and Busy keep the content under a banner (stale content is dimmed). Error offers Retry and Stale offers Refresh.
+  Nothing spins. `F12` steps every dock panel through the five; they are demo states and their text says so.
+- Tour stops 19 (readouts), 20 (panel states) and 21 (the palette's row menu).
+- Not shown: opening a readout from the keyboard (a click only), panel states on panes outside the docks, a state
+  that a real panel sets by itself (only the demo key sets them), and a binding that keeps a row's argument.

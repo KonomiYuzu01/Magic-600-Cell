@@ -122,6 +122,7 @@ internal static partial class Program
             ("A5CommitBarInlineParameters", A5CommitBarInlineParameters),
             ("A5ScreenChecksKeyboardAndWords", A5ScreenChecksKeyboardAndWords),
             ("A5HistoryBranchesInFull", A5HistoryBranchesInFull),
+            ("A5PaletteReadoutsAndPanelStates", A5PaletteReadoutsAndPanelStates),
             ("A5FrameLockedPairRefusesHidingAMainView", A5FrameLockedPairRefusesHidingAMainView),
             ("A5FrameStoredArrangementRoundTripAndWorkspaces", A5FrameStoredArrangementRoundTripAndWorkspaces),
             ("LayoutValidationRefusals", LayoutRefusals),

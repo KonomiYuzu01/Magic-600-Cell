@@ -54,6 +54,19 @@ public sealed partial class CommandPalette : ChromeOverlay
     public event Action<PaletteRow>? Run;
     // Typed mode also takes a whole 600 Cell Script line (ADR-D01.59) and keeps its own history.
     public event Action<string>? TypedLine;
+    // The row menu (ADR-D01.18): a right click, the Menu key or Shift+F10 opens it on a row; it pins, aliases or binds.
+    public int MenuRow { get; private set; } = -1;
+    public PaletteRow? AliasFor { get; private set; }
+    public event Action<PaletteRow>? Bind;
+    public void OpenMenu(int index) { MenuRow = index >= 0 && index < Rows.Count ? index : -1; if (MenuRow >= 0) Selected = MenuRow; Refresh(false); }
+    public void MenuPin() { if (MenuRow < 0) return; int at = MenuRow; MenuRow = -1; TogglePin(at); }
+    public void MenuAlias()
+    {
+        if (MenuRow < 0 || MenuRow >= Rows.Count) return;
+        AliasFor = Rows[MenuRow]; MenuRow = -1; Query.Text = "=" + (AliasFor.Alias ?? ""); Query.CaretColumn = Query.Text.Length; Selected = 0; Refresh(); Query.GrabFocus();
+    }
+    public void MenuBind() { if (MenuRow < 0 || MenuRow >= Rows.Count) return; PaletteRow row = Rows[MenuRow]; MenuRow = -1; Close(); Safe.Raise(Bind, row); }
+    private void Leave() { MenuRow = -1; AliasFor = null; Query.Text = ""; Selected = 0; Refresh(); }
     public LineHistory History { get; } = new();
     private readonly VBoxContainer list = new() { Name = "PaletteRows" };
     private readonly Label count = new() { ThemeTypeVariation = "MicroLabel" };
@@ -68,13 +81,20 @@ public sealed partial class CommandPalette : ChromeOverlay
         Query.GuiInput += Typed;
     }
 
-    public override void Open() { base.Open(); Query.Text = ""; Selected = 0; Refresh(); Query.GrabFocus(); }
+    public override void Open() { base.Open(); MenuRow = -1; AliasFor = null; Query.Text = ""; Selected = 0; Refresh(); Query.GrabFocus(); }
 
     public void Type(string text) { Query.Text = text; Selected = 0; Refresh(); }
 
     private void Typed(InputEvent e)
     {
         if (e is not InputEventKey { Pressed: true } key) return;
+        if (key.Keycode == Godot.Key.Menu || (key.Keycode == Godot.Key.F10 && key.ShiftPressed)) { if (AliasFor == null) OpenMenu(MenuRow == Selected ? -1 : Selected); Query.AcceptEvent(); return; }
+        if (key.Keycode == Godot.Key.Escape && (MenuRow >= 0 || AliasFor != null)) { Leave(); Query.AcceptEvent(); return; }
+        if (MenuRow >= 0 && key.Keycode is Godot.Key.P or Godot.Key.A or Godot.Key.B)
+        {
+            if (key.Keycode == Godot.Key.P) MenuPin(); else if (key.Keycode == Godot.Key.A) MenuAlias(); else MenuBind();
+            Query.AcceptEvent(); return;
+        }
         if (Query.Text.StartsWith('>') && Rows.Count == 0 && key.Keycode is Godot.Key.Up or Godot.Key.Down)
         {
             Type("> " + History.Step(key.Keycode == Godot.Key.Up ? -1 : 1)); Query.CaretColumn = Query.Text.Length; Query.AcceptEvent();
@@ -93,6 +113,7 @@ public sealed partial class CommandPalette : ChromeOverlay
     // Runs the highlighted row. An unavailable row stays on screen with its reason; nothing runs.
     public bool Accept()
     {
+        if (AliasFor != null) { Model.Alias(AliasFor, Query.Text.TrimStart('=')); Leave(); return true; }
         if (Query.Text.StartsWith('>') && Query.Text.Substring(1).Trim() is { Length: > 0 } line && (Rows.Count == 0 || line.Contains('(')))
         {
             History.Add(line); Close(); Safe.Raise(TypedLine, line);
@@ -110,17 +131,21 @@ public sealed partial class CommandPalette : ChromeOverlay
     private IReadOnlyList<PaletteRow> Find()
     {
         string text = Query.Text;
+        if (AliasFor != null) return new[] { AliasFor };
         if (!text.StartsWith('>')) return Model.Rows(text);
         // Typed mode: "> command.id argument" names one row exactly.
         string[] parts = text.Substring(1).Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0) return Array.Empty<PaletteRow>();
         string? argument = parts.Length > 1 ? parts[1].Trim() : null;
         PaletteRow[] exact = Model.Rows("").Where(r => r.Command == parts[0] && r.Argument == argument).ToArray();
+        // A command with an argument of the solver's own is a row too: "> orbit.switch O05".
+        if (exact.Length == 0 && argument != null && Model.Typed(parts[0], argument) is { } own) return new[] { own };
         return exact.Length > 0 ? exact : Model.Rows("").Where(r => r.Command.StartsWith(parts[0], StringComparison.Ordinal) && r.Argument == null).ToArray();
     }
 
     private void Describe()
     {
+        if (AliasFor != null) { Help.Text = $"Alias for \"{AliasFor.Label}\": type it after = and press Enter. An empty alias takes it away. Esc leaves."; return; }
         if (Rows.Count == 0)
         {
             Help.Text = Query.Text.StartsWith('>') ? "Type a command or a script line. Up recalls. A run never commits." : "No command matches.";
@@ -148,6 +173,7 @@ public sealed partial class CommandPalette : ChromeOverlay
             if (row.Pinned) { ChromeIcons.Apply(pin, "palette.pin", tokens.Px("icon.small")); pin.AddThemeColorOverride("font_color", tokens.C("accent.strong")); }
             line.AddChild(pin);
             Label label = ChromeWidgets.Text(row.Label, row.Unavailable == null ? "" : "DimLabel", true); line.AddChild(label);
+            if (row.Alias != null) { Label alias = ChromeWidgets.Text("= " + row.Alias, "AccentLabel"); alias.TooltipText = "Your alias for this row"; line.AddChild(alias); }
             if (row.Unavailable != null) { Label tag = ChromeWidgets.Text("unavailable", "MicroLabel"); tag.AddThemeColorOverride("font_color", tokens.C("severity.warning")); line.AddChild(tag); }
             line.AddChild(ChromeWidgets.Text(row.Location, "MicroLabel"));
             if (row.Keys.Length > 0)
@@ -157,12 +183,19 @@ public sealed partial class CommandPalette : ChromeOverlay
             holder.GuiInput += e =>
             {
                 if (e is not InputEventMouseButton { Pressed: true } click) return;
-                if (click.ButtonIndex == MouseButton.Right) { TogglePin(index); return; }
+                if (click.ButtonIndex == MouseButton.Right) { OpenMenu(MenuRow == index ? -1 : index); return; }
                 Selected = index; Rows = Rows.ToArray(); Refresh(false); Accept();
             };
             list.AddChild(holder);
+            if (i != MenuRow || AliasFor != null) continue;
+            var menu = new HBoxContainer { Name = "PaletteRowMenu", Alignment = BoxContainer.AlignmentMode.End };
+            void Item(string name, string text, string tip, Action act) { Button b = ChromeWidgets.Tool(text, tip); b.Name = name; b.FocusMode = FocusModeEnum.None; b.Pressed += act; menu.AddChild(b); }
+            Item("RowPin", row.Pinned ? "Unpin (P)" : "Pin (P)", "A pinned row stays at the top", MenuPin);
+            Item("RowAlias", "Alias (A)", "Give the row a second name of your own", MenuAlias);
+            Item("RowBind", "Bind a key (B)", "The next key you press runs this command", MenuBind);
+            list.AddChild(menu);
         }
-        count.Text = $"{Rows.Count} commands   ↑↓ choose   Enter run   right-click pin   Esc close";
+        count.Text = $"{Rows.Count} commands   \u2191\u2193 choose   Enter run   right-click or Shift+F10: pin, alias, bind   Esc close";
         Describe();
     }
 }

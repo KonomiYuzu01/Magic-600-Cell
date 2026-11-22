@@ -599,6 +599,21 @@
       "meaning": "Key map: a twist key.",
       "cue": "a double outline"
     },
+    "lamp.idle": {
+      "group": "encoding",
+      "meaning": "A lamp at rest.",
+      "cue": "an empty ring"
+    },
+    "lamp.active": {
+      "group": "encoding",
+      "meaning": "A lamp that is on: something is in progress or not at its newest.",
+      "cue": "a filled lamp"
+    },
+    "lamp.attention": {
+      "group": "encoding",
+      "meaning": "A lamp that asks for a look.",
+      "cue": "a filled lamp inside a ring"
+    },
     "syntax.keyword": {
       "group": "syntax",
       "meaning": "A 600 Cell Script keyword."
@@ -924,6 +939,21 @@
     },
     {
       "text": "keymap.key.twist",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "lamp.idle",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "lamp.active",
+      "surface": "surface.panel",
+      "minimum": 3
+    },
+    {
+      "text": "lamp.attention",
       "surface": "surface.panel",
       "minimum": 3
     },
