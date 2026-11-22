@@ -105,9 +105,10 @@ owner's working days; no target day is set ([3 November 2026](owner-decisions-20
     subagents do the work within the subscription, with local tools. The owner's answers on the Taste Lab batches stay
     local and never go to any API. A5, the ADR line's Look Lab build, keeps the API budget the owner already approved for
     it.
-11. **Tools.** FFmpeg is pinned in `tools/toolchain.lock.json` and approved once on main. Blender and Audacity have no
-    user-scope winget installer for x64, so they are pinned later as hashed archive entries: Audacity before round 3 and
-    Blender after round 4. They are batched with the next approval-input change.
+11. **Tools.** FFmpeg 9.1 (winget `Gyan.FFmpeg`, user scope, x64) is pinned in `tools/toolchain.lock.json`; the owner
+    ran the pin and approved that revision on 22 November 2026. Blender and Audacity have no user-scope winget
+    installer for x64, so they are pinned later as hashed archive entries: Audacity before round 3 and Blender after
+    round 4. They are batched with the next approval-input change.
 
 ## What follows
 

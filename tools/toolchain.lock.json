@@ -1111,14 +1111,14 @@
         "media"
       ],
       "method": "winget",
-      "status": "unverified",
-      "installable": false,
+      "status": "verified",
+      "installable": true,
       "platforms": [
         "windows"
       ],
       "winget_id": "Gyan.FFmpeg",
-      "version": null,
-      "installer_sha256": null,
+      "version": "9.1",
+      "installer_sha256": "f9a83be8f97b8989a223a15e4af234accd0842bacf7c126af5a3aae759785e48",
       "probe": [
         "ffmpeg",
         "-version"
