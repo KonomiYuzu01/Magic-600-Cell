@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-22] decision | The design and art path in four freeze rounds
+The owner approved the design, art and promotion path: stage 2 ends with a usable program framework, UI/UX freezes in four rounds (round 1 at A7, round 2 ends stage 2), K2 opens after A7 and the Jumbling ADR (ADR-D02) beside LP4 and LP5, sound, motion and icons are not cut, and the line uses no API until the owner says so; the briefing records it, with its format-packet pin refreshed under FP.1 ([decision](decisions/owner-decisions-2026-11-22-design-art-path.md)).
+
 ## [2026-11-22] decision | LP3's exit (C10) and LP2's exit signed
 The owner signed both exits on one card: LP3 on `013900ff`, whose index at the comment-only commit `798dc877` reads 61 whole, 11 part and 10 missing of 82, and LP2 on `0260e6b1`. The four readings of the tests that did not run whole take the recommended options ([decision](decisions/owner-decisions-2026-11-22-c10-lp2-exit.md)).
 
