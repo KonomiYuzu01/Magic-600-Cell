@@ -182,9 +182,9 @@ internal static class LabFrame
                 if (demo.Preview.Pending != null) view.AddMark("mark.pending", "preview pending", "state.pending", "A preview waits in the preview view; this view still shows the committed state.");
                 view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
             }
-            frame.Local.AddMark("mark.autoframe", "auto-frame", "text.dim", app.Linked.Shape != null ? "Local stays on the moving cells and the cells around them. Its shape is the data file local-view.json." : "Local re-frames on the moving cells.");
+            frame.Local.AddMark("mark.autoframe", "auto-frame", "text.dim", app.Linked.Shape != null ? "Local stays on the moving cells, spread apart so the inner ones show. Its shape is the data file local-view.json." : "Local re-frames on the moving cells.");
             frame.Global.SetStatus(null, new[] { "drag: rotate 4D" }, $"gap {F("gap")}  shrink {F("stickerShrink")}");
-            frame.Local.SetStatus(app.Linked.Shape != null ? $"{app.Linked.FocusCells} moving cells + neighbours" : "moving cells", new[] { app.Linked.Shape != null ? "drag: turn" : "drag: rotate 4D" }, app.Linked.Shape != null ? "own shape" : "follows Global");
+            frame.Local.SetStatus(app.Linked.Shape != null ? $"{app.Linked.FocusCells} moving cells, spread apart" : "moving cells", new[] { app.Linked.Shape != null ? "drag: turn" : "drag: rotate 4D" }, app.Linked.Shape != null ? "own shape" : "follows Global");
         }
         frame.Rebuilt += Describe; frame.Recoloured += Describe;
         demo.Preview.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Describe(); };

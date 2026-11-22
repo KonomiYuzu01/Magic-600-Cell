@@ -77,9 +77,11 @@ internal static partial class Program
         Check(frame.CapCos > -.99 * 1 && .6 * 0 + -1 * frame.Axis[3] < frame.CapCos, "the far cell is inside the cap");
         Check(frame.Zoom > 0 && shape.Frame(centres, new[] { 0 }, Geometry.Identity(), 2).Zoom > frame.Zoom, "a smaller focus is not drawn larger");
         Equal(shape.Frame(centres, new[] { 3 }, Geometry.Identity(), 1).Q[15], -1.0);
-        Refuse(() => LocalShape.Parse(text.Replace("0.25", "0.31"), Schema), "gap");
+        Refuse(() => LocalShape.Parse(text.Replace("0.3,", "0.31,"), Schema), "gap");
         Refuse(() => LocalShape.Parse(text.Replace("orthographic", "hopfRings"), Schema), "projection");
         Refuse(() => LocalShape.Parse(text.Replace("0.86", "1.2"), Schema), "fill");
+        Refuse(() => LocalShape.Parse(text.Replace("1.7", "3.5"), Schema), "spread");
+        Check((shape with { Spread = 1 }).Frame(centres, new[] { 0, 1, 2 }, Geometry.Identity(), 2).Zoom > frame.Zoom, "spread cells do not take more room");
         Refuse(() => LocalShape.Parse(text.Replace("magic600-look-local-view", "magic600-look-opening"), Schema), "format");
     }
 

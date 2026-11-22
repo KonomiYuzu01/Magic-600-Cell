@@ -148,7 +148,11 @@ internal sealed class LinkedViews
             m.SetShaderParameter("cs", (float)frame.Cs); m.SetShaderParameter("ss", (float)frame.Ss);
             m.SetShaderParameter("d4", (float)frame.D4); m.SetShaderParameter("zoom", (float)frame.Zoom);
             m.SetShaderParameter("focus_axis", LookViewport.Vector4(frame.Axis)); m.SetShaderParameter("focus_cos", (float)frame.CapCos);
+            m.SetShaderParameter("focus_spread", (float)frame.Spread);
             Local.SetViewFrame(FocusFrame.Neutral);
+            // Global fits a pane that is taller than wide.
+            Vector2 pane = app.View.GetViewport().GetVisibleRect().Size;
+            app.View.Material.SetShaderParameter("zoom", (float)(app.State.Preset.Params.Structure(1).Zoom * Math.Min(1, pane.Y > 0 ? pane.X / pane.Y : 1)));
         }
         else if (FramingEnabled) Local.SetViewFrame(follower.Step(Target(), dt));
     }

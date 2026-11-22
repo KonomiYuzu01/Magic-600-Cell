@@ -71,6 +71,7 @@ internal sealed partial class LookViewport : Node3D
         Material.SetShaderParameter("aspect", 1.6f);
         Material.SetShaderParameter("focus_axis", new Godot.Vector4(0, 0, 0, 1));
         Material.SetShaderParameter("focus_cos", -2f);
+        Material.SetShaderParameter("focus_spread", 1f);
         SetViewFrame(FocusFrame.Neutral);
         Material.SetShaderParameter("base_normal", Vector4(Geometry.BaseNormal.Span));
         Material.SetShaderParameter("radius", (float)Geometry.Radius);

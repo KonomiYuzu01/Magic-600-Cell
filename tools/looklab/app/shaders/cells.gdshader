@@ -55,6 +55,8 @@ uniform float hemisphere_clamp;
 // A view may draw only the cells whose centre lies within a cap around an axis; off by default.
 uniform vec4 focus_axis = vec4(0.0, 0.0, 0.0, 1.0);
 uniform float focus_cos = -2.0;
+// In such a view the cells are moved apart from the middle by this factor, without changing their size.
+uniform float focus_spread = 1.0;
 
 varying vec3 projected;
 varying float visible_w;
@@ -91,6 +93,17 @@ void vertex() {
     if (projection_kind == 0) factor = d4 / (d4 - world.w);
     if (projection_kind == 1) factor = 1.0 / (1.0 - world.w);
     projected = world.xyz * factor;
+    if (focus_cos > -1.5 && focus_spread != 1.0 && projection_kind < 3) {
+        vec4 centre = texelFetch(cell_layout, ivec2(INSTANCE_ID, 0), 0);
+        if (moving > 0.5 && theta != 0.0) {
+            float cx = dot(centre, plane_u);
+            float cy = dot(centre, plane_v);
+            centre += ((cos(theta) - 1.0) * cx - sin(theta) * cy) * plane_u + (sin(theta) * cx + (cos(theta) - 1.0) * cy) * plane_v;
+        }
+        centre = q * centre;
+        float centre_factor = projection_kind == 0 ? d4 / (d4 - centre.w) : 1.0;
+        projected += centre.xyz * centre_factor * (focus_spread - 1.0);
+    }
     if (projection_kind >= 3) {
         int target_cell = INSTANCE_ID;
         float blend = 0.0;

@@ -942,11 +942,11 @@ state through `LabApp.ViewParts`.
 Inside the window frame the Local view has its own shape, read from
 `tools/looklab/data/local-view.json` (format `magic600-look-local-view`:
 `projection` perspective or orthographic, `d4`, `gap` and `stickerShrink`
-inside their parameter ranges, `margin` in radians and `fill`). It draws only
-the moving cells and the cells within the margin around them, centred and at a
-fixed size; the linked rotation turns them in 3D. Without the file Local is the
-re-framed copy of Global. The lab saves one picture of its window, `frame.png`,
-beside `view.json` four seconds after it opens. The theme follows the Windows
+inside their parameter ranges, `margin` in radians, `fill` and `spread`). It
+draws only the moving cells and the cells within the margin around them,
+centred, at a fixed size and moved apart by `spread` so the inner cells show; the linked rotation turns them in 3D. Without the file Local is the
+re-framed copy of Global. The lab saves a picture of its window, `frame.png`,
+beside `view.json` four and twelve seconds after it opens. The theme follows the Windows
 light or dark setting until a choice is kept.
 
 `python tools/looklab/check.py --godot` adds one result line,

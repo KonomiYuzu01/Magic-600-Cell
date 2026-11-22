@@ -26,7 +26,7 @@ internal sealed partial class LiveSession : Control
     private readonly DataWatch watch;
     private readonly List<string> pending = new();
     private double sincePoll, sinceSave, open;
-    private bool pictured;
+    private int pictured;
     private readonly string pictureFile;
     public const double PictureSeconds = 4;
     private byte[] saved = Array.Empty<byte>();
@@ -59,10 +59,10 @@ internal sealed partial class LiveSession : Control
     public override void _Process(double delta)
     {
         sincePoll += delta; sinceSave += delta; open += delta;
-        // One picture of the window, a few seconds after it opened, beside the kept view: what the lab looked like.
-        if (!pictured && open >= PictureSeconds && DisplayServer.GetName() != "headless")
+        // A picture of the window, four and twelve seconds after it opened, beside the kept view: what the lab looked like.
+        if (pictured < 2 && open >= PictureSeconds * (1 + 2 * pictured) && DisplayServer.GetName() != "headless")
         {
-            pictured = true;
+            pictured++;
             try { GetViewport().GetTexture().GetImage().SavePng(pictureFile); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { }
         }

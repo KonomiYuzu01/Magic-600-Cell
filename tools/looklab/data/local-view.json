@@ -3,8 +3,9 @@
   "version": 1,
   "projection": "orthographic",
   "d4": 2,
-  "gap": 0.25,
+  "gap": 0.3,
   "stickerShrink": 0.6,
-  "margin": 0.28,
-  "fill": 0.86
+  "margin": 0,
+  "fill": 0.86,
+  "spread": 1.7
 }
