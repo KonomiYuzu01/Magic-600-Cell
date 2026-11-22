@@ -2,7 +2,7 @@
 
 Status: **frozen at LP3 (chapter 12, PHS.53)**. The merge of the command-table freeze pull request is LP3's frozen candidate, on which the owner signs off C10 ([LP3 exit decisions](../../wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md)). An item marked OPEN is not frozen, and a later change goes through PHS.52. The table joins the signed 3 October dispositions and carries DT-M1's fix-first items 2 to 4 and the [22 October answers](../../wiki/decisions/owner-decisions-2026-10-22-dt-m1.md). The owner answered LQ1 to LQ21 on [6 November 2026](../../wiki/decisions/owner-decisions-2026-11-06.md). The owner accepted the language ADRs and froze the language architecture on [15 November 2026](../../wiki/decisions/owner-decisions-2026-11-15-freeze.md). The design line remains closed.
 
-- **CM.1 [D]** [build_command_table.py](build_command_table.py) builds [command-table.json](command-table.json) from its retained rows, the signed join, [command-rows-jumbling.json](command-rows-jumbling.json) and [command-rows-language.json](command-rows-language.json). The stored table has 175 commands: 152 retained-purpose and DT-M1 rows, 16 jumbling additions and seven language additions (the six of 6 November and LP3's record write `workspace.set`, CM.17), with six existing rows amended by the jumbling delta and two notes by the language delta. It has `final: true` and equals a fresh default build. Nine service registrations (CM.16) and 30 bridge reads (CM.18) are separate. `--draft-without-jumbling` builds the 152-row base with `final: false` for isolated checks. `final: true` marks a non-draft build; equality with a fresh default build and the delta checks show completeness. It is not an architecture approval. The working forms are HANDOFF H15.
+- **CM.1 [D]** [build_command_table.py](build_command_table.py) builds [command-table.json](command-table.json) from its retained rows, the signed join, [command-rows-jumbling.json](command-rows-jumbling.json), [command-rows-language.json](command-rows-language.json) and [command-rows-design.json](command-rows-design.json). The stored table has 193 commands: 152 retained-purpose and DT-M1 rows, 16 jumbling additions, seven language additions (the six of 6 November and LP3's record write `workspace.set`, CM.17) and 18 ADR-D01 additions (CM.19), with six existing rows amended by the jumbling delta and two notes by the language delta. It has `final: true` and equals a fresh default build. Nine service registrations (CM.16) and 30 bridge reads (CM.18) are separate. `--draft-without-jumbling` builds the 152-row base with `final: false` for isolated checks. `final: true` marks a non-draft build; equality with a fresh default build and the delta checks show completeness. It is not an architecture approval. The working forms are HANDOFF H15.
 
 ```text
 python -B docs/progress/1.0/build_command_table.py
@@ -148,12 +148,14 @@ The old busy-bearing rows now have lanes. Commit rows use `commit`; `session.res
     `straddlers`, `certificates` and `status`), the row keeps the served name, and a rename is a later change under
     PHS.52.
 
+- **CM.19 [D]** ADR-D01's 14 workspace and 4 view rows in [command-rows-design.json](command-rows-design.json) are ordinary additions after the LP3 freeze under the owner's decision of 22 November 2026, item 3 ([ADR-D01 and the frozen clauses](../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md)), not PHS.52 changes and not part of `013900ff`; they are data only, with no gate, no preview, no job, no commit row and undo `none`, since ADR-D01.14 puts design-profile changes in a layout history whose rows come with the later commit work (item 4).
+
 ## 3. What the table shows now
 
 | Kind | Commands | Examples |
 |---|---|---|
-| workspace | 67 | phases, buffers, intents, blocks, protection, macros, keymaps, timer, recordings, record writes |
-| view | 45 | panels, cycle modes, inspection, display controls, camera, further views |
+| workspace | 81 | phases, buffers, intents, blocks, protection, macros, keymaps, timer, recordings, record writes, design profile, panels, palette, explore |
+| view | 49 | panels, cycle modes, inspection, display controls, camera, further views, preview view, A/B wipe, history dock |
 | query | 38 | check, preview, buffer analyser, recommendations, structure, filter counts |
 | commit | 14 | execute, live twist, shared undo and redo, mode crossings, menu twist, new solve, reset, log import, checkpoint save/restore, branch selection, practice copy |
 | file, app | 11 | exports, backup, resume, stop a job, exit, clipboard |
@@ -339,6 +341,24 @@ Eleven top-down inventory rows remain in `not_commands`. That historical index d
 | `recording.play` | workspace | program |
 | `recording.convert` | workspace | none |
 | `workspace.set` | workspace | none |
+| `theme.select` | workspace | none |
+| `theme.tune` | workspace | none |
+| `token.override.set` | workspace | none |
+| `token.override.reset` | workspace | none |
+| `density.preset.set` | workspace | none |
+| `type.scale.set` | workspace | none |
+| `motion.preset.set` | workspace | none |
+| `motion.reduced.set` | workspace | none |
+| `panel.mount` | workspace | none |
+| `panel.unmount` | workspace | none |
+| `radial.edit` | workspace | none |
+| `palette.pin` | workspace | none |
+| `palette.alias` | workspace | none |
+| `explore.set` | workspace | none |
+| `view.preview.open` | view | view |
+| `view.pin` | view | view |
+| `view.compare.wipe` | view | view |
+| `history.dock.mode` | view | view |
 
 The bridge reads (CM.18), in the table's order:
 

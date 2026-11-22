@@ -390,7 +390,7 @@ fn ct_one_02_a_program_delivers_no_commit_row() {
 /// CT-KN5-10 (part: R-05 for the session rows: with every orbit protected, every `c600_session::Row` variant is
 /// delivered by an exhaustive enumeration; `Execute` and `SwitchLine` are refused with the protection code and change
 /// nothing, an `Undo` or a `Redo` that would release protection and a `protection.set` release are refused until
-/// confirmed, and no row moves a protected orbit; the H-08 table's 175 rows run against their restrictions in
+/// confirmed, and no row moves a protected orbit; the H-08 table's 193 rows run against their restrictions in
 /// `c600-command/tests/r05_rows.rs`; not run: an `Undo` or a `Redo` of a move refused with the protection code, which
 /// M6 cannot reach: protection changes share the one undo order, so what is on top of either stack was done under the
 /// protection now in force)
