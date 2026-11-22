@@ -452,6 +452,10 @@ These clauses are about lattice configurations only, where labels are defined (K
   one line per session is active, and that line's head is the state of record (ONE.1).
 - **ONE.74 [D]** A branch comes from the solver's own commits: the journal keeps a line when the solver commits after an undo
   (KN4.1). No program can create, switch or change a branch.
+  Extended for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: a branch may also come from a mid-history insert, with the old line's later moves offered
+  as a preview (ADR-D01.16).
 - **ONE.75 [D]** Switching the active line is a row of kind `commit`, and it makes a new revision like any other. ONE.49 applies to it.
 - **ONE.76 [D]** A program reads another branch through `open_snapshot` and compares it through `compare`. Those are the only ways it
   sees one.

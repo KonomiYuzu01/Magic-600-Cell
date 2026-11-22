@@ -42,6 +42,10 @@ views are allowed everywhere.
   test data (RPI.19). The renderer feature matrix now supplies draft payload/support rows and RM.14 to RM.26's
   portable adapter operations, immutable leases, cancellation and safe resource retirement. Those contracts grant
   no backend support claim without the required implementation and evidence.
+  Overruled in part for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: the inventory gains the canvas and any building block of ADR-D01.29 that it lacks
+  (ADR-D01.31).
 - **ADR-L11.6** Picking resolves a display instance through a source map bound to its plan generation and base revision
   (RPI.20 to RPI.24, ADR-L04.9). A stale reply is discarded or returns its typed reason, and it never retries a
   state-changing command (RPI.25). RM.10 consumes EV1.10's source ranges. H15.10 checks pick bindings with

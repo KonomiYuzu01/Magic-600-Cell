@@ -523,6 +523,12 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   Built-in tools retain the 2 October boundary and the 17 October named-cap repair-list exception (INV-11). Showing
   a result or recording a solver's pick grants no new declassifier.
 
+  Overruled for the 1.0 product by ADR-D01 (owner, [22 November
+  2026](../../../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md), item 2), without a
+  versioned-change review: the solver's own programs prepare solving previews, and packages from others stay refused
+  there (ADR-D01.8). How the author classes map to the solver's own programs and to packages from others is settled
+  with ADR-D01's text at A7.
+
 - **EV4.17 [B]** Recorded view and workspace steps may play unattended (owner, 6 November 2026, decision 3).
   EV4.18 and EV4.22 give the integrator's row and lane eligibility rules, including the query default beyond the
   owner's words. That default supplies no effect permission.

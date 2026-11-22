@@ -301,7 +301,8 @@ STEPS = (
                    'runs',
                    'python -B tools/perf/c9/lx4.py analyze --fixtures <fixtures> <both run dirs> --e2 <e2 record>.json '
                    '--gate-reference <U4 W3 gate summary>.json --out <record>.json   # renderer_gate.py measures '
-                   'acceptance builds only, so the summary is recorded, not counted as the gate (lx4.py)'),
+                   'acceptance builds only, so the summary is recorded, and counted as the gate only where the owner '
+                   'accepted it (lx4.py)'),
          prerequisites=(('file', 'rust/c600-lx4/src/main.rs'), ('imports', 'lx4'), ('presentmon', None),
                         ('compiles', LAUNCH), ('mentions', (SHELL, '"--lx4"')),
                         ('mentions', (SHELL, 'Magic600.LX4.Reset')), ('mentions', (SHELL, '"lx4"')),

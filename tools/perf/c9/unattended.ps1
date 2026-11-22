@@ -524,7 +524,7 @@ function Invoke-U8 {
     }
     $null = Invoke-Step 'U8/key_to_frame' $Python @('-B', '-u', 'tools/perf/c9/key_to_frame.py', "$Runs\u8-off$Tag", "$Runs\u8-on$Tag", '--out', "$Runs\u8$Tag-e2.json") 900 "$Runs\u8$Tag-e2.json"
     # renderer_gate.py measures acceptance builds only, so U4's W3 summary is recorded as a reference, never as the gate
-    # (lx4.py --gate-reference; the verdict stays insufficient until the owner rules on it).
+    # (lx4.py --gate-reference; it counts as the gate only for the summary and build the owner accepted, 22 Nov 2026).
     $analyze = @('-B', '-u', 'tools/perf/c9/lx4.py', 'analyze', '--fixtures', $Fixtures, "$Runs\u8-off$Tag", "$Runs\u8-on$Tag",
         '--e2', "$Runs\u8$Tag-e2.json", '--out', "$Runs\u8$Tag-lx4.json")
     # This run's U4 summary, else the one without a suffix (a rerun of U8 alone).
