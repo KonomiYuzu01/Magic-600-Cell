@@ -10,8 +10,9 @@ and it writes nothing but the edition.
 
 A row binds a claim group to a typed statement (its ID is the SHA-256 of the statement's canonical content), the scope
 phrase, its stored inputs by digest (the matrix's `required_files`, plus the stage 18 chains' stop table, step members
-and stored end; a composed or tail-replay group whose checker checks it records the intermediate start tables as
-`derived`), and the KN6 sub-checkers that read it.
+and stored end, plus the stored inputs its named claim checker reads that `required_files` leaves out, listed in
+`CHECKER_INPUTS`, each a file of the frozen matrix with the matrix's own pin; a composed or tail-replay group whose
+checker checks it records the intermediate start tables as `derived`), and the KN6 sub-checkers that read it.
 Which sub-checker reads which group, and how, is the table `ROUTES` below, written from each stage's sub-checker
 documentation in `rust/c600-checkers/src/archive/` and the tests that run them: when a sub-checker is added or
 changes its scope, change its rows there and rerun this script (the Rust test then asks for the new pin). The
@@ -137,6 +138,35 @@ ROUTES = [
      ["/one_fixed_L3", "/one_fixed_S", "/generic_mixed_rank_proof_check"], ["s19.ranks"], "certificate"),
 ]
 
+# The stored inputs a named claim checker reads that the matrix's `required_files` for its group leave out (LP5's draft
+# rule for edition 1, LP5-4, extended like the stage 18 exception; it settles nothing in LB5.14 to LB5.17 and changes no
+# matrix reason): (family, record, sub-checker) -> [(the sub-checker's role, the matrix file)]. Written from each
+# sub-checker's documentation and the tests that feed it (`rust/c600-checkers/src/archive/s19/`, `tests/kn6_s19.rs`),
+# never inferred. Each file must be a file of the frozen matrix and is bound with the matrix's pin under the edition's
+# role for it (`record` for a stage 19 record); a checker named scope-only binds none.
+S19_RECORDS = RESEARCH + "19-height-depth-framework/records/"
+CHECKER_INPUTS = {
+    ("19/frontier", S19_RECORDS + "type-lex-trimmed-independent-results.json", "s19.frontier"): [
+        # s19.frontier reads Γ(Y)'s validation record as `blocks` (its word, block boundaries and reference digest).
+        ("blocks", S19_RECORDS + "profile-family-validation-results.json.gz"),
+    ],
+    ("19/ranks", S19_RECORDS + "type-height-weight-results.json", "s19.ranks"): [
+        # s19.ranks reads the four-coset record as `source` (its input_digest, which must be Y's).
+        ("source", S19_RECORDS + "type-lex-282-results.json"),
+        # s19.ranks reads the source table Y as `start` (the rows' q before each one-letter step).
+        ("start", S19_RECORDS + "irregularity-descent-source-end-table.json.gz"),
+    ],
+    ("19/ranks", S19_RECORDS + "type-lex-trimmed-independent-results.json", "s19.ranks"): [
+        # s19.ranks reads Γ(Y)'s validation record as `blocks` (the block words A, D, C, E).
+        ("blocks", S19_RECORDS + "profile-family-validation-results.json.gz"),
+        # s19.ranks reads the source table Y as `origin` (the blocks' reference).
+        ("origin", S19_RECORDS + "irregularity-descent-source-end-table.json.gz"),
+        # s19.ranks reads the post-A table as `start` (block A from Y must reach it).
+        ("start", S19_RECORDS + "type-lex-independent-282-13-end-table.json.gz"),
+    ],
+}
+
+
 # The certificate a `checked_as: input` record enters (stage 18): its chain's `steps.json`, or the lattice run.
 def via_for(path: str, checked_as: str) -> str | None:
     if checked_as == "input":
@@ -156,6 +186,8 @@ LABELS = {("19/q11", RESEARCH + "19-height-depth-framework/records/type-lex-trim
 
 # Stage 18's chains (piece R0's dependency report, section 3): the record, and its stored end table if any.
 CHAINS = {S18 + "d1-tail/steps.json": T6_END, S18 + "rule-stop/steps.json": None}
+# The families whose groups bind a chain's stored stop table as their start.
+CHAIN_FAMILIES = ("18/expansion", "18/composed", "18/tail_replay")
 
 
 def sha(data: bytes) -> str:
@@ -200,6 +232,7 @@ def build() -> bytes:
     for f in files:
         if sha(read(f["path"])) != f["sha256"]:
             raise SystemExit(f"{f['path']} does not have its pinned SHA-256")
+    matrix_pins = {f["path"]: f["sha256"] for f in files}
 
     model_id = json.loads(read(MODEL_MANIFEST))["model_id"]
     binding = json.loads(read(JUMBLE_BINDING))["binding"]
@@ -224,6 +257,7 @@ def build() -> bytes:
     rows = []
     seen_ids = set()
     used_routes = set()
+    used_inputs = set()
     for index, g in enumerate(m["groups"]):
         source = files[g["source"]]["path"]
         rel = source[len(RESEARCH):] if source.startswith(RESEARCH) else source
@@ -261,7 +295,7 @@ def build() -> bytes:
         # share). Only a sub-checker that checks the claim rebuilds the intermediate start tables (composed and tail
         # replay), so only its row records them as derived and resolves `dependency_missing` by them.
         chain_path = source if source in CHAINS else via if via in CHAINS else None
-        if family in ("18/expansion", "18/composed", "18/tail_replay") and checked_as and chain_path:
+        if family in CHAIN_FAMILIES and checked_as and chain_path:
             chain = json.loads(read(chain_path))
             stop = json.loads(read(STOP_TABLE))
             if chain["start_digest"] != chain["steps"][0]["start_digest"] or stop.get("digest") != chain["start_digest"]:
@@ -283,6 +317,18 @@ def build() -> bytes:
                                     "rule": "rebuilt_start_tables"})
                 if "dependency_missing" in g["outcome"]["reasons"]:
                     resolved["dependency_missing"] = "rebuilt_start_tables"
+        # The stored inputs the named claim checker reads beyond the matrix's required files (`CHECKER_INPUTS`).
+        for checker in checkers:
+            key = (family, source, checker)
+            if key not in CHECKER_INPUTS:
+                continue
+            if checked_as == "scope_only":
+                raise SystemExit(f"{group_id}: a scope-only checker binds no checker-read input")
+            used_inputs.add(key)
+            for _, path in CHECKER_INPUTS[key]:
+                if path not in matrix_pins:
+                    raise SystemExit(f"{group_id}: {path} is not a file of the frozen matrix")
+                inputs.append([pin(path), role_of(path, source)])
         if via:
             pin(via)
         # One role per file: the first named wins (the matrix's required files, the claim record among them, come
@@ -291,6 +337,12 @@ def build() -> bytes:
         for path, role in inputs:
             roles.setdefault(path, role)
         inputs = [[path, roles[path]] for path in sorted(roles)]
+        # Every stored file a row names is a file of the frozen matrix with the matrix's pin, except stage 18's stored
+        # stop table, which the chains' rule binds as their start (owner, LP5-3).
+        for path, role in [[source, "claim_record"]] + inputs + ([[via, "via"]] if via else []):
+            stop = path == STOP_TABLE and role == "start_table" and family in CHAIN_FAMILIES
+            if matrix_pins.get(path) != catalogue[path]["sha256"] and not stop:
+                raise SystemExit(f"{group_id}: the stored input {path} is not a matrix file with the matrix's pin")
 
         missing = []
         for mi in g["missing_inputs"]:
@@ -333,6 +385,9 @@ def build() -> bytes:
     unused = [ROUTES[n][:2] for n in range(len(ROUTES)) if n not in used_routes]
     if unused:
         raise SystemExit(f"routes that match no group: {unused}")
+    unused = sorted(set(CHECKER_INPUTS) - used_inputs)
+    if unused:
+        raise SystemExit(f"checker-read inputs that bind no group: {unused}")
 
     ordered = sorted(catalogue)
     position = {p: i for i, p in enumerate(ordered)}
@@ -348,7 +403,11 @@ def build() -> bytes:
         "matrix": {"format": m["format"], "groups": len(m["groups"]), "path": MATRIX, "sha256": sha(matrix_bytes)},
         "note": "FR-B08's typed claim bindings, one row per claim group of the frozen claim matrix, written by LP5 "
                 "piece R1 on 23 November 2026 (owner, LP5-4). A row's statement is the claim its record states at "
-                "its pointers, on that one record; its scope names the record's bytes. The matrix's blockers stay "
+                "its pointers, on that one record; its scope names the record's bytes. Its stored inputs are the "
+                "matrix's required files, stage 18's chain inputs, and the stored inputs its named claim checker reads "
+                "beyond them, each a file of the frozen matrix with the matrix's pin (LP5's draft rule, which settles "
+                "nothing in LB5.14 to LB5.17); only stage 18's stored stop table is outside the matrix. The matrix's "
+                "blockers stay "
                 "word for word in matrix_reasons and missing; resolved names only what this binding resolves. A "
                 "checker named with checked_as scope_only reads the record but checks no claim of the group, which "
                 "keeps no_independent_checker. Preflight adds no evidence leaf and runs no check (LB5.14, EVD.46).",
