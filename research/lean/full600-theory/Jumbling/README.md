@@ -1,6 +1,6 @@
 # Jumbling: round-22 restoration results in Lean
 
-The second library of this Lake project. It formalizes two first batches of proved results from the jumbling
+The second library of this Lake project. It formalizes batches of proved results from the jumbling
 restoration research, indexed in
 [`research/jumbling/restoration/12-low-height/ARCHON-HANDOFF.md`](../../../jumbling/restoration/12-low-height/ARCHON-HANDOFF.md)
 with statements and proofs in
@@ -180,8 +180,72 @@ three-cycle instead of citing the point stabilizer of `Alt(d)`; the counterexamp
 - The bridge from the group layer to the piece model (SAFE-ALL words of `PieceModel` map the holes by their
   chamber permutation).
 
-Out of scope for this batch: R22B-08 and R22B-15 (they need Jordan's theorem for a prime cycle, which the pinned
-Mathlib does not have), R22B-19 and R22B-25 (they need `Aut(Alt(d)) = Sym(d)`, also absent), and R22B-07.
+Out of scope for scope B: R22B-08 and R22B-15 (they need Jordan's theorem for a prime cycle, which the pinned
+Mathlib does not have), R22B-19 and R22B-25 (they need `Aut(Alt(d)) = Sym(d)`, also absent), and R22B-07. Batch 2
+below proves both classical theorems and formalizes the four results.
+
+## Batch 2: two classical theorems and four results
+
+Two classical theorems that the pinned Mathlib does not have, in `Jumbling/Classical/`, and the four group-layer
+results they unlock, in `Jumbling/Group/`. Neither classical module uses a puzzle notion; `JordanPrimeCycle` imports
+only Mathlib.
+
+### Modules
+
+| Module | Content |
+| --- | --- |
+| `Jumbling.Classical.JordanPrimeCycle` | Jordan's theorem for a cycle of prime length (Wielandt 13.9), and Theorem A's power and block steps. |
+| `Jumbling.Classical.AlternatingAut` | `Aut(Alt(d)) = Sym(d)` for `d ≥ 7`; the centralizer of `Alt(d)` in `Sym(d)` is trivial. |
+| `Jumbling.Group.LocalAlt` | R22B-15, the proved part. |
+| `Jumbling.Group.JordanSeed` | R22B-08. |
+| `Jumbling.Group.ProductAlt` | R22B-19. |
+| `Jumbling.Group.Classifier` | R22B-25. |
+
+### Results
+
+`C.` is `Jumbling.Classical.`, `AA.` is `Jumbling.AlternatingAut.` and `A.` is `Jumbling.Alphabet.`; other names are
+in the namespace `Jumbling`.
+
+| Source | Lean | Content |
+| --- | --- | --- |
+| Jordan's theorem, prime-cycle form (Wielandt 13.9) | `C.alternatingGroup_le_of_isPreprimitive_of_isCycle_mem` | A primitive subgroup of `Perm α` that contains a cycle whose support has prime size `p` with `p + 3 ≤ |α|` contains `alternatingGroup α`. The general form: no `p > n/2` hypothesis. |
+| Its proof steps | `C.exists_mem_eqOn_compl_support`, `C.exists_conj_eq_zpow`, `C.exists_zpow_eq_on_support_of_commute`, `C.isPreprimitive_ofFixingSubgroup_compl_support` | Multiple transitivity from Mathlib's Jordan criterion (`MulAction.IsPreprimitive.isMultiplyPreprimitive`); the Frattini argument for the cycle's group, a Sylow subgroup of the pointwise stabilizer of the complement; the centralizer of a cycle. A commutator of two normalizing elements that swap points outside the cycle commutes with the cycle and, corrected by a power of it, is a three-cycle; Mathlib's three-cycle form of Jordan's theorem ends the proof. |
+| Theorem A's block and power steps | `C.isPreprimitive_of_isCycle_mem`, `C.alternatingGroup_le_of_isPretransitive_of_isCycle_mem`, `C.pow_orderOf_mul_inv`, `C.orderOf_mul_inv_eq_lcm` | A transitive group with a cycle of prime length `p > n/2` is primitive, so with `p ≤ n − 3` it contains `Alt(n)`; a power of a permutation by the lcm of its other cycle lengths is the one long cycle. |
+| `Aut(Alt(d)) = Sym(d)`, `d ≥ 7` | `AA.autAlternatingGroup`, `AA.conjNormal_bijective`, `AA.autAlternatingGroup_apply`, `AA.existsUnique_perm_conj`, `AA.centralizer_alternatingGroup_eq_bot`, `AA.exists_equiv_of_mulEquiv` | For `7 ≤ |α|`, conjugation is an isomorphism `Perm α ≃* MulAut (alternatingGroup α)`, so every automorphism is conjugation by a unique permutation; the centralizer is trivial for `4 ≤ |α|`; an isomorphism `Alt(β) ≃* Alt(α)` is induced by a bijection. `d = 6` is excluded: `Alt(6)` has an outer automorphism. The handoff needs `d ≥ 7` (R22B-19 uses `d ≥ 8`). |
+| R22B-15, the proved part | `A.inducedPerm`, `A.inducedGroup`, `A.isPretransitive_inducedGroup`, `A.alternatingGroup_le_inducedGroup`, `A.localAlt`, `A.localAlt_words`, `eight_le_of_prime`, `A.vacate_iff_short`, `cyclicCounterexample` | The local test: if an element acts on an orbit `Δ` with a `p`-cycle, `p` prime and `d/2 < p ≤ d − 3`, the group induced on `Δ` contains `Alt(Δ)`; without Alt, a vacating word exists exactly when one of at most `∏ C(|Δ|, |T ∩ Δ|) − 1` letters does; the six-point cyclic counterexample. |
+| R22B-08 | `A.IsJordanCertificate`, `A.jordanExp`, `A.jordanPower`, `A.exists_short_word_from`, `A.alternatingGroup_le_genAlphabet`, `A.inducedGroup_genAlphabet_eq`, `A.jordanSeed`, `A.jordanSeed_isSeed` | From a global Jordan certificate (H1) and a word of small support (H2), a seed `C = [h, U⁻¹hU]` that acts on `Δ` as a three-cycle and fixes everything outside `Δ`, with `|C| ≤ 4q + 4·(ℓM + 2(d − p))·(C(d, r) − 1)`; a seed for every order of the orbits. |
+| R22B-19 | `ProductAlt.productAlt`, `ProductAlt.productAlt_pi`, `A.vacancy_of_productAlt`, `ProductAlt.CyclicFour.counterexample` | Under H1 (local Alt on each `Δ_i`) and H2 (separating cycle types for equal sizes), the induced group contains every `Alt(Δ_i)` acting alone, hence their product; N2 then suffices for vacancy when every target orbit of size at least 2 satisfies H1 and H2; the four-point cyclic counterexample. |
+| R22B-25, the mathematical claims | `Classifier.alternatingGroup_le_iff`, `Classifier.alternatingGroup_le_iff_div_two`, `Classifier.eq_alternatingGroup_iff`, `Classifier.blockRel`, `Classifier.isBlock_blockClass`, `Classifier.isPreprimitive_iff_blockRel`, `Classifier.not_isPreprimitive_of_blockRel`, `Classifier.blockRel_act`, `Classifier.blockRel_le_of_letters`, `Classifier.eq_one_of_smul_eq_of_card_eq`, `Classifier.bijective_smul_of_card_eq`, `Classifier.vacancy_iff_blocks`, `Classifier.block_inequality_of_vacancy`, `Classifier.vacancy_iff_restrict`, `Classifier.vacancy_iff_targetOrbits`, `Classifier.ResidualCase.isPreprimitive_K`, `Classifier.ResidualCase.card_K`, `Classifier.ResidualCase.not_alternatingGroup_le` | `K ≥ Alt(d)` exactly when `|K| ≥ d!/2`, and `Alt(d)` is the only subgroup of index 2; the classes of the least invariant relation containing `(a, b)` are blocks, and `K` is primitive exactly when each such relation is total; a transitive `K` of order `d` acts regularly; vacancy on an imprimitive orbit with independent block factors is the block inequality, which is necessary without them; orbits that miss `T` impose nothing; `Sym(12)` on the 66 pairs is primitive of order 479,001,600 and does not contain `Alt(66)`. |
+
+### Hypotheses and readings
+
+- No external result is a hypothesis in batch 2: Jordan's theorem, Theorem A's power and block steps and
+  `Aut(Alt(d)) = Sym(d)` are proved.
+- R22B-15: "w acts on `Δ` with a `p`-cycle" is `p ∈ cycleType` of the permutation `w` induces on `Δ`. The source's
+  `d ≥ 8` is not a hypothesis: `d/2 < p ≤ d − 3` with `p` prime implies it (`eight_le_of_prime`). For the claim without
+  Alt, the orbits are a family of invariant sets covering the chambers.
+- R22B-08: H1 and H2 are hypotheses, as in the source (`A.IsJordanCertificate`: some cycle factor has `p` points
+  inside `Δ`, and every cycle factor of length divisible by `p` is that one; `M` is the lcm of the other cycle
+  lengths). H2 reads `2 ≤ r` and `2r ≤ d + 1`.
+- R22B-19: H1 and H2 are hypotheses, as in the source. The Lean statement needs `|Δ_i| ≥ 7` (the source has `d ≥ 8`)
+  and invariant sets, not orbits; the vacancy consequence assumes `[Finite]` index and chamber types and, as in R22B-01,
+  that every orbit of size at least 2 meeting `T` is one of the `Δ_i`. The proof does not follow the source's route
+  through `[H, H]`: it inducts over the coordinates, with simplicity, `AA.exists_equiv_of_mulEquiv` and the trivial
+  centralizer in the two-coordinate step.
+- R22B-25: transitivity is explicit where the source has it from `Δ` being an orbit; the order criterion holds for every
+  `d`, not only `d ≥ 8`. The imprimitive case takes as hypotheses that the blocks cover the orbit, that `K` maps blocks
+  to blocks, and the independent factors (every permutation of a block is induced by an element fixing the other blocks
+  pointwise), which in the source come from a computation or from R22B-19.
+
+### Not formalized in batch 2
+
+- R22B-15: the remark on `5 ≤ d ≤ 7` (an exact closure computation), the remark on local and global tests (its
+  counterexample is part one's `diagonalCounterexample`), and the open universal claim, which stays open.
+- R22B-08: the remark that at most `d − p + 1` conjugates are needed (the proof uses all of them; the bound is
+  unchanged).
+- R22B-25: the Schreier–Sims chain and the enumeration with time limits (algorithms), the regular case as a search
+  (only the regularity and the bijection are formal), and the remarks that no proof excludes the residual case and on
+  global Jordan certificates.
 
 ## How it was produced
 
