@@ -47,7 +47,8 @@ def environment():
     env = os.environ.copy()
     env.update(TMP=str(tmp), TEMP=str(tmp), DOTNET_CLI_HOME=str(tmp),
                DOTNET_NOLOGO="1", DOTNET_CLI_TELEMETRY_OPTOUT="1",
-               DOTNET_SKIP_FIRST_TIME_EXPERIENCE="1", PYTHONDONTWRITEBYTECODE="1")
+               DOTNET_SKIP_FIRST_TIME_EXPERIENCE="1", DOTNET_ADD_GLOBAL_TOOLS_TO_PATH="0",
+               PYTHONDONTWRITEBYTECODE="1")
     return env
 
 

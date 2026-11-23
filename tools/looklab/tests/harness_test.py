@@ -49,6 +49,7 @@ class HarnessTests(unittest.TestCase):
                 self.assertEqual(Path(env[key]).parent, temporary)
             for key in ("DOTNET_CLI_TELEMETRY_OPTOUT", "DOTNET_NOLOGO", "DOTNET_SKIP_FIRST_TIME_EXPERIENCE", "MSBUILDDISABLENODEREUSE", "DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER", "PYTHONDONTWRITEBYTECODE"):
                 self.assertEqual(env[key], "1")
+            self.assertEqual(env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"], "0")
             self.assertNotIn("LOOKLAB_TEST_TOKEN", env)
             self.assertEqual(env["LOOKLAB_PYTHON"], sys.executable)
             self.assertEqual(kwargs["cwd"], check.ROOT)
