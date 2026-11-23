@@ -1,8 +1,9 @@
 //! Stage 14's literal replay rows (LB5.15's third stage 14 family; the claim matrix's `14/literal` groups): a stored
 //! word replayed from a stored stage 13 table with every chronological observable recomputed after every letter.
 //!
-//! The records carry no format key; one is recognised by its fields exactly: `table` (the table's historical path,
-//! which binds nothing: LB5.14), `word` (the letters `[cap, item]` of the I_a menu) and `rows`. Row 0 is the start
+//! The records carry no format key; one is recognised by any of its fields ([`common::own`]) and must then have
+//! exactly these: `table` (the table's historical path, which binds nothing: LB5.14), `word` (the letters
+//! `[cap, item]` of the I_a menu) and `rows`. Row 0 is the start
 //! (`letter` and `applied` null); row k + 1 follows letter k. Each row states n₂, n₄ and n₆ (the pieces of left height
 //! 2, 4 and 6), the largest height, Φ = Σ max(0, h − 2), the number of pieces off the lattice and the state digest.
 //!
@@ -16,7 +17,7 @@ use c600_kernel::json::Value;
 
 use super::common::{self, claim_bool, claim_int, claim_str, engine, observe, start, word};
 use crate::archive::SubChecker;
-use crate::claims::{array, at, document, field, hex64, keys, not_applicable, reject, Run, Step};
+use crate::claims::{array, at, document, field, hex64, keys, reject, string, Run, Step};
 use crate::kinds::{Checker, Needs};
 use crate::replay::{letter, tree_tables};
 use crate::report::Sources;
@@ -48,18 +49,9 @@ const ROW: [&str; 9] = ["letter", "applied", "n2", "n4", "n6", "max_h", "phi", "
 fn run(engines: &Engines, run: &mut Run) -> Step<()> {
     let ctx = engine(engines)?;
     let doc = document(run.cert.bytes)?;
-    if let Some(reason) = common::unchecked_scope(&doc) {
-        return Err(not_applicable(reason));
-    }
-    if doc.get("format").is_some() {
-        return Err(not_applicable("a record with a format key is not a formatless stage 14 replay record"));
-    }
-    let is_replay =
-        doc.as_object().is_some_and(|m| m.len() == 3 && ["table", "word", "rows"].iter().all(|k| m.contains_key(*k)));
-    if !is_replay {
-        return Err(not_applicable("not a stage 14 replay record (fields table, word and rows)"));
-    }
+    common::own(&doc, SOURCES.id)?;
     keys(&doc, "certificate", &["table", "word", "rows"], &[])?;
+    string(field(&doc, "table", "table")?, "table")?;
     let rows = array(field(&doc, "rows", "rows")?, "rows")?;
     let Some(first) = rows.first() else {
         return Err(reject("rows", "a replay has its start row"));

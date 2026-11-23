@@ -188,6 +188,10 @@ fn ct_kn6_01_core_checkpoints_gate_jumbling() {
             f.skip.push(format!("checkpoints[{k}].nu[{c}]"));
         }
     }
+    // A checkpoint's ν, labels and lattice are optional parts of kn6-checkpoints/1: one left out claims less.
+    for k in 0..3 {
+        f.optional.extend(["nu", "labels", "lattice"].map(|part| format!("checkpoints[{k}].{part}")));
+    }
     let report = assert_gate(&f);
     assert!(report.tampered() >= 16, "{}", report.tampered());
 }

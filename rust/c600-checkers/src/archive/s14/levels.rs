@@ -33,7 +33,7 @@ use c600_kernel::json::{self, Value};
 
 use super::common::{self, claim_int, claim_str, engine, heights, labels, start};
 use crate::archive::SubChecker;
-use crate::claims::{array, at, document, dot, field, hex64, keys, not_applicable, reject, require_format, Run, Step};
+use crate::claims::{array, at, document, dot, field, hex64, keys, reject, Run, Step};
 use crate::kinds::{Checker, Needs};
 use crate::replay::tree_tables;
 use crate::report::{codes, Sources};
@@ -84,16 +84,26 @@ fn stated_level(run: &mut Run, value: &Value, claim: &str, computed: Level) -> S
 fn run(engines: &Engines, run: &mut Run) -> Step<()> {
     let ctx = engine(engines)?;
     let doc = document(run.cert.bytes)?;
-    if let Some(reason) = common::unchecked_scope(&doc) {
-        return Err(not_applicable(reason));
-    }
-    require_format(&doc, FORMAT)?;
+    common::own(&doc, SOURCES.id)?;
     keys(
         &doc,
         "certificate",
-        &["digest", "format", "high_units", "histogram", "iterations", "lambda", "lambda_witness", "levels"],
-        &["cpu_s", "setup"],
+        &[
+            "cpu_s",
+            "digest",
+            "format",
+            "high_units",
+            "histogram",
+            "iterations",
+            "lambda",
+            "lambda_witness",
+            "levels",
+            "setup",
+        ],
+        &[],
     )?;
+    common::seconds(field(&doc, "cpu_s", "cpu_s")?, "cpu_s")?;
+    common::setup(field(&doc, "setup", "setup")?, "setup")?;
     let stated = hex64(field(&doc, "digest", "digest")?, "digest")?.to_owned();
 
     // The state: the table, or the end of a stored word from it.

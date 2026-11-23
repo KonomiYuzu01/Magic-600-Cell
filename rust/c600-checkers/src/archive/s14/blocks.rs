@@ -15,9 +15,11 @@
 //! - Per-grip rows: the straddlers by height and by own or other branch; for a clean grip what its cap holds (lattice
 //!   pieces, and own- and other-branch pieces by height, a key for every height and branch the state has) and whether
 //!   it is pure; for a blocked grip its covers by one clean cap (the first 20), whether every straddler has a clean
-//!   holder, and the retained twists (c, k) at clean caps that free it (the first 20). A twist's effect is Corollary
-//!   L1's count |S_d| − |I_c ∩ S_d| + |I_c ∩ S_{k⁻¹d}| (a proved consequence of Lemma L), over k in A4_c in the engine's
-//!   order and caps c in ascending order.
+//!   holder, and the retained twists (c, k) at clean caps that free it (the first 20), over caps c in ascending order
+//!   and k in A4_c in the engine's order. Each candidate twist is applied on the engine to a copy of the state, must be
+//!   admissible and move exactly its cap's pieces, and frees d when no piece it moved straddles d at its new pose,
+//!   evaluated exactly; only a cap that holds every straddler of d can free it, since a twist moves no other piece.
+//!   Corollary L1's count is not used, so a wrong lemma would show as a mismatch.
 //! - The anatomy of target grips (the own holders of the high units, in unit order, or the record's named target):
 //!   its straddlers and its foreign pieces in units with their cells, holders by kind (clean pure own class, clean
 //!   impure own class, clean other class, blocked) and the foreign load by height and branch. With `moves`, every
@@ -30,13 +32,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use c600_jumble::model::{NP, POLES};
 use c600_jumble::observe::Tables;
 use c600_jumble::state::{State, Status};
+use c600_jumble::twist::Twist;
 use c600_kernel::json::Value;
+use c600_kernel::parallel;
 
 use super::common::{
-    self, claim_bool, claim_int, claim_ints, engine, heights, holds, labels, lattice_inside, start, Labels,
+    self, claim_bool, claim_int, claim_ints, engine, heights, holds, labels, lattice_inside, start, Form, Labels,
 };
 use crate::archive::SubChecker;
-use crate::claims::{array, at, document, dot, field, hex64, keys, not_applicable, object, reject, Run, Step};
+use crate::claims::{array, at, document, dot, field, hex64, keys, object, reject, Run, Step};
 use crate::kinds::{Checker, Needs};
 use crate::replay::{tree_tables, Jumbling};
 use crate::report::Sources;
@@ -80,45 +84,23 @@ const COHELD: [&str; 12] = [
 fn run(engines: &Engines, run: &mut Run) -> Step<()> {
     let ctx = engine(engines)?;
     let doc = document(run.cert.bytes)?;
-    if let Some(reason) = common::unchecked_scope(&doc) {
-        return Err(not_applicable(reason));
-    }
-    if doc.get("format").is_some() {
-        return Err(not_applicable("a record with a format key is not a formatless stage 14 block record"));
-    }
-    let Some(map) = doc.as_object() else {
-        return Err(not_applicable("not a stage 14 block record"));
+    let form = common::own(&doc, SOURCES.id)?;
+    let fields: &[&str] = match form {
+        Form::Coheld => &["digest", "groups"],
+        Form::Caps => &["caps", "digest"],
+        Form::Anatomy => &["anatomy", "digest", "phi", "targets"],
+        other => return Err(reject("certificate", format!("{other:?} is not a block form"))),
     };
-    let names: BTreeSet<&str> = map.keys().map(String::as_str).collect();
-    let shape =
-        if names == BTreeSet::from(["digest", "groups"])
-            && map["groups"].as_array().and_then(|g| g.first()).and_then(Value::as_object).is_some_and(|g| {
-                g.keys().map(String::as_str).collect::<BTreeSet<_>>() == COHELD.iter().copied().collect()
-            })
-        {
-            Shape::Coheld
-        } else if names == BTreeSet::from(["digest", "caps"]) {
-            Shape::Caps
-        } else if names == BTreeSet::from(["anatomy", "digest", "phi", "targets"]) {
-            Shape::Anatomy
-        } else {
-            return Err(not_applicable("not a stage 14 block record (co-held units, per-grip rows or anatomy)"));
-        };
+    keys(&doc, "certificate", fields, &[])?;
     let stated = hex64(field(&doc, "digest", "digest")?, "digest")?.to_owned();
     let j = start(ctx, run, "digest", &stated)?;
     let tables = tree_tables(ctx, "digest")?;
     let facts = Facts::build(&j, tables)?;
-    match shape {
-        Shape::Coheld => coheld(run, &j.state, &facts, &doc),
-        Shape::Caps => caps(run, &j, &facts, &doc),
-        Shape::Anatomy => anatomy(run, &j, tables, &facts, &doc),
+    match form {
+        Form::Coheld => coheld(run, &j.state, &facts, &doc),
+        Form::Caps => caps(run, &j, &facts, &doc),
+        _ => anatomy(run, &j, tables, &facts, &doc),
     }
-}
-
-enum Shape {
-    Coheld,
-    Caps,
-    Anatomy,
 }
 
 /// The facts of the stated table every block record reads.
@@ -267,21 +249,6 @@ fn caps(run: &mut Run, j: &Jumbling, facts: &Facts, doc: &Value) -> Step<()> {
         .map(|&c| (c, (0..POLES).map(|d| common::intersection(facts.labels.inside(c), straddle(d)) as i64).collect()))
         .collect();
     let n_s: Vec<i64> = (0..POLES).map(|d| straddle(d).len() as i64).collect();
-    let mut freed: BTreeMap<usize, Vec<(usize, u16)>> = BTreeMap::new();
-    for &c in &clean_grips {
-        for k in ctx.kplus.a4(c) {
-            if k == 0 {
-                continue;
-            }
-            let pre = &ctx.kplus.perms[ctx.kplus.inv[k as usize] as usize];
-            for d in 0..POLES {
-                let after = n_s[d] - m[&c][d] + m[&c][pre[d] as usize];
-                if n_s[d] > 0 && after == 0 {
-                    freed.entry(d).or_default().push((c, k));
-                }
-            }
-        }
-    }
     let has_clean_holder = |p: u32| facts.row(p).iter().any(|&c| facts.clean[c]);
     for (c, value) in rows.iter().enumerate() {
         let path = at("caps", c);
@@ -320,14 +287,7 @@ fn caps(run: &mut Run, j: &Jumbling, facts: &Facts, doc: &Value) -> Step<()> {
             list_claim(run, value, &path, "clean_covers", &grips_value(&covers[..covers.len().min(20)]))?;
             claim_int(run, value, &path, "n_clean_covers", covers.len() as i64)?;
             claim_bool(run, value, &path, "every_straddler_has_clean_holder", s.iter().all(|&p| has_clean_holder(p)))?;
-            let twists = freed.get(&c).map_or(&[][..], |v| &v[..]);
-            let fp = dot(&path, "freed_by_one_retained_twist");
-            let stated = array(field(value, "freed_by_one_retained_twist", &path)?, &fp)?;
-            let shown = &twists[..twists.len().min(20)];
-            run.claim(&format!("{fp}.length"), &stated.len(), &shown.len())?;
-            for (i, (entry, &(g, k))) in stated.iter().zip(shown).enumerate() {
-                claim_ints(run, entry, &at(&fp, i), &[g as i64, k as i64])?;
-            }
+            array(field(value, "freed_by_one_retained_twist", &path)?, &dot(&path, "freed_by_one_retained_twist"))?;
         } else {
             let index = clean_grips.binary_search(&c).map_err(|_| reject(&path, "a clean grip"))?;
             let mut inside: BTreeMap<String, i64> = BTreeMap::new();
@@ -352,7 +312,98 @@ fn caps(run: &mut Run, j: &Jumbling, facts: &Facts, doc: &Value) -> Step<()> {
             claim_bool(run, value, &path, "pure", facts.pure[c])?;
         }
     }
+    // The retained twists that free each blocked grip, compared last: they are the costly part.
+    let freed = freed_twists(run, j, facts, &clean_grips, &lattice, &m, &n_s)?;
+    for (c, value) in rows.iter().enumerate() {
+        if facts.clean[c] {
+            continue;
+        }
+        let path = at("caps", c);
+        let twists = freed.get(&c).map_or(&[][..], |v| &v[..]);
+        let fp = dot(&path, "freed_by_one_retained_twist");
+        let stated = array(field(value, "freed_by_one_retained_twist", &path)?, &fp)?;
+        let shown = &twists[..twists.len().min(20)];
+        run.claim(&format!("{fp}.length"), &stated.len(), &shown.len())?;
+        for (i, (entry, &(g, k))) in stated.iter().zip(shown).enumerate() {
+            claim_ints(run, entry, &at(&fp, i), &[g as i64, k as i64])?;
+        }
+    }
     Ok(())
+}
+
+/// The retained twists (c, k) that free each blocked grip d, in the order of the caps c and of k in A4_c, each applied
+/// on the engine to a copy of the state. A twist at cap c moves exactly the pieces inside c, so a straddler of d
+/// outside c stays: only a clean cap that covers d (holds every straddler of d) can free it. At each such cap every
+/// retained letter (k in A4_c, the identity excluded, in the engine's order) must be admissible and move exactly the
+/// cap's pieces, and d is freed when none of the pieces it moved straddles d at its new pose, evaluated exactly. The
+/// twists run on the machine's threads; the result does not depend on them.
+#[allow(clippy::type_complexity)]
+fn freed_twists(
+    run: &mut Run,
+    j: &Jumbling,
+    facts: &Facts,
+    clean_grips: &[usize],
+    lattice: &[Vec<u32>],
+    m: &BTreeMap<usize, Vec<i64>>,
+    n_s: &[i64],
+) -> Step<BTreeMap<usize, Vec<(usize, u16)>>> {
+    let ctx = j.ctx;
+    let menu_items = j.menu.items.len();
+    // (cap, K⁺ element, item, twist, the grips the cap covers, the pieces it holds)
+    let mut jobs: Vec<(usize, u16, usize, Twist, Vec<usize>, Vec<u32>)> = Vec::new();
+    for (index, &c) in clean_grips.iter().enumerate() {
+        let covered: Vec<usize> = (0..POLES).filter(|&d| n_s[d] > 0 && m[&c][d] == n_s[d]).collect();
+        if covered.is_empty() {
+            continue;
+        }
+        let claim = format!("caps.freed_by_one_retained_twist (cap {c})");
+        let mut moved = facts.labels.inside(c).to_vec();
+        moved.extend(&lattice[index]);
+        moved.sort_unstable();
+        let mut retained: BTreeMap<u16, usize> = BTreeMap::new();
+        for item in 1..menu_items {
+            if let Some(k) = j.twist(c, item, &claim)?.kidx {
+                retained.insert(k, item);
+            }
+        }
+        for k in ctx.kplus.a4(c) {
+            if k == 0 {
+                continue;
+            }
+            let Some(&item) = retained.get(&k) else {
+                return Err(reject(&claim, format!("the menu has no retained letter of K⁺ element {k} at cap {c}")));
+            };
+            jobs.push((c, k, item, j.twist(c, item, &claim)?, covered.clone(), moved.clone()));
+        }
+    }
+    let results = parallel::map(jobs.len(), |n| -> Step<(bool, Vec<Vec<u32>>)> {
+        let (c, _, _, twist, covered, moved) = &jobs[n];
+        let claim = format!("caps.freed_by_one_retained_twist (cap {c})");
+        let mut after = Jumbling::new(ctx, j.menu.clone(), j.state.clone());
+        let outcome = after.apply(twist, &claim)?;
+        if outcome.status != Status::Admissible || &outcome.inside != moved {
+            return Ok((false, Vec::new()));
+        }
+        Ok((true, common::straddlers_among(ctx, &after.state, moved, covered, &claim)?))
+    });
+    let mut freed: BTreeMap<usize, Vec<(usize, u16)>> = BTreeMap::new();
+    for ((c, k, item, _, covered, _), result) in jobs.iter().zip(results) {
+        let claim = format!("caps.freed_by_one_retained_twist (cap {c})");
+        let (moved_as_held, after) = result.map_err(|_| reject(&claim, "an engine application did not finish"))??;
+        if !moved_as_held {
+            let stop = reject(
+                &claim,
+                format!("the retained letter [{c}, {item}] at a clean cap is refused or moves another set"),
+            );
+            return Err(run.failed(stop, "refused or another set"));
+        }
+        for (d, now) in covered.iter().zip(after) {
+            if now.is_empty() {
+                freed.entry(*d).or_default().push((*c, *k));
+            }
+        }
+    }
+    Ok(freed)
 }
 
 /// A stated object of counts compared key by key with the computed one.
@@ -594,14 +645,18 @@ fn moves(
                 ],
                 &[],
             )?;
+            if outcome.inside != held {
+                let stop = reject(dot(&ep, "moved"), "the engine moved another set than the cap's pieces");
+                return Err(run.failed(stop, outcome.inside.len()));
+            }
             claim_int(run, entry, &ep, "moved", held.len() as i64)?;
-            let seen = common::observe(ctx, tables, &after.state, &ep)?;
+            let hs = heights(ctx, tables, &after.state, &ep)?;
+            let seen = common::observe_from(ctx, &after.state, &hs);
             claim_int(run, entry, &ep, "dphi", seen.phi - phi_before)?;
             claim_int(run, entry, &ep, "max_h", seen.max_h)?;
             claim_int(run, entry, &ep, "off", seen.off)?;
             let at_x = labels(ctx, &after.state, &[x], false, &ep)?;
             claim_int(run, entry, &ep, "straddlers_x", at_x.straddle(x).len() as i64)?;
-            let hs = heights(ctx, tables, &after.state, &ep)?;
             let foreign = at_x
                 .inside(x)
                 .iter()

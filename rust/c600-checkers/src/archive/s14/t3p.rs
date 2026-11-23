@@ -36,6 +36,10 @@
 //! A chain record's `stop` statuses, its single-letter count and each round's `statuses_before` are the outcomes of
 //! `t3p-scan/1`, a finite search (the claim matrix's `14/finite_search` group of the same record); they are not
 //! checked here and the trace says so. Records of the scan, pairs and plus formats are `not_applicable`.
+//!
+//! A check record's `prefix_word` is replayed from the table letter by letter, each letter admissible, and the state it
+//! reaches must be round 0's `digest_before`. Its `dropped_identities` (the certificate's helpers of item 0) are
+//! compared with the certificate input; without it a check record can name none.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -47,10 +51,10 @@ use c600_kernel::json::Value;
 
 use super::common::{
     self, claim_bool, claim_int, claim_str, engine, grip, heights, image, intersection, labels, observe, piece, start,
-    Heights, Labels,
+    Form, Heights, Labels,
 };
 use crate::archive::SubChecker;
-use crate::claims::{array, at, document, dot, field, hex64, int, keys, not_applicable, reject, Run, Step};
+use crate::claims::{array, at, document, dot, field, hex64, int, keys, reject, Run, Step};
 use crate::kinds::{Checker, Needs};
 use crate::replay::{left_facts, letter, tree_tables, Jumbling};
 use crate::report::Sources;
@@ -85,15 +89,11 @@ pub const CERTIFICATE_INPUT: &str = "certificate";
 fn run(engines: &Engines, run: &mut Run) -> Step<()> {
     let ctx = engine(engines)?;
     let doc = document(run.cert.bytes)?;
-    if let Some(reason) = common::unchecked_scope(&doc) {
-        return Err(not_applicable(reason));
-    }
-    match doc.get("format").and_then(Value::as_str) {
-        Some(CERTIFICATE) => certificate(ctx, run, &doc),
-        Some(CHECK) => check_record(ctx, run, &doc),
-        Some(CHAIN) => chain(ctx, run, &doc),
-        Some(other) => Err(not_applicable(format!("the format {other} is not a T3P round record"))),
-        None => Err(not_applicable("a formatless record is not a T3P round record")),
+    match common::own(&doc, SOURCES.id)? {
+        Form::Certificate => certificate(ctx, run, &doc),
+        Form::Check => check_record(ctx, run, &doc),
+        Form::Chain => chain(ctx, run, &doc),
+        other => Err(reject("format", format!("{other:?} is not a T3P round form"))),
     }
 }
 
@@ -123,18 +123,17 @@ fn check_record(ctx: &c600_jumble::Context, run: &mut Run, doc: &Value) -> Step<
     keys(
         doc,
         "certificate",
-        &["digest_after", "failures", "format", "passed", "prefix_word", "rounds"],
-        &["cpu_s", "setup"],
+        &["cpu_s", "digest_after", "failures", "format", "passed", "prefix_word", "rounds", "setup"],
+        &[],
     )?;
+    common::seconds(field(doc, "cpu_s", "cpu_s")?, "cpu_s")?;
+    common::setup(field(doc, "setup", "setup")?, "setup")?;
     let rounds = nonempty(field(doc, "rounds", "rounds")?, "rounds")?;
     let first = at("rounds", 0);
     let stated = hex64(field(&rounds[0], "digest_before", &first)?, &format!("{first}.digest_before"))?.to_owned();
+    // The prefix word is replayed from the table; the state it reaches is round 0's.
     let prefix = field(doc, "prefix_word", "prefix_word")?;
-    if !array(prefix, "prefix_word")?.is_empty() {
-        return Err(not_applicable("a check after a prefix word names no start digest of its table"));
-    }
-    run.held("prefix_word", "empty");
-    let mut j = start(ctx, run, &format!("{first}.digest_before"), &stated)?;
+    let mut j = common::start_after(ctx, run, &format!("{first}.digest_before"), &stated, prefix, "prefix_word")?;
     let items = j.menu.items.len();
     let certified = certified_rounds(run, items)?;
     if let Some((digest, specs)) = &certified {
@@ -144,7 +143,8 @@ fn check_record(ctx: &c600_jumble::Context, run: &mut Run, doc: &Value) -> Step<
     let tables = tree_tables(ctx, "rounds")?;
     for (k, value) in rounds.iter().enumerate() {
         let path = at("rounds", k);
-        keys(value, &path, &ROUND_KEYS, &["cpu_s"])?;
+        keys(value, &path, &ROUND_KEYS, &[])?;
+        common::seconds(field(value, "cpu_s", &path)?, &dot(&path, "cpu_s"))?;
         let rows = array(field(value, "helpers", &path)?, &dot(&path, "helpers"))?;
         let mut letters = Vec::with_capacity(rows.len());
         for (i, row) in rows.iter().enumerate() {
@@ -154,13 +154,25 @@ fn check_record(ctx: &c600_jumble::Context, run: &mut Run, doc: &Value) -> Step<
         let dropped = field(value, "dropped_identities", &path)?;
         let letters = Value::Array(letters);
         let spec = spec(value, &path, items, &letters, Some(dropped))?;
+        // The dropped identity helpers are the certificate's helpers of item 0: they are compared with the
+        // certificate input, and without it a check record can name none.
+        let dp = dot(&path, "dropped_identities");
+        let stated_dropped: Vec<String> = spec.dropped.iter().map(|&l| text(l)).collect();
+        match &certified {
+            Some((_, specs)) => {
+                let named: Vec<String> = specs[k].dropped.iter().map(|&l| text(l)).collect();
+                run.claim(&dp, &format!("[{}]", stated_dropped.join(", ")), &format!("[{}]", named.join(", ")))?;
+            }
+            None if !spec.dropped.is_empty() => {
+                let stop = reject(&dp, "dropped identity helpers are checked against the certificate input");
+                return Err(run.failed(stop, "no certificate input"));
+            }
+            None => run.held(&dp, "[] (no certificate input: no identity helper is named)"),
+        }
         if let Some((_, specs)) = &certified {
             let named = &specs[k];
-            let same = named.x == spec.x
-                && named.h == spec.h
-                && named.unit == spec.unit
-                && named.helpers == spec.helpers
-                && named.dropped == spec.dropped;
+            let same =
+                named.x == spec.x && named.h == spec.h && named.unit == spec.unit && named.helpers == spec.helpers;
             if !same {
                 let stop = reject(&path, "the round is not the certificate's round");
                 return Err(run.failed(stop, format!("{CERTIFICATE_INPUT}.rounds[{k}]")));
@@ -169,7 +181,7 @@ fn check_record(ctx: &c600_jumble::Context, run: &mut Run, doc: &Value) -> Step<
         }
         let order = stated_order(value, &path)?;
         let outcome = round(run, &mut j, tables, &path, &spec, Some(&order))?;
-        compare_round(run, value, &path, &spec, &outcome)?;
+        compare_round(run, value, &path, items, &outcome)?;
     }
     claim_str(run, doc, "", "digest_after", &j.digest())?;
     claim_bool(run, doc, "", "passed", true)?;
@@ -182,19 +194,28 @@ fn chain(ctx: &c600_jumble::Context, run: &mut Run, doc: &Value) -> Step<()> {
         doc,
         "certificate",
         &[
+            "cpu_s",
             "end_digest",
             "end_n4",
             "end_phi",
             "format",
+            "name",
+            "policy",
             "rounds",
             "start_digest",
             "start_n4",
             "start_phi",
             "stop",
+            "table",
             "word",
         ],
-        &["cpu_s", "name", "policy", "table"],
+        &[],
     )?;
+    // The run's name, policy and table path describe it and bind nothing (LB5.14); its time is no claim.
+    common::seconds(field(doc, "cpu_s", "cpu_s")?, "cpu_s")?;
+    for key in ["name", "policy", "table"] {
+        crate::claims::string(field(doc, key, key)?, key)?;
+    }
     let stated = hex64(field(doc, "start_digest", "start_digest")?, "start_digest")?.to_owned();
     let mut j = start(ctx, run, "start_digest", &stated)?;
     let items = j.menu.items.len();
@@ -206,7 +227,7 @@ fn chain(ctx: &c600_jumble::Context, run: &mut Run, doc: &Value) -> Step<()> {
     let mut word = Vec::new();
     for (k, value) in rounds.iter().enumerate() {
         let path = at("rounds", k);
-        keys(value, &path, &CHAIN_ROUND_KEYS, &["statuses_before"])?;
+        keys(value, &path, &CHAIN_ROUND_KEYS, &[])?;
         claim_int(run, value, &path, "round", k as i64 + 1)?;
         let spec = spec(value, &path, items, field(value, "helpers", &path)?, None)?;
         let order = stated_order(value, &path)?;
@@ -246,10 +267,11 @@ fn chain(ctx: &c600_jumble::Context, run: &mut Run, doc: &Value) -> Step<()> {
     Ok(())
 }
 
-const ROUND_KEYS: [&str; 30] = [
+const ROUND_KEYS: [&str; 31] = [
     "D",
     "F",
     "S",
+    "cpu_s",
     "d0",
     "digest_before",
     "dropped_identities",
@@ -279,7 +301,8 @@ const ROUND_KEYS: [&str; 30] = [
     "x",
 ];
 
-const CHAIN_ROUND_KEYS: [&str; 14] = [
+/// The fields of a chain's round; `statuses_before` is the scan's (unchecked, `14/finite_search`) but is part of the form.
+const CHAIN_ROUND_KEYS: [&str; 15] = [
     "D",
     "F",
     "S",
@@ -292,6 +315,7 @@ const CHAIN_ROUND_KEYS: [&str; 14] = [
     "phi_after",
     "predicted_phi",
     "round",
+    "statuses_before",
     "unit_piece",
     "x",
 ];
@@ -829,7 +853,7 @@ fn require_replay(run: &mut Run, path: &str, out: &Outcome) -> Step<()> {
 }
 
 /// A check record's round compared field by field with the recomputed round.
-fn compare_round(run: &mut Run, value: &Value, path: &str, spec: &Spec, out: &Outcome) -> Step<()> {
+fn compare_round(run: &mut Run, value: &Value, path: &str, items: usize, out: &Outcome) -> Step<()> {
     claim_int(run, value, path, "target_class", out.target_class)?;
     claim_int(run, value, path, "unit_size", out.unit_size)?;
     claim_int(run, value, path, "unit_height", out.unit_height)?;
@@ -837,8 +861,6 @@ fn compare_round(run: &mut Run, value: &Value, path: &str, spec: &Spec, out: &Ou
     claim_str(run, value, path, "digest_before", &out.digest_before)?;
     claim_int(run, value, path, "phi_before", out.phi_before)?;
     claim_bool(run, value, path, "unit_lowering", out.unit_lowering)?;
-    let dropped: Vec<String> = spec.dropped.iter().map(|&l| text(l)).collect();
-    run.held(dot(path, "dropped_identities"), format!("[{}]", dropped.join(", ")));
     let hypotheses = field(value, "hypotheses", path)?;
     let hp = dot(path, "hypotheses");
     keys(hypotheses, &hp, &["P0", "P1", "P2", "P3", "P4"], &[])?;
@@ -918,7 +940,7 @@ fn compare_round(run: &mut Run, value: &Value, path: &str, spec: &Spec, out: &Ou
         let flag = if last { "every_member_lowered" } else { "delta_phi_equal" };
         keys(stated, &p, &["admissible", "digest", "letter", "moved", "moved_set_equal", "n4", "phi", flag], &[])?;
         let lp = dot(&p, "letter");
-        let named = letter(field(stated, "letter", &p)?, &lp, 60)?;
+        let named = letter(field(stated, "letter", &p)?, &lp, items)?;
         run.claim(&lp, &text(named), &text(row.letter))?;
         claim_bool(run, stated, &p, "admissible", row.admissible)?;
         claim_int(run, stated, &p, "moved", row.moved)?;
@@ -933,4 +955,27 @@ fn compare_round(run: &mut Run, value: &Value, path: &str, spec: &Spec, out: &Ou
     require_replay(run, path, out)?;
     claim_bool(run, value, path, "passed", true)?;
     empty_list(run, value, path, "failures")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// CT-LB5-01, precedence part: a reversed real edge is no topological order. No stored round of stage 14 has a
+    /// precedence edge, so the edge is set here on the functions every round's order goes through.
+    #[test]
+    fn ct_lb5_01_reversed_precedence_edge_is_no_topological_order() {
+        let nodes = [344, 451, 522];
+        let edges: BTreeSet<(usize, usize)> = [(451, 344)].into_iter().collect();
+        assert_eq!(least_order(&nodes, &edges), Some(vec![451, 344, 522]));
+        assert!(topological(&nodes, &edges, &[451, 344, 522]));
+        assert!(topological(&nodes, &edges, &[451, 522, 344]));
+        // The edge reversed, a helper left out, a helper repeated.
+        assert!(!topological(&nodes, &edges, &[344, 451, 522]));
+        assert!(!topological(&nodes, &edges, &[451, 344]));
+        assert!(!topological(&nodes, &edges, &[451, 451, 522]));
+        // A cycle has no order at all (P1 fails).
+        let cycle: BTreeSet<(usize, usize)> = [(451, 344), (344, 451)].into_iter().collect();
+        assert_eq!(least_order(&nodes, &cycle), None);
+    }
 }

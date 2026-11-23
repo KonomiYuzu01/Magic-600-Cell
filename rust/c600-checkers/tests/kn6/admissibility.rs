@@ -98,6 +98,9 @@ fn ct_kn6_01_core_admissibility_gate_synthetic() {
             f.skip.push(format!("{base}.{side}[0][2]"));
         }
     }
+    // The survey is optional, and so is each of its entries; the last step is blocked and moves nothing, so the word
+    // without it is another word with the same end.
+    f.optional = ["survey", "survey[1]", "steps[6]"].map(String::from).to_vec();
     let report = assert_gate(&f);
     assert!(report.tampered() >= 25, "{}", report.tampered());
 }
