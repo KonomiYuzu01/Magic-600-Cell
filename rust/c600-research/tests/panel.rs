@@ -5,10 +5,12 @@
 //! data: a new session in memory, the restoration corpus's members read in place (read-only) through the host's file
 //! grant, and the written files in a fresh folder under the test's scratch directory.
 //!
-//! R10 has no indexed conformance test (LP5 plan, section 5), so no test here names a CT ID (PHS.62). What is not
-//! run: the panel's look, layout, text and motion (ADR-D02, K2); a commit's cancellation of a queued row (a research
-//! session has no commit route, since `operation.preview` is the solving profile's); `job.stop` and
-//! `session.branch.select`, which the command layer does not build here; Lean, which no test runs (LP5-2).
+//! R10 has no indexed conformance test of its own (LP5 plan, section 5). Two tests here run parts of other pieces'
+//! LP5 tests through the rows R10 serves, R9's obligation export and R8's preflight and archived runs, and their docs
+//! carry those tests' PHS.62 markers; the other two tests name none. What is not run: the panel's look, layout, text
+//! and motion (ADR-D02, K2); a commit's cancellation of a queued row (a research session has no commit route, since
+//! `operation.preview` is the solving profile's); `job.stop` and `session.branch.select`, which the command layer does
+//! not build here; Lean, which no test runs (LP5-2).
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -220,6 +222,11 @@ fn completion_kind(receipt: &Receipt, layer: &CommandLayer<MemoryStore>) -> &'st
 /// shapes, none a commit or app row, none taking a token, preparing a preview or having a gate; H-08 holds them as its
 /// fifth delta (owner, 23 November 2026, item 3.1), so the table is H-08's rows as H-08 has them, none added twice, and
 /// the H-08 rows the panel invokes are in the table.
+///
+/// CT-LB5-11 (source, part: `research.obligation.export` is a `file` row that takes no token and has no gate, action
+/// guard or preview, so an export reaches no commit gate; not run here: the export, which `panel_driver_end_to_end`
+/// and `tests/obligation_export.rs` run).
+/// CT-RTE-23 (source, part: the same row shape, which gives an export no commit authority; not run here: the export).
 #[test]
 fn panel_rows_are_lp5s_block_of_the_command_table() {
     let table = panel::table();
@@ -309,6 +316,26 @@ fn a_queued_row_reads_loading_and_a_full_lane_reads_busy() {
 /// members of the corpus; the claims with LB5.14's preflight; a KN6 check job of R01's claim group; its report, the
 /// group's evidence word and the runs; a reproduction; the check bundle and the obligation exports; and the stale
 /// answers after the revision or the research data moved. Every answer carries the revision it was computed at.
+///
+/// R10 has no indexed conformance test; these markers name the parts of other pieces' tests that the flow runs.
+///
+/// CT-LB5-11 (source, part: the row writes the supported statement's exact text only to a file granted for writing,
+/// and an ungranted destination and two statements with no body write nothing; not run here: the refusal vectors and
+/// the checks that an export changes no evidence, claim or revision, which `tests/obligation_export.rs` runs).
+/// CT-PS1-26 (source, part: the format packet's supported statement exported byte for byte, with its SHA-256, through
+/// a granted file, and statements with no body refused with `LB5:input.obligation_untranslatable`, writing nothing; not
+/// run here: the unknown-symbol and wrong-arity vectors, which `tests/obligation_export.rs` runs, and a named
+/// statement at the row).
+/// CT-RTE-23 (source, part: the export through LB5.18's file grant; not run here: its format, pins and the checks that
+/// it promotes no claim, which `tests/obligation_export.rs` runs).
+/// CT-ERR-19 (source, part: a refused `research.obligation.export` writes no file; not run here: the codes' owning
+/// chapters, refusal form and retries, which `c600-evidence/tests/obligation.rs` runs).
+/// CT-LB5-06 (source, part: LB5.14's preflight at the claims row, R01's group ready and q11 unavailable with its
+/// missing dependency and its label word for word, a check of q11 refused before anything runs, and an import adding
+/// no check; not run here: stage 19's digests, tables and certificates).
+/// CT-DET-24 (source, part: the archive's runs listed as recorded, stage 15's stop among them, each reproducing as
+/// `not run`, and R01 counted only through a check job of its own, with that job's scope; not run here: the
+/// data-only archive of stage 19).
 #[test]
 fn panel_driver_end_to_end() {
     let mut p = Panel::new();
