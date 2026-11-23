@@ -677,12 +677,15 @@ fn a_runtime_envelope_without_its_rows_token_never_takes_the_command_id() {
 
 /// CT-KN5-10 (part: the layer's public functions that take `&mut self` are the allowlisted entry points, its test hooks
 /// exist only in builds with debug assertions or the `test-hooks` feature, and the shell reaches the layer through
-/// `invoke`, `present` and `presentation_unavailable` alone besides reads; each row's delivery against the restriction
-/// table runs whole in `tests/r05_rows.rs`), R-05, KN5.1, L15.
+/// `invoke`, `present` and `presentation_unavailable` alone besides reads, and through `begin_step` for EV4.20's step
+/// action, which writes a playback's pending entry before the shell sends the ordinary row (LP4-9); each row's delivery
+/// against the restriction table runs whole in `tests/r05_rows.rs`), R-05, KN5.1, L15. The layer's sources are
+/// `src/layer.rs` and its playback module `src/layer/playback.rs`.
 #[test]
 fn the_layer_has_no_public_mutator_beside_its_entry_points() {
     const HOOK: &str = "#[cfg(any(debug_assertions, feature = \"test-hooks\"))]";
-    let lines: Vec<&str> = include_str!("../src/layer.rs").lines().map(str::trim).collect();
+    let sources = [include_str!("../src/layer.rs"), include_str!("../src/layer/playback.rs")];
+    let lines: Vec<&str> = sources.iter().flat_map(|source| source.lines()).map(str::trim).collect();
     let mut found = Vec::new();
     for (i, line) in lines.iter().enumerate() {
         let Some(rest) = line.strip_prefix("pub fn ") else { continue };
@@ -728,6 +731,10 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("take_program_job", false),
         ("finish_program_job", false),
         ("finish_program_job_with", false),
+        // LP4-9 (`src/layer/playback.rs`): the host's recorder and module versions, and EV4.20's step action.
+        ("set_recorder", false),
+        ("set_module_versions", false),
+        ("begin_step", false),
     ];
     let expected: Vec<(String, bool)> = expected.iter().map(|(name, hook)| ((*name).to_owned(), *hook)).collect();
     assert_eq!(found, expected);
@@ -744,8 +751,10 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
     calls.sort_unstable();
     calls.dedup();
     // `layout_hint` is the layout history's hint (ADR-D01.14), read as `undo_hint` is.
-    let reads = ["frame", "identity_binding", "layout_hint", "revision", "table", "undo_hint"];
-    let mut expected = vec!["invoke", "present", "presentation_unavailable"];
+    // `step_arguments` and `step_draft` read the step a playback waits at (EV4.20, LP4-9).
+    let reads =
+        ["frame", "identity_binding", "layout_hint", "revision", "step_arguments", "step_draft", "table", "undo_hint"];
+    let mut expected = vec!["begin_step", "invoke", "present", "presentation_unavailable"];
     expected.extend(reads);
     expected.sort_unstable();
     assert_eq!(calls, expected);

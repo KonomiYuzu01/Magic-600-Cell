@@ -129,6 +129,9 @@ use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
 };
+use crate::recording::{
+    JOB_STOP_ROW, RECORDING_CONVERT_ROW, RECORDING_PLAY_ROW, RECORDING_START_ROW, RECORDING_STOP_ROW,
+};
 use crate::repair::{self, REPAIR_LIST_ROW};
 use crate::sets::{saved_set_record, SavedSet, REPLACE, SAVED_SET_PREFIX, SET_SAVE_RECORD, SET_SAVE_ROW};
 use crate::store::{
@@ -144,6 +147,8 @@ use crate::worksheet::{
     WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
+
+mod playback;
 
 /// The mode of a revision with Jumble off: a session starts with Jumble off.
 pub const MODE: &str = "jumble_off";
@@ -170,8 +175,6 @@ pub const ROLLBACK_ROW: &str = "session.rollback";
 /// draft): a preview that replaced one the solver was shown commits only once this long has passed since the first
 /// frame that shows it.
 pub const SETTLE_DRAFT: Duration = Duration::from_millis(250);
-/// The stored row that plays a recording; a run inside its job never replaces a preview (ADR-D01.9).
-const RECORDING_PLAY_ROW: &str = "recording.play";
 
 /// The monotonic clock the layer measures ADR-D01.9's settle interval with: the time since a fixed start. The layer
 /// starts with the process's clock ([`MonotonicClock`]); a host may give it another ([`CommandLayer::set_clock`]).
@@ -385,6 +388,11 @@ pub struct ProgramJob {
     /// The budget the invocation declared, admitted under the ceiling ([`CommandLayer::budget_ceiling`]): the host runs
     /// the entry under it (KN7.7; draft).
     pub budget: Budget,
+    /// The module digest a recorded step names, for a job a playback's step started (EV4.10, EV4.14; LP4-9 draft): the
+    /// hex SHA-256 of the closure of the module's version that was active when the step was recorded. The host binds
+    /// the job to that version and no other (`Modules::bind_pinned`), so a module of the same name never stands in for
+    /// it. `None` for every other job, which binds the active version.
+    pub module: Option<String>,
 }
 
 impl ProgramJob {
@@ -954,6 +962,9 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     recovery: Option<Error>,
     limbo: Option<Adoption>,
     generation: u64,
+    /// Capture and playback (LP4-9; [`crate::recording`]): the host's recorder, the capture in progress, the stored
+    /// recordings and playback states, and the live playback jobs and children.
+    rec: playback::Rec,
 }
 
 impl<S: Store> CommandLayer<S> {
@@ -1033,6 +1044,7 @@ impl<S: Store> CommandLayer<S> {
             recovery: None,
             limbo: None,
             generation: 0,
+            rec: playback::Rec::default(),
         }
     }
 
@@ -1695,8 +1707,8 @@ impl<S: Store> CommandLayer<S> {
         Ok(())
     }
 
-    /// Whether run `run` runs inside a `recording.play` job: its job, or a job of a run that invoked it, plays a
-    /// recording. A chain that does not get older is not followed.
+    /// Whether run `run` runs inside a `recording.play` job: its job, or a job of a run that invoked it, is an unattended
+    /// step a playback started ([`CommandLayer::played_child`]). A chain that does not get older is not followed.
     fn in_recording(&self, run: &str) -> bool {
         let mut run = run.to_owned();
         let mut below = u64::MAX;
@@ -1707,7 +1719,7 @@ impl<S: Store> CommandLayer<S> {
             let Some(program) = self.running.get(&job) else {
                 return false;
             };
-            if program.row == RECORDING_PLAY_ROW {
+            if self.played_child(program) {
                 return true;
             }
             match &program.caller {
@@ -2347,6 +2359,7 @@ impl<S: Store> CommandLayer<S> {
             }
         }
         self.next_epoch();
+        self.end_plays();
         self.generation += 1;
     }
 
@@ -2590,6 +2603,9 @@ impl<S: Store> CommandLayer<S> {
                 self.exclusive_free()
             }
             "protection.orbit.set" | POLICY_ROW | GRIP_REBIND_ROW | MACRO_SAVE_ROW => Ok(()),
+            RECORDING_START_ROW | RECORDING_STOP_ROW | RECORDING_PLAY_ROW | RECORDING_CONVERT_ROW | JOB_STOP_ROW => {
+                self.recording_gates(row)
+            }
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
                 None => {
@@ -2629,7 +2645,8 @@ impl<S: Store> CommandLayer<S> {
             .values()
             .filter(|program| self.table.row(&program.row).is_some_and(|row| row.lane == Lane::Program))
             .count();
-        if queued + running >= self.program_capacity {
+        // A live playback holds the program lane too (H-08: `recording.play` is a program-lane job row).
+        if queued + running + self.rec.plays.len() >= self.program_capacity {
             return Err(Error::new(code::LANE_FULL, "the program lane is full"));
         }
         Ok(())
@@ -2672,7 +2689,8 @@ impl<S: Store> CommandLayer<S> {
     /// is the solver's too, not `workspace.set`, which M6 does not grant a program (draft), and not `worksheet.save` or
     /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2), and not
     /// `worksheet.compare`, the solver's comparison before a reuse (U6-040; draft), whose job would hold the exclusive
-    /// lane the solver's previews take. Of the rows an entry
+    /// lane the solver's previews take, and not a `recording.*` row: capture and playback are the solver's (EV4.22: RPI.14
+    /// stays true, playback is solver-invoked). Of the rows an entry
     /// runs, an overlay row or a served row, only a query or view row: a run alone causes no durable action, so it
     /// reaches no workspace row, whose completion is a durable write outside the undo order, and no file row (findings
     /// B3 and B4 of the KN5 boundary attack). A run that a solver command started reaches none either: a program
@@ -2688,6 +2706,7 @@ impl<S: Store> CommandLayer<S> {
             && row.id != WORKSHEET_SAVE_ROW
             && row.id != WORKSHEET_LOAD_ROW
             && row.id != WORKSHEET_COMPARE_ROW
+            && !crate::recording::recording_row(&row.id)
             && (row.overlay.is_none() || matches!(row.kind, Kind::Query | Kind::View))
     }
 
@@ -2759,6 +2778,9 @@ impl<S: Store> CommandLayer<S> {
         if self.receipts.contains_key(&key) || self.lost.contains_key(&key) {
             return self.kernel_outcome(caller, &invocation.command, &request);
         }
+        // A manual step's pending entry is dispatched now (EV4.20); capture reads the invocation before it runs.
+        self.rec.awaiting.remove(&key);
+        let captured = self.capture_begin(caller, &invocation, &request);
         let (job, status) = match self.dispatch(caller, &invocation, &request, &inputs) {
             Ok(answer) => answer,
             Err(error) => (None, Status::Refused(error)),
@@ -2769,8 +2791,11 @@ impl<S: Store> CommandLayer<S> {
             return receipt;
         }
         let receipt = Receipt { command: invocation.command.clone(), request: request.clone(), job, status };
-        let record = self.receipts.entry(key).or_insert(Record { request, receipt, durable: false });
-        record.receipt.clone()
+        let record = self.receipts.entry(key.clone()).or_insert(Record { request, receipt, durable: false });
+        let receipt = record.receipt.clone();
+        self.capture_end(captured, key);
+        self.reconcile_children();
+        receipt
     }
 
     fn dispatch(
@@ -2786,6 +2811,9 @@ impl<S: Store> CommandLayer<S> {
         let Some(row) = self.table.row(&invocation.row).cloned() else {
             return refused(code::UNKNOWN_ROW, format!("no row `{}`", invocation.row));
         };
+        // An unattended playback step plays only the eligible row it was checked for, with no token (EV4.12, EV4.17,
+        // EV4.22): whatever reached this point, nothing else is dispatched while it plays.
+        self.playing_admits(&row, invocation)?;
         if let Caller::Runtime { .. } = caller {
             if matches!(row.kind, Kind::Commit | Kind::App) {
                 return refused(code::COMMIT_ROW_REFUSED, format!("the runtime may not invoke `{}` (KN5.15)", row.id));
@@ -2845,6 +2873,11 @@ impl<S: Store> CommandLayer<S> {
             REPAIR_LIST_ROW => self.admit_repair(caller, invocation),
             VIEW_OPEN_ROW | VIEW_CLOSE_ROW => self.view_row(caller, invocation, &row, args),
             FIND_ROW => self.find_row(caller, &row, args),
+            RECORDING_START_ROW => self.recording_start(&row, args),
+            RECORDING_STOP_ROW => self.recording_stop(&row, args),
+            RECORDING_PLAY_ROW => self.recording_play(caller, invocation, &row, args),
+            RECORDING_CONVERT_ROW => self.recording_convert(caller, invocation, request, &row, args),
+            JOB_STOP_ROW => self.job_stop(&row, args),
             _ if row.overlay.is_some() => {
                 // A language-defined row whose module failed its static check runs nothing: the palette lists it as
                 // unavailable with this diagnostic, and a press by key or palette is refused with it (KN5.4, EV4.2).
@@ -3048,7 +3081,7 @@ impl<S: Store> CommandLayer<S> {
             }
         }
         self.jobs = keep;
-        ran
+        ran + self.run_plays()
     }
 
     fn build_preview(
@@ -3504,6 +3537,8 @@ impl<S: Store> CommandLayer<S> {
         self.revision = transaction.revision.clone();
         self.order = transaction.order;
         self.head = head;
+        // The action each durable invocation took, for a recording's `action` and a playback's map (LI.9, EV4.18).
+        self.rec.took.insert((transaction.caller.scope(), transaction.command.clone()), transaction.order);
         // A record write, or its undo or redo, or a workspace row's writes: each record's version advances and never
         // goes back (KN0.8).
         for RecordWrite { name, value } in transaction.record.iter().chain(&transaction.records) {
@@ -5592,6 +5627,7 @@ impl<S: Store> CommandLayer<S> {
             overlay,
             inputs: inputs.to_vec(),
             budget,
+            module: self.child_module(caller, &invocation.command),
         };
         self.jobs.push_back(Job {
             id,
@@ -5693,7 +5729,9 @@ impl<S: Store> CommandLayer<S> {
         };
         self.settle(&key, status);
         self.generation += 1;
-        self.receipts.get(&key).map(|record| record.receipt.clone())
+        let receipt = self.receipts.get(&key).map(|record| record.receipt.clone());
+        self.reconcile_children();
+        receipt
     }
 
     /// The checks a job's output passes before the layer takes it (draft): only a workspace row's job writes records,

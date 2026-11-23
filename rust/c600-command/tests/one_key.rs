@@ -20,7 +20,9 @@ use c600_kernel::{Kernel, Snapshot};
 const SECRET: [u8; 32] = [7; 32];
 /// A tool's workspace row, whose completion writes records.
 const SAVE: &str = "tool.save";
-const PLAY: &str = "recording.play";
+/// A stored workspace row whose undo class is `none`, which an entry serves here (`recording.play` played this part
+/// until LP4-9 built it in the layer).
+const PLAY: &str = "session.timer.start";
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -134,11 +136,11 @@ impl Fixture {
         self.shell.invoke(&mut self.layer, ONE_KEY_ROW, own(name)).unwrap()
     }
 
-    /// Registers a workspace tool row and serves `recording.play`, whose completions write records.
+    /// Registers a workspace tool row and serves `session.timer.start`, whose completions write records.
     fn with_jobs(&mut self) {
         let overlay = Overlay { module: "tools/save".into(), entry: "run".into() };
         self.layer.register_overlay(SAVE, Kind::Workspace, &[], overlay).unwrap();
-        self.layer.serve_row(PLAY, Overlay { module: "tools/recording".into(), entry: "play".into() }).unwrap();
+        self.layer.serve_row(PLAY, Overlay { module: "tools/timer".into(), entry: "start".into() }).unwrap();
     }
 
     /// The solver invokes `row`, whose job the host takes; returns the job.
@@ -456,12 +458,12 @@ fn every_commit_rechecks_the_head_against_its_recorded_hash() {
 }
 
 /// The press commits only a value the solver kept with `workspace.set` (ADR-D01.12; the reading of row 4: no key
-/// commits a word the solver never kept). A tool's workspace completion or a recording's completion that rewrites the
+/// commits a word the solver never kept). A tool's workspace completion or a served stored row's completion that rewrites the
 /// record is refused with `named_object_invalid`, a press minted before the rewrite included, and nothing is built or
 /// committed; once the solver keeps the new value, the press commits it.
 #[test]
 fn a_value_a_job_wrote_is_not_the_solvers_until_they_keep_it() {
-    for (row, args) in [(SAVE, json::object([])), (PLAY, json::object([("recording", text("r1"))]))] {
+    for (row, args) in [(SAVE, json::object([])), (PLAY, json::object([]))] {
         let mut f = fixture(&[]);
         f.with_jobs();
         f.keep("own", &[1]);

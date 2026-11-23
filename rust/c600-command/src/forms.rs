@@ -68,8 +68,9 @@ fn revision(value: &Value) -> bool {
 fn form(ty: &str, value: &Value) -> Option<bool> {
     let ty = ty.strip_suffix('?').unwrap_or(ty);
     Some(match ty {
-        "Nat" => nat(value),
+        "Nat" | "JobId" => nat(value),
         "Text" => value.as_str().is_some(),
+        "RecordingRef" => value.as_str().is_some_and(|name| !name.is_empty()),
         "CellId" => cell(value),
         "CellIdPair" => value.as_array().is_some_and(|pair| pair.len() == 2 && pair.iter().all(cell)),
         "RevisionRef" => revision(value),
@@ -107,6 +108,7 @@ pub(crate) fn check(row: &Row, args: &BTreeMap<String, Value>, current: &Revisio
 ///   the forms.
 /// - `FilterRef` is a result reference `{"job": Nat, "digest": Text}` and `FilterPreviewRef` `{"epoch": Nat, "job":
 ///   Nat}`, a job and the epoch it ran in ([`crate::filter`]; draft). What they name is checked after the forms.
+/// - `JobId` is a `Nat`, and `RecordingRef` a recording's name, a nonempty text (LP4-9; draft).
 /// - `CanonicalObjectRefs` is a list of pieces or positions, as `set.save`'s `kind` names them, each an integer from 0
 ///   to 177,119 ([`c600_kernel::PIECES`]). An empty list and a repeated member pass, as they do in
 ///   [`c600_kernel::Kernel::protected_pieces`] (draft, after LP3's `save_set`, whose `members` is `List<Nat>`).

@@ -256,6 +256,50 @@ impl Shell {
         Ok(self.send(layer, invocation))
     }
 
+    /// EV4.20's step action: plays the user step that the playback of `recording` waits at as the solver's own press.
+    /// The shell takes the recorded row and arguments ([`CommandLayer::step_arguments`]), fills in what only the press
+    /// fixes (the current hint of the step's history for an undo or redo, the presented preview for a word commit, and
+    /// `confirm` when the solver confirms, since a recording stores no confirmation), chooses the command ID and mints
+    /// the token ([`Shell::prepare`]); the layer checks the step and writes `pending` ([`CommandLayer::begin_step`]);
+    /// then the ordinary row is sent. A refusal before the send changes nothing but what `begin_step` says it stops.
+    pub fn step<S: Store>(
+        &mut self,
+        layer: &mut CommandLayer<S>,
+        recording: &str,
+        confirm: bool,
+    ) -> Result<Receipt, Error> {
+        let (row, recorded) = layer.step_arguments(recording)?;
+        let mut args = recorded.as_object().cloned().unwrap_or_default();
+        let hint = |hint: Option<ActionHint>| {
+            hint.map(|hint| hint.to_json()).ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, "no eligible target"))
+        };
+        match row.as_str() {
+            "session.undo" => args.insert("hint".to_owned(), hint(layer.undo_hint(Direction::Undo))?),
+            "session.redo" => args.insert("hint".to_owned(), hint(layer.undo_hint(Direction::Redo))?),
+            crate::layer::LAYOUT_UNDO_ROW => args.insert("hint".to_owned(), hint(layer.layout_hint(Direction::Undo))?),
+            crate::layer::LAYOUT_REDO_ROW => args.insert("hint".to_owned(), hint(layer.layout_hint(Direction::Redo))?),
+            "operation.execute" => match &self.presented {
+                Some(p) => args.insert("preview".to_owned(), Value::Int(p.id as i64)),
+                None => return Err(Error::new(code::NO_FRESH_PREVIEW, "no presented preview")),
+            },
+            _ => None,
+        };
+        if confirm {
+            args.insert("confirm".to_owned(), Value::Bool(true));
+        }
+        let invocation = self.prepare(layer, &row, Value::Object(args))?;
+        layer.begin_step(recording, &invocation)?;
+        Ok(self.send(layer, invocation))
+    }
+
+    /// The fresh whole-word preview of the word step that the playback of `recording` waits at (EV4.18): an ordinary
+    /// `operation.preview` of the stored word ([`CommandLayer::step_draft`]), never the recorded preview. It does not
+    /// move the cursor; [`Shell::step`] commits it once it is presented.
+    pub fn step_preview<S: Store>(&mut self, layer: &mut CommandLayer<S>, recording: &str) -> Result<Receipt, Error> {
+        let draft = layer.step_draft(recording)?;
+        self.invoke(layer, "operation.preview", json::object([("draft", draft)]))
+    }
+
     /// The key route: resolves the binding of `sequence` in the global routing class for the shell's destination under
     /// the key map's active layout ([`resolve_binding`]), resolves its relative names at the press, then invokes.
     /// `sequence` is one or more chords separated by spaces, each a physical chord (`Ctrl+KeyZ`) or a character intent

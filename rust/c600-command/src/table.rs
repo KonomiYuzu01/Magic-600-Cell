@@ -444,7 +444,7 @@ impl Table {
 }
 
 /// The stored rows the command layer builds itself; no entry serves them.
-const LAYER_ROWS: [&str; 20] = [
+const LAYER_ROWS: [&str; 24] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -465,4 +465,8 @@ const LAYER_ROWS: [&str; 20] = [
     crate::worksheet::WORKSHEET_LOAD_ROW,
     crate::worksheet::WORKSHEET_COMPARE_ROW,
     crate::palette::FIND_ROW,
+    crate::recording::RECORDING_START_ROW,
+    crate::recording::RECORDING_STOP_ROW,
+    crate::recording::RECORDING_PLAY_ROW,
+    crate::recording::RECORDING_CONVERT_ROW,
 ];

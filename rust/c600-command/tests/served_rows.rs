@@ -19,10 +19,12 @@ const SECRET: [u8; 32] = [7; 32];
 const COMPARE: &str = "structure.compare";
 const SAVE: &str = "set.save";
 const SCOPE: &str = "view.effect.scope";
-const PLAY: &str = "recording.play";
+/// A language-defined workspace row, which takes the `program` lane: H-08's one stored row on that lane,
+/// `recording.play`, is the layer's own since LP4-9.
+const PLAY: &str = "tool.play";
 
 /// The stored rows the command layer builds itself.
-const LAYER_ROWS: [&str; 13] = [
+const LAYER_ROWS: [&str; 17] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -36,6 +38,11 @@ const LAYER_ROWS: [&str; 13] = [
     WORKSHEET_COMPARE_ROW,
     GRIP_REBIND_ROW,
     MACRO_SAVE_ROW,
+    // LP4-9: capture, playback and conversion are the layer's own.
+    "recording.start",
+    "recording.stop",
+    "recording.play",
+    "recording.convert",
 ];
 
 /// One row per shape condition, each alone on a row the layer could otherwise serve; the first six are served.
@@ -340,16 +347,16 @@ fn a_served_view_row_supersedes_its_waiting_invocation() {
     assert_eq!((f.layer.revision(), f.layer.store().log.len()), (&before, 0));
 }
 
-/// A served row keeps H-08's lane (KN7.2; draft): `recording.play`, the stored row on the `program` lane, is held to
-/// the lane's capacity, while `set.save`, on the `none` lane, has no occupancy limit and is admitted when the program
-/// lane is full.
+/// A served row keeps H-08's lane (KN7.2; draft): a job on the `program` lane, here a language-defined workspace row's,
+/// holds the lane to its capacity, while `set.save`, on the `none` lane, has no occupancy limit and is admitted when the
+/// program lane is full.
 #[test]
 fn a_served_row_keeps_its_lane() {
     let mut f = fixture();
-    f.layer.serve_row(PLAY, overlay("play")).unwrap();
+    f.layer.register_overlay(PLAY, Kind::Workspace, &[], overlay("play")).unwrap();
     f.layer.serve_row(SAVE, overlay("save_set")).unwrap();
     f.layer.set_program_capacity(1);
-    let play = json::object([("from", Value::Int(0)), ("recording", text("r1"))]);
+    let play = json::object([]);
     assert!(running(&f.invoke(PLAY, play.clone())));
     assert_eq!(f.layer.availability(PLAY).unwrap_err().code, code::LANE_FULL);
     assert_eq!(code_of(&f.invoke(PLAY, play)), code::LANE_FULL);
@@ -524,7 +531,7 @@ fn a_commit_and_an_undo_cancel_a_job_building_a_preview_and_a_view_rows_jobs() {
 fn concurrent_requests_obey_the_lanes_the_layer_builds() {
     let mut f = fixture();
     f.layer.serve_row(SCOPE, overlay("effect_scope")).unwrap();
-    f.layer.serve_row(PLAY, overlay("play")).unwrap();
+    f.layer.register_overlay(PLAY, Kind::Workspace, &[], overlay("play")).unwrap();
     f.layer.serve_row(SAVE, overlay("save_set")).unwrap();
     f.layer.set_program_capacity(1);
     assert_eq!(f.layer.availability("jumble.release.check").unwrap_err().code, code::ROW_NOT_BUILT);
@@ -532,7 +539,7 @@ fn concurrent_requests_obey_the_lanes_the_layer_builds() {
     let (_, a) = ask_preview(&mut f, &word(&[1]));
     assert_eq!(f.layer.run_jobs(), 1);
     f.frames.present(&mut f.shell, &mut f.layer, a).unwrap();
-    let play = json::object([("from", Value::Int(0)), ("recording", text("r1"))]);
+    let play = json::object([]);
     let played = f.invoke(PLAY, play.clone());
     let first = f.invoke(SCOPE, scope_args("body"));
     assert!(running(&played) && running(&first));
