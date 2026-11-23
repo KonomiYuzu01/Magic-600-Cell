@@ -82,7 +82,7 @@ proceeding. The harness checks that real Godot AppData top-level names and
 modification times are unchanged and that no real user-data directory has the
 run's name. It removes the staging folder and verifies the checkout, including
 ignored files. Build/core processes have 180-second limits, Godot imports and
-probes 120 seconds, version probes 15 seconds, and the directory handshake
+probes 120 seconds (the A5 sweep 400 seconds), version probes 15 seconds, and the directory handshake
 20 seconds. Interactive runs have a two-hour limit. Expiry ends the process
 tree with `taskkill /T /F` on Windows and fails the run.
 
@@ -1141,11 +1141,17 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
 - Keyboard reach, in the tests that `python tools/looklab/check.py` runs: every key set (the default and each
   preset) opens the palette, closes an overlay and shows the key map; the palette lists every command; every action
   that an element raises by name is a command, or is listed under `pointer_only` in
-  `data/design/screen-words.json` (the list is empty today); eleven of the twelve solving commands have a key and
+  `data/design/screen-words.json` (today only `layout.roll`, History's roll to a layout step); eleven of the twelve
+  solving commands have a key and
   the twelfth is the held orbit jump.
 - Words per screen, in the sweep of the Godot lane (`check.py --godot`): for each of the five workspaces the sweep
   counts the words of the labels, buttons and empty fields shown in the window and fails over the limit in the same
-  file. Counts on 22 November 2026: solve 129, script 99, analyse 160, reference 96, gallery 141.
+  file. Counts on 22 November 2026: solve 129, script 99, analyse 160, reference 96, gallery 141. Counts on 23
+  November 2026, with the Library dock and History in the right dock: solve 140, script 151, analyse 151,
+  reference 184, gallery 195 (limits 155, 165, 175, 200, 215). A screen is counted after the sweep's first press in
+  it, so the count includes what earlier presses left open (strip problems, History rows).
+- Time: the sweep presses about 760 buttons and takes about 230 seconds; it has its own 400-second limit in
+  `lane_a5.py`. On main at 7a8c4cca it already ran past the general 120-second limit.
 - Limits of the checks: the word limits are those counts with a margin, kept so that a screen does not grow
   unnoticed; they are not the owner's text budgets for trial content. Text an instrument draws itself (rail ids,
   keycaps) and tooltips are not counted. The reach check reads source text: a control whose handler acts without
