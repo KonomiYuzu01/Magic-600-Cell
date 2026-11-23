@@ -167,7 +167,7 @@
     {"id": "1.0-lp5", "track": "lp5", "title": "Language research expressiveness (LP5)", "status": "in_progress", "acceptance": "PHS.31's five acceptance items on one candidate; the 23 LP5 tests and the seven LP2 halves run whole; the owner's PHS.56 understanding confirmation", "acceptance_source": "docs/progress/1.0/language-lp5-plan.md", "blocker": null,
      "items": [
       {"id": "plan", "title": "Plan and owner decisions", "weight": 2, "done": true, "evidence": "ce426a7f47c543f398c7d27ec1e5a458c4a9000b"},
-      {"id": "r0-import", "title": "R0 archive import and inventory", "weight": 6, "done": false, "evidence": null},
+      {"id": "r0-import", "title": "R0 archive import and inventory", "weight": 6, "done": true, "evidence": "4441251250734fd7f21c001045a01534304add9a"},
       {"id": "r1-bindings", "title": "R1 typed claim bindings and preflight", "weight": 4, "done": false, "evidence": null},
       {"id": "r2-checker-core", "title": "R2 KN6 checker core", "weight": 4, "done": true, "evidence": "c61669b0800514807631dc7ddaf132e11df183e9"},
       {"id": "r3-stage14", "title": "R3 stage 14 checkers", "weight": 4, "done": false, "evidence": null},

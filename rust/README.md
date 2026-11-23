@@ -3591,6 +3591,18 @@ The plan is [`language-lp5-plan.md`](../docs/progress/1.0/language-lp5-plan.md);
 2026 with every recommended option. The three LP5 crates were added as empty members first, so the pieces share no
 workspace file.
 
+- R0, the research archive import (PS3.10 to PS3.17): `c600-archive` imports the stage 14 to 19 archive from files
+  the test driver grants it out of the Git-blob manifest (`tests/test_lp5_archive.py`, in the headless CI). It uses
+  versioned editions of the import table and of the discriminator for records with no `format` key (PS3.10, PS3.12,
+  FP.22; ten rules, each pinned to the manifest's and the record's stored digests), checks manifests and members
+  (PS3.14, PS3.15), keeps recognition, integrity, interpretation and recheck as separate results, and exports FP.23
+  check bundles that carry the caller's KN0.1 identity, refuse any envelope or dependency whose integrity failed, and
+  list missing dependencies; those with no recorded digest go in the optional FP.10 extension
+  `missing_without_digest`. Gzip is decided by the member's `.gz` name, so damaged signature bytes are a gzip failure.
+  It depends on `c600-digest`, `c600-evidence` and the kernel's container readers only, and calls no engine, process,
+  Git or network. All 497 records import with no integrity failure. The dependency report
+  ([`lp5-r0-dependency-report.md`](../docs/progress/1.0/lp5-r0-dependency-report.md)) finds every stage 18 start table
+  stored or rebuildable by exact replay of stored words, so no LP5 check waits.
 - R2, KN6's independent checker core: `c600-checkers`. `check(engines, certificate, kind)` returns a `CheckReport`
   with a pass, fail or not-applicable verdict, the checker's ID and source digest, the input digest, the stated inputs
   with the identities read from them and a per-claim trace; a kind with no checker, or one whose engine was not
