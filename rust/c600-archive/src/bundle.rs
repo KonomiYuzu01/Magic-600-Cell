@@ -4,12 +4,17 @@
 //! The bundle carries each envelope's source record and its present dependencies by digest, keeps source names as
 //! metadata only (case-only names may name distinct digests without overwrite), and lists every missing dependency.
 //! A missing dependency prevents the check that requires it; bundle integrity implies no replay, and a historic PASS
-//! receipt implies no new reproduction. No checker exists yet (KN6), so the bundle names none. Nothing is executed:
-//! a producer's source text travels as bytes, if at all, and nothing here can run it.
+//! receipt implies no new reproduction. The bundle carries no checker pins or check reports, so `checkers` is empty.
+//! Nothing is executed: a producer's source text travels as bytes, if at all, and nothing here can run it.
+//!
+//! Only bytes that passed import integrity travel: an envelope or a member dependency with any failed integrity check
+//! is refused, and every carried record is compared with the digest its corpus manifest records, a value independent
+//! of the bytes in hand.
 //!
 //! The FP.11 wrapper is written with `identity` and `provenance` null; the evidence envelopes themselves (FP.19) are
 //! not built in R0, so `envelopes` is empty and each source record is carried by digest instead. Dependencies with no
-//! recorded digest cannot be FP.8 `DigestRef`s, so they are listed under `extensions.missing_without_digest`.
+//! recorded digest cannot be FP.8 `DigestRef`s, so they are listed in the optional FP.10 extension
+//! `missing_without_digest`.
 
 use std::collections::BTreeMap;
 
@@ -31,6 +36,8 @@ pub struct Dependency {
     pub bytes: Option<Vec<u8>>,
     /// What the dependency is for, or why it is missing, word for word.
     pub reason: String,
+    /// The failed import integrity checks behind `bytes` when they come from a granted member; export refuses any.
+    pub failed_checks: Vec<String>,
 }
 
 /// An envelope reference for export: the source record's bytes and identity with its declared dependencies.
@@ -38,6 +45,10 @@ pub struct Dependency {
 pub struct EvidenceEnvelopeRef {
     pub name: String,
     pub stored_sha256: String,
+    /// The stored-byte digest the corpus manifest records for the member: the independent value export checks.
+    pub listed_sha256: String,
+    /// The member's failed import integrity checks (its own and the corpus manifest's); export refuses any.
+    pub failed_checks: Vec<String>,
     pub decoded_sha256: Option<String>,
     pub bytes: Vec<u8>,
     /// The record's own format, or `None` for an absent format.
@@ -60,7 +71,8 @@ pub struct CheckBundle {
 }
 
 impl ImportReport {
-    /// The envelope reference for a granted record, or `None` when it is not a present record.
+    /// The envelope reference for a granted record with a declared or an absent format, or `None` otherwise. It
+    /// carries the member's failed integrity checks, which `export_check_bundle` refuses.
     pub fn envelope(&self, name: &str) -> Option<EvidenceEnvelopeRef> {
         let i = self.member(name)?;
         let m = &self.members[i];
@@ -76,6 +88,8 @@ impl ImportReport {
         Some(EvidenceEnvelopeRef {
             name: m.name.clone(),
             stored_sha256: m.stored_sha256.clone()?,
+            listed_sha256: m.listed.stored_sha256.clone(),
+            failed_checks: self.failed_checks(i),
             decoded_sha256: m.decoded_sha256.clone(),
             bytes,
             format,
@@ -86,17 +100,36 @@ impl ImportReport {
             revision_bound: false,
         })
     }
+
+    /// A dependency carried from a listed member: its bytes when granted, missing otherwise, with the member's failed
+    /// integrity checks; `None` when no member has that name.
+    pub fn dependency(&self, member: &str, name: &str, sha256: Option<&str>, reason: &str) -> Option<Dependency> {
+        let i = self.member(member)?;
+        Some(Dependency {
+            name: name.to_string(),
+            sha256: sha256.map(str::to_string),
+            bytes: self.stored_bytes(i).map(<[u8]>::to_vec),
+            reason: reason.to_string(),
+            failed_checks: self.failed_checks(i),
+        })
+    }
 }
 
 impl EvidenceEnvelopeRef {
-    /// Declares a dependency: present when `bytes` is given, missing otherwise.
-    pub fn with_dependency(mut self, name: &str, sha256: Option<&str>, bytes: Option<Vec<u8>>, reason: &str) -> Self {
-        self.dependencies.push(Dependency {
+    /// Declares a dependency from the caller's bytes: present when `bytes` is given, missing otherwise.
+    pub fn with_dependency(self, name: &str, sha256: Option<&str>, bytes: Option<Vec<u8>>, reason: &str) -> Self {
+        self.with(Dependency {
             name: name.to_string(),
             sha256: sha256.map(str::to_string),
             bytes,
             reason: reason.to_string(),
-        });
+            failed_checks: Vec::new(),
+        })
+    }
+
+    /// Declares a dependency built elsewhere, such as `ImportReport::dependency`.
+    pub fn with(mut self, dependency: Dependency) -> Self {
+        self.dependencies.push(dependency);
         self
     }
 }
@@ -124,8 +157,13 @@ pub fn export_check_bundle(
                 detail: "an envelope's scope holds revision-bound context".to_string(),
             });
         }
-        if sha256_hex(&e.bytes) != e.stored_sha256 {
-            return Err(ArchiveError::digest("an envelope's bytes disagree with its stored digest"));
+        if let Some(first) = e.failed_checks.first() {
+            return Err(ArchiveError::digest(&format!("an envelope's member failed import integrity: {first}")));
+        }
+        // The independent value is the corpus manifest's recorded digest, not one computed from these bytes.
+        let actual = sha256_hex(&e.bytes);
+        if actual != e.listed_sha256 || actual != e.stored_sha256 {
+            return Err(ArchiveError::digest("an envelope's bytes disagree with the digest its manifest records"));
         }
         match &table {
             None => table = Some((e.table_edition.clone(), e.table_sha256.clone())),
@@ -146,6 +184,9 @@ pub fn export_check_bundle(
         total += e.bytes.len();
         objects.insert(e.stored_sha256.clone(), (e.bytes.clone(), "record", e.decoded_sha256.clone()));
         for d in &e.dependencies {
+            if let (Some(_), Some(first)) = (&d.bytes, d.failed_checks.first()) {
+                return Err(ArchiveError::digest(&format!("a dependency's member failed import integrity: {first}")));
+            }
             match (&d.bytes, &d.sha256) {
                 (Some(b), Some(hex)) => {
                     if sha256_hex(b) != *hex {
@@ -220,20 +261,10 @@ pub fn export_check_bundle(
                 ("missing", Value::Array(missing.into_values().collect())),
             ]),
         ),
+        // FP.11: "`provenance` is FP.17; null is allowed only for a record that is neither a word, macro nor workspace
+        // record". A `c600-research-bundle` manifest (FP.4, FP.23) is none of those, so null is the stated absence.
         ("provenance", Value::Null),
-        (
-            "extensions",
-            o(vec![
-                ("table_edition", s(&edition)),
-                ("missing_without_digest", Value::Array(missing_without_digest)),
-                ("checker_status", s("no independent checker exists yet (KN6; LB5.14 no_independent_checker)")),
-                (
-                    "replay",
-                    s("this bundle asserts no replay; a historic PASS receipt implies no new portable reproduction"),
-                ),
-                ("producers", s("no archived producer is executed; source text, if carried, is data")),
-            ]),
-        ),
+        ("extensions", extensions(&edition, missing_without_digest)),
     ]);
     let mut manifest_bytes = manifest.canonical().into_bytes();
     manifest_bytes.push(b'\n');
@@ -242,6 +273,29 @@ pub fn export_check_bundle(
     let zip = store_zip(&entries)?;
     let sha256 = sha256_hex(&zip);
     Ok(CheckBundle { zip, manifest, sha256 })
+}
+
+/// FP.10's extension list: `[{name, required, value}]` with unique names in scalar order. Every entry is optional
+/// (`required: false`) and changes no interpretation: the table is identified by `payload.table`'s digest, and the
+/// other entries are notes and names of dependencies that have no digest to list under `payload.missing`.
+fn extensions(table_edition: &str, missing_without_digest: Vec<Value>) -> Value {
+    let s = |x: &str| Value::String(x.to_string());
+    let mut entries: Vec<(&str, Value)> = vec![
+        ("checker_status", s("this bundle carries no checker pins or check reports: its checkers list is empty")),
+        ("missing_without_digest", Value::Array(missing_without_digest)),
+        ("producers", s("no archived producer is executed; source text, if carried, is data")),
+        ("replay", s("this bundle asserts no replay; a historic PASS receipt implies no new portable reproduction")),
+        ("table_edition", s(table_edition)),
+    ];
+    entries.sort_by(|a, b| a.0.cmp(b.0));
+    Value::Array(
+        entries
+            .into_iter()
+            .map(|(name, value)| {
+                c600_kernel::json::object([("name", s(name)), ("required", Value::Bool(false)), ("value", value)])
+            })
+            .collect(),
+    )
 }
 
 /// FP.23's ZIP: STORE, UTF-8 flag only, 1980-01-01 00:00:00, version 20, attributes zero, no extras, comments or data

@@ -15,7 +15,7 @@ use std::fs;
 
 use c600_archive::{
     export_check_bundle, import_archive, Discriminator, GrantedFile, GrantedFiles, ImportTable, ImportTableRef, Limits,
-    LimitsRef,
+    LimitsRef, SIZE_LIMIT,
 };
 use c600_kernel::json::{parse, Value};
 
@@ -30,9 +30,13 @@ fn main() -> Result<(), String> {
 fn read(path: &str, limit: usize) -> Result<Vec<u8>, String> {
     let len = fs::metadata(path).map_err(|_| "a granted file cannot be read".to_string())?.len();
     if len > limit as u64 {
-        return Err(format!("{}: a granted file is over {limit} bytes", c600_archive::SIZE_LIMIT));
+        return Err(format!("{}: a granted file is over {limit} bytes", SIZE_LIMIT));
     }
-    fs::read(path).map_err(|_| "a granted file cannot be read".to_string())
+    let bytes = fs::read(path).map_err(|_| "a granted file cannot be read".to_string())?;
+    if bytes.len() > limit {
+        return Err(format!("{}: a granted file is over {limit} bytes", SIZE_LIMIT));
+    }
+    Ok(bytes)
 }
 
 fn text<'a>(v: &'a Value, key: &str) -> Result<&'a str, String> {
@@ -47,12 +51,18 @@ fn run(args: &[String]) -> Result<(), String> {
         name: text(manifest, "name")?.to_string(),
         bytes: read(text(manifest, "path")?, limits.max_manifest_bytes)?,
     };
+    let listed = grant.get("members").and_then(Value::as_array).ok_or("the grant names no members")?;
+    // The member count and the total stored bytes are bounded before and while reading, not after.
+    if listed.len() > limits.max_members {
+        return Err(format!("{}: members: limit {}, attempted {}", SIZE_LIMIT, limits.max_members, listed.len()));
+    }
     let mut members = Vec::new();
-    for m in grant.get("members").and_then(Value::as_array).ok_or("the grant names no members")? {
-        members.push(GrantedFile {
-            name: text(m, "name")?.to_string(),
-            bytes: read(text(m, "path")?, limits.max_member_stored_bytes)?,
-        });
+    let mut total = 0usize;
+    for m in listed {
+        let room = limits.max_member_stored_bytes.min(limits.max_total_stored_bytes - total);
+        let bytes = read(text(m, "path")?, room)?;
+        total += bytes.len();
+        members.push(GrantedFile { name: text(m, "name")?.to_string(), bytes });
     }
     let table = ImportTable::edition_1();
     let discriminator = Discriminator::edition_1();
@@ -73,19 +83,15 @@ fn run(args: &[String]) -> Result<(), String> {
             let name = text(e, "name")?;
             let mut envelope = report.envelope(name).ok_or("an envelope names no present record")?;
             for d in e.get("dependencies").and_then(Value::as_array).unwrap_or(&[]) {
-                let bytes = match d.get("member").and_then(Value::as_str) {
-                    Some(member) => {
-                        let i = report.member(member).ok_or("a dependency names no listed member")?;
-                        report.stored_bytes(i).map(<[u8]>::to_vec)
-                    }
-                    None => None,
+                let (name, reason) = (text(d, "name")?, text(d, "reason")?);
+                let sha256 = d.get("sha256").and_then(Value::as_str);
+                envelope = match d.get("member").and_then(Value::as_str) {
+                    // A member dependency carries the member's integrity result, which export refuses on failure.
+                    Some(member) => envelope.with(
+                        report.dependency(member, name, sha256, reason).ok_or("a dependency names no listed member")?,
+                    ),
+                    None => envelope.with_dependency(name, sha256, None, reason),
                 };
-                envelope = envelope.with_dependency(
-                    text(d, "name")?,
-                    d.get("sha256").and_then(Value::as_str),
-                    bytes,
-                    text(d, "reason")?,
-                );
             }
             envelopes.push(envelope);
         }
