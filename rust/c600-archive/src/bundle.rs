@@ -11,10 +11,16 @@
 //! is refused, and every carried record is compared with the digest its corpus manifest records, a value independent
 //! of the bytes in hand.
 //!
-//! The FP.11 wrapper is written with `identity` and `provenance` null; the evidence envelopes themselves (FP.19) are
-//! not built in R0, so `envelopes` is empty and each source record is carried by digest instead. Dependencies with no
-//! recorded digest cannot be FP.8 `DigestRef`s, so they are listed in the optional FP.10 extension
-//! `missing_without_digest`.
+//! The FP.11 wrapper's `identity` is the caller's KN0.1 identity block, written verbatim after a shape check
+//! ([`check_identity`]); FP.11 grants no null for it, and this archive is the jumbling puzzle, whose three
+//! jumbling-only fields are required. `provenance` is null, which FP.11 allows for a record that is neither a word,
+//! macro nor workspace record. The evidence envelopes themselves (FP.19) are not built in R0, so `envelopes` is empty
+//! and each source record is carried by digest instead.
+//!
+//! Dependencies with no recorded digest cannot be FP.8 `DigestRef`s, so they are listed in the FP.10 extension
+//! `missing_without_digest`. That extension is optional (`required: false`) and has no effect on interpretation:
+//! `payload.missing` keeps every dependency that has a digest, and a dependency without one cannot be resolved in
+//! either place. So it needs no change to FP.23's format (contradiction candidate C3 is settled without one).
 
 use std::collections::BTreeMap;
 
@@ -134,11 +140,53 @@ impl EvidenceEnvelopeRef {
     }
 }
 
-/// Writes the bundle. Every carried byte is checked against its digest first; nothing is executed.
+/// KN0.1's identity field names, which FP.11 uses as wire names.
+pub const IDENTITY_FIELDS: [&str; 5] = ["puzzle", "model_id", "menu_id", "menu_order", "contract_rev"];
+
+/// The shape of a KN0.1 identity block as FP.11 writes it, and nothing more: exactly KN0.1's field names; `puzzle`
+/// is `full` or `jumbling`; the digest-valued fields are 64 lowercase hex digits; the three jumbling-only fields are
+/// non-null for jumbling and null for Full. The values are the caller's, as the host holds them; they are not compared
+/// with any model here. A missing or malformed block refuses with `PS1:input.persistence_format`.
+pub fn check_identity(identity: &Value) -> Result<(), ArchiveError> {
+    let Value::Object(fields) = identity else {
+        return Err(ArchiveError::format("the bundle has no model identity block (FP.11, KN0.1)"));
+    };
+    if fields.len() != IDENTITY_FIELDS.len() || IDENTITY_FIELDS.iter().any(|k| !fields.contains_key(*k)) {
+        return Err(ArchiveError::format("the identity block does not have exactly KN0.1's field names"));
+    }
+    let digest = |k: &str| matches!(fields.get(k), Some(Value::String(s)) if crate::is_sha256(s));
+    if !digest("model_id") {
+        return Err(ArchiveError::format("the identity's model_id is not 64 lowercase hex digits"));
+    }
+    match fields.get("puzzle").and_then(Value::as_str) {
+        Some("jumbling") => {
+            if !digest("menu_id") || !digest("menu_order") {
+                return Err(ArchiveError::format(
+                    "a jumbling identity needs menu_id and menu_order as 64 lowercase hex digits",
+                ));
+            }
+            if !matches!(fields.get("contract_rev"), Some(Value::String(s)) if !s.is_empty()) {
+                return Err(ArchiveError::format("a jumbling identity needs a non-empty contract_rev"));
+            }
+        }
+        Some("full") => {
+            if ["menu_id", "menu_order", "contract_rev"].iter().any(|k| fields.get(*k) != Some(&Value::Null)) {
+                return Err(ArchiveError::format("a Full identity has its jumbling-only fields null"));
+            }
+        }
+        _ => return Err(ArchiveError::format("the identity's puzzle is neither full nor jumbling")),
+    }
+    Ok(())
+}
+
+/// Writes the bundle under the caller's model identity. The identity's shape and every carried byte are checked
+/// first; nothing is executed.
 pub fn export_check_bundle(
     envelopes: &[EvidenceEnvelopeRef],
+    identity: &Value,
     limits: LimitsRef<'_>,
 ) -> Result<CheckBundle, ArchiveError> {
+    check_identity(identity)?;
     let limits = limits.0;
     let s = |x: &str| Value::String(x.to_string());
     let o = |pairs: Vec<(&str, Value)>| Value::Object(pairs.into_iter().map(|(k, v)| (k.to_string(), v)).collect());
@@ -242,7 +290,8 @@ pub fn export_check_bundle(
     let manifest = o(vec![
         ("format", s("c600-research-bundle")),
         ("version", Value::Int(1)),
-        ("identity", Value::Null),
+        // FP.11: `identity` uses KN0.1's field names and has no null exception; the caller's block, verbatim.
+        ("identity", identity.clone()),
         (
             "payload",
             o(vec![

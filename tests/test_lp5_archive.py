@@ -37,12 +37,15 @@ RULE = "docs/architecture/1.0/language/evidence-import/rule.txt"
 SCRIPT = "docs/architecture/1.0/language/evidence-import/extract_labels.py"
 MATRIX = "docs/architecture/1.0/language/claim-matrix/matrix.json"
 RESEARCH = "research/jumbling/restoration/"
+MODEL_MANIFEST = "assets/manifest.json"
+JUMBLE_BINDING = "rust/c600-jumble/data/corrections-I_a.json"
 S15 = RESEARCH + "15-lowering-machine/"
 S16 = RESEARCH + "16-six-jams/"
 S18 = RESEARCH + "18-tail-completion/"
 S19 = RESEARCH + "19-height-depth-framework/"
 STAGE13_STOP_TABLE = RESEARCH + "13-tutorial-runner/runs/dev/d1-acc-s7101/out4/tables/00113.json"
 DIGEST_MISMATCH = "PS1:input.digest_mismatch"
+FORMAT = "PS1:input.persistence_format"
 
 # The pinned inputs (CX.3, EVD.49): the label table and the corpus identities it records.
 LABELS_SHA256 = "6fcd45325a8789736534d53cd336297a0718c3c4386bb9da5af21fbb0ac13a68"
@@ -246,15 +249,34 @@ def importer_binary() -> Path:
     raise AssertionError("cargo built no c600-archive-import executable")
 
 
-def run_import(binary: Path, grant: Path, directory: Path, bundle_request: dict | None = None):
+def jumbling_identity() -> dict:
+    """The jumbling model's KN0.1 identity block, read in place: `model_id` from the model manifest and the I_a menu
+    identity, menu-order digest and state-contract revision from the binding of c600-jumble's committed corrections
+    data. The archive's research ran on the I_a menu."""
+    model_id = json.loads(head_blob(MODEL_MANIFEST))["model_id"]
+    binding = json.loads(head_blob(JUMBLE_BINDING))["binding"]
+    if binding["model_id"] != model_id:
+        raise AssertionError("the jumbling binding names another model")
+    return {"puzzle": "jumbling", "model_id": model_id, "menu_id": binding["menu_identity"],
+            "menu_order": binding["menu_order"], "contract_rev": binding["contract_revision"]}
+
+
+REAL_IDENTITY = object()
+
+
+def run_import(binary: Path, grant: Path, directory: Path, bundle_request: dict | None = None,
+               identity=REAL_IDENTITY):
     report = directory / (grant.stem + "-report.json")
     args = [str(binary), str(grant), str(report)]
     bundle = None
     if bundle_request is not None:
+        identity_file = directory / (grant.stem + "-identity.json")
+        value = jumbling_identity() if identity is REAL_IDENTITY else identity
+        identity_file.write_text(json.dumps(value), encoding="utf-8")
         request = directory / (grant.stem + "-bundle-request.json")
         request.write_text(json.dumps(bundle_request), encoding="utf-8")
         bundle = directory / (grant.stem + "-bundle.zip")
-        args += [str(request), str(bundle)]
+        args += [str(identity_file), str(request), str(bundle)]
     done = subprocess.run(args, cwd=directory, capture_output=True, text=True)
     if done.returncode != 0:
         raise AssertionError("the importer refused: " + done.stderr.strip()[-400:])
@@ -641,6 +663,14 @@ class Lp5ArchiveTests(unittest.TestCase):
         self.assertIsNotNone(q11_source["original"])
         self.assertNotEqual(q11_source["original"]["sha256"], q11_source["stored"]["sha256"])
         self.assertEqual(report["totals"]["producers_run"], 0)
+        # FP.11 and KN0.1: the jumbling model's identity block, as the caller supplied it, verbatim.
+        identity = jumbling_identity()
+        self.assertEqual(manifest["identity"], identity)
+        self.assertEqual(identity["model_id"], "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9")
+        # No identity, or null jumbling-only fields, refuses the bundle with PS1:input.persistence_format.
+        for bad in (None, {**identity, "menu_id": None, "menu_order": None, "contract_rev": None}):
+            with self.assertRaisesRegex(AssertionError, re.escape(FORMAT)):
+                run_import(self.binary, self.corpus.grant(), self.dir, request, identity=bad)
 
     # --- CT-DET-24 -------------------------------------------------------------------------------------------------
 

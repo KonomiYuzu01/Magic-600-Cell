@@ -1,13 +1,14 @@
 //! Runs `import_archive` on an explicit grant and writes the import report; optionally exports a check bundle.
 //!
 //! ```text
-//! c600-archive-import <grant.json> <report.json> [<bundle-request.json> <bundle.zip>]
+//! c600-archive-import <grant.json> <report.json> [<identity.json> <bundle-request.json> <bundle.zip>]
 //! ```
 //!
 //! The grant names every file by path: `{"manifest":{"name":N,"path":P},"members":[{"name":N,"path":P},...]}`. The
 //! names are source names (metadata); the paths are where the caller put the bytes, which the test driver names by
 //! digest so that no two source names share a path. Nothing else is read: no directory is listed, no repository is
-//! opened, no process is started and no network is used. A bundle request is
+//! opened, no process is started and no network is used. The identity file holds the caller's KN0.1 identity block,
+//! which the bundle carries verbatim after a shape check. A bundle request is
 //! `{"envelopes":[{"name":N,"dependencies":[{"name":N,"sha256":H|null,"member":N|null,"reason":R}]}]}`; a dependency
 //! is present when `member` names a granted member.
 
@@ -15,14 +16,16 @@ use std::fs;
 
 use c600_archive::{
     export_check_bundle, import_archive, Discriminator, GrantedFile, GrantedFiles, ImportTable, ImportTableRef, Limits,
-    LimitsRef, SIZE_LIMIT,
+    LimitsRef, FORMAT, SIZE_LIMIT,
 };
 use c600_kernel::json::{parse, Value};
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if !(args.len() == 2 || args.len() == 4) {
-        return Err("usage: c600-archive-import <grant.json> <report.json> [<bundle-request.json> <bundle.zip>]".into());
+    if !(args.len() == 2 || args.len() == 5) {
+        return Err("usage: c600-archive-import <grant.json> <report.json> \
+                    [<identity.json> <bundle-request.json> <bundle.zip>]"
+            .into());
     }
     run(&args)
 }
@@ -76,8 +79,10 @@ fn run(args: &[String]) -> Result<(), String> {
     out.push(b'\n');
     fs::write(&args[1], out).map_err(|_| "the report cannot be written".to_string())?;
 
-    if args.len() == 4 {
-        let request = parse(&read(&args[2], 16 << 20)?).map_err(|_| "the bundle request is not strict JSON")?;
+    if args.len() == 5 {
+        let identity =
+            parse(&read(&args[2], 1 << 20)?).map_err(|_| format!("{FORMAT}: the identity file is not strict JSON"))?;
+        let request = parse(&read(&args[3], 16 << 20)?).map_err(|_| "the bundle request is not strict JSON")?;
         let mut envelopes = Vec::new();
         for e in request.get("envelopes").and_then(Value::as_array).ok_or("the request names no envelopes")? {
             let name = text(e, "name")?;
@@ -95,8 +100,8 @@ fn run(args: &[String]) -> Result<(), String> {
             }
             envelopes.push(envelope);
         }
-        let bundle = export_check_bundle(&envelopes, LimitsRef(&limits)).map_err(|e| e.to_string())?;
-        fs::write(&args[3], &bundle.zip).map_err(|_| "the bundle cannot be written".to_string())?;
+        let bundle = export_check_bundle(&envelopes, &identity, LimitsRef(&limits)).map_err(|e| e.to_string())?;
+        fs::write(&args[4], &bundle.zip).map_err(|_| "the bundle cannot be written".to_string())?;
     }
     Ok(())
 }
