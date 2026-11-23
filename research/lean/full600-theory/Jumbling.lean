@@ -1,3 +1,16 @@
+import Jumbling.Model.Pieces
+import Jumbling.Model.Steps
+import Jumbling.Model.ClassCell
+import Jumbling.Model.CleanPowers
+import Jumbling.Model.Transport
+import Jumbling.Group.Words
+import Jumbling.Group.Schreier
+import Jumbling.Group.Cluster
+import Jumbling.Group.Certified
+import Jumbling.Group.PowerSeed
+import Jumbling.Group.Anchors
+import Jumbling.Group.ShortSeeds
+
 /-!
 # Jumbling restoration, round 22: first Lean batches
 
