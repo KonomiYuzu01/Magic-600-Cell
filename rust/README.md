@@ -3603,6 +3603,16 @@ workspace file.
   Git or network. All 497 records import with no integrity failure. The dependency report
   ([`lp5-r0-dependency-report.md`](../docs/progress/1.0/lp5-r0-dependency-report.md)) finds every stage 18 start table
   stored or rebuildable by exact replay of stored words, so no LP5 check waits.
+- R1, typed claim bindings and preflight (FR-B08, LB5.14 to LB5.17; owner, LP5-4): `c600-archive::bindings` reads
+  edition 1 of the typed claim bindings (`data/claim-bindings-1.json`, pinned by SHA-256 and written by
+  `data/claim_bindings.py` from the frozen claim matrix's anchors; `--check` confirms the file matches its build). It
+  has one row per claim group (510), each with a typed statement, scope, inputs by digest and the KN6 sub-checkers
+  that read the group, and answers LB5.14's `check_availability` as preflight data, never as a check and never as an
+  evidence leaf. With every sub-checker registered, 286 groups are `ready` and 224 `unavailable` with the matrix's
+  blockers; q11 answers `unavailable([dependency_missing, no_independent_checker], ...)` with its captured string
+  unchanged (LB5.17). Groups a sub-checker answers `not_applicable` are bound scope-only and keep
+  `no_independent_checker`. `c600-library`'s `research_preflight.6cs` states the same rule as language code over
+  host-supplied data, and `c600-research/tests/preflight_bindings.rs` checks the bindings against the KN6 registry.
 - R2, KN6's independent checker core: `c600-checkers`. `check(engines, certificate, kind)` returns a `CheckReport`
   with a pass, fail or not-applicable verdict, the checker's ID and source digest, the input digest, the stated inputs
   with the identities read from them and a per-claim trace; a kind with no checker, or one whose engine was not
