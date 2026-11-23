@@ -603,12 +603,27 @@ pub struct Rollback {
     pub stop: Option<Status>,
 }
 
-/// The gesture and step of a multi-step rollback's step from its command ID, `{gesture}#{i}` with i at least 1
-/// (ADR-D01.15; draft). The history dock groups the steps by the gesture.
-pub fn rollback_step(command: &str) -> Option<(&str, u64)> {
-    let (gesture, step) = command.rsplit_once('#')?;
-    let step: u64 = step.parse().ok().filter(|&step| step >= 1)?;
-    (!gesture.is_empty() && step.to_string() == command[gesture.len() + 1..]).then_some((gesture, step))
+/// The gesture, step i and step count k of a multi-step rollback's step from its command ID, `{gesture}#{i}/{k}` with
+/// 1 <= i <= k, both in plain decimal (ADR-D01.15; draft; R2-5, owner, 23 November 2026, decision 4.2). The history
+/// dock groups the steps by the gesture, and k makes "j of k" durable: after a reopen the step ID alone tells a gesture
+/// cut at j of k from a whole one. The older form `{gesture}#{i}` names no step.
+pub fn rollback_step(command: &str) -> Option<(&str, u64, u64)> {
+    let (gesture, tail) = command.rsplit_once('#')?;
+    let (step, of) = tail.split_once('/')?;
+    let decimal = |text: &str| text.parse::<u64>().ok().filter(|n| n.to_string() == text);
+    let (step, of) = (decimal(step)?, decimal(of)?);
+    (!gesture.is_empty() && 1 <= step && step <= of).then_some((gesture, step, of))
+}
+
+/// The last action's place in a multi-step rollback when it was one of its steps (ADR-D01.15; draft), so a replay
+/// admits a step after the first only when it follows its gesture's step before it.
+#[derive(Clone, Debug)]
+struct StepAt {
+    gesture: String,
+    step: u64,
+    of: u64,
+    kind: TransactionKind,
+    epoch: u64,
 }
 
 /// Who turned ADR-D01.39's explore state on (draft): the solver, by `explore.set` from the shell, or a run inside a
@@ -895,10 +910,14 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     rollback: Option<Rollback>,
     /// The gesture, step and kind of the last action when it was a rollback's step (ADR-D01.15; draft), so a replay
     /// admits a step after the first only when it follows the gesture's step before it.
-    last_step: Option<(String, u64, TransactionKind, u64)>,
+    last_step: Option<StepAt>,
     /// The command IDs of the rollback steps the layer journaled or tried, by caller scope, for LI.30's lookup of a
     /// gesture's steps (ADR-D01.15): an ordinary command whose ID looks like a step is no step.
     step_ids: BTreeSet<Key>,
+    /// The step count k of each rollback gesture the layer journaled or tried, by caller scope and gesture ID
+    /// (ADR-D01.15; R2-5): LI.30's lookup builds the step IDs `{gesture}#{i}/{k}` from it, and one gesture ID names
+    /// one gesture whatever its k.
+    gestures: BTreeMap<Key, u64>,
     /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
     /// CT-BND-27; draft). Record writes and workspace completions journal them; a replay keeps them again.
     blocks: BTreeMap<String, String>,
@@ -993,6 +1012,7 @@ impl<S: Store> CommandLayer<S> {
             rollback: None,
             last_step: None,
             step_ids: BTreeSet::new(),
+            gestures: BTreeMap::new(),
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
             comparison: None,
@@ -1227,26 +1247,31 @@ impl<S: Store> CommandLayer<S> {
                 }
                 // The row names the history and the direction: `layout.undo` and `layout.redo` step the layout history
                 // (ADR-D01.14), `session.undo` and `session.redo` the move history. A multi-step rollback's step is a
-                // move-history step under command `{gesture}#{i}`, and a step after the first follows its gesture's
-                // step before it in the same direction, as the live gesture writes them (ADR-D01.15).
+                // move-history step under command `{gesture}#{i}/{k}`, and a step after the first follows its
+                // gesture's step before it with the same k in the same direction, as the live gesture writes them
+                // (ADR-D01.15; R2-5).
                 let history = match (History::of(&stored.row), stored.row == ROLLBACK_ROW) {
                     (Some((history, named)), false) if named == direction => history,
                     (None, true) => {
-                        let Some((gesture, step)) = rollback_step(&stored.command) else {
-                            return Err(unadmitted("a rollback step whose command names no gesture and step"));
+                        let Some((gesture, step, of)) = rollback_step(&stored.command) else {
+                            return Err(unadmitted("a rollback step whose command names no gesture, step and count"));
                         };
-                        let follows = self.last_step.as_ref().is_some_and(|(last, at, kind, epoch)| {
-                            last == gesture
-                                && step.checked_sub(1) == Some(*at)
-                                && *kind == stored.kind
-                                && *epoch == stored.revision.epoch
+                        let follows = self.last_step.as_ref().is_some_and(|last| {
+                            last.gesture == gesture
+                                && step.checked_sub(1) == Some(last.step)
+                                && last.of == of
+                                && last.kind == stored.kind
+                                && last.epoch == stored.revision.epoch
                         });
                         if step > 1 && !follows {
                             return Err(unadmitted(
                                 "a rollback step that does not follow its gesture's step before it in its epoch",
                             ));
                         }
-                        if step == 1 && self.receipts.contains_key(&(stored.caller.scope(), gesture.to_owned())) {
+                        let gesture_key = (stored.caller.scope(), gesture.to_owned());
+                        if step == 1
+                            && (self.receipts.contains_key(&gesture_key) || self.gestures.contains_key(&gesture_key))
+                        {
                             return Err(unadmitted("a rollback whose gesture ID an earlier action used"));
                         }
                         if self.receipts.contains_key(&(stored.caller.scope(), stored.command.clone())) {
@@ -1907,14 +1932,18 @@ impl<S: Store> CommandLayer<S> {
         self.rollback.as_ref()
     }
 
-    /// LI.30's lookup of a gesture's steps (ADR-D01.15; draft): the shell's receipts of `{gesture}#1`, `{gesture}#2`
-    /// and on, in order, up to the first step with none. After a crash a retry finds the complete prefix that landed;
-    /// a step whose transient receipt a restart lost answers `unknown_outcome`.
+    /// LI.30's lookup of a gesture's steps (ADR-D01.15; draft): the shell's receipts of `{gesture}#1/{k}`,
+    /// `{gesture}#2/{k}` and on, in order, up to the first step with none. After a crash a retry finds the complete
+    /// prefix that landed; a step whose transient receipt a restart lost answers `unknown_outcome`. Each receipt's
+    /// command carries k, so after a reopen j landed steps of k tell a cut gesture from a whole one (R2-5).
     pub fn rollback_steps(&self, gesture: &str) -> Vec<Receipt> {
         let scope = Caller::Shell.scope();
+        let Some(&of) = self.gestures.get(&(scope.clone(), gesture.to_owned())) else {
+            return Vec::new();
+        };
         let mut steps = Vec::new();
-        for step in 1.. {
-            let key = (scope.clone(), format!("{gesture}#{step}"));
+        for step in 1..=of {
+            let key = (scope.clone(), format!("{gesture}#{step}/{of}"));
             if !self.step_ids.contains(&key) {
                 break;
             }
@@ -3551,14 +3580,16 @@ impl<S: Store> CommandLayer<S> {
             }
             Tree::None => {}
         }
-        // A rollback's step, for the replay's check of the next one (ADR-D01.15).
-        self.last_step = match transaction.row == ROLLBACK_ROW {
-            true => rollback_step(&transaction.command)
-                .map(|(gesture, step)| (gesture.to_owned(), step, transaction.kind, transaction.revision.epoch)),
-            false => None,
-        };
+        // A rollback's step, for the replay's check of the next one and LI.30's lookup (ADR-D01.15; R2-5).
+        self.last_step = None;
         if transaction.row == ROLLBACK_ROW {
-            self.step_ids.insert((transaction.caller.scope(), transaction.command.clone()));
+            let scope = transaction.caller.scope();
+            if let Some((gesture, step, of)) = rollback_step(&transaction.command) {
+                self.gestures.entry((scope.clone(), gesture.to_owned())).or_insert(of);
+                let (gesture, kind, epoch) = (gesture.to_owned(), transaction.kind, transaction.revision.epoch);
+                self.last_step = Some(StepAt { gesture, step, of, kind, epoch });
+            }
+            self.step_ids.insert((scope, transaction.command.clone()));
         }
         let receipt = transaction.receipt();
         let key = (transaction.caller.scope(), transaction.command.clone());
@@ -4047,12 +4078,15 @@ impl<S: Store> CommandLayer<S> {
     /// `session.rollback {hint, token}` (ADR-D01.15; draft; the integrator's ruling of 22 November 2026): one solver
     /// action that rolls the move history back or forward to the state just after action `hint.target` (0: the
     /// session's start; [`CommandLayer::rollback_hint`]). It is k ordinary undo or redo steps of the move history, each
-    /// its own transaction with its own admission and receipt under command `{gesture}#{i}`, where the gesture is the
-    /// press's command ID, and with the gesture and step i of k in its arguments; so no journal kind or format changes,
-    /// and every span has one encoding with no branch transition. The layer holds the writer for the whole gesture and
-    /// stops at the first step that does not commit, reporting j of k ([`CommandLayer::rollback`]). A crash leaves a
-    /// complete prefix of steps, which a retry finds by LI.30's lookup of the step command IDs
-    /// ([`CommandLayer::rollback_steps`]); there is no all-or-nothing across a crash.
+    /// its own transaction with its own admission and receipt under command `{gesture}#{i}/{k}`, where the gesture is
+    /// the press's command ID, and with the gesture and step i of k in its arguments; so no journal kind or format
+    /// changes, and every span has one encoding with no branch transition. The layer holds the writer for the whole
+    /// gesture and stops at the first step that does not commit, reporting j of k ([`CommandLayer::rollback`]). A crash
+    /// leaves a complete prefix of steps, which a retry finds by LI.30's lookup of the step command IDs
+    /// ([`CommandLayer::rollback_steps`]); there is no all-or-nothing across a crash. Since each step ID carries k,
+    /// "j of k" is durable: a reopen tells a cut gesture from a whole one by the step IDs alone (R2-5, owner, 23
+    /// November 2026, decision 4.2). A gesture ID names one gesture: a press under an ID whose gesture has steps is
+    /// refused with `command_id_reused`, whatever its k.
     ///
     /// The token binds the hint and the state and protection revisions as `session.undo`'s does; a raced hint is
     /// `undo_superseded` before the revisions are checked. Each step takes `session.undo`'s permission path under the
@@ -4071,7 +4105,7 @@ impl<S: Store> CommandLayer<S> {
             return refused(code::ARGUMENT_FORM, "only the layer names a rollback's gesture and steps");
         }
         let gesture = invocation.command.as_str();
-        if rollback_step(&format!("{gesture}#1")) != Some((gesture, 1)) {
+        if rollback_step(&format!("{gesture}#1/1")) != Some((gesture, 1, 1)) {
             return refused(code::ARGUMENT_FORM, "a rollback's command ID must name its gesture's steps");
         }
         let binding = self.authenticate(invocation)?;
@@ -4092,6 +4126,10 @@ impl<S: Store> CommandLayer<S> {
         if steps.iter().any(|step| taken(&(scope.clone(), step.command.clone()))) {
             return refused(code::COMMAND_ID_REUSED, "a step of the gesture would reuse a command ID");
         }
+        if self.gestures.contains_key(&(scope.clone(), invocation.command.clone())) {
+            return refused(code::COMMAND_ID_REUSED, "the gesture ID names an earlier gesture's steps");
+        }
+        self.gestures.insert((scope.clone(), invocation.command.clone()), of);
         let (mut landed, mut last, mut stop) = (0, None, None);
         for step in &steps {
             let request = self.request(caller, step, &[]);
@@ -4123,15 +4161,15 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// Step `step` of `of` of the rollback `invocation` presses: command `{gesture}#{step}` on the same row, with the
-    /// press's arguments, the gesture and the step in its arguments, and the press's token and epoch.
+    /// Step `step` of `of` of the rollback `invocation` presses: command `{gesture}#{step}/{of}` on the same row, with
+    /// the press's arguments, the gesture, the step and the count in its arguments, and the press's token and epoch.
     fn rollback_invocation(invocation: &Invocation, step: u64, of: u64) -> Invocation {
         let mut args = invocation.args.as_object().cloned().unwrap_or_default();
         args.insert("gesture".to_owned(), Value::String(invocation.command.clone()));
         args.insert("step".to_owned(), Value::Int(step as i64));
         args.insert("of".to_owned(), Value::Int(of as i64));
         Invocation {
-            command: format!("{}#{step}", invocation.command),
+            command: format!("{}#{step}/{of}", invocation.command),
             row: ROLLBACK_ROW.to_owned(),
             args: Value::Object(args),
             token: invocation.token.clone(),

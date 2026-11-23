@@ -3761,3 +3761,23 @@ LG5.6).
   - the palette's generation event (KN5.8's protocol): the shell compares the layer's revision and generation when it
     reads.
 - Evidence kind: source. Nothing here is Windows input, display or timing evidence.
+
+## Status of LP4, LP4-15: durable rollback step IDs (R2-5)
+
+- The owner's decision 4.2 of 23 November 2026: each step of `session.rollback` is journaled under the command ID
+  `{gesture}#{i}/{k}` (1 <= i <= k, plain decimal), so "j of k" is durable and a reopen tells a gesture cut at j of k
+  from a whole one by the step IDs alone. `rollback_step` parses the form to (gesture, i, k); the journal format does
+  not change, since the step ID is the command ID the journal already keeps.
+- A reopen admits a step as the live gesture writes it: step 1 under a gesture ID that no earlier action or gesture
+  used, and each later step right after the one before it with the same k, in the same epoch. Step 0, i above k, a
+  number not in plain decimal and the older form `{gesture}#{i}` name no step and stop the replay in read-only
+  recovery (`KN5:consistency.unadmitted_journal_action`). A press under a gesture ID whose gesture has steps is refused
+  with `KN5:input.command_id_reused` whatever its k, live and after a reopen.
+- `CommandLayer::rollback_steps` builds the step IDs from the gesture's k; its receipts' commands carry k.
+- R2-5's reading test in `c600-command/tests/attack_rollback.rs` is now a passing test of the fix
+  (`a_cut_gesture_and_a_whole_one_journal_apart`), and `tests/rollback.rs` gains the crash case and the admission
+  cases. The `session.rollback` row's note in `command-rows-commit.json`, `command-table.json` and `command-table.md`
+  names the new form.
+- Not built: a journal written before this change with a rollback gesture in the older form reopens in read-only
+  recovery; no migration of such a journal is built, since the row was a draft of 22 November 2026.
+- Evidence kind: source.
