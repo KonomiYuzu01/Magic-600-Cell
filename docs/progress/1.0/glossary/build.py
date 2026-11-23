@@ -410,12 +410,6 @@ def path_errors(doc: dict, path: dict) -> list[str]:
             ids.append(tid)
         concepts[s["id"]] = ids
     for s in steps.values():
-        for name in s.get("revisits", []):
-            tid, why = resolve(names, name)
-            if why:
-                errors.append(f"{s['id']} revisits: {why}")
-            elif taught.get(tid) not in ancestors(s["id"]):
-                errors.append(f"{s['id']} revisits '{name}', which no earlier step teaches")
         for w in s.get("waiting", []):
             tid, why = resolve(names, w.get("term", ""))
             if why:
@@ -439,6 +433,15 @@ def path_errors(doc: dict, path: dict) -> list[str]:
             errors.append(f"assumed: '{name}' is also taught at {taught[tid]}")
         else:
             outside.add(tid)
+    # A step revisits a concept an earlier step taught, or one the path takes from the manual (step 4 revisits Word's
+    # named alphabet and identity, since the manual's chapter 1 shows jumbling words only).
+    for s in steps.values():
+        for name in s.get("revisits", []):
+            tid, why = resolve(names, name)
+            if why:
+                errors.append(f"{s['id']} revisits: {why}")
+            elif taught.get(tid) not in ancestors(s["id"]) and tid not in outside:
+                errors.append(f"{s['id']} revisits '{name}', which no earlier step teaches")
     for sid, ids in concepts.items():
         known = set(ids)
         for a in ancestors(sid):

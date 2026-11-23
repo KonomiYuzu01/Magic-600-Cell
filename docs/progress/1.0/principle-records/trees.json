@@ -13,7 +13,7 @@
     "pose_tree"
   ],
   "level": "L5",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "The mathematician's pass of 23 November 2026 found M16 (pose, not orientation); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
   "binding": {
     "source_sha256": "7736d38c80d115ab07b89b5dfc466997ce62dcb211d8228fd93b54fa81796d0b",
     "closure_sha256": "d8d169a289e9349884bdb5b4a54f05daebbf14218f241a806cae64a90793d45b",
@@ -451,7 +451,7 @@
       "statement": "the identity pose factors as 1 x 1 and sits at the tree's root vertex",
       "idea": "The solved pose does nothing, so it sits at the start of the tree: no distance and no branch.",
       "terms": [
-        "orientation"
+        "pose"
       ]
     },
     "failure": [
@@ -502,7 +502,7 @@
     ],
     "prerequisites": {
       "terms": [
-        "orientation",
+        "pose",
         "piece"
       ],
       "records": [

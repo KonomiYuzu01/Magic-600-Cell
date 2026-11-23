@@ -12,7 +12,7 @@
     "layer_predicate"
   ],
   "level": "L1",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "The mathematician's pass of 23 November 2026 found M15 (distance 0 is a definition, not a certificate); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
   "binding": {
     "source_sha256": "7332a75475c8971fa0688462d62736d1ec1b63c5d437d5bd07f890817479cc06",
     "closure_sha256": "e000501570570e7229aa882592e372357eba967a58df2feea0d98cd860c922f9",
@@ -203,15 +203,11 @@
       }
     },
     {
-      "kind": "certificate",
+      "kind": "by_definition",
       "statement": "the face-step distance between cells is zero from a cell to itself",
-      "text": "A distance counts the steps of the shortest path between two cells through shared faces; the path from a cell to itself has no step. The cells and their faces are the model's.",
+      "text": "A distance counts the steps of the shortest path between two cells through shared faces; the path from a cell to itself has no step.",
       "evidence": {
-        "path": "assets/manifest.json",
-        "sha256": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
-        "basis": "certificate",
-        "check": "producer",
-        "label": "the model manifest, which pins the cell structure's asset digests"
+        "none": "a definition: the path from a cell to itself has no step"
       }
     }
   ],

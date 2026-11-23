@@ -7,7 +7,7 @@
     "setups_for"
   ],
   "level": "L3",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "The mathematician's pass of 23 November 2026 found M14 (an empty list at a non-buffer position); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
   "binding": {
     "source_sha256": "d9e0c3696071fb270a6e88f0c47fc5338e6f1fe2adf2f643e71b974150e8aad2",
     "closure_sha256": "6e573f9bee4fce8e16c92bf83c6f76a86298abc87bb2a9f51fb01973c3bd2c16",
@@ -38,7 +38,7 @@
       "tie_rule": {
         "none": "the row ranks none and marks none best (BND.1): the setups come in the table's node order"
       },
-      "empty_answer": "An empty setup list at a buffer position means the position is a buffer of the orbit's tree; at another position it concerns the named position and the table's family only and never says that no solving step exists.",
+      "empty_answer": "An empty setup list means the named position is a buffer of the orbit's tree: the certified tables cover every oriented non-buffer state of every orbit (solving workflow, section 3.1), so at every other position of the orbit the list is not empty. The empty answer concerns the named position and the table's family only and never says that no solving step exists.",
       "negative_scope": {
         "none": "the entry answers no yes-or-no question, so it has no negative answer"
       },
@@ -49,7 +49,7 @@
     {
       "kind": "certificate",
       "statement": "a buffer position of an orbit has no guarded setup",
-      "text": "The star cycles buffer A to buffer B to the target, so a buffer is never a target of its own tree: the table holds no setup for it. The tables are the model's certified execution trees.",
+      "text": "The star cycles buffer A to buffer B to the target, so a buffer is never a target of its own tree: the table holds no setup for it. The tables cover every oriented non-buffer state of every orbit, so every other position of the orbit has a setup. The tables are the model's certified execution trees.",
       "evidence": {
         "path": "assets/execution_trees.json.gz",
         "sha256": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20",

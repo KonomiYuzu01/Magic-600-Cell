@@ -13,7 +13,7 @@
     "orbit_report"
   ],
   "level": "L4",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "The mathematician's pass of 23 November 2026 found M3 (the reason said only the cycle remains) and M13 (the seed role); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
   "binding": {
     "source_sha256": "0d40695d5ac113896a28347ffc77a86b91ffcd2459d213060e7f177eee448582",
     "closure_sha256": "929c8ff62cdee9977f381bc6531cf6d1d4dd9f48226df11e3fcb76f1b3de30f8",
@@ -255,7 +255,8 @@
         5,
         -5
       ],
-      "base": "solved"
+      "base": "solved",
+      "roles": "generators 1, 2 and 3 stand in the setup, relocation and seed roles; generator 3 is no seed of the atlas, whose seeds have 46 letters or more"
     },
     "expected": [
       {
@@ -334,7 +335,7 @@
     },
     "reason": {
       "statement": "a star is setup^-1 relocation^-1 seed relocation setup in chronological order",
-      "idea": "A star carries the seed's small cycle to the place you named and carries everything back afterwards, so only the cycle remains.",
+      "idea": "A star carries the seed to the place you named and carries everything back afterwards, so what remains is the seed's whole effect carried there: its cycle and any collateral.",
       "terms": [
         "star",
         "setup",
@@ -345,7 +346,7 @@
     "failure": [
       {
         "hypothesis": "the relocation and the setup are applied again after the seed",
-        "outcome": "counterexample: without them the word [-1, -2, 3] leaves the setup's and the relocation's effect in place, and its effect is not a conjugate of the seed's"
+        "outcome": "counterexample: without them the word [-1, -2, 3] leaves the setup's and the relocation's effect in place"
       }
     ],
     "not_meant": "A star word built from the solver's setup, relocation and seed is a literal word; recipes never chooses a setup or a target, and an effect report shows what a recipe does, not whether it helps.",
@@ -365,7 +366,7 @@
         "leaf": "input named by the caller"
       },
       {
-        "name": "seed",
+        "name": "the seed role",
         "value": [
           3
         ],
@@ -382,7 +383,7 @@
     ],
     "steps": [
       {
-        "check": "setup⁻¹ = [-1], relocation⁻¹ = [-2], then the seed [3], the relocation [2] and the setup [1]: [-1, -2, 3, 2, 1].",
+        "check": "setup⁻¹ = [-1], relocation⁻¹ = [-2], then [3] in the seed role, the relocation [2] and the setup [1]: [-1, -2, 3, 2, 1].",
         "result": [
           -1,
           -2,

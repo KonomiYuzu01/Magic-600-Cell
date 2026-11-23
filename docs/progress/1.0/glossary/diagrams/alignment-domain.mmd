@@ -1,4 +1,4 @@
 flowchart LR
-  L[lattice] -->|"rotated by γ"| C["coset γK⁺"]
-  P[pieces whose poses fit that copy] --> C
+  L[lattice] -->|"rotated by γ"| C["coset γK⁺ of poses"]
   C --> D[alignment domain]
+  P[pieces whose poses lie in it] -. share one tree position .- D

@@ -88,7 +88,7 @@
    "note": "EV5.6's 'every, some and negation' are the Statement form and Negation pair rows; 'empty, not found, not run' (EVD.33) are Empty answer, Not found within budget and Not run; 'record parts specification and not meant' are the Specification and Not meant rows. The closure adds what these definitions use: View, Statement, Evidence, Admitted domain, Theorem, Certificate, Digest, Identity level and Sticker.",
    "routes": "H-08 `command.find`, `object.inspect`, `view.findings`, `view.residuals`, `operation.check`, `job.stop`. `invoke` on an overlay row (chapter 01), `word` (chapter 06), `follow_pick` (EV3). Explanation and provenance view: owed",
    "fixture": {
-    "task": "The search record at the 7302 stop ran the family search with beam 64 to depth 3 and stopped. Read its Φ, beam, depth and status, then give the evidence word for E₃, 'some family-R word with at most three retained letters lowers Φ here', with its scope.",
+    "task": "In the jumbling puzzle under menu I_a, the search record at the 7302 stop ran family R's search with beam 64 to depth 3. Read Φ, family R's beam and depth, whether its search was exhausted, through how many letters it was exhaustive and how many candidates it found. Then give the evidence word for E₃, 'some family-R word with at most three retained letters lowers Φ here', with its scope, and the word for the narrower claim that the two-letter subset was searched exhaustively.",
     "concepts": [
      "Evidence words",
      "Not found within budget",
@@ -107,25 +107,33 @@
         "value": 1094
        },
        {
-        "pointer": "/run/options/beam",
+        "pointer": "/run/steps/3/families/R/beam",
         "value": 64
        },
        {
-        "pointer": "/run/options/depth",
+        "pointer": "/run/steps/3/families/R/depth",
         "value": 3
        },
        {
-        "pointer": "/run/status",
-        "value": "stopped"
+        "pointer": "/run/steps/3/families/R/exhausted",
+        "value": false
+       },
+       {
+        "pointer": "/run/steps/3/families/R/exhaustive_through",
+        "value": 2
+       },
+       {
+        "pointer": "/run/steps/3/families/R/candidates",
+        "value": 0
        }
       ]
      }
     ],
     "answer": {
      "kind": "evidence word",
-     "expected": "not found within budget: the beamed search did not cover its set, so it gives no negative over it"
+     "expected": "E₃ reads not found within budget: family R's beam-64 search of three letters was not exhausted, so it gives no negative over its set. The two-letter subset was searched exhaustively and found none: that narrower claim has its own key and reads finite instance."
     },
-    "source": "Chapter 06 section 9, E3, first row; EV5.6 step 1's candidate"
+    "source": "Chapter 06 section 9, E3, its first two rows; EV5.6 step 1's candidate"
    },
    "review": "Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12)."
   },
@@ -144,31 +152,47 @@
    "closure": [
     "Source range"
    ],
-   "note": "EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows.",
+   "note": "EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows. The fixture's fork is CT-EV3-05's, whose source declares default_layer an editable parameter under LP4-7's draft directive.",
    "routes": "`edit_declared_part` (EV3), `diagnose` (EV1). Workspace command that persists it, host fork operation: owed",
    "fixture": {
-    "task": "You fork the built-in stage-order entry (library module seeds) to change a parameter. Read the built-in's principle record: which evidence file does its argument cite, and how many of its arguments does your fork inherit?",
+    "task": "CT-EV3-05 forks the built-in 600-cell-Full tool and declares one editable parameter in the fork. Read the fork's declaration: which function is the parameter, and which value does it hold? Then read the built-in's principle record: which file does its certificate argument cite, how much of that evidence does the fork inherit, and what does it keep of the record's cited statements?",
     "concepts": [
      "Fork",
      "Editable parameter"
     ],
     "reads": [
      {
-      "path": "docs/progress/1.0/principle-records/seeds.json",
-      "sha256": "8591babe5eb601c6431a7110b850b0244ebf29241782dc612b28965910d40d92",
+      "path": "rust/c600-editor/tests/ct_ev3_05.rs",
+      "sha256": "f495b9953fca350283510441a7409aa7fd00d13219681b7ee0bd1630d5afeac7",
       "expect": [
        {
-        "pointer": "/justification/0/evidence/path",
-        "value": "assets/seed_atlas.json"
+        "text": "# @editable parameter\nfn default_layer() -> Nat effects [] {\n    return 2;\n}"
+       }
+      ]
+     },
+     {
+      "path": "docs/progress/1.0/principle-records/full_600_cell.json",
+      "sha256": "f065414a05cfc025c9a4ef9cd900d278ac86bb9b64f30f1b090357b59cb0a2d9",
+      "expect": [
+       {
+        "pointer": "/justification/1/evidence/path",
+        "value": "assets/manifest.json"
+       },
+       {
+        "pointer": "/binding/statements",
+        "value": [
+         "full_600_cell.preview_word proposes the named word unchanged",
+         "a generator followed by its inverse is the identity permutation of the 259,800 sticker slots"
+        ]
        }
       ]
      }
     ],
     "answer": {
-     "kind": "count",
-     "expected": "0: a fork inherits no evidence; the built-in's argument cites assets/seed_atlas.json"
+     "kind": "value",
+     "expected": "default_layer, a parameter holding 2. The certificate argument cites assets/manifest.json; the fork inherits none of that evidence, and keeps the record's two cited statements as references, never as evidence (EV5.5)."
     },
-    "source": "LB6.3; EV5.5"
+    "source": "rust/c600-editor/tests/ct_ev3_05.rs (LP4-7, EV3.7); LB6.3; EV5.5"
    },
    "review": "Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12)."
   },
@@ -187,8 +211,7 @@
     "Workspace undo"
    ],
    "closure": [
-    "Keyboard key",
-    "Assistance provenance"
+    "Keyboard key"
    ],
    "note": "EV5.6's 'Binding with absolute arguments' is the Binding row. Workspace undo follows the owner's overrule X1 of 23 November 2026: moves and layouts keep separate histories.",
    "routes": "H-08 `keymap.edit`, `file.keymap.export`, `file.keymap.check`, `file.keymap.apply`, `grip.capture`. `edit_declared_part`. Save layout: owed",
@@ -240,14 +263,20 @@
     },
     "source": "H-08 keymap.edit; EV4.15 with the owner's overrule X1"
    },
-   "review": "Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12)."
+   "review": "Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12).",
+   "forward": [
+    {
+     "concept": "Workspace record",
+     "uses": "Assistance provenance",
+     "why": "Its 'where required' applies only to stored words (PS1.32, LB7.3), which step 4 teaches (the mathematician's ruling on OV-3, 23 November 2026)."
+    }
+   ]
   },
   {
    "id": "S4",
    "name": "Compose recipes and macros",
    "after": [
-    "S1",
-    "S3"
+    "S1"
    ],
    "concepts": [
     "Literal word",
@@ -266,6 +295,7 @@
     "Protection",
     "Net and Strict checks",
     "Complete effect",
+    "Assistance provenance",
     "Recording"
    ],
    "closure": [
@@ -273,9 +303,9 @@
     "Revision reference"
    ],
    "revisits": [
-    "Assistance provenance"
+    "Word"
    ],
-   "note": "Word is taught by the manual (chapter 1) and is assumed here. Assistance provenance moves to step 3, where the workspace record needs it, and is revisited here; step 4 therefore comes after step 3. 'Fresh preview on reuse' (LB7.2) is the Preview row's rule: a reused macro or work sheet gets a fresh preview. Conjugate and commutator at this step are the mathematician's inference (EV5.6).",
+   "note": "Word is taken from the manual, whose chapter 1 shows jumbling words only; this step revisits it for its named alphabet and identity (the mathematician, 23 November 2026). Assistance provenance keeps its frozen step; the workspace record of step 3 records a forward use of it. 'Fresh preview on reuse' (LB7.2) is the Preview row's rule: a reused macro or work sheet gets a fresh preview. Conjugate and commutator at this step are the mathematician's inference (EV5.6).",
    "routes": "H-08 `macro.base.open`, `macro.select`, `macro.add`, `macro.save`, `macro.variant.create`, `macro.compare`, `operation.new`, `operation.phase.edit`, `operation.reuse`, `operation.check`, `operation.preview`, `operation.execute`, `worksheet.save`, `worksheet.load`. `propose` (chapter 01), `word_key` (chapter 02). `recording.start`, `recording.stop`, `recording.play`, `recording.convert` (EV4)",
    "fixture": {
     "task": "Read the seed atlas entry for orbit 26. What is its seed's exact length, what is the outer form of its formula, and which orbits does its collateral move?",
@@ -347,7 +377,7 @@
    "note": "EV5.6's 'Base part' is the Decomposition leaf row (EV5.18), and 'a domain inside its lemma's scope' is the Declared domain row with LB6.2's rule. Stating a principle of one's own has no data route (EV5.9). Theorem is taught at step 1, where a basis names it, and revisited here as a proof.",
    "routes": "`hover`, `definition` (EV1). Reading a record: owed. Stating your own: owed; no data route exists, and EV5.9 leaves the map to the joint setting",
    "fixture": {
-    "task": "Read the floor instance's givens in the manual: after the 40-twist scramble numbered 7101, cap 30 has In_30 = 840, Out_30 = 737 and A_30 = 0. Check N_30 and the floor by hand, as the worked instance's hand derivation does.",
+    "task": "In the jumbling puzzle under menu I_a, read the floor instance's givens in the manual: after the 40-twist scramble numbered 7101, cap 30 has In_30 = 840, Out_30 = 737 and A_30 = 0. Check N_30 and the floor by hand, as the worked instance's hand derivation does.",
     "concepts": [
      "Worked instance",
      "Hand derivation",
@@ -489,31 +519,31 @@
    "note": "Digest and Certificate are taught at step 1, where a job result and a basis name them, and revisited here.",
    "routes": "`replay_run` (EV2), `reproduce` (chapter 09), `check` (chapter 01), `word` (chapter 06), `import_archive`, `export_check_bundle`, `migrate_record` (chapter 05)",
    "fixture": {
-    "task": "The stage-order record cites the seed atlas by digest. Recompute the atlas's SHA-256 and compare it with the digest in the record.",
+    "task": "The guarded-setups record cites the certified execution trees by digest. Recompute the table's SHA-256, compare it with the digest in the record, and say what a match shows.",
     "concepts": [
      "Digest",
      "Certificate"
     ],
     "reads": [
      {
-      "path": "docs/progress/1.0/principle-records/seeds.json",
-      "sha256": "8591babe5eb601c6431a7110b850b0244ebf29241782dc612b28965910d40d92",
+      "path": "docs/progress/1.0/principle-records/guarded_setups.json",
+      "sha256": "47970ef95fdbd97695c0f5805bdd5a22924abb676e7371a4d432adf15070cca1",
       "expect": [
        {
         "pointer": "/justification/0/evidence/sha256",
-        "value": "de41b58067ac8c0bf5339c11e43b828aa4944b6b40e8b2e7e1287e625e898891"
+        "value": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20"
        }
       ]
      },
      {
-      "path": "assets/seed_atlas.json",
-      "sha256": "de41b58067ac8c0bf5339c11e43b828aa4944b6b40e8b2e7e1287e625e898891",
+      "path": "assets/execution_trees.json.gz",
+      "sha256": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20",
       "expect": []
      }
     ],
     "answer": {
      "kind": "yes or no",
-     "expected": "yes: the recomputed digest equals the record's"
+     "expected": "yes: the recomputed digest equals the record's. A match shows that these are the cited bytes; it does not check the certificate."
     },
     "source": "LB6.2 (records resolve through their recorded digests)"
    },

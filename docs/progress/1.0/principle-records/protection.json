@@ -12,7 +12,7 @@
     "strict_check_within"
   ],
   "level": "L4",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "The mathematician's pass of 23 November 2026 found M12 (the failure example kept its hypothesis); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
   "binding": {
     "source_sha256": "d1f0c9262131d4da022c08f59a791745f364144ffd0a2624cf76ee17ad4b4582",
     "closure_sha256": "efa6e4fa72f9ba9a531e34c699461f6778b2e8fb5b9fd5c87c18614fefa669d2",
@@ -299,7 +299,7 @@
     "failure": [
       {
         "hypothesis": "the recipe's net effect is the identity",
-        "outcome": "weaker conclusion: under Strict the same recipe can fail, since a prefix may move a locked slot before the end undoes it (CT-LB2-02's identity word)"
+        "outcome": "counterexample: generator 1 alone, [1], is not the identity and moves slot 1; at solved its end state holds label 5 at slot 1, not the captured 1, so Net reports a conflict (counted with core.py on the model)"
       }
     ],
     "not_meant": "clear under Net says nothing about the steps in between, and a verdict never chooses a recipe.",

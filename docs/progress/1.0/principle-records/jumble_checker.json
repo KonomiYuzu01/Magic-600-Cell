@@ -8,7 +8,7 @@
     "check_named_word"
   ],
   "level": "L1",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "The mathematician's pass of 23 November 2026 found M6 (the second letter's admissibility); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
   "binding": {
     "source_sha256": "dddba17a57b35e56dc8bb64a6ef4ce12fe0e3e057f07f1ce1e9ea8a852f891fb",
     "closure_sha256": "913e6b6ce4d17d6849697dd13b76aca0f3346698d1108c2d0c11386161a5a4d2",
@@ -215,7 +215,7 @@
         "result": 2
       },
       {
-        "check": "At solved every piece sits on its lattice pose, so no piece straddles a cap and both letters apply: the word is admissible.",
+        "check": "At solved no piece straddles cap 0's cut, so the first letter applies. A twist at a cap c moves only the pieces inside H_c⁺, rigidly within it, so it creates no straddler of c, and the second letter at the same cap 0 applies too: the word is admissible. The argument holds at the same cap only: card 6 shows that pieces of height 2 can block grips of other classes.",
         "result": true
       },
       {

@@ -1,4 +1,6 @@
 flowchart LR
   S[solver] -->|chooses and executes| M[solving macro]
   P[program] -->|may track, analyse, check, protect, reuse| M
+  P -->|may propose setups for a named target| U[setup search]
+  P -->|may list repairs at a named cap, unranked| R[repair list]
   P -. never chooses, outputs or executes one alone .- X[solving]

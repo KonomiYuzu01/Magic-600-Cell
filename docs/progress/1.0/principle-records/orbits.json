@@ -9,14 +9,14 @@
     "orbit_residuals"
   ],
   "level": "L5",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "The mathematician's pass of 23 November 2026 found M8 (orbit -1 presented the fixed centres as one orbit); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
   "binding": {
     "source_sha256": "57cf50c1127d096c70897272f88c0f16ac3f1b63d29922f202643383ba5bfcb9",
     "closure_sha256": "b8d3ab5327d23ae436c0576101a6abdd0e814b390984a4a8255b4851bc7e0bb7",
     "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
     "decomposition_sha256": "bc8aab7cacd3ed4928fb743d7cca1a95fc0ecca6a5632dce27defe2c3d6047dc",
     "statements": [
-      "orbit -1 holds the 600 fixed cell centres, one per cell"
+      "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell"
     ]
   },
   "specification": [
@@ -36,7 +36,7 @@
         "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
       },
       "level": "L5",
-      "domain": "every list of orbits -1 to 34",
+      "domain": "every list of orbit indices -1 to 34",
       "tie_rule": {
         "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
       },
@@ -44,7 +44,7 @@
       "negative_scope": {
         "none": "the entry answers no yes-or-no question, so it has no negative answer"
       },
-      "outside_scope": "outside the model's orbits -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
+      "outside_scope": "outside the model's orbit indices -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
     },
     {
       "entry": "orbit_progress",
@@ -72,7 +72,7 @@
       "negative_scope": {
         "none": "the entry answers no yes-or-no question, so it has no negative answer"
       },
-      "outside_scope": "outside the model's orbits -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
+      "outside_scope": "outside the model's orbit indices -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
     },
     {
       "entry": "orbit_residuals",
@@ -96,14 +96,14 @@
       },
       "empty_answer": "Empty lists with complete = true mean the orbit's named pieces are all home and oriented.",
       "negative_scope": "solved = false names what is still wrong; it never names a next step.",
-      "outside_scope": "outside the model's orbits -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
+      "outside_scope": "outside the model's orbit indices -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
     }
   ],
   "justification": [
     {
       "kind": "certificate",
-      "statement": "orbit -1 holds the 600 fixed cell centres, one per cell",
-      "text": "Each of the 600 cells has one centre piece that no twist moves; they form orbit -1.",
+      "statement": "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell",
+      "text": "Each of the 600 cells has one centre piece that no twist moves, so each centre is a position orbit of its own (Theory, hypothesis R). The orbit table lists them together under the index -1.",
       "evidence": {
         "path": "assets/manifest.json",
         "sha256": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
@@ -146,12 +146,12 @@
       "map": [
         {
           "node": "orbits.orbit_catalogue",
-          "statement": "orbit -1 holds the 600 fixed cell centres, one per cell",
+          "statement": "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell",
           "step": "step 1"
         },
         {
           "node": "kernel:read_snapshot(orbits)",
-          "statement": "orbit -1 holds the 600 fixed cell centres, one per cell",
+          "statement": "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell",
           "step": "step 3"
         }
       ],
@@ -176,8 +176,8 @@
       ]
     },
     "reason": {
-      "statement": "orbit -1 holds the 600 fixed cell centres, one per cell",
-      "idea": "Every cell has a centre that never moves, so there are as many fixed centres as cells.",
+      "statement": "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell",
+      "idea": "Every cell has a centre that never moves, so there are as many fixed centres as cells; the table keeps them under one index, -1, although each is an orbit of one position.",
       "terms": [
         "cell",
         "orbit",
@@ -186,7 +186,7 @@
     },
     "failure": [
       {
-        "hypothesis": "the named orbit is the fixed cell centres",
+        "hypothesis": "the named index is -1, the fixed cell centres",
         "outcome": "weaker conclusion: another orbit's piece count is the orbit table's, which the instance does not show"
       }
     ],
@@ -204,11 +204,11 @@
         "result": 1
       },
       {
-        "check": "The row is the named orbit's: -1.",
+        "check": "The row is the named index's: -1.",
         "result": -1
       },
       {
-        "check": "Orbit -1 holds one centre per cell, and there are 600 cells: 600 pieces.",
+        "check": "Index -1 lists one centre per cell, and there are 600 cells: 600 pieces, each its own singleton orbit.",
         "result": 600
       }
     ],

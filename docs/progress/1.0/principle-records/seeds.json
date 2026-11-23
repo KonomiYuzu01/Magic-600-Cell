@@ -8,14 +8,15 @@
     "stage_order"
   ],
   "level": "L2",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "The mathematician's pass of 23 November 2026 found M7 (the reason said nothing solved is disturbed again; the justification is a topological sort); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
   "binding": {
     "source_sha256": "c7cc7fd2ebb07fe63c517be838688fcbd827bf72385b2743dab627025d09341d",
     "closure_sha256": "99cde9efa5f80cf79f1119ed60b8772648934cda615c25e0408771d78f1083e4",
     "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
     "decomposition_sha256": "5db164db6eb29c910dbce10712d2b34d86dee8e61473208d98a96b3649c22a49",
     "statements": [
-      "an orbit comes before every orbit its seed's collateral moves"
+      "stage_order is a topological sort: repeatedly placing the first listed row with no unplaced predecessor puts every orbit before every orbit its seed's collateral moves",
+      "technical-report@85b1fe6626f1276aac29bbe2d51d7a973eb63934:Triangular stage invariant"
     ]
   },
   "specification": [
@@ -74,15 +75,27 @@
   ],
   "justification": [
     {
-      "kind": "certificate",
-      "statement": "an orbit comes before every orbit its seed's collateral moves",
-      "text": "Placing an orbit releases the orbits its collateral moves; repeatedly placing the first listed row with no unplaced predecessor gives an order in which every collateral falls on a later orbit. The rows are the seed atlas's.",
+      "kind": "lemma",
+      "statement": "stage_order is a topological sort: repeatedly placing the first listed row with no unplaced predecessor puts every orbit before every orbit its seed's collateral moves",
+      "text": "Each round places the first listed row whose predecessors are all placed and releases the rows its collateral moves (Kahn's algorithm), so a row comes before every row its collateral names. Rows on a cycle, and rows held behind one, are never released; the answer lists them in `cycle`.",
       "evidence": {
-        "path": "assets/seed_atlas.json",
-        "sha256": "de41b58067ac8c0bf5339c11e43b828aa4944b6b40e8b2e7e1287e625e898891",
-        "basis": "certificate",
+        "path": "rust/c600-library/tests/seeds.rs",
+        "sha256": "47be73b3fdfcbf0757f6f413e2fe07bbc1a4ea003dd576f012bde7fa4d520262",
+        "basis": "exact_computation",
         "check": "producer",
-        "label": "the model's seed atlas with each seed's collateral"
+        "label": "LB2 stage order on listed rows, cycles included (LP3 test)"
+      }
+    },
+    {
+      "kind": "lemma",
+      "statement": "technical-report@85b1fe6626f1276aac29bbe2d51d7a973eb63934:Triangular stage invariant",
+      "text": "The technical report's proposition, at the commit that last changed it: with the certified setup and frame coverage, the orientation corrections and an acyclic raw-seed collateral graph, solving every orbit before the orbits its seed's collateral moves keeps each completed orbit solved at later macro boundaries. The next raw seed fixes the completed orbits, since its collateral lies on later orbits, and every conjugate of it by a legal setup fixes them too. It holds at macro boundaries only (Net): during a macro, pieces of completed orbits can move and return.",
+      "evidence": {
+        "path": "research/Full_600cell_Technical_Report.tex",
+        "sha256": "484ff58e22f67775dad340c7a83fdee257c67128895b32172d83a13a3883746c",
+        "basis": "theorem",
+        "check": "producer",
+        "label": "Technical report, Proposition 'Triangular stage invariant'"
       }
     }
   ],
@@ -126,22 +139,22 @@
       "map": [
         {
           "node": "seeds.in_degrees",
-          "statement": "an orbit comes before every orbit its seed's collateral moves",
+          "statement": "stage_order is a topological sort: repeatedly placing the first listed row with no unplaced predecessor puts every orbit before every orbit its seed's collateral moves",
           "step": "step 1"
         },
         {
           "node": "seeds.first_ready",
-          "statement": "an orbit comes before every orbit its seed's collateral moves",
+          "statement": "stage_order is a topological sort: repeatedly placing the first listed row with no unplaced predecessor puts every orbit before every orbit its seed's collateral moves",
           "step": "step 2"
         },
         {
           "node": "seeds.released",
-          "statement": "an orbit comes before every orbit its seed's collateral moves",
+          "statement": "stage_order is a topological sort: repeatedly placing the first listed row with no unplaced predecessor puts every orbit before every orbit its seed's collateral moves",
           "step": "step 3"
         },
         {
           "node": "seeds.unplaced",
-          "statement": "an orbit comes before every orbit its seed's collateral moves",
+          "statement": "stage_order is a topological sort: repeatedly placing the first listed row with no unplaced predecessor puts every orbit before every orbit its seed's collateral moves",
           "step": "step 4"
         }
       ],
@@ -167,8 +180,8 @@
       "unmapped_steps": []
     },
     "reason": {
-      "statement": "an orbit comes before every orbit its seed's collateral moves",
-      "idea": "Solve an orbit before the orbits its seed disturbs, so that nothing already solved is disturbed again.",
+      "statement": "technical-report@85b1fe6626f1276aac29bbe2d51d7a973eb63934:Triangular stage invariant",
+      "idea": "Solve an orbit before the orbits its seed disturbs. Each later seed, and every setup's version of it, then leaves the finished orbits as they are at the end of each macro, although their pieces may move and come back during one.",
       "terms": [
         "seed",
         "collateral",
@@ -182,7 +195,7 @@
         "outcome": "weaker conclusion: rows on a cycle cannot be placed, and the answer lists them in `cycle`"
       }
     ],
-    "not_meant": "A stage order is one order the collateral allows; it is not the only one and not a plan the program chooses for the solver.",
+    "not_meant": "A stage order is one order the collateral allows; it is not the only one and not a plan the program chooses for the solver. It keeps finished orbits in place at macro boundaries, not after every letter.",
     "givens": [
       {
         "name": "collateral of orbit 26",

@@ -108,14 +108,15 @@ A world-fixed [grip](#grip) and cut; which [pieces](#piece) lie inside it depend
 
 ### <a id="cap-cover"></a>Cap cover
 
-"d covers c": the predicate at a named [cap](#cap) c that the solver asks about another named cap d.
+"d covers c": at [cap](#cap) c's cut, the face [pieces](#piece) whose centres lie in the region of a neighbouring cap d all sit on aligned [cut cells](#cut-cell), with the same number of them, at least ten, on each side of the cut. A later turn of d then erased c's [seam](#seam) there, so d was turned after c and comes off first.
 
 ![Cap cover](diagrams/cap-cover.svg)
 
 - First needed: L1 (Turning the puzzle)
 - In the UI: not placed yet
 - Source: EV5.18; DT-J1 M4; [manual section 2.2](../../../../research/jumbling/manual/02-descent.md)
-- Review: Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14).
+- Uses Cut cell before the manual introduces it: The chapter 2 introduction names the cover step before section 2.1 names cut cells; section 2.2, which defines covering, comes after both. Waits for the mathematician's review (EV5.14).
+- Review: The mathematician's pass of 23 November 2026 found M10 (the definition did not say what covering is; manual section 2.2); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="cell"></a>Cell
 
@@ -264,14 +265,15 @@ The per-revision counts of [pieces](#piece) at the declared exact [height](#heig
 
 ### <a id="in-out-a"></a>In_c, Out_c, A_c
 
-At [cap](#cap) c's cut: the [cut cells](#cut-cell) inside [pieces](#piece) cover, those outside pieces cover, and those covered on both sides by one alignment.
+At [cap](#cap) c's cut: the [cut cells](#cut-cell) inside [pieces](#piece) cover, those outside pieces cover, and those covered on both sides by pieces of one [alignment domain](#alignment-domain).
 
 ![In_c, Out_c, A_c](diagrams/in-out-a.svg)
 
 - First needed: L1 (Turning the puzzle)
 - In the UI: not placed yet
 - Source: [Descent manual](../../../../research/jumbling/manual/02-descent.md)
-- Review: Waits for the mathematician's review (EV5.14; LP4-11 integration).
+- Forward reference to Alignment domain, waiting for review: The manual teaches domains at L1 (chapter 1) by the pieces that fit one rotated copy of the slot pattern; section 6 proposes the coset form at L6. The mathematician asked for the qualified name (EV5.18).
+- Review: The mathematician's pass of 23 November 2026 found M24 (write alignment domain); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="invalid"></a>Invalid
 
@@ -399,15 +401,16 @@ The immutable identity fixing the mechanical objects and interpretation of their
 
 ### <a id="n-total"></a>N
 
-The total misalignment: how many times a [cut cell](#cut-cell), on any rotated cut, is covered on one side and not by the same alignment on the other.
+The total misalignment: how many times a [cut cell](#cut-cell), on any rotated cut, is covered on one side and not by pieces of the same [alignment domain](#alignment-domain) on the other.
 
 ![N](diagrams/n-total.svg)
 
 - First needed: L1 (Turning the puzzle)
 - In the UI: not placed yet
 - Source: Chapter 03; [restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test)
+- Forward reference to Alignment domain, waiting for review: The manual teaches domains at L1 (chapter 1) by the pieces that fit one rotated copy of the slot pattern; section 6 proposes the coset form at L6. The mathematician asked for the qualified name (EV5.18).
 - Uses Cut cell before the manual introduces it: Chapter 1 counts cells along a cut; the manual names a cut cell in chapter 2; waits for the mathematician's review (EV5.14).
-- Review: Waits for the mathematician's review (EV5.14; LP4-11 integration).
+- Review: The mathematician's pass of 23 November 2026 found M24 (write alignment domain); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="n-c"></a>N_c
 
@@ -637,25 +640,25 @@ The complete set of [pieces](#piece) straddling a named [cap](#cap)'s cut at a n
 
 ### <a id="twist-full"></a>Twist, 600-cell-Full
 
-A turn of one [grip](#grip) by a non-identity retained [menu](#menu) rotation, which can be a sequence of [generators](#generator).
+A turn of one [grip](#grip) c by a non-identity rotation of its [cap](#cap)'s A4 (Theory F), written as a sequence of the cap's two [generators](#generator) H_c and T_c.
 
 ![Twist, 600-cell-Full](diagrams/twist-full.svg)
 
 - First needed: L1 (Turning the puzzle)
 - In the UI: Twist keys; the move list and history
-- Source: Overview 3.6; DT-M1 Terms; core.py Model.move (primitive IDs +-1..+-1200)
-- Review: Waits for the mathematician's review (EV5.14; LP4-11 integration).
+- Source: Overview 3.6; DT-M1 Terms; Theory F; core.py Model.move (primitive IDs +-1..+-1200)
+- Review: The mathematician's pass of 23 November 2026 found M11 (600-cell-Full has no menu); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="twist-jumbling"></a>Twist, jumbling puzzle
 
-A turn of one [grip](#grip) by a non-identity active [menu](#menu) element, represented by a pinned [menu letter](#menu-letter).
+A turn of one [grip](#grip) c by a non-identity element of the active [menu](#menu) at c, written as a pinned [menu letter](#menu-letter). The full menu Λ_c has 60 items: the 12 retained rotations and 48 jumbles.
 
 ![Twist, jumbling puzzle](diagrams/twist-jumbling.svg)
 
 - First needed: L1 (Turning the puzzle)
 - In the UI: Twist keys; the move list and history
-- Source: Overview 3.6; DT-M1 Terms; core.py Model.move (primitive IDs +-1..+-1200)
-- Review: Waits for the mathematician's review (EV5.14; LP4-11 integration).
+- Source: Overview 3.6; DT-M1 Terms; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)
+- Review: The mathematician's pass of 23 November 2026 found M19 (cite the menu Λ_c of card 6, not core.py); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="typed-partial-result"></a>Typed partial result
 
@@ -720,7 +723,7 @@ A presentation of information at one [revision](#revision); further views are al
 
 ### <a id="admitted-domain"></a>Admitted domain
 
-A named set of inputs with a test for membership, such as D[k].
+A named set of inputs with a test for membership, such as D[k]: the certified domain of a bound with parameter k, whose test is the admission check Adm_k.
 
 ![Admitted domain](diagrams/admitted-domain.svg)
 
@@ -728,7 +731,7 @@ A named set of inputs with a test for membership, such as D[k].
 - In the UI: not placed yet
 - Taught at learning-path step S1
 - Source: Chapter 06 section 2; [stage 19 README](../../../../research/jumbling/restoration/19-height-depth-framework/README.md)
-- Review: Waits for the mathematician's review (EV5.14; LP4-11 integration).
+- Review: The mathematician's pass of 23 November 2026 found a nit (the example D[k] was not explained at step 1); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="assistance-provenance"></a>Assistance provenance
 
@@ -738,7 +741,7 @@ The origin of a [word](#word): whether the solver wrote it or a tool supplied it
 
 - First needed: L2 (Orbits and protection)
 - In the UI: not placed yet
-- Taught at learning-path step S3
+- Taught at learning-path step S4
 - Source: EV5.18; partition BM2; PS1.32; LB7.3
 - Review: Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14).
 
@@ -1073,15 +1076,15 @@ The written working of a [worked instance](#worked-instance): the givens read fr
 
 ### <a id="human-solve-boundary"></a>Human-solve boundary
 
-The rule that the program never chooses or outputs a solving [macro](#macro) by itself, never executes without the solver's action and never solves automatically. Tools may track, analyse, check, protect and reuse the solver's own macros.
+The rule that the program never chooses or outputs a solving [macro](#macro) by itself, never executes without the solver's action and never solves automatically. Tools may track, analyse, check, protect and reuse the solver's own macros. Setup search for a target the solver names is allowed, and in the jumbling puzzle's descent, at a cap the solver names, the program may list the repairs that lower N in a neutral order without ranking, and the solver picks one.
 
 ![Human-solve boundary](diagrams/human-solve-boundary.svg)
 
 - First needed: L2 (Orbits and protection)
 - In the UI: not placed yet
 - Taught at learning-path step S6
-- Source: Owner, 2 October 2026; KN2.5
-- Review: Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14).
+- Source: Owner, 2 October 2026; Owner, 17 October 2026 (the repair list); KN2.5
+- Review: The mathematician's pass of 23 November 2026 found M21 (setup search and the 17 October repair-list exception); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="hypothesis"></a>Hypothesis
 
@@ -1295,15 +1298,15 @@ The [digest](#digest) fixing the ordered [menu](#menu) that gives an item index 
 
 ### <a id="mixed-statement"></a>Mixed statement
 
-A [statement](#statement) of the form every case has some answer, such as every admitted state having a legal selected [macro](#macro). One found case discharges nothing, and one failed search refutes nothing.
+A [statement](#statement) of the form every case has some answer, such as every admitted state having a legal selected [macro](#macro). One found case discharges nothing, and one failed budgeted search refutes nothing; a completed exhaustive search that finds no answer at one admitted case does refute it.
 
 ![Mixed statement](diagrams/mixed-statement.svg)
 
 - First needed: L2 (Orbits and protection)
 - In the UI: not placed yet
 - Taught at learning-path step S5
-- Source: Chapter 06 section 9 (E2); EV5.6
-- Review: Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14).
+- Source: Chapter 06 section 9 (E2, E3); EV5.6
+- Review: The mathematician's pass of 23 November 2026 found M2 (a failed budgeted search, not any failed search); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="negation-pair"></a>Negation pair
 
@@ -1912,15 +1915,15 @@ One of two fixed [positions](#position), A and B, chosen for an [orbit](#orbit);
 
 ### <a id="commutator"></a>Commutator
 
-The [word](#word) M N M⁻¹ N⁻¹, read in chronological order. Where M and N move no common [piece](#piece) it changes nothing, so a small overlap gives a small effect.
+The [word](#word) M N M⁻¹ N⁻¹ in chronological order: M first, N⁻¹ last. In the seed atlas [H0, T5] expands to 1, 12, 1, −12, since the half-turn H0 is its own inverse. Where M and N have disjoint supports (they move disjoint sets of slots) it changes nothing, so a small overlap gives a small effect.
 
 ![Commutator](diagrams/commutator.svg)
 
 - First needed: L3 (Buffers and stars)
 - In the UI: not placed yet
 - Taught at learning-path step S4
-- Source: EV5.6 (step 4, the mathematician's inference)
-- Review: Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). The order convention is for the mathematician to fix.
+- Source: EV5.6 (step 4, the mathematician's inference); assets/seed_atlas.json
+- Review: The mathematician's pass of 23 November 2026 found M20 (the order is settled; disjoint supports, not no common piece); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="conjugate"></a>Conjugate
 
@@ -2103,13 +2106,14 @@ The operation P_X(q) = K_{X,q} K_X^-1, built from [stars](#star): on the working
 
 ### <a id="residual"></a>Residual
 
-What is still wrong in an [orbit](#orbit): [pieces](#piece) not at Home, wrong [buffer](#buffer) [occupants](#occupant), wrong [orientations](#orientation) and unknown [frames](#frame); the final buffer may keep only a residual the orientation group allows.
+What is still wrong in an [orbit](#orbit): [pieces](#piece) not at Home, wrong [buffer](#buffer) [occupants](#occupant), wrong [orientations](#orientation) and unknown [frames](#frame); the final buffer may keep only a residual the [frame group](#frame-group) allows.
 
 ![Residual](diagrams/residual.svg)
 
 - First needed: L5 (Orientation and the endgame)
 - In the UI: Residuals panel per orbit; stage display; completion
 - Source: solving-workflow.md section 3.4
+- Review: The mathematician's pass of 23 November 2026 found M17 (frame group, not orientation group); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="retained-checkpoint"></a>Retained checkpoint
 
@@ -2171,7 +2175,7 @@ The declared mathematical action on the typed objects of a representation.
 
 ### <a id="alignment-domain"></a>Alignment domain
 
-A [coset](#coset) γK⁺: [pieces](#piece) whose [poses](#pose) fit one rotated copy of the [lattice](#lattice).
+A [coset](#coset) γK⁺ of [poses](#pose): the poses that fit one rotated copy of the [lattice](#lattice). The [pieces](#piece) whose poses lie in one alignment domain share one tree position (card 6, T6).
 
 ![Alignment domain](diagrams/alignment-domain.svg)
 
@@ -2179,7 +2183,7 @@ A [coset](#coset) γK⁺: [pieces](#piece) whose [poses](#pose) fit one rotated 
 - In the UI: not placed yet
 - Source: [Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)
 - Uses Pose before the manual introduces it: Chapter 1 describes domains by pieces that fit together; the manual names a pose in chapter 3; waits for the mathematician's review (EV5.14).
-- Review: Waits for the mathematician's review (EV5.14; LP4-11 integration).
+- Review: The mathematician's pass of 23 November 2026 found M24 (the definition mixed up the coset with the set of pieces); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="alternative"></a>Alternative
 
@@ -2298,15 +2302,14 @@ A representation of cells and their incidence relations at a stated dimension.
 
 ### <a id="census-rank"></a>Census rank
 
-The [orbit](#orbit) field `rank` in the census; what it counts is not established.
+The [orbit](#orbit) field `rank` in the census: r(A) = |M(A)| − 1, one less than the number of [caps](#cap) in the complete cap signature M(A) of the orbit's piece positions, the caps whose region holds the piece's [chamber](#cut-chamber) interior (Theory Lemma 6). It is neither a dimension nor a codimension.
 
 ![Census rank](diagrams/census-rank.svg)
 
 - First needed: L6 (Beyond the baseline)
-- Not learner-facing
 - In the UI: not placed yet
-- Source: EV5.18; assets/census.json
-- Review: Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). Not learner-facing until what it counts is established.
+- Source: EV5.18; Theory Lemma 6; assets/census.json
+- Review: The mathematician's pass of 23 November 2026 (M9) established what the field counts: r(A) = |M(A)| − 1 (Theory Lemma 6), and rank = len(mask) − 1 holds for all 35 orbits of assets/census.json (LP4-11 follow-up). This replaces EV5.18's 'what it counts is not established', a reading for the integrator; the row is learner-facing. The fix waits for the mathematician's review (EV5.14).
 
 ### <a id="chart"></a>Chart
 
@@ -3411,14 +3414,14 @@ A tree representation with declared node identities and edge relations.
 
 ### <a id="tree-branch"></a>Tree branch
 
-The class b(A) of a [piece](#piece)'s first step in the jumbling tree.
+The class b(A) of a [piece](#piece)'s first step in the jumbling tree, defined only for a piece of [height](#height) 2 or more.
 
 ![Tree branch](diagrams/tree-branch.svg)
 
 - First needed: L6 (Beyond the baseline)
 - In the UI: not placed yet
 - Source: EV5.18; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)
-- Review: Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14).
+- Review: The mathematician's pass of 23 November 2026 found M18 (defined only at height 2 or more); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="typed-ir"></a>Typed IR
 
@@ -3469,8 +3472,8 @@ Assumed from the manual and the solving glossary: Word, Lattice, Menu, Piece, Po
 - Used before it is taught: Not meant uses Principle record: EV5.6 reads the record's not-meant part at step 1 and the whole record at step 5.
 - Note: EV5.6's 'every, some and negation' are the Statement form and Negation pair rows; 'empty, not found, not run' (EVD.33) are Empty answer, Not found within budget and Not run; 'record parts specification and not meant' are the Specification and Not meant rows. The closure adds what these definitions use: View, Statement, Evidence, Admitted domain, Theorem, Certificate, Digest, Identity level and Sticker.
 - Command routes: H-08 `command.find`, `object.inspect`, `view.findings`, `view.residuals`, `operation.check`, `job.stop`. `invoke` on an overlay row (chapter 01), `word` (chapter 06), `follow_pick` (EV3). Explanation and provenance view: owed
-- Fixture task: The search record at the 7302 stop ran the family search with beam 64 to depth 3 and stopped. Read its Φ, beam, depth and status, then give the evidence word for E₃, 'some family-R word with at most three retained letters lowers Φ here', with its scope.
-- Answer: evidence word: not found within budget: the beamed search did not cover its set, so it gives no negative over it
+- Fixture task: In the jumbling puzzle under menu I_a, the search record at the 7302 stop ran family R's search with beam 64 to depth 3. Read Φ, family R's beam and depth, whether its search was exhausted, through how many letters it was exhaustive and how many candidates it found. Then give the evidence word for E₃, 'some family-R word with at most three retained letters lowers Φ here', with its scope, and the word for the narrower claim that the two-letter subset was searched exhaustively.
+- Answer: evidence word: E₃ reads not found within budget: family R's beam-64 search of three letters was not exhausted, so it gives no negative over its set. The two-letter subset was searched exhaustively and found none: that narrower claim has its own key and reads finite instance.
 - Reads: `research/jumbling/restoration/15-lowering-machine/results/runs/s7302-pstar.json`
 - Review: Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12).
 
@@ -3479,18 +3482,19 @@ Assumed from the manual and the solving glossary: Word, Lattice, Menu, Piece, Po
 - After: S1
 - Concepts: Editable parameter, Fork, Diagnostic, Typed error
 - Also taught, because the concepts' definitions use them: Source range
-- Note: EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows.
+- Note: EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows. The fixture's fork is CT-EV3-05's, whose source declares default_layer an editable parameter under LP4-7's draft directive.
 - Command routes: `edit_declared_part` (EV3), `diagnose` (EV1). Workspace command that persists it, host fork operation: owed
-- Fixture task: You fork the built-in stage-order entry (library module seeds) to change a parameter. Read the built-in's principle record: which evidence file does its argument cite, and how many of its arguments does your fork inherit?
-- Answer: count: 0: a fork inherits no evidence; the built-in's argument cites assets/seed_atlas.json
-- Reads: `docs/progress/1.0/principle-records/seeds.json`
+- Fixture task: CT-EV3-05 forks the built-in 600-cell-Full tool and declares one editable parameter in the fork. Read the fork's declaration: which function is the parameter, and which value does it hold? Then read the built-in's principle record: which file does its certificate argument cite, how much of that evidence does the fork inherit, and what does it keep of the record's cited statements?
+- Answer: value: default_layer, a parameter holding 2. The certificate argument cites assets/manifest.json; the fork inherits none of that evidence, and keeps the record's two cited statements as references, never as evidence (EV5.5).
+- Reads: `rust/c600-editor/tests/ct_ev3_05.rs`, `docs/progress/1.0/principle-records/full_600_cell.json`
 - Review: Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12).
 
 ### S3: Save layouts and bindings
 
 - After: S1
 - Concepts: Layout, Workspace record, Binding, Routing class, Preference, Workspace undo
-- Also taught, because the concepts' definitions use them: Keyboard key, Assistance provenance
+- Also taught, because the concepts' definitions use them: Keyboard key
+- Used before it is taught: Workspace record uses Assistance provenance: Its 'where required' applies only to stored words (PS1.32, LB7.3), which step 4 teaches (the mathematician's ruling on OV-3, 23 November 2026).
 - Note: EV5.6's 'Binding with absolute arguments' is the Binding row. Workspace undo follows the owner's overrule X1 of 23 November 2026: moves and layouts keep separate histories.
 - Command routes: H-08 `keymap.edit`, `file.keymap.export`, `file.keymap.check`, `file.keymap.apply`, `grip.capture`. `edit_declared_part`. Save layout: owed
 - Fixture task: Read the command table's row for changing a key. Which kind of command is it, which gate does it pass, and which history does its undo use?
@@ -3500,11 +3504,11 @@ Assumed from the manual and the solving glossary: Word, Lattice, Menu, Piece, Po
 
 ### S4: Compose recipes and macros
 
-- After: S1, S3
-- Concepts: Literal word, Equality key, Cost alphabet, Setup, Star, Conjugate, Commutator, Recipe, Macro, Macro base, Proposal, Preview, User-action token, Protection, Net and Strict checks, Complete effect, Recording
+- After: S1
+- Concepts: Literal word, Equality key, Cost alphabet, Setup, Star, Conjugate, Commutator, Recipe, Macro, Macro base, Proposal, Preview, User-action token, Protection, Net and Strict checks, Complete effect, Assistance provenance, Recording
 - Also taught, because the concepts' definitions use them: Menu letter, Revision reference
-- Revisits: Assistance provenance
-- Note: Word is taught by the manual (chapter 1) and is assumed here. Assistance provenance moves to step 3, where the workspace record needs it, and is revisited here; step 4 therefore comes after step 3. 'Fresh preview on reuse' (LB7.2) is the Preview row's rule: a reused macro or work sheet gets a fresh preview. Conjugate and commutator at this step are the mathematician's inference (EV5.6).
+- Revisits: Word
+- Note: Word is taken from the manual, whose chapter 1 shows jumbling words only; this step revisits it for its named alphabet and identity (the mathematician, 23 November 2026). Assistance provenance keeps its frozen step; the workspace record of step 3 records a forward use of it. 'Fresh preview on reuse' (LB7.2) is the Preview row's rule: a reused macro or work sheet gets a fresh preview. Conjugate and commutator at this step are the mathematician's inference (EV5.6).
 - Command routes: H-08 `macro.base.open`, `macro.select`, `macro.add`, `macro.save`, `macro.variant.create`, `macro.compare`, `operation.new`, `operation.phase.edit`, `operation.reuse`, `operation.check`, `operation.preview`, `operation.execute`, `worksheet.save`, `worksheet.load`. `propose` (chapter 01), `word_key` (chapter 02). `recording.start`, `recording.stop`, `recording.play`, `recording.convert` (EV4)
 - Fixture task: Read the seed atlas entry for orbit 26. What is its seed's exact length, what is the outer form of its formula, and which orbits does its collateral move?
 - Answer: list of objects: length 46; a nested commutator; its collateral moves orbit 30 only
@@ -3518,7 +3522,7 @@ Assumed from the manual and the solving glossary: Word, Lattice, Menu, Piece, Po
 - Revisits: Theorem
 - Note: EV5.6's 'Base part' is the Decomposition leaf row (EV5.18), and 'a domain inside its lemma's scope' is the Declared domain row with LB6.2's rule. Stating a principle of one's own has no data route (EV5.9). Theorem is taught at step 1, where a basis names it, and revisited here as a proof.
 - Command routes: `hover`, `definition` (EV1). Reading a record: owed. Stating your own: owed; no data route exists, and EV5.9 leaves the map to the joint setting
-- Fixture task: Read the floor instance's givens in the manual: after the 40-twist scramble numbered 7101, cap 30 has In_30 = 840, Out_30 = 737 and A_30 = 0. Check N_30 and the floor by hand, as the worked instance's hand derivation does.
+- Fixture task: In the jumbling puzzle under menu I_a, read the floor instance's givens in the manual: after the 40-twist scramble numbered 7101, cap 30 has In_30 = 840, Out_30 = 737 and A_30 = 0. Check N_30 and the floor by hand, as the worked instance's hand derivation does.
 - Answer: count: N_30 = 840 + 737 − 2·0 = 1,577; floor = 840 − 737 = 103; two steps
 - Reads: `research/jumbling/manual/02-descent.md`
 - Review: Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12).
@@ -3545,9 +3549,9 @@ Assumed from the manual and the solving glossary: Word, Lattice, Menu, Piece, Po
 - Revisits: Digest, Certificate
 - Note: Digest and Certificate are taught at step 1, where a job result and a basis name them, and revisited here.
 - Command routes: `replay_run` (EV2), `reproduce` (chapter 09), `check` (chapter 01), `word` (chapter 06), `import_archive`, `export_check_bundle`, `migrate_record` (chapter 05)
-- Fixture task: The stage-order record cites the seed atlas by digest. Recompute the atlas's SHA-256 and compare it with the digest in the record.
-- Answer: yes or no: yes: the recomputed digest equals the record's
-- Reads: `docs/progress/1.0/principle-records/seeds.json`, `assets/seed_atlas.json`
+- Fixture task: The guarded-setups record cites the certified execution trees by digest. Recompute the table's SHA-256, compare it with the digest in the record, and say what a match shows.
+- Answer: yes or no: yes: the recomputed digest equals the record's. A match shows that these are the cited bytes; it does not check the certificate.
+- Reads: `docs/progress/1.0/principle-records/guarded_setups.json`, `assets/execution_trees.json.gz`
 - Review: Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12).
 
 ### The manual's first-use order

@@ -1,4 +1,5 @@
 flowchart LR
   E[every case] --> S[has some answer]
   F[one found case] -. discharges nothing .- S
-  X[one failed search] -. refutes nothing .- S
+  X[one failed budgeted search] -. refutes nothing .- S
+  C[a completed exhaustive search finding none at one admitted case] -->|refutes| S

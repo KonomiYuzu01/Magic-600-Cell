@@ -530,10 +530,11 @@
    "id": "residual",
    "term": "Residual",
    "level": "L5",
-   "definition": "What is still wrong in an [[orbit]]: [[pieces|Piece]] not at Home, wrong [[buffer]] [[occupants|Occupant]], wrong [[orientations|Orientation]] and unknown [[frames|Frame]]; the final buffer may keep only a residual the orientation group allows.",
+   "definition": "What is still wrong in an [[orbit]]: [[pieces|Piece]] not at Home, wrong [[buffer]] [[occupants|Occupant]], wrong [[orientations|Orientation]] and unknown [[frames|Frame]]; the final buffer may keep only a residual the [[frame group]] allows.",
    "ui": "Residuals panel per orbit; stage display; completion",
    "source": "solving-workflow.md section 3.4",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "The mathematician's pass of 23 November 2026 found M17 (frame group, not orientation group); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "pure-controller",
@@ -548,23 +549,23 @@
    "id": "twist-full",
    "term": "Twist, 600-cell-Full",
    "level": "L1",
-   "definition": "A turn of one [[grip]] by a non-identity retained [[menu]] rotation, which can be a sequence of [[generators|Generator]].",
+   "definition": "A turn of one [[grip]] c by a non-identity rotation of its [[cap]]'s A4 (Theory F), written as a sequence of the cap's two [[generators|Generator]] H_c and T_c.",
    "ui": "Twist keys; the move list and history",
-   "source": "Overview 3.6; DT-M1 Terms; core.py Model.move (primitive IDs +-1..+-1200)",
+   "source": "Overview 3.6; DT-M1 Terms; Theory F; core.py Model.move (primitive IDs +-1..+-1200)",
    "origin": "M6",
    "chapter_term": "Twist, 600-cell-Full (change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "The mathematician's pass of 23 November 2026 found M11 (600-cell-Full has no menu); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "twist-jumbling",
    "term": "Twist, jumbling puzzle",
    "level": "L1",
-   "definition": "A turn of one [[grip]] by a non-identity active [[menu]] element, represented by a pinned [[menu letter]].",
+   "definition": "A turn of one [[grip]] c by a non-identity element of the active [[menu]] at c, written as a pinned [[menu letter]]. The full menu Λ_c has 60 items: the 12 retained rotations and 48 jumbles.",
    "ui": "Twist keys; the move list and history",
-   "source": "Overview 3.6; DT-M1 Terms; core.py Model.move (primitive IDs +-1..+-1200)",
+   "source": "Overview 3.6; DT-M1 Terms; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "M6",
    "chapter_term": "Twist, jumbling puzzle (change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "The mathematician's pass of 23 November 2026 found M19 (cite the menu Λ_c of card 6, not core.py); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "retained-twist",
@@ -988,7 +989,7 @@
    "id": "n-total",
    "term": "N",
    "level": "L1",
-   "definition": "The total misalignment: how many times a [[cut cell]], on any rotated cut, is covered on one side and not by the same alignment on the other.",
+   "definition": "The total misalignment: how many times a [[cut cell]], on any rotated cut, is covered on one side and not by pieces of the same [[alignment domain]] on the other.",
    "source": "Chapter 03; [restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test)",
    "origin": "chapter 04 section 6",
    "chapter_term": "N",
@@ -1001,7 +1002,13 @@
      "why": "Chapter 1 counts cells along a cut; the manual names a cut cell in chapter 2; waits for the mathematician's review (EV5.14)."
     }
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "The mathematician's pass of 23 November 2026 found M24 (write alignment domain); the fix waits for the mathematician's review (EV5.14).",
+   "forward": [
+    {
+     "term": "Alignment domain",
+     "why": "The manual teaches domains at L1 (chapter 1) by the pieces that fit one rotated copy of the slot pattern; section 6 proposes the coset form at L6. The mathematician asked for the qualified name (EV5.18)."
+    }
+   ]
   },
   {
    "id": "n-c",
@@ -1020,11 +1027,17 @@
    "id": "in-out-a",
    "term": "In_c, Out_c, A_c",
    "level": "L1",
-   "definition": "At [[cap]] c's cut: the [[cut cells|Cut cell]] inside [[pieces|Piece]] cover, those outside pieces cover, and those covered on both sides by one alignment.",
+   "definition": "At [[cap]] c's cut: the [[cut cells|Cut cell]] inside [[pieces|Piece]] cover, those outside pieces cover, and those covered on both sides by pieces of one [[alignment domain]].",
    "source": "[Descent manual](../../../../research/jumbling/manual/02-descent.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "In_c, Out_c, A_c",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "The mathematician's pass of 23 November 2026 found M24 (write alignment domain); the fix waits for the mathematician's review (EV5.14).",
+   "forward": [
+    {
+     "term": "Alignment domain",
+     "why": "The manual teaches domains at L1 (chapter 1) by the pieces that fit one rotated copy of the slot pattern; section 6 proposes the coset form at L6. The mathematician asked for the qualified name (EV5.18)."
+    }
+   ]
   },
   {
    "id": "floor",
@@ -1131,7 +1144,7 @@
    "id": "alignment-domain",
    "term": "Alignment domain",
    "level": "L6",
-   "definition": "A [[coset]] γK⁺: [[pieces|Piece]] whose [[poses|Pose]] fit one rotated copy of the [[lattice]].",
+   "definition": "A [[coset]] γK⁺ of [[poses|Pose]]: the poses that fit one rotated copy of the [[lattice]]. The [[pieces|Piece]] whose poses lie in one alignment domain share one tree position (card 6, T6).",
    "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Alignment domain",
@@ -1145,7 +1158,7 @@
      "why": "Chapter 1 describes domains by pieces that fit together; the manual names a pose in chapter 3; waits for the mathematician's review (EV5.14)."
     }
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "The mathematician's pass of 23 November 2026 found M24 (the definition mixed up the coset with the set of pieces); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "free-mode",
@@ -1671,11 +1684,11 @@
    "id": "admitted-domain",
    "term": "Admitted domain",
    "level": "L2",
-   "definition": "A named set of inputs with a test for membership, such as D[k].",
+   "definition": "A named set of inputs with a test for membership, such as D[k]: the certified domain of a bound with parameter k, whose test is the admission check Adm_k.",
    "source": "Chapter 06 section 2; [stage 19 README](../../../../research/jumbling/restoration/19-height-depth-framework/README.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Admitted domain",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "The mathematician's pass of 23 November 2026 found a nit (the example D[k] was not explained at step 1); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "basis",
@@ -3062,10 +3075,10 @@
    "id": "tree-branch",
    "term": "Tree branch",
    "level": "L6",
-   "definition": "The class b(A) of a [[piece]]'s first step in the jumbling tree.",
+   "definition": "The class b(A) of a [[piece]]'s first step in the jumbling tree, defined only for a piece of [[height]] 2 or more.",
    "source": "EV5.18; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M18 (defined only at height 2 or more); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "evidence-edition",
@@ -3089,11 +3102,10 @@
    "id": "census-rank",
    "term": "Census rank",
    "level": "L6",
-   "learner_facing": false,
-   "definition": "The [[orbit]] field `rank` in the census; what it counts is not established.",
-   "source": "EV5.18; assets/census.json",
+   "definition": "The [[orbit]] field `rank` in the census: r(A) = |M(A)| − 1, one less than the number of [[caps|Cap]] in the complete cap signature M(A) of the orbit's piece positions, the caps whose region holds the piece's [[chamber|Cut chamber]] interior (Theory Lemma 6). It is neither a dimension nor a codimension.",
+   "source": "EV5.18; Theory Lemma 6; assets/census.json",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). Not learner-facing until what it counts is established."
+   "review": "The mathematician's pass of 23 November 2026 (M9) established what the field counts: r(A) = |M(A)| − 1 (Theory Lemma 6), and rank = len(mask) − 1 holds for all 35 orbits of assets/census.json (LP4-11 follow-up). This replaces EV5.18's 'what it counts is not established', a reading for the integrator; the row is learner-facing. The fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "assistance-provenance",
@@ -3135,14 +3147,20 @@
    "id": "cap-cover",
    "term": "Cap cover",
    "level": "L1",
-   "definition": "\"d covers c\": the predicate at a named [[cap]] c that the solver asks about another named cap d.",
+   "definition": "\"d covers c\": at [[cap]] c's cut, the face [[pieces|Piece]] whose centres lie in the region of a neighbouring cap d all sit on aligned [[cut cells|Cut cell]], with the same number of them, at least ten, on each side of the cut. A later turn of d then erased c's [[seam]] there, so d was turned after c and comes off first.",
    "source": "EV5.18; DT-J1 M4; [manual section 2.2](../../../../research/jumbling/manual/02-descent.md)",
    "origin": "EV5.18 sense (LP4-11)",
    "manual": [
     "cover",
     "covers"
    ],
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M10 (the definition did not say what covering is; manual section 2.2); the fix waits for the mathematician's review (EV5.14).",
+   "first_use_forward": [
+    {
+     "term": "Cut cell",
+     "why": "The chapter 2 introduction names the cover step before section 2.1 names cut cells; section 2.2, which defines covering, comes after both. Waits for the mathematician's review (EV5.14)."
+    }
+   ]
   },
   {
    "id": "helper-cover",
@@ -3272,19 +3290,19 @@
    "id": "commutator",
    "term": "Commutator",
    "level": "L3",
-   "definition": "The [[word]] M N M⁻¹ N⁻¹, read in chronological order. Where M and N move no common [[piece]] it changes nothing, so a small overlap gives a small effect.",
-   "source": "EV5.6 (step 4, the mathematician's inference)",
+   "definition": "The [[word]] M N M⁻¹ N⁻¹ in chronological order: M first, N⁻¹ last. In the seed atlas [H0, T5] expands to 1, 12, 1, −12, since the half-turn H0 is its own inverse. Where M and N have disjoint supports (they move disjoint sets of slots) it changes nothing, so a small overlap gives a small effect.",
+   "source": "EV5.6 (step 4, the mathematician's inference); assets/seed_atlas.json",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). The order convention is for the mathematician to fix."
+   "review": "The mathematician's pass of 23 November 2026 found M20 (the order is settled; disjoint supports, not no common piece); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "mixed-statement",
    "term": "Mixed statement",
    "level": "L2",
-   "definition": "A [[statement]] of the form every case has some answer, such as every admitted state having a legal selected [[macro]]. One found case discharges nothing, and one failed search refutes nothing.",
-   "source": "Chapter 06 section 9 (E2); EV5.6",
+   "definition": "A [[statement]] of the form every case has some answer, such as every admitted state having a legal selected [[macro]]. One found case discharges nothing, and one failed budgeted search refutes nothing; a completed exhaustive search that finds no answer at one admitted case does refute it.",
+   "source": "Chapter 06 section 9 (E2, E3); EV5.6",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M2 (a failed budgeted search, not any failed search); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "approximate-value",
@@ -3299,10 +3317,10 @@
    "id": "human-solve-boundary",
    "term": "Human-solve boundary",
    "level": "L2",
-   "definition": "The rule that the program never chooses or outputs a solving [[macro]] by itself, never executes without the solver's action and never solves automatically. Tools may track, analyse, check, protect and reuse the solver's own macros.",
-   "source": "Owner, 2 October 2026; KN2.5",
+   "definition": "The rule that the program never chooses or outputs a solving [[macro]] by itself, never executes without the solver's action and never solves automatically. Tools may track, analyse, check, protect and reuse the solver's own macros. Setup search for a target the solver names is allowed, and in the jumbling puzzle's descent, at a cap the solver names, the program may list the repairs that lower N in a neutral order without ranking, and the solver picks one.",
+   "source": "Owner, 2 October 2026; Owner, 17 October 2026 (the repair list); KN2.5",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M21 (setup search and the 17 October repair-list exception); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "stabiliser",

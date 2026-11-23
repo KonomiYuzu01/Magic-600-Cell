@@ -586,7 +586,8 @@ fn fixture_word_keys() {
     compare(&s, vec![("same_x_y", same("x", "y")), ("same_x_z", same("x", "z"))]);
 }
 
-/// `linalg` over F5 on the C5 coordinates (orbits 17 and 28) of corrections 27 and 30 of the I_a correction library.
+/// `linalg` over F5 on a plain example matrix, [[1, 2], [3, 4]] with right-hand side [1, 1]: no correction library's
+/// rows, and no combination of corrections (owner, 22 October 2026, O6 (b)).
 #[test]
 fn fixture_linalg() {
     let s = subject("linalg");
@@ -627,7 +628,8 @@ fn fixture_trees() {
     );
 }
 
-/// `recipes`: a star word from a setup, a relocation and a seed, and the effect report of [5, -5] at solved.
+/// `recipes`: a star word from generators 1, 2 and 3 in the setup, relocation and seed roles, and the effect report of
+/// [5, -5] at solved.
 #[test]
 fn fixture_recipes() {
     let s = subject("recipes");
@@ -748,7 +750,8 @@ fn fixture_seeds() {
     compare(&s, vec![("order", field(&answer, "order")), ("cycle", field(&answer, "cycle"))]);
 }
 
-/// `orbits.orbit_catalogue` of orbit -1, the fixed cell centres, at solved.
+/// `orbits.orbit_catalogue` of index -1, the table's index for the 600 fixed cell centres (600 singleton position
+/// orbits), at solved.
 #[test]
 fn fixture_orbits() {
     let s = subject("orbits");

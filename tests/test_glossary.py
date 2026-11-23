@@ -3,7 +3,8 @@
 CT-EV5-02 (part: the integrated glossary covers chapter 04 section 6's rows, every entry has build evidence, each
 sense of EV5.18's homonyms has its own row, each step's prerequisite concepts are taught before that step's task, and
 the steps' prerequisites form a DAG; not run: that the proposed changes have been reviewed, because the
-mathematician's review of LP4-11's integration is not recorded yet (each such row says so in `review`); that flow
+mathematician's pass of 23 November 2026 is recorded in OV-3 only and its fixes wait for their check (each such row
+says so in `review`); that flow
 goals need no undisclosed concept, because the disclosure data is LP4-11's part in c600-command; and BS3's branch of
 EV5.9, which waits for LQ2's option set).
 
@@ -226,6 +227,19 @@ class PlantedPath(unittest.TestCase):
             p["steps"][6]["closure"].append("Statement")
         errs = self.errors(move)
         self.assertTrue(any("uses 'Statement', which no step up to S1 teaches" in e for e in errs), errs)
+
+    def test_a_revisit_names_an_earlier_or_assumed_concept(self) -> None:
+        errs = self.errors(lambda p: p["steps"][0].setdefault("revisits", []).append("Gauge"))
+        self.assertTrue(any("S1 revisits 'Gauge', which no earlier step teaches" in e for e in errs), errs)
+        # Step 4 revisits Word, which the path takes from the manual.
+        self.assertIn("Word", self.path["steps"][3]["revisits"])
+        self.assertEqual(self.errors(lambda p: None), [])
+
+    def test_a_planned_forward_use_must_occur(self) -> None:
+        def unplanned(p):
+            p["steps"][2]["forward"] = []
+        errs = self.errors(unplanned)
+        self.assertTrue(any("'Workspace record' uses 'Assistance provenance'" in e for e in errs), errs)
 
     def test_a_row_that_is_not_learner_facing_cannot_be_taught(self) -> None:
         errs = self.errors(lambda p: p["steps"][5]["concepts"].append("Free mode"))

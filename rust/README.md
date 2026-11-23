@@ -4184,10 +4184,20 @@ interpreter, the tools, representations and library crates are its dev-dependenc
   600-cell-Full tool inside the command the solver invokes, through the tools' host bridge, with the layer's preview;
   the jumbling tool onto the jumbling engine's whole-word check under W-J fixture I_a's menu; state-reading library
   entries through `Boundary` and the host bridge onto a 600-cell-Full command layer at solved; pure entries on
-  600-cell-Full values (generators, the golden ratio of the vertex coordinates, the I_a correction library's C5
-  coordinates, the seed atlas's collateral, the solved pose). Evidence files are model assets, research data and
-  `c600-library`'s tests, pinned by digest: a change to one makes its record refuse until the digest is refreshed.
-  Leaf specifications name their oracle tests by path and function, not by digest.
+  600-cell-Full values (generators, the golden ratio of the vertex coordinates, the seed atlas's collateral, the solved
+  pose), and `linalg` on a plain example matrix over F5, never a correction library's rows (the program never shows a
+  combination of corrections: owner, 22 October 2026, O6 (b)). Evidence files are model assets, research data, the
+  technical report and `c600-library`'s tests, pinned by digest: a change to one makes its record refuse until the
+  digest is refreshed. Leaf specifications name their oracle tests by path and function, not by digest.
+- The mathematician's pass of 23 November 2026, fixed: `linalg`'s instance is a plain matrix (M1); `recipes` says that
+  what remains of a star is the seed's whole effect, its cycle and any collateral, and calls generator 3 the seed role
+  (M3, M13); `jumble_checker` admits the second letter because a twist at c moves only the pieces inside H_c⁺, rigidly,
+  and creates no straddler of c (M6); `seeds` rests on a topological sort and on the technical report's "Triangular
+  stage invariant", which keeps finished orbits in place at macro boundaries only (M7); `orbits` reads -1 as the table's
+  index for 600 singleton position orbits (M8); `protection`'s failure example is [1], which moves slot 1 (M12);
+  `guarded_setups`' empty list means a buffer, since the tables cover every non-buffer position (M14, checked on all 35
+  trees); `representations`' distance 0 is a definition (M15); `trees` says pose (M16). Counted with `core.py` on the
+  model: generator 1 moves 3,094 pieces (4,600 slots), and generators 1 and 45 move disjoint slots.
 - Explanations (`explain`). `explain` builds a tool's explanation from its record and its admission state: the
   specification, each argument's claim with its word from `c600_evidence::word` at a pinned edition over a graph of the
   record's facts (statement, scope, bases, checks, job outcome, source labels and check references kept apart), the
@@ -4214,10 +4224,11 @@ interpreter, the tools, representations and library crates are its dev-dependenc
   - the jumbling library's sixteen modules in `c600-jumble-tool` (`jumble_admissibility` to `menu_words`), which have
     no record yet;
   - the manifests' `principle` digest and the tools' `principle_record` flag, which wait for `c600-tools`' owner;
-  - commit-pinned lemma citations in the shipped records: their statements are typed, and the stage-qualified form is
-    exercised by the tests only;
-  - the mathematician's review of the records' derivations, reasons, failure examples and "not meant" texts, which
-    each record's `review` field says it waits for;
+  - commit-pinned lemma citations beyond one: `seeds` cites the technical report's proposition pinned to the commit
+    that last changed the report, since basis theorem needs a commit-pinned record (EVD.64, EVD.65); every other
+    statement is typed;
+  - the mathematician's check of the pass's fixes, and their review of the parts the pass left unchanged, which each
+    record's `review` field names;
   - a rendered reference or explanation page in the shell or the docs site: `render` gives Markdown text only;
   - RT4's host decomposition (RTE.80), since RT4 is not built (LB6.6).
 - Evidence kind: source and fixture. The fixtures' instances are the real model's and the research fixtures'; a pass
@@ -4249,32 +4260,48 @@ mathematician's review. It is data and a standard-library Python check outside t
   generator, orbit, Net and Strict, complete effect, orientation, frame, occupant, target) got new diagrams.
 - The manual's first use (owner, 23 November 2026). A row's `manual` words name the manual's word for it; `build.py`
   computes where the manual's chapters first use each, by section, and refuses a definition that uses a term the
-  manual introduces in a later section unless the row records it in `first_use_forward`. Seven such uses are recorded
-  for review (lattice, N, seam, height and alignment domain use pose, cut cell or retained twist before the manual
-  names them; the ν-corrections are announced before ν).
+  manual introduces in a later section unless the row records it in `first_use_forward`. Eight such uses are recorded
+  for review (lattice, N, seam, height, alignment domain and cap cover use pose, cut cell or retained twist before the
+  manual names them; the ν-corrections are announced before ν).
+- The mathematician's pass of 23 November 2026, fixed: mixed statement says a failed budgeted search (M2); census rank
+  is r(A) = |M(A)| − 1 (Theory Lemma 6; `rank` = len(`mask`) − 1 on all 35 orbits of `assets/census.json`) and is
+  learner-facing, which replaces EV5.18's "what it counts is not established" (M9); cap cover says what covering is
+  (manual 2.2, M10); the 600-cell-Full twist is a rotation of the cap's A4, a sequence of H_c and T_c (M11), and the
+  jumbling twist cites the menu Λ_c of card 6 (M19); residual names the frame group (M17); tree branch exists at
+  height 2 or more (M18); commutator's order is settled by the atlas, [H0, T5] = 1, 12, 1, −12, and it speaks of
+  disjoint supports (M20); the human-solve boundary allows setup search and the 17 October repair list (M21); In_c,
+  Out_c, A_c, N and alignment domain name the alignment domain, a coset of poses (M24); admitted domain explains D[k].
+  Their diagrams were rendered again.
 - The learning path (`learning-path.json`). EV5.6's seven steps, each with its concepts resolved to rows, the rows
   their definitions need (`closure`), revisits, waiting rows (the flow rule waits for LQ2), its command routes and one
   fixture task. The check refuses a cycle among the steps, a concept that is not learner-facing, a concept whose
   definition uses a term no step up to it teaches (unless the manual or the solving glossary teaches it, as `assumed`
-  names, or the step records the use, as step 1 does for the principle record), a fixture concept taught after the
-  task, a fixture whose recorded instance is missing, changed or lacks its expected value, and a fixture whose answer is
-  a word or a macro. The fixtures read the 7302 search record, the stage-order principle record, the command table's
-  key-change row (read live by ID, since the draft table changes), the seed atlas, the manual's floor instance, the
-  `seeds` module source and the seed atlas's digest.
+  names, or the step records the use, as step 1 does for the principle record and step 3 for assistance provenance), a
+  revisit of a concept that neither an earlier step nor the manual teaches, a fixture concept taught after the task, a
+  fixture whose recorded instance is missing, changed or lacks its expected value, and a fixture whose answer is a word
+  or a macro. The fixtures read family R's coverage in the 7302 search record and the floor instance in the manual
+  (both of the jumbling puzzle under menu I_a), CT-EV3-05's fork with its declared parameter (LP4-7) and the
+  600-cell-Full tool's record, the command table's key-change row (read live by ID, since the draft table changes), the
+  seed atlas, the `seeds` module source, and the guarded setups' certificate with its digest (a match names the cited
+  bytes and checks no certificate).
 - Tests. `tests/test_glossary.py` runs the check on the repository and plants each refusal. It runs CT-EV5-02 in part:
-  the review of LP4-11's integration, flow goals against the disclosure data (LP4-11's `c600-command` part) and BS3's
-  branch (LQ2) are not run. CI should run `python tests/test_glossary.py`, which also runs the check.
-- Readings (drafts): EV5.6's phrases are resolved to rows; the path teaches five concepts earlier than EV5.6 lists
-  them, because definitions at an earlier step use them (theorem, certificate, digest and identity level at step 1;
-  assistance provenance at step 3, so step 4 comes after step 3), and adds eleven rows EV5.6 does not list (view,
+  the review clause (the mathematician's pass is recorded in OV-3, and its fixes wait for their check), flow goals
+  against the disclosure data (LP4-11's `c600-command` part) and BS3's branch (LQ2) are not run. CI runs
+  `python tests/test_glossary.py`, which also runs the check.
+- Readings (drafts; OV-3 records them): EV5.6's phrases are resolved to rows; the path teaches four concepts earlier
+  than EV5.6 lists them, because definitions at step 1 use them (theorem, certificate, digest and identity level);
+  assistance provenance keeps its frozen step 4, and the workspace record of step 3 records a forward use of it, since
+  its "where required" applies only to stored words (the mathematician's ruling); step 4 depends on step 1 only and
+  revisits Word, which the manual's chapter 1 shows with jumbling words only; the path adds eleven rows EV5.6 does not
+  list (view,
   statement, evidence, admitted domain and sticker at step 1, source range at 2, keyboard key at 3, menu letter and
   revision reference at 4, state derivation at 6, gauge at 7); the manual's first use is read from its chapters, since
   its README previews terms before they are taught; bare chamber reads as cut
   chamber and bare key as keyboard key, bare block as achievement block (EV5.18) and bare witness as this glossary's
   witness; a record's specification uses the declared domain, proposed at L6, at L2, recorded as a forward reference.
 - Not built:
-  - the mathematician's review of every row LP4-11 added or changed, of the levels, sense marks, references and
-    diagrams, and of the learning path's order and fixtures (each says so in its `review` field);
+  - the mathematician's check of the pass's fixes; rows the pass did not change still say in `review` that they wait
+    for review, since the pass itself is recorded in OV-3;
   - UI placements for the new rows (`ui` is absent, "not placed yet"), which belong to the design line;
   - soft disclosure and the flow goals' undisclosed-concept check, LP4-11's `c600-command` part;
   - the human tests of the path (EV5.7, EV5.12), which wait for the owner's form;
