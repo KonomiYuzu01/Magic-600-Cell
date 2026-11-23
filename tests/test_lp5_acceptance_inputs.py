@@ -47,6 +47,11 @@ EVIDENCE_WRITERS = (
     r"\bCheckJob\b",
 )
 LITERAL = re.compile(r"[\"'](research/[^\"'{}]*)")
+# Base folders that a test names only to join a further path to it, never to read the folder: the archive driver's
+# `RESEARCH`, the restoration root that also holds stages 1 to 13 and later notes LP5 does not read. A base is no input
+# itself; each join `NAME + "..."` is read as the literal it builds.
+BASES = {"RESEARCH": "research/jumbling/restoration/"}
+JOIN = re.compile(r"\b(" + "|".join(BASES) + r")\s*\+\s*[\"']([^\"'{}]*)")
 PROCESS = re.compile(r"Command::new|subprocess\.|os\.system|Popen")
 # Literals that name no tracked file are not inputs (a test's deliberately absent path); at most this many.
 ABSENT_LIMIT = 3
@@ -77,8 +82,13 @@ def research_prefixes(files: list[Path]) -> dict[str, list[str]]:
     """Each research path literal (cut at a format placeholder), with the files that name it."""
     found: dict[str, list[str]] = {}
     for file in files:
-        for match in LITERAL.finditer(file.read_bytes().decode("utf-8")):
-            found.setdefault(match.group(1), []).append(file.relative_to(ROOT).as_posix())
+        text = file.read_bytes().decode("utf-8")
+        name = file.relative_to(ROOT).as_posix()
+        for match in LITERAL.finditer(text):
+            if match.group(1) not in BASES.values():
+                found.setdefault(match.group(1), []).append(name)
+        for match in JOIN.finditer(text):
+            found.setdefault(BASES[match.group(1)] + match.group(2), []).append(name)
     return found
 
 
