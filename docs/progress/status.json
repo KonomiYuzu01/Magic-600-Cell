@@ -171,7 +171,7 @@
       {"id": "r1-bindings", "title": "R1 typed claim bindings and preflight", "weight": 4, "done": false, "evidence": null},
       {"id": "r2-checker-core", "title": "R2 KN6 checker core", "weight": 4, "done": true, "evidence": "c61669b0800514807631dc7ddaf132e11df183e9"},
       {"id": "r3-stage14", "title": "R3 stage 14 checkers", "weight": 4, "done": false, "evidence": null},
-      {"id": "r4-stages15-17", "title": "R4 stages 15 to 17 checkers", "weight": 8, "done": false, "evidence": null},
+      {"id": "r4-stages15-17", "title": "R4 stages 15 to 17 checkers", "weight": 8, "done": true, "evidence": "cae3407aa73ae7938bfd569002500da7f4d19d22"},
       {"id": "r5-stage18", "title": "R5 stage 18 checkers", "weight": 6, "done": false, "evidence": null},
       {"id": "r6-stage19", "title": "R6 stage 19 checkers", "weight": 6, "done": true, "evidence": "3fdd711f2b63e3cea80b25e68fb5915e0df03d72"},
       {"id": "r7-library", "title": "R7 research library entries", "weight": 6, "done": true, "evidence": "595c4ca7853989fa3390f3f5df33287845cb8a90"},

@@ -3625,6 +3625,18 @@ workspace file.
   helper sets, precedence, input digests or start tables fail. The 22 finite-search records (scans, pairs, plus, beam
   and peel) answer `not_applicable` with their scope. The fourteen-table level rebuild is an ignored test (about
   100 s); the 7304 stop runs as its fast representative.
+- R4, stages 15 to 17's research-archive sub-checkers (CT-LB5-02 to CT-LB5-04, CT-KN6-03's stage 15 to 17 parts):
+  `c600-checkers/src/archive/s15` to `s17` register `s15.macro`, `s16.macro` and `s17.macro` (`macro-certificate/1`
+  and `macro-check/1` through the macro kind, bound to the jam catalogue: stage 15 starts at the chain end and whole
+  descents end at the jam, stages 16 and 17 start at the jam end, and a check record is matched leaf by leaf against a
+  fresh check of its certificate), `s15.pstar` (the clean-pair census recomputed from the exact state), `s16.release`
+  (the literal traces SJ-E1, T2-cx, I-7304 and I-7306 letter by letter, with S, F and max D at the named grips; SJ-E1
+  stays a release), `s16.mobility` (unit mobility at the jams from the full label table), `s16.reductions` (reduced
+  transport against the recorded unreduced case at 7307, never a lemma) and `s17.rr` (Lemma RR's five tails against
+  brute force at `test_rr.py`'s recorded inputs H2 and H2b only, in an exact label calculus checked against the
+  engine). P*, P**, P***, RR, routing, T1, alphabet and transport stop and run records answer `not_applicable` with
+  their bounds; a malformed self-contained record fails at the departing field. `tests/kn6_r4.rs` holds the fast
+  tests; thirteen slower gates are ignored tests.
 - R5, stage 18's research-archive sub-checkers (CT-LB5-05, CT-LB5-09, CT-LB1-04's expansion half):
   `c600-checkers/src/archive/s18` registers `s18.expansion` (gate 1: both `steps.json` forms, each step's exact length
   admitted at most 10^7 before any word is read, every word file streamed and hashed), `s18.composed` (gate 2: the
