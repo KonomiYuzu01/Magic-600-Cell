@@ -3081,6 +3081,8 @@ impl<S: Store> CommandLayer<S> {
             }
         }
         self.jobs = keep;
+        // A playback's user step may be a preview job that just settled (EV4.20).
+        self.reconcile_children();
         ran + self.run_plays()
     }
 

@@ -104,6 +104,13 @@ fn hinted(row: &str) -> bool {
     matches!(row, "session.undo" | "session.redo" | LAYOUT_UNDO_ROW | LAYOUT_REDO_ROW)
 }
 
+/// Whether argument `name` of `row` names a revision (`RevisionRef`), which the shell fills with the current one at a
+/// user step (EV4.18).
+fn revision_ref(row: &Row, name: &str) -> bool {
+    let ty = row.arguments.get(name).map(String::as_str).unwrap_or_default();
+    ty.strip_suffix('?').unwrap_or(ty) == "RevisionRef"
+}
+
 /// The arguments a step stores (EV4.10, PS1.30): the invocation's, without a token, an operation preview ID or a
 /// confirmation, which is old execution permission.
 fn stored_arguments(row: &Row, args: &Value) -> Value {
@@ -213,7 +220,11 @@ impl<S: Store> CommandLayer<S> {
             let detail = format!("the step at the cursor is `{}` in this epoch", step.row);
             return Err(Error::new(code::RECORDING_STATE, detail));
         }
-        let fresh = |name: &str| matches!(name, "hint" | "preview" | "confirm");
+        // What only the press fixes (EV4.18): the hint, the presented preview, a confirmation and the current revision.
+        let row = self.table.row(&step.row).cloned();
+        let fresh = |name: &str| {
+            matches!(name, "hint" | "preview" | "confirm") || row.as_ref().is_some_and(|row| revision_ref(row, name))
+        };
         let given = invocation.args.as_object().cloned().unwrap_or_default();
         let recorded = step.arguments.as_object().cloned().unwrap_or_default();
         let same = given.iter().filter(|(n, _)| !fresh(n)).all(|(n, v)| recorded.get(n) == Some(v))
@@ -221,7 +232,7 @@ impl<S: Store> CommandLayer<S> {
         if !same {
             return Err(Error::new(code::RECORDING_STATE, "the step action submits the recorded arguments"));
         }
-        if let Some(row) = self.table.row(&step.row).cloned() {
+        if let Some(row) = row {
             if let Err(error) = self.module_identity(&step, &row) {
                 self.stop(name, &state, Stop::Code(error.code.to_owned()));
                 return Err(error);
@@ -313,8 +324,7 @@ impl<S: Store> CommandLayer<S> {
         let mut depends = vec![self.revision.to_json()];
         if let Some(fields) = invocation.args.as_object() {
             for (name, value) in fields {
-                let ty = row.arguments.get(name).map(String::as_str).unwrap_or_default();
-                if ty.strip_suffix('?').unwrap_or(ty) == "RevisionRef" {
+                if revision_ref(row, name) {
                     depends.push(value.clone());
                 }
             }
@@ -496,7 +506,8 @@ impl<S: Store> CommandLayer<S> {
 
     /// `recording.play {recording, from?}` (EV4.22): after the state's pending child is reconciled, EV4.22's table
     /// decides where the playback starts ([`recording::play_from`]), and a new playback replaces the recording's state.
-    /// Refused, writing nothing: the forms (`KN5:input.argument_form`); no recorder (`KN5:input.row_not_built`); no
+    /// Refused, writing nothing: the forms (`KN5:input.argument_form`), except that a negative integer `from` is
+    /// outside EV4.22's table (`EV4:input.recording_state`); no recorder (`KN5:input.row_not_built`); no
     /// recording of that name (`KN2:input.named_object_invalid`); another model identity, or a step from the start
     /// whose module is not the active version (`EV4:input.recording_identity_mismatch`); the table's refusals
     /// (`EV4:input.recording_state`); a full program lane (`KN7:busy.lane_full`). The state is written `running` before
@@ -508,8 +519,18 @@ impl<S: Store> CommandLayer<S> {
         row: &Row,
         args: &BTreeMap<String, Value>,
     ) -> Result<(Option<u64>, Status), Error> {
-        forms::check_forms(row, args)?;
+        // EV4.22: a negative integer `from` is outside the table, as one past the end is (the format packet's
+        // `play-from-negative`), so it is refused with `EV4:input.recording_state` once the other names fit.
+        let negative = args.get("from").and_then(Value::as_i64).is_some_and(|from| from < 0);
+        let mut named = args.clone();
+        if negative {
+            named.remove("from");
+        }
+        forms::check_forms(row, &named)?;
         self.recorder_needed(row)?;
+        if negative {
+            return refused(code::RECORDING_STATE, "`from` must name a step of the recording (0 <= from < steps)");
+        }
         let name = text(args, "recording").to_owned();
         let Some(recording) = self.rec.recordings.get(&name).cloned() else {
             return refused(code::NAMED_OBJECT_INVALID, format!("no recording named `{name}`"));
@@ -590,7 +611,7 @@ impl<S: Store> CommandLayer<S> {
         self.same_identity(&recording)?;
         let conversion = recording::convert(&recording, target, &self.table, Self::runtime_may)?;
         let reader = self.provenance.as_ref().expect("the gate checked the reader");
-        let block = reader.assemble(target.name(), &conversion.parts)?;
+        let block = reader.assemble(target.name(), conversion.source.as_deref(), &conversion.parts)?;
         reader.check(block.as_bytes())?;
         let (record, payload) = match target {
             Target::Draft => {
@@ -836,16 +857,18 @@ impl<S: Store> CommandLayer<S> {
         Ok(())
     }
 
-    /// EV4.14 for an overlay step: the module digest it recorded must name the active version; a step whose module the
-    /// host does not resolve is unresolved.
+    /// EV4.14 for a step that recorded a module digest (PS1.30's `module`: a user module's active version when it was
+    /// recorded; a built-in tool's entry records none, and the host binds its entry as before): the row must still run
+    /// that module, and the digest must name its active version, or the step is unresolved (no row, no active version)
+    /// or mismatched (another version). With no reader of the host's versions the layer checks nothing here, and the
+    /// host's binding of the step's job to the recorded digest is the check ([`ProgramJob::module`]).
     fn module_identity(&self, step: &RecordedStep, row: &Row) -> Result<(), Error> {
-        let (Some(overlay), Some(versions)) = (&row.overlay, &self.rec.versions) else {
-            return Ok(());
-        };
-        let Some(recorded) = &step.module else {
-            let detail = format!("`{}` recorded no module digest for `{}`", step.row, overlay.module);
+        let Some(recorded) = &step.module else { return Ok(()) };
+        let Some(overlay) = &row.overlay else {
+            let detail = format!("`{}` no longer runs the module its step recorded", step.row);
             return Err(Error::new(code::RECORDING_STEP_UNRESOLVED, detail));
         };
+        let Some(versions) = &self.rec.versions else { return Ok(()) };
         match versions.active(&overlay.module) {
             Some(active) if active == *recorded => Ok(()),
             Some(_) => {

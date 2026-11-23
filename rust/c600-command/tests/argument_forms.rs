@@ -219,8 +219,9 @@ fn a_served_rows_arguments_have_their_types_forms() {
     assert_eq!(rows, [COMPARE, COMPARE, LAYER, SAVE, SAVE, SAVE, SAVE, SCOPE]);
 }
 
-/// An argument of an optional type may be left out: `recording.play`'s `from` is `Nat?`. Given, it has `Nat`'s form;
-/// left out, the playback starts where EV4.22's table says. Every other argument must be given, and no other name may
+/// An argument of an optional type may be left out: `recording.play`'s `from` is `Nat?`. Given, it has `Nat`'s form,
+/// except that a negative integer is refused with `EV4:input.recording_state` as EV4.22 says; left out, the playback
+/// starts where EV4.22's table says. Every other argument must be given, and no other name may
 /// be. The names come before the row's arm, so a row the layer does not build is refused as not built once its names
 /// fit, with its optional argument left out or given. The layer plays a recording itself (LP4-9), so no program job is
 /// taken; each playback here passes over its recorded refusals and finishes.
@@ -244,8 +245,10 @@ fn an_optional_argument_may_be_left_out() {
         let name = args.get("recording").and_then(Value::as_str).unwrap();
         assert_eq!(f.layer.playback(name).map(|state| state.status.clone()), Some(PlayStatus::Finished), "{args:?}");
     }
+    // A negative integer is outside EV4.22's table, as one past the end is: the format packet's `play-from-negative`.
+    let negative = fields(&[("from", Value::Int(-1)), ("recording", text("r1"))]);
+    assert_eq!(refusal(&f.invoke(PLAY, negative)), code::RECORDING_STATE);
     let refused = [
-        fields(&[("from", Value::Int(-1)), ("recording", text("r1"))]),
         fields(&[("from", text("2")), ("recording", text("r1"))]),
         fields(&[("from", Value::Null), ("recording", text("r1"))]),
         fields(&[("from", Value::Int(0))]),

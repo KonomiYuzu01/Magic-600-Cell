@@ -258,8 +258,9 @@ impl Shell {
 
     /// EV4.20's step action: plays the user step that the playback of `recording` waits at as the solver's own press.
     /// The shell takes the recorded row and arguments ([`CommandLayer::step_arguments`]), fills in what only the press
-    /// fixes (the current hint of the step's history for an undo or redo, the presented preview for a word commit, and
-    /// `confirm` when the solver confirms, since a recording stores no confirmation), chooses the command ID and mints
+    /// fixes (the current hint of the step's history for an undo or redo, the presented preview for a word commit, the
+    /// current revision for a `RevisionRef` argument, and `confirm` when the solver confirms, since a recording stores no
+    /// confirmation), chooses the command ID and mints
     /// the token ([`Shell::prepare`]); the layer checks the step and writes `pending` ([`CommandLayer::begin_step`]);
     /// then the ordinary row is sent. A refusal before the send changes nothing but what `begin_step` says it stops.
     pub fn step<S: Store>(
@@ -286,6 +287,15 @@ impl Shell {
         };
         if confirm {
             args.insert("confirm".to_owned(), Value::Bool(true));
+        }
+        // EV4.18: the current revision where the row names one, never the recorded one.
+        if let Some(found) = layer.table().row(&row) {
+            for (name, value) in args.iter_mut() {
+                let ty = found.arguments.get(name).map(String::as_str).unwrap_or_default();
+                if ty.strip_suffix('?').unwrap_or(ty) == "RevisionRef" {
+                    *value = layer.revision().to_json();
+                }
+            }
         }
         let invocation = self.prepare(layer, &row, Value::Object(args))?;
         layer.begin_step(recording, &invocation)?;

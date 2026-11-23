@@ -188,10 +188,11 @@ pub trait Provenance: Send + Sync {
     }
 
     /// The block of the record a conversion of a recording writes (EV4.23, BND.24; LP4-9 draft): `target` is `draft`
-    /// or `source`, and `parts` the blocks of the words that remain in the result, in recorded order. The block lists
-    /// each part, so BND.84 reads them when the result is previewed; a `source` result is a program's. The default has
-    /// no block to give, so the conversion is refused with `KN5:input.row_not_built`.
-    fn assemble(&self, target: &str, _parts: &[String]) -> Result<String, Error> {
+    /// or `source`, `source` the generated module text of a `source` conversion (`None` for a draft), and `parts` the
+    /// blocks of the words that remain in the result, in recorded order. The block lists each part, so BND.84 reads
+    /// them when the result is previewed; a `source` result is a program's, the generated module's. The default has no
+    /// block to give, so the conversion is refused with `KN5:input.row_not_built`.
+    fn assemble(&self, target: &str, _source: Option<&str>, _parts: &[String]) -> Result<String, Error> {
         let detail = format!("the host's provenance reader assembles no block for a `{target}` conversion");
         Err(Error::new(crate::receipt::code::ROW_NOT_BUILT, detail))
     }
