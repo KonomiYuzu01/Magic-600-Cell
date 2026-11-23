@@ -2,13 +2,13 @@
 //! command layer over M6's journal: a word carried through a workspace record, a recording and both conversions keeps
 //! its FP.17 block, which the conversion's block lists in its parts (BND.24, BND.32, EV4.13, EV4.23), and a research
 //! run's word that a recording carries cannot be laundered into a solving preview (BND.84, EV4.16). The test reader's
-//! version of these cases, and the rest of LP4-9's tests, are `c600-command`'s `tests/recording.rs`.
+//! version of these cases, and the rest of LP4-9's tests, are `c600-command`'s `tests/recording.rs`. The recorder is
+//! the session's own (`JournalStore::recorder`).
 
 mod common;
 
 use c600_command::{
-    code, MemoryRecorder, Recorded, RecordedStep, Status, RECORDING_CONVERT_ROW, RECORDING_START_ROW,
-    RECORDING_STOP_ROW,
+    code, Fate, RecordedStep, Recorder, Status, RECORDING_CONVERT_ROW, RECORDING_START_ROW, RECORDING_STOP_ROW,
 };
 use c600_digest::sha256;
 use c600_kernel::json::{self, Value};
@@ -41,7 +41,8 @@ fn block_of(f: &Fixture, record: &str) -> provenance::Json {
 #[test]
 fn ct_bnd_03_a_word_keeps_its_block_through_a_recording_and_its_conversions() {
     let mut f = Fixture::create(Box::new(MemDisk::new()));
-    f.layer.set_recorder(Box::new(MemoryRecorder::new())).unwrap();
+    let recorder = f.layer.store().recorder();
+    f.layer.set_recorder(Box::new(recorder)).unwrap();
     let own = manual();
     assert!(completed(&f.write("word", &[1, 2], &own)));
     let start = f.shell.invoke(&mut f.layer, RECORDING_START_ROW, named("name", "p")).unwrap();
@@ -116,9 +117,9 @@ fn ct_ev4_10_a_research_word_is_not_laundered() {
         request: "r".into(),
         outcome: Some(committed),
     });
-    let recorder = MemoryRecorder::new();
-    let recordings = [("laundry".to_owned(), recording)].into_iter().collect();
-    recorder.put(Recorded { recordings, playbacks: Default::default() });
+    // The recording as one read from elsewhere: written to the session's recorder before the layer installs it.
+    let mut recorder = f.layer.store().recorder();
+    assert_eq!(recorder.save_recording(&recording), Fate::Durable);
     f.layer.set_recorder(Box::new(recorder)).unwrap();
 
     use c600_command::Provenance;
