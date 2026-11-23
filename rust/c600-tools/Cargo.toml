@@ -12,10 +12,14 @@ c600-digest = { path = "../c600-digest" }
 c600-display = { path = "../c600-display" }
 c600-ir = { path = "../c600-ir" }
 c600-kernel = { path = "../c600-kernel" }
+# A user module's runs, bound wholly to one checked version (`modules`, EV1.11; LP4-2).
+c600-module = { path = "../c600-module" }
 c600-run = { path = "../c600-run" }
 c600-runtime = { path = "../c600-runtime" }
 c600-syntax = { path = "../c600-syntax" }
 c600-view = { path = "../c600-view" }
 
 [dev-dependencies]
+# CT-EV1-04's key route: a key bound to a user module's overlay row (tests/ct_ev1_04_routes.rs).
+c600-input = { path = "../c600-input" }
 c600-library = { path = "../c600-library" }

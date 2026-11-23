@@ -54,6 +54,12 @@ pub fn format(file: &ParsedFile) -> Option<String> {
     Some(out)
 }
 
+/// A type's canonical text, as the layout prints it: `Map<Nat,Text>`, `fn(Nat) -> Nat effects [snapshot]`. The editor
+/// services show declared types with it (EV1.3, EV1.5).
+pub fn type_text(t: &TypeExpr) -> String {
+    ty(t)
+}
+
 fn list(items: impl Iterator<Item = String>, separator: &str) -> String {
     items.collect::<Vec<_>>().join(separator)
 }

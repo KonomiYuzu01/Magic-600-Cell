@@ -68,7 +68,9 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   `c600-shell-session-fixture` writes: Jumble off in `session-fixture/` and Jumble on (`--puzzle jumble-on`) in
   `session-fixture-jumble-on/`. A launch reopens a fresh copy of its puzzle's fixture. A release build of
   `c600-shell-lx4` (`renderer/bridge/lx4`, LX-4's editor library, C9 U8) goes in `lx4/`; the shell loads it only with
-  `launch.py --lx4`. A build made before this part existed fails the check and must be rebuilt.
+  `launch.py --lx4`. A release build of `c600-shell-editor` (`renderer/bridge/editor`, the editor library of LP4-3's
+  write-check-run flow) goes in `editor/`; the shell's editor panel loads it only with `launch.py --editor`. A build
+  made before these parts existed fails the check and must be rebuilt.
   `product.json` (`magic600-c9-product-build-v1`) names every part by its SHA-256 and gives the build identity, a
   digest of the parts. It never launches anything.
 - `launch.py`: the one way to start the shell. It recomputes every part of a product build (default: the newest),
@@ -78,7 +80,9 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   plus `M600_INPUT_ECHO=1` with `--echo`. `--lx4 --lx4-fixtures DIR` (the two go together) adds `M600_LX4=1`,
   `M600_LX4_DLL` (the build's `lx4/c600_shell_lx4.dll`) and `M600_LX4_FIXTURES` (DIR, a folder that `c600-lx4 --out`
   wrote; it must hold `MANIFEST.json`). The fixtures are not part of the build, so `launch.json` records
-  `MANIFEST.json`'s SHA-256 as `lx4_fixtures` and never the folder. It waits for the shell to exit
+  `MANIFEST.json`'s SHA-256 as `lx4_fixtures` and never the folder. `--editor` adds `M600_EDITOR=1` and
+  `M600_EDITOR_DLL` (the build's `editor/c600_shell_editor.dll`), the editor panel of LP4-3 (a draft; the section
+  "Status of LP4, LP4-3" in `rust/README.md`), and `launch.json` records the flag. It waits for the shell to exit
   and writes `launch.json` (`magic600-c9-launch-v1`) with the build and run folders written as `<build>` and
   `<out>`. `--dry-run` checks and prints and starts nothing. Start it from a PowerShell on the desktop: a window
   started from a background process never gets the foreground.
@@ -93,6 +97,10 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
   - every shell call declared by the header and absent from the bridge's table;
   - the host library's exports, version, status codes, press codes, and frame, key and presented rows equal to its
     Rust source, and the correctness control's name;
+  - the editor library's exports, version and codes equal to its Rust source, and the editor panel's fixed points:
+    created by `M600_EDITOR`, Check and Activate as its own palette entries with no key, a row registered only after
+    an activation, no key routed and nothing committed by the panel, and the code field's focus as the router's text
+    focus (LP4-3);
   - the event log's `key`, `frame` and `presented` fields as `key_to_frame.py` reads them, and a passing
     correctness only from the session's control;
   - the chord codes `KeyChord.cs` names, all known to c600-input;

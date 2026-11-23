@@ -1,0 +1,14 @@
+[package]
+name = "c600-editor"
+description = "EV1's editor services for 600 Cell Script: parse with recovery, completion, diagnostics, hover, definition and rename over pinned source ranges (LP4-1)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# A service reads source and checker data and runs no user program (EV1.9): no path to c600-run or c600-command.
+# `tests/dependencies.rs` reads these manifests and fails on any other path dependency.
+[dependencies]
+c600-check = { path = "../c600-check" }
+c600-digest = { path = "../c600-digest" }
+c600-ir = { path = "../c600-ir" }
+c600-syntax = { path = "../c600-syntax" }

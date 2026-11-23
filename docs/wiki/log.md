@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-23] decision | LP4 and LP5 start
+The owner took every recommended option on the LP4 and LP5 start card: the command layer's open points, LP4's seven items, LP5's four items and one owner sitting ([decision](decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)). LP4 and LP5 continue in the sessions that drafted their plans.
+
 ## [2026-11-23] update | Briefing, solving workflow and glossary follow the 22 and 23 November decisions
 The briefing records the LP2 and LP3 exits, the ADR line's evening decisions and the A7 freeze, with an FP.1 pin refresh of the format packet; the solving workflow and the glossary drop the suggestions that ADR-D01 revision 4 cut ([A7 freeze](decisions/owner-decisions-2026-11-23-a7-freeze.md), What follows).
 

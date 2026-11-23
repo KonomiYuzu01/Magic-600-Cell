@@ -1,0 +1,35 @@
+# The shell's editor library (LP4-3): the write-check-run flow of a `.6cs` macro behind a C interface that the shell's
+# C# panel (renderer/shell/project/Editor) calls. It holds the editor's document with EV1's editor services
+# (c600-editor: diagnostics and completion), the host's user modules (c600-module: an explicit check and an explicit
+# activation) and the runs of the program jobs the host's command layer queues for a language row (c600-tools'
+# bound runs, in this process or in the runtime's own process). It is a member of renderer/bridge's workspace, outside
+# the language workspace (rust/Cargo.toml), because its C interface needs unsafe code, which CT-RPI-01 keeps out of
+# that workspace. It uses the language crates only through their public interfaces.
+[package]
+name = "c600-shell-editor"
+description = "The product shell's write-check-run flow of a .6cs macro: editor services, module check and activation, program-job runs, behind a C interface (LP4-3, draft)"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+# cdylib for the shell; rlib so that the tests call the C interface directly.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+c600-check = { path = "../../../rust/c600-check" }
+c600-digest = { path = "../../../rust/c600-digest" }
+c600-editor = { path = "../../../rust/c600-editor" }
+c600-kernel = { path = "../../../rust/c600-kernel" }
+c600-module = { path = "../../../rust/c600-module" }
+c600-run = { path = "../../../rust/c600-run" }
+# The runtime's child for the process route's tests (src/bin) and its stop codes.
+c600-runtime = { path = "../../../rust/c600-runtime" }
+c600-tools = { path = "../../../rust/c600-tools" }
+
+[dev-dependencies]
+# The whole flow through the host's C interface over the bridge's C shim and the fake core (tests/flow.rs).
+c600-display = { path = "../../../rust/c600-display" }
+c600-render = { path = "../../../rust/c600-render" }
+c600-render-ffi = { path = ".." }
+c600-shell-host = { path = "../host" }

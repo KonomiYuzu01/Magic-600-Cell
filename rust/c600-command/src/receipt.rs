@@ -50,6 +50,9 @@ pub mod code {
     pub const JUMBLE_OFF_NOT_SHOWN_REACHABLE: &str = "KN5:input.jumble_off_not_shown_reachable";
     /// A language-defined row whose required kernel row the table does not hold (LI.20).
     pub const OVERLAY_DEPENDENCY_MISSING: &str = "KN5:input.overlay_dependency_missing";
+    /// A key binding whose sequence the shell's keymap already binds in an overlapping context (EV4.3, EV4.7;
+    /// [`crate::Shell::bind`]).
+    pub const BINDING_CONFLICT: &str = "EV4:input.binding_conflict";
 
     /// Drafts that chapter 13 does not register yet.
     pub const UNKNOWN_ROW: &str = "KN5:input.unknown_row";

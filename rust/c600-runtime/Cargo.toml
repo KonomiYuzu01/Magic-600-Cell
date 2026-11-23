@@ -9,6 +9,8 @@ publish.workspace = true
 c600-check = { path = "../c600-check" }
 c600-digest = { path = "../c600-digest" }
 c600-ir = { path = "../c600-ir" }
+# A job bound wholly to one checked module version (`bound`, EV1.11; LP4-2).
+c600-module = { path = "../c600-module" }
 # The platform layer (RPI.52): the parent starts its child without a console window of its own.
 c600-platform = { path = "../c600-platform" }
 c600-run = { path = "../c600-run" }

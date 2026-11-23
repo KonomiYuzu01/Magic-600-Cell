@@ -2,11 +2,12 @@
 //!
 //! The stored table is `docs/progress/1.0/command-table.json`, compiled in. It is frozen at LP3 (PHS.53), and
 //! this module reads only the fields the command layer uses and ignores the rest. A language-defined command is an
-//! overlay row of kind view, workspace, query or file, never commit or app. A view overlay runs on the `view` lane and
-//! every other overlay on the `program` lane. A stored row that a built-in tool's entry serves ([`Table::serve_row`])
-//! keeps H-08's lane. A language-defined row's stored [`Metadata`] is what its availability reads (KN5.7, LI.20).
+//! overlay row of kind view, workspace, query or file, never commit or app, and a file row only with a granted file
+//! capability ([`Registration`]). A view overlay runs on the `view` lane and every other overlay on the `program` lane.
+//! A stored row that a built-in tool's entry serves ([`Table::serve_row`]) keeps H-08's lane. A language-defined row's
+//! stored [`Metadata`] is what its availability reads (KN5.7, LI.20).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use c600_kernel::json::{self, Value};
 
@@ -59,10 +60,44 @@ pub struct Overlay {
     pub entry: String,
 }
 
+/// A capability the solver granted a language-defined command's module (draft; KN5.3, EV4.1, LG3.8): consent given at
+/// install and revocable (ADR-D01.32, which overrules DET.37's per-run grant), which the host passes as data. Network,
+/// process and session-file access are never granted in 1.0 (LG3.8), so they have no grant here.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Grant {
+    File,
+    Clock,
+    Randomness,
+}
+
+/// What a language-defined command registers beside its ID, kind, arguments and entry (draft; EV4.1, ADR-D01.17): the
+/// label the palette shows and searches, and the capabilities the solver granted its module. A `file` row needs
+/// [`Grant::File`] (KN5.3). The default has no label, so the palette shows the row's ID, and no grant.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Registration {
+    pub label: Option<String>,
+    pub grants: BTreeSet<Grant>,
+}
+
+impl Registration {
+    /// A registration with `label` and no grant.
+    pub fn labelled(label: &str) -> Registration {
+        Registration { label: Some(label.to_owned()), grants: BTreeSet::new() }
+    }
+
+    /// The same registration with `grant` added.
+    pub fn granting(mut self, grant: Grant) -> Registration {
+        self.grants.insert(grant);
+        self
+    }
+}
+
 /// One row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Row {
     pub id: String,
+    /// H-08's label, or a language-defined row's registered label; `None` when neither gives one.
+    pub label: Option<String>,
     pub kind: Kind,
     pub lane: Lane,
     pub undo: UndoClass,
@@ -78,6 +113,9 @@ pub struct Row {
     /// Set for a language-defined row, and for a stored row that a built-in tool's entry serves
     /// ([`Table::serve_row`]).
     pub overlay: Option<Overlay>,
+    /// The capabilities granted a language-defined row's module at its registration ([`Registration`]); empty for a
+    /// stored row.
+    pub grants: BTreeSet<Grant>,
 }
 
 impl Row {
@@ -187,6 +225,7 @@ fn row(value: &Value) -> Result<Row, String> {
     }
     let flag = |name: &str| value.get(name).is_some_and(|v| matches!(v, Value::Bool(true)));
     Ok(Row {
+        label: value.get("label").and_then(Value::as_str).map(str::to_owned),
         kind: word(value.get("kind"), &kinds).map_err(fail)?,
         lane: word(value.get("lane"), &lanes).map_err(fail)?,
         undo: word(value.get("undo"), &undos).map_err(fail)?,
@@ -199,6 +238,7 @@ fn row(value: &Value) -> Result<Row, String> {
         arguments,
         action_guard: value.get("action_guard").and_then(Value::as_str).map(str::to_owned),
         overlay: None,
+        grants: BTreeSet::new(),
         id,
     })
 }
@@ -248,6 +288,7 @@ impl Table {
         let arguments = [("payload", "Json"), ("provenance", "ProvenanceBlock"), ("record", "Text")];
         self.rows.entry(id.to_owned()).or_insert(Row {
             id: id.to_owned(),
+            label: Some("Write workspace record".to_owned()),
             kind: Kind::Workspace,
             lane: Lane::None,
             undo: UndoClass::Workspace,
@@ -260,14 +301,13 @@ impl Table {
             arguments: arguments.iter().map(|(n, t)| ((*n).to_owned(), (*t).to_owned())).collect(),
             action_guard: None,
             overlay: None,
+            grants: BTreeSet::new(),
         });
         self
     }
 
-    /// Registers a language-defined row. Its lane follows its kind, it takes no token, it has no gates and it is
-    /// available in every context. Its metadata starts as the default until [`Table::declare`] stores it. A commit or
-    /// app row is refused with `KN5:input.overlay_row_kind`; an ID that a row or service already holds is refused with
-    /// `KN5:input.overlay_row_conflict`.
+    /// Registers a language-defined row with no label and no grant: [`Table::register_overlay_with`] with the default
+    /// [`Registration`], so a `file` row is refused.
     pub fn register_overlay(
         &mut self,
         id: &str,
@@ -275,8 +315,31 @@ impl Table {
         arguments: &[(&str, &str)],
         overlay: Overlay,
     ) -> Result<&Row, Error> {
+        self.register_overlay_with(id, kind, arguments, overlay, Registration::default())
+    }
+
+    /// Registers a language-defined row (KN5.3, EV4.1). Its lane follows its kind, it takes no token, it has no gates
+    /// and it is available in every context; it keeps the registration's label and grants. Its metadata starts as the
+    /// default until [`Table::declare`] stores it. Registering runs nothing (LG3.3). Refused, in this order, leaving
+    /// the table as it was:
+    /// - a `commit` or `app` row, and a `file` row whose registration does not grant [`Grant::File`], with
+    ///   `KN5:input.overlay_row_kind`;
+    /// - an ID that a row or service already holds, with `KN5:input.overlay_row_conflict`;
+    /// - a row that takes a user-action token, with `KN5:input.overlay_row_kind`.
+    pub fn register_overlay_with(
+        &mut self,
+        id: &str,
+        kind: Kind,
+        arguments: &[(&str, &str)],
+        overlay: Overlay,
+        registration: Registration,
+    ) -> Result<&Row, Error> {
         if matches!(kind, Kind::Commit | Kind::App) {
             return Err(Error::new(code::OVERLAY_ROW_KIND, format!("overlay row `{id}` may not be a {kind:?} row")));
+        }
+        if kind == Kind::File && !registration.grants.contains(&Grant::File) {
+            let detail = format!("overlay row `{id}` is a file row, and its module holds no granted file capability");
+            return Err(Error::new(code::OVERLAY_ROW_KIND, detail));
         }
         if self.rows.contains_key(id) || self.services.iter().any(|s| s == id) {
             return Err(Error::new(code::OVERLAY_ROW_CONFLICT, format!("`{id}` is already a row or service")));
@@ -286,6 +349,7 @@ impl Table {
         }
         let row = Row {
             id: id.to_owned(),
+            label: registration.label,
             kind,
             lane: if kind == Kind::View { Lane::View } else { Lane::Program },
             undo: if kind == Kind::Workspace { UndoClass::Workspace } else { UndoClass::None },
@@ -298,6 +362,7 @@ impl Table {
             arguments: arguments.iter().map(|(n, t)| ((*n).to_owned(), (*t).to_owned())).collect(),
             action_guard: None,
             overlay: Some(overlay),
+            grants: registration.grants,
         };
         self.metadata.insert(id.to_owned(), Metadata::default());
         Ok(self.rows.entry(id.to_owned()).or_insert(row))
@@ -379,7 +444,7 @@ impl Table {
 }
 
 /// The stored rows the command layer builds itself; no entry serves them.
-const LAYER_ROWS: [&str; 17] = [
+const LAYER_ROWS: [&str; 18] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -397,4 +462,5 @@ const LAYER_ROWS: [&str; 17] = [
     crate::worksheet::WORKSHEET_SAVE_ROW,
     crate::worksheet::WORKSHEET_LOAD_ROW,
     crate::worksheet::WORKSHEET_COMPARE_ROW,
+    crate::palette::FIND_ROW,
 ];
