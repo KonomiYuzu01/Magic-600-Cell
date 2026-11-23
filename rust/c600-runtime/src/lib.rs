@@ -124,9 +124,14 @@
 //!     The faults belong to the binary that gives the hook (c600-lx2's injection device); this crate has none, and
 //!     [`FAULT_HOOK`] says whether a build has the hook. The product build has the feature off. The test child
 //!     `c600-runtime-hooked`, built only with the feature, records the hook's calls and injects nothing.
+//! 17. **Bound jobs** (EV1.7, EV1.11; LP4-2): [`bound::BoundJob`] builds a job wholly from one checked module version,
+//!     a `c600_module::Binding`, and [`Runtime::run_bound`] runs it. The wire is unchanged: the child gets the bound
+//!     bytes with the run and holds them to its end, so a run suspended at a host call resumes on them after another
+//!     version activates. The drafts of the binding are in [`bound`].
 
 #![forbid(unsafe_code)]
 
+pub mod bound;
 pub mod child;
 pub mod codec;
 pub mod message;
@@ -134,6 +139,7 @@ pub mod parent;
 pub mod program;
 pub mod wire;
 
+pub use bound::{run_bound_in_process, BoundJob};
 pub use parent::{Canceller, Config, Fault, FaultKind, Killer, Runtime};
 pub use program::{run_in_process, Ended, Job, JobOptions, Refused, Stage};
 

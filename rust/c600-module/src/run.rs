@@ -7,6 +7,8 @@
 //! `LG3:capability.not_granted`. The boundary's preview admission runs first and keeps its own codes (BND.84, BND.85),
 //! and the program gets the boundary's fixed acknowledgement `{base, id}` either way (BND.42, BND.43). A proposal is a
 //! literal word's or a menu word's ([`Request::is_proposal`]; LB1.8, LP2 draft): both pass the same gate.
+//! [`Ready::run_with`] puts the same two hosts around another executor of the closure (LP4-2), such as the runtime's
+//! child, which forwards each host call to them.
 
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
@@ -55,6 +57,15 @@ pub struct RunRequest<'a> {
     pub options: Options<'a>,
 }
 
+/// The context of one run without its executor's options: the run's name and base revision, the stored blocks of the
+/// entry's arguments, and the pins the policy in force can read. [`Ready::run_with`] takes it.
+pub struct RunContext<'a> {
+    pub run: &'a str,
+    pub base: &'a str,
+    pub inputs: Vec<Vec<u8>>,
+    pub pins: Pins,
+}
+
 /// The end of one run: the interpreter's result, what the shell shows for each proposal, the captures, and the
 /// proposals that capability separation refused.
 #[derive(Debug)]
@@ -66,13 +77,42 @@ pub struct Outcome {
     pub separated: Vec<String>,
 }
 
+/// A run whose executor left no interpreter run, with what the boundary recorded before it stopped: what the shell
+/// shows for each proposal that reached it, the captures and the separated proposals ([`Ready::run_with`]).
+#[derive(Debug)]
+pub struct Halted<E> {
+    pub cause: E,
+    pub shell: Vec<Shown>,
+    pub captures: Vec<Capture>,
+    pub separated: Vec<String>,
+}
+
 impl Ready {
     pub fn approval(&self) -> &Approval {
         &self.approval
     }
 
-    /// Runs the approved entry with an engine and a store.
+    /// Runs the approved entry with an engine and a store, in this process.
     pub fn run(&self, request: RunRequest, engine: &mut dyn Host, store: &mut Store) -> Result<Outcome, Refusal> {
+        let RunRequest { run, base, args, inputs, pins, options } = request;
+        let (module, function) = (&self.approval.entry.module, &self.approval.entry.function);
+        let context = RunContext { run, base, inputs, pins };
+        let execute = |host: &mut dyn Host| self.loaded.run(module, function, args, host, &options);
+        self.run_with(context, engine, store, execute).map_err(|halted| halted.cause)
+    }
+
+    /// Runs the approved entry through `execute`, an executor of the same closure: in this process
+    /// ([`Ready::run`]), or in the runtime's own process, whose child runs the closure's bytes and forwards each host
+    /// call to the host `execute` is given. That host is the one [`Ready::run`] uses: the boundary with this approval's
+    /// context and the separation gate around the engine, in the caller's process. `execute` runs the approved entry
+    /// on that host and gives its run, or why it left none.
+    pub fn run_with<E>(
+        &self,
+        context: RunContext,
+        engine: &mut dyn Host,
+        store: &mut Store,
+        execute: impl FnOnce(&mut dyn Host) -> Result<Run, E>,
+    ) -> Result<Outcome, Halted<E>> {
         let a = &self.approval;
         let producer = Producer {
             contract: a.contract.clone(),
@@ -83,21 +123,25 @@ impl Ready {
             profile: a.entry.profile,
         };
         let context = Context {
-            run: request.run.to_string(),
-            base: request.base.to_string(),
+            run: context.run.to_string(),
+            base: context.base.to_string(),
             producer,
             reads_state: a.admitted.separation.reads_state,
-            inputs: request.inputs,
-            pins: request.pins,
+            inputs: context.inputs,
+            pins: context.pins,
         };
         let gate = Gate::default();
         let mut split = Split { engine, gate: &gate };
         let boundary = Boundary::new(&mut split, store, context);
         let mut outer = Outer { boundary, gate: &gate };
-        let run = self.loaded.run(&a.entry.module, &a.entry.function, request.args, &mut outer, &request.options)?;
+        let ran = execute(&mut outer);
         let shell = std::mem::take(&mut outer.boundary.shell);
         let captures = std::mem::take(&mut outer.boundary.captures);
-        Ok(Outcome { run, shell, captures, separated: gate.separated.take() })
+        let separated = gate.separated.take();
+        match ran {
+            Ok(run) => Ok(Outcome { run, shell, captures, separated }),
+            Err(cause) => Err(Halted { cause, shell, captures, separated }),
+        }
     }
 }
 

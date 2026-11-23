@@ -85,6 +85,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-module"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-run",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-platform"
 version = "0.0.0"
 
@@ -128,6 +139,7 @@ dependencies = [
  "c600-check",
  "c600-digest",
  "c600-ir",
+ "c600-module",
  "c600-platform",
  "c600-run",
  "c600-syntax",
