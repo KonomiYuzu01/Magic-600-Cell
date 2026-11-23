@@ -16,7 +16,8 @@ use std::sync::OnceLock;
 use c600_archive::bindings::Bindings;
 use c600_checkers::engines::Loaded;
 use c600_command::{
-    CommandLayer, Kind, MemoryStore, PreviewRule, Profile, Receipt, Revision, Secret, Shell, Status, WorkspaceRecord,
+    code, CommandLayer, Kind, MemoryStore, PreviewRule, Profile, Receipt, Revision, Secret, Shell, Status,
+    WorkspaceRecord,
 };
 use c600_evidence::obligation::{self, json};
 use c600_research::panel::{self, invoke, rows, Grant, Host, D2};
@@ -324,8 +325,10 @@ fn ct_lb5_11_an_export_changes_no_evidence_claim_or_revision() {
 /// CT-ERR-19 (source, part: an untranslatable obligation refused through the row writes no file; not run here: the
 /// codes' owning chapters, refusal form and retries, which `c600-evidence/tests/obligation.rs` runs).
 ///
-/// The named-statement vector's StatementId is given as the canonical text of its FP.19 form: the row passes it to
-/// the translator, which refuses it because a named ID has no body (PS1.46).
+/// The named-statement vector's StatementId is given as the text of its FP.19 form: the row passes it to the
+/// translator, which refuses it because a named ID has no body (PS1.46). Text that is neither a typed ID's 64
+/// lowercase hex digits nor a named ID's form (exactly `kind` `named`, `stage`, `commit` and `name`) is an
+/// argument-form refusal, which writes nothing and reaches no translator.
 #[test]
 fn ct_ps1_26_refusal_vectors_refuse_through_the_row_and_write_nothing() {
     let mut p = Panel::new();
@@ -347,6 +350,16 @@ fn ct_ps1_26_refusal_vectors_refuse_through_the_row_and_write_nothing() {
     assert_eq!(p.failed(rows::OBLIGATION, args), UNTRANSLATABLE, "a named statement has no body");
     assert!(!p.folder.join("obligation.lean").exists());
     assert_eq!(listing(&p.folder), files);
+
+    let upper = named.replace("named", "NAMED");
+    let fifth = named.replacen('{', "{\"extra\":\"x\",", 1);
+    let typed_upper = "A".repeat(64);
+    for text in [upper.as_str(), fifth.as_str(), typed_upper.as_str(), "not a statement", "{}"] {
+        let args = p.export(text);
+        assert_eq!(p.failed(rows::OBLIGATION, args), code::ARGUMENT_FORM, "{text}");
+        assert!(!p.folder.join("obligation.lean").exists(), "{text}");
+        assert_eq!(listing(&p.folder), files, "{text}");
+    }
 
     let (_, obligations) = p.answer(rows::OBLIGATIONS, obj(&[]));
     let exports = items(at(&obligations, &["exports"]));

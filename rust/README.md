@@ -3613,31 +3613,31 @@ workspace file.
   unchanged (LB5.17). Groups a sub-checker answers `not_applicable` are bound scope-only and keep
   `no_independent_checker`. `c600-library`'s `research_preflight.6cs` states the same rule as language code over
   host-supplied data, and `c600-research/tests/preflight_bindings.rs` checks the bindings against the KN6 registry.
-- R2, KN6's independent checker core: `c600-checkers`. `check(engines, certificate, kind)` returns a `CheckReport`
-  with a pass, fail or not-applicable verdict, the checker's ID and source digest, the input digest, the stated inputs
-  with the identities read from them and a per-claim trace; a kind with no checker, or one whose engine was not
-  supplied, is a refusal with `KN6:evidence.no_checker`. Words replay letter by letter through `c600-jumble` and
-  `c600-kernel` with no cache of the checker's own; the crate depends on nothing else but `c600-digest` and calls no
-  chooser inside the engines. Four kinds are built: admissibility and straddlers, `macro-certificate/1`,
-  compressed-word expansion (streamed, length-checked before any letter) and ν and label checkpoints; the three other
-  certificate forms are the crate's drafts (`kn6-admissibility/1`, `kn6-expansion/1`, `kn6-checkpoints/1`). The
-  mutation gate (`gate`) requires every fixture to fail under a tampered claim, a wrong start table and a wrong input
-  digest, and under structural changes of its claims: a key deleted, renamed or joined by an unknown key, a list
-  emptied or shortened by one element (a change that leaves the record unchanged is skipped; `Fixture::optional`
-  names the parts a form may leave out, and no research-archive fixture names any). The research-archive kind is a family of sub-checkers registered per stage in `src/archive/s14` to `s19`,
-  each with its own ID, source digest and gate (LP5 pieces R3 to R6). All 17 stage 15 macro certificates (R01 to R17)
-  pass in place, read-only. `tests/test_language_scans.py` runs CT-KN6-02's import scan on the crate. An expansion's
-  running time is bounded by the check job's budget (R8), not here.
+- R2, KN6's independent checker core: `c600-checkers`. `check(engines, certificate, kind)` returns a `CheckReport` with
+  a pass, fail or not-applicable verdict, the checker's ID and source digest, the input digest, the stated inputs with
+  the identities read from them and a per-claim trace; a kind with no checker, or one whose engine was not supplied, is
+  a refusal with `KN6:evidence.no_checker`. Words replay letter by letter through `c600-jumble` and `c600-kernel` with
+  no cache of the checker's own; the crate depends on nothing else but `c600-digest` and calls no chooser inside the
+  engines. Four kinds are built: admissibility and straddlers, `macro-certificate/1`, compressed-word expansion
+  (streamed, length-checked before any letter) and ν and label checkpoints; the three other certificate forms are the
+  crate's drafts (`kn6-admissibility/1`, `kn6-expansion/1`, `kn6-checkpoints/1`). The mutation gate (`gate`) requires
+  every fixture to fail under a tampered claim, a wrong start table and a wrong input digest, and under structural
+  changes of its claims: a key deleted, renamed or joined by an unknown key, a list emptied or shortened by one element
+  (a change that leaves the record unchanged is skipped; `Fixture::optional` names the parts a form may leave out, and
+  no research-archive fixture names any). The research-archive kind is a family of sub-checkers registered per stage in
+  `src/archive/s14` to `s19`, each with its own ID, source digest and gate (LP5 pieces R3 to R6). All 17 stage 15 macro
+  certificates (R01 to R17) pass in place, read-only. `tests/test_language_scans.py` runs CT-KN6-02's import scan on the
+  crate. An expansion's running time is bounded by the check job's budget (R8), not here.
 - R3, stage 14's research-archive sub-checkers (CT-LB5-01): `c600-checkers/src/archive/s14` registers `s14.t3p`,
   `s14.literal`, `s14.locality`, `s14.levels` and `s14.blocks`, each with its own identity and mutation gate. From the
-  stored stage 13 tables, the I_a menu and the model they recompute W3, W5 and the scan certificates, the T3P checks
-  (P0 to P4, the T3P+ edges, Lemma A's replay), the six chains' rounds, words and ends, the replay records'
-  chronological rows, the locality summary, the fourteen level tables (greatest fixed point, λ and its witness) and
-  the co-held, per-grip, jam and moves-522 records at the 7304 stop. All 44 records pass in place, read-only; changed
-  helper sets, precedence, input digests or start tables fail. The 22 finite-search records (scans, pairs, plus, beam
-  and peel) answer `not_applicable` with their scope, and only when they have exactly their signature's fields; any
-  other record whose shape or format departs from its stage 14 form fails, naming the field. The fourteen-table level rebuild is an ignored test (about
-  100 s); the 7304 stop runs as its fast representative.
+  stored stage 13 tables, the I_a menu and the model they recompute W3, W5 and the scan certificates, the T3P checks (P0
+  to P4, the T3P+ edges, Lemma A's replay), the six chains' rounds, words and ends, the replay records' chronological
+  rows, the locality summary, the fourteen level tables (greatest fixed point, λ and its witness) and the co-held,
+  per-grip, jam and moves-522 records at the 7304 stop. All 44 records pass in place, read-only; changed helper sets,
+  precedence, input digests or start tables fail. The 22 finite-search records (scans, pairs, plus, beam and peel)
+  answer `not_applicable` with their scope, and only when they have exactly their signature's fields; any other record
+  whose shape or format departs from its stage 14 form fails, naming the field. The fourteen-table level rebuild is an
+  ignored test (about 100 s); the 7304 stop runs as its fast representative.
 - R4, stages 15 to 17's research-archive sub-checkers (CT-LB5-02 to CT-LB5-04, CT-KN6-03's stage 15 to 17 parts):
   `c600-checkers/src/archive/s15` to `s17` register `s15.macro`, `s16.macro` and `s17.macro` (`macro-certificate/1`
   and `macro-check/1` through the macro kind, bound to the jam catalogue: stage 15 starts at the chain end and whole
@@ -3653,8 +3653,8 @@ workspace file.
 - R5, stage 18's research-archive sub-checkers (CT-LB5-05, CT-LB5-09, CT-LB1-04's expansion half):
   `c600-checkers/src/archive/s18` registers `s18.expansion` (gate 1: both `steps.json` forms, each step's exact length
   admitted at most 10^7 before any word is read, every word file streamed and hashed), `s18.composed` (gate 2: the
-  composed strict′ contract checked letter by letter), `s18.tail_replay` (gate 3: chunked literal replay for T6 steps 1 to
-  3; T6 step 4 and the rule stages keep `historical_check_incomplete` and never pass it), `s18.lattice_run` (the
+  composed strict′ contract checked letter by letter), `s18.tail_replay` (gate 3: chunked literal replay for T6 steps 1
+  to 3; T6 step 4 and the rule stages keep `historical_check_incomplete` and never pass it), `s18.lattice_run` (the
   `runner-run/3` record, report, tables, step trees and words) and `s18.lattice_replay` (the lattice phase's 13,231,266
   twists replayed from T6's stored end table, a fresh check with no archived `check.jsonl` to match). Start tables of
   later steps are rebuilt by exact replay and marked derived (owner, LP5-3). Stop units and whole-cap outputs answer

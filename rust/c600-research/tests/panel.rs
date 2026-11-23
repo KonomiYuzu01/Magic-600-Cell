@@ -324,8 +324,8 @@ fn a_queued_row_reads_loading_and_a_full_lane_reads_busy() {
 /// the checks that an export changes no evidence, claim or revision, which `tests/obligation_export.rs` runs).
 /// CT-PS1-26 (source, part: the format packet's supported statement exported byte for byte, with its SHA-256, through
 /// a granted file, and statements with no body refused with `LB5:input.obligation_untranslatable`, writing nothing; not
-/// run here: the unknown-symbol and wrong-arity vectors, which `tests/obligation_export.rs` runs, and a named
-/// statement at the row).
+/// run here: the unknown-symbol, wrong-arity and named-statement vectors at the row, which
+/// `tests/obligation_export.rs` runs).
 /// CT-RTE-23 (source, part: the export through LB5.18's file grant; not run here: its format, pins and the checks that
 /// it promotes no claim, which `tests/obligation_export.rs` runs).
 /// CT-ERR-19 (source, part: a refused `research.obligation.export` writes no file; not run here: the codes' owning
