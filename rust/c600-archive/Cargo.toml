@@ -1,0 +1,10 @@
+[package]
+name = "c600-archive"
+description = "PS3's research archive import and exchange: the versioned import table, the discriminator for records with no format key, manifest and member checks, the import report, the typed claim bindings and the check-bundle export; it executes nothing (LP5, R0 and R1)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-digest = { path = "../c600-digest" }
+c600-evidence = { path = "../c600-evidence" }

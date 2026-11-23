@@ -16,6 +16,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-archive"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-evidence",
+]
+
+[[package]]
 name = "c600-build"
 version = "0.0.0"
 dependencies = [
@@ -31,6 +39,15 @@ name = "c600-check"
 version = "0.0.0"
 dependencies = [
  "c600-ir",
+]
+
+[[package]]
+name = "c600-checkers"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-jumble",
+ "c600-kernel",
 ]
 
 [[package]]
@@ -212,6 +229,20 @@ dependencies = [
  "c600-syntax",
  "c600-tools",
  "c600-view",
+]
+
+[[package]]
+name = "c600-research"
+version = "0.0.0"
+dependencies = [
+ "c600-archive",
+ "c600-checkers",
+ "c600-command",
+ "c600-digest",
+ "c600-evidence",
+ "c600-library",
+ "c600-session",
+ "c600-tools",
 ]
 
 [[package]]

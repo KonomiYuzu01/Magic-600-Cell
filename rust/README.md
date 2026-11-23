@@ -36,6 +36,10 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 
+| `c600-checkers` | KN6's independent checkers as kernel code: one per certificate kind, the research-archive kind as a family of sub-checkers with their own identities and mutation gates (LP5, R2 to R6; scaffold) |
+| `c600-archive` | PS3's research archive import and exchange: the versioned import table, records with no format key, manifest and member checks, the import report, the typed claim bindings and the check-bundle export; it executes nothing (LP5, R0 and R1; scaffold) |
+| `c600-research` | The research host: research overlay rows and host reads, the KN6 check job adapter, reproducible research jobs on engine-owned branches, the obligation export row and the research output panel's rows (LP5, R8 to R10; scaffold) |
+
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
@@ -67,6 +71,11 @@ The durable crate holds tests only; its dev-dependencies are the session store, 
 syntax crate, the interpreter, the kernel and the digest crate.
 The library crate depends on the IR, syntax and digest crates only; its tests also run the checker, the interpreter
 and the kernel.
+LP5's KN6 checkers depend on the kernel, jumbling and digest crates only, so no checker reaches the interpreter, the
+library, an archive reader or a producer (KN6.2). The archive crate depends on the digest crate and the evidence
+library only. The research host depends on the tools crate, the command layer, the session store, the library, the
+evidence library, the checkers and the archive crate; the command layer gains no edge (ONE.48). Any other edge
+follows PHS.52 ([LP5 plan](../docs/progress/1.0/language-lp5-plan.md), section 4).
 
 ## Running the tests
 
