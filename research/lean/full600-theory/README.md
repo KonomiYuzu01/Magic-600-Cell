@@ -4,6 +4,8 @@ A Lean 4 and Mathlib project for the base theory in [`research/ARCHON-HANDOFF-TH
 
 No file has a `sorry`, an `admit`, a `native_decide` or a new axiom. `#print axioms` on every theorem named below lists only `propext`, `Classical.choice` and `Quot.sound`.
 
+The project also holds a second library, `Jumbling`: Lean formalizations of round-22 results of the jumbling restoration research, which import `ArchonFull600Theory.Basic`. See [`Jumbling/README.md`](Jumbling/README.md). `lake build` builds both libraries.
+
 ## Milestone 1: the permutation core
 
 All 16 Milestone 1 theorems in `ArchonFull600Theory/Basic.lean` are proved.

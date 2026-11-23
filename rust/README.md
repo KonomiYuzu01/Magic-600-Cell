@@ -3853,3 +3853,71 @@ LG5.6).
   raced rebind, the 600-slot bound, the overwrite of a macro by name, and the Full word's literal digest profile, in
   the crate documentation of `c600_command::grip` and `c600_command::macros`.
 - Evidence kind: source and synthetic. No Windows, IME, device or timing claim.
+
+## Status of LP4, LP4-3: the shell's write-check-run flow
+
+LP4-3 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV1.2 to EV1.13; chapter 05 KN5;
+EV4.1, EV4.2), the last item of phase I, a draft. Its code is in `renderer/`, outside this workspace (CT-RPI-01); it
+uses this workspace's crates through their public interfaces and changes none of them.
+
+- The editor library `c600-shell-editor` (`renderer/bridge/editor`, a member of the bridge's workspace) is a C
+  interface, version 1 (`m6e_*`). It holds one document with EV1's services from `c600-editor` (`m6e_set_text`,
+  `m6e_edit` in the declared units, `m6e_diagnose`, `m6e_complete`). `m6e_check(entry)` checks the buffer as a
+  single-file module with one entry, the solver's own program in the solving profile, through `c600_module::Modules`;
+  it creates a candidate and activates nothing. `m6e_activate(module, expected, candidate, reference)` is the explicit
+  switch (`activate_module`, EV1.11, EV1.13). `m6e_run(job)` binds a program job's entry to the active version once
+  (`Modules::bind`) and runs it on a worker thread, in process or, after `m6e_load_runtime`, in the runtime's own
+  process (`c600_tools::modules`); `m6e_run_poll` gives the run's record. Answers are JSON (`m6e_answer`); a refusal
+  is `{"code", "detail"}` (`m6e_last_error`).
+- The host library `c600-shell-host` goes to version 7. `m6h_register_row` registers a module's entry as a language
+  overlay row (`tool.<module>.<entry>`, a query row, `register_overlay_with`) and binds its key in the router and the
+  shell's keymap. `m6h_palette` reads the palette. `m6h_invoke` invokes a row from the palette (`Shell::invoke`).
+  `m6h_take_job` and `m6h_finish_job` carry a program job's run (`ModuleRun::of_job`, as JSON) to the editor library
+  and its end back to the layer as the job's result or error. `m6h_set_draft_word` sets the editor's draft,
+  `m6h_set_focus` the router's text or puzzle focus, and `m6h_answer` gives the JSON answers. The host now builds the
+  previews the layer queues (`run_jobs`) at each pump, frame and key, shows a pending preview on the view
+  (`show_preview`, with no primitives yet), and reports each confirmed frame that showed it to the layer
+  (`CommandLayer::present`, the base translated from the display's engine revision to the layer's state revision), so
+  the commit key finds a presented preview. The two libraries share no Rust object; the panel and the flow test carry
+  the JSON between them.
+- Preview route: the solver-invoked route. A run's engine host serves no row (`NoHost`) and the run holds no token.
+  The word the macro returns is shown and becomes the editor's draft; the solver previews it with
+  `operation.preview`'s key (Ctrl+Enter) and commits it with `operation.execute`'s key (Ctrl+Shift+Enter, the key
+  route's token) once a frame showed the preview; `session.undo`'s key undoes. The shell chooses, ranks and outputs
+  no solving word of its own. The program-prepared route that ADR-D01.8 allows ("the solver's own programs prepare
+  solving previews"; ADR-D01's overrule of EV4.16 and BND.84) is blocked in this workspace: `c600-check`'s
+  solving-profile admission still refuses `PreparePreview` for an own, forked or imported tool (BND.56, LG3.16; the
+  `Profile::Solving` branch of `c600-check/src/lib.rs`). Lifting it is a change to `c600-check`, which LP4-3 does not
+  make.
+- The greybox panel (`renderer/shell/project/Editor`, `M600_EDITOR=1`, `launch.py --editor`): a code field, the
+  diagnostics list (code, line and column), code completion at the caret, and a palette list that starts with the
+  panel's own Check and Activate entries, which have no key (the LP4 plan's integrator default), followed by the
+  session's language rows. Activate registers the activated entry's row, the first one with the key Ctrl+Shift+KeyR.
+  Each frame the panel takes the host's program jobs, runs them through the editor library and reports their ends.
+  While the code field has the focus, the router has the text focus, so the field keeps typing and a commit row's key
+  (DT-M1 C4). `build_product.py` builds `editor/c600_shell_editor.dll`.
+- LX-4's editor library (`renderer/bridge/lx4`) is re-pointed onto `c600-editor`: its syntax, completion and
+  diagnostics stages run `parse`, `complete` and `diagnose` (the W modules are the context's dependencies), and its
+  dependents stage keeps `c600_lx4::front_end`. The `lx4_*` interface (version 2), its texts and its endpoints are
+  unchanged.
+- Tests: `renderer/bridge/editor/tests/flow.rs` drives both libraries through their C interfaces over the bridge's
+  shim and the fake core. The macro is typed with an error and shows its diagnostic (`LG2:type.mismatch` on its line);
+  completion offers `word`; the fixed macro checks and is not active, so a palette run fails with
+  `EV1:input.module_not_checked`; a stale activation is refused and the explicit one succeeds; the row shows in the
+  palette with its key; it runs from the palette in process and by its key in the runtime's process (the word
+  `[1,-2,3]`); the draft is previewed by key, a commit before a frame showed the preview commits nothing, the commit
+  and the undo go by key, and the close's control counts the two changes and reopens the journal at the start.
+  `tests/test_renderer_shell.py` checks the panel's fixed points and both libraries' exports against the Rust source.
+- Not built:
+  - the program-prepared preview route (above) and ADR-D01.12's one-key preview-and-commit;
+  - a module with imports or capabilities: the check builds a single-file manifest with no dependency and no
+    capability, so a draft that imports or requires one is refused;
+  - more than one entry per check, and arguments (a registered row takes none; their conversion waits for LG5.2);
+  - persistence of the module set and of the registered rows, which live for one run of the shell; removing or
+    re-keying a row (LP4-8's checked keymap);
+  - the panel's look (ADR-D01's later rounds); hover, definition and rename in the panel; diagnostics drawn in the
+    code field; the preview's primitives on the view;
+  - the on-screen flow: the shell built offline with the panel (`build_shell.py`, no warnings), and it was never
+    launched.
+- Evidence kind: source. The flow test's frames are a fake core's and its keys synthetic; nothing here is Windows
+  input, display or timing evidence.

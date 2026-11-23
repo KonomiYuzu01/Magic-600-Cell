@@ -45,6 +45,17 @@
 //! - After a recovery, c600-display's `Host::recover` prepares the installed publication again for the new device
 //!   when it is the library's newest one (RM.23). Otherwise the newest one was never installed (published or adopted
 //!   while the device was lost), and the library publishes it again.
+//! - LP4-3's write-check-run flow (a draft; version 7): with a session open, [`m6h_register_row`] registers a checked
+//!   and activated user module's entry as a language overlay row with its key, [`m6h_palette`] reads the palette,
+//!   [`m6h_invoke`] invokes a row from it, [`m6h_take_job`] and [`m6h_finish_job`] take and report a language row's
+//!   program job (the editor library, `renderer/bridge/editor`, runs it), [`m6h_set_draft_word`] sets the editor's
+//!   draft that `operation.preview`'s key reads, and [`m6h_set_focus`] tells the router whether a text field has the
+//!   keyboard. The host builds the layer's word previews on its own calls ([`m6h_pump`], [`m6h_frame`], the key and
+//!   palette calls) and shows the fresh pending one in the view as the engine's preview display row (RM.9; it names
+//!   the preview and draws no primitive of it yet), so each frame names it, and [`m6h_read_presented`] reports every
+//!   confirmed frame to the layer through the shell (RM.26, ONE.41). The commit is the solver's key press
+//!   (`operation.execute`, whose token the shell mints); a program never commits, and the runtime gets no token.
+//!   [`m6h_answer`] gives the JSON answer of the last of these calls.
 //!
 //! Calls: a handle is used by one thread at a time, as the core's context is (a `sa2_create` context takes no lock,
 //! and the caller serialises). Every function checks its pointers, catches a panic and answers a status code. A panic
@@ -52,24 +63,27 @@
 //! input or performance evidence.
 
 use std::cell::RefCell;
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::ffi::c_void;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::ptr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use c600_command::{
+    word_draft, Error as LayerError, FrameChain, FrameStamp as LayerStamp, PresentedFrame as LayerFrame, ShownPreview,
+};
 use c600_display::array::Array;
 use c600_display::codes;
 use c600_display::host::{Backend, Host};
 use c600_display::jumble;
-use c600_display::pick::PresentedFrame;
+use c600_display::pick::{Presented, PresentedFrame};
 use c600_display::plan::*;
 use c600_display::produce::{self, full_set, GeometryInput};
 use c600_display::validate::{BoundArray, EngineBundle, LimitProfile};
 use c600_display::{Error, Status as CommandStatus};
-use c600_kernel::json::Value;
+use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::TARGET_SURFACE;
 use c600_render::{DisplayTime, RenderBackend};
@@ -82,13 +96,14 @@ pub mod turns;
 pub mod view;
 use c600_run::meter::Amounts;
 use c600_runtime::parent::{Config as RuntimeConfig, Runtime};
+use c600_tools::modules::ModuleRun;
 use preload::{ExactLoad, Preload};
-use turns::{Head, Press, Puzzle, Turns};
+use turns::{Head, Pending, Press, Puzzle, Turns};
 
 /// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
 /// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs; version 5
-/// the session's puzzle; version 6 the preload.
-pub const M6H_ABI_VERSION: u32 = 6;
+/// the session's puzzle; version 6 the preload; version 7 LP4-3's write-check-run flow.
+pub const M6H_ABI_VERSION: u32 = 7;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -125,6 +140,11 @@ pub const M6H_PRESS_OTHER: u32 = 3;
 pub const M6H_PUZZLE_JUMBLE_OFF: u32 = 0;
 /// [`m6h_open_session`]'s `puzzle`: the jumbled puzzle, the shell's `jumble-on` (index 1 of its `EventLog.Puzzles`).
 pub const M6H_PUZZLE_JUMBLE_ON: u32 = 1;
+
+/// [`m6h_set_focus`]'s `focus`: the puzzle views and the workspace, where no field takes keys.
+pub const M6H_FOCUS_PUZZLE: u32 = 0;
+/// [`m6h_set_focus`]'s `focus`: a text field, such as the editor's, which keeps the keys it takes.
+pub const M6H_FOCUS_TEXT: u32 = 1;
 
 /// [`M6hViewResult::status`]: the run has not ended yet.
 pub const M6H_VIEW_STATUS_PENDING: u32 = 0;
@@ -261,8 +281,20 @@ pub struct ShellHost {
     reference: Option<CommandId>,
     views: view::Views,
     presented: VecDeque<M6hPresented>,
+    /// The engine's pending preview the view shows ([`ShellHost::sync_preview`]).
+    shown: Option<Shown>,
+    /// The JSON answer of the last call of the write-check-run flow ([`m6h_answer`]).
+    answer: String,
     error: String,
     poisoned: bool,
+}
+
+/// The engine's pending preview as the view shows it: the layer's preview and the engine revision of the publication
+/// base it is shown over, which a frame's preview row names as its base.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Shown {
+    pending: Pending,
+    display: u64,
 }
 
 type Failure = (i32, String);
@@ -380,6 +412,8 @@ impl ShellHost {
             reference: None,
             views: view::Views::default(),
             presented: VecDeque::new(),
+            shown: None,
+            answer: String::new(),
             error: String::new(),
             poisoned: false,
         };
@@ -454,6 +488,123 @@ impl ShellHost {
         self.host.pump();
         self.settle_views();
     }
+
+    /// Builds the word previews the session's layer queued, and shows its fresh pending preview in the view as the
+    /// engine's preview display row (RM.9), over the adopted publication's base, or shows none once it ended. The row
+    /// names the preview by its ID, literal digest and certified effect, taken from the engine's preview object and
+    /// never from a program, and holds no primitive yet, so the frames name the preview while the view draws the
+    /// adopted state.
+    fn sync_preview(&mut self) -> Result<(), Failure> {
+        let want = match self.turns.as_mut() {
+            Some(turns) => {
+                turns.run_jobs();
+                turns.pending()
+            }
+            None => None,
+        };
+        if want.as_ref() == self.shown.as_ref().map(|shown| &shown.pending) {
+            return Ok(());
+        }
+        let base = self.publication.base.clone();
+        let display = want.as_ref().map(|pending| PreviewDisplay {
+            preview: PreviewId(pending.id),
+            base: base.clone(),
+            literal: pending.literal.clone(),
+            effect: pending.effect.clone(),
+            primitives: Vec::new(),
+        });
+        self.host.show_preview(VIEW, display).map_err(host_error)?;
+        self.shown = want.map(|pending| Shown { pending, display: base.state });
+        Ok(())
+    }
+
+    /// The command layer's report of a confirmed frame (RM.26): its stamp, and the preview its row names, with the
+    /// layer's state revision for the base when it is the preview the view shows over the base the row names.
+    fn layer_frame(&self, frame: &PresentedFrame) -> LayerFrame {
+        let preview = match &frame.presented {
+            Presented::NoPreview => None,
+            Presented::Previews(previews) => previews.first().map(|shown| {
+                let base = match &self.shown {
+                    Some(view) if view.pending.id == shown.preview.0 && view.display == shown.base => {
+                        view.pending.state
+                    }
+                    _ => shown.base,
+                };
+                ShownPreview { id: shown.preview.0, literal: shown.literal.clone(), base }
+            }),
+        };
+        let s = &frame.stamp;
+        let stamp = LayerStamp {
+            device_epoch: s.device_epoch,
+            surface: s.surface,
+            surface_generation: s.surface_generation,
+            sequence: s.sequence,
+        };
+        LayerFrame { preview, stamp, chain: FrameChain::BuiltIn }
+    }
+}
+
+/// A code another library reported, such as the editor library's refusal of a job's binding or its run's stop, as the
+/// command layer's `&'static str`: each distinct code is kept once for the process's life. A code is `PREFIX:` and a
+/// dotted lower-case name (`EV1:input.module_not_checked`); anything else, and more than [`CODES`] distinct codes,
+/// answers [`M6H_E_INVALID_ARGUMENT`].
+fn intern(code: &str) -> Result<&'static str, Failure> {
+    static KEPT: Mutex<BTreeSet<&'static str>> = Mutex::new(BTreeSet::new());
+    let invalid = || (M6H_E_INVALID_ARGUMENT, format!("`{code}` is not a code"));
+    let (prefix, name) = code.split_once(':').ok_or_else(invalid)?;
+    let named = |c: char| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '.';
+    if prefix.is_empty()
+        || !prefix.chars().all(|c| c.is_ascii_alphanumeric())
+        || !name.contains('.')
+        || name.starts_with('.')
+        || name.ends_with('.')
+        || !name.chars().all(named)
+        || code.len() > 128
+    {
+        return Err(invalid());
+    }
+    let mut kept = KEPT.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    if let Some(found) = kept.get(code) {
+        return Ok(found);
+    }
+    if kept.len() >= CODES {
+        return Err((M6H_E_INVALID_ARGUMENT, format!("more than {CODES} distinct codes were reported")));
+    }
+    let leaked: &'static str = Box::leak(code.to_owned().into_boxed_str());
+    kept.insert(leaked);
+    Ok(leaked)
+}
+
+/// The most distinct codes [`intern`] keeps.
+pub const CODES: usize = 1024;
+
+/// Bytes as lowercase hex.
+fn hex_bytes(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// The run a program job names, as JSON for the editor library: the job, its row, the overlay's module and entry, and
+/// the run of `c600_tools::modules::ModuleRun::of_job` (its name `job-<id>`, the revision it reads, its argument
+/// blocks in hex and its limits, the job's budget, as decimal text).
+fn job_json(job: &c600_command::ProgramJob) -> Value {
+    let run = ModuleRun::of_job(job, Vec::new());
+    let amount = |n: u128| Value::String(n.to_string());
+    let limits = json::object([
+        ("steps", amount(run.limits.steps)),
+        ("kernel_cost", amount(run.limits.kernel_cost)),
+        ("memory", amount(run.limits.memory)),
+        ("output", amount(run.limits.output)),
+    ]);
+    json::object([
+        ("job", Value::Int(job.job as i64)),
+        ("row", Value::String(job.row.clone())),
+        ("module", Value::String(job.overlay.module.clone())),
+        ("entry", Value::String(job.overlay.entry.clone())),
+        ("run", Value::String(run.run)),
+        ("base", Value::String(run.base)),
+        ("inputs", Value::Array(run.inputs.iter().map(|block| Value::String(hex_bytes(block))).collect())),
+        ("limits", limits),
+    ])
 }
 
 /// Runs `body` on a live handle and turns its outcome into a status code.
@@ -688,7 +839,8 @@ pub unsafe extern "C" fn m6h_set_viewport(handle: *mut ShellHost, width: u32, he
 }
 
 /// Polls the host: delivers the view jobs that ended ([`m6h_run_view`]), notices a lost device, and installs ready
-/// preparations.
+/// preparations. With a session open it also builds the word previews the layer queued and shows the fresh pending
+/// one in the view (LP4-3).
 ///
 /// # Safety
 ///
@@ -699,14 +851,14 @@ pub unsafe extern "C" fn m6h_pump(handle: *mut ShellHost) -> i32 {
     unsafe {
         with_host(handle, |shell| {
             shell.poll();
-            Ok(())
+            shell.sync_preview()
         })
     }
 }
 
 /// Polls the host as [`m6h_pump`] does, then submits a frame of the view to the surface and writes its sequence,
 /// device epoch, surface and revisions to `*out`. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are
-/// read and dropped here.
+/// read and dropped here. The frame names the preview the view shows, if any.
 ///
 /// # Safety
 ///
@@ -717,6 +869,7 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
     unsafe {
         with_host(handle, |shell| {
             shell.poll();
+            shell.sync_preview()?;
             let stamp = shell.host.frame(VIEW).map_err(host_error)?;
             let _ = shell.host.backend.read_frame_reports();
             let drawn = match shell.host.installed(VIEW) {
@@ -775,6 +928,14 @@ pub unsafe extern "C" fn m6h_read_presented(
             shell.presented.extend(rows_read?);
             for frame in &frames {
                 shell.views.confirmed(frame.stamp.sequence);
+            }
+            // LP4-3: every confirmed frame goes to the session's layer through the shell, in order (RM.26, ONE.41); a
+            // frame that does not present the pending preview ends its presentation, which is no failure here.
+            let reports: Vec<LayerFrame> = frames.iter().map(|frame| shell.layer_frame(frame)).collect();
+            if let Some(turns) = shell.turns.as_mut() {
+                for report in &reports {
+                    let _ = turns.present(report);
+                }
             }
             let n = shell.presented.len().min(capacity as usize);
             for (i, row) in shell.presented.drain(..n).enumerate() {
@@ -1077,6 +1238,7 @@ pub unsafe extern "C" fn m6h_key_down(
                     }
                 }
             };
+            shell.sync_preview()?;
             if !out.is_null() {
                 out.write(M6hKey { press: code, reserved: 0, engine_revision: shell.revision });
             }
@@ -1110,6 +1272,258 @@ pub unsafe extern "C" fn m6h_key_up(handle: *mut ShellHost, chord: *const u8, ch
 pub unsafe extern "C" fn m6h_focus_lost(handle: *mut ShellHost) -> i32 {
     // SAFETY: the contract.
     unsafe { with_host(handle, |shell| shell.turns()?.focus_lost().map_err(|e| (M6H_E_SESSION, e))) }
+}
+
+/// Tells the session's input router what has the keyboard focus inside the window (LP4-3): [`M6H_FOCUS_TEXT`] while a
+/// text field, such as the editor's, has it, so that the field keeps the keys it takes (its typing, its editing and
+/// office chords and a key bound to a commit row, DT-M1 C4) and the global map gets the rest; [`M6H_FOCUS_PUZZLE`]
+/// otherwise. Held keys are released. Another value answers [`M6H_E_INVALID_ARGUMENT`], and no open session
+/// [`M6H_E_SESSION`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_focus(handle: *mut ShellHost, focus: u32) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let text = match focus {
+                M6H_FOCUS_PUZZLE => false,
+                M6H_FOCUS_TEXT => true,
+                other => return Err((M6H_E_INVALID_ARGUMENT, format!("{other} is not a focus of this interface"))),
+            };
+            shell.turns()?.set_focus(text);
+            Ok(())
+        })
+    }
+}
+
+/// Registers the entry `entry` of the user module `module` as a language overlay row of the session's layer (LP4-3;
+/// KN5.3, EV4.1): row `tool.<module>.<entry>`, a `query` row with no argument and no grant, labelled `label`. With a
+/// non-empty `chord` (c600-input's form, `Ctrl+Shift+KeyR`) the router binds the row's key in the global map and the
+/// palette shows it; an empty or null `chord` binds none. Every text is UTF-8 with its length. The caller registers an
+/// entry once its module has a checked and active version; the program job of each invocation binds the version active
+/// when the host takes it. A refused registration (a second one of the row, a key bound already or one the map
+/// refuses) changes nothing and answers [`M6H_E_HOST`]; no open session answers [`M6H_E_SESSION`]. [`m6h_answer`]
+/// gives `{"row"}`.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `module`, `entry` and `label` point to their readable
+/// bytes; `chord` is null with length 0 or points to its readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_register_row(
+    handle: *mut ShellHost,
+    module: *const u8,
+    module_len: usize,
+    entry: *const u8,
+    entry_len: usize,
+    label: *const u8,
+    label_len: usize,
+    chord: *const u8,
+    chord_len: usize,
+) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let module = utf8(module, module_len, "module name")?;
+            let entry = utf8(entry, entry_len, "entry name")?;
+            let label = utf8(label, label_len, "label")?;
+            let chord = match (chord.is_null(), chord_len) {
+                (true, 0) => None,
+                _ => Some(utf8(chord, chord_len, "chord")?).filter(|chord| !chord.is_empty()),
+            };
+            let row = shell.turns()?.register_row(module, entry, label, chord).map_err(|e| (M6H_E_HOST, e))?;
+            shell.answer = json::object([("row", Value::String(row))]).canonical();
+            Ok(())
+        })
+    }
+}
+
+/// Reads the session's palette (LP4-3; EV4.2, KN5.6): [`m6h_answer`] gives `{"revision", "generation", "entries"}`,
+/// each entry `{"row", "label", "kind", "language_defined", "keys", "unavailable"}` in the table's order, an
+/// unavailable one in its place with its typed reason. The read starts no program and changes nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_palette(handle: *mut ShellHost) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let palette = shell.turns()?.palette().map_err(|e| (M6H_E_SESSION, e))?;
+            shell.answer = palette.canonical();
+            Ok(())
+        })
+    }
+}
+
+/// Invokes the row `row` (UTF-8, `row_len` bytes) from the palette with the absolute arguments `args` (a JSON object,
+/// UTF-8, `args_len` bytes; empty for none) through the shell, the key route's own path (LP4-3; EV4.2). The host then
+/// builds what the layer queued and shows a fresh pending preview. `*out_job` gets the program job of a `running`
+/// receipt, which [`m6h_take_job`] takes, or 0. [`m6h_answer`] gives the receipt (KN5.21's JSON). A row the shell
+/// cannot send answers [`M6H_E_HOST`]; a refusal by the layer is a receipt.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `row` and `args` point to their readable bytes (`args`
+/// may be null with `args_len` 0); `out_job` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_invoke(
+    handle: *mut ShellHost,
+    row: *const u8,
+    row_len: usize,
+    args: *const u8,
+    args_len: usize,
+    out_job: *mut u64,
+) -> i32 {
+    if out_job.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            out_job.write(0);
+            let row = utf8(row, row_len, "row")?;
+            let args = match (args.is_null(), args_len) {
+                (true, 0) => json::object([]),
+                _ => json::parse(utf8(args, args_len, "arguments")?.as_bytes())
+                    .ok()
+                    .filter(|value| value.as_object().is_some())
+                    .ok_or_else(|| (M6H_E_INVALID_ARGUMENT, "the arguments are no JSON object".to_owned()))?,
+            };
+            let receipt = shell.turns()?.invoke(row, args).map_err(|e| (M6H_E_HOST, e))?;
+            if let c600_command::Status::Running(job) = receipt.status {
+                out_job.write(job);
+            }
+            shell.answer = receipt.to_json().canonical();
+            shell.sync_preview()
+        })
+    }
+}
+
+/// Takes the next program job of the session's layer (LP4-3): a language row's, which the host holds from here until
+/// [`m6h_finish_job`] reports it, and while it holds it the run is inside the command that invoked the job (ONE.34).
+/// `*out_job` gets its ID, or 0 when there is none. [`m6h_answer`] gives the run it names, for the editor library:
+/// `{"job", "row", "module", "entry", "run", "base", "inputs", "limits"}` (`c600_tools::modules::ModuleRun::of_job`:
+/// the run `job-<id>` at the job's revision under its budget, the amounts as decimal text, the argument blocks in hex).
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `out_job` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_take_job(handle: *mut ShellHost, out_job: *mut u64) -> i32 {
+    if out_job.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            out_job.write(0);
+            let job = shell.turns()?.take_job();
+            shell.answer = match &job {
+                Some(job) => {
+                    out_job.write(job.job);
+                    job_json(job).canonical()
+                }
+                None => "null".to_owned(),
+            };
+            Ok(())
+        })
+    }
+}
+
+/// Reports the program job `job` that [`m6h_take_job`] took (LP4-3): with an empty `code` its entry's returned value,
+/// `value` (UTF-8, `value_len` bytes; the run's canonical output), as a JSON string; otherwise the error that ended
+/// its run, `code` (a code such as `EV1:input.module_not_checked`) with `detail` (UTF-8). [`m6h_answer`] gives the
+/// receipt of the solver's command that invoked the job, or `null` when the layer no longer held the job (a commit or
+/// a newer job ended it). A malformed code answers [`M6H_E_INVALID_ARGUMENT`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `value`, `code` and `detail` are null with length 0 or
+/// point to their readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_finish_job(
+    handle: *mut ShellHost,
+    job: u64,
+    value: *const u8,
+    value_len: usize,
+    code: *const u8,
+    code_len: usize,
+    detail: *const u8,
+    detail_len: usize,
+) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let text = |text: *const u8, len: usize, what: &str| match (text.is_null(), len) {
+                (true, 0) => Ok(""),
+                _ => utf8(text, len, what),
+            };
+            let code = text(code, code_len, "code")?;
+            let result = if code.is_empty() {
+                Ok(Value::String(text(value, value_len, "value")?.to_owned()))
+            } else {
+                Err(LayerError::new(intern(code)?, text(detail, detail_len, "detail")?))
+            };
+            let receipt = shell.turns()?.finish_job(job, result);
+            shell.answer = receipt.map_or_else(|| "null".to_owned(), |receipt| receipt.to_json().canonical());
+            shell.sync_preview()
+        })
+    }
+}
+
+/// Sets the editor's draft (LP4-3): the word of `count` letters at `letters` as a word reference
+/// (`{"recipe": [{"kind": "word", "moves": [...]}]}`), which `operation.preview`'s key (Ctrl+Enter) previews; `count`
+/// 0 clears it. The draft is the solver's to preview: setting it previews nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `letters` points to `count` readable letters (or is null
+/// with `count` 0).
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_draft_word(handle: *mut ShellHost, letters: *const i32, count: usize) -> i32 {
+    if letters.is_null() && count > 0 {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let draft = (count > 0).then(|| {
+                // SAFETY: `count` readable letters (the contract); no alignment is assumed.
+                let word: Vec<Value> =
+                    (0..count).map(|i| Value::Int(i64::from(letters.add(i).read_unaligned()))).collect();
+                let step = json::object([("kind", Value::String("word".to_owned())), ("moves", Value::Array(word))]);
+                word_draft(&Value::Array(vec![step]))
+            });
+            shell.turns()?.set_draft(draft);
+            Ok(())
+        })
+    }
+}
+
+/// The JSON answer of the last call of the write-check-run flow ([`m6h_register_row`], [`m6h_palette`],
+/// [`m6h_invoke`], [`m6h_take_job`], [`m6h_finish_job`]), NUL-terminated and sized as [`m6h_last_error`] sizes its
+/// text.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `buffer` points to `capacity` writable bytes (or is
+/// null); `out_size` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_answer(handle: *mut ShellHost, buffer: *mut u8, capacity: u32, out_size: *mut u32) -> i32 {
+    if out_size.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: the contract.
+    match unsafe { handle.as_ref() } {
+        // SAFETY: the contract.
+        Some(shell) => unsafe { copy_text(&shell.answer, buffer, capacity, out_size) },
+        None => M6H_E_INVALID_ARGUMENT,
+    }
 }
 
 /// Closes the session and runs its correctness control once ([`turns::Turns::check`]). `shown_revision` is the engine

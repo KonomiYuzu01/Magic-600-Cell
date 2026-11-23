@@ -30,7 +30,9 @@ namespace Magic600.Shell;
 /// fresh copy of its session, which the host reopens at the revision that counts the fixture's presses; when
 /// M600_RUNTIME names the c600-runtime binary, the host starts the language runtime's process; with the event log,
 /// <see cref="StartupLog"/> records both and the first correct frame, and when M600_EXIT_AT_FIRST_FRAME is 1 the shell
-/// quits once that frame is shown.
+/// quits once that frame is shown. LP4-3 (a draft): when M600_EDITOR is 1 the shell creates the editor panel
+/// (<see cref="Editor.EditorPanel"/>), the write-check-run flow of a .6cs macro over the editor library
+/// (M600_EDITOR_DLL); while its code field has the focus, the keys go on to it as well as to the session's router.
 /// </remarks>
 public partial class Shell : Control
 {
@@ -59,6 +61,8 @@ public partial class Shell : Control
     private long _preDrawQpc;
     private bool _uiFrames;
     private readonly List<IShellModule> _modules = new();
+    /// <summary>LP4-3's editor panel, one of <see cref="_modules"/> when M600_EDITOR is 1.</summary>
+    private Editor.EditorPanel? _editor;
     private StartupLog? _startup;
     /// <summary>The engine revision the session opened at (charter E3's R0).</summary>
     private ulong _openRevision;
@@ -205,6 +209,11 @@ public partial class Shell : Control
         {
             _modules.Add(new Lx2.Lx2Module(new ShellContext(window, this, _log, hostLibrary, _host)));
         }
+        if (System.Environment.GetEnvironmentVariable("M600_EDITOR") == "1")
+        {
+            _editor = new Editor.EditorPanel(new ShellContext(window, this, _log, hostLibrary, _host));
+            _modules.Add(_editor);
+        }
         if (_modules.Count > 0)
         {
             WindowHook.Install(window, _modules);
@@ -292,7 +301,8 @@ public partial class Shell : Control
             else if (!chrome.Takes(turn))
             {
                 Turn(turn, qpc);
-                if (_session && KeyChord.Code(turn.PhysicalKeycode) is not null)
+                // The editor's code field keeps the keys its text focus takes (the router routes by that focus).
+                if (_session && KeyChord.Code(turn.PhysicalKeycode) is not null && _editor?.TextFocused != true)
                 {
                     GetViewport().SetInputAsHandled();
                 }
@@ -522,6 +532,7 @@ public partial class Shell : Control
         WindowHook.Remove();
         EachModule(module => module.Dispose());
         _modules.Clear();
+        _editor = null;
         _startup?.Dispose();
         _startup = null;
         _log?.Dispose();
