@@ -11,7 +11,13 @@
 //!   the checked bytes are the executed bytes, over the transitive dependency closure (LG5.6).
 //! - [`load`] refuses a closure whose digest differs from the approval's, so substituted dependency bytes never run
 //!   (LG5.1, LG5.3, CT-RTE-08). [`Ready::run`] runs the approved entry through `c600-run`'s boundary
-//!   ([`c600_run::boundary::Boundary`]) and keeps capability separation at the preview point (LG3.13, BND.39).
+//!   ([`c600_run::boundary::Boundary`]) and keeps capability separation at the preview point (LG3.13, BND.39);
+//!   [`Ready::run_with`] puts the same boundary and gate around another executor of the closure, such as the runtime's
+//!   own process.
+//! - [`Modules`] is a host's set of user modules with version separation and activation (EV1.7, EV1.8, EV1.11; LP4-2):
+//!   [`Modules::check`] creates a candidate without changing the active version, [`Modules::activate_module`] is the
+//!   only switch, and [`Modules::bind`] binds each invocation wholly to the active version. Its drafts are in the
+//!   documentation of [`Modules`]' module.
 //!
 //! Every refusal carries a stable code of chapter 13 ([`code`]). The crate reads and writes local bytes only: it opens
 //! no file, network or process itself (LG5.9).
@@ -113,16 +119,18 @@
 
 #![forbid(unsafe_code)]
 
+pub mod activate;
 mod approval;
 mod closure;
 mod form;
 mod run;
 
+pub use activate::{Activation, Binding, BoundRun, Candidate, CheckReference, Modules, CHECK_REFERENCE_FORMAT};
 pub use approval::{admit_program, approve, Admitted, Approval, Entry};
 pub use c600_run::interp::Refusal;
 pub use closure::{resolve, verify, Closure, Files};
 pub use form::{Dependency, Identity, Location, Lock, LockedModule, Manifest};
-pub use run::{load, Outcome, Ready, RunRequest};
+pub use run::{load, Halted, Outcome, Ready, RunContext, RunRequest};
 
 /// The manifest form FP.4 reserves (draft).
 pub const MANIFEST_FORMAT: &str = "c600-module-draft";
@@ -160,6 +168,10 @@ pub mod code {
     pub const NONCANONICAL_VALUE: &str = c600_run::interp::code::NONCANONICAL_VALUE;
     /// A capability the profile, class or policy does not grant (LG3, BND.84).
     pub const NOT_GRANTED: &str = c600_check::NOT_GRANTED;
+    /// Activation, or an invocation, lacks a successful check of exactly the module version it names (EV1.11, EV1.7).
+    pub const MODULE_NOT_CHECKED: &str = "EV1:input.module_not_checked";
+    /// The active module digest is not the one the request expected (EV1.11).
+    pub const STALE_ACTIVATION_BASE: &str = "EV1:stale.activation_base";
 }
 
 fn refuse(code: &'static str, detail: impl Into<String>) -> Refusal {

@@ -22,7 +22,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
 | `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, RM.37's jumbling crosswalk as fixtures (LP3, C2), and the jumbling producers from M5's kernel (LP3, C8) |
-| `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
+| `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4); a host's module set with version separation and activation (LP4-2) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, CT-LB2-03's work-sheet part, and the durable leg of LP2's saved sets (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, each run under its job's budget, with KN2.4's `positions`, `labels`, `effect`, `protection` and `replay` rows, the draft `setups` and `orbits` rows and the representations tool's draft `structure.compare`, `filter.preview` and `structure.layer` rows (C6) as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views, the host's view rows on the view model and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
@@ -48,13 +48,14 @@ The command layer depends on the kernel and digest crates only, so it has no pat
 view model depends on the digest crate only, and the display contract on the digest, kernel and jumbling crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
 layer.
-The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
-path to the command layer.
-The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates, on the command layer, and on
-the runtime, display and view crates: its host bridge connects the interpreter, in process or in the runtime's own
-process (C3), to the command layer as the runtime's host, and its views build on the display contract and the view
-model. The library crate is its dev-dependency, so that its tests run the library's exact-completion entry through the
-host bridge.
+The runtime depends on the syntax, checker, interpreter, IR, digest and module crates and the big-integer crates, and
+has no path to the command layer; the module crate gives it the binding a bound job is built from (LP4-2).
+The tools crate depends on the syntax, checker, interpreter, IR, digest, kernel and module crates, on the command
+layer, and on the runtime, display and view crates: its host bridge connects the interpreter, in process or in the
+runtime's own process (C3), to the command layer as the runtime's host, its views build on the display contract and the
+view model, and its user-module runs bind through the module crate's set (LP4-2). The library crate is its
+dev-dependency, so that its tests run the library's exact-completion entry through the host bridge, and so is the input
+router, so that its tests invoke a user module's row from a key.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
 The jumbling crate depends on the kernel and digest crates and the big-integer crates.
@@ -3575,3 +3576,68 @@ run or not applicable is no pass (PHS.63).
   at the meter's budget code or at the host's 60 s view deadline, `KN7:resource_limit.safety_stop`, whichever comes
   first. `c600-lx2/examples/view_limits_probe.rs` measures how far a metered fault runs under the product's view
   limits. Evidence kind: source and synthetic; nothing is timing.
+
+## Status of LP4, LP4-2: version separation and module activation
+
+LP4-2 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV1.7, EV1.8 and EV1.11; chapter 02
+LG5.6).
+
+- `c600-module`'s `Modules` is a host's set of user modules for one session identity. `check(manifest, lock, files,
+  entries)` verifies a draft's closure, approves its entries and creates the module's candidate, returning its digest
+  (the closure digest) and its `CheckReference`; it never changes the active version, and a refused check, such as a
+  broken draft, stores nothing. `activate_module(module, expected_active_digest, candidate_digest, check_reference)`
+  is the only switch: under one lock it checks that the reference is that of the candidate's successful check
+  (`EV1:input.module_not_checked` otherwise), that every checked entry's grant lies within the host's grant
+  (`LG3:capability.not_granted`), and that the active digest is the expected one, none for an initial install
+  (`EV1:stale.activation_base`), and only then installs the whole candidate closure; success returns the previous and
+  new digests. `bind(module, function)` binds an invocation wholly to the active version under the same lock;
+  `bind_pinned(module, function, digest)` is the route that names a digest. A `Binding` holds its version's bytes,
+  approvals and loaded program for as long as it lives, runs in process (`Binding::run`, with the version's own source
+  map, so a stop's range names the bytes that ran) or through another executor of the closure (`Binding::run_with`,
+  over `Ready::run_with`, which keeps the boundary and the separation gate in the caller's process), and its result
+  names the version (`BoundRun`).
+- `c600-runtime`'s `BoundJob` builds a job wholly from one binding: the version's bytes in the lock's order, the
+  approved entry and the approval's profile, grant and declassifiers; `Runtime::run_bound` runs it. The wire is
+  unchanged: the child gets the bytes with the run, so a run suspended at a host call resumes on them after another
+  version activates.
+- `c600-tools`' `modules` is the host's side: `bind_job` binds a user module's overlay-row program job when the host
+  takes it, whichever way the solver invoked the row; `bind_view_source` admits a view source only when its module
+  digest names the row's module's active version; `run_bound_in_process` and `ProcessHost::run_bound` run a binding on
+  either host.
+- Activation is a module service: H-08's stored table has no row for it, and none is added. Activation is explicit
+  (owner, 23 November 2026, EV1.13 for the stage 2 greybox): a check never activates, and only a call of
+  `activate_module` switches.
+- Tests: CT-EV1-04 is whole by union of `c600-module/tests/ct_ev1_04.rs` (three broken drafts, each refused with its
+  own code while A keeps running and its results and ranges name A; and the set's routes: invocation by name, a route
+  naming B's closure or source digest, activation, B's bytes under A's approval) and `c600-tools/tests/ev1_host.rs`
+  (the program job from the palette and from a key on both hosts, and a view source, while a draft is broken, B
+  unchecked, and B checked and not active), for the routes that exist. CT-EV1-08 is whole by union of
+  `c600-module/tests/ct_ev1_08.rs` (the service, the check reference, every refusal leaving A active, the frozen
+  vector `old-run-survives-activation` on a run suspended at a host call, a binding outliving the set, and eight
+  threads racing one activation), `c600-runtime/tests/ct_ev1_08_process.rs` (the same run suspended in the child, and
+  bound jobs racing activation) and `c600-tools/tests/ev1_host.rs` (a program job suspended on either host).
+- Drafts, which freeze with the module formats and the editor protocol (LG5.10, LQ10): the check record
+  `c600-check-reference-draft` version 1, whose SHA-256 is the check reference (no FP.4 row, never stored); the
+  candidate's digest is the closure digest; one candidate per module, which a new successful check replaces; a check
+  names one or more entries of the root module; the host's grant in the set, checked at activation and at each bind;
+  a module with no active version, or an entry its check did not cover, is `EV1:input.module_not_checked`; on a route
+  that names a digest, a digest no check produced is `EV1:input.module_not_checked` and a checked digest that is not
+  active is `EV1:stale.activation_base`, whose continuation is `after_refresh`. Chapter 13 names `activate_module` as
+  both codes' origin, so this reading on a route is the integrator's to confirm. The list is in the documentation of
+  `c600_module::activate`, `c600_runtime::bound` and `c600_tools::modules`.
+- Crate edges: `c600-runtime` and `c600-tools` depend on `c600-module`, and `c600-tools` has `c600-input` as a
+  dev-dependency. `renderer/bridge/Cargo.lock` lists `c600-module` because `c600-runtime` depends on it.
+- Not built:
+  - the debugger's and a recording's routes (LP4-5, LP4-9), which must bind through `Modules::bind` or
+    `Modules::bind_pinned` and extend CT-EV1-04 when they arrive;
+  - a built-in entry's binding on the runtime's process: an approval carries no class rows, so `BoundJob::new` refuses
+    it at the admission stage and it runs in process only;
+  - the conversion of a program job's JSON arguments to an entry's declared parameters, which waits for the module
+    formats' declared parameters (LG5.2); `ModuleRun::of_job` takes the values converted;
+  - persistence of the set: candidates and active versions live in memory for one session, and a reopen has nothing
+    active until the host checks and activates again;
+  - stopping a running binding when the host revokes a grant (KN7's, the run's host's), and the revision-driven runs of
+    an overlay view, which the view model does not run yet;
+  - the shell's write-check-run flow and its explicit activation control (LP4-3).
+- Evidence kind: source. The process-host tests start the runtime's child on the test machine; nothing is timing,
+  input or Windows interaction evidence.

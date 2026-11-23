@@ -150,7 +150,7 @@ pub fn runtime_beside(executable: &Path) -> PathBuf {
 /// The runtime's own process as the host of a tool's runs. One child serves every run until a fault ends it; the
 /// next run then starts a fresh one.
 pub struct ProcessHost {
-    runtime: Runtime,
+    pub(crate) runtime: Runtime,
     /// The wall-clock safety stop of one run (KN7.10); it is outside the deterministic key (DET.17). None by default.
     pub deadline: Option<Duration>,
 }
