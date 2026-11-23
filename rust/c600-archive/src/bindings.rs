@@ -13,7 +13,13 @@
 //!   its scope covers one instance with the record's bytes as input, and its scope phrase is EVD.36's;
 //! - its stored inputs by digest (the matrix's `required_files`, and for stage 18's two chains the stored stop table,
 //!   step members and end table), and the inputs a check rebuilds instead of reading ([`Derived`]: stage 18's
-//!   intermediate start tables, rebuilt by exact replay under the checking sub-checker's identity, owner's LP5-3);
+//!   intermediate start tables, rebuilt by exact replay under the checking sub-checker's identity, owner's LP5-3).
+//!   Beside the stage 18 exception, a row also binds the stored inputs its named claim checker reads (not
+//!   [`CheckedAs::ScopeOnly`]) that `required_files` leaves out, each a file of the frozen matrix with the matrix's own
+//!   digest (stage 19: `s19.frontier` and `s19.ranks` read their block, origin, start and source records). That rule
+//!   is LP5's draft for edition 1 (LP5-4): it settles nothing in LB5.14 to LB5.17, and `matrix_reasons` stay word for
+//!   word. Every stored file a row names is a matrix file with the matrix's digest, except stage 18's stored stop
+//!   table;
 //! - the KN6 research-archive sub-checkers that read it, by ID (such as `s14.t3p` or `s19.frontier`), with how its
 //!   record enters them ([`CheckedAs`]), or none. A sub-checker named [`CheckedAs::ScopeOnly`] reads the record but
 //!   checks no claim of the group (it answers KN6's `not_applicable` with the record's own bounds), so it is no
@@ -59,7 +65,7 @@ use crate::ArchiveError;
 pub const EDITION_1: &[u8] = include_bytes!("../data/claim-bindings-1.json");
 
 /// The SHA-256 of [`EDITION_1`]: a change to the data is a new edition, and this pin moves with it.
-pub const EDITION_1_SHA256: &str = "313059bdf413b796c94c943b357585f4ad97fc91e978599a88cd33d40da926a0";
+pub const EDITION_1_SHA256: &str = "8e37f4d8335f4e10a8523c1166161a25f50e3cb8bd13c1613b85b02772a55737";
 
 /// The frozen claim matrix's format, which edition 1 was written from.
 pub const MATRIX_FORMAT: &str = "fr-b08-claim-matrix-draft/1";
@@ -623,8 +629,10 @@ impl Bindings {
 
     /// Compares the edition with the matrix's bytes as granted: the pinned digest and format; one row per group, in
     /// order, with the matrix's family, record and digest, anchors, data status, preflight reasons, missing inputs and
-    /// unfinished gates; every required file bound with its pinned digest; each statement ID recomputed; and every
-    /// resolution one the edition may make. Returns the problems found, empty when the edition is the matrix's.
+    /// unfinished gates; every required file bound with its pinned digest; every stored file a row names (its record,
+    /// inputs and `via`) a matrix file with the matrix's digest, except stage 18's stored stop table bound as a chain's
+    /// start; each statement ID recomputed; and every resolution one the edition may make. Returns the problems found,
+    /// empty when the edition is the matrix's.
     pub fn compare_with_matrix(&self, matrix: &[u8]) -> Result<Vec<String>, ArchiveError> {
         let m = parse(matrix).map_err(|_| bad("the matrix is not strict JSON"))?;
         let mut problems = Vec::new();
@@ -640,6 +648,7 @@ impl Bindings {
             .iter()
             .map(|f| Ok((text(f, "path")?, text(f, "sha256")?)))
             .collect::<Result<_, ArchiveError>>()?;
+        let pins: BTreeMap<&str, &str> = files.iter().map(|(path, sha)| (path.as_str(), sha.as_str())).collect();
         let file = |v: &Value| -> Result<&(String, String), ArchiveError> {
             v.as_i64().and_then(|i| files.get(i as usize)).ok_or(bad("a matrix file index is out of range"))
         };
@@ -706,6 +715,16 @@ impl Bindings {
                     problems.push(format!("{at}: the required file {path} is not bound with its pin"));
                 }
             }
+            for (i, role) in self.stored(row) {
+                let pin = self.file(i);
+                let in_matrix = pins.get(pin.path.as_str()) == Some(&pin.sha256.as_str());
+                if !in_matrix && !stage_18_stop_table(row, role, &pin.path) {
+                    problems.push(format!(
+                        "{at}: the stored input {} is not a matrix file with the matrix's digest",
+                        pin.path
+                    ));
+                }
+            }
             if c600_digest::sha256_hex(self.statement_content(row).as_bytes()) != row.statement.id
                 || row.statement.input != source.sha256
             {
@@ -764,6 +783,15 @@ fn may_resolve(row: &Binding, reason: Reason, basis: &str) -> bool {
         }
         _ => false,
     }
+}
+
+/// Whether a stored file outside the matrix is the one the edition may bind: stage 18's stored stop table (a stage 13
+/// table), bound as the start of a chain's expansion, composed or tail-replay group (owner's LP5-3).
+fn stage_18_stop_table(row: &Binding, role: &str, path: &str) -> bool {
+    matches!(row.family.as_str(), "18/expansion" | "18/composed" | "18/tail_replay")
+        && role == "start_table"
+        && path.starts_with("research/jumbling/restoration/13-tutorial-runner/")
+        && path.contains("/tables/")
 }
 
 /// A row's own consistency: its statement ID, form and stage, and what it resolves.
@@ -1077,6 +1105,71 @@ mod tests {
             assert!(problems.iter().any(|p| p.contains("not the ones the edition pins")), "{problems:?}");
             assert!(problems.iter().any(|p| p.contains(problem)), "{problem}: {problems:?}");
         }
+    }
+
+    /// LP5's draft rule for checker-read inputs: the three stage 19 groups whose claim checkers read files beyond the
+    /// matrix's `required_files` bind them, and every stored file a row names is a matrix file with the matrix's digest
+    /// except stage 18's stored stop table. A matrix whose pin for such an input differs, or that lacks it, and an
+    /// edition that binds the stop table outside stage 18's chains, are refused by the comparison.
+    #[test]
+    fn checker_read_inputs_are_matrix_files_with_the_matrixs_digest() {
+        let b = Bindings::edition_1();
+        let bytes = std::fs::read(repository().join(&b.matrix.path)).expect("the frozen claim matrix");
+        let canonical = parse(&bytes).expect("strict JSON").canonical();
+        let records = "research/jumbling/restoration/19-height-depth-framework/records/";
+        let trimmed = "type-lex-trimmed-independent-results.json";
+        let weights = row(&b, "19/ranks", "type-height-weight-results.json");
+        let ranks = row(&b, "19/ranks", trimmed);
+        let frontier = b
+            .rows()
+            .iter()
+            .find(|r| r.family == "19/frontier" && !r.checkers.is_empty() && b.file(r.source).path.ends_with(trimmed))
+            .expect("the frontier group of the trimmed record");
+        let named =
+            |r: &Binding, name: &str| r.inputs.iter().any(|i| b.file(i.file).path == format!("{records}{name}"));
+        let results = "profile-family-validation-results.json.gz";
+        let y = "irregularity-descent-source-end-table.json.gz";
+        for (r, names) in [
+            (weights, vec!["type-lex-282-results.json", y]),
+            (frontier, vec![results]),
+            (ranks, vec![results, y, "type-lex-independent-282-13-end-table.json.gz"]),
+        ] {
+            for name in names {
+                assert!(named(r, name), "{}: {name}", r.group);
+            }
+        }
+
+        // The matrix with another pin for the results table, or without the file, refuses both trimmed groups.
+        let path = format!("{records}{results}");
+        let pin = b.files.iter().find(|f| f.path == path).expect("the results table is in the catalogue");
+        let entry = format!("\"path\":\"{path}\",\"present\":true,\"sha256\":\"{}\"", pin.sha256);
+        assert!(canonical.contains(&entry), "{entry}");
+        let other_pin = canonical.replacen(&entry, &entry.replace(&pin.sha256, &"0".repeat(64)), 1);
+        let other_path = canonical.replacen(&entry, &entry.replace(".json.gz\"", ".json.gzip\""), 1);
+        for changed in [other_pin, other_path] {
+            let problems = b.compare_with_matrix(changed.as_bytes()).expect("a readable matrix");
+            for r in [ranks, frontier] {
+                let expected =
+                    format!("{}: the stored input {path} is not a matrix file with the matrix's digest", r.group);
+                assert!(problems.contains(&expected), "{expected}: {problems:?}");
+                let required = format!("{}: the required file", r.group);
+                assert!(!problems.iter().any(|p| p.starts_with(&required)), "not a required file of {}", r.group);
+            }
+        }
+
+        // Stage 18's stored stop table is the one file outside the matrix, and only as a chain's start.
+        let stop = b.files.iter().position(|f| f.path.ends_with("d1-acc-s7101/out4/tables/00113.json")).expect("stop");
+        assert!(!canonical.contains(&format!("\"path\":\"{}\"", b.file(stop).path)), "the matrix has no stop table");
+        let at = b.files.iter().position(|f| f.path == path).unwrap();
+        let text = std::str::from_utf8(EDITION_1).unwrap();
+        let changed = in_row(text, &ranks.group, &format!("[{at},\"record\"]"), &format!("[{stop},\"start_table\"]"));
+        let edited = Bindings::parse(changed.as_bytes()).expect("an edition that reads");
+        let expected = format!(
+            "{}: the stored input {} is not a matrix file with the matrix's digest",
+            ranks.group,
+            b.file(stop).path
+        );
+        assert_eq!(edited.compare_with_matrix(&bytes).expect("a readable matrix"), [expected]);
     }
 
     #[test]
