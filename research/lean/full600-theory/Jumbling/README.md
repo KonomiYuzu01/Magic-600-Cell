@@ -50,7 +50,8 @@ each grip a side function (inside, outside, straddle) and a menu. Its fields are
 
 - `menu_side`: a menu element keeps the side of every region with respect to its own grip (a letter maps its cap onto
   itself). The source uses this without stating it.
-- `menu_inv`: menus are closed under inverses.
+- `menu_inv`: menus are closed under inverses. The source uses the inverse of jumble letters as well as of retained
+  ones (`a⁻¹` in R22D-03 and R22D-05), so the closure is read for the whole menu.
 - `chamber_side`: no home chamber straddles a cut (a lattice piece never straddles, O2).
 - `smul_chamber`: `K` maps home chambers to home chambers; `home_mem`: each piece's home is a chamber.
 
@@ -141,6 +142,9 @@ Some statements need fewer hypotheses than the source states, so the Lean theore
 
 ### Hypotheses and readings
 
+- The group layer works with permutations of the chambers only. The holes after a word are the image of the holes
+  under the word's permutation, which is how object O5 describes SAFE-ALL words ("maps the holes by `π_w`"); the
+  group layer is not linked to the piece model of scope A by a lemma.
 - N1 and N2 are hypotheses, as in the source (`A.N1`, `A.N2`). Proposition N is not proved. N1 follows from N2,
   whose singleton orbits are N1's case (`N2.n1`).
 - R22B-05's H1, also used by R22B-17: every even permutation of `Δ` is induced on `Δ` by an element of the group.
@@ -169,6 +173,12 @@ three-cycle instead of citing the point stabilizer of `Alt(d)`; the counterexamp
 - Computed instances: R22B-02's count at the depth 40 stop, R22B-03's b00 commutators, R22B-17's b00 and b19
   constants (they rest on computed orbit sizes).
 - R22B-03's greedy-run remark, R22B-05's sharper instance bounds and its remark without H1.
+- R22B-01's "a procedure that reads only the current holes": the theorem states that `V` exists with the bound; its
+  proof is a construction from the holes, but the procedure is not a separate Lean object.
+- R22B-06: `A.selection_decides` holds for any test on anchor pairs, applied here to the two connectivity tests; the
+  converse, that single-letter tables exist only when both graphs are connected, is not stated.
+- The bridge from the group layer to the piece model (SAFE-ALL words of `PieceModel` map the holes by their
+  chamber permutation).
 
 Out of scope for this batch: R22B-08 and R22B-15 (they need Jordan's theorem for a prime cycle, which the pinned
 Mathlib does not have), R22B-19 and R22B-25 (they need `Aut(Alt(d)) = Sym(d)`, also absent), and R22B-07.
