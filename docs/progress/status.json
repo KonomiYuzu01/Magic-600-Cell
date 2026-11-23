@@ -176,8 +176,8 @@
       {"id": "r6-stage19", "title": "R6 stage 19 checkers", "weight": 6, "done": true, "evidence": "3fdd711f2b63e3cea80b25e68fb5915e0df03d72"},
       {"id": "r7-library", "title": "R7 research library entries", "weight": 6, "done": true, "evidence": "595c4ca7853989fa3390f3f5df33287845cb8a90"},
       {"id": "r8-repro", "title": "R8 reproducible research work", "weight": 4, "done": true, "evidence": "5802828c956687e30cdcf8fb0d50fde9d089edc4"},
-      {"id": "r9-obligation-export", "title": "R9 proof-obligation export", "weight": 3, "done": false, "evidence": null},
-      {"id": "r10-panel-rows", "title": "R10 research panel rows", "weight": 4, "done": false, "evidence": null},
+      {"id": "r9-obligation-export", "title": "R9 proof-obligation export", "weight": 3, "done": true, "evidence": "5ecc1003fc1e8e146193ef42ab52d3fe61e01e7b"},
+      {"id": "r10-panel-rows", "title": "R10 research panel rows", "weight": 4, "done": true, "evidence": "a08d7211b4b5237af0481500bf38ca65e9116215"},
       {"id": "exit", "title": "LP5 exit record", "weight": 4, "done": false, "evidence": null}
      ]}
   ]

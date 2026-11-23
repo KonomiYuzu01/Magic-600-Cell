@@ -3714,3 +3714,16 @@ workspace file.
   CT-PS1-26, CT-RTE-23 and CT-ERR-19 run their translator parts (`c600-evidence/tests/obligation.rs`); the `file` row
   `research.obligation.export`, its grant and the proof that a refusal writes no file come with `c600-research`.
   `tests/sinks.rs` now scans module folders, so the translator is inside CT-EVD-20's and CT-EVD-21's scans.
+- R10, the research output panel's rows (the plan's section 6): `c600-research::panel` adds eleven rows, six
+  queries (`research.archive.inventory`, `research.claims`, `research.check.report`, `evidence.word`,
+  `research.runs`, `research.obligations`), three file rows (`research.archive.import`, `research.bundle.export`,
+  `research.obligation.export`) and two workspace rows with undo `none` (`research.check.run`,
+  `research.run.reproduce`). `panel::Host` serves them through `CommandLayer::serve_row` in research-profile sessions
+  only (a solving session is refused) and answers each from its own data: its file grant, its imports, the claim
+  bindings and its KN6 check runs, never by running language code. Every answer is `{row, revision, research,
+  answer}`, and `Host::read` gives charter D2's state, so an answer read after the revision moved shows as stale. File
+  rows touch only granted files and a refusal writes nothing; check runs and reproductions go through R8's job
+  adapter and are written as `research.run/<sha>` and `research.reproduction/<sha>` workspace records; the obligation
+  export uses R9's translator with LB5.18's grant. LP5's block of rows is
+  `docs/progress/1.0/command-rows-research.json`. `tests/panel.rs` is a headless driver of the panel's whole flow on
+  fresh data; no CT is indexed for R10.
