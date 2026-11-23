@@ -3,7 +3,8 @@
 //! duplicates and the prefix-code property separately in each routing class, and every check under each declared
 //! layout, so the DT-M1 US and French counterexample fails under its conflicting layout while US is active. A refused
 //! binding leaves the map, and what its keys do, as they were. `c600-input/tests/keymap.rs` runs the same checks on the
-//! specs alone; together they are CT-EV4-06 whole.
+//! specs alone. CT-EV4-06 (synthetic, part: the checks through `Shell::bind` on the shell's map; with
+//! `c600-input/tests/keymap.rs` the whole by union).
 //!
 //! The layouts are tables in `c600_command::keys`, not a platform's: none of this is Windows input or IME evidence
 //! (CT-EV4-05 stays a windows test). No assertion reads a refusal's detail text.

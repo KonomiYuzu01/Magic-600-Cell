@@ -1,4 +1,5 @@
-//! CT-EV4-05, the headless part only (synthetic; EV4.4, EV4.6, EV4.7; LP4-8): IME composition, text undo and focus
+//! CT-EV4-05 (synthetic, part: the headless half; not run: the actual Windows half on the owner's machine), with
+//! EV4.4, EV4.6 and EV4.7 (LP4-8): IME composition, text undo and focus
 //! loss suppress puzzle dispatch and clear held keys, on synthetic events under each declared layout. CT-EV4-05 is a
 //! windows test: its half with actual Windows IME, text undo and focus loss runs on the owner's machine and is not run
 //! here. Nothing here is Windows input or IME evidence.
@@ -23,11 +24,11 @@ fn commit(f: &mut Fixture, letters: &[i64]) {
     assert!(matches!(status(&f.tap("Ctrl+Shift+Enter")), Status::Committed(_)));
 }
 
-/// CT-EV4-05 (headless part; not run: the actual Windows IME, text-undo and focus-loss half): a held puzzle key is
-/// released when the focus enters a text field; IME composition and the text field's undo and redo, by the character
-/// the active layout gives them, stay in the field and reach no row; a focus loss during composition releases every
-/// held key; afterwards the keys held before repeat nothing until a fresh key-down, and only a fresh undo key-down
-/// outside the text field undoes the commit.
+/// CT-EV4-05 (synthetic, part: the headless half; not run: the actual Windows IME, text-undo and focus-loss half): a
+/// held puzzle key is released when the focus enters a text field; IME composition and the text field's undo and redo,
+/// by the character the active layout gives them, stay in the field and reach no row; a focus loss during composition
+/// releases every held key; afterwards the keys held before repeat nothing until a fresh key-down, and only a fresh
+/// undo key-down outside the text field undoes the commit.
 #[test]
 fn ime_text_undo_and_focus_loss_suppress_puzzle_dispatch() {
     for (layout, undo) in [("us-qwerty", "Ctrl+KeyZ"), ("fr-azerty", "Ctrl+KeyW")] {

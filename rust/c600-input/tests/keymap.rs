@@ -1,7 +1,7 @@
-//! CT-EV4-06 on the specs (EV4.7): the key-map checks test duplicates and the prefix-code property separately in
-//! each routing class and under every declared layout, and any finding refuses the whole map before it applies. With
-//! `c600-command/tests/keymap.rs`, which runs the same checks through `Shell::bind` on the shell's one map, this is
-//! CT-EV4-06 whole (synthetic; LP4-8).
+//! CT-EV4-06 (synthetic, part: the key-map checks on the specs, EV4.7; LP4-8). They test duplicates and the
+//! prefix-code property separately in each routing class and under every declared layout, and any finding refuses
+//! the whole map before it applies. `c600-command/tests/keymap.rs` runs the same checks through `Shell::bind` on the
+//! shell's one map; the two files are the whole by union.
 //! CT-PS1-13 (part: the findings a stored map must report, duplicates, a complete binding that is also a prefix
 //! and a layout conversion that collides; not run: the round trip of `c600-binding` and `c600-key-map` records,
 //! which no writer stores yet).

@@ -1,7 +1,8 @@
-//! Checker stepping (EV2.6; LP4-6): the parts of CT-EV2-07 this build can run. No checker in the workspace writes
-//! KN6.4's per-claim trace yet, so these steps run over a trace this test builds, as a stored checker output would
-//! hold it. Each step binds the certificate and checker digests; a missing trace is unavailable, never a passed check;
-//! the debugger imports no producer code (`tests/dependencies.rs`).
+//! Checker stepping (EV2.6; LP4-6). CT-EV2-07 (part: the steps of a trace this test builds, as a stored checker
+//! output would hold it, and the debugger's imports, with `tests/dependencies.rs`; not run: a trace that a checker
+//! writes, since no checker in the workspace writes KN6.4's per-claim trace yet). Each step binds the certificate
+//! and checker digests; a missing trace is unavailable, never a passed check; the debugger imports no producer code
+//! (`tests/dependencies.rs`).
 
 mod support;
 

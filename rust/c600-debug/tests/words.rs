@@ -1,4 +1,4 @@
-//! Word references (EV2.5, EV2.11; LP4-6): CT-EV2-06 whole. A compressed long word resolves cited letter positions
+//! Word references (EV2.5, EV2.11; LP4-6): CT-EV2-06 (whole). A compressed long word resolves cited letter positions
 //! lazily, under H7's zero-based half-open intervals, keeps its alphabet and identity block, and a path names one
 //! expansion occurrence.
 
