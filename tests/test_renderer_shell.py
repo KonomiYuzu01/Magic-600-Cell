@@ -55,7 +55,7 @@ def csharp_list(name: str, file: str = "CoreLibrary.cs") -> list[str]:
     source = text(PROJECT / file)
     block = re.search(rf"\b{name} = new\[\]\s*\{{(.*?)\}};", source, re.S)
     assert block, f"{name} in {file}"
-    return re.findall(r'"((?:sa2|m6h)_[a-z_0-9]+)"', block.group(1))
+    return re.findall(r'"((?:sa2|m6h|m6e)_[a-z_0-9]+)"', block.group(1))
 
 
 def csharp_symbols() -> list[str]:
@@ -201,6 +201,83 @@ class ShellProject(unittest.TestCase):
                                            "KIND_DRAFT"})
         self.assertEqual({f"{group.upper()}_{name.upper()}": value for group, name, value in csharp_views},
                          rust_views)
+        # LP4-3: the focus codes of m6h_set_focus.
+        rust_focus = dict(re.findall(r"pub const M6H_FOCUS_([A-Z]+): u32 = (\d+);", source))
+        csharp_focus = dict(re.findall(r"public const uint Focus(\w+) = (\d+);", csharp))
+        self.assertEqual(rust_focus, {"PUZZLE": "0", "TEXT": "1"})
+        self.assertEqual({name.upper(): value for name, value in csharp_focus.items()}, rust_focus)
+
+    def test_the_editor_library_calls_match_its_rust_source(self):
+        """LP4-3: the editor library's exports, version and codes, the same on both sides."""
+        source = text(ROOT / "renderer" / "bridge" / "editor" / "src" / "lib.rs")
+        csharp = text(PROJECT / "Editor" / "EditorLibrary.cs")
+        exports = re.findall(r'#\[no_mangle\]\s*pub (?:unsafe )?extern "C" fn (m6e_[a-z_]+)\(', source)
+        self.assertIn("m6e_create", exports)
+        self.assertEqual(csharp_list("Exports", "Editor/EditorLibrary.cs"), exports)
+        rust_version = re.search(r"pub const M6E_ABI_VERSION: u32 = (\d+);", source)
+        csharp_version = re.search(r"public const uint AbiVersion = (\d+);", csharp)
+        self.assertTrue(rust_version and csharp_version)
+        self.assertEqual(rust_version.group(1), csharp_version.group(1))
+        rust_codes = dict(re.findall(r"pub const M6E_(OK|E_[A-Z_]+): i32 = (\d+);", source))
+        csharp_codes = dict(re.findall(r"public const int (\w+) = (\d+);", csharp))
+        names = {"OK": "Ok", "E_INVALID_ARGUMENT": "InvalidArgument", "E_REFUSED": "Refused",
+                 "E_RUNTIME": "RuntimeRefused", "E_POISONED": "Poisoned"}
+        self.assertEqual(set(rust_codes), set(names))
+        for rust, name in names.items():
+            self.assertEqual(csharp_codes.get(name), rust_codes[rust], rust)
+        for group in ("UNITS", "RUN"):
+            with self.subTest(group=group):
+                rust_values = dict(re.findall(rf"pub const M6E_{group}_([A-Z0-9]+): u32 = (\d+);", source))
+                prefix = group.title()
+                csharp_values = dict(re.findall(rf"public const uint {prefix}(\w+) = (\d+);", csharp))
+                self.assertTrue(rust_values)
+                self.assertEqual({name.upper(): value for name, value in csharp_values.items()}, rust_values)
+
+    def test_the_editor_panel_keeps_the_write_check_run_flow_s_fixed_points(self):
+        """LP4-3's greybox panel: created by M600_EDITOR, activation an explicit palette entry with no default key, a
+        run that commits nothing, and keys that reach the code field while it has the focus."""
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_EDITOR") == "1")', shell)
+        self.assertIn("_editor = new Editor.EditorPanel(new ShellContext(window, this, _log, hostLibrary, _host));",
+                      shell)
+        self.assertIn("_modules.Add(_editor);", shell)
+        self.assertLess(shell.index("new Editor.EditorPanel"), shell.index("WindowHook.Install(window, _modules);"))
+        self.assertIn("_editor?.TextFocused != true", shell)
+        panel = text(PROJECT / "Editor" / "EditorPanel.cs")
+        self.assertIn("public sealed class EditorPanel : IShellModule", panel)
+        self.assertIn('GetEnvironmentVariable("M600_EDITOR_DLL")', panel)
+        self.assertIn('GetEnvironmentVariable("M600_RUNTIME")', panel)
+        self.assertIn("M600_EDITOR_DLL", self.shell_variables())
+        # Check and Activate are the panel's own palette entries; only Activate registers a row, and only after the
+        # library activated the candidate.
+        self.assertIn('public const string CheckEntry = "editor.check";', panel)
+        self.assertIn('public const string ActivateEntry = "editor.activate";', panel)
+        activate = panel[panel.index("private void Activate()"):panel.index("private void Pump()")]
+        check = panel[panel.index("private void Check()"):panel.index("private void Activate()")]
+        self.assertNotIn("RegisterRow", check)
+        self.assertNotIn("_library.Activate", check)
+        self.assertLess(activate.index("_library.Activate("), activate.index("RegisterRow("))
+        self.assertEqual(panel.count("RegisterRow("), 1)
+        # The row's key is no default binding of the router, and the panel's own entries have none.
+        key = re.search(r'public const string Key = "([A-Za-z+]+)";', panel)
+        self.assertTrue(key)
+        self.assertNotIn(f'"{key.group(1)}"', text(ROOT / "rust" / "c600-input" / "src" / "keymap.rs"))
+        # A run commits nothing: the panel invokes rows only through the palette route, routes no key itself, and its
+        # run's word only becomes the draft, which the solver previews by key.
+        for absent in ("KeyDown(", "operation.execute", "operation.preview\"", "Invoke(Context.HostHandle, \"operation"):
+            self.assertNotIn(absent, panel)
+        self.assertEqual(panel.count("SetDraftWord("), 1)
+        pump = panel[panel.index("private void Pump()"):panel.index("private void Shown(")]
+        for needle in ("host.TakeJob(", "_library.Run(", "_library.RunPoll(", "host.FinishJob("):
+            self.assertIn(needle, pump)
+        # The code field's focus is the router's text focus.
+        self.assertIn("_code.FocusEntered += () => Focus(true);", panel)
+        self.assertIn("HostLibrary.FocusText : HostLibrary.FocusPuzzle", panel)
+        # The library counts positions in scalars, as Godot's columns do.
+        self.assertIn("_library.Create(EditorLibrary.UnitsScalar, out _editor)", panel)
+
+    def shell_variables(self) -> tuple[str, ...]:
+        return shell_module("launch").SHELL_VARIABLES
 
     def test_the_event_log_writes_the_rows_the_e2_timer_reads(self):
         sys.path.insert(0, str(ROOT / "tools" / "perf" / "c9"))
@@ -443,6 +520,7 @@ class ProductBuild(unittest.TestCase):
         self.build = self.temp / "20261118T000000Z"
         files = {"native/sa2_interop.dll": b"core", "native/draw_vs.dxil": b"vs", "native/build.ninja": b"rules",
                  "host/c600_shell_host.dll": b"host", "lx4/c600_shell_lx4.dll": b"lx4",
+                 "editor/c600_shell_editor.dll": b"editor",
                  f"shell/project/{self.build_product.build_shell.ASSEMBLY}": b"asm",
                  "shell/project/Main.tscn": b"scene", "shell/project/obj/Generated.cs": b"generated",
                  "assets/manifest.json": b"{}", "menu/wj-I_a.json": b"{}", "runtime/c600-runtime.exe": b"runtime",
@@ -468,7 +546,8 @@ class ProductBuild(unittest.TestCase):
     def test_a_build_verifies_and_names_every_part_it_loads(self):
         product = self.build_product.verify(self.build)
         self.assertEqual(set(product["parts"]), {"core:sa2_interop.dll", "core:draw_vs.dxil", "host:c600_shell_host.dll",
-                                                 "lx4:c600_shell_lx4.dll", "shell:assembly", "shell:Main.tscn", "assets:manifest.json",
+                                                 "lx4:c600_shell_lx4.dll", "editor:c600_shell_editor.dll",
+                                                 "shell:assembly", "shell:Main.tscn", "assets:manifest.json",
                                                  "menu:wj-I_a.json", "runtime:c600-runtime.exe", "fixture:fixture.json",
                                                  "fixture:session/lock", "fixture:session/journal",
                                                  "fixture-jumble-on:fixture.json", "fixture-jumble-on:session/lock",
@@ -535,14 +614,20 @@ class ProductBuild(unittest.TestCase):
 
     def test_the_build_never_launches(self):
         for command, package in ((self.build_product.host_command(), "c600-shell-host"),
-                                 (self.build_product.lx4_command(), "c600-shell-lx4")):
+                                 (self.build_product.lx4_command(), "c600-shell-lx4"),
+                                 (self.build_product.editor_command(), "c600-shell-editor")):
             self.assertEqual(command[:6], ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path"])
             self.assertEqual(command[-2:], ["-p", package])
-        # The library the build copies is the one that LX-4's crate builds.
-        manifest = text(ROOT / "renderer" / "bridge" / "lx4" / "Cargo.toml")
-        self.assertIn('name = "c600-shell-lx4"', manifest)
-        self.assertIn('"cdylib"', manifest)
-        self.assertEqual(self.build_product.LX4_DLL, "lx4/c600_shell_lx4.dll")
+        # The libraries the build copies are the ones that LX-4's crate and the editor's crate build, both members of
+        # the bridge's workspace.
+        for folder, package, dll, constant in (("lx4", "c600-shell-lx4", "lx4/c600_shell_lx4.dll", "LX4_DLL"),
+                                               ("editor", "c600-shell-editor", "editor/c600_shell_editor.dll",
+                                                "EDITOR_DLL")):
+            manifest = text(ROOT / "renderer" / "bridge" / folder / "Cargo.toml")
+            self.assertIn(f'name = "{package}"', manifest)
+            self.assertIn('"cdylib"', manifest)
+            self.assertEqual(getattr(self.build_product, constant), dll)
+            self.assertIn(f'"{folder}"', text(ROOT / "renderer" / "bridge" / "Cargo.toml"))
         self.assertTrue(str(self.build_product.BUILD_ROOT).replace("\\", "/").endswith("work/build/c9-product"))
         source = text(SHELL / "build_product.py")
         self.assertNotIn("--path", source)
@@ -555,7 +640,7 @@ class ProductBuild(unittest.TestCase):
         child.write_bytes(b"injection child")
         lx2 = ["--lx2-injection", str(child)]
         for flags in ([], ["--echo"], self.lx4, ["--puzzle", "jumble-off", *self.lx4, "--echo"], ["--cold-start"], lx2,
-                      [*self.lx4, *lx2]):
+                      [*self.lx4, *lx2], ["--editor"]):
             lines = []
             out = self.temp / "run"
             code = self.launch.main(["--out", str(out), "--build", str(self.build), "--dry-run", *flags],
@@ -569,9 +654,13 @@ class ProductBuild(unittest.TestCase):
                         | ({"M600_INPUT_ECHO"} if "--echo" in flags else set())
                         | ({"M600_LX4", "M600_LX4_DLL", "M600_LX4_FIXTURES"} if "--lx4" in flags else set())
                         | ({"M600_LX2"} if "--lx2-injection" in flags else set())
+                        | ({"M600_EDITOR", "M600_EDITOR_DLL"} if "--editor" in flags else set())
                         | ({"M600_EXIT_AT_FIRST_FRAME"} if "--cold-start" in flags else set()))
             self.assertEqual(names, expected)
             self.assertIn("env: M600_PUZZLE=jumble-off", lines)
+            if "--editor" in flags:
+                self.assertIn(f"env: M600_EDITOR_DLL={self.build.resolve() / 'editor' / 'c600_shell_editor.dll'}",
+                              lines)
             if "--lx2-injection" in flags:
                 self.assertIn(f"env: M600_RUNTIME={child.resolve()}", lines)
                 digest = hashlib.sha256(b"injection child").hexdigest()
@@ -738,7 +827,7 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual(env["M600_SESSION_FIXTURE"], str(build / "session-fixture" / "fixture.json"))
         self.assertEqual(env["M600_RUNTIME"], str(build / "runtime" / "c600-runtime.exe"))
         self.assertNotIn("M600_INPUT_ECHO", env)
-        for name in ("M600_LX4", "M600_LX4_DLL", "M600_LX4_FIXTURES"):
+        for name in ("M600_LX4", "M600_LX4_DLL", "M600_LX4_FIXTURES", "M600_EDITOR", "M600_EDITOR_DLL"):
             self.assertNotIn(name, env)
         self.assertNotIn("M600_EXIT_AT_FIRST_FRAME", env)
         self.assertEqual(env["M600_PUZZLE"], "jumble-off")
@@ -749,6 +838,7 @@ class ProductBuild(unittest.TestCase):
         self.assertEqual((record["format"], record["build_identity"], record["exit_code"], record["echo"],
                           record["puzzle"], record["lx4"], record["lx4_fixtures"], record["cold_start"]),
                          ("magic600-c9-launch-v1", product["identity"], 0, False, "jumble-off", False, None, False))
+        self.assertIs(record["editor"], False)
         rows = [json.loads(line) for line in (out / "startup.jsonl").read_text(encoding="utf-8").splitlines()]
         self.assertEqual([row["t"] for row in rows], ["run", "process_start"])
         for temp in {str(self.temp), str(self.temp.resolve())}:
@@ -761,8 +851,10 @@ class ProductBuild(unittest.TestCase):
                                       base={"M600_INPUT_ECHO": "1", "m600_core_dll": "elsewhere", "PATH": "p",
                                             "M600_LX4": "1", "m600_puzzle": "jumble-on", "M600_LX2": "1",
                                             "C600_LX2_CEILING": "1", "c600_lx2_fault": "kill",
-                                            "M600_LX4_DLL": "elsewhere", "m600_lx4_fixtures": "elsewhere"})
-        for dropped in ("M600_LX2", "C600_LX2_CEILING", "c600_lx2_fault", "M600_LX4_DLL", "m600_lx4_fixtures"):
+                                            "M600_LX4_DLL": "elsewhere", "m600_lx4_fixtures": "elsewhere",
+                                            "M600_EDITOR": "1", "m600_editor_dll": "elsewhere"})
+        for dropped in ("M600_LX2", "C600_LX2_CEILING", "c600_lx2_fault", "M600_LX4_DLL", "m600_lx4_fixtures",
+                        "M600_EDITOR", "m600_editor_dll"):
             self.assertNotIn(dropped, env)
         self.assertNotIn("M600_INPUT_ECHO", env)
         self.assertNotIn("M600_LX4", env)

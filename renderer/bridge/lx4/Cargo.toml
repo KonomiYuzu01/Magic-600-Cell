@@ -15,8 +15,9 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-c600-check = { path = "../../../rust/c600-check" }
 c600-digest = { path = "../../../rust/c600-digest" }
+# The syntax, completion and diagnostics stages: EV1's editor services (LP4-1; re-pointed by LP4-3).
+c600-editor = { path = "../../../rust/c600-editor" }
 c600-kernel = { path = "../../../rust/c600-kernel" }
 c600-lx4 = { path = "../../../rust/c600-lx4" }
 c600-syntax = { path = "../../../rust/c600-syntax" }

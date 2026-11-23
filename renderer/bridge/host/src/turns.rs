@@ -31,13 +31,32 @@
 //!   way and its twist applied exactly. Engine revision [`ENGINE_REVISION`] is the solved labels the host adopts at
 //!   its start in both puzzles; with Jumble on the next one is the solved poses `jumble.on` entered at.
 //!
+//! - LP4-3's write-check-run flow (a draft; [`Turns::register_row`] and the calls after it): a checked and activated
+//!   user module's entry is registered as a language overlay row, a `query` row with its label and no grant
+//!   (`CommandLayer::register_overlay_with`), with its key bound in the router's map and in the shell's keymap, which
+//!   the palette reads (`Shell::read_palette`). The solver invokes it from the palette ([`Turns::invoke`], the shell's
+//!   `Shell::invoke`) or by its key (the router), and the host takes its program job ([`Turns::take_job`]) and
+//!   reports it ([`Turns::finish_job`]); the run itself is the editor library's (`renderer/bridge/editor`), which binds
+//!   the job to the module's active version. The run serves no row, so it prepares no preview: the solver puts its word
+//!   in the editor's draft ([`Turns::set_draft`]) and previews it with `operation.preview` (Ctrl+Enter), which the host
+//!   builds ([`Turns::run_jobs`]) and the view shows; the confirmed frames that show it are reported to the layer
+//!   ([`Turns::present`]), and the solver commits it with `operation.execute` (Ctrl+Shift+Enter), whose token the
+//!   shell mints from the press, and undoes it with `session.undo` (Ctrl+Z). A text field's focus
+//!   ([`Turns::set_focus`]) keeps the keys it takes, a commit chord among them (DT-M1 C4).
+//!
 //! Nothing here is Windows/DirectX, input or performance evidence.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use c600_command::{CommandLayer, Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, TWIST_ROW};
-use c600_input::{default_specs, Arg, Chord, Context as Keys, KeyEvent, KeyMap, Layout, Routed, Router, Slot};
+use c600_command::{
+    CommandLayer, Error as LayerError, KeyBinding, Kind, Overlay, PresentedFrame, PreviewState, ProgramJob, Receipt,
+    Registration, Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, TWIST_ROW,
+};
+use c600_input::{
+    default_specs, Arg, BindingSpec, Chord, ChordIntent, Context as Keys, Focus, KeyEvent, KeyMap, Layout, Routed,
+    Router, RoutingClass, Slot,
+};
 use c600_jumble::rotation;
 use c600_jumble::state::{State, Status as Admissibility};
 use c600_jumble::twist::Menu;
@@ -156,6 +175,8 @@ pub struct Turns {
     layer: Option<CommandLayer<JournalStore>>,
     shell: Shell,
     router: Router,
+    /// The router's specs: the puzzle's draft defaults and the keys of the rows registered since ([`specs`]).
+    specs: Vec<BindingSpec>,
     /// The arguments of every committed press, in order.
     committed: Vec<Value>,
     refused: u64,
@@ -167,10 +188,10 @@ fn menu(exact: &Exact, record: &Value) -> Result<Menu, String> {
     Menu::from_record(exact, record).map_err(|error| format!("the twist menu does not read: {error}"))
 }
 
-/// The router's draft default map under the active layout for `puzzle`. With Jumble on, every binding of
-/// `twist.apply` binds `jumble.twist.menu` instead, on the same chord and destination: its `rotation` becomes the
-/// row's `letter`, and the row's `revision` is the layer's revision at the press.
-pub fn keymap(puzzle: Puzzle) -> Result<KeyMap, String> {
+/// The router's draft default specs for `puzzle`. With Jumble on, every binding of `twist.apply` binds
+/// `jumble.twist.menu` instead, on the same chord and destination: its `rotation` becomes the row's `letter`, and the
+/// row's `revision` is the layer's revision at the press.
+pub fn specs(puzzle: Puzzle) -> Vec<BindingSpec> {
     let mut specs = default_specs();
     if puzzle == Puzzle::JumbleOn {
         for spec in specs.iter_mut().filter(|spec| spec.command == TWIST_ROW) {
@@ -181,8 +202,30 @@ pub fn keymap(puzzle: Puzzle) -> Result<KeyMap, String> {
             spec.args.push(("revision".to_owned(), Arg::Revision));
         }
     }
-    let declared = [Layout::US, Layout::FRENCH];
-    KeyMap::apply(&specs, &declared, LAYOUT).map_err(|findings| format!("the key map: {findings:?}"))
+    specs
+}
+
+/// The layouts the router's map declares.
+const DECLARED: [Layout; 2] = [Layout::US, Layout::FRENCH];
+
+/// The router's draft default map under the active layout for `puzzle` ([`specs`]).
+pub fn keymap(puzzle: Puzzle) -> Result<KeyMap, String> {
+    KeyMap::apply(&specs(puzzle), &DECLARED, LAYOUT).map_err(|findings| format!("the key map: {findings:?}"))
+}
+
+/// The engine's pending preview as the host shows it: its ID, its literal word's digest, its certified effect's digest
+/// and the layer's state revision it was built on.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Pending {
+    pub id: u64,
+    pub literal: String,
+    pub effect: String,
+    pub state: u64,
+}
+
+/// The row ID of a user module's entry in the palette: `tool.<module>.<entry>` (a draft).
+pub fn row_id(module: &str, entry: &str) -> String {
+    format!("tool.{module}.{entry}")
 }
 
 /// What a new and a reopened session both read: the menu record, the exact model, the pinned menu, and the router on
@@ -344,6 +387,7 @@ impl Turns {
             layer: Some(layer),
             shell: Shell::new(Secret::fixed(SECRET), "shell"),
             router,
+            specs: specs(puzzle),
             committed,
             refused: 0,
             others: 0,
@@ -443,6 +487,146 @@ impl Turns {
     /// The arguments of every committed press, in order, a reopened fixture's first.
     pub fn committed(&self) -> &[Value] {
         &self.committed
+    }
+
+    // ----- LP4-3's write-check-run flow (a draft)
+
+    /// Registers the entry `entry` of user module `module` as a language overlay row (KN5.3, EV4.1): row [`row_id`], a
+    /// `query` row with no argument, with `label` and no grant (`Registration::labelled`). With `chord` (c600-input's
+    /// form, such as `Ctrl+Shift+KeyR`), the router's map binds the row in the global context and the shell's keymap
+    /// names it, so the palette shows the key. A chord that is not one, that the shell's keymap binds already or that
+    /// the map refuses under a declared layout, and a row the layer refuses (`KN5:input.overlay_row_conflict` for a
+    /// second registration), change nothing. The registration is not journaled: a reopen registers again. The answer is
+    /// the row's ID.
+    pub fn register_row(
+        &mut self,
+        module: &str,
+        entry: &str,
+        label: &str,
+        chord: Option<&str>,
+    ) -> Result<String, String> {
+        let row = row_id(module, entry);
+        let mut specs = self.specs.clone();
+        if let Some(chord) = chord {
+            if ChordIntent::parse(chord).is_none() {
+                return Err(format!("`{chord}` is not a chord"));
+            }
+            if self.shell.keymap().iter().any(|binding| binding.sequence == chord) {
+                return Err(format!("the shell's keymap binds `{chord}` already"));
+            }
+            specs.push(BindingSpec::new(&[chord], RoutingClass::Global, &row, vec![]));
+            KeyMap::apply(&specs, &DECLARED, LAYOUT).map_err(|findings| format!("the key map: {findings:?}"))?;
+        }
+        let overlay = Overlay { module: module.to_owned(), entry: entry.to_owned() };
+        let layer = self.layer.as_mut().ok_or("the session is closed")?;
+        layer
+            .register_overlay_with(&row, Kind::Query, &[], overlay, Registration::labelled(label))
+            .map_err(|error| format!("{}: {}", error.code, error.detail))?;
+        if let Some(chord) = chord {
+            self.shell
+                .bind(KeyBinding::new(chord, "any", &row, &[]))
+                .map_err(|error| format!("{}: {}", error.code, error.detail))?;
+            self.router.apply(&specs, &DECLARED, LAYOUT).map_err(|findings| format!("the key map: {findings:?}"))?;
+            self.specs = specs;
+        }
+        Ok(row)
+    }
+
+    /// Sets the focus the router routes keys by: a text field (`true`) keeps the keys it takes, its typing, editing
+    /// and office chords and a key bound to a commit row (DT-M1 C4), and the global map gets the rest; the puzzle
+    /// (`false`) keeps none. Held keys are released, as on a focus loss.
+    pub fn set_focus(&mut self, text: bool) {
+        self.router.set_focus(if text { Focus::Text } else { Focus::Puzzle });
+    }
+
+    /// The palette (EV4.2, KN5.6) as JSON: one entry per row of the table, in its order, with its label, kind, whether
+    /// a language module registered it, the key sequences the shell's keymap binds to it and its availability, `null`
+    /// or the typed reason it is unavailable. The shell reads it once per revision and generation; reading it starts
+    /// no program and changes nothing.
+    pub fn palette(&mut self) -> Result<Value, String> {
+        let layer = self.layer.as_ref().ok_or("the session is closed")?;
+        let palette = self.shell.read_palette(layer);
+        let entries = palette.entries().iter().map(|entry| {
+            let keys = entry.keys.iter().map(|key| Value::String(key.clone())).collect();
+            json::object([
+                ("row", Value::String(entry.row.clone())),
+                ("label", Value::String(entry.label.clone())),
+                ("kind", Value::String(format!("{:?}", entry.kind).to_lowercase())),
+                ("language_defined", Value::Bool(entry.language_defined)),
+                ("keys", Value::Array(keys)),
+                ("unavailable", entry.availability.err().map_or(Value::Null, |code| Value::String(code.to_owned()))),
+            ])
+        });
+        Ok(json::object([
+            ("revision", Value::Int(palette.revision.state as i64)),
+            ("generation", Value::Int(palette.generation as i64)),
+            ("entries", Value::Array(entries.collect())),
+        ]))
+    }
+
+    /// The palette's route (EV4.2): the shell invokes `row` with absolute arguments `args` (`Shell::invoke`, the key
+    /// route's own path, so the same gates apply), and the host builds what the layer queued for it
+    /// ([`Turns::run_jobs`]). A language row answers `running` with its program job, which the host takes
+    /// ([`Turns::take_job`]).
+    pub fn invoke(&mut self, row: &str, args: Value) -> Result<Receipt, String> {
+        let layer = self.layer.as_mut().ok_or("the session is closed")?;
+        self.shell.invoke(layer, row, args).map_err(|error| format!("{}: {}", error.code, error.detail))
+    }
+
+    /// Takes the next program job the layer admitted (a language row's), as the host takes it before it runs the job's
+    /// entry. While the host holds it, the run is inside the command that invoked it (ONE.34).
+    pub fn take_job(&mut self) -> Option<ProgramJob> {
+        self.layer.as_mut()?.take_program_job()
+    }
+
+    /// Reports the program job `job`: the entry's returned value, or the error that ended its run. The answer is the
+    /// receipt of the solver's command that invoked it, or `None` when the layer no longer holds the job (a commit
+    /// ended it).
+    pub fn finish_job(&mut self, job: u64, result: Result<Value, LayerError>) -> Option<Receipt> {
+        self.layer.as_mut()?.finish_program_job(job, result)
+    }
+
+    /// Sets the editor's draft, the word reference `operation.preview`'s key (Ctrl+Enter) reads (`{"recipe": [...]}`),
+    /// or clears it.
+    pub fn set_draft(&mut self, draft: Option<Value>) {
+        self.shell.draft = draft;
+    }
+
+    /// Runs the jobs the layer queued that the layer itself runs, such as a word preview's build; a program job stays
+    /// for [`Turns::take_job`]. The answer is how many ran.
+    pub fn run_jobs(&mut self) -> usize {
+        self.layer.as_mut().map_or(0, |layer| layer.run_jobs())
+    }
+
+    /// The pending preview while it is fresh, built and not yet ended (`ready` or `presented`) at the layer's state
+    /// revision: what the host's view shows.
+    pub fn pending(&self) -> Option<Pending> {
+        let layer = self.layer.as_ref()?;
+        let state = layer.revision().state;
+        layer
+            .preview()
+            .filter(|p| matches!(p.state, PreviewState::Ready | PreviewState::Presented) && p.deps.state == state)
+            .map(|p| Pending {
+                id: p.id,
+                literal: p.literal.clone(),
+                effect: p.effect.net_sha256.clone(),
+                state: p.deps.state,
+            })
+    }
+
+    /// Reports one confirmed frame to the layer through the shell (RM.26, ONE.41), as `c600_tools::views` reports a
+    /// composed one: for the preview the frame shows, else the pending one, else the one the shell bound, and nothing
+    /// when there is none. A frame that does not present that preview ends its presentation; the layer's refusal of it
+    /// is the answer.
+    pub fn present(&mut self, frame: &PresentedFrame) -> Result<Option<u64>, LayerError> {
+        let Some(layer) = self.layer.as_mut() else { return Ok(None) };
+        let shown = frame.preview.as_ref().map(|shown| shown.id);
+        let pending = layer.preview().map(|preview| preview.id);
+        let bound = self.shell.presented().map(|binding| binding.id);
+        match shown.or(pending).or(bound) {
+            Some(id) => self.shell.present(layer, id, frame).map(|()| Some(id)),
+            None => Ok(None),
+        }
     }
 
     /// The correctness control, once: closes the layer (its lock is released), reopens the journal, replays every
