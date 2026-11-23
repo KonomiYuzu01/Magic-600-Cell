@@ -37,6 +37,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 | `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
 | `c600-debug` | EV2's read-only debugger, replay and cost profile: stepping RT1's evaluator at the run's own LG4/DET.20 positions with suspended kernel calls, value inspection, word references into compressed words, replay with preflight and mismatch reporting, journal travel over a host's query rows, a pinned run's freshness and checker-trace stepping (LP4-5, LP4-6) |
+| `c600-log` | The 1.0 log file: what a log holds, its record `c600-log-draft` (`.c600log`), the compiler with its gates, a recorder, and the check, import and export of 0.4 proof logs and MPUlt v1 logs of 600-cell-Full (LP4-12, LP4-13); no path to `c600-run` |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -3894,3 +3895,149 @@ LG4.12).
   - the debugger's editor protocol and its C ABI (LP4-3), and replay of a jumbling record with its menu alphabet beyond
     the identity preflight.
 - Evidence kind: source; CT-EV2-05 is synthetic. Nothing here is Windows input, display or timing evidence.
+
+## Status of LP4, LP4-7: the declared-part round trip
+
+LP4-7 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04, EV3.5's `edit_declared_part` and
+EV3.7), in `c600-editor`, a draft.
+
+- `edit_declared_part(document, digest, declaration, field, value, context)` returns the source edits that set one
+  field of a declared part to a typed `PartValue`, the SHA-256 of the edited bytes (the new version, `source_digest`)
+  and the edited draft checked again under the same module context (its diagnostics and verdict, as `diagnose` gives
+  them). The edit replaces exactly the field's literal with its canonical spelling, under the request's digest;
+  `apply_edits` applies it. Nothing is persisted and no program runs (EV1.9). `declared_parts(document, digest)` lists
+  the parts a source declares, each field with its path, declared type text, current value and range.
+- Refusals, each an `Envelope` with service `EditDeclaredPart` and no span: a part the source does not declare is
+  `EV3:input.round_trip_undeclared` with its reason (`Undeclared`: no declaration, no directive, a malformed
+  directive, a field the directive does not list, or a part that is not a literal); a value of another type than the
+  field's is `LG2:type.mismatch` (`Reason::ValueType` with the field's type text and the supplied kind, next action
+  `SupplyValue`); a request for other bytes is `EV1:stale.editor_source`.
+- DRAFT, which freezes with the syntax (PHS.49): the source syntax has no clause for an editable part, so a part is
+  declared by a directive comment on the lines above its declaration, `# @editable parameter|layout|default
+  [field.path ...]`; with no field listed, the one field is `value`, the whole result. A declared part is a `fn` with
+  no generics, parameters, effects, charge or `let`, whose body returns a literal (exact or approximate number, `Q5`,
+  text, boolean, literal word) or a record of literals. A computed value, a command, a view and a declaration without
+  a directive are never round-tripped: nothing is inverted from a drawing (EV3.7). The integrator may replace the
+  directive by a syntax clause at the syntax freeze; the service's data does not change.
+- Tests: CT-EV3-05 runs whole in `c600-editor/tests/ct_ev3_05.rs` (source). It reads the three built-in tools'
+  sources from their crates (`full_600_cell.6cs`, `representations.6cs`, `jumble_checker.6cs`): as shipped they
+  declare no editable part, so every declaration and declared parameter is refused; each tool's fork (its shipped bytes
+  with a declared parameter, layout and default appended) round-trips every declared field, reads it back and checks
+  clean; drawn views, computed values, undeclared fields and malformed directives are refused. CT-EV1-07 now also
+  covers the two round-trip refusals.
+- Not built:
+  - declared parts in the shipped built-in tools: their `.6cs` bytes are hashed into the build strings and LX-4's
+    module set reads them, so adding parts to them is the integrator's change (the tests use forks);
+  - the workspace command that persists a round-tripped layout or parameter with its undo (EV3.7, default 16), the
+    host's fork operation, and activating the new version (LP4-2's `activate_module` does that once it is checked);
+  - follow-pick navigation from a drawn instance to its declared part (EV3.5's `follow_pick`, chapter 10's
+    `SourceMap`);
+  - keeping the directive comments through `format`, which still drops comments (LP4-1).
+- Evidence kind: source. Nothing here is Windows, input, display or timing evidence.
+
+## Status of LP4, LP4-12: the 1.0 log and its compiler
+
+LP4-12 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (ADR-D01.80 to .82 as revision 6's R-2 and R-3
+amend them), in the new crate `c600-log`, a draft.
+
+- What a log holds (`Log`): the model identity (KN0.1); the start state (solved, or its labels in PS1.7's
+  `u32le-base64` carrier); the move history and the layout history (ADR-D01.14 to .16); the saved cursors and the
+  full-state hash at save; the view, the layout and the workspace as recorded values; each open document with its
+  identity (a path, or an untitled id that was never saved), the digest of its last saved bytes and its full contents,
+  with its dirty mark; the embedded macros (FP.12's steps, Nat count and `DigestRef(recipe_expansion)`), Library
+  entries and scripts (text and `DigestRef(source)`), each with its author class (`built_in`, `own`,
+  `forked_built_in`, `imported`, or `unknown`); the preferences as canonical JSON text, recorded and never applied;
+  where the log came from.
+- Histories: each is an append-only list of actions. A node action (commit, partial undo, workspace action, layout
+  step) adds a node whose parent is where the cursor stood; a cursor action (undo, redo, roll, select) moves the
+  cursor, an undo only back on its line, a redo only forward, a roll either way, a select anywhere. An abandoned branch
+  is the nodes no later cursor returns to. A partial undo names its commit and how many of its literal letters stay;
+  its parent is the commit's parent, and the cursor must stand on the commit or on another partial undo of it. A
+  commit carries its legal witness (0.4's word and star steps), its Nat counts and its pre and post full-state hashes.
+- The record (`write`, `read`), DRAFT: an FP.11 record of format `c600-log-draft`, version 1, with null provenance,
+  outside the data core like FP.37's playback state; payload `{log, seal}`, where the seal is the
+  `DigestRef(content)` of the FP.5 bytes of the record with `payload` reduced to `{log}`. The bytes are FP.5's
+  `c600-json-1`, or FP.7's `c600-gzip-stored-1` above 250,000 bytes, read under FP.9's limits and only in their one
+  canonical spelling; FP.10's dispatch comes first, unknown fields are refused, and an unknown optional extension is
+  kept. The extension is `.c600log` (`EXTENSION`).
+- `compile(kernel, bytes)` (ADR-D01.81) runs the gates `format`, `model_match`, `moves` (every node replayed from the
+  start with its legal witness through `c600-kernel`, a state kept only while a later node needs it), `final_hash`,
+  `macros` and `scripts` (each embedded script given to `c600_editor::diagnose`, with the other embedded scripts as its
+  digest-pinned dependencies; nothing runs). Codes: a bad record `PS1:input.persistence_format`,
+  `PS1:input.noncanonical_value` or `PS1:resource_limit.persistence_size`; an unknown format or version, or an unknown
+  required extension, `PS2:input.persistence_version`; a changed byte `PS1:input.digest_mismatch` (the seal, or a clean
+  document's contents against its saved digest); another model `KN1:input.identity_mismatch`; a move without its legal
+  witness the kernel's `KN2:input.recipe_shape` (or its other recipe codes); a replay that disagrees with a pre or post
+  state, or a wrong final hash, `PS3:input.checkpoint_replay`. The result names the SHA-256 of the bytes it compiled
+  (`binds`). Only when `format`, `model_match`, `moves` and `final_hash` all passed does it bind the saved state;
+  otherwise the log is read-only with its problems and no state (R-2). A script's or a macro's problem leaves the
+  state bound and the compile not passed.
+- `Recorder` writes a log action by action with the kernel computing each state, for fixtures and short sessions.
+- Tests (source): `tests/compile.rs` writes a session with an abandoned branch, partial undos, a branch switch, layout
+  steps, open documents, a macro, a Library entry, a built-in script and preferences, and compiles it through every
+  gate to the session's hash; a changed model identity, missing and wrong witnesses, a flipped byte (one named, and a
+  bit flip every 37 bytes), a wrong final hash, bad structure, bad documents and other spellings each fail with their
+  code and no bound state; a dirty document's unsaved contents and saved digest survive saving and reopening.
+  `tests/dependencies.rs` follows the manifests and fails on a path from `c600-log` to `c600-run`, `c600-command` or
+  `c600-session`, or on any dependency that is not a workspace path.
+- Readings: `c600-log` cannot depend on `c600-session` as the plan's selection 1 lists, because `c600-session` depends
+  on `c600-run`; it keeps its own plain history types, and converting the session store's journal and branches into a
+  `Log` is LP4-14's. R-3 is read in its final form: every open document's full contents are kept, clean or dirty, and
+  a clean document's contents must match its saved digest. Embedded scripts are checked without a session identity (a
+  model-independent request).
+- Not built:
+  - LP4-14's document rows (`file.log.*`: New, Open, Save, Save as, Compile, Close, and the import commit with its file
+    check and confirm gates, recovery checkpoint and undo journal), the tabs, the Problems tab, the compile lamp and
+    the signature; saving the live session at exit, and restoring open documents at start with a changed-on-disk mark;
+  - the conversion between `c600-session`'s history and `Log`;
+  - logs of the jumbled puzzle: the identity block reads, `model_match` refuses it, and the replay is 600-cell-Full's;
+  - interpreting the recorded view, layout, workspace and layout steps, and checking Library entries (they are recorded
+    values); the install-time consent a script of another author class needs before it runs (the log records the
+    class);
+  - a chapter 05 table row and an FP.4 row for `c600-log-draft`, which are versioned changes of frozen text.
+- Evidence kind: source. Nothing here is Windows, input, display or timing evidence.
+
+## Status of LP4, LP4-13: C600 and MPUlt interchange
+
+LP4-13 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md), in `c600-log`: 0.4's proof logs and MPUltimate
+v1 logs of 600-cell-Full checked, imported and exported with 0.4's rules (`log_io.py`, `mpult_log.py`), which are not
+changed.
+
+- `c600::check`, `import` and `export`: `C600-STUDIO-SESSION-v1` (extension `.c600.json.gz`) with `decode_log`'s and
+  `validate_record`'s limits, order and texts: at most 16 MiB stored and 24 MiB expanded, UTF-8 JSON with an optional
+  BOM, a solved root, at most 10,000 transactions and 2,000,000 primitives, every recipe normalized with its counts,
+  and every pre, post and final state replayed. Import makes one commit per transaction and records the preferences
+  without applying them. Export writes the line from the start to the saved cursor as `Session.export` does (a partial
+  undo becomes a transaction of its kept letters), as canonical JSON, raw or in a stored gzip member with no time.
+  Codes: another model `KN1:input.identity_mismatch`, another format `PS2:input.persistence_version`, a cap
+  `PS1:resource_limit.persistence_size`, a replay mismatch `PS3:input.checkpoint_replay`, other faults
+  `PS1:input.persistence_format`.
+- `mpult::NativeProfile` reads 0.4's `C600-NATIVE-PROFILE-v1` with `profile_data`'s checks, plus its format and its
+  `profile_sha256`, which is checked on the file's bytes because 0.4 hashed `translations` with integer keys.
+  `mpult::check`, `import` and `export`: MPUltimate v1 logs of 600-cell-Full (extension `.log`) with `import_native`'s
+  checks: header, description with exact decimals, base36 colors, timer, CRC, macro groups and shuffle boundary, the
+  verified bridge words, the replay of every move with the redo tail, and the colors at the pointer. The caps are
+  0.4's: 16 MiB, 20,000 sequence entries and 10,000 native moves. Over a cap is `PS1:resource_limit.persistence_size`,
+  another puzzle (header, description or dimensions) `KN1:input.identity_mismatch`, another MPUltimate version
+  `PS2:input.persistence_version`, a CRC mismatch `PS1:input.digest_mismatch`, colors that disagree with the replay
+  `PS3:input.checkpoint_replay`. Import keeps the redo tail as moves after the saved cursor (a roll back to the
+  pointer). Export writes the line through the saved cursor and on along the last redo branch, with the pointer at
+  the saved cursor: an unchanged import is written back with its recorded sequence entries, counters and timer, and
+  any other transaction letter by letter through the profile's translations, as `export_native` does.
+- Tests (fixture): `tests/fixtures/make_fixtures.py` made the fixtures with 0.4's own code in the pinned engine
+  environment, and `expected.json` holds what 0.4 returned and the 0.4 sources' digests. `tests/interchange.rs`: the
+  0.4 sources and fixtures are unchanged; the fixtures import to the states 0.4 reaches, transaction by transaction,
+  and compile as logs to the session's hash; export then import is the identity, byte for byte for the raw C600
+  fixture and every MPUlt fixture, and by the JSON inside the gzip one; a session's letter-by-letter MPUlt export
+  equals 0.4's `export_native` bytes; the refusals above each carry their code; the description constant is MPUlt's
+  block.
+- Readings: the MPUlt profile in the fixtures is 0.4's synthetic one (`test_native_bridge.make_fixture`), not an export
+  of the actual MPUlt process, so this is source and fixture evidence only. Unlike 0.4's export, MPUlt export keeps a
+  redo tail and an imported transaction's recorded entries (macro markers and moves of no letter), so that an
+  unchanged import round-trips.
+- Not built:
+  - checks against a profile from the actual MPUlt process on the owner's machine;
+  - C600 export above 16 MiB stored: 0.4 compresses with zlib, this crate writes stored blocks only and refuses;
+  - JSON nested deeper than 128 levels in a 0.4 log, which 0.4's reader accepts and the kernel's parser refuses;
+  - the interchange command rows and file dialogs (LP4-14).
+- Evidence kind: source and fixture. Nothing here is Windows, input, display or timing evidence.

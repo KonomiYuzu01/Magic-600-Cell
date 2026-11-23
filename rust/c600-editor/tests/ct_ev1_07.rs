@@ -5,8 +5,8 @@
 mod support;
 
 use c600_editor::{
-    apply_edits, code, complete, definition, diagnose, hover, rename, Document, Edit, Envelope, Form, IdentitySubject,
-    ModuleContext, NextAction, Reason, Retry, Service, SourceRange, Units,
+    apply_edits, code, complete, definition, diagnose, edit_declared_part, hover, rename, Document, Edit, Envelope,
+    Form, IdentitySubject, ModuleContext, NextAction, PartValue, Reason, Retry, Service, SourceRange, Units, WHOLE,
 };
 use support::{full, importer, jumble, open, tool, LIB};
 
@@ -20,6 +20,8 @@ enum Step {
     PickContext,
     SplitEdits,
     AddDependency(String),
+    /// Ask for a value of the named type (EV3.7's round trip).
+    AskForValue(String),
     Edit,
 }
 
@@ -32,6 +34,7 @@ fn handle(e: &Envelope) -> Step {
         (NextAction::SelectContext, code::IDENTITY_MISMATCH) => Step::PickContext,
         (NextAction::SeparateEdits, code::SOURCE_RANGE_INVALID) => Step::SplitEdits,
         (NextAction::SupplyDependency { digest }, _) => Step::AddDependency(digest.clone()),
+        (NextAction::SupplyValue { expected }, code::TYPE_MISMATCH) => Step::AskForValue(expected.clone()),
         _ => Step::Edit,
     }
 }
@@ -197,6 +200,24 @@ fn refusals() -> Vec<(&'static str, Envelope, Service, &'static str, Step)> {
         assert_eq!(subject, &IdentitySubject::Dependency { alias: "lib".into(), digest: lib.clone() });
     }
     all.push(("member identity", refused, Service::Complete, "IdentityMismatch", Step::PickContext));
+    // The declared-part round trip (EV3.7): an undeclared field, and a value of another type than a declared one's.
+    let nat = PartValue::Int("1".into());
+    all.push((
+        "round trip undeclared",
+        edit_declared_part(&doc, old, "f", "x", &nat, &context).unwrap_err(),
+        Service::EditDeclaredPart,
+        "RoundTripUndeclared",
+        Step::Edit,
+    ));
+    let declared = open(&tool("# @editable parameter\nfn p() -> Nat effects [] {\n    return 1;\n}\n"));
+    let text = PartValue::Text("one".into());
+    all.push((
+        "round trip type",
+        edit_declared_part(&declared, declared.digest(), "p", WHOLE, &text, &context).unwrap_err(),
+        Service::EditDeclaredPart,
+        "ValueType",
+        Step::AskForValue("Nat".into()),
+    ));
     all
 }
 
@@ -218,6 +239,8 @@ fn reason_kind(r: &Reason) -> &'static str {
         Reason::DependencyMissing { .. } => "DependencyMissing",
         Reason::IdentityMismatch { .. } => "IdentityMismatch",
         Reason::ObligationUnmet { .. } => "ObligationUnmet",
+        Reason::RoundTripUndeclared { .. } => "RoundTripUndeclared",
+        Reason::ValueType { .. } => "ValueType",
     }
 }
 
@@ -227,7 +250,7 @@ fn reason_kind(r: &Reason) -> &'static str {
 fn ct_ev1_07_every_refusal_carries_event_reason_and_next_action() {
     let all = refusals();
     let kinds: std::collections::BTreeSet<&str> = all.iter().map(|(_, _, _, k, _)| *k).collect();
-    assert_eq!(kinds.len(), 8, "every refusal reason the services raise: {kinds:?}");
+    assert_eq!(kinds.len(), 10, "every refusal reason the services raise: {kinds:?}");
     for (label, e, service, kind, step) in &all {
         assert_eq!(e.form, Form::Refusal, "{label}");
         assert_eq!(e.service, *service, "{label}");
