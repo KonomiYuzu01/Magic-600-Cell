@@ -32,7 +32,9 @@ fn block_of(f: &Fixture, record: &str) -> provenance::Json {
     provenance::read(value.provenance.as_bytes()).expect("the conversion's block reads")
 }
 
-/// CT-BND-03 (part: workspace record, recording, draft and source conversion; not run: a file and a macro).
+/// CT-BND-03 (part: workspace record, recording, draft and source conversion; not run: a file, since the layer builds
+/// no file export or import of a word, and a macro, since `macro.save` takes an inline word and writes its own block,
+/// not the word's).
 /// CT-EV4-10 (part: both conversions keep provenance through parts; a source-produced word is a program's,
 /// `profile: solving`; not run: no laundering and no old permission, in the next test).
 /// The solver writes a word
@@ -139,4 +141,82 @@ fn ct_ev4_10_a_research_word_is_not_laundered() {
     let fresh = f.shell.step_preview(&mut f.layer, "laundry").unwrap_err();
     assert_eq!(fresh.code, own_refusal.code, "the word step's fresh preview");
     assert_ne!(own_refusal.code, code::ROW_NOT_BUILT);
+}
+
+/// The labels of a block that reads as FP.17: its form, author, producer, profile and whether it may read the state.
+fn labels(block: &[u8]) -> (String, String, String, String, bool) {
+    let read = provenance::read(block).expect("the block reads");
+    let (form, author, producer) = (field::form(&read), field::author(&read), field::producer(&read));
+    (form.into(), author.into(), producer.into(), field::profile(&read).into(), field::may_read_state(&read))
+}
+
+/// CT-PS1-17 (part: a state-derived word survives workspace save and read, a power loss and a reopen, a recording and
+/// both conversions with its labels under capability separation; not run: rename, since no H-08 row renames a
+/// workspace record, and the file round trip, since the layer builds no file export or import of a word). LQ21,
+/// RTE.24, PS1.16, PS1.32, BND.24, BND.32 on C5's reader. The word is a built-in solving tool's output whose run read
+/// the state (`read_state: yes`). `workspace.set` saves it; the record reads back byte for byte with its labels, and
+/// again after a power loss and a reopen. Previewed from its record and committed while recording, its word step
+/// carries the block; both conversions list it as a part, which the reader keeps and gives back with the same labels.
+/// The draft is admitted at preview, since its part is a built-in tool's output; the source conversion's own block is
+/// a program's that reads no state, its part keeping the state-read label. After a second power loss the recording
+/// and both conversions still carry the block.
+#[test]
+fn ct_ps1_17_a_state_derived_word_keeps_its_labels() {
+    let disk = MemDisk::new();
+    let producer = Producer {
+        contract: contract(),
+        checker: Some(common::checker()),
+        author: Author::BuiltIn,
+        module: sha256(b"a built-in tool's module"),
+        entry: "derive".into(),
+        profile: Profile::Solving,
+    };
+    let derived = provenance::canonical(&provenance::program(&producer, true, &[]));
+    let want = labels(&derived);
+    assert_eq!(want, ("capability_separation".into(), "built_in".into(), "program".into(), "solving".into(), true));
+
+    let mut f = Fixture::create(Box::new(disk.clone()));
+    assert!(completed(&f.write("derived", &[1, 2], &derived)));
+    assert_eq!(f.layer.record("derived").map(|v| v.provenance.clone()), Some(text(&derived)), "read back");
+    drop(f);
+    disk.crash();
+    let mut f = Fixture::open(Box::new(disk.clone()));
+    let kept = f.layer.record("derived").expect("the record after a reopen").provenance.clone();
+    assert_eq!((kept.as_bytes(), labels(kept.as_bytes())), (&derived[..], want.clone()), "byte for byte");
+
+    let recorder = f.layer.store().recorder();
+    f.layer.set_recorder(Box::new(recorder)).unwrap();
+    assert!(completed(&f.shell.invoke(&mut f.layer, RECORDING_START_ROW, named("name", "p")).unwrap()));
+    let id = f.preview(record_draft("derived"));
+    let press = f.press(id);
+    assert!(matches!(f.shell.send(&mut f.layer, press).status, Status::Committed(_)));
+    assert!(completed(&f.shell.invoke(&mut f.layer, RECORDING_STOP_ROW, named("recording", "p")).unwrap()));
+    let p = f.layer.recording("p").unwrap().clone();
+    assert_eq!(p.steps[1].block(), Some(text(&derived).as_str()), "the word step carries the block");
+    for target in ["draft", "source"] {
+        let name = format!("{target}/recording/p");
+        assert!(completed(&convert(&mut f, "p", target)), "{target}");
+        assert_eq!(field::parts(&block_of(&f, &name)), vec![sha256(&derived)], "{target}");
+        let record = f.layer.record(&name).unwrap().provenance.clone();
+        let parts = c600_command::Provenance::parts(&f.reader, record.as_bytes());
+        assert_eq!(parts, [text(&derived)], "{target}: the part is the block itself");
+        assert_eq!(labels(parts[0].as_bytes()), want, "{target}: with its labels");
+    }
+    let previewed = f.ask(record_draft("draft/recording/p"));
+    assert!(matches!(previewed.status, Status::Running(_)), "the draft is admitted: {:?}", previewed.status);
+    f.layer.run_jobs();
+    let source = block_of(&f, "source/recording/p");
+    assert_eq!((field::producer(&source), field::may_read_state(&source)), ("program", false), "the module's own");
+
+    drop(f);
+    disk.crash();
+    let mut g = Fixture::open(Box::new(disk.clone()));
+    let recorder = g.layer.store().recorder();
+    g.layer.set_recorder(Box::new(recorder)).unwrap();
+    let step = g.layer.recording("p").map(|p| p.steps[1].block().map(str::to_owned));
+    assert_eq!(step, Some(Some(text(&derived))), "the recording's word step, after a reopen");
+    for target in ["draft", "source"] {
+        assert_eq!(field::parts(&block_of(&g, &format!("{target}/recording/p"))), vec![sha256(&derived)], "{target}");
+    }
+    assert!(matches!(g.ask(record_draft("draft/recording/p")).status, Status::Running(_)), "admitted after a reopen");
 }

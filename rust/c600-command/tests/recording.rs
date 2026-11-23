@@ -398,12 +398,15 @@ fn completed_write(name: &str, moves: &[i64], action: u64) -> RecordedStep {
 
 /// CT-EV4-11 (whole; EV4.10, EV4.11).
 /// CT-EV4-08 (part: a recording retains semantic commands, canonical arguments, identities, word and action
-/// references, revisions and receipt bindings; not run: that playback has no rebinding operation, since only
-/// untargeted revisions are asserted in `ct_ev4_16`, and source conversion's checks and grants on the real checker).
-/// CT-PS1-15 (part: the round trip of a recording whose steps hold no module digest or block; not run: the round trip
-/// of a step with a module digest or a block).
+/// references, revisions and receipt bindings; not run: that playback has no rebinding operation, which
+/// `ct_ev4_08_playback_has_no_rebinding_operation` runs, and source conversion's checks and grants on the real checker,
+/// which `c600-durable`'s `tests/ps1_44_carrier.rs` runs).
+/// CT-PS1-15 (part: the round trip of a recording whose steps hold no module digest or block; not run: the round
+/// trip of a step with a module digest or a word block, which `ct_ps1_15_a_module_digest_and_a_word_block_round_trip`
+/// runs).
 /// CT-PS1-24 (part: completed, committed and refused receipts round-trip unchanged; no token or operation preview ID
-/// is stored; not run: failed and cancelled receipts, and a missing terminal's absence after a round trip).
+/// is stored; not run: failed and cancelled receipts, and a missing terminal's absence after a round trip, which
+/// `ct_ps1_24_every_recorded_outcome_round_trips_and_a_missing_terminal_stays_absent` runs).
 /// CT-EV4-19 (part: a start while recording and a stop with none refuse with `EV4:input.recording_state`; not run: the
 /// rest of EV4.22's table, which `ct_ev4_19_the_play_table_rewinds_and_job_stop` runs).
 ///
@@ -466,6 +469,203 @@ fn ct_ev4_11_capture_appends_one_step_per_resolved_invocation() {
     }
 }
 
+/// CT-EV4-08 (whole by union with `ct_ev4_11_capture_appends_one_step_per_resolved_invocation`, which runs what a
+/// recording retains, and `c600-durable`'s `tests/ps1_44_carrier.rs`, which runs a source conversion through the real
+/// checker and the module set's grants: here, that playback has no rebinding operation; EV4.10 to EV4.14).
+/// The command table's recording rows are the four, and their arguments name a recording, a capture's name, a step and
+/// a target: none names a step's argument, module or revision to replace. An unattended step is played as a new
+/// invocation of its recorded row with its recorded canonical arguments, and its job is bound to the module digest the
+/// step recorded. A user step's action submits the recorded arguments: one that submits other arguments is refused
+/// with `EV4:input.recording_state` and writes nothing, and the step action that follows plays the step as recorded.
+/// The recording is the same after the playback.
+#[test]
+fn ct_ev4_08_playback_has_no_rebinding_operation() {
+    // Every row that names a recording takes only a recording, a capture's name, a step (`from`) and a target.
+    let table = Table::h08().with_drafts();
+    let named: Vec<&c600_command::Row> = table
+        .rows()
+        .filter(|row| row.id.starts_with("recording.") || row.arguments.values().any(|ty| ty == "RecordingRef"))
+        .collect();
+    for row in &named {
+        let kinds: Vec<&str> = row.arguments.values().map(String::as_str).collect();
+        let replaces = kinds.iter().any(|ty| !matches!(*ty, "RecordingRef" | "Text" | "Nat?" | "draft | source"));
+        assert!(!replaces, "{} takes {kinds:?}: no recording row rebinds a step", row.id);
+    }
+    let ids: Vec<&str> = named.iter().map(|row| row.id.as_str()).collect();
+    for id in [RECORDING_START_ROW, RECORDING_STOP_ROW, RECORDING_PLAY_ROW, RECORDING_CONVERT_ROW] {
+        assert!(ids.contains(&id), "{id}");
+    }
+
+    let mut f = fixture();
+    let digest = "ab".repeat(32);
+    let versions = Versions::default();
+    versions.set("tools/fixture", Some(&digest));
+    f.layer.set_module_versions(Box::new(versions));
+    let rotated = RecordedStep { module: Some(digest.clone()), ..completed_rotate() };
+    let save = json::object([("name", text("m")), ("word", json::object([("recipe", word(&[1]))]))]);
+    let b = recording("b", vec![rotated.clone(), step("macro.save", save.clone(), Some(completed()))]);
+    f.put(vec![b.clone()]);
+    let played = f.play("b", None);
+    assert!(matches!(played.status, Status::Running(_)), "{:?}", played.status);
+    f.layer.run_jobs();
+    let child = f.layer.take_program_job().expect("the rotation's job");
+    assert_eq!((child.row.as_str(), &child.args), (ROTATE, &rotated.arguments), "the recorded canonical arguments");
+    assert_eq!(child.module.as_deref(), Some(digest.as_str()), "bound to the module digest the step recorded");
+    assert!(child.command != rotated.command && child.command.starts_with(&f.state("b").playback), "a new one");
+    f.layer.finish_program_job_with(child.job, Ok(JobOutput::of(Value::Null))).expect("reported");
+    f.drive();
+    assert_eq!(f.state("b").status, PlayStatus::Waiting(1));
+
+    let mut other = save.as_object().cloned().unwrap();
+    other.insert("name".into(), text("other"));
+    other.insert("confirm".into(), Value::Bool(true));
+    let rebound = f.shell.prepare(&f.layer, "macro.save", Value::Object(other)).unwrap();
+    let (writes, before) = (f.recorder.writes(), f.state("b"));
+    assert_eq!(f.layer.begin_step("b", &rebound).unwrap_err().code, code::RECORDING_STATE, "other arguments");
+    assert_eq!((f.recorder.writes(), f.state("b")), (writes, before), "nothing written");
+    let saved = f.shell.step(&mut f.layer, "b", true).unwrap();
+    assert!(matches!(saved.status, Status::Completed(_)), "{:?}", saved.status);
+    assert!(f.layer.record("macro/m").is_some() && f.layer.record("macro/other").is_none(), "played as recorded");
+    assert_eq!(f.state("b").status, PlayStatus::Finished);
+    assert_eq!(f.layer.recording("b"), Some(&b), "the recording is the same");
+}
+
+// ----- CT-PS1-15 and CT-PS1-24: the round trip of every field and every recorded outcome
+
+/// The recording `name` after a round trip through its canonical bytes (PS1.30's draft form), the memory recorder and
+/// a reopen of the journal and the recorder.
+fn round_trips(f: &F, name: &str) -> Recording {
+    let recording = f.layer.recording(name).expect("stored").clone();
+    let bytes = recording.to_json().canonical();
+    let read = Recording::from_json(&json::parse(bytes.as_bytes()).unwrap()).expect("the bytes read");
+    assert_eq!(read, recording, "every field round-trips through the bytes");
+    for step in &recording.steps {
+        assert_eq!(RecordedStep::from_json(&step.to_json()).as_ref(), Some(step), "{}", step.row);
+    }
+    assert_eq!(f.recorder.held().recordings.get(name), Some(&recording), "the recorder holds it");
+    let g = reopen(f, "again");
+    assert_eq!(g.layer.recording(name), Some(&recording), "a reopen reads it back");
+    recording
+}
+
+/// CT-PS1-15 (whole by union with `ct_ev4_09_no_token_is_stored_or_replayed`, which plays commits with a new explicit
+/// action and token, and `ct_ev4_11_capture_appends_one_step_per_resolved_invocation`: here, the round trip of steps
+/// with a module digest and a word block; PS1.30, EV4.10). A capture holds a rotation and a block step that an entry of
+/// a user module's active version served, each with that version's digest, the block step with the revision it named;
+/// a preview of a record's word and its commit, whose word step keeps the word, its source and the record's block and
+/// names the action it took; and a record write with its action. Every field round-trips unchanged through the
+/// canonical bytes, the recorder and a reopen: canonical arguments, word and action references, revisions, module
+/// digests, receipt bindings and the provenance block.
+#[test]
+fn ct_ps1_15_a_module_digest_and_a_word_block_round_trip() {
+    let mut f = fixture();
+    let digest = "cd".repeat(32);
+    let versions = Versions::default();
+    versions.set("tools/fixture", Some(&digest));
+    f.layer.set_module_versions(Box::new(versions));
+    let own = block("manual", "none", &[&manual()]);
+    assert!(matches!(f.write_with("word", &[1, 2], &own).status, Status::Completed(_)));
+    f.start("all");
+    assert!(matches!(f.rotate().status, Status::Completed(_)));
+    let revision = f.layer.revision().to_json();
+    let args = json::object([("mode", text("exact")), ("positions", letters(&[3])), ("revision", revision.clone())]);
+    assert!(matches!(f.served(BLOCK, args.clone(), Value::Null).status, Status::Completed(_)));
+    let id = f.preview(json::object([("record", text("word"))]));
+    assert!(matches!(f.execute(id).status, Status::Committed(_)));
+    assert!(matches!(f.write("w", &[3]).status, Status::Completed(_)));
+    f.stop("all");
+
+    let all = round_trips(&f, "all");
+    let rows: Vec<&str> = all.steps.iter().map(|step| step.row.as_str()).collect();
+    assert_eq!(rows, [ROTATE, BLOCK, "operation.preview", "operation.execute", RECORD_ROW]);
+    let modules: Vec<Option<&str>> = all.steps.iter().map(|step| step.module.as_deref()).collect();
+    assert_eq!(modules, [Some(digest.as_str()), Some(digest.as_str()), None, None, None], "the served steps' digest");
+    assert_eq!((all.steps[1].arguments.clone(), all.steps[1].depends.get(1)), (args, Some(&revision)));
+    let execute = &all.steps[3];
+    assert_eq!(execute.block(), Some(own.as_str()), "the word step keeps the record's block");
+    assert_eq!(execute.word.as_ref().and_then(|w| w.get("recipe")), Some(&word(&[1, 2])));
+    assert!(execute.action.is_some() && all.steps[4].action.is_some(), "the actions the steps took");
+    for (i, step) in all.steps.iter().enumerate() {
+        let receipt = f.receipt(&step.command, &step.request);
+        assert_eq!(step.outcome.as_ref(), Some(&receipt.to_json()), "step {i}: the receipt binding");
+    }
+}
+
+/// CT-PS1-24 (whole; PS1.30, EV4.11, EV4.19). One capture holds a completed record write and preview, a committed word,
+/// a refused policy change, a rotation whose entry failed, a rotation a newer request superseded (`cancelled`) and the
+/// rotation that superseded it: each step's outcome is its invocation's terminal receipt, and every one round-trips
+/// unchanged through the bytes, the recorder and a reopen, with no token, binding, nonce, confirmation or operation
+/// preview ID stored. A second capture holds a rotation whose transient receipt a restart lost before the stop: it
+/// has no terminal record, and it stays absent after the round trip; playback and both conversions stop at that step
+/// with `EV4:input.recording_step_outcome_unknown`, filling nothing in. A played child's new binding is kept in the
+/// playback state and never replaces the captured invocation.
+#[test]
+fn ct_ps1_24_every_recorded_outcome_round_trips_and_a_missing_terminal_stays_absent() {
+    let mut f = fixture();
+    f.start("o");
+    assert!(matches!(f.write("w", &[1]).status, Status::Completed(_)));
+    let id = f.preview(json::object([("recipe", word(&[2]))]));
+    let press =
+        f.shell.prepare(&f.layer, "operation.execute", json::object([("preview", Value::Int(id as i64))])).unwrap();
+    let binding = press.token.as_ref().expect("a commit's token").binding.to_json().canonical();
+    assert!(matches!(f.shell.send(&mut f.layer, press).status, Status::Committed(_)));
+    let policy = json::object([("confirm", Value::Bool(false)), ("policy", text("strict"))]);
+    assert_eq!(code_of(&f.press(POLICY_ROW, policy)), Some(code::CONFIRMATION_REQUIRED));
+    let failing = f.press(ROTATE, rotate_args());
+    let Status::Running(job) = failing.status else { panic!("{:?}", failing.status) };
+    assert_eq!(f.layer.take_program_job().map(|taken| taken.job), Some(job));
+    let failed = f.layer.finish_program_job_with(job, Err(Error::new(code::ROW_NOT_BUILT, "the entry failed")));
+    assert!(matches!(failed.map(|r| r.status), Some(Status::Failed(_))));
+    let superseded = f.press(ROTATE, rotate_args());
+    assert!(matches!(superseded.status, Status::Running(_)), "{:?}", superseded.status);
+    assert!(matches!(f.press(ROTATE, rotate_args()).status, Status::Running(_)));
+    f.drive();
+    f.stop("o");
+
+    let o = round_trips(&f, "o");
+    let names: Vec<Option<&str>> = o.steps.iter().map(RecordedStep::status).collect();
+    let want = ["completed", "completed", "committed", "refused", "failed", "cancelled", "completed"].map(Some);
+    assert_eq!(names, want);
+    for (i, step) in o.steps.iter().enumerate() {
+        let receipt = f.receipt(&step.command, &step.request);
+        assert_eq!(step.outcome.as_ref(), Some(&receipt.to_json()), "step {i}: the receipt, unchanged");
+    }
+    let bytes = o.to_json().canonical();
+    for held in [binding.as_str(), "\"nonce\"", "\"token\"", "\"confirm\""] {
+        assert!(!bytes.contains(held), "the recording holds {held}");
+    }
+    assert_eq!(o.steps[2].arguments, json::object([]), "no operation preview ID");
+
+    // A played child: a new command and request, kept in the state; the captured step is never replaced.
+    let played = f.play("o", None);
+    assert!(matches!(played.status, Status::Running(_)), "{:?}", played.status);
+    f.drive();
+    let state = f.state("o");
+    assert_eq!(state.status, PlayStatus::Waiting(1), "the preview is a user step");
+    let last = state.last.as_ref().expect("the record write's child");
+    assert_ne!(last.get("command"), Some(&text(&o.steps[0].command)));
+    assert_eq!(f.layer.recording("o"), Some(&o), "the captured invocation stays");
+
+    // A missing terminal.
+    f.start("m");
+    let lost = f.press(ROTATE, rotate_args());
+    assert!(matches!(lost.status, Status::Running(_)), "{:?}", lost.status);
+    f.layer.restart(Secret::fixed(SECRET));
+    f.stop("m");
+    let m = round_trips(&f, "m");
+    assert_eq!((m.steps.len(), m.steps[0].outcome.as_ref(), m.steps[0].status()), (1, None, None), "absent");
+    assert_eq!(historical(&m.steps[0]), Historical::Unknown);
+    let played = f.play("m", None);
+    f.drive();
+    let stop = Stop::Code(code::RECORDING_STEP_OUTCOME_UNKNOWN.to_owned());
+    assert_eq!((f.state("m").step, f.state("m").status), (0, PlayStatus::Stopped(stop)));
+    assert_eq!(code_of(&f.receipt(&played.command, &played.request)), Some(code::RECORDING_STEP_OUTCOME_UNKNOWN));
+    for target in ["draft", "source"] {
+        assert_eq!(code_of(&f.convert("m", target)), Some(code::RECORDING_STEP_OUTCOME_UNKNOWN), "{target}");
+    }
+    assert_eq!(f.layer.recording("m"), Some(&m), "still absent: nothing filled it in");
+}
+
 // ----- CT-EV4-12: the eligibility table
 
 /// EV4.22's table, as this test reads it, for a row of `kind`, `lane`, `job` and `gates`.
@@ -476,8 +676,10 @@ fn expected(kind: &str, lane: &str, job: bool, gates: &[&str]) -> bool {
     !user && matches!((kind, lane), ("view" | "workspace", "view" | "none") | ("query", "none"))
 }
 
-/// CT-EV4-12 (part: the table enumerated whole and H-08's rows; not run: a no-job query in lane none played live, and
-/// the filter freshness check at play, which `ct_ev4_16` runs). EV4.17, EV4.18, EV4.22: the eligibility table
+/// CT-EV4-12 (part: the table enumerated whole and H-08's rows; not run: rows played live, which
+/// `ct_ev4_12_playback_plays_only_the_unattended_rows` and
+/// `ct_ev4_12_a_query_plays_and_file_app_and_exclusive_rows_wait` run, and the filter freshness check at play, which
+/// the `ct_ev4_16` tests run). EV4.17, EV4.18, EV4.22: the eligibility table
 /// enumerated whole, across every kind, lane, job flag and
 /// gate that H-08's grammar has (6 kinds, 5 lanes, 2 job flags, 4 gate sets: 240 rows), against the test's own reading
 /// of the table; then every row of H-08 with the drafts. Kind `view` or `workspace` on lane `view` or `none` and kind
@@ -556,9 +758,10 @@ fn ct_ev4_12_the_eligibility_table_enumerated_whole() {
 }
 
 /// CT-EV4-12 (part: a workspace edit, a camera rotation and a layout step play unattended, and confirm, policy, job
-/// and commit rows wait; not run: a no-job query played live). One recording holds a workspace edit, a camera
-/// rotation, a no-job query in lane none,
-/// a layout step, a `confirm` row, a policy change, a language-defined job row and a word commit. The first four play
+/// and commit rows wait; not run: a no-job query played live and file, app, `file_check` and exclusive rows
+/// waiting, which `ct_ev4_12_a_query_plays_and_file_app_and_exclusive_rows_wait` runs). One recording holds a
+/// workspace edit, a camera rotation, a layout step, a `confirm` row, a policy change, a language-defined job row and
+/// a word commit. The first three play
 /// unattended, each as a new invocation; the playback stops at each user step, where `recording.play` finishes, and
 /// the solver's step action plays it. Nothing the playback dispatches is a commit: the journal holds only the edit's
 /// and the layout step's actions until the solver's own presses.
@@ -615,6 +818,91 @@ fn ct_ev4_12_playback_plays_only_the_unattended_rows() {
     let commit = f.shell.step(&mut f.layer, "mixed", false).unwrap();
     assert!(matches!(commit.status, Status::Committed(_)), "{:?}", commit.status);
     assert_eq!(f.state("mixed").status, PlayStatus::Finished);
+}
+
+/// A predicate the filter reads: a `structure.layer` job writes record `layer`; its `FilterRef` names the job and its
+/// output. The job's completion is a workspace action on the move history.
+fn predicate(f: &mut F) -> Value {
+    let receipt = f.press(PREDICATE_ROW, json::object([("cell", Value::Int(1)), ("layer", Value::Int(2))]));
+    let Status::Running(job) = receipt.status else { panic!("the predicate: {:?}", receipt.status) };
+    assert_eq!(f.layer.take_program_job().map(|taken| taken.job), Some(job));
+    let mut output = JobOutput::of(Value::Null);
+    output.records.insert("layer".into(), RecordValue { payload: letters(&[1, 2, 3]), provenance: manual() });
+    let digest = output.digest();
+    let done = f.layer.finish_program_job_with(job, Ok(output)).expect("reported");
+    assert!(matches!(done.status, Status::Completed(_)), "{:?}", done.status);
+    json::object([("digest", text(&digest)), ("job", Value::Int(job as i64))])
+}
+
+/// `filter.preview`'s arguments for `predicate` at the current revision.
+fn filter_args(f: &F, predicate: &Value) -> Value {
+    json::object([("predicate", predicate.clone()), ("revision", f.layer.revision().to_json())])
+}
+
+/// A filter preview of `predicate` that the layer keeps: its job and its `FilterPreviewRef`.
+fn kept_filter(f: &mut F, predicate: &Value) -> (u64, Value) {
+    let receipt = f.press(FILTER_PREVIEW, filter_args(f, predicate));
+    let Status::Running(job) = receipt.status else { panic!("the filter preview: {:?}", receipt.status) };
+    assert_eq!(f.layer.take_program_job().map(|taken| taken.job), Some(job));
+    let counts = json::object([("kept", Value::Int(12)), ("total", Value::Int(600))]);
+    let done = f.layer.finish_program_job_with(job, Ok(JobOutput::of(counts))).expect("reported");
+    assert!(matches!(done.status, Status::Completed(_)), "{:?}", done.status);
+    (job, f.layer.filter_preview(job).expect("kept").reference())
+}
+
+/// A completed query's recorded outcome.
+fn query_done() -> Value {
+    json::object([("name", text("completed")), ("kind", text("query"))])
+}
+
+/// The receipt of the child the playback of `name` settled last.
+fn last_child(f: &F, name: &str) -> Receipt {
+    let state = f.state(name);
+    let last = state.last.as_ref().expect("a settled child");
+    let field = |key: &str| last.get(key).and_then(Value::as_str).unwrap().to_owned();
+    f.receipt(&field("command"), &field("request"))
+}
+
+/// CT-EV4-12 (whole by union with `ct_ev4_12_the_eligibility_table_enumerated_whole`, which enumerates the table,
+/// `ct_ev4_12_playback_plays_only_the_unattended_rows`, and `ct_ev4_16_stale_steps_stop_and_identities_refuse` and
+/// `ct_ev4_16_a_kept_filter_preview_gone_stale_stops_unretargeted`, which check filter freshness at play without
+/// retargeting: here, a no-job query in lane none played live, and file, app, `file_check` and exclusive rows waiting
+/// live; EV4.17, EV4.18, EV4.22). A `filter.preview`, a query on lane `none` with no job flag, plays unattended by the
+/// integrator's default as a new invocation and completes as a query: it takes no action and moves no undo target. A
+/// keymap export (`file`), `job.stop` (`app`), a keymap apply (`file_check` and `confirm`) and a log check (exclusive
+/// lane and a job) each wait for the solver's step action, and nothing is dispatched for them.
+#[test]
+fn ct_ev4_12_a_query_plays_and_file_app_and_exclusive_rows_wait() {
+    let mut f = fixture();
+    let predicate = predicate(&mut f);
+    let query = step(FILTER_PREVIEW, filter_args(&f, &predicate), Some(query_done()));
+    let waits = [
+        ("file.keymap.export", json::object([("destination", text("keys.json")), ("keymap", text("current"))])),
+        ("job.stop", json::object([("job", Value::Int(1))])),
+        ("file.keymap.apply", json::object([("checked", text("keys.json"))])),
+        ("file.log.check", json::object([("file", text("log.json"))])),
+    ];
+    let mut steps = vec![query];
+    steps.extend(waits.iter().map(|(row, args)| step(row, args.clone(), Some(completed()))));
+    f.put(vec![recording("q", steps)]);
+    let (log, undo) = (f.log(), f.layer.undo_hint(Direction::Undo));
+    let played = f.play("q", None);
+    assert!(matches!(played.status, Status::Running(_)), "{:?}", played.status);
+    f.drive();
+    assert_eq!(f.state("q").status, PlayStatus::Waiting(1), "the query played; the file row waits");
+    let child = last_child(&f, "q");
+    let Status::Completed(done) = &child.status else { panic!("{:?}", child.status) };
+    assert_eq!(done.kind, c600_command::CompletionKind::Query, "a query, by the default");
+    assert!(child.command.starts_with(&f.state("q").playback), "a new invocation: {}", child.command);
+    assert_eq!((f.log(), f.layer.undo_hint(Direction::Undo)), (log, undo), "no action and no undo target");
+    for (at, (row, _)) in waits.iter().enumerate().skip(1) {
+        let at = at as u64 + 1;
+        assert!(matches!(f.play("q", Some(at as i64)).status, Status::Running(_)), "{row}");
+        f.layer.run_jobs();
+        assert!(f.layer.take_program_job().is_none(), "{row}: nothing is dispatched");
+        assert_eq!(f.state("q").status, PlayStatus::Waiting(at), "{row} waits");
+    }
+    assert_eq!(f.log(), log);
 }
 
 // ----- CT-EV4-13: EV4.19's two tables
@@ -730,8 +1018,9 @@ fn kernel_revision() -> c600_command::Revision {
 // ----- CT-EV4-15: undo classification (X1: two histories)
 
 /// CT-EV4-15 (part: the edit and the layout step become undo targets, the rotation, the timer row and the cursor
-/// invent none, and a later failure keeps earlier actions; not run: a no-job query step played, which this recording
-/// does not hold). EV4.21; X1, owner decision of 23 November 2026, item 2.7. A playback of an undoable workspace edit
+/// invent none, and a later failure keeps earlier actions; not run: a no-job query step played, which
+/// `ct_ev4_15_a_query_an_edit_and_a_rotation_keep_their_undo_classes` runs). EV4.21; X1, owner decision of 23 November
+/// 2026, item 2.7. A playback of an undoable workspace edit
 /// (`workspace.set`, on the move history: EV4.15's single order would hold it in the same place), a camera rotation
 /// (`undo: none`), a no-job query and a layout step (`work.layout.set`, on the layout history, which EV4.15's single
 /// order would not keep apart): only the edit becomes the move history's undo target and only the layout step the
@@ -784,11 +1073,73 @@ fn ct_ev4_15_each_played_step_keeps_its_undo_class() {
     assert_eq!(f.layer.record("w").map(|v| v.payload.clone()), Some(letters(&[1])), "the earlier action stays");
 }
 
+/// CT-EV4-15 (whole; EV4.21; X1, owner decision of 23 November 2026, item 2.7: the move history, where EV4.15's
+/// single order would read the same, since no layout step is involved). A playback of a no-job query
+/// (`filter.preview`), an undoable workspace edit (`workspace.set`), a camera rotation and a timer row (both
+/// `undo: none`; an entry serves the timer row here), then a rotation whose entry fails: the query completes
+/// read-only and the rotation with a receipt, and neither takes an action; the timer row's completion is a durable
+/// workspace action of undo class none, so it too invents no undo target; only the edit becomes the move history's
+/// undo target; the later failure stops the playback and leaves the edit applied. The cursor is never an undo target:
+/// its writes take no action, and the undo after the edit's reaches the action before the playback, leaving the
+/// cursor where it was.
+#[test]
+fn ct_ev4_15_a_query_an_edit_and_a_rotation_keep_their_undo_classes() {
+    let mut f = fixture();
+    f.layer.serve_row("session.timer.start", overlay("timer")).unwrap();
+    let predicate = predicate(&mut f);
+    let query = step(FILTER_PREVIEW, filter_args(&f, &predicate), Some(query_done()));
+    let timer = step("session.timer.start", json::object([]), Some(completed()));
+    let steps = vec![query, completed_write("w", &[1], 1), completed_rotate(), timer, completed_rotate()];
+    f.put(vec![recording("u", steps)]);
+    let (log, before) = (f.log(), f.layer.undo_hint(Direction::Undo).map(|hint| hint.target));
+    assert_eq!(before, Some(log as u64), "the predicate's action");
+    let writes = f.recorder.writes();
+    f.play("u", None);
+    // Each child's job, settled by hand: the step it plays, its row, its receipt, then the log and the undo target.
+    let mut settled = Vec::new();
+    loop {
+        f.layer.run_jobs();
+        let Some(job) = f.layer.take_program_job() else { break };
+        let at = f.state("u").step;
+        let result = match at {
+            4 => Err(Error::new(code::ROW_NOT_BUILT, "the entry failed")),
+            _ => Ok(JobOutput::of(Value::Null)),
+        };
+        let receipt = f.layer.finish_program_job_with(job.job, result).expect("reported");
+        let undo = f.layer.undo_hint(Direction::Undo).map(|hint| hint.target);
+        settled.push((at, job.row, receipt.status.name(), f.log(), undo));
+    }
+    let edit = log as u64 + 1;
+    let row = |row: &str| row.to_owned();
+    let want = [
+        (0, row(FILTER_PREVIEW), "completed", log, before),
+        (2, row(ROTATE), "completed", log + 1, Some(edit)),
+        (3, row("session.timer.start"), "completed", log + 2, Some(edit)),
+        (4, row(ROTATE), "failed", log + 2, Some(edit)),
+    ];
+    assert_eq!(settled, want, "only the edit becomes an undo target; the timer row's action is undo class none");
+    let state = f.state("u");
+    assert_eq!((state.step, &state.status), (4, &PlayStatus::Stopped(Stop::Outcome(ChildOutcome::Failed))));
+    let map: Vec<(u64, u64)> = state.actions.iter().map(|entry| (entry.recorded, entry.played)).collect();
+    assert_eq!(map, [(1, edit)], "the map holds the edit's action");
+    assert_eq!(f.log(), log + 2, "the edit's and the timer row's actions; the query, rotation and cursor took none");
+    assert!(f.recorder.writes() > writes, "the cursor's writes went to the recorder");
+    assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), Some(edit), "the move history");
+    assert!(f.layer.layout_hint(Direction::Undo).is_none(), "and nothing on the layout history");
+    assert_eq!(f.layer.record("w").map(|v| v.payload.clone()), Some(letters(&[1])), "kept after the failure");
+
+    let hint = f.layer.undo_hint(Direction::Undo).unwrap();
+    assert!(matches!(f.press("session.undo", json::object([("hint", hint.to_json())])).status, Status::Committed(_)));
+    assert!(f.layer.record("w").is_none(), "the edit is undone");
+    assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), before, "next, the action before the play");
+    assert_eq!(f.state("u"), state, "the cursor is no undo target and stays where it was");
+}
+
 // ----- CT-EV4-16: staleness and identity
 
 /// CT-EV4-16 (part: a current revision plays, a stale one stops with its arguments as recorded, and a model or module
-/// mismatch refuses before play or stops during it; not run: a kept filter preview gone stale, since only a preview ID
-/// never kept is tried).
+/// mismatch refuses before play or stops during it; not run: a kept filter preview gone stale, since only a
+/// preview ID never kept is tried, which `ct_ev4_16_a_kept_filter_preview_gone_stale_stops_unretargeted` runs).
 /// CT-ERR-18 (part: stale-step stops and identity refusals; not run: unknown outcomes, state and conversion refusals
 /// and forwarded child failures, which other tests run).
 /// An unattended step naming the current
@@ -887,6 +1238,45 @@ fn ct_ev4_16_stale_steps_stop_and_identities_refuse() {
 /// A completed invocation of the language-defined query row of module `m`.
 fn completed_tool() -> RecordedStep {
     step(TOOL, json::object([]), Some(json::object([("name", text("completed")), ("kind", text("query"))])))
+}
+
+/// CT-EV4-16 (whole by union with `ct_ev4_16_stale_steps_stop_and_identities_refuse`: here, a kept filter preview that
+/// went stale; EV4.14, EV4.22). A `filter.apply` step names a filter preview the layer keeps: while it is fresh the
+/// step plays and applies. Once a commit moves the state, the layer still keeps that filter preview but it is no
+/// longer fresh, and the step stops with `EV4:stale.recording_step` at it, applying nothing, its arguments as
+/// recorded. A fresh filter preview of the same predicate does not change that: the step still names the stale one,
+/// and nothing retargets it.
+#[test]
+fn ct_ev4_16_a_kept_filter_preview_gone_stale_stops_unretargeted() {
+    let mut f = fixture();
+    let predicate = predicate(&mut f);
+    let (job, kept) = kept_filter(&mut f, &predicate);
+    let apply = json::object([("preview", kept)]);
+    f.put(vec![recording("apply", vec![step(APPLY, apply.clone(), Some(completed()))])]);
+    f.play("apply", None);
+    f.drive();
+    assert_eq!(f.state("apply").status, PlayStatus::Finished, "a fresh filter preview plays");
+    assert!(f.layer.record("out/filter.apply").is_some(), "and applies");
+
+    assert!(matches!(f.commit(&[1]).status, Status::Committed(_)), "the state moves");
+    let preview = f.layer.filter_preview(job).expect("still kept").clone();
+    assert!(!f.layer.filter_fresh(&preview), "and no longer fresh");
+    let log = f.log();
+    let stale = PlayStatus::Stopped(Stop::Code(code::STALE_RECORDING_STEP.to_owned()));
+    let played = f.play("apply", Some(0));
+    assert!(matches!(played.status, Status::Running(_)), "{:?}", played.status);
+    f.drive();
+    assert_eq!((f.state("apply").step, f.state("apply").status), (0, stale.clone()));
+    assert_eq!(code_of(&f.receipt(&played.command, &played.request)), Some(code::STALE_RECORDING_STEP));
+    assert_eq!(f.log(), log, "nothing applied");
+
+    let (fresh, _) = kept_filter(&mut f, &predicate);
+    assert_ne!(fresh, job);
+    assert!(matches!(f.play("apply", Some(0)).status, Status::Running(_)));
+    f.drive();
+    assert_eq!(f.state("apply").status, stale, "the step names the stale filter preview, not the fresh one");
+    assert_eq!(f.log(), log);
+    assert_eq!(f.layer.recording("apply").unwrap().steps[0].arguments, apply, "not retargeted");
 }
 
 // ----- CT-EV4-14 and CT-PS1-25: the crash points, synthetic
@@ -1065,13 +1455,12 @@ fn ct_ev4_17_the_five_conversion_vectors_on_both_targets() {
     assert!(module.contains("propose(word[1, 3], target(\"operation.preview\"))"), "{module}");
 }
 
-/// CT-EV4-18 (part: a redo of a word, an undo of a non-word action, a checkpoint save, the report, the source refusals
-/// and one undoable draft action; not run: a redo of a non-word action, and a draft keeping more than one block).
-/// EV4.23. A redo restores a word at its recorded place; an undo of a recorded non-word action and a
-/// checkpoint save add no draft letters but refuse source; completed non-word steps enter the draft report; source takes
-/// only calls an overlay row may invoke (KN5.4) with no `confirm` or `file_check` gate and refuses a file or app row. A
-/// successful draft conversion is one undoable action that writes a Macro-phase draft and keeps every contributing
-/// word's block in its block's parts. X1: the conversion's record write is the move history's undo target, as
+/// CT-EV4-18 (whole; EV4.23). A redo restores a word at its recorded place; an undo or a redo of a recorded non-word
+/// action and a checkpoint save add no draft letters but refuse source, each at its own step; completed non-word steps
+/// enter the draft report; source takes only calls an overlay row may invoke (KN5.4) with no `confirm` or `file_check`
+/// gate and refuses a file or app row and a row no overlay row may invoke. A successful draft conversion is one
+/// undoable action that writes a Macro-phase draft and keeps every contributing word's block in its block's parts,
+/// each once, two blocks included. X1: the conversion's record write is the move history's undo target, as
 /// `workspace.set`'s is; EV4.15's single order would read the same.
 #[test]
 fn ct_ev4_18_conversion_details() {
@@ -1146,6 +1535,76 @@ fn ct_ev4_18_conversion_details() {
     }
     assert!(matches!(f.convert("file", "draft").status, Status::Completed(_)), "a file row is in the draft's report");
     assert!(matches!(f.convert("gated", "draft").status, Status::Completed(_)), "so is a `confirm` row");
+
+    // Each source refusal at its own step. The non-word action here is `macro.add`, a workspace row an overlay row may
+    // invoke with no gate, so it is a source call itself and the refusal is the undo's, the redo's or the save's.
+    let staged = RecordedStep {
+        action: Some(1),
+        ..step(
+            "macro.add",
+            json::object([("macro", json::object([("recipe", word(&[5]))])), ("phase", text("macro"))]),
+            Some(completed()),
+        )
+    };
+    let checkpoint = RecordedStep {
+        action: Some(2),
+        ..step("session.checkpoint.save", json::object([("name", text("c"))]), Some(committed()))
+    };
+    f.put(vec![
+        recording("staged", vec![staged.clone(), word_step(&[2], 2, None)]),
+        recording(
+            "redone",
+            vec![
+                staged.clone(),
+                word_step(&[2], 2, None),
+                undo_step("session.undo", 1, 3),
+                undo_step("session.redo", 1, 4),
+            ],
+        ),
+        recording("redo", vec![staged, word_step(&[2], 2, None), undo_step("session.redo", 1, 3)]),
+        recording("saved", vec![word_step(&[1], 1, None), checkpoint]),
+        recording("written", vec![word_step(&[1], 1, None), completed_write("w", &[1], 2)]),
+    ]);
+    assert!(matches!(f.convert("staged", "source").status, Status::Completed(_)));
+    let calls = &f.layer.conversion().unwrap().1.calls;
+    assert_eq!(calls.iter().map(|c| c.get("row").cloned()).collect::<Vec<_>>(), [Some(text("macro.add"))]);
+    let staged_report = ["nothing", "letters", "nothing", "nothing"];
+    for (name, at, row, want, reported) in [
+        ("redone", 2, "session.undo", vec![2], &staged_report[..]),
+        ("redo", 2, "session.redo", vec![2], &staged_report[..3]),
+        ("saved", 1, "session.checkpoint.save", vec![1], &["letters", "nothing"][..]),
+        ("written", 1, RECORD_ROW, vec![1], &["letters", "nothing"][..]),
+    ] {
+        let before = f.log();
+        let refused = f.convert(name, "source");
+        let Status::Refused(error) = &refused.status else { panic!("{name}: {:?}", refused.status) };
+        assert_eq!(error.code, code::RECORDING_NOT_CONVERTIBLE, "{name}");
+        assert!(error.detail.starts_with(&format!("step {at} (`{row}`)")), "{name}: {}", error.detail);
+        assert_eq!(f.log(), before, "{name}: nothing written");
+        assert!(matches!(f.convert(name, "draft").status, Status::Completed(_)), "{name}");
+        let (_, conversion) = f.layer.conversion().unwrap();
+        assert_eq!(conversion.letters, want, "{name}: no letters from step {at}");
+        let report: Vec<&str> = conversion.report.iter().filter_map(|e| e.get("contributes")?.as_str()).collect();
+        assert_eq!(report, reported, "{name}: every step is in the draft's report, an undo's and a redo's too");
+    }
+
+    // A draft that keeps two blocks: each contributing word's block once, in recorded order, on both targets.
+    let b2 = block("import", "none", &[]);
+    f.put(vec![recording(
+        "blocks",
+        vec![word_step(&[1], 1, Some(&b1)), word_step(&[2], 2, Some(&b2)), word_step(&[3], 3, Some(&b1))],
+    )]);
+    let before = f.log();
+    assert!(matches!(f.convert("blocks", "draft").status, Status::Completed(_)));
+    assert_eq!(f.log(), before + 1, "one action");
+    let value = f.layer.record("draft/recording/blocks").unwrap().clone();
+    let sheet = c600_command::Worksheet::from_payload(&value.payload).expect("an operation draft");
+    assert_eq!(sheet.phases, [vec![], vec![1, 2, 3], vec![]], "the Macro phase holds the literal word");
+    assert_eq!(Reader.parts(value.provenance.as_bytes()), [b1.clone(), b2.clone()], "both blocks are kept");
+    assert_eq!(f.layer.undo_hint(Direction::Undo).map(|hint| hint.target), Some(f.log() as u64), "undoable");
+    assert!(matches!(f.convert("blocks", "source").status, Status::Completed(_)));
+    let source = f.layer.record("source/recording/blocks").unwrap().provenance.clone();
+    assert_eq!(Reader.parts(source.as_bytes()), [b1, b2], "and the source's");
 }
 
 // ----- CT-EV4-19 and CT-EV4-20: the play table, rewinds and the map
@@ -1296,17 +1755,17 @@ fn twist_args(index: u64) -> Value {
     json::object([("cap", cap), ("rotation", Value::Object(fields))])
 }
 
-/// CT-EV4-09 (part: stepwise and unattended play store and replay no token, every commit waits for a fresh solver
-/// action, `operation.execute` takes a new whole-word preview and a live twist none; not run: that a conversion's
-/// output holds no token).
-/// CT-PS1-15 (part: commit playback needs a new explicit action and token; not run: the round trip of a step with a
-/// module digest or a block).
-/// EV4.12, EV4.18: no recording or
-/// playback state holds a token or a preview ID, and none is replayed: a recorded preview and a recorded word commit
+/// CT-EV4-09 (whole; EV4.12, EV4.18, ONE.78).
+/// CT-PS1-15 (part: commit playback needs a new explicit action and token; not run: the round trip of a step with
+/// a module digest or a word block, which `ct_ps1_15_a_module_digest_and_a_word_block_round_trip` runs).
+/// No recording, playback state or
+/// conversion holds a token or a preview ID, and none is replayed: a recorded preview and a recorded word commit
 /// wait for the solver's step actions, the commit's with a new whole-word preview of the stored word, never the
 /// recorded preview ID; a recorded checkpoint save waits too, and its step action mints a new token and fills the
 /// current revision (the layer does not build `session.checkpoint.save`, so its send is refused, which stops the
-/// playback). A recorded live twist (ONE.78) takes no preview: its step action commits it as a press does.
+/// playback). A recorded live twist (ONE.78) takes no preview: its step action commits it as a press does. A
+/// recording of a commit converts to a draft and to source whose records and calls hold no token, binding, nonce,
+/// confirmation or preview ID.
 #[test]
 fn ct_ev4_09_no_token_is_stored_or_replayed() {
     let mut f = fixture();
@@ -1372,13 +1831,46 @@ fn ct_ev4_09_no_token_is_stored_or_replayed() {
     assert!(matches!(f.shell.step(&mut f.layer, "tw", false).unwrap().status, Status::Committed(_)));
     assert_eq!((f.layer.revision().state, f.state("tw").status), (state + 1, PlayStatus::Finished));
     assert_eq!(f.layer.run_jobs(), 0, "no preview job");
+
+    // A conversion's output: a recorded commit, made with a token, and a view step convert to a draft and to source
+    // whose records (payload and block) and calls hold no token, its binding or nonce, confirmation or preview ID.
+    let mut f = fixture();
+    f.start("c");
+    let id = f.preview(json::object([("recipe", word(&[1, 2]))]));
+    let press =
+        f.shell.prepare(&f.layer, "operation.execute", json::object([("preview", Value::Int(id as i64))])).unwrap();
+    let binding = press.token.as_ref().expect("a commit's token").binding.to_json().canonical();
+    assert!(matches!(f.shell.send(&mut f.layer, press).status, Status::Committed(_)));
+    assert!(matches!(f.rotate().status, Status::Completed(_)));
+    f.stop("c");
+    for target in ["draft", "source"] {
+        assert!(matches!(f.convert("c", target).status, Status::Completed(_)), "{target}");
+        let value = f.layer.record(&format!("{target}/recording/c")).unwrap().clone();
+        let bytes = format!("{}{}", value.payload.canonical(), value.provenance);
+        for held in [binding.as_str(), "\"nonce\"", "\"token\"", "\"confirm\""] {
+            assert!(!bytes.contains(held), "{target} holds {held}: {bytes}");
+        }
+        let (_, conversion) = f.layer.conversion().unwrap();
+        assert_eq!(conversion.letters, [1, 2], "{target}: the word, never its preview");
+        for call in &conversion.calls {
+            let fields = call.get("arguments").and_then(Value::as_object).unwrap();
+            assert!(["token", "preview", "confirm"].iter().all(|k| !fields.contains_key(*k)), "{target}: {fields:?}");
+        }
+    }
+    let source = f.layer.record("source/recording/c").unwrap().payload.clone();
+    let calls = source.get("source").and_then(|s| s.get("calls")).and_then(Value::as_array).unwrap();
+    let rows: Vec<&str> = calls.iter().filter_map(|call| call.get("row")?.as_str()).collect();
+    assert_eq!(rows, ["operation.preview", ROTATE], "the stored calls name their rows, with no execution permission");
 }
 
 /// CT-EV4-10 (whole; EV4.13, EV4.16, EV4.23, on this file's test reader).
 /// CT-BND-03 (part: a word carried through a workspace record, a recording and a conversion to source keeps its block,
-/// BND.32; not run: a file and a macro).
-/// CT-PS1-17 (part: a state-derived word survives a recording and a source conversion with its block; not run:
-/// workspace save and read, rename, the file round trip and the labels).
+/// BND.32; not run: a file, since the layer builds no file export or import of a word, and a macro, since `macro.save`
+/// takes an inline word and writes its own block, not the word's).
+/// CT-PS1-17 (part: a word survives a recording and a source conversion with its block, on this file's test reader;
+/// not run: workspace save and read and the labels of a state-derived word, which `c600-durable`'s
+/// `tests/ct_bnd_03_recording_blocks.rs` runs on C5's reader; rename, since no H-08 row renames a workspace record; and
+/// the file round trip, since the layer builds no file export or import of a word).
 /// A word written with a block, previewed from its record and committed is recorded
 /// with that block, and both conversions keep it as a part. A research run's word that a recording carries is not
 /// laundered: the draft conversion's preview reads its part and is refused, and so is the fresh preview of its word
