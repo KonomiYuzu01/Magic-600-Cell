@@ -36,6 +36,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 | `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
+| `c600-debug` | EV2's read-only debugger, replay and cost profile: stepping RT1's evaluator at the run's own LG4/DET.20 positions with suspended kernel calls, value inspection, word references into compressed words, replay with preflight and mismatch reporting, journal travel over a host's query rows, a pinned run's freshness and checker-trace stepping (LP4-5, LP4-6) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -54,7 +55,9 @@ has no path to the command layer; the module crate gives it the binding a bound 
 The tools crate depends on the syntax, checker, interpreter, IR, digest, kernel and module crates, on the command
 layer, and on the runtime, display and view crates: its host bridge connects the interpreter, in process or in the
 runtime's own process (C3), to the command layer as the runtime's host, its views build on the display contract and the
-view model, and its user-module runs bind through the module crate's set (LP4-2). The library crate is its
+view model, and its user-module runs bind through the module crate's set (LP4-2). It also depends on the debugger
+crate, whose journal rows it serves over the command layer and whose stepped runs of a binding it launches (LP4-5,
+LP4-6). The library crate is its
 dev-dependency, so that its tests run the library's exact-completion entry through the host bridge, and so is the input
 router, so that its tests invoke a user module's row from a key.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
@@ -71,6 +74,9 @@ The library crate depends on the IR, syntax and digest crates only; its tests al
 and the kernel.
 The editor services crate depends on the syntax, checker, IR and digest crates only, so it has no path to the
 interpreter or the command layer and runs no user program (EV1.9).
+The debugger crate depends on the interpreter, syntax, IR and digest crates only, so it has no path to the command
+layer's writes, the session store, the runtime, the module host or any producer code (EV2.1, EV2.6, EV2.8); the
+checker is its dev-dependency.
 
 ## Running the tests
 
@@ -3712,8 +3718,8 @@ LG5.6).
 - Crate edges: `c600-runtime` and `c600-tools` depend on `c600-module`, and `c600-tools` has `c600-input` as a
   dev-dependency. `renderer/bridge/Cargo.lock` lists `c600-module` because `c600-runtime` depends on it.
 - Not built:
-  - the debugger's and a recording's routes (LP4-5, LP4-9), which must bind through `Modules::bind` or
-    `Modules::bind_pinned` and extend CT-EV1-04 when they arrive;
+  - a recording's route (LP4-9), which must bind through `Modules::bind` or `Modules::bind_pinned` and extend
+    CT-EV1-04 when it arrives (the debugger's route binds through `Modules::bind_pinned` since LP4-5);
   - a built-in entry's binding on the runtime's process: an approval carries no class rows, so `BoundJob::new` refuses
     it at the admission stage and it runs in process only;
   - the conversion of a program job's JSON arguments to an entry's declared parameters, which waits for the module
@@ -3829,3 +3835,66 @@ uses this workspace's crates through their public interfaces and changes none of
     launched.
 - Evidence kind: source. The flow test's frames are a fake core's and its keys synthetic; nothing here is Windows
   input, display or timing evidence.
+
+## Status of LP4, LP4-5 and LP4-6: the debugger, replay and profile
+
+LP4-5 and LP4-6 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV2.1 to EV2.12; chapter 02
+LG4.12).
+
+- Stepping (`c600-run`'s `step`, additive). `Loaded::run_gated` calls a `Gate` before each operation is admitted, at the
+  run's own DET.20 position (the root's admitted steps) under the operation's DET.56 locator, with its source range,
+  the enclosing call sites and the frame's bound slots by their source names. The gate adds no step, charge or tariff:
+  a gate that lets everything through leaves rows, charges, stop and output unchanged. The run stays on the caller's
+  thread, since the interpreter starts no thread (CT-DET-21); `c600-debug`'s `stepper` drives a gated run on a thread
+  of the debugger's, one advance at a time: a dispatched host row is a suspended kernel call (`waiting(call)`), and a
+  duplicate request returns its latest result without dispatching or charging again.
+- `c600-debug` is the read-only debugger. `Debugger::debug_step(run, expected_stop, request_id)` answers EV2.12's
+  `StepResult` (`stopped`, `waiting(call)`, `terminal(outcome)` with five distinct reasons, or
+  `unavailable(step_mapping_missing)`), with the stop's source ranges and its call sites' or an explicit
+  `unavailable(source_map_missing | source_bytes_missing)`, and stale requests as `EV2:stale.debug_stop`.
+  `inspect_value` keeps exact values, approximate display values with their precision, partial results and verdicts
+  apart (EV2.2). A stepped run's host is `ReadOnly`, which refuses every preview and sink with
+  `EV2:capability.debug_write_forbidden` before the host behind it sees one. `words` resolves H7 references into
+  literal and compressed words lazily, by occurrence path and offset (EV2.11). `Replayer::replay_run` preflights the
+  record's key (module digests, edition, IR and contract, identity, input, cost units), re-evaluates the computation
+  against the record's captured inputs, inspects its recorded effects without executing them (EV2.9 as the owner read
+  it on 23 November 2026), and compares the trace, outcome, code, stop, coverage, charges, rows, result bytes and output
+  (`EV2:evidence.replay_mismatch` with the field and position); a safety-stopped record is not run and stays incomplete.
+  `profile` is EV2.7's cost profile, equal across cached, uncached and slow runs, with elapsed time as display data
+  only. `journal` reads a host's query rows through the read-only `JournalRows` (EV2.8) and says whether a pinned input
+  is still the head (EV2.10). `checker` steps KN6.4's per-claim trace, bound to its certificate and checker digests.
+- `c600-tools`' `debug` is the host's side: `Rows` serves `JournalRows` over `CommandLayer`'s reading methods,
+  `bind_debug` is the debugger's route through `Modules::bind_pinned`, and `launch` steps a binding behind its boundary
+  with the read-only host outside it; `target` names an executor without a step mapping for the runtime's process.
+- Tests, each naming its ID: CT-EV2-01 whole (`c600-tools/tests/debug_host.rs`, every debugger operation with a live
+  engine behind it; its stepping part also in `c600-debug/tests/stepping.rs`), CT-EV2-02, CT-EV2-11 and CT-LG4-07 whole
+  (`c600-debug/tests/stepping.rs`), CT-EV2-03, CT-EV2-04, CT-EV2-05 and CT-EV2-08 whole
+  (`c600-debug/tests/replay.rs`), CT-EV2-06 whole (`c600-debug/tests/words.rs`), CT-EV2-09 whole
+  (`c600-tools/tests/debug_host.rs`), CT-EV1-04's debugger route (`c600-tools/tests/ev1_host.rs`), and parts of
+  CT-EV2-07 (`c600-debug/tests/checker.rs`, `c600-debug/tests/dependencies.rs`) and CT-EV2-10
+  (`c600-debug/tests/replay.rs`). `c600-run/tests/step.rs` covers the gate and `c600-debug/tests/stepper.rs` the
+  stepper.
+- Drafts, which change until the editor protocol and the IR freeze (PHS.49): the stop and value reference texts
+  (`<step>/<locator>`, `<call>/await`, `end`; `<stop>#<index>`, `<stop>#result`, `end#value`), `StepResult`'s fields,
+  the typed `RunRecord` and `ReproKey` the replayer reads, the host-trace events a record holds, the cost profile's
+  budget name (the run's), the journal row forms, the checker trace form, and the literal digests of menu letters and UI
+  actions. Every host row a stepped run performs is a suspended call; a cancellation waits for a call in flight.
+- Not built:
+  - KN6.4's per-claim trace producer: no checker in the workspace writes one, so CT-EV2-07 runs in part, over a trace
+    its test builds, and re-deriving a trace by running a checker as budgeted work is not built;
+  - EV2.9's replay contract in chapters 05 and 09: EV2.9 is open, and CT-EV2-10 asks for "the settled contract", which
+    those chapters do not state yet; its parts run on the owner's reading (effect inspection, never re-execution,
+    refusal of an effect the record does not hold, and the two kinds kept apart);
+  - chapter 05's `RunRecord` and chapter 09's `ReproKey` forms, the session's capture of a run's host trace and a
+    conversion from `c600-session`'s records (the debugger cannot depend on the session store); only tests capture;
+  - opening an old event's snapshot state: travel opens journal entries, and the headless layer serves no snapshot of
+    an old event; the `checkpoints` row is not built there and answers `KN5:input.row_not_built`; chapter 08's snapshot
+    and branch lifecycles;
+  - a step mapping for the runtime's own process and for RT2 and RT3: their sessions are
+    `unavailable(step_mapping_missing)`;
+  - EV2.5's provenance view of evidence and computation edges (only its word references are built), a `Derived`
+    value's derivation and reachability claim in inspection (KN2.11 to KN2.14), and exact transport of a pinned result
+    by a lemma (EV2.10);
+  - the debugger's editor protocol and its C ABI (LP4-3), and replay of a jumbling record with its menu alphabet beyond
+    the identity preflight.
+- Evidence kind: source; CT-EV2-05 is synthetic. Nothing here is Windows input, display or timing evidence.

@@ -44,6 +44,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-debug"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-run",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-digest"
 version = "0.0.0"
 
@@ -285,6 +296,7 @@ version = "0.0.0"
 dependencies = [
  "c600-check",
  "c600-command",
+ "c600-debug",
  "c600-digest",
  "c600-display",
  "c600-input",

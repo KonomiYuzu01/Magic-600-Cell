@@ -4,10 +4,10 @@
 //! module digest opens only on the active version. Every key event here is synthetic; none of this is Windows input
 //! evidence.
 //!
-//! CT-EV1-04 (source, part: the host's routes, the program job from the palette and from a key on both hosts and the
-//! view source, while a draft is broken, unchecked or checked and not active; the broken drafts and the module set's
-//! own routes are in `c600-module/tests/ct_ev1_04.rs`, which with this file is the whole by union for the routes that
-//! exist; the debugger's and a recording's routes arrive with LP4-5 and LP4-9).
+//! CT-EV1-04 (source, part: the host's routes, the program job from the palette and from a key on both hosts, the
+//! view source and the debugger's route (LP4-5), while a draft is broken, unchecked or checked and not active; the
+//! broken drafts and the module set's own routes are in `c600-module/tests/ct_ev1_04.rs`, which with this file is the
+//! whole by union for the routes that exist; a recording's route arrives with LP4-9).
 //!
 //! CT-EV1-08 (source, part: a program job's run suspended at a host call on either host, through the binding's
 //! boundary, while B activates; the service, the refusals and the races are in `c600-module/tests/ct_ev1_08.rs` and
@@ -334,6 +334,96 @@ fn ct_ev1_04_a_view_source_opens_only_on_the_active_version() {
     assert_eq!(open("b3", &b.source()), None);
     assert_eq!(open("a2", &a.source()), Some(STALE_ACTIVATION_BASE), "A after B activated");
     assert_eq!(opened(&views), ["global", "local", "a1", "b3"]);
+}
+
+/// The debugger's engine: it serves the probe row, and a stepped run's thread may own it.
+struct Served;
+
+impl Host for Served {
+    fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
+        Probe::default().tariff(request)
+    }
+
+    fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
+        Probe::default().perform(request)
+    }
+
+    fn sink(&mut self, _: &Sink, _: &Value, _: &[u8]) -> Result<(), &'static str> {
+        Err(NOT_GRANTED)
+    }
+}
+
+/// Steps `m.go` of `binding` to its end on RT1 in this process, or opens it on the runtime's own process; the last
+/// result, the session's target and the shown text of the run's value, if it has one.
+fn debug(
+    binding: c600_module::Binding,
+    process: bool,
+) -> (c600_debug::session::StepResult, c600_debug::session::Target, Option<String>) {
+    use c600_debug::session::{Debugger, Executor, State};
+    let input = c600_debug::Pinned {
+        identity: c600_debug::Identity {
+            puzzle: "600-cell-Full".into(),
+            model: "model".into(),
+            menu: None,
+            menu_order: None,
+            contract: None,
+        },
+        level: "labels".into(),
+        digest: "0".repeat(64),
+    };
+    let executor = if process { Executor::Unmapped("c600-runtime process".into()) } else { Executor::Evaluator };
+    let target = c600_tools::debug::target(&binding, input, executor);
+    let wide = c600_run::meter::Amounts { steps: 1 << 30, kernel_cost: 1 << 30, memory: 1 << 30, output: 1 << 30 };
+    let run = ModuleRun { run: "debug-1".into(), base: "e0".into(), args: vec![], inputs: vec![], limits: wide };
+    let launch = c600_tools::debug::launch(binding, run, Box::new(Served), Store::default());
+    let mut debugger = Debugger::new();
+    let mut at = debugger.open("d", target.clone(), launch).unwrap();
+    let mut n = 0;
+    while let State::Stopped { .. } | State::Waiting { .. } = at.state {
+        if let c600_debug::session::Source::Mapped(ranges) = &at.source {
+            assert!(ranges.iter().all(|r| target.sources.contains_key(&r.digest)), "a stop maps into the bound bytes");
+        }
+        n += 1;
+        at = debugger.debug_step("d", &at.stop_id, &format!("q{n}")).unwrap();
+    }
+    let shown = at.values.first().map(|value| debugger.inspect_value("d", &value.reference).unwrap().shown.text);
+    (at, target, shown)
+}
+
+/// EV1.7 on the debugger's route (LP4-5): the debugger names the version it steps by digest and binds through
+/// `Modules::bind_pinned`. B's digest is refused while B is unchecked (`EV1:input.module_not_checked`) and while B is
+/// checked and not active (`EV1:stale.activation_base`); A's digest steps A's bytes to A's result, and every stop maps
+/// into them. On the runtime's own process the session is `unavailable(step_mapping_missing)`. Once B activates, B's
+/// digest steps B and A's is stale.
+#[test]
+fn ct_ev1_04_the_debugger_steps_only_the_active_version() {
+    use c600_debug::session::{Reason, State, Unavailable};
+    use c600_tools::debug::bind_debug;
+    let (a, b) = (version(10), version(20));
+    let modules = modules();
+    activate(&modules, &check(&modules, &a).unwrap());
+    let root = |v: &Version| sha256(v.root.as_bytes());
+
+    assert_eq!(bind_debug(&modules, "m", "go", root(&b)).unwrap_err().code, MODULE_NOT_CHECKED, "B unchecked");
+    let cb = check(&modules, &b).unwrap();
+    for digest in [root(&b), b.closure()] {
+        assert_eq!(bind_debug(&modules, "m", "go", digest).unwrap_err().code, STALE_ACTIVATION_BASE, "B not active");
+    }
+    let stepped = |v: &Version, digest: [u8; 32]| {
+        let (end, target, shown) = debug(bind_debug(&modules, "m", "go", digest).unwrap(), false);
+        assert_eq!(target.module_digest, hex(&v.closure()));
+        let State::Terminal(t) = &end.state else { panic!("{end:?}") };
+        assert_eq!(t.reason, Reason::Completed);
+        assert_eq!(shown.as_deref().map(str::as_bytes), Some(v.output().trim_ascii_end()));
+    };
+    stepped(&a, root(&a));
+    stepped(&a, a.closure());
+    let (none, _, _) = debug(bind_debug(&modules, "m", "go", root(&a)).unwrap(), true);
+    assert_eq!(none.state, State::Unavailable(Unavailable::StepMappingMissing));
+
+    activate(&modules, &cb);
+    stepped(&b, root(&b));
+    assert_eq!(bind_debug(&modules, "m", "go", root(&a)).unwrap_err().code, STALE_ACTIVATION_BASE, "A after B");
 }
 
 /// EV1.11 on the host: the job of `m`'s query row is bound to A when the host takes it; its run is suspended at its

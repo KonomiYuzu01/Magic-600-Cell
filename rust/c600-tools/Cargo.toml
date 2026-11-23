@@ -8,6 +8,8 @@ publish.workspace = true
 [dependencies]
 c600-check = { path = "../c600-check" }
 c600-command = { path = "../c600-command" }
+# EV2's debugger (`debug`, LP4-5 and LP4-6): its journal rows over the command layer and its bound stepped runs.
+c600-debug = { path = "../c600-debug" }
 c600-digest = { path = "../c600-digest" }
 c600-display = { path = "../c600-display" }
 c600-ir = { path = "../c600-ir" }

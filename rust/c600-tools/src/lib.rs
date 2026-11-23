@@ -25,6 +25,9 @@
 //! - [`modules`] is the host's side of a user module's runs (EV1.7, EV1.11; LP4-2): a program job of a user module's
 //!   overlay row, or a view source that names its module digest, binds wholly to the module's active version in
 //!   `c600_module::Modules`, and the binding runs in process or on the process host, staying on its version to its end.
+//! - [`debug`] is the host's side of EV2's debugger (LP4-5, LP4-6): the debugger's journal rows over the command
+//!   layer's query rows, its route to a user module through `Modules::bind_pinned`, and a binding's stepped run behind
+//!   the debugger's read-only host.
 //! - [`supports`] reads the 1,200 generators' complete supports from the kernel and builds LB1.10's independence
 //!   relation `full-disjoint-support/1`, which a host pins for a run's trace keys (LP2 draft).
 //! - The binary `c600-lp3-source` replays O01 to O07 on the source route: each step's proposal comes from a run of the
@@ -248,6 +251,7 @@
 
 pub mod bridge;
 pub mod case;
+pub mod debug;
 pub mod expand;
 pub mod kernel_rows;
 pub mod modules;
@@ -258,12 +262,13 @@ pub mod views;
 pub mod workspace;
 
 /// The sources of the built-in tools, the bridge and the kernel rows it serves, the provenance reader, the trace
-/// relation's supports and the source route's runner, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 14] = [
+/// relation's supports, the debugger's host side and the source route's runner, hashed into [`build`].
+pub const SOURCES: [(&str, &[u8]); 15] = [
     ("c600-tools/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-tools/src/bin/c600-lp3-source.rs", include_bytes!("bin/c600-lp3-source.rs")),
     ("c600-tools/src/bridge.rs", include_bytes!("bridge.rs")),
     ("c600-tools/src/case.rs", include_bytes!("case.rs")),
+    ("c600-tools/src/debug.rs", include_bytes!("debug.rs")),
     ("c600-tools/src/expand.rs", include_bytes!("expand.rs")),
     ("c600-tools/src/full_600_cell.6cs", include_bytes!("full_600_cell.6cs")),
     ("c600-tools/src/kernel_rows.rs", include_bytes!("kernel_rows.rs")),
