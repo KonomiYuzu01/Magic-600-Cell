@@ -1,0 +1,117 @@
+edition "6cs-draft-1";
+module research_models requires [];
+
+export fn restriction(action: List<List<Nat>>, region: List<Nat>) -> record { closed_letters: List<Nat>, map: Text, partial: List<List<Int>>, preserved: List<Text>, reachability: Text, region: List<Nat> } effects [] {
+    let partial = repeat(length(action), list<List<Int>>(), fn(done: List<List<Int>>) -> List<List<Int>> {
+        let images = index(action, length(done));
+        return push(done, repeat(length(region), list<Int>(), fn(row: List<Int>) -> List<Int> {
+            let image = index(images, index(region, length(row)));
+            return push(row, match listed_in(region, image) {
+                true => image;
+                _ => -1;
+            });
+        }));
+    });
+    let closed = repeat(length(partial), record { done = list<Nat>(), next = 0 }, fn(s: record { done: List<Nat>, next: Nat }) -> record { done: List<Nat>, next: Nat } {
+        let done = match listed_int(index(partial, s.next), -1) {
+            true => s.done;
+            _ => push(s.done, s.next);
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+    return record { closed_letters = closed, map = "restriction", partial = partial, preserved = list<Text>("legality_inside_region", "letter_images_inside_region"), reachability = "not_asserted", region = region };
+}
+
+export fn quotient(action: List<List<Nat>>, blocks: List<Nat>, block_count: Nat) -> record { compatible: Bool, conflicts: Nat, map: Text, preserved: List<Text>, quotient: List<List<Int>>, reachability: Text } effects [] {
+    let built = repeat(length(action), record { conflicts = 0, rows = list<List<Int>>() }, fn(s: record { conflicts: Nat, rows: List<List<Int>> }) -> record { conflicts: Nat, rows: List<List<Int>> } {
+        let row = block_row(index(action, length(s.rows)), blocks, block_count);
+        return record { conflicts = exact_add(s.conflicts, row.conflicts), rows = push(s.rows, row.images) };
+    });
+    let compatible = exact_eq(built.conflicts, 0);
+    let preserved = match compatible {
+        true => list<Text>("block_structure");
+        _ => list<Text>();
+    };
+    return record { compatible = compatible, conflicts = built.conflicts, map = "quotient", preserved = preserved, quotient = built.rows, reachability = "not_asserted" };
+}
+
+export fn recognize_instance(region: List<Nat>, point: Nat) -> record { member: Bool, reachability: Text } effects [] {
+    return record { member = listed_in(region, point), reachability = "not_asserted" };
+}
+
+export fn conditional_bound(name: Text, value: Int, premises: List<Text>, scope: Text) -> record { conditional: Bool, name: Text, premises: List<Text>, scope: Text, value: Int } effects [] {
+    let kept = normalized(premises);
+    return record { conditional = not(exact_eq(length(kept), 0)), name = name, premises = kept, scope = scope, value = value };
+}
+
+export fn combine(name: Text, a: record { conditional: Bool, name: Text, premises: List<Text>, scope: Text, value: Int }, b: record { conditional: Bool, name: Text, premises: List<Text>, scope: Text, value: Int }) -> record { conditional: Bool, name: Text, premises: List<Text>, scope: Text, value: Int } effects [] {
+    let same_scope = assert(exact_eq(a.scope, b.scope));
+    return conditional_bound(name, exact_add(a.value, b.value), concat(a.premises, b.premises), a.scope);
+}
+
+export fn discharge(bound: record { conditional: Bool, name: Text, premises: List<Text>, scope: Text, value: Int }, statement: record { premise: Text, scope: Text }) -> record { bound: record { conditional: Bool, name: Text, premises: List<Text>, scope: Text, value: Int }, discharged: Bool } effects [] {
+    let applies = and(exact_eq(statement.scope, bound.scope), listed_text(bound.premises, statement.premise));
+    let remaining = repeat(length(bound.premises), record { done = list<Text>(), next = 0 }, fn(s: record { done: List<Text>, next: Nat }) -> record { done: List<Text>, next: Nat } {
+        let premise = index(bound.premises, s.next);
+        let done = match and(applies, exact_eq(premise, statement.premise)) {
+            true => s.done;
+            _ => push(s.done, premise);
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+    return record { bound = conditional_bound(bound.name, bound.value, remaining, bound.scope), discharged = applies };
+}
+
+fn block_row(images: List<Nat>, blocks: List<Nat>, block_count: Nat) -> record { conflicts: Nat, images: List<Int> } effects [] {
+    let paired = assert(exact_eq(length(images), length(blocks)));
+    let first = repeat(block_count, list<Int>(), fn(done: List<Int>) -> List<Int> {
+        return push(done, -1);
+    });
+    let row = repeat(length(images), record { conflicts = 0, images = first, next = 0 }, fn(s: record { conflicts: Nat, images: List<Int>, next: Nat }) -> record { conflicts: Nat, images: List<Int>, next: Nat } {
+        let from = index(blocks, s.next);
+        let image = index(blocks, index(images, s.next));
+        let current = index(s.images, from);
+        return match exact_eq(current, -1) {
+            true => record { conflicts = s.conflicts, images = set_int(s.images, from, image), next = exact_add(s.next, 1) };
+            _ => match exact_eq(current, image) {
+                true => record { conflicts = s.conflicts, images = s.images, next = exact_add(s.next, 1) };
+                _ => record { conflicts = exact_add(s.conflicts, 1), images = s.images, next = exact_add(s.next, 1) };
+            };
+        };
+    });
+    return record { conflicts = row.conflicts, images = row.images };
+}
+
+fn set_int(values: List<Int>, at: Nat, value: Int) -> List<Int> effects [] {
+    return repeat(length(values), list<Int>(), fn(done: List<Int>) -> List<Int> {
+        return push(done, match exact_eq(length(done), at) {
+            true => value;
+            _ => index(values, length(done));
+        });
+    });
+}
+
+fn normalized(premises: List<Text>) -> List<Text> effects [] {
+    let kept = repeat(length(premises), record { next = 0, seen = set<Text>() }, fn(s: record { next: Nat, seen: Set<Text> }) -> record { next: Nat, seen: Set<Text> } {
+        return record { next = exact_add(s.next, 1), seen = insert(s.seen, index(premises, s.next)) };
+    }).seen;
+    return elements(kept, ascending);
+}
+
+fn listed_in(values: List<Nat>, v: Nat) -> Bool effects [] {
+    return repeat(length(values), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        return record { found = or(s.found, exact_eq(index(values, s.next), v)), next = exact_add(s.next, 1) };
+    }).found;
+}
+
+fn listed_int(values: List<Int>, v: Int) -> Bool effects [] {
+    return repeat(length(values), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        return record { found = or(s.found, exact_eq(index(values, s.next), v)), next = exact_add(s.next, 1) };
+    }).found;
+}
+
+fn listed_text(values: List<Text>, v: Text) -> Bool effects [] {
+    return repeat(length(values), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        return record { found = or(s.found, exact_eq(index(values, s.next), v)), next = exact_add(s.next, 1) };
+    }).found;
+}
