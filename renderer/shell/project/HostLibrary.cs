@@ -11,12 +11,15 @@ namespace Magic600.Shell;
 /// runs the display host over the bridge. The shell hands it the core's function table
 /// (<see cref="CoreLibrary.Functions"/>) and the context it created with sa2_create, then drives frames through it.
 /// tests/test_renderer_shell.py checks <see cref="Exports"/>, the version, the status codes and the frame, presented
-/// and view-result rows against the Rust source.
+/// and view-result rows against the Rust source. Version 7 (LP4-3) adds the write-check-run flow's calls, which the
+/// editor panel (<see cref="Editor.EditorPanel"/>) makes: <see cref="SetFocus"/>, <see cref="RegisterRow"/>,
+/// <see cref="Palette"/>, <see cref="Invoke"/>, <see cref="TakeJob"/>, <see cref="FinishJob"/>,
+/// <see cref="SetDraftWord"/> and <see cref="Answer"/>.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 6;
+    public const uint AbiVersion = 7;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -27,6 +30,13 @@ public sealed unsafe class HostLibrary : IDisposable
     /// <summary><see cref="OpenSession"/>'s puzzle: the jumbled puzzle, index 1 of <see cref="EventLog.Puzzles"/>.
     /// </summary>
     public const uint PuzzleJumbleOn = 1;
+
+    /// <summary><see cref="SetFocus"/>: the puzzle has the keyboard focus; the router's global map gets every key.
+    /// </summary>
+    public const uint FocusPuzzle = 0;
+    /// <summary><see cref="SetFocus"/>: a text field has it and keeps its typing, editing and office chords and a key
+    /// bound to a commit row (DT-M1 C4).</summary>
+    public const uint FocusText = 1;
 
     public const int Ok = 0;
     public const int InvalidArgument = 1;
@@ -85,6 +95,14 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_key_down",
         "m6h_key_up",
         "m6h_focus_lost",
+        "m6h_set_focus",
+        "m6h_register_row",
+        "m6h_palette",
+        "m6h_invoke",
+        "m6h_take_job",
+        "m6h_finish_job",
+        "m6h_set_draft_word",
+        "m6h_answer",
         "m6h_close_session",
         "m6h_check",
         "m6h_last_error",
@@ -441,6 +459,107 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>The window lost the keyboard focus: the router releases its held keys.</summary>
     public int FocusLost(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_focus_lost"])(host);
+
+    /// <summary>
+    /// Tells the session's router what has the keyboard focus inside the window: <see cref="FocusText"/> while a text
+    /// field has it, <see cref="FocusPuzzle"/> otherwise. Held keys are released.
+    /// </summary>
+    public int SetFocus(IntPtr host, uint focus) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, int>)_exports["m6h_set_focus"])(host, focus);
+
+    /// <summary>
+    /// Registers the entry <paramref name="entry"/> of the user module <paramref name="module"/> as a language
+    /// overlay row (tool.module.entry, a query row) labelled <paramref name="label"/>, with the key
+    /// <paramref name="chord"/> in c600-input's form, or none when it is empty. <see cref="Answer"/> gives {"row"}.
+    /// </summary>
+    public int RegisterRow(IntPtr host, string module, string entry, string label, string chord)
+    {
+        var m = Encoding.UTF8.GetBytes(module);
+        var e = Encoding.UTF8.GetBytes(entry);
+        var l = Encoding.UTF8.GetBytes(label);
+        var c = Encoding.UTF8.GetBytes(chord);
+        fixed (byte* mb = m)
+        fixed (byte* eb = e)
+        fixed (byte* lb = l)
+        fixed (byte* cb = c)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, byte*, nuint, byte*, nuint, byte*, nuint, int>)
+                _exports["m6h_register_row"])(host, mb, (nuint)m.Length, eb, (nuint)e.Length, lb, (nuint)l.Length,
+                cb, (nuint)c.Length);
+        }
+    }
+
+    /// <summary>Reads the session's palette; <see cref="Answer"/> gives {"revision", "generation", "entries"}.</summary>
+    public int Palette(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_palette"])(host);
+
+    /// <summary>
+    /// Invokes <paramref name="row"/> from the palette with the absolute arguments <paramref name="args"/> (a JSON
+    /// object, or empty for none), through the shell. <paramref name="job"/> is the program job of a running
+    /// receipt, or 0; <see cref="Answer"/> gives the receipt.
+    /// </summary>
+    public int Invoke(IntPtr host, string row, string args, out ulong job)
+    {
+        var r = Encoding.UTF8.GetBytes(row);
+        var a = Encoding.UTF8.GetBytes(args);
+        ulong j = 0;
+        int code;
+        fixed (byte* rb = r)
+        fixed (byte* ab = a)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, byte*, nuint, ulong*, int>)_exports["m6h_invoke"])(
+                host, rb, (nuint)r.Length, a.Length == 0 ? null : ab, (nuint)a.Length, &j);
+        }
+        job = j;
+        return code;
+    }
+
+    /// <summary>
+    /// Takes the next program job of the session's layer, a language row's: <paramref name="job"/> is its ID, or 0
+    /// for none, and <see cref="Answer"/> gives the run it names, which the editor library runs.
+    /// </summary>
+    public int TakeJob(IntPtr host, out ulong job)
+    {
+        ulong j = 0;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, ulong*, int>)_exports["m6h_take_job"])(host, &j);
+        job = j;
+        return code;
+    }
+
+    /// <summary>
+    /// Reports the program job <paramref name="job"/>: with an empty <paramref name="errorCode"/> the run's output
+    /// <paramref name="value"/> as its result, otherwise the error that ended its run. <see cref="Answer"/> gives the
+    /// receipt of the command that invoked the job, or null.
+    /// </summary>
+    public int FinishJob(IntPtr host, ulong job, string value, string errorCode, string detail)
+    {
+        var v = Encoding.UTF8.GetBytes(value);
+        var c = Encoding.UTF8.GetBytes(errorCode);
+        var d = Encoding.UTF8.GetBytes(detail);
+        fixed (byte* vb = v)
+        fixed (byte* cb = c)
+        fixed (byte* db = d)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, byte*, nuint, byte*, nuint, byte*, nuint, int>)
+                _exports["m6h_finish_job"])(host, job, v.Length == 0 ? null : vb, (nuint)v.Length,
+                c.Length == 0 ? null : cb, (nuint)c.Length, d.Length == 0 ? null : db, (nuint)d.Length);
+        }
+    }
+
+    /// <summary>
+    /// Sets the editor's draft, the word <paramref name="letters"/>, which operation.preview's key previews; an empty
+    /// word clears it. Setting it previews nothing.
+    /// </summary>
+    public int SetDraftWord(IntPtr host, ReadOnlySpan<int> letters)
+    {
+        fixed (int* l = letters)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, int*, nuint, int>)_exports["m6h_set_draft_word"])(
+                host, letters.Length == 0 ? null : l, (nuint)letters.Length);
+        }
+    }
+
+    /// <summary>The JSON answer of the last call of the write-check-run flow.</summary>
+    public string Answer(IntPtr host) => Text(host, "m6h_answer");
 
     /// <summary>
     /// Closes the session and runs its correctness control once. <paramref name="shownRevision"/> is the engine

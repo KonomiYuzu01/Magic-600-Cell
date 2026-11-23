@@ -122,6 +122,7 @@ use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
 use crate::journal::{self, EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT};
 use crate::jumble::{self, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
+use crate::palette::FIND_ROW;
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
@@ -132,7 +133,7 @@ use crate::store::{
     identity_json, policy_from_name, policy_name, Fate, Genesis, MemoryStore, Profile, Reopen, Store, Transaction,
     TransactionKind,
 };
-use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Row, Table, UndoClass};
+use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Registration, Row, Table, UndoClass};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
 use crate::view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
@@ -1372,8 +1373,8 @@ impl<S: Store> CommandLayer<S> {
         &self.table
     }
 
-    /// Registers a language-defined row (KN5.3). The generation advances, since the overlay rows are an input of
-    /// availability (LI.21); a refusal changes nothing.
+    /// Registers a language-defined row (KN5.3) with no label and no grant: [`CommandLayer::register_overlay_with`]
+    /// with the default [`Registration`], so a `file` row is refused.
     pub fn register_overlay(
         &mut self,
         id: &str,
@@ -1381,7 +1382,21 @@ impl<S: Store> CommandLayer<S> {
         arguments: &[(&str, &str)],
         overlay: Overlay,
     ) -> Result<(), Error> {
-        self.table.register_overlay(id, kind, arguments, overlay)?;
+        self.register_overlay_with(id, kind, arguments, overlay, Registration::default())
+    }
+
+    /// Registers a language-defined row with its label and the capabilities the solver granted its module (KN5.3,
+    /// EV4.1). [`Table::register_overlay_with`] says what is refused. The generation advances, since the overlay rows
+    /// are an input of availability (LI.21); a refusal changes nothing.
+    pub fn register_overlay_with(
+        &mut self,
+        id: &str,
+        kind: Kind,
+        arguments: &[(&str, &str)],
+        overlay: Overlay,
+        registration: Registration,
+    ) -> Result<(), Error> {
+        self.table.register_overlay_with(id, kind, arguments, overlay, registration)?;
         self.generation += 1;
         Ok(())
     }
@@ -2465,7 +2480,7 @@ impl<S: Store> CommandLayer<S> {
                     None => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
                 }
             }
-            EXPLORE_ROW => Ok(()),
+            EXPLORE_ROW | FIND_ROW => Ok(()),
             ONE_KEY_ROW => {
                 if self.commit_held {
                     return Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight"));
@@ -2781,7 +2796,13 @@ impl<S: Store> CommandLayer<S> {
             JUMBLE_TWIST_ROW => self.twist_menu(caller, invocation, request, &row),
             REPAIR_LIST_ROW => self.admit_repair(caller, invocation),
             VIEW_OPEN_ROW | VIEW_CLOSE_ROW => self.view_row(caller, invocation, &row, args),
+            FIND_ROW => self.find_row(caller, &row, args),
             _ if row.overlay.is_some() => {
+                // A language-defined row whose module failed its static check runs nothing: the palette lists it as
+                // unavailable with this diagnostic, and a press by key or palette is refused with it (KN5.4, EV4.2).
+                if let Some(diagnostic) = self.table.metadata(&row.id).and_then(|stored| stored.diagnostic.clone()) {
+                    return Err(diagnostic);
+                }
                 forms::check(&row, args, &self.revision)?;
                 self.check_filter_refs(&row, args)?;
                 self.fresh_filter_gate(&row, &invocation.args)?;
@@ -2846,6 +2867,30 @@ impl<S: Store> CommandLayer<S> {
         match &source {
             Some(source) => views.open(command, view, source)?,
             None => views.close(command, view)?,
+        }
+        Ok((None, Status::Accepted))
+    }
+
+    // ----- command.find -----
+
+    /// `command.find {query, object?}` (EV4.2; DT-M1 C1): opens the palette over `query`. The palette's data is the
+    /// shell's read of the table and KN5.6's availability table ([`crate::palette`]), searched with no engine call per
+    /// keystroke, so the layer only admits the row. Refused, in this order: a malformed `query`
+    /// (`KN5:input.argument_form`); a run not inside a command the solver invoked (`LG3:capability.not_granted`, as for
+    /// `view.open`, RPI.83). An admitted find is `accepted` with no job and changes nothing, the layer's final answer.
+    /// The selection `object` passes unchecked, as its type's form is not written down, and filters nothing yet.
+    fn find_row(
+        &self,
+        caller: &Caller,
+        row: &Row,
+        args: &BTreeMap<String, Value>,
+    ) -> Result<(Option<u64>, Status), Error> {
+        forms::check_forms(row, args)?;
+        if let Caller::Runtime { run } = caller {
+            if !self.inside_solver_command(run) {
+                let detail = format!("run `{run}` is not inside a command the solver invoked (RPI.83)");
+                return refused(code::NOT_GRANTED, detail);
+            }
         }
         Ok((None, Status::Accepted))
     }

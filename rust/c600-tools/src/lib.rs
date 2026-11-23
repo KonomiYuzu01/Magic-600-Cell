@@ -22,6 +22,9 @@
 //! - [`workspace`] is the host's provenance reader on the command layer (KN5's stage 3): it reads a workspace record's
 //!   block before `workspace.set` writes the record (PS1.16), and admits or refuses a draft that names a record
 //!   (KN5.26, BND.84, BND.85).
+//! - [`modules`] is the host's side of a user module's runs (EV1.7, EV1.11; LP4-2): a program job of a user module's
+//!   overlay row, or a view source that names its module digest, binds wholly to the module's active version in
+//!   `c600_module::Modules`, and the binding runs in process or on the process host, staying on its version to its end.
 //! - [`supports`] reads the 1,200 generators' complete supports from the kernel and builds LB1.10's independence
 //!   relation `full-disjoint-support/1`, which a host pins for a run's trace keys (LP2 draft).
 //! - The binary `c600-lp3-source` replays O01 to O07 on the source route: each step's proposal comes from a run of the
@@ -247,6 +250,7 @@ pub mod bridge;
 pub mod case;
 pub mod expand;
 pub mod kernel_rows;
+pub mod modules;
 pub mod process;
 pub mod supports;
 pub mod tool;
@@ -255,7 +259,7 @@ pub mod workspace;
 
 /// The sources of the built-in tools, the bridge and the kernel rows it serves, the provenance reader, the trace
 /// relation's supports and the source route's runner, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 13] = [
+pub const SOURCES: [(&str, &[u8]); 14] = [
     ("c600-tools/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-tools/src/bin/c600-lp3-source.rs", include_bytes!("bin/c600-lp3-source.rs")),
     ("c600-tools/src/bridge.rs", include_bytes!("bridge.rs")),
@@ -264,6 +268,7 @@ pub const SOURCES: [(&str, &[u8]); 13] = [
     ("c600-tools/src/full_600_cell.6cs", include_bytes!("full_600_cell.6cs")),
     ("c600-tools/src/kernel_rows.rs", include_bytes!("kernel_rows.rs")),
     ("c600-tools/src/lib.rs", include_bytes!("lib.rs")),
+    ("c600-tools/src/modules.rs", include_bytes!("modules.rs")),
     ("c600-tools/src/process.rs", include_bytes!("process.rs")),
     ("c600-tools/src/supports.rs", include_bytes!("supports.rs")),
     ("c600-tools/src/tool.rs", include_bytes!("tool.rs")),

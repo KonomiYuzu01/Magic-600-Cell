@@ -2,7 +2,7 @@
 
 use crate::ast::*;
 use crate::code::*;
-use crate::lex::{canonical, is_decimal, is_digest, lex, ratio, unescape, Kind, Token};
+use crate::lex::{canonical, is_decimal, is_digest, lex_trivia, ratio, unescape, Kind, Token};
 use crate::{sha256_hex, Diagnostic, RawContext, Span, EDITION};
 use c600_ir::MENU_INDEX_LIMIT;
 
@@ -29,7 +29,8 @@ fn literal(span: Span, message: &str) -> Problem {
 
 /// Parses one source file. A refused encoding, a missing or unsupported edition and a broken module header end the
 /// parse: nothing after them is read, and no other edition is tried (LG1.2). A broken declaration becomes a recovery
-/// hole, and parsing resumes at the next declaration in column 1 (LG1.5).
+/// hole, and parsing resumes at the next declaration in column 1 (LG1.5). For each hole the file keeps what the parser
+/// read of the declaration (EV1.2), and for pinned text its comments and whitespace (PHS.21).
 pub fn parse(bytes: &[u8]) -> ParsedFile {
     let mut file = ParsedFile::default();
     let source = match pinned(bytes) {
@@ -40,7 +41,10 @@ pub fn parse(bytes: &[u8]) -> ParsedFile {
         }
     };
     file.digest = Some(sha256_hex(bytes));
-    let mut p = Parser { tokens: lex(source), pos: 0 };
+    let (tokens, trivia) = lex_trivia(source);
+    file.trivia = trivia;
+    let mut p =
+        Parser { tokens, pos: 0, trail: Vec::new(), scopes: Vec::new(), closures: 0, partial: Partial::default() };
     if let Err(problem) = p.header(&mut file) {
         file.diagnostics.push(problem.into());
         return file;
@@ -50,10 +54,12 @@ pub fn parse(bytes: &[u8]) -> ParsedFile {
         match p.item() {
             Ok(item) => file.items.push(item),
             Err(problem) => {
+                let stopped = problem.span;
                 file.diagnostics.push(problem.into());
                 p.recover(position);
                 let hole = Span { end: p.tok().span.start, ..start };
                 file.holes.push(hole);
+                file.recovered.push(p.recovered(hole, stopped));
                 file.diagnostics.push(Diagnostic {
                     code: RECOVERY_GAP,
                     message: "declaration omitted; a draft with a recovery hole does not lower".into(),
@@ -67,8 +73,9 @@ pub fn parse(bytes: &[u8]) -> ParsedFile {
 }
 
 /// The source text, if the bytes are UTF-8 with LF line ends and no byte-order mark (LG1.3). Otherwise ERR.10's
-/// encoding diagnostic: no span, the raw input digest and the first offending byte interval.
-fn pinned(bytes: &[u8]) -> Result<&str, Diagnostic> {
+/// encoding diagnostic: no span, the raw input digest and the first offending byte interval. The editor services read
+/// it to decide whether bytes have source ranges at all (EV1.10).
+pub fn pinned(bytes: &[u8]) -> Result<&str, Diagnostic> {
     let refuse = |start: usize, end: usize, message: &str| Diagnostic {
         code: INVALID_ENCODING,
         message: message.into(),
@@ -95,9 +102,57 @@ fn is(t: &Token, text: &str) -> bool {
 struct Parser {
     tokens: Vec<Token>,
     pos: usize,
+    /// The names bound so far in the item being parsed, each visible to `usize::MAX` while its scope is open (EV1.2).
+    trail: Vec<RecoveredBinding>,
+    /// The open scopes, each the length of `trail` when it opened.
+    scopes: Vec<usize>,
+    /// How many closures the parser is inside.
+    closures: usize,
+    /// The item's kind, export and name as far as they were read.
+    partial: Partial,
+}
+
+/// What an item's head said before it broke.
+#[derive(Default)]
+struct Partial {
+    kind: Option<DeclKind>,
+    exported: bool,
+    name: Option<Name>,
 }
 
 impl Parser {
+    /// The recovered declaration of a hole: the item's head as read, and its bindings, where each scope still open
+    /// ends at the hole's end.
+    fn recovered(&mut self, hole: Span, stopped: Span) -> RecoveredDecl {
+        let partial = std::mem::take(&mut self.partial);
+        let mut bindings = std::mem::take(&mut self.trail);
+        for b in &mut bindings {
+            b.to = b.to.min(hole.end);
+        }
+        self.scopes.clear();
+        self.closures = 0;
+        RecoveredDecl { hole, stopped, kind: partial.kind, exported: partial.exported, name: partial.name, bindings }
+    }
+
+    /// Records a binding visible from `from` until its scope closes.
+    fn bind(&mut self, name: &Name, kind: BindingKind, ty: Option<&TypeExpr>, from: usize) {
+        self.trail.push(RecoveredBinding { name: name.clone(), kind, ty: ty.cloned(), from, to: usize::MAX });
+    }
+
+    fn open(&mut self) {
+        self.scopes.push(self.trail.len());
+    }
+
+    /// Closes the innermost scope at the end of the last token taken.
+    fn close(&mut self) {
+        let end = self.tokens[self.pos.saturating_sub(1)].span.end;
+        if let Some(start) = self.scopes.pop() {
+            for b in &mut self.trail[start..] {
+                b.to = b.to.min(end);
+            }
+        }
+    }
+
     fn tok(&self) -> &Token {
         &self.tokens[self.pos]
     }
@@ -252,6 +307,10 @@ impl Parser {
     }
 
     fn item(&mut self) -> R<Item> {
+        self.trail.clear();
+        self.scopes.clear();
+        self.closures = 0;
+        self.partial = Partial::default();
         let start = self.tok().span;
         if start.column != 1 {
             return Err(self.unexpected("a declaration starts in column 1"));
@@ -266,6 +325,7 @@ impl Parser {
             return Ok(Item::Import(Import { alias, digest, loc: Loc(self.since(start)) }));
         }
         let exported = self.accept("export");
+        self.partial.exported = exported;
         let kind = if self.accept("fn") {
             DeclKind::Fn
         } else if self.accept("view") {
@@ -277,13 +337,20 @@ impl Parser {
         } else {
             return Err(self.unexpected("expected `fn`, `view`, `command`, `contract` or `import`"));
         };
+        self.partial.kind = Some(kind);
         let name = self.name()?;
+        self.partial.name = Some(name.clone());
+        self.open();
         let mut generics = Vec::new();
         if self.accept("<") {
             if self.at(">") {
                 return Err(self.unexpected("expected a generic parameter"));
             }
-            generics = self.separated(">", Self::name)?;
+            generics = self.separated(">", |p| {
+                let g = p.name()?;
+                p.bind(&g, BindingKind::Generic, None, g.loc.0.end);
+                Ok(g)
+            })?;
         }
         let params = self.params()?;
         self.expect("->")?;
@@ -300,6 +367,7 @@ impl Parser {
             None
         };
         let body = self.block()?;
+        self.close();
         Ok(Item::Decl(Box::new(Decl {
             exported,
             kind,
@@ -320,7 +388,11 @@ impl Parser {
         self.separated(")", |p| {
             let name = p.name()?;
             p.expect(":")?;
-            Ok(ParamDecl { name, ty: p.ty()? })
+            let ty = p.ty()?;
+            let kind = if p.closures > 0 { BindingKind::ClosureParameter } else { BindingKind::Parameter };
+            let after = p.since(name.loc.0).end;
+            p.bind(&name, kind, Some(&ty), after);
+            Ok(ParamDecl { name, ty })
         })
     }
 
@@ -352,6 +424,7 @@ impl Parser {
     /// `{ let a = e; ... return e; }`: every binding comes before the single return.
     fn block(&mut self) -> R<Block> {
         let start = self.expect("{")?.span;
+        self.open();
         let mut lets = Vec::new();
         while self.at("let") {
             let at = self.take().span;
@@ -359,12 +432,15 @@ impl Parser {
             self.expect("=")?;
             let value = self.expr()?;
             self.expect(";")?;
-            lets.push(LetStmt { name, value, loc: Loc(self.since(at)) });
+            let loc = Loc(self.since(at));
+            self.bind(&name, BindingKind::Let, None, loc.0.end);
+            lets.push(LetStmt { name, value, loc });
         }
         self.expect("return")?;
         let result = self.expr()?;
         self.expect(";")?;
         self.expect("}")?;
+        self.close();
         Ok(Block { lets, result, loc: Loc(self.since(start)) })
     }
 
@@ -431,12 +507,18 @@ impl Parser {
             self.take();
             let binder = self.name()?;
             self.take();
+            self.open();
+            let after = self.since(binder.loc.0).end;
+            self.bind(&binder, BindingKind::MatchBinder, None, after);
             Pattern::Binder { tag, binder }
         } else {
             Pattern::Lit(self.postfix(false)?)
         };
         self.expect("=>")?;
         let body = self.expr()?;
+        if matches!(pattern, Pattern::Binder { .. }) {
+            self.close();
+        }
         Ok(Arm { pattern, body, loc: Loc(self.since(start)) })
     }
 
@@ -535,10 +617,15 @@ impl Parser {
                 }
                 "fn" if is(self.peek(1), "(") => {
                     self.take();
+                    self.closures += 1;
+                    self.open();
                     let params = self.params()?;
                     self.expect("->")?;
                     let result = self.ty()?;
-                    ExprKind::Closure { params, result, body: Box::new(self.block()?) }
+                    let body = Box::new(self.block()?);
+                    self.close();
+                    self.closures -= 1;
+                    ExprKind::Closure { params, result, body }
                 }
                 "fn" | "match" => return Err(self.unexpected("expected an expression")),
                 _ => {

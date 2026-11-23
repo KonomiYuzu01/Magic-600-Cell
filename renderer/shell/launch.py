@@ -2,7 +2,7 @@
 
   python -B renderer/shell/launch.py --out NEW_FOLDER [--build DIR] [--run-id ID] [--echo] [--resolution WxH]
                                      [--puzzle jumble-off|jumble-on] [--lx4 --lx4-fixtures DIR]
-                                     [--lx2-injection CHILD] [--cold-start] [--dry-run]
+                                     [--lx2-injection CHILD] [--editor] [--cold-start] [--dry-run]
 
 The launcher recomputes every part of the product build (`build_product.verify`; default: the newest build under
 work/build/c9-product), creates the run folder `--out`, which must not exist yet, and starts the pinned Godot (the
@@ -28,6 +28,10 @@ child (`c600-lx2-child`, never shipped), which then replaces the build's runtime
 combines with `--lx4`, so that one run measures the echo bar during the fault windows, and is refused with
 `--cold-start`, which measures the product's own runtime. The launcher drops `C600_LX2_CEILING` and `C600_LX2_FAULT`
 from the environment it passes on: LX-2's module sets them in the shell's process before a respawn of the child.
+
+LP4-3 (a draft): `--editor` adds `M600_EDITOR=1`, which makes the shell create the editor panel of the write-check-run
+flow, and `M600_EDITOR_DLL` (the build's `editor/c600_shell_editor.dll`); the panel runs the solver's macro in the
+language runtime that `M600_RUNTIME` names. `launch.json` records the flag.
 
 Charter E3 (C9 U6, a draft): every launch copies the build's session fixture of its puzzle (`session-fixture/session`,
 with Jumble on `session-fixture-jumble-on/session`) fresh to the run's `session` folder and sets `M600_SESSION_FIXTURE`
@@ -75,7 +79,7 @@ RECORD = "launch.json"
 SHELL_VARIABLES = ("M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
                    "M600_RUN_ID", "M600_INPUT_ECHO", "M600_SESSION_DIR", "M600_TWIST_MENU", "M600_PUZZLE", "M600_LX4",
                    "M600_LX4_DLL", "M600_LX4_FIXTURES", "M600_SESSION_FIXTURE", "M600_RUNTIME",
-                   "M600_EXIT_AT_FIRST_FRAME", "M600_LX2", "M600_CHROME")
+                   "M600_EXIT_AT_FIRST_FRAME", "M600_LX2", "M600_CHROME", "M600_EDITOR", "M600_EDITOR_DLL")
 # The file of an LX-4 fixture folder that the launcher checks and records (renderer/bridge/lx4's fixtures.rs).
 LX4_MANIFEST = "MANIFEST.json"
 # LX-2's fault variables, which the injection child reads at its start: a run starts with them unset, and only LX-2's
@@ -115,10 +119,11 @@ def command(product: dict, build: Path, out: Path, resolution: str | None = None
 
 def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, base: dict | None = None,
                 puzzle: str = PUZZLES[0], lx4: Path | None = None, cold_start: bool = False,
-                lx2_injection: Path | None = None, frame: bool = False) -> dict:
+                lx2_injection: Path | None = None, frame: bool = False, editor: bool = False) -> dict:
     """The process environment: `base` (default: this process's) without any shell variable or LX-2 fault variable,
     then the launch's. `lx4` is LX-4's fixture folder, which turns its module on with the build's library.
-    `lx2_injection` replaces the build's runtime with LX-2's injection child."""
+    `lx2_injection` replaces the build's runtime with LX-2's injection child. `editor` turns the editor panel on
+    with the build's editor library."""
     env = {key: value for key, value in (os.environ if base is None else base).items()
            if key.upper() not in SHELL_VARIABLES + LX2_FAULT_VARIABLES}
     env.update({"M600_CORE_DLL": str(build / build_product.CORE_DLL), "M600_HOST_DLL": str(build / build_product.HOST_DLL),
@@ -136,6 +141,8 @@ def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, 
         env["M600_EXIT_AT_FIRST_FRAME"] = "1"
     if frame:
         env["M600_CHROME"] = "1"
+    if editor:
+        env.update({"M600_EDITOR": "1", "M600_EDITOR_DLL": str(build / build_product.EDITOR_DLL)})
     if lx2_injection is not None:
         env["M600_RUNTIME"] = str(lx2_injection)
         env["M600_LX2"] = "1"
@@ -317,6 +324,8 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
                         help="charter E3: wait 20 s since the previous exit; the shell quits at its first correct frame")
     parser.add_argument("--frame", action="store_true",
                         help="open the frame (A5): the chrome library over the window, the core under the Global view")
+    parser.add_argument("--editor", action="store_true",
+                        help="LP4-3: create the editor panel of the write-check-run flow in the shell")
     parser.add_argument("--dry-run", action="store_true", help="check and print; create and start nothing")
     args = parser.parse_args(argv)
     try:
@@ -340,7 +349,7 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
         run_id = args.run_id or run_id_now()
         arguments = command(product, build, out, args.resolution)
         env = environment(product, build, out, run_id, args.echo, puzzle=args.puzzle, lx4=fixtures,
-                          cold_start=args.cold_start, lx2_injection=child, frame=args.frame)
+                          cold_start=args.cold_start, lx2_injection=child, frame=args.frame, editor=args.editor)
     except (LaunchError, build_product.ProductError, OSError) as error:
         out_stream(f"launch: {error}")
         return 2
@@ -383,7 +392,7 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
         stream.write(json.dumps({"format": FORMAT, "run_id": run_id, "build_identity": product["identity"],
                                  "echo": args.echo, "puzzle": args.puzzle, "lx4": args.lx4,
                                  "lx4_fixtures": None if manifest is None else {"manifest_sha256": manifest},
-                                 "lx2_injection": injection,
+                                 "lx2_injection": injection, "editor": args.editor,
                                  "cold_start": args.cold_start, "command": sanitized(arguments, build, out),
                                  "started_utc": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "seconds": seconds,
                                  "exit_code": code}, indent=2) + "\n")

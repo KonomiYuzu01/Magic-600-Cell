@@ -1,6 +1,8 @@
 //! Tokens and literal text: LX-8's shared lexical grammar (`syntax.py`) in the same order of alternatives, with `.`
-//! added for field access. Spaces, tabs, newlines and `#` comments separate tokens and are not kept.
+//! added for field access. Spaces, tabs, newlines and `#` comments separate tokens; they are kept apart as trivia for
+//! the authoring services (EV1.2; M7 deferred them, PHS.21) and never become tokens.
 
+use crate::ast::{Trivia, TriviaKind};
 use crate::Span;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -27,27 +29,84 @@ pub(crate) struct Token {
 const PUNCT2: [&str; 5] = ["->", "=>", ":=", "<-", "|>"];
 const PUNCT1: &[u8] = b"{}()[],;:<>!=@~|.";
 
+/// A token's kind as a host reads it (EV1.2): the lexer's own kinds under public names.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LexemeKind {
+    /// A quoted string that closes on its line.
+    Text,
+    /// `n/d`.
+    Rational,
+    /// A decimal number without a precision marker, which is never a value (LG1.7).
+    Decimal,
+    Integer,
+    Name,
+    Punct,
+    /// Any other character, such as a quote that opens no string on its line.
+    Other,
+    /// The end of the file, an empty token.
+    End,
+}
+
+/// One token of pinned source text, with its text and source range.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Lexeme {
+    pub kind: LexemeKind,
+    pub text: String,
+    pub span: Span,
+}
+
+/// The tokens of pinned source text, ending with an end-of-file token, and its trivia, both in source order: the same
+/// tokens the parser reads (EV1.2). Completion and navigation read them to find what a position touches.
+pub fn lexemes(source: &str) -> (Vec<Lexeme>, Vec<Trivia>) {
+    let (tokens, trivia) = lex_trivia(source);
+    let kind = |k: Kind| match k {
+        Kind::Str => LexemeKind::Text,
+        Kind::Rat => LexemeKind::Rational,
+        Kind::BadNumber => LexemeKind::Decimal,
+        Kind::Int => LexemeKind::Integer,
+        Kind::Id => LexemeKind::Name,
+        Kind::Punct => LexemeKind::Punct,
+        Kind::Bad => LexemeKind::Other,
+        Kind::Eof => LexemeKind::End,
+    };
+    let lexemes = tokens.into_iter().map(|t| Lexeme { kind: kind(t.kind), text: t.text, span: t.span }).collect();
+    (lexemes, trivia)
+}
+
 /// The tokens of pinned source text, ending with an end-of-file token.
+#[cfg(test)]
 pub(crate) fn lex(source: &str) -> Vec<Token> {
+    lex_trivia(source).0
+}
+
+/// The tokens of pinned source text, ending with an end-of-file token, and the trivia between them: each run of
+/// spaces, tabs and newlines and each `#` comment, in source order.
+pub(crate) fn lex_trivia(source: &str) -> (Vec<Token>, Vec<Trivia>) {
     let b = source.as_bytes();
     let mut tokens = Vec::new();
+    let mut trivia = Vec::new();
     let (mut i, mut line, mut column) = (0, 1, 1);
     // Where the last scan for an unclosed string stopped. Every quote before that point was escaped in that scan, so
     // its own scan would resume in step and stop there too: it is not scanned again, which keeps lexing linear.
     let mut unclosed = 0;
     while i < b.len() {
         match b[i] {
-            b' ' | b'\t' => {
-                column += 1;
-                i += 1;
-            }
-            b'\n' => {
-                line += 1;
-                column = 1;
-                i += 1;
+            b' ' | b'\t' | b'\n' => {
+                let start = Span { start: i, end: i, line, column };
+                while i < b.len() && matches!(b[i], b' ' | b'\t' | b'\n') {
+                    if b[i] == b'\n' {
+                        line += 1;
+                        column = 1;
+                    } else {
+                        column += 1;
+                    }
+                    i += 1;
+                }
+                trivia.push(Trivia { kind: TriviaKind::Whitespace, span: Span { end: i, ..start } });
             }
             b'#' => {
                 let end = b[i..].iter().position(|&c| c == b'\n').map_or(b.len(), |n| i + n);
+                trivia.push(Trivia { kind: TriviaKind::Comment, span: Span { start: i, end, line, column } });
                 column += source[i..end].chars().count();
                 i = end;
             }
@@ -61,7 +120,7 @@ pub(crate) fn lex(source: &str) -> Vec<Token> {
         }
     }
     tokens.push(Token { kind: Kind::Eof, text: String::new(), span: Span { start: i, end: i, line, column } });
-    tokens
+    (tokens, trivia)
 }
 
 /// The kind and end of the token at `i`, trying the alternatives in LX-8's order. A quote before `unclosed` cannot

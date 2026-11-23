@@ -75,6 +75,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-editor"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-evidence"
 version = "0.0.0"
 dependencies = [
@@ -234,6 +244,7 @@ dependencies = [
  "c600-check",
  "c600-digest",
  "c600-ir",
+ "c600-module",
  "c600-platform",
  "c600-run",
  "c600-syntax",
@@ -276,9 +287,11 @@ dependencies = [
  "c600-command",
  "c600-digest",
  "c600-display",
+ "c600-input",
  "c600-ir",
  "c600-kernel",
  "c600-library",
+ "c600-module",
  "c600-run",
  "c600-runtime",
  "c600-syntax",

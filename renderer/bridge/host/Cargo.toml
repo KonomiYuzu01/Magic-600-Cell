@@ -29,3 +29,5 @@ c600-run = { path = "../../../rust/c600-run" }
 c600-runtime = { path = "../../../rust/c600-runtime" }
 c600-session = { path = "../../../rust/c600-session" }
 c600-syntax = { path = "../../../rust/c600-syntax" }
+# LP4-3: the run a language row's program job names (c600_tools::modules::ModuleRun), for the editor library.
+c600-tools = { path = "../../../rust/c600-tools" }
