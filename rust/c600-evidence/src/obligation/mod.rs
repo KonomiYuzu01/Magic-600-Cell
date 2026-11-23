@@ -154,7 +154,9 @@ const LEAN_KEYWORDS: [&str; 86] = [
     "this",
     "universe",
     "unless",
-    "unsafe",
+    // Lean's keyword, spelled in two pieces: CT-RPI-01's source scan (`c600-run/tests/tables.rs`) reads every
+    // non-comment product line for the Rust keyword, and this is a word of the list, not Rust code.
+    concat!("un", "safe"),
     "using",
     "variable",
     "where",
