@@ -1,4 +1,4 @@
 flowchart LR
-  K[grip key] -->|selects| Cap[cap]
-  Cap -->|ready for| Tw[twist]
-  K -. state unchanged .- St[(puzzle state)]
+  P[pole of one cell] --> G[grip: a world-fixed place]
+  G -->|chosen for| T[the next twist]
+  G -. choosing changes nothing .- St[(puzzle state)]

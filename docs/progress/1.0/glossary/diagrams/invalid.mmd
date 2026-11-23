@@ -1,0 +1,4 @@
+flowchart LR
+  R[request] --> Q{exact element of the active menu?}
+  Q -->|no| I[invalid]
+  I -. state not tested .- St[(state)]

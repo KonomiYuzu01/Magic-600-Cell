@@ -1,277 +1,3371 @@
 {
-  "format": "C600-GLOSSARY-draft",
-  "levels": [
-    {
-      "id": "L1",
-      "name": "Turning the puzzle",
-      "workflow": "solving-workflow.md section 4.3 (Keyboard)"
-    },
-    {
-      "id": "L2",
-      "name": "Orbits and protection",
-      "workflow": "solving-workflow.md section 2"
-    },
-    {
-      "id": "L3",
-      "name": "Buffers and stars",
-      "workflow": "solving-workflow.md section 3.1"
-    },
-    {
-      "id": "L4",
-      "name": "Placement, blocks and frames",
-      "workflow": "solving-workflow.md sections 3.2, 3.3 and 4"
-    },
-    {
-      "id": "L5",
-      "name": "Orientation and the endgame",
-      "workflow": "solving-workflow.md section 3.4"
-    },
-    {
-      "id": "L6",
-      "name": "Beyond the baseline",
-      "workflow": "solving-workflow.md section 2 (pure controllers)"
-    }
+ "format": "C600-GLOSSARY-draft",
+ "version": 2,
+ "note": "Version 2 integrates chapter 04 section 6 of the language architecture (EV5.14, EV5.15) and the senses of EV5.18 in LP4-11. A reference in a definition is written [[Term]] or [[shown text|Term]] and must name one row at or below the definition's level (EV5.10). `learner_facing: false` marks a row that never reaches the interface. `origin` says where a row comes from; `chapter_term` keeps the chapter's row name; `review` says what waits for the mathematician.",
+ "levels": [
+  {
+   "id": "L1",
+   "name": "Turning the puzzle",
+   "workflow": "solving-workflow.md section 4.3 (Keyboard)"
+  },
+  {
+   "id": "L2",
+   "name": "Orbits and protection",
+   "workflow": "solving-workflow.md section 2"
+  },
+  {
+   "id": "L3",
+   "name": "Buffers and stars",
+   "workflow": "solving-workflow.md section 3.1"
+  },
+  {
+   "id": "L4",
+   "name": "Placement, blocks and frames",
+   "workflow": "solving-workflow.md sections 3.2, 3.3 and 4"
+  },
+  {
+   "id": "L5",
+   "name": "Orientation and the endgame",
+   "workflow": "solving-workflow.md section 3.4"
+  },
+  {
+   "id": "L6",
+   "name": "Beyond the baseline",
+   "workflow": "solving-workflow.md section 2 (pure controllers)"
+  }
+ ],
+ "citations": {
+  "documents": [
+   "Chapter",
+   "Chapters",
+   "Overview",
+   "Partition",
+   "Charter",
+   "State contract",
+   "DT-M1",
+   "DT-L1",
+   "DT-J1",
+   "Theory",
+   "Card",
+   "Note",
+   "Owner",
+   "Solving workflow",
+   "H-08",
+   "Theorem MC"
   ],
-  "terms": [
-    {
-      "id": "cell",
-      "term": "Cell",
-      "level": "L1",
-      "definition": "One of the 600 tetrahedral cells of the 600-cell; each cell carries 433 sticker slots.",
-      "ui": "Local and Global views (cell outlines); cell names such as C013 in inspection and filters",
-      "source": "research/Full_600cell_Puzzle_Theory.tex, Lemma 3; assets/mesh.json (cells, base_stickers)"
-    },
-    {
-      "id": "sticker-slot",
-      "term": "Sticker slot",
-      "level": "L1",
-      "definition": "A fixed place for one sticker; the full model has 600 x 433 = 259,800 slots. The mechanical state always keeps all of them; display filters may hide some from drawing, never from the state.",
-      "ui": "Views draw all slots unless a display filter hides some; inspection shows slot numbers",
-      "source": "AGENTS.md (Mechanics and model); assets/mesh.json"
-    },
-    {
-      "id": "label",
-      "term": "Label",
-      "level": "L1",
-      "definition": "The identity of the sticker that sits in a slot; the state of the puzzle is the list of all 259,800 labels.",
-      "ui": "Inspection panel; exact-label progress; colour is drawn from the label",
-      "source": "core.py PuzzleState (labels, state_hash)"
-    },
-    {
-      "id": "piece",
-      "term": "Piece",
-      "level": "L1",
-      "definition": "A rigid group of stickers that always moves together; a piece occupies one position and its stickers fill that position's slots.",
-      "ui": "Picking, inspection and tracking act on pieces",
-      "source": "core.py PuzzleState.piece; research/Full_600cell_Puzzle_Theory.tex, Lemma 6"
-    },
-    {
-      "id": "cap",
-      "term": "Cap",
-      "level": "L1",
-      "definition": "The set of pieces cut off around one cell pole that turns as one unit; a legal turn rotates exactly one cap.",
-      "ui": "Grip highlight in Local; the cap a key will turn",
-      "source": "research/Full_600cell_Puzzle_Theory.tex, Lemma 6 (cap actions)"
-    },
-    {
-      "id": "grip",
-      "term": "Grip",
-      "level": "L1",
-      "definition": "The choice of which cap the next twist turns; choosing a grip changes nothing in the puzzle state.",
-      "ui": "Grip keys of the keyboard; grip marker in Local",
-      "source": "solving-workflow.md section 4.3; research/Full_600cell_Technical_Report.tex (grips, twists)"
-    },
-    {
-      "id": "twist",
-      "term": "Twist",
-      "level": "L1",
-      "definition": "A turn of the gripped cap in one legal direction; every twist is one of the 1,200 generators or its inverse.",
-      "ui": "Twist keys; the move list and history",
-      "source": "core.py Model.move (primitive IDs +-1..+-1200)"
-    },
-    {
-      "id": "generator",
-      "term": "Generator (primitive move)",
-      "level": "L1",
-      "definition": "One of the 1,200 legal basic turns, numbered 1 to 1200; a negative number is its inverse. Every operation expands into generators.",
-      "ui": "Move counts, macro text, history",
-      "source": "AGENTS.md (1,200 legal generators); core.py Model.move"
-    },
-    {
-      "id": "orbit",
-      "term": "Orbit",
-      "level": "L2",
-      "definition": "A class of positions whose pieces legal moves can exchange; the 35 moving orbits are numbered O0 to O34, pieces never leave their orbit, and the 600 fixed cell-centre pieces never move and are not numbered.",
-      "ui": "Orbit selector; per-orbit progress and residuals; filters such as O33",
-      "source": "assets/census.json (orbits); research/Full_600cell_Puzzle_Theory.tex (35-orbit census)"
-    },
-    {
-      "id": "seed",
-      "term": "Seed",
-      "level": "L2",
-      "definition": "A legal word, one per orbit, whose effect on that orbit is a cycle of three pieces.",
-      "ui": "Macro base (per orbit); star construction details",
-      "source": "solving-workflow.md section 2; core.py Model.certify_seed"
-    },
-    {
-      "id": "collateral",
-      "term": "Collateral",
-      "level": "L2",
-      "definition": "What a word moves outside the orbit being worked on; 23 of the 35 raw seeds have collateral, and it is always kept, never discarded.",
-      "ui": "Complete-effect panel; support and conflict lists before execution",
-      "source": "solving-workflow.md section 2; assets/seed_atlas.json (collateral)"
-    },
-    {
-      "id": "stage-order",
-      "term": "Stage order",
-      "level": "L2",
-      "definition": "An order of orbits in which every seed's collateral falls on orbits not yet solved, so that finished orbits stay solved at every macro boundary. More than one such order exists.",
-      "ui": "Orbit list order, labelled as one admissible order",
-      "source": "solving-workflow.md section 2; technical report, 'Triangular stage invariant'"
-    },
-    {
-      "id": "protection",
-      "term": "Protection",
-      "level": "L2",
-      "definition": "The solver's instruction that an orbit, position, piece or block must not change; an operation that would change it is refused, not hidden.",
-      "ui": "Protection indicator on every view; conflict warnings in preview",
-      "source": "session.py Session.preview and commit (protected orbits); solving-workflow.md section 3.3"
-    },
-    {
-      "id": "net-strict",
-      "term": "Net and Strict checks",
-      "level": "L2",
-      "definition": "Net checks protection on the complete operation's end result; Strict checks after every generator. An unchecked part is shown as unchecked, never as safe.",
-      "ui": "Protection check mode in preview",
-      "source": "solving-workflow.md section 2 (Boundaries, not intermediate steps)"
-    },
-    {
-      "id": "buffer",
-      "term": "Buffer",
-      "level": "L3",
-      "definition": "One of two fixed positions, A and B, chosen for an orbit; pieces pass through them while others are placed. A buffer is a place, not a piece.",
-      "ui": "A and B markers in Local; buffer keys",
-      "source": "solving-workflow.md section 3.1"
-    },
-    {
-      "id": "occupant",
-      "term": "Occupant",
-      "level": "L3",
-      "definition": "The piece currently sitting in a position; a buffer's occupant changes every time a star runs.",
-      "ui": "Inspection; buffer status line",
-      "source": "solving-workflow.md section 3.1"
-    },
-    {
-      "id": "target",
-      "term": "Target",
-      "level": "L3",
-      "definition": "The position X the solver wants to fill next; the solver always names it, the program never chooses it alone.",
-      "ui": "Target marker; list of unfinished positions in position-id order",
-      "source": "solving-workflow.md sections 3.3 and 7"
-    },
-    {
-      "id": "setup",
-      "term": "Setup",
-      "level": "L3",
-      "definition": "A word S, chosen for a target, that carries the reference position to the target X without moving the buffers; a star runs S^-1 first and S last.",
-      "ui": "Prepare phase of the work sheet; proposed setups for a named target",
-      "source": "solving-workflow.md sections 3.1 and 7; research/Full_600cell_Puzzle_Theory.tex, Lemma 15"
-    },
-    {
-      "id": "relocation",
-      "term": "Relocation",
-      "level": "L3",
-      "definition": "The fixed word that moves the seed's three-cycle onto buffer A, buffer B and a reference position.",
-      "ui": "Star construction details",
-      "source": "core.py Model.certify_seed (relocation); solving-workflow.md section 3.1"
-    },
-    {
-      "id": "star",
-      "term": "Star",
-      "level": "L3",
-      "definition": "The macro that cycles buffer A to B to target X; in chronological order it runs setup^-1, relocation^-1, the seed, relocation, setup (as Model.expand writes it). Its inverse cycles A to X to B.",
-      "ui": "Macro base (star macros); preview of the cycle",
-      "source": "solving-workflow.md section 3.1; core.py Model.star_net and expand"
-    },
-    {
-      "id": "home",
-      "term": "Home",
-      "level": "L4",
-      "definition": "The position where a piece belongs when the puzzle is solved.",
-      "ui": "Home and current structure toggle; home(C...) filters",
-      "source": "core.py Filters (home and current predicates); solving-workflow.md section 3.3"
-    },
-    {
-      "id": "block",
-      "term": "Block",
-      "level": "L4",
-      "definition": "A group of pieces the solver declares as an achievement, with members, required positions or relations, a reference and a preservation policy; Home blocks and referenced blocks are distinct.",
-      "ui": "Block panel; block boundary in Local; block protection",
-      "source": "solving-workflow.md section 3.3"
-    },
-    {
-      "id": "frame",
-      "term": "Frame",
-      "level": "L4",
-      "definition": "An ordered choice of reference stickers that fixes how a piece or block is oriented; a transported frame is the same frame carried along by moves.",
-      "ui": "Reference and frame display in Local; frame comparison of hidden buffers",
-      "source": "research/Full_600cell_Puzzle_Theory.tex, Lemma 7; core.py star_net (frame checks)"
-    },
-    {
-      "id": "complete-effect",
-      "term": "Complete effect",
-      "level": "L4",
-      "definition": "Everything an operation does to all 259,800 labels, including regions hidden by filters; checks and protection always use it.",
-      "ui": "Preview: cycles, collateral, support, conflicts",
-      "source": "solving-workflow.md section 4.1"
-    },
-    {
-      "id": "work-sheet",
-      "term": "Work sheet",
-      "level": "L4",
-      "definition": "A saved operation with its roles and three phases, Prepare, Macro and Cleanup; reusing it always triggers a fresh review.",
-      "ui": "Work sheet editor; phase editor",
-      "source": "solving-workflow.md section 4"
-    },
-    {
-      "id": "orientation",
-      "term": "Orientation",
-      "level": "L5",
-      "definition": "How a piece sits in its position; a piece can be at Home but wrongly oriented.",
-      "ui": "Orientation marks in Local; orientation_wrong counts",
-      "source": "core.py PuzzleState (orientation_wrong)"
-    },
-    {
-      "id": "orientation-group",
-      "term": "Orientation group",
-      "level": "L5",
-      "definition": "The group of ways a piece of an orbit can be turned in place: trivial, C2, C5, D5 or A5; it limits what can remain in the last buffer.",
-      "ui": "Orbit details; endgame stage display",
-      "source": "assets/census.json (orientation_group); solving-workflow.md section 3.4"
-    },
-    {
-      "id": "orientation-transfer",
-      "term": "Orientation transfer",
-      "level": "L5",
-      "definition": "The operation P_X(q) = K_{X,q} K_X^-1, built from stars: on the working orbit it fixes every position and moves an orientation change from X to a buffer; like every star product, it may also move pieces of other orbits (collateral), which preview shows.",
-      "ui": "Endgame tools; both ends shown in preview",
-      "source": "solving-workflow.md section 3.4"
-    },
-    {
-      "id": "residual",
-      "term": "Residual",
-      "level": "L5",
-      "definition": "What is still wrong in an orbit: pieces not at Home, wrong buffer occupants, wrong orientations and unknown frames; the final buffer may keep only a residual the orientation group allows.",
-      "ui": "Residuals panel per orbit; stage display; completion",
-      "source": "solving-workflow.md section 3.4"
-    },
-    {
-      "id": "pure-controller",
-      "term": "Pure controller",
-      "level": "L6",
-      "definition": "A raw seed followed by corrections of all its collateral through previously built pure controllers; its net effect touches only its own orbit.",
-      "ui": "Macro base (advanced); theory book",
-      "source": "solving-workflow.md section 2; research/Full_600cell_Puzzle_Theory.tex (certificate C)"
-    }
+  "clauses": [
+   "KN",
+   "EV",
+   "LB",
+   "LG",
+   "BND",
+   "PS",
+   "RPI",
+   "LI",
+   "EVD",
+   "INV-",
+   "RTE",
+   "PHS",
+   "BM",
+   "LQ",
+   "ONE",
+   "CX"
   ]
+ },
+ "homonyms": [
+  {
+   "word": "Domain",
+   "senses": [
+    "Alignment domain",
+    "Declared domain",
+    "Admitted domain",
+    "Chart domain"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Projection",
+   "senses": [
+    "Display projection",
+    "Level projection"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Key",
+   "senses": [
+    "Keyboard key",
+    "Statement key",
+    "Equality key",
+    "Reproducibility key",
+    "Source key"
+   ],
+   "bare": "Keyboard key"
+  },
+  {
+   "word": "Checkpoint",
+   "senses": [
+    "Saved checkpoint",
+    "Retained checkpoint",
+    "Label checkpoint"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Branch",
+   "senses": [
+    "Journal branch",
+    "Tree branch"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Edition",
+   "senses": [
+    "Language edition",
+    "Evidence edition"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Rank",
+   "senses": [
+    "Descent rank",
+    "Matrix rank",
+    "Census rank"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Clean",
+   "senses": [
+    "Clean grip",
+    "Clean step"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Block",
+   "senses": [
+    "Achievement block",
+    "Jumbling block"
+   ],
+   "bare": "Achievement block"
+  },
+  {
+   "word": "Provenance",
+   "senses": [
+    "Assistance provenance",
+    "Result trace",
+    "Attribution"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Macro",
+   "senses": [
+    "Macro",
+    "Lowering macro",
+    "Macro certificate"
+   ],
+   "bare": "Macro"
+  },
+  {
+   "word": "Covers",
+   "senses": [
+    "Covered set",
+    "Cap cover",
+    "Helper cover"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Level",
+   "senses": [
+    "Identity level",
+    "Learning level",
+    "Grip level"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Witness",
+   "senses": [
+    "Witness",
+    "Witness piece"
+   ],
+   "bare": "Witness"
+  },
+  {
+   "word": "Chamber",
+   "senses": [
+    "Cut chamber",
+    "Flag chamber"
+   ],
+   "bare": "Cut chamber"
+  },
+  {
+   "word": "Base part",
+   "senses": [
+    "Decomposition leaf",
+    "Base-tier function"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Derivation",
+   "senses": [
+    "Hand derivation",
+    "State derivation"
+   ],
+   "bare": null
+  },
+  {
+   "word": "Twist",
+   "senses": [
+    "Twist, 600-cell-Full",
+    "Twist, jumbling puzzle"
+   ],
+   "bare": null
+  }
+ ],
+ "terms": [
+  {
+   "id": "cell",
+   "term": "Cell",
+   "level": "L1",
+   "definition": "One of the 600 tetrahedral cells of the 600-cell; each cell carries 433 [[sticker slots|Sticker slot]].",
+   "ui": "Local and Global views (cell outlines); cell names such as C013 in inspection and filters",
+   "source": "research/Full_600cell_Puzzle_Theory.tex, Lemma 3; assets/mesh.json (cells, base_stickers)",
+   "origin": "M6"
+  },
+  {
+   "id": "sticker-slot",
+   "term": "Sticker slot",
+   "level": "L1",
+   "definition": "A fixed place for one [[sticker]]; the full model has 600 x 433 = 259,800 slots. The mechanical state always keeps all of them; display [[filters|Filter]] may hide some from drawing, never from the state.",
+   "ui": "Views draw all slots unless a display filter hides some; inspection shows slot numbers",
+   "source": "AGENTS.md (Mechanics and model); assets/mesh.json",
+   "origin": "M6"
+  },
+  {
+   "id": "label",
+   "term": "Label",
+   "level": "L1",
+   "definition": "A [[sticker]]'s identity at a [[lattice]] slot; the label array is the state of record for 600-cell-Full.",
+   "ui": "Inspection panel; exact-label progress; colour is drawn from the label",
+   "source": "Chapter 01 KN1; partition LG2; core.py PuzzleState (labels, state_hash)",
+   "origin": "M6",
+   "chapter_term": "Label (scope change)",
+   "manual": [
+    "label",
+    "labels"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "piece",
+   "term": "Piece",
+   "level": "L1",
+   "definition": "A rigid labelled object with [[stickers|Sticker]]; slot occupancy is defined only on the [[lattice]] in the jumbling puzzle.",
+   "ui": "Picking, inspection and tracking act on pieces",
+   "source": "Chapter 01 KN1; DT-L1 M3, M6; core.py PuzzleState.piece; research/Full_600cell_Puzzle_Theory.tex, Lemma 6",
+   "origin": "M6",
+   "chapter_term": "Piece (scope change)",
+   "manual": [
+    "piece",
+    "pieces"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "cap",
+   "term": "Cap",
+   "level": "L1",
+   "definition": "A world-fixed [[grip]] and cut; which [[pieces|Piece]] lie inside it depends on the state.",
+   "ui": "Grip highlight in Local; the cap a key will turn",
+   "source": "Chapter 01 KN1.5; partition KN1; research/Full_600cell_Puzzle_Theory.tex, Lemma 6 (cap actions)",
+   "origin": "M6",
+   "chapter_term": "Cap (scope change)",
+   "manual": [
+    "cap",
+    "caps"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "grip",
+   "term": "Grip",
+   "level": "L1",
+   "definition": "A world-fixed place, the pole of one [[cell]]. Choosing the grip for the next [[twist|Twist, 600-cell-Full]] or [[jumbling twist|Twist, jumbling puzzle]] changes nothing in the puzzle state.",
+   "ui": "Grip keys of the keyboard; grip marker in Local",
+   "source": "Chapter 01 KN1.5; state contract section 1; solving-workflow.md section 4.3; research/Full_600cell_Technical_Report.tex (grips, twists)",
+   "origin": "M6",
+   "chapter_term": "Grip (scope change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "generator",
+   "term": "Generator",
+   "aliases": [
+    "Primitive move"
+   ],
+   "level": "L1",
+   "definition": "One of the 1,200 generators of 600-cell-Full; a negative number is its inverse. Every count says what it counts.",
+   "ui": "Move counts, macro text, history",
+   "source": "Chapter 01 KN1.5; DT-M1 Terms; AGENTS.md (1,200 legal generators); core.py Model.move",
+   "origin": "M6",
+   "chapter_term": "Generator (scope change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "orbit",
+   "term": "Orbit",
+   "level": "L2",
+   "definition": "A retained label-position orbit; a centre's fixed [[labels|Label]] do not imply a fixed jumbling [[pose]].",
+   "ui": "Orbit selector; per-orbit progress and residuals; filters such as O33",
+   "source": "Chapter 01 KN1; DT-L1 M3; assets/census.json (orbits); research/Full_600cell_Puzzle_Theory.tex (35-orbit census)",
+   "origin": "M6",
+   "chapter_term": "Orbit (scope change)",
+   "manual": [
+    "orbit",
+    "orbits"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "seed",
+   "term": "Seed",
+   "level": "L2",
+   "definition": "A legal [[word]], one per [[orbit]], whose effect on that orbit is a cycle of three [[pieces|Piece]].",
+   "ui": "Macro base (per orbit); star construction details",
+   "source": "solving-workflow.md section 2; core.py Model.certify_seed",
+   "origin": "M6"
+  },
+  {
+   "id": "collateral",
+   "term": "Collateral",
+   "level": "L2",
+   "definition": "What a [[word]] moves outside the [[orbit]] being worked on; 23 of the 35 raw [[seeds|Seed]] have collateral, and it is always kept, never discarded.",
+   "ui": "Complete-effect panel; support and conflict lists before execution",
+   "source": "solving-workflow.md section 2; assets/seed_atlas.json (collateral)",
+   "origin": "M6"
+  },
+  {
+   "id": "stage-order",
+   "term": "Stage order",
+   "level": "L2",
+   "definition": "An order of [[orbits|Orbit]] in which every [[seed]]'s [[collateral]] falls on orbits not yet solved, so that finished orbits stay solved at every [[macro]] boundary. More than one such order exists.",
+   "ui": "Orbit list order, labelled as one admissible order",
+   "source": "BND.65; LB2.5; solving-workflow.md section 2; research/Full_600cell_Technical_Report.tex, 'Triangular stage invariant'",
+   "origin": "M6",
+   "chapter_term": "Stage order (scope change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "protection",
+   "term": "Protection",
+   "level": "L2",
+   "definition": "The solver's instruction that an [[orbit]], [[position]], [[piece]] or [[block|Achievement block]] must not change; an operation that would change it is refused, not hidden.",
+   "ui": "Protection indicator on every view; conflict warnings in preview",
+   "source": "session.py Session.preview and commit (protected orbits); solving-workflow.md section 3.3",
+   "origin": "M6",
+   "forward": [
+    {
+     "term": "Achievement block",
+     "why": "The solving glossary names a block among protected objects at L2; achievement blocks enter at L4."
+    }
+   ]
+  },
+  {
+   "id": "net-strict",
+   "term": "Net and Strict checks",
+   "level": "L2",
+   "definition": "[[Protection]] on the whole end state or on every executed literal prefix, at the puzzle's [[protection level|Identity level]].",
+   "ui": "Protection check mode in preview",
+   "source": "Chapter 01 KN2.7; partition default 10; solving-workflow.md section 2 (Boundaries, not intermediate steps)",
+   "origin": "M6",
+   "chapter_term": "Net and Strict checks (scope change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "buffer",
+   "term": "Buffer",
+   "level": "L3",
+   "definition": "One of two fixed [[positions|Position]], A and B, chosen for an [[orbit]]; [[pieces|Piece]] pass through them while others are placed. A buffer is a place, not a piece.",
+   "ui": "A and B markers in Local; buffer keys",
+   "source": "solving-workflow.md section 3.1",
+   "origin": "M6"
+  },
+  {
+   "id": "occupant",
+   "term": "Occupant",
+   "level": "L3",
+   "definition": "The [[piece]] currently sitting in a [[position]]; partial off the [[lattice]], where it has no value.",
+   "ui": "Inspection; buffer status line",
+   "source": "Chapter 01 KN1.9; EV3.8; solving-workflow.md section 3.1",
+   "origin": "M6",
+   "chapter_term": "Occupant (scope change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "target",
+   "term": "Target",
+   "level": "L3",
+   "definition": "The [[position]] X the solver wants to fill next; the solver always names it, the program never chooses it alone.",
+   "ui": "Target marker; list of unfinished positions in position-id order",
+   "source": "BND.65; LB2.5; solving-workflow.md sections 3.3 and 7",
+   "origin": "M6",
+   "chapter_term": "Target (scope change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "setup",
+   "term": "Setup",
+   "level": "L3",
+   "definition": "A [[word]] S, chosen for a [[target]], that carries the reference [[position]] to the target X without moving the [[buffers|Buffer]]; a [[star]] runs S^-1 first and S last.",
+   "ui": "Prepare phase of the work sheet; proposed setups for a named target",
+   "source": "solving-workflow.md sections 3.1 and 7; research/Full_600cell_Puzzle_Theory.tex, Lemma 15",
+   "origin": "M6"
+  },
+  {
+   "id": "relocation",
+   "term": "Relocation",
+   "level": "L3",
+   "definition": "The fixed [[word]] that moves the [[seed]]'s three-cycle onto [[buffer]] A, buffer B and a reference [[position]].",
+   "ui": "Star construction details",
+   "source": "core.py Model.certify_seed (relocation); solving-workflow.md section 3.1",
+   "origin": "M6"
+  },
+  {
+   "id": "star",
+   "term": "Star",
+   "level": "L3",
+   "definition": "The [[macro]] that cycles [[buffer]] A to B to [[target]] X; in chronological order it runs [[setup]]^-1, [[relocation]]^-1, the [[seed]], relocation, setup (as Model.expand writes it). Its inverse cycles A to X to B.",
+   "ui": "Macro base (star macros); preview of the cycle",
+   "source": "solving-workflow.md section 3.1; core.py Model.star_net and expand",
+   "origin": "M6",
+   "manual": [
+    "stars"
+   ]
+  },
+  {
+   "id": "home",
+   "term": "Home",
+   "level": "L4",
+   "definition": "The [[position]] where a [[piece]] belongs when the puzzle is solved.",
+   "ui": "Home and current structure toggle; home(C...) filters",
+   "source": "core.py Filters (home and current predicates); solving-workflow.md section 3.3",
+   "origin": "M6"
+  },
+  {
+   "id": "block",
+   "term": "Achievement block",
+   "aliases": [
+    "Block"
+   ],
+   "level": "L4",
+   "definition": "A group of [[pieces|Piece]] the solver declares as an achievement, with members, required [[positions|Position]] or relations, a reference and a preservation policy; Home blocks and referenced blocks are distinct.",
+   "ui": "Block panel; block boundary in Local; block protection",
+   "source": "solving-workflow.md section 3.3",
+   "origin": "M6",
+   "review": " Named per EV5.18: bare block means achievement block."
+  },
+  {
+   "id": "frame",
+   "term": "Frame",
+   "level": "L4",
+   "definition": "Unqualified, an ordered choice of reference [[stickers|Sticker]] that fixes how a [[piece]] or [[block|Achievement block]] is read. Every other use carries a qualifier.",
+   "ui": "Reference and frame display in Local; frame comparison of hidden buffers",
+   "source": "Theory Lemma 7; DT-L1 R3-M4; research/Full_600cell_Puzzle_Theory.tex, Lemma 7; core.py star_net (frame checks)",
+   "origin": "M6",
+   "chapter_term": "Frame (scope change)",
+   "manual": [
+    "frame",
+    "frames"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "complete-effect",
+   "term": "Complete effect",
+   "level": "L4",
+   "definition": "The whole operation's effect at its declared puzzle and [[level|Identity level]], including every hidden mechanical part.",
+   "ui": "Preview: cycles, collateral, support, conflicts",
+   "source": "Chapter 01 KN5.10; charter S4; solving-workflow.md section 4.1",
+   "origin": "M6",
+   "chapter_term": "Complete effect (scope change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "work-sheet",
+   "term": "Work sheet",
+   "level": "L4",
+   "definition": "A saved operation with its roles and three phases, Prepare, Macro and Cleanup; reusing it always triggers a fresh review.",
+   "ui": "Work sheet editor; phase editor",
+   "source": "solving-workflow.md section 4",
+   "origin": "M6"
+  },
+  {
+   "id": "orientation",
+   "term": "Orientation",
+   "level": "L5",
+   "definition": "How a [[piece]] sits in its [[position]] as its [[labels|Label]] show it; a piece can be at Home and wrongly oriented. A3's [[pose-level|Identity level]] orientation is a separate quantity that labels do not read, and takes its own name.",
+   "ui": "Orientation marks in Local; orientation_wrong counts",
+   "source": "Chapter 01 KN1; DT-L1 M3; core.py PuzzleState (orientation_wrong)",
+   "origin": "M6",
+   "chapter_term": "Orientation (scope change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "orientation-transfer",
+   "term": "Orientation transfer",
+   "level": "L5",
+   "definition": "The operation P_X(q) = K_{X,q} K_X^-1, built from [[stars|Star]]: on the working [[orbit]] it fixes every [[position]] and moves an [[orientation]] change from X to a [[buffer]]; like every star product, it may also move [[pieces|Piece]] of other orbits ([[collateral]]), which [[preview]] shows.",
+   "ui": "Endgame tools; both ends shown in preview",
+   "source": "solving-workflow.md section 3.4",
+   "origin": "M6"
+  },
+  {
+   "id": "residual",
+   "term": "Residual",
+   "level": "L5",
+   "definition": "What is still wrong in an [[orbit]]: [[pieces|Piece]] not at Home, wrong [[buffer]] [[occupants|Occupant]], wrong [[orientations|Orientation]] and unknown [[frames|Frame]]; the final buffer may keep only a residual the orientation group allows.",
+   "ui": "Residuals panel per orbit; stage display; completion",
+   "source": "solving-workflow.md section 3.4",
+   "origin": "M6"
+  },
+  {
+   "id": "pure-controller",
+   "term": "Pure controller",
+   "level": "L6",
+   "definition": "A raw [[seed]] followed by corrections of all its [[collateral]] through previously built pure controllers; its net effect touches only its own [[orbit]].",
+   "ui": "Macro base (advanced); theory book",
+   "source": "solving-workflow.md section 2; research/Full_600cell_Puzzle_Theory.tex (certificate C)",
+   "origin": "M6"
+  },
+  {
+   "id": "twist-full",
+   "term": "Twist, 600-cell-Full",
+   "level": "L1",
+   "definition": "A turn of one [[grip]] by a non-identity retained [[menu]] rotation, which can be a sequence of [[generators|Generator]].",
+   "ui": "Twist keys; the move list and history",
+   "source": "Overview 3.6; DT-M1 Terms; core.py Model.move (primitive IDs +-1..+-1200)",
+   "origin": "M6",
+   "chapter_term": "Twist, 600-cell-Full (change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "twist-jumbling",
+   "term": "Twist, jumbling puzzle",
+   "level": "L1",
+   "definition": "A turn of one [[grip]] by a non-identity active [[menu]] element, represented by a pinned [[menu letter]].",
+   "ui": "Twist keys; the move list and history",
+   "source": "Overview 3.6; DT-M1 Terms; core.py Model.move (primitive IDs +-1..+-1200)",
+   "origin": "M6",
+   "chapter_term": "Twist, jumbling puzzle (change)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "retained-twist",
+   "term": "Retained twist",
+   "level": "L1",
+   "definition": "A [[twist|Twist, jumbling puzzle]] in the [[cap]]'s retained rotation subgroup, with the same rotation when Jumble is on.",
+   "source": "DT-M1 Outcome C6, Terms",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Retained twist",
+   "manual": [
+    "retained twist",
+    "retained twists"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "jumble-twist",
+   "term": "Jumble twist",
+   "level": "L1",
+   "definition": "An active-menu [[twist|Twist, jumbling puzzle]] outside that retained subgroup, refused when Jumble is off.",
+   "source": "DT-M1 Outcome C6, Terms",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Jumble twist",
+   "manual": [
+    "jumble twist",
+    "jumble twists"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "position",
+   "term": "Position",
+   "level": "L1",
+   "definition": "The [[chamber|Cut chamber]] occupied by a [[piece]], derived from [[labels|Label]] and undefined off the [[lattice]].",
+   "source": "Chapter 01 KN1.5, KN1.9",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Position",
+   "manual": [
+    "position",
+    "positions"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "cut-chamber",
+   "term": "Cut chamber",
+   "level": "L1",
+   "definition": "One of the 177,120 fixed places a [[piece]] can fill. A [[position]] names one.",
+   "source": "State contract section 2; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md); [theory, cut chambers](../../../../research/Full_600cell_Puzzle_Theory.tex)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Chamber",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). Named per EV5.18 (cut chamber against flag chamber); bare chamber reads as cut chamber here, since flag chambers stay in the theory."
+  },
+  {
+   "id": "pose",
+   "term": "Pose",
+   "level": "L1",
+   "definition": "A [[piece]]'s exact rotation in the jumbling puzzle, independent of whether its [[stickers|Sticker]] occupy [[lattice]] slots.",
+   "source": "Chapter 01 KN1.5, KN1.6",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Pose",
+   "manual": [
+    "pose"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "sticker",
+   "term": "Sticker",
+   "level": "L1",
+   "definition": "The identified region attached to a [[piece]] and its home host facet.",
+   "source": "Chapter 01 KN1.5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Sticker",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "model-identity",
+   "term": "Model identity",
+   "level": "L1",
+   "definition": "The immutable identity fixing the mechanical objects and interpretation of their data.",
+   "source": "Chapter 01 KN1; INV-7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Model identity",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "canonical-id",
+   "term": "Canonical ID",
+   "level": "L1",
+   "definition": "An object's fixed identifier in its model, independent of how it is drawn.",
+   "source": "Chapter 01 KN1.5; INV-6",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Canonical ID",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "identity-block",
+   "term": "Identity block",
+   "level": "L2",
+   "definition": "Chapter 01's bundle of puzzle, model, [[menu]], menu order and contract references.",
+   "source": "Chapter 01 KN0.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Identity block",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "identity-level",
+   "term": "Identity level",
+   "level": "L2",
+   "definition": "How finely a value describes a state: from each [[piece]]'s exact [[pose]] down to what the [[stickers|Sticker]] show and coarser. Every stored value names its level.",
+   "source": "Chapter 01 KN1.7, KN1.8",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Identity level",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "identity-tower",
+   "term": "Identity tower",
+   "level": "L6",
+   "definition": "The puzzle's [[levels|Identity level]], a partial order, and the exact [[projections|Level projection]] from finer information to coarser information.",
+   "source": "Chapter 01 KN1.7; DT-L1 R2-E2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Identity tower",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "sticker-class",
+   "term": "Sticker class",
+   "level": "L6",
+   "definition": "The class g_A·S_A of a [[pose]]: poses that show every labelled [[sticker]] in the same place. Earlier name: visible pose class.",
+   "source": "Chapter 01 KN1.7; DT-L1 N1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Sticker class",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "region-class",
+   "term": "Region class",
+   "level": "L6",
+   "definition": "The class g_A·R_A of a [[pose]], which is the [[piece]]'s posed region.",
+   "source": "Chapter 01 KN1.7; DT-L1 N1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Region class",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "frame-group",
+   "term": "Frame group",
+   "level": "L5",
+   "definition": "The group of permutations of a [[piece]]'s [[sticker]] regions that turns keeping its region can make; trivial, C2, C5, D5 or A5 by [[orbit]].",
+   "ui": "Orbit details; endgame stage display",
+   "source": "Chapter 01 KN1.7 (R_A/S_A); Theory Lemma 7; DT-L1 N1; assets/census.json (orientation_group); solving-workflow.md section 3.4",
+   "origin": "M6",
+   "chapter_term": "Frame group (change: replaces Orientation group)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "gauge",
+   "term": "Gauge",
+   "level": "L6",
+   "definition": "A pair (σ, t): σ permutes the [[pieces|Piece]], and each t_A is a rotation carrying A's reference region onto that of σA. Piece A takes the place σA had, so the same regions stay occupied. By [[Theorem]] 1 of note N1 (status: theorem, producer) every [[word]] stays admissible and the two runs stay related by the same gauge. A gauge is not equality and does not carry reachability.",
+   "source": "Chapter 01 KN1.7, KN1.14; DT-L1 N1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Gauge",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "shape",
+   "term": "Shape",
+   "level": "L6",
+   "definition": "The multiset of posed regions of a state, forgetting which [[piece]] fills which region. On a state without collisions, the set.",
+   "source": "Chapter 01 KN1.7; DT-L1 N1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Shape",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "digest",
+   "term": "Digest",
+   "level": "L2",
+   "definition": "A short value computed from exact bytes, used to name them. Digests compare only at the same [[level|Identity level]].",
+   "source": "Chapter 01 KN1.8",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Digest",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "level-qualified-digest",
+   "term": "Level-qualified digest",
+   "level": "L2",
+   "definition": "A [[digest]] of normalised bytes naming the [[identity level]] it [[covers|~]].",
+   "source": "Chapter 01 KN1.8",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Level-qualified digest",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "menu",
+   "term": "Menu",
+   "level": "L1",
+   "definition": "The pinned set of rotations available to a [[grip]] in the named puzzle.",
+   "source": "Chapter 01 KN1; partition LG2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Menu",
+   "manual": [
+    "menu"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "menu-letter",
+   "term": "Menu letter",
+   "level": "L1",
+   "definition": "A [[grip]] and a menu-item number, meaningful only under its named [[menu]] and that menu's order.",
+   "source": "Chapter 01 KN1.3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Menu letter",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "menu-identity",
+   "term": "Menu identity",
+   "level": "L2",
+   "definition": "The order-independent identity of the [[menu]]'s rotations.",
+   "source": "Chapter 01 KN1.3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Menu identity",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "menu-order-digest",
+   "term": "Menu-order digest",
+   "level": "L2",
+   "definition": "The [[digest]] fixing the ordered [[menu]] that gives an item index its meaning.",
+   "source": "Chapter 01 KN1.3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Menu-order digest",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "seat",
+   "term": "Seat",
+   "level": "L1",
+   "definition": "One of the four sets of twelve [[jumble twists|Jumble twist]] at a [[cap]]; hold a seat, then press a [[twist|Twist, jumbling puzzle]] [[key|Keyboard key]].",
+   "source": "DT-M1 Outcome Seats; DT-M1 Q7 (a), only if Q7 picks seats",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Seat",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "jumble-on-and-jumble-off",
+   "term": "Jumble on and Jumble off",
+   "level": "L1",
+   "definition": "The two session modes, without merging the two puzzles' model identities.",
+   "source": "Overview 3.6; chapter 01 KN0.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Jumble on and Jumble off",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "word",
+   "term": "Word",
+   "level": "L2",
+   "definition": "A chronological list of letters in a named alphabet and identity.",
+   "source": "Overview 3.6; chapter 01 KN2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Word",
+   "manual": [
+    "word",
+    "words"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "literal-word",
+   "term": "Literal word",
+   "level": "L2",
+   "definition": "The [[word]] as written before normalisation, whose prefixes are checked and executed.",
+   "source": "Chapter 01 KN2.7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Literal word",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "equality-key",
+   "term": "Equality key",
+   "level": "L2",
+   "definition": "A [[word]]'s normal form used for equality, without replacing its literal execution path.",
+   "source": "Chapter 01 KN2.7; partition default 10",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Equality key",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "recipe",
+   "term": "Recipe",
+   "level": "L3",
+   "definition": "An operation composed of [[word]] and [[star]] steps with their complete chronological expansion.",
+   "source": "Partition 4.1, 10.2; chapter 05",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Recipe",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "compressed-word",
+   "term": "Compressed word",
+   "aliases": [
+    "Straight-line program"
+   ],
+   "level": "L6",
+   "definition": "A [[word]] represented by a finite composition of named parts with an exact expanded length.",
+   "source": "Chapter 01 KN2.10; chapter 05",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Compressed word (straight-line program)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "macro",
+   "term": "Macro",
+   "level": "L2",
+   "definition": "A reusable named [[word]] with its identity, exact length, start reference and [[provenance|Assistance provenance]].",
+   "source": "EV4.9; DT-J1 Outcome E1, E3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Macro",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "macro-base",
+   "term": "Macro base",
+   "level": "L2",
+   "definition": "The shared collection of typed [[macros|Macro]] for both puzzles, with per-entry identities and [[provenance|Assistance provenance]].",
+   "source": "EV4.8, EV4.9; DT-J1 Outcome E1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Macro base",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "cost-alphabet",
+   "term": "Cost alphabet",
+   "level": "L2",
+   "definition": "The named unit of a [[word]] or action count, such as retained [[generators|Generator]] or [[menu letters|Menu letter]].",
+   "source": "Chapter 02; partition LG2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Cost alphabet",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "admissible",
+   "term": "Admissible",
+   "level": "L1",
+   "definition": "The jumbling-twist outcome that permits the exact proposed rotation on its input state.",
+   "source": "Chapter 01 KN2.8",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Admissible",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "blocked",
+   "term": "Blocked",
+   "level": "L1",
+   "definition": "The jumbling-twist refusal caused by a cut-straddling [[piece]], with the state unchanged.",
+   "source": "Chapter 01 KN2.8; DT-J1 fix-first item 3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Blocked",
+   "manual": [
+    "blocked"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "invalid",
+   "term": "Invalid",
+   "level": "L1",
+   "definition": "The outcome of a request that is not an exact element of the active [[menu]]; the state is not tested.",
+   "source": "Chapter 01 KN2.8",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Invalid",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "uncertain",
+   "term": "Uncertain",
+   "level": "L1",
+   "definition": "The distinct unresolved jumbling-twist outcome that permits no state change.",
+   "source": "Chapter 01 KN2.8",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Uncertain",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "lattice",
+   "term": "Lattice",
+   "level": "L1",
+   "definition": "Configurations where every [[piece]]'s [[pose]] is a rotation symmetry of the 600-cell, so each piece fills a [[chamber|Cut chamber]] and its [[stickers|Sticker]] sit on slots.",
+   "source": "Chapter 01 KN1.9; state contract section 2 (K⁺); [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Lattice",
+   "manual": [
+    "lattice"
+   ],
+   "first_use_forward": [
+    {
+     "term": "Pose",
+     "why": "The manual describes the lattice by slots in chapter 1 and names a pose only in chapter 3; waits for the mathematician's review (EV5.14)."
+    }
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "straddler-set",
+   "term": "Straddler set",
+   "level": "L1",
+   "definition": "The complete set of [[pieces|Piece]] straddling a named [[cap]]'s cut at a named [[revision]].",
+   "source": "Chapter 01 KN2.4; DT-J1 fix-first item 3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Straddler set",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "n-total",
+   "term": "N",
+   "level": "L1",
+   "definition": "The total misalignment: how many times a [[cut cell]], on any rotated cut, is covered on one side and not by the same alignment on the other.",
+   "source": "Chapter 03; [restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "N",
+   "manual": [
+    "total N"
+   ],
+   "first_use_forward": [
+    {
+     "term": "Cut cell",
+     "why": "Chapter 1 counts cells along a cut; the manual names a cut cell in chapter 2; waits for the mathematician's review (EV5.14)."
+    }
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "n-c",
+   "term": "N_c",
+   "level": "L1",
+   "definition": "A [[cap]]'s misalignment: In_c + Out_c − 2·A_c.",
+   "source": "[Descent manual](../../../../research/jumbling/manual/02-descent.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "N_c",
+   "manual": [
+    "misalignment"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "in-out-a",
+   "term": "In_c, Out_c, A_c",
+   "level": "L1",
+   "definition": "At [[cap]] c's cut: the [[cut cells|Cut cell]] inside [[pieces|Piece]] cover, those outside pieces cover, and those covered on both sides by one alignment.",
+   "source": "[Descent manual](../../../../research/jumbling/manual/02-descent.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "In_c, Out_c, A_c",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "floor",
+   "term": "Floor",
+   "level": "L1",
+   "definition": "A lower bound on a [[cap]]'s misalignment: the size of the difference between In_c and Out_c. [[Twists|Twist, jumbling puzzle]] of that cap alone keep both, so they cannot go below it.",
+   "source": "[Descent manual](../../../../research/jumbling/manual/02-descent.md); [open problems](../../../../research/jumbling/theory/open-problems.md); BND.10",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Floor",
+   "manual": [
+    "floor"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "cut-cell",
+   "term": "Cut cell",
+   "level": "L1",
+   "definition": "A pair of neighbouring [[chambers|Cut chamber]] on either side of a [[cap]]'s cut, sharing one face on it.",
+   "source": "[Restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test); [jumbling observation](../jumbling-observation.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Cut cell",
+   "manual": [
+    "cut cell",
+    "cut cells"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "seam",
+   "term": "Seam",
+   "level": "L1",
+   "definition": "A misaligned [[cut cell]]. An off-grip seam lies on a rotated cut that is no [[cap]]'s cut, so no single [[twist|Twist, jumbling puzzle]] closes it.",
+   "source": "[Restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test); [jumbling observation](../jumbling-observation.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Seam",
+   "manual": [
+    "seam",
+    "seams"
+   ],
+   "first_use_forward": [
+    {
+     "term": "Cut cell",
+     "why": "Chapter 1 counts cells along a cut; the manual names a cut cell in chapter 2; waits for the mathematician's review (EV5.14)."
+    }
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "u-blocking",
+   "term": "u",
+   "level": "L1",
+   "definition": "The number of [[pieces|Piece]] that straddle a [[cap]]'s cut and so block it.",
+   "source": "Chapter 01 KN2.4; chapter 03; [engineering handoff](../jumbling-handoff/engineering.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "u",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "lowering-count",
+   "term": "Lowering count D_x(h)",
+   "level": "L6",
+   "definition": "The number of inside [[pieces|Piece]] of [[height]] at least 4 and [[branch|Tree branch]] CLS(x) that item h lowers at [[grip]] x.",
+   "source": "Chapter 03; [card 7, Terms](../../../../research/jumbling/theory/cards/card-7-lowering-machine.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Lowering count D_x(h)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "depth-phi",
+   "term": "Depth Φ",
+   "level": "L6",
+   "definition": "Under I_a, the sum over [[pieces|Piece]] of their left [[height]] above two, counting no negative contribution.",
+   "source": "Chapter 03; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Depth Φ",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "height",
+   "term": "Height",
+   "level": "L1",
+   "definition": "How far a [[piece]]'s [[pose]] lies from the [[lattice]], on the stated side and [[menu]]. A [[jumble twist]] changes it by at most 2; a [[retained twist]] never does.",
+   "source": "Chapter 03; [card 6, Model and T5](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md), for menu I_a",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Height",
+   "manual": [
+    "left height",
+    "height"
+   ],
+   "first_use_forward": [
+    {
+     "term": "Pose",
+     "why": "Chapter 1 measures height before chapter 3 names a pose; waits for the mathematician's review (EV5.14)."
+    },
+    {
+     "term": "Retained twist",
+     "why": "Chapter 1 uses the retained puzzle's twists; the manual names a retained twist in chapter 2; waits for the mathematician's review (EV5.14)."
+    }
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "alignment-domain",
+   "term": "Alignment domain",
+   "level": "L6",
+   "definition": "A [[coset]] γK⁺: [[pieces|Piece]] whose [[poses|Pose]] fit one rotated copy of the [[lattice]].",
+   "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Alignment domain",
+   "manual": [
+    "domain",
+    "domains"
+   ],
+   "first_use_forward": [
+    {
+     "term": "Pose",
+     "why": "Chapter 1 describes domains by pieces that fit together; the manual names a pose in chapter 3; waits for the mathematician's review (EV5.14)."
+    }
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "free-mode",
+   "term": "Free mode",
+   "level": "L6",
+   "learner_facing": false,
+   "definition": "The simulator's infinite field-valued alphabet in place of a finite [[menu]]. On Γ(Λ) left and right [[height]] 0 together mean the [[lattice]]; in free mode they do not.",
+   "source": "State contract; chapter 02",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Free mode",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). Flag: not learner-facing."
+  },
+  {
+   "id": "foreign-load",
+   "term": "Foreign load",
+   "aliases": [
+    "F_x"
+   ],
+   "level": "L6",
+   "definition": "The number of [[pieces|Piece]] in [[grip]] x's [[cap]] of [[height]] at least 2 and [[tree branch]] other than the grip's class.",
+   "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md); chapter 03",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Foreign load",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). EV5.18: F_x stays foreign load."
+  },
+  {
+   "id": "clean-grip",
+   "term": "Clean grip",
+   "level": "L6",
+   "definition": "A [[grip]] with no straddlers, so all its [[twists|Twist, jumbling puzzle]] are admissible. The opposite of blocked.",
+   "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Clean grip",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "tame",
+   "term": "Tame",
+   "level": "L6",
+   "definition": "Of a [[word]]: no letter raises Φ. Stronger than every prefix staying at or below the start.",
+   "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Tame",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "domain-id",
+   "term": "Domain ID",
+   "level": "L6",
+   "definition": "The exact identifier of a [[pose]]'s alignment class, supplied with the [[height]] batch at its input [[revision]].",
+   "source": "Chapter 01 KN2.4; chapter 03",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Domain ID",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "height-counts",
+   "term": "Height counts",
+   "level": "L1",
+   "definition": "The per-revision counts of [[pieces|Piece]] at the declared exact [[height]] values.",
+   "source": "Chapter 01 KN2.4; DT-J1 Outcome A1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Height counts",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "rim-summary",
+   "term": "Rim summary",
+   "level": "L1",
+   "definition": "Per [[revision]], for every [[cap]]: [[N_c]], [[In_c, Out_c, A_c]], blocked, and whether it is at its [[floor]]. It selects no [[twist|Twist, jumbling puzzle]] and no cap.",
+   "source": "Chapter 01 KN2.4; DT-J1 rule 6",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Rim summary",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "lifted",
+   "term": "Lifted",
+   "level": "L1",
+   "definition": "The [[lattice]] [[pieces|Piece]] a proposed operation takes off the lattice, distinct from its full moving set.",
+   "source": "DT-J1 M22, fix-first item 4; chapter 03",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Lifted (working term)",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "jumbling-block",
+   "term": "Jumbling block",
+   "level": "L6",
+   "definition": "[[Pieces|Piece]] that no cut separates and therefore move together, distinct from a solver-declared [[achievement block]].",
+   "source": "Chapter 03; [tail section 3.1](../../../../research/jumbling/manual/03-tail.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Jumbling block",
+   "manual": [
+    "blocks"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "jumbling-frame-domain",
+   "term": "Jumbling frame domain",
+   "level": "L6",
+   "definition": "A height-two [[alignment domain]] in the jumbling tree, distinct from an ordered [[sticker]] reference [[frame]].",
+   "source": "Chapter 03; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Jumbling frame domain",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "clean-step-unit",
+   "term": "Clean-step unit",
+   "level": "L6",
+   "definition": "A [[jumbling block]] or one frame part of a [[block|Jumbling block]], as used by the tail's [[clean-step|Clean step]] contract.",
+   "source": "Chapter 03; [tail section 3.2](../../../../research/jumbling/manual/03-tail.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Clean-step unit",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "pose-unit",
+   "term": "Pose unit",
+   "level": "L6",
+   "definition": "A set of [[pieces|Piece]] with one exact [[pose]], as used in the blocking-structure card.",
+   "source": "Chapter 03; [card 6, Terms](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Pose unit",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "clean-step",
+   "term": "Clean step",
+   "level": "L6",
+   "definition": "A legal [[word]] landing its unit, keeping prior [[lattice]] [[pieces|Piece]] on the lattice and preserving other off pieces outside its free set.",
+   "source": "Chapter 03; [tail section 3.2](../../../../research/jumbling/manual/03-tail.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Clean step",
+   "manual": [
+    "clean step",
+    "clean steps"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "excursion",
+   "term": "Excursion",
+   "level": "L6",
+   "definition": "The largest rise of the named depth measure along a [[literal word]] relative to its starting value.",
+   "source": "Chapter 03; [card 7](../../../../research/jumbling/theory/cards/card-7-lowering-machine.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Excursion",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "nu",
+   "term": "ν",
+   "level": "L5",
+   "definition": "The 45 coordinates read from the [[labels|Label]] of a [[lattice]] configuration: 35 sign bits, 8 [[frame]] bits and two values modulo 5. [[Retained twists|Retained twist]] do not change them, and jumble [[words|Word]] can. Undefined off the lattice.",
+   "source": "Chapter 01 KN2.4; DT-J1 Outcome A3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "ν",
+   "manual": [
+    "ν"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "nu-correction",
+   "term": "ν-correction",
+   "level": "L5",
+   "definition": "One of the 36 named constructions in the static catalogue, with a fixed effect on [[ν]].",
+   "source": "DT-J1 O7 (a); chapter 03",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "ν-correction",
+   "manual": [
+    "correction",
+    "corrections"
+   ],
+   "first_use_forward": [
+    {
+     "term": "ν",
+     "why": "Section 4.1 announces the corrections before section 4.3 defines ν; waits for the mathematician's review (EV5.14)."
+    }
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "repair-list",
+   "term": "Repair list",
+   "level": "L1",
+   "definition": "The neutral-order repair pairs at a [[cap]] the solver names under the 17 October exception.",
+   "source": "Chapter 01 KN2.4; DT-J1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Repair list",
+   "manual": [
+    "repair list"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "retained-checkpoint",
+   "term": "Retained checkpoint",
+   "level": "L5",
+   "definition": "A [[lattice]] configuration with a witnessed legal [[word]] in the 1,200 retained [[generators|Generator]] from solved, or certified equal to such a state. Every retained checkpoint is a [[label checkpoint]].",
+   "source": "Chapter 01 KN2.4; partition default 9",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Retained checkpoint",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "label-checkpoint",
+   "term": "Label checkpoint",
+   "level": "L5",
+   "definition": "A reachable [[lattice]] configuration with [[ν]] = 0 (state contract A5). Its reachability clause reads the [[pose]] and the [[journal]], so [[labels|Label]] alone cannot establish it.",
+   "source": "Chapter 01 KN2.4; DT-J1 O8 (1)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Label checkpoint",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "sticker-test",
+   "term": "Sticker test",
+   "level": "L5",
+   "definition": "The label-based completion test, distinct from equality of every exact [[pose]].",
+   "source": "Chapter 01 KN2.4; DT-J1 O8 (1)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Sticker test",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "revision",
+   "term": "Revision",
+   "level": "L1",
+   "definition": "One numbered moment of a session; each change makes a new revision.",
+   "source": "Chapter 01 KN0.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Revision",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "revision-reference",
+   "term": "Revision reference",
+   "level": "L2",
+   "definition": "The session, epoch, identity and state, workspace and [[protection]] [[revisions|Revision]] bound to a result.",
+   "source": "Chapter 01 KN0.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Revision reference",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "base-revision",
+   "term": "Base revision",
+   "level": "L2",
+   "definition": "The [[revision]] a result or [[view]] read. Once it is replaced, the output is [[stale]] until recomputed.",
+   "source": "EV3.3; RPI.5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Base revision",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "stale",
+   "term": "Stale",
+   "level": "L2",
+   "definition": "Output read at a [[revision]] whose dependencies no longer match the current one. It stays marked with that revision and is never passed off as current.",
+   "source": "EV3.3; RPI.12, RPI.13",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Stale",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "state-reference",
+   "term": "State reference",
+   "level": "L6",
+   "definition": "The typed reference to a [[snapshot]] or derived value used by kernel reads.",
+   "source": "Chapter 01 KN0.3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "State reference",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "snapshot",
+   "term": "Snapshot",
+   "level": "L2",
+   "definition": "A read-only handle pinned to one [[revision]] for its lifetime.",
+   "source": "Chapter 01 KN2.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Snapshot",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "derived-state",
+   "term": "Derived state",
+   "level": "L6",
+   "definition": "An immutable kernel-computed value with a [[derivation|State derivation]] and [[reachability claim]], without a session [[revision]].",
+   "source": "Chapter 01 KN2.11 to KN2.14",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Derived state",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "derived-model",
+   "term": "Derived model",
+   "level": "L6",
+   "definition": "A [[quotient]], restriction or simplified model represented by a [[derivation|State derivation]] and claim-preserving maps.",
+   "source": "Chapter 01 KN1.12, KN1.13",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Derived model",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "difference",
+   "term": "Difference",
+   "level": "L2",
+   "definition": "A comparison of named states at a declared model and [[level|Identity level]].",
+   "source": "Partition 4.1; chapters 02, 03",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Difference",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "typed-partial-result",
+   "term": "Typed partial result",
+   "level": "L1",
+   "definition": "A result that says which part it [[covers|~]], which part is missing, or why it is undefined.",
+   "source": "Chapter 01 KN0.4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Typed partial result",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "verdict",
+   "term": "Verdict",
+   "level": "L2",
+   "definition": "Yes or no with [[evidence]], or unknown with a reason, for a stated decision.",
+   "source": "Chapter 01 KN0.5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Verdict",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "none-off-the-lattice",
+   "term": "None: off the lattice",
+   "level": "L1",
+   "definition": "A known absence of a [[lattice]] value, distinct from insufficient knowledge.",
+   "source": "EV3.9; chapter 01 KN0.4; DT-L1 R2-E4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "None: off the lattice",
+   "manual": [
+    "off the lattice"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "reachability-claim",
+   "term": "Reachability claim",
+   "level": "L2",
+   "definition": "What is on record about whether a state can be reached in a named puzzle: witnessed, by [[theorem]] without a [[witness]], promised, refuted or open.",
+   "source": "Chapter 01 KN2.13; chapter 06",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Reachability claim",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "witnessed-reachability",
+   "term": "Witnessed reachability",
+   "level": "L2",
+   "definition": "Reachability accompanied by a finite legal [[witness]] in the named puzzle.",
+   "source": "Chapter 01 KN2.13",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Witnessed reachability",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "reachable-by-theorem-without-a-witness",
+   "term": "Reachable by theorem without a witness",
+   "level": "L2",
+   "definition": "A [[reachability claim]] supported by the cited [[theorem]] without a stored legal [[word]].",
+   "source": "Chapter 01 KN2.13",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Reachable by theorem without a witness",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "promised-reachability",
+   "term": "Promised reachability",
+   "level": "L2",
+   "definition": "A reachability assumption supplied by the source and not upgraded by input validation.",
+   "source": "Chapter 01 KN2.13, KN2.14",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Promised reachability",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "proposal",
+   "term": "Proposal",
+   "level": "L2",
+   "definition": "A [[word]], with a record of where it came from, submitted for a [[preview]] at a [[base revision]].",
+   "source": "Chapter 01 KN5.9",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Proposal",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "preview",
+   "term": "Preview",
+   "level": "L2",
+   "definition": "What the engine says will happen if you commit: the exact [[word]] and what it does, fixed at one [[base revision]].",
+   "source": "Chapter 01 KN5.9",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Preview",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "user-action-token",
+   "term": "User-action token",
+   "level": "L2",
+   "definition": "The shell's single-use authority bound to the displayed [[preview]] and its literal letters.",
+   "source": "Chapter 01 KN5.14, KN5.15",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "User-action token",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "receipt",
+   "term": "Receipt",
+   "level": "L2",
+   "definition": "An invocation's [[command]] identity, request [[digest]] and typed execution outcome; retention follows its kind.",
+   "source": "Chapter 01 KN5.21, KN5.23; LI.30",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Receipt",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "availability",
+   "term": "Availability",
+   "level": "L1",
+   "definition": "Whether a [[command]] can run now, and the reason when it cannot.",
+   "source": "Chapter 01 KN5.6, KN5.7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Availability",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "claim",
+   "term": "Claim",
+   "level": "L2",
+   "definition": "A typed [[statement]] with an [[evidence]] state, without conflating score or execution permission.",
+   "source": "Chapter 06; INV-5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Claim",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "statement",
+   "term": "Statement",
+   "level": "L2",
+   "definition": "A precise sentence about named objects that records can support or refute.",
+   "source": "Chapter 06 section 2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Statement",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "statement-form",
+   "term": "Statement form",
+   "level": "L2",
+   "definition": "Whether a [[statement]] concerns one finite case, every case, some case, or a mix such as every case having some answer.",
+   "source": "Chapter 06 EVD.9, section 2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Statement form",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "negation-pair",
+   "term": "Negation pair",
+   "level": "L2",
+   "definition": "A [[statement]] and its exact opposite, recorded together, so that one record can settle both.",
+   "source": "Chapter 06 EVD.9",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Negation pair",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "statement-id",
+   "term": "Statement ID",
+   "level": "L6",
+   "definition": "A typed-statement [[digest]] or stage-qualified, commit-pinned [[statement]] name.",
+   "source": "Chapter 06; DT-L1 R2-E1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Statement ID",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "statement-key",
+   "term": "Statement key",
+   "level": "L6",
+   "definition": "A [[statement ID]] with its [[scope]]: what [[evidence]] discharges, refutes or transports.",
+   "source": "Chapter 06 EVD.7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Statement key",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "scope",
+   "term": "Scope",
+   "level": "L2",
+   "definition": "The declared inputs, identities and set for which a [[claim]] is asserted, every field immutable.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Scope",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "covered-set",
+   "term": "Covered set",
+   "level": "L2",
+   "definition": "What a [[claim]] is about: one instance, a declared search set, an [[admitted domain]] or every reachable state. The field name `covers` is not learner-facing.",
+   "source": "Chapter 06 section 2; EVD.32. Not the kernel row `covers`",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Covered set",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "admitted-domain",
+   "term": "Admitted domain",
+   "level": "L2",
+   "definition": "A named set of inputs with a test for membership, such as D[k].",
+   "source": "Chapter 06 section 2; [stage 19 README](../../../../research/jumbling/restoration/19-height-depth-framework/README.md)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Admitted domain",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "basis",
+   "term": "Basis",
+   "level": "L2",
+   "definition": "The [[theorem]], [[certificate]], exhaustive computation, exact computation or sample on which a [[claim]] rests.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Basis",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "check",
+   "term": "Check",
+   "level": "L2",
+   "definition": "A recorded confirmation with its checker or reviewer identity and mode.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Check",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "premise",
+   "term": "Premise",
+   "level": "L2",
+   "definition": "A named obligation on which a conditional [[claim]] depends.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Premise",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "hypothesis",
+   "term": "Hypothesis",
+   "level": "L2",
+   "definition": "A condition a [[statement]] assumes; the statement says nothing about cases where it fails.",
+   "source": "Chapter 03 LB6.2; chapter 06",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Hypothesis",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "lemma",
+   "term": "Lemma",
+   "level": "L2",
+   "definition": "A [[statement]] with a written proof, used as a step towards other statements; cited by stage and source commit.",
+   "source": "Chapter 06 EVD.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Lemma",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "theorem",
+   "term": "Theorem",
+   "level": "L2",
+   "definition": "A [[statement]] with a written proof, cited by stage and source commit. As a basis it says a proof is cited; who checked it is separate.",
+   "source": "Chapter 06 EVD.1, EVD.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Theorem",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "invariant",
+   "term": "Invariant",
+   "level": "L2",
+   "definition": "A quantity or property that a named set of [[twists|Twist, 600-cell-Full]] or [[jumbling twists|Twist, jumbling puzzle]] leaves unchanged.",
+   "source": "Chapter 03 LB6.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Invariant",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "counterexample",
+   "term": "Counterexample",
+   "level": "L2",
+   "definition": "A checked case that lies in a [[statement]]'s [[scope]], meets its hypotheses and breaks its conclusion.",
+   "source": "Chapter 06 EVD.42; chapter 03 LB6.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Counterexample",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "witness",
+   "term": "Witness",
+   "aliases": [
+    "Witness word"
+   ],
+   "level": "L2",
+   "definition": "A concrete object that proves something exists; for reachability, a finite legal [[word]] from solved.",
+   "source": "Chapter 01 KN2.13; chapter 06 EVD.44",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Witness",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). EV5.18's witness word is this row's reachability case; the witness piece has its own row."
+  },
+  {
+   "id": "declared-domain",
+   "term": "Declared domain",
+   "level": "L6",
+   "definition": "The inputs on which an operation or [[claim]] is defined.",
+   "source": "Chapters 02, 06; partition 4.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Declared domain",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "goal",
+   "term": "Goal",
+   "level": "L2",
+   "definition": "A predicate typed by puzzle and [[identity level]], with its completion meaning stated.",
+   "source": "Chapter 01 KN1.11; chapter 02",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Goal",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "certificate",
+   "term": "Certificate",
+   "level": "L2",
+   "definition": "Data supporting stated [[claims|Claim]] for an independent checker of a named kind.",
+   "source": "Chapter 01 KN6; chapter 06",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Certificate",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "check-report",
+   "term": "Check report",
+   "level": "L2",
+   "definition": "The checker's [[verdict]], identity, input [[digest]] and [[per-claim trace]] reference.",
+   "source": "Chapter 01 KN6.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Check report",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "evidence",
+   "term": "Evidence",
+   "level": "L2",
+   "definition": "The support for a scoped [[claim]], separate from who wrote the tool, score and permission.",
+   "source": "INV-5; chapter 06",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Evidence",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "evidence-envelope",
+   "term": "Evidence envelope",
+   "level": "L6",
+   "definition": "Chapter 05's stored [[evidence]] carrier, whose facts or judgements depend on LQ10.",
+   "source": "Chapters 05, 06; partition LQ10",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Evidence envelope",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "result-trace",
+   "term": "Result trace",
+   "level": "L2",
+   "definition": "The linked computation and [[evidence]] edges through which a result can be traced; only evidence edges are support.",
+   "source": "Chapter 06; EV2.5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Result trace",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "per-claim-trace",
+   "term": "Per-claim trace",
+   "level": "L2",
+   "definition": "The independent checker's own steps and outcomes for each checked [[claim]].",
+   "source": "Chapter 01 KN6.4; EV2.6",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Per-claim trace",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "evidence-words",
+   "term": "Evidence words",
+   "level": "L2",
+   "definition": "The versioned display vocabulary for [[evidence]] and run status, interpreted by source and field.",
+   "source": "Chapter 06; EV5.13",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Evidence words",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "proved",
+   "term": "Proved",
+   "level": "L2",
+   "definition": "The [[word|Evidence words]] shown when a [[statement]] stands at the [[threshold]] with no [[premise]] assumed, over an [[admitted domain]] or every reachable state. It always carries its [[scope]] phrase. It says the recorded argument passes the threshold, not that a person has reviewed it.",
+   "source": "Chapter 06; partition LQ3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Proved",
+   "manual": [
+    "proved"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "conditional",
+   "term": "Conditional",
+   "level": "L2",
+   "definition": "A [[statement]] that stands once every [[premise]] not refuted is assumed; the [[word|Evidence words]] names the premises.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Conditional",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "finite-instance",
+   "term": "Finite instance",
+   "level": "L2",
+   "definition": "The [[word|Evidence words]] for a [[statement]] that stands on one input or on a declared search set. Nothing outside that set is claimed.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Finite instance",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "not-found-within-budget",
+   "term": "Not found within budget",
+   "aliases": [
+    "Not found"
+   ],
+   "level": "L2",
+   "definition": "A search stopped at its [[budget]] or declared limit without covering its set, and found no [[witness]]. It gives no negative over that set; only a part it examined completely can carry a narrower [[claim]] of its own.",
+   "source": "Chapter 01 KN7.11; chapter 06",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Not found within budget",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). EVD.33's not found (row 5) reads as this word."
+  },
+  {
+   "id": "incomplete",
+   "term": "Incomplete",
+   "level": "L2",
+   "definition": "The [[job]] was cancelled, failed, or hit a resource stop, so it gives no negative. A search stopped by its own declared [[budget]] reads \"[[not found within budget]]\".",
+   "source": "Chapter 01 KN7; chapter 06",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Incomplete",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "refuted",
+   "term": "Refuted",
+   "level": "L2",
+   "definition": "A [[claim]] contradicted by [[evidence]] of the kind required for that [[statement]].",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Refuted",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "open",
+   "term": "Open",
+   "level": "L2",
+   "definition": "The stated [[claim]] is unresolved by the available [[evidence]].",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Open",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "verified",
+   "term": "Verified",
+   "level": "L2",
+   "definition": "The command-layer [[evidence]] label interpreted in its [[check]] context, without granting execution.",
+   "source": "Chapter 06; H-08",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Verified",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "recorded",
+   "term": "Recorded",
+   "level": "L2",
+   "definition": "A source's [[claim]] or result retained without treating it as a fresh independent [[check]].",
+   "source": "Chapter 06; partition PS3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Recorded",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "unknown",
+   "term": "Unknown",
+   "level": "L1",
+   "definition": "Not enough is known for the requested conclusion; never false or a numeric zero.",
+   "source": "Chapter 01 KN0.5; INV-5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Unknown",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "unchecked",
+   "term": "Unchecked",
+   "level": "L2",
+   "definition": "A declared [[check]] has not been performed for the stated input and context.",
+   "source": "Chapter 06; H-08",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Unchecked",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "computed",
+   "term": "Computed",
+   "level": "L6",
+   "definition": "A research label whose meaning is mapped from its format, field and value.",
+   "source": "Chapter 06; partition PS3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Computed",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "measured",
+   "term": "Measured",
+   "level": "L6",
+   "definition": "In the research [[evidence]] vocabulary, exact computation on finite inputs, not a performance timing.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Measured",
+   "manual": [
+    "measured"
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "lead",
+   "term": "Lead",
+   "level": "L6",
+   "definition": "A source-qualified research indication retained without promotion to a proof.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Lead",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "reported",
+   "term": "Reported",
+   "level": "L6",
+   "definition": "Computed by a program that is not committed, so the repository cannot replay it.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Reported",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "exact-transport",
+   "term": "Exact transport",
+   "level": "L6",
+   "definition": "A lemma-justified move of a [[claim]] to another input that preserves its subject, with no re-run. Along a [[gauge]], the [[lemma]] is [[Theorem]] 1 of note N1 and the checked relation is Z = X·γ.",
+   "source": "Chapter 01 KN1.16, KN7.5; chapter 06 EVD.18",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Exact transport",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "check-mode",
+   "term": "Check mode",
+   "level": "L6",
+   "definition": "The recorded distinction among reused transport, fresh exact audit and actual replay.",
+   "source": "Chapter 06; partition 8.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Check mode",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "grade",
+   "term": "Grade",
+   "level": "L6",
+   "definition": "A (basis, [[check]]) pair in chapter 06's partial order.",
+   "source": "Chapter 06 EVD.19",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Grade",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "alternative",
+   "term": "Alternative",
+   "level": "L6",
+   "definition": "One argument's summary: its weakest [[grades|Grade]] and its [[premises|Premise]]. A [[statement]]'s summary keeps the undominated ones.",
+   "source": "Chapter 06 EVD.23",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Alternative",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "standing",
+   "term": "Standing",
+   "level": "L2",
+   "definition": "Whether a [[statement]]'s recorded arguments clear the [[threshold]]: first with no [[premise]] assumed, then with every premise assumed except those refuted in the first pass. It describes records, not truth.",
+   "source": "Chapter 06 EVD.30",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Standing",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "threshold",
+   "term": "Threshold",
+   "level": "L2",
+   "definition": "The versioned bar a recorded argument must clear before a [[word|Evidence words]] such as proved or conditional appears.",
+   "source": "Chapter 06 EVD.29 (raising it is LQ3)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Threshold",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "typed-inconsistency",
+   "term": "Typed inconsistency",
+   "level": "L2",
+   "definition": "The [[word|Evidence words]] shown when the records behind a [[statement]] contradict each other or break a record rule. It states no [[claim]].",
+   "source": "Chapter 06 EVD.32 row 0, EVD.40",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Typed inconsistency",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "evidence-graph",
+   "term": "Evidence graph",
+   "level": "L2",
+   "definition": "The record of how supports combine: an argument needs all its parts, and any one argument that clears the [[threshold]] carries the [[statement]].",
+   "source": "Chapter 06 EVD.15, EVD.39",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Evidence graph",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "principle-record",
+   "term": "Principle record",
+   "level": "L2",
+   "definition": "A tool's [[specification]], justification, [[worked instance]], generated [[decomposition]] and the parts a person writes: [[step map]], reason, failure, what an answer does not mean, [[hand derivation]], prerequisites and [[leaf specifications|Leaf specification]].",
+   "source": "Chapter 03; INV-12",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Principle record",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "principle",
+   "term": "Principle",
+   "level": "L2",
+   "definition": "The [[statement]] named as a tool's reason in its [[principle record]], with that statement's hypotheses: why an answer means what the [[specification]] says.",
+   "source": "Chapter 03 LB6.2, a working definition with no owner text",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Principle",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "decomposition",
+   "term": "Decomposition",
+   "level": "L2",
+   "definition": "The generated list of the parts a tool calls, down to [[base parts|Decomposition leaf]]. It shows how the tool is built, not why its answer is right.",
+   "source": "Chapter 03 LB6.2; EV5.4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Decomposition",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "decomposition-leaf",
+   "term": "Decomposition leaf",
+   "level": "L2",
+   "definition": "A shipped function at which a tool's [[decomposition]] stops.",
+   "source": "Chapter 03 LB6.1, LB6.2 (meaning inferred)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Base part",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). Named per EV5.18 (decomposition leaf against base-tier function); EV5.6 step 5's Base part."
+  },
+  {
+   "id": "step-map",
+   "term": "Step map",
+   "level": "L2",
+   "definition": "A stated relation between a [[decomposition]]'s parts and the steps of a proof, reporting what is unmapped on both sides.",
+   "source": "Chapter 03 LB6.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Step map",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "hand-derivation",
+   "term": "Hand derivation",
+   "level": "L2",
+   "definition": "The written working of a [[worked instance]]: the givens read from named parts, and the steps a person checks from them, with the step count.",
+   "source": "Chapter 03 LB6.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Hand derivation",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "leaf-specification",
+   "term": "Leaf specification",
+   "level": "L2",
+   "definition": "A written [[statement]] of what an opaque [[base part|Decomposition leaf]] computes, naming the test that [[covers|~]] it.",
+   "source": "Chapter 03 LB6.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Leaf specification",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "worked-instance",
+   "term": "Worked instance",
+   "level": "L2",
+   "definition": "A small instance on the real geometry whose steps a person can check by hand from named givens.",
+   "source": "Chapter 03 LB6.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Worked instance",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "fixture",
+   "term": "Fixture",
+   "level": "L2",
+   "definition": "A fixed input with its expected results, kept apart from the solver's session. A pass shows the tool reproduced those results at that input, nothing wider.",
+   "source": "Chapter 03 LB6.2; EV5.7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Fixture",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "fork",
+   "term": "Fork",
+   "level": "L2",
+   "definition": "Your own copy of a built-in tool. It keeps a link to its origin and inherits none of the origin's [[evidence]].",
+   "source": "Chapter 03 LB6.3; EV5.5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Fork",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "editable-parameter",
+   "term": "Editable parameter",
+   "level": "L2",
+   "definition": "A value a tool's source declares editable. Changing it makes a new version of the tool with no inherited [[evidence]].",
+   "source": "EV3.7; chapter 03 LB6.3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Editable parameter",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "library-entry",
+   "term": "Library entry",
+   "level": "L6",
+   "definition": "A source-addressed operation with its checked [[domain|Declared domain]], effects and supporting references.",
+   "source": "Chapter 03",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Library entry",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "research-tier",
+   "term": "Research tier",
+   "level": "L6",
+   "definition": "The entries that search, minimise, [[rank|~]] or select over [[twists|Twist, 600-cell-Full]], [[jumbling twists|Twist, jumbling puzzle]], [[words|Word]] or [[caps|Cap]]. They ship in 1.0 and stay out of the solving [[profile]].",
+   "source": "Chapter 03 LB1.5; EV5.17; owner, 6 November 2026, LQ16",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Research tier",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "effect",
+   "term": "Effect",
+   "level": "L6",
+   "definition": "A declared and checked kind of interaction a program can perform.",
+   "source": "Chapter 02; partition LG3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Effect",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "capability-declaration",
+   "term": "Capability declaration",
+   "level": "L6",
+   "definition": "A [[module]]'s request for authority that the host must grant for the [[profile]] and run.",
+   "source": "Chapters 02, 09",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Capability declaration",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "typed-ir",
+   "term": "Typed IR",
+   "level": "L6",
+   "definition": "The checked intermediate representation consumed by execution and environment services.",
+   "source": "Chapter 02; partition LG4, LQ9",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Typed IR",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "module",
+   "term": "Module",
+   "level": "L6",
+   "definition": "A digest-addressed source unit with its [[edition|Language edition]], manifest and dependencies.",
+   "source": "Chapter 02; partition LG5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Module",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "module-manifest",
+   "term": "Module manifest",
+   "level": "L6",
+   "definition": "The [[module]]'s declared supported identities, capabilities, [[edition|Language edition]] and dependencies.",
+   "source": "Chapter 02",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Module manifest",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "lockfile",
+   "term": "Lockfile",
+   "level": "L6",
+   "definition": "The dependency resolution that pins the [[digests|Digest]] used by a run.",
+   "source": "Chapter 02",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Lockfile",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "language-edition",
+   "term": "Language edition",
+   "level": "L6",
+   "definition": "A named source or semantic version whose changes preserve recorded saved meaning through migration.",
+   "source": "Chapters 02, 05",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Language edition",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "profile",
+   "term": "Profile",
+   "level": "L6",
+   "definition": "The chapter 07 capability and labelling context, without deciding a separate product entrance.",
+   "source": "Chapters 07, 09; partition LQ1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Profile",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "author-class",
+   "term": "Author class",
+   "level": "L6",
+   "definition": "The recorded source class of a tool, distinct from mathematical [[evidence]] and understanding.",
+   "source": "Chapter 07; partition BM2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Author class",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "provenance-block",
+   "term": "Provenance block",
+   "level": "L6",
+   "definition": "Chapter 07's assistance-origin information carried by [[previews|Preview]] and stored [[words|Word]].",
+   "source": "Chapter 07; partition BM2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Provenance block",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "boundary-class",
+   "term": "Boundary class",
+   "level": "L6",
+   "definition": "A shipped tool's reviewed class under the [[human-solve boundary]].",
+   "source": "Chapter 07; partition BM5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Boundary class",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "declassifier",
+   "term": "Declassifier",
+   "level": "L6",
+   "definition": "A fixed policy-enabled entry that permits a named information flow; programs cannot declare one.",
+   "source": "Chapter 07; partition BM2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Declassifier",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "flow-rule",
+   "term": "Flow rule",
+   "level": "L6",
+   "learner_facing": false,
+   "definition": "A policy switch: when on, in the solving [[profile]], a [[preview]]'s [[word]] and [[target]] may depend on the state or computed results only through [[declassifiers|Declassifier]].",
+   "source": "Chapter 07 BND.33",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Flow rule",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). Flag: not learner-facing unless LQ2 turns it on. Not taught by the learning path until LQ2 turns it on (EV5.6 step 6 lists it)."
+  },
+  {
+   "id": "flow-label",
+   "term": "Flow label",
+   "level": "L6",
+   "definition": "The [[provenance|Assistance provenance]] information following permitted data and control dependencies; not selected, since LQ21 chose [[capability separation]] (RTE.24).",
+   "source": "Chapter 07; partition LQ21",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Flow label",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "capability-separation",
+   "term": "Capability separation",
+   "level": "L6",
+   "definition": "LQ21's selected mechanism (owner, 14 November 2026; RTE.24), separating state-reading programs from preview-preparing programs.",
+   "source": "Chapter 07; partition BM2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Capability separation",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "solving-session",
+   "term": "Solving session",
+   "level": "L2",
+   "definition": "A session whose [[journal]] can stand as a [[solve record]]; every ordinary session is one.",
+   "source": "Chapter 07 BND.14",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Solving session",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "solve-record",
+   "term": "Solve record",
+   "level": "L2",
+   "definition": "The [[journal]] of a solve, read as its record, with the assistance the system recorded.",
+   "source": "Chapter 07 BND.14, BND.35 (the mathematician's reading; the term is used and never defined)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Solve record",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "sink",
+   "term": "Sink",
+   "level": "L6",
+   "definition": "A place a labelled value can reach: a [[preview]], a draft, a display, a workspace, a file or a record.",
+   "source": "Chapter 07 BND.26",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Sink",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "transparent-entry",
+   "term": "Transparent entry",
+   "level": "L6",
+   "definition": "A shipped function on the policy's list whose output carries only the join of its inputs.",
+   "source": "Chapter 07 BND.25",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Transparent entry",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "policy-table",
+   "term": "Policy table",
+   "level": "L6",
+   "definition": "The versioned data that fills the boundary mechanisms with a joint setting's choices.",
+   "source": "Chapter 07 BND.28",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Policy table",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "assistance-summary",
+   "term": "Assistance summary",
+   "level": "L2",
+   "definition": "The per-solve account of the assistance the system recorded.",
+   "source": "Chapter 07 BND.35",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Assistance summary",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "pick-record",
+   "term": "Pick record",
+   "level": "L6",
+   "definition": "The record of a solver's choice among listed options, with the list that offered them.",
+   "source": "Chapter 07 BND.54",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Pick record",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "job",
+   "term": "Job",
+   "level": "L2",
+   "definition": "Admitted cancellable work with a pinned input, [[budget]] and typed outcome.",
+   "source": "Chapter 01 KN7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Job",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "job-result",
+   "term": "Job result",
+   "level": "L2",
+   "definition": "A value with outcome, input [[digest]], parameters, coverage and [[budget]] use.",
+   "source": "Chapter 01 KN7.3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Job result",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "budget",
+   "term": "Budget",
+   "level": "L2",
+   "definition": "Deterministic limits on steps, declared kernel cost, logical memory and output.",
+   "source": "Chapter 01 KN7.7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Budget",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "lane",
+   "term": "Lane",
+   "level": "L6",
+   "definition": "A named admission rule for concurrent [[commands|Command]] or [[jobs|Job]].",
+   "source": "Chapter 01 KN7.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Lane",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "kernel-row",
+   "term": "Kernel row",
+   "level": "L6",
+   "definition": "A command-layer row invoking kernel behavior through its gates without language execution.",
+   "source": "Chapter 01 KN5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Kernel row",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "language-overlay",
+   "term": "Language overlay",
+   "level": "L6",
+   "definition": "The data-only command-table rows registered by checked language [[modules|Module]].",
+   "source": "Chapter 01 KN5.3 to KN5.5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Language overlay",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "latest-wins",
+   "term": "Latest wins",
+   "level": "L2",
+   "definition": "Admission or recomputation that supersedes an older request with the newest applicable input.",
+   "source": "Chapter 01 KN7.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Latest wins",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "reproducibility-key",
+   "term": "Reproducibility key",
+   "level": "L6",
+   "definition": "The complete identity of a deterministic run's source, inputs, seed, units and [[budgets|Budget]].",
+   "source": "Chapter 09",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Reproducibility key",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "run-record",
+   "term": "Run record",
+   "level": "L6",
+   "definition": "The stored run inputs, reproducibility references, stop reason and results.",
+   "source": "Chapter 05",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Run record",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "journal-branch",
+   "term": "Journal branch",
+   "level": "L6",
+   "definition": "An engine-owned [[journal]] line whose [[availability]] in [[solving sessions|Solving session]] remains LQ4.",
+   "source": "Chapters 01, 08",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Journal branch",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "journal",
+   "term": "Journal",
+   "level": "L2",
+   "definition": "The session store's parent-linked durable events, distinct from the [[debugger]]'s inspection cursor.",
+   "source": "Chapter 01 KN4.1; chapter 08",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Journal",
+   "forward": [
+    {
+     "term": "Debugger",
+     "why": "A contrast only: the journal is not the debugger's cursor (L6)."
+    }
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "saved-checkpoint",
+   "term": "Saved checkpoint",
+   "level": "L2",
+   "definition": "A stored session point with the replay path needed to reconstruct and validate it.",
+   "source": "Chapter 01 KN4; chapter 05",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Saved checkpoint",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "workspace-record",
+   "term": "Workspace record",
+   "level": "L2",
+   "definition": "Persistent work around the puzzle changed only through workspace [[commands|Command]], with [[provenance|Assistance provenance]] where required.",
+   "source": "Chapter 01 KN4.4; chapter 05",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Workspace record",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "filter",
+   "term": "Filter",
+   "level": "L1",
+   "definition": "A declared query limiting display or interaction without changing the mechanical state.",
+   "source": "Chapter 05; solving workflow section 4.3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Filter",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "preference",
+   "term": "Preference",
+   "level": "L1",
+   "definition": "A persisted user setting whose stored meaning is versioned by chapter 05.",
+   "source": "Chapter 05; partition PS1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Preference",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "search-space",
+   "term": "Search space",
+   "level": "L6",
+   "definition": "The declared set and alphabet over which a research search ranges.",
+   "source": "Chapter 03; partition LB5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Search space",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "search-record",
+   "term": "Search record",
+   "level": "L6",
+   "definition": "The inputs, coverage and outcome of a search, including a bounded failure to find a [[witness]].",
+   "source": "Chapters 03, 05, 06",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Search record",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "strategy",
+   "term": "Strategy",
+   "level": "L6",
+   "definition": "A research procedure composed over a declared [[search space]] and [[budget]].",
+   "source": "Chapter 03; partition LB5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Strategy",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "descent-rank",
+   "term": "Descent rank",
+   "level": "L6",
+   "definition": "A declared quantity with stated decrease obligations on the admitted operations.",
+   "source": "Chapter 03; partition 10.3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Descent rank",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "view-model-node",
+   "term": "View-model node",
+   "level": "L6",
+   "definition": "The declarative node by which program content reaches the host.",
+   "source": "Chapter 10; EV3.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "View-model node",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "view",
+   "term": "View",
+   "level": "L1",
+   "definition": "A presentation of information at one [[revision]]; further views are allowed in every [[profile]].",
+   "source": "Chapter 10 RPI.81 to RPI.83; EV3.11; owner, 6 November 2026, LQ6",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "View",
+   "forward": [
+    {
+     "term": "Profile",
+     "why": "Views are allowed in every profile; profiles enter at L6."
+    }
+   ],
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "panel",
+   "term": "Panel",
+   "level": "L6",
+   "definition": "A declared host container for view-model content and its [[command]] references.",
+   "source": "Chapter 10; EV3.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Panel",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "control",
+   "term": "Control",
+   "level": "L6",
+   "definition": "A view-model element naming a typed [[command]] interaction.",
+   "source": "Chapter 10; EV3.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Control",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "overlay",
+   "term": "Overlay",
+   "level": "L1",
+   "definition": "Declarative information attached to a [[view]].",
+   "source": "Chapter 10; partition EV3",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Overlay",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "display-plan",
+   "term": "Display plan",
+   "level": "L6",
+   "definition": "The renderer-independent description consumed by the adapter, with its base and [[derivation|State derivation]] references.",
+   "source": "Chapter 10",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Display plan",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "display-instance",
+   "term": "Display instance",
+   "level": "L1",
+   "definition": "A particular drawn occurrence that maps back to a canonical object.",
+   "source": "Chapter 10; partition default 7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Display instance",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "source-map",
+   "term": "Source map",
+   "level": "L6",
+   "definition": "Chapter 10's linkage between produced [[display instances|Display instance]], [[canonical IDs|Canonical ID]] and source locations.",
+   "source": "Chapter 10",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Source map",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "source-range",
+   "term": "Source range",
+   "level": "L6",
+   "definition": "A digest-bound source span under the editor protocol's declared position convention.",
+   "source": "EV1.1, EV1.10",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Source range",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "diagnostic",
+   "term": "Diagnostic",
+   "level": "L6",
+   "definition": "A typed code, [[source range]] and context explaining a failed or incomplete source check.",
+   "source": "EV1.4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Diagnostic",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "typed-error",
+   "term": "Typed error",
+   "level": "L2",
+   "definition": "A stable category and code with typed context and a defined continuation.",
+   "source": "Chapter 01 KN5.24; chapter 13",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Typed error",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "recovered-parse",
+   "term": "Recovered parse",
+   "level": "L6",
+   "definition": "A source structure retaining invalid or missing spans for [[editor services|Editor service]] without executable gaps.",
+   "source": "EV1.2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Recovered parse",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "editor-service",
+   "term": "Editor service",
+   "level": "L6",
+   "definition": "A source-bound operation for parsing, completion, [[diagnostics|Diagnostic]], hover, definition or rename.",
+   "source": "EV1.1 to EV1.6",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Editor service",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "debugger",
+   "term": "Debugger",
+   "level": "L6",
+   "definition": "The read-only service for stepping checked evaluation and checker traces and inspecting their values.",
+   "source": "EV2.1, EV2.6",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Debugger",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "deterministic-replay",
+   "term": "Deterministic replay",
+   "level": "L6",
+   "definition": "Re-evaluation from a complete [[run record]] under its [[reproducibility key]], with an explicit result comparison.",
+   "source": "EV2.3, EV2.4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Deterministic replay",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "cost-profile",
+   "term": "Cost profile",
+   "level": "L6",
+   "definition": "A report of declared deterministic costs, [[budget]] usage and stop reason in KN7 units.",
+   "source": "EV2.7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Cost profile",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "round-trip",
+   "term": "Round trip",
+   "level": "L6",
+   "definition": "A checked source edit derived from an explicitly [[editable parameter]], [[layout]] or default.",
+   "source": "EV3.7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Round trip",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "command",
+   "term": "Command",
+   "level": "L1",
+   "definition": "A stable command-table row invoked with resolved arguments through the shared gates.",
+   "source": "Chapter 01 KN5; EV4.1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Command",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "binding",
+   "term": "Binding",
+   "level": "L1",
+   "definition": "The map from a [[key|Keyboard key]] sequence and routing context to a [[command]] ID with absolute arguments.",
+   "source": "EV4.3; DT-M1",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Binding",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "recording",
+   "term": "Recording",
+   "level": "L2",
+   "definition": "A sequence of semantic [[commands|Command]] and resolved objects with [[revision references|Revision reference]].",
+   "source": "EV4.10; chapter 05",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Recording",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "routing-class",
+   "term": "Routing class",
+   "level": "L1",
+   "definition": "The key-routing context that separates text, list or [[view]] navigation, and global dispatch.",
+   "source": "EV4.4; DT-M1 Outcome C2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Routing class",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "portable-key-layer",
+   "term": "Portable key layer",
+   "level": "L6",
+   "definition": "The physical-code [[binding]] data below platform character labels and IME handling.",
+   "source": "EV4.7; DT-M1 Outcome K5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Portable key layer",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "layout",
+   "term": "Layout",
+   "level": "L2",
+   "definition": "A saved arrangement of what a [[view]] shows; a program's layout can change only where its source declares it editable.",
+   "source": "Chapters 05, 10; EV3.7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Layout",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "chart",
+   "term": "Chart",
+   "level": "L6",
+   "definition": "A display map governed by chapter 10's [[declared domain]] and precision, with a user vertex stage checked under its stage safety contract.",
+   "source": "Chapter 10 RPI.68 to RPI.80; owner, 6 November 2026, LQ7",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Chart",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "display-projection",
+   "term": "Display projection",
+   "level": "L1",
+   "definition": "A stated map used to display the geometry, without altering its canonical objects.",
+   "source": "Chapter 10; charter M2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Display projection",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "section",
+   "term": "Section",
+   "level": "L6",
+   "definition": "A declared representation of a geometric section with its exact mathematical basis.",
+   "source": "Chapters 03, 10; partition LB4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Section",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "atlas",
+   "term": "Atlas",
+   "level": "L6",
+   "definition": "A collection of linked [[charts|Chart]] with their [[domains|Chart domain]] and object correspondences.",
+   "source": "Chapters 03, 10; partition LB4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Atlas",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "action",
+   "term": "Action",
+   "level": "L6",
+   "definition": "The declared mathematical action on the typed objects of a representation.",
+   "source": "Chapter 03; partition LB4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Action",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "embedding",
+   "term": "Embedding",
+   "level": "L6",
+   "definition": "A representation map with its source objects and stated mathematical properties.",
+   "source": "Chapter 03; partition LB4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Embedding",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "relation",
+   "term": "Relation",
+   "level": "L1",
+   "definition": "A stated connection between named objects in one state, such as which [[piece]] occupies a [[position]].",
+   "source": "EV3.8; chapters 02, 06",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Relation",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "graph",
+   "term": "Graph",
+   "level": "L6",
+   "definition": "A representation with typed vertices and edges whose meanings are declared.",
+   "source": "Chapter 03; partition LB4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Graph",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "tree",
+   "term": "Tree",
+   "level": "L6",
+   "definition": "A tree representation with declared node identities and edge relations.",
+   "source": "Chapter 03; partition LB1, LB4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Tree",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "cell-complex",
+   "term": "Cell complex",
+   "level": "L6",
+   "definition": "A representation of cells and their incidence relations at a stated dimension.",
+   "source": "Chapter 03; partition LB4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Cell complex",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "state-graph",
+   "term": "State graph",
+   "level": "L6",
+   "definition": "A graph of named states and declared transitions, without making its nodes authoritative sessions.",
+   "source": "Chapters 03, 10; partition LB4",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "State graph",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "relationship-strip",
+   "term": "Relationship strip",
+   "level": "L1",
+   "definition": "The strip that shows stated relations, in the grammar shared by the code and the theory book, inside Global and Local.",
+   "source": "EV3.8; owner design decisions section 2",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Relationship strip",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "competence-check",
+   "term": "Competence check",
+   "level": "L1",
+   "definition": "An isolated task recording correctness, mistakes, help and transfer.",
+   "source": "EV5.7 to EV5.9; LQ14 (access policy)",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Competence check",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "soft-disclosure",
+   "term": "Soft disclosure",
+   "level": "L1",
+   "definition": "Gradual introduction of [[key|Keyboard key]] information while the palette continues to offer every [[command]].",
+   "source": "EV5.8; owner design decisions section 5",
+   "origin": "chapter 04 section 6",
+   "chapter_term": "Soft disclosure",
+   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+  },
+  {
+   "id": "chart-domain",
+   "term": "Chart domain",
+   "level": "L6",
+   "definition": "Where a [[chart]]'s map is defined.",
+   "source": "EV5.18; Chapter 10 RPI.68 to RPI.80",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "level-projection",
+   "term": "Level projection",
+   "level": "L6",
+   "definition": "The exact, possibly partial map from a value to a coarser [[identity level]], called explicitly; off the [[lattice]] it returns a [[typed partial result]]. The [[label]] projection π is one.",
+   "source": "EV5.18; Chapter 01 KN1.9",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "keyboard-key",
+   "term": "Keyboard key",
+   "level": "L1",
+   "definition": "A key on the keyboard. A [[binding]] maps key sequences to [[commands|Command]].",
+   "source": "EV5.18; EV4.7",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "source-key",
+   "term": "Source key",
+   "level": "L6",
+   "definition": "A [[display instance]]'s entry in the [[source map]], which links the drawn occurrence to its canonical object and its source.",
+   "source": "EV5.18; Chapter 10 RPI.20, RPI.21",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "tree-branch",
+   "term": "Tree branch",
+   "level": "L6",
+   "definition": "The class b(A) of a [[piece]]'s first step in the jumbling tree.",
+   "source": "EV5.18; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "evidence-edition",
+   "term": "Evidence edition",
+   "level": "L6",
+   "definition": "The version of the four tables that are the only inputs of an [[evidence word|Evidence words]] besides its facts: the order on [[grades|Grade]] and the other tables of EVD.14.",
+   "source": "EV5.18; EVD.14",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "matrix-rank",
+   "term": "Matrix rank",
+   "level": "L6",
+   "definition": "The rank of a matrix in linear algebra: the largest number of its rows that are linearly independent.",
+   "source": "EV5.18; Chapter 03",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "census-rank",
+   "term": "Census rank",
+   "level": "L6",
+   "learner_facing": false,
+   "definition": "The [[orbit]] field `rank` in the census; what it counts is not established.",
+   "source": "EV5.18; assets/census.json",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). Not learner-facing until what it counts is established."
+  },
+  {
+   "id": "assistance-provenance",
+   "term": "Assistance provenance",
+   "level": "L2",
+   "definition": "The origin of a [[word]]: whether the solver wrote it or a tool supplied it, carried with the word through storage and import.",
+   "source": "EV5.18; partition BM2; PS1.32; LB7.3",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "attribution",
+   "term": "Attribution",
+   "level": "L6",
+   "definition": "Who authored, reproduced or set the [[scope]] of a record, and its review class.",
+   "source": "EV5.18; EVD.6; PS1.35",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "lowering-macro",
+   "term": "Lowering macro",
+   "level": "L6",
+   "definition": "A [[word]] ending in a [[jumble twist]] that lowers the [[depth Φ]].",
+   "source": "EV5.18; [stage 15 README](../../../../research/jumbling/restoration/15-lowering-machine/README.md)",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "macro-certificate",
+   "term": "Macro certificate",
+   "level": "L6",
+   "definition": "[[Theorem]] MC's event-by-event [[certificate]] of a [[word]].",
+   "source": "EV5.18; [stage 15 README](../../../../research/jumbling/restoration/15-lowering-machine/README.md)",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "cap-cover",
+   "term": "Cap cover",
+   "level": "L1",
+   "definition": "\"d covers c\": the predicate at a named [[cap]] c that the solver asks about another named cap d.",
+   "source": "EV5.18; DT-J1 M4; [manual section 2.2](../../../../research/jumbling/manual/02-descent.md)",
+   "origin": "EV5.18 sense (LP4-11)",
+   "manual": [
+    "cover",
+    "covers"
+   ],
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "helper-cover",
+   "term": "Helper cover",
+   "level": "L6",
+   "definition": "Helpers whose inside sets together cover a target's straddlers.",
+   "source": "EV5.18; [card 7](../../../../research/jumbling/theory/cards/card-7-lowering-machine.md)",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "learning-level",
+   "term": "Learning level",
+   "level": "L1",
+   "definition": "One of the glossary's levels L1 to L6, at which a term is first needed.",
+   "source": "EV5.18; charter M6",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "grip-level",
+   "term": "Grip level",
+   "level": "L6",
+   "definition": "lev(c), a [[grip]]'s level in the lowering machine.",
+   "source": "EV5.18; [card 7](../../../../research/jumbling/theory/cards/card-7-lowering-machine.md)",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "witness-piece",
+   "term": "Witness piece",
+   "level": "L6",
+   "definition": "The [[piece]] a [[certificate]] point targets, with its [[grip]] recorded separately.",
+   "source": "EV5.18; Chapter 10 RPI.12, RPI.13",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "flag-chamber",
+   "term": "Flag chamber",
+   "level": "L6",
+   "definition": "A spherical tetrahedron of the 600-cell's barycentric subdivision, one for each flag. The symmetry group permutes them simply transitively, so there are 14,400.",
+   "source": "EV5.18; research/Full_600cell_Puzzle_Theory.tex, Coxeter presentation",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "base-tier-function",
+   "term": "Base-tier function",
+   "level": "L6",
+   "learner_facing": false,
+   "definition": "A function in the base tier of built-in tools under option BS2 of LQ2.",
+   "source": "EV5.18; LQ2",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). Not learner-facing while LQ2's option set is open."
+  },
+  {
+   "id": "state-derivation",
+   "term": "State derivation",
+   "level": "L6",
+   "definition": "How a [[derived state]] was computed, by the same exact kernels as the engine.",
+   "source": "EV5.18; KN2.11",
+   "origin": "EV5.18 sense (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "empty-answer",
+   "term": "Empty answer",
+   "level": "L2",
+   "definition": "A completed exhaustive search that found nothing: a negative over its whole declared set.",
+   "source": "EVD.33; partition default 6",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "not-run",
+   "term": "Not run",
+   "level": "L2",
+   "definition": "No record of the [[job]], or the import value of EVD.47. It supports nothing.",
+   "source": "EVD.33; EVD.41",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "specification",
+   "term": "Specification",
+   "level": "L2",
+   "definition": "The [[principle record]]'s part that states the tool's procedure, inputs, parameters and [[budget]], output type, puzzle, [[menu]] and [[level|Identity level]], [[domain|Declared domain]], tie rule, what an [[empty answer]] means and the [[scope]] of a negative answer.",
+   "source": "LB6.2",
+   "origin": "EV5.6 concept (LP4-11)",
+   "forward": [
+    {
+     "term": "Declared domain",
+     "why": "The record's specification names its domain at L2, while chapter 04 proposes Declared domain at L6."
+    }
+   ],
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "not-meant",
+   "term": "Not meant",
+   "level": "L2",
+   "definition": "The [[principle record]]'s part that says what an empty or negative answer does not mean.",
+   "source": "LB6.2",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "workspace-undo",
+   "term": "Workspace undo",
+   "level": "L2",
+   "definition": "Taking back the latest action on a history; an undo whose action a later action superseded is refused. Puzzle moves and [[layout]] changes keep separate histories.",
+   "source": "EV4.15; [owner, 23 November 2026, decision 2.7 (X1)](../../../wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). X1 overrules EV4.15's single undo order (two histories)."
+  },
+  {
+   "id": "conjugate",
+   "term": "Conjugate",
+   "level": "L3",
+   "definition": "The [[word]] S⁻¹ M S, read in chronological order: a [[setup]] undone, then M, then the setup. It acts as M acts, at the places the setup carries M's places to; a [[star]] is one.",
+   "source": "EV5.6 (step 4, the mathematician's inference); solving-workflow.md section 3.1",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). The chronological convention follows the star entry."
+  },
+  {
+   "id": "commutator",
+   "term": "Commutator",
+   "level": "L3",
+   "definition": "The [[word]] M N M⁻¹ N⁻¹, read in chronological order. Where M and N move no common [[piece]] it changes nothing, so a small overlap gives a small effect.",
+   "source": "EV5.6 (step 4, the mathematician's inference)",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). The order convention is for the mathematician to fix."
+  },
+  {
+   "id": "mixed-statement",
+   "term": "Mixed statement",
+   "level": "L2",
+   "definition": "A [[statement]] of the form every case has some answer, such as every admitted state having a legal selected [[macro]]. One found case discharges nothing, and one failed search refutes nothing.",
+   "source": "Chapter 06 section 9 (E2); EV5.6",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "approximate-value",
+   "term": "Approximate value",
+   "level": "L6",
+   "definition": "A value of the approximate type, made from an exact one only by an explicit conversion that names a precision. It never converts back and never decides legality, admissibility, [[protection]], equality of exact objects, goals, [[digests|Digest]] or [[evidence]].",
+   "source": "LG2.4; LG1.7; INV-4",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "human-solve-boundary",
+   "term": "Human-solve boundary",
+   "level": "L2",
+   "definition": "The rule that the program never chooses or outputs a solving [[macro]] by itself, never executes without the solver's action and never solves automatically. Tools may track, analyse, check, protect and reuse the solver's own macros.",
+   "source": "Owner, 2 October 2026; KN2.5",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "stabiliser",
+   "term": "Stabiliser",
+   "level": "L6",
+   "definition": "The elements of a group that leave a given object unchanged. They form a subgroup.",
+   "source": "EV5.6 (step 6), standard mathematics",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "coset",
+   "term": "Coset",
+   "level": "L6",
+   "definition": "The set g·H of products of one group element g with every element of a subgroup H. The cosets of H split the group into parts of equal size.",
+   "source": "EV5.6 (step 6), standard mathematics",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "quotient",
+   "term": "Quotient",
+   "level": "L6",
+   "definition": "The set of classes of an equivalence, such as the [[cosets|Coset]] of a subgroup, with the structure that passes to the classes.",
+   "source": "EV5.6 (step 6), standard mathematics",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "homomorphism",
+   "term": "Homomorphism",
+   "level": "L6",
+   "definition": "A map between groups that preserves products: the image of a product is the product of the images.",
+   "source": "EV5.6 (step 6), standard mathematics",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "f2",
+   "term": "F2",
+   "level": "L6",
+   "definition": "The field with two elements, 0 and 1, where 1 + 1 = 0. Sign bits and [[frame]] bits take values in it.",
+   "source": "EV5.6 (step 6), standard mathematics",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "f5",
+   "term": "F5",
+   "level": "L6",
+   "definition": "The field with five elements: the integers modulo 5.",
+   "source": "EV5.6 (step 6), standard mathematics",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  },
+  {
+   "id": "q-sqrt5",
+   "term": "Q(√5)",
+   "level": "L6",
+   "definition": "The field of numbers a + b√5 with rational a and b. The 600-cell's coordinates are exact in it.",
+   "source": "EV5.6 (step 6), standard mathematics; research/Full_600cell_Puzzle_Theory.tex",
+   "origin": "EV5.6 concept (LP4-11)",
+   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+  }
+ ]
 }

@@ -38,6 +38,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
 | `c600-debug` | EV2's read-only debugger, replay and cost profile: stepping RT1's evaluator at the run's own LG4/DET.20 positions with suspended kernel calls, value inspection, word references into compressed words, replay with preflight and mismatch reporting, journal travel over a host's query rows, a pinned run's freshness and checker-trace stepping (LP4-5, LP4-6) |
 | `c600-log` | The 1.0 log file: what a log holds, its record `c600-log-draft` (`.c600log`), the compiler with its gates, a recorder, and the check, import and export of 0.4 proof logs and MPUlt v1 logs of 600-cell-Full (LP4-12, LP4-13); no path to `c600-run` |
+| `c600-docs` | EV5's reference docs and principle records: reference entries generated from checked metadata, an entry's decomposition from the checked IR's call graph, `PrincipleRecord` data read and admitted against it (typed nones, resolving digests, derivation-backed claims, stale hand parts), and explanations whose words come from chapter 06's word function, with lazy provenance links and forks that inherit no evidence (LP4-10) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -4136,3 +4137,145 @@ changed.
   - JSON nested deeper than 128 levels in a 0.4 log, which 0.4's reader accepts and the kernel's parser refuses;
   - the interchange command rows and file dialogs (LP4-14).
 - Evidence kind: source and fixture. Nothing here is Windows, input, display or timing evidence.
+
+## Status of LP4, LP4-10: reference docs and principle records
+
+LP4-10 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV5.2 to EV5.5 and EV5.13; chapter 03
+LB6), a draft. The crate `c600-docs` depends on the syntax, checker, IR, module and digest crates (the plan's five)
+and on the evidence library, whose word function the explanation words come from (EV5.13). It runs no program and has
+no path to the command layer; its tests run the fixtures, so the command layer, the kernel, the jumbling crates, the
+interpreter, the tools, representations and library crates are its dev-dependencies.
+
+- Reference docs (`reference`). A module's reference is generated from its source and its checked metadata: source
+  and closure digests (the closure of a manifest with the module's supported identity, LG5.3), edition, IR version and
+  contract, requested capabilities, supported identities, and per function its signature, declared and inferred
+  effects, capabilities, grant rows, state reads (capability separation) and the range of its declaration in the
+  source. The comment lines directly above a declaration are carried as written. The principle record is linked by its
+  path and digest, never copied. A draft that does not parse, lower or check is `Status::Broken` with its findings and
+  no entry, and its page says it is not the active tool's documentation (EV1.7).
+- Decompositions (`decompose`). An entry's decomposition is generated from the checked IR before executor lowering:
+  every function the entry reaches in any module of the program, with the checker's inferred effects, capabilities and
+  grant rows; its direct calls; "may call" edges for function values and references (the checker's `reaches` beyond
+  the direct calls); its kernel and host operations as opaque leaves (`kernel:read_snapshot(<row>)`,
+  `kernel:propose(<target>)`, `kernel:publish_view`, `kernel:write_workspace(<record>)`, `kernel:receipt(<field>)`, ...);
+  and its base parts, the IR's own operations (`base:<prim>`, `base:Repeat`, ...). Its digest names the IR version,
+  the contract and every module's source digest. `check_submitted` refuses a submitted graph that omits a derived node,
+  effect or edge or names other source or another IR, with `LB6:evidence.decomposition_mismatch`.
+- Principle records (`record`). A record is the data file `docs/progress/1.0/principle-records/<module>.json`, form
+  `c600-principle-record-draft` version 1, with LB6.2's parts: the specification of each exported entry (function,
+  inputs, parameters, budget, output, puzzle, menu, level, domain, tie rule, the meaning of an empty and of a negative
+  answer, and what the answer means outside the cited statement's scope), the justification (lemma, certificate, replay
+  or "by definition", each with its statement and an evidence reference: a repository file, its SHA-256, basis, check,
+  source label and whether it is imported), the instance (model identity, level, input, expected claims each naming
+  the derivation step it repeats, and the fixture test), the binding (source and closure digests, model identity,
+  decomposition digest, statements) and the parts a person writes (step map with the unmapped nodes and steps on both
+  sides, reason with its glossary terms, failure examples, what an answer does not mean, givens, steps, prerequisite
+  terms and records, and a leaf specification with its oracle test per kernel leaf). Every part is given or a typed
+  none, `{"none": "because ..."}`. `admit` refuses an absent part, a none without its reason, an empty list, an
+  evidence file at other bytes, a fixture or leaf test that names no function, a claim that is not its step's result,
+  a kernel leaf with no specification, a step map whose unmapped lists are not the computed ones, and a prerequisite
+  term that is unknown, not learner-facing or above the record's level (`LB6:evidence.principle_record_incomplete`); a
+  record bound to other source or another closure is `LB6:evidence.decomposition_mismatch`. A record whose
+  decomposition digest is not the current one is `Stale`: every hand-written part is stale, and the step map and leaf
+  specifications wait for the person who refreshes them. `prerequisite_cycle` checks that records form a DAG.
+- Records shipped: the three built-in tools of PHS.22 (`full_600_cell`, `jumble_checker`, `representations`) and
+  the library's twelve modules (`words`, `quadratic`, `word_keys`, `linalg`, `trees`, `recipes`, `completion`,
+  `protection`, `guarded_setups`, `macros`, `seeds`, `orbits`). Each instance runs on the real geometry: the
+  600-cell-Full tool inside the command the solver invokes, through the tools' host bridge, with the layer's preview;
+  the jumbling tool onto the jumbling engine's whole-word check under W-J fixture I_a's menu; state-reading library
+  entries through `Boundary` and the host bridge onto a 600-cell-Full command layer at solved; pure entries on
+  600-cell-Full values (generators, the golden ratio of the vertex coordinates, the I_a correction library's C5
+  coordinates, the seed atlas's collateral, the solved pose). Evidence files are model assets, research data and
+  `c600-library`'s tests, pinned by digest: a change to one makes its record refuse until the digest is refreshed.
+  Leaf specifications name their oracle tests by path and function, not by digest.
+- Explanations (`explain`). `explain` builds a tool's explanation from its record and its admission state: the
+  specification, each argument's claim with its word from `c600_evidence::word` at a pinned edition over a graph of the
+  record's facts (statement, scope, bases, checks, job outcome, source labels and check references kept apart), the
+  instance's claim (one instance, a completed or failed producing job, or none when the fixture did not run), the
+  decomposition's roots as collapsed links (`expand` gives a node's calls, kernel leaves and base parts; a long word is
+  a digest and a length until `expand_word` reads letters from bytes of that digest; a named, commit-pinned statement
+  is a lemma link; an imported result links its stored bytes and source label with its producer absent), the parts a
+  person writes and the stale parts. A record's evidence enters through chapter 06's `record` sink as the host's
+  write, so a `formal_proof` or `independent_checker` check is refused and shown as refused. A computed or certified
+  argument's claim covers the recorded inputs only. Where no human review or formal proof is recorded, the claim says
+  so. The author class is shown as data and no word reads it; an explanation takes no score and grants nothing. A
+  fork's explanation keeps the cited statements as references and records none of the parent's evidence.
+- Tests. CT-LB6-01, CT-EV5-01 and CT-EV5-06 run whole (`c600-docs/tests/ct_lb6_01.rs`, `ct_ev5_01.rs`,
+  `ct_ev5_06.rs`). Each record's fixture is `fixture_<module>` in `ct_lb6_01.rs`; it reads the record's input and
+  compares the module's answers with the record's expected claims. `tests/facts.rs` prints, on request
+  (`--ignored`), the generated fields a record's refresh needs.
+- Readings (drafts, to confirm at the next freeze): the record is data beside the module, bound to the closure digest
+  of a manifest with no principle field, since the manifest's `principle` digest cannot be inside what the record
+  binds (LB6.2 "the record is data in the module manifest" is read as "named by the manifest"); the tools' own
+  manifests (`c600_tools::tool::Manifest::principle_record`) still say `false`, since `c600-tools` and
+  `c600-jumble-tool` are not this item's files; the evidence library is a sixth dependency beside the plan's five,
+  since EV5.13 asks for chapter 06's word function.
+- Not built:
+  - the jumbling library's sixteen modules in `c600-jumble-tool` (`jumble_admissibility` to `menu_words`), which have
+    no record yet;
+  - the manifests' `principle` digest and the tools' `principle_record` flag, which wait for `c600-tools`' owner;
+  - commit-pinned lemma citations in the shipped records: their statements are typed, and the stage-qualified form is
+    exercised by the tests only;
+  - the mathematician's review of the records' derivations, reasons, failure examples and "not meant" texts, which
+    each record's `review` field says it waits for;
+  - a rendered reference or explanation page in the shell or the docs site: `render` gives Markdown text only;
+  - RT4's host decomposition (RTE.80), since RT4 is not built (LB6.6).
+- Evidence kind: source and fixture. The fixtures' instances are the real model's and the research fixtures'; a pass
+  proves no universal lemma and records no human comprehension result (EV5.4).
+
+## Status of LP4, LP4-11: the glossary check and the learning path
+
+LP4-11's glossary and fixture part (chapter 04 EV5.6, EV5.10, EV5.14, EV5.15 and EV5.18), a draft under the
+mathematician's review. It is data and a standard-library Python check outside this workspace:
+`docs/progress/1.0/glossary/` (`terms.json`, `learning-path.json`, `diagrams/`, the generated `glossary.md` and
+`build.py`), tested by `tests/test_glossary.py`. The principle records of LP4-10 name their prerequisite terms in it.
+
+- The term check (`build.py --check`). A definition writes a reference as `[[Term]]` or `[[shown text|Term]]`; it must
+  name one row by its term, an alias or a homonym's declared bare sense, and nothing is resolved by a similar name.
+  The check refuses an unknown term, an ambiguous term (a homonym word without a bare sense), a definition that uses a
+  term above its own level unless the row records that forward reference with its reason, a learner-facing definition
+  that uses a row marked `"learner_facing": false`, a citation without a registered source prefix (a document such as
+  "Theory" or "Chapter 03", a clause prefix such as `KN`, or a repository file or link that exists), a homonym sense
+  without its own row, and a bare homonym word in a definition (`[[covers|~]]` marks an ordinary word). It also checks
+  the diagram manifest (EV5.15) and that `glossary.md` is the output of the data.
+- Integrated entries. `terms.json` (version 2) holds 298 rows: 31 solving rows (the 30 before, with twist split into
+  its two puzzles' senses and frame group replacing orientation group), 230 new rows from chapter 04 section 6's 246
+  entries (the other 16 merged into solving rows with their scope changes), 20 sense rows of EV5.18 that had none, and
+  17 rows for EV5.6's step concepts that had none (empty answer, not
+  run, specification, not meant, workspace undo, conjugate, commutator, mixed statement, approximate value, the
+  human-solve boundary, stabiliser, coset, quotient, homomorphism, F2, F5, Q(√5)). Section 6's ambiguous citations are
+  qualified ("partition default 10", "DT-M1 Q7 (a)", "LQ14 (access policy)"). Every row has its diagram source, its SVG
+  rendered by the local Mermaid CLI 12.0.0 and both digests in the manifest; the changed rows (cap, grip, label, piece,
+  generator, orbit, Net and Strict, complete effect, orientation, frame, occupant, target) got new diagrams.
+- The manual's first use (owner, 23 November 2026). A row's `manual` words name the manual's word for it; `build.py`
+  computes where the manual's chapters first use each, by section, and refuses a definition that uses a term the
+  manual introduces in a later section unless the row records it in `first_use_forward`. Seven such uses are recorded
+  for review (lattice, N, seam, height and alignment domain use pose, cut cell or retained twist before the manual
+  names them; the ν-corrections are announced before ν).
+- The learning path (`learning-path.json`). EV5.6's seven steps, each with its concepts resolved to rows, the rows
+  their definitions need (`closure`), revisits, waiting rows (the flow rule waits for LQ2), its command routes and one
+  fixture task. The check refuses a cycle among the steps, a concept that is not learner-facing, a concept whose
+  definition uses a term no step up to it teaches (unless the manual or the solving glossary teaches it, as `assumed`
+  names, or the step records the use, as step 1 does for the principle record), a fixture concept taught after the
+  task, a fixture whose recorded instance is missing, changed or lacks its expected value, and a fixture whose answer is
+  a word or a macro. The fixtures read the 7302 search record, the stage-order principle record, the command table's
+  key-change row (read live by ID, since the draft table changes), the seed atlas, the manual's floor instance, the
+  `seeds` module source and the seed atlas's digest.
+- Tests. `tests/test_glossary.py` runs the check on the repository and plants each refusal. It runs CT-EV5-02 in part:
+  the review of LP4-11's integration, flow goals against the disclosure data (LP4-11's `c600-command` part) and BS3's
+  branch (LQ2) are not run. CI should run `python tests/test_glossary.py`, which also runs the check.
+- Readings (drafts): EV5.6's phrases are resolved to rows; the path teaches five concepts earlier than EV5.6 lists
+  them, because definitions at an earlier step use them (theorem, certificate, digest and identity level at step 1;
+  assistance provenance at step 3, so step 4 comes after step 3), and adds eleven rows EV5.6 does not list (view,
+  statement, evidence, admitted domain and sticker at step 1, source range at 2, keyboard key at 3, menu letter and
+  revision reference at 4, state derivation at 6, gauge at 7); the manual's first use is read from its chapters, since
+  its README previews terms before they are taught; bare chamber reads as cut
+  chamber and bare key as keyboard key, bare block as achievement block (EV5.18) and bare witness as this glossary's
+  witness; a record's specification uses the declared domain, proposed at L6, at L2, recorded as a forward reference.
+- Not built:
+  - the mathematician's review of every row LP4-11 added or changed, of the levels, sense marks, references and
+    diagrams, and of the learning path's order and fixtures (each says so in its `review` field);
+  - UI placements for the new rows (`ui` is absent, "not placed yet"), which belong to the design line;
+  - soft disclosure and the flow goals' undisclosed-concept check, LP4-11's `c600-command` part;
+  - the human tests of the path (EV5.7, EV5.12), which wait for the owner's form;
+  - prose outside the glossary rewritten with EV5.18's qualified names.

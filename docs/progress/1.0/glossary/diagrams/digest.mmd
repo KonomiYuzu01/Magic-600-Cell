@@ -1,0 +1,4 @@
+flowchart LR
+  B[exact bytes] -->|hash| D[digest]
+  D -->|names| B
+  D -. compare only at the same level .- D2[other digest]

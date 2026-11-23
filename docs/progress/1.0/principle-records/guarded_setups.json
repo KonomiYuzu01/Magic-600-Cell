@@ -1,0 +1,157 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "guarded_setups",
+  "entries": [
+    "setups_for"
+  ],
+  "level": "L3",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "d9e0c3696071fb270a6e88f0c47fc5338e6f1fe2adf2f643e71b974150e8aad2",
+    "closure_sha256": "6e573f9bee4fce8e16c92bf83c6f76a86298abc87bb2a9f51fb01973c3bd2c16",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "23fc9a11f28850e2b87b82365b153d7a34cb78578500c80d260ed2e5afc03fa5",
+    "statements": [
+      "a buffer position of an orbit has no guarded setup"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "setups_for",
+      "function": "the certified guarded setups of the orbit's execution tree at the position the solver named, in the table's order, with the buffers and the table's digest",
+      "inputs": "goal: record {orbit, position}, the target the solver named",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {buffers, family, orbit, position, setups, table_sha256}",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L3",
+      "domain": "every orbit 0 to 34 and every position of that orbit",
+      "tie_rule": {
+        "none": "the row ranks none and marks none best (BND.1): the setups come in the table's node order"
+      },
+      "empty_answer": "An empty setup list at a buffer position means the position is a buffer of the orbit's tree; at another position it concerns the named position and the table's family only and never says that no solving step exists.",
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The certificate covers the shipped tables. A position outside the orbit is refused (`KN2:input.named_object_invalid`); with Jumble on the row refuses (`KN5:input.retained_tool_needs_jumble_off`)."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "certificate",
+      "statement": "a buffer position of an orbit has no guarded setup",
+      "text": "The star cycles buffer A to buffer B to the target, so a buffer is never a target of its own tree: the table holds no setup for it. The tables are the model's certified execution trees.",
+      "evidence": {
+        "path": "assets/execution_trees.json.gz",
+        "sha256": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20",
+        "basis": "certificate",
+        "check": "producer",
+        "label": "the model's certified execution trees and buffers"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L3",
+    "input": {
+      "orbit": 33,
+      "position": 2712,
+      "base": "solved"
+    },
+    "expected": [
+      {
+        "claim": "position_is_buffer_a",
+        "value": true,
+        "from_step": 1
+      },
+      {
+        "claim": "setups",
+        "value": 0,
+        "from_step": 2
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_guarded_setups"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "kernel:read_snapshot(setups)",
+          "statement": "a buffer position of an orbit has no guarded setup",
+          "step": "step 2"
+        },
+        {
+          "node": "guarded_setups.setups_for",
+          "statement": "a buffer position of an orbit has no guarded setup",
+          "step": "step 1"
+        }
+      ],
+      "unmapped_nodes": [],
+      "unmapped_steps": []
+    },
+    "reason": {
+      "statement": "a buffer position of an orbit has no guarded setup",
+      "idea": "A buffer is where pieces wait on their way; it is never the place a star fills, so no setup leads to it.",
+      "terms": [
+        "buffer",
+        "setup",
+        "star",
+        "target"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the named position is a buffer",
+        "outcome": "weaker conclusion: at another position of the orbit the list can hold setups, in the table's order"
+      }
+    ],
+    "not_meant": "An empty list does not say that the position cannot be solved; the program never picks a setup or a target.",
+    "givens": [
+      {
+        "name": "buffers of orbit 33",
+        "value": [
+          2712,
+          175618
+        ],
+        "leaf": "kernel:read_snapshot(setups)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "Position 2712 is buffer A of orbit 33 (given).",
+        "result": true
+      },
+      {
+        "check": "A buffer position has no setup in the table: 0 setups.",
+        "result": 0
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "buffer",
+        "setup",
+        "star",
+        "target"
+      ],
+      "records": [
+        "recipes"
+      ]
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:read_snapshot(setups)",
+        "spec": "The setups row: the certified guarded setups at a named position, the buffers and the table's digest; a read changes nothing.",
+        "test": "rust/c600-tools/tests/setups_row.rs::a_library_entry_reads_setups_in_its_declared_order"
+      }
+    ]
+  }
+}

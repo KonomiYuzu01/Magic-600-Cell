@@ -1,0 +1,516 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "trees",
+  "entries": [
+    "factors",
+    "reconstructs",
+    "v2",
+    "kval",
+    "dist",
+    "branch",
+    "pose_tree"
+  ],
+  "level": "L5",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "7736d38c80d115ab07b89b5dfc466997ce62dcb211d8228fd93b54fa81796d0b",
+    "closure_sha256": "d8d169a289e9349884bdb5b4a54f05daebbf14218f241a806cae64a90793d45b",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "cb26e1808445c57e8214b13e997de61a77697c47bd0f76f2daad56561006938b",
+    "statements": [
+      "v2 is the 2-adic valuation on Q(sqrt 5): v2(2) = 1 and v2 of a unit of Z[phi] is 0",
+      "the identity pose factors as 1 x 1 and sits at the tree's root vertex"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "factors",
+      "function": "the quaternions l and r with M x = l x conj(r) for the pose matrix M, as trees.py extracts them (not up to scale), and whether they reconstruct M",
+      "inputs": "m: a 4x4 matrix of Q5 values",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {l, r, reconstructs}",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every pose matrix of the jumbled puzzle",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": "reconstructs = false means the extracted l and r do not give M back up to scale.",
+      "outside_scope": "The reference fixture covers trees.py's recorded inputs; the definitions cover every nonzero value. A zero argument is outside: the entry stops on its assertion, since a valuation of 0 is not defined."
+    },
+    {
+      "entry": "reconstructs",
+      "function": "whether l x conj(r) gives M up to a nonzero scale",
+      "inputs": "m, l, r",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Bool",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every pose matrix and pair of quaternions",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": "false means no common scale makes l x conj(r) equal to M on the basis.",
+      "outside_scope": "The reference fixture covers trees.py's recorded inputs; the definitions cover every nonzero value. A zero argument is outside: the entry stops on its assertion, since a valuation of 0 is not defined."
+    },
+    {
+      "entry": "v2",
+      "function": "the 2-adic valuation of a nonzero element of Q(√5)",
+      "inputs": "x: Q5, nonzero",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Int",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every nonzero Q5 value",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The reference fixture covers trees.py's recorded inputs; the definitions cover every nonzero value. A zero argument is outside: the entry stops on its assertion, since a valuation of 0 is not defined."
+    },
+    {
+      "entry": "kval",
+      "function": "the least v2 of the nonzero coordinates of a quaternion in trees.py's local basis of the icosian order at 2",
+      "inputs": "x: a nonzero quaternion",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Int",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every nonzero quaternion",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The reference fixture covers trees.py's recorded inputs; the definitions cover every nonzero value. A zero argument is outside: the entry stops on its assertion, since a valuation of 0 is not defined."
+    },
+    {
+      "entry": "dist",
+      "function": "the distance of a quaternion's vertex from the root of the Bruhat-Tits tree at 2: v2(norm) - 2 kval",
+      "inputs": "x: a nonzero quaternion",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Int",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every nonzero quaternion",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The reference fixture covers trees.py's recorded inputs; the definitions cover every nonzero value. A zero argument is outside: the entry stops on its assertion, since a valuation of 0 is not defined."
+    },
+    {
+      "entry": "branch",
+      "function": "the branch of the root a quaternion's vertex lies on: -1 at the root, else one of the five tetrahedral subgroups",
+      "inputs": "x: a nonzero quaternion",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Int: -1 or 0 to 4",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every nonzero quaternion",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The reference fixture covers trees.py's recorded inputs; the definitions cover every nonzero value. A zero argument is outside: the entry stops on its assertion, since a valuation of 0 is not defined."
+    },
+    {
+      "entry": "pose_tree",
+      "function": "dist and branch of both factors of a pose matrix",
+      "inputs": "m: a 4x4 matrix of Q5 values",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {branch_l, branch_r, dist_l, dist_r}",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every pose matrix of the jumbled puzzle",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The reference fixture covers trees.py's recorded inputs; the definitions cover every nonzero value. A zero argument is outside: the entry stops on its assertion, since a valuation of 0 is not defined."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "lemma",
+      "statement": "v2 is the 2-adic valuation on Q(sqrt 5): v2(2) = 1 and v2 of a unit of Z[phi] is 0",
+      "text": "For x = (a + b√5)/d, v2 reads the 2-adic valuations of a - b, 2b and d: 2 = 2·1 has valuation 1, and φ = (1 + √5)/2 is a unit of Z[φ] (φ·(φ - 1) = 1), so its valuation is 0.",
+      "evidence": {
+        "path": "rust/c600-library/tests/fixtures/trees-reference.json",
+        "sha256": "5741076369e15d5f0ba31078ef5d7c08dc76d9aff608505f117fc737768cc510",
+        "basis": "exact_computation",
+        "check": "producer",
+        "label": "trees.py's exact answers (research/jumbling/theory)"
+      }
+    },
+    {
+      "kind": "lemma",
+      "statement": "the identity pose factors as 1 x 1 and sits at the tree's root vertex",
+      "text": "The identity matrix is x ↦ 1·x·1, so both factors are the unit quaternion 1, which lies at the root vertex: distance 0 and no branch, written -1.",
+      "evidence": {
+        "none": "a definition: the root vertex is the class of the icosian order, which holds 1"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L5",
+    "input": {
+      "two": [
+        2,
+        0,
+        1
+      ],
+      "phi": [
+        1,
+        1,
+        2
+      ],
+      "solved_pose": [
+        [
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            1
+          ]
+        ]
+      ],
+      "form": "[a, b, d] is (a + b sqrt(5)) / d; the solved pose of every piece is the identity"
+    },
+    "expected": [
+      {
+        "claim": "v2_two",
+        "value": 1,
+        "from_step": 1
+      },
+      {
+        "claim": "v2_phi",
+        "value": 0,
+        "from_step": 2
+      },
+      {
+        "claim": "dist_l",
+        "value": 0,
+        "from_step": 4
+      },
+      {
+        "claim": "dist_r",
+        "value": 0,
+        "from_step": 4
+      },
+      {
+        "claim": "branch_l",
+        "value": -1,
+        "from_step": 5
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_trees"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "trees.v2",
+          "statement": "v2 is the 2-adic valuation on Q(sqrt 5): v2(2) = 1 and v2 of a unit of Z[phi] is 0",
+          "step": "step 1"
+        },
+        {
+          "node": "trees.v2",
+          "statement": "v2 is the 2-adic valuation on Q(sqrt 5): v2(2) = 1 and v2 of a unit of Z[phi] is 0",
+          "step": "step 2"
+        },
+        {
+          "node": "trees.factors",
+          "statement": "the identity pose factors as 1 x 1 and sits at the tree's root vertex",
+          "step": "step 3"
+        },
+        {
+          "node": "trees.dist",
+          "statement": "the identity pose factors as 1 x 1 and sits at the tree's root vertex",
+          "step": "step 4"
+        },
+        {
+          "node": "trees.branch",
+          "statement": "the identity pose factors as 1 x 1 and sits at the tree's root vertex",
+          "step": "step 5"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:And",
+        "base:Assert",
+        "base:Concat",
+        "base:ExactAdd",
+        "base:ExactEq",
+        "base:ExactLess",
+        "base:ExactMul",
+        "base:Index",
+        "base:Length",
+        "base:Not",
+        "base:Or",
+        "base:Push",
+        "base:Q5Of",
+        "base:Q5Parts",
+        "base:Repeat",
+        "base:Residue",
+        "base:ToField(F2)",
+        "trees.branch_at",
+        "trees.column_of",
+        "trees.coords",
+        "trees.dot",
+        "trees.factor_matrix",
+        "trees.first_nonzero_column",
+        "trees.first_nonzero_row",
+        "trees.is_zero",
+        "trees.kval",
+        "trees.local_basis_inverse",
+        "trees.min_int",
+        "trees.neg",
+        "trees.pose_tree",
+        "trees.projective_units",
+        "trees.qconj",
+        "trees.qmul",
+        "trees.qnorm",
+        "trees.reconstructs",
+        "trees.same_members",
+        "trees.tetrahedral_subgroups",
+        "trees.unit_vector",
+        "trees.v2int"
+      ],
+      "unmapped_steps": []
+    },
+    "reason": {
+      "statement": "the identity pose factors as 1 x 1 and sits at the tree's root vertex",
+      "idea": "The solved pose does nothing, so it sits at the start of the tree: no distance and no branch.",
+      "terms": [
+        "orientation"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "x is nonzero",
+        "outcome": "for x = 0 the valuation is not defined and the entry stops on its assertion"
+      }
+    ],
+    "not_meant": "A distance in the tree is not a count of twists, and a branch names no move to make.",
+    "givens": [
+      {
+        "name": "kval(1)",
+        "value": 0,
+        "leaf": "rust/c600-library/tests/fixtures/trees-reference.json"
+      },
+      {
+        "name": "norm of 1",
+        "value": 1,
+        "leaf": "the quaternion norm"
+      }
+    ],
+    "steps": [
+      {
+        "check": "2 = 2¹·1 with 1 odd: v2(2) = 1.",
+        "result": 1
+      },
+      {
+        "check": "φ·(φ - 1) = 1, so φ is a unit and v2(φ) = 0.",
+        "result": 0
+      },
+      {
+        "check": "The identity matrix factors with l = r = 1.",
+        "result": [
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "check": "dist(1) = v2(norm 1) - 2·kval(1) = 0 - 2·0 = 0 for both factors.",
+        "result": 0
+      },
+      {
+        "check": "At distance 0 there is no branch: -1.",
+        "result": -1
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "orientation",
+        "piece"
+      ],
+      "records": [
+        "quadratic"
+      ]
+    },
+    "leaf_specs": {
+      "none": "the decomposition reaches no kernel leaf: the module is pure (LG3.2), so every part of it is a base part of the IR"
+    }
+  }
+}

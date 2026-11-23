@@ -1,0 +1,175 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "completion",
+  "entries": [
+    "exact_completion"
+  ],
+  "level": "L4",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "5cb30cd6d27207f32019df503311af3d24440bf909e6f5f6002190f2f808e8de",
+    "closure_sha256": "3ca8d110883490fbf48423b2c1d4857e8f962bb72adb6c90023e6ca85b4052d3",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "e84b312d958ffd49dacd162103ff5a91ef39d8d2ea48037b034e5dadce44f82d",
+    "statements": [
+      "in the solved state every slot holds its own label"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "exact_completion",
+      "function": "whether every named piece sits in its home position with each sticker in its own home slot (identity, slot and orientation)",
+      "inputs": "pieces: piece IDs; home_slots: their home slots, model data the host names with the pieces",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Bool",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every nonempty list of pieces at any revision",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is a Bool; an empty list of pieces answers false, so empty candidates never pass (CT-LB2-04)"
+      },
+      "negative_scope": "false means at least one named piece is away from home or wrongly oriented, or the home slots named are not the pieces'; it says nothing about pieces not named.",
+      "outside_scope": {
+        "none": "the definition of solved covers every revision: the entry compares positions and labels exactly"
+      }
+    }
+  ],
+  "justification": [
+    {
+      "kind": "by_definition",
+      "statement": "in the solved state every slot holds its own label",
+      "text": "A piece is complete when its positions row puts each of its stickers in its home slot and the labels at its home slots are its own; in the solved state every slot holds its own label.",
+      "evidence": {
+        "none": "a definition: the solved state is the identity labelling"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L4",
+    "input": {
+      "pieces": [
+        0
+      ],
+      "home_slots": [
+        0
+      ],
+      "base": "solved"
+    },
+    "expected": [
+      {
+        "claim": "complete",
+        "value": true,
+        "from_step": 2
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_completion"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "kernel:read_snapshot(positions)",
+          "statement": "in the solved state every slot holds its own label",
+          "step": "step 1"
+        },
+        {
+          "node": "kernel:read_snapshot(labels)",
+          "statement": "in the solved state every slot holds its own label",
+          "step": "step 2"
+        },
+        {
+          "node": "completion.exact_completion",
+          "statement": "in the solved state every slot holds its own label",
+          "step": "step 2"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:And",
+        "base:Concat",
+        "base:ExactAdd",
+        "base:ExactEq",
+        "base:ExactLess",
+        "base:Index",
+        "base:Length",
+        "base:Push",
+        "base:Repeat",
+        "completion.flatten"
+      ],
+      "unmapped_steps": []
+    },
+    "reason": {
+      "statement": "in the solved state every slot holds its own label",
+      "idea": "A piece is done when each of its stickers sits in its own home slot; in the solved puzzle that holds for every piece.",
+      "terms": [
+        "piece",
+        "home",
+        "label"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the state is solved",
+        "outcome": "weaker conclusion: in a scrambled state the answer depends on the named piece and can be false"
+      }
+    ],
+    "not_meant": "true for the named pieces says nothing about the other pieces, and the entry never names a piece to work on.",
+    "givens": [
+      {
+        "name": "piece 0's home slots",
+        "value": [
+          0
+        ],
+        "leaf": "kernel:read_snapshot(positions)"
+      },
+      {
+        "name": "the label at slot 0",
+        "value": 0,
+        "leaf": "kernel:read_snapshot(labels)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "At solved, piece 0's one sticker sits in its home slot 0.",
+        "result": true
+      },
+      {
+        "check": "Slot 0 holds label 0, piece 0's own, so piece 0 is complete: true.",
+        "result": true
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "piece",
+        "home",
+        "label"
+      ],
+      "records": []
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:read_snapshot(positions)",
+        "spec": "Each named piece's orbit, home slots, current slots and position, read at the head.",
+        "test": "rust/c600-tools/tests/positions_row.rs::a_library_entry_reads_identities_slots_and_orientations"
+      },
+      {
+        "leaf": "kernel:read_snapshot(labels)",
+        "spec": "The labels at the named slots, read at the head.",
+        "test": "rust/c600-tools/tests/labels_row.rs::a_library_entry_reads_the_labels_of_named_slots"
+      }
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+flowchart LR
+  J[job] -->|cancelled, failed or resource stop| I[incomplete]
+  I -. gives no negative .- N[negative]
+  B[stopped by its own declared budget] --> NF[not found within budget]

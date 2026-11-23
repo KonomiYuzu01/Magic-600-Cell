@@ -1,0 +1,195 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "quadratic",
+  "entries": [
+    "sign_q5",
+    "compare_q5"
+  ],
+  "level": "L5",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "6c82146b6e3014019e47f5ee63687a28c3d646d4daed868c1d116a7c38974070",
+    "closure_sha256": "d509c57986274ed42d5504cca4f5af09628cd3480a155eca5328476c9dcc925e",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "ca315c1facc385682610abfde43ae87e242c09a751c00266cc328d619f9327ac",
+    "statements": [
+      "2 < sqrt(5) < 3, and the sign of a + b sqrt(5) is decided by exact comparison of rationals"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "sign_q5",
+      "function": "the sign of an exact number a + b√5 with a and b rational: -1, 0 or 1",
+      "inputs": "x: Q5",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Int: -1, 0 or 1",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every Q5 value",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": "-1 means x < 0 exactly, by exact comparison with no rounding.",
+      "outside_scope": "The test evidence covers its recorded numbers; the lemma covers every Q5 value, and nothing lies outside Q5 for the entry's type."
+    },
+    {
+      "entry": "compare_q5",
+      "function": "the sign of x - y: -1 when x < y, 0 when x = y, 1 when x > y",
+      "inputs": "x, y: Q5",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Int: -1, 0 or 1",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every pair of Q5 values",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": "-1 means x < y exactly.",
+      "outside_scope": "The test evidence covers its recorded numbers; the lemma covers every pair of Q5 values."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "lemma",
+      "statement": "2 < sqrt(5) < 3, and the sign of a + b sqrt(5) is decided by exact comparison of rationals",
+      "text": "Since 4 < 5 < 9, 2 < √5 < 3. A number a + b√5 with a and b of the same sign has that sign; with opposite signs its sign is that of the larger of a² and 5b², taken with its own term's sign.",
+      "evidence": {
+        "path": "rust/c600-library/tests/ct_lb1_01.rs",
+        "sha256": "c997e92dd988e792e122071fbefa1726b14efd2ebf840f8c461798a3a5f8df1c",
+        "basis": "exact_computation",
+        "check": "producer",
+        "label": "LB1 Q5 signs against the kernel (LP2 test)"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L5",
+    "input": {
+      "phi": [
+        1,
+        1,
+        2
+      ],
+      "one": [
+        1,
+        0,
+        1
+      ],
+      "one_minus_phi": [
+        1,
+        -1,
+        2
+      ],
+      "form": "[a, b, d] is (a + b sqrt(5)) / d; phi is the golden ratio of the 600-cell's vertex coordinates"
+    },
+    "expected": [
+      {
+        "claim": "compare_phi_one",
+        "value": 1,
+        "from_step": 2
+      },
+      {
+        "claim": "sign_one_minus_phi",
+        "value": -1,
+        "from_step": 3
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_quadratic"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "quadratic.compare_q5",
+          "statement": "2 < sqrt(5) < 3, and the sign of a + b sqrt(5) is decided by exact comparison of rationals",
+          "step": "step 2"
+        },
+        {
+          "node": "quadratic.sign_q5",
+          "statement": "2 < sqrt(5) < 3, and the sign of a + b sqrt(5) is decided by exact comparison of rationals",
+          "step": "step 3"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:ExactAdd",
+        "base:ExactLess",
+        "base:ExactMul"
+      ],
+      "unmapped_steps": [
+        "step 1"
+      ]
+    },
+    "reason": {
+      "statement": "2 < sqrt(5) < 3, and the sign of a + b sqrt(5) is decided by exact comparison of rationals",
+      "idea": "An exact number with a square root of 5 is compared with zero by squaring, never by a decimal approximation, so a sign is never wrong by rounding.",
+      "terms": []
+    },
+    "failure": [
+      {
+        "hypothesis": "the comparison is exact",
+        "outcome": "weaker conclusion: with a decimal approximation of √5 the sign of a number very close to 0 can come out wrong; only exact arithmetic gives the sign"
+      }
+    ],
+    "not_meant": "A sign says nothing about which pose or piece a number belongs to.",
+    "givens": [
+      {
+        "name": "phi",
+        "value": "(1 + sqrt(5))/2",
+        "leaf": "the model's vertex coordinates"
+      },
+      {
+        "name": "one",
+        "value": 1,
+        "leaf": "input named by the caller"
+      }
+    ],
+    "steps": [
+      {
+        "check": "4 < 5, so 2 < √5.",
+        "result": true
+      },
+      {
+        "check": "φ - 1 = (√5 - 1)/2 > (2 - 1)/2 > 0, so compare(φ, 1) = 1.",
+        "result": 1
+      },
+      {
+        "check": "1 - φ = (1 - √5)/2 < (1 - 2)/2 < 0, so its sign is -1.",
+        "result": -1
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "orientation"
+      ],
+      "records": []
+    },
+    "leaf_specs": {
+      "none": "the decomposition reaches no kernel leaf: the module is pure (LG3.2), so every part of it is a base part of the IR"
+    }
+  }
+}

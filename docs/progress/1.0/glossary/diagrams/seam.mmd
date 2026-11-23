@@ -1,0 +1,4 @@
+flowchart LR
+  C[cut cell] --> Q{misaligned?}
+  Q -->|yes| S[seam]
+  S -->|on a rotated cut that is no cap's cut| O[off-grip seam: no single twist closes it]

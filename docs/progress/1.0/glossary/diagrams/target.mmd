@@ -1,4 +1,4 @@
 flowchart LR
   Sol[solver] -->|names| X[target X]
-  Prog[program] -->|may propose candidates with reasons| Sol
+  Prog[program] -. no candidate list .- X
   X --> Star[star or placement]

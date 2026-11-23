@@ -1,0 +1,262 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "jumbling tool",
+  "module": "jumble_checker",
+  "entries": [
+    "check_named_twist",
+    "check_named_word"
+  ],
+  "level": "L1",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "dddba17a57b35e56dc8bb64a6ef4ce12fe0e3e057f07f1ce1e9ea8a852f891fb",
+    "closure_sha256": "913e6b6ce4d17d6849697dd13b76aca0f3346698d1108c2d0c11386161a5a4d2",
+    "model_identity": "{\"contract_rev\":\"state-contract 2026-11-15 A1-A6\",\"menu_id\":\"fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c\",\"menu_order\":\"5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c\",\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"jumbling\"}",
+    "decomposition_sha256": "9bfefc306dd78d1e2ef5b640cc0b1623a00a52004d0d5b6294c4f01165e39b4c",
+    "statements": [
+      "jumble_checker entries propose the named word unchanged",
+      "the pinned I_a menu replays J1's journal with its recorded digests",
+      "a menu letter followed by its inverse at the same cap returns every piece to its pose"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "check_named_twist",
+      "function": "check_named_twist(t) proposes the named twist, a literal word of one menu letter [cap, item], to `operation.preview`; the preview checks that one letter at the base.",
+      "inputs": "t: a literal word of one letter of the pinned menu, [cap, item], as the solver named it",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the fixed acknowledgement {base, id}; the solver sees the preview: the jumbling engine's whole-word check of the named letters at the base (admissibility, the letters applied, the cap, the heights and the lattice counts before and after)",
+      "puzzle": "the jumbled puzzle (Jumble on) under a pinned menu",
+      "menu": "the menu pinned for the session; the instance pins W-J fixture I_a's menu, 60 items",
+      "level": "L1",
+      "domain": "every one-letter word of the pinned menu at any revision of a jumbling session",
+      "tie_rule": {
+        "none": "the entry chooses nothing: it proposes the one letter it was given"
+      },
+      "empty_answer": {
+        "none": "a check is never empty: a word with no letter is not a twist and the layer refuses it, so the answer never says that no twist exists"
+      },
+      "negative_scope": "An inadmissible answer concerns the named letter at the named cap and revision only: the twist is blocked there. It says nothing about other letters, other caps or later revisions.",
+      "outside_scope": "The replayed journal covers I_a's recorded walk only. A menu other than I_a, or a revision the journal never reached, is outside it: there the check is the engine's answer with no recorded replay behind it."
+    },
+    {
+      "entry": "check_named_word",
+      "function": "check_named_word(w) proposes the named word of menu letters to `operation.preview`; the preview checks the whole word at the base (LB3.8).",
+      "inputs": "w: a literal word of letters of the pinned menu, [cap, item] pairs, as the solver named it",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the fixed acknowledgement {base, id}; the solver sees the preview: the jumbling engine's whole-word check of the named letters at the base (admissibility, the letters applied, the cap, the heights and the lattice counts before and after)",
+      "puzzle": "the jumbled puzzle (Jumble on) under a pinned menu",
+      "menu": "the menu pinned for the session; the instance pins W-J fixture I_a's menu, 60 items",
+      "level": "L1",
+      "domain": "every literal word of the pinned menu at any revision of a jumbling session",
+      "tie_rule": {
+        "none": "the entry chooses nothing: it proposes the one word it was given"
+      },
+      "empty_answer": {
+        "none": "a check is never empty: the empty word's check answers with no cap named and never says that no word exists"
+      },
+      "negative_scope": "An inadmissible answer concerns the named word at the named revision: its first blocked letter is named. It says nothing about other words.",
+      "outside_scope": "The replayed journal covers I_a's recorded walk only. Other menus and revisions are outside it: there the check is the engine's answer with no recorded replay behind it."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "by_definition",
+      "statement": "jumble_checker entries propose the named word unchanged",
+      "text": "Each entry's body is one proposal of its parameter to `operation.preview`: it computes no word and reads no state (LG3.13, BND.39), so what the preview checks is the word the solver named.",
+      "evidence": {
+        "none": "a definition: the entries' checked source is their own statement"
+      }
+    },
+    {
+      "kind": "replay",
+      "statement": "the pinned I_a menu replays J1's journal with its recorded digests",
+      "text": "The pinned menu and the engine's twist application are those of J1's research journal under I_a: the journal's records replay with its recorded digests (W-J fixture I_a).",
+      "evidence": {
+        "path": "research/jumbling/fixtures/wj-I_a.json",
+        "sha256": "86c6c15de125c5073f7ec433e302e926e54f1839000f3cedf6a6804215bd7334",
+        "basis": "exact_computation",
+        "check": "producer",
+        "label": "J1 research engine journal, W-J fixture I_a",
+        "imported": true
+      }
+    },
+    {
+      "kind": "lemma",
+      "statement": "a menu letter followed by its inverse at the same cap returns every piece to its pose",
+      "text": "The menu is closed under inverses: item 45 is the transpose, the inverse rotation, of item 12, so applying item 12 and then item 45 at the same cap returns every piece of the cap to its pose.",
+      "evidence": {
+        "none": "a definition: an inverse rotation undoes the rotation"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":\"state-contract 2026-11-15 A1-A6\",\"menu_id\":\"fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c\",\"menu_order\":\"5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c\",\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"jumbling\"}",
+    "level": "L1",
+    "input": {
+      "word": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          45
+        ]
+      ],
+      "twist": [
+        [
+          7,
+          12
+        ]
+      ],
+      "menu": "W-J fixture I_a",
+      "base": "solved"
+    },
+    "expected": [
+      {
+        "claim": "word_letters",
+        "value": 2,
+        "from_step": 1
+      },
+      {
+        "claim": "word_admissible",
+        "value": true,
+        "from_step": 2
+      },
+      {
+        "claim": "word_off_after",
+        "value": 0,
+        "from_step": 3
+      },
+      {
+        "claim": "twist_letters",
+        "value": 1,
+        "from_step": 4
+      },
+      {
+        "claim": "twist_cap",
+        "value": 7,
+        "from_step": 5
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_jumble_checker"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "jumble_checker.check_named_word",
+          "statement": "jumble_checker entries propose the named word unchanged",
+          "step": "step 1"
+        },
+        {
+          "node": "jumble_checker.check_named_twist",
+          "statement": "jumble_checker entries propose the named word unchanged",
+          "step": "step 4"
+        },
+        {
+          "node": "kernel:propose(operation.preview)",
+          "statement": "a menu letter followed by its inverse at the same cap returns every piece to its pose",
+          "step": "step 3"
+        }
+      ],
+      "unmapped_nodes": [
+        "kernel:receipt(Base)",
+        "kernel:receipt(Id)"
+      ],
+      "unmapped_steps": [
+        "step 2",
+        "step 5"
+      ]
+    },
+    "reason": {
+      "statement": "a menu letter followed by its inverse at the same cap returns every piece to its pose",
+      "idea": "Turning a cap and turning it straight back puts every piece back where it was, so the named word ends where it started, with no piece off the lattice.",
+      "terms": [
+        "cap",
+        "twist-jumbling",
+        "piece"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the second letter is the first letter's inverse at the same cap",
+        "outcome": "without it the word does not return: the named twist [7, 12] alone is admissible at solved and its check's end digest differs from the start (CT-LB3-07's fixture)"
+      }
+    ],
+    "not_meant": "A check answers for the named word only: it recommends no word, names no next cap and ranks nothing (CT-LB3-07). An admissible answer does not mean the word helps the solve.",
+    "givens": [
+      {
+        "name": "the inverse of item 12",
+        "value": 45,
+        "leaf": "the pinned menu of research/jumbling/fixtures/wj-I_a.json"
+      },
+      {
+        "name": "pieces off the lattice at solved",
+        "value": 0,
+        "leaf": "kernel:propose(operation.preview)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "The named word has two letters, [0, 12] and [0, 45].",
+        "result": 2
+      },
+      {
+        "check": "At solved every piece sits on its lattice pose, so no piece straddles a cap and both letters apply: the word is admissible.",
+        "result": true
+      },
+      {
+        "check": "Item 45 is the inverse of item 12 at the same cap 0, so the second letter undoes the first: every piece is back on its pose, and 0 pieces are off the lattice after the word.",
+        "result": 0
+      },
+      {
+        "check": "The named twist has one letter.",
+        "result": 1
+      },
+      {
+        "check": "Its cap is the letter's first number, 7.",
+        "result": 7
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "cap",
+        "twist-jumbling",
+        "piece"
+      ],
+      "records": [
+        "full_600_cell"
+      ]
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:propose(operation.preview)",
+        "spec": "The preview checks the proposed word as a whole at the base and changes nothing; the answer is for that word only.",
+        "test": "rust/c600-jumble-tool/tests/lb3.rs::ct_lb3_07_a_named_word_check_answers_only_its_named_word"
+      },
+      {
+        "leaf": "kernel:receipt(Base)",
+        "spec": "The receipt's base is the revision the run read.",
+        "test": "rust/c600-jumble-tool/tests/tool.rs::ct_lb6_03_the_declared_class_matches_each_exact_entry_definition"
+      },
+      {
+        "leaf": "kernel:receipt(Id)",
+        "spec": "The receipt's id is the run's proposal ID.",
+        "test": "rust/c600-jumble-tool/tests/tool.rs::ct_lb6_03_the_declared_class_matches_each_exact_entry_definition"
+      }
+    ]
+  }
+}

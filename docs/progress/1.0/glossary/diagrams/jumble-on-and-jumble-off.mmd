@@ -1,0 +1,4 @@
+flowchart LR
+  S[session] -->|mode| On[Jumble on]
+  S -->|mode| Off[Jumble off]
+  On & Off -. two puzzles keep their own model identities .- M[model identities]
