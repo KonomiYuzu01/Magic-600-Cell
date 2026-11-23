@@ -10,10 +10,11 @@ edition = "2021"
 publish = false
 
 # A workspace of its own, so that it is no member of rust/Cargo.toml's. Its other members are the shell's native host
-# library (host/, c600-shell-host) and LX-4's editor library (lx4/, c600-shell-lx4), which share the lockfile and the
-# vendored crates.
+# library (host/, c600-shell-host), the shell's editor library of LP4-3's write-check-run flow (editor/,
+# c600-shell-editor) and LX-4's editor library (lx4/, c600-shell-lx4), which share the lockfile and the vendored
+# crates.
 [workspace]
-members = [".", "host", "lx4"]
+members = [".", "editor", "host", "lx4"]
 
 [dependencies]
 c600-render = { path = "../../rust/c600-render" }
