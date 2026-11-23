@@ -79,7 +79,8 @@ fn two_writes(f: &mut Fixture) {
     assert!(completed(&f.write("w2", &[2], &manual())));
 }
 
-/// CT-EV4-14 and CT-PS1-25 (crash point 1: `pending` is durable, the dispatch never happened). The pending entry's
+/// CT-EV4-14 and CT-PS1-25 (synthetic, part: crash point 1, `pending` durable and the dispatch never happened; not
+/// run: points 2 and 3). The pending entry's
 /// frame, the first write of the job, reaches the disk while its sync reports an error and the cut fails, so the fate
 /// is unknown and the layer does not dispatch. After the power loss the lookup finds no receipt for the child's
 /// command: the playback stops on `unknown_outcome` with nothing dispatched, and no later play or job retries it.
@@ -115,8 +116,10 @@ fn code_of(receipt: &Receipt) -> Option<&'static str> {
     receipt.status.code()
 }
 
-/// CT-EV4-14 and CT-PS1-25 (crash point 2: the child's completion is durable in the journal, the cursor's advance is
-/// not). The job's writes are the pending entry's frame (append and sync), the child's action frame (its record value's
+/// CT-EV4-14 and CT-PS1-25 (synthetic, part: crash point 2, the child's completion durable and the cursor's advance
+/// not;
+/// not run: points 1 and 3). The job's writes are the pending entry's frame (append and sync), the child's action
+/// frame (its record value's
 /// object is the recorded write's, already on the disk) and the advance's frame; every write fails from the advance's
 /// append on, so its fate is unknown and the next step is never dispatched. After the power loss the lookup finds the
 /// record write's receipt in the journal: the playback advances once, maps the recorded action to the played one and,
@@ -157,7 +160,8 @@ fn ct_ev4_14_child_durable_before_the_advance() {
     assert_eq!(state(&i, "r"), finished);
 }
 
-/// CT-EV4-14 and CT-PS1-25 (crash point 3: during a manual continuation). The playback waits at the recorded preview,
+/// CT-EV4-14 and CT-PS1-25 (synthetic, part: crash point 3, during a manual continuation; not run: points 1 and 2).
+/// The playback waits at the recorded preview,
 /// a user step; the step action writes `pending` durably and the power fails before the shell sends the row. After
 /// the open the lookup finds no receipt: the playback stops on `unknown_outcome`, nothing was committed or previewed,
 /// and only an explicit `from` opens a new playback, which waits at the same step.

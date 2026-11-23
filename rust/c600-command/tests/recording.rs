@@ -396,10 +396,18 @@ fn completed_write(name: &str, moves: &[i64], action: u64) -> RecordedStep {
 
 // ----- CT-EV4-11, CT-EV4-08, CT-PS1-15, CT-PS1-24: capture
 
-/// CT-EV4-11 (EV4.10, EV4.11), CT-EV4-08 (part: a recording retains semantic commands, canonical arguments,
-/// identities, word and action references, revisions and receipt bindings), CT-PS1-15 (part: the round trip of every
-/// `RecordedStep` field), CT-PS1-24 (part: completed, committed and refused receipts round-trip unchanged; a missing
-/// terminal stays absent; no token or operation preview ID is stored). A completed record write, a completed preview, a
+/// CT-EV4-11 (whole; EV4.10, EV4.11).
+/// CT-EV4-08 (part: a recording retains semantic commands, canonical arguments, identities, word and action
+/// references, revisions and receipt bindings; not run: that playback has no rebinding operation, since only
+/// untargeted revisions are asserted in `ct_ev4_16`, and source conversion's checks and grants on the real checker).
+/// CT-PS1-15 (part: the round trip of a recording whose steps hold no module digest or block; not run: the round trip
+/// of a step with a module digest or a block).
+/// CT-PS1-24 (part: completed, committed and refused receipts round-trip unchanged; no token or operation preview ID
+/// is stored; not run: failed and cancelled receipts, and a missing terminal's absence after a round trip).
+/// CT-EV4-19 (part: a start while recording and a stop with none refuse with `EV4:input.recording_state`; not run: the
+/// rest of EV4.22's table, which `ct_ev4_19_the_play_table_rewinds_and_job_stop` runs).
+///
+/// A completed record write, a completed preview, a
 /// committed word, a refused policy change and a completed view step each append one step; an unresolved row, a retry
 /// that the outcome lookup answers and the `recording.*` rows append none. A served step still running at the stop is
 /// recorded `running`, never as a completion. No stored argument holds a token, the operation preview ID or a
@@ -468,7 +476,9 @@ fn expected(kind: &str, lane: &str, job: bool, gates: &[&str]) -> bool {
     !user && matches!((kind, lane), ("view" | "workspace", "view" | "none") | ("query", "none"))
 }
 
-/// CT-EV4-12 (EV4.17, EV4.18, EV4.22): the eligibility table enumerated whole, across every kind, lane, job flag and
+/// CT-EV4-12 (part: the table enumerated whole and H-08's rows; not run: a no-job query in lane none played live, and
+/// the filter freshness check at play, which `ct_ev4_16` runs). EV4.17, EV4.18, EV4.22: the eligibility table
+/// enumerated whole, across every kind, lane, job flag and
 /// gate that H-08's grammar has (6 kinds, 5 lanes, 2 job flags, 4 gate sets: 240 rows), against the test's own reading
 /// of the table; then every row of H-08 with the drafts. Kind `view` or `workspace` on lane `view` or `none` and kind
 /// `query` on lane `none`, with no job and no `confirm` or `file_check` gate, are unattended; every commit-lane,
@@ -545,7 +555,9 @@ fn ct_ev4_12_the_eligibility_table_enumerated_whole() {
     assert_eq!(of(RECORDING_START_ROW), Eligibility::User(UserReason::Recording));
 }
 
-/// CT-EV4-12 (part: at playback). One recording holds a workspace edit, a camera rotation, a no-job query in lane none,
+/// CT-EV4-12 (part: a workspace edit, a camera rotation and a layout step play unattended, and confirm, policy, job
+/// and commit rows wait; not run: a no-job query played live). One recording holds a workspace edit, a camera
+/// rotation, a no-job query in lane none,
 /// a layout step, a `confirm` row, a policy change, a language-defined job row and a word commit. The first four play
 /// unattended, each as a new invocation; the playback stops at each user step, where `recording.play` finishes, and
 /// the solver's step action plays it. Nothing the playback dispatches is a commit: the journal holds only the edit's
@@ -607,11 +619,13 @@ fn ct_ev4_12_playback_plays_only_the_unattended_rows() {
 
 // ----- CT-EV4-13: EV4.19's two tables
 
-/// CT-EV4-13 (EV4.19): both tables whole. Historical: `completed` plays (or waits when not eligible), `committed`
+/// CT-EV4-13 (whole; EV4.19): both tables. Historical: `completed` plays (or waits when not eligible), `committed`
 /// waits, `refused`, `failed` and `cancelled` are passed over and stay in the recording, and `accepted`, `running`, no
 /// terminal record and `unknown_outcome` stop playback and conversion with `EV4:input.recording_step_outcome_unknown`.
 /// New child: `accepted` and `running` are pending, `completed` advances either step, `committed` advances only a user
 /// step, and `refused`, `failed`, `cancelled` and `unknown_outcome` stop with that outcome.
+/// CT-ERR-18 (part: an unknown recorded outcome stops play and conversion with `recording_step_outcome_unknown`; not
+/// run: the stale, identity, state and forwarding clauses, which other tests run).
 #[test]
 fn ct_ev4_13_every_historical_and_child_outcome() {
     for (name, want) in [
@@ -715,7 +729,9 @@ fn kernel_revision() -> c600_command::Revision {
 
 // ----- CT-EV4-15: undo classification (X1: two histories)
 
-/// CT-EV4-15 (EV4.21; X1, owner decision of 23 November 2026, item 2.7). A playback of an undoable workspace edit
+/// CT-EV4-15 (part: the edit and the layout step become undo targets, the rotation, the timer row and the cursor
+/// invent none, and a later failure keeps earlier actions; not run: a no-job query step played, which this recording
+/// does not hold). EV4.21; X1, owner decision of 23 November 2026, item 2.7. A playback of an undoable workspace edit
 /// (`workspace.set`, on the move history: EV4.15's single order would hold it in the same place), a camera rotation
 /// (`undo: none`), a no-job query and a layout step (`work.layout.set`, on the layout history, which EV4.15's single
 /// order would not keep apart): only the edit becomes the move history's undo target and only the layout step the
@@ -770,7 +786,12 @@ fn ct_ev4_15_each_played_step_keeps_its_undo_class() {
 
 // ----- CT-EV4-16: staleness and identity
 
-/// CT-EV4-16 (EV4.14), CT-ERR-18 (part: stale-step stops and identity refusals). An unattended step naming the current
+/// CT-EV4-16 (part: a current revision plays, a stale one stops with its arguments as recorded, and a model or module
+/// mismatch refuses before play or stops during it; not run: a kept filter preview gone stale, since only a preview ID
+/// never kept is tried).
+/// CT-ERR-18 (part: stale-step stops and identity refusals; not run: unknown outcomes, state and conversion refusals
+/// and forwarded child failures, which other tests run).
+/// An unattended step naming the current
 /// revision plays; the same step after the revision moved stops with `EV4:stale.recording_step`, its arguments as
 /// recorded. A filter apply naming a filter preview that is not fresh stops as stale too, with nothing retargeted. A
 /// recording made under another model identity is refused before play, and a step whose module digest is not the
@@ -870,7 +891,8 @@ fn completed_tool() -> RecordedStep {
 
 // ----- CT-EV4-14 and CT-PS1-25: the crash points, synthetic
 
-/// CT-EV4-14 and CT-PS1-25 (EV4.20, PS1.44; synthetic: the recorder's injected fates stand in for the crash, and a
+/// CT-EV4-14 and CT-PS1-25 (synthetic, whole; EV4.20, PS1.44: the recorder's injected fates stand in for the crash,
+/// and a
 /// reopen of the journal and the recorder for the restart; `c600-durable` runs them on M6's journal and the session
 /// store's recorder on a memory disk). Three crash points:
 ///
@@ -973,8 +995,10 @@ fn draft_letters(f: &F, name: &str) -> Option<Vec<i64>> {
     f.layer.record(&format!("draft/recording/{name}")).and_then(RecordValue::operation)
 }
 
-/// CT-EV4-17 (EV4.23) on both targets, the five vectors. Every refusal writes nothing: the journal, the records and the
-/// revision stay as they were. (1) A camera rotation alone refuses the empty draft and becomes one permitted source
+/// CT-EV4-17 (whole; EV4.23) on both targets, the five vectors. Every refusal writes nothing: the journal, the records
+/// and the revision stay as they were. CT-ERR-18 (part: a conversion refusal keeps `recording_not_convertible`; not
+/// run: the stale, identity, outcome and forwarding clauses, which other tests run). (1) A camera rotation alone
+/// refuses the empty draft and becomes one permitted source
 /// call. (2) `macro.add(W)` then `operation.execute(W)` gives W once. (3) W1, W2, undo W2, W3 gives W1 W3. (4) An undo
 /// of an action outside the recording refuses. (5) `jumble.on` between word steps refuses. Undo here is the move
 /// history's `session.undo` (X1), which EV4.23's table names, so EV4.15's single order reads the same.
@@ -1041,7 +1065,9 @@ fn ct_ev4_17_the_five_conversion_vectors_on_both_targets() {
     assert!(module.contains("propose(word[1, 3], target(\"operation.preview\"))"), "{module}");
 }
 
-/// CT-EV4-18 (EV4.23). A redo restores a word at its recorded place; an undo of a recorded non-word action and a
+/// CT-EV4-18 (part: a redo of a word, an undo of a non-word action, a checkpoint save, the report, the source refusals
+/// and one undoable draft action; not run: a redo of a non-word action, and a draft keeping more than one block).
+/// EV4.23. A redo restores a word at its recorded place; an undo of a recorded non-word action and a
 /// checkpoint save add no draft letters but refuse source; completed non-word steps enter the draft report; source takes
 /// only calls an overlay row may invoke (KN5.4) with no `confirm` or `file_check` gate and refuses a file or app row. A
 /// successful draft conversion is one undoable action that writes a Macro-phase draft and keeps every contributing
@@ -1124,7 +1150,11 @@ fn ct_ev4_18_conversion_details() {
 
 // ----- CT-EV4-19 and CT-EV4-20: the play table, rewinds and the map
 
-/// CT-EV4-19 (EV4.22), CT-ERR-18 (part: state refusals keep their own code). A play or `from` outside EV4.22's table
+/// CT-EV4-19 (part: a play or `from` outside the table refuses, a rewind opens an empty map, W, rewind, W, undo undoes
+/// the second W only, a play ends at the next user step, `job.stop` halts it, and each child has its own receipt; not
+/// run: a start while recording and a stop with none, and the table's rows on the vectors, which other tests run).
+/// CT-ERR-18 (part: state refusals keep their own code; not run: the clauses other tests run).
+/// EV4.22: a play or `from` outside EV4.22's table
 /// refuses with `EV4:input.recording_state` (a start while recording and a stop with none are in
 /// `ct_ev4_11_capture_appends_one_step_per_resolved_invocation`); each row of the table gives its outcome after
 /// reconciliation (`the_format_packets_playback_vectors` runs the table on the vectors, and the rows run live here): a
@@ -1189,7 +1219,8 @@ fn ct_ev4_19_the_play_table_rewinds_and_job_stop() {
     assert_eq!(f.state("r").status, PlayStatus::Finished);
 }
 
-/// CT-EV4-20 (EV4.18, PS1.44; X1: `session.undo` and `session.redo` on the move history, which EV4.15's single order
+/// CT-EV4-20 (whole; EV4.18, PS1.44; X1: `session.undo` and `session.redo` on the move history, which EV4.15's
+/// single order
 /// would read the same, since no layout step is involved). W recorded as action 1 plays as a new action; a
 /// `workspace.set` of X outside the playback (the vector's `macro.add(X)`, which this layer does not build) takes the
 /// next action and leaves the cursor; the undo user step's hint then targets X, not the action W played as, so the
@@ -1265,7 +1296,12 @@ fn twist_args(index: u64) -> Value {
     json::object([("cap", cap), ("rotation", Value::Object(fields))])
 }
 
-/// CT-EV4-09 (EV4.12, EV4.18), CT-PS1-15 (part: commit playback needs a new explicit action and token). No recording or
+/// CT-EV4-09 (part: stepwise and unattended play store and replay no token, every commit waits for a fresh solver
+/// action, `operation.execute` takes a new whole-word preview and a live twist none; not run: that a conversion's
+/// output holds no token).
+/// CT-PS1-15 (part: commit playback needs a new explicit action and token; not run: the round trip of a step with a
+/// module digest or a block).
+/// EV4.12, EV4.18: no recording or
 /// playback state holds a token or a preview ID, and none is replayed: a recorded preview and a recorded word commit
 /// wait for the solver's step actions, the commit's with a new whole-word preview of the stored word, never the
 /// recorded preview ID; a recorded checkpoint save waits too, and its step action mints a new token and fills the
@@ -1338,9 +1374,12 @@ fn ct_ev4_09_no_token_is_stored_or_replayed() {
     assert_eq!(f.layer.run_jobs(), 0, "no preview job");
 }
 
-/// CT-EV4-10 (EV4.13, EV4.16, EV4.23), CT-BND-03 (part: a word carried through a workspace record, a recording and a
-/// conversion to source keeps its block, BND.32), CT-PS1-17 (part: a state-derived word survives a recording and a
-/// source conversion with its block). A word written with a block, previewed from its record and committed is recorded
+/// CT-EV4-10 (whole; EV4.13, EV4.16, EV4.23, on this file's test reader).
+/// CT-BND-03 (part: a word carried through a workspace record, a recording and a conversion to source keeps its block,
+/// BND.32; not run: a file and a macro).
+/// CT-PS1-17 (part: a state-derived word survives a recording and a source conversion with its block; not run:
+/// workspace save and read, rename, the file round trip and the labels).
+/// A word written with a block, previewed from its record and committed is recorded
 /// with that block, and both conversions keep it as a part. A research run's word that a recording carries is not
 /// laundered: the draft conversion's preview reads its part and is refused, and so is the fresh preview of its word
 /// step. A source conversion's own block is a program's, which this session's reader refuses at preview (BND.84). A
@@ -1457,6 +1496,8 @@ fn stop_vector(stopped: &Value) -> Value {
     }
 }
 
+/// CT-EV4-19 (part: EV4.22's table, EV4.18's map and a rewind's empty map on the packet's vectors; not run: live play).
+///
 /// The format packet's `playback`, `playback_from`, `playback_trace` and `playback_arguments` vectors (EV4.14, EV4.18,
 /// EV4.22, PS1.44), each through the layer's own functions: PS1.44's map and stop ([`PlaybackState::from_json`],
 /// [`PlayStatus::from_json`], read in this layer's draft form), EV4.18's map ([`mapped`]), EV4.22's table
@@ -1521,7 +1562,9 @@ fn the_format_packets_playback_vectors() {
 
 // ----- CT-ERR-18
 
-/// CT-ERR-18 (EV4.14, EV4.19, EV4.22, EV4.23; ERR.7, ERR.14), whole with the tests that name its parts: every EV4
+/// CT-ERR-18 (part: the registry rows with their continuations, and a child's failure forwarded unchanged; not run:
+/// the stale, identity, outcome, state and conversion behaviours, which the tests that name its parts run).
+/// EV4.14, EV4.19, EV4.22, EV4.23; ERR.7, ERR.14: every EV4
 /// recording code the layer uses is chapter 13's, with its continuation (a stale step's is `after_refresh`); an
 /// identity mismatch refuses before play and stops during it (`ct_ev4_16`); an unknown recorded outcome stops play and
 /// conversion with its own code (`ct_ev4_13`); state and conversion refusals keep theirs (`ct_ev4_17`, `ct_ev4_19`);

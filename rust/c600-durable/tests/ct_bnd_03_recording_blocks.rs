@@ -32,8 +32,10 @@ fn block_of(f: &Fixture, record: &str) -> provenance::Json {
     provenance::read(value.provenance.as_bytes()).expect("the conversion's block reads")
 }
 
-/// CT-BND-03 (part: workspace record, recording, draft and source conversion), CT-EV4-10 (part: both conversions keep
-/// provenance through parts; a source-produced word is a program's, `profile: solving`). The solver writes a word
+/// CT-BND-03 (part: workspace record, recording, draft and source conversion; not run: a file and a macro).
+/// CT-EV4-10 (part: both conversions keep provenance through parts; a source-produced word is a program's,
+/// `profile: solving`; not run: no laundering and no old permission, in the next test).
+/// The solver writes a word
 /// with their own block, previews it from the record and commits it while recording; the recorded word step carries
 /// the record's block. The draft conversion is the solver's own word, a `manual` block whose parts name that block,
 /// and its preview is admitted; the source conversion's block is a program's, the generated module with entry
@@ -71,7 +73,8 @@ fn ct_bnd_03_a_word_keeps_its_block_through_a_recording_and_its_conversions() {
     assert!(module.contains("propose(word[1, 2], target(\"operation.preview\"))"), "{module}");
 }
 
-/// CT-EV4-10 (part: no laundering of research output into a solving preview; no old permission revives). A research
+/// CT-EV4-10 (part: no laundering of research output into a solving preview; not run: provenance through
+/// both conversions, in the test above, and a recorded confirmation never reviving, in `c600-command`). A research
 /// run's word, which a recording carries with its block, converts to a draft whose block lists the research block as a
 /// part: the reader refuses the draft's preview with the code it gives the research block itself, and the fresh
 /// preview of the word step is refused the same way.
