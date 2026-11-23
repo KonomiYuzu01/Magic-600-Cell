@@ -1,0 +1,215 @@
+{
+  "format": "magic600-design-theme",
+  "version": 1,
+  "id": "paper",
+  "name": "Paper",
+  "scheme": "light",
+  "character": "tone",
+  "ladder": [
+    0.975,
+    0.95,
+    0.925,
+    0.895,
+    0.86,
+    0.81,
+    0.74,
+    0.63,
+    0.5,
+    0.42,
+    0.32,
+    0.18
+  ],
+  "ramps": {
+    "neutral": {
+      "hue": 85,
+      "chroma": 0.01
+    },
+    "accent": {
+      "hue": 250,
+      "chroma": 0.14
+    },
+    "blue": {
+      "hue": 250,
+      "chroma": 0.14
+    },
+    "teal": {
+      "hue": 195,
+      "chroma": 0.14
+    },
+    "green": {
+      "hue": 150,
+      "chroma": 0.14
+    },
+    "amber": {
+      "hue": 80,
+      "chroma": 0.14
+    },
+    "orange": {
+      "hue": 50,
+      "chroma": 0.14
+    },
+    "red": {
+      "hue": 25,
+      "chroma": 0.14
+    },
+    "magenta": {
+      "hue": 345,
+      "chroma": 0.14
+    },
+    "violet": {
+      "hue": 300,
+      "chroma": 0.14
+    }
+  },
+  "knobs": {
+    "tone": {
+      "min": -0.06,
+      "max": 0.06,
+      "value": 0
+    },
+    "contrast": {
+      "min": 0.85,
+      "max": 1.2,
+      "value": 1
+    },
+    "blackLevel": {
+      "min": 0,
+      "max": 0.12,
+      "value": 0
+    },
+    "accentHue": {
+      "min": 0,
+      "max": 360,
+      "value": 250
+    },
+    "gridIntensity": {
+      "min": 0,
+      "max": 1,
+      "value": 0.5
+    }
+  },
+  "roles": {
+    "surface.window": "neutral.0",
+    "surface.panel": "neutral.1",
+    "surface.control": "neutral.2",
+    "surface.raised": "neutral.3",
+    "surface.sunken": "neutral.0",
+    "border.subtle": "neutral.4",
+    "border.strong": "neutral.6",
+    "text.primary": "neutral.11",
+    "text.secondary": "neutral.9",
+    "text.disabled": "neutral.7",
+    "accent.base": "accent.8",
+    "accent.strong": "accent.9",
+    "accent.text": "neutral.0",
+    "focus.ring": "accent.9",
+    "grid.line": {
+      "mix": [
+        "surface.window",
+        "text.primary"
+      ],
+      "knob": "gridIntensity",
+      "scale": 0.4
+    },
+    "script.frame": "violet.8",
+    "state.committed": "neutral.10",
+    "state.preview": "orange.8",
+    "state.pending": "violet.9",
+    "state.stale": "amber.8",
+    "state.invalid": "red.8",
+    "state.selected": "green.9",
+    "state.protected": "green.8",
+    "severity.error": "red.8",
+    "severity.warning": "amber.8",
+    "severity.info": "blue.8",
+    "severity.ok": "green.9",
+    "strip.cell.target": "blue.8",
+    "strip.cell.occupant": "amber.9",
+    "strip.cell.wanted": "magenta.8",
+    "strip.cell.buffer_a": "teal.8",
+    "strip.cell.target_frame": "neutral.9",
+    "strip.cell.residual": "orange.8",
+    "strip.cell.buffer_b": "teal.9",
+    "strip.next": "neutral.9",
+    "strip.link": "accent.9",
+    "anchor.target": "blue.8",
+    "anchor.buffer_a": "teal.8",
+    "anchor.buffer_b": "teal.9",
+    "anchor.wanted": "magenta.8",
+    "anchor.next": "neutral.9",
+    "rail.ground": "neutral.1",
+    "rail.cell.id": "neutral.9",
+    "rail.cell.group": "neutral.9",
+    "rail.cell.residual_level": "orange.8",
+    "rail.cell.solved": "green.9",
+    "rail.cell.lock": "amber.9",
+    "rail.cell.working": "accent.9",
+    "rail.cell.next": "neutral.9",
+    "rail.lock.none": "neutral.7",
+    "rail.lock.partial": "amber.9",
+    "rail.lock.whole": "amber.9",
+    "rail.status.open": "orange.8",
+    "rail.status.solved": "green.9",
+    "rail.status.permitted_residual": "teal.8",
+    "rail.status.unknown_frame": "neutral.9",
+    "rail.moment.complete": "green.9",
+    "mark.route.draft": "violet.9",
+    "mark.route.direct": "neutral.10",
+    "draft.phase.prepare": "neutral.9",
+    "draft.phase.core": "neutral.9",
+    "draft.phase.cleanup": "neutral.9",
+    "commit.goal.unset": "neutral.9",
+    "commit.goal.met": "green.9",
+    "commit.goal.unmet": "amber.9",
+    "commit.goal.unknown": "neutral.9",
+    "chip.check_mode.net": "teal.9",
+    "chip.check_mode.strict": "blue.8",
+    "commit.status.settling": "amber.8",
+    "lamp.idle": "neutral.9",
+    "lamp.active": "teal.9",
+    "lamp.attention": "amber.9",
+    "keymap.key.bound": "neutral.10",
+    "keymap.key.unbound": "neutral.9",
+    "keymap.key.held": "teal.9",
+    "keymap.key.out_of_context": "neutral.9",
+    "keymap.key.twist": "violet.9",
+    "strip.ground": "neutral.1",
+    "syntax.keyword": "violet.9",
+    "syntax.identifier": "neutral.11",
+    "syntax.type": "teal.9",
+    "syntax.number": "orange.9",
+    "syntax.string": "green.9",
+    "syntax.operator": "neutral.10",
+    "syntax.reference": "blue.9",
+    "syntax.comment": "neutral.8"
+  },
+  "sceneLooks": {
+    "solving": {
+      "bgLightness": 0.93,
+      "bgHue": 85,
+      "bgTint": 0.01,
+      "fog": 0.2,
+      "glow": 0,
+      "edgeBrightness": 0.2,
+      "edgeWeight": 0
+    },
+    "inspecting": {
+      "bgLightness": 0.86,
+      "bgHue": 85,
+      "bgTint": 0.006,
+      "fog": 0,
+      "glow": 0,
+      "edgeBrightness": 0.1,
+      "edgeWeight": 0.6
+    },
+    "celebrating": {
+      "bgLightness": 0.95,
+      "bgHue": 60,
+      "bgTint": 0.035,
+      "fog": 0.1,
+      "glow": 0.5,
+      "edgeBrightness": 0.2,
+      "edgeWeight": 0
+    }
+  }
+}

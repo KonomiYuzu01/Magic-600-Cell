@@ -1,0 +1,16 @@
+edition "6cs-draft-1";
+# What a sweep of one ring reaches, and the sweep itself as a preview.
+
+# What a sweep of one ring would reach. A read: its result shows inline.
+export fn reach(ring: Nat) -> record { cells: Nat, orbits: Nat, stickers: Nat } effects [snapshot] {
+    let cells = ring_cells(ring);
+    return record { cells: count(cells), orbits: count(orbits_of(cells)), stickers: count(stickers_of(cells)) };
+}
+
+# Twist every cell of the ring about two axes. A run ends in a preview
+# in the preview view; only the commit key commits it.
+export command ring(ring: Nat) -> Preview effects [preview] {
+    let cells = ring_cells(ring);
+    let there = sweep(cells, axis 1);
+    return preview(there |> then(sweep(cells, axis 4)) |> then(inverse(there)));
+}

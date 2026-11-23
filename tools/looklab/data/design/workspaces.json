@@ -1,0 +1,157 @@
+{
+  "format": "magic600-design-workspaces",
+  "version": 1,
+  "workspaces": [
+    {
+      "id": "solve",
+      "name": "Solve",
+      "arrangement": {
+        "docks": {
+          "left": "library",
+          "right": "history",
+          "bottom": null
+        },
+        "pair": {
+          "arrangement": "side",
+          "ratio": 0.5
+        },
+        "focus": false,
+        "centre": {
+          "tabs": [
+            "pair"
+          ],
+          "active": 0
+        }
+      }
+    },
+    {
+      "id": "script",
+      "name": "Script",
+      "arrangement": {
+        "docks": {
+          "left": "scripts",
+          "right": null,
+          "bottom": null
+        },
+        "pair": {
+          "arrangement": "side",
+          "ratio": 0.5
+        },
+        "focus": false,
+        "centre": {
+          "split": "horizontal",
+          "ratio": 0.6,
+          "a": {
+            "tabs": [
+              "pair"
+            ],
+            "active": 0
+          },
+          "b": {
+            "tabs": [
+              "editor"
+            ],
+            "active": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "analyse",
+      "name": "Analyse",
+      "arrangement": {
+        "docks": {
+          "left": "library",
+          "right": "inspector",
+          "bottom": "problems"
+        },
+        "pair": {
+          "arrangement": "side",
+          "ratio": 0.5
+        },
+        "focus": false,
+        "centre": {
+          "split": "vertical",
+          "ratio": 0.74,
+          "a": {
+            "tabs": [
+              "pair"
+            ],
+            "active": 0
+          },
+          "b": {
+            "tabs": [
+              "preview",
+              "canvas"
+            ],
+            "active": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "reference",
+      "name": "Reference",
+      "arrangement": {
+        "docks": {
+          "left": null,
+          "right": null,
+          "bottom": null
+        },
+        "pair": {
+          "arrangement": "side",
+          "ratio": 0.5
+        },
+        "focus": false,
+        "centre": {
+          "split": "horizontal",
+          "ratio": 0.62,
+          "a": {
+            "tabs": [
+              "pair"
+            ],
+            "active": 0
+          },
+          "b": {
+            "tabs": [
+              "reference"
+            ],
+            "active": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "gallery",
+      "name": "Gallery",
+      "arrangement": {
+        "docks": {
+          "left": null,
+          "right": null,
+          "bottom": null
+        },
+        "pair": {
+          "arrangement": "stacked",
+          "ratio": 0.5
+        },
+        "focus": false,
+        "centre": {
+          "split": "horizontal",
+          "ratio": 0.3,
+          "a": {
+            "tabs": [
+              "pair"
+            ],
+            "active": 0
+          },
+          "b": {
+            "tabs": [
+              "gallery"
+            ],
+            "active": 0
+          }
+        }
+      }
+    }
+  ]
+}

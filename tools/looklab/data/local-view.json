@@ -1,0 +1,12 @@
+{
+  "format": "magic600-look-local-view",
+  "version": 1,
+  "projection": "orthographic",
+  "d4": 2,
+  "gap": 0.3,
+  "stickerShrink": 0.6,
+  "margin": 0,
+  "fill": 0.86,
+  "spread": 1.7,
+  "ghost": 0
+}

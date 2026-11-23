@@ -52,6 +52,13 @@ uniform float turn_angle;
 uniform float hemisphere_offset;
 uniform float hemisphere_scale;
 uniform float hemisphere_clamp;
+// A view may draw only the cells whose centre lies within a cap around an axis; off by default.
+uniform vec4 focus_axis = vec4(0.0, 0.0, 0.0, 1.0);
+uniform float focus_cos = -2.0;
+// In such a view the cells are moved apart from the middle by this factor, without changing their size.
+uniform float focus_spread = 1.0;
+// How far the pieces that do not move fade into the background (the Local view's neighbours).
+uniform float ghost = 0.0;
 
 varying vec3 projected;
 varying float visible_w;
@@ -88,6 +95,17 @@ void vertex() {
     if (projection_kind == 0) factor = d4 / (d4 - world.w);
     if (projection_kind == 1) factor = 1.0 / (1.0 - world.w);
     projected = world.xyz * factor;
+    if (focus_cos > -1.5 && focus_spread != 1.0 && projection_kind < 3) {
+        vec4 centre = texelFetch(cell_layout, ivec2(INSTANCE_ID, 0), 0);
+        if (moving > 0.5 && theta != 0.0) {
+            float cx = dot(centre, plane_u);
+            float cy = dot(centre, plane_v);
+            centre += ((cos(theta) - 1.0) * cx - sin(theta) * cy) * plane_u + (sin(theta) * cx + (cos(theta) - 1.0) * cy) * plane_v;
+        }
+        centre = q * centre;
+        float centre_factor = projection_kind == 0 ? d4 / (d4 - centre.w) : 1.0;
+        projected += centre.xyz * centre_factor * (focus_spread - 1.0);
+    }
     if (projection_kind >= 3) {
         int target_cell = INSTANCE_ID;
         float blend = 0.0;
@@ -122,9 +140,12 @@ void vertex() {
     float w = 5.0 - projected.z;
     // Godot's Vulkan/D3D12 depth is reversed (near=1, far=0).
     vec4 clip = vec4(projected.x * zoom / aspect, projected.y * zoom, (0.05 / 99.95) * (100.0 - w), w);
+    // Ghost pieces sit behind every piece that moves, so they never cover one.
+    if (ghost > 0.0 && moving < 0.5) clip.z *= 0.05;
     clip.xy = (clip.xy - view_frame.xy * clip.w) * view_frame.z;
     geometry_value = vec3(clip.x / clip.w, clip.y / clip.w, clip.w);
     POSITION = clip;
+    if (focus_cos > -1.5 && dot(normalize(texelFetch(cell_layout, ivec2(INSTANCE_ID, 0), 0)), focus_axis) < focus_cos) POSITION = vec4(2.0, 2.0, 2.0, 1.0);
     int label = int(texelFetch(labels, slot_texel, 0).r);
     int colour_class = int(texelFetch(cell_classes, ivec2(label / 433, 0), 0).r);
     sticker_colour = texelFetch(palette, ivec2(colour_class, 0), 0).rgb;
@@ -162,6 +183,7 @@ void fragment() {
         float edge = 1.0 - min(min(e.x, e.y), e.z);
         colour = mix(colour, vec3(edgeBrightness), edge * 0.85);
     }
+    if (ghost > 0.0 && moving < 0.5) colour = mix(colour, background.rgb, ghost);
     float depth_fog = 1.0 - exp(-fog * 0.6 * max(5.0 - projected.z - 1.5, 0.0));
     ALBEDO = clamp(mix(colour, background.rgb, clamp(depth_fog, 0.0, 1.0)), vec3(0.0), vec3(1.0));
     if (cvd_enabled) {

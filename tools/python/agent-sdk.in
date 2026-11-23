@@ -1,0 +1,4 @@
+# Claude Agent SDK environment (tools/.venv/agent-sdk), Windows x64 CPython 3.14 only.
+# The ADR line's A5 Look Lab build runs Fable through the Agent SDK on the owner's Anthropic API credits (owner,
+# 22 Nov 2026); no product code imports it. The package bundles the Claude Code CLI it drives.
+claude-agent-sdk==0.2.187

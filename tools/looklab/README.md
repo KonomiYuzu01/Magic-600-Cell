@@ -82,7 +82,7 @@ proceeding. The harness checks that real Godot AppData top-level names and
 modification times are unchanged and that no real user-data directory has the
 run's name. It removes the staging folder and verifies the checkout, including
 ignored files. Build/core processes have 180-second limits, Godot imports and
-probes 120 seconds, version probes 15 seconds, and the directory handshake
+probes 120 seconds (the A5 sweep 400 seconds), version probes 15 seconds, and the directory handshake
 20 seconds. Interactive runs have a two-hour limit. Expiry ends the process
 tree with `taskkill /T /F` on Windows and fails the run.
 
@@ -659,7 +659,7 @@ are retained, and paths through links are refused.
 `python tools/looklab/check.py --godot` adds three headless result lines: exact
 metrics for the fixed docked layout and 14-step piece-operation flow, refusal
 of an unreachable final command, and exact catalogue coverage in all eight
-contexts on all four layouts: `layouts=4 contexts=32 commands=86 placements=360`.
+contexts on all four layouts: `layouts=4 contexts=32 commands=198 placements=348`.
 The harness also requires the refusal-handler and
 catalogue-filter faults to fail their own checks. Core tests cover all six
 flows on all four layouts, progression, refusal/reset, JSON precision and scoped
@@ -917,3 +917,383 @@ integrator runs the GPU probe and `--shot` after integration.
 
 Clips are not made until the owner approves FFmpeg. Renders and manifests
 stay private and are never committed.
+
+## A5: live data and the kept view
+
+The interactive lab (`python tools/looklab/check.py --run`) polls the JSON files
+under `tools/looklab/data/` and `tools/looklab/presets/` and the command table
+twice a second. When one changes and has been quiet for one poll, the lab is
+rebuilt from the files in the same window. A file the lab refuses leaves the
+last good lab on screen, with the reason in the notice line at the top left.
+
+The camera, the look being edited and the panel state are kept across a rebuild
+and across a restart in `work/loop-memory/looklab/view.json` (format
+`magic600-look-view`, version 1: `q` and `spin` as 16 numbers each, the sha256
+of the default preset the look was edited from as `defaultPreset`, the look as
+`preset`, and panel state as strings under `ui`). The file is written at most
+once a second and when the window closes. When `presets/default.json` changes
+on disk, the new default is shown instead of the kept look. The interactive lab
+opens with the values of `tools/looklab/data/opening.json` (format
+`magic600-look-opening`) over the default preset: the Hopf-ring layout drawn
+large, with smaller cells and stickers, so every cell is the same size and the
+structure is easy to read. Checks, stills and shots do not read it. A panel adds its
+state through `LabApp.ViewParts`.
+
+Inside the window frame the Local view has its own shape, read from
+`tools/looklab/data/local-view.json` (format `magic600-look-local-view`:
+`projection` perspective or orthographic, `d4`, `gap` and `stickerShrink`
+inside their parameter ranges, `margin` in radians, `fill` and `spread`). It
+draws only the moving cells and the cells within the margin around them,
+centred, at a fixed size and moved apart by `spread` so the inner cells show; the linked rotation turns them in 3D. Without the file Local is the
+re-framed copy of Global. The lab saves a picture of its window, `frame.png`,
+beside `view.json` four and twelve seconds after it opens. The window opens at
+most of the screen.
+
+The frame carries the two inspector tiers over one field model (a strip at
+the top edge of the views and the docked inspector, collapsed by default) and
+the bottom index (Problems, Console and Tasks, collapsed, with count badges).
+The inspector's View fields are the lab's own parameters; the selection, the
+preview parameters, the problems and the task are sample data and are marked
+so. A typed `=` expression is kept as a live binding (view part
+`frame.bindings`) and is not evaluated.
+Labels are off by default; the tag button in the top bar turns them on (view
+part `frame.labels`). The theme follows the Windows
+light or dark setting until a choice is kept.
+
+The script interface (ADR-D01 section 6 and ADR-D01.57 to ADR-D01.59) is in
+the chrome library: the `.6cs` editor pane with diagnostics beside the code,
+the Scripts dock, the console line, the palette's typed mode for a whole
+line, two script panel slots in the right dock and the canvas. Every exported
+`fn` or `command` of a program is a command row `script.<program>.<entry>`,
+so the palette lists it and a key binds to it. Own bindings are kept apart
+from the default keymap (view part `frame.keymap`) and over the preset in
+force (`data/design/keymaps/`); `file.keymap.export` writes them as a
+versioned keymap file. Ctrl+Enter in the editor runs the entry point at the
+caret and Ctrl+Shift+Enter is the commit key there. Look Lab has no
+interpreter: the entry points of the sample programs in `data/samples/` are
+wired by hand in `app/Live/LabScripts.cs`, their values are sample values,
+and an edited program is checked but not saved.
+
+`python tools/looklab/check.py --godot` adds one result line,
+`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=15 checks=7`, and
+three faults that must fail their own check.
+
+The sweep (`app/Live/Sweep.cs`, mode `a5-sweep`) uses the whole frame the way
+a person does: time runs past the end of the sample task, every available
+command runs through the entry the palette, the keys and the radial menus
+share, every dock panel, pane, workspace, theme family, scene look and
+density is shown, every visible button takes a real mouse press through the
+root viewport, and the close request keeps the view. A logged engine error, a
+listener the chrome caught (`Safe.Raise`) or a button whose press did not
+reach it fails the check. Its line is
+`LOOKLAB_A5_SWEEP_PASS commands=N clicks=M errors=0`, with two faults (a
+token no theme has, a listener that throws). While the window is open the
+same failures light the error lamp in the top bar, become Problems rows and
+are written to `work/loop-memory/looklab/errors.log`.
+
+Local has two shapes on file, compared on F7: `data/local-view-cap.json`
+(the default: stereographic, centred on the moving cells, the cells around
+them faint and behind) and `data/local-view.json` (the moving cells spread
+apart). F8 compares the two Global layouts (rings and the ball), and F9 steps
+through the screens of the current showing. Global is fitted to its pane by
+scale alone. A kept arrangement from an earlier showing is not restored (view
+part `frame.showing`); a fresh start takes the scene of its theme family.
+
+### A5 stage 7: the script interface
+
+The Script workspace opens on `sweep.6cs`. The editor, the Scripts dock, the console, the script panel slots, the
+mounts, the canvas and the package sheet are the chrome library (`app/Chrome/Model/Editor.cs`,
+`app/Chrome/Ui/ScriptPanels.cs`, `app/Chrome/Ui/ScriptWidgets.cs`); `app/Live/LabScripts.cs` wires them to the
+sample programs under `data/samples/`, whose entry points give fixed results.
+
+- Every run waits in a visible queue and ends in a preview, a read result or a view change, never in a commit.
+  A read result stays under its region and dims, with the name of what came between, after a commit or an undo.
+- Diagnostics show in the gutter, at the end of the line, on the scrollbar and in the list; a fix shows as ghost
+  text and Tab takes it. The bug button gives one fault of each severity.
+- `mounts.6cs` mounts in six places (palette entries, a context action, an inspector section, a docked panel, a
+  free view, an overlay annotation), each with a switch in the Scripts dock. Two panel slots, then tabs.
+- `data/samples/packages/ring-tools.json` is a package by another author: its digest binds its source, the consent
+  sheet lists what it asks for, and in a solving session its preview is refused before anything is prepared.
+- A key that commits is never given to a run. Restart scripts and safe mode are in the Scripts dock; F4 opens the
+  command bar; F9 steps through the ten screens of this stage.
+- `a5-sweep` also fails when a script frame holds a commit control.
+
+### A5 stage 8: colour, type, icons, motion and the component gallery
+
+Look Lab opens on the Solve workspace. F9 steps through the screens of this stage; F6 (and the palette row
+"Theme: next of the six presets") steps through Graphite and Paper with their three scene looks; key 5 opens the
+Gallery workspace.
+
+- The two families are two characters (`character` in `data/design/themes/*.json`): Graphite builds depth with
+  hairlines and square corners, Paper with tone steps and soft corners. The Appearance dock can draw a family the
+  other way, to compare. Each family gives committed, preview, script and selection an accent of their own.
+- A scene look sets the ground, the fog, the glow and the edges through the lab's own parameters, inside their ranges.
+- The gallery (`app/Chrome/Ui/Gallery.cs`, model in `app/Chrome/Model/Gallery.cs`) has seven pages: every widget in
+  every state, type with the notation glyphs each face chain misses, both icon tiers at 16 px with the command
+  coverage, the motion table (`data/design/motion.json`) with a play button per entry, the candidate sticker palettes
+  (`data/design/palettes.json`) with their smallest OKLab distances under four kinds of colour vision, a list of
+  10,000 rows that builds only the rows in view, and the five designed states of a pane.
+- Only a palette that passes is offered; choosing one writes the lab's palette parameters, so both views show it.
+- `data/design/command-icons.json` gives every registered command an icon or marks it label only on purpose.
+- The top bar has readout cells; each view has pick-layer keys (6 to 0, F10 cycles how the other layers show).
+  The layers change marks only: the core does not draw per-layer opacity yet.
+- Reduced motion (Appearance dock, the gallery's Motion page, `motion.reduced.set`) shows every motion's still
+  picture at once. Cue slots carry no audio.
+- The core tests include a token lint: no colour is written in `app/Chrome/Ui` or in the lab's wiring of it.
+
+### A5 stage 9: the same frame in the product shell
+
+The chrome library has no second copy: `renderer/shell/build_shell.py` stages `app/Chrome` and `data/design` into the
+shell's build. Three members exist for a host whose picture lies beneath a transparent window: `ChromeFrame.OpenGround`
+(the ground is painted everywhere but the Global view), `ChromeFrame.Opening` (that rectangle) and
+`ChromeFrame.Claims` (whether the chrome takes a key). Look Lab sets none of them. See `renderer/shell/README.md`,
+"The frame (A5 stage 9)".
+
+### A5 stage 10, point 1: the relationship strip
+
+The strip sits on the shared edge of the locked pair (`ChromeFrame.SetSeam`), never in a dock: Target with its
+Occupant, the Wanted piece with where it sits now, Buffer A and Buffer B with their Occupants, the Target frame
+(Home or Captured) and the working orbit's Residual, which expands in place into its exact classes. Next is a quiet
+bookmark at the strip's end. Each item has an anchor in Local and a marker in Global; a hovered item is linked to
+them. An ill-formed tuple is shown as invalid and is never corrected.
+
+- Orbit ids, piece counts, orientation groups, the stage order and the seed dependencies are read from
+  `assets/seed_atlas.json`. Everything else is demo data and is marked so on the strip: three demo states (mid-solve,
+  the endgame at the last buffer, a fresh scramble), switched with F11 or the chip at the strip's head. The places
+  of the anchors on the pictures are demo places too: the lab has no engine that knows where a position is drawn.
+- Keys: E steps the Target through the unfinished positions (position-id order), A and B move a buffer, H changes
+  the Target frame, O goes to the following orbit of the rail, Shift+N sets Next, Alt+N clears it, N activates it.
+- The commands keep the ids of the command table; the lab's display words for them are in
+  `data/design/command-labels.json`.
+- Token slots: `strip.ground`, `strip.cell.*`, `strip.link`, `strip.next`, `anchor.*`; motion row `strip.change`.
+- Not shown: the stale state of an item (the demo has no commit that makes one stale).
+
+### A5 stage 10, point 2: the orbit rail
+
+The rail lies along the head of the locked pair (`ChromeFrame.SetPairHead`), never in a dock: 35 cells, each with
+the orbit id, the orientation-group glyph (one kind per group type), the residual level drawn as a length, and
+three separate marks in three fixed places (solved, lock, Next); the working orbit has a border and a bar.
+
+- The order never depends on the state: the seed stage order, labelled "one admissible order", or orbit-id order
+  with the button at the rail's end. No cell is emphasised for being unfinished and nothing moves at idle.
+- A click selects the working orbit; a click on the working cell opens it in place into the exact residual classes
+  with exact numerals ("unknown" is hatched on the cell and spelled out, never zero) and the unfinished positions in
+  position-id order. Hold O and type two digits to select an orbit; the rail shows what is typed.
+- On hover a cell marks the orbits its seed touches (a line above) and the orbits whose seeds touch it (a line
+  below), from the seed atlas; they are never lit from the state.
+- Token slots: `rail.ground`, `rail.cell.*`, `rail.lock.*`, `rail.status.*`, `rail.moment.complete`; motion rows
+  `orbit.complete`, `lock.set`, `lock.release`.
+- Not shown: setting a lock on a cell, and the completion moment (no demo action completes an orbit). The list of
+  unfinished positions shows the first 120 and counts the rest.
+- The tour key now also works while a radial menu is open.
+
+### A5 stage 10, point 3: the draft line
+
+- A row over the commit bar, under the pair (ADR-D01.66): the route switch (Draft or Direct) with the route mark, the
+  three phases Prepare, Core and Cleanup with the active one marked, the Goal slot with its own result, the check-mode
+  chip (Net or Strict) and the settling lamp. The line draws no commit control: Commit stays on the host's bar.
+- In Draft a twist joins the active phase and the draft is staged as the preview, so the commit bar commits it and a
+  commit or a discard empties the draft. In Direct a twist is one complete operation and is committed at once.
+- The Goal never gates a commit: an unmet Goal leaves Commit enabled. The switch between Draft and Direct lets go of
+  every held key (the orbit jump among them) and changes the grip marker in Local: broken for Draft, whole for Direct.
+- Keys: `Q` Draft or Direct, `P` next phase, `J` append a sample twist, `U` take the last twist of the active phase
+  away, `Y` declare the sample Goal or take it away. The five commands `input.destination.set`, `intent.set`,
+  `operation.phase.select`, `operation.phase.edit` and `operation.phase.append_twist` also run from the palette, so
+  all twelve commands of the solving surface work on the demo state.
+- Demo data: the twists, the Goal result (met or unmet by a fixed rule) and the Net and Strict results (a Prepare
+  without a Cleanup passes Net and fails Strict). No engine evaluates them.
+- Token slots: `mark.route.*`, `draft.phase.*`, `commit.goal.*`, `chip.check_mode.*`, `commit.status.settling`;
+  motion row `route.switch`.
+- Not shown: inline parameters, editing a twist inside a phase by hand (the command takes a typed argument), and the
+  motion of the route switch.
+
+### A5 stage 10, point 4: the key map
+
+- The keymap in force drawn as a keyboard (ADR-D01.74), over the frame and never modal: keys keep working under it.
+  Hold the help key (`Shift+/`) and it shows; let go and it leaves. A short press pins it, and so do its Pin button
+  and the keyboard button of the top bar; a short press again or `Esc` lets it go. Its List button opens the earlier
+  list of every binding, which the palette command still opens too.
+- Each cap shows what the key does where the pointer is, with the modifiers that are held. The header names the
+  active key set (the preset, and "with your bindings" when you have bound keys), the place and the modifiers; a
+  change of key set is also said in the notice line. So a key never changes meaning without a name for the change.
+- Five cap states, each with its own drawing and token slot `keymap.key.*`: a whole outline for a key bound here, a
+  double outline for a twist key, a broken outline with the place for a key bound somewhere else, a faint outline for
+  an unbound key and a filled cap for a held key. Look Lab's own keys (tour, demo state, orbit jump) show as bound.
+- Tour stop 18 shows it pinned with the pointer over Local.
+- Not shown: the ordered marks that keycaps share with the Grip frame (no Grip frame is built), key sets per orbit
+  (the presets are the two keymap files), and numpad or navigation keys.
+
+### A5 stage 10, point 5: inline parameters on the commit bar
+
+- What was left of the commit bar after the draft line: the scrub and the commit of a prefix were already there, so
+  this point adds inline parameters (ADR-D01.11). The numbers of the staged statement show as small number fields
+  on the bar, each named by the word before it (cell, axis, ring) or as turns for a signed count. Text in quotes is
+  never a parameter. A change rebuilds the preview under a new id, so the settle interval applies again.
+- The bar only asks: the host rebuilds. For a staged draft the changed number goes into the twist of the draft it
+  belongs to, and the draft line shows it. Up to four fields show; more are counted.
+- Demo data: the ranges (cell 0 to 599, axis 0 to 5, ring 0 to 11, turns -2 to 2), and after a change the moves and
+  the effects stay those of the sample, which the preview says.
+- Tour stop 18 shows a typed twist with its three fields.
+- Not shown: parameters that are not whole numbers, and a parameter of a macro's own definition.
+
+### A5 stage 10, point 14: two automatic screen checks
+
+- Keyboard reach, in the tests that `python tools/looklab/check.py` runs: every key set (the default and each
+  preset) opens the palette, closes an overlay and shows the key map; the palette lists every command; every action
+  that an element raises by name is a command, or is listed under `pointer_only` in
+  `data/design/screen-words.json` (empty since the A6 re-check: History's roll to a layout step is the draft row
+  `layout.roll`); on the Library, the History dock and the draft line no button, chip or row acts by itself, each
+  sends a registry command; eleven of the twelve solving commands have a key and
+  the twelfth is the held orbit jump.
+- Words per screen, in the sweep of the Godot lane (`check.py --godot`): for each of the five workspaces the sweep
+  counts the words of the labels, buttons and empty fields shown in the window and fails over the limit in the same
+  file. Counts on 22 November 2026: solve 129, script 99, analyse 160, reference 96, gallery 141. Counts on 23
+  November 2026, with the Library dock and History in the right dock: solve 140, script 151, analyse 151,
+  reference 184, gallery 195 (limits 155, 165, 175, 200, 215). A screen is counted after the sweep's first press in
+  it, so the count includes what earlier presses left open (strip problems, History rows).
+- Time: the sweep presses about 760 buttons and takes about 230 seconds; it has its own 400-second limit in
+  `lane_a5.py`. On main at 7a8c4cca it already ran past the general 120-second limit.
+- Limits of the checks: the word limits are those counts with a margin, kept so that a screen does not grow
+  unnoticed; they are not the owner's text budgets for trial content. Text an instrument draws itself (rail ids,
+  keycaps) and tooltips are not counted. The reach check reads source text: a control whose handler acts without
+  raising a command by name is not seen by it, and focus order by Tab is not checked.
+
+### A5 stage 10, point 7: History in full
+
+- Already there before this point: abandoned redo steps kept as a branch, the partial undo (one move back inside the
+  last applied entry, recorded as its own action) and "roll to here".
+- New (ADR-D01.16): each kept branch has a row with its starting entry, its entries and moves, and two controls.
+  Switch makes the branch the line: it asks first (Confirm or Cancel in the row), the later entries of the current
+  line become a branch in its place, and nothing is rewritten or lost. Switch is off while an entry is partly undone
+  or when the branch's starting entry is no longer on the line, and its tooltip says why. Replay brings the branch's
+  moves back as a preview that the commit bar commits.
+- The command `session.branch.select` runs from the palette too: there it only opens the confirm gate in History.
+- Tour stop 18 shows a partial undo inside an entry and a kept branch.
+- Demo data: the entries and moves are the sample session's; the puzzle state does not follow the history.
+- Not shown: names for branches, a tree drawing of more than one level, and restoring a named version. Replay is the
+  command `session.branch.replay` (a draft row of the record, see the A6 section below).
+
+### A5 stage 10, points 9 to 11: the palette's row menu, readouts with lamps, the five panel states
+
+Done together at the owner's request.
+
+- Palette (ADR-D01.18). Pins and typed mode were there. New: a row menu, opened by a right click or by the Menu key
+  or `Shift+F10` on the highlighted row, with Pin (`P`), Alias (`A`) and Bind a key (`B`). An alias is a second
+  name of your own: a query finds the row by it, the row shows it, and it never changes the order of the rows. It
+  is typed after `=` and kept with the pins. Bind uses the same "press the key" step as the Scripts dock and binds
+  the command without its argument. Typed mode now also takes an argument of your own, as in `> orbit.switch O05`.
+- Top bar readouts. Each of the three cells (revision, history position, run queue) has a lamp and opens on a click
+  to a second line of words. The lamp is told apart by shape: a ring at rest, filled when the history is behind its
+  newest entry or runs wait, filled inside a ring when an entry is partly undone. Token slots `lamp.idle`,
+  `lamp.active`, `lamp.attention`. No Timer and no Session cell.
+- Panel states (ADR-D01.33). Every dock panel sits in a box that can show one of five states besides ready, each
+  with a word, a glyph of its own shape and the reason: Empty, Loading and Error take the content's place; Stale
+  and Busy keep the content under a banner (stale content is dimmed). Error offers Retry and Stale offers Refresh.
+  Nothing spins. `F12` steps every dock panel through the five; they are demo states and their text says so.
+- Tour stops 19 (readouts), 20 (panel states) and 21 (the palette's row menu).
+- Not shown: opening a readout from the keyboard (a click only), panel states on panes outside the docks, a state
+  that a real panel sets by itself (only the demo key sets them), and a binding that keeps a row's argument.
+
+### Stage 10 point 8: the inspector's two tiers and the shared field gestures
+
+Both tiers read one field model (ADR-D01.22, ADR-D01.23). The strip above the views shows the selection and the
+Essential preview parameters, and a count (`+n`) of the fields the Inspector dock holds beyond it; pressing the count
+shows or hides the dock. In the dock, the head of a section counts the numbers that are away from their defaults and
+resets them together. Neither tier has a commit control, and a test reads the source to keep it so.
+
+Every numeric field has the same gestures in both tiers:
+
+- drag the value; Shift is ten times coarser and Alt one step a notch for that drag. No gesture goes finer than the
+  step: every value a field takes lies on its grid and its display has the decimals that grid needs, so a change of
+  value always changes what the field shows (Q2 of the A6 review);
+- the value ladder: three rungs of 100, 10 and 1 of the field's steps for each notch, never finer than the step. The
+  small ladder beside the value shows the rung, and both tiers show the same one. Changing the rung is not an edit;
+- the keyboard, with the field focused: Left and Right step by the rung, Up and Down change the rung, Enter types a
+  value, `=` starts an expression that stays a live binding, Delete resets;
+- the mark beside the label names where the value comes from, and clicking the label resets the field.
+
+Not built: the View section's scope switch (the lab's View fields always act on both views), and the ladder as a
+pop-up under the pointer.
+
+### Stage 10 point 6: the preview view's before and after, and the range a preview touches
+
+The stage of the preview view compares the committed state with the state after the whole sequence (ADR-D01.10):
+one row of cells for each orbit, the share that will move outlined before and filled after. The button in the head
+steps through both sides, before only and after only (`preview.side.next`; each side is also its own command,
+`preview.side.both`, `preview.side.before` and `preview.side.after`). The line under the panes is the scrub, one notch
+for each move.
+Above the per-orbit bars one line names the range: how many orbits and how many pieces the sequence moves. The
+comparison itself is a picture with no control, and the commit stays on the host's commit bar.
+
+The orbits, their sizes and the moved counts are sample numbers (the orbits are named "sample orbit"). The comparison
+draws the two ends only; the state between them, the collateral pieces one by one and the different animation of a
+preview twist are the core's to draw and are not built here.
+
+### A6 review: build fixes
+
+The A6 review of the A5 build found build defects against rules the record already states, so the record does not
+change. Each fix has a headless test in `tests/A6FixTests.cs`; A5 tests whose sample was the defect were changed.
+
+- Commit safety. A draft whose protection check fails is staged as an impossible preview and never commits (B-1). A
+  typed line never writes the move history; in Direct a typed twist is staged, and only a twist key commits (B-2). A
+  prefix taken at the scrub is prepared and checked again as its own preview before it can commit (B-3). A ready
+  preview remembers the head it was built on and goes stale when anything moves the head, a Direct twist included
+  (B-13). An edited statement is checked again and never keeps its old witness (B-12). A branch switch commits only
+  the answer to the open question, for its branch and at its head (B-5).
+- Effects and drafts. Only evaluated effects may say an orbit is untouched; a preview without them says "Not
+  evaluated" (B-4). Each orbit keeps its own draft; activating Next in another orbit saves the present one (B-7).
+- Gallery, scripts, anchors. The gallery's pane states are the docks' five, Busy among them (B-8). A script's frame
+  follows the recorded author class: a built-in tool has the mark alone, the solver's own script a thin border, other
+  authors a patterned border (B-9). The strip's anchors sit where each view's own projection puts their position, so
+  they follow the camera (B-10, `core/ScenePlaces.cs`; a position of an orbit stands for its p-th piece, sample data).
+- Library (B-6). Solve opens the Library on the left and History on the right. The Library holds macros, Templates,
+  sets, blocks and saved states in one tree with a Built-in branch (sample records). Its filter box filters in place;
+  Up and Down select; Enter adds the selected macro to the active phase (Core by default) as one change
+  (`macro.add`); Shift+Enter previews it alone (`operation.preview` with `macro:<name>`). Rows lead with the kind's
+  glyph and the effect signature on the sample orbits, which reads as unverified. Analyse opens the Library on the
+  left too; History is in the right dock of every layout. The live check drives the filter with real key events and
+  prints `LOOKLAB_A6_LIBRARY filter=swap core=3 changes=1 history=right`.
+- Commands (Q5). Replaying a kept branch (`session.branch.replay`) and the preview's sides (`preview.side.both`,
+  `preview.side.before`, `preview.side.after`, `preview.side.next`) are rows of the registry, added from
+  `data/design/command-rows-draft.json` until the command table takes them; the buttons send these commands.
+- Numeric gestures (Q2). No gesture goes finer than a field's step (Alt drags one step a notch); every value lies
+  on the field's grid and shows with the grid's decimals.
+
+Deferred: B-11 (help at the cursor as a geometry-backed term card linked to the Learn layout). The lab has no Learn
+layout and no term cards, so the key's label alone would point at a missing surface; it needs its own step.
+
+### A6 scoped re-check: build fixes
+
+The scoped re-check of the fixes above left build findings open; each fix has a headless test, in
+`tests/A6RecheckTests.cs` or as an extension of the A6 or A5 test it names.
+
+- Checks. A staged draft carries its own prefix check: a prefix is cut from the phases in order and checked under the
+  mode the draft was staged with, so a Strict draft's prefix stays Strict (B-3). A word whose effects move the locked
+  sample orbit fails the draft's check in both modes, as the same twist staged alone (N-2). A twist of a cell outside
+  0 to 599 or an axis outside 0 to 5 is no witness and gives its reason; a Direct twist is checked before it commits
+  (N-3). The sample previews are checked by the sample rule when they are staged (`PreviewSamples`), so one witness
+  shows one collateral however it was staged (N-6).
+- Anchors. In Local the anchors follow the view's spread of the cells (`focus_spread`) and its cap (`focus_cos`), the
+  shader's own formula (B-10, `LocalFocus` in `core/ScenePlaces.cs`): a position on a cell the view does not draw has
+  no anchor.
+- History. A Replay with no branch number (a key bound through the palette) acts on the branch last named in History
+  and refuses when there is none; it never prepares branch 0 by default (Q5). Opening or cancelling the switch
+  question records nothing (`MoveHistory.Asked`), so state-reading tasks keep running and script results stay fresh
+  (N-4). A change of demo state (F11) carries the drafts by state and orbit (N-10).
+- Library. Shift+Enter with nothing selected says so and leaves the pending preview (N-5; the live check presses it on
+  an empty filter). The effect signature has 35 slots in the rail's order and follows the rail's order setting: a full
+  bar where the word moves the orbit, a base-line tick where it was measured not to, a short upright hair where
+  nothing is known. The five sample orbits stand on O34, O06, O00, O17 and O02 (sample mapping, demo data); every
+  other slot is unknown (N-8). The Template binds its roles Target, Buffer A and Buffer B to the strip of the
+  working orbit (a position names a sample cell, sample mapping); Enter adds the bound word and Shift+Enter previews
+  it, and another Target gives another word and a fresh preview (N-9).
+- Commands (N-7). The Library's branch heads, History's Moves and Layout tabs, its entries, its Switch and Cancel and
+  its layout steps, and the check-mode chip send registry commands. The chip uses the command table's
+  `protection.policy.set` (net or strict). Four rows are Look Lab's own proposal, in
+  `data/design/command-rows-draft.json` after the record's five: `library.branch.toggle`, `layout.roll`,
+  `history.show` and `history.entry.toggle`. `history.show` without an argument shows the moves, History's default
+  view.
+
+All build findings of the re-check are fixed on this branch, each with a test. Their full acceptance moves to the
+stage 2 greybox check, where the five flows run on the backend. The record findings J-6, R-3, J-7 and N-1 belong to
+the design-system ADR's record; the lab makes no build change for them.

@@ -91,6 +91,9 @@ public sealed class GlobalLayout
         return own;
     }
 
+    // A cell's centre as the layout holds it (row 0 of cell_layout), before any turn or camera.
+    public IReadOnlyList<double> Centre(int cell) => Array.AsReadOnly(centres[cell]);
+
     public float[] CellLayout(TurnData turn)
     {
         var data = new float[600 * LayoutRows * 4];
