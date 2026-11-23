@@ -134,6 +134,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_language_scans.py"],
     # LP5's archive import (R0): the Git-blob corpus granted to the c600-archive importer (PS3.10 to PS3.17).
     ["tests/test_lp5_archive.py"],
+    # LP5's fourth acceptance item: every research input of LP5's acceptance tests is archived and unchanged.
+    ["tests/test_lp5_acceptance_inputs.py"],
     ["tests/test_source_checkout.py"],
     # The command layer (LP3) drives O01 to O07 through its rows on the command and key routes, with undo and redo.
     ["tests/test_lp3_loop.py"],
