@@ -8,7 +8,14 @@
 //!   `KN6:evidence.start_table_mismatch`;
 //! - a tampered claim, once per claim leaf: one scalar under the fixture's claim paths changed (an integer by 2, a
 //!   digest in its first character, a status word to another, a flag negated), the certificate re-serialized and its
-//!   stated digest recomputed, so only the claim differs.
+//!   stated digest recomputed, so only the claim differs;
+//! - a changed shape, once per structural change of the claims: a claim's key deleted, a claim's key renamed, an
+//!   unknown key added to the object that holds a claim (or to a claim that is an object), a claim list emptied, and
+//!   one element dropped from a claim list (its last; the named element when the claim is a list element). With no
+//!   claim paths, every object and list of the certificate is changed so. Each is re-serialized with its digest
+//!   recomputed, as a tampered claim is, and each must fail: a record whose shape departs from its form is a failed
+//!   claim, never `not_applicable`. Only the claims a fixture names as optional are not deleted, emptied or dropped,
+//!   and a change that would leave the record as it is (an empty list emptied) is not made.
 //!
 //! The gate reads nothing but the fixture and runs nothing but [`crate::check`] or [`crate::run_checker`]; it holds no
 //! producer code.
@@ -26,15 +33,21 @@ pub struct Fixture {
     pub kind: CheckerKind,
     pub certificate: Vec<u8>,
     pub inputs: Vec<(String, Vec<u8>)>,
-    /// Claim paths (as claim IDs name them: `a.b[2].c`); every scalar leaf at or under one of them is tampered. Empty:
-    /// every scalar leaf of the certificate.
+    /// Claim paths (as claim IDs name them: `a.b[2].c`); every scalar leaf at or under one of them is tampered, and
+    /// every claim at or under one of them is changed in shape. Empty: every scalar leaf, object and list of the
+    /// certificate.
     pub claims: Vec<String>,
-    /// Paths at or under which no leaf is tampered: a certificate's subject (its letters) and values that are not
-    /// claims (an allowance, which a larger value only weakens).
+    /// Paths at or under which nothing is tampered or changed in shape: a certificate's subject (its letters) and
+    /// values that are not claims (an allowance, which a larger value only weakens).
     pub skip: Vec<String>,
     /// The start input's role and the bytes of a wrong start table for it. KN6.5 requires one: a fixture without it
     /// is a problem of the gate.
     pub wrong_start: Option<(String, Vec<u8>)>,
+    /// Claims the certificate's form lets it leave out (an optional section, a survey entry, a blocked step): a
+    /// certificate without one claims less and still holds. Exactly these paths are never deleted, emptied or dropped
+    /// from their list; every other change of them and under them is still made. Empty by default; a record of a fixed
+    /// form (the research archive's) names none.
+    pub optional: Vec<String>,
 }
 
 /// What one mutation did.
@@ -138,7 +151,201 @@ fn run_with(
         expect_fail(&mut problems, &fixture.name, &mutation, &report.verdict, None);
         outcomes.push(Outcome { mutation, verdict: report.verdict });
     }
+
+    let changes = shape_changes(&doc, fixture);
+    if changes.is_empty() {
+        problems.push(format!("{}: no claim to change in shape", fixture.name));
+    }
+    for change in changes {
+        let mut changed = doc.clone();
+        if !change.apply(&mut changed) {
+            problems.push(format!("{}: {} could not be applied", fixture.name, change.label()));
+            continue;
+        }
+        // A change that leaves the record as it was (no such change is generated: an empty list is never emptied)
+        // cannot be required to fail.
+        if changed == doc {
+            continue;
+        }
+        let bytes = changed.canonical().into_bytes();
+        let digest = c600_digest::sha256_hex(&bytes);
+        let report = check(&CertificateRef { digest: &digest, bytes: &bytes, inputs: &inputs })?;
+        let mutation = change.label();
+        expect_fail(&mut problems, &fixture.name, &mutation, &report.verdict, None);
+        outcomes.push(Outcome { mutation, verdict: report.verdict });
+    }
     Ok(GateReport { baseline, outcomes, problems })
+}
+
+/// One structural change of a certificate, by the paths of the containers it changes.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Change {
+    /// The key of an object deleted.
+    Delete { object: String, key: String },
+    /// The key of an object renamed to a key the object does not have.
+    Rename { object: String, key: String },
+    /// A key the object does not have added, with a null value.
+    Add { object: String },
+    /// A list emptied.
+    Empty { list: String },
+    /// One element of a list dropped.
+    Drop { list: String, index: usize },
+}
+
+impl Change {
+    fn label(&self) -> String {
+        let name = |path: &str| if path.is_empty() { "the certificate".to_owned() } else { path.to_owned() };
+        match self {
+            Change::Delete { object, key } => format!("deleted {}", child(object, key)),
+            Change::Rename { object, key } => format!("renamed {}", child(object, key)),
+            Change::Add { object } => format!("added an unknown key to {}", name(object)),
+            Change::Empty { list } => format!("emptied {}", name(list)),
+            Change::Drop { list, index } => format!("dropped {}[{index}]", name(list)),
+        }
+    }
+
+    /// Applies the change; false when its container is not where it names.
+    fn apply(&self, doc: &mut Value) -> bool {
+        match self {
+            Change::Delete { object, key } => match node_mut(doc, object) {
+                Some(Value::Object(map)) => map.remove(key).is_some(),
+                _ => false,
+            },
+            Change::Rename { object, key } => match node_mut(doc, object) {
+                Some(Value::Object(map)) => match map.remove(key) {
+                    Some(value) => {
+                        let fresh = unused(map, &format!("{key}~"));
+                        map.insert(fresh, value);
+                        true
+                    }
+                    None => false,
+                },
+                _ => false,
+            },
+            Change::Add { object } => match node_mut(doc, object) {
+                Some(Value::Object(map)) => {
+                    let fresh = unused(map, "unknown~");
+                    map.insert(fresh, Value::Null);
+                    true
+                }
+                _ => false,
+            },
+            Change::Empty { list } => match node_mut(doc, list) {
+                Some(Value::Array(items)) if !items.is_empty() => {
+                    items.clear();
+                    true
+                }
+                _ => false,
+            },
+            Change::Drop { list, index } => match node_mut(doc, list) {
+                Some(Value::Array(items)) if *index < items.len() => {
+                    items.remove(*index);
+                    true
+                }
+                _ => false,
+            },
+        }
+    }
+}
+
+/// A key that `map` does not have: `base`, or `base` with more `~`.
+fn unused(map: &std::collections::BTreeMap<String, Value>, base: &str) -> String {
+    let mut key = base.to_owned();
+    while map.contains_key(&key) {
+        key.push('~');
+    }
+    key
+}
+
+/// The claim path of an object's member.
+fn child(object: &str, key: &str) -> String {
+    if object.is_empty() {
+        key.to_owned()
+    } else {
+        format!("{object}.{key}")
+    }
+}
+
+/// Where a node of a document sits.
+enum Parent {
+    Root,
+    Member { object: String, key: String },
+    Element { list: String, index: usize },
+}
+
+/// Every node of a document (objects, lists and scalars) with its path and where it sits.
+fn collect_nodes<'v>(value: &'v Value, path: String, parent: Parent, out: &mut Vec<(String, Parent, &'v Value)>) {
+    match value {
+        Value::Object(map) => {
+            for (key, member) in map {
+                let parent = Parent::Member { object: path.clone(), key: key.clone() };
+                collect_nodes(member, child(&path, key), parent, out);
+            }
+        }
+        Value::Array(items) => {
+            for (index, item) in items.iter().enumerate() {
+                let parent = Parent::Element { list: path.clone(), index };
+                collect_nodes(item, format!("{path}[{index}]"), parent, out);
+            }
+        }
+        _ => {}
+    }
+    out.push((path, parent, value));
+}
+
+/// The structural changes of the fixture's claims, each once, in a fixed order. A claim that is an object member is
+/// deleted and renamed and gets an unknown sibling; a claim that is an object gets an unknown key; a claim that is a
+/// non-empty list is emptied and loses its last element (a one-element list only is emptied); a claim that is a list
+/// element whose list is not itself a claim is dropped. The fixture's optional claims are not deleted, emptied or
+/// dropped.
+fn shape_changes(doc: &Value, fixture: &Fixture) -> Vec<Change> {
+    let selected = |path: &str| {
+        (fixture.claims.is_empty() || fixture.claims.iter().any(|c| under(path, c)))
+            && !fixture.skip.iter().any(|s| under(path, s))
+    };
+    let mut nodes = Vec::new();
+    collect_nodes(doc, String::new(), Parent::Root, &mut nodes);
+    let mut changes = std::collections::BTreeSet::new();
+    for (path, parent, value) in &nodes {
+        if !selected(path) {
+            continue;
+        }
+        match parent {
+            Parent::Root => {}
+            Parent::Member { object, key } => {
+                changes.insert(Change::Delete { object: object.clone(), key: key.clone() });
+                changes.insert(Change::Rename { object: object.clone(), key: key.clone() });
+                changes.insert(Change::Add { object: object.clone() });
+            }
+            Parent::Element { list, index } => {
+                if !selected(list) {
+                    changes.insert(Change::Drop { list: list.clone(), index: *index });
+                }
+            }
+        }
+        match value {
+            Value::Object(_) => {
+                changes.insert(Change::Add { object: path.clone() });
+            }
+            Value::Array(items) if !items.is_empty() => {
+                changes.insert(Change::Empty { list: path.clone() });
+                if items.len() > 1 {
+                    changes.insert(Change::Drop { list: path.clone(), index: items.len() - 1 });
+                }
+            }
+            _ => {}
+        }
+    }
+    let optional = |path: String| fixture.optional.contains(&path);
+    changes
+        .into_iter()
+        .filter(|change| match change {
+            Change::Delete { object, key } => !optional(child(object, key)),
+            Change::Empty { list } => !optional(list.clone()),
+            Change::Drop { list, index } => !optional(format!("{list}[{index}]")),
+            Change::Rename { .. } | Change::Add { .. } => true,
+        })
+        .collect()
 }
 
 fn expect_fail(problems: &mut Vec<String>, name: &str, mutation: &str, verdict: &Verdict, code: Option<&str>) {
@@ -178,7 +385,15 @@ pub fn tamper_at(value: &mut Value, path: &str) -> bool {
     true
 }
 
-fn walk<'v>(mut value: &'v mut Value, path: &str) -> Option<&'v mut Value> {
+fn walk<'v>(value: &'v mut Value, path: &str) -> Option<&'v mut Value> {
+    match node_mut(value, path)? {
+        Value::Object(_) | Value::Array(_) => None,
+        scalar => Some(scalar),
+    }
+}
+
+/// The node at `path`, of any kind; the document itself at the empty path.
+fn node_mut<'v>(mut value: &'v mut Value, path: &str) -> Option<&'v mut Value> {
     let mut rest = path;
     while !rest.is_empty() {
         if let Some(after) = rest.strip_prefix('[') {
@@ -200,10 +415,7 @@ fn walk<'v>(mut value: &'v mut Value, path: &str) -> Option<&'v mut Value> {
             rest = &rest_key[end..];
         }
     }
-    match value {
-        Value::Object(_) | Value::Array(_) => None,
-        _ => Some(value),
-    }
+    Some(value)
 }
 
 /// A different value of the same shape.

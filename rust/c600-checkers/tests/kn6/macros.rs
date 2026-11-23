@@ -200,6 +200,8 @@ fn ct_kn6_01_core_macro_gate_synthetic() {
         Some(("table", wrong)),
     );
     f.skip = ["format", "prefix", "macros[0].events", "excursion"].map(String::from).to_vec();
+    // macro-certificate/1 does not require a macro: an empty list claims nothing about one.
+    f.optional.push("macros".into());
     let report = assert_gate(&f);
     // Two supports of two fields, two deltas, phis and digests, the excursion, F and D, the table digest and the
     // start's digest and Φ.

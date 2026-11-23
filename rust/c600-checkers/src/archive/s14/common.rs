@@ -17,13 +17,13 @@ use c600_jumble::model::{Model, NP, POLES};
 use c600_jumble::nu::{I_A_MENU_IDENTITY, I_A_ORDER_DIGEST};
 use c600_jumble::observe::Tables;
 use c600_jumble::q5::{matmul, Mat4, Q5};
-use c600_jumble::state::{Pose, State};
+use c600_jumble::state::{Pose, State, Status};
 use c600_jumble::twist::Twist;
 use c600_jumble::Context;
 use c600_kernel::json::Value;
 use c600_kernel::parallel;
 
-use crate::claims::{array, at, field, int, reject, start_mismatch, Run, Step};
+use crate::claims::{array, at, field, int, not_applicable, reject, start_mismatch, Run, Step};
 use crate::replay::{left_facts, letter, read_menu, read_state, Jumbling};
 use crate::report::codes;
 
@@ -52,60 +52,236 @@ pub fn start<'e>(ctx: &'e Context, run: &mut Run, claim: &str, stated: &str) -> 
     Ok(j)
 }
 
-/// The reason a stage 14 record is outside every stage 14 sub-checker: a finite search, whose negative holds only in the
-/// family it names and whose complete coverage certificate (alphabet, bounds, every admitted edge, pruning lemmas and
-/// stop coverage) is not stored, or an input catalogue that asserts no mathematical result (the claim matrix's
-/// `14/finite_search` and `14/input_catalogue` groups). Such a record is `not_applicable` with this reason: it never
-/// passes and never fails here, and its own label stays as recorded.
-pub fn unchecked_scope(doc: &Value) -> Option<String> {
-    let text = |key: &str| doc.get(key).and_then(Value::as_str).unwrap_or("not stated").to_owned();
-    match doc.get("format").and_then(Value::as_str) {
-        Some("t3p-scan/1") => {
-            return Some(format!(
+/// As [`start`], after the prefix word `prefix` (claim `prefix_claim`) replayed letter by letter from the table, each
+/// letter admissible: the state it reaches must have the stated digest, else the start table is the wrong one.
+pub fn start_after<'e>(
+    ctx: &'e Context,
+    run: &mut Run,
+    claim: &str,
+    stated: &str,
+    prefix: &Value,
+    prefix_claim: &str,
+) -> Step<Jumbling<'e>> {
+    let menu = read_menu(ctx, run, MENU)?;
+    run.claim("menu.identity", &I_A_MENU_IDENTITY.to_owned(), &menu.identity)?;
+    run.claim("menu.order", &I_A_ORDER_DIGEST.to_owned(), &menu.order)?;
+    let letters = word(prefix, prefix_claim, menu.items.len())?;
+    if run.optional_input(TABLE).is_none() {
+        return Err(start_mismatch(TABLE, "the start table is absent"));
+    }
+    let state = read_state(ctx, run, &menu, TABLE)?;
+    let mut j = Jumbling::new(ctx, menu, state);
+    for (k, &(cap, item)) in letters.iter().enumerate() {
+        let c = at(prefix_claim, k);
+        let twist = j.twist(cap, item, &c)?;
+        if j.apply(&twist, &c)?.status != Status::Admissible {
+            return Err(run.failed(reject(&c, "the prefix letter is refused at the state before it"), "blocked"));
+        }
+    }
+    run.held(prefix_claim, format!("{} letters replayed from the table", letters.len()));
+    run.compare(claim, &stated.to_owned(), &j.digest(), codes::START_TABLE_MISMATCH)?;
+    Ok(j)
+}
+
+/// A running time in seconds (`cpu_s`): no claim, read for its form only (a nonnegative number).
+pub fn seconds(value: &Value, claim: &str) -> Step<()> {
+    let ok = match value {
+        Value::Int(n) => *n >= 0,
+        Value::Number(lexeme) => !lexeme.starts_with('-'),
+        _ => false,
+    };
+    if ok {
+        Ok(())
+    } else {
+        Err(reject(claim, "expected a running time in seconds"))
+    }
+}
+
+/// A record's `setup` timings (`labels`, `load`, `trees` and `word`, each `{cpu_s}`): no claim, read for its form.
+pub fn setup(value: &Value, claim: &str) -> Step<()> {
+    const PARTS: [&str; 4] = ["labels", "load", "trees", "word"];
+    crate::claims::keys(value, claim, &PARTS, &[])?;
+    for part in PARTS {
+        let path = crate::claims::dot(claim, part);
+        let timing = field(value, part, claim)?;
+        crate::claims::keys(timing, &path, &["cpu_s"], &[])?;
+        seconds(field(timing, "cpu_s", &path)?, &crate::claims::dot(&path, "cpu_s"))?;
+    }
+    Ok(())
+}
+
+/// A stage 14 form that a sub-checker checks.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Form {
+    /// `t3p-certificate/1` (`s14.t3p`).
+    Certificate,
+    /// `t3p-check/1` (`s14.t3p`).
+    Check,
+    /// `t3p-chain/1` (`s14.t3p`).
+    Chain,
+    /// `t3p-locality/1` (`s14.locality`).
+    Locality,
+    /// `t3p-levels/1` (`s14.levels`).
+    Levels,
+    /// A formatless replay record: `table`, `word` and `rows` (`s14.literal`).
+    Replay,
+    /// A formatless co-held record: `digest` and `groups` of high units (`s14.blocks`).
+    Coheld,
+    /// A formatless per-grip record: `digest` and `caps` (`s14.blocks`).
+    Caps,
+    /// A formatless anatomy record: `digest`, `phi`, `targets` and `anatomy` (`s14.blocks`).
+    Anatomy,
+}
+
+impl Form {
+    /// The ID of the sub-checker that checks the form.
+    pub fn checker(self) -> &'static str {
+        match self {
+            Form::Certificate | Form::Check | Form::Chain => "s14.t3p",
+            Form::Locality => "s14.locality",
+            Form::Levels => "s14.levels",
+            Form::Replay => "s14.literal",
+            Form::Coheld | Form::Caps | Form::Anatomy => "s14.blocks",
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Form::Certificate => "a t3p-certificate/1 record",
+            Form::Check => "a t3p-check/1 record",
+            Form::Chain => "a t3p-chain/1 record",
+            Form::Locality => "a t3p-locality/1 record",
+            Form::Levels => "a t3p-levels/1 record",
+            Form::Replay => "a replay record",
+            Form::Coheld => "a co-held record",
+            Form::Caps => "a per-grip record",
+            Form::Anatomy => "an anatomy record",
+        }
+    }
+
+    /// The exact top-level fields of a formatless form (none for a form its format names).
+    pub fn fields(self) -> Option<&'static [&'static str]> {
+        match self {
+            Form::Replay => Some(&["rows", "table", "word"]),
+            Form::Coheld => Some(&["digest", "groups"]),
+            Form::Caps => Some(&["caps", "digest"]),
+            Form::Anatomy => Some(&["anatomy", "digest", "phi", "targets"]),
+            _ => None,
+        }
+    }
+}
+
+/// The stage 14 form of a record, by its signature, when the sub-checker `id` checks it.
+///
+/// A record is `not_applicable` only when it is a finite search (`t3p-scan/1`, `t3p-pairs/1`, `t3p-plus/1`, a
+/// retained-letter beam record, a peel record, each by its exact signature), one of the two input catalogues
+/// (`sources.json`, `states.json`), or a record of a stage 14 form another sub-checker checks (which it names): its
+/// format names that form, or, formatless, it has exactly that form's fields. Every other record fails at the field
+/// that departs from the stage 14 forms, a format no stage 14 form has included: a record of a stage 14 form is checked
+/// to its last field by its sub-checker, so a malformed one is a failed claim, never an unchecked one.
+pub fn own(doc: &Value, id: &str) -> Step<Form> {
+    let form = form(doc)?;
+    if form.checker() == id {
+        return Ok(form);
+    }
+    // A formatless record is read as a form by one of its fields; it is left to another sub-checker only when it has
+    // exactly that form's fields, so a damaged record (a chain without its format) never goes unchecked.
+    if let Some(fields) = form.fields() {
+        crate::claims::keys(doc, "certificate", fields, &[])?;
+    }
+    Err(not_applicable(format!("{} is checked by {}, not {id}", form.name(), form.checker())))
+}
+
+/// The fields every group of a retained-letter beam record has.
+const BEAM_GROUP: [&str; 9] = ["best", "branch", "height", "pose", "seconds", "size", "start", "status", "word"];
+
+/// The fields of a two-letter peel record.
+const PEEL: [&str; 9] = ["A", "B", "digest", "first", "keep", "n4", "phi", "rows", "x"];
+
+fn form(doc: &Value) -> Step<Form> {
+    if let Some(list) = doc.as_array() {
+        if !list.is_empty() && list.iter().all(|entry| entry.get("table_sha256").is_some()) {
+            return Err(not_applicable(CATALOGUE));
+        }
+        return Err(reject("certificate", "a list that is not the stage's table catalogue is no stage 14 record"));
+    }
+    let Some(map) = doc.as_object() else {
+        return Err(reject("certificate", "a stage 14 record is a JSON object"));
+    };
+    if let Some(format) = map.get("format") {
+        let Some(format) = format.as_str() else {
+            return Err(reject("format", "expected a string"));
+        };
+        let text = |key: &str| doc.get(key).and_then(Value::as_str).unwrap_or("not stated").to_owned();
+        return match format {
+            "t3p-certificate/1" => Ok(Form::Certificate),
+            "t3p-check/1" => Ok(Form::Check),
+            "t3p-chain/1" => Ok(Form::Chain),
+            "t3p-locality/1" => Ok(Form::Locality),
+            "t3p-levels/1" => Ok(Form::Levels),
+            "t3p-scan/1" => Err(not_applicable(format!(
                 "t3p-scan/1 is a finite search: its statuses and its empty lowering layer are negatives of its own \
                  family only ({}), and no complete coverage certificate is stored",
                 text("family_exhausted")
-            ))
-        }
-        Some("t3p-pairs/1") => {
-            return Some(format!(
+            ))),
+            "t3p-pairs/1" => Err(not_applicable(format!(
                 "t3p-pairs/1 is a finite search over two-letter words at two grips ({}); it keeps {}, so its counts \
                  and its negative are not checked",
                 text("metric_scope"),
                 text("rows_kept")
-            ))
-        }
-        Some("t3p-plus/1") => {
-            return Some(
+            ))),
+            "t3p-plus/1" => Err(not_applicable(
                 "t3p-plus/1 is a finite search for T3P+ instances with one unlocking helper; its empty result is a \
-                 negative of that family only, and no complete coverage certificate is stored"
-                    .to_owned(),
-            )
-        }
-        Some(_) => return None,
-        None => {}
+                 negative of that family only, and no complete coverage certificate is stored",
+            )),
+            // Any other format, a damaged stage 14 one or another stage's, is no stage 14 record: it fails here, so a
+            // record whose format was changed never goes unchecked.
+            other => Err(reject(
+                "format",
+                format!(
+                    "{other} is no stage 14 format (t3p-certificate/1, t3p-check/1, t3p-chain/1, t3p-locality/1, \
+                     t3p-levels/1 or a finite search's)"
+                ),
+            )),
+        };
     }
-    let map = doc.as_object()?;
-    if map.len() == 2 && map.contains_key("digest") {
-        if let Some(groups) = map.get("groups").and_then(Value::as_array) {
-            if groups.first().is_some_and(|g| g.get("word").is_some() && g.get("status").is_some()) {
-                return Some(
-                    "a retained-letter beam search (bounded depth, beam and time): its best words and its \
-                     no-improvement results are outcomes of that beam only, not a coverage claim"
-                        .to_owned(),
-                );
-            }
-        }
+    let has = |key: &str| map.contains_key(key);
+    let exactly = |fields: &[&str]| map.len() == fields.len() && fields.iter().all(|key| has(key));
+    let groups = map.get("groups").and_then(Value::as_array);
+    let beam_group = |g: &Value| g.as_object().is_some_and(|g| BEAM_GROUP.iter().all(|key| g.contains_key(*key)));
+    if exactly(&["digest", "groups"]) && groups.is_some_and(|g| !g.is_empty() && g.iter().all(beam_group)) {
+        return Err(not_applicable(
+            "a retained-letter beam search (bounded depth, beam and time): its best words and its no-improvement \
+             results are outcomes of that beam only, not a coverage claim",
+        ));
     }
-    if ["x", "A", "B", "keep", "first", "rows"].iter().all(|k| map.contains_key(*k)) {
-        return Some(
+    if exactly(&PEEL) {
+        return Err(not_applicable(
             "a two-letter peel search that follows only the kept first letters: its counts cover the pairs it \
-             explored, not every word"
-                .to_owned(),
-        );
+             explored, not every word",
+        ));
     }
-    None
+    if !map.is_empty() && map.values().all(|v| v.get("summary").is_some() && v.get("high").is_some()) {
+        return Err(not_applicable(CATALOGUE));
+    }
+    if has("rows") || has("word") || has("table") {
+        Ok(Form::Replay)
+    } else if has("groups") {
+        Ok(Form::Coheld)
+    } else if has("caps") {
+        Ok(Form::Caps)
+    } else if has("anatomy") || has("targets") {
+        Ok(Form::Anatomy)
+    } else {
+        Err(reject(
+            "certificate",
+            "a formatless record of no stage 14 form (replay rows, co-held units, per-grip rows or anatomy)",
+        ))
+    }
 }
+
+/// The reason an input catalogue is unchecked.
+const CATALOGUE: &str = "an input catalogue (the stage's tables or its named states) asserts no mathematical result";
 
 /// A word of `[cap, item]` letters of the I_a menu.
 pub fn word(value: &Value, claim: &str, items: usize) -> Step<Vec<(usize, usize)>> {
@@ -236,7 +412,11 @@ pub struct Observables {
 
 /// The observables of `state`, recomputed in full from the heights of its poses.
 pub fn observe(ctx: &Context, tables: &Tables, state: &State, claim: &str) -> Step<Observables> {
-    let heights = heights(ctx, tables, state, claim)?;
+    Ok(observe_from(ctx, state, &heights(ctx, tables, state, claim)?))
+}
+
+/// The observables of `state` from the heights of its poses, already computed.
+pub fn observe_from(ctx: &Context, state: &State, heights: &Heights) -> Observables {
     let counts = pose_counts(state);
     let mut out = Observables { n2: 0, n4: 0, n6: 0, max_h: 0, phi: 0, off: 0, digest: state.digest(ctx) };
     for (id, &n) in counts.iter().enumerate() {
@@ -256,7 +436,7 @@ pub fn observe(ctx: &Context, tables: &Tables, state: &State, claim: &str) -> St
             out.off += n;
         }
     }
-    Ok(out)
+    out
 }
 
 // ------------------------------------------------------------------------------------------------------ labels
@@ -384,6 +564,40 @@ pub fn labels(ctx: &Context, state: &State, grips: &[usize], lattice: bool, clai
         list.sort_unstable();
     }
     Ok(Labels { index, inside, straddle })
+}
+
+/// The pieces of `pieces` that straddle each of `grips` in `state`, ascending, each evaluated exactly at its pose by
+/// pose group (a lattice piece occupies a chamber and straddles nothing).
+pub fn straddlers_among(
+    ctx: &Context,
+    state: &State,
+    pieces: &[u32],
+    grips: &[usize],
+    claim: &str,
+) -> Step<Vec<Vec<u32>>> {
+    let mut by_pose: std::collections::BTreeMap<u32, Vec<u32>> = std::collections::BTreeMap::new();
+    for &p in pieces {
+        let id = state.pose_ids()[p as usize];
+        if state.poses()[id as usize].kidx().is_none() {
+            by_pose.entry(id).or_default().push(p);
+        }
+    }
+    let groups: Vec<(u32, Vec<u32>)> = by_pose.into_iter().collect();
+    let evaluated = parallel::map(groups.len(), |k| {
+        let (pid, members) = &groups[k];
+        group_labels(ctx, state.pose_matrix(ctx, *pid), members, grips)
+    });
+    let mut out: Vec<Vec<u32>> = vec![Vec::new(); grips.len()];
+    for result in evaluated {
+        let rows = result.ok().flatten().ok_or_else(|| reject(claim, "an exact label evaluation did not finish"))?;
+        for (i, (_, straddle)) in rows.into_iter().enumerate() {
+            out[i].extend(straddle);
+        }
+    }
+    for list in &mut out {
+        list.sort_unstable();
+    }
+    Ok(out)
 }
 
 /// The lattice pieces inside each of `grips`, ascending: a piece at K⁺ pose k is inside cap e exactly when its home

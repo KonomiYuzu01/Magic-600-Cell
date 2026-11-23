@@ -9,8 +9,11 @@
 //! - [`levels`] (`s14.levels`): `t3p-levels/1`, the greatest fixed point rebuilt from the table.
 //! - [`blocks`] (`s14.blocks`): the formatless co-held, per-grip and anatomy records at the 7304 stop.
 //!
-//! The finite searches (`t3p-scan/1`, `t3p-pairs/1`, `t3p-plus/1`, the beam and peel records) and the input catalogues
-//! are `not_applicable` under every one of them, with their scope ([`common::unchecked_scope`]).
+//! Every sub-checker first reads the record's form ([`common::own`]): the finite searches (`t3p-scan/1`, `t3p-pairs/1`,
+//! `t3p-plus/1`, the beam and peel records) and the input catalogues are `not_applicable` under every one of them,
+//! with their scope, as is a well-formed record of another sub-checker's form; any other record, one with a format no
+//! stage 14 form has included, is checked to its last field, so a malformed one fails at the field that departs from
+//! its form.
 
 pub mod blocks;
 pub mod common;

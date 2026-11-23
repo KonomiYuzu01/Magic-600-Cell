@@ -97,7 +97,7 @@ fn ct_kn6_01_core_expansion_gate_full_with_replay() {
             ]),
         ),
     ]);
-    let f = fixture(
+    let mut f = fixture(
         "full expansion",
         CheckerKind::Expansion,
         cert.canonical().into_bytes(),
@@ -105,6 +105,8 @@ fn ct_kn6_01_core_expansion_gate_full_with_replay() {
         &["inputs", "claims", "replay"],
         Some(("start", wrong)),
     );
+    // The replay section is optional in kn6-expansion/1: without it the certificate claims the expansion only.
+    f.optional.push("replay".into());
     let report = assert_gate(&f);
     assert_eq!(report.tampered(), 5);
     let span = report.baseline.trace.iter().find(|s| s.claim == "claims.sha256").and_then(|s| s.span.clone());
@@ -153,7 +155,7 @@ fn ct_kn6_01_core_expansion_gate_ia16_inverse_returns_to_start() {
             ]),
         ),
     ]);
-    let f = fixture(
+    let mut f = fixture(
         "ia16 expansion",
         CheckerKind::Expansion,
         cert.canonical().into_bytes(),
@@ -161,6 +163,7 @@ fn ct_kn6_01_core_expansion_gate_ia16_inverse_returns_to_start() {
         &["inputs", "menu", "claims", "replay"],
         Some(("start", state_record(&wrong))),
     );
+    f.optional.push("replay".into());
     let report = assert_gate(&f);
     assert_eq!(report.tampered(), 8);
 }

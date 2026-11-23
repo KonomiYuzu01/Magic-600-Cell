@@ -182,6 +182,7 @@ pub fn fixture(
         claims: claims.iter().map(|c| (*c).to_owned()).collect(),
         skip: Vec::new(),
         wrong_start: wrong_start.map(|(r, b)| (r.to_owned(), b)),
+        optional: Vec::new(),
     }
 }
 

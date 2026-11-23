@@ -27,9 +27,7 @@ use c600_kernel::parallel;
 
 use super::common::{self, claim_bool, claim_int, claim_ints, claim_str, engine, exact_text};
 use crate::archive::SubChecker;
-use crate::claims::{
-    array, at, document, field, keys, not_applicable, reject, require_format, start_mismatch, Run, Step,
-};
+use crate::claims::{array, at, document, field, keys, reject, start_mismatch, string, Run, Step};
 use crate::kinds::{Checker, Needs};
 use crate::report::Sources;
 use crate::Engines;
@@ -61,16 +59,28 @@ pub const MODEL: &str = "model";
 fn run(engines: &Engines, run: &mut Run) -> Step<()> {
     let ctx = engine(engines)?;
     let doc = document(run.cert.bytes)?;
-    if let Some(reason) = common::unchecked_scope(&doc) {
-        return Err(not_applicable(reason));
-    }
-    require_format(&doc, FORMAT)?;
+    common::own(&doc, SOURCES.id)?;
     keys(
         &doc,
         "certificate",
-        &["NN", "R2", "equal_partner_counts", "format", "kappa", "partner_count", "partner_counts", "shells"],
-        &["cpu_s", "delta_encoding"],
+        &[
+            "NN",
+            "R2",
+            "cpu_s",
+            "delta_encoding",
+            "equal_partner_counts",
+            "format",
+            "kappa",
+            "partner_count",
+            "partner_counts",
+            "shells",
+        ],
+        &[],
     )?;
+    // The running time is no claim, and the encoding sentence describes the producer's full table, which the summary
+    // does not carry: both are read for their form only.
+    common::seconds(field(&doc, "cpu_s", "cpu_s")?, "cpu_s")?;
+    string(field(&doc, "delta_encoding", "delta_encoding")?, "delta_encoding")?;
     let model = &ctx.model;
     let bytes = run.optional_input(MODEL).ok_or_else(|| start_mismatch(MODEL, "the model manifest is absent"))?;
     let manifest = json::parse(bytes).map_err(|error| start_mismatch(MODEL, format!("not JSON: {error}")))?;

@@ -227,7 +227,10 @@ fn ct_lb5_01_t3p_changed_helpers_precedence_or_start_fail() {
             assert_eq!(report.verdict.code(), Some(codes::START_TABLE_MISMATCH), "{what}");
         }
     }
-    // A changed precedence: a check record stating an edge the images do not give, or an order that is not one.
+    // A changed precedence: a check record stating an edge the images do not give, or an order that is not one. No
+    // stored round of the stage has a precedence edge (W3, W5 and every chain round: their digraphs are empty, and the
+    // reversed order of each two-helper round is still topological), so a reversed real edge is tested on the order
+    // functions themselves (`t3p::tests`, CT-LB5-01).
     let mut doc = parse(&record("s7304-t3p-check-w3.json"));
     {
         let Value::Object(top) = &mut doc else { panic!() };
@@ -341,6 +344,7 @@ fn ct_lb5_01_coheld_and_per_grip_rows_recomputed_at_the_7304_stop() {
 }
 
 #[test]
+#[ignore = "slow (about 45 s): ct_kn6_03_stage14_gate_blocks_moves passes the same record in full as its baseline"]
 fn ct_lb5_01_single_letters_at_the_holders_of_522() {
     let report = check_with(BLOCKS, "s7304-moves-522.json", S7304_END, &[]);
     assert_pass(&report, "s7304-moves-522.json");
@@ -388,6 +392,174 @@ fn ct_lb5_01_finite_searches_are_not_applicable_with_their_scope() {
             assert!(matches!(report.verdict, Verdict::NotApplicable { .. }), "{name}: {:?}", report.verdict);
         }
     }
+}
+
+/// A record with one edit.
+fn edited(name: &str, edit: impl FnOnce(&mut BTreeMap<String, Value>)) -> Vec<u8> {
+    let mut doc = parse(&record(name));
+    let Value::Object(top) = &mut doc else { panic!() };
+    edit(top);
+    doc.canonical().into_bytes()
+}
+
+fn first_of<'v>(top: &'v mut BTreeMap<String, Value>, key: &str) -> &'v mut BTreeMap<String, Value> {
+    let Some(Value::Array(list)) = top.get_mut(key) else { panic!() };
+    let Value::Object(first) = &mut list[0] else { panic!() };
+    first
+}
+
+#[test]
+fn ct_lb5_01_malformed_records_fail_and_are_never_unchecked() {
+    let menu = menu_record("I_a");
+    let start = table(S7304_END);
+    let inputs: [(&str, &[u8]); 2] = [("table", &start), ("menu", &menu)];
+    let cases: Vec<(&str, CheckerKind, Vec<u8>)> = vec![
+        (
+            "co-held groups emptied",
+            BLOCKS,
+            edited("s7304-coheld.json", |t| {
+                t.insert("groups".into(), Value::Array(vec![]));
+            }),
+        ),
+        (
+            "co-held group key renamed",
+            BLOCKS,
+            edited("s7304-coheld.json", |t| {
+                let g = first_of(t, "groups");
+                let v = g.remove("own").unwrap();
+                g.insert("owned".into(), v);
+            }),
+        ),
+        (
+            "co-held top-level key added",
+            BLOCKS,
+            edited("s7304-coheld.json", |t| {
+                t.insert("note".into(), Value::Null);
+            }),
+        ),
+        (
+            "co-held top-level key dropped",
+            BLOCKS,
+            edited("s7304-coheld.json", |t| {
+                t.remove("digest");
+            }),
+        ),
+        (
+            "anatomy top-level key dropped",
+            BLOCKS,
+            edited("s7304-jam.json", |t| {
+                t.remove("phi");
+            }),
+        ),
+        (
+            "replay with a fourth key",
+            LITERAL,
+            edited("s7304-w5-replay.json", |t| {
+                t.insert("note".into(), Value::Null);
+            }),
+        ),
+        (
+            "check after a prefix word",
+            T3P,
+            edited("s7304-t3p-check-w3.json", |t| {
+                let letter = Value::Array(vec![Value::Int(1), Value::Int(2)]);
+                t.insert("prefix_word".into(), Value::Array(vec![letter]));
+            }),
+        ),
+        (
+            "unknown stage 14 format",
+            T3P,
+            edited("s7304-w3-certificate.json", |t| {
+                t.insert("format".into(), Value::String("t3p-certificate/2".into()));
+            }),
+        ),
+        (
+            "levels without its timings",
+            LEVELS,
+            edited("s7304-levels.json", |t| {
+                t.remove("setup");
+            }),
+        ),
+        (
+            "formatless record of no form",
+            LITERAL,
+            edited("s7304-coheld.json", |t| {
+                let v = t.remove("groups").unwrap();
+                t.insert("units".into(), v);
+            }),
+        ),
+        // A chain without its format has a replay record's `word`, `table` and `rows` among others: it is no replay
+        // record, so the T3P sub-checker does not leave it to the literal one.
+        (
+            "chain without its format",
+            T3P,
+            edited("s7304-t3p-chain.json", |t| {
+                t.remove("format");
+            }),
+        ),
+        // A replay record with two of the peel record's fields is no peel search.
+        (
+            "replay with a peel's fields",
+            LITERAL,
+            edited("s7304-w5-replay.json", |t| {
+                t.insert("keep".into(), Value::Array(vec![]));
+                t.insert("first".into(), Value::Array(vec![]));
+            }),
+        ),
+    ];
+    for (what, kind, bytes) in &cases {
+        let report = run(*kind, bytes, &inputs);
+        assert!(report.verdict.is_fail(), "{what}: {:?}", report.verdict);
+    }
+    // A well-formed record of another sub-checker's form is not_applicable, naming the one that checks it.
+    let report = run(T3P, &record("s7304-w5-replay.json"), &inputs);
+    let Verdict::NotApplicable { reason } = &report.verdict else { panic!("{:?}", report.verdict) };
+    assert!(reason.contains("s14.literal"), "{reason}");
+    // A format no stage 14 form has, a damaged one or another stage's, fails at the format in every sub-checker.
+    for format in ["chain/1", "t3p_chain/1", "macro-certificate/1"] {
+        let other = edited("s7304-t3p-chain.json", |t| {
+            t.insert("format".into(), Value::String(format.into()));
+        });
+        for kind in KINDS {
+            let Verdict::Fail { claim, .. } = &run(kind, &other, &inputs).verdict else { panic!("{format} {kind:?}") };
+            assert_eq!(claim, "format", "{format} {kind:?}");
+        }
+    }
+}
+
+#[test]
+fn ct_lb5_01_check_after_a_prefix_word_replays_it_from_the_table() {
+    // The W5 check's second round, stated after its first round's word as a prefix: the prefix is replayed letter by
+    // letter from the table, and the state it reaches is the round's start.
+    let w5 = parse(&record("s7304-t3p-check-w5.json"));
+    let rounds = w5.get("rounds").and_then(Value::as_array).unwrap();
+    let prefix: Vec<Value> = rounds[0]
+        .get("replay")
+        .and_then(Value::as_array)
+        .unwrap()
+        .iter()
+        .map(|r| r.get("letter").unwrap().clone())
+        .collect();
+    let bytes = edited("s7304-t3p-check-w5.json", |t| {
+        let Some(Value::Array(list)) = t.get_mut("rounds") else { panic!() };
+        list.remove(0);
+        t.insert("prefix_word".into(), Value::Array(prefix.clone()));
+    });
+    let menu = menu_record("I_a");
+    let start = table(S7304_END);
+    let report = run(T3P, &bytes, &[("table", &start), ("menu", &menu)]);
+    assert!(report.complete(), "{:?}", report.verdict);
+    assert!(report.trace.iter().any(|s| s.claim == "prefix_word" && s.held));
+    // Another prefix reaches another state: the table with it is the wrong start.
+    let mut wrong = prefix.clone();
+    wrong.pop();
+    let bytes = edited("s7304-t3p-check-w5.json", |t| {
+        let Some(Value::Array(list)) = t.get_mut("rounds") else { panic!() };
+        list.remove(0);
+        t.insert("prefix_word".into(), Value::Array(wrong));
+    });
+    let report = run(T3P, &bytes, &[("table", &start), ("menu", &menu)]);
+    assert_eq!(report.verdict.code(), Some(codes::START_TABLE_MISMATCH), "{:?}", report.verdict);
 }
 
 // ----------------------------------------------------------------------------- CT-KN6-03: stage 14 registration
@@ -439,10 +611,16 @@ fn ct_kn6_03_stage14_gate_t3p_check() {
             "rounds[0].replay[1].n4",
             "rounds[0].unit_size",
             "rounds[0].hypotheses.P4",
+            "rounds[0].edges",
+            "rounds[0].order",
+            "rounds[0].dropped_identities",
             "digest_after",
         ],
     );
-    assert_gate(&f);
+    let report = assert_gate(&f);
+    for change in ["deleted rounds[0].edges", "emptied rounds[0].order", "tampered rounds[0].order[1]"] {
+        assert!(report.outcomes.iter().any(|o| o.mutation == change), "{change}");
+    }
 }
 
 #[test]
@@ -452,7 +630,20 @@ fn ct_kn6_03_stage14_gate_t3p_chain() {
         "s7302-t3p-chain.json",
         ENDS[0].1,
         vec![],
-        &["start_phi", "rounds[1].D", "rounds[0].digest_after", "word[2][1]", "end_n4", "stop.phi"],
+        &[
+            "start_phi",
+            "rounds[1].D",
+            "rounds[0].digest_after",
+            "rounds[0].order",
+            "rounds[0].h",
+            "rounds[0].x",
+            "rounds[0].helpers",
+            "rounds[1].x",
+            "rounds[1].helpers[0][1]",
+            "word[2][1]",
+            "end_n4",
+            "stop.phi",
+        ],
     );
     f.skip.push("rounds[0].statuses_before".into());
     assert_gate(&f);
@@ -491,6 +682,7 @@ fn ct_kn6_03_stage14_gate_locality() {
         ],
         skip: vec![],
         wrong_start: Some(("model".into(), other)),
+        optional: vec![],
     };
     assert_gate(&f);
 }
@@ -527,4 +719,51 @@ fn ct_kn6_03_stage14_gate_blocks() {
     );
     let report = assert_gate(&f);
     assert_eq!(report.baseline.checker.id, "s14.blocks");
+}
+
+#[test]
+fn ct_kn6_03_stage14_gate_blocks_coheld() {
+    let f = archive_fixture(
+        BLOCKS,
+        "s7304-coheld.json",
+        S7304_END,
+        vec![],
+        &["digest", "groups[1].holders", "groups[1].own", "groups[1].coheld_foreign", "groups[1].member_holder_rows"],
+    );
+    let report = assert_gate(&f);
+    assert!(report.outcomes.iter().any(|o| o.mutation == "added an unknown key to the certificate"));
+}
+
+#[test]
+fn ct_kn6_03_stage14_gate_blocks_end_caps() {
+    let f = archive_fixture(
+        BLOCKS,
+        "s7304-end-caps.json",
+        S7304_END,
+        vec![],
+        &[
+            "digest",
+            "caps[42].clean_covers",
+            "caps[42].freed_by_one_retained_twist[0]",
+            "caps[16].by_height",
+            "caps[16].inside.h2-own",
+            "caps[16].pure",
+        ],
+    );
+    assert_gate(&f);
+}
+
+/// The moves record checks 118 letters in order; its gate changes the first entry and the first with a landed unit,
+/// so each mutation stops early.
+#[test]
+fn ct_kn6_03_stage14_gate_blocks_moves() {
+    let f = archive_fixture(
+        BLOCKS,
+        "s7304-moves-522.json",
+        S7304_END,
+        vec![],
+        &["anatomy[0].moves[0]", "anatomy[0].moves[11].landed_units"],
+    );
+    let report = assert_gate(&f);
+    assert!(report.baseline.trace.iter().any(|s| s.claim == "anatomy[0].moves[117].landed_units.length" && s.held));
 }
