@@ -110,6 +110,8 @@ internal static partial class Program
         string handles = Body(demo, "public static bool Handles", ";");
         foreach (string id in new[] { "layout.roll", "history.show", "history.entry.toggle" }) Check(handles.Contains("\"" + id + "\"", StringComparison.Ordinal) && demo.Contains("case \"" + id + "\":", StringComparison.Ordinal), id + " is not handled by the lab");
         Check(demo.Contains("History.Command += run;", StringComparison.Ordinal) && !demo.Contains("command == \"layout.roll\"", StringComparison.Ordinal) && demo.Contains("parts is [\"cancel\"]", StringComparison.Ordinal), "History's commands are intercepted");
+        // A bare history.show (a key or a sweep press) shows History's default view, the moves; it never flips views.
+        Check(demo.Contains("case \"history.show\": History.Show(argument == \"layout\"); break;", StringComparison.Ordinal), "a bare history.show does not show the moves");
         Check(solve.Contains("\"library.branch.toggle\" or \"protection.policy.set\"", StringComparison.Ordinal) && solve.Contains("Library.Toggle(argument)", StringComparison.Ordinal) && solve.Contains("Draft.SetPolicy(argument)", StringComparison.Ordinal),
             "the Solve host does not carry out the rows");
     }

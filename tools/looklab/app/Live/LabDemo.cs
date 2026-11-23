@@ -274,7 +274,8 @@ internal sealed class LabDemo
                 bool rolled = int.TryParse(argument, NumberStyles.None, CultureInfo.InvariantCulture, out int step) && Restore(Layout.RollTo(step));
                 Nothing(rolled, argument == null ? "Roll the layout: it needs the number of a layout step" : "The layout history is already there"); break;
             }
-            case "history.show": History.Show(argument == null ? !History.ShowLayout : argument == "layout"); break;
+            // Without an argument History shows its default view, the moves.
+            case "history.show": History.Show(argument == "layout"); break;
             case "history.entry.toggle": if (argument == null) frame.Say("History: it needs the id of an entry", true); else History.Toggle(argument); break;
             case "layout.redo": Nothing(Restore(Layout.Redo()), "No layout change to redo"); break;
             case "history.dock.mode": History.SetPlainList(!History.PlainList); break;

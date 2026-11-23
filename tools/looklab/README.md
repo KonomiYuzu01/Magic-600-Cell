@@ -1291,4 +1291,9 @@ The scoped re-check of the fixes above left build findings open; each fix has a 
   its layout steps, and the check-mode chip send registry commands. The chip uses the command table's
   `protection.policy.set` (net or strict). Four rows are Look Lab's own proposal, in
   `data/design/command-rows-draft.json` after the record's five: `library.branch.toggle`, `layout.roll`,
-  `history.show` and `history.entry.toggle`.
+  `history.show` and `history.entry.toggle`. `history.show` without an argument shows the moves, History's default
+  view.
+
+All build findings of the re-check are fixed on this branch, each with a test. Their full acceptance moves to the
+stage 2 greybox check, where the five flows run on the backend. The record findings J-6, R-3, J-7 and N-1 belong to
+the design-system ADR's record; the lab makes no build change for them.
