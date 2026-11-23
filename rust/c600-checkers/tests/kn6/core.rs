@@ -116,8 +116,7 @@ fn run_macro(engines: &Engines, run: &mut c600_checkers::Run) -> c600_checkers::
 
 #[test]
 fn ct_kn6_01_core_archive_registration_point() {
-    // The registry holds no sub-checker yet and its invariants hold; a broken registration is reported by name.
-    assert_eq!(archive::registry().count(), 0);
+    // Whatever the stage pieces register, the registry's invariants hold; a broken registration is reported by name.
     assert!(archive::registry_problems(archive::registry()).is_empty());
     assert!(archive::registry_problems([&EXAMPLE]).is_empty());
     let problems = archive::registry_problems([&EXAMPLE, &EXAMPLE]);
