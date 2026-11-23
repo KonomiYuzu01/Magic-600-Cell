@@ -252,11 +252,14 @@ internal static class LabFrame
             var values = new StructureValues(m.GetShaderParameter("cs").AsSingle(), m.GetShaderParameter("ss").AsSingle(), m.GetShaderParameter("d4").AsSingle(),
                 m.GetShaderParameter("zoom").AsSingle(), m.GetShaderParameter("aspect").AsSingle(), (ProjectionKind)m.GetShaderParameter("projection_kind").AsInt32());
             static double[] Columns(Godot.Projection p) => new double[] { p.X.X, p.X.Y, p.X.Z, p.X.W, p.Y.X, p.Y.Y, p.Y.Z, p.Y.W, p.Z.X, p.Z.Y, p.Z.Z, p.Z.W, p.W.X, p.W.Y, p.W.Z, p.W.W };
-            Godot.Vector4 f = m.GetShaderParameter("view_frame").AsVector4();
+            Godot.Vector4 f = m.GetShaderParameter("view_frame").AsVector4(), axis = m.GetShaderParameter("focus_axis").AsVector4();
+            // Local's cap and spread are the shader's (A6 re-check B-10): an anchor follows the spread, and a cell the
+            // view does not draw has no anchor.
+            var focus = new LocalFocus(new double[] { axis.X, axis.Y, axis.Z, axis.W }, m.GetShaderParameter("focus_cos").AsSingle(), m.GetShaderParameter("focus_spread").AsSingle());
             try
             {
                 return ScenePlaces.InView(places.Project(slot, values, Columns(m.GetShaderParameter("q").AsProjection()), Columns(m.GetShaderParameter("spin").AsProjection()),
-                    view.Turn, m.GetShaderParameter("theta").AsSingle(), view.Layout, new FocusFrame(f.X, f.Y, f.Z)));
+                    view.Turn, m.GetShaderParameter("theta").AsSingle(), view.Layout, new FocusFrame(f.X, f.Y, f.Z), focus));
             }
             catch (FormatException) { return null; }
         }

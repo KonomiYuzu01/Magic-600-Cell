@@ -315,8 +315,39 @@ internal static partial class Program
     }
 
     // B-10: an anchor sits where the view's own projection puts its point, so it follows the camera.
+    // The shader's place of a position's slot in a Local frame, worked out from cells.gdshader on its own: a cell
+    // outside the cap is not drawn; otherwise each vertex's projected point (the core's, which the GPU geometry check
+    // holds the shader to) plus its cell's spread, then the camera.
+    private static Projection? ShaderPlace(ScenePlaces places, GlobalLayout layout, int orbit, int position, StructureValues v, LocalFrame f, TurnData turn, double theta)
+    {
+        int slot = places.Slot(orbit, position)!.Value, cell = slot / Geometry.StickersPerCell, sticker = slot % Geometry.StickersPerCell;
+        double[] c = layout.Centre(cell).ToArray(); double length = Math.Sqrt(c.Sum(x => x * x));
+        if (f.CapCos > -1.5 && c.Zip(f.Axis, (a, b) => a * b).Sum() / length < f.CapCos) return null;
+        if (theta != 0 && turn.IsMoving(slot))
+        {
+            double[] u = turn.PlaneU.ToArray(), w4 = turn.PlaneV.ToArray();
+            double cx = c.Zip(u, (a, b) => a * b).Sum(), cy = c.Zip(w4, (a, b) => a * b).Sum();
+            double du = (Math.Cos(theta) - 1) * cx - Math.Sin(theta) * cy, dv = Math.Sin(theta) * cx + (Math.Cos(theta) - 1) * cy;
+            for (int i = 0; i < 4; i++) c[i] += du * u[i] + dv * w4[i];
+        }
+        var t = new double[4];
+        for (int row = 0; row < 4; row++) for (int col = 0; col < 4; col++) t[row] += f.Q[col * 4 + row] * c[col];
+        double factor = v.Projection == ProjectionKind.Perspective ? v.D4 / (v.D4 - t[3]) : 1, k = f.Spread - 1;
+        ReadOnlySpan<int> stickers = Mesh.BaseStickerIds.Span;
+        double sx = 0, sy = 0, sw = 0; int n = 0;
+        for (int vi = 0; vi < Geometry.BaseVertices; vi++)
+        {
+            if (stickers[vi] != sticker) continue;
+            double[] p = Mesh.Projected(cell * Geometry.BaseVertices + vi, v, f.Q, turn, theta);
+            double px = p[0] + t[0] * factor * k, py = p[1] + t[1] * factor * k, pz = p[2] + t[2] * factor * k, w = 5 - pz;
+            sx += px * v.Zoom / v.Aspect / w; sy += py * v.Zoom / w; sw += w; n++;
+        }
+        return ViewFraming.Apply(new Projection(sx / n, sy / n, sw / n), FocusFrame.Neutral);
+    }
+
     private static void A6AnchorsFollowTheViewsProjection()
     {
+        string ui = Read("app/Chrome/Ui/SolvingSurface.cs"), frame = Read("app/Live/LabFrame.cs");
         var places = new ScenePlaces(Root, Mesh); OrbitAtlas atlas = Atlas;
         Check(places.Orbits == OrbitAtlas.Count, "orbits in the model: " + places.Orbits);
         for (int o = 0; o < OrbitAtlas.Count; o++) Check(places.Pieces(o) == atlas.Orbits[o].Pieces, $"O{o:00}: {places.Pieces(o)} pieces in the model, {atlas.Orbits[o].Pieces} in the atlas");
@@ -335,7 +366,47 @@ internal static partial class Program
         Check(at != s.Wanted && after["wanted"].X == wanted.X && after["wanted"].Y == wanted.Y && after["wanted"].OnPiece, "the Wanted anchor is not on its piece's place");
         // No projection, no anchor; a position outside the orbit has no stand-in.
         Check(StripAnchors.Of(s, null).Count == 0 && places.Slot(s.Orbit, -1) == null && places.Slot(s.Orbit, places.Pieces(s.Orbit)) == null, "an anchor was placed from an id");
-        string ui = Read("app/Chrome/Ui/SolvingSurface.cs"), frame = Read("app/Live/LabFrame.cs");
+        // Re-check: Local B spreads its cells apart and draws only the cap around its focus (cells.gdshader, focus_spread
+        // and focus_cos). During rotation and a twist, the Target and Wanted anchors sit where the shader's formula,
+        // worked out here on its own, draws them; a position on a cell outside the cap has no anchor.
+        LocalShape shapeB = LocalShape.Parse(Read("data/local-view.json"), Schema);
+        float[] cellLayout = layout.CellLayout(Turn);
+        int CellOf(int position) => places.Slot(s.Orbit, position)!.Value / Geometry.StickersPerCell;
+        int[] focusCells = new[] { CellOf(s.Target!.Value), CellOf(s.WantedAt!.Value), CellOf(s.BufferA!.Value) }.Distinct().ToArray();
+        Check(shapeB.Spread > 1 && focusCells.Length >= 2, "the Local B fixture");
+        int excludedSeen = 0, inViewWithoutCap = 0;
+        foreach ((double[] localSpin, double theta) in new[] { (Geometry.Identity(), 0.0), (turned, 0.0), (turned, .25) })
+        {
+            LocalFrame lf = shapeB.Frame(cellLayout.AsSpan(0, Geometry.Cells * 4), focusCells, localSpin, 1);
+            var lv = new StructureValues(lf.Cs, lf.Ss, lf.D4, lf.Zoom, 1, lf.Projection); var focus = new LocalFocus(lf.Axis, lf.CapCos, lf.Spread);
+            Func<int, int, (double X, double Y)?> Local(LocalFocus f) => (o, p) => places.Slot(o, p) is { } slot ? ScenePlaces.InView(places.Project(slot, lv, lf.Q, localSpin, Turn, theta, layout, FocusFrame.Neutral, f)) : null;
+            var spread = StripAnchors.Of(s, Local(focus)); var flat = StripAnchors.Of(s, Local(focus with { Spread = 1 }));
+            foreach ((string name, int position) in new[] { ("target", s.Target!.Value), ("wanted", s.WantedAt!.Value) })
+            {
+                (double X, double Y)? shader = ScenePlaces.InView(ShaderPlace(places, layout, s.Orbit, position, lv, lf, Turn, theta));
+                Check(spread.ContainsKey(name) && shader is { } r && Math.Abs(spread[name].X - r.X) < 1e-9 && Math.Abs(spread[name].Y - r.Y) < 1e-9, $"Local's {name} anchor is not where the shader draws it (theta {theta})");
+            }
+            Check(Math.Abs(spread["target"].X - flat["target"].X) + Math.Abs(spread["target"].Y - flat["target"].Y) > 1e-4, "the spread does not move an off-axis anchor");
+            // A position whose cell is outside the cap: no anchor, though the same point without the cap may be in view.
+            int? outside = null;
+            for (int p = 0; p < places.Pieces(s.Orbit) && outside == null; p++)
+            {
+                int cell = CellOf(p); double[] c = layout.Centre(cell).ToArray(); double length = Math.Sqrt(c.Sum(x => x * x));
+                if (c.Zip(lf.Axis, (a, b) => a * b).Sum() / length >= lf.CapCos) continue;
+                if (Local(LocalFocus.None)(s.Orbit, p) != null) outside = p;
+            }
+            if (outside is { } excluded)
+            {
+                inViewWithoutCap++;
+                int? keptB = s.BufferB; s.BufferB = excluded;
+                Check(Local(focus)(s.Orbit, excluded) == null && !StripAnchors.Of(s, Local(focus)).ContainsKey("buffer_b") && ShaderPlace(places, layout, s.Orbit, excluded, lv, lf, Turn, theta) == null,
+                    "a position on a cell outside Local's cap has an anchor");
+                s.BufferB = keptB; excludedSeen++;
+            }
+        }
+        Check(excludedSeen > 0 && inViewWithoutCap > 0, "no excluded cell was in view without the cap: the check does not bite");
+        Check(frame.Contains("m.GetShaderParameter(\"focus_spread\")", StringComparison.Ordinal) && frame.Contains("m.GetShaderParameter(\"focus_cos\")", StringComparison.Ordinal) &&
+            frame.Contains("new FocusFrame(f.X, f.Y, f.Z), focus)", StringComparison.Ordinal), "the lab's anchors ignore Local's spread and cap");
         Check(!ui.Contains("2654435761", StringComparison.Ordinal) && ui.Contains("StripAnchors.Of(strip.Demo.State, Project)", StringComparison.Ordinal) &&
             frame.Contains("m.GetShaderParameter(\"q\").AsProjection()", StringComparison.Ordinal) && Read("app/Live/LabSolve.cs").Contains("GlobalAnchors.Project = globalPlace; LocalAnchors.Project = localPlace;", StringComparison.Ordinal),
             "the lab places anchors from ids");

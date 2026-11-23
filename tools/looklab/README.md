@@ -1273,6 +1273,9 @@ The scoped re-check of the fixes above left build findings open; each fix has a 
   0 to 599 or an axis outside 0 to 5 is no witness and gives its reason; a Direct twist is checked before it commits
   (N-3). The sample previews are checked by the sample rule when they are staged (`PreviewSamples`), so one witness
   shows one collateral however it was staged (N-6).
+- Anchors. In Local the anchors follow the view's spread of the cells (`focus_spread`) and its cap (`focus_cos`), the
+  shader's own formula (B-10, `LocalFocus` in `core/ScenePlaces.cs`): a position on a cell the view does not draw has
+  no anchor.
 - History. A Replay with no branch number (a key bound through the palette) acts on the branch last named in History
   and refuses when there is none; it never prepares branch 0 by default (Q5). Opening or cancelling the switch
   question records nothing (`MoveHistory.Asked`), so state-reading tasks keep running and script results stay fresh
