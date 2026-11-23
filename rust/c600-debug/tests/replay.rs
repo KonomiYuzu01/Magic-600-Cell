@@ -1,6 +1,6 @@
 //! Deterministic replay and the cost profile (EV2.3, EV2.4, EV2.7, EV2.9; LP4-6): CT-EV2-03, CT-EV2-04, CT-EV2-05 and
-//! CT-EV2-08 whole, and the parts of CT-EV2-10 this build can run (EV2.9 is open in chapter 04, and chapters 05 and 09
-//! do not yet state the replay contract the owner settled on 23 November 2026).
+//! CT-EV2-08 whole, and CT-EV2-10 whole under the replay contract the owner settled on 23 November 2026 (chapter 09's
+//! DET.7 as amended under PHS.52, and overlay OV-1 for chapter 05's part).
 
 mod support;
 
@@ -252,10 +252,10 @@ fn ct_ev2_08_cached_and_slow_runs_charge_and_stop_the_same() {
     assert_eq!(quick.1.stop, Some((code::KERNEL_COST, "kernel_cost")));
 }
 
-/// CT-EV2-10 (parts): replay inspects a record's effects without executing them, refuses an effect the record does
-/// not hold instead of writing, and tells effect inspection from a complete re-execution.
+/// CT-EV2-10 (whole): replay inspects a record's effects without executing them, refuses an effect the record does
+/// not hold instead of writing, and tells effect inspection from a complete re-execution (DET.7 as amended).
 #[test]
-fn ct_ev2_10_part_effects_are_inspected_never_executed() {
+fn ct_ev2_10_effects_are_inspected_never_executed() {
     let replayer = replayer();
 
     let (mut engine, seen) = Engine::new();

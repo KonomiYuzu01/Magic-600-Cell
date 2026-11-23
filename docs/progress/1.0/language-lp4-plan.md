@@ -316,13 +316,21 @@ That is about 3 to 4 owner hours in all.
     owner sitting, after the candidate freezes.
   - The confirmation gap is product work after the freeze.
 - **EV5.9's BS3 gate (LQ2's joint setting).**
-- **Chapter 05 is a file of the frozen migration format's candidate**
-  (`docs/architecture/1.0/language/format-packet/candidate.json`). EV2.9's PHS.52 revision of chapter 05 therefore
-  changes the candidate's bytes. LP4-6 writes the revision and stops before committing the chapter 05 part. The line's
-  main session then asks the top integrator whether the owner's authorization of 23 November 2026 covers the
-  changed candidate digest, or whether the chapter 05 part goes into a separate record that leaves the candidate's
-  bytes alone.
-- **ADR-D01.8's author classes for the flow's solving preview:** read from ADR-D01's frozen text (A7).
+- **EV2.9, settled on 23 November 2026.** Chapter 05 is a file of the frozen migration format's candidate, so its bytes
+  stay as they are (the integrator's ruling). Its part is overlay OV-1 in
+  [the overlay register](language-overlays.md), and chapter 09's part amends DET.7 in place under PHS.52. Chapter 09
+  is not a format-packet input, so no pin moves. CT-EV2-10 runs whole.
+- **The solving preview of a solver's own program.** LG3.16 and BND.56 are the interim human-solve boundary until the
+  joint boundary setting (LQ2), which is the owner's with the integrator. The rule that ADR-D01 wins over frozen
+  clauses does not reach the human-solve boundary, so ADR-D01.8's and .58's program-prepared preview opens only with
+  that setting. Until then the solver previews a program's returned word by key, as LP4-3 builds it (the integrator's
+  reading, 23 November 2026).
+- **Other readings the integrator confirmed on 23 November 2026:**
+  - a run reaches view and query rows only, as the 18 November reading of ONE.52 says. ADR-D01.2's workspace rows for
+    invoked entry points go to the owner's next card;
+  - the EV1 codes on routes that name a digest, and `LG3:capability.not_granted` for a grant that no longer holds at
+    activation;
+  - the EV1 diagnose details, including the draft rule for `EV1:evidence.obligation_unmet`.
 - **Contradictions X1 and X2, now overrules.** The owner recorded both on 23 November 2026 (decision 2.7), under the
   rule of [22 November 2026](../../wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md):
   - **X1.** ADR-D01.14 and .15 (two histories, multi-step rollback) extend to EV4.15's single undo order and to the

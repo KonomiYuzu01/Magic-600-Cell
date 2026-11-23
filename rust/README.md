@@ -3868,12 +3868,11 @@ LG4.12).
   with the read-only host outside it; `target` names an executor without a step mapping for the runtime's process.
 - Tests, each naming its ID: CT-EV2-01 whole (`c600-tools/tests/debug_host.rs`, every debugger operation with a live
   engine behind it; its stepping part also in `c600-debug/tests/stepping.rs`), CT-EV2-02, CT-EV2-11 and CT-LG4-07 whole
-  (`c600-debug/tests/stepping.rs`), CT-EV2-03, CT-EV2-04, CT-EV2-05 and CT-EV2-08 whole
-  (`c600-debug/tests/replay.rs`), CT-EV2-06 whole (`c600-debug/tests/words.rs`), CT-EV2-09 whole
-  (`c600-tools/tests/debug_host.rs`), CT-EV1-04's debugger route (`c600-tools/tests/ev1_host.rs`), and parts of
-  CT-EV2-07 (`c600-debug/tests/checker.rs`, `c600-debug/tests/dependencies.rs`) and CT-EV2-10
-  (`c600-debug/tests/replay.rs`). `c600-run/tests/step.rs` covers the gate and `c600-debug/tests/stepper.rs` the
-  stepper.
+  (`c600-debug/tests/stepping.rs`), CT-EV2-03, CT-EV2-04, CT-EV2-05 and CT-EV2-08 whole (`c600-debug/tests/replay.rs`),
+  CT-EV2-06 whole (`c600-debug/tests/words.rs`), CT-EV2-09 whole (`c600-tools/tests/debug_host.rs`), CT-EV1-04's
+  debugger route (`c600-tools/tests/ev1_host.rs`), CT-EV2-10 whole (`c600-debug/tests/replay.rs`, under DET.7 as amended
+  and overlay OV-1), and parts of CT-EV2-07 (`c600-debug/tests/checker.rs`, `c600-debug/tests/dependencies.rs`).
+  `c600-run/tests/step.rs` covers the gate and `c600-debug/tests/stepper.rs` the stepper.
 - Drafts, which change until the editor protocol and the IR freeze (PHS.49): the stop and value reference texts
   (`<step>/<locator>`, `<call>/await`, `end`; `<stop>#<index>`, `<stop>#result`, `end#value`), `StepResult`'s fields,
   the typed `RunRecord` and `ReproKey` the replayer reads, the host-trace events a record holds, the cost profile's
@@ -3882,9 +3881,6 @@ LG4.12).
 - Not built:
   - KN6.4's per-claim trace producer: no checker in the workspace writes one, so CT-EV2-07 runs in part, over a trace
     its test builds, and re-deriving a trace by running a checker as budgeted work is not built;
-  - EV2.9's replay contract in chapters 05 and 09: EV2.9 is open, and CT-EV2-10 asks for "the settled contract", which
-    those chapters do not state yet; its parts run on the owner's reading (effect inspection, never re-execution,
-    refusal of an effect the record does not hold, and the two kinds kept apart);
   - chapter 05's `RunRecord` and chapter 09's `ReproKey` forms, the session's capture of a run's host trace and a
     conversion from `c600-session`'s records (the debugger cannot depend on the session store); only tests capture;
   - opening an old event's snapshot state: travel opens journal entries, and the headless layer serves no snapshot of

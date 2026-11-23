@@ -24,12 +24,12 @@
 //!
 //! # Drafts
 //!
-//! Chapter 05's `RunRecord` and chapter 09's `ReproKey` and comparison rules are not written as forms yet; [`RunRecord`]
-//! and [`ReproKey`] are the debugger's typed reading of them, and the record producer is the session's (not this
-//! crate's). Chapters 05 and 09 do not yet state EV2.9's settled contract: this module follows the owner's reading of
-//! 23 November 2026. Elapsed time and receipts a new session would issue are not compared. The module bytes the key
-//! names were checked when the record was made; the replay relowers them and the loader revalidates the IR, without a
-//! second checker run.
+//! Chapter 05's `RunRecord` and chapter 09's `ReproKey` and comparison rules are not written as forms yet;
+//! [`RunRecord`] and [`ReproKey`] are the debugger's typed reading of them, and the record producer is the session's
+//! (not this crate's). EV2.9's contract is settled in chapter 09's DET.7 as amended under PHS.52, and what a record
+//! holds for it in overlay OV-1 (`docs/progress/1.0/language-overlays.md`). Elapsed time and receipts a new session
+//! would issue are not compared. The module bytes the key names were checked when the record was made; the replay
+//! relowers them and the loader revalidates the IR, without a second checker run.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
