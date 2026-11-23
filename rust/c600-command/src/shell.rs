@@ -13,13 +13,18 @@
 //!
 //! The keymap is a draft: G6 has no keymap table yet. It follows 0.4 where 0.4 has a key (`Ctrl+Enter`,
 //! `Ctrl+Shift+Enter`) and uses `Ctrl+Z`, `Ctrl+Y` and `Escape` for undo, redo and cancel, and ADR-D01.14's
-//! `Ctrl+Alt+Z` and `Ctrl+Alt+Y` for the layout history's undo and redo (owner, 22 November 2026).
+//! `Ctrl+Alt+Z` and `Ctrl+Alt+Y` for the layout history's undo and redo (owner, 22 November 2026). [`Shell::bind`] adds
+//! a binding, such as one of a checked user command.
+//!
+//! The shell keeps the palette it read last ([`Shell::read_palette`], [`crate::palette`]): one read per revision and
+//! generation, and a search of the kept palette for each keystroke, with no engine call (EV4.2, KN5.6).
 
 use c600_kernel::json::{self, Value};
 
 use crate::budget::Budget;
 use crate::frame::{PresentedFrame, ShownPreview};
 use crate::layer::{Caller, CommandLayer, Invocation};
+use crate::palette::Palette;
 use crate::receipt::{code, ActionHint, CompletionKind, Direction, Error, Receipt, Revision, Status};
 use crate::store::Store;
 use crate::table::{PreviewRule, Row};
@@ -97,6 +102,8 @@ pub struct Shell {
     pub sent: Vec<String>,
     /// The budget the shell declares on an invocation of a row an entry serves ([`crate::budget`]; draft).
     pub budget: Option<Budget>,
+    /// The palette read last ([`Shell::read_palette`]).
+    palette: Option<Palette>,
 }
 
 impl Shell {
@@ -114,17 +121,50 @@ impl Shell {
             presented: None,
             sent: Vec::new(),
             budget: Some(Budget::CEILING),
+            palette: None,
         }
     }
 
-    /// Replaces the secret after a restart; every earlier token stays invalid.
+    /// Replaces the secret after a restart; every earlier token stays invalid, and the palette is read again.
     pub fn restart(&mut self, secret: Secret) {
         self.secret = secret;
         self.presented = None;
+        self.palette = None;
     }
 
     pub fn keymap(&self) -> &[KeyBinding] {
         &self.keymap
+    }
+
+    /// Adds a binding of a key sequence in a context to a row with its arguments (draft; EV4.3), so that a checked user
+    /// command is invoked by key as well as from the palette. A sequence the keymap already binds in an overlapping
+    /// context, the same one or `any` on either side, is refused with `EV4:input.binding_conflict`, and the keymap is
+    /// unchanged. The palette shows each row's key sequences, so a binding makes a new read due. LP4-8's checked
+    /// keymap and rebind (EV4.7, EV4.8) replace this draft.
+    pub fn bind(&mut self, binding: KeyBinding) -> Result<(), Error> {
+        let overlaps = |b: &KeyBinding| b.context == "any" || binding.context == "any" || b.context == binding.context;
+        if self.keymap.iter().any(|b| b.sequence == binding.sequence && overlaps(b)) {
+            let detail = format!("`{}` is bound in an overlapping context already", binding.sequence);
+            return Err(Error::new(code::BINDING_CONFLICT, detail));
+        }
+        self.keymap.push(binding);
+        self.palette = None;
+        Ok(())
+    }
+
+    /// The palette (EV4.2, KN5.6): the kept read while it is current for `layer`, at the same revision and generation
+    /// (KN5.25), and otherwise a new read ([`Palette::read`]). A search of it ([`Palette::find`]) reads it alone, so a
+    /// keystroke costs no engine call.
+    pub fn read_palette<S: Store>(&mut self, layer: &CommandLayer<S>) -> &Palette {
+        if !self.palette.as_ref().is_some_and(|kept| kept.current(layer)) {
+            self.palette = Some(Palette::read(layer, &self.keymap));
+        }
+        self.palette.as_ref().expect("a palette was kept or read")
+    }
+
+    /// The palette read last, which may be older than the layer's revision or generation.
+    pub fn palette(&self) -> Option<&Palette> {
+        self.palette.as_ref()
     }
 
     /// The preview the shell presented last.

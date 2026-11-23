@@ -468,6 +468,29 @@
 //!   - Only a language-defined row takes metadata; a stored row an entry serves answers by its own gates. Metadata is
 //!     not journaled: after a reopen the host declares it again, as it registers its overlays again.
 //!   - The generation advances when an overlay row is registered, a stored row served or metadata declared (LI.21).
+//! - Overlay rows and the palette (KN5.3, EV4.1, EV4.2; LP4-4; draft).
+//!   - A language-defined row registers with its label and the capabilities the solver granted its module
+//!     ([`CommandLayer::register_overlay_with`], [`Registration`], [`Grant`]): consent at install, revocable
+//!     (ADR-D01.32). Its kind is view, workspace or query, or file with [`Grant::File`]. A commit or app row, a file
+//!     row without the grant and a row that takes a token are refused with `KN5:input.overlay_row_kind`, and an ID a
+//!     row or service holds, a stored puzzle row among them, with `KN5:input.overlay_row_conflict`.
+//!     [`CommandLayer::register_overlay`] registers with no label and no grant. Revoking a grant, and removing a
+//!     registered row, are not built. Only the solver invokes a file row: a run reaches none (below).
+//!   - An invocation of a language-defined row whose stored static verdict failed is refused with that diagnostic
+//!     after its argument names and before their forms, so a module that failed its check runs nothing (KN5.4).
+//!     Availability answers the same diagnostic.
+//!   - The palette ([`palette`]) lists every row with its label, kind, key sequences and its answer in one
+//!     [`Availability`] read per revision and generation ([`Shell::read_palette`]); a search reads that palette alone.
+//!     An unavailable entry keeps its place with its typed reason. A palette invocation is [`Shell::invoke`], the key
+//!     route's own path, so the same gates apply. [`Shell::bind`] binds a key to a row, refusing a sequence bound in an
+//!     overlapping context with `EV4:input.binding_conflict`.
+//!   - `command.find` ([`FIND_ROW`]) opens the palette: after its `query`'s form, and for a run only inside a command
+//!     the solver invoked (`LG3:capability.not_granted` otherwise, as for `view.open`), it is `accepted` with no job
+//!     and changes nothing.
+//!   - A run still reaches no workspace or file row (the owner's reading of ONE.52 on 18 November 2026). ADR-D01.2's
+//!     first route, which lets an invoked entry point run view and workspace rows and overrules LG3.1 and LG3.5 in
+//!     part, is met here by a workspace overlay the solver invokes: its job's records are written in its own
+//!     completion, one undoable action.
 //! - The report after a command (KN5.22, R-02, ONE.70; CT-KN5-05's command-layer half). [`report`] pairs a receipt
 //!   with the display's status, [`DisplayStatus`]. When the receipt says that its command applied, the display
 //!   refreshes to the head through the host's [`Refresh`]; when that fails, the status is `OutOfDate`, whose message is
@@ -581,6 +604,7 @@ pub mod frame;
 pub mod journal;
 pub mod jumble;
 pub mod layer;
+pub mod palette;
 pub mod receipt;
 pub mod repair;
 pub mod sets;
@@ -604,6 +628,7 @@ pub use layer::{
     ProgramJob, Rollback, EXPLORE_ROW, LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
     ROLLBACK_ROW, SETTLE_DRAFT,
 };
+pub use palette::{Palette, PaletteEntry, FIND_ROW};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
@@ -618,7 +643,9 @@ pub use store::{
     identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Profile,
     Reopen, Store, Transaction, TransactionKind,
 };
-pub use table::{Binding, Dependency, Kind, Lane, Metadata, Overlay, PreviewRule, Row, Table, UndoClass};
+pub use table::{
+    Binding, Dependency, Grant, Kind, Lane, Metadata, Overlay, PreviewRule, Registration, Row, Table, UndoClass,
+};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
 pub use view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
@@ -642,6 +669,7 @@ pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/src/jumble.rs", include_bytes!("jumble.rs")),
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
+    ("c600-command/src/palette.rs", include_bytes!("palette.rs")),
     ("c600-command/src/receipt.rs", include_bytes!("receipt.rs")),
     ("c600-command/src/repair.rs", include_bytes!("repair.rs")),
     ("c600-command/src/sets.rs", include_bytes!("sets.rs")),

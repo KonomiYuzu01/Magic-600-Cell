@@ -874,7 +874,8 @@ fn an_exit_ends_the_jobs_that_read_the_state() {
     let mut f = fixture(&[]);
     f.layer.register_overlay("tool.full.inspect", Kind::Query, &[], overlay("inspect")).unwrap();
     f.layer.register_overlay("tool.full.scan", Kind::Query, &[], overlay("scan")).unwrap();
-    f.layer.register_overlay("tool.full.export", Kind::File, &[], overlay("export")).unwrap();
+    let granted = c600_command::Registration::default().granting(c600_command::Grant::File);
+    f.layer.register_overlay_with("tool.full.export", Kind::File, &[], overlay("export"), granted).unwrap();
     f.layer.set_program_capacity(3);
     assert!(committed(&f.enter()));
     let inspect = f.shell.invoke(&mut f.layer, "tool.full.inspect", json::object([])).unwrap();

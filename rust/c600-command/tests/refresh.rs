@@ -85,7 +85,11 @@ fn fixture() -> Fixture {
     for (row, kind) in
         [("inspect", Kind::Query), ("note", Kind::Workspace), ("view", Kind::View), ("export", Kind::File)]
     {
-        layer.register_overlay(&format!("tool.full.{row}"), kind, &[], overlay(row)).unwrap();
+        let mut registration = c600_command::Registration::default();
+        if kind == Kind::File {
+            registration = registration.granting(c600_command::Grant::File);
+        }
+        layer.register_overlay_with(&format!("tool.full.{row}"), kind, &[], overlay(row), registration).unwrap();
     }
     layer.set_program_capacity(4);
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }

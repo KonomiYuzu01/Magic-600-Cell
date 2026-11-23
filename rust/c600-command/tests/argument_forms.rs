@@ -20,7 +20,8 @@ const SAVE: &str = "set.save";
 const SCOPE: &str = "view.effect.scope";
 const PLAY: &str = "recording.play";
 const FILTER: &str = "filter.preview";
-const FIND: &str = "command.find";
+/// ADR-D01's row that resets a theme token's override; the headless layer does not build it.
+const RESET: &str = "token.override.reset";
 
 /// The stored rows the command layer builds itself.
 const LAYER_ROWS: [&str; 11] = [
@@ -215,12 +216,13 @@ fn an_optional_argument_may_be_left_out() {
     let taken: Vec<Value> = f.take_all().into_iter().map(|(_, args)| args).collect();
     assert_eq!(taken, given);
 
-    // `command.find`, which nothing serves here, takes `query: Text` and `object: CanonicalObjectRef?`.
-    for args in [fields(&[("query", text("layer"))]), fields(&[("object", Value::Int(3)), ("query", text("layer"))])] {
-        assert_eq!(refusal(&f.invoke(FIND, args.clone())), code::ROW_NOT_BUILT, "{args:?}");
+    // `token.override.reset`, which nothing serves here, takes `name: TokenName` and `theme: ThemeFamilyId?`.
+    // (`command.find`, which this test used before LP4-4 built it, is in `tests/palette.rs`.)
+    for args in [fields(&[("name", text("accent"))]), fields(&[("name", text("accent")), ("theme", text("night"))])] {
+        assert_eq!(refusal(&f.invoke(RESET, args.clone())), code::ROW_NOT_BUILT, "{args:?}");
     }
-    for args in [fields(&[]), fields(&[("object", Value::Int(3))])] {
-        assert_eq!(refusal(&f.invoke(FIND, args.clone())), code::ARGUMENT_FORM, "{args:?}");
+    for args in [fields(&[]), fields(&[("theme", text("night"))])] {
+        assert_eq!(refusal(&f.invoke(RESET, args.clone())), code::ARGUMENT_FORM, "{args:?}");
     }
 }
 
