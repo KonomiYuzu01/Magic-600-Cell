@@ -1,3 +1,4 @@
 flowchart LR
   F["face pieces of c's cut with centres in d's region"] --> Q{"all on aligned cut cells, the same number, at least 10, on each side?"}
-  Q -->|yes| C["d covers c: d was turned after c"]
+  Q -->|yes| C["d covers c: a hint that d was turned after c"]
+  C -. can fail: other turns may have moved the overlap .- X[no guarantee]

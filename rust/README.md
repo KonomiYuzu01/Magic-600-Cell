@@ -4192,8 +4192,9 @@ interpreter, the tools, representations and library crates are its dev-dependenc
 - The mathematician's pass of 23 November 2026, fixed: `linalg`'s instance is a plain matrix (M1); `recipes` says that
   what remains of a star is the seed's whole effect, its cycle and any collateral, and calls generator 3 the seed role
   (M3, M13); `jumble_checker` admits the second letter because a twist at c moves only the pieces inside H_c⁺, rigidly,
-  and creates no straddler of c (M6); `seeds` rests on a topological sort and on the technical report's "Triangular
-  stage invariant", which keeps finished orbits in place at macro boundaries only (M7); `orbits` reads -1 as the table's
+  and creates no straddler of c (M6); `seeds` rests on Kahn's argument for its topological sort, with the library's
+  test as a check on finite instances only (M27), and on the technical report's "Triangular stage invariant", which
+  keeps finished orbits in place at macro boundaries only (M7); `orbits` reads -1 as the table's
   index for 600 singleton position orbits (M8); `protection`'s failure example is [1], which moves slot 1 (M12);
   `guarded_setups`' empty list means a buffer, since the tables cover every non-buffer position (M14, checked on all 35
   trees); `representations`' distance 0 is a definition (M15); `trees` says pose (M16). Counted with `core.py` on the
@@ -4263,11 +4264,13 @@ mathematician's review. It is data and a standard-library Python check outside t
   manual introduces in a later section unless the row records it in `first_use_forward`. Eight such uses are recorded
   for review (lattice, N, seam, height, alignment domain and cap cover use pose, cut cell or retained twist before the
   manual names them; the ν-corrections are announced before ν).
-- The mathematician's pass of 23 November 2026, fixed: mixed statement says a failed budgeted search (M2); census rank
-  is r(A) = |M(A)| − 1 (Theory Lemma 6; `rank` = len(`mask`) − 1 on all 35 orbits of `assets/census.json`) and is
-  learner-facing, which replaces EV5.18's "what it counts is not established" (M9); cap cover says what covering is
-  (manual 2.2, M10); the 600-cell-Full twist is a rotation of the cap's A4, a sequence of H_c and T_c (M11), and the
-  jumbling twist cites the menu Λ_c of card 6 (M19); residual names the frame group (M17); tree branch exists at
+- The mathematician's pass of 23 November 2026 and its re-check, fixed: mixed statement says a failed budgeted search
+  (M2), and an exhaustive search refutes it only over the whole set "some" ranges over, under EVD.42's guard (M26);
+  census rank is the Theory's application rank, r(A) = |M(A)| − 1 (Theory Lemma 6; `rank` = len(`mask`) − 1 on all
+  35 orbits of `assets/census.json`), and is learner-facing, which replaces EV5.18's "what it counts is not
+  established" (M9, M29); cap cover says what covering is (manual 2.2, M10), as a hint about the order that can fail
+  (manual 2.2 and 2.6, M25); the 600-cell-Full twist is a rotation of the cap's A4, a sequence of H_c and T_c
+  (M11), and the jumbling twist cites the menu Λ_c of card 6 (M19); residual names the frame group (M17); tree branch exists at
   height 2 or more (M18); commutator's order is settled by the atlas, [H0, T5] = 1, 12, 1, −12, and it speaks of
   disjoint supports (M20); the human-solve boundary allows setup search and the 17 October repair list (M21); In_c,
   Out_c, A_c, N and alignment domain name the alignment domain, a coset of poses (M24); admitted domain explains D[k].
@@ -4280,7 +4283,7 @@ mathematician's review. It is data and a standard-library Python check outside t
   revisit of a concept that neither an earlier step nor the manual teaches, a fixture concept taught after the task, a
   fixture whose recorded instance is missing, changed or lacks its expected value, and a fixture whose answer is a word
   or a macro. The fixtures read family R's coverage in the 7302 search record and the floor instance in the manual
-  (both of the jumbling puzzle under menu I_a), CT-EV3-05's fork with its declared parameter (LP4-7) and the
+  (both of the jumbling puzzle under menu I_a), CT-EV3-05's fork with its two marked parameters (LP4-7) and the
   600-cell-Full tool's record, the command table's key-change row (read live by ID, since the draft table changes), the
   seed atlas, the `seeds` module source, and the guarded setups' certificate with its digest (a match names the cited
   bytes and checks no certificate).

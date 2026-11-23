@@ -108,15 +108,15 @@ A world-fixed [grip](#grip) and cut; which [pieces](#piece) lie inside it depend
 
 ### <a id="cap-cover"></a>Cap cover
 
-"d covers c": at [cap](#cap) c's cut, the face [pieces](#piece) whose centres lie in the region of a neighbouring cap d all sit on aligned [cut cells](#cut-cell), with the same number of them, at least ten, on each side of the cut. A later turn of d then erased c's [seam](#seam) there, so d was turned after c and comes off first.
+"d covers c": at [cap](#cap) c's cut, the face [pieces](#piece) whose centres lie in the region of a neighbouring cap d all sit on aligned [cut cells](#cut-cell), with the same number of them, at least ten, on each side of the cut. It hints that a later turn of d erased c's [seam](#seam) there, so that d was turned after c and comes off first. The hint can fail: other turns may have moved the overlap away, and the descent's techniques are no guarantee.
 
 ![Cap cover](diagrams/cap-cover.svg)
 
 - First needed: L1 (Turning the puzzle)
 - In the UI: not placed yet
-- Source: EV5.18; DT-J1 M4; [manual section 2.2](../../../../research/jumbling/manual/02-descent.md)
+- Source: EV5.18; DT-J1 M4; [manual sections 2.2 and 2.6](../../../../research/jumbling/manual/02-descent.md)
 - Uses Cut cell before the manual introduces it: The chapter 2 introduction names the cover step before section 2.1 names cut cells; section 2.2, which defines covering, comes after both. Waits for the mathematician's review (EV5.14).
-- Review: The mathematician's pass of 23 November 2026 found M10 (the definition did not say what covering is; manual section 2.2); the fix waits for the mathematician's review (EV5.14).
+- Review: The mathematician's pass of 23 November 2026 found M10 (the definition did not say what covering is) and their re-check M25 (the order is a hint that can fail: manual 2.2 and 2.6); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="cell"></a>Cell
 
@@ -1298,15 +1298,15 @@ The [digest](#digest) fixing the ordered [menu](#menu) that gives an item index 
 
 ### <a id="mixed-statement"></a>Mixed statement
 
-A [statement](#statement) of the form every case has some answer, such as every admitted state having a legal selected [macro](#macro). One found case discharges nothing, and one failed budgeted search refutes nothing; a completed exhaustive search that finds no answer at one admitted case does refute it.
+A [statement](#statement) of the form every case has some answer, such as every admitted state having a legal selected [macro](#macro). One found case discharges nothing, and one failed budgeted search refutes nothing. At one admitted case, a completed exhaustive search of exactly the whole finite set that 'some' ranges over, under EVD.42's guard, that finds no answer does refute it; an exhaustive search of a smaller set, such as three letters of family R, refutes nothing.
 
 ![Mixed statement](diagrams/mixed-statement.svg)
 
 - First needed: L2 (Orbits and protection)
 - In the UI: not placed yet
 - Taught at learning-path step S5
-- Source: Chapter 06 section 9 (E2, E3); EV5.6
-- Review: The mathematician's pass of 23 November 2026 found M2 (a failed budgeted search, not any failed search); the fix waits for the mathematician's review (EV5.14).
+- Source: Chapter 06 section 9 (E2, E3); EVD.42; EV5.6
+- Review: The mathematician's pass of 23 November 2026 found M2 (a failed budgeted search, not any failed search) and their re-check M26 (the refuting search covers the whole set, under EVD.42's guard); the fix waits for the mathematician's review (EV5.14).
 
 ### <a id="negation-pair"></a>Negation pair
 
@@ -2302,14 +2302,14 @@ A representation of cells and their incidence relations at a stated dimension.
 
 ### <a id="census-rank"></a>Census rank
 
-The [orbit](#orbit) field `rank` in the census: r(A) = |M(A)| − 1, one less than the number of [caps](#cap) in the complete cap signature M(A) of the orbit's piece positions, the caps whose region holds the piece's [chamber](#cut-chamber) interior (Theory Lemma 6). It is neither a dimension nor a codimension.
+The [orbit](#orbit) field `rank` in the census, the Theory's application rank: r(A) = |M(A)| − 1, one less than the number of [caps](#cap) in the complete cap signature M(A) of the orbit's piece positions, the caps whose region holds the piece's [chamber](#cut-chamber) interior (Theory Lemma 6). It is neither a dimension nor a codimension.
 
 ![Census rank](diagrams/census-rank.svg)
 
 - First needed: L6 (Beyond the baseline)
 - In the UI: not placed yet
 - Source: EV5.18; Theory Lemma 6; assets/census.json
-- Review: The mathematician's pass of 23 November 2026 (M9) established what the field counts: r(A) = |M(A)| − 1 (Theory Lemma 6), and rank = len(mask) − 1 holds for all 35 orbits of assets/census.json (LP4-11 follow-up). This replaces EV5.18's 'what it counts is not established', a reading for the integrator; the row is learner-facing. The fix waits for the mathematician's review (EV5.14).
+- Review: The mathematician's pass of 23 November 2026 (M9) established what the field counts: r(A) = |M(A)| − 1 (Theory Lemma 6), and rank = len(mask) − 1 holds for all 35 orbits of assets/census.json (LP4-11 follow-up). This replaces EV5.18's 'what it counts is not established', a reading for the integrator; the row is learner-facing. The re-check (M29) added the Theory's name, application rank. The fix waits for the mathematician's review (EV5.14).
 
 ### <a id="chart"></a>Chart
 
@@ -3482,10 +3482,10 @@ Assumed from the manual and the solving glossary: Word, Lattice, Menu, Piece, Po
 - After: S1
 - Concepts: Editable parameter, Fork, Diagnostic, Typed error
 - Also taught, because the concepts' definitions use them: Source range
-- Note: EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows. The fixture's fork is CT-EV3-05's, whose source declares default_layer an editable parameter under LP4-7's draft directive.
+- Note: EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows. The fixture's fork is CT-EV3-05's: under LP4-7's draft directive it marks default_layer, a literal, and drawn_size, a computed value, as editable parameters, and only default_layer round-trips.
 - Command routes: `edit_declared_part` (EV3), `diagnose` (EV1). Workspace command that persists it, host fork operation: owed
-- Fixture task: CT-EV3-05 forks the built-in 600-cell-Full tool and declares one editable parameter in the fork. Read the fork's declaration: which function is the parameter, and which value does it hold? Then read the built-in's principle record: which file does its certificate argument cite, how much of that evidence does the fork inherit, and what does it keep of the record's cited statements?
-- Answer: value: default_layer, a parameter holding 2. The certificate argument cites assets/manifest.json; the fork inherits none of that evidence, and keeps the record's two cited statements as references, never as evidence (EV5.5).
+- Fixture task: CT-EV3-05 forks the built-in 600-cell-Full tool and marks two functions as editable parameters: default_layer and drawn_size. Read the fork's declarations: which of the two round-trips, which value does it hold, and why is an edit of the other refused? Then read the built-in's principle record: which file does its certificate argument cite, how much of that evidence does the fork inherit, and what does it keep of the record's cited statements?
+- Answer: value: default_layer round-trips, a parameter holding 2; drawn_size is a computed value, exact_add(1, 2), so an edit of it is refused (EV3:input.round_trip_undeclared). The certificate argument cites assets/manifest.json; the fork inherits none of that evidence, and keeps the record's two cited statements as references, never as evidence (EV5.5).
 - Reads: `rust/c600-editor/tests/ct_ev3_05.rs`, `docs/progress/1.0/principle-records/full_600_cell.json`
 - Review: Waits for the mathematician's review (EV5.14); the human test of this step waits for the owner's form (EV5.12).
 

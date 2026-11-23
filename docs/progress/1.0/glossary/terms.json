@@ -3102,10 +3102,10 @@
    "id": "census-rank",
    "term": "Census rank",
    "level": "L6",
-   "definition": "The [[orbit]] field `rank` in the census: r(A) = |M(A)| − 1, one less than the number of [[caps|Cap]] in the complete cap signature M(A) of the orbit's piece positions, the caps whose region holds the piece's [[chamber|Cut chamber]] interior (Theory Lemma 6). It is neither a dimension nor a codimension.",
+   "definition": "The [[orbit]] field `rank` in the census, the Theory's application rank: r(A) = |M(A)| − 1, one less than the number of [[caps|Cap]] in the complete cap signature M(A) of the orbit's piece positions, the caps whose region holds the piece's [[chamber|Cut chamber]] interior (Theory Lemma 6). It is neither a dimension nor a codimension.",
    "source": "EV5.18; Theory Lemma 6; assets/census.json",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "The mathematician's pass of 23 November 2026 (M9) established what the field counts: r(A) = |M(A)| − 1 (Theory Lemma 6), and rank = len(mask) − 1 holds for all 35 orbits of assets/census.json (LP4-11 follow-up). This replaces EV5.18's 'what it counts is not established', a reading for the integrator; the row is learner-facing. The fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 (M9) established what the field counts: r(A) = |M(A)| − 1 (Theory Lemma 6), and rank = len(mask) − 1 holds for all 35 orbits of assets/census.json (LP4-11 follow-up). This replaces EV5.18's 'what it counts is not established', a reading for the integrator; the row is learner-facing. The re-check (M29) added the Theory's name, application rank. The fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "assistance-provenance",
@@ -3147,14 +3147,14 @@
    "id": "cap-cover",
    "term": "Cap cover",
    "level": "L1",
-   "definition": "\"d covers c\": at [[cap]] c's cut, the face [[pieces|Piece]] whose centres lie in the region of a neighbouring cap d all sit on aligned [[cut cells|Cut cell]], with the same number of them, at least ten, on each side of the cut. A later turn of d then erased c's [[seam]] there, so d was turned after c and comes off first.",
-   "source": "EV5.18; DT-J1 M4; [manual section 2.2](../../../../research/jumbling/manual/02-descent.md)",
+   "definition": "\"d covers c\": at [[cap]] c's cut, the face [[pieces|Piece]] whose centres lie in the region of a neighbouring cap d all sit on aligned [[cut cells|Cut cell]], with the same number of them, at least ten, on each side of the cut. It hints that a later turn of d erased c's [[seam]] there, so that d was turned after c and comes off first. The hint can fail: other turns may have moved the overlap away, and the descent's techniques are no guarantee.",
+   "source": "EV5.18; DT-J1 M4; [manual sections 2.2 and 2.6](../../../../research/jumbling/manual/02-descent.md)",
    "origin": "EV5.18 sense (LP4-11)",
    "manual": [
     "cover",
     "covers"
    ],
-   "review": "The mathematician's pass of 23 November 2026 found M10 (the definition did not say what covering is; manual section 2.2); the fix waits for the mathematician's review (EV5.14).",
+   "review": "The mathematician's pass of 23 November 2026 found M10 (the definition did not say what covering is) and their re-check M25 (the order is a hint that can fail: manual 2.2 and 2.6); the fix waits for the mathematician's review (EV5.14).",
    "first_use_forward": [
     {
      "term": "Cut cell",
@@ -3299,10 +3299,10 @@
    "id": "mixed-statement",
    "term": "Mixed statement",
    "level": "L2",
-   "definition": "A [[statement]] of the form every case has some answer, such as every admitted state having a legal selected [[macro]]. One found case discharges nothing, and one failed budgeted search refutes nothing; a completed exhaustive search that finds no answer at one admitted case does refute it.",
-   "source": "Chapter 06 section 9 (E2, E3); EV5.6",
+   "definition": "A [[statement]] of the form every case has some answer, such as every admitted state having a legal selected [[macro]]. One found case discharges nothing, and one failed budgeted search refutes nothing. At one admitted case, a completed exhaustive search of exactly the whole finite set that 'some' ranges over, under EVD.42's guard, that finds no answer does refute it; an exhaustive search of a smaller set, such as three letters of family R, refutes nothing.",
+   "source": "Chapter 06 section 9 (E2, E3); EVD.42; EV5.6",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "The mathematician's pass of 23 November 2026 found M2 (a failed budgeted search, not any failed search); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M2 (a failed budgeted search, not any failed search) and their re-check M26 (the refuting search covers the whole set, under EVD.42's guard); the fix waits for the mathematician's review (EV5.14)."
   },
   {
    "id": "approximate-value",

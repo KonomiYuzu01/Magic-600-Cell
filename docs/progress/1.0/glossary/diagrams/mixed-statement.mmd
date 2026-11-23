@@ -2,4 +2,5 @@ flowchart LR
   E[every case] --> S[has some answer]
   F[one found case] -. discharges nothing .- S
   X[one failed budgeted search] -. refutes nothing .- S
-  C[a completed exhaustive search finding none at one admitted case] -->|refutes| S
+  P[an exhaustive search of a smaller set] -. refutes nothing .- S
+  C["at one admitted case, a completed exhaustive search of the whole set 'some' ranges over, under EVD.42's guard, finding none"] -->|refutes| S

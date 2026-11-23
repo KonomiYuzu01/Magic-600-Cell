@@ -152,10 +152,10 @@
    "closure": [
     "Source range"
    ],
-   "note": "EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows. The fixture's fork is CT-EV3-05's, whose source declares default_layer an editable parameter under LP4-7's draft directive.",
+   "note": "EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows. The fixture's fork is CT-EV3-05's: under LP4-7's draft directive it marks default_layer, a literal, and drawn_size, a computed value, as editable parameters, and only default_layer round-trips.",
    "routes": "`edit_declared_part` (EV3), `diagnose` (EV1). Workspace command that persists it, host fork operation: owed",
    "fixture": {
-    "task": "CT-EV3-05 forks the built-in 600-cell-Full tool and declares one editable parameter in the fork. Read the fork's declaration: which function is the parameter, and which value does it hold? Then read the built-in's principle record: which file does its certificate argument cite, how much of that evidence does the fork inherit, and what does it keep of the record's cited statements?",
+    "task": "CT-EV3-05 forks the built-in 600-cell-Full tool and marks two functions as editable parameters: default_layer and drawn_size. Read the fork's declarations: which of the two round-trips, which value does it hold, and why is an edit of the other refused? Then read the built-in's principle record: which file does its certificate argument cite, how much of that evidence does the fork inherit, and what does it keep of the record's cited statements?",
     "concepts": [
      "Fork",
      "Editable parameter"
@@ -167,6 +167,9 @@
       "expect": [
        {
         "text": "# @editable parameter\nfn default_layer() -> Nat effects [] {\n    return 2;\n}"
+       },
+       {
+        "text": "# @editable parameter\nfn drawn_size() -> Nat effects [] {\n    return exact_add(1, 2);\n}"
        }
       ]
      },
@@ -190,7 +193,7 @@
     ],
     "answer": {
      "kind": "value",
-     "expected": "default_layer, a parameter holding 2. The certificate argument cites assets/manifest.json; the fork inherits none of that evidence, and keeps the record's two cited statements as references, never as evidence (EV5.5)."
+     "expected": "default_layer round-trips, a parameter holding 2; drawn_size is a computed value, exact_add(1, 2), so an edit of it is refused (EV3:input.round_trip_undeclared). The certificate argument cites assets/manifest.json; the fork inherits none of that evidence, and keeps the record's two cited statements as references, never as evidence (EV5.5)."
     },
     "source": "rust/c600-editor/tests/ct_ev3_05.rs (LP4-7, EV3.7); LB6.3; EV5.5"
    },
