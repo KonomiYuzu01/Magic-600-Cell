@@ -169,7 +169,7 @@
       {"id": "plan", "title": "Plan and owner decisions", "weight": 2, "done": true, "evidence": "ce426a7f47c543f398c7d27ec1e5a458c4a9000b"},
       {"id": "r0-import", "title": "R0 archive import and inventory", "weight": 6, "done": false, "evidence": null},
       {"id": "r1-bindings", "title": "R1 typed claim bindings and preflight", "weight": 4, "done": false, "evidence": null},
-      {"id": "r2-checker-core", "title": "R2 KN6 checker core", "weight": 4, "done": false, "evidence": null},
+      {"id": "r2-checker-core", "title": "R2 KN6 checker core", "weight": 4, "done": true, "evidence": "c61669b0800514807631dc7ddaf132e11df183e9"},
       {"id": "r3-stage14", "title": "R3 stage 14 checkers", "weight": 4, "done": false, "evidence": null},
       {"id": "r4-stages15-17", "title": "R4 stages 15 to 17 checkers", "weight": 8, "done": false, "evidence": null},
       {"id": "r5-stage18", "title": "R5 stage 18 checkers", "weight": 6, "done": false, "evidence": null},
