@@ -1,7 +1,7 @@
 # Handoff to the Lean formalization (draft)
 
-Draft of 18 October 2026, for the Lean agent Archon. On 23 November 2026, at the owner's request, a first batch of
-results was formalized in Claude Code (the column "Lean" in section 3); what comes next waits for the owner's
+Draft of 18 October 2026, for the Lean agent Archon. On 23 November 2026, at the owner's request, two batches of
+results were formalized in Claude Code (the column "Lean" in section 3); what comes next waits for the owner's
 decision, as before ([E2 and the Lean plan](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-m2.md);
 [B′(h)](../../../../docs/wiki/decisions/owner-decisions-2026-10-18-bprime-goal.md)). A passed formal verification is
 one of the conditions for merging draft pull request #112
@@ -84,7 +84,7 @@ formalized.
 | 10 | R22B-01 | Certified three-cycles give a polynomial bound | proved; conditional on the certificate | group | — | R22B-05, R22A2-01, R22B-02, R22A2-06, R22B-09, R22B-10, R22B-11, R22B-16, R22B-17, R22B-31 | 3, 558 | `Jumbling/Group/Certified.lean`: `Alphabet.certifiedThreeCycles` (given the certificate) |
 | 11 | R22B-05 | Tables of Schreier words always exist | proved | group | R22B-01 | R22A2-01, R22B-07, R22B-09, R22B-10, R22B-17 | 3, 647 | `Jumbling/Group/Schreier.lean`: `Alphabet.schreierTables` |
 | 12 | R22B-03 | Cluster certificates and separated commutators | proved; instance computed | group | — | R22B-08, R22B-14, R22B-15, R22B-22 | 3, 611 | `Jumbling/Group/Cluster.lean`: `clusterLemma`, `separatedOverlap` |
-| 13 | R22B-08 | A seed from a Jordan word and a letter of small support | proved | group | R22B-03 | R22A2-01, R22B-09, R22B-10, R22B-14 | 3, 726 |  |
+| 13 | R22B-08 | A seed from a Jordan word and a letter of small support | proved | group | R22B-03 | R22A2-01, R22B-09, R22B-10, R22B-14 | 3, 726 || `Jumbling/Group/JordanSeed.lean`: `Alphabet.jordanSeed`, `Alphabet.jordanSeed_isSeed`; Jordan's theorem: `Jumbling/Classical/JordanPrimeCycle.lean`, `Classical.alternatingGroup_le_of_isPreprimitive_of_isCycle_mem` |
 | 14 | R22A2-01 | b19's vacating word by construction | computed hypotheses; proved consequence | model + computed | R22A-06, R22B-01, R22B-05, R22B-08 | R22A2-04 | 2, 282 |  |
 | 15 | R22A2-02 | When a second strict′ step survives the first | proved | model | R22A-05 | R22A2-03, R22A2-05 | 2, 307 | `Jumbling/Model/Steps.lean`: `PieceModel.isStrictPrime_after_iff`, `PieceModel.isStrictPrime_after_iff_disjoint` |
 | 16 | R22A2-03 | The thirteen supplied steps compose at most six deep | computed | computed | R22A2-02 | — | 2, 329 |  |
@@ -101,11 +101,11 @@ formalized.
 | 27 | R22B-12 | When a power of a word is a seed | proved | group | — | R22B-13, R22B-17, R22B-18 | 3, 820 | `Jumbling/Group/PowerSeed.lean`: `powerSeed_iff`, `Alphabet.powerSeed_word` |
 | 28 | R22B-13 | Two short seeds for b00 | computed | computed | R22B-12 | R22B-18 | 3, 841 |  |
 | 29 | R22B-14 | Powers of one letter cannot shrink a support | proved; computed | model + computed | R22B-08, R22B-03 | — | 3, 855 |  |
-| 30 | R22B-15 | A local test for Alt, and what stays open | proved; the universal claim open | group | R22B-03 | R22B-19, R22B-21, R22B-22, R22B-25 | 3, 865 |  |
+| 30 | R22B-15 | A local test for Alt, and what stays open | proved; the universal claim open | group | R22B-03 | R22B-19, R22B-21, R22B-22, R22B-25 | 3, 865 || `Jumbling/Group/LocalAlt.lean`: `Alphabet.localAlt`, `Alphabet.vacate_iff_short`, `cyclicCounterexample` (the proved part; the universal claim stays open) |
 | 31 | R22B-16 | The checker of E22-1b is sound, and the recorded numbers hold | checked in the source; computed | model + computed | R22B-01, R22B-10 | — | 3, 888 |  |
 | 32 | R22B-17 | The bound that short seeds would give | proved; conditional | group | R22B-01, R22B-05, R22B-12 | — | 3, 903 | `Jumbling/Group/ShortSeeds.lean`: `Alphabet.shortSeedBound`, `Alphabet.shortSeedBound_max` |
 | 33 | R22B-18 | An extended commutator-power search | specification; not implemented | specification | R22B-12, R22B-13, R22B-10 | — | 3, 924 |  |
-| 34 | R22B-19 | Local Alt and separating words give a product of alternating groups | proved | group | R22B-15 | R22B-20, R22B-22, R22B-23, R22B-25, R22B-28, R22B-29, COV-10 | 3, 958 |  |
+| 34 | R22B-19 | Local Alt and separating words give a product of alternating groups | proved | group | R22B-15 | R22B-20, R22B-22, R22B-23, R22B-25, R22B-28, R22B-29, COV-10 | 3, 958 || `Jumbling/Group/ProductAlt.lean`: `ProductAlt.productAlt`, `Alphabet.vacancy_of_productAlt`; Aut(Alt(d)): `Jumbling/Classical/AlternatingAut.lean`, `AlternatingAut.autAlternatingGroup` |
 | 35 | R22B-20 | At b00 no letter separates two pairs; one word separates all | computed | computed | R22B-19, R22B-04 | — | 3, 983 |  |
 | 36 | R22B-21 | An orbit of twelve chambers with a group of order twelve | computed; counterexample | computed | R22B-15 | R22B-24 | 3, 995 |  |
 | 37 | R22B-22 | Small orbits need a joint test; they occur at the depth 60 stop | proved; computed | model + computed | R22B-15, R22B-03, R22B-19 | R22B-23, R22B-24, R22B-25, R22B-26, R22B-27, R22B-28, R22B-29 | 3, 1013 |  |
@@ -141,7 +141,7 @@ formalized.
 | 67 | R22C3-05 | The catalogue of unresolved units stays conditional | inventory | specification | — | — | 7, 4852 |  |
 | 68 | R22C3-06 | A uniform core bound; coverage stays open | proved; conditional | model | R22C-K | COV-03, COV-15, COV-21, COV-24, COV-29, COV-34, COV-36, COV-39 | 7, 4872 |  |
 | 69 | R22B-24 | A non-Alt orbit meets a catalogue target that has a hole; vacancy still holds | computed | computed | R22B-21, R22B-22 | — | 3, 1070 |  |
-| 70 | R22B-25 | A finite classifier of the induced action, with a residual case | proved | group | R22B-15, R22B-19, R22B-22 | — | 3, 1089 |  |
+| 70 | R22B-25 | A finite classifier of the induced action, with a residual case | proved | group | R22B-15, R22B-19, R22B-22 | — | 3, 1089 || `Jumbling/Group/Classifier.lean`: `Classifier.alternatingGroup_le_iff`, `Classifier.isPreprimitive_iff_blockRel`, `Classifier.vacancy_iff_blocks`, `Classifier.ResidualCase.not_alternatingGroup_le` |
 | 71 | R22B-26 | The depth 60 home targets miss every small orbit | computed | computed | R22B-22 | — | 3, 1109 |  |
 | 72 | R22B-27 | The T1′ middles of 151 and 180 miss the small orbits too | computed | computed | R22B-22, R22C3-03, R22C3-04 | — | 3, 1120 |  |
 | 73 | R22B-28 | What a strict′ step keeps: subgroup certificates, not inventories | proved | model | R22C3-01, R22B-19, R22B-22 | R22B-49 | 3, 1130 |  |

@@ -10,6 +10,12 @@ import Jumbling.Group.Certified
 import Jumbling.Group.PowerSeed
 import Jumbling.Group.Anchors
 import Jumbling.Group.ShortSeeds
+import Jumbling.Classical.JordanPrimeCycle
+import Jumbling.Classical.AlternatingAut
+import Jumbling.Group.LocalAlt
+import Jumbling.Group.JordanSeed
+import Jumbling.Group.ProductAlt
+import Jumbling.Group.Classifier
 
 /-!
 # Jumbling restoration, round 22: first Lean batches
@@ -20,5 +26,7 @@ that it shares the pinned toolchain and Mathlib and can use the permutation lemm
 `ArchonFull600Theory.Basic`.
 
 * `Jumbling.Model.*`: the model layer (scope A).
-* `Jumbling.Group.*`: the group-theory layer (scope B).
+* `Jumbling.Group.*`: the group-theory layer (scope B and batch 2).
+* `Jumbling.Classical.*`: classical theorems the pinned Mathlib lacks (Jordan's theorem for a prime
+  cycle, `Aut(Alt(d)) = Sym(d)` for `d ≥ 7`).
 -/
