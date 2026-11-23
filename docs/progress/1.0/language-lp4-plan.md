@@ -252,6 +252,16 @@ LP4-14 and LP4-11's disclosure data run in that order in one session. The worksp
 `rust/README.md` are shared. Each session adds only its own member line and README section, and the line's main
 session merges them. At most three sessions run at once (owner, 23 November 2026).
 
+LP5 runs at the same time
+([LP5 plan](language-lp5-plan.md)). These shared files are coordinated through the top integrator:
+- The workspace members: the second line to land takes the union of members and regenerates `Cargo.lock` with cargo.
+- `c600-library`: LP5 adds research modules there. LP4-10 tells the top integrator before it edits a list that both
+  lines use.
+- `c600-session`: LP5's run-record additions are sequenced against LP4-9, so the top integrator hears before LP4-9
+  starts.
+- `command-table.json`: LP4's rows stay in their own block, and the second line to land merges main.
+- `tests/test_language_scans.py` gains one LP5 scan. LP5 stays off `c600-command` and `c600-run`.
+
 | Wave | Session A | Session B | Session C |
 | --- | --- | --- | --- |
 | 1 (phase I) | LP4-1 (`c600-syntax`, `c600-editor`) | LP4-2 (`c600-module`, `c600-tools`, `c600-runtime`) | LP4-4 (`c600-command`) |
@@ -323,9 +333,8 @@ That is about 3 to 4 owner hours in all.
     overrules chapter 12's hold on the design line (PHS.28, PHS.41, PHS.44, section 19's design-system row and
     CT-PHS-03).
 
-  As with the clauses noted on 22 November 2026, a note that cites the record goes beside each overruled clause in its
-  chapter, in the line's pull request. A pinned chapter gets the format packet's pin refresh (FP.1), and a candidate
-  file is not touched.
+  The decision page is their record; LP4 writes no other. A test or a conformance index entry that relies on X1 or X2
+  cites that page, and no frozen chapter is edited for them.
 
 ## 8. Owner answers and the next card
 
