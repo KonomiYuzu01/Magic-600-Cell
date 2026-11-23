@@ -22,6 +22,10 @@ public partial class Entry : Node
             if (mode is not ("stage0-gpu" or "geometry" or "stills" or "shot" or "ll8-capture"))
             {
                 if (args.Length < 2) throw new Exception("expected checkout root and scratch folder from harness");
+                if (mode == "interactive") { Live.LabErrors.Install(System.IO.Path.Combine(args[0], "work/loop-memory/looklab/errors.log")); AddChild(new Live.LiveSession(args[0], System.IO.Path.Combine(args[0], "work/loop-memory/looklab"))); return; }
+                if (mode == Live.Sweep.LookMode) { await Live.Sweep.Look(this, args[0], args[1], fault); Live.LabErrors.Remove(); GetTree().Quit(); return; }
+                if (mode == Live.Sweep.Mode) { await Live.Sweep.Run(this, args[0], args[1], fault); Live.LabErrors.Remove(); GetTree().Quit(); return; }
+                if (Live.LiveChecks.Handles(mode)) { Live.LiveChecks.Run(this, args[0], args[1], fault); GetTree().Quit(); return; }
                 var app = new LabApp(args[0]); AddChild(app);
                 if (mode == "smoke") { AppSmoke.Run(app, args[1], fault); GetTree().Quit(); }
                 else if (LL4.LL4Checks.Handles(mode)) { LL4.LL4Checks.Run(app, args[0], mode, fault); GetTree().Quit(); }

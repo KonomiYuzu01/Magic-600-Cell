@@ -179,3 +179,32 @@ Next steps:
 
 - the E3 startup log;
 - the owner-machine run of S4 (route B check B1 first), in the one sitting.
+
+## The frame (A5 stage 9)
+
+`python renderer/shell/launch.py --out <new folder> --frame` opens the shell with the frame: the chrome library
+(`tools/looklab/app/Chrome`) and the design data (`tools/looklab/data/design`) that Look Lab uses, staged into the
+build's project by `build_shell.py`. The repository holds no second copy of either. Without `--frame` the window is
+bare, as in every measured run: the launcher sets `M600_CHROME=1` only for this flag, and a C9 measurement never
+passes it.
+
+What reads the session and the core:
+
+- The Global view is an opening in the frame. The core's surface lies under it and follows it when a dock opens, a
+  splitter moves or the window is resized (after the opening has kept one place for six process steps).
+- History lists each committed twist with the engine revision the host adopted; an undo or a redo moves its cursor.
+- The readout cells show the engine revision that the newest presented frame carries and the history position.
+- The Global strip says what the keys do, and names a refused press.
+
+The Local view says "not drawn yet", and every dock and pane other than History, Appearance, the token specimen and
+the gallery says "not in this build yet". There are no previews and no scripts in the shell: the commit bar stays empty, and the
+commands that need them are refused with their reason.
+
+Keys: one router decides. The frame asks first (`ShellChrome.Takes`); a key it takes never reaches the session, and
+a key that goes to the session's router is marked handled, so that no key does both. A command the shell cannot
+carry out leaves its key to the session.
+
+`M600_FRAME_PICTURE=<file>` in the launcher's environment makes the shell save the window's own picture (the frame
+without the core's picture) five seconds after the start. Checked so far: this picture and the run's logs, with the
+core presenting throughout. Not checked: keys, which a window started from a background process does not receive,
+and the picture on the screen with the core beneath the opening. Start it from a PowerShell on the desktop.

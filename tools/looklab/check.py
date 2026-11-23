@@ -76,6 +76,9 @@ def child_env(temporary):
                 "DOTNET_SKIP_FIRST_TIME_EXPERIENCE", "MSBUILDDISABLENODEREUSE",
                 "DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER", "PYTHONDONTWRITEBYTECODE"):
         env[key] = "1"
+    # A fresh DOTNET_CLI_HOME makes every run a dotnet first run, and a first run appends
+    # the .dotnet/tools folder under that home to the user's PATH for good; hundreds of runs overflowed it.
+    env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0"
     env["NUGET_FALLBACK_PACKAGES"] = ""
     env["LOOKLAB_TEMP_ROOT"] = str(temporary)
     # The Windows Python install-manager alias discovers runtimes through
@@ -412,6 +415,7 @@ def godot_lane(mode, temporary, env, parent, stems=()):
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll6.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll7.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll8.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_a5.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
         elif mode == "--godot-gpu":
             run = godot_run(godot, stage, temporary, env, [*common, "stage0-gpu"], graphics=True)
             if "LOOKLAB_STAGE0_GPU_PASS" not in run.stdout:

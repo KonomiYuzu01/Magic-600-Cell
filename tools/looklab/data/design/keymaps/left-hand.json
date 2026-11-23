@@ -1,0 +1,11 @@
+{
+  "format": "magic600-design-keymap",
+  "version": 1,
+  "radials": {},
+  "bindings": [
+    {"key": "Q", "context": "global", "command": "command.find"},
+    {"key": "E", "context": "global", "command": "help.open"},
+    {"key": "Z", "context": "global", "command": "session.undo"},
+    {"key": "X", "context": "global", "command": "session.redo"}
+  ]
+}

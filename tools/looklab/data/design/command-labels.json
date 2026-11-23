@@ -1,0 +1,18 @@
+{
+  "format": "looklab-command-labels",
+  "version": 1,
+  "labels": {
+    "target.current.set": "Set Target",
+    "target.next.set": "Set Next",
+    "target.next.activate": "Activate Next",
+    "target.next.clear": "Clear Next",
+    "buffer.assign": "Assign Buffer A or B",
+    "target.frame.set": "Set Target frame: Home or Captured",
+    "orbit.switch": "Switch working orbit",
+    "input.destination.set": "Draft or Direct",
+    "intent.set": "Set Goal",
+    "operation.phase.select": "Select phase Prepare / Core / Cleanup",
+    "operation.phase.edit": "Edit phase twists",
+    "operation.phase.append_twist": "Append twist to phase"
+  }
+}

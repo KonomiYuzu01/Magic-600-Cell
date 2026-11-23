@@ -100,7 +100,8 @@ internal static class LL4Checks
                 controls.ContextChoice.Select(controls.Catalogue.Contexts.ToList().IndexOf(context));
                 controls.ContextChoice.EmitSignal(OptionButton.SignalName.ItemSelected, controls.ContextChoice.Selected);
                 Button[] shown = Descendants(controls.Canvas).OfType<Button>().Where(b => b.HasMeta("ll4_command")).ToArray();
-                string[] expected = controls.Catalogue.Commands.Values.Where(c => c.Contexts.Contains(context)).Select(c => c.Id).OrderBy(c => c, StringComparer.Ordinal).ToArray();
+                // A command the layout hides in this context is not drawn.
+                string[] expected = controls.CurrentLayout.Contexts[context].Placed.Keys.OrderBy(c => c, StringComparer.Ordinal).ToArray();
                 Require(shown.All(b => controls.Catalogue.Commands.ContainsKey(b.Text) && b.IsVisibleInTree()) &&
                     shown.Select(b => b.Text).OrderBy(c => c, StringComparer.Ordinal).SequenceEqual(expected), check, "shown set differs in " + context);
                 foreach (Button button in shown)

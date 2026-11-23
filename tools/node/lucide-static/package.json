@@ -1,0 +1,7 @@
+{
+  "name": "magic600-tool-lucide-static",
+  "private": true,
+  "dependencies": {
+    "lucide-static": "1.77.0"
+  }
+}

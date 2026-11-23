@@ -1,0 +1,540 @@
+{
+  "format": "magic600-design-icons",
+  "version": 1,
+  "font": "lucide-static/node_modules/lucide-static/font/lucide.woff2",
+  "codepoints": "lucide-static/node_modules/lucide-static/font/codepoints.json",
+  "icons": {
+    "panel.history": {
+      "glyph": "history",
+      "fallback": "H"
+    },
+    "panel.library": {
+      "glyph": "library-big",
+      "fallback": "L"
+    },
+    "library.template": {
+      "glyph": "square-function",
+      "fallback": "T"
+    },
+    "library.set.query": {
+      "glyph": "text-search",
+      "fallback": "Q"
+    },
+    "library.set.piece": {
+      "glyph": "puzzle",
+      "fallback": "P"
+    },
+    "library.set.position": {
+      "glyph": "map-pinned",
+      "fallback": "O"
+    },
+    "library.block": {
+      "glyph": "square-dashed",
+      "fallback": "B"
+    },
+    "library.state": {
+      "glyph": "bookmark",
+      "fallback": "V"
+    },
+    "library.tool": {
+      "glyph": "wrench",
+      "fallback": "W"
+    },
+    "panel.scripts": {
+      "glyph": "file-code",
+      "fallback": "S"
+    },
+    "panel.tokens": {
+      "glyph": "swatch-book",
+      "fallback": "D"
+    },
+    "panel.inspector": {
+      "glyph": "info",
+      "fallback": "I"
+    },
+    "panel.tune": {
+      "glyph": "sliders-horizontal",
+      "fallback": "~"
+    },
+    "panel.appearance": {
+      "glyph": "palette",
+      "fallback": "A"
+    },
+    "panel.problems": {
+      "glyph": "triangle-alert",
+      "fallback": "P"
+    },
+    "panel.console": {
+      "glyph": "terminal",
+      "fallback": "C"
+    },
+    "panel.tasks": {
+      "glyph": "list-checks",
+      "fallback": "T"
+    },
+    "pair.side": {
+      "glyph": "columns-2",
+      "fallback": "||"
+    },
+    "pair.stacked": {
+      "glyph": "rows-2",
+      "fallback": "="
+    },
+    "pair.maximise": {
+      "glyph": "maximize-2",
+      "fallback": "<>"
+    },
+    "pair.restore": {
+      "glyph": "minimize-2",
+      "fallback": "><"
+    },
+    "pair.focus": {
+      "glyph": "focus",
+      "fallback": "F"
+    },
+    "workspace.reset": {
+      "glyph": "rotate-ccw",
+      "fallback": "R"
+    },
+    "pane.close": {
+      "glyph": "x",
+      "fallback": "x"
+    },
+    "theme.family": {
+      "glyph": "sun-moon",
+      "fallback": "*"
+    },
+    "mark.committed": {
+      "glyph": "square",
+      "fallback": "#"
+    },
+    "mark.link": {
+      "glyph": "link-2",
+      "fallback": "="
+    },
+    "mark.autoframe": {
+      "glyph": "scan",
+      "fallback": "o"
+    },
+    "mark.protected": {
+      "glyph": "lock",
+      "fallback": "L"
+    },
+    "search": {
+      "glyph": "search",
+      "fallback": "?"
+    },
+    "palette.pin": {
+      "glyph": "pin",
+      "fallback": "*"
+    },
+    "help.keys": {
+      "glyph": "keyboard",
+      "fallback": "K"
+    },
+    "step.back": {
+      "glyph": "chevron-left",
+      "fallback": "<"
+    },
+    "step.forward": {
+      "glyph": "chevron-right",
+      "fallback": ">"
+    },
+    "history.undo": {
+      "glyph": "undo-2",
+      "fallback": "<-"
+    },
+    "history.redo": {
+      "glyph": "redo-2",
+      "fallback": "->"
+    },
+    "history.roll": {
+      "glyph": "corner-down-left",
+      "fallback": "<"
+    },
+    "history.partial": {
+      "glyph": "step-back",
+      "fallback": "|<"
+    },
+    "history.branch": {
+      "glyph": "git-branch",
+      "fallback": "Y"
+    },
+    "mark.pending": {
+      "glyph": "hourglass",
+      "fallback": "~"
+    },
+    "preview.commit": {
+      "glyph": "check",
+      "fallback": "ok"
+    },
+    "preview.discard": {
+      "glyph": "trash-2",
+      "fallback": "x"
+    },
+    "preview.promote": {
+      "glyph": "bookmark-plus",
+      "fallback": "+"
+    },
+    "preview.moves": {
+      "glyph": "list",
+      "fallback": "="
+    },
+    "fold.open": {
+      "glyph": "chevron-down",
+      "fallback": "v"
+    },
+    "fold.closed": {
+      "glyph": "chevrons-right",
+      "fallback": ">"
+    },
+    "severity.error": {
+      "glyph": "circle-x",
+      "fallback": "x"
+    },
+    "severity.warning": {
+      "glyph": "octagon-alert",
+      "fallback": "!"
+    },
+    "severity.info": {
+      "glyph": "message-circle",
+      "fallback": "i"
+    },
+    "task.running": {
+      "glyph": "loader",
+      "fallback": "~"
+    },
+    "task.ok": {
+      "glyph": "circle-check",
+      "fallback": "ok"
+    },
+    "task.cancelled": {
+      "glyph": "circle-slash",
+      "fallback": "/"
+    },
+    "task.cancel": {
+      "glyph": "circle-stop",
+      "fallback": "x"
+    },
+    "problems.last": {
+      "glyph": "locate-fixed",
+      "fallback": ">!"
+    },
+    "labels": {
+      "glyph": "tag",
+      "fallback": "Aa"
+    },
+    "workspace.solve": {
+      "glyph": "box",
+      "fallback": "So"
+    },
+    "workspace.script": {
+      "glyph": "code-xml",
+      "fallback": "Sc"
+    },
+    "workspace.analyse": {
+      "glyph": "chart-line",
+      "fallback": "An"
+    },
+    "workspace.reference": {
+      "glyph": "book-open",
+      "fallback": "Re"
+    },
+    "prov.default": {
+      "glyph": "dot",
+      "fallback": "."
+    },
+    "prov.theme": {
+      "glyph": "paintbrush",
+      "fallback": "t"
+    },
+    "prov.session": {
+      "glyph": "circle-dot",
+      "fallback": "*"
+    },
+    "prov.override": {
+      "glyph": "pencil",
+      "fallback": "^"
+    },
+    "prov.script": {
+      "glyph": "braces",
+      "fallback": "="
+    },
+    "script.run": {
+      "glyph": "play",
+      "fallback": ">"
+    },
+    "panel.slot1": {
+      "glyph": "panel-right",
+      "fallback": "S1"
+    },
+    "panel.slot2": {
+      "glyph": "panel-right-dashed",
+      "fallback": "S2"
+    },
+    "script.abort": {
+      "glyph": "octagon-x",
+      "fallback": "x"
+    },
+    "script.rerun": {
+      "glyph": "rotate-cw",
+      "fallback": "r"
+    },
+    "script.mark": {
+      "glyph": "square-code",
+      "fallback": "s"
+    },
+    "follow.pause": {
+      "glyph": "pause",
+      "fallback": "p"
+    },
+    "follow.goto": {
+      "glyph": "locate",
+      "fallback": "g"
+    },
+    "editor.wrap": {
+      "glyph": "wrap-text",
+      "fallback": "w"
+    },
+    "editor.unused": {
+      "glyph": "eraser",
+      "fallback": "u"
+    },
+    "editor.faults": {
+      "glyph": "bug",
+      "fallback": "f"
+    },
+    "kind.read": {
+      "glyph": "eye",
+      "fallback": "r"
+    },
+    "kind.view": {
+      "glyph": "layout-grid",
+      "fallback": "v"
+    },
+    "mount.context": {
+      "glyph": "mouse-pointer-click",
+      "fallback": "c"
+    },
+    "mount.view": {
+      "glyph": "app-window",
+      "fallback": "v"
+    },
+    "mount.overlay": {
+      "glyph": "layers",
+      "fallback": "o"
+    },
+    "bind.key": {
+      "glyph": "command",
+      "fallback": "k"
+    },
+    "package": {
+      "glyph": "package",
+      "fallback": "P"
+    },
+    "package.install": {
+      "glyph": "download",
+      "fallback": "+"
+    },
+    "package.revoke": {
+      "glyph": "shield-x",
+      "fallback": "-"
+    },
+    "cap.read": {
+      "glyph": "scan-eye",
+      "fallback": "r"
+    },
+    "cap.preview": {
+      "glyph": "circle-play",
+      "fallback": "p"
+    },
+    "cap.view": {
+      "glyph": "layout-panel-top",
+      "fallback": "v"
+    },
+    "cap.panel": {
+      "glyph": "panel-right-open",
+      "fallback": "d"
+    },
+    "cap.canvas": {
+      "glyph": "pen-tool",
+      "fallback": "c"
+    },
+    "lock": {
+      "glyph": "lock-keyhole",
+      "fallback": "L"
+    },
+    "ref.pick": {
+      "glyph": "crosshair",
+      "fallback": "+"
+    },
+    "tree.leaf": {
+      "glyph": "minus",
+      "fallback": "."
+    },
+    "command.bar": {
+      "glyph": "square-terminal",
+      "fallback": ">"
+    },
+    "console.typed": {
+      "glyph": "arrow-right",
+      "fallback": ">"
+    },
+    "console.echo": {
+      "glyph": "corner-down-right",
+      "fallback": "~"
+    },
+    "console.result": {
+      "glyph": "equal",
+      "fallback": "="
+    },
+    "scripts.restart": {
+      "glyph": "refresh-cw",
+      "fallback": "R"
+    },
+    "scripts.safe": {
+      "glyph": "shield",
+      "fallback": "S"
+    },
+    "keymap.export": {
+      "glyph": "file-output",
+      "fallback": "e"
+    },
+    "keymap.defaults": {
+      "glyph": "list-restart",
+      "fallback": "d"
+    },
+    "layer.cells": {
+      "glyph": "boxes",
+      "fallback": "C"
+    },
+    "layer.stickers": {
+      "glyph": "sticker",
+      "fallback": "S"
+    },
+    "layer.grips": {
+      "glyph": "grip",
+      "fallback": "G"
+    },
+    "layer.axes": {
+      "glyph": "axis-3d",
+      "fallback": "A"
+    },
+    "layer.orbit": {
+      "glyph": "orbit",
+      "fallback": "O"
+    },
+    "layer.cycle": {
+      "glyph": "eye-off",
+      "fallback": "C"
+    },
+    "workspace.gallery": {
+      "glyph": "gallery-vertical-end",
+      "fallback": "G"
+    },
+    "motion.play": {
+      "glyph": "play-circle",
+      "fallback": "P"
+    },
+    "motion.reduced": {
+      "glyph": "snail",
+      "fallback": "R"
+    },
+    "cue.mute": {
+      "glyph": "volume-x",
+      "fallback": "M"
+    },
+    "preset.next": {
+      "glyph": "paint-bucket",
+      "fallback": "N"
+    },
+    "contrast.high": {
+      "glyph": "contrast",
+      "fallback": "H"
+    },
+    "readout.revision": {
+      "glyph": "git-commit-horizontal",
+      "fallback": "R"
+    },
+    "readout.position": {
+      "glyph": "map-pin",
+      "fallback": "P"
+    },
+    "readout.queue": {
+      "glyph": "list-ordered",
+      "fallback": "Q"
+    },
+    "glyph.cell": {
+      "glyph": "hexagon",
+      "fallback": "C"
+    },
+    "glyph.grip": {
+      "glyph": "circle-dot-dashed",
+      "fallback": "G"
+    },
+    "glyph.axis": {
+      "glyph": "move-diagonal",
+      "fallback": "A"
+    },
+    "glyph.macro": {
+      "glyph": "workflow",
+      "fallback": "M"
+    },
+    "glyph.preview": {
+      "glyph": "scan-search",
+      "fallback": "P"
+    },
+    "glyph.proof": {
+      "glyph": "badge-check",
+      "fallback": "P"
+    },
+    "state.loading": {
+      "glyph": "loader-circle",
+      "fallback": "L"
+    },
+    "state.notdrawn": {
+      "glyph": "image-off",
+      "fallback": "N"
+    },
+    "character.swap": {
+      "glyph": "replace",
+      "fallback": "S"
+    },
+    "state.empty": {
+      "glyph": "inbox",
+      "fallback": "E"
+    },
+    "state.error": {
+      "glyph": "circle-alert",
+      "fallback": "E"
+    },
+    "state.stale": {
+      "glyph": "clock-alert",
+      "fallback": "S"
+    },
+    "density.next": {
+      "glyph": "rows-3",
+      "fallback": "N"
+    },
+    "view.reset": {
+      "glyph": "brush",
+      "fallback": "R"
+    },
+    "view.names": {
+      "glyph": "tags",
+      "fallback": "N"
+    },
+    "view.findings": {
+      "glyph": "flag-triangle-right",
+      "fallback": "F"
+    },
+    "display.frame": {
+      "glyph": "frame",
+      "fallback": "F"
+    },
+    "display.adaptive": {
+      "glyph": "gauge",
+      "fallback": "A"
+    }
+  }
+}

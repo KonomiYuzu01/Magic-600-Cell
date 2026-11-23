@@ -9,8 +9,9 @@
     "renderer-spike": "Stage 2.4 renderer experiments",
     "media": "Stages 5 and 7",
     "release": "Stage 8",
-    "api": "Paid Anthropic API runs the owner confirms (ADR line A1 to A3); never product code",
-    "optional": "Install only when needed"
+    "api": "Paid Anthropic API runs the owner confirms (ADR line A1 to A3 and A5); never product code",
+    "optional": "Install only when needed",
+    "design": "ADR-D01 design system: the approved type faces and placeholder icons for Look Lab and the product shell (renderer/shell)"
   },
   "owner_required": [
     "Visual Studio Build Tools",
@@ -229,6 +230,134 @@
         "registry.npmjs.org"
       ],
       "uninstall": "delete tools/node/marp-cli/node_modules"
+    },
+    {
+      "id": "ibm-plex-sans",
+      "purpose": "ADR-D01 ui type role (D01.47): IBM Plex Sans as complete WOFF2 files",
+      "profiles": [
+        "design"
+      ],
+      "method": "npm-ci",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "2.0.0",
+      "requires": [
+        "node"
+      ],
+      "prefix": "tools/node/ibm-plex-sans",
+      "probe": [
+        "node",
+        "-p",
+        "require('./tools/node/ibm-plex-sans/node_modules/@ibm/plex-sans/package.json').version"
+      ],
+      "expect": "^2\\.0\\.0$",
+      "license": "OFL-1.1 with Reserved Font Name \"Plex\" (fonts/complete/woff2/license.txt); a modified build may not ship under that name; ship the OFL text",
+      "network_hosts": [
+        "registry.npmjs.org"
+      ],
+      "note": "Item 1 of the ADR-D01 dependency list the owner approved on 22 November 2026 (docs/wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md). Data only: the installer runs npm ci with --ignore-scripts and nothing executes code from the package. The probe reads the installed package.json, so run it from the repository root, as the install guard requires. The package's postinstall script runs the ibmtelemetry command of its dependency @ibm/telemetry-js 1.12.0 (Apache-2.0); the installer's --ignore-scripts keeps it from running, so it sends nothing. Faces: node_modules/@ibm/plex-sans/fonts/complete/woff2/IBMPlexSans-*.woff2.",
+      "uninstall": "delete tools/node/ibm-plex-sans/node_modules"
+    },
+    {
+      "id": "ibm-plex-serif",
+      "purpose": "ADR-D01 content type role (D01.47): IBM Plex Serif as complete WOFF2 files",
+      "profiles": [
+        "design"
+      ],
+      "method": "npm-ci",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "2.0.0",
+      "requires": [
+        "node"
+      ],
+      "prefix": "tools/node/ibm-plex-serif",
+      "probe": [
+        "node",
+        "-p",
+        "require('./tools/node/ibm-plex-serif/node_modules/@ibm/plex-serif/package.json').version"
+      ],
+      "expect": "^2\\.0\\.0$",
+      "license": "OFL-1.1 with Reserved Font Name \"Plex\" (fonts/complete/woff2/license.txt); a modified build may not ship under that name; ship the OFL text",
+      "network_hosts": [
+        "registry.npmjs.org"
+      ],
+      "note": "Item 2 of the ADR-D01 dependency list the owner approved on 22 November 2026 (docs/wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md). Data only: the installer runs npm ci with --ignore-scripts and nothing executes code from the package. The probe reads the installed package.json, so run it from the repository root, as the install guard requires. The package's postinstall script runs the ibmtelemetry command of its dependency @ibm/telemetry-js 1.12.0 (Apache-2.0); the installer's --ignore-scripts keeps it from running, so it sends nothing. Faces: node_modules/@ibm/plex-serif/fonts/complete/woff2/IBMPlexSerif-*.woff2.",
+      "uninstall": "delete tools/node/ibm-plex-serif/node_modules"
+    },
+    {
+      "id": "lilex",
+      "purpose": "ADR-D01 code type role (D01.47): Lilex through Fontsource, WOFF2 split by Unicode range",
+      "profiles": [
+        "design"
+      ],
+      "method": "npm-ci",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "5.3.0",
+      "requires": [
+        "node"
+      ],
+      "prefix": "tools/node/lilex",
+      "probe": [
+        "node",
+        "-p",
+        "require('./tools/node/lilex/node_modules/@fontsource/lilex/package.json').version"
+      ],
+      "expect": "^5\\.3\\.0$",
+      "license": "OFL-1.1 (LICENSE: The Lilex Project Authors); ship the OFL text",
+      "network_hosts": [
+        "registry.npmjs.org"
+      ],
+      "note": "Item 3 of the ADR-D01 dependency list the owner approved on 22 November 2026 (docs/wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md). Data only: the installer runs npm ci with --ignore-scripts and nothing executes code from the package. The probe reads the installed package.json, so run it from the repository root, as the install guard requires. Fontsource repackages the Google Fonts build of Lilex: one WOFF2 per weight, style and Unicode subset (latin, latin-ext, greek, cyrillic, cyrillic-ext, vietnamese, symbols2), so a face is the set of its subset files: node_modules/@fontsource/lilex/files/lilex-<subset>-<weight>-<style>.woff2. npm carries no TTF build of Lilex; the upstream release zip (mishamyrt/Lilex 2.630) has no executable for the zip method's probe.",
+      "uninstall": "delete tools/node/lilex/node_modules"
+    },
+    {
+      "id": "lucide-static",
+      "purpose": "ADR-D01 placeholder tier-1 icons (D01.53) until the design and art session draws the set",
+      "profiles": [
+        "design"
+      ],
+      "method": "npm-ci",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ],
+      "version": "1.77.0",
+      "requires": [
+        "node"
+      ],
+      "prefix": "tools/node/lucide-static",
+      "probe": [
+        "node",
+        "-p",
+        "require('./tools/node/lucide-static/node_modules/lucide-static/package.json').version"
+      ],
+      "expect": "^1\\.77\\.0$",
+      "license": "ISC (Lucide Icons and Contributors); about 120 icons derived from Feather are MIT (Cole Bemis), listed in the same LICENSE file; ship that file",
+      "network_hosts": [
+        "registry.npmjs.org"
+      ],
+      "note": "Item 5 of the ADR-D01 dependency list the owner approved on 22 November 2026 (docs/wiki/decisions/owner-decisions-2026-11-22-adr-d01-overrules.md). Data only: the installer runs npm ci with --ignore-scripts and nothing executes code from the package. The probe reads the installed package.json, so run it from the repository root, as the install guard requires. Placeholder only (charter D3 wants a custom set). Icons: node_modules/lucide-static/icons/*.svg (2,410 files); the package also holds an icon font and a sprite.",
+      "uninstall": "delete tools/node/lucide-static/node_modules"
     },
     {
       "id": "drawio",
@@ -965,6 +1094,44 @@
       ],
       "note": "Holds no key: the SDK reads ANTHROPIC_API_KEY from the owner's environment at run time. Each run needs the owner's confirmation of provider, models and budget, and writes one ledger line per call (AGENTS.md, Records and budgets).",
       "uninstall": "delete tools/.venv/api"
+    },
+    {
+      "id": "claude-agent-sdk",
+      "purpose": "Claude Agent SDK, with the Claude Code CLI it bundles, for the owner-confirmed ADR line A5 run on the owner's API credits (Fable building in Look Lab); no product code imports it",
+      "profiles": [
+        "api"
+      ],
+      "method": "uv-venv-hashed",
+      "status": "verified",
+      "installable": true,
+      "platforms": [
+        "windows"
+      ],
+      "version": "0.2.187",
+      "python": {
+        "implementation": "cpython",
+        "version": "3.14.7",
+        "bits": 64
+      },
+      "requires": [
+        "uv"
+      ],
+      "venv": "tools/.venv/agent-sdk",
+      "requirements": "tools/python/agent-sdk.txt",
+      "probe": [
+        "{venv}/python",
+        "-I",
+        "-c",
+        "import claude_agent_sdk; print(claude_agent_sdk.__version__)"
+      ],
+      "expect": "^0\\.2\\.187$",
+      "license": "MIT (the SDK); the bundled Claude Code CLI 2.1.330 is used under Anthropic's terms",
+      "network_hosts": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "note": "Holds no key: the bundled CLI reads ANTHROPIC_API_KEY from the owner's environment at run time. The owner's Max plan API credits cover the Agent SDK but not Claude Code itself (platform.claude.com, API credits for Max, Ultra and Team plans). Each run needs the owner's confirmation of provider, models and budget, and writes ledger lines (AGENTS.md, Records and budgets).",
+      "uninstall": "delete tools/.venv/agent-sdk"
     },
     {
       "id": "clip-vit-b-16",

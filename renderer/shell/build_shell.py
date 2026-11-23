@@ -25,6 +25,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT = ROOT / "renderer" / "shell" / "project"
 BUILD_ROOT = ROOT / "work" / "build" / "c9-shell"
+# The frame (A5): the chrome library and the design data are Look Lab's own sources, staged into the build's project.
+# The repository holds no second copy of them.
+CHROME = ROOT / "tools" / "looklab" / "app" / "Chrome"
+DESIGN = ROOT / "tools" / "looklab" / "data" / "design"
+COMMANDS = ROOT / "docs" / "progress" / "1.0" / "command-table.json"
 CSPROJ = "Magic600Shell.csproj"
 ASSEMBLY = ".godot/mono/temp/bin/Debug/Magic600Shell.dll"
 sys.path.insert(0, str(ROOT / "renderer" / "acceptance"))
@@ -54,6 +59,9 @@ def build(executable: str | None, out: Path | None = None) -> Path:
     logs.mkdir()
     private.mkdir()
     shutil.copytree(PROJECT, project, ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
+    shutil.copytree(CHROME, project / "Chrome", ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
+    shutil.copytree(DESIGN, project / "design")
+    shutil.copy2(COMMANDS, project / "design" / "command-table.json")
     env = prepare_host.offline_environment(private, nupkgs)
     print(f"dotnet build: {project}", flush=True)
     prepare_host.run_logged(build_command(), project, env, 900, logs / "dotnet-build")

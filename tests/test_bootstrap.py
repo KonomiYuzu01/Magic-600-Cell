@@ -784,6 +784,28 @@ class RefusalTests(unittest.TestCase):
             self.assertEqual(os.listdir(outside), [])
         self.assertEqual(calls, [])
 
+    def test_data_only_npm_package_is_present_only_with_its_node_modules(self):
+        # Probed through the shared node, which is on PATH whether or not the package is installed.
+        entry = dict(bootstrap.entry_for(bootstrap.load_lock(), "ibm-plex-sans"))
+        self.assertEqual(entry["probe"][0], "node")
+        tool = dict(bootstrap.entry_for(bootstrap.load_lock(), "mermaid-cli"))
+        saved = (bootstrap.ROOT, bootstrap.shutil.which)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td).resolve()
+            (root / entry["prefix"]).mkdir(parents=True)
+            (root / entry["prefix"] / "package.json").write_text("{}\n")
+            bootstrap.ROOT = root
+            bootstrap.shutil.which = lambda name, path=None: str(root / "node.exe")
+            try:
+                self.assertFalse(bootstrap.present(entry))  # node alone does not make the package present
+                (root / entry["prefix"] / "node_modules").mkdir()
+                self.assertTrue(bootstrap.present(entry))
+                # A package with a command of its own is still present only through that command.
+                (root / tool["prefix"] / "node_modules").mkdir(parents=True)
+                self.assertFalse(bootstrap.present(tool))
+            finally:
+                bootstrap.ROOT, bootstrap.shutil.which = saved
+
     def test_helpers_are_loaded_from_source_not_bytecode(self):
         self.assertFalse(hasattr(sys.modules["repo_digest"], "__cached__") and sys.modules["repo_digest"].__cached__)
         for rel in ("tools/toolchain/bootstrap.py", "tools/skills/sync.py"):

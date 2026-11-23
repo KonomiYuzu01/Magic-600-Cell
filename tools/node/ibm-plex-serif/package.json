@@ -1,0 +1,7 @@
+{
+  "name": "magic600-tool-ibm-plex-serif",
+  "private": true,
+  "dependencies": {
+    "@ibm/plex-serif": "2.0.0"
+  }
+}
