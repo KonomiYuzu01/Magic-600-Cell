@@ -7,8 +7,8 @@
 //! These runs test the answer's contract only and enter no research evidence (LP5 plan, section 9, reading B). A pass
 //! is source and fixture evidence.
 //!
-//! CT-LB5-08 (source, part: the library's membership over synthetic actions; not run here: the jumbling form of D[k]
-//! over KN2.4's branch predicates, which waits for the research host's reads).
+//! CT-LB5-08 (source, part: the library's membership over synthetic actions; not run: the jumbling form of D[k]
+//! over KN2.4's branch predicates, which needs research host reads that are not built).
 
 mod research_common;
 

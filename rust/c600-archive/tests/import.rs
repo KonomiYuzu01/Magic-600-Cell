@@ -185,9 +185,12 @@ fn stage_fixture() -> Fixture {
     f
 }
 
+/// CT-PS3-08 (source, part: on synthetic members, a tampered gzip stream, a changed decoded content and a tampered
+/// corpus-manifest digest each fail separately, and no check ever expects an original digest; not run: the
+/// corpus with stage 19's IMPORT-MANIFEST rows, and a public digest replaced by its original, which
+/// `tests/test_lp5_archive.py` runs).
 #[test]
 fn ct_ps3_08_synthetic_tampered_gzip_decoded_and_manifest_digests_fail_separately() {
-    // CT-PS3-08 (part: synthetic members; the corpus part runs in tests/test_lp5_archive.py).
     let clean = run(stage_fixture().granted());
     assert!(failed(&clean).is_empty(), "{:?}", failed(&clean));
     assert!(clean.refusal().is_none());
@@ -269,9 +272,11 @@ fn ct_ps3_08_synthetic_tampered_gzip_decoded_and_manifest_digests_fail_separatel
     assert!(all.iter().all(|c| c.expected != "9".repeat(64) && c.expected != "8".repeat(64)));
 }
 
+/// CT-PS3-09 (source, part: synthetic case-only names stay distinct by digest with every member present, and a listed
+/// member that is not granted is reported missing and stays counted; not run: the six stage 16 pairs, which
+/// `tests/test_lp5_archive.py` runs).
 #[test]
 fn ct_ps3_09_synthetic_case_only_names_and_a_missing_member() {
-    // CT-PS3-09 (part: synthetic names; the six stage 16 pairs run in tests/test_lp5_archive.py).
     let f = Fixture::new()
         .record("runs/PX-1.json", r#"{"format":"x/1","status":"A"}"#, false)
         .record("runs/px-1.json", r#"{"format":"x/1","status":"B"}"#, false)
@@ -303,9 +308,12 @@ fn ct_ps3_09_synthetic_case_only_names_and_a_missing_member() {
     assert_eq!(run_with(g, &Limits::research_archive()).unwrap_err().code, FORMAT);
 }
 
+/// CT-PS3-10 (source, part: a synthetic bundle that carries a producer as data, lists missing dependencies with and
+/// without a digest and claims no checker, and refuses damaged bytes, a revision-bound scope, a malformed identity and
+/// the caller's limits; not run: the corpus bundle and the scan for network and process use, which
+/// `tests/test_lp5_archive.py` runs).
 #[test]
 fn ct_ps3_10_synthetic_bundle_declares_missing_dependencies_and_refuses_bad_input() {
-    // CT-PS3-10 (part: synthetic envelopes; the corpus bundle runs in tests/test_lp5_archive.py).
     let script = b"print('a producer, carried as data and never run')\n";
     let f = Fixture::new().record("a.json.gz", SCAN, true).record("b.json", RUN, false).auxiliary("make.py", script);
     let r = run(f.granted());
@@ -428,9 +436,11 @@ fn ct_ps3_10_synthetic_bundle_declares_missing_dependencies_and_refuses_bad_inpu
     assert_eq!(export_check_bundle(&[a, b], &id, LimitsRef(&small)).unwrap_err().code, SIZE_LIMIT);
 }
 
+/// CT-DET-24 (source, part: a synthetic archived timed stop imports with its status and reason as cut-off facts, its
+/// recheck not run and no producer run; not run: the corpus's timed stop and stage 19's data-only archive, which
+/// `tests/test_lp5_archive.py` runs, and the KN6-checked witness, which `c600-research/tests/r8/ct_det_24.rs` runs).
 #[test]
 fn ct_det_24_synthetic_timed_stop_keeps_its_limits() {
-    // CT-DET-24 (part: a synthetic archived timed stop; the corpus records run in tests/test_lp5_archive.py).
     let r = run(Fixture::new().record("s7305-pstar.json", RUN, false).granted());
     let m = &r.members[0];
     assert!(matches!(m.recognition, Recognition::Absent(Discrimination::Undiscriminated)));

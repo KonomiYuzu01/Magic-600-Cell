@@ -1,11 +1,17 @@
 //! LP5 piece R1: the research library's availability preflight, `research_preflight.check_availability` (LB5.14), on
 //! `c600-run` with no host.
 //!
-//! Test names carry the CT ID and part (PHS.62): CT-LB5-06's preflight part (every claim group of `c600-archive`'s
-//! binding edition, read in place as the host would supply it, answers `ready` or `unavailable` with the matrix's
-//! blockers, and q11 answers LB5.17's example with its captured string unchanged) and CT-ERR-11's unavailable part (an
-//! unavailable answer is a completed value, never a pass, a failure or a negative). The module's own source and
-//! catalogue row are checked as R7's catalogue test checks the other research modules. A pass is source evidence.
+//! Test names carry the CT ID and part (PHS.62):
+//!
+//! - CT-LB5-06 (source, part: LB5.14's preflight in the language: every claim group of `c600-archive`'s binding
+//!   edition, read in place as the host would supply it, answers `ready` or `unavailable` with the matrix's blockers,
+//!   and q11 answers LB5.17's example with its captured string unchanged; not run: the stage 19 manifest digests,
+//!   which `tests/test_lp5_archive.py` checks, and the stage 19 claims, which `c600-checkers/tests/kn6_s19.rs` checks).
+//! - CT-ERR-11 (source, part: an unavailable preflight answer is a completed value, never a pass, a failure or a
+//!   negative; not run: the membership, search and other research answers, which `research_ct_err_11.rs` runs).
+//!
+//! The module's own source and catalogue row are checked as R7's catalogue test checks the other research modules. A
+//! pass is source evidence.
 
 mod research_common;
 

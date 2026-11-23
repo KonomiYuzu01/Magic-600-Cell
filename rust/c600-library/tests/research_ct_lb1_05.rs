@@ -8,7 +8,7 @@
 //! runs in `research_entries.rs`. A pass is source and fixture evidence.
 //!
 //! CT-LB1-05 (source, part: the library half, fixed points, matching and integral flows on synthetic instances; not
-//! run here: the matching half over stage 19's stored Γ(Y) certificate, which is R6's).
+//! run: the matching half over stage 19's stored Γ(Y) certificate, which `c600-checkers/tests/kn6_s19.rs` runs).
 
 mod research_common;
 

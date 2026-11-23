@@ -1,4 +1,17 @@
-//! Stage 17 (routing in the driver): CT-LB5-04 and CT-KN6-03's stage 17 part.
+//! Stage 17 (routing in the driver), read in place.
+//!
+//! - CT-LB5-04 (source, part: every `s16-rr/1` release search, `s16-pxrr/1` run and separate stop record answering
+//!   not applicable with its own bounds, so a bounded stop refutes no word beyond them, and the family-R stop at 7304
+//!   keeping P*'s unbeamed scope; `s17.rr` refusing a word or grip other than the recorded gate inputs before any
+//!   search; not run: the RR canonical-word and five-tail gates against brute force at the recorded inputs H2 and
+//!   H2b, which only the ignored tests `ct_lb5_04_stage17_rr_gate_h2` and `ct_lb5_04_stage17_rr_gate_h2b` run, with
+//!   the label calculus checked against the engine in the ignored test
+//!   `ct_kn6_03_stage17_label_calculus_agrees_with_the_engine`).
+//! - CT-KN6-01 (source, part: `s17.macro`'s gate on RR-7304, with `gate::run`'s structural changes, and `s17.rr`
+//!   failing under a wrong start table, a tampered Φ and a changed word, grip or statement; not run: `s17.rr`'s gate
+//!   over its claims on H2b, which only the ignored test `ct_kn6_03_stage17_rr_gate` runs).
+//! - CT-KN6-03 (source, part: stage 17's sub-checkers registered and the chosen P*** descents and RR-7304 passing in
+//!   place with their check records; not run: the RR gate records H2 and H2b, which only ignored tests check).
 
 use c600_checkers::archive::s15::grips::sfd;
 use c600_checkers::archive::s15::labels::LabelTable;

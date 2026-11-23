@@ -182,10 +182,12 @@ fn bound_names(value: &Json, out: &mut Vec<String>) {
 
 // --- CT-PS1-26 ------------------------------------------------------------------------------------------------
 
-/// CT-PS1-26 (part: the translator; not run: the export through a granted file capability, which is
-/// `c600-research`'s `research.obligation.export` row): PS1.45 and PS1.46. The format packet's supported typed
-/// statement exports its exact Lean 4 text, with `by sorry`, the format, the vocabulary and the statement and table
-/// pins; the unknown symbol, the wrong arity and the named statement refuse with
+/// CT-PS1-26 (source, part: the translator; not run: the unknown-symbol and wrong-arity vectors refused through
+/// `research.obligation.export` with no file written, and a check at that row that an export promotes no evidence; the
+/// row's export of the supported vector through a granted file, refusals of statements with no body writing nothing and
+/// an ungranted destination run in `c600-research/tests/panel.rs`): PS1.45 and PS1.46. The format packet's supported
+/// typed statement exports its exact Lean 4 text, with `by sorry`, the format, the vocabulary and the statement and
+/// table pins; the unknown symbol, the wrong arity and the named statement refuse with
 /// `LB5:input.obligation_untranslatable`, and the body whose bytes differ from the StatementId's digest refuses with
 /// `PS1:input.digest_mismatch`. Each refusal returns no text.
 #[test]
@@ -273,12 +275,13 @@ fn ps1_46_versioned_table_and_prelude_pins_hold() {
 
 // --- CT-LB5-11 ------------------------------------------------------------------------------------------------
 
-/// CT-LB5-11 (part: the translator half; not run: the file grant that `research.obligation.export` requires and that
-/// a refused export writes no file, which are `c600-research`'s): LB5.18. The translator writes only the restricted
-/// versioned vocabulary: each of PS1.46's forms gives its exact Lean text, and every token of every export is the
-/// theorem's frame, a mark or sort of the vocabulary, a numeral, a hypothesis name, a Lean identifier of the table or a
-/// name the body binds. A statement named by ID, unresolved bytes, a table of another vocabulary, an unknown symbol, a
-/// wrong arity, an unbound variable and every form outside the vocabulary refuse with
+/// CT-LB5-11 (source, part: the translator half; not run: checks at `research.obligation.export` that an export changes
+/// no evidence grade and no revision and that the row's code in `c600-research` names no process or network API; the
+/// row's file grant and a refused export writing no file run in `c600-research/tests/panel.rs`): LB5.18. The translator
+/// writes only the restricted versioned vocabulary: each of PS1.46's forms gives its exact Lean text, and every token
+/// of every export is the theorem's frame, a mark or sort of the vocabulary, a numeral, a hypothesis name, a Lean
+/// identifier of the table or a name the body binds. A statement named by ID, unresolved bytes, a table of another
+/// vocabulary, an unknown symbol, a wrong arity, an unbound variable and every form outside the vocabulary refuse with
 /// `LB5:input.obligation_untranslatable` and return no text. The prelude and Lean stay outside the shipped software:
 /// the prelude is not compiled in and the crate has no Lean dependency.
 #[test]
@@ -500,10 +503,11 @@ fn canonical_json_reads_as_the_reference_reader() {
 
 // --- CT-RTE-23 ------------------------------------------------------------------------------------------------
 
-/// CT-RTE-23 (part: as far as the pure translator shows it; not run: LB5.18's file grant and the `file` row's command
-/// path, which are `c600-research`'s): RTE.28 and EVD.64. The export is PS1.45's `c600-proof-obligation-draft`; the
-/// crate has no Lean dependency; the module reaches nothing in the crate but `Statement` and `StatementId`, so it reads
-/// no proof record, defines no import row or check mode and writes no evidence field; no public function takes a
+/// CT-RTE-23 (source, part: as far as the pure translator shows it; not run: a check at `research.obligation.export`
+/// that an export promotes no claim, its evidence and revision unchanged; LB5.18's file grant through that `file` row
+/// runs in `c600-research/tests/panel.rs`): RTE.28 and EVD.64. The export is PS1.45's `c600-proof-obligation-draft`;
+/// the crate has no Lean dependency; the module reaches nothing in the crate but `Statement` and `StatementId`, so it
+/// reads no proof record, defines no import row or check mode and writes no evidence field; no public function takes a
 /// mutable reference, so an export changes nothing it is given and promotes no claim; and `formal proof` keeps no
 /// writer: every writer's attempt is refused with `EVD:capability.field_not_writable`.
 #[test]
@@ -579,13 +583,13 @@ fn registry_row(code: &str) -> Vec<String> {
     rows[0].trim_matches('|').split(" | ").map(|cell| cell.trim().to_string()).collect()
 }
 
-/// CT-ERR-19 (part: the codes the translator and the writer check emit, with their chapter 13 rows read in place; not
-/// run: that a refused `research.obligation.export` writes no file, which is `c600-research`'s row): LB5.18, EVD.64,
-/// EVD.65 and ERR.14. An untranslatable obligation refuses with `LB5:input.obligation_untranslatable` and returns no
-/// text; an unauthorized evidence field refuses with `EVD:capability.field_not_writable` and adds no leaf (the
-/// writer check's whole table runs as CT-EVD-26 to CT-EVD-29 in `tests/sinks.rs`). Each code keeps its owning
-/// chapter (03 for LB5, 06 for EVD), the refusal form and its category's retry, `after_user_change` for input and
-/// capability (ERR.14).
+/// CT-ERR-19 (source, part: the codes the translator and the writer check emit, with their chapter 13 rows read in
+/// place; not run: that a refused `research.obligation.export` writes no file, which `c600-research/tests/panel.rs`
+/// runs): LB5.18, EVD.64, EVD.65 and ERR.14. An untranslatable obligation refuses with
+/// `LB5:input.obligation_untranslatable` and returns no text; an unauthorized evidence field refuses with
+/// `EVD:capability.field_not_writable` and adds no leaf (the writer check's whole table runs as CT-EVD-26 to CT-EVD-29
+/// in `tests/sinks.rs`). Each code keeps its owning chapter (03 for LB5, 06 for EVD), the refusal form and its
+/// category's retry, `after_user_change` for input and capability (ERR.14).
 #[test]
 fn ct_err_19_refusals_keep_their_codes_chapters_and_retry() {
     let error = refused(export(&body(r#"{"kind":"pred","name":"absent","args":[]}"#)), "untranslatable");

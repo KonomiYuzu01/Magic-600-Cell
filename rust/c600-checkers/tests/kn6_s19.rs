@@ -1,11 +1,25 @@
 //! Stage 19's research-archive sub-checkers (LP5 piece R6) on the archive, read in place and read-only.
 //!
-//! Test names carry the CT ID and part (PHS.62): CT-LB5-06's claim part (stored and decoded digests, full tables, the
-//! checkable certificates, R3/S block decrease and R_L's length premises, frontier exits failing the sticker goal,
-//! indexed references not read as distinct fibres, Γ(Y) carrying legality without sticker goals, unknown synthetic
-//! reachability; the manifest part is R0's and the preflight part R1's) and CT-LB1-05's matching half (the matching
-//! witness satisfies every edge constraint and brute force agrees on the infeasible bijections). Every sub-checker
-//! passes the mutation gate on an archived record. The slowest gates are `#[ignore]`d with their reason.
+//! Test names carry the CT ID and part (PHS.62):
+//!
+//! - CT-LB5-06 (source, part: the claims: stored and decoded digests and the full pose tables, the checkable
+//!   certificates, R3/S block decrease and R_L's length premises, frontier exits failing the sticker goal, indexed
+//!   references not read as distinct fibres, Γ(Y) carrying legality without sticker goals, unknown synthetic
+//!   reachability, and groups outside the families never passing; not run: IMPORT-MANIFEST's stored and
+//!   uncompressed digests, which `tests/test_lp5_archive.py` checks, and LB5.14's preflight, which `c600-archive`'s
+//!   bindings and `c600-library`'s `research_ct_lb5_06_preflight.rs` run).
+//! - CT-LB1-05 (source, part: the matching half: the stored Γ(Y) matching certificate meets every edge constraint and
+//!   brute force over the changed rows agrees on the infeasible bijections; not run: fixed points and integral
+//!   flows, which `c600-library`'s `research_ct_lb1_05.rs` runs).
+//! - CT-KN6-01 (source, part: the gates of stage 19's five sub-checkers on archived records, each failing under a
+//!   tampered claim, a wrong table and a wrong input digest; not run: the other kinds and stages, and the further
+//!   fixtures of the ignored gates).
+//! - CT-KN6-03 (source, part: stage 19's sub-checkers registered and its checkable records passing in place; not run:
+//!   the seven type-lex records, for which the archive defines no irregular-piece vector, and the cap-noninteraction
+//!   claims, which wait for the definition of delta_Q5, have no sub-checker).
+//!
+//! Every sub-checker passes the mutation gate on an archived record. The slowest gates are `#[ignore]`d with their
+//! reason.
 
 #[path = "kn6/common.rs"]
 mod common;

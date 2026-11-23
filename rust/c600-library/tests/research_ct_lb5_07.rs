@@ -8,8 +8,9 @@
 //! reading B; PHS.31). The key is the canonical encoding of the declaration (DET.59), which the record keeps whole.
 //! A pass is source and fixture evidence.
 //!
-//! CT-LB5-07 (source, part: the library's search record, stops and reduction gate on synthetic families; not run
-//! here: the puzzle form over KN2.4's rows and a `ReproKey` of a job record, which are R8's, CT-DET-24).
+//! CT-LB5-07 (source, part: the library's search record, stops and reduction gate on synthetic families; not run:
+//! a search over the puzzle's states through KN2.4's rows, and the search run as a research job whose record's
+//! `ReproKey` holds LB5.2's input and module identities; the research host has no search job).
 
 mod research_common;
 

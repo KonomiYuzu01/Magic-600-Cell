@@ -6,8 +6,9 @@
 //! answer is in the value. The fixtures are synthetic and enter no research evidence (LP5 plan, section 9, reading
 //! B). A pass is source and fixture evidence.
 //!
-//! CT-ERR-11 (source, part: the research library's entries; not run here: the research host's job records and the
-//! jumbling form of D[k], which wait for R8 and the research host's reads).
+//! CT-ERR-11 (source, part: the research library's entries; not run: the jumbling form of D[k] and the jumbling
+//! puzzle's own off-lattice results as research answers, which need research host reads that are not built; the
+//! research host's job records keep stops as values in `c600-research/tests/r8/stop.rs`).
 
 mod research_common;
 

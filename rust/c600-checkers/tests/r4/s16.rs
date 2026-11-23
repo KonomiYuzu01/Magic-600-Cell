@@ -1,4 +1,18 @@
-//! Stage 16 (six jams): CT-LB5-03 and CT-KN6-03's stage 16 part.
+//! Stage 16 (six jams), read in place.
+//!
+//! - CT-LB5-03 (source, part: the jam descents, routing releases and transports of section 2.2 and P**'s whole
+//!   descents with their check records, each from its exact table with the jam word as prefix; SJ-E1 letter by letter
+//!   as a release check outside the macro family; reduced transport matching the recorded unreduced case at 7307 and
+//!   never promoted to a lemma; every T1, routing, alphabet-restricted and two-carrier record keeping its scope; not
+//!   run: nothing the definition names; the I-7304 and I-7306 release traces, which only ignored tests replay, are
+//!   literal records of the stage, not certificates of this definition).
+//! - CT-KN6-01 (source, part: the gates of `s16.macro`, `s16.release` and `s16.reductions`, with `gate::run`'s
+//!   structural changes, the wrong start table for the trace family, and `s16.mobility` failing under a tampered
+//!   digest and a wrong start table; not run: `s16.mobility`'s gate over its claims, which only the ignored test
+//!   `ct_kn6_03_stage16_mobility_gate` runs).
+//! - CT-KN6-03 (source, part: stage 16's sub-checkers registered and its self-contained records passing in place, with
+//!   the label table checked against the engine; not run: the I-7304 and I-7306 traces and the mobility records of
+//!   the jams other than 7304, which only ignored tests run).
 
 use c600_checkers::archive::{self, s16};
 use c600_checkers::gate::Fixture;
