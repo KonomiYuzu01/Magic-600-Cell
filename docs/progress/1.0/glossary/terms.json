@@ -125,8 +125,8 @@
       "id": "stage-order",
       "term": "Stage order",
       "level": "L2",
-      "definition": "The order of orbits in which every seed's collateral falls on orbits not yet solved, so that finished orbits stay solved at every macro boundary.",
-      "ui": "Orbit list order; next-orbit suggestions",
+      "definition": "An order of orbits in which every seed's collateral falls on orbits not yet solved, so that finished orbits stay solved at every macro boundary. More than one such order exists.",
+      "ui": "Orbit list order, labelled as one admissible order",
       "source": "solving-workflow.md section 2; technical report, 'Triangular stage invariant'"
     },
     {
@@ -166,7 +166,7 @@
       "term": "Target",
       "level": "L3",
       "definition": "The position X the solver wants to fill next; the solver always names it, the program never chooses it alone.",
-      "ui": "Target marker; candidate list with reasons",
+      "ui": "Target marker; list of unfinished positions in position-id order",
       "source": "solving-workflow.md sections 3.3 and 7"
     },
     {

@@ -149,12 +149,12 @@ A legal word, one per orbit, whose effect on that orbit is a cycle of three piec
 
 ### Stage order
 
-The order of orbits in which every seed's collateral falls on orbits not yet solved, so that finished orbits stay solved at every macro boundary.
+An order of orbits in which every seed's collateral falls on orbits not yet solved, so that finished orbits stay solved at every macro boundary. More than one such order exists.
 
 ![Stage order](diagrams/stage-order.svg)
 
 - First needed: L2 (Orbits and protection)
-- In the UI: Orbit list order; next-orbit suggestions
+- In the UI: Orbit list order, labelled as one admissible order
 - Source: solving-workflow.md section 2; technical report, 'Triangular stage invariant'
 
 ## L3: Buffers and stars
@@ -216,7 +216,7 @@ The position X the solver wants to fill next; the solver always names it, the pr
 ![Target](diagrams/target.svg)
 
 - First needed: L3 (Buffers and stars)
-- In the UI: Target marker; candidate list with reasons
+- In the UI: Target marker; list of unfinished positions in position-id order
 - Source: solving-workflow.md sections 3.3 and 7
 
 ## L4: Placement, blocks and frames
