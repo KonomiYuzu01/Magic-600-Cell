@@ -237,11 +237,20 @@ class Corpus:
 
 
 def importer_binary() -> Path:
-    """The importer, built in release mode: unoptimised SHA-256 over the 59 MB corpus takes about 12 s a run."""
-    out = subprocess.run(
+    """The importer, built in release mode: unoptimised SHA-256 over the 59 MB corpus takes about 12 s a run. Cargo
+    runs in `rust/`, since it reads `rust/.cargo/config.toml` (the vendored crates that `--offline` needs) from its
+    working directory, not from the manifest's."""
+    run = subprocess.run(
         ["cargo", "build", "--release", "--locked", "--offline", "--quiet", "--message-format=json", "--manifest-path",
          str(RUST / "Cargo.toml"), "-p", "c600-archive", "--bin", "c600-archive-import"],
-        cwd=ROOT, capture_output=True, check=True, text=True).stdout
+        cwd=RUST, capture_output=True, text=True)
+    out = run.stdout
+    if run.returncode != 0:
+        # The compiler's own messages come as JSON on stdout; cargo's summary on stderr. Both are shown, so a CI log
+        # names the cause.
+        rendered = [m.get("message", {}).get("rendered") or "" for m in map(json.loads, out.splitlines())
+                    if m.get("reason") == "compiler-message"]
+        raise AssertionError(f"cargo build exited with {run.returncode}:\n{''.join(rendered)}\n{run.stderr}")
     for line in out.splitlines():
         message = json.loads(line)
         if message.get("reason") == "compiler-artifact" and message.get("executable"):
