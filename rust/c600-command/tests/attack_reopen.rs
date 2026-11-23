@@ -19,7 +19,8 @@ const SECRET: [u8; 32] = [7; 32];
 const NOTE_ROW: &str = "tool.note";
 /// A stored workspace row whose undo class is `none`: no undo reaches its job's record write, which takes the earlier
 /// actions that wrote the record off both stacks (the layer's history cut).
-const PLAY_ROW: &str = "recording.play";
+/// (`recording.play` played this part until LP4-9 built it in the layer.)
+const PLAY_ROW: &str = "session.timer.start";
 const NAMES: [&str; 3] = ["a", "b", "c"];
 
 fn repository() -> PathBuf {
@@ -112,7 +113,7 @@ fn equip(mut layer: CommandLayer, prefix: &str) -> Session {
     layer.set_provenance(Box::new(Reader));
     // ADR-D01.9's settle interval is tested in tests/settle.rs; these sessions commit on the first presented press.
     layer.set_settle(Duration::ZERO);
-    layer.serve_row(PLAY_ROW, Overlay { module: "recordings".into(), entry: "play".into() }).unwrap();
+    layer.serve_row(PLAY_ROW, Overlay { module: "timers".into(), entry: "start".into() }).unwrap();
     let overlay = Overlay { module: "notes".into(), entry: "note".into() };
     layer.register_overlay(NOTE_ROW, Kind::Workspace, &[], overlay).unwrap();
     Session { layer, shell: Shell::new(Secret::fixed(SECRET), prefix), frames: HeadlessFrames::new() }
@@ -194,10 +195,7 @@ impl Session {
                 answer(self.shell.invoke(&mut self.layer, POLICY_ROW, args))
             }
             Op::Job(name, letter) => self.job(NOTE_ROW, json::object([]), *name, *letter),
-            Op::Play(name, letter) => {
-                let args = json::object([("from", Value::Int(0)), ("recording", text("r1"))]);
-                self.job(PLAY_ROW, args, *name, *letter)
-            }
+            Op::Play(name, letter) => self.job(PLAY_ROW, json::object([]), *name, *letter),
             Op::CommitRecord(name) => {
                 self.execute(json::object([("draft", json::object([("record", text(NAMES[*name]))]))]))
             }

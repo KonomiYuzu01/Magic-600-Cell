@@ -4309,3 +4309,112 @@ mathematician's review. It is data and a standard-library Python check outside t
   - soft disclosure and the flow goals' undisclosed-concept check, LP4-11's `c600-command` part;
   - the human tests of the path (EV5.7, EV5.12), which wait for the owner's form;
   - prose outside the glossary rewritten with EV5.18's qualified names.
+
+## Status of LP4, LP4-9: semantic recording, playback and conversion
+
+LP4-9 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV4.10 to EV4.23; chapter 05 PS1.30
+and PS1.44; chapter 13's EV4 codes), a draft. Undo follows X1 (owner decision of 23 November 2026,
+`docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md`, item 2.7): the move history (`session.undo`) and
+the layout history (`layout.undo`); each test that reads an undo target names its history.
+
+- Built in the command layer (`c600_command::recording` for the data and the tables, `src/layer/playback.rs` for the
+  layer's side): H-08's `recording.start`, `recording.stop`, `recording.play` and `recording.convert`, and `job.stop`
+  for a playback's job. No command-table row was added and the table did not change.
+- Capture sits in `CommandLayer::invoke`: each invocation of the shell's channel whose row resolves is one
+  `RecordedStep` (row, canonical arguments without a token, an operation preview ID or a confirmation, the word and
+  its block, the revisions it read, the module digest of an overlay step, the action it took (LI.9), its command and
+  request, and its terminal receipt or none). A retry the outcome lookup answers, a run's invocation and a
+  `recording.*` row are not captured. `recording.stop` stores the recording in the host's recorder.
+- Playback is a program-lane job the layer runs itself (`run_jobs`). EV4.22's eligibility table
+  (`recording::eligibility`, enumerated whole in CT-EV4-12) decides which steps play unattended: kind `view` or
+  `workspace` on lane `view` or `none`, and kind `query` on lane `none`, with no job and no `confirm` or `file_check`
+  gate. Every other row is a user step, and so are the integrator's additions: the rows whose change the layer
+  confirms itself (`protection.policy.set`, `protection.orbit.set`, rows with an action guard) and the `recording.*`
+  rows. An unattended child is a new invocation with its own command ID (`{playback}/play/{epoch}/{step}/{n}`), no
+  token, written to the state as `pending` before it is dispatched; while it is dispatched the layer dispatches no
+  other row and no token (`playing_admits`), and a run inside it never replaces a preview (ADR-D01.9). A user step
+  waits for the shell's step action (`Shell::step`, `Shell::step_preview`, `CommandLayer::begin_step`): the shell fills
+  the current revision, hint, presented preview and the solver's confirmation and mints a new token; a word commit
+  takes a fresh whole-word preview of the stored word; an undo or redo is checked against EV4.18's map. Unattended
+  playback cannot commit: a commit-lane row is never eligible, `playing_admits` refuses anything else, and a child that
+  commits is held (EV4.19).
+- EV4.19's two tables (`recording::historical`, `recording::child`), EV4.22's play table (`recording::play_from`),
+  EV4.18's map (`recording::mapped`, `PlaybackState::map`), EV4.14's identity, module and staleness checks, and
+  EV4.20's reconciliation: a pending child is looked up (KN5.23) after the invocation that settles it, after a job's
+  report, at each `recording.play`, at `set_recorder` and at a restart, and advances at most once; an unknown outcome
+  stops and is never retried; an ordinary invocation never moves the cursor; the cursor's writes go to the recorder and
+  are never an undo target. A recorder write that rolls back leaves the layer's state as the recorder's last durable
+  write left it (read back from the recorder); a write whose fate is unknown is read again from the recorder before the
+  next recording row, `job.stop` or step action. A state a job left `running` when it ended on a failed write, with no
+  child pending, stops with `KN5:resource_limit.engine_lost` at the next `recording.play`, as at a restart; that write,
+  like the reconciliation, comes before EV4.22's table decides. `job.stop` answers its write's fate: rolled back, it
+  stops nothing and answers `failed`; unknown, it ends the job and answers `unknown_outcome`.
+- EV4.23's conversion (`recording::convert`) writes nothing unless every step passes; it writes `draft/recording/<name>`
+  (an operation draft whose Macro phase holds the literal word) or `source/recording/<name>` (the generated module text
+  and its calls) as one record write, undoable on the move history. The record's block is the host reader's
+  (`Provenance::assemble`): `c600_tools::workspace::Reader` gives a draft a `manual` block and a source a program block
+  of the generated module (entry `replay`, profile `solving`); both list the contributing words' blocks as parts.
+- The recorder: `c600_command::Recorder`, with `MemoryRecorder` for tests and the session store's
+  `JournalStore::recorder` (`c600_session::recorder::JournalRecorder`): recordings and playback states are workspace
+  records in the session's own journal (PS1.16, PS1.44, FP.37), one draft record kind,
+  `{"record": "command_workspace", "id", "kind", "value"}`, in `c600-command-journal-draft-1`. `kind` is
+  `c600-recording-draft` (the value a record object the frame cites) or `c600-playback-draft` (the value inline, so a
+  playback adds no object per step); `id` is the recording's name; the last record of an id and kind wins. A record
+  takes no action number, has no receipt or undo target and no transaction cites it; it shares the journal's lock,
+  fates, torn-tail cut and read-only recovery. The host's version reader is `c600_command::ModuleVersions`, with
+  `c600_tools::modules::ActiveVersions` over a module set; `c600_tools::modules::bind_job` binds a recording step's job
+  pinned to the digest it recorded.
+- Tests:
+  - `c600-command/tests/recording.rs`: CT-EV4-08 to -13 and -15 to -20; CT-PS1-15, -17 and -24 in part; CT-BND-03 in
+    part; CT-ERR-18 whole by union with the parts its doc names; CT-EV4-14 and CT-PS1-25 synthetic (the recorder's
+    injected fates and a reopen); the format packet's `playback` (12), `playback_from` (26), `playback_trace` (3) and
+    `playback_arguments` (4) vectors.
+  - `c600-durable/tests/ct_ev4_14_playback_crash.rs`: CT-EV4-14 and CT-PS1-25's three crash points on the journal,
+    which holds the recorder's records, over a memory disk; `c600-durable/tests/ct_bnd_03_recording_blocks.rs`:
+    CT-BND-03 and CT-EV4-10 on C5's reader; `c600-durable/tests/ps1_44_carrier.rs`: the carrier, what reset, import
+    and the recovery checkpoint do to it, and a source conversion whose recording's name holds line ends parses,
+    lowers and checks.
+  - `c600-session/tests/recorder.rs`: the journal recorder's records outside the action order, torn tail, failed
+    writes and records that do not read.
+  - `c600-command/tests/recording.rs` also holds the recorder's failed and unknown writes (a rolled-back state write
+    and the next play's recovery, `job.stop`'s fates, an unknown `recording.stop` read again) and the generated
+    module's one-line comments.
+  - `c600-tools/tests/ev1_host.rs`: CT-EV1-04's recording route, so with `c600-module/tests/ct_ev1_04.rs` CT-EV1-04 is
+    whole by union for every route (palette, key, view source, debugger, recording).
+  - Updated in `c600-command/tests/`: `attack_playback.rs` (the four rows are the layer's now; a served
+    `recording.play` is refused and a run's is `not_granted`), `settle.rs` (a playback's step stands in for the run
+    inside a `recording.play` job), `served_rows.rs` (its served program-lane row is `recording.play`'s H-08 entry under
+    another ID, since H-08 has no other row on that lane), `argument_forms.rs`, `filter_apply.rs`, `job_output.rs`,
+    `one_key.rs` and `attack_reopen.rs` (which served `recording.play` as a stand-in row), and `kn5.rs` (CT-KN5-10's
+    allowlist names `set_recorder`, `set_module_versions` and `begin_step`).
+- Drafts and departures (recorded, frozen text unchanged):
+  - PS1.44 and FP.37 put a playback state in PS1.16's workspace carrier outside the undo order; PS1.12 names the
+    recording's writer and reader. Both live in the session journal's own `command_workspace` records, outside its
+    action order. FP.12's carrier fields `id`, `kind` and `value` are there; `dependencies`, `action` and `revision`
+    are not written, since the record takes no action, and the frame's place in the journal is its position. No
+    frozen format changed: the record kind is a draft addition to `c600-command-journal-draft-1`, which a reader
+    before it stops at, as at any record it does not read. The values are draft JSON (`c600-recording-draft` and
+    `c600-playback-draft`, version 1), not FP.37's bytes; a recording is a record object, a state is inline.
+  - The recordings and states belong to the journal they were written in. The command layer's path builds no reset,
+    import or checkpoint row (`session.reset`, `session.checkpoint.save`, `session.checkpoint.restore`,
+    `file.log.import`, `file.macro.import` are `KN5:input.row_not_built` and write nothing), a new session needs a disk
+    with no journal, and a reopen reads them from the same journal; a reset or import that keeps the session must
+    decide, when it is built, what happens to a playback state whose map names actions before it.
+  - A state still `running` with no live job after a restart stops with `KN5:resource_limit.engine_lost`; the play
+    job's receipt is `completed(workspace)` when the playback waits or finishes, and forwards a child's refusal or
+    failure with its code and detail unchanged (ERR.7).
+  - A negative integer `from` is `EV4:input.recording_state`, as the format packet's `play-from-negative` says, not
+    `KN5:input.argument_form`.
+  - `job.stop` stops a playback's job only; another job is `KN5:input.row_not_built`.
+  - The step's `module` is the closure digest of the module's active version, which `bind_pinned` accepts.
+  - A source conversion names each non-word call in a `#` comment and in its `calls`: the draft edition has no
+    primitive that invokes a stored view or workspace row. Every control character and U+2028 and U+2029 in a comment
+    is written as its `\u{...}` escape, so the module parses whatever the recording's name holds.
+- Not built:
+  - FP.37's wire form of a recording and a playback state, and the format packet's `playback_storage` vectors (18);
+  - a host that installs `JournalStore::recorder` and `ActiveVersions` (the renderer bridge is outside this work), the
+    recording rows' keys and UI, and the step action's UI;
+  - `session.checkpoint.save`: a playback waits at it, and its step action is refused as not built;
+  - CT-BND-03's macro route; CT-EV4-14 on a file-system disk on the owner's machine (memory disks only here);
+  - recording a run's own invocations (a run is part of the job the solver invoked, which is the step).
+- Evidence kind: source and synthetic. No Windows, input, display, long-session or timing claim.

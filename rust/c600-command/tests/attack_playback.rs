@@ -1,8 +1,9 @@
 //! Attack tests on recording playback (owner-requested attack of the command layer, class B: a recording that commits
-//! when played). Playback is not built: no source file in the workspace plays a recording, and the four `recording.*`
-//! rows of H-08 have no implementation in the layer. What exists is the door a playback would come in by: a stored
-//! row that an entry serves (`CommandLayer::serve_row`), which `tests/served_rows.rs` already exercises with
-//! `recording.play`. These tests attack that door and pin what the layer answers today.
+//! when played). When these tests were written playback was not built, and the door a playback would come in by was a
+//! stored row that an entry serves (`CommandLayer::serve_row`). Since LP4-9 the layer builds the four `recording.*`
+//! rows itself (`src/layer/playback.rs`): no entry serves them, and they need the host's recorder. These tests attack
+//! both doors and pin what the layer answers; `tests/recording.rs` holds LP4-9's own tests, the unattended table among
+//! them.
 //!
 //! Each test asserts the rule. The one that failed while its bypass existed gives the finding, what was observed on
 //! commit 4c20ce30 and the fix.
@@ -11,7 +12,8 @@ use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, Caller, CommandLayer, Invocation, MemoryStore, Overlay, Receipt, Secret, Shell, Status, Table, POLICY_ROW,
+    code, Caller, CommandLayer, Invocation, MemoryRecorder, MemoryStore, Overlay, Receipt, Secret, Shell, Status,
+    Table, POLICY_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, ProtectionMode};
@@ -93,19 +95,50 @@ fn answer(receipt: &Receipt) -> String {
 ///
 /// Fixed with B3: `recording.play` is a workspace row, which a run does not reach, so the invocation is refused with
 /// `LG3:capability.not_granted` and no job waits.
+///
+/// Since LP4-9 the layer builds `recording.play`: an entry's serve of it is refused with
+/// `KN5:input.overlay_row_conflict` and changes nothing, and with the host's recorder installed and a recording the
+/// solver made, a run's `recording.play` is refused with `LG3:capability.not_granted` (no `recording.*` row is a run's,
+/// [`CommandLayer::invoke`]'s `runtime_may`): no job waits and no playback state is written. The solver's own play of
+/// the same recording starts.
 #[test]
 fn a_run_cannot_start_a_served_playback() {
     let mut f = fixture();
     let overlay = Overlay { module: "tools/recording".into(), entry: "play".into() };
-    f.layer.serve_row("recording.play", overlay).unwrap();
-    let receipt = f.runtime("stray-run", "recording.play", args("recording.play"));
-    let job = f.layer.take_program_job().map(|program| program.job);
-    assert_eq!(receipt.status.code(), Some(code::NOT_GRANTED), "{:?}", receipt.status);
-    assert!(
-        matches!(receipt.status, Status::Refused(_)) && job.is_none(),
-        "the run's `recording.play` was answered {}, and the waiting program job is {job:?}",
-        answer(&receipt)
-    );
+    let refused = f.layer.serve_row("recording.play", overlay).unwrap_err();
+    assert_eq!(refused.code, code::OVERLAY_ROW_CONFLICT);
+    assert!(f.layer.table().row("recording.play").is_some_and(|row| row.overlay.is_none()));
+
+    let recorder = MemoryRecorder::new();
+    f.layer.set_recorder(Box::new(recorder.clone())).unwrap();
+    for (row, args) in [("recording.start", args("recording.start")), (POLICY_ROW, policy(None))] {
+        let _ = f.shell.invoke(&mut f.layer, row, args).unwrap();
+    }
+    let stopped = f.shell.invoke(&mut f.layer, "recording.stop", args("recording.stop")).unwrap();
+    assert!(matches!(stopped.status, Status::Completed(_)), "{:?}", stopped.status);
+    assert_eq!(recorder.held().recordings.get("r1").map(|r| r.steps.len()), Some(1));
+
+    for row in ROWS {
+        let receipt = f.runtime("stray-run", row, args(row));
+        assert_eq!(receipt.status.code(), Some(code::NOT_GRANTED), "{row}: {:?}", receipt.status);
+        let job = f.layer.take_program_job().map(|program| program.job);
+        assert!(
+            matches!(receipt.status, Status::Refused(_)) && job.is_none() && f.layer.run_jobs() == 0,
+            "the run's `{row}` was answered {}, and the waiting program job is {job:?}",
+            answer(&receipt)
+        );
+        assert!(recorder.held().playbacks.is_empty(), "{row}");
+        assert_eq!(f.layer.capturing(), None, "{row}");
+    }
+    let played = f.shell.invoke(&mut f.layer, "recording.play", args("recording.play")).unwrap();
+    assert!(matches!(played.status, Status::Running(_)), "the solver's play: {:?}", played.status);
+}
+
+fn policy(confirm: Option<bool>) -> Value {
+    match confirm {
+        None => json::object([("policy", text("strict"))]),
+        Some(confirm) => json::object([("confirm", Value::Bool(confirm)), ("policy", text("strict"))]),
+    }
 }
 
 /// Finding LD1 (class B and D, a lead: playback is not built). Rule: EV4.22 [D] lets a recording play view and
@@ -143,9 +176,10 @@ fn ld1_a_policy_change_needs_the_solvers_confirmed_press() {
     assert_eq!((f.layer.policy(), f.transactions()), (ProtectionMode::Strict, before.2 + 1));
 }
 
-/// Guard (class B, refuted): playback is not built, and the layer does nothing for a recording row that no entry
-/// serves. From the shell and from a run, each of the four rows is refused, no job is admitted and nothing durable
-/// changes. The codes are printed, not pinned: they are the layer's answer for a row it does not build.
+/// Guard (class B, refuted): without the host's recorder, the layer does nothing for a recording row. From the shell
+/// and from a run, each of the four rows is refused, no job is admitted and nothing durable changes. The codes are
+/// printed, not pinned: they are the layer's answer for a row it cannot run (since LP4-9, `KN5:input.row_not_built`
+/// from the shell, as before, and `LG3:capability.not_granted` from a run).
 #[test]
 fn an_unserved_recording_row_does_nothing() {
     let mut f = fixture();

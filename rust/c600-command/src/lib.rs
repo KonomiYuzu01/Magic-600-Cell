@@ -614,6 +614,7 @@ pub mod layer;
 pub mod macros;
 pub mod palette;
 pub mod receipt;
+pub mod recording;
 pub mod repair;
 pub mod sets;
 pub mod shell;
@@ -643,6 +644,12 @@ pub use palette::{Palette, PaletteEntry, FIND_ROW};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
     Receipt, ResultRef, Revision, Status,
+};
+pub use recording::{
+    eligibility, ActionEntry, ChildOutcome, Conversion, Eligibility, MemoryRecorder, ModuleVersions, Pending,
+    PlayStatus, PlaybackState, Recorded, RecordedStep, Recorder, Recording, Stop, Target, JOB_STOP_ROW,
+    PLAYBACK_FORMAT, RECORDING_CONVERT_ROW, RECORDING_FORMAT, RECORDING_PLAY_ROW, RECORDING_START_ROW,
+    RECORDING_STOP_ROW,
 };
 pub use repair::REPAIR_LIST_ROW;
 pub use sets::{saved_set_record, SavedSet, REPLACE, SAVED_SET_PREFIX, SET_SAVE_RECORD, SET_SAVE_ROW};
@@ -684,10 +691,12 @@ pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/src/keys/layout.rs", include_bytes!("keys/layout.rs")),
     ("c600-command/src/keys/mod.rs", include_bytes!("keys/mod.rs")),
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
+    ("c600-command/src/layer/playback.rs", include_bytes!("layer/playback.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-command/src/macros.rs", include_bytes!("macros.rs")),
     ("c600-command/src/palette.rs", include_bytes!("palette.rs")),
     ("c600-command/src/receipt.rs", include_bytes!("receipt.rs")),
+    ("c600-command/src/recording.rs", include_bytes!("recording.rs")),
     ("c600-command/src/repair.rs", include_bytes!("repair.rs")),
     ("c600-command/src/sets.rs", include_bytes!("sets.rs")),
     ("c600-command/src/shell.rs", include_bytes!("shell.rs")),
