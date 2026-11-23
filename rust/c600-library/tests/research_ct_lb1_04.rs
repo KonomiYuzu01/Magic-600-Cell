@@ -11,7 +11,7 @@
 //! integers. A pass is source and fixture evidence.
 //!
 //! CT-LB1-04 (source, part: the library half, straight-line length and streaming, symbolic bounds and admission;
-//! not run here: the kernel's expansion half over the recorded stage 18 words, which is R5's, CT-LB5-09).
+//! not run: the kernel's expansion half over the recorded stage 18 words, which `c600-checkers/tests/s18.rs` runs).
 
 mod research_common;
 

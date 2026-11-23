@@ -445,7 +445,9 @@ class Lp5ArchiveTests(unittest.TestCase):
         return S19 + row["path"], row
 
     def test_ct_ps3_08_tampered_gzip_decoded_and_manifest_digests_fail_separately(self):
-        """CT-PS3-08 (part: the corpus, with stage 19's IMPORT-MANIFEST and the Git-blob manifest)."""
+        """CT-PS3-08 (source, part: on the corpus, a tampered gzip stream, a tampered decoded content and a tampered
+        digest in stage 19's IMPORT-MANIFEST or in the Git-blob manifest each fail separately; not run: the
+        source-edition digest, which the next test runs)."""
         self.assertEqual(failed(self.report), set())
         name, row = self.stage19_compressed()
         stage = S19 + "IMPORT-MANIFEST.json"
@@ -530,7 +532,9 @@ class Lp5ArchiveTests(unittest.TestCase):
         self.assertEqual({(m, c) for m, c, _ in got if m != "<manifest>"}, {(victim["path"], "stored_sha256")})
 
     def test_ct_ps3_08_source_edition_digest_is_not_taken_for_public_bytes(self):
-        """CT-PS3-08 (part: IMPORT-MANIFEST's original digests stay source-edition metadata)."""
+        """CT-PS3-08 (source, part: IMPORT-MANIFEST's original digests stay source-edition metadata that no check
+        compares with bytes, and a public digest replaced by its original fails; not run: the tampered digests,
+        which the previous test runs)."""
         stage = S19 + "IMPORT-MANIFEST.json"
         report_rows = next(s for s in self.report["stage_manifests"])["rows"]
         self.assertTrue(all(x["original_bytes"].startswith("absent") for x in report_rows))
@@ -561,7 +565,9 @@ class Lp5ArchiveTests(unittest.TestCase):
     # --- CT-PS3-09 -------------------------------------------------------------------------------------------------
 
     def test_ct_ps3_09_case_only_pairs_stay_distinct_by_digest(self):
-        """CT-PS3-09 (part: the six stage 16 pairs under the names they had before the 4 November 2026 rename)."""
+        """CT-PS3-09 (source, part: the six stage 16 pairs, under the names they had before the 4 November 2026
+        rename, stay distinct by digest with every member present; not run: a missing member, which the next test
+        runs)."""
         self.assertEqual(self.report["case_only_names"], [])
         manifest = json.loads(self.corpus.manifest_raw)
         members = dict(self.corpus.bytes)
@@ -597,7 +603,8 @@ class Lp5ArchiveTests(unittest.TestCase):
         self.assertIsNone(r["refusal"])
 
     def test_ct_ps3_09_missing_member_is_reported_and_stays_counted(self):
-        """CT-PS3-09 (part: a member listed by the Git-blob manifest and not granted)."""
+        """CT-PS3-09 (source, part: a record or word member listed by the Git-blob manifest and not granted is reported
+        missing and stays counted; not run: the case-only pairs, which the previous test runs)."""
         name = S16 + "jams.json"
         members = {n: b for n, b in self.corpus.bytes.items() if n != name}
         r = self.import_(members=members)
@@ -616,7 +623,10 @@ class Lp5ArchiveTests(unittest.TestCase):
     # --- CT-PS3-10 -------------------------------------------------------------------------------------------------
 
     def test_ct_ps3_10_bundle_declares_missing_dependencies_and_runs_nothing(self):
-        """CT-PS3-10 (part: a bundle of stage 19's q11 record and a stage 14 record with a producer source as data)."""
+        """CT-PS3-10 (source, part: a bundle of stage 19's q11 record and a stage 14 record with its producer source
+        carried as data: the missing dependency listed, no replay asserted, no checker claimed and no producer run;
+        not run: that the importer has no network or process path, which
+        test_nothing_runs_a_producer_or_reaches_git_processes_or_the_network runs)."""
         q11 = S19 + "records/type-lex-trimmed-independent-results.json"
         reference = S19 + "records/type-lex-trimmed-macro.json"
         producer = RESEARCH + "14-blocking-structure/scripts/replay_word.py"
@@ -675,8 +685,9 @@ class Lp5ArchiveTests(unittest.TestCase):
     # --- CT-DET-24 -------------------------------------------------------------------------------------------------
 
     def test_ct_det_24_timed_stop_and_data_only_archive_keep_their_limits(self):
-        """CT-DET-24 (part: import of an archived timed stop and of stage 19's data-only archive; the KN6-checked
-        witnesses of the definition's last clause wait for R8 and the stage checkers)."""
+        """CT-DET-24 (source, part: the import of an archived timed stop and of stage 19's data-only archive, which keep
+        their limits with no recheck and no producer run; not run: the KN6-checked witness of the definition's
+        last clause, which rust/c600-research/tests/r8/ct_det_24.rs runs)."""
         table = json.loads(TABLE_DATA.read_bytes())
         facts = lambda g: table["rules"][g["rule"]]["facts"] if g["outcome"] == "facts" else None
         names = [m["name"] for m in self.report["members"]]
@@ -697,10 +708,11 @@ class Lp5ArchiveTests(unittest.TestCase):
     # --- CT-EVD-12 -------------------------------------------------------------------------------------------------
 
     def test_ct_evd_12_import_half(self):
-        """CT-EVD-12 (part: the import half; the records of E1 to E3 give, through the import table, the grade and job
-        facts that rust/c600-evidence/tests/examples.rs transcribes. The forms of E1 to E3 come from the test's own
-        statements, since the label table has no producer for `form` (chapter 06, open items; plan reading C2). Not
-        run here: building the words from these facts, which waits for R1's typed bindings)."""
+        """CT-EVD-12 (source, part: the import half; the records of E1 to E3 give, through the import table, the grade
+        and job facts that rust/c600-evidence/tests/examples.rs transcribes. The forms of E1 to E3 come from the test's
+        own statements, since the label table has no producer for `form` (chapter 06, open items; plan reading C2). Not
+        run: the words of section 9 built from these imported facts, and the facts of E1's third replay path and of
+        E3's records other than the 7302 stop)."""
         table = json.loads(TABLE_DATA.read_bytes())
         names = [m["name"] for m in self.report["members"]]
 
@@ -739,8 +751,9 @@ class Lp5ArchiveTests(unittest.TestCase):
     # --- CT-LB5-06 -------------------------------------------------------------------------------------------------
 
     def test_ct_lb5_06_manifest_part(self):
-        """CT-LB5-06 (part: stage 19's stored and uncompressed manifest digests; the reference tables, certificates
-        and preflight parts belong to R6 and R1)."""
+        """CT-LB5-06 (source, part: stage 19's stored and uncompressed manifest digests; not run: the reference
+        tables and certificates, which rust/c600-checkers/tests/kn6_s19.rs runs, and the preflight, which c600-archive's
+        bindings and c600-library's research_ct_lb5_06_preflight.rs run)."""
         [stage] = self.report["stage_manifests"]
         self.assertEqual(self.report["members"][stage["member"]]["name"], S19 + "IMPORT-MANIFEST.json")
         self.assertEqual(stage["fields"]["format"], "sanitized-research-archive/1")
@@ -775,6 +788,10 @@ class Lp5ArchiveTests(unittest.TestCase):
     # --- no producer, process or network ---------------------------------------------------------------------------
 
     def test_nothing_runs_a_producer_or_reaches_git_processes_or_the_network(self):
+        """CT-PS3-10 (source, part: the importer's sources name no process, network, Git or directory walk, its only
+        workspace dependencies are c600-digest, c600-evidence and c600-kernel's container readers, and it calls none
+        of the kernel's engines; not run: the bundle, which
+        test_ct_ps3_10_bundle_declares_missing_dependencies_and_runs_nothing runs)."""
         banned = re.compile(r'std::process|Command::|std::net|TcpStream|UdpSocket|read_dir|walkdir|"git"')
         for path in sorted((CRATE / "src").rglob("*.rs")):
             code = "\n".join(line for line in path.read_text(encoding="utf-8").splitlines()

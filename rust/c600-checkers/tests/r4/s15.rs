@@ -1,4 +1,17 @@
-//! Stage 15 (lowering machine): CT-LB5-02 and CT-KN6-03's stage 15 part.
+//! Stage 15 (lowering machine), read in place.
+//!
+//! - CT-LB5-02 (source, part: R01 to R17 with their check records under the chain binding, the whole descents at
+//!   the six chain ends and the P* and DIS-1 certificates reproducing their supports, changes and digests; tampered
+//!   claims failing in `s15.macro`'s gate; P*'s beamed reference stop and the unbeamed pruned stop at 7304 answering
+//!   with different scopes; `pstar2/2` records and the run wrappers recognized; not run: nothing the definition
+//!   names; the 7307 census, which only the ignored test `ct_lb5_02_stage15_census_7307` checks, is a relation, not a
+//!   certificate of this definition).
+//! - CT-KN6-01 (source, part: `s15.macro`'s gate on a certificate and a check record, with `gate::run`'s structural
+//!   changes; `s15.pstar` failing under structural tampering of the 7304 census and under a wrong start table; not
+//!   run: `s15.pstar`'s gate over its claims and a wrong input digest, which only the ignored test
+//!   `ct_kn6_03_stage15_pstar_gate` runs).
+//! - CT-KN6-03 (source, part: stage 15's sub-checkers registered and its self-contained records passing in place;
+//!   not run: the 7307 census, an ignored test).
 
 use c600_checkers::archive::{self, s15};
 use c600_checkers::{codes, CheckerKind, Verdict};

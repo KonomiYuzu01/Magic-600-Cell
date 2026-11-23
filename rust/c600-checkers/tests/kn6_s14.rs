@@ -1,9 +1,18 @@
 //! Stage 14's research-archive sub-checkers (LP5 piece R3) on the archive's records, read in place and read-only.
 //!
-//! Test names carry the CT ID and part (PHS.62): CT-LB5-01 (stage 14: every self-contained `t3p-*/1` claim group and
-//! replay record checks; changed helper sets, precedence and input or start digests fail; replay rows keep their
-//! chronological observables) and CT-KN6-03's stage 14 part (the stage's sub-checkers registered, each passing its
-//! mutation gate on an archive record).
+//! Test names carry the CT ID and part (PHS.62):
+//!
+//! - CT-LB5-01 (source, part: every `t3p-*/1` kind read, W3, W5 and the six scan certificates, P0 to P4 in both check
+//!   records, the six chains' rounds, words and ends, the nine replay records' rows in chronological order, the
+//!   locality summary from the model, the 7304 stop's level table, the co-held, per-grip, jam and moves-522 records,
+//!   and changed helper sets, precedence and input or start digests failing, a reversed real edge on the order
+//!   functions in `src/archive/s14/t3p.rs`'s unit test; not run: the thirteen other level tables, which only the
+//!   ignored test `ct_lb5_01_levels_rebuilt_from_every_table_and_word` rebuilds).
+//! - CT-KN6-01 (source, part: the mutation gates of stage 14's five research-archive sub-checkers, `s14.t3p`,
+//!   `s14.literal`, `s14.locality`, `s14.levels` and `s14.blocks`, on archive records: a tampered claim, a wrong start
+//!   table and a wrong input digest fail; not run: the other kinds and stages).
+//! - CT-KN6-03 (source, part: stage 14's sub-checkers registered with their own identities and its self-contained
+//!   records passing in place; not run: the thirteen other level tables, an ignored test, and the other stages).
 //!
 //! The records are `research/jumbling/restoration/14-blocking-structure/results/`; their start tables are stage 13's,
 //! found through the stage's own catalogue `results/sources.json` by state digest. The menu is I_a.

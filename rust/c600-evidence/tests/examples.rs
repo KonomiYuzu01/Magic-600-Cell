@@ -1,7 +1,8 @@
 //! Chapter 06 section 9: the worked examples E1, E2 and E3, transcribed from the chapter's tables into synthetic
 //! graphs. Expected words come from those tables and the clauses they cite (EVD.63, section 5's (c1) to (c3), EVD.42).
-//! The records themselves are not imported: the label-table importer (EVD.48 to EVD.51) is not implemented, so the
-//! forms of E1 to E3 come from the test's own statements, as section 13's open item on the `form` fact allows.
+//! The records themselves are not imported here: their import through the label table (EVD.48 to EVD.51) runs in
+//! `tests/test_lp5_archive.py`'s CT-EVD-12 import half, and no test yet builds these graphs from the facts it gives.
+//! The forms of E1 to E3 come from the test's own statements, as section 13's open item on the `form` fact allows.
 
 mod common;
 
@@ -37,10 +38,10 @@ fn e1() -> (Graph, Key) {
     (g, s1)
 }
 
-/// CT-EVD-12 (part: E1 as a synthetic transcription of section 9; not run: the import of the actual records through
-/// the label table, EVD.48 to EVD.51): EVD.63. At the trial threshold U0 S1 reads finite instance; a threshold that
-/// requires a check above producer need not keep that word, because neither replay path gains an independent-checker
-/// upgrade; with the replay paths distrusted, a1 alone keeps the word.
+/// CT-EVD-12 (source, part: E1 as a synthetic transcription of section 9; not run: E1's words built from the facts that
+/// the import of its records through the label table gives, EVD.48 to EVD.51): EVD.63. At the trial threshold U0 S1
+/// reads finite instance; a threshold that requires a check above producer need not keep that word, because neither
+/// replay path gains an independent-checker upgrade; with the replay paths distrusted, a1 alone keeps the word.
 #[test]
 fn ct_evd_12_e1_macro_certificate() {
     let (g, s1) = e1();
@@ -137,11 +138,12 @@ fn e2(outside: bool) -> E2 {
     E2 { g, implication, sel, bound, u, tz, reach_z, adm_rejected, not_adm_rejected, t_rejected, reach_rejected }
 }
 
-/// CT-EVD-12 (part: E2 as a synthetic transcription of section 9; not run: the import of the actual records through
-/// the label table, EVD.48 to EVD.51): the implication reads proved, given Sel; the bound reads conditional on Sel;
-/// U(h, k) reads "proved on D[k], for reachable inputs"; U applied to a concrete Z reads conditional on reach(Z); for a
-/// rejected Z, not Adm_k(Z) reads finite instance and T(Z) reads open, not refuted (section 5's (c2) and (c3)). A
-/// macro found at one state discharges nothing, and a failed budgeted search at one state does not refute Sel.
+/// CT-EVD-12 (source, part: E2 as a synthetic transcription of section 9; not run: E2's words built from the facts that
+/// the import of its records through the label table gives, EVD.48 to EVD.51): the implication reads proved, given Sel;
+/// the bound reads conditional on Sel; U(h, k) reads "proved on D[k], for reachable inputs"; U applied to a concrete Z
+/// reads conditional on reach(Z); for a rejected Z, not Adm_k(Z) reads finite instance and T(Z) reads open, not refuted
+/// (section 5's (c2) and (c3)). A macro found at one state discharges nothing, and a failed budgeted search at one
+/// state does not refute Sel.
 #[test]
 fn ct_evd_12_e2_conditional_bound() {
     let E2 { g, implication, sel, bound, u, tz, reach_z, adm_rejected, not_adm_rejected, t_rejected, reach_rejected } =
@@ -251,13 +253,14 @@ fn both_read(g: &Graph, e3: &Key, s4: &Key, code: &str, what: &str) {
     }
 }
 
-/// CT-EVD-12 (part: E3 as a synthetic transcription of section 9; not run: the import of the actual records through
-/// the label table, EVD.48 to EVD.51): the truncated beam reads not found within budget for both; the two-letter subset
-/// has its own key and reads finite instance; the unbeamed witness gives E3 finite instance and S4 refuted; the
-/// guarded 7303 search gives S4 finite instance and E3 refuted, both with "three letters of family R only"; a different
-/// declared set, partial coverage, another failed guard, a matching label or an exact-computation grade gives row 0
-/// inconsistent_fields for both; a job that did not complete keeps negative_without_completion; "not stated" stays row
-/// 7; the cancelled runs read incomplete; the two-level stop proves the five-family negative only.
+/// CT-EVD-12 (source, part: E3 as a synthetic transcription of section 9; not run: E3's words built from the facts that
+/// the import of its records through the label table gives, EVD.48 to EVD.51): the truncated beam reads not found
+/// within budget for both; the two-letter subset has its own key and reads finite instance; the unbeamed witness gives
+/// E3 finite instance and S4 refuted; the guarded 7303 search gives S4 finite instance and E3 refuted, both with "three
+/// letters of family R only"; a different declared set, partial coverage, another failed guard, a matching label or an
+/// exact-computation grade gives row 0 inconsistent_fields for both; a job that did not complete keeps
+/// negative_without_completion; "not stated" stays row 7; the cancelled runs read incomplete; the two-level stop proves
+/// the five-family negative only.
 #[test]
 fn ct_evd_12_e3_cut_off_search() {
     let e = ed();
