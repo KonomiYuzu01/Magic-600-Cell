@@ -153,6 +153,9 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_jumbling_rust_corrections.py"],
     # The section 15.3 conformance index (LP2, M8): every LP2 test ID with exactly one state.
     ["tests/test_ct_index.py"],
+    # The glossary and learning path (LP4-11; EV5.6, EV5.10, EV5.15, EV5.18, overlay OV-3): the term check, diagrams and
+    # fixtures, through glossary/build.py --check.
+    ["tests/test_glossary.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
