@@ -217,8 +217,9 @@ fn completion_kind(receipt: &Receipt, layer: &CommandLayer<MemoryStore>) -> &'st
 // ------------------------------------------------------------------------------------------------------ tests
 
 /// The panel's rows are LP5's block of the command table as the host serves it: eleven rows with the section 6
-/// shapes, none a commit or app row, none taking a token, preparing a preview or having a gate; H-08's rows stay as
-/// H-08 has them, and the H-08 rows the panel invokes are in the table.
+/// shapes, none a commit or app row, none taking a token, preparing a preview or having a gate; H-08 holds them as its
+/// fifth delta (owner, 23 November 2026, item 3.1), so the table is H-08's rows as H-08 has them, none added twice, and
+/// the H-08 rows the panel invokes are in the table.
 #[test]
 fn panel_rows_are_lp5s_block_of_the_command_table() {
     let table = panel::table();
@@ -226,7 +227,7 @@ fn panel_rows_are_lp5s_block_of_the_command_table() {
     for row in h08.rows() {
         assert_eq!(table.row(&row.id), Some(row), "{} is H-08's", row.id);
     }
-    assert_eq!(table.rows().count(), h08.rows().count() + ROWS.len());
+    assert_eq!(table.rows().count(), h08.rows().count());
     let delta = c600_session::persist::codec::parse(panel::DELTA.as_bytes()).expect("the block reads");
     assert_eq!(text_at(&delta, &["format"]), "c600-command-rows-delta-1");
     assert!(items(at(&delta, &["amend"])).is_empty(), "the block amends no row");
@@ -234,7 +235,7 @@ fn panel_rows_are_lp5s_block_of_the_command_table() {
     assert_eq!(ids, ROWS.iter().map(|row| row.id).collect::<Vec<_>>());
     for row in &ROWS {
         let stored = table.row(row.id).expect("the row is in the table");
-        assert!(h08.row(row.id).is_none(), "{} is a new row", row.id);
+        assert_eq!(h08.row(row.id), Some(stored), "{} is H-08's own row", row.id);
         assert_eq!((stored.kind, stored.lane, stored.undo), (row.kind, row.lane, row.undo), "{}", row.id);
         let arguments: Vec<(&str, &str)> = stored.arguments.iter().map(|(n, t)| (n.as_str(), t.as_str())).collect();
         assert_eq!(arguments, row.arguments, "{}", row.id);

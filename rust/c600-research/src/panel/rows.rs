@@ -1,15 +1,13 @@
 //! The eleven rows of the LP5 plan's section 6, LP5's own block of the command table, and the table a research host
 //! serves them from.
 
-use std::collections::BTreeSet;
-
 use c600_command::{Availability, Binding, CommandLayer, Kind, Lane, Store, Table, UndoClass};
-use c600_session::persist::codec::{canonical, parse, Json};
 
 /// The overlay module that serves the rows; each row's entry is its own ID.
 pub const MODULE: &str = "research.panel";
 
-/// LP5's block of the command table, in the H2 delta format (`c600-command-rows-delta-1`).
+/// LP5's block of the command table, in the H2 delta format (`c600-command-rows-delta-1`): H-08's fifth delta, which
+/// `docs/progress/1.0/build_command_table.py` applies after the commit delta.
 pub const DELTA: &str = include_str!("../../../../docs/progress/1.0/command-rows-research.json");
 
 pub const INVENTORY: &str = "research.archive.inventory";
@@ -74,27 +72,16 @@ pub const ROWS: [PanelRow; 11] = [
     job(OBLIGATION, Kind::File, &[("destination", "Text"), ("statement", "Text")]),
 ];
 
-/// The command table a research host serves the rows from: H-08 with the rows of [`DELTA`] it does not hold yet, and
-/// the command layer's draft rows ([`Table::with_drafts`]). A row H-08 holds is kept as H-08 has it, so the table
-/// does not change once the line main has merged the block into H-08.
+/// The command table a research host serves the rows from: H-08 with the command layer's draft rows
+/// ([`Table::with_drafts`]). H-08 holds [`DELTA`] as its fifth delta (owner, 23 November 2026, item 3.1), so every row
+/// of the block is read from H-08 as it stores it and none is added here a second time; a stored table without one
+/// of them is a build error, and this panics.
 pub fn table() -> Table {
-    let h08 = parse(c600_command::table::H08.as_bytes()).expect("the stored H-08 table reads");
-    let delta = parse(DELTA.as_bytes()).expect("LP5's block of the command table reads");
-    let list = |value: Option<&Json>| match value {
-        Some(Json::List(items)) => items.clone(),
-        _ => Vec::new(),
-    };
-    let mut commands = list(h08.get("commands"));
-    let held: BTreeSet<String> =
-        commands.iter().filter_map(|row| row.get("id").and_then(Json::as_text)).map(str::to_owned).collect();
-    commands.extend(
-        list(delta.get("add"))
-            .into_iter()
-            .filter(|row| row.get("id").and_then(Json::as_text).is_some_and(|id| !held.contains(id))),
-    );
-    let document =
-        Json::object([("commands", Json::List(commands)), ("services", Json::List(list(h08.get("services"))))]);
-    Table::parse(&canonical(&document)).expect("H-08 with LP5's block reads").with_drafts()
+    let table = Table::h08().with_drafts();
+    if let Some(row) = ROWS.iter().find(|row| table.row(row.id).is_none()) {
+        panic!("the stored H-08 table does not hold LP5's row `{}`", row.id);
+    }
+    table
 }
 
 /// KN5.6's availability table for the panel's controls: every row of the block and the H-08 rows it invokes, bound as

@@ -4,9 +4,10 @@
 //!
 //! - [`rows`]: the eleven rows of section 6 as LP5's own block of the command table,
 //!   `docs/progress/1.0/command-rows-research.json` (format `c600-command-rows-delta-1`; owner's LP5-1: ordinary
-//!   additions after the LP3 freeze, CM.19 and CM.20, changing no frozen row). [`rows::table`] is H-08 with the rows of
-//!   that block it does not hold yet, as `c600-tools`' table adds the command layer's draft rows. [`rows::palette`] is
-//!   KN5.6's availability table for the panel's controls, which a palette reads once per generation.
+//!   additions after the LP3 freeze, CM.19 and CM.20, changing no frozen row). H-08 holds the block as its fifth delta
+//!   (owner, 23 November 2026, item 3.1), so [`rows::table`] is H-08 with the command layer's draft rows and adds no
+//!   row of the block a second time. [`rows::palette`] is KN5.6's availability table for the panel's controls, which a
+//!   palette reads once per generation.
 //! - [`host`]: the research host that serves the rows ([`Host::serve`], the command layer's `serve_row`) and answers
 //!   each row's job from its own data: the files granted to it, the imports it published, the claim bindings of
 //!   `c600-archive` and the check runs it made through R8's job adapter. No row is answered by running language code
