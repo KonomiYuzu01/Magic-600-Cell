@@ -306,7 +306,7 @@
     ],
     "prerequisites": {
       "terms": [
-        "orientation-group",
+        "frame-group",
         "residual"
       ],
       "records": []

@@ -1,0 +1,4 @@
+flowchart LR
+  E1[event] -->|parent link| E2[event] -->|parent link| E3[event]
+  E1 & E2 & E3 --> J[journal: durable, in the session store]
+  D[debugger cursor] -. distinct .- J

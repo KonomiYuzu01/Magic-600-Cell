@@ -1,0 +1,4 @@
+flowchart LR
+  Q[requested conclusion] --> K{enough known?}
+  K -->|no| U[Unknown]
+  U -. never false, never 0 .- F[false or zero]

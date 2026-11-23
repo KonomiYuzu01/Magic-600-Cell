@@ -133,7 +133,7 @@
       "idea": "Doing a word n times is writing it n times; doing it a negative number of times is doing its inverse that many times.",
       "terms": [
         "generator",
-        "twist"
+        "twist-full"
       ]
     },
     "failure": [
@@ -183,7 +183,7 @@
     "prerequisites": {
       "terms": [
         "generator",
-        "twist"
+        "twist-full"
       ],
       "records": []
     },

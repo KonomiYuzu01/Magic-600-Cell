@@ -3915,3 +3915,60 @@ interpreter, the tools, representations and library crates are its dev-dependenc
   - RT4's host decomposition (RTE.80), since RT4 is not built (LB6.6).
 - Evidence kind: source and fixture. The fixtures' instances are the real model's and the research fixtures'; a pass
   proves no universal lemma and records no human comprehension result (EV5.4).
+
+## Status of LP4, LP4-11: the glossary check and the learning path
+
+LP4-11's glossary and fixture part (chapter 04 EV5.6, EV5.10, EV5.14, EV5.15 and EV5.18), a draft under the
+mathematician's review. It is data and a standard-library Python check outside this workspace:
+`docs/progress/1.0/glossary/` (`terms.json`, `learning-path.json`, `diagrams/`, the generated `glossary.md` and
+`build.py`), tested by `tests/test_glossary.py`. The principle records of LP4-10 name their prerequisite terms in it.
+
+- The term check (`build.py --check`). A definition writes a reference as `[[Term]]` or `[[shown text|Term]]`; it must
+  name one row by its term, an alias or a homonym's declared bare sense, and nothing is resolved by a similar name.
+  The check refuses an unknown term, an ambiguous term (a homonym word without a bare sense), a definition that uses a
+  term above its own level unless the row records that forward reference with its reason, a learner-facing definition
+  that uses a row marked `"learner_facing": false`, a citation without a registered source prefix (a document such as
+  "Theory" or "Chapter 03", a clause prefix such as `KN`, or a repository file or link that exists), a homonym sense
+  without its own row, and a bare homonym word in a definition (`[[covers|~]]` marks an ordinary word). It also checks
+  the diagram manifest (EV5.15) and that `glossary.md` is the output of the data.
+- Integrated entries. `terms.json` (version 2) holds 298 rows: 31 solving rows (the 30 before, with twist split into
+  its two puzzles' senses and frame group replacing orientation group), 230 new rows from chapter 04 section 6's 246
+  entries (the other 16 merged into solving rows with their scope changes), 20 sense rows of EV5.18 that had none, and
+  17 rows for EV5.6's step concepts that had none (empty answer, not
+  run, specification, not meant, workspace undo, conjugate, commutator, mixed statement, approximate value, the
+  human-solve boundary, stabiliser, coset, quotient, homomorphism, F2, F5, Q(√5)). Section 6's ambiguous citations are
+  qualified ("partition default 10", "DT-M1 Q7 (a)", "LQ14 (access policy)"). Every row has its diagram source, its SVG
+  rendered by the local Mermaid CLI 12.0.0 and both digests in the manifest; the changed rows (cap, grip, label, piece,
+  generator, orbit, Net and Strict, complete effect, orientation, frame, occupant, target) got new diagrams.
+- The manual's first use (owner, 23 November 2026). A row's `manual` words name the manual's word for it; `build.py`
+  computes where the manual's chapters first use each, by section, and refuses a definition that uses a term the
+  manual introduces in a later section unless the row records it in `first_use_forward`. Seven such uses are recorded
+  for review (lattice, N, seam, height and alignment domain use pose, cut cell or retained twist before the manual
+  names them; the ν-corrections are announced before ν).
+- The learning path (`learning-path.json`). EV5.6's seven steps, each with its concepts resolved to rows, the rows
+  their definitions need (`closure`), revisits, waiting rows (the flow rule waits for LQ2), its command routes and one
+  fixture task. The check refuses a cycle among the steps, a concept that is not learner-facing, a concept whose
+  definition uses a term no step up to it teaches (unless the manual or the solving glossary teaches it, as `assumed`
+  names, or the step records the use, as step 1 does for the principle record), a fixture concept taught after the
+  task, a fixture whose recorded instance is missing, changed or lacks its expected value, and a fixture whose answer is
+  a word or a macro. The fixtures read the 7302 search record, the stage-order principle record, the command table's
+  key-change row (read live by ID, since the draft table changes), the seed atlas, the manual's floor instance, the
+  `seeds` module source and the seed atlas's digest.
+- Tests. `tests/test_glossary.py` runs the check on the repository and plants each refusal. It runs CT-EV5-02 in part:
+  the review of LP4-11's integration, flow goals against the disclosure data (LP4-11's `c600-command` part) and BS3's
+  branch (LQ2) are not run. CI should run `python tests/test_glossary.py`, which also runs the check.
+- Readings (drafts): EV5.6's phrases are resolved to rows; the path teaches five concepts earlier than EV5.6 lists
+  them, because definitions at an earlier step use them (theorem, certificate, digest and identity level at step 1;
+  assistance provenance at step 3, so step 4 comes after step 3), and adds eleven rows EV5.6 does not list (view,
+  statement, evidence, admitted domain and sticker at step 1, source range at 2, keyboard key at 3, menu letter and
+  revision reference at 4, state derivation at 6, gauge at 7); the manual's first use is read from its chapters, since
+  its README previews terms before they are taught; bare chamber reads as cut
+  chamber and bare key as keyboard key, bare block as achievement block (EV5.18) and bare witness as this glossary's
+  witness; a record's specification uses the declared domain, proposed at L6, at L2, recorded as a forward reference.
+- Not built:
+  - the mathematician's review of every row LP4-11 added or changed, of the levels, sense marks, references and
+    diagrams, and of the learning path's order and fixtures (each says so in its `review` field);
+  - UI placements for the new rows (`ui` is absent, "not placed yet"), which belong to the design line;
+  - soft disclosure and the flow goals' undisclosed-concept check, LP4-11's `c600-command` part;
+  - the human tests of the path (EV5.7, EV5.12), which wait for the owner's form;
+  - prose outside the glossary rewritten with EV5.18's qualified names.

@@ -1,0 +1,4 @@
+flowchart LR
+  S[solver] -->|chooses and executes| M[solving macro]
+  P[program] -->|may track, analyse, check, protect, reuse| M
+  P -. never chooses, outputs or executes one alone .- X[solving]

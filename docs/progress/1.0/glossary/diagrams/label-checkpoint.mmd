@@ -1,0 +1,4 @@
+flowchart LR
+  C[reachable lattice configuration] --> Q{"ν = 0?"}
+  Q -->|yes| L[label checkpoint]
+  J[pose and journal] -->|needed for reachability| C

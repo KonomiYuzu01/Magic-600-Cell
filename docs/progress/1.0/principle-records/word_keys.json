@@ -146,7 +146,7 @@
       "statement": "generators with disjoint supports commute, and a swap of neighbouring letters keeps the letters a word holds",
       "idea": "Two twists that touch no common sticker can be done in either order, so two words that differ only by such swaps are the same word for every purpose of the effect.",
       "terms": [
-        "twist",
+        "twist-full",
         "sticker-slot"
       ]
     },
@@ -181,7 +181,7 @@
     "prerequisites": {
       "terms": [
         "generator",
-        "twist",
+        "twist-full",
         "sticker-slot"
       ],
       "records": [

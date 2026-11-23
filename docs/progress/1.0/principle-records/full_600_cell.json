@@ -135,7 +135,7 @@
       "statement": "a generator followed by its inverse is the identity permutation of the 259,800 sticker slots",
       "idea": "A twist followed by the same twist undone leaves every piece where it was, so the preview of a generator and then its inverse shows no change: no piece moves, no orbit is touched and the end state is the base.",
       "terms": [
-        "twist",
+        "twist-full",
         "generator",
         "piece"
       ]
@@ -190,7 +190,7 @@
     "prerequisites": {
       "terms": [
         "generator",
-        "twist",
+        "twist-full",
         "piece",
         "sticker-slot"
       ],

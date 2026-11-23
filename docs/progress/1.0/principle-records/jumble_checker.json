@@ -186,7 +186,7 @@
       "idea": "Turning a cap and turning it straight back puts every piece back where it was, so the named word ends where it started, with no piece off the lattice.",
       "terms": [
         "cap",
-        "twist",
+        "twist-jumbling",
         "piece"
       ]
     },
@@ -234,7 +234,7 @@
     "prerequisites": {
       "terms": [
         "cap",
-        "twist",
+        "twist-jumbling",
         "piece"
       ],
       "records": [
