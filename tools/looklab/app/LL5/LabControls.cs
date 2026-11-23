@@ -42,5 +42,19 @@ internal sealed partial class LabControls : VBoxContainer
         Preview.Refresh(); Palette.Refresh(); Costs.Refresh(); UpdateStatus(baseStatus);
     }
 
-    public override void _ExitTree() => state.Changed -= Refresh;
+    // The frame moves these controls between docks, so they leave and enter the tree more than once; on return they
+    // catch up with the edits made while they were out.
+    private bool listening = true;
+    public override void _EnterTree()
+    {
+        if (listening) return;
+        state.Changed += Refresh; listening = true;
+        Preview.Refresh(); Palette.Refresh(); Costs.Refresh(); UpdateStatus(baseStatus);
+    }
+
+    public override void _ExitTree()
+    {
+        if (!listening) return;
+        state.Changed -= Refresh; listening = false;
+    }
 }
