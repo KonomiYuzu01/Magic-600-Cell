@@ -130,11 +130,69 @@ fn research_row_effects_are_the_checkers_and_no_entry_reads_state() {
     }
 }
 
+/// Chapter 03's Effect column for `entry`, as IR effects: `pure` adds none, and a qualified phrase ("read a snapshot
+/// for instance tests", "seeded randomness if used") counts as its effect.
+fn chapter_effects(chapter: &str, entry: &str) -> BTreeSet<Effect> {
+    let line = chapter
+        .lines()
+        .find(|line| line.starts_with(&format!("| {entry} |")))
+        .unwrap_or_else(|| panic!("chapter 03 has a row {entry:?}"));
+    let column = line.split('|').nth(3).expect("an Effect column");
+    let mut effects = BTreeSet::new();
+    for phrase in column.split([',', ';']).map(str::trim) {
+        if phrase == "pure" {
+            continue;
+        } else if phrase == "budgets" {
+            effects.insert(Effect::Budgets);
+        } else if phrase.starts_with("read a snapshot") {
+            effects.insert(Effect::ReadSnapshot);
+        } else if phrase.starts_with("seeded randomness") {
+            effects.insert(Effect::SeededRandomness);
+        } else {
+            panic!("{entry}: unknown effect phrase {phrase:?}");
+        }
+    }
+    effects
+}
+
+/// Each row's effects, the checker's, are a subset of chapter 03's Effect column for the row: the column is the most
+/// an entry of the row may use. LB1's four rows list `pure, budgets` and their entries use no budget, so they are
+/// pure; the enumerating rows use budgets; no row reads a snapshot, which only the unbuilt puzzle forms would.
+#[test]
+fn research_row_effects_are_within_chapter_03s_effect_column() {
+    let chapter =
+        std::fs::read_to_string(repository().join("docs/architecture/1.0/language/architecture/03-libraries.md"))
+            .expect("chapter 03");
+    for row in rows() {
+        let allowed = chapter_effects(&chapter, row.entry);
+        let declared: BTreeSet<Effect> = row.effects.iter().copied().collect();
+        assert!(declared.is_subset(&allowed), "{}: {declared:?} within {allowed:?}", row.entry);
+    }
+    for entry in [
+        "Straight-line programs",
+        "Big integers and symbolic bounds",
+        "Finite fixed points",
+        "Exact matching and integral flows",
+    ] {
+        assert_eq!(chapter_effects(&chapter, entry), BTreeSet::from([Effect::Budgets]), "{entry}: pure, budgets");
+    }
+}
+
 /// Exactly chapter 03's marked rows are research tier candidates: restricted word search, search reductions and
 /// gates, strategies, selectors and ranks, and admitted-domain membership. Every exported function that enumerates
-/// words, the ones with a budget, is in one of them. No row's text offers to choose, rank or output a solving word.
+/// words, the ones with a budget, is in one of them. What is scanned besides: the search's and the membership's result
+/// types hold no word type, so no record carries a witness word; and no row text or source uses a move-selection
+/// phrase from the list below.
 #[test]
 fn research_tier_candidates_are_exactly_the_marked_rows() {
+    for function in ["search", "membership"] {
+        let signature = SEARCH_SOURCE
+            .lines()
+            .find(|line| line.starts_with(&format!("export fn {function}(")))
+            .expect("an exported function");
+        let result = &signature[signature.find(") -> ").expect("a result type")..signature.rfind(" effects ").unwrap()];
+        assert!(!result.contains("Word"), "{function}'s result holds no word");
+    }
     let marked: Vec<&str> = research_tier_rows().iter().map(|row| row.entry).collect();
     assert_eq!(
         marked,

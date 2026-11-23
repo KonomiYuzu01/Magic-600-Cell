@@ -82,14 +82,14 @@ fn unfinished(d: record { action: List<List<Nat>>, beam: record { applicable: Bo
 }
 
 fn checked(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }) -> record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat } effects [] {
-    let valid = assert(well_formed(d.action, d.start));
+    let valid = assert(well_formed(d.action, d.start, d.goals));
     return d;
 }
 
-fn well_formed(action: List<List<Nat>>, start: Nat) -> Bool effects [] {
+fn well_formed(action: List<List<Nat>>, start: Nat, goals: List<Nat>) -> Bool effects [] {
     return match exact_eq(length(action), 0) {
-        true => true;
-        _ => rows_fit(action, length(index(action, 0)), start);
+        true => false;
+        _ => and(rows_fit(action, length(index(action, 0)), start), images_fit(goals, length(index(action, 0))));
     };
 }
 
@@ -160,7 +160,7 @@ fn test_level(goals: List<Nat>, limit: Nat, s: record { complete: Nat, discarded
             _ => record { cut = true, examined = t.examined, least = t.least, next = exact_add(t.next, 1), witnesses = t.witnesses };
         };
     });
-    let complete = match t.cut {
+    let complete = match or(t.cut, exact_less(0, s.discarded)) {
         true => s.complete;
         _ => exact_add(s.level, 1);
     };

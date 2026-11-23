@@ -37,9 +37,10 @@ fn domain(action: &[&[u64]], budget: u64, k: u64, targets: &[u64]) -> Value {
 const CYCLE: &[&[u64]] = &[&[1, 2, 3, 0]];
 
 /// Completed outside-domain membership and `unknown` stay values. A complete rejection, a budget stop and an error in
-/// the enumeration (an action whose image or start point leaves its points, a row of another length) each complete
-/// with no code; the rejection answers `OUTSIDE_CERTIFIED_DOMAIN` with its scope, the others `unknown`, and none
-/// asserts reachability. A malformed action is an error even where the enumeration would never read the bad image.
+/// the enumeration each complete with no code; the rejection answers `OUTSIDE_CERTIFIED_DOMAIN` with its scope, the
+/// others `unknown`, and none asserts reachability. Malformed input is an error, never a rejection, even where the
+/// enumeration would never read the bad point: an image, the input or a target outside the action's points, a row of
+/// another length, or an action with no letter.
 #[test]
 fn ct_err_11_membership_answers_are_values() {
     let loaded = loaded(&[SEARCH_SOURCE]);
@@ -52,10 +53,17 @@ fn ct_err_11_membership_answers_are_values() {
         ("unknown".into(), "budget".into())
     );
     let mut answers = vec![rejected, stopped];
-    let malformed: [(&[&[u64]], u64); 4] =
-        [(&[&[1, 2, 7, 0]], 0), (&[&[1, 2, 3, 0], &[0, 1, 2]], 0), (CYCLE, 4), (&[&[1, 2, 3, 0], &[0, 1, 2, 9]], 3)];
-    for (action, input) in malformed {
-        let broken = call(&loaded, SEARCH_MODULE, "membership", vec![domain(action, 100, 3, &[3]), nat(input)]);
+    let malformed: [(&[&[u64]], u64, &[u64]); 7] = [
+        (&[&[1, 2, 7, 0]], 0, &[3]),
+        (&[&[1, 2, 3, 0], &[0, 1, 2]], 0, &[3]),
+        (CYCLE, 4, &[3]),
+        (&[&[1, 2, 3, 0], &[0, 1, 2, 9]], 3, &[3]),
+        (CYCLE, 0, &[99]),
+        (CYCLE, 0, &[3, 4]),
+        (&[], 0, &[0]),
+    ];
+    for (action, input, targets) in malformed {
+        let broken = call(&loaded, SEARCH_MODULE, "membership", vec![domain(action, 100, 3, targets), nat(input)]);
         assert_eq!(
             (as_text(field(&broken, "membership")), as_text(field(&broken, "stop"))),
             ("unknown".into(), "error".into())
@@ -190,12 +198,19 @@ fn ct_err_11_partial_and_false_and_empty_answers_are_values() {
     assert!(items(field(&unrecognized, "transferred")).is_empty());
 
     let search = loaded(&[SEARCH_SOURCE]);
-    let declaration = record(vec![
-        ("action", list(vec![nats(&[1, 0, 2])])),
+    let empty = call(&search, SEARCH_MODULE, "search", vec![declaration(&[&[1, 0, 2]], &[2], 0)]);
+    assert_eq!(as_text(field(&empty, "outcome")), "empty");
+    assert_eq!(as_u64(field(&empty, "witnesses")), 0);
+}
+
+/// A search declaration over `action` from `start` to `goals`, with words of at most 3 letters and no beam.
+fn declaration(action: &[&[u64]], goals: &[u64], start: u64) -> Value {
+    record(vec![
+        ("action", list(action.iter().map(|images| nats(images)).collect())),
         ("beam", record(vec![("applicable", boolean(false)), ("width", nat(0))])),
         ("budget", record(vec![("limit", nat(100)), ("unit", text("candidates"))])),
         ("family", text("synthetic")),
-        ("goals", nats(&[2])),
+        ("goals", nats(goals)),
         ("hypotheses", texts(&[])),
         ("independent", list(vec![])),
         ("input_sha256", text("")),
@@ -203,11 +218,37 @@ fn ct_err_11_partial_and_false_and_empty_answers_are_values() {
         ("module_sha256", text("")),
         ("reduction", text("none")),
         ("seed", record(vec![("applicable", boolean(false)), ("value", nat(0))])),
-        ("start", nat(0)),
-    ]);
-    let empty = call(&search, SEARCH_MODULE, "search", vec![declaration]);
-    assert_eq!(as_text(field(&empty, "outcome")), "empty");
-    assert_eq!(as_u64(field(&empty, "witnesses")), 0);
+        ("start", nat(start)),
+    ])
+}
+
+/// A search over malformed input answers outcome `error` with no coverage and no negative, never `empty`: a goal, the
+/// start point or an image outside the action's points, or an action with no letter. The well-formed search beside
+/// them is the one negative.
+#[test]
+fn ct_err_11_a_malformed_search_is_an_error_and_no_negative() {
+    let loaded = loaded(&[SEARCH_SOURCE]);
+    let negative = call(&loaded, SEARCH_MODULE, "search", vec![declaration(&[&[1, 0, 2]], &[2], 0)]);
+    assert!(as_bool(field(&negative, "negative")));
+    let malformed: [(&[&[u64]], &[u64], u64); 5] = [
+        (&[&[1, 0, 2]], &[99], 0),
+        (&[&[1, 0, 2]], &[2, 3], 0),
+        (&[&[1, 0, 2]], &[2], 3),
+        (&[&[1, 0, 5]], &[2], 0),
+        (&[], &[0], 0),
+    ];
+    for (action, goals, start) in malformed {
+        let record = call(&loaded, SEARCH_MODULE, "search", vec![declaration(action, goals, start)]);
+        assert_eq!(
+            (as_text(field(&record, "outcome")), as_text(field(&record, "stop"))),
+            ("error".into(), "error".into()),
+            "{action:?} {goals:?} {start}"
+        );
+        assert!(!as_bool(field(&record, "negative")));
+        assert_eq!(as_text(field(&record, "negative_family")), "none");
+        assert_eq!(as_u64(field(&record, "examined")), 0);
+        assert_eq!(as_u64(field(&record, "complete_lengths")), 0);
+    }
 }
 
 /// No research source spells the withdrawn outside-domain code (ERR.22): the answer is the value
