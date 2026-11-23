@@ -182,10 +182,9 @@ fn bound_names(value: &Json, out: &mut Vec<String>) {
 
 // --- CT-PS1-26 ------------------------------------------------------------------------------------------------
 
-/// CT-PS1-26 (source, part: the translator; not run: the unknown-symbol and wrong-arity vectors refused through
-/// `research.obligation.export` with no file written, and a check at that row that an export promotes no evidence; the
-/// row's export of the supported vector through a granted file, refusals of statements with no body writing nothing and
-/// an ungranted destination run in `c600-research/tests/panel.rs`): PS1.45 and PS1.46. The format packet's supported
+/// CT-PS1-26 (source, part: the translator; not run here: the row half, the vectors through
+/// `research.obligation.export` and its granted file, which `c600-research/tests/obligation_export.rs` and
+/// `c600-research/tests/panel.rs` run): PS1.45 and PS1.46. The format packet's supported
 /// typed statement exports its exact Lean 4 text, with `by sorry`, the format, the vocabulary and the statement and
 /// table pins; the unknown symbol, the wrong arity and the named statement refuse with
 /// `LB5:input.obligation_untranslatable`, and the body whose bytes differ from the StatementId's digest refuses with
@@ -275,9 +274,8 @@ fn ps1_46_versioned_table_and_prelude_pins_hold() {
 
 // --- CT-LB5-11 ------------------------------------------------------------------------------------------------
 
-/// CT-LB5-11 (source, part: the translator half; not run: checks at `research.obligation.export` that an export changes
-/// no evidence grade and no revision and that the row's code in `c600-research` names no process or network API; the
-/// row's file grant and a refused export writing no file run in `c600-research/tests/panel.rs`): LB5.18. The translator
+/// CT-LB5-11 (source, part: the translator half; not run here: the row half at `research.obligation.export`, which
+/// `c600-research/tests/obligation_export.rs` and `c600-research/tests/panel.rs` run): LB5.18. The translator
 /// writes only the restricted versioned vocabulary: each of PS1.46's forms gives its exact Lean text, and every token
 /// of every export is the theorem's frame, a mark or sort of the vocabulary, a numeral, a hypothesis name, a Lean
 /// identifier of the table or a name the body binds. A statement named by ID, unresolved bytes, a table of another
@@ -503,9 +501,9 @@ fn canonical_json_reads_as_the_reference_reader() {
 
 // --- CT-RTE-23 ------------------------------------------------------------------------------------------------
 
-/// CT-RTE-23 (source, part: as far as the pure translator shows it; not run: a check at `research.obligation.export`
-/// that an export promotes no claim, its evidence and revision unchanged; LB5.18's file grant through that `file` row
-/// runs in `c600-research/tests/panel.rs`): RTE.28 and EVD.64. The export is PS1.45's `c600-proof-obligation-draft`;
+/// CT-RTE-23 (source, part: as far as the pure translator shows it; not run here: the row half at
+/// `research.obligation.export`, which `c600-research/tests/obligation_export.rs` and `c600-research/tests/panel.rs`
+/// run): RTE.28 and EVD.64. The export is PS1.45's `c600-proof-obligation-draft`;
 /// the crate has no Lean dependency; the module reaches nothing in the crate but `Statement` and `StatementId`, so it
 /// reads no proof record, defines no import row or check mode and writes no evidence field; no public function takes a
 /// mutable reference, so an export changes nothing it is given and promotes no claim; and `formal proof` keeps no

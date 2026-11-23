@@ -29,7 +29,8 @@ Everything here is source evidence (PHS.31). Two rules of reading apply througho
 
 At `66b597ff`, before these notes and markers, the tool gave 0 whole, 15 part and 8 named only. With them it gives
 11 whole, all by union, and 12 part. With the row tests and markers of `lp5-ct-gaps` it gives 13 whole, all by union,
-and 10 part.
+and 10 part. With `research.obligation.export` answering a named StatementId with PS1.46's
+`LB5:input.obligation_untranslatable` (the row passes it to the translator) it gives 14 whole, all by union, and 9 part.
 
 | ID | note kind | text |
 | --- | --- | --- |
@@ -45,6 +46,7 @@ and 10 part.
 | CT-DET-24 | whole by union | the three tests of `c600-research/tests/r8/ct_det_24.rs` (stage 15's archived timed stop and stage 19's data-only archive, imported at the research host, keep their recorded outcome and limits and reproduce as `not run`; R01 counts only through a KN6 check job of its own, with that job's record and scope) together run the whole definition, with the import halves in `tests/test_lp5_archive.py` and `c600-archive/tests/import.rs` |
 | CT-LB5-11 | whole by union | the translator half in `c600-evidence/tests/obligation.rs` (`ct_lb5_11_translator_writes_only_the_vocabulary`: only the versioned vocabulary written, every untranslatable form refused with no text, the prelude not compiled in and no Lean dependency; `ct_evd_20_obligation_module_names_no_effect`: no process, network or file in the module; `ct_rte_23_export_promotes_nothing_and_has_no_return_path`: no return path and no check value added) and the row half: in `c600-research/tests/panel.rs`, the row's shape with no token, gate or preview and, in `panel_driver_end_to_end`, the supported statement written only to a granted file while an ungranted destination and statements with no body write nothing; in `c600-research/tests/obligation_export.rs`, the unknown-symbol and wrong-arity vectors refused through the row with no file written or changed, an export and its refusals changing no evidence word, claim, report, run, revision, workspace record or preview after a KN6 check gave the group an admitted leaf, and a scan finding no process, network or Lean in the crate's sources and the translator, file access only in the host's grant, no Lean package in the lock file and no row or import fact that returns a proof record; together they run the whole definition. LB5.18's translator takes a typed Statement, so its untranslatable statement is a typed one; a named StatementId is PS1.46's case and stays with CT-PS1-26 |
 | CT-ERR-19 | whole by union | the codes, owning chapters, refusal form and retries in `c600-evidence/tests/obligation.rs` (`ct_err_19_refusals_keep_their_codes_chapters_and_retry`) and a refused `research.obligation.export` writing no file in `c600-research/tests/panel.rs` (`panel_driver_end_to_end`) and `c600-research/tests/obligation_export.rs` (`ct_ps1_26_refusal_vectors_refuse_through_the_row_and_write_nothing`) together run the whole definition |
+| CT-PS1-26 | whole by union | the translator half in `c600-evidence/tests/obligation.rs` (`ct_ps1_26_format_packet_vectors_translate_byte_for_byte`: the supported typed statement's exact Lean 4 text with `by sorry`, its format, vocabulary and pins; the unknown symbol, the wrong arity and the named statement refused with `LB5:input.obligation_untranslatable` and no text) and the row half in `c600-research`: `tests/obligation_export.rs` (`ct_ps1_26_refusal_vectors_refuse_through_the_row_and_write_nothing`: the three refusal vectors through `research.obligation.export`, the named one as its FP.19 form, each refused with that code, nothing written and the refusal on record; `ct_lb5_11_an_export_changes_no_evidence_claim_or_revision`: no evidence promoted) and `tests/panel.rs` (the supported vector exported byte for byte through the granted file, and the row's shape with no return format, check mode, process or network grant) |
 | CT-RTE-23 | whole by union | the translator half in `c600-evidence/tests/obligation.rs` (`ct_rte_23_export_promotes_nothing_and_has_no_return_path`: PS1.45's format, no Lean dependency, no proof-record reader, import row or check value added, and `formal proof` refused to every writer) and the row half in `c600-research/tests/panel.rs` (LB5.18's file grant; the row's shape with no token, gate or preview) and `c600-research/tests/obligation_export.rs` (the export's format, vocabulary and pins at the row; no evidence word, claim, report, run, revision or workspace record changed by an export; no Lean package in the workspace's lock file, no row that reads a proof record back and no import fact asserting `formal proof` or a check mode outside EVD.47's) together run the whole definition |
 
 ## LP2's seven halves
@@ -116,15 +118,6 @@ a product change that does not exist.
   families; the research host has no search job.
 - CT-LB5-08: the jumbling form of D[k] over KN2.4's branch predicates, which needs research host reads that are not
   built. The library's membership runs on synthetic actions.
-- CT-PS1-26: a named statement given to `research.obligation.export`. The row's `statement` argument takes only a
-  typed StatementId's digest, so the named-statement vector's FP.19 form is refused with `KN5:input.argument_form`
-  before translation and writes nothing (`c600-research/tests/obligation_export.rs`), where PS1.46 names
-  `LB5:input.obligation_untranslatable`; the translator itself refuses it with that code. Everything else runs: the
-  supported vector byte for byte with its pins through a granted file, the unknown-symbol and wrong-arity vectors
-  refused through the row with nothing written, and no evidence promoted. Closing it needs the row to answer a named
-  StatementId with `LB5:input.obligation_untranslatable` (a change in `c600-research/src/panel/host.rs`) or an owner
-  reading. The marker in `c600-evidence/tests/obligation.rs` still names the row's vectors and evidence check as not
-  run; they run now.
 - CT-EVD-12: E1 to E3's words of section 9 built from the facts that the import of their records gives through the
   label table. The import half in `tests/test_lp5_archive.py` checks the facts of R01, R01's check record, the stage
   19 receipt and the 7302 stop only, and `c600-evidence/tests/examples.rs` builds the words from a transcription. The
@@ -138,6 +131,6 @@ a product change that does not exist.
   need research host reads that are not built. The library's answers and the preflight's unavailable answers run as
   values, and the research host's job records keep stops as values (`c600-research/tests/r8/stop.rs`).
 
-CT-PS1-26 needs a product change at the row or an owner reading. CT-EVD-12 needs an envelope builder that joins a
+CT-EVD-12 needs an envelope builder that joins a
 record's facts into leaves, and the facts of the other records of E1 to E3, which is more than a small test.
 CT-LB5-07, CT-LB5-08 and CT-ERR-11 need research host reads or a search job, which are product work.

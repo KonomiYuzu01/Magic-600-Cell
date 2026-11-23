@@ -16,8 +16,7 @@ use std::sync::OnceLock;
 use c600_archive::bindings::Bindings;
 use c600_checkers::engines::Loaded;
 use c600_command::{
-    code, CommandLayer, Kind, MemoryStore, PreviewRule, Profile, Receipt, Revision, Secret, Shell, Status,
-    WorkspaceRecord,
+    CommandLayer, Kind, MemoryStore, PreviewRule, Profile, Receipt, Revision, Secret, Shell, Status, WorkspaceRecord,
 };
 use c600_evidence::obligation::{self, json};
 use c600_research::panel::{self, invoke, rows, Grant, Host, D2};
@@ -316,16 +315,17 @@ fn ct_lb5_11_an_export_changes_no_evidence_claim_or_revision() {
     assert_eq!(row.preview, PreviewRule::None);
 }
 
-/// CT-PS1-26 (source, part: the format packet's unknown-symbol and wrong-arity vectors, each given to
-/// `research.obligation.export` by its own StatementId with its body granted under that digest, refuse with
-/// `LB5:input.obligation_untranslatable` and write nothing; not run: a named statement given to the row, which refuses
-/// it with `KN5:input.argument_form` before translation, since the row's `statement` argument takes only a typed
-/// StatementId's digest, where PS1.46 names `LB5:input.obligation_untranslatable`).
+/// CT-PS1-26 (source, part: the format packet's unknown-symbol, wrong-arity and named-statement vectors given to
+/// `research.obligation.export`, the first two by their typed StatementIds with their bodies granted under those
+/// digests and the third as its FP.19 named form, each refuse with `LB5:input.obligation_untranslatable`, write nothing
+/// and stay on record; not run here: the supported vector's byte-for-byte export, the vocabulary pins and the absent
+/// return format, check mode and process or network grant, which `c600-evidence/tests/obligation.rs`, `panel.rs` and
+/// this file's other tests run).
 /// CT-ERR-19 (source, part: an untranslatable obligation refused through the row writes no file; not run here: the
 /// codes' owning chapters, refusal form and retries, which `c600-evidence/tests/obligation.rs` runs).
 ///
-/// The named-statement vector's StatementId, given as the canonical text of its FP.19 form, is refused and writes
-/// nothing; the code is asserted as the row gives it, and the marker keeps that clause as not run.
+/// The named-statement vector's StatementId is given as the canonical text of its FP.19 form: the row passes it to
+/// the translator, which refuses it because a named ID has no body (PS1.46).
 #[test]
 fn ct_ps1_26_refusal_vectors_refuse_through_the_row_and_write_nothing() {
     let mut p = Panel::new();
@@ -344,14 +344,14 @@ fn ct_ps1_26_refusal_vectors_refuse_through_the_row_and_write_nothing() {
     assert_eq!(expected.as_text(), Some(UNTRANSLATABLE));
     assert!(named.starts_with('{'), "a named StatementId has no digest: {named}");
     let args = p.export(&named);
-    assert_eq!(p.failed(rows::OBLIGATION, args), code::ARGUMENT_FORM, "refused before translation");
+    assert_eq!(p.failed(rows::OBLIGATION, args), UNTRANSLATABLE, "a named statement has no body");
     assert!(!p.folder.join("obligation.lean").exists());
     assert_eq!(listing(&p.folder), files);
 
     let (_, obligations) = p.answer(rows::OBLIGATIONS, obj(&[]));
     let exports = items(at(&obligations, &["exports"]));
     let codes: Vec<&str> = exports.iter().map(|e| text_at(e, &["result", "code"])).collect();
-    assert_eq!(codes, [UNTRANSLATABLE, UNTRANSLATABLE], "the two translated refusals are on record");
+    assert_eq!(codes, [UNTRANSLATABLE; 3], "the three refusals are on record");
 }
 
 /// The research host's sources and the translator the row calls, for the scan.

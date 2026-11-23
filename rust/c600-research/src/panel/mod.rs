@@ -66,8 +66,9 @@
 //!   reproduction, but the host does not read them back yet, and it serves its rows again as every host does.
 //! - `session.branch.select` and `job.stop` are the command layer's; it does not build `job.stop` today.
 //!
-//! Tests: `tests/panel.rs`, the headless driver. R10 has no indexed conformance test (LP5 plan, section 5), so no test
-//! names a CT ID.
+//! Tests: `tests/panel.rs`, the headless driver, and `tests/obligation_export.rs`, the export row's checks. R10 has no
+//! indexed conformance test of its own (LP5 plan, section 5); their markers name the parts they run of R8's and R9's
+//! tests (CT-LB5-06, CT-LB5-11, CT-PS1-26, CT-RTE-23, CT-ERR-19, CT-DET-24).
 
 /// The command layer's JSON value of a [`Json`](c600_session::persist::codec::Json), read by the kernel's strict JSON
 /// reader (this crate has no edge of its own to the kernel, so it reaches that reader through `c600-checkers`).

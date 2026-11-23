@@ -548,12 +548,16 @@ impl<'a> Host<'a> {
     fn obligation(&mut self, args: &Json) -> Result<Done, Error> {
         let destination = arg_text(args, "destination")?;
         self.grant.writable(destination)?;
-        let statement = arg_sha(args, "statement")?;
-        // The body is a granted file with the statement's SHA-256. A claim group's statement content names a record's
-        // claim by its pointers and is no body in the obligation vocabulary, so it is never passed as one.
-        let body = self.grant.by_digest(statement);
-        let translated = SymbolTable::draft_1()
-            .and_then(|table| translate(&Statement::new(StatementId::typed(statement)), body, &table));
+        let statement = arg_text(args, "statement")?;
+        let id = statement_id(statement)?;
+        // A typed ID's body is a granted file with its SHA-256. A claim group's statement content names a record's
+        // claim by its pointers and is no body in the obligation vocabulary, so it is never passed as one. A named ID
+        // has no body (PS1.46): the translator refuses it with `LB5:input.obligation_untranslatable` and writes nothing.
+        let body = match &id {
+            StatementId::Typed { content } => self.grant.by_digest(content),
+            StatementId::Named { .. } => None,
+        };
+        let translated = SymbolTable::draft_1().and_then(|table| translate(&Statement::new(id.clone()), body, &table));
         let mut entry = ExportEntry {
             row: rows::OBLIGATION,
             subject: Json::text(statement),
@@ -607,6 +611,30 @@ impl PreflightHost for Host<'_> {
             InputState::Missing
         }
     }
+}
+
+/// `research.obligation.export`'s `statement` argument (PS1.46): a typed StatementId, given as its content's SHA-256,
+/// or a named StatementId, given as the text of its FP.19 form, an object of exactly `kind` (`named`), `stage`,
+/// `commit` and `name`. A named ID is accepted here only so that the translator refuses it with
+/// `LB5:input.obligation_untranslatable`, as PS1.46 requires; anything else is an argument-form refusal.
+fn statement_id(text: &str) -> Result<StatementId, Error> {
+    if c600_archive::is_sha256(text) {
+        return Ok(StatementId::typed(text));
+    }
+    let named = c600_evidence::obligation::json::parse(text.as_bytes()).ok().and_then(|value| {
+        let fields = value.as_object()?;
+        let field = |key: &str| fields.get(key).and_then(|v| v.as_text());
+        if fields.len() != 4 || field("kind") != Some("named") {
+            return None;
+        }
+        Some(StatementId::named(field("stage")?, field("commit")?, field("name")?))
+    });
+    named.ok_or_else(|| {
+        Error::new(
+            code::ARGUMENT_FORM,
+            "`statement` is neither a typed StatementId's 64 lowercase hex digits nor a named StatementId's FP.19 form",
+        )
+    })
 }
 
 /// Whether an answer has nothing to list: null, an empty list, or an object with at least one list field whose list
