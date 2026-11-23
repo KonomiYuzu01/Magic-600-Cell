@@ -90,10 +90,11 @@ section 9's LP4 answer state (PHS.29). While the editor's look is open, LP4 is n
    - `c600-docs`: EV5.2 to EV5.5's reference and principle-record generation from checked metadata and the IR's
      call graph. It depends on `c600-syntax`, `c600-check`, `c600-ir`, `c600-module` and `c600-digest`.
    - `c600-log` (added 23 November 2026): the 1.0 log format, its compiler and the C600 and MPUlt interchange
-     (ADR-D01.80, .81, .84). It depends on `c600-kernel` (replay with legal witnesses), `c600-session` (the two
-     histories), `c600-editor` (compiling embedded scripts) and `c600-digest`, and it has no path to `c600-run`:
-     compile never runs a script (ADR-D01.81). The log is written in chapter 05's exchange forms. A part that would
-     change the frozen migration format goes to the owner (owner, 22 November 2026, ADR-D01 overrules item 4).
+     (ADR-D01.80, .81, .84). It depends on `c600-kernel` (replay with legal witnesses), `c600-editor` (checking
+     embedded scripts) and `c600-digest`, with its own history types. `c600-session` reaches `c600-run`, so the
+     conversion from the session store's histories to a log is LP4-14's. `c600-log` has no path to `c600-run`:
+     compile never runs a script (ADR-D01.81). Its record `c600-log-draft` is overlay OV-2 in
+     [the overlay register](language-overlays.md), outside the frozen migration format.
 
    Outside the language workspace:
    - `renderer/bridge/editor`: a new library `c600-shell-editor`, beside `lx4`, over `c600-editor` and
