@@ -2,9 +2,11 @@
 
 Status: plan of 22 November 2026, written when LP2 and LP3 had exited
 ([LP2 and LP3 exit](../../wiki/decisions/owner-decisions-2026-11-22-c10-lp2-exit.md),
-[LX bars and freeze](../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)) and before any LP5 code. It
-records the integrator's selections, and the owner may overrule any of them. It is no ADR, freezes nothing and edits no
-frozen text: where a frozen clause and this plan meet awkwardly, section 9 records it for the integrator.
+[LX bars and freeze](../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)) and before any LP5 code;
+updated 23 November 2026, when the owner started LP5 and took every recommended option
+([LP4 and LP5 start](../../wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md), item 3; section 11). It
+records the integrator's selections. It is no ADR, freezes nothing and edits no frozen text: where a frozen clause and
+this plan meet awkwardly, section 9 records it for the integrator.
 
 Inputs: [partition](../../architecture/1.0/language/ecosystem-partition.md) row LP5; chapter 12 section 7 (PHS.30 to
 PHS.33) and section 15.6; chapter 03 section 6 and 7 (LB5.1 to LB5.18); chapter 01 section 7 (KN6.1 to KN6.6);
@@ -88,14 +90,15 @@ inputs not bound. The inventory points to a way through for T6: its start table 
 `runs/dev/d1-acc-s7101/out4/tables/00113.json`), its literal words are stored with their digests in `steps.json`, and
 each later step's start follows by replaying the earlier step's word, so the per-step tables can be rebuilt exactly
 as a new derivation under the LP5 checker's identity (as CX.17 allows), not presented as the archive's own. The
-rule stages' start tables were not traced. Piece R0 settles both before R5 starts. If a start table can be neither
-found nor rebuilt from stored data, LP5 waits on that group, the integrator tells the owner (PHS.33, owner item 3),
-and the rest of LP5 continues. The lattice phase's 13,231,266 twists can be replayed from T6's end as a fresh check,
+rule stages' start tables were not traced. Piece R0 settles both before R5 starts. The owner decided on 23 November
+2026 (LP5-3) that an unstored start table is rebuilt by exact replay as a new derivation with its own checker. Only a
+table that can be neither found nor rebuilt from stored data makes LP5 wait on that group; the integrator then tells
+the owner (PHS.33), and the rest of LP5 continues. The lattice phase's 13,231,266 twists can be replayed from T6's end as a fresh check,
 but with `check.jsonl` absent there is no archived check to match it against, and the record says so. No other
 section 15.6 test names a check over a row whose data the matrix marks as needing input; R0 confirms this per test
 before the stage pieces start.
 
-## 4. Integrator selections (the owner may overrule them)
+## 4. Integrator selections
 
 1. **Existing crates first.** Research library entries are language code in `c600-library` (`.6cs` modules, LB1.1).
    Run records and branches stay in `c600-session` (`persist/run.rs`, ONE.75 branches). Statements, the evidence graph,
@@ -125,13 +128,13 @@ before the stage pieces start.
    checker each (section 9, reading A).
 5. **Claim bindings.** The typed statement, scope and input binding that FR-B08 still owes (CX.22) is written by LP5 as
    versioned data in `c600-archive`, one row per claim group, from the matrix's anchors; an unbound group keeps
-   `claim_unmapped`. Owner item 4.
+   `claim_unmapped` (owner, 23 November 2026, LP5-4).
 6. **New reads and rows.** The research host needs reads and overlay rows that H-08 did not hold at the LP3 freeze
    (KN6's `check`, the import inventory, run records, `research.*` rows). Overlay rows are language-defined (KN5.3,
-   ADR-L02.4); host reads extend CM.18's list. Recommended: ordinary additions after the freeze, as CM.19 and CM.20,
-   changing no frozen row. Owner item 1.
+   ADR-L02.4); host reads extend CM.18's list. They enter as ordinary additions after the freeze, as CM.19 and CM.20,
+   changing no frozen row (owner, 23 November 2026, LP5-1).
 7. **No Lean run.** The export is checked against the format packet's exact Lean text; Lean stays off the allowlist
-   and out of every check (LB5.18). Owner item 2.
+   and out of every check (LB5.18; owner, 23 November 2026, LP5-2).
 8. **Critical path and review.** `c600-checkers` decides pass or fail for independent checks and `c600-research` writes
    through the command layer; each candidate change to them gets one read by a fresh Claude subagent on a smaller model
    before commit, with the diff and the piece's acceptance check (`AGENTS.md`, "Codex minimum"). No Codex call.
@@ -200,8 +203,10 @@ R10 after R0, R1 and R8's job adapter
 
 - Wave 1, in parallel, with disjoint files: R0 (`c600-archive`, the driver), R2 (`c600-checkers` core and the scan
   test), R7 (new `.6cs` modules in `c600-library` and their tests only), R9 (`c600-evidence`'s new `obligation` module
-  and the prelude folder). Shared files (`rust/Cargo.toml`'s member list, `rust/README.md`, `tools/ci/run_headless.py`)
-  change only in the integrator's merge, not in the pieces.
+  and the prelude folder). Before wave 1, the line main adds the three new crates as empty members in one scaffold
+  commit (`rust/Cargo.toml`, `rust/Cargo.lock`, `rust/README.md`), so no piece edits those files; R0 alone registers
+  its driver in `tools/ci/run_headless.py`. Each piece's worktree is cut from the line branch, and the line main
+  merges the pieces back into it.
 - Wave 2, after R0 and R2 merge: R1, then R3, R4, R5 and R6 in parallel, each in its own `src/archive/sNN/` folder.
   R5 starts only once R0's report settles stage 18's start tables.
 - Wave 3: R8 and R10 in `c600-research`, one session, since both write that crate; R9's overlay row joins there.
@@ -226,17 +231,17 @@ R10 after R0, R1 and R8's job adapter
 
 No frozen text is edited. These are recorded for the integrator to rule on or route.
 
-- **Reading A (KN6.1).** KN6.1 says one small checker per certificate kind and lists research archives as one kind,
-  while LB5.15 and LB5.16 plan many claim-family checkers. This plan reads the research-archive kind as a family of
-  sub-checkers, each with its own identity and mutation gate. If the integrator reads KN6.1 as one checker for all
-  archives, the difference is a PHS.52 item.
-- **Reading B (PHS.31 and the brute-force tests).** PHS.31 counts no search as acceptance, while CT-LB5-04 compares
-  RR with brute force and CT-LB5-07 runs a search declaration. This plan reads both as checks of a recorded gate input or
-  of the record contract on a synthetic fixture, whose outputs enter no research evidence. No frozen text conflicts if
-  that reading holds.
+The integrator adopted readings A and B, and the owner's record of 23 November 2026 routes C1 and C2 through LP5-1.
+
+- **Reading A (KN6.1), adopted.** KN6.1 says one small checker per certificate kind and lists research archives as
+  one kind, while LB5.15 and LB5.16 plan many claim-family checkers. This plan reads the research-archive kind as a
+  family of sub-checkers, each with its own identity and mutation gate.
+- **Reading B (PHS.31 and the brute-force tests), adopted.** PHS.31 counts no search as acceptance, while CT-LB5-04
+  compares RR with brute force and CT-LB5-07 runs a search declaration. This plan reads both as checks of a recorded
+  gate input or of the record contract on a synthetic fixture, whose outputs enter no research evidence.
 - **Contradiction candidate C1 (H-08's reads after the freeze).** CM.18 lists the reads at the LP3 freeze, and
-  PHS.30's products need host reads it does not hold (KN6's `check` among them). Section 4, selection 6, and owner
-  item 1 route it.
+  PHS.30's products need host reads it does not hold (KN6's `check` among them). LP5-1 makes them ordinary additions
+  (section 4, selection 6).
 - **Contradiction candidate C2 (CT-EVD-12's form facts).** Chapter 06's open items record that the label table has no
   producer for `form`, which CT-EVD-12 needs. R0 takes the forms from the test's own statements, as that open item
   allows, and records the choice.
@@ -265,20 +270,20 @@ Agent-days of model work, rough; owner hours apart. They bind nothing (PHS.1).
 | Integration, exit record, reviews | 2 |
 | Total | about 29.5; about 10 to 12 working days with up to four parallel sessions |
 
-Owner hours: about 2. One milestone card (15 minutes), the PHS.56 explanation and understanding confirmation at exit
-(about 1.5 hours), and a decision on stage 18's start tables only if R0 finds them absent.
+Owner hours: about 2. The milestone card was answered on 23 November 2026; what remains is the PHS.56 explanation and
+understanding confirmation at exit (about 1.5 hours), and a decision only if a stage 18 start table can be neither
+found nor rebuilt.
 
-## 11. Owner items for the integrator's milestone card
+## 11. Owner decisions
 
-Recommended option first in each.
+The owner answered the milestone card on 23 November 2026 with every recommended option
+([LP4 and LP5 start](../../wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md), item 3).
 
-1. **New research reads and overlay rows.** (a) Ordinary additions after the LP3 freeze, as CM.19 and CM.20, changing
-   no frozen row (recommended); (b) a versioned PHS.52 change of H-08.
-2. **Lean.** (a) No Lean run in LP5; the export is checked against the format packet's exact text (recommended);
-   (b) one owner-approved Lean check of the prelude and vectors on the owner's machine, which needs Lean outside the
-   allowlist.
-3. **Stage 18's start tables, if R0 finds them unstored.** (a) Allow rebuilding them exactly by replaying stored words
-   from a stored table, as a new derivation with its own checker identity, so CT-LB5-05's completed gates can be
-   rechecked (recommended); (b) LP5 waits on those four groups and the gates stay recorded only.
-4. **Typed claim bindings (FR-B08).** (a) LP5 writes them as versioned data from the matrix's anchors (recommended);
-   (b) they wait for a separate EN4 pass.
+1. **LP5-1, new research reads and overlay rows:** ordinary additions after the LP3 freeze, as CM.19 and CM.20,
+   changing no frozen row. Not chosen: a versioned PHS.52 change of H-08.
+2. **LP5-2, Lean:** no Lean run in LP5; the export is checked against the format packet's exact text. Not chosen: an
+   owner-machine Lean check.
+3. **LP5-3, stage 18's start tables:** an unstored table is rebuilt by exact replay of stored words from a stored
+   table, as a new derivation with its own checker identity. Not chosen: waiting with the gates recorded only.
+4. **LP5-4, typed claim bindings (FR-B08):** LP5 writes them as versioned data from the matrix's anchors. Not chosen:
+   waiting for a separate EN4 pass.
