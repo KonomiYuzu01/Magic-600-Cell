@@ -40,7 +40,7 @@ When all non-buffer positions are right, a lone swap of A and B cannot remain: e
   - a **referenced block**: identity, position and frame relations in one verified common reference, describing a useful partial structure away from Home. It is not a claim that the structure can be carried around rigidly; that needs a separate proof.
 - Building a block may disturb unprotected parts of the active orbit. Gains, losses and retained members are shown before execution. "Completed", "protected" and "selected" are separate facts.
 - **Protection is finer than whole orbits:** a position lock keeps occupants and slots, an identity lock keeps the chosen pieces' location and orientation, a completed-block lock keeps the block's conditions, and a relative-block lock keeps its relations. For a protected orbit that is not yet solved, "preserve" means its captured state does not change. Example from the archived O33 walk-through: after inserting X into a two-member Home block, the solver protects the achieved X requirement before working on Y.
-- After a successful insertion, the next target is the solver's locked Next if set; otherwise a candidate inside the current orbit that continues the current context, lies on the current block's boundary, matches one of the solver's existing macros, and needs no change of protection. The candidate is shown with its reasons; it is never executed automatically.
+- After a successful insertion, the next target is the solver's locked Next if set; otherwise the solver names it. The program lists the orbit's unfinished positions in position-id order, without reasons, ranking or macro matches, and never chooses one (owner, 22 November 2026: [ADR-D01 revision 4](../../wiki/decisions/owner-decisions-2026-11-22-adr-line-evening.md)).
 
 ### 3.4 Orientation and the buffers (the endgame)
 
@@ -64,7 +64,7 @@ Recorded in the 0.4 product brief as the core loop:
 
 | Step | What the solver needs to see | What the solver does | Tool support |
 |---|---|---|---|
-| Choose target | Residuals of the orbit, current block, locked Next, candidates with reasons | Picks a target or confirms the candidate | Residuals, explained candidates |
+| Choose target | Residuals of the orbit, current block, locked Next, the orbit's unfinished positions in position-id order | Picks a target | Residuals, the list of unfinished positions |
 | Find piece and buffers | Where the target's piece is, A and B occupants, the cells involved, Home vs current structure | Looks; switches between following the piece and watching a fixed position | Piece-focused tracking, Local view |
 | Relate the two places | Where the piece and the target are on the whole polytope, shared cells, distance | Orients themself | Global view (adjacency routes are navigation, not move sequences) |
 | Choose or enter a macro | Macros of this orbit by use (star, pure cycle, orientation), with their effects | Picks, records or types a macro | Macro base, keyboard |
@@ -84,8 +84,8 @@ Recorded in the 0.4 product brief as the core loop:
 
 ### 4.2 Branches
 
-- **Candidates exhausted, residual left:** stay in the orbit and open the endgame (section 3.4).
-- **Orbit finished, no Next:** show later-orbit suggestions and wait for the solver's choice.
+- **No position left to fill, residual left:** stay in the orbit and open the endgame (section 3.4).
+- **Orbit finished, no Next:** wait for the solver's choice of orbit; the program suggests none.
 - **Locked Next in another orbit:** it has priority; the current orbit's draft and settings are saved.
 - **Return or resume:** drafts and choices are kept, the identities' current positions are resolved again, execution permission is invalidated, and the current global protection stays in force; an old orbit context never rolls protection back.
 - **Interruption:** save, close, restore, undo and redo keep identity, state and history consistent.
@@ -108,7 +108,7 @@ The 0.4 brief names the costliest part as **buffer preparation and protection ch
 - **Local and Global, redesigned** (owner, 2 October 2026): Local answers "does this piece match its target here", Global answers "how do these two places relate". The 0.4 views are not the baseline.
 - **Macro base by orbit and use,** with work sheets, and the complete effect drawn as graphics: cycles, sockets, occupants, orientation.
 - **Protection always visible,** at the scope the solver chose; a conflict is never hidden by a filter.
-- **Residual state per orbit** drives the stage display, candidates and completion.
+- **Residual state per orbit** drives the stage display and completion.
 - **Learning path:** the steps above, in this order, are the levels of the skill (charter section 5).
 
 ## 7. Boundary

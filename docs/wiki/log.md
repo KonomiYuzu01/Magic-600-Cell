@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-23] update | Briefing, solving workflow and glossary follow the 22 and 23 November decisions
+The briefing records the LP2 and LP3 exits, the ADR line's evening decisions and the A7 freeze, with an FP.1 pin refresh of the format packet; the solving workflow and the glossary drop the suggestions that ADR-D01 revision 4 cut ([A7 freeze](decisions/owner-decisions-2026-11-23-a7-freeze.md), What follows).
+
 ## [2026-11-23] decision | A7: the design system frozen
 The owner froze A7: ADR-D01 is accepted at revision 6 as UI/UX freeze round 1 (framework items and slot names, not values), and its text is published under `docs/architecture/1.0/design/adr/` ([decision](decisions/owner-decisions-2026-11-23-a7-freeze.md)). The A6 Astra review with Computer Use and its scoped re-check are answered; the Look Lab fixes land with it, and the build's full acceptance moves to the stage 2 greybox check.
 

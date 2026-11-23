@@ -67,7 +67,18 @@ What this page does not do:
 - **For the integrator.**
   - The briefing still lists the design-system ADR as open, with its 22 November bullet. Both need an edit with
     the FP.1 pin refresh.
+    - Done on 23 November 2026: the briefing records the LP2 and LP3 exits, the evening decisions and this freeze,
+      and its pin is refreshed under FP.1:
+      - `docs/development-guide/AGENT_BRIEFING.md`, SHA-256 `2d0b042513f9657491ad980142e53daa6a08bf88fbb1cf84d7d051cdb6a271bf` to
+        `685c27ab4191c6e12a20bf57f9675c0158420c7199aa7fb1199db4132bc5e2e1`;
+      - `input_commit`, `57ea15b6364502f4640da722274b4988ed0cd2d0` to `5749e0cbc941369c2f06a35e41370ab2b2439d7b`, the commit that edits the
+        briefing.
+
+      The packet cites none of the edited lines. The candidate files, `candidate_sha256` and every other pin are
+      unchanged.
   - Revision 4's public-line edits are still open (the solving workflow and the glossary).
+    - Done on 23 November 2026: the solving workflow lists unfinished positions in position-id order and suggests no
+      orbit, and the glossary's Stage order and Target entries follow.
   - So are the command-table rows that the revisions name: `session.branch.replay`, `preview.side.*`, the document
     rows of ADR-D01.84, and the rows Look Lab proposes (`library.branch.toggle`, `layout.roll`, `history.show`,
     `history.entry.toggle`). They are added at the command-table freeze.
