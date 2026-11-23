@@ -19,6 +19,8 @@ pub mod command_store;
 pub mod disk;
 pub mod journal;
 pub mod persist;
+/// The command layer's recordings and playback states on the session's disk (LP4-9 draft).
+pub mod recorder;
 
 mod jobs;
 mod session;
