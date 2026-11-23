@@ -13,9 +13,9 @@
 //! - [`historical`] and [`child`]: EV4.19's two tables.
 //! - [`play_from`]: EV4.22's `recording.play` state table; [`mapped`]: EV4.18's action map before an undo or redo.
 //! - [`convert`]: EV4.23's conversion to a draft and to source, which writes nothing unless every step passes.
-//! - [`Recorder`]: the durable home of recordings and playback states, outside the journal's action order
-//!   (PS1.44: "outside the undo order"), which the host supplies ([`crate::CommandLayer::set_recorder`]);
-//!   [`MemoryRecorder`] keeps the same contract in memory.
+//! - [`Recorder`]: the durable home of recordings and playback states, outside the action order (PS1.44: "outside
+//!   the undo order"), which the host supplies ([`crate::CommandLayer::set_recorder`]): the session store's is the
+//!   session journal's own workspace records; [`MemoryRecorder`] keeps the same contract in memory.
 //!
 //! # Drafts
 //!
@@ -831,15 +831,16 @@ pub fn convert(
 
 /// The module a source conversion writes (EV4.13): its entry proposes the whole word for a fresh preview, and each
 /// recorded call is named with its command, absolute arguments and revision guards. The draft edition has no
-/// primitive that invokes a stored view or workspace row, so a call is named in a comment and runs nothing; the
-/// conversion's `calls` carry them as data.
+/// primitive that invokes a stored view or workspace row, so a call is named in a `#` comment and runs nothing; the
+/// conversion's `calls` carry them as data. Each comment stays one line whatever the recording's name or a call's
+/// arguments hold ([`comment`]).
 fn source_text(recording: &Recording, letters: &[i64], calls: &[Value]) -> String {
     let digest = recording.digest();
     let mut text = format!("edition \"{SOURCE_EDITION}\";\nmodule recording_{} requires [];\n\n", &digest[..12]);
-    text.push_str(&format!(
-        "// Converted from the recording `{}` ({RECORDING_FORMAT} sha256 {digest}) under EV4.13 and EV4.23.\n",
-        recording.name.replace('\n', " ")
-    ));
+    text.push_str(&comment(&format!(
+        "Converted from the recording `{}` ({RECORDING_FORMAT} sha256 {digest}) under EV4.13 and EV4.23.",
+        recording.name
+    )));
     for call in calls {
         let step = call.get("step").and_then(Value::as_i64).unwrap_or(-1);
         let row = call.get("row").and_then(Value::as_str).unwrap_or("");
@@ -851,7 +852,7 @@ fn source_text(recording: &Recording, letters: &[i64], calls: &[Value]) -> Strin
             .iter()
             .filter_map(|guard| guard.get("digest").and_then(Value::as_str).map(str::to_owned))
             .collect();
-        text.push_str(&format!("// call {step}: `{row}` {arguments}; revision guards {guards:?}\n"));
+        text.push_str(&comment(&format!("call {step}: `{row}` {arguments}; revision guards {guards:?}")));
     }
     if letters.is_empty() {
         text.push_str("export fn replay() -> Int effects [] {\n    return 0;\n}\n");
@@ -865,6 +866,22 @@ fn source_text(recording: &Recording, letters: &[i64], calls: &[Value]) -> Strin
         word.join(", ")
     ));
     text
+}
+
+/// One `#` comment line of a generated module. The source is pinned to UTF-8 with LF line ends and no CR (LG1.3), and
+/// the lexer ends a comment at LF, so every control character (LF, CR and NEL among them) and every Unicode line or
+/// paragraph separator is written as its `\u{...}` escape: no recorded text can end the comment early or break the
+/// source.
+fn comment(text: &str) -> String {
+    let mut line = String::from("# ");
+    for c in text.chars() {
+        match c.is_control() || matches!(c, '\u{2028}' | '\u{2029}') {
+            true => line.push_str(&format!("\\u{{{:04x}}}", c as u32)),
+            false => line.push(c),
+        }
+    }
+    line.push('\n');
+    line
 }
 
 /// The draft conversion's undo class: one undoable workspace action (EV4.23), whatever the table holds.
@@ -881,8 +898,9 @@ pub struct Recorded {
 
 /// The durable home of recordings and playback states (PS1.30, PS1.44), outside the journal's action order: a write
 /// here takes no action number and creates no undo target. Each write is one recoverable write: a playback state's
-/// cursor, pending entry, map, status and last receipt land together. LP2's session store implements it on a disk of
-/// its own (`c600_session::recorder::DiskRecorder`); [`MemoryRecorder`] keeps it in memory.
+/// cursor, pending entry, map, status and last receipt land together. LP2's session store implements it in the
+/// session's own journal, as workspace records outside its action order (PS1.16; `c600_session::recorder`);
+/// [`MemoryRecorder`] keeps it in memory.
 pub trait Recorder: Send {
     /// Stores a recording under its name, replacing one of the same name.
     fn save_recording(&mut self, recording: &Recording) -> Fate;

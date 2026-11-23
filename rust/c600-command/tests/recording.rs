@@ -1573,3 +1573,149 @@ fn the_draft_forms_round_trip() {
     assert_eq!(PlaybackState::from_json(&state.to_json()), Some(state.clone()));
     assert_eq!(state.actions.iter().map(|e| e.recorded).collect::<Vec<_>>(), [1, 2]);
 }
+
+// ----- the recorder's failed and unknown writes, and the generated module's comments
+
+/// A write the recorder refuses, as a full disk would.
+fn rolled_back() -> Fate {
+    Fate::RolledBack(Error::new(code::PERSISTENCE_FORMAT, "an injected write that rolled back"))
+}
+
+/// PS1.44, EV4.20, EV4.22: a recorder write that rolls back leaves the playback state as the recorder's last durable
+/// write left it, never as the write would have made it. A job that ends on such a write, at an unattended step's
+/// pending entry or at the write that leaves `running` for a user step, answers `failed` with the write's error and
+/// leaves its state `running` with no live job, as a restart would find it. The next `recording.play` stops it with
+/// `KN5:resource_limit.engine_lost` first, a write made before EV4.22's table decides, so a play the table refuses
+/// has still made it; a play the table admits then continues from the cursor. No undo is involved.
+#[test]
+fn a_rolled_back_state_write_keeps_the_durable_state_and_the_next_play_recovers_it() {
+    // At an unattended step's pending entry: nothing is dispatched.
+    let mut f = fixture();
+    f.put(vec![recording("c", vec![completed_write("w", &[1], 1), completed_write("v", &[2], 2)])]);
+    let played = f.play("c", None);
+    let durable = f.recorder.held().playbacks["c"].clone();
+    assert_eq!((durable.status.clone(), durable.step), (PlayStatus::Running, 0));
+    f.recorder.inject(rolled_back());
+    f.layer.run_jobs();
+    assert_eq!(f.state("c"), durable, "the last durable write, with no pending entry");
+    assert_eq!(f.log(), 0, "nothing was dispatched");
+    let answer = f.receipt(&played.command, &played.request);
+    assert_eq!(answer.status.code(), Some(code::PERSISTENCE_FORMAT), "the job failed with the write's error");
+    let again = f.play("c", None);
+    assert!(matches!(again.status, Status::Running(_)), "not stuck at `running`: {:?}", again.status);
+    f.drive();
+    assert_eq!((f.state("c").status, f.log()), (PlayStatus::Finished, 2));
+    assert_eq!(f.recorder.held().playbacks["c"], f.state("c"));
+
+    // At the write that leaves `running` for a user step: the job ends, and the next play waits at the step.
+    let mut f = fixture();
+    f.put(vec![recording("m", vec![word_step(&[1], 1, None)])]);
+    f.play("m", None);
+    let durable = f.recorder.held().playbacks["m"].clone();
+    f.recorder.inject(rolled_back());
+    f.layer.run_jobs();
+    assert_eq!(f.state("m"), durable, "still `running`, as durably written");
+    let writes = f.recorder.writes();
+    assert_eq!(code_of(&f.play("m", Some(5))), Some(code::RECORDING_STATE), "the table refuses `from` past the end");
+    let recovered = f.recorder.held().playbacks["m"].clone();
+    assert_eq!(recovered.status, PlayStatus::Stopped(Stop::Code(code::ENGINE_LOST.to_owned())));
+    assert_eq!((f.recorder.writes(), f.state("m")), (writes + 1, recovered), "the recovery was written first");
+    assert!(matches!(f.play("m", None).status, Status::Running(_)));
+    f.drive();
+    assert_eq!(f.state("m").status, PlayStatus::Waiting(0));
+    assert_eq!(f.layer.revision().state, 0, "nothing committed");
+}
+
+/// EV4.22, PS1.44: `job.stop` answers the fate of its write. One that rolls back stops nothing: the answer is `failed`
+/// with the write's error, the job stays live and the state is the durable one. One whose fate is unknown ends the job
+/// with `cancelled(by_user)` and answers `unknown_outcome`; the next row reads the recorder again, so a stop that did
+/// not land leaves the durable state, whose pending child is reconciled once when it reports, and the next play
+/// continues from the cursor after the `engine_lost` recovery. No undo is involved.
+#[test]
+fn job_stop_answers_the_fate_of_its_write() {
+    let mut f = fixture();
+    f.put(vec![recording("r", vec![completed_rotate(), completed_rotate()])]);
+    let played = f.play("r", None);
+    let Status::Running(job) = played.status else { panic!("{:?}", played.status) };
+    f.layer.run_jobs();
+    let taken = f.layer.take_program_job().expect("the first step's job");
+    let before = f.state("r");
+    assert!(before.pending.is_some());
+    let stop = |f: &mut F| f.press("job.stop", json::object([("job", Value::Int(job as i64))]));
+
+    f.recorder.inject(rolled_back());
+    assert_eq!(code_of(&stop(&mut f)), Some(code::PERSISTENCE_FORMAT));
+    assert_eq!(f.state("r"), before, "nothing stopped");
+    assert!(matches!(f.receipt(&played.command, &played.request).status, Status::Running(_)), "the job is live");
+
+    f.recorder.inject(Fate::Unknown); // the stop does not land
+    assert_eq!(stop(&mut f).status, Status::UnknownOutcome);
+    assert_eq!(f.receipt(&played.command, &played.request).status, Status::Cancelled(CancelReason::ByUser));
+    assert_eq!(code_of(&stop(&mut f)), Some(code::ROW_NOT_BUILT), "the job ended");
+    assert_eq!(f.state("r"), before, "the next row read the recorder again: the stop did not land");
+    f.layer.finish_program_job(taken.job, Ok(Value::Null)).unwrap();
+    let reconciled = f.state("r");
+    assert_eq!((reconciled.step, reconciled.pending.is_none()), (1, true), "the child's completion, once");
+    assert!(matches!(f.play("r", None).status, Status::Running(_)), "the cursor continues after the recovery");
+    f.drive();
+    assert_eq!(f.state("r").status, PlayStatus::Finished);
+}
+
+/// EV4.19's unknown outcome on the recorder (EV4.11, PS1.30): a `recording.stop` whose write's fate is unknown answers
+/// `unknown_outcome` and keeps the capture, and the layer does not assume the write landed. The next row reads the
+/// recorder again: a recording that landed is found by `recording.play`; one that did not stays absent, and a second
+/// stop stores it whole.
+#[test]
+fn an_unknown_recording_write_is_read_again_at_the_next_row() {
+    let stop = |f: &mut F, name: &str| f.press(RECORDING_STOP_ROW, json::object([("recording", text(name))]));
+
+    // Landed.
+    let mut f = fixture();
+    f.start("r");
+    assert!(matches!(f.write("w", &[1]).status, Status::Completed(_)));
+    f.recorder.set_unknown_writes(true);
+    f.recorder.inject(Fate::Unknown);
+    assert_eq!(stop(&mut f, "r").status, Status::UnknownOutcome);
+    assert_eq!((f.layer.recording("r"), f.layer.capturing()), (None, Some("r")), "not assumed; the capture stays");
+    assert!(f.recorder.held().recordings.contains_key("r"), "the write landed");
+    let played = f.play("r", None);
+    assert!(matches!(played.status, Status::Running(_)), "the play read the recorder again: {:?}", played.status);
+    assert_eq!(f.layer.recording("r"), f.recorder.held().recordings.get("r"));
+    f.drive();
+    assert_eq!(f.state("r").status, PlayStatus::Finished);
+
+    // Not landed.
+    let mut f = fixture();
+    f.start("s");
+    assert!(matches!(f.write("w", &[1]).status, Status::Completed(_)));
+    f.recorder.inject(Fate::Unknown);
+    assert_eq!(stop(&mut f, "s").status, Status::UnknownOutcome);
+    assert_eq!(code_of(&f.play("s", None)), Some(code::NAMED_OBJECT_INVALID), "it did not land");
+    assert_eq!(f.layer.capturing(), Some("s"));
+    let stored = f.stop("s");
+    assert_eq!((stored.steps.len(), f.recorder.held().recordings.get("s")), (1, Some(&stored)));
+}
+
+/// EV4.13 under LG1.3 (pinned source: UTF-8, LF line ends, no CR; a `#` comment runs to LF): the generated module's
+/// comments stay one line whatever the recording's name or a call's arguments hold. CR, LF, NEL, U+2028 and U+2029
+/// are written as `\u{...}` escapes, so the text holds no raw line end but LF and no CR, and exactly the header and
+/// one line per call are comments. `c600-durable`'s `tests/ps1_44_carrier.rs` parses and lowers such a module.
+#[test]
+fn a_source_conversion_keeps_its_comments_on_one_line() {
+    let name = "r\r\n# x\u{85}\u{2028}\u{2029}end";
+    let mut f = fixture();
+    let mut rotate = completed_rotate();
+    rotate.arguments = json::object([("rotation", text("quarter\u{2028}\r")), ("view", text("main"))]);
+    f.put(vec![recording(name, vec![word_step(&[1, 2], 1, None), rotate])]);
+    let converted = f.convert(name, "source");
+    assert!(matches!(converted.status, Status::Completed(_)), "{:?}", converted.status);
+    let record = f.layer.record(&format!("source/recording/{name}")).expect("the source record");
+    let source = record.payload.get("source").and_then(|s| s.get("text")).and_then(Value::as_str).unwrap();
+    for raw in ['\r', '\u{85}', '\u{2028}', '\u{2029}'] {
+        assert!(!source.contains(raw), "{raw:?} in {source}");
+    }
+    let comments: Vec<&str> = source.lines().filter(|line| line.starts_with('#')).collect();
+    assert_eq!(comments.len(), 2, "{source}");
+    assert!(comments[0].contains("`r\\u{000d}\\u{000a}# x\\u{0085}\\u{2028}\\u{2029}end`"), "{}", comments[0]);
+    assert!(comments[1].starts_with("# call 1: `camera.rotate`") && comments[1].contains("quarter"), "{}", comments[1]);
+}

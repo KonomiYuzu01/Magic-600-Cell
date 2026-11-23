@@ -8,9 +8,13 @@
 //!   invocation is not captured: it is part of the program job the solver invoked, which is a step itself. A retry
 //!   that the outcome lookup answers is no new step. A `recording.*` row is never captured (EV4.11).
 //! - `recording.start`, `recording.stop` and `recording.play` complete as transient answers and take no action number,
-//!   and a playback state's writes go to the recorder, outside the journal's action order: none of them is an undo
-//!   target (EV4.20, EV4.21). Only `recording.convert` writes the journal, one record write that `session.undo`
-//!   reaches.
+//!   and a recording's and a playback state's writes go to the recorder, outside the action order (PS1.44; the
+//!   session's own journal holds them as workspace records, `c600_session::recorder`): none of them is an undo target
+//!   (EV4.20, EV4.21). Only `recording.convert` writes an action, one record write that `session.undo` reaches.
+//! - A recorder write that rolls back leaves what the layer holds as the recorder's last durable write left it; one
+//!   whose fate is unknown is read again from the recorder before the next recording row, `job.stop` or step action
+//!   relies on it. A state that a job left `running` when the job ended on a failed write, with no child pending, is
+//!   what a restart finds, and the next `recording.play` stops it with `KN5:resource_limit.engine_lost` first.
 //! - The playback job holds the program lane while it is live and runs in [`CommandLayer::run_jobs`]. Each step it
 //!   plays is a new invocation on the shell's channel with no token and a command ID of its own
 //!   (`{playback}/play/{epoch}/{step}/{n}`), written to the state as `pending` before it is dispatched; while it is
@@ -89,6 +93,9 @@ pub(super) struct Rec {
     issued: u64,
     /// The last conversion that every step passed, with its report (EV4.23; draft): transient.
     conversion: Option<(String, Conversion)>,
+    /// A recorder write whose fate was unknown, or a read that failed, since the recorder was last read: what the
+    /// layer holds may differ from what the recorder holds until it is read again (`resync`).
+    unsettled: bool,
 }
 
 fn text<'a>(args: &'a BTreeMap<String, Value>, name: &str) -> &'a str {
@@ -136,6 +143,7 @@ impl<S: Store> CommandLayer<S> {
         self.rec.recordings = held.recordings;
         self.rec.playbacks = held.playbacks;
         self.rec.recorder = Some(recorder);
+        self.rec.unsettled = false;
         self.rec.plays.clear();
         self.rec.awaiting.clear();
         self.recover_playbacks();
@@ -213,6 +221,7 @@ impl<S: Store> CommandLayer<S> {
     /// (`EV4:stale.recording_step`). An undo or redo whose hint does not target the action EV4.18's map gives stops
     /// the playback with `EV4:stale.recording_step`, undoing nothing.
     pub fn begin_step(&mut self, name: &str, invocation: &Invocation) -> Result<(), Error> {
+        self.resync()?;
         let (recording, state, step) = self.waiting_step(name)?;
         let (recording, state, step) = (recording.clone(), state.clone(), step.clone());
         self.same_identity(&recording)?;
@@ -419,17 +428,21 @@ impl<S: Store> CommandLayer<S> {
         ran
     }
 
-    /// A restart ends the playback jobs (their jobs end with the epoch) and recovers every state as an open does.
+    /// A restart ends the playback jobs (their jobs end with the epoch) and recovers every state as an open does, after
+    /// the recorder is read again if a write's fate was unknown.
     pub(super) fn end_plays(&mut self) {
         self.rec.plays.clear();
         self.rec.awaiting.clear();
+        let _ = self.resync();
         self.recover_playbacks();
     }
 
     // ----- the rows -----
 
-    fn recorder_needed(&self, row: &Row) -> Result<(), Error> {
-        self.recording_gates(row)
+    /// The gates ([`CommandLayer::recording_gates`]), then the recorder read again if a write's fate was unknown.
+    fn recorder_needed(&mut self, row: &Row) -> Result<(), Error> {
+        self.recording_gates(row)?;
+        self.resync()
     }
 
     /// `recording.start {name}` (EV4.22): starts capture under `name`. A start while recording is refused with
@@ -456,7 +469,8 @@ impl<S: Store> CommandLayer<S> {
     /// `recording.stop {recording}` (EV4.22): ends the capture named `recording` and stores it, each step with its
     /// terminal receipt or none and the action it took (EV4.11). A stop with no capture of that name is refused with
     /// `EV4:input.recording_state`. Its answer is a transient `completed(workspace)` whose result digest is the
-    /// recording's.
+    /// recording's; a write that rolls back answers `failed` and one whose fate is unknown `unknown_outcome`, and both
+    /// keep the capture.
     pub(super) fn recording_stop(
         &mut self,
         row: &Row,
@@ -497,8 +511,11 @@ impl<S: Store> CommandLayer<S> {
                 self.rec.capture = Some(capture);
                 Ok((None, Status::Failed(error)))
             }
+            // The recorder may hold the recording: the next row reads it again (`resync`), and the capture stays, so a
+            // second stop replaces it whole.
             Fate::Unknown => {
                 self.rec.capture = Some(capture);
+                self.rec.unsettled = true;
                 Ok((None, Status::UnknownOutcome))
             }
         }
@@ -512,6 +529,12 @@ impl<S: Store> CommandLayer<S> {
     /// whose module is not the active version (`EV4:input.recording_identity_mismatch`); the table's refusals
     /// (`EV4:input.recording_state`); a full program lane (`KN7:busy.lane_full`). The state is written `running` before
     /// the job is admitted.
+    ///
+    /// The state's recovery is written before EV4.22's table decides, so a play that the table, the module check or the
+    /// lane then refuses has still written it: EV4.22 reads the state after its pending child is reconciled, and a
+    /// state still `running` with no live job, which a job that ended on a failed recorder write leaves, stops with
+    /// `KN5:resource_limit.engine_lost` (draft) in the same write, as a restart stops it. Such a write that rolls back
+    /// answers `failed` with its error, and the play admits nothing.
     pub(super) fn recording_play(
         &mut self,
         caller: &Caller,
@@ -536,12 +559,10 @@ impl<S: Store> CommandLayer<S> {
             return refused(code::NAMED_OBJECT_INVALID, format!("no recording named `{name}`"));
         };
         self.same_identity(&recording)?;
-        // EV4.22: the state is read after its pending child is reconciled.
-        if let Some(next) = self.reconciled(&name) {
-            let current = self.rec.playbacks.get(&name).cloned().expect("a pending state");
-            if let Fate::RolledBack(error) = self.write_reconciled(&name, &current, next) {
-                return Ok((None, Status::Failed(error)));
-            }
+        // EV4.22: the state is read after its pending child is reconciled. This write comes before the table can
+        // refuse (see above).
+        if let Some(Fate::RolledBack(error)) = self.recover_playback(&name) {
+            return Ok((None, Status::Failed(error)));
         }
         let digest = recording.digest();
         let state = self.rec.playbacks.get(&name).filter(|state| state.recording == digest).cloned();
@@ -641,7 +662,10 @@ impl<S: Store> CommandLayer<S> {
     /// `job.stop {job}` (EV4.22): halts a live playback job. Its state stops with `KN7:cancelled.by_user`, keeping a
     /// pending child for the next play's reconciliation, and the job's receipt is `cancelled(by_user)`; the answer is a
     /// transient `completed(app)`. A job that is not a live playback's is refused with `KN5:input.row_not_built`: the
-    /// layer builds `job.stop` for a playback's job only (draft).
+    /// layer builds `job.stop` for a playback's job only (draft). A stop whose write rolls back stops nothing: the job
+    /// stays live and the answer is `failed` with the write's error. One whose fate is unknown ends the job, whose
+    /// receipt is `cancelled(by_user)`, and answers `unknown_outcome`: a state the recorder still holds `running`
+    /// stops with `KN5:resource_limit.engine_lost` at the next play or open.
     pub(super) fn job_stop(
         &mut self,
         row: &Row,
@@ -655,15 +679,23 @@ impl<S: Store> CommandLayer<S> {
         let Some(play) = self.rec.plays.remove(&job) else {
             return refused(code::ROW_NOT_BUILT, format!("job {job} is not a live playback's; only those stop here"));
         };
+        let mut answer =
+            Status::Completed(Completion { kind: CompletionKind::App, revision: self.revision.clone(), result: None });
         if let Some(state) = self.rec.playbacks.get(&play.name).cloned() {
             let mut next = state;
             next.status = PlayStatus::Stopped(Stop::Code(code::BY_USER.to_owned()));
-            self.save_state(&play.name, next);
+            match self.save_state(&play.name, next) {
+                Fate::Durable => {}
+                Fate::RolledBack(error) => {
+                    self.rec.plays.insert(job, play);
+                    return Ok((None, Status::Failed(error)));
+                }
+                Fate::Unknown => answer = Status::UnknownOutcome,
+            }
         }
         self.settle(&play.key, Status::Cancelled(CancelReason::ByUser));
         self.generation += 1;
-        let completion = Completion { kind: CompletionKind::App, revision: self.revision.clone(), result: None };
-        Ok((None, Status::Completed(completion)))
+        Ok((None, answer))
     }
 
     // ----- playing -----
@@ -959,30 +991,73 @@ impl<S: Store> CommandLayer<S> {
     fn recover_playbacks(&mut self) {
         let names: Vec<String> = self.rec.playbacks.keys().cloned().collect();
         for name in names {
-            let live = self.rec.plays.values().any(|play| play.name == name);
-            let current = self.rec.playbacks.get(&name).cloned().expect("a listed state");
-            let mut next = self.reconciled(&name).unwrap_or_else(|| current.clone());
-            if next.status == PlayStatus::Running && !live && next.pending.is_none() {
-                next.status = PlayStatus::Stopped(Stop::Code(code::ENGINE_LOST.to_owned()));
-            }
-            if next != current {
-                let _ = self.write_reconciled(&name, &current, next);
-            }
+            let _ = self.recover_playback(&name);
         }
     }
 
-    /// Writes playback `name`'s state to the recorder and keeps it. A rolled-back write keeps the state before it; an
-    /// unknown write keeps the new state, which every later write replaces whole.
+    /// Recovers playback `name`'s state in one write: its pending child looked up and reconciled, and a state still
+    /// `running` with no live job and no child pending stopped with `KN5:resource_limit.engine_lost` (draft). The
+    /// write's fate, or `None` when nothing changes.
+    fn recover_playback(&mut self, name: &str) -> Option<Fate> {
+        let live = self.rec.plays.values().any(|play| play.name == name);
+        let current = self.rec.playbacks.get(name).cloned()?;
+        let mut next = self.reconciled(name).unwrap_or_else(|| current.clone());
+        if next.status == PlayStatus::Running && !live && next.pending.is_none() {
+            next.status = PlayStatus::Stopped(Stop::Code(code::ENGINE_LOST.to_owned()));
+        }
+        (next != current).then(|| self.write_reconciled(name, &current, next))
+    }
+
+    /// Writes playback `name`'s state to the recorder and keeps it. A rolled-back write leaves the state as the
+    /// recorder's last durable write left it, read from the recorder; an unknown write keeps the new state, which every
+    /// later write replaces whole, until the recorder is read again (`resync`).
     fn save_state(&mut self, name: &str, state: PlaybackState) -> Fate {
         let Some(recorder) = self.rec.recorder.as_mut() else {
             return Fate::RolledBack(Error::new(code::ROW_NOT_BUILT, "no recorder"));
         };
         let fate = recorder.save_playback(name, &state);
-        if !matches!(fate, Fate::RolledBack(_)) {
-            self.rec.playbacks.insert(name.to_owned(), state);
+        match &fate {
+            Fate::Durable => {
+                self.rec.playbacks.insert(name.to_owned(), state);
+            }
+            Fate::Unknown => {
+                self.rec.playbacks.insert(name.to_owned(), state);
+                self.rec.unsettled = true;
+            }
+            Fate::RolledBack(_) => match recorder.load() {
+                Ok(held) => match held.playbacks.get(name) {
+                    Some(durable) => {
+                        self.rec.playbacks.insert(name.to_owned(), durable.clone());
+                    }
+                    None => {
+                        self.rec.playbacks.remove(name);
+                    }
+                },
+                Err(_) => self.rec.unsettled = true,
+            },
         }
         self.generation += 1;
         fate
+    }
+
+    /// Reads the recorder again after a write whose fate was unknown, or a read that failed, so that what it holds,
+    /// the recordings and the playback states, is what the layer holds: as an unknown outcome is decided elsewhere, by
+    /// the store and never by a retry. While the recorder cannot be read, the row that needs it is refused with
+    /// `KN5:unknown_outcome.commit_fate`, writing nothing.
+    fn resync(&mut self) -> Result<(), Error> {
+        if !self.rec.unsettled {
+            return Ok(());
+        }
+        let Some(recorder) = self.rec.recorder.as_mut() else { return Ok(()) };
+        let held = recorder.load().map_err(|error| {
+            let detail = format!("the recorder cannot say what an earlier write left: {}", error.detail);
+            Error::new(code::COMMIT_FATE, detail)
+        })?;
+        self.rec.recordings = held.recordings;
+        self.rec.playbacks = held.playbacks;
+        self.rec.unsettled = false;
+        self.generation += 1;
+        Ok(())
     }
 
     fn workspace_completion(&self, result: Option<ResultRef>) -> Status {
