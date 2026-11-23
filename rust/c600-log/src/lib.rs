@@ -11,11 +11,15 @@
 //!   witness, the final full-state hash, the embedded macros, and the embedded scripts through the editor services.
 //!   It never changes live state and never runs a script; a log whose first four gates did not pass binds no state.
 //! - [`Recorder`] writes a log action by action with the kernel computing each state.
+//! - [`c600`] and [`mpult`] check, import and export 0.4's `C600-STUDIO-SESSION-v1` and MPUltimate v1 logs of
+//!   600-cell-Full with 0.4's limits.
 
 #![forbid(unsafe_code)]
 
+pub mod c600;
 mod compile;
 mod log;
+pub mod mpult;
 mod problem;
 mod record;
 pub mod wire;

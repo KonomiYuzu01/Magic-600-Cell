@@ -1,0 +1,1258 @@
+{
+ "c600": {
+  "c600-scramble.c600.json": {
+   "events": [
+    {
+     "assistance": "recorded-scramble",
+     "length": 30,
+     "note": "Random scramble, seed 47, 30 moves",
+     "post": "3cab272445ca9bd47ec73890bea55f283a37e0ae187fbd07b3695e060e64228e",
+     "pre": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        721,
+        129,
+        882,
+        1169,
+        704,
+        1050,
+        -804,
+        -858,
+        -210,
+        541,
+        987,
+        -1120,
+        647,
+        1163,
+        -876,
+        487,
+        1072,
+        -906,
+        69,
+        1149,
+        767,
+        724,
+        1143,
+        -1178,
+        489,
+        73,
+        258,
+        201,
+        744,
+        1042
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual",
+     "length": 2,
+     "note": "",
+     "post": "acf33586bf0322a10fb773b5bad141640040814817af5256d5f69eda76aa2280",
+     "pre": "3cab272445ca9bd47ec73890bea55f283a37e0ae187fbd07b3695e060e64228e",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -3,
+        5
+       ]
+      }
+     ],
+     "stars": 0
+    }
+   ],
+   "primitive_count": 32,
+   "session": "acf33586bf0322a10fb773b5bad141640040814817af5256d5f69eda76aa2280",
+   "sha256": "3e33e50243d6f04f69d91a31ebb43f3215f30ce298f0dd436fc72d4fade1804f",
+   "state": "acf33586bf0322a10fb773b5bad141640040814817af5256d5f69eda76aa2280",
+   "transactions": 2
+  },
+  "c600-session.c600.json.gz": {
+   "events": [
+    {
+     "assistance": "manual",
+     "length": 3,
+     "note": "",
+     "post": "b2a284c5b8393bf70af00fd75bb5fb155f66ffe58b0c125bbeda46b413cc30b4",
+     "pre": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        2,
+        4,
+        6
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual",
+     "length": 56,
+     "note": "",
+     "post": "3f0197610dd4009583915a15669d0df28e83188f0f3895abb080ff2c899cbba7",
+     "pre": "b2a284c5b8393bf70af00fd75bb5fb155f66ffe58b0c125bbeda46b413cc30b4",
+     "recipe": [
+      {
+       "kind": "star",
+       "node": 0,
+       "orbit": 33,
+       "sign": 1
+      }
+     ],
+     "stars": 1
+    },
+    {
+     "assistance": "manual",
+     "length": 2223,
+     "note": "",
+     "post": "041a1d6d827e9408b67a7b59a8dae763b95e6b856c7ab10e706918a0fdc0c426",
+     "pre": "3f0197610dd4009583915a15669d0df28e83188f0f3895abb080ff2c899cbba7",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        8,
+        -8,
+        1200
+       ]
+      },
+      {
+       "kind": "star",
+       "node": 1,
+       "orbit": 0,
+       "sign": -1
+      }
+     ],
+     "stars": 1
+    }
+   ],
+   "primitive_count": 2282,
+   "session": "041a1d6d827e9408b67a7b59a8dae763b95e6b856c7ab10e706918a0fdc0c426",
+   "sha256": "ae1064463d2589a37d135be6d281de91061c3e7cb4b2952995c684bf7fad4bf7",
+   "state": "041a1d6d827e9408b67a7b59a8dae763b95e6b856c7ab10e706918a0fdc0c426",
+   "transactions": 3
+  }
+ },
+ "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+ "mpult": {
+  "mpult-export.log.gz": {
+   "events": [
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "982ac5111dbe9f81c2156700e69120ee05bb6c26e3e90d76831344be08b2f736",
+     "pre": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "e78d0046516046028b5a80150e92360ada6959b9b75349b5296395f9528bab6f",
+     "pre": "982ac5111dbe9f81c2156700e69120ee05bb6c26e3e90d76831344be08b2f736",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        2
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "6445545cef1b08acdee67b29f2e9dc2cd7d7c27f50a726debcb721fedc1eeb57",
+     "pre": "e78d0046516046028b5a80150e92360ada6959b9b75349b5296395f9528bab6f",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "78bafdabf9d53e8385f62361a7d864f561ac5816252325f6d9cce159e17bcf46",
+     "pre": "6445545cef1b08acdee67b29f2e9dc2cd7d7c27f50a726debcb721fedc1eeb57",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -1110
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "c310da189e4f6fb4dd4e9bf7bb2c793f550df72f590965fe9429f28e898a91f0",
+     "pre": "78bafdabf9d53e8385f62361a7d864f561ac5816252325f6d9cce159e17bcf46",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        857
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "dfae6c880ac662061f91ee72b36406c5d56a0b4b70a8446a24f3c18f9a604162",
+     "pre": "c310da189e4f6fb4dd4e9bf7bb2c793f550df72f590965fe9429f28e898a91f0",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        399
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "f2f708fb0b900969cf51f3b3b437a4f9bcc2cbe16f7906927b7b6bab6d95f0d6",
+     "pre": "dfae6c880ac662061f91ee72b36406c5d56a0b4b70a8446a24f3c18f9a604162",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        119
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "df4950873397a513e96264de5c8ae062390b497824372ce11bb095adbb3bd1c4",
+     "pre": "f2f708fb0b900969cf51f3b3b437a4f9bcc2cbe16f7906927b7b6bab6d95f0d6",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        53
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "59fd60bece43452e5acba73f58727c56f371a0a999dfd852db95165f1896eef4",
+     "pre": "df4950873397a513e96264de5c8ae062390b497824372ce11bb095adbb3bd1c4",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "8b95ddf2bc180df93116ce3b11f30d7c83815ffa5a33efcf158dc55d878c4935",
+     "pre": "59fd60bece43452e5acba73f58727c56f371a0a999dfd852db95165f1896eef4",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "5a5d8a85360f5f2591da1c6f35ae6e47f9d6f3476f3c698972bc75c56f25d2a6",
+     "pre": "8b95ddf2bc180df93116ce3b11f30d7c83815ffa5a33efcf158dc55d878c4935",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "41a9f9f953d0fe9e72e10d672eca3db4f238878f6301a07d74dafff37b61709f",
+     "pre": "5a5d8a85360f5f2591da1c6f35ae6e47f9d6f3476f3c698972bc75c56f25d2a6",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "a46f9c878d5ef424a522ab48dc52af9fcb128b2080f287003a49ad0aa5ee5443",
+     "pre": "41a9f9f953d0fe9e72e10d672eca3db4f238878f6301a07d74dafff37b61709f",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        31
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "7ac3898306bac2a20d8f0739ce99277ae0806066c1d1dab1e3f3c52b493a15e4",
+     "pre": "a46f9c878d5ef424a522ab48dc52af9fcb128b2080f287003a49ad0aa5ee5443",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "99d0a5af0237d1b786f9c68d9945af88737b102c357af348976c75a9bbdd85cb",
+     "pre": "7ac3898306bac2a20d8f0739ce99277ae0806066c1d1dab1e3f3c52b493a15e4",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "b6829615ca225466fd3f8b4531d3a6701bb99ed4c844cadba8e2f80ed5291154",
+     "pre": "99d0a5af0237d1b786f9c68d9945af88737b102c357af348976c75a9bbdd85cb",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "c08e9adfd17ca563cdb96a9cb5fd4209e004d9dcfdbe7d2f916ce39ff412eec9",
+     "pre": "b6829615ca225466fd3f8b4531d3a6701bb99ed4c844cadba8e2f80ed5291154",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "faeb719213883afb0d4ec99536a7c81c54e562967049a177e70c5af8e85cd099",
+     "pre": "c08e9adfd17ca563cdb96a9cb5fd4209e004d9dcfdbe7d2f916ce39ff412eec9",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        31
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "9792233cf7536f31435c91c39390aa2890c4569db92a8b7481e1c02f1bb23719",
+     "pre": "faeb719213883afb0d4ec99536a7c81c54e562967049a177e70c5af8e85cd099",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        113
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "4e5f23a8ede44b67efb94ac39f2df06aad8a75e536342b0790b31256a13d9deb",
+     "pre": "9792233cf7536f31435c91c39390aa2890c4569db92a8b7481e1c02f1bb23719",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        31
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "637e608bcf6fdc9f4e86ef4ba92d8d1d723d0638fb846fb5c03557492659e429",
+     "pre": "4e5f23a8ede44b67efb94ac39f2df06aad8a75e536342b0790b31256a13d9deb",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "9079b771073fcb764bd549b9d7ef0b416d7c9225d1c64bac12086fbe6ff7e36b",
+     "pre": "637e608bcf6fdc9f4e86ef4ba92d8d1d723d0638fb846fb5c03557492659e429",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "7adf917cc22611e68af457b65c2e052ef9edbfeb6ae3b6e240d74d9e070912df",
+     "pre": "9079b771073fcb764bd549b9d7ef0b416d7c9225d1c64bac12086fbe6ff7e36b",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "ada8e0f0fe97ae1afa5b30cf44c8b40421655dbd4dab86085bb3663131db594a",
+     "pre": "7adf917cc22611e68af457b65c2e052ef9edbfeb6ae3b6e240d74d9e070912df",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "3bee4da02f1150e16c2f9964cfd53e4dda688a1fcc08c1868eff34515a57db33",
+     "pre": "ada8e0f0fe97ae1afa5b30cf44c8b40421655dbd4dab86085bb3663131db594a",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        31
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "ae75fdfae9386c4e44e36e4eba040f026995a1722799f7577230492c7f3d98b5",
+     "pre": "3bee4da02f1150e16c2f9964cfd53e4dda688a1fcc08c1868eff34515a57db33",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "25a94cdfdddfdb3c2877f2d09c3f85b601d1de060cc6385dd6f270c25e978272",
+     "pre": "ae75fdfae9386c4e44e36e4eba040f026995a1722799f7577230492c7f3d98b5",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "c41cf512d94b3454b641a4c4092b28e9ea3968bc7fd5b9ecff5836c6d2e6794b",
+     "pre": "25a94cdfdddfdb3c2877f2d09c3f85b601d1de060cc6385dd6f270c25e978272",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "3862bb55da1dae160388b624ea966111c0aab4f8dfaf67aa4cf1904698a9492c",
+     "pre": "c41cf512d94b3454b641a4c4092b28e9ea3968bc7fd5b9ecff5836c6d2e6794b",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "57fa6037bed40e833cfc38c557221d07d2514f3db135aedc74f3b21d75657a5b",
+     "pre": "3862bb55da1dae160388b624ea966111c0aab4f8dfaf67aa4cf1904698a9492c",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        113
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "32ee681a692e1b1319e8390607d545668ecc5057328a99790d9a417c9ada65ba",
+     "pre": "57fa6037bed40e833cfc38c557221d07d2514f3db135aedc74f3b21d75657a5b",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        43
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "0f84bcefdd725328eb2582dcbdf5116e12ae4a44ec21ec83f86565e660ba9178",
+     "pre": "32ee681a692e1b1319e8390607d545668ecc5057328a99790d9a417c9ada65ba",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        113
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "973beba10d4f5a44539e3179368e44a257f592ed3acf70aff9e4b8bdf06643de",
+     "pre": "0f84bcefdd725328eb2582dcbdf5116e12ae4a44ec21ec83f86565e660ba9178",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "aaf2bbf0901f8d853c3840ca309a6d1b5eb22e6415487a4434fc5352bfc32f93",
+     "pre": "973beba10d4f5a44539e3179368e44a257f592ed3acf70aff9e4b8bdf06643de",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "962cedd745ed150f8d753a3b2ad8813985b6b864b8a361f27004cbb5e3406a6f",
+     "pre": "aaf2bbf0901f8d853c3840ca309a6d1b5eb22e6415487a4434fc5352bfc32f93",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "d8ea01580eb1aa399a9be2db822c6337e7e5548f86248476744a5f20773dc092",
+     "pre": "962cedd745ed150f8d753a3b2ad8813985b6b864b8a361f27004cbb5e3406a6f",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "1ffae817d7e5beb60e5632bdacf4fb2c8eef4e39a71269faaa4bc400f1c935cb",
+     "pre": "d8ea01580eb1aa399a9be2db822c6337e7e5548f86248476744a5f20773dc092",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        31
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "5c57045255d91c1a1ba59953eaed0bb1c7bca036a3c407bce41f9b9e38369d77",
+     "pre": "1ffae817d7e5beb60e5632bdacf4fb2c8eef4e39a71269faaa4bc400f1c935cb",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "4af31d469d9aeb5a8542d9b5b6b52f605a067eb9b15fbbed1786d53540694bbe",
+     "pre": "5c57045255d91c1a1ba59953eaed0bb1c7bca036a3c407bce41f9b9e38369d77",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "4cc2f281fc9121d421e201bf578cdb407ed627edb713ff7d11103e18431b0d16",
+     "pre": "4af31d469d9aeb5a8542d9b5b6b52f605a067eb9b15fbbed1786d53540694bbe",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "35e84a34030ad39bc1c883dd6eb50f232396b7b497e04578eca8ef4115a17d54",
+     "pre": "4cc2f281fc9121d421e201bf578cdb407ed627edb713ff7d11103e18431b0d16",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "692c06a35e89c7bafc4bab61fae0ace3b9583c554ed092af07fffe48cd108247",
+     "pre": "35e84a34030ad39bc1c883dd6eb50f232396b7b497e04578eca8ef4115a17d54",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        31
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "b283c719e48db576b734474e64bee872c40fa3c2c3dec9c1d56daac1fda8ab87",
+     "pre": "692c06a35e89c7bafc4bab61fae0ace3b9583c554ed092af07fffe48cd108247",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        113
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "4c44327fc0925708fc0027a605f1fcc23ea474f93cfc68c781c070136db2db93",
+     "pre": "b283c719e48db576b734474e64bee872c40fa3c2c3dec9c1d56daac1fda8ab87",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        31
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "ea6b4ff48622e4abc7c4cd3e2510f6e8fcaa5b27e988b18ae4f205e8f2bef031",
+     "pre": "4c44327fc0925708fc0027a605f1fcc23ea474f93cfc68c781c070136db2db93",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "cf3910bd016e95e144ae413e12b5e07a617d6456273a2211d1243d388d47a35e",
+     "pre": "ea6b4ff48622e4abc7c4cd3e2510f6e8fcaa5b27e988b18ae4f205e8f2bef031",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "0b242eebd9a4f82ca848d337a869ac6c0fd216fe2bd19d5af6c2fd709de77a06",
+     "pre": "cf3910bd016e95e144ae413e12b5e07a617d6456273a2211d1243d388d47a35e",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "7462e963191a306d66231da8d3a4a87400498b355d327e9ea5bed7388c1ef9dc",
+     "pre": "0b242eebd9a4f82ca848d337a869ac6c0fd216fe2bd19d5af6c2fd709de77a06",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "5f0945f9f0c483b408e94c3bf1f1f35ecb6d990f737772cc7446e93237c990b0",
+     "pre": "7462e963191a306d66231da8d3a4a87400498b355d327e9ea5bed7388c1ef9dc",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        31
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "449a8f07b50632bdc2223076d58b86691588e9714cbf5ef54816548f38984724",
+     "pre": "5f0945f9f0c483b408e94c3bf1f1f35ecb6d990f737772cc7446e93237c990b0",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "4ae3ad4795971147fa637def2fb77b0b834256c7f70e12d665e0c4c6f6a6d00f",
+     "pre": "449a8f07b50632bdc2223076d58b86691588e9714cbf5ef54816548f38984724",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "832c9de22cbcff73af6417ce3a9cb2162c030aa851c3eef5cb7aba89b5396bf4",
+     "pre": "4ae3ad4795971147fa637def2fb77b0b834256c7f70e12d665e0c4c6f6a6d00f",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -4
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "32db59cf5d51cc17b2767695a375599cba917a14819c5173d5974a1bb65de171",
+     "pre": "832c9de22cbcff73af6417ce3a9cb2162c030aa851c3eef5cb7aba89b5396bf4",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "3c09176d8e4491c0fb662a68e89c5a0ef37e64c707ff8dfa1071342a8bde6bb0",
+     "pre": "32db59cf5d51cc17b2767695a375599cba917a14819c5173d5974a1bb65de171",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        43
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "842c8c97ebf3aaf8ce2e58b478d8de08cfe97aa4a6c1b6166a66bbb73fb3aa19",
+     "pre": "3c09176d8e4491c0fb662a68e89c5a0ef37e64c707ff8dfa1071342a8bde6bb0",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        53
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "9541b04657c38d0254b75526fb1babcdb13ae2599e0fd71392718edb6a360aaf",
+     "pre": "842c8c97ebf3aaf8ce2e58b478d8de08cfe97aa4a6c1b6166a66bbb73fb3aa19",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        119
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "eb9f175016a80275b7b0d5c7b28192a836d7eed7093820dae99458cddbb893dd",
+     "pre": "9541b04657c38d0254b75526fb1babcdb13ae2599e0fd71392718edb6a360aaf",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        399
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "83ca6fe99e299433123d380d4cced8218ef8790eddf915158426b035be56cef4",
+     "pre": "eb9f175016a80275b7b0d5c7b28192a836d7eed7093820dae99458cddbb893dd",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        857
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "bb393e6796c70c96d58adec475a21c5adf4497a54689db62eb0db75160a22d23",
+     "pre": "83ca6fe99e299433123d380d4cced8218ef8790eddf915158426b035be56cef4",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1110
+       ]
+      }
+     ],
+     "stars": 0
+    }
+   ],
+   "native_log": {
+    "all_colors_verified": 259800,
+    "checksum_verified": true,
+    "format": "MPUltimate-v1",
+    "pointer": 59,
+    "redo_transactions": 0,
+    "sequence_entries": 59,
+    "shuffle_boundary": 0,
+    "timer_milliseconds": 12000
+   },
+   "primitive_count": 59,
+   "selected_count": 59,
+   "session": "bb393e6796c70c96d58adec475a21c5adf4497a54689db62eb0db75160a22d23",
+   "sha256": "c7ea1f724f7a63f1a58a8bfee7ca5e25bfe8608af67b0301f0316f14ba7f163e",
+   "state": "bb393e6796c70c96d58adec475a21c5adf4497a54689db62eb0db75160a22d23",
+   "transactions": 59
+  },
+  "mpult-negative.log.gz": {
+   "events": [
+    {
+     "assistance": "manual-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "982ac5111dbe9f81c2156700e69120ee05bb6c26e3e90d76831344be08b2f736",
+     "pre": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 2,
+     "note": "Imported native MPUlt move",
+     "post": "b78207ff65b105069257fb64035d79567c435cf31d374f432457665b046e255d",
+     "pre": "982ac5111dbe9f81c2156700e69120ee05bb6c26e3e90d76831344be08b2f736",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -1192,
+        1191
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 2,
+     "note": "Imported native MPUlt move",
+     "post": "5e9af6a30cfe18c0e54aa1782af72fe61b509b5a4167a4007b50836e6a680cf3",
+     "pre": "b78207ff65b105069257fb64035d79567c435cf31d374f432457665b046e255d",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        5,
+        1185
+       ]
+      }
+     ],
+     "stars": 0
+    }
+   ],
+   "native_log": {
+    "all_colors_verified": 259800,
+    "checksum_verified": true,
+    "format": "MPUltimate-v1",
+    "pointer": 3,
+    "redo_transactions": 0,
+    "sequence_entries": 3,
+    "shuffle_boundary": 0,
+    "timer_milliseconds": 12345
+   },
+   "primitive_count": 5,
+   "selected_count": 3,
+   "sha256": "e4ce995e3a46dc25bb0d1eee8accecf4bb05249a7a681aca083ee4c45b20a5b3",
+   "state": "5e9af6a30cfe18c0e54aa1782af72fe61b509b5a4167a4007b50836e6a680cf3",
+   "transactions": 3
+  },
+  "mpult-partial-redo.log.gz": {
+   "events": [
+    {
+     "assistance": "recorded-scramble-native-import",
+     "length": 1,
+     "note": "Imported native MPUlt move",
+     "post": "982ac5111dbe9f81c2156700e69120ee05bb6c26e3e90d76831344be08b2f736",
+     "pre": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        1
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 2,
+     "note": "Imported native MPUlt move",
+     "post": "b78207ff65b105069257fb64035d79567c435cf31d374f432457665b046e255d",
+     "pre": "982ac5111dbe9f81c2156700e69120ee05bb6c26e3e90d76831344be08b2f736",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        -1192,
+        1191
+       ]
+      }
+     ],
+     "stars": 0
+    },
+    {
+     "assistance": "manual-native-import",
+     "length": 2,
+     "note": "Imported native MPUlt move",
+     "post": "5e9af6a30cfe18c0e54aa1782af72fe61b509b5a4167a4007b50836e6a680cf3",
+     "pre": "b78207ff65b105069257fb64035d79567c435cf31d374f432457665b046e255d",
+     "recipe": [
+      {
+       "kind": "word",
+       "moves": [
+        5,
+        1185
+       ]
+      }
+     ],
+     "stars": 0
+    }
+   ],
+   "native_log": {
+    "all_colors_verified": 259800,
+    "checksum_verified": true,
+    "format": "MPUltimate-v1",
+    "pointer": 2,
+    "redo_transactions": 2,
+    "sequence_entries": 5,
+    "shuffle_boundary": 2,
+    "timer_milliseconds": 12345
+   },
+   "primitive_count": 5,
+   "selected_count": 1,
+   "sha256": "effdefdc81c0009b68385a3e9af5e97cd3d138f79337f27567dea8d855e5df55",
+   "state": "982ac5111dbe9f81c2156700e69120ee05bb6c26e3e90d76831344be08b2f736",
+   "transactions": 3
+  }
+ },
+ "profile_sha256": "3f08c92d2e253e488d56e715ae9d19bcda876286f353c334ed9a9223c48feb67",
+ "sources": {
+  "core.py": "67839fc28bf4dd020b515330efcde43a2116474e9970a1d743de55c7deb2eea2",
+  "enhanced.py": "8e0f3d96ba23baa91e935c83f8188669a3faad080fed44398408e24731e58f43",
+  "log_io.py": "b0a8f9d01196bc1ba909600dcdda6a685dd64d0491a98d0249102c051967249f",
+  "mpult_log.py": "58ab02f4be44010d6a4a8b5adde9734e0c05b5770c4c8b8f312a75cbb97e7ada",
+  "native/runtime/MPUlt_puzzles.txt": "b52bf61866d2d47e582b28e1adb64dda3141ed42591b639b955f91dc60c598e2",
+  "native_bridge.py": "f01b64de34698f3e6dff2d3587903f3afb759d2a25f3b483ae68f1b95b67709f",
+  "session.py": "bbac102569880c98a0454c9702e6dfdf3c6a6043a1b1c5d4f35b79cee638e3b7",
+  "tests/test_native_bridge.py": "09b34e978ca81de6989105cf4e46924b3fcc60cf2322e1fd8d07516c0a4696d3"
+ }
+}

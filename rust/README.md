@@ -3931,3 +3931,48 @@ amend them), in the new crate `c600-log`, a draft.
     class);
   - a chapter 05 table row and an FP.4 row for `c600-log-draft`, which are versioned changes of frozen text.
 - Evidence kind: source. Nothing here is Windows, input, display or timing evidence.
+
+## Status of LP4, LP4-13: C600 and MPUlt interchange
+
+LP4-13 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md), in `c600-log`: 0.4's proof logs and MPUltimate
+v1 logs of 600-cell-Full checked, imported and exported with 0.4's rules (`log_io.py`, `mpult_log.py`), which are not
+changed.
+
+- `c600::check`, `import` and `export`: `C600-STUDIO-SESSION-v1` (extension `.c600.json.gz`) with `decode_log`'s and
+  `validate_record`'s limits, order and texts: at most 16 MiB stored and 24 MiB expanded, UTF-8 JSON with an optional
+  BOM, a solved root, at most 10,000 transactions and 2,000,000 primitives, every recipe normalized with its counts,
+  and every pre, post and final state replayed. Import makes one commit per transaction and records the preferences
+  without applying them. Export writes the line from the start to the saved cursor as `Session.export` does (a partial
+  undo becomes a transaction of its kept letters), as canonical JSON, raw or in a stored gzip member with no time.
+  Codes: another model `KN1:input.identity_mismatch`, another format `PS2:input.persistence_version`, a cap
+  `PS1:resource_limit.persistence_size`, a replay mismatch `PS3:input.checkpoint_replay`, other faults
+  `PS1:input.persistence_format`.
+- `mpult::NativeProfile` reads 0.4's `C600-NATIVE-PROFILE-v1` with `profile_data`'s checks, plus its format and its
+  `profile_sha256`, which is checked on the file's bytes because 0.4 hashed `translations` with integer keys.
+  `mpult::check`, `import` and `export`: MPUltimate v1 logs of 600-cell-Full (extension `.log`) with `import_native`'s
+  checks: header, description with exact decimals, base36 colors, timer, CRC, macro groups and shuffle boundary, the
+  verified bridge words, the replay of every move with the redo tail, and the colors at the pointer. The caps are
+  0.4's: 16 MiB, 20,000 sequence entries and 10,000 native moves. Over a cap is `PS1:resource_limit.persistence_size`,
+  another puzzle (header, description or dimensions) `KN1:input.identity_mismatch`, another MPUltimate version
+  `PS2:input.persistence_version`, a CRC mismatch `PS1:input.digest_mismatch`, colors that disagree with the replay
+  `PS3:input.checkpoint_replay`. Import keeps the redo tail as moves after the saved cursor (a roll back to the
+  pointer). Export writes the line through the saved cursor and on along the last redo branch, with the pointer at
+  the saved cursor: an unchanged import is written back with its recorded sequence entries, counters and timer, and
+  any other transaction letter by letter through the profile's translations, as `export_native` does.
+- Tests (fixture): `tests/fixtures/make_fixtures.py` made the fixtures with 0.4's own code in the pinned engine
+  environment, and `expected.json` holds what 0.4 returned and the 0.4 sources' digests. `tests/interchange.rs`: the
+  0.4 sources and fixtures are unchanged; the fixtures import to the states 0.4 reaches, transaction by transaction,
+  and compile as logs to the session's hash; export then import is the identity, byte for byte for the raw C600
+  fixture and every MPUlt fixture, and by the JSON inside the gzip one; a session's letter-by-letter MPUlt export
+  equals 0.4's `export_native` bytes; the refusals above each carry their code; the description constant is MPUlt's
+  block.
+- Readings: the MPUlt profile in the fixtures is 0.4's synthetic one (`test_native_bridge.make_fixture`), not an export
+  of the actual MPUlt process, so this is source and fixture evidence only. Unlike 0.4's export, MPUlt export keeps a
+  redo tail and an imported transaction's recorded entries (macro markers and moves of no letter), so that an
+  unchanged import round-trips.
+- Not built:
+  - checks against a profile from the actual MPUlt process on the owner's machine;
+  - C600 export above 16 MiB stored: 0.4 compresses with zlib, this crate writes stored blocks only and refuses;
+  - JSON nested deeper than 128 levels in a 0.4 log, which 0.4's reader accepts and the kernel's parser refuses;
+  - the interchange command rows and file dialogs (LP4-14).
+- Evidence kind: source and fixture. Nothing here is Windows, input, display or timing evidence.
