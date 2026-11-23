@@ -3591,6 +3591,22 @@ The plan is [`language-lp5-plan.md`](../docs/progress/1.0/language-lp5-plan.md);
 2026 with every recommended option. The three LP5 crates were added as empty members first, so the pieces share no
 workspace file.
 
+- R7, the research library's entries (LB1, LB5): `c600-library` holds them as 600 Cell Script in eight modules
+  (`research_slp`, `research_bigint`, `research_fixpoints`, `research_flows`, `research_search`, `research_ranks`,
+  `research_families`, `research_models`), with eleven catalogue rows in `c600_library::research`: LB1's straight-line
+  programs, big integers and symbolic bounds, finite fixed points, and exact matching and integral flows; LB5's
+  restricted word search, search reductions and gates, admitted-domain membership, ranks, bound calculation and
+  compressed witnesses, regional-family recognition, and conditional models. No entry reads state; the search and the
+  membership check run over synthetic permutation actions only, carry no witness word, and their four rows are marked
+  research tier candidates. A search record keeps its declaration, outcome, stop reason and coverage; only a completed,
+  unbeamed enumeration is a negative, and a reduced negative leaves its family only through a matching lemma, otherwise
+  `LB5:evidence.reduction_scope_mismatch`. Membership answers `OUTSIDE_CERTIFIED_DOMAIN` with k and its scope only
+  after a complete enumeration, always with `reachability: not_asserted`. B11 (6,775 digits) computes without
+  expansion. Drafts: an expansion over its bound answers as a value (`admitted: false`), since LB1 registers no code
+  for it; D[k] is "within k letters of a target point"; a search budget counts examined candidates. Tests: CT-LB1-04,
+  CT-LB1-05, CT-LB5-07, CT-LB5-08 and CT-ERR-11, their library parts. Not built here: the host's refusal of research
+  tier rows in a solving session (BND.64, CT-BND-16), the entries' puzzle forms over KN2.4's reads and the jumbling
+  form of D[k] (the research host's); strategies, selectors, certificate builders and seeded search.
 - R9, the proof-obligation translator (LB5.18, PS1.45, PS1.46): `c600-evidence`'s `obligation` module, as pure code.
   It translates a typed Statement over `c600-obligation-vocabulary-draft-1` into PS1.45's `c600-proof-obligation-draft`
   Lean 4 text with `by sorry`, and matches the format packet's `obligations` vectors byte for byte. A named statement,
