@@ -7,8 +7,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
+use c600_command::keys::default_specs;
 use c600_command::layer::EXPLORE_ROW;
-use c600_command::shell::default_keymap;
 use c600_command::{
     code, draft_args, Caller, CommandLayer, Direction, Error, HeadlessFrames, Invocation, JobOutput, Kind, MemoryStore,
     Overlay, PreviewState, Profile, Provenance, Receipt, RecordValue, Revision, Secret, Shell, Status, Table,
@@ -415,7 +415,7 @@ fn the_explore_state_pauses_it_and_a_run_never_reaches_it() {
 /// No default key: the solver binds their own macros.
 #[test]
 fn it_has_no_default_key() {
-    assert!(default_keymap().iter().all(|binding| binding.row != ONE_KEY_ROW));
+    assert!(default_specs().iter().all(|spec| spec.command != ONE_KEY_ROW));
     assert_eq!(Table::h08().row(ONE_KEY_ROW).and_then(|row| row.key_0_4.clone()), None);
 }
 

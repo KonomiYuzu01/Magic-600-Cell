@@ -2609,10 +2609,8 @@ run or not applicable is no pass (PHS.63).
   - The class rule (no text-class or capture-class binding; list-class bindings reach only the list rows) reports
     `EV4:input.binding_conflict`, since chapter 13 has no row of its own for it; a dedicated row is a change to
     chapter 13 (PHS.52).
-  - Two draft key maps exist: the shell's five chords in `c600-command`, which C1's key route uses, and the router's
-    default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
-    which DT-M1 C4 rules out. One map is to remain; the command table's freeze (PHS.53) left both, since H-08 holds
-    no 1.0 key map.
+  - Closed by LP4-8: two draft key maps existed (the shell's five chords and the router's default map). One checked
+    map remains, in `c600_command::keys`, and Escape cancels no preview.
   - The host gives the router the pinned menu's two digests, since the command layer gives no read of its pin; a read
     in `c600-command` would remove the copy. No key binds `jumble.twist.menu`, and K2's other four axes, a slot's
     transported frame (D11) and C6's seat keys have no key.
@@ -3751,15 +3749,13 @@ LG5.6).
   keep their places with their typed reasons. A palette invocation is `Shell::invoke`, the key route's own path.
 - `command.find` is built: after its `query`'s form, and for a run only inside a command the solver invoked, it is
   `accepted` with no job and changes nothing. No entry can serve it.
-- `Shell::bind` adds a key binding, refusing a sequence bound in an overlapping context with
-  `EV4:input.binding_conflict`.
+- `Shell::bind` adds a key binding; since LP4-8 it runs EV4.7's checks of the whole map (below).
 - CT-EV4-01 runs whole in `c600-command/tests/palette.rs` (source).
 - Not built:
   - ranking by the solver's own recency, frequency and pins (ADR-D01.18), glossary terms in the search, aliases
     (`palette.alias`), pins (`palette.pin`), synonyms (ADR-D01.17), short help and the selection filter of
     `command.find`'s `object`;
   - revoking a grant or removing a registered row; the host keeps its registrations for the layer's life;
-  - LP4-8's checked keymap, layouts and rebind (EV4.7, EV4.8): `Shell::bind` is a draft that checks duplicates only;
   - a run's own invocation of a workspace or file row. ADR-D01.2's first route lets an invoked entry point run view
     and workspace rows (overruling LG3.1 and LG3.5 in part); the layer still follows the owner's reading of ONE.52 of
     18 November 2026 (findings B3 and B4), so a workspace entry point the solver invokes writes its records in its own
@@ -3768,6 +3764,105 @@ LG5.6).
   - the palette's generation event (KN5.8's protocol): the shell compares the layer's revision and generation when it
     reads.
 - Evidence kind: source. Nothing here is Windows input, display or timing evidence.
+
+## Status of LP4, LP4-15: durable rollback step IDs (R2-5)
+
+- The owner's decision 4.2 of 23 November 2026: each step of `session.rollback` is journaled under the command ID
+  `{gesture}#{i}/{k}` (1 <= i <= k, plain decimal), so "j of k" is durable and a reopen tells a gesture cut at j of k
+  from a whole one by the step IDs alone. `rollback_step` parses the form to (gesture, i, k); the journal format does
+  not change, since the step ID is the command ID the journal already keeps.
+- A reopen admits a step as the live gesture writes it: step 1 under a gesture ID that no earlier action or gesture
+  used, and each later step right after the one before it with the same k, in the same epoch. Step 0, i above k, a
+  number not in plain decimal and the older form `{gesture}#{i}` name no step and stop the replay in read-only
+  recovery (`KN5:consistency.unadmitted_journal_action`). A press under a gesture ID whose gesture has steps is refused
+  with `KN5:input.command_id_reused` whatever its k, live and after a reopen.
+- `CommandLayer::rollback_steps` builds the step IDs from the gesture's k; its receipts' commands carry k.
+- R2-5's reading test in `c600-command/tests/attack_rollback.rs` is now a passing test of the fix
+  (`a_cut_gesture_and_a_whole_one_journal_apart`), and `tests/rollback.rs` gains the crash case and the admission
+  cases. The `session.rollback` row's note in `command-rows-commit.json`, `command-table.json` and `command-table.md`
+  names the new form.
+- Not built: a journal written before this change with a rollback gesture in the older form reopens in read-only
+  recovery; no migration of such a journal is built, since the row was a draft of 22 November 2026.
+- Evidence kind: source.
+
+## Status of LP4, LP4-8: bindings, layouts, rebind and macros
+
+- One checked key map (EV4.3, EV4.4, EV4.7): the key-map model moved from `c600-input` to `c600_command::keys` (chords
+  in W3C `code` names, the US QWERTY and French AZERTY tables, `BindingSpec`, `KeyMap`, EV4.7's checks and the draft
+  default map); `c600-input` re-exports it in its old modules, so the router's API is unchanged. The shell's key
+  route (`Shell::press`) and the router use the same map, which closes C5's open item "one
+  map is to remain": the shell's own five-chord draft map, `KeyBinding` and `ArgSource` are gone, and Escape no longer
+  cancels a preview anywhere (DT-M1 C4: `Ctrl+Shift+Backspace` does; Escape is `transient.close`).
+  `Shell::press` takes a sequence of physical chords or character intents (`Ctrl+'z'`) resolved under the map's active
+  layout, in the global routing class for the shell's destination; a relative name only the router holds (a grip
+  slot, a menu item, a list entry, a phase, a scrub position) is refused before any envelope with
+  `KN5:input.argument_form`. The default map gains `Ctrl+Alt+'z'` and `Ctrl+Alt+'y'` for the layout history's undo and
+  redo (ADR-D01.14), by character as undo and redo are (Q2 (b)).
+- `Shell::bind` replaces LP4-4's draft: it checks the whole map with the new binding (`KeyMap::bind`), duplicates and
+  the prefix-code property per routing class and every check under each declared layout, and refuses with the first
+  finding's code (`EV4:input.binding_conflict`, `EV4:input.binding_prefix_conflict`,
+  `EV4:input.binding_layout_mismatch`), leaving the map and the palette as they were. `Shell::apply_keymap` takes a map
+  that passed the checks, such as one under another active layout. The palette shows key sequences as chord names
+  (`Ctrl+KeyZ`).
+- The applied grip-slot map (EV4.8, PS1.26; DT-M1 K2, Q3 (a), K6): `grip.rebind {anchor, map, expected_map}` is built.
+  It writes the record `grip/map` (anchor, caps and transported frames in slot order, and the model) as one record
+  write, undoable as a workspace inverse, after checking the forms (`KN5:input.argument_form`: a piece anchor, 1 to 600
+  slots of exactly `{cap, frame}`, caps below 600) and that `expected_map` is the digest of the applied map
+  (`CommandLayer::slot_map_digest`; `KN5:stale.revision_changed` otherwise). Before the first rebind the host's default
+  map applies: the slot map the router's `Context` is made with. `Context::rebind` is gone; `Router::slots` reads the
+  layer's applied map at each press, so only the rebind command changes what a slot key or a twist key's grip sends.
+- The macro base (EV4.9; JI.18 to JI.20; DT-J1 E1, DT-M1 K6): `macro.save {word, name}` is built, with H-08's `confirm`
+  gate (`KN5:input.confirmation_required` without `confirm: true`, which the journal keeps). It writes `macro/<name>`
+  holding the alphabet (`full` or `menu`), KN1's identity block (the model's, or the jumbling block with the pinned
+  menu and its order), the literal letters in chronological order, flat (signed generators, or JI.19's `60*grip +
+  item` codes), the exact expanded length, the literal digest (the journal's for a Full word; JI.19's
+  `ia16-expanded-le/1` for a menu word, which reproduces JI.23's digest), the start digest (labels with Jumble off,
+  poses with Jumble on), the source as written (a recipe's words and stars are its named parts) and the key contracts
+  (`word-key/1`; `trace-key/1` under `full-disjoint-support/1` or `jumble-locality/1`). A save neither selects,
+  inserts nor executes; it is allowed in either Jumble mode, so one base serves both puzzles, and a save under a used
+  name writes the next version. `CommandLayer::macro_base` lists it. `macros::check_keys` refuses comparing two
+  macros whose alphabet, identity, key kinds or versions, or independence contract differ with
+  `LB1:input.key_contract_mismatch` (registered in chapter 13).
+- Only their own rows write these records: `workspace.set` and `worksheet.save` refuse names under `grip/` and
+  `macro/` (as under `set/`), a program job's output that writes one fails with `KN2:input.named_object_invalid`, a
+  run reaches neither row (`LG3:capability.not_granted`), no entry can serve them, and a reopen stops in read-only
+  recovery (`KN5:consistency.unadmitted_journal_action`) at a write of one that is not its own row's from the shell,
+  with its confirmation and a record that reads, and at a job's completion under either row, which runs no job (B7).
+- No H-08 row was added: `grip.rebind` and `macro.save` were stored rows. The command table did not change.
+- Tests:
+  - CT-EV4-06 whole (synthetic): `c600-input/tests/keymap.rs` on the specs and `c600-command/tests/keymap.rs` through
+    `Shell::bind` on the shell's one map, with DT-M1's US and French counterexample refused under AZERTY while US is
+    active.
+  - CT-EV4-07 whole (source): `c600-command/tests/rebind_and_macro_base.rs` (the rebind leg on the layer, the
+    reserved-name and replay legs, the macro base for both puzzles across Jumble on and a reopen, the checks of a save,
+    the key contracts) and the rebind leg of `c600-input/tests/routing.rs` (a slot key sends the rebound cap).
+  - CT-EV4-05, headless part only: `c600-input/tests/ime_focus.rs` (synthetic IME composition, text undo under both
+    layouts and focus loss suppress dispatch and clear held keys). Not run: CT-EV4-05 itself, a windows test with
+    actual Windows IME, text undo and focus loss, on the owner's machine.
+- Not built:
+  - the key-map rows `keymap.edit`, `keymap.save`, `keymap.defaults`, `keymap.name` and `file.keymap.*`, and the
+    persisted binding and key-map forms of chapter 05 (CT-PS1-13's round trip); the shell's map is built in code;
+  - the other `macro.*` rows (`macro.base.open`, `macro.select`, `macro.add`, `macro.replace`, `macro.compare`,
+    `macro.variant.create`, `macro.metadata.set`, `macro.filter`, `macro.library.check`, `macro.compose`,
+    `macro.operand.set`, `macro.reference.check`) and `file.macro.*`; a macro's use, where a jumble letter is refused
+    with Jumble off, waits for `macro.add` and `macro.replace`;
+  - `macro.save` of a `{"record": name}` word, named spans with `same_as` and `inverse_of` relations (JI.21), chunked
+    storage and streaming (JI.20, JI.22) and DT-J1 X3's expansion bound;
+  - the word and trace keys themselves: they are the interpreter's primitives, and `c600-command` keeps no path to it
+    (ONE.48), so the layer records their contracts and `macro.compare`'s job will compute them;
+  - `grip.select`, `grip.anchor.set` and the transport of frames from an anchor (the map is stored as the rebind gives
+    it); `FrameRef` has no settled form, so a frame is kept as given;
+  - the renderer bridge's rebind: it keeps its one default slot and sends no `grip.rebind`.
+- Callers moved to the map's chords: `c600-tools`' `c600-lp3-source` dismisses a refused commit's preview with
+  `Ctrl+Shift+Backspace` and undoes and redoes with `Ctrl+KeyZ` and `Ctrl+KeyY`. The renderer bridge's host
+  (`renderer/bridge/host`, LP4-3's `m6h_register_row`) gives its shell the router's map, and a row's key is bound by
+  checking the router's specs with the new binding under both declared layouts (`KeyMap::apply`) and applying the
+  result to the router and the shell together, so the palette and the router read one map. The spellings in the
+  bridge's tests, the editor panel and `renderer/shell/README.md` are the map's.
+- Drafts: the record names `grip/map` and `macro/<name>`, their payloads and provenance blocks, the stale code for a
+  raced rebind, the 600-slot bound, the overwrite of a macro by name, and the Full word's literal digest profile, in
+  the crate documentation of `c600_command::grip` and `c600_command::macros`.
+- Evidence kind: source and synthetic. No Windows, IME, device or timing claim.
 
 ## Status of LP4, LP4-3: the shell's write-check-run flow
 
@@ -3786,9 +3881,9 @@ uses this workspace's crates through their public interfaces and changes none of
   is `{"code", "detail"}` (`m6e_last_error`).
 - The host library `c600-shell-host` goes to version 7. `m6h_register_row` registers a module's entry as a language
   overlay row (`tool.<module>.<entry>`, a query row, `register_overlay_with`) and binds its key in the router and the
-  shell's keymap. `m6h_palette` reads the palette. `m6h_invoke` invokes a row from the palette (`Shell::invoke`).
-  `m6h_take_job` and `m6h_finish_job` carry a program job's run (`ModuleRun::of_job`, as JSON) to the editor library
-  and its end back to the layer as the job's result or error. `m6h_set_draft_word` sets the editor's draft,
+  shell's key map, one map since LP4-8. `m6h_palette` reads the palette. `m6h_invoke` invokes a row from the palette
+  (`Shell::invoke`). `m6h_take_job` and `m6h_finish_job` carry a program job's run (`ModuleRun::of_job`, as JSON) to
+  the editor library and its end back to the layer as the job's result or error. `m6h_set_draft_word` sets the editor's draft,
   `m6h_set_focus` the router's text or puzzle focus, and `m6h_answer` gives the JSON answers. The host now builds the
   previews the layer queues (`run_jobs`) at each pump, frame and key, shows a pending preview on the view
   (`show_preview`, with no primitives yet), and reports each confirmed frame that showed it to the layer
@@ -3829,7 +3924,7 @@ uses this workspace's crates through their public interfaces and changes none of
     capability, so a draft that imports or requires one is refused;
   - more than one entry per check, and arguments (a registered row takes none; their conversion waits for LG5.2);
   - persistence of the module set and of the registered rows, which live for one run of the shell; removing or
-    re-keying a row (LP4-8's checked keymap);
+    re-keying a row;
   - the panel's look (ADR-D01's later rounds); hover, definition and rename in the panel; diagnostics drawn in the
     code field; the preview's primitives on the view;
   - the on-screen flow: the shell built offline with the panel (`build_shell.py`, no warnings), and it was never

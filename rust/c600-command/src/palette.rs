@@ -23,9 +23,9 @@
 //!   (`command.find`'s `object`) are not built.
 
 use crate::availability::Availability;
+use crate::keys::KeyMap;
 use crate::layer::CommandLayer;
 use crate::receipt::Revision;
-use crate::shell::KeyBinding;
 use crate::store::Store;
 use crate::table::{Binding, Kind};
 
@@ -43,7 +43,9 @@ pub struct PaletteEntry {
     pub kind: Kind,
     /// Whether a checked language module registered the row (KN5.3); a stored row that an entry serves is not one.
     pub language_defined: bool,
-    /// The key sequences the shell's keymap binds to the row, in keymap order, shown before disclosure (EV4.2).
+    /// The key sequences the shell's key map binds to the row, in key map order, as resolved under its active layout:
+    /// each chord in [`crate::keys::Chord`]'s form, chords of a prefix group separated by a space. They are shown
+    /// before disclosure (EV4.2).
     pub keys: Vec<String>,
     /// The row's answer in the availability table the palette read: `Ok(())`, or the typed reason it is unavailable.
     pub availability: Result<(), &'static str>,
@@ -73,7 +75,7 @@ impl Palette {
     /// Reads every row of `layer`'s table with its answer in one availability table
     /// ([`CommandLayer::availability_table`], a computed binding per row) and the key sequences `keymap` binds to it.
     /// It starts no program, queues no job and changes nothing in the layer.
-    pub fn read<S: Store>(layer: &CommandLayer<S>, keymap: &[KeyBinding]) -> Palette {
+    pub fn read<S: Store>(layer: &CommandLayer<S>, keymap: &KeyMap) -> Palette {
         let computed = Binding::Computed;
         let table = layer.table();
         let availability = layer.availability_table(table.rows().map(|row| (row.id.as_str(), &computed)));
@@ -84,7 +86,12 @@ impl Palette {
                 label: row.label.clone().unwrap_or_else(|| row.id.clone()),
                 kind: row.kind,
                 language_defined: table.language_defined(&row.id),
-                keys: keymap.iter().filter(|binding| binding.row == row.id).map(|b| b.sequence.clone()).collect(),
+                keys: keymap
+                    .bindings()
+                    .iter()
+                    .filter(|binding| binding.command == row.id)
+                    .map(|binding| binding.sequence.iter().map(ToString::to_string).collect::<Vec<_>>().join(" "))
+                    .collect(),
                 availability: availability.answer(&row.id, &computed).expect("the table answers every row asked"),
             })
             .collect();

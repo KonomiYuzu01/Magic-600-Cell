@@ -24,7 +24,7 @@
 //! the preview job, and the runner then reports the solver's command with the program's acknowledgement: the layer
 //! builds a run's preview only while the host holds the run's job. The shell presents the built preview and commits
 //! it by the key route's commit chord, `Ctrl+Shift+Enter`, with a token bound to the presented preview. Undo and redo
-//! follow `c600-lp3-oracle`'s schedule, by `Ctrl+Z` and `Ctrl+Y`. A recipe with no literal word stops at the
+//! follow `c600-lp3-oracle`'s schedule, by `Ctrl+KeyZ` and `Ctrl+KeyY`. A recipe with no literal word stops at the
 //! expansion with the kernel's refusal, before any command: it and a literal word the layer refuses at admission are
 //! `invalid-input` steps. On either host a word the kernel refused that has no transfer encoding (a letter outside 1
 //! to 1200 in magnitude) is refused at the run's start stage: it is an `invalid-input` step whose solver's command
@@ -574,24 +574,25 @@ impl Session<'_> {
         }
     }
 
-    /// The solver dismisses the preview a refused commit left shown, with the key route's Escape: only the solver's
+    /// The solver dismisses the preview a refused commit left shown, with the key route's cancel chord,
+    /// `Ctrl+Shift+Backspace` (`Escape` closes transients and never cancels a preview, DT-M1 C4): only the solver's
     /// action ends a shown preview, so the next run's preview is not admitted while it stays (findings B1 and L17 of
     /// the KN5 boundary attack, the owner's reading of 18 November 2026). The cancel changes no revision and takes no
     /// job, so it is not kept with the step's receipts; it shifts only the shell's later command IDs.
     fn dismiss(&mut self) -> Result<(), Failure> {
-        match self.shell.press(&mut self.layer, "Escape", false) {
+        match self.shell.press(&mut self.layer, "Ctrl+Shift+Backspace", false) {
             Ok(Some(receipt)) if matches!(receipt.status, Status::Completed(_)) => Ok(()),
             Ok(Some(receipt)) => Err(unexpected("operation.preview.cancel", &receipt.status)),
-            Ok(None) => Err(disagree("`Escape` was dropped as a repeat")),
-            Err(error) => Err(disagree(format!("the shell stopped `Escape`: {}", error.code))),
+            Ok(None) => Err(disagree("`Ctrl+Shift+Backspace` was dropped as a repeat")),
+            Err(error) => Err(disagree(format!("the shell stopped `Ctrl+Shift+Backspace`: {}", error.code))),
         }
     }
 
     /// Undoes or redoes the top action by its chord; the state must then be `expected`.
     fn back(&mut self, direction: Direction, expected: &str) -> Result<(), Failure> {
         let (row, chord) = match direction {
-            Direction::Undo => ("session.undo", "Ctrl+Z"),
-            Direction::Redo => ("session.redo", "Ctrl+Y"),
+            Direction::Undo => ("session.undo", "Ctrl+KeyZ"),
+            Direction::Redo => ("session.redo", "Ctrl+KeyY"),
         };
         // A state move ends the command route's mark of a shown preview.
         self.dismissed = None;

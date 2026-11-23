@@ -16,12 +16,12 @@
 //! the initial state. In a chain case, after the last step, every committed step is undone and then redone, and each
 //! must land on the state the trace recorded for it, which `tools/oracle/compare.py` checks against the oracle.
 //!
-//! `--route command` invokes the rows with absolute arguments. `--route key` presses the draft keymap's chords
-//! (`Ctrl+Enter`, `Ctrl+Shift+Enter`, `Ctrl+Z`, `Ctrl+Y`), which the shell resolves to rows and absolute arguments at
-//! the press. `--receipts` writes every receipt in order, so the two routes can be compared byte for byte. A malformed
-//! case or a model mismatch exits with 2 and writes no trace for that case; any answer of the command layer the loop
-//! does not expect exits with 1. Both commands print one line to stdout: the build string, or a JSON summary with
-//! timings, which are informational.
+//! `--route command` invokes the rows with absolute arguments. `--route key` presses the draft key map's chords
+//! (`Ctrl+Enter`, `Ctrl+Shift+Enter`, `Ctrl+KeyZ`, `Ctrl+KeyY`), which the shell resolves to rows and absolute
+//! arguments at the press. `--receipts` writes every receipt in order, so the two routes can be compared byte for byte.
+//! A malformed case or a model mismatch exits with 2 and writes no trace for that case; any answer of the command layer
+//! the loop does not expect exits with 1. Both commands print one line to stdout: the build string, or a JSON summary
+//! with timings, which are informational.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -346,8 +346,8 @@ impl Session {
     fn back(&mut self, direction: Direction, expected: &str) -> Result<(), Failure> {
         let hint = self.layer.undo_hint(direction).ok_or_else(|| disagree("no action to undo or redo"))?;
         let (row, chord) = match direction {
-            Direction::Undo => ("session.undo", "Ctrl+Z"),
-            Direction::Redo => ("session.redo", "Ctrl+Y"),
+            Direction::Undo => ("session.undo", "Ctrl+KeyZ"),
+            Direction::Redo => ("session.redo", "Ctrl+KeyY"),
         };
         let receipt = self.act(row, json::object([("hint", hint.to_json())]), chord)?;
         match &receipt.status {

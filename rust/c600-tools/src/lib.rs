@@ -108,9 +108,10 @@
 //! - **Source route.** `c600-lp3-source` keeps `c600-lp3-oracle`'s session names, shell prefixes, trace form and
 //!   candidate block (`c600-command-lp3-loop` with the command layer's build), so the two routes' traces compare byte
 //!   for byte; its summary adds the route `source`, this crate's [`build`] and the host. Each step's run is
-//!   named `<case>-<index>`. The shell commits with `Ctrl+Shift+Enter`, the draft keymap's chord for
-//!   `operation.execute` (H-08's `key_0_4`), because the keymap binds `Ctrl+Enter` to `operation.preview`, which on
-//!   this route the program invokes; undo and redo are `Ctrl+Z` and `Ctrl+Y`.
+//!   named `<case>-<index>`. The shell commits with `Ctrl+Shift+Enter`, the checked key map's chord for
+//!   `operation.execute` (H-08's `key_0_4`), because the map binds `Ctrl+Enter` to `operation.preview`, which on
+//!   this route the program invokes; undo and redo are `Ctrl+KeyZ` and `Ctrl+KeyY`, and a refused commit's preview
+//!   is dismissed with `Ctrl+Shift+Backspace` (LP4-8).
 //! - **Receipts file.** `--receipts` writes every receipt in order with its caller and, per step, the literal word's
 //!   digest and length, the kernel's refusal of a recipe with no literal word, the preview's draft digest, the case
 //!   recipe's draft digest, and the preview's result digest rebased onto the case recipe's draft. The preview-ready

@@ -561,7 +561,7 @@ fn availability_follows_the_preview_lifecycle() {
     assert_eq!(f.layer.availability("operation.execute").unwrap_err().code, code::COMMIT_IN_FLIGHT);
     f.layer.hold_commit_lane(false);
     assert!(advanced(&f.layer));
-    let cancel = f.shell.press(&mut f.layer, "Escape", false).unwrap().unwrap();
+    let cancel = f.shell.press(&mut f.layer, "Ctrl+Shift+Backspace", false).unwrap().unwrap();
     assert!(matches!(cancel.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })));
     assert!(advanced(&f.layer));
     assert_eq!(f.layer.preview_state(id), Some(PreviewState::Cancelled));

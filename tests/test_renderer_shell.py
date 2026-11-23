@@ -258,10 +258,11 @@ class ShellProject(unittest.TestCase):
         self.assertNotIn("_library.Activate", check)
         self.assertLess(activate.index("_library.Activate("), activate.index("RegisterRow("))
         self.assertEqual(panel.count("RegisterRow("), 1)
-        # The row's key is no default binding of the router, and the panel's own entries have none.
+        # The row's key is no default binding of the one checked key map (LP4-8 moved it to c600_command::keys, which
+        # c600-input re-exports), and the panel's own entries have none.
         key = re.search(r'public const string Key = "([A-Za-z+]+)";', panel)
         self.assertTrue(key)
-        self.assertNotIn(f'"{key.group(1)}"', text(ROOT / "rust" / "c600-input" / "src" / "keymap.rs"))
+        self.assertNotIn(f'"{key.group(1)}"', text(ROOT / "rust" / "c600-command" / "src" / "keys" / "keymap.rs"))
         # A run commits nothing: the panel invokes rows only through the palette route, routes no key itself, and its
         # run's word only becomes the draft, which the solver previews by key.
         for absent in ("KeyDown(", "operation.execute", "operation.preview\"", "Invoke(Context.HostHandle, \"operation"):
@@ -413,7 +414,8 @@ class ShellProject(unittest.TestCase):
             self.assertIn(needle, lx2)
 
     def test_the_shell_routes_physical_keys_in_c600_inputs_chord_form(self):
-        chord = text(ROOT / "rust" / "c600-input" / "src" / "chord.rs")
+        # The chord tables are c600_command::keys::chord's since LP4-8; c600-input re-exports them.
+        chord = text(ROOT / "rust" / "c600-command" / "src" / "keys" / "chord.rs")
         known = set()
         for name in ("CHARACTER_KEYS", "NAMED_KEYS"):
             block = re.search(rf"const {name}: \[&str; (\d+)\] = \[(.*?)\];", chord, re.S)

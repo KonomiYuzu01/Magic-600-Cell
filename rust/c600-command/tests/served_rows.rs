@@ -8,8 +8,8 @@ use std::sync::{Arc, OnceLock};
 use c600_command::{
     code, digest, draft_args, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction, Error,
     HeadlessFrames, Invocation, JobOutput, Kind, MemoryStore, Overlay, PreviewState, Provenance, Receipt, RecordValue,
-    ResultRef, Row, SavedSet, Secret, Shell, Status, Table, TransactionKind, POLICY_ROW, RECORD_ROW,
-    WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    ResultRef, Row, SavedSet, Secret, Shell, Status, Table, TransactionKind, GRIP_REBIND_ROW, MACRO_SAVE_ROW,
+    POLICY_ROW, RECORD_ROW, WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -22,7 +22,7 @@ const SCOPE: &str = "view.effect.scope";
 const PLAY: &str = "recording.play";
 
 /// The stored rows the command layer builds itself.
-const LAYER_ROWS: [&str; 11] = [
+const LAYER_ROWS: [&str; 13] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -34,6 +34,8 @@ const LAYER_ROWS: [&str; 11] = [
     WORKSHEET_SAVE_ROW,
     WORKSHEET_LOAD_ROW,
     WORKSHEET_COMPARE_ROW,
+    GRIP_REBIND_ROW,
+    MACRO_SAVE_ROW,
 ];
 
 /// One row per shape condition, each alone on a row the layer could otherwise serve; the first six are served.
@@ -397,7 +399,7 @@ fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
         "operation.check",
         "jumble.release.check",
         "jumble.scramble",
-        "macro.save",
+        "keymap.save",
         "file.keymap.check",
         "file.keymap.apply",
     ];

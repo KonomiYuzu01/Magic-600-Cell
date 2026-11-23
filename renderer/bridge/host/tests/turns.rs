@@ -307,7 +307,8 @@ fn an_undo_is_shown_and_fails_the_control() {
     let folder = fresh("undo");
     assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
     assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
-    // Ctrl+Z is the draft map's `session.undo`, which the layer builds: the host adopts the solved state again.
+    // Ctrl+KeyZ is the checked key map's `session.undo` under US QWERTY, which the layer builds: the host adopts the
+    // solved state again.
     assert_eq!(run.press("Ctrl+KeyZ"), (M6H_PRESS_OTHER, 3));
     assert_eq!(run.fake().adoptions.len(), 3);
     assert_eq!(run.close(3), (M6H_OK, 0));

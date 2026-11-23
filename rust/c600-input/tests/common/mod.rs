@@ -166,13 +166,18 @@ pub fn fixture(prefix: &str, layout: &str) -> Fixture {
 
 impl Fixture {
     /// Pins the I_a menu as the host does: in the layer (`CommandLayer::pin_menu`) and, by its two digests, in the
-    /// router's context. The applied slot map becomes [`cap_slots`], with the grip on none of them.
+    /// router's context. The host's default slot map becomes [`cap_slots`]: the router gets the context a host with
+    /// that default makes, keeping the other fields. No rebind has run, so the default is the applied map (EV4.8).
     pub fn pin_menu(&mut self) {
         let menu = menu();
         assert_eq!((menu.identity.as_str(), menu.order.as_str()), (SET, ORDER), "the I_a menu's digests");
         self.layer.pin_menu(exact(), menu).expect("the menu's model is the session's model");
-        self.router.context.menu = Some(pin());
-        self.router.context.rebind(cap_slots());
+        let before = std::mem::replace(&mut self.router.context, Context::new(cap_slots()));
+        let context = &mut self.router.context;
+        (context.destination, context.grip, context.phase, context.scrub) =
+            (before.destination, before.grip, before.phase, before.scrub);
+        (context.camera, context.hover, context.filter) = (before.camera, before.hover, before.filter);
+        context.menu = Some(pin());
     }
 
     pub fn key(&mut self, event: KeyEvent) -> Routed {
