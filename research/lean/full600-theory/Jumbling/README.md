@@ -183,6 +183,16 @@ three-cycle instead of citing the point stabilizer of `Alt(d)`; the counterexamp
 Out of scope for this batch: R22B-08 and R22B-15 (they need Jordan's theorem for a prime cycle, which the pinned
 Mathlib does not have), R22B-19 and R22B-25 (they need `Aut(Alt(d)) = Sym(d)`, also absent), and R22B-07.
 
+## Batch 2 (in progress)
+
+Two classical theorems the pinned Mathlib does not have, in `Jumbling/Classical/`, and the four group-layer results
+they unlock, in `Jumbling/Group/`:
+
+- Jordan's theorem in the prime-cycle form: a primitive permutation group of degree `n` that contains a cycle of
+  prime length `p ≤ n − 3` contains `Alt(n)`;
+- `Aut(Alt(d)) = Sym(d)` for `d ≥ 7` (the range the handoff names; `d = 6`, where it fails, is outside it);
+- R22B-08 and the proved part of R22B-15 (with Jordan's theorem), R22B-19 and R22B-25 (with `Aut(Alt(d))`).
+
 ## How it was produced
 
 Claude Code (Claude Opus 5.5), with no Archon run and no Codex call; the two scopes were written in parallel by two
