@@ -27,6 +27,14 @@ public sealed class PanelStates
     // Empty, loading and error take the content's place; stale and busy keep it in view under a banner.
     public static bool HidesContent(PanelCondition condition) => condition is PanelCondition.Empty or PanelCondition.Loading or PanelCondition.Error;
     public static string Word(PanelCondition condition) => condition.ToString();
+    // The state's id where a specimen or a check names it.
+    public static string Id(PanelCondition condition) => condition.ToString().ToLowerInvariant();
+    // A sample reason of each state, for specimens: a state always says why.
+    public static string Example(PanelCondition condition) => condition switch
+    {
+        PanelCondition.Empty => "Nothing here yet", PanelCondition.Loading => "Reading the session", PanelCondition.Error => "The file could not be read",
+        PanelCondition.Stale => "Older than the committed state", PanelCondition.Busy => "A run is working here", _ => "",
+    };
     // What the solver can do about it from the panel itself, or null.
     public static string? Action(PanelCondition condition) => condition switch { PanelCondition.Error => "retry", PanelCondition.Stale => "refresh", _ => null };
 

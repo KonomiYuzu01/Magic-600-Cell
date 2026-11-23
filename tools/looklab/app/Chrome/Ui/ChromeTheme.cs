@@ -90,8 +90,11 @@ public static class ChromeTheme
         var rowOn = Box(t, "control.pressed", null, "radius.control", s1); rowOn.BorderColor = t.C("accent.base"); rowOn.SetBorderWidth(Side.Left, t.Px("focus.width"));
         theme.SetTypeVariation("RowSelected", "PanelContainer"); theme.SetStylebox("panel", "RowSelected", rowOn);
         theme.SetTypeVariation("OverlayBox", "PanelContainer"); theme.SetStylebox("panel", "OverlayBox", Box(t, "popup.background", "popup.border", "radius.control", s3));
-        // Every script-drawn area carries this frame (ADR-D01.4 item 4).
-        theme.SetTypeVariation("ScriptFrame", "PanelContainer"); theme.SetStylebox("panel", "ScriptFrame", Box(t, "panel.background", "script.frame", "radius.panel", s2, t.Px("focus.width")));
+        // Every script-drawn area carries a frame by its recorded author class (ADR-D01.4 item 4): a built-in tool
+        // the mark alone, the solver's own script a thin border, anything else a patterned border (ScriptFrames).
+        theme.SetTypeVariation("ScriptFrame", "PanelContainer"); theme.SetStylebox("panel", "ScriptFrame", Box(t, "panel.background", "script.frame", "radius.panel", s2, t.Px("border.width")));
+        theme.SetTypeVariation("ScriptFrameBuiltIn", "PanelContainer"); theme.SetStylebox("panel", "ScriptFrameBuiltIn", Box(t, "panel.background", null, "radius.panel", s2));
+        theme.SetTypeVariation("ScriptFrameOther", "PanelContainer"); theme.SetStylebox("panel", "ScriptFrameOther", Box(t, "panel.background", null, "radius.panel", s2));
 
         foreach (string type in new[] { "Button", "OptionButton", "MenuButton", "CheckButton", "CheckBox" })
         {

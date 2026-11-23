@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using LookLab.Core;
 using Magic600.Chrome;
 
 // Tests for the A5 build defects that the A6 review found (B-1 to B-13, Q5). Each names the finding it pins.
@@ -199,5 +200,66 @@ internal static partial class Program
         string handles = Body(demo, "public static bool Handles", ";");
         foreach (string id in rows) Check(handles.Contains("\"" + id + "\"", StringComparison.Ordinal) && demo.Contains("case \"" + id + "\":", StringComparison.Ordinal), id + " is not handled by the lab");
         Check(Read("app/Live/LabFrame.cs").Contains("registry.AddRows(File.ReadAllText(Path.Combine(folder, \"command-rows-draft.json\")));", StringComparison.Ordinal), "the lab does not register the draft rows");
+    }
+
+    // B-8: the gallery's pane states are the docks' five, Busy among them, drawn by the box the docks use.
+    private static void A6GalleryPaneStatesAreTheDocks()
+    {
+        Sequence(PanelStates.Five.Select(PanelStates.Id), new[] { "empty", "loading", "error", "stale", "busy" });
+        Check(PanelStates.Five.All(c => PanelStates.Example(c).Length > 8), "a specimen state without its reason");
+        string gallery = Read("app/Chrome/Ui/Gallery.cs"), page = gallery.Substring(gallery.IndexOf("private void PanePage", StringComparison.Ordinal));
+        Check(page.Contains("foreach (PanelCondition condition in PanelStates.Five)", StringComparison.Ordinal) && page.Contains("new PanelStateBox(", StringComparison.Ordinal) &&
+            !page.Contains("Placeholders", StringComparison.Ordinal) && !gallery.Contains("ChromeBody.PaneStates", StringComparison.Ordinal), "the gallery draws its own pane states");
+        string frame = Read("app/Live/LabFrame.cs");
+        foreach (PanelCondition c in PanelStates.Five) Check(frame.Contains("PanelCondition." + c + ",", StringComparison.Ordinal), c + " is not among the docks' demo states");
+    }
+
+    // B-9: the host draws a script's frame from the recorded author class: the mark alone, a thin border, a
+    // patterned border.
+    private static void A6ScriptFramesByAuthorClass()
+    {
+        Check(ScriptMarks.Of(true, true, false) == AuthorClass.BuiltIn && ScriptMarks.Of(true, true, true) == AuthorClass.BuiltIn, "a verified built-in tool");
+        Check(ScriptMarks.Of(true, false, true) == AuthorClass.Own && ScriptMarks.Of(false, false, true) == AuthorClass.Own, "the solver's own script, a fork of a built-in tool included");
+        Check(ScriptMarks.Of(true, false, false) == AuthorClass.Other && ScriptMarks.Of(false, false, false) == AuthorClass.Other && ScriptMarks.Of(false, true, false) == AuthorClass.Other,
+            "a modified built-in nobody forked, a package by another author, a module of unknown origin");
+        string[] frames = new[] { AuthorClass.BuiltIn, AuthorClass.Own, AuthorClass.Other }.Select(ScriptMarks.Frame).ToArray();
+        Check(frames.Distinct().Count() == 3 && frames.All(f => f.StartsWith("ScriptFrame", StringComparison.Ordinal)) && !ScriptMarks.Bordered(AuthorClass.BuiltIn) && ScriptMarks.Bordered(AuthorClass.Own) &&
+            !ScriptMarks.Patterned(AuthorClass.Own) && ScriptMarks.Patterned(AuthorClass.Other), "one frame for every class");
+        string theme = Read("app/Chrome/Ui/ChromeTheme.cs"), panels = Read("app/Chrome/Ui/ScriptPanels.cs"), scripts = Read("app/Live/LabScripts.cs");
+        foreach (string f in frames) Check(theme.Contains("theme.SetTypeVariation(\"" + f + "\", \"PanelContainer\")", StringComparison.Ordinal), f + " has no style");
+        Check(Body(theme, "SetStylebox(\"panel\", \"ScriptFrameBuiltIn\"", ";").Contains("null", StringComparison.Ordinal) && Body(theme, "SetStylebox(\"panel\", \"ScriptFrame\",", ";").Contains("\"border.width\"", StringComparison.Ordinal),
+            "the built-in frame has a border, or the own frame is not thin");
+        Check(panels.Contains("AuthorClass author = AuthorClass.Other)", StringComparison.Ordinal) && panels.Contains("public void Show(IReadOnlyList<CanvasMark> marks, string source, AuthorClass author)", StringComparison.Ordinal) &&
+            panels.Contains("on.DrawDashedLine(", StringComparison.Ordinal) && !panels.Contains("ThemeTypeVariation = \"ScriptFrame\"", StringComparison.Ordinal), "a host constructor makes one frame decision for every author");
+        Check(System.Text.RegularExpressions.Regex.Matches(scripts, @"AuthorOf\(").Count >= 6 && !scripts.Contains("ThemeTypeVariation = \"ScriptFrame\"", StringComparison.Ordinal), "the lab does not pass the author class");
+        Check(Read("app/Live/Sweep.cs").Contains("StartsWith(\"ScriptFrame\"", StringComparison.Ordinal), "the sweep misses a frame of another class");
+        Check(Read("app/Chrome/Ui/Gallery.cs").Contains("foreach (AuthorClass author in new[] { AuthorClass.BuiltIn, AuthorClass.Own, AuthorClass.Other })", StringComparison.Ordinal), "the gallery shows one frame");
+    }
+
+    // B-10: an anchor sits where the view's own projection puts its point, so it follows the camera.
+    private static void A6AnchorsFollowTheViewsProjection()
+    {
+        var places = new ScenePlaces(Root, Mesh); OrbitAtlas atlas = Atlas;
+        Check(places.Orbits == OrbitAtlas.Count, "orbits in the model: " + places.Orbits);
+        for (int o = 0; o < OrbitAtlas.Count; o++) Check(places.Pieces(o) == atlas.Orbits[o].Pieces, $"O{o:00}: {places.Pieces(o)} pieces in the model, {atlas.Orbits[o].Pieces} in the atlas");
+        var values = new StructureValues(.9, .8, 3, 1, 1, ProjectionKind.Orthographic); var layout = new GlobalLayout(Mesh.CellStructure); double[] spin = Geometry.Identity();
+        Func<int, int, (double X, double Y)?> View(double[] q) => (o, p) => places.Slot(o, p) is { } slot ? ScenePlaces.InView(places.Project(slot, values, q, spin, Turn, 0, layout, FocusFrame.Neutral)) : null;
+        double[] still = Geometry.Identity(), turned = Geometry.Identity(); Geometry.Rotate(turned, 0, 2, .6); Geometry.Rotate(turned, 1, 2, -.4);
+        SolvingState s = new SolvingDemo(atlas).State;
+        var before = StripAnchors.Of(s, View(still)); var after = StripAnchors.Of(s, View(turned));
+        foreach (string slot in new[] { "target", "buffer_a", "buffer_b", "wanted" }) Check(before.ContainsKey(slot) && after.ContainsKey(slot), slot + " has no anchor");
+        // The Target stays put and the view turns: its anchor follows the projection of its position.
+        (double X, double Y) target = View(turned)(s.Orbit, s.Target!.Value)!.Value;
+        Check(Math.Abs(after["target"].X - before["target"].X) + Math.Abs(after["target"].Y - before["target"].Y) > 1e-3 && after["target"].X == target.X && after["target"].Y == target.Y && !after["target"].OnPiece,
+            "the Target anchor did not follow the camera");
+        // A displaced piece: the Wanted anchor sits on the position the piece is at now.
+        int at = s.WantedAt!.Value; (double X, double Y) wanted = View(turned)(s.Orbit, at)!.Value;
+        Check(at != s.Wanted && after["wanted"].X == wanted.X && after["wanted"].Y == wanted.Y && after["wanted"].OnPiece, "the Wanted anchor is not on its piece's place");
+        // No projection, no anchor; a position outside the orbit has no stand-in.
+        Check(StripAnchors.Of(s, null).Count == 0 && places.Slot(s.Orbit, -1) == null && places.Slot(s.Orbit, places.Pieces(s.Orbit)) == null, "an anchor was placed from an id");
+        string ui = Read("app/Chrome/Ui/SolvingSurface.cs"), frame = Read("app/Live/LabFrame.cs");
+        Check(!ui.Contains("2654435761", StringComparison.Ordinal) && ui.Contains("StripAnchors.Of(strip.Demo.State, Project)", StringComparison.Ordinal) &&
+            frame.Contains("m.GetShaderParameter(\"q\").AsProjection()", StringComparison.Ordinal) && Read("app/Live/LabSolve.cs").Contains("GlobalAnchors.Project = globalPlace; LocalAnchors.Project = localPlace;", StringComparison.Ordinal),
+            "the lab places anchors from ids");
     }
 }

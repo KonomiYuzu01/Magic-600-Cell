@@ -514,3 +514,24 @@ public sealed class OperationDraft
     public void SetMode(CheckMode mode) { Mode = mode; Safe.Raise(Changed); }
     public void Clear() { foreach (var t in twists) t.Clear(); Active = 1; Safe.Raise(Changed); }
 }
+
+// Where each anchor of the strip sits in a view (ADR-D01.62): the view's own projection of a position of the
+// working orbit. Position anchors (Target, A, B) project their positions; piece anchors (Wanted, Next) project the
+// position the piece sits on now, so they move when it moves. A point the projection does not place (off the view,
+// or no projection at all) gets no anchor: an anchor is never placed from an id.
+public static class StripAnchors
+{
+    public static IReadOnlyDictionary<string, (double X, double Y, bool OnPiece)> Of(SolvingState s, Func<int, int, (double X, double Y)?>? project)
+    {
+        var found = new Dictionary<string, (double X, double Y, bool OnPiece)>(StringComparer.Ordinal);
+        if (project == null) return found;
+        void Put(string slot, int? position, bool onPiece)
+        {
+            if (position is { } p && p >= 0 && p < s.Facts.Pieces && project(s.Orbit, p) is { } at) found[slot] = (at.X, at.Y, onPiece);
+        }
+        Put("target", s.Target, false); Put("buffer_a", s.BufferA, false); Put("buffer_b", s.BufferB, false);
+        Put("wanted", s.WantedAt, true);
+        if (s.Next is { } n && n.Orbit == s.Orbit && n.Piece >= 0 && n.Piece < s.Facts.Pieces) Put("next", s.Where(n.Piece), true);
+        return found;
+    }
+}

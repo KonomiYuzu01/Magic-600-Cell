@@ -606,10 +606,32 @@ public sealed partial class ScriptList : VBoxContainer
     }
 }
 
+// The host's frame of a script-drawn area, chosen from the run's recorded author class: the mark alone, a thin
+// border, or a patterned border drawn over the box. The script has no say in it.
+public static class ScriptFrames
+{
+    public static void Apply(PanelContainer frame, AuthorClass author)
+    {
+        frame.ThemeTypeVariation = ScriptMarks.Frame(author); frame.SetMeta("author", author.ToString()); frame.QueueRedraw();
+    }
+
+    // The patterned border of the other class: dashes along every edge, in the script frame's colour.
+    public static void Pattern(Control on, AuthorClass author, TokenSet t)
+    {
+        if (!ScriptMarks.Patterned(author)) return;
+        float width = Math.Max(1, t.Px("focus.width")), dash = Math.Max(3, t.Px("space.1") * 1.5f); Rect2 box = new Rect2(Vector2.Zero, on.Size).Grow(-width / 2);
+        Vector2 a = box.Position, b = new(box.End.X, box.Position.Y), c = box.End, d = new(box.Position.X, box.End.Y);
+        foreach ((Vector2 from, Vector2 to) in new[] { (a, b), (b, c), (c, d), (d, a) }) on.DrawDashedLine(from, to, t.C("script.frame"), width, dash);
+    }
+
+    public static string Tip(AuthorClass author, string? program) => (program != null ? "Drawn by the host from " + program : "Its program is missing") + "; author: " + ScriptMarks.Says(author);
+}
+
 // A panel a program declared, drawn by the host inside the script frame (ADR-D01.30): rows, bars and the host's
 // widgets. It has no commit control. A panel whose program is missing keeps its place and shows a placeholder.
 public sealed partial class ScriptPanelHost : PanelContainer
 {
+    public AuthorClass Author { get; }
     public ScriptPanelSpec? Spec { get; }
     public string PanelId { get; }
     public bool Pinned { get; private set; }
@@ -620,10 +642,12 @@ public sealed partial class ScriptPanelHost : PanelContainer
     private readonly Func<TokenSet> tokens;
     private readonly bool closable;
 
-    public ScriptPanelHost(string id, ScriptPanelSpec? spec, Func<TokenSet> tokens, bool closable = true)
+    // An author class the host did not record reads as unknown origin: the patterned border.
+    public ScriptPanelHost(string id, ScriptPanelSpec? spec, Func<TokenSet> tokens, bool closable = true, AuthorClass author = AuthorClass.Other)
     {
-        PanelId = id; Spec = spec; Name = "ScriptPanel_" + id.Replace('.', '_'); ThemeTypeVariation = "ScriptFrame";
+        PanelId = id; Spec = spec; Name = "ScriptPanel_" + id.Replace('.', '_'); Author = author; ScriptFrames.Apply(this, author);
         this.tokens = tokens; this.closable = closable;
+        Draw += () => ScriptFrames.Pattern(this, Author, this.tokens());
         Refresh();
     }
 
@@ -639,7 +663,7 @@ public sealed partial class ScriptPanelHost : PanelContainer
         var column = new VBoxContainer(); AddChild(column);
         var head = new HBoxContainer(); column.AddChild(head);
         Label glyph = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(glyph, "script.mark", t.Px("icon.small")); glyph.AddThemeColorOverride("font_color", t.C("script.frame"));
-        glyph.TooltipText = spec != null ? "Drawn by the host from " + spec.Program : "Its program is missing"; glyph.MouseFilter = MouseFilterEnum.Pass; head.AddChild(glyph);
+        glyph.TooltipText = ScriptFrames.Tip(Author, spec?.Program); glyph.MouseFilter = MouseFilterEnum.Pass; head.AddChild(glyph);
         head.AddChild(ChromeWidgets.Text(spec?.Title ?? id, "MicroLabel", true));
         if (Target.Length > 0) head.AddChild(SessionWidgets.Chip(Target, t.C(Pinned ? "accent.strong" : "text.dim"), Pinned ? "Pinned target" : "Target: follows the selection"));
         Button pin = ChromeWidgets.Tool("", "Pin: keep this target when the selection changes", true); ChromeIcons.Apply(pin, "palette.pin", t.Px("icon.small"));
@@ -701,6 +725,7 @@ public sealed partial class ScriptCanvas : PanelContainer
 {
     public IReadOnlyList<CanvasMark> Marks => surface.Marks;
     public string Source { get; private set; } = "";
+    public AuthorClass Author { get; private set; } = AuthorClass.Other;
     private readonly CanvasSurface surface;
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer head = new();
@@ -708,18 +733,21 @@ public sealed partial class ScriptCanvas : PanelContainer
 
     public ScriptCanvas(Func<TokenSet> tokens, string name = "ScriptCanvas", string hint = "Nothing drawn")
     {
-        this.tokens = tokens; this.hint = hint; Name = name; ThemeTypeVariation = "ScriptFrame"; surface = new CanvasSurface(tokens);
+        this.tokens = tokens; this.hint = hint; Name = name; ScriptFrames.Apply(this, Author); surface = new CanvasSurface(tokens);
+        Draw += () => ScriptFrames.Pattern(this, Author, this.tokens());
         var column = new VBoxContainer(); AddChild(column); column.AddChild(head); column.AddChild(surface);
-        Show(Array.Empty<CanvasMark>(), "");
+        Show(Array.Empty<CanvasMark>(), "", AuthorClass.Other);
     }
 
-    public void Show(IReadOnlyList<CanvasMark> marks, string source) { surface.Show(marks); Source = source; Repaint(); }
+    // The frame follows the author class of the run that drew the marks.
+    public void Show(IReadOnlyList<CanvasMark> marks, string source, AuthorClass author) { surface.Show(marks); Source = source; Author = author; ScriptFrames.Apply(this, author); Repaint(); }
 
     public void Repaint()
     {
         if (!IsInstanceValid(this)) return;
         TokenSet t = tokens(); SessionWidgets.Clear(head);
-        Label glyph = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(glyph, "script.mark", t.Px("icon.small")); glyph.AddThemeColorOverride("font_color", t.C("script.frame")); head.AddChild(glyph);
+        Label glyph = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(glyph, "script.mark", t.Px("icon.small")); glyph.AddThemeColorOverride("font_color", t.C("script.frame"));
+        glyph.TooltipText = ScriptFrames.Tip(Author, Marks.Count == 0 ? null : Source); glyph.MouseFilter = MouseFilterEnum.Pass; head.AddChild(glyph);
         head.AddChild(ChromeWidgets.Text(Marks.Count == 0 ? hint : Source, "MicroLabel", true));
         surface.QueueRedraw();
     }

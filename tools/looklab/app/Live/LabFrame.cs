@@ -241,7 +241,25 @@ internal static class LabFrame
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
         inspect = new LabInspect(app, frame, demo); Inspects.Add(frame, inspect);
         // The solving surface on the pair's body: the relationship strip on the seam, anchors in both views.
-        solve = new LabSolve(frame, root, id => motions.Seconds(id, design, look.ReducedMotion), Execute, demo); Solves.Add(frame, solve);
+        // The anchors sit where each view's own projection puts the sample slot of their position (B-10 of A6).
+        var places = new ScenePlaces(root, app.View.Geometry);
+        (double X, double Y)? Place(LookViewport? view, int orbit, int position)
+        {
+            if (view == null || places.Slot(orbit, position) is not { } slot) return null;
+            ShaderMaterial m = view.Material;
+            var values = new StructureValues(m.GetShaderParameter("cs").AsSingle(), m.GetShaderParameter("ss").AsSingle(), m.GetShaderParameter("d4").AsSingle(),
+                m.GetShaderParameter("zoom").AsSingle(), m.GetShaderParameter("aspect").AsSingle(), (ProjectionKind)m.GetShaderParameter("projection_kind").AsInt32());
+            static double[] Columns(Godot.Projection p) => new double[] { p.X.X, p.X.Y, p.X.Z, p.X.W, p.Y.X, p.Y.Y, p.Y.Z, p.Y.W, p.Z.X, p.Z.Y, p.Z.Z, p.Z.W, p.W.X, p.W.Y, p.W.Z, p.W.W };
+            Godot.Vector4 f = m.GetShaderParameter("view_frame").AsVector4();
+            try
+            {
+                return ScenePlaces.InView(places.Project(slot, values, Columns(m.GetShaderParameter("q").AsProjection()), Columns(m.GetShaderParameter("spin").AsProjection()),
+                    view.Turn, m.GetShaderParameter("theta").AsSingle(), view.Layout, new FocusFrame(f.X, f.Y, f.Z)));
+            }
+            catch (FormatException) { return null; }
+        }
+        solve = new LabSolve(frame, root, id => motions.Seconds(id, design, look.ReducedMotion), Execute, demo,
+            (orbit, position) => Place(app.View, orbit, position), (orbit, position) => Place(app.Linked.Local, orbit, position)); Solves.Add(frame, solve);
         frame.SetStrip(solve.Bars(demo.Bar));
         app.ViewParts["frame.bindings"] = (() => inspect.Inspector.Store(), v => inspect.Inspector.Restore(v));
         // Scripts: editor, Scripts dock, console line, panel slots, canvas and the solver's own key bindings.

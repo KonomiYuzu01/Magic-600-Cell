@@ -15,15 +15,16 @@ public static class ChromeBody
     // The one place that turns a colour of the design data into an engine colour.
     public static Color Engine(Rgb c) => new Color((float)c.R, (float)c.G, (float)c.B);
 
-    // The five designed states of a pane (ADR-D01.6).
-    public static readonly IReadOnlyList<(string Id, string Icon, string Words)> PaneStates = Array.AsReadOnly(new[]
+    // Placeholders a host draws where a pane's content does not exist yet (a shell before its core is loaded).
+    // They are not panel states: those are the five of PanelStates, drawn by PanelStateBox in the docks and in
+    // the gallery alike.
+    public static readonly IReadOnlyList<(string Id, string Icon, string Words)> Placeholders = Array.AsReadOnly(new[]
     {
-        ("empty", "state.empty", "Nothing here yet"), ("loading", "state.loading", "Loading"), ("notdrawn", "state.notdrawn", "Not drawn yet"),
-        ("error", "state.error", "Could not show this"), ("stale", "state.stale", "Shown from before the last change"),
+        ("empty", "state.empty", "Nothing here yet"), ("notdrawn", "state.notdrawn", "Not drawn yet"),
     });
     public static Control PaneState(string id, string? words = null)
     {
-        var state = PaneStates.First(s => s.Id == id);
+        var state = Placeholders.First(s => s.Id == id);
         Control shown = ChromeWidgets.Empty(state.Icon, words ?? state.Words); shown.Name = "PaneState" + id;
         return shown;
     }
@@ -402,8 +403,18 @@ public sealed partial class ComponentGallery : VBoxContainer
         TreeItem top = tree.CreateItem(); top.SetText(0, "sweep.6cs");
         foreach (string entry in new[] { "reach", "ring" }) { TreeItem item = tree.CreateItem(top); item.SetText(0, entry); tree.CreateItem(item).SetText(0, "result") ; }
         lower.AddChild(tree);
-        var script = new PanelContainer { ThemeTypeVariation = "ScriptFrame", CustomMinimumSize = new Vector2(t.Px("dock.width"), 0), TooltipText = "A script's own surface always sits in this frame" };
-        script.AddChild(ChromeWidgets.Text("script panel", "DimLabel")); lower.AddChild(script);
+        // One display plan in the three frames the host draws from the recorded author class: a built-in tool, the
+        // solver's own script (a fork of a built-in tool too), and another author's package or a module of unknown
+        // origin (a modified built-in that nobody forked too).
+        var frames = new VBoxContainer { Name = "ScriptFrames" }; frames.AddThemeConstantOverride("separation", t.Px("space.2")); lower.AddChild(frames);
+        foreach (AuthorClass author in new[] { AuthorClass.BuiltIn, AuthorClass.Own, AuthorClass.Other })
+        {
+            var script = new PanelContainer { Name = "ScriptFrame" + author, CustomMinimumSize = new Vector2(t.Px("dock.width"), 0), TooltipText = "Author: " + ScriptMarks.Says(author) };
+            ScriptFrames.Apply(script, author); AuthorClass mine = author; script.Draw += () => ScriptFrames.Pattern(script, mine, tokens());
+            var line = new HBoxContainer(); script.AddChild(line);
+            Label mark = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(mark, "script.mark", t.Px("icon.small")); mark.AddThemeColorOverride("font_color", t.C("script.frame")); line.AddChild(mark);
+            line.AddChild(ChromeWidgets.Text(author == AuthorClass.BuiltIn ? "built-in" : author == AuthorClass.Own ? "own" : "other", "DimLabel")); frames.AddChild(script);
+        }
     }
 
     private void TypePage(TokenSet t)
@@ -535,14 +546,19 @@ public sealed partial class ComponentGallery : VBoxContainer
         body.AddChild(list);
     }
 
+    // The five panel states (ADR-D01.33), each drawn by the same box the docks use, so the specimen is the
+    // inventory the docks have: empty, loading and error take the content's place; stale and busy keep it.
     private void PanePage(TokenSet t)
     {
-        Heading("the five designed states of a pane");
+        Heading("the five panel states, as the docks draw them");
         var row = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; row.AddThemeConstantOverride("separation", t.Px("space.3")); body.AddChild(row);
-        foreach (var state in ChromeBody.PaneStates)
+        foreach (PanelCondition condition in PanelStates.Five)
         {
-            var cell = new PanelContainer { ThemeTypeVariation = "GalleryCell", SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, t.Px("dock.height")), TooltipText = state.Id };
-            cell.AddChild(ChromeBody.PaneState(state.Id)); row.AddChild(cell);
+            string id = PanelStates.Id(condition);
+            var cell = new PanelContainer { Name = "PaneState" + id, ThemeTypeVariation = "GalleryCell", SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, t.Px("dock.height")), TooltipText = id };
+            var states = new PanelStates(); var content = ChromeWidgets.Text("Panel content", "DimLabel");
+            var box = new PanelStateBox("gallery." + id, content, states, tokens); states.Set(box.Id, condition, PanelStates.Example(condition));
+            cell.AddChild(box); row.AddChild(cell);
         }
     }
 }

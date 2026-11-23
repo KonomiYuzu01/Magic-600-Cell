@@ -159,7 +159,7 @@ internal static class Sweep
             }
         }
         // A script frame never holds a commit control (ADR-D01.58): the commit bar is the frame's own.
-        foreach (PanelContainer script in frame.FindChildren("*", "PanelContainer", true, false).OfType<PanelContainer>().Where(p => p.ThemeTypeVariation == "ScriptFrame"))
+        foreach (PanelContainer script in frame.FindChildren("*", "PanelContainer", true, false).OfType<PanelContainer>().Where(p => p.ThemeTypeVariation.ToString().StartsWith("ScriptFrame", StringComparison.Ordinal)))
             if (script.FindChildren("*", "Button", true, false).OfType<Button>().Any(b => b.Text == "Commit" || b.TooltipText.StartsWith("Commit", StringComparison.Ordinal)))
                 throw new Exception(Mode + ": a script frame holds a commit control");
         Calm(); await Frames(1);

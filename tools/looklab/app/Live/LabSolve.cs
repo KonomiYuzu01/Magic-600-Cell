@@ -24,9 +24,13 @@ internal sealed class LabSolve
     public static bool Handles(string command) => command is "target.current.set" or "target.next.set" or "target.next.activate" or "target.next.clear" or
         "buffer.assign" or "target.frame.set" or "orbit.switch" or "input.destination.set" or "intent.set" or "operation.phase.select" or "operation.phase.edit" or "operation.phase.append_twist";
 
-    public LabSolve(ChromeFrame frame, string root, Func<string, double> seconds, Action<string, string?> run, LabDemo session)
+    // The two views' projections of a position of an orbit, for the anchors (LabFrame reads them from the views).
+    private readonly Func<int, int, (double X, double Y)?>? globalPlace, localPlace;
+
+    public LabSolve(ChromeFrame frame, string root, Func<string, double> seconds, Action<string, string?> run, LabDemo session,
+        Func<int, int, (double X, double Y)?>? globalPlace = null, Func<int, int, (double X, double Y)?>? localPlace = null)
     {
-        this.frame = frame; this.session = session;
+        this.frame = frame; this.session = session; this.globalPlace = globalPlace; this.localPlace = localPlace;
         Line = new DraftLine(Draft, () => frame.Tokens); Line.Command += run;
         // The draft is staged as the preview whenever it changes; the host's commit bar commits it. A commit or a
         // discard of that preview empties the draft.
@@ -64,6 +68,7 @@ internal sealed class LabSolve
         GlobalAnchors = new AnchorLayer(Strip, () => frame.Tokens, true, () => frame.PairSideBySide ? new Vector2(1, .5f) : new Vector2(.5f, 1));
         LocalAnchors = new AnchorLayer(Strip, () => frame.Tokens, false, () => frame.PairSideBySide ? new Vector2(0, .5f) : new Vector2(.5f, 0));
         LocalAnchors.GripDraft = () => Draft.Route == InputRoute.Draft;
+        GlobalAnchors.Project = globalPlace; LocalAnchors.Project = localPlace;
         frame.Global.Slot.AddChild(GlobalAnchors); frame.Local.Slot.AddChild(LocalAnchors); Line.Refresh();
     }
 
