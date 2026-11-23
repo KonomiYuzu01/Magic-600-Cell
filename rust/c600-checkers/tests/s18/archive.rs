@@ -1,5 +1,6 @@
-//! Stage 18's records read in place: registration, gate 1 on both `steps.json` forms, the lattice run record, the
-//! groups left `not_applicable`, and the long words through length and admission checks.
+//! Stage 18's records read in place: registration, gate 1 on both `steps.json` forms, gate 3's tables of the archive's
+//! completed and stopped replays, the lattice run record, the groups left `not_applicable`, and the long words through
+//! length and admission checks.
 
 use c600_checkers::archive::{self, s18, SHARED_SOURCES};
 use c600_checkers::gate;
@@ -87,6 +88,61 @@ fn ct_lb5_05_gate1_mutation_gate_on_both_records_in_place() {
     let record = pinned(&format!("{RULE}/steps.json"), RULE_STEPS_SHA256);
     let inputs = chain_inputs(RULE, false);
     structural_gate("rule-stop steps.json, gate 1", expansion(), &record, &inputs, &[], &["steps[2].end_digest"]);
+}
+
+/// Each step of a `steps.json` record as (dir, start digest, end digest).
+fn step_digests(record: &Value) -> Vec<(String, String, String)> {
+    let get = |step: &Value, key: &str| step.get(key).and_then(Value::as_str).unwrap().to_owned();
+    let steps = record.get("steps").and_then(Value::as_array).unwrap();
+    steps.iter().map(|s| (get(s, "dir"), get(s, "start_digest"), get(s, "end_digest"))).collect()
+}
+
+#[test]
+fn ct_lb5_05_gate3_completed_table_names_t6_steps_1_to_3_and_not_a_tampered_record() {
+    use s18::tail_replay::{COMPLETED, INCOMPLETE};
+    // The tables against the archive's records read in place: COMPLETED is T6's steps 1 to 3, INCOMPLETE T6's step 4
+    // and the rule's three stages, each by its directory, start digest and end digest.
+    let t6_bytes = pinned(&format!("{T6}/steps.json"), T6_STEPS_SHA256);
+    let t6 = step_digests(&parse(&t6_bytes));
+    let rule = step_digests(&parse(&pinned(&format!("{RULE}/steps.json"), RULE_STEPS_SHA256)));
+    let tables: Vec<_> = COMPLETED.iter().chain(INCOMPLETE.iter()).collect();
+    let records: Vec<_> = t6.iter().chain(rule.iter()).collect();
+    assert_eq!(tables.len(), records.len());
+    for ((name, start, end), (dir, s, e)) in tables.iter().zip(&records) {
+        assert!(name.ends_with(&format!("({dir})")), "{name} is not {dir}");
+        assert_eq!((*start, *end), (s.as_str(), e.as_str()), "{name}");
+    }
+
+    // The checker finds them. Each step in scope gets its history from the record alone, before the start table is
+    // read, so a wrong start table stops the check at once with every history in the trace.
+    let inputs = replace(&chain_inputs(T6, false), "start", pinned(BEFORE_STOP_TABLE, BEFORE_STOP_TABLE_SHA256));
+    let histories = |record: &[u8]| -> Vec<String> {
+        let report = check_owned(tail_replay(), record, &inputs);
+        assert_eq!(report.verdict.code(), Some(codes::START_TABLE_MISMATCH));
+        assert!(report.trace.iter().all(|t| t.claim != "steps[3].history"), "step 4 is out of gate 3's scope");
+        (0..3)
+            .map(|k| {
+                let claim = format!("steps[{k}].history");
+                report.trace.iter().find(|t| t.claim == claim && t.held).expect("a history").computed.clone()
+            })
+            .collect()
+    };
+    let recorded = histories(&t6_bytes);
+    for (k, history) in recorded.iter().enumerate() {
+        assert_eq!(*history, format!("{}: the archive records gate 3 complete; rechecked here", COMPLETED[k].0));
+    }
+
+    // Tampered control: step 2's end and step 3's start changed together, so the record still chains, but those two
+    // steps are no longer the archive's and never borrow its history: each is a new check.
+    let mut doc = parse(&t6_bytes);
+    let other = "ab".repeat(32);
+    set_at(&mut doc, "steps[1].end_digest", text(&other));
+    set_at(&mut doc, "steps[2].start_digest", text(&other));
+    let tampered = histories(doc.canonical().as_bytes());
+    assert_eq!(tampered[0], recorded[0]);
+    for history in &tampered[1..] {
+        assert_eq!(history, "the archive holds no gate-3 record for this step; a new check");
+    }
 }
 
 #[test]
@@ -294,6 +350,11 @@ fn ct_lb5_09_recorded_long_words_stream_through_length_and_admission() {
         assert_eq!(report.verdict.claim(), Some("steps[14].letters"), "{kind:?}");
         assert_ne!(report.verdict.code(), Some(codes::START_TABLE_MISMATCH));
     }
+    // An admitted length that a gzip member is too short to hold is refused before anything is inflated: DEFLATE
+    // inflates at most 1,032 times, so 7 bytes cannot hold the 2,352,984 letters of the lattice phase's step 14.
+    let refused = s18::words::ia16_member("words/00014.ia16.gz", b"no word", 2_352_984, "steps[14]").unwrap_err();
+    assert!(matches!(&refused, c600_checkers::claims::Stop::Fail { claim, reason, .. }
+        if claim == "steps[14].letters" && reason.contains("cannot hold")));
 }
 
 #[test]

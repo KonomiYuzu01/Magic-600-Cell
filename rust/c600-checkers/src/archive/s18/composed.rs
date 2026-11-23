@@ -13,6 +13,9 @@
 //! 4. the step ends at its recorded end digest with the recorded off count, and is strict′: the unit on the lattice,
 //!    no collateral, every other off piece at its exact pose ([`super::play`]).
 //!
+//! An optional stored table of the chain's end must then carry the last step's end digest, which the replay reached,
+//! and its off count ([`super::record::end_table`]).
+//!
 //! The SAFE-ALL spans are applied letter by letter here (KN6.2), not composed into one action as the archive's gate
 //! did; the claims checked are gate 2's. This check is not gate 3: it claims no twist-by-twist replay of a step and
 //! never completes the archive's third gate, which stays `historical_check_incomplete` for T6's step 4 and the rule's
@@ -108,8 +111,7 @@ fn run(engines: &Engines, run: &mut Run) -> Step<()> {
         let sp = strict_prime(&before, &j.state, &words.unit);
         check_strict(run, path, &sp, step.off_after)?;
     }
-    let reached = j.digest();
-    end_table(&opened, run, Some(&reached))?;
+    end_table(&opened, run)?;
     run.held("scope", "gate 2 for every step; gate 3 is not claimed by this check (LB5.12 keeps the gates apart)");
     Ok(())
 }

@@ -31,8 +31,10 @@ fn ct_lb5_05_gate2_composed_t6_four_steps_in_place() {
         let start = report.trace.iter().find(|t| t.claim == format!("steps[{k}].start")).unwrap();
         assert!(start.computed.starts_with("derived: "), "{}", start.computed);
     }
-    // The rebuilt chain ends at the stored table of T6's end.
-    assert!(report.trace.iter().any(|t| t.claim == "end.reached" && t.computed == T6_END_DIGEST));
+    // The rebuilt chain ends at the stored table of T6's end: every step reached its recorded end, and the stored table
+    // carries the last one.
+    assert!(report.trace.iter().any(|t| t.claim == "steps[3].end_digest" && t.held && t.computed == T6_END_DIGEST));
+    assert!(report.trace.iter().any(|t| t.claim == "end.digest" && t.held && t.computed == T6_END_DIGEST));
 }
 
 #[test]

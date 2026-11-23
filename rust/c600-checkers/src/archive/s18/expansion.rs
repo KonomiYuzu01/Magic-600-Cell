@@ -53,5 +53,5 @@ fn run(engines: &Engines, run: &mut Run) -> Step<()> {
         read_step(run, step, &opened.inverse, false)?;
         run.held(dot(&step.path, "expansion"), expansion_note(step, opened.chain.form));
     }
-    end_table(&opened, run, None)
+    end_table(&opened, run)
 }

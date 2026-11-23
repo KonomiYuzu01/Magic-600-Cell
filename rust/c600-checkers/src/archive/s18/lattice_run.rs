@@ -184,12 +184,16 @@ fn check_report(run: &mut Run, record: &RunRecord, file: &str, stated: &str) -> 
 /// A node's extent in the word and its letters.
 type Extents = BTreeMap<Vec<usize>, (u64, u64)>;
 
+/// The most bytes a step tree may decode to, 64 MiB: the record states a tree's node count, not its size in bytes, so
+/// the bound is fixed, far above the archive's largest tree (1,133,164 bytes decoded).
+const TREE_LIMIT: usize = 1 << 26;
+
 /// One step's tree against its record and word.
 fn check_tree(run: &mut Run, step: &LatticeStep, word: &[u8], inverse: &[usize]) -> Step<()> {
     let path = dot(&step.path, "tree");
     let (file, size) = (step.tree.file.as_str(), step.tree.size);
     let bytes = run.input(file)?;
-    let decoded = decode(file, bytes, 1 << 26, &path)?;
+    let decoded = decode(file, bytes, TREE_LIMIT, &path)?;
     let digest = c600_digest::sha256_hex(&decoded);
     run.bind(file, bytes, vec![("decoded_sha256", digest.clone())]);
     run.claim(&dot(&path, "sha256"), &step.tree.sha, &digest)?;
