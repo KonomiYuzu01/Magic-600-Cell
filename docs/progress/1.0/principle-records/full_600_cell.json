@@ -1,0 +1,217 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "600-cell-Full tool",
+  "module": "full_600_cell",
+  "entries": [
+    "preview_word"
+  ],
+  "level": "L1",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "5d9e13fe6219fd88abe421660762bb5bfbe78694e4a3da1ed3390ca33ad76d2d",
+    "closure_sha256": "e334c900bd43636b3ab5f0b7d25b2d8e84b44007ec361f44ebee81079e9fbe67",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "da7f19e9bc83202fd3ff27df26b472e196e36d8971011d5279bf86ecee8c38b5",
+    "statements": [
+      "full_600_cell.preview_word proposes the named word unchanged",
+      "a generator followed by its inverse is the identity permutation of the 259,800 sticker slots"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "preview_word",
+      "function": "preview_word(w) proposes the word w, as the solver named it, to the command layer's `operation.preview` row and returns the fixed acknowledgement {base, id}. The solver sees the layer's preview of w: the kernel's complete effect of w at the base revision.",
+      "inputs": "w: a literal word of the generators 1 to 1200, each letter signed (a negative letter is the inverse), as the solver named it",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {base, id}: the revision the run read and the proposal's ID. The preview's outcome is withheld from the program (BND.11) and shown to the solver by the shell.",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every literal word of the 1,200 generators at any revision of a 600-cell-Full session",
+      "tie_rule": {
+        "none": "the entry chooses nothing: it proposes the one word it was given"
+      },
+      "empty_answer": {
+        "none": "the acknowledgement is never empty; the empty word is refused by the layer (KN2's recipe shape), the program still receives the fixed acknowledgement, and the shell shows the refusal: an empty answer never says that a word does nothing"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The certificate covers the model's 1,200 generators and their inverses. A word whose preview the layer refuses (the empty word, a word under a protected orbit it would move) is outside it: the program's answer is still the fixed acknowledgement, and the meaning is the layer's refusal, which the shell shows."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "by_definition",
+      "statement": "full_600_cell.preview_word proposes the named word unchanged",
+      "text": "The entry's body is one proposal of its parameter w to `operation.preview` and the return of the receipt's base and id: it computes no word, chooses no target and reads no state (LG3.13), so the previewed word is the solver's word.",
+      "evidence": {
+        "none": "a definition: the entry's checked source is its own statement, and its decomposition is generated from it"
+      }
+    },
+    {
+      "kind": "certificate",
+      "statement": "a generator followed by its inverse is the identity permutation of the 259,800 sticker slots",
+      "text": "Each generator is a permutation of the 259,800 sticker slots, and the negative letter names the inverse permutation (the generator convention of the model manifest), so the composite of a generator and its inverse moves no sticker.",
+      "evidence": {
+        "path": "assets/manifest.json",
+        "sha256": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+        "basis": "certificate",
+        "check": "producer",
+        "label": "the model manifest, which pins the 1,200 generators and every asset's digest"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L1",
+    "input": {
+      "word": [
+        1,
+        -1
+      ],
+      "base": "solved"
+    },
+    "expected": [
+      {
+        "claim": "primitive_count",
+        "value": 2,
+        "from_step": 2
+      },
+      {
+        "claim": "moved_pieces",
+        "value": 0,
+        "from_step": 3
+      },
+      {
+        "claim": "support_rows",
+        "value": 0,
+        "from_step": 4
+      },
+      {
+        "claim": "end_is_base",
+        "value": true,
+        "from_step": 5
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_full_600_cell"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "full_600_cell.preview_word",
+          "statement": "full_600_cell.preview_word proposes the named word unchanged",
+          "step": "step 1"
+        },
+        {
+          "node": "kernel:propose(operation.preview)",
+          "statement": "a generator followed by its inverse is the identity permutation of the 259,800 sticker slots",
+          "step": "step 3"
+        },
+        {
+          "node": "kernel:receipt(Base)",
+          "statement": "full_600_cell.preview_word proposes the named word unchanged",
+          "step": "step 5"
+        }
+      ],
+      "unmapped_nodes": [
+        "kernel:receipt(Id)"
+      ],
+      "unmapped_steps": [
+        "step 2",
+        "step 4"
+      ]
+    },
+    "reason": {
+      "statement": "a generator followed by its inverse is the identity permutation of the 259,800 sticker slots",
+      "idea": "A twist followed by the same twist undone leaves every piece where it was, so the preview of a generator and then its inverse shows no change: no piece moves, no orbit is touched and the end state is the base.",
+      "terms": [
+        "twist",
+        "generator",
+        "piece"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the second letter is the inverse of the first",
+        "outcome": "without it the end state is in general not the base: generator 1 alone moves 3,094 pieces in the kernel's effect row (read from the effect of the word [1])"
+      }
+    ],
+    "not_meant": "The preview shows the effect of the one word the solver named. It does not say that the word is useful, short or part of a solution, and the tool never proposes a word of its own.",
+    "givens": [
+      {
+        "name": "w",
+        "value": [
+          1,
+          -1
+        ],
+        "leaf": "kernel:propose(operation.preview)"
+      },
+      {
+        "name": "base",
+        "value": "solved",
+        "leaf": "kernel:receipt(Base)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "The entry proposes w = [1, -1] as given: its body is one proposal of its parameter.",
+        "result": [
+          1,
+          -1
+        ]
+      },
+      {
+        "check": "The word has two letters and each letter is one generator, so its expansion has 2 primitive moves.",
+        "result": 2
+      },
+      {
+        "check": "-1 names the inverse of generator 1, so the word applies generator 1 and then undoes it: the composite is the identity, and 0 pieces move.",
+        "result": 0
+      },
+      {
+        "check": "An orbit gets a support row only when a piece of it moves; no piece moves, so there are 0 rows.",
+        "result": 0
+      },
+      {
+        "check": "The end state is the base state under the identity: the base state itself.",
+        "result": true
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "generator",
+        "twist",
+        "piece",
+        "sticker-slot"
+      ],
+      "records": []
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:propose(operation.preview)",
+        "spec": "The layer previews the proposed literal word at the base revision: the kernel's complete effect of the word, withheld from the program and shown to the solver.",
+        "test": "rust/c600-tools/tests/bridge.rs::each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowledgement"
+      },
+      {
+        "leaf": "kernel:receipt(Base)",
+        "spec": "The receipt's base is the revision the run read.",
+        "test": "rust/c600-tools/tests/bridge.rs::each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowledgement"
+      },
+      {
+        "leaf": "kernel:receipt(Id)",
+        "spec": "The receipt's id is the run's proposal ID `<run>/1`.",
+        "test": "rust/c600-tools/tests/bridge.rs::each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowledgement"
+      }
+    ]
+  }
+}

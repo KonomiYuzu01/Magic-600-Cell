@@ -36,6 +36,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 | `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
+| `c600-docs` | EV5's reference docs and principle records: reference entries generated from checked metadata, an entry's decomposition from the checked IR's call graph, `PrincipleRecord` data read and admitted against it (typed nones, resolving digests, derivation-backed claims, stale hand parts), and explanations whose words come from chapter 06's word function, with lazy provenance links and forks that inherit no evidence (LP4-10) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -3829,3 +3830,88 @@ uses this workspace's crates through their public interfaces and changes none of
     launched.
 - Evidence kind: source. The flow test's frames are a fake core's and its keys synthetic; nothing here is Windows
   input, display or timing evidence.
+
+## Status of LP4, LP4-10: reference docs and principle records
+
+LP4-10 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV5.2 to EV5.5 and EV5.13; chapter 03
+LB6), a draft. The crate `c600-docs` depends on the syntax, checker, IR, module and digest crates (the plan's five)
+and on the evidence library, whose word function the explanation words come from (EV5.13). It runs no program and has
+no path to the command layer; its tests run the fixtures, so the command layer, the kernel, the jumbling crates, the
+interpreter, the tools, representations and library crates are its dev-dependencies.
+
+- Reference docs (`reference`). A module's reference is generated from its source and its checked metadata: source
+  and closure digests (the closure of a manifest with the module's supported identity, LG5.3), edition, IR version and
+  contract, requested capabilities, supported identities, and per function its signature, declared and inferred
+  effects, capabilities, grant rows, state reads (capability separation) and the range of its declaration in the
+  source. The comment lines directly above a declaration are carried as written. The principle record is linked by its
+  path and digest, never copied. A draft that does not parse, lower or check is `Status::Broken` with its findings and
+  no entry, and its page says it is not the active tool's documentation (EV1.7).
+- Decompositions (`decompose`). An entry's decomposition is generated from the checked IR before executor lowering:
+  every function the entry reaches in any module of the program, with the checker's inferred effects, capabilities and
+  grant rows; its direct calls; "may call" edges for function values and references (the checker's `reaches` beyond
+  the direct calls); its kernel and host operations as opaque leaves (`kernel:read_snapshot(<row>)`,
+  `kernel:propose(<target>)`, `kernel:publish_view`, `kernel:write_workspace(<record>)`, `kernel:receipt(<field>)`, ...);
+  and its base parts, the IR's own operations (`base:<prim>`, `base:Repeat`, ...). Its digest names the IR version,
+  the contract and every module's source digest. `check_submitted` refuses a submitted graph that omits a derived node,
+  effect or edge or names other source or another IR, with `LB6:evidence.decomposition_mismatch`.
+- Principle records (`record`). A record is the data file `docs/progress/1.0/principle-records/<module>.json`, form
+  `c600-principle-record-draft` version 1, with LB6.2's parts: the specification of each exported entry (function,
+  inputs, parameters, budget, output, puzzle, menu, level, domain, tie rule, the meaning of an empty and of a negative
+  answer, and what the answer means outside the cited statement's scope), the justification (lemma, certificate, replay
+  or "by definition", each with its statement and an evidence reference: a repository file, its SHA-256, basis, check,
+  source label and whether it is imported), the instance (model identity, level, input, expected claims each naming
+  the derivation step it repeats, and the fixture test), the binding (source and closure digests, model identity,
+  decomposition digest, statements) and the parts a person writes (step map with the unmapped nodes and steps on both
+  sides, reason with its glossary terms, failure examples, what an answer does not mean, givens, steps, prerequisite
+  terms and records, and a leaf specification with its oracle test per kernel leaf). Every part is given or a typed
+  none, `{"none": "because ..."}`. `admit` refuses an absent part, a none without its reason, an empty list, an
+  evidence file at other bytes, a fixture or leaf test that names no function, a claim that is not its step's result,
+  a kernel leaf with no specification, a step map whose unmapped lists are not the computed ones, and a prerequisite
+  term that is unknown, not learner-facing or above the record's level (`LB6:evidence.principle_record_incomplete`); a
+  record bound to other source or another closure is `LB6:evidence.decomposition_mismatch`. A record whose
+  decomposition digest is not the current one is `Stale`: every hand-written part is stale, and the step map and leaf
+  specifications wait for the person who refreshes them. `prerequisite_cycle` checks that records form a DAG.
+- Records shipped: the three built-in tools of PHS.22 (`full_600_cell`, `jumble_checker`, `representations`) and
+  the library's twelve modules (`words`, `quadratic`, `word_keys`, `linalg`, `trees`, `recipes`, `completion`,
+  `protection`, `guarded_setups`, `macros`, `seeds`, `orbits`). Each instance runs on the real geometry: the
+  600-cell-Full tool inside the command the solver invokes, through the tools' host bridge, with the layer's preview;
+  the jumbling tool onto the jumbling engine's whole-word check under W-J fixture I_a's menu; state-reading library
+  entries through `Boundary` and the host bridge onto a 600-cell-Full command layer at solved; pure entries on
+  600-cell-Full values (generators, the golden ratio of the vertex coordinates, the I_a correction library's C5
+  coordinates, the seed atlas's collateral, the solved pose). Evidence files are model assets, research data and
+  `c600-library`'s tests, pinned by digest: a change to one makes its record refuse until the digest is refreshed.
+  Leaf specifications name their oracle tests by path and function, not by digest.
+- Explanations (`explain`). `explain` builds a tool's explanation from its record and its admission state: the
+  specification, each argument's claim with its word from `c600_evidence::word` at a pinned edition over a graph of the
+  record's facts (statement, scope, bases, checks, job outcome, source labels and check references kept apart), the
+  instance's claim (one instance, a completed or failed producing job, or none when the fixture did not run), the
+  decomposition's roots as collapsed links (`expand` gives a node's calls, kernel leaves and base parts; a long word is
+  a digest and a length until `expand_word` reads letters from bytes of that digest; a named, commit-pinned statement
+  is a lemma link; an imported result links its stored bytes and source label with its producer absent), the parts a
+  person writes and the stale parts. A record's evidence enters through chapter 06's `record` sink as the host's
+  write, so a `formal_proof` or `independent_checker` check is refused and shown as refused. A computed or certified
+  argument's claim covers the recorded inputs only. Where no human review or formal proof is recorded, the claim says
+  so. The author class is shown as data and no word reads it; an explanation takes no score and grants nothing. A
+  fork's explanation keeps the cited statements as references and records none of the parent's evidence.
+- Tests. CT-LB6-01, CT-EV5-01 and CT-EV5-06 run whole (`c600-docs/tests/ct_lb6_01.rs`, `ct_ev5_01.rs`,
+  `ct_ev5_06.rs`). Each record's fixture is `fixture_<module>` in `ct_lb6_01.rs`; it reads the record's input and
+  compares the module's answers with the record's expected claims. `tests/facts.rs` prints, on request
+  (`--ignored`), the generated fields a record's refresh needs.
+- Readings (drafts, to confirm at the next freeze): the record is data beside the module, bound to the closure digest
+  of a manifest with no principle field, since the manifest's `principle` digest cannot be inside what the record
+  binds (LB6.2 "the record is data in the module manifest" is read as "named by the manifest"); the tools' own
+  manifests (`c600_tools::tool::Manifest::principle_record`) still say `false`, since `c600-tools` and
+  `c600-jumble-tool` are not this item's files; the evidence library is a sixth dependency beside the plan's five,
+  since EV5.13 asks for chapter 06's word function.
+- Not built:
+  - the jumbling library's sixteen modules in `c600-jumble-tool` (`jumble_admissibility` to `menu_words`), which have
+    no record yet;
+  - the manifests' `principle` digest and the tools' `principle_record` flag, which wait for `c600-tools`' owner;
+  - commit-pinned lemma citations in the shipped records: their statements are typed, and the stage-qualified form is
+    exercised by the tests only;
+  - the mathematician's review of the records' derivations, reasons, failure examples and "not meant" texts, which
+    each record's `review` field says it waits for;
+  - a rendered reference or explanation page in the shell or the docs site: `render` gives Markdown text only;
+  - RT4's host decomposition (RTE.80), since RT4 is not built (LB6.6).
+- Evidence kind: source and fixture. The fixtures' instances are the real model's and the research fixtures'; a pass
+  proves no universal lemma and records no human comprehension result (EV5.4).
