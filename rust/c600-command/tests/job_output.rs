@@ -141,7 +141,8 @@ fn serve(layer: &mut CommandLayer) {
     layer.serve_row(COMPARE, overlay("compare_cells")).unwrap();
     layer.serve_row(SCOPE, overlay("effect_scope")).unwrap();
     layer.serve_row(PLAY, overlay("play")).unwrap();
-    layer.register_overlay(EXPORT, Kind::File, &[], overlay("export")).unwrap();
+    let granted = c600_command::Registration::default().granting(c600_command::Grant::File);
+    layer.register_overlay_with(EXPORT, Kind::File, &[], overlay("export"), granted).unwrap();
     layer.register_overlay(STORE, Kind::Workspace, &[], overlay("store")).unwrap();
 }
 

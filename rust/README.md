@@ -22,7 +22,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
 | `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, RM.37's jumbling crosswalk as fixtures (LP3, C2), and the jumbling producers from M5's kernel (LP3, C8) |
-| `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
+| `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4); a host's module set with version separation and activation (LP4-2) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on KN5's command layer over M6's journal and on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, CT-LB2-03's work-sheet part, and the durable leg of LP2's saved sets (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, each run under its job's budget, with KN2.4's `positions`, `labels`, `effect`, `protection` and `replay` rows, the draft `setups` and `orbits` rows and the representations tool's draft `structure.compare`, `filter.preview` and `structure.layer` rows (C6) as snapshot reads, the recipe expansion, the source route `c600-lp3-source`, the tool's views, the host's view rows on the view model and the host's provenance reader (LP3, C5), and the loaded model's trace relation (LP2 draft, LB1.10) |
@@ -35,6 +35,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests, and user stages as HLSL under `m600-stage-hlsl/1` with their binary32 CPU reference; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
+| `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -48,13 +49,14 @@ The command layer depends on the kernel and digest crates only, so it has no pat
 view model depends on the digest crate only, and the display contract on the digest, kernel and jumbling crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
 layer.
-The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
-path to the command layer.
-The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates, on the command layer, and on
-the runtime, display and view crates: its host bridge connects the interpreter, in process or in the runtime's own
-process (C3), to the command layer as the runtime's host, and its views build on the display contract and the view
-model. The library crate is its dev-dependency, so that its tests run the library's exact-completion entry through the
-host bridge.
+The runtime depends on the syntax, checker, interpreter, IR, digest and module crates and the big-integer crates, and
+has no path to the command layer; the module crate gives it the binding a bound job is built from (LP4-2).
+The tools crate depends on the syntax, checker, interpreter, IR, digest, kernel and module crates, on the command
+layer, and on the runtime, display and view crates: its host bridge connects the interpreter, in process or in the
+runtime's own process (C3), to the command layer as the runtime's host, its views build on the display contract and the
+view model, and its user-module runs bind through the module crate's set (LP4-2). The library crate is its
+dev-dependency, so that its tests run the library's exact-completion entry through the host bridge, and so is the input
+router, so that its tests invoke a user module's row from a key.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
 The jumbling crate depends on the kernel and digest crates and the big-integer crates.
@@ -67,6 +69,8 @@ The durable crate holds tests only; its dev-dependencies are the session store, 
 syntax crate, the interpreter, the kernel and the digest crate.
 The library crate depends on the IR, syntax and digest crates only; its tests also run the checker, the interpreter
 and the kernel.
+The editor services crate depends on the syntax, checker, IR and digest crates only, so it has no path to the
+interpreter or the command layer and runs no user program (EV1.9).
 
 ## Running the tests
 
@@ -396,8 +400,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Canonical layout (LG1.4, CT-LG1-03). `format` depends on the parsed program only: four-space indents, a blank line
   before each declaration, imports directly after the module line, one `let` or `return` per line, `match` arms and
   closure bodies on lines of their own, and type arguments and generic parameters without spaces (`<T,E>`, as LX-8's
-  type strings). Comments are not retained, as in candidate A, so the layout drops them; retention comes with the
-  authoring services (PHS.21). `c600-syntax/tests/fixtures/canonical.6cs` pins one expected output by its SHA-256.
+  type strings). The layout drops comments, as in candidate A. Since LP4-1 the parse keeps them, and whitespace, as
+  trivia for the authoring services (PHS.21), but no layout keeps them yet.
+  `c600-syntax/tests/fixtures/canonical.6cs` pins one expected output by its SHA-256.
 - Source map (LG4.12). `lower` returns, for each module, the source digest, each function's declaration range and
   the source range of every IR path in each body, so a checker diagnostic's function and path map to source text.
 - What parses but does not lower yet. Lowering refuses each of these with a message naming what it waits for: a
@@ -3575,3 +3580,252 @@ run or not applicable is no pass (PHS.63).
   at the meter's budget code or at the host's 60 s view deadline, `KN7:resource_limit.safety_stop`, whichever comes
   first. `c600-lx2/examples/view_limits_probe.rs` measures how far a metered fault runs under the product's view
   limits. Evidence kind: source and synthetic; nothing is timing.
+
+## Status of LP4-1: the editor services
+
+`c600-editor` holds EV1's editor services (chapter 04, EV1.1 to EV1.12) as a library that LP4-3's C ABI host library
+(`renderer/bridge/editor`, not built yet) wraps. Its API is plain owned data: strings, vectors, enums and byte offsets,
+with no handle kept between calls and no callback. Like the IR, it is a draft until the language's interfaces freeze.
+
+- No user program runs (EV1.9). The crate forbids unsafe code and depends on `c600-syntax`, `c600-check`, `c600-ir`
+  and `c600-digest` only; `tests/dependencies.rs` follows the manifests and fails on any path to `c600-run` or
+  `c600-command`. A shell links it as a library; program execution stays outside the UI thread.
+- Documents and ranges (EV1.1, EV1.10). `Document::open(bytes, units)`, or `open_declared(bytes, "utf8" | "utf16" |
+  "scalar")`, names immutable bytes by their SHA-256 (`digest()`) and keeps the units the host declared. Every service
+  takes the digest its request was built against, and positions in the declared units; another digest is
+  `EV1:stale.editor_source`. `SourceRange { digest, start, end }` is H7's: UTF-8 byte offsets on scalar boundaries,
+  half-open. `offset`, `range`, `host` and `host_in` convert from and to the declared units without rounding. An
+  endpoint inside a scalar or past the end, a reversed range, units other than the declared ones, and bytes that are
+  not pinned source (malformed UTF-8, a CR, a byte-order mark) are `EV1:input.source_range_invalid`, each with its
+  typed reason; for unpinned bytes the reason carries ERR.10's raw context, the raw digest and the offending byte
+  interval, and never a converted position.
+- Subjects and contexts. Every response carries a `Subject`: the source digest, whether the bytes are pinned, the
+  edition and the module context's digest. A `ModuleContext` holds the edition, the session's model identity and the
+  identities the draft supports (KN0.1's five fields), the evidence obligations, and the dependency sources by digest
+  with the identities each supports; `ModuleContext::digest` is a draft canonical text,
+  `c600-editor-context-draft-1`.
+- `parse(document, edition)` (EV1.2): the parsed file with its recovery holes, what was read of each broken
+  declaration (kind, `export`, name, and every binding with the byte span it is visible in), comments and whitespace
+  as trivia, an outline in source order (imports, declarations, holes, comments) and the syntax diagnostics. An
+  encoding fault gives ERR.10's diagnostic with no span.
+- `complete(document, digest, position, context)` (EV1.3): the completion context at the position (comment, text,
+  literal, declaration, signature, new name, type, effects, capabilities, a dependency's members, a field or an
+  expression), the range the prefix replaces, and the candidates, sorted by label only, each with its kind, type,
+  effects, declaring identity (alias, source digest and declaration) and documentation reference. Locals come from the
+  recovered scope, so an incomplete declaration still completes; members come from the pinned dependency. A missing
+  dependency or unknown field types are listed in `missing`. A context whose session identity the draft does not
+  support, or a dependency that supports another identity, is refused with `KN1:input.identity_mismatch`. Nothing
+  ranks candidates or proposes a move (the human-solve boundary).
+- `diagnose(document, digest, context)` (EV1.4): syntax diagnostics; `LG5:input.module_dependency_missing` at an
+  import whose bytes the context does not hold; `KN1:input.identity_mismatch` at the module header or at the import,
+  naming the first differing field; `LG4:input.ir_rejected` for a lowering refusal; the checker's findings forwarded
+  with their own codes and typed context at the range the source map gives, so LG2.22's direct and helper condition
+  refusals and its scalar `exact_required` case pass through unchanged; and `EV1:evidence.obligation_unmet`. The
+  `Verdict` is `Checked(CheckedCandidate)` only for a complete draft that lowers and checks with no finding.
+  `CheckedCandidate` names the source, module, edition, closure digests, IR version, execution contract and context
+  digest, the data that EV1.11's activation names; it grants nothing.
+- `hover` and `definition` (EV1.5, EV1.6) resolve a name in the draft and its pinned dependencies: the declared type
+  or signature, declared effects, the required capabilities, exactness, the module's static check, the checker's
+  inferred effects and capabilities with capability separation's view, the permission `DecidedAtInvocation`, and the
+  defining range under its own source's digest. Each field it cannot resolve says why (`Unresolved`); a missing
+  dependency is never replaced by another version, and no check is invented.
+- `rename(document, digest, position, proposed, context)` (EV1.6) proposes edits, each bound to its source's digest,
+  the draft's first. Renaming a dependency's exported declaration edits that dependency's bytes, named by its old
+  digest, and re-pins each importer's digest literal up the closure in dependency order, so no import keeps naming
+  bytes that changed. The edited closure is checked again, and its diagnostics and verdict are returned: a clash or a
+  malformed name shows there, and the proposed name is not judged first. `apply_edits(document, edits)` applies one
+  source's edits; edits for other bytes are `EV1:stale.editor_source`, overlapping edits and invalid ranges
+  `EV1:input.source_range_invalid`.
+- Envelopes (EV1.12, chapter 13). Every diagnostic and refusal is an `Envelope`: the code, the form, the service that
+  raised it (the event), a typed `Reason`, a typed `NextAction`, the range when it has one, and a summary for display
+  only. `category`, `recoverable` and `retry` follow ERR.8 to ERR.15. The codes are constants in `c600_editor::code`.
+- Additions to `c600-syntax`, additive only, so its other tests run unchanged: `ParsedFile.trivia` (comments and
+  whitespace), `ParsedFile.recovered` (`ast::RecoveredDecl`), `lexemes`, `pinned` (the byte check alone),
+  `type_text`, and the name lists lowering reads (`base_types`, `type_constructors`, `precisions`, `effect_names`,
+  `capability_names`, `orders`) (`c600-syntax/tests/authoring.rs`).
+- Tests. CT-EV1-01, CT-EV1-02, CT-EV1-03, CT-EV1-05 and CT-EV1-07 run whole (`c600-editor/tests/ct_ev1_0N.rs`, each
+  test named by its ID); `tests/completion.rs` covers completion contexts and `tests/dependencies.rs` EV1.9's
+  dependency part.
+- DRAFT: the evidence obligation. The IR draft has no claim types, so a declaration the context requires to supply
+  evidence meets the obligation when it, or a function it calls, has an exact evidence sink (`use_evidence`).
+- Not built, which is no pass (PHS.63):
+  - a layout that keeps comments: `format` still drops them;
+  - inferred types of locals: the checker reports none, so hover gives a local's declared type or says why not;
+  - model and level on hover, and evidence references: the IR draft has no identity tower, levels or claims;
+  - field completion beyond the declared record types of parameters;
+  - renaming a binding inside a recovery hole: such occurrences stay unchanged and are listed in `skipped`;
+  - a missing dependency of a dependency is reported at the draft's import; identities are compared for the draft's
+    direct imports only;
+  - EV1.11's activation (LP4-2 builds it on `CheckedCandidate`) and the C ABI host library (LP4-3).
+- Not run here: CT-EV1-04 and CT-EV1-08 (EV1.7, EV1.8 and EV1.11 need activation), CT-EV1-06 (LX-4's bars, on the
+  owner's machine).
+- Evidence kind: source and synthetic. A pass is not Windows/DirectX, input, long-session or performance evidence.
+
+## Status of LP4, LP4-2: version separation and module activation
+
+LP4-2 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV1.7, EV1.8 and EV1.11; chapter 02
+LG5.6).
+
+- `c600-module`'s `Modules` is a host's set of user modules for one session identity. `check(manifest, lock, files,
+  entries)` verifies a draft's closure, approves its entries and creates the module's candidate, returning its digest
+  (the closure digest) and its `CheckReference`; it never changes the active version, and a refused check, such as a
+  broken draft, stores nothing. `activate_module(module, expected_active_digest, candidate_digest, check_reference)`
+  is the only switch: under one lock it checks that the reference is that of the candidate's successful check
+  (`EV1:input.module_not_checked` otherwise), that every checked entry's grant lies within the host's grant
+  (`LG3:capability.not_granted`), and that the active digest is the expected one, none for an initial install
+  (`EV1:stale.activation_base`), and only then installs the whole candidate closure; success returns the previous and
+  new digests. `bind(module, function)` binds an invocation wholly to the active version under the same lock;
+  `bind_pinned(module, function, digest)` is the route that names a digest. A `Binding` holds its version's bytes,
+  approvals and loaded program for as long as it lives, runs in process (`Binding::run`, with the version's own source
+  map, so a stop's range names the bytes that ran) or through another executor of the closure (`Binding::run_with`,
+  over `Ready::run_with`, which keeps the boundary and the separation gate in the caller's process), and its result
+  names the version (`BoundRun`).
+- `c600-runtime`'s `BoundJob` builds a job wholly from one binding: the version's bytes in the lock's order, the
+  approved entry and the approval's profile, grant and declassifiers; `Runtime::run_bound` runs it. The wire is
+  unchanged: the child gets the bytes with the run, so a run suspended at a host call resumes on them after another
+  version activates.
+- `c600-tools`' `modules` is the host's side: `bind_job` binds a user module's overlay-row program job when the host
+  takes it, whichever way the solver invoked the row; `bind_view_source` admits a view source only when its module
+  digest names the row's module's active version; `run_bound_in_process` and `ProcessHost::run_bound` run a binding on
+  either host.
+- Activation is a module service: H-08's stored table has no row for it, and none is added. Activation is explicit
+  (owner, 23 November 2026, EV1.13 for the stage 2 greybox): a check never activates, and only a call of
+  `activate_module` switches.
+- Tests: CT-EV1-04 is whole by union of `c600-module/tests/ct_ev1_04.rs` (three broken drafts, each refused with its
+  own code while A keeps running and its results and ranges name A; and the set's routes: invocation by name, a route
+  naming B's closure or source digest, activation, B's bytes under A's approval) and `c600-tools/tests/ev1_host.rs`
+  (the program job from the palette and from a key on both hosts, and a view source, while a draft is broken, B
+  unchecked, and B checked and not active), for the routes that exist. CT-EV1-08 is whole by union of
+  `c600-module/tests/ct_ev1_08.rs` (the service, the check reference, every refusal leaving A active, the frozen
+  vector `old-run-survives-activation` on a run suspended at a host call, a binding outliving the set, and eight
+  threads racing one activation), `c600-runtime/tests/ct_ev1_08_process.rs` (the same run suspended in the child, and
+  bound jobs racing activation) and `c600-tools/tests/ev1_host.rs` (a program job suspended on either host).
+- Drafts, which freeze with the module formats and the editor protocol (LG5.10, LQ10): the check record
+  `c600-check-reference-draft` version 1, whose SHA-256 is the check reference (no FP.4 row, never stored); the
+  candidate's digest is the closure digest; one candidate per module, which a new successful check replaces; a check
+  names one or more entries of the root module; the host's grant in the set, checked at activation and at each bind;
+  a module with no active version, or an entry its check did not cover, is `EV1:input.module_not_checked`; on a route
+  that names a digest, a digest no check produced is `EV1:input.module_not_checked` and a checked digest that is not
+  active is `EV1:stale.activation_base`, whose continuation is `after_refresh`. Chapter 13 names `activate_module` as
+  both codes' origin, so this reading on a route is the integrator's to confirm. The list is in the documentation of
+  `c600_module::activate`, `c600_runtime::bound` and `c600_tools::modules`.
+- Crate edges: `c600-runtime` and `c600-tools` depend on `c600-module`, and `c600-tools` has `c600-input` as a
+  dev-dependency. `renderer/bridge/Cargo.lock` lists `c600-module` because `c600-runtime` depends on it.
+- Not built:
+  - the debugger's and a recording's routes (LP4-5, LP4-9), which must bind through `Modules::bind` or
+    `Modules::bind_pinned` and extend CT-EV1-04 when they arrive;
+  - a built-in entry's binding on the runtime's process: an approval carries no class rows, so `BoundJob::new` refuses
+    it at the admission stage and it runs in process only;
+  - the conversion of a program job's JSON arguments to an entry's declared parameters, which waits for the module
+    formats' declared parameters (LG5.2); `ModuleRun::of_job` takes the values converted;
+  - persistence of the set: candidates and active versions live in memory for one session, and a reopen has nothing
+    active until the host checks and activates again;
+  - stopping a running binding when the host revokes a grant (KN7's, the run's host's), and the revision-driven runs of
+    an overlay view, which the view model does not run yet;
+  - the shell's write-check-run flow and its explicit activation control (LP4-3).
+- Evidence kind: source. The process-host tests start the runtime's child on the test machine; nothing is timing,
+  input or Windows interaction evidence.
+
+## Status of LP4, LP4-4: overlay rows and the palette
+
+- Overlay rows (KN5.3, EV4.1): `CommandLayer::register_overlay_with` registers a language-defined command with its
+  label and the capabilities the solver granted its module (`Registration`, `Grant`: file, clock, randomness; consent
+  at install, ADR-D01.32). Its kind is view, workspace or query, or file with the file grant. A commit or app row, a
+  file row without the file grant and a row that takes a token are refused with `KN5:input.overlay_row_kind`; an ID a
+  stored row, a service or another overlay holds, the stored puzzle rows and `command.find` among them, with
+  `KN5:input.overlay_row_conflict`. `register_overlay` keeps its signature and grants nothing, so a file row needs the
+  new call.
+- A language-defined row whose stored static verdict failed is refused at invocation with that diagnostic, by key and
+  from the palette alike, so a module that failed its check runs nothing.
+- The palette's data (EV4.2, KN5.6): `Palette::read` lists every row of the table, H-08's 198 and the overlays, with
+  its label, kind, key sequences and its answer in one KN5.6 availability table (a computed binding per row: the
+  argument-independent gates). `Shell::read_palette` reads it once per revision and generation; `Palette::find` searches
+  the kept read with no layer, case-insensitive substrings of the label, row ID or key sequences. Unavailable entries
+  keep their places with their typed reasons. A palette invocation is `Shell::invoke`, the key route's own path.
+- `command.find` is built: after its `query`'s form, and for a run only inside a command the solver invoked, it is
+  `accepted` with no job and changes nothing. No entry can serve it.
+- `Shell::bind` adds a key binding, refusing a sequence bound in an overlapping context with
+  `EV4:input.binding_conflict`.
+- CT-EV4-01 runs whole in `c600-command/tests/palette.rs` (source).
+- Not built:
+  - ranking by the solver's own recency, frequency and pins (ADR-D01.18), glossary terms in the search, aliases
+    (`palette.alias`), pins (`palette.pin`), synonyms (ADR-D01.17), short help and the selection filter of
+    `command.find`'s `object`;
+  - revoking a grant or removing a registered row; the host keeps its registrations for the layer's life;
+  - LP4-8's checked keymap, layouts and rebind (EV4.7, EV4.8): `Shell::bind` is a draft that checks duplicates only;
+  - a run's own invocation of a workspace or file row. ADR-D01.2's first route lets an invoked entry point run view
+    and workspace rows (overruling LG3.1 and LG3.5 in part); the layer still follows the owner's reading of ONE.52 of
+    18 November 2026 (findings B3 and B4), so a workspace entry point the solver invokes writes its records in its own
+    completion, and a run reaches view and query rows only. Whether ADR-D01.2 lifts that reading is the integrator's
+    question;
+  - the palette's generation event (KN5.8's protocol): the shell compares the layer's revision and generation when it
+    reads.
+- Evidence kind: source. Nothing here is Windows input, display or timing evidence.
+
+## Status of LP4, LP4-3: the shell's write-check-run flow
+
+LP4-3 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV1.2 to EV1.13; chapter 05 KN5;
+EV4.1, EV4.2), the last item of phase I, a draft. Its code is in `renderer/`, outside this workspace (CT-RPI-01); it
+uses this workspace's crates through their public interfaces and changes none of them.
+
+- The editor library `c600-shell-editor` (`renderer/bridge/editor`, a member of the bridge's workspace) is a C
+  interface, version 1 (`m6e_*`). It holds one document with EV1's services from `c600-editor` (`m6e_set_text`,
+  `m6e_edit` in the declared units, `m6e_diagnose`, `m6e_complete`). `m6e_check(entry)` checks the buffer as a
+  single-file module with one entry, the solver's own program in the solving profile, through `c600_module::Modules`;
+  it creates a candidate and activates nothing. `m6e_activate(module, expected, candidate, reference)` is the explicit
+  switch (`activate_module`, EV1.11, EV1.13). `m6e_run(job)` binds a program job's entry to the active version once
+  (`Modules::bind`) and runs it on a worker thread, in process or, after `m6e_load_runtime`, in the runtime's own
+  process (`c600_tools::modules`); `m6e_run_poll` gives the run's record. Answers are JSON (`m6e_answer`); a refusal
+  is `{"code", "detail"}` (`m6e_last_error`).
+- The host library `c600-shell-host` goes to version 7. `m6h_register_row` registers a module's entry as a language
+  overlay row (`tool.<module>.<entry>`, a query row, `register_overlay_with`) and binds its key in the router and the
+  shell's keymap. `m6h_palette` reads the palette. `m6h_invoke` invokes a row from the palette (`Shell::invoke`).
+  `m6h_take_job` and `m6h_finish_job` carry a program job's run (`ModuleRun::of_job`, as JSON) to the editor library
+  and its end back to the layer as the job's result or error. `m6h_set_draft_word` sets the editor's draft,
+  `m6h_set_focus` the router's text or puzzle focus, and `m6h_answer` gives the JSON answers. The host now builds the
+  previews the layer queues (`run_jobs`) at each pump, frame and key, shows a pending preview on the view
+  (`show_preview`, with no primitives yet), and reports each confirmed frame that showed it to the layer
+  (`CommandLayer::present`, the base translated from the display's engine revision to the layer's state revision), so
+  the commit key finds a presented preview. The two libraries share no Rust object; the panel and the flow test carry
+  the JSON between them.
+- Preview route: the solver-invoked route. A run's engine host serves no row (`NoHost`) and the run holds no token.
+  The word the macro returns is shown and becomes the editor's draft; the solver previews it with
+  `operation.preview`'s key (Ctrl+Enter) and commits it with `operation.execute`'s key (Ctrl+Shift+Enter, the key
+  route's token) once a frame showed the preview; `session.undo`'s key undoes. The shell chooses, ranks and outputs
+  no solving word of its own. The program-prepared route that ADR-D01.8 allows ("the solver's own programs prepare
+  solving previews"; ADR-D01's overrule of EV4.16 and BND.84) is blocked in this workspace: `c600-check`'s
+  solving-profile admission still refuses `PreparePreview` for an own, forked or imported tool (BND.56, LG3.16; the
+  `Profile::Solving` branch of `c600-check/src/lib.rs`). Lifting it is a change to `c600-check`, which LP4-3 does not
+  make.
+- The greybox panel (`renderer/shell/project/Editor`, `M600_EDITOR=1`, `launch.py --editor`): a code field, the
+  diagnostics list (code, line and column), code completion at the caret, and a palette list that starts with the
+  panel's own Check and Activate entries, which have no key (the LP4 plan's integrator default), followed by the
+  session's language rows. Activate registers the activated entry's row, the first one with the key Ctrl+Shift+KeyR.
+  Each frame the panel takes the host's program jobs, runs them through the editor library and reports their ends.
+  While the code field has the focus, the router has the text focus, so the field keeps typing and a commit row's key
+  (DT-M1 C4). `build_product.py` builds `editor/c600_shell_editor.dll`.
+- LX-4's editor library (`renderer/bridge/lx4`) is re-pointed onto `c600-editor`: its syntax, completion and
+  diagnostics stages run `parse`, `complete` and `diagnose` (the W modules are the context's dependencies), and its
+  dependents stage keeps `c600_lx4::front_end`. The `lx4_*` interface (version 2), its texts and its endpoints are
+  unchanged.
+- Tests: `renderer/bridge/editor/tests/flow.rs` drives both libraries through their C interfaces over the bridge's
+  shim and the fake core. The macro is typed with an error and shows its diagnostic (`LG2:type.mismatch` on its line);
+  completion offers `word`; the fixed macro checks and is not active, so a palette run fails with
+  `EV1:input.module_not_checked`; a stale activation is refused and the explicit one succeeds; the row shows in the
+  palette with its key; it runs from the palette in process and by its key in the runtime's process (the word
+  `[1,-2,3]`); the draft is previewed by key, a commit before a frame showed the preview commits nothing, the commit
+  and the undo go by key, and the close's control counts the two changes and reopens the journal at the start.
+  `tests/test_renderer_shell.py` checks the panel's fixed points and both libraries' exports against the Rust source.
+- Not built:
+  - the program-prepared preview route (above) and ADR-D01.12's one-key preview-and-commit;
+  - a module with imports or capabilities: the check builds a single-file manifest with no dependency and no
+    capability, so a draft that imports or requires one is refused;
+  - more than one entry per check, and arguments (a registered row takes none; their conversion waits for LG5.2);
+  - persistence of the module set and of the registered rows, which live for one run of the shell; removing or
+    re-keying a row (LP4-8's checked keymap);
+  - the panel's look (ADR-D01's later rounds); hover, definition and rename in the panel; diagnostics drawn in the
+    code field; the preview's primitives on the view;
+  - the on-screen flow: the shell built offline with the panel (`build_shell.py`, no warnings), and it was never
+    launched.
+- Evidence kind: source. The flow test's frames are a fake core's and its keys synthetic; nothing here is Windows
+  input, display or timing evidence.

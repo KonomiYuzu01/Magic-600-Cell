@@ -187,6 +187,37 @@ pub fn builtins() -> &'static [&'static str] {
     &BUILTINS
 }
 
+/// The base types lowering reads, read-only (LP2 drafts that freeze with the syntax and the IR, PHS.49), for a host's
+/// completion list (EV1.3).
+pub fn base_types() -> &'static [&'static str] {
+    &BASE_TYPES
+}
+
+/// The type constructors lowering reads: `Display<T>`, `Approx<P>`, `List<T>`, `Set<T>` and `Map<K, V>`.
+pub fn type_constructors() -> &'static [&'static str] {
+    &["Display", "Approx", "List", "Set", "Map"]
+}
+
+/// The precisions an `Approx` type takes.
+pub fn precisions() -> &'static [&'static str] {
+    &["P24", "P53", "P113"]
+}
+
+/// The effect names of an `effects` list (LG3.1); `file` and `random` are also capabilities.
+pub fn effect_names() -> &'static [&'static str] {
+    &EFFECTS
+}
+
+/// The capability names of a `requires` list and an `effects` list (LG3.8).
+pub fn capability_names() -> &'static [&'static str] {
+    &["file", "clock", "random", "network", "process", "session_file"]
+}
+
+/// The named orders of a listing (LG4.3; LP2 draft), which a program cannot bind.
+pub fn orders() -> &'static [&'static str] {
+    &ORDERS
+}
+
 /// Whether a type is or holds a function. The LP2 draft's lists hold none, so a callable's needs never hide in one.
 fn holds_callable(ty: &Ty) -> bool {
     match ty {
@@ -1280,6 +1311,17 @@ impl Body<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The public name lists are the ones lowering reads: every capability name is a capability, and no listed name is
+    /// bindable.
+    #[test]
+    fn the_public_name_lists_are_the_ones_lowering_reads() {
+        assert!(capability_names().iter().all(|n| capability(n).is_some()));
+        let all = ["file", "clock", "random", "network", "process", "session_file", "x"];
+        assert_eq!(all.iter().filter(|n| capability(n).is_some()).count(), capability_names().len());
+        assert!(orders().iter().chain(keywords()).chain(builtins()).all(|n| reserved(n)));
+        assert_eq!(effect_names(), EFFECTS);
+    }
 
     /// `BUILTINS` and `Body::builtin` name the same operations: each reserved name lowers when it is called with
     /// arguments of its shape. Lowering does not type the call; the checker does.

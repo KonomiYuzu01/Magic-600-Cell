@@ -1,7 +1,7 @@
 name = "archon-full600-theory"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["ArchonFull600Theory"]
+defaultTargets = ["ArchonFull600Theory", "Jumbling"]
 
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
@@ -16,3 +16,6 @@ rev = "v4.36.0"
 
 [[lean_lib]]
 name = "ArchonFull600Theory"
+
+[[lean_lib]]
+name = "Jumbling"

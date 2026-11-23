@@ -336,7 +336,8 @@ fn a_press_whose_preview_ended_is_refused_by_how_it_ended() {
 fn an_action_that_moves_nothing_keeps_the_preview_and_the_jobs() {
     let mut f = fixture(&[]);
     f.layer.register_overlay("tool.full.inspect", Kind::Query, &[], overlay("inspect")).unwrap();
-    f.layer.register_overlay("tool.full.export", Kind::File, &[], overlay("export")).unwrap();
+    let granted = c600_command::Registration::default().granting(c600_command::Grant::File);
+    f.layer.register_overlay_with("tool.full.export", Kind::File, &[], overlay("export"), granted).unwrap();
     f.layer.register_overlay("tool.full.note", Kind::Workspace, &[], overlay("note")).unwrap();
     f.layer.set_program_capacity(3);
     assert!(committed(&f.commit(&word(&[1]))));
@@ -701,6 +702,8 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
     }
     let expected = [
         ("register_overlay", false),
+        // KN5.3's registration with the label and the granted capabilities (EV4.1; LP4-4).
+        ("register_overlay_with", false),
         ("serve_row", false),
         ("declare_overlay", false),
         ("store_mut", true),

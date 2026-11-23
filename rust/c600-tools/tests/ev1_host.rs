@@ -1,0 +1,367 @@
+//! The host's routes of a user module's runs (chapter 04 EV1.7, EV1.8, EV1.11; LP4-2): a program job of the module's
+//! overlay row, invoked from the palette through the shell or from a key through the input router, binds the active
+//! version when the host takes it and runs in process or in the runtime's own process; a view source that names a
+//! module digest opens only on the active version. Every key event here is synthetic; none of this is Windows input
+//! evidence.
+//!
+//! CT-EV1-04 (source, part: the host's routes, the program job from the palette and from a key on both hosts and the
+//! view source, while a draft is broken, unchecked or checked and not active; the broken drafts and the module set's
+//! own routes are in `c600-module/tests/ct_ev1_04.rs`, which with this file is the whole by union for the routes that
+//! exist; the debugger's and a recording's routes arrive with LP4-5 and LP4-9).
+//!
+//! CT-EV1-08 (source, part: a program job's run suspended at a host call on either host, through the binding's
+//! boundary, while B activates; the service, the refusals and the races are in `c600-module/tests/ct_ev1_08.rs` and
+//! `c600-runtime/tests/ct_ev1_08_process.rs`, which with this part are the whole by union).
+
+mod process_support;
+
+use std::sync::{Arc, Mutex};
+
+use c600_check::{Grant, Policy};
+use c600_command::{
+    CommandLayer, Error as LayerError, Kind, Overlay, ProgramJob, Receipt, Shell, Status, ViewSourceRef, VIEW_OPEN_ROW,
+};
+use c600_digest::{sha256, sha256_hex};
+use c600_input::{default_specs, BindingSpec, Context, KeyEvent, KeyMap, Layout, Router, RoutingClass, Slot};
+use c600_kernel::json::{self, Value as Json};
+use c600_module::code::{MODULE_NOT_CHECKED, STALE_ACTIVATION_BASE};
+use c600_module::{resolve, Candidate, Dependency, Entry, Files, Identity, Manifest, Modules};
+use c600_run::boundary::Store;
+use c600_run::interp::{Host, Request, RowTariff, Sink};
+use c600_run::meter::code::NOT_GRANTED;
+use c600_run::provenance::{hex, Author, Pin, Profile};
+use c600_run::value::Value;
+use c600_tools::modules::{bind_job, bind_view_source, run_bound_in_process, ModuleRun};
+use c600_tools::process::{ProcessHost, IN_PROCESS, PROCESS};
+use c600_tools::views::{model_revision, ModelViews};
+use c600_view as view;
+
+use process_support::{process_host, session, HOSTS};
+
+const EDITION: &str = "6cs-draft-1";
+const PROBE: i64 = 5;
+/// The overlay rows `m`'s entry serves, and the key bound to the query row.
+const GO: &str = "tool.m.go";
+const PANEL: &str = "tool.m.panel";
+const KEY: &str = "Ctrl+Shift+KeyT";
+
+// ----- versions of the user module `m`
+
+fn module(name: &str, imports: &[(&str, &str)], body: &str) -> String {
+    let mut text = format!("edition \"{EDITION}\";\nmodule {name} requires [];\n\n");
+    for (alias, source) in imports {
+        text.push_str(&format!("import {alias} \"{}\";\n", hex(&sha256(source.as_bytes()))));
+    }
+    if !imports.is_empty() {
+        text.push('\n');
+    }
+    text + body
+}
+
+const BODY: &str = "export fn go() -> Int effects [snapshot] {\n    \
+                    let n = read_snapshot<Int>(\"probe\");\n    \
+                    return exact_add(n, helper.value());\n}\n";
+
+/// Version `n` of `m`: the same root text over a dependency whose `value` returns `n`; `go` returns the probe row's
+/// value plus `n`.
+struct Version {
+    n: i64,
+    root: String,
+    manifest: Vec<u8>,
+    lock: Vec<u8>,
+    files: Files,
+}
+
+fn version_of(n: i64, body: &str) -> Version {
+    let dep = module("helper", &[], &format!("export fn value() -> Int effects [] {{\n    return {n};\n}}\n"));
+    let root = module("m", &[("helper", &dep)], body);
+    let manifest = Manifest {
+        module: "m".into(),
+        edition: EDITION.into(),
+        source: sha256(root.as_bytes()),
+        dependencies: vec![Dependency { alias: "helper".into(), source: sha256(dep.as_bytes()) }],
+        capabilities: vec![],
+        boundary: None,
+        principle: None,
+        supports: vec![Identity::full()],
+    }
+    .bytes();
+    let files = Files::new().with("src/root.6cs", root.as_bytes()).with("src/dep.6cs", dep.as_bytes());
+    let lock = resolve(&manifest, &files).unwrap_or_else(|r| panic!("{r:?}")).bytes();
+    Version { n, root, manifest, lock, files }
+}
+
+fn version(n: i64) -> Version {
+    version_of(n, BODY)
+}
+
+impl Version {
+    fn closure(&self) -> [u8; 32] {
+        c600_module::verify(&self.manifest, &self.lock, &self.files, &Identity::full()).unwrap().digest
+    }
+
+    fn source(&self) -> String {
+        sha256_hex(self.root.as_bytes())
+    }
+
+    /// `go`'s output: its canonical encoding.
+    fn output(&self) -> Vec<u8> {
+        format!("{{\"int\":\"{}\"}}\n", PROBE + self.n).into_bytes()
+    }
+}
+
+fn modules() -> Modules {
+    let contract = Pin::of("fixture-1", b"p3 fixture capability contract 1\n");
+    Modules::new(Identity::full(), contract, Pin::of("m1-draft", b"c600-check fixture\n"), Grant::none())
+}
+
+fn check(modules: &Modules, v: &Version) -> Result<Candidate, c600_module::Refusal> {
+    let entry = Entry {
+        module: "m".into(),
+        function: "go".into(),
+        author: Author::Own,
+        profile: Profile::ToolAuthoring,
+        grant: Grant::none(),
+        policy: Policy::interim(),
+    };
+    modules.check(&v.manifest, &v.lock, &v.files, &[entry])
+}
+
+fn activate(modules: &Modules, c: &Candidate) {
+    let active = modules.active("m");
+    modules.activate_module("m", active, c.digest, c.reference).unwrap_or_else(|r| panic!("{r:?}"));
+}
+
+// ----- the engine side and the session
+
+/// An engine that serves the probe row and runs a hook once inside it: while the run is suspended at that call.
+#[derive(Default)]
+struct Probe {
+    hook: Option<Box<dyn FnOnce()>>,
+}
+
+impl Host for Probe {
+    fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
+        match request {
+            Request::Snapshot { query: "probe", .. } => Ok(RowTariff { kernel_cost: 1, result_bound: 64 }),
+            _ => Err(NOT_GRANTED),
+        }
+    }
+
+    fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
+        match request {
+            Request::Snapshot { query: "probe", .. } => {
+                if let Some(hook) = self.hook.take() {
+                    hook();
+                }
+                Ok(Value::int(PROBE))
+            }
+            _ => Err(NOT_GRANTED),
+        }
+    }
+
+    fn sink(&mut self, _: &Sink, _: &Value, _: &[u8]) -> Result<(), &'static str> {
+        Err(NOT_GRANTED)
+    }
+}
+
+/// A session with `m`'s query row, the row of a module never activated, and a router whose default map binds [`KEY`]
+/// to the query row.
+fn layer() -> (CommandLayer, Shell, Router) {
+    let (mut layer, shell) = session("ev1");
+    let overlay = |module: &str| Overlay { module: module.into(), entry: "go".into() };
+    layer.register_overlay(GO, Kind::Query, &[], overlay("m")).unwrap();
+    layer.register_overlay("tool.n.go", Kind::Query, &[], overlay("n")).unwrap();
+    let mut specs = default_specs();
+    specs.push(BindingSpec::new(&[KEY], RoutingClass::Global, GO, vec![]));
+    let keymap = KeyMap::apply(&specs, &[Layout::US, Layout::FRENCH], "us-qwerty").unwrap();
+    let text = |s: String| Json::String(s);
+    let slots = (0..4).map(|n| Slot { cap: text(format!("c{n}")), frame: text(format!("f{n}")) }).collect();
+    (layer, shell, Router::new(keymap, Context::new(slots)))
+}
+
+/// The solver invokes `row` from the palette (`key` false) or `m`'s query row by its key; the host takes the job.
+fn invoke(layer: &mut CommandLayer, shell: &mut Shell, router: &mut Router, row: &str, key: bool) -> ProgramJob {
+    let receipt: Receipt = if key {
+        let routed = router.key(shell, layer, KeyEvent::down(KEY));
+        router.key(shell, layer, KeyEvent::up(KEY));
+        routed.receipt().cloned().expect("the key reached the layer")
+    } else {
+        shell.invoke(layer, row, json::object([])).expect("delivered")
+    };
+    let Status::Running(id) = receipt.status else { panic!("{row}: {:?}", receipt.status) };
+    let job = layer.take_program_job().expect("a program job");
+    assert_eq!((job.job, job.row.as_str()), (id, row));
+    job
+}
+
+/// Binds the job, runs it on `host` (in process or on the process host) and reports it; the run's closure and output.
+fn serve(
+    modules: &Modules,
+    layer: &mut CommandLayer,
+    job: ProgramJob,
+    host: &str,
+    process: &mut ProcessHost,
+    engine: &mut Probe,
+) -> Result<([u8; 32], Vec<u8>), LayerError> {
+    let binding = match bind_job(modules, &job) {
+        Ok(binding) => binding,
+        Err(error) => {
+            let receipt = layer.finish_program_job(job.job, Err(error.clone())).unwrap();
+            assert!(matches!(&receipt.status, Status::Failed(e) if e.code == error.code), "{:?}", receipt.status);
+            return Err(error);
+        }
+    };
+    let run = ModuleRun::of_job(&job, vec![]);
+    let mut store = Store::default();
+    let ran = match host {
+        IN_PROCESS => run_bound_in_process(&binding, &run, engine, &mut store),
+        _ => process.run_bound(&binding, &run, engine, &mut store),
+    }
+    .unwrap_or_else(|stopped| panic!("{:?}", stopped.cause));
+    assert_eq!(ran.closure, binding.digest());
+    let output = ran.outcome.run.output.clone().expect("a completed run");
+    let result = Json::String(String::from_utf8(output.clone()).unwrap());
+    let receipt = layer.finish_program_job(job.job, Ok(result)).unwrap();
+    assert!(matches!(receipt.status, Status::Completed(_)), "{:?}", receipt.status);
+    Ok((ran.closure, output))
+}
+
+/// EV1.7, EV1.8, EV1.11 on the host: while a draft is broken, while B is unchecked and while B is checked and not
+/// active, `m`'s query row invoked from the palette and from its key runs A on both hosts, its run names A, and its
+/// job completes with A's result. A module that was never activated is refused when the host takes its job, and the
+/// job fails with `EV1:input.module_not_checked`. After B activates, both routes run B on both hosts.
+#[test]
+fn ct_ev1_04_the_palette_and_a_key_run_only_the_active_version() {
+    let (a, b) = (version(10), version(20));
+    let modules = modules();
+    activate(&modules, &check(&modules, &a).unwrap());
+    let (mut layer, mut shell, mut router) = layer();
+    let mut process = process_host();
+    let mut engine = Probe::default();
+    let mut all = |layer: &mut CommandLayer, shell: &mut Shell, router: &mut Router, want: &Version, why: &str| {
+        for host in HOSTS {
+            for key in [false, true] {
+                let job = invoke(layer, shell, router, GO, key);
+                let ran = serve(&modules, layer, job, host, &mut process, &mut engine).unwrap();
+                assert_eq!(ran, (want.closure(), want.output()), "{why}: {host}, key {key}");
+            }
+        }
+    };
+
+    let broken = version_of(20, "export fn go() -> Int effects [] {\n    return true;\n}\n");
+    assert_eq!(check(&modules, &broken).unwrap_err().code, "LG2:type.mismatch");
+    all(&mut layer, &mut shell, &mut router, &a, "a broken draft");
+    all(&mut layer, &mut shell, &mut router, &a, "B unchecked");
+    let cb = check(&modules, &b).unwrap();
+    all(&mut layer, &mut shell, &mut router, &a, "B checked, not active");
+
+    let job = invoke(&mut layer, &mut shell, &mut router, "tool.n.go", false);
+    let refused = serve(&modules, &mut layer, job, PROCESS, &mut process_host(), &mut Probe::default()).unwrap_err();
+    assert_eq!(refused.code, MODULE_NOT_CHECKED, "a module never activated");
+
+    activate(&modules, &cb);
+    all(&mut layer, &mut shell, &mut router, &b, "B active");
+}
+
+/// The view model's fixture profile, candidate and a further view's workload, as `tests/view_host.rs` declares them.
+fn view_model(layer: &CommandLayer) -> view::ViewModel {
+    const BIG: u64 = 1 << 40;
+    let value = |field: view::Field| match field {
+        view::Field::Overdraw => 1,
+        view::Field::ViewVertexEvals | view::Field::AdapterCpuBytes => 4,
+        _ => BIG,
+    };
+    let entries: Vec<(&str, u64, &str)> =
+        view::Field::ALL.iter().map(|field| (field.name(), value(*field), field.unit())).collect();
+    let profile = view::LimitProfile::from_entries("fixture-2", &entries).unwrap();
+    let revision = model_revision(layer.revision()).unwrap();
+    let part = |kind: view::PartKind, digest: [u8; 32]| view::BundlePart { kind, revision, digest };
+    let fixture = |name: &str| sha256(format!("{name} of {}", layer.revision().to_json().canonical()).as_bytes());
+    let parts = vec![
+        part(view::PartKind::Metadata, fixture("metadata")),
+        part(view::PartKind::Labels, sha256(layer.revision().digest.as_bytes())),
+        part(view::PartKind::Styles, fixture("styles")),
+    ];
+    let candidate = view::BundleCandidate { revision, mode: view::Mode::JumbleOff, parts };
+    let none = view::Workload::default();
+    view::ViewModel::new(view::Profile::Solving, profile, &candidate, none, none).unwrap()
+}
+
+/// EV1.7 (a view): `m`'s view row opens from a source that names A's source digest. A source naming B's digest is
+/// refused while B is unchecked (`EV1:input.module_not_checked`) and while B is checked and not active
+/// (`EV1:stale.activation_base`); the receipt carries the refusal, takes no job and opens nothing. Once B activates,
+/// B's digest opens and A's is stale.
+#[test]
+fn ct_ev1_04_a_view_source_opens_only_on_the_active_version() {
+    let (a, b) = (version(10), version(20));
+    let modules = Arc::new(modules());
+    activate(&modules, &check(&modules, &a).unwrap());
+    let (mut layer, mut shell, _) = layer();
+    let overlay = Overlay { module: "m".into(), entry: "go".into() };
+    layer.register_overlay(PANEL, Kind::View, &[], overlay.clone()).unwrap();
+    let model = Arc::new(Mutex::new(view_model(&layer)));
+    let declared = Arc::clone(&modules);
+    let views = ModelViews::new(model, move |source: &ViewSourceRef| {
+        bind_view_source(&declared, &overlay, source)?;
+        let workload =
+            view::Workload { vertex_evals: 1, stage_ops: 0, fragment_ops: 0, cpu_bytes: 1, gpu_bytes: 1, pixels: 0 };
+        let output = view::OutputAllowance::new(1 << 40, 16);
+        Ok(view::Declared { depends: view::Depends::STATE, workload, output, class: None })
+    });
+    layer.set_views(Box::new(views.clone()));
+    let mut open = |name: &str, digest: &str| {
+        let source = format!(r#"{{"overlay": {{"row": "{PANEL}", "module": "{digest}", "arguments": {{}}}}}}"#);
+        let args = json::parse(format!(r#"{{"view": "{name}", "source": {source}}}"#).as_bytes()).unwrap();
+        let receipt = shell.invoke(&mut layer, VIEW_OPEN_ROW, args).expect("delivered");
+        assert_eq!(receipt.job, None, "a view open takes no job: {:?}", receipt.status);
+        match receipt.status {
+            Status::Accepted => None,
+            Status::Refused(error) => Some(error.code),
+            other => panic!("{other:?}"),
+        }
+    };
+    let opened = |views: &ModelViews| -> Vec<String> {
+        views.model().lock().unwrap().views().iter().map(|id| id.as_str().to_owned()).collect()
+    };
+
+    assert_eq!(open("a1", &a.source()), None);
+    assert_eq!(open("b1", &b.source()), Some(MODULE_NOT_CHECKED), "B unchecked");
+    let cb = check(&modules, &b).unwrap();
+    assert_eq!(open("b2", &b.source()), Some(STALE_ACTIVATION_BASE), "B checked, not active");
+    assert_eq!(opened(&views), ["global", "local", "a1"]);
+    activate(&modules, &cb);
+    assert_eq!(open("b3", &b.source()), None);
+    assert_eq!(open("a2", &a.source()), Some(STALE_ACTIVATION_BASE), "A after B activated");
+    assert_eq!(opened(&views), ["global", "local", "a1", "b3"]);
+}
+
+/// EV1.11 on the host: the job of `m`'s query row is bound to A when the host takes it; its run is suspended at its
+/// probe read, on either host, while B activates with expected A; it resumes on A through the binding's boundary and
+/// its job completes with A's result. The next job binds B.
+#[test]
+fn ct_ev1_08_a_job_suspended_on_either_host_finishes_on_a_after_b_activates() {
+    let (a, b) = (version(10), version(20));
+    let mut process = process_host();
+    for host in HOSTS {
+        let modules = Arc::new(modules());
+        activate(&modules, &check(&modules, &a).unwrap());
+        let cb = check(&modules, &b).unwrap();
+        let (mut layer, mut shell, mut router) = layer();
+        let job = invoke(&mut layer, &mut shell, &mut router, GO, false);
+        let switched = Arc::new(Mutex::new(None));
+        let (m, out, expected) = (Arc::clone(&modules), Arc::clone(&switched), Some(a.closure()));
+        let mut engine = Probe {
+            hook: Some(Box::new(move || {
+                *out.lock().unwrap() = Some(m.activate_module("m", expected, cb.digest, cb.reference));
+            })),
+        };
+        let ran = serve(&modules, &mut layer, job, host, &mut process, &mut engine).unwrap();
+        let activation = switched.lock().unwrap().take().expect("the run was suspended at its probe read").unwrap();
+        assert_eq!((activation.previous, activation.new), (Some(a.closure()), b.closure()), "{host}");
+        assert_eq!(ran, (a.closure(), a.output()), "{host}: the suspended run finished on A");
+        let job = invoke(&mut layer, &mut shell, &mut router, GO, false);
+        let next = serve(&modules, &mut layer, job, host, &mut process, &mut Probe::default()).unwrap();
+        assert_eq!(next, (b.closure(), b.output()), "{host}: the next job binds B");
+    }
+}

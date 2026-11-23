@@ -1,11 +1,13 @@
 """Build C9's product on route B offline into work/build/c9-product/<stamp>/; never launch Godot, a window or a GPU.
 
-A product build holds nine parts, each built from this checkout:
+A product build holds ten parts, each built from this checkout:
 
 - `native/`: the S-A2 core (`renderer/core/build.cmd`), `sa2_interop.dll` with the shaders it loads beside it;
 - `host/c600_shell_host.dll`: the shell's native host (`renderer/bridge/host`), a release build;
 - `lx4/c600_shell_lx4.dll`: LX-4's editor library (`renderer/bridge/lx4`, C9 U8), a release build, which the shell
   loads only with `launch.py --lx4`;
+- `editor/c600_shell_editor.dll`: the editor library of LP4-3's write-check-run flow (`renderer/bridge/editor`), a
+  release build, which the shell's editor panel loads only with `launch.py --editor`;
 - `runtime/c600-runtime.exe`: the language runtime's process (`rust/c600-runtime`, route RT1), a release build, which
   the host starts (charter E3, a draft);
 - `shell/`: the Godot .NET shell (`build_shell.py`);
@@ -46,6 +48,7 @@ RECORD = "product.json"
 CORE_DLL = "native/sa2_interop.dll"
 HOST_DLL = "host/c600_shell_host.dll"
 LX4_DLL = "lx4/c600_shell_lx4.dll"
+EDITOR_DLL = "editor/c600_shell_editor.dll"
 PROJECT = "shell/project"
 ASSETS = "assets"
 # The twist menu that the turns' session pins (charter E2; draft: the I_a menu that KN3's and c600-input's tests pin;
@@ -96,6 +99,11 @@ def lx4_command() -> list[str]:
             "-p", "c600-shell-lx4"]
 
 
+def editor_command() -> list[str]:
+    return ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(BRIDGE / "Cargo.toml"),
+            "-p", "c600-shell-editor"]
+
+
 def runtime_command() -> list[str]:
     return ["cargo", "build", "--locked", "--offline", "--release", "--manifest-path", str(RUST / "Cargo.toml"),
             "-p", "c600-runtime"]
@@ -109,12 +117,12 @@ def fixture_command(build: Path, puzzle: str = "jumble-off") -> list[str]:
 
 
 def part_paths(build: Path) -> dict[str, Path]:
-    """Every file the product loads, by part name: the core with its shaders, the host, LX-4's library, the runtime,
-    the shell's assembly and project files (not Godot's or dotnet's generated folders), the model's files, the twist
-    menu and each puzzle's session fixture."""
+    """Every file the product loads, by part name: the core with its shaders, the host, LX-4's library, the editor
+    library, the runtime, the shell's assembly and project files (not Godot's or dotnet's generated folders), the
+    model's files, the twist menu and each puzzle's session fixture."""
     native, project, assets = build / "native", build / PROJECT, build / ASSETS
     paths = {"core:sa2_interop.dll": build / CORE_DLL, "host:c600_shell_host.dll": build / HOST_DLL,
-             "lx4:" + Path(LX4_DLL).name: build / LX4_DLL,
+             "lx4:" + Path(LX4_DLL).name: build / LX4_DLL, "editor:" + Path(EDITOR_DLL).name: build / EDITOR_DLL,
              "runtime:" + Path(RUNTIME).name: build / RUNTIME, "shell:assembly": project / build_shell.ASSEMBLY,
              "menu:" + Path(MENU).name: build / MENU}
     for puzzle, prefix in FIXTURE_PARTS.items():
@@ -183,6 +191,8 @@ def record(build: Path, executable: Path, head: str, dirty: bool) -> dict:
                               "-p c600-shell-host"),
                      "lx4": ("cargo build --locked --offline --release --manifest-path renderer/bridge/Cargo.toml "
                              "-p c600-shell-lx4"),
+                     "editor": ("cargo build --locked --offline --release --manifest-path renderer/bridge/Cargo.toml "
+                                "-p c600-shell-editor"),
                      "runtime": "cargo build --locked --offline --release --manifest-path rust/Cargo.toml -p c600-runtime",
                      "shell": " ".join(build_shell.build_command()),
                      **{"fixture " + puzzle: ("c600-shell-session-fixture --assets <build>/assets --menu "
@@ -228,13 +238,14 @@ def build(godot: str | None) -> Path:
     dirty = prepare_host.git("status", "--porcelain", "--", "renderer", "rust", "assets").strip() != ""
     out = BUILD_ROOT / dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     native, host, lx4, runtime, logs = out / "native", out / "host", out / "lx4", out / "runtime", out / "logs"
+    editor = out / "editor"
     if len(str(native)) > prepare_host.BUILD_PATH_LIMIT:
         raise ProductError("checkout path too long for the native build; use a shorter checkout path")
     if any(c in str(native) for c in ('"', "\r", "\n")):
         raise ProductError("unsupported build path")
     # Plain mkdir under the ignored work tree, never %TEMP% (Application Control).
     out.mkdir(parents=True)
-    for folder in (native, host, lx4, runtime, logs):
+    for folder in (native, host, lx4, editor, runtime, logs):
         folder.mkdir()
     env = os.environ.copy()
     for name in ("M600_SA2_CPU_CHECK", prepare_host.INJECT):
@@ -248,6 +259,9 @@ def build(godot: str | None) -> Path:
     print("lx4: cargo build --release -p c600-shell-lx4", flush=True)
     prepare_host.run_logged(lx4_command(), BRIDGE, env, 1800, logs / "lx4")
     shutil.copy2(BRIDGE / "target" / "release" / "c600_shell_lx4.dll", out / LX4_DLL)
+    print("editor: cargo build --release -p c600-shell-editor", flush=True)
+    prepare_host.run_logged(editor_command(), BRIDGE, env, 1800, logs / "editor")
+    shutil.copy2(BRIDGE / "target" / "release" / "c600_shell_editor.dll", out / EDITOR_DLL)
     print("runtime: cargo build --release -p c600-runtime", flush=True)
     # From rust/, so that cargo reads its .cargo/config.toml.
     prepare_host.run_logged(runtime_command(), RUST, env, 1800, logs / "runtime")

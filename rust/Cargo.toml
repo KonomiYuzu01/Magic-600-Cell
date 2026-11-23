@@ -6,6 +6,7 @@ members = [
     "c600-evidence", "c600-command", "c600-view", "c600-display", "c600-module", "c600-runtime", "c600-tools",
     "c600-input", "c600-jumble", "c600-durable", "c600-a2-filter", "c600-repr", "c600-jumble-tool",
     "c600-library", "c600-platform", "c600-build", "c600-render", "c600-lx4", "c600-lx2",
+    "c600-editor",
 ]
 
 [workspace.package]
