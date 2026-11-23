@@ -162,11 +162,13 @@ fn action(g: &mut Fixtures, letters: usize, points: usize) -> Vec<Vec<u64>> {
 /// over seeded actions, two runs of one declaration give equal records, and the record keeps the declaration whole
 /// (family, alphabet, bounds, beam, seed, budget, cost unit and identities) under the same key. The coverage is the
 /// test's own enumeration's: a completed search examines every word of the declared (reduced) family and counts its
-/// witnesses and their least length. A changed budget is another key, with its own coverage.
+/// witnesses and their least length. A changed budget is another key, with its own coverage. A beamed search covers
+/// completely only the lengths before the first level the beam truncated, never every length once it discarded.
 #[test]
 fn ct_lb5_07_one_search_key_repeats_coverage_and_stop_reason() {
     let loaded = search_module();
     let mut g = Fixtures::new(0x5175_0107);
+    let mut truncated = 0;
     for round in 0..24 {
         let (letters, points) = (1 + g.below(3) as usize, 2 + g.below(5) as usize);
         let mut decl = Decl::new(
@@ -210,7 +212,22 @@ fn ct_lb5_07_one_search_key_repeats_coverage_and_stop_reason() {
             assert_ne!(other.key(), decl.key(), "another budget is another key");
             assert_eq!(as_u64(field(&search(&loaded, &other), "examined")), (decl.limit + 1).min(words.len() as u64));
         }
+        if let (Some(width), "completed") = (decl.beam, stop.as_str()) {
+            // The lengths before the first level the beam truncated are the only ones covered completely.
+            let (mut size, mut complete) = (1u64, decl.max_length + 1);
+            for level in 1..=decl.max_length {
+                size *= letters as u64;
+                if size > width {
+                    complete = level;
+                    break;
+                }
+            }
+            assert_eq!(as_u64(field(&first, "complete_lengths")), complete, "{decl:?}");
+            assert_eq!(as_u64(field(&first, "discarded")) > 0, complete <= decl.max_length, "{decl:?}");
+            truncated += usize::from(complete <= decl.max_length);
+        }
     }
+    assert!(truncated > 0, "a beamed fixture discards candidates");
 }
 
 /// An interruption that arrives after a number of the run's polls, as a host's clock or the solver stops a run.
@@ -286,7 +303,9 @@ fn ct_lb5_07_budget_clock_and_error_stops_yield_no_negative() {
     beamed.beam = Some(2);
     let record = search(&loaded, &beamed);
     assert_eq!(outcome(&record), ("not_found_in_beam".into(), "completed".into(), false));
-    assert!(as_u64(field(&record, "discarded")) > 0);
+    assert_eq!(as_u64(field(&record, "discarded")), 1 + 4 + 4, "of 3 words at length 1 and of 6 at 2 and 3, 2 kept");
+    assert_eq!(as_u64(field(&record, "complete_lengths")), 1, "only length 0 escaped the beam");
+    assert!(!as_bool(field(&record, "exhaustive")));
 
     let mut seeded = decl.clone();
     seeded.seed = Some(7);

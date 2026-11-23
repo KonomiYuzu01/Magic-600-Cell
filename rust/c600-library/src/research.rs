@@ -54,9 +54,12 @@
 //!   unit `candidates`; a declaration with another unit, an applicable seed (the enumeration draws nothing) or an
 //!   unknown reduction is not run (DET.30's `not run`, stop `unsupported`). The search runs in a child scope with no
 //!   caps of its own (DET.60), so an error in it answers outcome `error` with no coverage. The first check in it is
-//!   the action's: rows of one length, images and the start point among its points; a malformed action is such an
-//!   error. A stop of the run's own budget or an interruption (a clock or the solver) ends the run with no record at
-//!   all. Neither gives a negative.
+//!   the input's: at least one letter, rows of one length, and the images, the start point and every goal point among
+//!   the action's points; malformed input is such an error. A stop of the run's own budget or an interruption (a
+//!   clock or the solver) ends the run with no record at all. Neither gives a negative.
+//! - LB5.2, coverage: `complete_lengths` counts the lengths 0, 1, ... whose words were all examined. A level after
+//!   the first beam discard is not complete, so a beamed run that discarded a candidate never reads as full coverage;
+//!   `discarded` counts the discards.
 //! - LB5.2, outcomes: `found`, `empty` (a completed enumeration of the whole declared, or reduced, family),
 //!   `not_found_in_beam` (completed, but the beam discarded candidates), `not_found_within_budget`, `not_run`,
 //!   `error` and `cut_off`. Only `empty` is a negative, for the declared family or, with a reduction, for the reduced
@@ -70,7 +73,8 @@
 //! - LB5.4, membership: D\[k\] is "within k letters of a target point" under the action; the answer is `inside` with
 //!   the least depth, `OUTSIDE_CERTIFIED_DOMAIN` only after every word of at most k letters was examined, and `unknown`
 //!   after a budget stop or an error. The scope is k, the domain's name and the reachability promise, and every answer
-//!   says `reachability: not_asserted`.
+//!   says `reachability: not_asserted`. Its input is checked as the search's, with the targets as goals and the
+//!   input as start, so a target or an input outside the action's points answers `unknown` with stop `error`.
 //! - LB1.11, admission: no LB1 code is registered for an expansion over a library entry's bound, so
 //!   `admitted_expansion` answers the refusal as a value with `admitted: false` and the exact length; chapter 05's
 //!   `PS1:resource_limit.word_expansion` stays the stored-word path's.
@@ -80,6 +84,10 @@
 //! - LB5.6, recognition: two poses fit when they are equal or the gauge relation pairs them, as given; the gauge is
 //!   data and the entry computes no group closure.
 //! - LB1.2: the rows are Rust data, as for the base library, because the IR draft carries no module manifest yet.
+//! - LB1.2, effects: each row's Effect field is the set of effects the checker infers for its functions, and it is a
+//!   subset of chapter 03's Effect column for the row. Where the chapter lists `pure, budgets` (LB1's four rows and
+//!   the bounds), `budgets` is the most an entry of the row may use; these entries use none and are pure. A `read a
+//!   snapshot` in the column belongs to the puzzle forms, which are not built.
 //!
 //! # Not built
 //!
