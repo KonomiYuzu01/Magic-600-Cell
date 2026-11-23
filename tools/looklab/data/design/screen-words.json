@@ -3,11 +3,11 @@
   "version": 1,
   "note": "Limits of the two automatic screen checks. The word limits are today's counts with a small margin, kept so a screen does not grow unnoticed; they are not the owner's text budgets for trial content. pointer_only lists the actions that have no command, so no path from the keyboard: the list may shrink and never grows unnoticed.",
   "words": {
-    "solve": 140,
-    "script": 110,
+    "solve": 155,
+    "script": 165,
     "analyse": 175,
-    "reference": 105,
-    "gallery": 155
+    "reference": 200,
+    "gallery": 215
   },
   "pointer_only": []
 }

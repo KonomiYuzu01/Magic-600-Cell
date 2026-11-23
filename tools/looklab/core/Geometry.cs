@@ -138,6 +138,17 @@ public sealed class Geometry
 
     public Projection Project(int globalVertex, StructureValues values, double[] q, TurnData turn, double theta)
     {
+        double[] p = Projected(globalVertex, values, q, turn, theta);
+        double px = p[0], py = p[1], pz = p[2];
+        double w = 5 - pz;
+        var projection = new Projection(px * values.Zoom / values.Aspect / w, py * values.Zoom / w, w);
+        return Finite(projection);
+    }
+
+    // The shader's projected point of a vertex for the point kinds (perspective, stereographic, orthographic):
+    // the place before the camera, where the Local view adds its spread.
+    public double[] Projected(int globalVertex, StructureValues values, double[] q, TurnData turn, double theta)
+    {
         ValidateProjection(globalVertex, values, q, turn, theta);
         if (GlobalLayout.IsLayout(values.Projection)) throw Json.Error("projection", "layout kind needs a GlobalLayout");
         double[] world = Multiply(q, Posed(globalVertex, values, turn, theta));
@@ -148,10 +159,7 @@ public sealed class Geometry
             ProjectionKind.Orthographic => 1,
             _ => throw Json.Error("projection", "unknown kind")
         };
-        double px = factor * world[0], py = factor * world[1], pz = factor * world[2];
-        double w = 5 - pz;
-        var projection = new Projection(px * values.Zoom / values.Aspect / w, py * values.Zoom / w, w);
-        return Finite(projection);
+        return new[] { factor * world[0], factor * world[1], factor * world[2] };
     }
 
     public Projection Project(int globalVertex, StructureValues values, double[] q, TurnData turn, double theta, GlobalLayout layout, double[] spin)

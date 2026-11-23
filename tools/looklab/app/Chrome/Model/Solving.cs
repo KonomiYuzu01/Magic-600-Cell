@@ -229,8 +229,21 @@ public sealed class SolvingDemo
     // What the last command changed, for the strip's change motion: slot names.
     public IReadOnlyList<string> LastChanged { get; private set; } = Array.Empty<string>();
     public event Action? Changed;
+    // The operation draft of the working orbit. Each orbit owns its draft (ADR-D01.63): leaving an orbit, by a
+    // switch or by activating Next, saves the draft and its settings, and the orbit entered gets its own back.
+    public OperationDraft? Draft { get; set; }
+    private readonly Dictionary<(string State, int Orbit), DraftSnapshot> drafts = new();
 
     public SolvingDemo(OrbitAtlas atlas) { Atlas = atlas; Reset(); }
+
+    // The draft in hand belongs to the orbit left in the state left; the state and orbit entered get their own.
+    // A change of demo state (F11) carries the drafts like a change of orbit.
+    private void Carry(SolvingState state, int from)
+    {
+        if (Draft == null || (state == State && from == State.Orbit)) return;
+        drafts[(state.Id, from)] = Draft.Save();
+        Draft.Load(drafts.TryGetValue((State.Id, State.Orbit), out DraftSnapshot? back) ? back : null);
+    }
 
     public void Reset() { States = new[] { MidSolve(Atlas), Endgame(Atlas), Fresh(Atlas) }; Index = 0; }
 
@@ -278,8 +291,17 @@ public sealed class SolvingDemo
         return s;
     }
 
-    public void NextState() { Index = (Index + 1) % States.Count; Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); }
-    public bool Show(string id) { int at = States.ToList().FindIndex(s => s.Id == id); if (at < 0) return false; Index = at; Tell(); return true; }
+    public void NextState()
+    {
+        SolvingState left = State; Index = (Index + 1) % States.Count; Carry(left, left.Orbit);
+        Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next");
+    }
+
+    public bool Show(string id)
+    {
+        int at = States.ToList().FindIndex(s => s.Id == id); if (at < 0) return false;
+        SolvingState left = State; Index = at; Carry(left, left.Orbit); Tell(); return true;
+    }
     private void Tell(params string[] slots) { LastChanged = slots; Safe.Raise(Changed); }
 
     private static int? Number(string? text) => text != null && int.TryParse(text.TrimStart('p', 'c', 'O'), NumberStyles.None, CultureInfo.InvariantCulture, out int n) ? n : null;
@@ -323,7 +345,8 @@ public sealed class SolvingDemo
         IReadOnlyList<int> order = Atlas.StageOrder;
         int? to = argument == null ? order[(order.ToList().IndexOf(State.Orbit) + 1) % order.Count] : Number(argument);
         if (to == null || to < 0 || to >= OrbitAtlas.Count) return "it needs an orbit from O00 to O34";
-        if (State.SwitchOrbit(to.Value)) Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next");
+        int from = State.Orbit;
+        if (State.SwitchOrbit(to.Value)) { Carry(State, from); Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); }
         return null;
     }
 
@@ -341,7 +364,8 @@ public sealed class SolvingDemo
     public string? ActivateNext()
     {
         if (State.Next is not { } next) return "no Next is set";
-        State.SwitchOrbit(next.Orbit); State.Target = next.Piece; State.Next = null;
+        int from = State.Orbit;
+        State.SwitchOrbit(next.Orbit); Carry(State, from); State.Target = next.Piece; State.Next = null;
         Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); return null;
     }
 }
@@ -386,6 +410,7 @@ public enum InputRoute { Draft, Direct }
 public enum GoalResult { Unset, Met, Unmet, Unknown }
 public enum CheckMode { Net, Strict }
 public enum CheckResult { Unchecked, Passed, Failed }
+public sealed record DraftSnapshot(IReadOnlyList<string>[] Phases, int Active, string? Goal, CheckMode Mode, InputRoute Route);
 
 // The draft line (ADR-D01.66): the operation draft in three phases, the route, the Goal and the check mode.
 // The Goal has its own result and never gates a commit: permission is not progress.
@@ -411,11 +436,73 @@ public sealed class OperationDraft
 
     // Demo evaluation, marked as demo wherever it shows: no engine reads the head here.
     public GoalResult GoalResult => Goal == null ? GoalResult.Unset : Count == 0 ? GoalResult.Unknown : twists[1].Count % 2 == 0 ? GoalResult.Met : GoalResult.Unmet;
-    // A word can pass Net and fail Strict: here a Prepare without a Cleanup fails Strict.
-    public CheckResult Result(CheckMode mode) => Count == 0 ? CheckResult.Unchecked : mode == CheckMode.Net || twists[0].Count == twists[2].Count ? CheckResult.Passed : CheckResult.Failed;
+    // The protection check (demo rule). In both modes a word whose own effects move the locked sample orbit fails.
+    // A word can pass Net and fail Strict: here a Prepare without a Cleanup of as many twists fails Strict.
+    public CheckResult Result(CheckMode mode) => Judge(Snapshot(), mode);
     public CheckResult Checked => Result(Mode);
-    // The complete operation is what a commit takes. Nothing about the Goal is asked here.
-    public bool CanCommit => Route == InputRoute.Draft && Count > 0;
+
+    private IReadOnlyList<string>[] Snapshot() => twists.Select(t => (IReadOnlyList<string>)t.ToArray()).ToArray();
+
+    private static CheckResult Judge(IReadOnlyList<string>[] phases, CheckMode mode)
+    {
+        if (phases.Sum(p => p.Count) == 0) return CheckResult.Unchecked;
+        if (SampleCheck.Effects(phases.SelectMany(p => p).ToArray()) is { } effects && effects[SampleCheck.Locked].Moved > 0) return CheckResult.Failed;
+        return mode == CheckMode.Net || phases[0].Count == phases[2].Count ? CheckResult.Passed : CheckResult.Failed;
+    }
+    // A complete operation in Draft is staged as the preview whatever its check says, so a failure is seen.
+    public bool CanStage => Route == InputRoute.Draft && Count > 0;
+    // The complete operation is what a commit takes, and only when the protection check in force passes: a failed
+    // check stops at the preview (ADR-D01.4 items 1 and 2). Nothing about the Goal is asked here.
+    public bool CanCommit => CanStage && Checked == CheckResult.Passed;
+
+    // The check of the staged preview (demo): its effects by the sample rule, its protection by the check in
+    // force. A failed check makes the preview impossible, so the commit stops there; the Goal is not asked.
+    public PreviewCheck StagedCheck() => Staged(Snapshot(), Mode);
+
+    // A word that moves the locked orbit is refused in both modes, exactly as the same word staged alone; then the
+    // mode's own rule decides.
+    private static PreviewCheck Staged(IReadOnlyList<string>[] phases, CheckMode mode)
+    {
+        PreviewCheck check = SampleCheck.Check(phases.SelectMany(p => p).ToArray());
+        if (check.Status != PreviewStatus.Ready) return check;
+        return Judge(phases, mode) switch
+        {
+            CheckResult.Passed => check with { Protection = $"{mode} protection check passed (demo rule)." + SampleCheck.Mark },
+            CheckResult.Failed => check with { Status = PreviewStatus.Impossible, Reason = $"the {mode} protection check failed (demo rule: Prepare and Cleanup differ)",
+                Protection = $"{mode} protection check failed (demo rule): the draft stops at the preview." },
+            _ => check with { Status = PreviewStatus.Refused, Reason = "the draft's protection is not checked", Protection = "Nothing was checked." },
+        };
+    }
+
+    public const string NotAPrefix = "these moves are not a prefix of the staged draft";
+
+    // The check of a prefix of the staged draft as its own preview (ADR-D01.12): the phases cut in order at the
+    // prefix's length and checked under the mode the draft was staged with, so a prefix keeps the draft's
+    // protection policy. It is taken when the draft is staged; later edits of the draft never change it.
+    public Func<IReadOnlyList<string>, PreviewCheck> PrefixCheck()
+    {
+        IReadOnlyList<string>[] phases = Snapshot(); CheckMode mode = Mode; string[] word = phases.SelectMany(p => p).ToArray();
+        return moves =>
+        {
+            if (moves.Count > word.Length || !moves.SequenceEqual(word.Take(moves.Count))) return new PreviewCheck(PreviewStatus.Refused, NotAPrefix, Array.Empty<OrbitEffect>(), "Nothing was checked.");
+            int left = moves.Count;
+            IReadOnlyList<string>[] cut = phases.Select(p => { int n = Math.Min(left, p.Count); left -= n; return (IReadOnlyList<string>)p.Take(n).ToArray(); }).ToArray();
+            return Staged(cut, mode);
+        };
+    }
+
+    // What an orbit keeps of its draft while the solver works elsewhere (ADR-D01.63).
+    public DraftSnapshot Save() => new(twists.Select(t => (IReadOnlyList<string>)t.ToArray()).ToArray(), Active, Goal, Mode, Route);
+
+    // The draft of the orbit entered: its own, or an empty one that keeps the route in force.
+    public void Load(DraftSnapshot? from)
+    {
+        InputRoute route = from?.Route ?? Route;
+        for (int i = 0; i < twists.Length; i++) { twists[i].Clear(); if (from != null) twists[i].AddRange(from.Phases[i]); }
+        Active = from?.Active ?? 1; Goal = from?.Goal; Mode = from?.Mode ?? CheckMode.Net;
+        if (route != Route) { Route = route; held.Clear(); Safe.Raise(HeldCleared); }
+        Safe.Raise(Changed);
+    }
 
     // The staged .6cs statement is the draft's projection.
     public string Statement => "preview operation { " + string.Join(" ", Phases.Select((name, i) => $"{name.ToLowerInvariant()} {{ {string.Join("; ", twists[i])} }}")) + " }";
@@ -449,6 +536,13 @@ public sealed class OperationDraft
         twists[Active].Add(twist.Trim()); Safe.Raise(Changed); return true;
     }
 
+    // A library macro joins the active phase as one change, so the draft stages once (ADR-D01.69).
+    public bool AppendAll(IReadOnlyList<string> word)
+    {
+        if (Route == InputRoute.Direct || word.Count == 0 || word.Any(string.IsNullOrWhiteSpace)) return false;
+        twists[Active].AddRange(word.Select(w => w.Trim())); Safe.Raise(Changed); return true;
+    }
+
     // "phase: twist; twist" replaces a phase; no argument takes the last twist of the active phase away.
     public string? Edit(string? argument)
     {
@@ -467,5 +561,37 @@ public sealed class OperationDraft
     // No argument declares the sample Goal, or takes the declared one away.
     public void SetGoal(string? argument) { Goal = argument == null ? (Goal == null ? SampleGoal : null) : string.IsNullOrWhiteSpace(argument) ? null : argument.Trim(); Safe.Raise(Changed); }
     public void SetMode(CheckMode mode) { Mode = mode; Safe.Raise(Changed); }
+
+    // protection.policy.set: Net or Strict by name; no argument changes to the other one.
+    public string? SetPolicy(string? argument)
+    {
+        CheckMode? to = argument?.Trim().ToLowerInvariant() switch
+        {
+            null => Mode == CheckMode.Net ? CheckMode.Strict : CheckMode.Net, "net" => CheckMode.Net, "strict" => CheckMode.Strict, _ => null,
+        };
+        if (to == null) return "it needs net or strict";
+        SetMode(to.Value); return null;
+    }
     public void Clear() { foreach (var t in twists) t.Clear(); Active = 1; Safe.Raise(Changed); }
+}
+
+// Where each anchor of the strip sits in a view (ADR-D01.62): the view's own projection of a position of the
+// working orbit. Position anchors (Target, A, B) project their positions; piece anchors (Wanted, Next) project the
+// position the piece sits on now, so they move when it moves. A point the projection does not place (off the view,
+// or no projection at all) gets no anchor: an anchor is never placed from an id.
+public static class StripAnchors
+{
+    public static IReadOnlyDictionary<string, (double X, double Y, bool OnPiece)> Of(SolvingState s, Func<int, int, (double X, double Y)?>? project)
+    {
+        var found = new Dictionary<string, (double X, double Y, bool OnPiece)>(StringComparer.Ordinal);
+        if (project == null) return found;
+        void Put(string slot, int? position, bool onPiece)
+        {
+            if (position is { } p && p >= 0 && p < s.Facts.Pieces && project(s.Orbit, p) is { } at) found[slot] = (at.X, at.Y, onPiece);
+        }
+        Put("target", s.Target, false); Put("buffer_a", s.BufferA, false); Put("buffer_b", s.BufferB, false);
+        Put("wanted", s.WantedAt, true);
+        if (s.Next is { } n && n.Orbit == s.Orbit && n.Piece >= 0 && n.Piece < s.Facts.Pieces) Put("next", s.Where(n.Piece), true);
+        return found;
+    }
 }

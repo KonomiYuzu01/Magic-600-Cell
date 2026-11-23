@@ -70,7 +70,8 @@ public sealed partial class DraftLine : PanelContainer
         CheckChip = new Button { Name = "CheckChip", ThemeTypeVariation = "ToolButton", FocusMode = FocusModeEnum.None, Text = $"{mode} \u00b7 {said}",
             TooltipText = $"Check mode. Net: {Draft.Result(CheckMode.Net).ToString().ToLowerInvariant()}. Strict: {Draft.Result(CheckMode.Strict).ToString().ToLowerInvariant()}. A word can pass Net and fail Strict. Click to change the mode. Demo data." };
         CheckChip.AddThemeColorOverride("font_color", t.C(check == CheckResult.Failed ? "state.invalid" : check == CheckResult.Unchecked ? "text.dim" : "chip.check_mode." + mode.ToLowerInvariant()));
-        CheckChip.Pressed += () => Draft.SetMode(Draft.Mode == CheckMode.Net ? CheckMode.Strict : CheckMode.Net); row.AddChild(CheckChip);
+        // The chip sets the policy through the command table's row (protection.policy.set), like a key would.
+        CheckChip.Pressed += () => Safe.Raise(Command, "protection.policy.set", Draft.Mode == CheckMode.Net ? "strict" : "net"); row.AddChild(CheckChip);
         lamp = new Control { Name = "SettlingLamp", CustomMinimumSize = new Vector2(t.Px("icon.small"), 0), TooltipText = "Settling lamp: lit while the settle interval runs after a change" };
         Control mine = lamp;
         mine.Draw += () =>

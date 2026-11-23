@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-23] decision | A7: the design system frozen
+The owner froze A7: ADR-D01 is accepted at revision 6 as UI/UX freeze round 1 (framework items and slot names, not values), and its text is published under `docs/architecture/1.0/design/adr/` ([decision](decisions/owner-decisions-2026-11-23-a7-freeze.md)). The A6 Astra review with Computer Use and its scoped re-check are answered; the Look Lab fixes land with it, and the build's full acceptance moves to the stage 2 greybox check.
+
 ## [2026-11-22] decision | The design-system ADR line's evening decisions and A5
 Recorded the owner's evening answers on the ADR line in [owner-decisions-2026-11-22-adr-line-evening](decisions/owner-decisions-2026-11-22-adr-line-evening.md): revision 4's seven options, A5's stage 10 scope, the ADR-D02 and ADR-D03 shells, ADR-D03's learning-curve solve test, A5's budget past the USD 150 ceiling, the 1.0 log file to LP4, and A6 with computer use. The same pull request lands A5's Look Lab build.
 

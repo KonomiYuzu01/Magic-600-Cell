@@ -210,3 +210,26 @@ public sealed class ScriptSlots
         Safe.Raise(Changed);
     }
 }
+
+// The author class the host records for a run (ADR-D01.4 item 4 as amended in revision 4). A script can neither
+// declare nor hide it: the host draws the frame from it.
+public enum AuthorClass { BuiltIn, Own, Other }
+
+public static class ScriptMarks
+{
+    // A built-in tool whose module digest matches the shipped lockfile is built-in. The solver's own scripts,
+    // forks of built-in tools included, are their own. Packages by others and modules of unknown origin are
+    // other; so is a shipped module whose digest no longer matches and that the solver did not fork.
+    public static AuthorClass Of(bool shipped, bool digestMatches, bool own) => shipped && digestMatches ? AuthorClass.BuiltIn : own ? AuthorClass.Own : AuthorClass.Other;
+
+    // The frame of each class: the mark alone, the mark and a thin border, the mark and a patterned border.
+    public static string Frame(AuthorClass author) => author switch { AuthorClass.BuiltIn => "ScriptFrameBuiltIn", AuthorClass.Own => "ScriptFrame", _ => "ScriptFrameOther" };
+    public static bool Patterned(AuthorClass author) => author == AuthorClass.Other;
+    public static bool Bordered(AuthorClass author) => author != AuthorClass.BuiltIn;
+    public static string Says(AuthorClass author) => author switch
+    {
+        AuthorClass.BuiltIn => "a built-in tool whose module matches the shipped lockfile",
+        AuthorClass.Own => "your own script",
+        _ => "a package by another author, or a module of unknown origin",
+    };
+}

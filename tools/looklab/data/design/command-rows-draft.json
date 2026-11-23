@@ -1,0 +1,70 @@
+{
+  "format": "magic600-design-command-rows",
+  "version": 1,
+  "note": "Draft command rows: actions the chrome offers that the command table does not hold yet. The first five are the design-system record's (revision 6, Q5); the last four are Look Lab's own, for actions its Library and History offer (A6 re-check N-7), proposed to the record. They join the command table at its freeze; until then Look Lab registers them after the table's rows. Their default keys are drafted with the default keymap, so none is bound here; the palette can bind each one.",
+  "commands": [
+    {
+      "id": "session.branch.replay",
+      "label": "Replay kept branch as preview",
+      "kind": "query",
+      "contexts": ["any"],
+      "note": "Prepares the moves of a kept branch as one preview with its own checks and effects. It never commits; the solver commits the preview like any other (ADR-D01.16). Argument: the branch number."
+    },
+    {
+      "id": "preview.side.both",
+      "label": "Preview: before beside after",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "The preview view's stage compares the committed state with the state after the whole sequence, side by side (ADR-D01.10)."
+    },
+    {
+      "id": "preview.side.before",
+      "label": "Preview: before only",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "The preview view's stage shows the committed state (ADR-D01.10)."
+    },
+    {
+      "id": "preview.side.after",
+      "label": "Preview: after only",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "The preview view's stage shows the state after the whole sequence (ADR-D01.10)."
+    },
+    {
+      "id": "preview.side.next",
+      "label": "Preview: next side",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "Cycles the preview view's stage through both, before and after (ADR-D01.10)."
+    },
+    {
+      "id": "library.branch.toggle",
+      "label": "Library: fold or open a branch",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "Folds or opens one branch of the Library tree (ADR-D01.69). Argument: the branch title (Macros, Templates, Sets, Blocks, Saved states, Built-in). Proposed by Look Lab."
+    },
+    {
+      "id": "layout.roll",
+      "label": "Roll the layout history to a step",
+      "kind": "commit",
+      "contexts": ["any"],
+      "note": "Restores the arrangement of one step of the layout history as one layout action (ADR-D01.14). Argument: the step number. Proposed by Look Lab."
+    },
+    {
+      "id": "history.show",
+      "label": "History: show moves or layout",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "Shows the move history or the layout history in the History dock (ADR-D01.14). Argument: moves or layout; none shows the moves. Proposed by Look Lab."
+    },
+    {
+      "id": "history.entry.toggle",
+      "label": "History: open or close an entry",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "Opens a move history entry in place to its moves, or closes it (ADR-D01.15). Argument: the entry id. Proposed by Look Lab."
+    }
+  ]
+}

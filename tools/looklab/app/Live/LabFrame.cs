@@ -29,8 +29,9 @@ internal static class LabFrame
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
     {
-        (DockSide.Left, "history", "History", "panel.history", "No moves yet"),
+        (DockSide.Left, "library", "Library", "panel.library", "No records yet"),
         (DockSide.Left, "scripts", "Scripts", "panel.scripts", "No programs yet"),
+        (DockSide.Right, "history", "History", "panel.history", "No moves yet"),
         (DockSide.Right, "inspector", "Inspector", "panel.inspector", "Nothing selected"),
         (DockSide.Right, "slot.1", "Script panel 1", "panel.slot1", "Empty panel slot"),
         (DockSide.Right, "slot.2", "Script panel 2", "panel.slot2", "Empty panel slot"),
@@ -116,6 +117,8 @@ internal static class LabFrame
         // Commands: the registry is the command table, the keymap and the palette are generated from it. The
         // lab has no engine, so only the commands the frame itself carries out are available here.
         var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(root, "docs/progress/1.0/command-table.json")));
+        // The record's draft rows (replay a kept branch, the preview's sides) join the table at its freeze.
+        registry.AddRows(File.ReadAllText(Path.Combine(folder, "command-rows-draft.json")));
         // The lab shows the solving commands in the owner's words; the table's ids and labels are not edited.
         registry.Relabel(File.ReadAllText(Path.Combine(folder, "command-labels.json")));
         Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
@@ -209,6 +212,7 @@ internal static class LabFrame
                 case "theme.select" when argument == "preset.next": NextPreset(); break;
                 case "theme.select": appearance.Edit(a => a.SetTheme(Next(themes.Select(t => t.Id).ToArray(), a.Theme)), true, true); break;
                 case "density.preset.set": appearance.Edit(a => a.SetDensity(Next(design.Densities, a.Density)), true, false); break;
+                case "operation.preview" when argument != null && argument.StartsWith(LabSolve.MacroPreview, StringComparison.Ordinal): solve.PreviewMacro(argument.Substring(LabSolve.MacroPreview.Length)); break;
                 case var sample when LabDemo.Handles(sample): demo.Execute(command, argument); break;
                 case var solving when LabSolve.Handles(solving): solve.Execute(command, argument, registry.Commands[command].Label); break;
                 default: frame.Say(registry.Commands[command].Label + ": nothing to do for " + argument, true); break;
@@ -239,7 +243,30 @@ internal static class LabFrame
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
         inspect = new LabInspect(app, frame, demo); Inspects.Add(frame, inspect);
         // The solving surface on the pair's body: the relationship strip on the seam, anchors in both views.
-        solve = new LabSolve(frame, root, id => motions.Seconds(id, design, look.ReducedMotion), Execute, demo); Solves.Add(frame, solve);
+        // The anchors sit where each view's own projection puts the sample slot of their position (B-10 of A6).
+        var places = new ScenePlaces(root, app.View.Geometry);
+        (double X, double Y)? Place(LookViewport? view, int orbit, int position)
+        {
+            if (view == null || places.Slot(orbit, position) is not { } slot) return null;
+            ShaderMaterial m = view.Material;
+            var values = new StructureValues(m.GetShaderParameter("cs").AsSingle(), m.GetShaderParameter("ss").AsSingle(), m.GetShaderParameter("d4").AsSingle(),
+                m.GetShaderParameter("zoom").AsSingle(), m.GetShaderParameter("aspect").AsSingle(), (ProjectionKind)m.GetShaderParameter("projection_kind").AsInt32());
+            static double[] Columns(Godot.Projection p) => new double[] { p.X.X, p.X.Y, p.X.Z, p.X.W, p.Y.X, p.Y.Y, p.Y.Z, p.Y.W, p.Z.X, p.Z.Y, p.Z.Z, p.Z.W, p.W.X, p.W.Y, p.W.Z, p.W.W };
+            Godot.Vector4 f = m.GetShaderParameter("view_frame").AsVector4(), axis = m.GetShaderParameter("focus_axis").AsVector4();
+            // Local's cap and spread are the shader's (A6 re-check B-10): an anchor follows the spread, and a cell the
+            // view does not draw has no anchor.
+            var focus = new LocalFocus(new double[] { axis.X, axis.Y, axis.Z, axis.W }, m.GetShaderParameter("focus_cos").AsSingle(), m.GetShaderParameter("focus_spread").AsSingle());
+            try
+            {
+                return ScenePlaces.InView(places.Project(slot, values, Columns(m.GetShaderParameter("q").AsProjection()), Columns(m.GetShaderParameter("spin").AsProjection()),
+                    view.Turn, m.GetShaderParameter("theta").AsSingle(), view.Layout, new FocusFrame(f.X, f.Y, f.Z), focus));
+            }
+            catch (FormatException) { return null; }
+        }
+        solve = new LabSolve(frame, root, id => motions.Seconds(id, design, look.ReducedMotion), Execute, demo,
+            (orbit, position) => Place(app.View, orbit, position), (orbit, position) => Place(app.Linked.Local, orbit, position)); Solves.Add(frame, solve);
+        // The Library dock of the Solve layout (B-6 of A6): its rows send commands like any other control.
+        frame.SetContent("library", solve.LibraryView);
         frame.SetStrip(solve.Bars(demo.Bar));
         app.ViewParts["frame.bindings"] = (() => inspect.Inspector.Store(), v => inspect.Inspector.Restore(v));
         // Scripts: editor, Scripts dock, console line, panel slots, canvas and the solver's own key bindings.

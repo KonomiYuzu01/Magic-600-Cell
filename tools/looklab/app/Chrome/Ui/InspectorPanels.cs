@@ -8,7 +8,7 @@ namespace Magic600.Chrome;
 // With the keyboard on a field: Left and Right step by the ladder's rung, Up and Down change the rung, Enter
 // types, = starts an expression, Delete resets. The small ladder beside the value shows the rung.
 // One numeric field with the shared gesture set (ADR-D01.23): drag the value, double-click to type a number or
-// "=" and an expression, Up and Down as the ladder while typing (Shift coarser, Alt finer), click the label to
+// "=" and an expression, Up and Down as the ladder while typing (Shift coarser, Alt one step), click the label to
 // reset. The mark beside the label names where the value comes from.
 public sealed partial class ValueField : HBoxContainer
 {
@@ -80,7 +80,7 @@ public sealed partial class ValueField : HBoxContainer
             if (button.Pressed && button.DoubleClick) BeginEdit();
         }
         else if (input is InputEventMouseMotion motion && (motion.ButtonMask & MouseButtonMask.Left) != 0)
-            DragBy(motion.Relative.X, motion.ShiftPressed ? 10 : motion.AltPressed ? .1 : InspectorModel.Rungs[model.Rung(Field.Id)]);
+            DragBy(motion.Relative.X, motion.ShiftPressed ? 10 : motion.AltPressed ? 1 : InspectorModel.Rungs[model.Rung(Field.Id)]);
         else if (input is InputEventKey { Pressed: true } key && Editor == null && Keyed(key.Keycode)) Value.AcceptEvent();
     }
 
@@ -121,7 +121,7 @@ public sealed partial class ValueField : HBoxContainer
             if (key.Keycode == Key.Escape) { EndEdit(); AcceptEvent(); }
             else if (key.Keycode is Key.Up or Key.Down)
             {
-                model.Nudge(Field.Id, key.Keycode == Key.Up ? 1 : -1, key.ShiftPressed ? 10 : key.AltPressed ? .1 : 1);
+                model.Nudge(Field.Id, key.Keycode == Key.Up ? 1 : -1, key.ShiftPressed ? 10 : 1);
                 if (Editor != null) Editor.Text = Field.Display;
                 AcceptEvent();
             }

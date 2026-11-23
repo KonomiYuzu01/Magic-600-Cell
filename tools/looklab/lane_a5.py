@@ -1,6 +1,10 @@
 """A5 design-system build: headless checks on the staged project and its directory guard."""
 import re
 
+# The sweep presses every visible button in every workspace (about 760 presses, about 230 seconds on the
+# owner's machine on 23 November 2026), so it has a longer limit than the other Godot runs.
+SWEEP_TIMEOUT = 400
+
 
 CHECKS = (
     ("a5-live", r"LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=15 checks=7"),
@@ -21,7 +25,8 @@ FAULTS = (
 
 def run(godot, stage, temporary, env, common, godot_run, failure):
     for mode, pattern in CHECKS:
-        result = godot_run(godot, stage, temporary, env, ["--headless", *common, mode])
+        limit = {"timeout": SWEEP_TIMEOUT} if mode == "a5-sweep" else {}
+        result = godot_run(godot, stage, temporary, env, ["--headless", *common, mode], **limit)
         if sum(re.fullmatch(pattern, line) is not None for line in result.stdout.splitlines()) != 1:
             raise failure("A5 result missing, repeated or wrong counts: " + mode)
     for mode, fault in FAULTS:

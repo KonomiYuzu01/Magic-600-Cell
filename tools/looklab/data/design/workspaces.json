@@ -7,8 +7,8 @@
       "name": "Solve",
       "arrangement": {
         "docks": {
-          "left": "history",
-          "right": null,
+          "left": "library",
+          "right": "history",
           "bottom": null
         },
         "pair": {
@@ -61,7 +61,7 @@
       "name": "Analyse",
       "arrangement": {
         "docks": {
-          "left": "history",
+          "left": "library",
           "right": "inspector",
           "bottom": "problems"
         },

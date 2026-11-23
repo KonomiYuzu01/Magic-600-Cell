@@ -198,6 +198,16 @@ internal sealed class LabScripts
 
     private PackageManifest? PackageOf(string program) => packages.FirstOrDefault(p => Path.GetFileNameWithoutExtension(p.File) == program);
 
+    // The author class the host records for a program (ADR-D01.4 item 4): a sample program on file is the
+    // solver's own, an installed package's program is another author's, and anything else is of unknown origin.
+    // No shipped built-in tool runs in this lab; the gallery shows that frame.
+    public AuthorClass AuthorOf(string? program)
+    {
+        if (program == null) return AuthorClass.Other;
+        string name = program.EndsWith(".6cs", StringComparison.Ordinal) ? Path.GetFileNameWithoutExtension(program) : program.Split('.')[0];
+        return ScriptMarks.Of(shipped: false, digestMatches: false, own: programs.Any(p => p.Id == name) && PackageOf(name) == null);
+    }
+
     private void Reload()
     {
         Load(); Register(); Editor.SetPrograms(programs); List.Packages = packages.Select(p => (p, Installed.Installed.Contains(p.Id))).ToArray(); List.SetPrograms(programs);
@@ -326,7 +336,7 @@ internal sealed class LabScripts
                 frame.Model.ShowDock(DockSide.Right, SlotId(Slots.Mount(CensusPanel)));
                 Result(entry, "record { cells: 600, faces: 1200, edges: 720, vertices: 120 }", "Census panel mounted"); break;
             case "script.census.fibres":
-                Canvas.Show(Fibres(), "census.fibres");
+                Canvas.Show(Fibres(), "census.fibres", AuthorOf("census"));
                 if (!frame.Model.IsOpen("canvas")) frame.Model.Drop("canvas", FrameModel.Pair, DropZone.Bottom); else frame.Model.Activate("canvas");
                 Result(entry, "12", "12 fibres drawn"); break;
             case "script.layout.side_by_side":
@@ -374,7 +384,7 @@ internal sealed class LabScripts
         facts = null;
         if (Shown("facts", MountKind.Inspector))
         {
-            facts = new ScriptPanelHost(FactsPanel, Spec(FactsPanel), () => frame.Tokens, false); inspect.InspectorColumn.AddChild(facts); Targets();
+            facts = new ScriptPanelHost(FactsPanel, Spec(FactsPanel), () => frame.Tokens, false, AuthorOf(Spec(FactsPanel)?.Program)); inspect.InspectorColumn.AddChild(facts); Targets();
         }
         // Docked panel.
         if (!Mounts.IsOn("mounts", MountKind.Panel) && Slots.SlotOf(TunerPanel) >= 0) Slots.Unmount(TunerPanel);
@@ -382,7 +392,7 @@ internal sealed class LabScripts
         bool view = Shown("ring_view", MountKind.View);
         if (view)
         {
-            View.Show(RingCensus(), "mounts.ring_view");
+            View.Show(RingCensus(), "mounts.ring_view", AuthorOf("mounts"));
             if (!frame.Model.IsOpen(RingView)) frame.Model.Drop(RingView, FrameModel.Pair, DropZone.Bottom); else frame.Model.Activate(RingView);
         }
         else if (frame.Model.IsOpen(RingView)) frame.Model.Close(RingView);
@@ -410,7 +420,7 @@ internal sealed class LabScripts
             var marks = new List<CanvasMark> { new("circle", .5, .5, .31, 0, tuner["tint"]) };
             for (int i = 0; i < 30; i++) marks.Add(new CanvasMark("dot", .5 + .31 * Math.Cos(i * Math.Tau / 30), .5 + .31 * Math.Sin(i * Math.Tau / 30), .006, 0, tuner["tint"]));
             surface.Show(marks);
-            var legend = new PanelContainer { ThemeTypeVariation = "ScriptFrame", Name = "ScriptLegend" }; overlay.AddChild(legend);
+            var legend = new PanelContainer { Name = "ScriptLegend" }; ScriptFrames.Apply(legend, AuthorOf("mounts")); overlay.AddChild(legend);
             legend.Position = new Vector2(frame.Tokens.Px("space.2"), frame.Tokens.Px("control.height") + 3 * frame.Tokens.Px("space.2"));
             Button reveal = SessionWidgets.Tool("script.mark", "Drawn by mounts.6cs: show its line. Drag it into the editor for a reference.", frame.Tokens,
                 () => { if (Find("script.mounts.annotate_ring") is { } entry) { Open(entry.Program, entry.Line); Editor.Reveal(entry); } }, "ring " + tuner["ring"]);
@@ -452,8 +462,10 @@ internal sealed class LabScripts
         string line = text.Trim().TrimStart('>').Trim().TrimEnd(';').Trim();
         if (line.Length == 0) return;
         Lines.Add(line); feedback.Log(ConsoleRows.Write(ConsoleKind.Typed, line));
-        if (Regex.IsMatch(line, @"^(commit\b|operation\.preview\.commit\b)")) { Say(ConsoleKind.Lock, "A typed line never commits."); return; }
-        quiet = true;
+        if (CommitPaths.TypedRefusal(line) is { } never) { Say(ConsoleKind.Lock, never); return; }
+        // Whatever the line runs knows it came from a typed line, so nothing it runs writes the move history:
+        // in Direct a typed twist is staged, not committed (ADR-D01.58).
+        quiet = true; demo.Surface = InputSurface.TypedLine;
         try
         {
             Match call = Regex.Match(line, @"^(?:preview\s+|run\s+)?([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)\s*(?:\(.*\))?$");
@@ -462,7 +474,7 @@ internal sealed class LabScripts
             else if (registry.Commands.ContainsKey(parts[0])) run(parts[0], parts.Length > 1 ? parts[1].Trim() : null);
             else Fail($"unknown word `{parts[0]}`");
         }
-        finally { quiet = false; }
+        finally { quiet = false; demo.Surface = InputSurface.Key; }
     }
 
     // The next key pressed becomes the binding of the command; Esc leaves it.
@@ -602,7 +614,7 @@ internal sealed class LabScripts
                     tab.Pressed += () => Slots.Mount(name); tabs.AddChild(tab);
                 }
             }
-            var host = new ScriptPanelHost(id, Spec(id), () => frame.Tokens) { SizeFlagsVertical = Control.SizeFlags.ExpandFill }; host.Unmount += panel => run("panel.unmount", panel);
+            var host = new ScriptPanelHost(id, Spec(id), () => frame.Tokens, true, AuthorOf(Spec(id)?.Program)) { SizeFlagsVertical = Control.SizeFlags.ExpandFill }; host.Unmount += panel => run("panel.unmount", panel);
             host.Edited += (widget, value) => Edit(id, widget, value);
             var scroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled }; scroll.AddChild(host); host.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             column.AddChild(scroll); frame.SetContent(SlotId(i), column);

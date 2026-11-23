@@ -229,11 +229,14 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
 }
 
 // The anchors of the strip in one view. Position anchors (Target, A, B) stay on positions; piece anchors (Wanted,
-// Next) sit where the piece sits now, so they move when it moves. Without an engine the places on the picture are
-// demo places: fixed per position, never read from the scene.
+// Next) sit where the piece sits now, so they move when it moves. Each sits where the view's own projection puts
+// its point (StripAnchors), so it stays on its geometry when the camera turns; with no projection none is drawn.
 public sealed partial class AnchorLayer : Control
 {
     private readonly RelationStrip strip; private readonly Func<TokenSet> tokens; private readonly bool marker; private readonly Func<Vector2> seam;
+    // The view's projection of a position of an orbit, as a place from 0 to 1: set by the host.
+    public Func<int, int, (double X, double Y)?>? Project { get; set; }
+    private string drawn = "";
     // The grip marker of the Local view takes the route's pattern: broken for Draft, whole for Direct. Null draws none.
     public Func<bool>? GripDraft { get; set; }
 
@@ -249,21 +252,17 @@ public sealed partial class AnchorLayer : Control
     private void Again() { if (IsInstanceValid(this)) QueueRedraw(); }
 
     // Where each anchor is, by slot: (place in the view from 0 to 1, on a piece).
-    public IReadOnlyDictionary<string, (Vector2 At, bool OnPiece)> Anchors()
-    {
-        SolvingState s = strip.Demo.State; var found = new Dictionary<string, (Vector2, bool)>(StringComparer.Ordinal);
-        Vector2 Place(int position) { uint h = (uint)(position * 2654435761L + s.Orbit * 40503L); return new Vector2(.2f + (h % 1000) / 1000f * .6f, .2f + (h / 1000 % 1000) / 1000f * .6f); }
-        bool In(int? p) => p is { } x && x >= 0 && x < s.Facts.Pieces;
-        if (In(s.Target)) found["target"] = (Place(s.Target!.Value), false);
-        if (In(s.BufferA)) found["buffer_a"] = (Place(s.BufferA!.Value), false);
-        if (In(s.BufferB)) found["buffer_b"] = (Place(s.BufferB!.Value), false);
-        if (s.WantedAt is { } w) found["wanted"] = (Place(w), true);
-        if (s.Next is { } n && n.Orbit == s.Orbit && n.Piece >= 0 && n.Piece < s.Facts.Pieces) found["next"] = (Place(s.Where(n.Piece)), true);
-        return found;
-    }
+    public IReadOnlyDictionary<string, (Vector2 At, bool OnPiece)> Anchors() =>
+        StripAnchors.Of(strip.Demo.State, Project).ToDictionary(a => a.Key, a => (new Vector2((float)a.Value.X, (float)a.Value.Y), a.Value.OnPiece), StringComparer.Ordinal);
+
+    // The camera turns without a change of the state: the anchors are placed again each frame and drawn again when
+    // one has moved by half a pixel.
+    private string Placed() => string.Join(";", Anchors().OrderBy(a => a.Key, StringComparer.Ordinal).Select(a => $"{a.Key}:{Mathf.Round(a.Value.At.X * Size.X * 2)},{Mathf.Round(a.Value.At.Y * Size.Y * 2)}"));
+    public override void _Process(double delta) { if (Project != null && IsVisibleInTree() && Placed() != drawn) QueueRedraw(); }
 
     public override void _Draw()
     {
+        drawn = Placed();
         TokenSet t = tokens(); float size = t.Px("icon.small") * (marker ? .8f : 1.2f);
         if (GripDraft is { } route)
         {

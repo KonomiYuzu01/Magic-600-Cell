@@ -31,7 +31,9 @@ public sealed partial class OrbitRail : PanelContainer
         Refresh();
     }
 
-    public void SetOrder(bool byId) { ByOrbitId = byId; Refresh(); }
+    // Raised when the order setting changes, so the signatures drawn elsewhere follow the rail.
+    public event Action? OrderChanged;
+    public void SetOrder(bool byId) { ByOrbitId = byId; Refresh(); Safe.Raise(OrderChanged); }
     public IReadOnlyList<RailCell> Cells() => OrbitRailModel.Cells(Demo.State, ByOrbitId);
     public void Recolour() => Refresh();
 
