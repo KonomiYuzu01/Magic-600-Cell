@@ -321,8 +321,9 @@ fn no_other_path_writes_the_grip_map_or_the_macro_base() {
         0
     );
 
-    // Forged journals: a job's completion that writes either, a rebind relabelled as another row or caller, a write of
-    // another record under the row, and a save without its stored confirmation or with a record that does not read.
+    // Forged journals: a job's completion that writes either or that names either row (with a record of its own name),
+    // a rebind relabelled as another row or caller, a write of another record under the row, and a save without its
+    // stored confirmation or with a record that does not read.
     let started = f.invoke(THEME, json::object([("family", text("dawn"))]));
     let Status::Running(job) = started.status else { panic!("{THEME}: {:?}", started.status) };
     assert_eq!(f.layer.take_program_job().map(|taken| taken.job), Some(job));
@@ -337,6 +338,8 @@ fn no_other_path_writes_the_grip_map_or_the_macro_base() {
     let forgeries: Vec<Box<dyn Fn(&mut MemoryStore)>> = vec![
         Box::new(move |s| s.log[theme_at].records[0].name = SLOT_MAP_RECORD.into()),
         Box::new(move |s| s.log[theme_at].records[0].name = "macro/m".into()),
+        Box::new(move |s| s.log[theme_at].row = GRIP_REBIND_ROW.into()),
+        Box::new(move |s| s.log[theme_at].row = MACRO_SAVE_ROW.into()),
         Box::new(move |s| s.log[rebind_at].row = "workspace.set".into()),
         Box::new(move |s| s.log[rebind_at].caller = Caller::Runtime { run: "r".into() }),
         Box::new(move |s| s.log[rebind_at].record.as_mut().unwrap().name = "grip/other".into()),

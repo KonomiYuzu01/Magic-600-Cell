@@ -18,8 +18,9 @@
 //!   layer's revision. c600-input binds no key to that row yet, so this map is the host's draft. The router's grip is
 //!   slot 0, cap 0 (draft: `grip.rebind` and `grip.select` are not built, so the cap never changes). Every other key
 //!   reaches the router too; the rows it names that the layer does not build are refused there and change nothing. A
-//!   key whose row the layer builds and that changes the head (`session.undo` and `session.redo` on Ctrl+Z and Ctrl+Y)
-//!   is [`Press::Other`]: the host shows the new head, and the control fails, since its replay knows only twists.
+//!   key whose row the layer builds and that changes the head (`session.undo` and `session.redo` on Ctrl+KeyZ and
+//!   Ctrl+KeyY) is [`Press::Other`]: the host shows the new head, and the control fails, since its replay knows only
+//!   twists.
 //! - A measured press is a key-down (not a repeat) whose binding is the puzzle's twist row: committed, or refused by
 //!   the router or the layer. A repeat of a twist key is dropped by the router (EV4.6), so it is never a press.
 //! - The correctness control ([`Turns::check`]) runs once, when the shell closes the session: the live head, the head
@@ -33,15 +34,15 @@
 //!
 //! - LP4-3's write-check-run flow (a draft; [`Turns::register_row`] and the calls after it): a checked and activated
 //!   user module's entry is registered as a language overlay row, a `query` row with its label and no grant
-//!   (`CommandLayer::register_overlay_with`), with its key bound in the router's map and in the shell's keymap, which
-//!   the palette reads (`Shell::read_palette`). The solver invokes it from the palette ([`Turns::invoke`], the shell's
-//!   `Shell::invoke`) or by its key (the router), and the host takes its program job ([`Turns::take_job`]) and
-//!   reports it ([`Turns::finish_job`]); the run itself is the editor library's (`renderer/bridge/editor`), which binds
-//!   the job to the module's active version. The run serves no row, so it prepares no preview: the solver puts its word
+//!   (`CommandLayer::register_overlay_with`), with its key bound in the one checked key map the router and the shell
+//!   share (LP4-8), which the palette reads (`Shell::read_palette`). The solver invokes it from the palette
+//!   ([`Turns::invoke`], the shell's `Shell::invoke`) or by its key (the router), and the host takes its program job
+//!   ([`Turns::take_job`]) and reports it ([`Turns::finish_job`]); the run itself is the editor library's
+//!   (`renderer/bridge/editor`), which binds the job to the module's active version. The run serves no row, so it prepares no preview: the solver puts its word
 //!   in the editor's draft ([`Turns::set_draft`]) and previews it with `operation.preview` (Ctrl+Enter), which the host
 //!   builds ([`Turns::run_jobs`]) and the view shows; the confirmed frames that show it are reported to the layer
 //!   ([`Turns::present`]), and the solver commits it with `operation.execute` (Ctrl+Shift+Enter), whose token the
-//!   shell mints from the press, and undoes it with `session.undo` (Ctrl+Z). A text field's focus
+//!   shell mints from the press, and undoes it with `session.undo` (Ctrl+KeyZ). A text field's focus
 //!   ([`Turns::set_focus`]) keeps the keys it takes, a commit chord among them (DT-M1 C4).
 //!
 //! Nothing here is Windows/DirectX, input or performance evidence.
@@ -50,8 +51,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use c600_command::{
-    CommandLayer, Error as LayerError, KeyBinding, Kind, Overlay, PresentedFrame, PreviewState, ProgramJob, Receipt,
-    Registration, Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, TWIST_ROW,
+    CommandLayer, Error as LayerError, Kind, Overlay, PresentedFrame, PreviewState, ProgramJob, Receipt, Registration,
+    Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, TWIST_ROW,
 };
 use c600_input::{
     default_specs, Arg, BindingSpec, Chord, ChordIntent, Context as Keys, Focus, KeyEvent, KeyMap, Layout, Routed,
@@ -378,6 +379,9 @@ impl Turns {
         router: Router,
         committed: Vec<Value>,
     ) -> Turns {
+        // One key map: the shell's palette names the keys the router binds (LP4-8).
+        let mut shell = Shell::new(Secret::fixed(SECRET), "shell");
+        shell.apply_keymap(router.keymap().clone());
         Turns {
             kernel,
             exact,
@@ -385,7 +389,7 @@ impl Turns {
             record,
             folder: folder.to_path_buf(),
             layer: Some(layer),
-            shell: Shell::new(Secret::fixed(SECRET), "shell"),
+            shell,
             router,
             specs: specs(puzzle),
             committed,
@@ -492,12 +496,12 @@ impl Turns {
     // ----- LP4-3's write-check-run flow (a draft)
 
     /// Registers the entry `entry` of user module `module` as a language overlay row (KN5.3, EV4.1): row [`row_id`], a
-    /// `query` row with no argument, with `label` and no grant (`Registration::labelled`). With `chord` (c600-input's
-    /// form, such as `Ctrl+Shift+KeyR`), the router's map binds the row in the global context and the shell's keymap
-    /// names it, so the palette shows the key. A chord that is not one, that the shell's keymap binds already or that
-    /// the map refuses under a declared layout, and a row the layer refuses (`KN5:input.overlay_row_conflict` for a
-    /// second registration), change nothing. The registration is not journaled: a reopen registers again. The answer is
-    /// the row's ID.
+    /// `query` row with no argument, with `label` and no grant (`Registration::labelled`). With `chord` (the checked
+    /// key map's form, such as `Ctrl+Shift+KeyR`), the one key map the router and the shell share binds the row in the
+    /// global routing class, so the palette shows the key. A chord that is not one, that the map binds already or that
+    /// the map refuses under a declared layout (EV4.7), and a row the layer refuses (`KN5:input.overlay_row_conflict`
+    /// for a second registration), change nothing. The registration is not journaled: a reopen registers again. The
+    /// answer is the row's ID.
     pub fn register_row(
         &mut self,
         module: &str,
@@ -507,26 +511,24 @@ impl Turns {
     ) -> Result<String, String> {
         let row = row_id(module, entry);
         let mut specs = self.specs.clone();
+        let mut bound = None;
         if let Some(chord) = chord {
             if ChordIntent::parse(chord).is_none() {
                 return Err(format!("`{chord}` is not a chord"));
             }
-            if self.shell.keymap().iter().any(|binding| binding.sequence == chord) {
-                return Err(format!("the shell's keymap binds `{chord}` already"));
-            }
             specs.push(BindingSpec::new(&[chord], RoutingClass::Global, &row, vec![]));
-            KeyMap::apply(&specs, &DECLARED, LAYOUT).map_err(|findings| format!("the key map: {findings:?}"))?;
+            let map =
+                KeyMap::apply(&specs, &DECLARED, LAYOUT).map_err(|findings| format!("the key map: {findings:?}"))?;
+            bound = Some(map);
         }
         let overlay = Overlay { module: module.to_owned(), entry: entry.to_owned() };
         let layer = self.layer.as_mut().ok_or("the session is closed")?;
         layer
             .register_overlay_with(&row, Kind::Query, &[], overlay, Registration::labelled(label))
             .map_err(|error| format!("{}: {}", error.code, error.detail))?;
-        if let Some(chord) = chord {
-            self.shell
-                .bind(KeyBinding::new(chord, "any", &row, &[]))
-                .map_err(|error| format!("{}: {}", error.code, error.detail))?;
+        if let Some(map) = bound {
             self.router.apply(&specs, &DECLARED, LAYOUT).map_err(|findings| format!("the key map: {findings:?}"))?;
+            self.shell.apply_keymap(map);
             self.specs = specs;
         }
         Ok(row)

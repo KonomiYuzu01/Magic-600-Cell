@@ -1306,7 +1306,11 @@ impl<S: Store> CommandLayer<S> {
                 if stored_workspace && !matches!(stored.caller, Caller::Shell) {
                     return Err(unadmitted("a workspace row's completion whose caller is not the shell"));
                 }
-                // No job's completion writes the applied grip map or the macro base (EV4.8, EV4.9).
+                // No job's completion writes the applied grip map or the macro base, and none comes under their rows,
+                // which run no job and write only their own record (EV4.8, EV4.9).
+                if stored.row == GRIP_REBIND_ROW || stored.row == MACRO_SAVE_ROW {
+                    return Err(unadmitted("a job's completion under the grip map's or the macro base's row"));
+                }
                 if stored.records.iter().any(|write| reserved_by_row(&write.name)) {
                     return Err(unadmitted("a job's completion that writes the grip map or the macro base"));
                 }

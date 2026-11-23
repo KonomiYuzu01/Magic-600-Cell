@@ -3782,8 +3782,8 @@ LG5.6).
 
 - One checked key map (EV4.3, EV4.4, EV4.7): the key-map model moved from `c600-input` to `c600_command::keys` (chords
   in W3C `code` names, the US QWERTY and French AZERTY tables, `BindingSpec`, `KeyMap`, EV4.7's checks and the draft
-  default map); `c600-input` re-exports it in its old modules, so the router's API and the renderer bridge are
-  unchanged. The shell's key route (`Shell::press`) and the router use the same map, which closes C5's open item "one
+  default map); `c600-input` re-exports it in its old modules, so the router's API is unchanged. The shell's key
+  route (`Shell::press`) and the router use the same map, which closes C5's open item "one
   map is to remain": the shell's own five-chord draft map, `KeyBinding` and `ArgSource` are gone, and Escape no longer
   cancels a preview anywhere (DT-M1 C4: `Ctrl+Shift+Backspace` does; Escape is `transient.close`).
   `Shell::press` takes a sequence of physical chords or character intents (`Ctrl+'z'`) resolved under the map's active
@@ -3820,7 +3820,7 @@ LG5.6).
   `macro/` (as under `set/`), a program job's output that writes one fails with `KN2:input.named_object_invalid`, a
   run reaches neither row (`LG3:capability.not_granted`), no entry can serve them, and a reopen stops in read-only
   recovery (`KN5:consistency.unadmitted_journal_action`) at a write of one that is not its own row's from the shell,
-  with its confirmation and a record that reads (B7).
+  with its confirmation and a record that reads, and at a job's completion under either row, which runs no job (B7).
 - No H-08 row was added: `grip.rebind` and `macro.save` were stored rows. The command table did not change.
 - Tests:
   - CT-EV4-06 whole (synthetic): `c600-input/tests/keymap.rs` on the specs and `c600-command/tests/keymap.rs` through
@@ -3846,9 +3846,12 @@ LG5.6).
   - `grip.select`, `grip.anchor.set` and the transport of frames from an anchor (the map is stored as the rebind gives
     it); `FrameRef` has no settled form, so a frame is kept as given;
   - the renderer bridge's rebind: it keeps its one default slot and sends no `grip.rebind`.
-- Open: `c600-tools`' `c600-lp3-source` still presses the shell's old draft chords (`Escape` to cancel a preview,
-  `Ctrl+Z`, `Ctrl+Y`), so `c600-tools/tests/process.rs` and `tests/test_lp3_source_route.py` fail until it presses
-  `Ctrl+Shift+Backspace`, `Ctrl+KeyZ` and `Ctrl+KeyY`; that crate is another line's.
+- Callers moved to the map's chords: `c600-tools`' `c600-lp3-source` dismisses a refused commit's preview with
+  `Ctrl+Shift+Backspace` and undoes and redoes with `Ctrl+KeyZ` and `Ctrl+KeyY`. The renderer bridge's host
+  (`renderer/bridge/host`, LP4-3's `m6h_register_row`) gives its shell the router's map, and a row's key is bound by
+  checking the router's specs with the new binding under both declared layouts (`KeyMap::apply`) and applying the
+  result to the router and the shell together, so the palette and the router read one map. The spellings in the
+  bridge's tests, the editor panel and `renderer/shell/README.md` are the map's.
 - Drafts: the record names `grip/map` and `macro/<name>`, their payloads and provenance blocks, the stale code for a
   raced rebind, the 600-slot bound, the overwrite of a macro by name, and the Full word's literal digest profile, in
   the crate documentation of `c600_command::grip` and `c600_command::macros`.
@@ -3871,9 +3874,9 @@ uses this workspace's crates through their public interfaces and changes none of
   is `{"code", "detail"}` (`m6e_last_error`).
 - The host library `c600-shell-host` goes to version 7. `m6h_register_row` registers a module's entry as a language
   overlay row (`tool.<module>.<entry>`, a query row, `register_overlay_with`) and binds its key in the router and the
-  shell's keymap. `m6h_palette` reads the palette. `m6h_invoke` invokes a row from the palette (`Shell::invoke`).
-  `m6h_take_job` and `m6h_finish_job` carry a program job's run (`ModuleRun::of_job`, as JSON) to the editor library
-  and its end back to the layer as the job's result or error. `m6h_set_draft_word` sets the editor's draft,
+  shell's key map, one map since LP4-8. `m6h_palette` reads the palette. `m6h_invoke` invokes a row from the palette
+  (`Shell::invoke`). `m6h_take_job` and `m6h_finish_job` carry a program job's run (`ModuleRun::of_job`, as JSON) to
+  the editor library and its end back to the layer as the job's result or error. `m6h_set_draft_word` sets the editor's draft,
   `m6h_set_focus` the router's text or puzzle focus, and `m6h_answer` gives the JSON answers. The host now builds the
   previews the layer queues (`run_jobs`) at each pump, frame and key, shows a pending preview on the view
   (`show_preview`, with no primitives yet), and reports each confirmed frame that showed it to the layer
@@ -3914,7 +3917,7 @@ uses this workspace's crates through their public interfaces and changes none of
     capability, so a draft that imports or requires one is refused;
   - more than one entry per check, and arguments (a registered row takes none; their conversion waits for LG5.2);
   - persistence of the module set and of the registered rows, which live for one run of the shell; removing or
-    re-keying a row (LP4-8's checked keymap);
+    re-keying a row;
   - the panel's look (ADR-D01's later rounds); hover, definition and rename in the panel; diagnostics drawn in the
     code field; the preview's primitives on the view;
   - the on-screen flow: the shell built offline with the panel (`build_shell.py`, no warnings), and it was never
