@@ -5,8 +5,8 @@ Status: plan of 22 November 2026, written when LP2 and LP3 had exited
 [LX bars and freeze](../../wiki/decisions/owner-decisions-2026-11-22-lx-bars-freeze.md)) and before any LP5 code;
 updated 23 November 2026, when the owner started LP5 and took every recommended option
 ([LP4 and LP5 start](../../wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md), item 3; section 11). It
-records the integrator's selections. It is no ADR, freezes nothing and edits no frozen text: where a frozen clause and
-this plan meet awkwardly, section 9 records it for the integrator.
+records the integrator's selections, and section 12 its exit record. It is no ADR, freezes nothing and edits no frozen
+text: where a frozen clause and this plan meet awkwardly, section 9 records it for the integrator.
 
 Inputs: [partition](../../architecture/1.0/language/ecosystem-partition.md) row LP5; chapter 12 section 7 (PHS.30 to
 PHS.33) and section 15.6; chapter 03 section 6 and 7 (LB5.1 to LB5.18); chapter 01 section 7 (KN6.1 to KN6.6);
@@ -288,3 +288,96 @@ The owner answered the milestone card on 23 November 2026 with every recommended
    table, as a new derivation with its own checker identity. Not chosen: waiting with the gates recorded only.
 4. **LP5-4, typed claim bindings (FR-B08):** LP5 writes them as versioned data from the matrix's anchors. Not chosen:
    waiting for a separate EN4 pass.
+
+## 12. Exit record
+
+Written on 23 November 2026 on the line's final candidate, the head of LP5's pull request, which names the checks that
+ran on it. Nothing here is the owner's: the readings below and the PHS.56 understanding confirmation are the owner's, on
+one exit card. Evidence kind throughout: source (PHS.31).
+
+### Acceptance items
+
+1. **Certificates and verdicts rechecked and matched.** `c600-research/tests/lp5_exit_sweep.rs` drives the check from
+   edition 1 of the claim bindings: preflight answers 286 groups `ready` and 224 `unavailable`, and each ready group's
+   record goes through each sub-checker its binding names, with its stored inputs by role and pin, and each report is
+   matched with the record's meaning, scope, original labels and check mode through R0's import. 291 self-contained
+   groups less 7 with no claim checker plus stage 18's 2 composed groups made ready by rebuilt start tables give 286
+   (the test's module doc names them). The 287 checks of the ready groups: 286 pass and one is not run. The fast sweep
+   passes its 116 checks in a normal `cargo test`, the stage 14 to 17 sweep its 168, and the two gate 2 replays pass in
+   place in `c600-checkers/tests/s18/long.rs` with the same sub-checker, record and inputs (below); the lattice replay's
+   check is not run. The 114 scope-only reads answer `not_applicable` with the record's own bounds and count as no
+   check. Every sub-checker's mutation gate, structural mutations included, fails on every tampered fixture (with the
+   checkers' ignored stage 14, 15 to 17 and 19 tests run in release).
+2. **Missing dependencies stay visible.** The 224 unavailable groups answer LB5.14's `unavailable(reasons,
+   dependencies)` with the matrix's blockers word for word (`c600-archive/tests/import.rs`,
+   `c600-research/tests/preflight_bindings.rs`, `c600-library/tests/research_ct_lb5_06_preflight.rs`); the sweep asserts
+   that no unavailable group runs a check. Stage 18's gate 3 stays `historical_check_incomplete` and step 4 is never
+   replayed for it. CT-LB5-10 passes (`check_matrix.py`).
+3. **A run record reproduced bit for bit.** `c600-research/tests/r8/` (CT-DET-24 and LP2's halves of CT-DET-01,
+   CT-DET-02 and CT-DET-11): a KN6 check runs as a job on an engine-owned branch at a pinned input, and `reproduce`
+   returns the exact payload byte for byte. It passes on Windows here; the Windows and headless Linux comparison counts
+   once both CI jobs pass on the candidate. No archive producer runs (DET.48).
+4. **No new search counted as acceptance.** `tests/test_lp5_acceptance_inputs.py`: every `research/` path the acceptance
+   tests read is a file of the frozen commit, unchanged since; the line changes nothing under `research/`; no acceptance
+   test starts a process on a research file; CT-LB5-07's and CT-LB5-08's synthetic searches reach no evidence writer and
+   read no archived record.
+5. **The proof-obligation export keeps its limits.** CT-LB5-11, CT-PS1-26, CT-RTE-23 and CT-ERR-19 run whole
+   (`c600-evidence/tests/obligation.rs`, `c600-research/tests/obligation_export.rs` and `tests/panel.rs`): the supported
+   vector exports byte for byte through a granted file, each refusal writes nothing and stays on record, and no process,
+   network, evidence promotion, commit gate or return path appears.
+
+### Long runs and their source identity
+
+The in-place replays ran in release from commit `b4dc6770` (gate 3's rerun from `7a0d7dd1`, which changed only its
+test's assertion); no source of `c600-checkers`, `c600-kernel`, `c600-jumble` or `c600-digest` and no `Cargo.lock` entry
+they use changed between that commit and the candidate; only test comments, markers and gate 3's assertion did.
+
+| Run | Result |
+| --- | --- |
+| Gate 3, T6's steps 1 to 3 (639,174 letters) | pass, 2272.5 s |
+| Gate 2, the rule's three stages (688,686 letters) | pass, 5973.4 s |
+| Gate 2, T6's four steps (1,510,756 letters) | pass, 8831.2 s |
+| The lattice phase (13,231,266 letters) | not run: 11 hours or more in release |
+| The checkers' ignored stage 14, 15 to 17 and 19 tests | pass: `kn6_r4` 60 tests, `kn6_s14` 24 and `kn6_s19` 19, ignored ones included |
+
+### Conformance index
+
+`ct_index.py --phase LP5`: 23 IDs, 14 whole (each by union) and 9 part. [Index notes](lp5-ct-index-notes.md) name what
+each part leaves. On the candidate:
+
+- CT-KN6-01, CT-LB5-01 and CT-LB5-04 lack only ignored tests, which ran and passed in release (`kn6_r4` 60 tests,
+  `kn6_s14` 24 and `kn6_s19` 19, ignored ones included). Recommended reading: whole.
+- CT-LB5-05 lacks only the in-place gate 2 and 3 replays above, which ran and passed. Recommended reading: whole.
+- CT-KN6-03 also lacks the lattice replay and has no sub-checker for stage 19's seven type-lex records (the archive
+  defines no irregular-piece vector I_t for them) or for the cap-noninteraction claims (delta_Q5 is not defined).
+  Recommended reading: part, with those records and claims kept `unavailable` and the lattice replay run once at the
+  owner-machine sitting.
+- CT-LB5-07, CT-LB5-08, CT-ERR-11 and CT-EVD-12 need product parts that do not exist (a research search job, host reads
+  over KN2.4's branch predicates, the envelope builder). Recommended reading: indexed with the work that builds them.
+
+LP2's seven halves: CT-KN6-02 runs whole; CT-DET-01, CT-DET-02, CT-DET-11 and CT-EVD-30 run their LP5 halves; CT-LG3-05
+(the mode refusal, as the session store holds JumbleOff only) and CT-LG5-02 (no reviewed boundary classes as data) do
+not. Recommended reading for those two: indexed with the work that builds them.
+
+### Drafts for the owner to ratify
+
+- R8: the cost rule, the metering rule, the report format and edition `6cs-draft-1`.
+- R10: the row IDs, kinds, lanes and argument types of section 6, and the research-profile serve.
+- R1: a binding names, besides the matrix's `required_files` and stage 18's stored stop table, step members and end
+  table, the stored inputs its named claim checker reads, each a matrix file with its pin.
+- Stage 19's uncovered records and claims stay `not_applicable` or `unavailable` until the archive defines I_t and
+  delta_Q5.
+
+### Deferred
+
+Minor review findings, recorded and not fixed at the exit: R5's string per letter; R6's unrecertified
+`tail_sticker_addend`, the joined cleanup table's unused pose 24 and a record with half or fewer keys read as another
+record; R8's constant `ArchivedRun::reproduction()` assertion, `bound_by` taking any one matching start state and a
+thread-local borrow per letter outside stop scopes; R0's missing r22b10 records, the inputs pinned only in R5's tests
+and the matrix's count of a relative reference as missing; the shared mutation gate not emptying the parent list of an
+element claim; the ambiguous `letters` key in gate 3's test.
+
+### Not run on the candidate
+
+The lattice replay (above); Look Lab's Godot checks (`tools/looklab/check.py --godot`), since the count sync changes no
+Godot scene; the Windows-only native host regression, which LP5 does not touch.
