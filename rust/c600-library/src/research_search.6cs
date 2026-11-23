@@ -1,0 +1,214 @@
+edition "6cs-draft-1";
+module research_search requires [];
+
+export fn search(declaration: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }) -> record { complete_lengths: Nat, declaration: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, discarded: Nat, examined: Nat, exhaustive: Bool, least_witness_length: Int, negative: Bool, negative_family: Text, outcome: Text, stop: Text, witnesses: Nat } effects [budget] {
+    return child(record {}, fn() -> record { complete_lengths: Nat, declaration: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, discarded: Nat, examined: Nat, exhaustive: Bool, least_witness_length: Int, negative: Bool, negative_family: Text, outcome: Text, stop: Text, witnesses: Nat } {
+        return run_search(declaration);
+    }, fn(status: Status) -> record { complete_lengths: Nat, declaration: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, discarded: Nat, examined: Nat, exhaustive: Bool, least_witness_length: Int, negative: Bool, negative_family: Text, outcome: Text, stop: Text, witnesses: Nat } {
+        let stop = match status {
+            tag("cut_off") => "cut_off";
+            _ => "error";
+        };
+        return unfinished(declaration, stop, stop);
+    });
+}
+
+export fn transport_negative(result: record { complete_lengths: Nat, declaration: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, discarded: Nat, examined: Nat, exhaustive: Bool, least_witness_length: Int, negative: Bool, negative_family: Text, outcome: Text, stop: Text, witnesses: Nat }, lemma: record { alphabet: Nat, conclusion: Text, family: Text, hypotheses: List<Text>, reduction: Text }) -> record { errors: List<Text>, negative_family: Text, transported: Bool } effects [] {
+    let d = result.declaration;
+    let same_family = and(exact_eq(lemma.family, d.family), exact_eq(lemma.alphabet, length(d.action)));
+    let same_premises = and(exact_eq(lemma.hypotheses, d.hypotheses), exact_eq(lemma.reduction, d.reduction));
+    let matching = and(and(same_family, same_premises), exact_eq(lemma.conclusion, "no_witness_in_unreduced_family"));
+    return match result.negative_family {
+        "reduced" => match matching {
+            true => record { errors = list<Text>(), negative_family = "declared", transported = true };
+            _ => record { errors = list<Text>("LB5:evidence.reduction_scope_mismatch"), negative_family = "reduced", transported = false };
+        };
+        _ => record { errors = list<Text>(), negative_family = result.negative_family, transported = false };
+    };
+}
+
+export fn membership(domain: record { action: List<List<Nat>>, budget: Nat, k: Nat, name: Text, promise: Text, targets: List<Nat> }, input: Nat) -> record { complete: Bool, depth: Int, examined: Nat, membership: Text, reachability: Text, scope: record { k: Nat, name: Text, promise: Text }, stop: Text } effects [budget] {
+    let scope = record { k = domain.k, name = domain.name, promise = domain.promise };
+    return child(record {}, fn() -> record { complete: Bool, depth: Int, examined: Nat, membership: Text, reachability: Text, scope: record { k: Nat, name: Text, promise: Text }, stop: Text } {
+        return membership_answer(scope, levels(checked(enumeration(domain, input))));
+    }, fn(status: Status) -> record { complete: Bool, depth: Int, examined: Nat, membership: Text, reachability: Text, scope: record { k: Nat, name: Text, promise: Text }, stop: Text } {
+        let stop = match status {
+            tag("cut_off") => "cut_off";
+            _ => "error";
+        };
+        return record { complete = false, depth = -1, examined = 0, membership = "unknown", reachability = "not_asserted", scope = scope, stop = stop };
+    });
+}
+
+fn run_search(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }) -> record { complete_lengths: Nat, declaration: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, discarded: Nat, examined: Nat, exhaustive: Bool, least_witness_length: Int, negative: Bool, negative_family: Text, outcome: Text, stop: Text, witnesses: Nat } effects [] {
+    let known_reduction = or(exact_eq(d.reduction, "none"), exact_eq(d.reduction, "local_commuting"));
+    let supported = and(not(d.seed.applicable), and(exact_eq(d.budget.unit, "candidates"), known_reduction));
+    return match supported {
+        true => searched(d, levels(checked(d)));
+        _ => unfinished(d, "not_run", "unsupported");
+    };
+}
+
+fn searched(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, s: record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat }) -> record { complete_lengths: Nat, declaration: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, discarded: Nat, examined: Nat, exhaustive: Bool, least_witness_length: Int, negative: Bool, negative_family: Text, outcome: Text, stop: Text, witnesses: Nat } effects [] {
+    let found = exact_less(0, s.witnesses);
+    let exhaustive = and(not(s.stopped), exact_eq(s.discarded, 0));
+    let negative = and(not(found), exhaustive);
+    let outcome = match found {
+        true => "found";
+        _ => match s.stopped {
+            true => "not_found_within_budget";
+            _ => match exhaustive {
+                true => "empty";
+                _ => "not_found_in_beam";
+            };
+        };
+    };
+    let family = match negative {
+        true => match d.reduction {
+            "none" => "declared";
+            _ => "reduced";
+        };
+        _ => "none";
+    };
+    let stop = match s.stopped {
+        true => "budget";
+        _ => "completed";
+    };
+    return record { complete_lengths = s.complete, declaration = d, discarded = s.discarded, examined = s.examined, exhaustive = exhaustive, least_witness_length = s.least, negative = negative, negative_family = family, outcome = outcome, stop = stop, witnesses = s.witnesses };
+}
+
+fn unfinished(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, outcome: Text, stop: Text) -> record { complete_lengths: Nat, declaration: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, discarded: Nat, examined: Nat, exhaustive: Bool, least_witness_length: Int, negative: Bool, negative_family: Text, outcome: Text, stop: Text, witnesses: Nat } effects [] {
+    return record { complete_lengths = 0, declaration = d, discarded = 0, examined = 0, exhaustive = false, least_witness_length = -1, negative = false, negative_family = "none", outcome = outcome, stop = stop, witnesses = 0 };
+}
+
+fn checked(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }) -> record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat } effects [] {
+    let valid = assert(well_formed(d.action, d.start));
+    return d;
+}
+
+fn well_formed(action: List<List<Nat>>, start: Nat) -> Bool effects [] {
+    return match exact_eq(length(action), 0) {
+        true => true;
+        _ => rows_fit(action, length(index(action, 0)), start);
+    };
+}
+
+fn rows_fit(action: List<List<Nat>>, points: Nat, start: Nat) -> Bool effects [] {
+    return repeat(length(action), record { fits = exact_less(start, points), next = 0 }, fn(s: record { fits: Bool, next: Nat }) -> record { fits: Bool, next: Nat } {
+        let row = index(action, s.next);
+        return record { fits = and(s.fits, and(exact_eq(length(row), points), images_fit(row, points))), next = exact_add(s.next, 1) };
+    }).fits;
+}
+
+fn images_fit(row: List<Nat>, points: Nat) -> Bool effects [] {
+    return repeat(length(row), record { fits = true, next = 0 }, fn(s: record { fits: Bool, next: Nat }) -> record { fits: Bool, next: Nat } {
+        return record { fits = and(s.fits, exact_less(index(row, s.next), points)), next = exact_add(s.next, 1) };
+    }).fits;
+}
+
+fn membership_answer(scope: record { k: Nat, name: Text, promise: Text }, s: record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat }) -> record { complete: Bool, depth: Int, examined: Nat, membership: Text, reachability: Text, scope: record { k: Nat, name: Text, promise: Text }, stop: Text } effects [] {
+    let answer = match exact_less(0, s.witnesses) {
+        true => "inside";
+        _ => match s.stopped {
+            true => "unknown";
+            _ => "OUTSIDE_CERTIFIED_DOMAIN";
+        };
+    };
+    let stop = match s.stopped {
+        true => "budget";
+        _ => "completed";
+    };
+    return record { complete = not(s.stopped), depth = s.least, examined = s.examined, membership = answer, reachability = "not_asserted", scope = scope, stop = stop };
+}
+
+fn enumeration(domain: record { action: List<List<Nat>>, budget: Nat, k: Nat, name: Text, promise: Text, targets: List<Nat> }, input: Nat) -> record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat } effects [] {
+    return record { action = domain.action, beam = record { applicable = false, width = 0 }, budget = record { limit = domain.budget, unit = "candidates" }, family = domain.name, goals = domain.targets, hypotheses = list<Text>(), independent = list<record { a: Nat, b: Nat }>(), input_sha256 = "", max_length = domain.k, module_sha256 = "", reduction = "none", seed = record { applicable = false, value = 0 }, start = input };
+}
+
+fn levels(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }) -> record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat } effects [] {
+    let first = list<record { last: Int, point: Nat }>(record { last = -1, point = d.start });
+    return repeat(exact_add(d.max_length, 1), record { complete = 0, discarded = 0, examined = 0, frontier = first, least = -1, level = 0, stopped = false, witnesses = 0 }, fn(s: record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat }) -> record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat } {
+        return match s.stopped {
+            true => s;
+            _ => level_step(d, s);
+        };
+    });
+}
+
+fn level_step(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, s: record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat }) -> record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat } effects [] {
+    let tested = test_level(d.goals, d.budget.limit, s);
+    let more = and(not(tested.stopped), exact_less(tested.level, d.max_length));
+    return match more {
+        true => next_level(d, tested);
+        _ => tested;
+    };
+}
+
+fn test_level(goals: List<Nat>, limit: Nat, s: record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat }) -> record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat } effects [] {
+    let t = repeat(length(s.frontier), record { cut = false, examined = s.examined, least = s.least, next = 0, witnesses = s.witnesses }, fn(t: record { cut: Bool, examined: Nat, least: Int, next: Nat, witnesses: Nat }) -> record { cut: Bool, examined: Nat, least: Int, next: Nat, witnesses: Nat } {
+        let hit = listed_in(goals, index(s.frontier, t.next).point);
+        let least = match and(hit, exact_less(t.least, 0)) {
+            true => s.level;
+            _ => t.least;
+        };
+        let witnesses = match hit {
+            true => exact_add(t.witnesses, 1);
+            _ => t.witnesses;
+        };
+        return match exact_less(t.examined, limit) {
+            true => record { cut = t.cut, examined = exact_add(t.examined, 1), least = least, next = exact_add(t.next, 1), witnesses = witnesses };
+            _ => record { cut = true, examined = t.examined, least = t.least, next = exact_add(t.next, 1), witnesses = t.witnesses };
+        };
+    });
+    let complete = match t.cut {
+        true => s.complete;
+        _ => exact_add(s.level, 1);
+    };
+    return record { complete = complete, discarded = s.discarded, examined = t.examined, frontier = s.frontier, least = t.least, level = s.level, stopped = t.cut, witnesses = t.witnesses };
+}
+
+fn next_level(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, s: record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat }) -> record { complete: Nat, discarded: Nat, examined: Nat, frontier: List<record { last: Int, point: Nat }>, least: Int, level: Nat, stopped: Bool, witnesses: Nat } effects [] {
+    let grown = repeat(length(s.frontier), record { done = list<record { last: Int, point: Nat }>(), next = 0 }, fn(g: record { done: List<record { last: Int, point: Nat }>, next: Nat }) -> record { done: List<record { last: Int, point: Nat }>, next: Nat } {
+        return record { done = extend(d, index(s.frontier, g.next), g.done), next = exact_add(g.next, 1) };
+    }).done;
+    let kept = match d.beam.applicable {
+        true => truncated(grown, d.beam.width);
+        _ => record { discarded = 0, frontier = grown };
+    };
+    return record { complete = s.complete, discarded = exact_add(s.discarded, kept.discarded), examined = s.examined, frontier = kept.frontier, least = s.least, level = exact_add(s.level, 1), stopped = false, witnesses = s.witnesses };
+}
+
+fn extend(d: record { action: List<List<Nat>>, beam: record { applicable: Bool, width: Nat }, budget: record { limit: Nat, unit: Text }, family: Text, goals: List<Nat>, hypotheses: List<Text>, independent: List<record { a: Nat, b: Nat }>, input_sha256: Text, max_length: Nat, module_sha256: Text, reduction: Text, seed: record { applicable: Bool, value: Nat }, start: Nat }, entry: record { last: Int, point: Nat }, done: List<record { last: Int, point: Nat }>) -> List<record { last: Int, point: Nat }> effects [] {
+    return repeat(length(d.action), record { done = done, letter = 0 }, fn(t: record { done: List<record { last: Int, point: Nat }>, letter: Nat }) -> record { done: List<record { last: Int, point: Nat }>, letter: Nat } {
+        let skipped = and(exact_eq(d.reduction, "local_commuting"), and(exact_less(t.letter, entry.last), independent(d.independent, entry.last, t.letter)));
+        let grown = match skipped {
+            true => t.done;
+            _ => push(t.done, record { last = t.letter, point = index(index(d.action, t.letter), entry.point) });
+        };
+        return record { done = grown, letter = exact_add(t.letter, 1) };
+    }).done;
+}
+
+fn truncated(frontier: List<record { last: Int, point: Nat }>, width: Nat) -> record { discarded: Nat, frontier: List<record { last: Int, point: Nat }> } effects [] {
+    let t = repeat(length(frontier), record { discarded = 0, frontier = list<record { last: Int, point: Nat }>(), next = 0 }, fn(t: record { discarded: Nat, frontier: List<record { last: Int, point: Nat }>, next: Nat }) -> record { discarded: Nat, frontier: List<record { last: Int, point: Nat }>, next: Nat } {
+        return match exact_less(t.next, width) {
+            true => record { discarded = t.discarded, frontier = push(t.frontier, index(frontier, t.next)), next = exact_add(t.next, 1) };
+            _ => record { discarded = exact_add(t.discarded, 1), frontier = t.frontier, next = exact_add(t.next, 1) };
+        };
+    });
+    return record { discarded = t.discarded, frontier = t.frontier };
+}
+
+fn independent(pairs: List<record { a: Nat, b: Nat }>, x: Int, y: Nat) -> Bool effects [] {
+    return repeat(length(pairs), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        let pair = index(pairs, s.next);
+        let hit = or(and(exact_eq(pair.a, x), exact_eq(pair.b, y)), and(exact_eq(pair.a, y), exact_eq(pair.b, x)));
+        return record { found = or(s.found, hit), next = exact_add(s.next, 1) };
+    }).found;
+}
+
+fn listed_in(values: List<Nat>, v: Nat) -> Bool effects [] {
+    return repeat(length(values), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        return record { found = or(s.found, exact_eq(index(values, s.next), v)), next = exact_add(s.next, 1) };
+    }).found;
+}

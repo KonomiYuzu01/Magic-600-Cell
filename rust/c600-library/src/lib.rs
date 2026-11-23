@@ -1009,3 +1009,5 @@ pub fn lower_sources(sources: &[&str]) -> Result<Program, String> {
     }
     lower(&files).map(|lowered| lowered.program).map_err(|error| format!("the sources do not lower: {error}"))
 }
+
+pub mod research;

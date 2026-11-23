@@ -1,0 +1,74 @@
+edition "6cs-draft-1";
+module research_bigint requires [];
+
+export fn binomial(n: Nat, k: Nat) -> Int effects [] {
+    let falling = repeat(k, record { at = 0, factorial = 1, product = 1 }, fn(s: record { at: Nat, factorial: Nat, product: Int }) -> record { at: Nat, factorial: Nat, product: Int } {
+        return record { at = exact_add(s.at, 1), factorial = exact_mul(s.factorial, exact_add(s.at, 1)), product = exact_mul(s.product, exact_add(n, exact_mul(-1, s.at))) };
+    });
+    let parts = q5_parts(q5_of(falling.product, 0, falling.factorial));
+    let whole = assert(exact_eq(parts.d, 1));
+    return parts.a;
+}
+
+export fn product(factors: List<Int>) -> Int effects [] {
+    return repeat(length(factors), record { at = 0, value = 1 }, fn(s: record { at: Nat, value: Int }) -> record { at: Nat, value: Int } {
+        return record { at = exact_add(s.at, 1), value = exact_mul(s.value, index(factors, s.at)) };
+    }).value;
+}
+
+export fn affine_recurrence(start: Int, multiplier: Int, increment: Int, steps: Nat) -> Int effects [] {
+    return repeat(steps, start, fn(x: Int) -> Int {
+        return exact_add(exact_mul(multiplier, x), increment);
+    });
+}
+
+export fn binomial_sum(n: Nat, terms: List<record { coefficient: Int, k: Nat }>, constant: Int) -> Int effects [] {
+    return repeat(length(terms), record { at = 0, total = constant }, fn(s: record { at: Nat, total: Int }) -> record { at: Nat, total: Int } {
+        let term = index(terms, s.at);
+        return record { at = exact_add(s.at, 1), total = exact_add(s.total, exact_mul(term.coefficient, binomial(n, term.k))) };
+    }).total;
+}
+
+export fn digit_count(x: Int) -> Nat effects [] {
+    let m = magnitude(x);
+    let ladder = repeat(64, record { done = false, last = 1, powers = list<Int>(), spans = list<Nat>() }, fn(s: record { done: Bool, last: Int, powers: List<Int>, spans: List<Nat> }) -> record { done: Bool, last: Int, powers: List<Int>, spans: List<Nat> } {
+        return match s.done {
+            true => s;
+            _ => climb(s, m);
+        };
+    });
+    return repeat(length(ladder.powers), record { at = 0, digits = 1, value = 1 }, fn(s: record { at: Nat, digits: Nat, value: Int }) -> record { at: Nat, digits: Nat, value: Int } {
+        let next = exact_mul(s.value, index(ladder.powers, s.at));
+        return match exact_less(m, next) {
+            true => record { at = exact_add(s.at, 1), digits = s.digits, value = s.value };
+            _ => record { at = exact_add(s.at, 1), digits = exact_add(s.digits, index(ladder.spans, s.at)), value = next };
+        };
+    }).digits;
+}
+
+export fn symbolic_bound(name: Text, value: Int, premises: List<Text>) -> record { digits: Nat, expanded: Bool, name: Text, premises: List<Text>, replayed: Bool, value: Int } effects [] {
+    return record { digits = digit_count(value), expanded = false, name = name, premises = premises, replayed = false, value = value };
+}
+
+fn magnitude(x: Int) -> Int effects [] {
+    return match exact_less(x, 0) {
+        true => exact_mul(-1, x);
+        _ => x;
+    };
+}
+
+fn climb(s: record { done: Bool, last: Int, powers: List<Int>, spans: List<Nat> }, m: Int) -> record { done: Bool, last: Int, powers: List<Int>, spans: List<Nat> } effects [] {
+    let first = exact_eq(length(s.powers), 0);
+    let candidate = match first {
+        true => 10;
+        _ => exact_mul(s.last, s.last);
+    };
+    let span = match first {
+        true => 1;
+        _ => exact_mul(2, index(s.spans, 0));
+    };
+    return match exact_less(m, candidate) {
+        true => record { done = true, last = s.last, powers = s.powers, spans = s.spans };
+        _ => record { done = false, last = candidate, powers = concat(list<Int>(candidate), s.powers), spans = concat(list<Nat>(span), s.spans) };
+    };
+}
