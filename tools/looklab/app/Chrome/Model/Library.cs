@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Magic600.Chrome;
@@ -9,18 +10,47 @@ public enum LibraryKind { Macro, Template, QuerySet, PieceSet, PositionSet, Bloc
 
 public sealed record LibraryRecord(string Name, LibraryKind Kind, IReadOnlyList<string> Word, string Note)
 {
+    // A Template's word names its roles as {Target}, {Buffer A} and {Buffer B}; they bind to the strip.
+    public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
     // Only a macro joins a phase: a Template binds its roles first, and the other records are not words.
     public bool IsMacro => Kind == LibraryKind.Macro && Word.Count > 0;
+    public bool IsTemplate => Kind == LibraryKind.Template && Word.Count > 0 && Roles.Count > 0;
+}
+
+// One slot of an effect signature: what is known of the word's effect on one orbit. Unknown is never zero.
+public enum SignatureMark { Unknown, Untouched, Moved }
+
+// A macro's effect signature (ADR-D01.70): 35 slots in the rail's order, each the effect on that orbit with its
+// evidence; without a certificate every effect reads as unverified.
+public sealed record EffectSignature(IReadOnlyList<(int Orbit, SignatureMark Mark)> Slots, bool Certified)
+{
+    // The measured effects (pieces moved, by orbit id) laid out in a rail order; an orbit with no measurement is
+    // unknown. The order must name each of the 35 orbits once.
+    public static EffectSignature Of(IReadOnlyDictionary<int, int> measured, IReadOnlyList<int> railOrder, bool certified)
+    {
+        if (railOrder.Count != OrbitAtlas.Count || railOrder.Distinct().Count() != OrbitAtlas.Count || railOrder.Any(o => o < 0 || o >= OrbitAtlas.Count))
+            throw J.Error("signature", "a rail order names each of the 35 orbits once");
+        return new EffectSignature(railOrder.Select(o => (o, measured.TryGetValue(o, out int moved) ? moved > 0 ? SignatureMark.Moved : SignatureMark.Untouched : SignatureMark.Unknown)).ToArray(), certified);
+    }
+
+    public static EffectSignature Unknown(IReadOnlyList<int> railOrder) => Of(new Dictionary<int, int>(), railOrder, false);
+    public SignatureMark Mark(int orbit) => Slots.First(s => s.Orbit == orbit).Mark;
 }
 
 // The Library dock (ADR-D01.69): the solver's records in one tree, macros, Templates, sets, blocks and saved
 // states, with a Built-in branch for the shipped tools. An input box filters in place; the keyboard moves the
 // selection over the rows shown; Enter adds the selected macro to the draft's active phase and Shift+Enter
-// previews it alone. A branch folds; while a filter is typed every branch with a match is shown, so every
-// record is reached from the keyboard. The records are sample data: the lab has no store.
+// previews it alone. A Template binds its roles to the strip first. A branch folds; while a filter is typed every
+// branch with a match is shown, so every record is reached from the keyboard. The records are sample data: the
+// lab has no store.
 public sealed class LibraryModel
 {
     public const string Mark = " (sample records, demo data)";
+    // The argument of operation.preview that previews a library record alone; the name follows, and an empty name
+    // asks for the selection, which the host refuses with its reason when there is none.
+    public const string PreviewArgument = "macro:";
+    public static string PreviewRequest(string? name) => PreviewArgument + (name ?? "");
+
     public static readonly IReadOnlyList<(string Title, LibraryKind[] Kinds)> Branches = Array.AsReadOnly(new[]
     {
         ("Macros", new[] { LibraryKind.Macro }), ("Templates", new[] { LibraryKind.Template }),
@@ -44,14 +74,19 @@ public sealed class LibraryModel
     private static LibraryRecord M(string name, string note, params string[] word) => new(name, LibraryKind.Macro, Array.AsReadOnly(word), note);
     private static LibraryRecord R(string name, LibraryKind kind, string note) => new(name, kind, Array.Empty<string>(), note);
 
+    public static readonly IReadOnlyList<string> RoleNames = Array.AsReadOnly(new[] { "Target", "Buffer A", "Buffer B" });
+
     // Sample records. The macros are words of typed twists that the sample rule evaluates; none moves the
-    // locked sample orbit. The built-in tools are the shipped ones of ADR-D01.76.
+    // locked sample orbit. The Template's twists name its roles; bound, they never use axis 0, so it never moves
+    // the locked orbit either. The built-in tools are the shipped ones of ADR-D01.76.
     public static readonly IReadOnlyList<LibraryRecord> Sample = Array.AsReadOnly(new[]
     {
         M("Three-cycle A", "a commutator of two twists", "twist(cell 5, axis 1, +1)", "twist(cell 40, axis 2, -1)", "twist(cell 5, axis 1, -1)", "twist(cell 40, axis 2, +1)"),
         M("Swap pair B", "a conjugated double turn", "twist(cell 77, axis 3, +1)", "twist(cell 22, axis 1, +2)", "twist(cell 77, axis 3, -1)"),
         M("Orient twin", "a commutator that turns two pieces in place", "twist(cell 117, axis 1, -1)", "twist(cell 8, axis 2, +1)", "twist(cell 117, axis 1, +1)", "twist(cell 8, axis 2, -1)"),
-        R("Three-cycle on roles", LibraryKind.Template, "parameters Target, Buffer A and Buffer B bind to the strip"),
+        new LibraryRecord("Three-cycle on roles", LibraryKind.Template,
+            Array.AsReadOnly(new[] { "twist(cell {Target}, axis 1, +1)", "twist(cell {Buffer A}, axis 2, -1)", "twist(cell {Target}, axis 1, -1)", "twist(cell {Buffer B}, axis 2, +1)" }),
+            "its roles Target, Buffer A and Buffer B bind to the strip") { Roles = RoleNames },
         R("Not at Home in O07", LibraryKind.QuerySet, "a query over the head"),
         R("Corner block pieces", LibraryKind.PieceSet, "pieces the solver named"),
         R("Home of the corner block", LibraryKind.PositionSet, "positions the solver named"),
@@ -101,6 +136,14 @@ public sealed class LibraryModel
         Safe.Raise(Changed);
     }
 
+    // library.branch.toggle: folds or opens a branch by its title; or why not.
+    public string? Toggle(string? branch)
+    {
+        string? title = branch == null ? null : Branches.Select(b => b.Title).FirstOrDefault(t => string.Equals(t, branch.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (title == null) return "it needs a branch: " + string.Join(", ", Branches.Select(b => b.Title));
+        Fold(title); return null;
+    }
+
     // The filter keeps the selection when it is still shown, and otherwise selects the first row shown.
     public void SetFilter(string text)
     {
@@ -129,34 +172,67 @@ public sealed class LibraryModel
         Selected = r.Name; Safe.Raise(Changed); return null;
     }
 
-    // The named record, or the selected one, as a macro; or why it is not one.
-    public (LibraryRecord? Macro, string? Why) Macro(string? name)
+    public const string NoSelection = "no library record is selected";
+
+    // The named record, or the selected one, as a macro: a macro as it is, a Template bound to the roles of the
+    // strip; or why it is not one.
+    public (LibraryRecord? Macro, string? Why) Macro(string? name, SolvingState? roles = null)
     {
         LibraryRecord? r = string.IsNullOrWhiteSpace(name) ? Current : Find(name);
-        if (r == null) return (null, string.IsNullOrWhiteSpace(name) ? "no library record is selected" : $"the library has no record named {name!.Trim()}");
-        return r.IsMacro ? (r, null) : (null, $"{r.Name} is a {Word(r.Kind)}: only a macro joins a phase");
+        if (r == null) return (null, string.IsNullOrWhiteSpace(name) ? NoSelection : $"the library has no record named {name!.Trim()}");
+        if (r.IsTemplate) return Bind(r, roles);
+        return r.IsMacro ? (r, null) : (null, $"{r.Name} is a {Word(r.Kind)}: only a macro or a bound Template joins a phase");
     }
 
-    // Enter (macro.add): the macro's twists join the draft's active phase as one change. Nothing is executed:
-    // the draft stages itself as the preview, and the commit bar commits it.
-    public string? Insert(OperationDraft draft, string? name = null)
+    // The cell of the sample rule that a position of an orbit names (sample mapping, demo data).
+    public static int SampleCell(int orbit, int position) => (int)(((long)position * 7 + orbit * 13) % SampleCheck.Cells);
+
+    // A Template's roles bind to the strip of the working orbit (ADR-D01.69): each role takes the position the
+    // strip holds, so nothing is typed twice. The bound word is a new macro, named by its binding; a Template bound
+    // to another Target is another word, checked again as its own preview, never a reuse of an earlier check.
+    public static (LibraryRecord? Macro, string? Why) Bind(LibraryRecord template, SolvingState? roles)
     {
-        (LibraryRecord? macro, string? why) = Macro(name);
+        if (!template.IsTemplate) return (null, $"{template.Name} is not a Template");
+        if (roles == null) return (null, $"{template.Name} is a Template: its roles bind to the strip, and no strip is here");
+        var places = new Dictionary<string, int?>(StringComparer.Ordinal) { ["Target"] = roles.Target, ["Buffer A"] = roles.BufferA, ["Buffer B"] = roles.BufferB };
+        foreach (string role in template.Roles)
+        {
+            if (!places.TryGetValue(role, out int? at)) return (null, $"{template.Name} has the role {role}, which the strip does not hold");
+            if (at == null) return (null, $"{template.Name} needs its role {role}: set {role} on the strip");
+        }
+        if (roles.Problems() is { Count: > 0 } bad) return (null, $"{template.Name} cannot bind an invalid tuple: {bad[0].Text}");
+        string Fill(string twist) => template.Roles.Aggregate(twist, (w, role) => w.Replace("{" + role + "}", SampleCell(roles.Orbit, places[role]!.Value).ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal));
+        string[] word = template.Word.Select(Fill).ToArray();
+        string name = $"{template.Name}(Target {OrbitAtlas.Position(roles.Target!.Value)}, A {OrbitAtlas.Position(roles.BufferA!.Value)}, B {OrbitAtlas.Position(roles.BufferB!.Value)})";
+        return (new LibraryRecord(name, LibraryKind.Macro, Array.AsReadOnly(word), $"{template.Name} bound to the strip of {OrbitAtlas.Name(roles.Orbit)} (sample mapping)"), null);
+    }
+
+    // Enter (macro.add): the macro's twists, or the bound Template's, join the draft's active phase as one change.
+    // Nothing is executed: the draft stages itself as the preview, and the commit bar commits it.
+    public string? Insert(OperationDraft draft, string? name = null, SolvingState? roles = null)
+    {
+        (LibraryRecord? macro, string? why) = Macro(name, roles);
         if (why != null) return why;
         if (draft.Route == InputRoute.Direct) return "in Direct a twist is one complete operation; switch to Draft to add a macro to a phase";
         return draft.AppendAll(macro!.Word) ? null : "the macro has no twist";
     }
 
-    // The effect signature on the sample orbits (ADR-D01.70): whether the word moves each orbit, by the sample
-    // rule. It is never certified here, so it reads as unverified.
-    public static IReadOnlyList<bool> Signature(IReadOnlyList<string> word) =>
-        word.Count > 0 && SampleCheck.Effects(word) is { } effects ? effects.Select(e => e.Moved > 0).ToArray() : Array.Empty<bool>();
-
-    public static string SignatureText(IReadOnlyList<string> word)
+    // The effect signature (ADR-D01.70) in a rail order: the sample rule's effects stand on the rail orbits the
+    // five sample orbits are drawn on (SampleCheck.RailOrbits); every other orbit is unknown, never zero. It is
+    // never certified here, so it reads as unverified.
+    public static EffectSignature Signature(IReadOnlyList<string> word, IReadOnlyList<int> railOrder)
     {
-        IReadOnlyList<bool> moved = Signature(word);
-        if (moved.Count == 0) return "No effect signature: not a word of twists.";
-        string[] names = moved.Select((m, i) => (m, i)).Where(x => x.m).Select(x => SampleCheck.Orbits[x.i]).ToArray();
-        return "Effect signature, unverified: moves " + (names.Length == 0 ? "no sample orbit" : string.Join(", ", names)) + SampleCheck.Mark + ".";
+        if (word.Count == 0 || SampleCheck.Effects(word) is not { } effects) return EffectSignature.Unknown(railOrder);
+        return EffectSignature.Of(effects.Select((e, i) => (Orbit: SampleCheck.RailOrbits[i], e.Moved)).ToDictionary(x => x.Orbit, x => x.Moved), railOrder, false);
+    }
+
+    public static string SignatureText(EffectSignature signature)
+    {
+        string Names(SignatureMark mark) => string.Join(", ", signature.Slots.Where(s => s.Mark == mark).Select(s => OrbitAtlas.Name(s.Orbit)));
+        int unknown = signature.Slots.Count(s => s.Mark == SignatureMark.Unknown);
+        if (unknown == signature.Slots.Count) return "Effect signature: every orbit unknown.";
+        string moved = Names(SignatureMark.Moved), untouched = Names(SignatureMark.Untouched);
+        return $"Effect signature, {(signature.Certified ? "certified" : "unverified")}: moves {(moved.Length == 0 ? "no orbit" : moved)}; untouched {(untouched.Length == 0 ? "none" : untouched)}; " +
+            $"{unknown} orbits unknown{(signature.Certified ? "" : SampleCheck.Mark)}.";
     }
 }

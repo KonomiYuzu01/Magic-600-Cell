@@ -561,6 +561,17 @@ public sealed class OperationDraft
     // No argument declares the sample Goal, or takes the declared one away.
     public void SetGoal(string? argument) { Goal = argument == null ? (Goal == null ? SampleGoal : null) : string.IsNullOrWhiteSpace(argument) ? null : argument.Trim(); Safe.Raise(Changed); }
     public void SetMode(CheckMode mode) { Mode = mode; Safe.Raise(Changed); }
+
+    // protection.policy.set: Net or Strict by name; no argument changes to the other one.
+    public string? SetPolicy(string? argument)
+    {
+        CheckMode? to = argument?.Trim().ToLowerInvariant() switch
+        {
+            null => Mode == CheckMode.Net ? CheckMode.Strict : CheckMode.Net, "net" => CheckMode.Net, "strict" => CheckMode.Strict, _ => null,
+        };
+        if (to == null) return "it needs net or strict";
+        SetMode(to.Value); return null;
+    }
     public void Clear() { foreach (var t in twists) t.Clear(); Active = 1; Safe.Raise(Changed); }
 }
 

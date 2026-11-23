@@ -419,7 +419,13 @@ internal static class LiveChecks
         Type(Godot.Key.Enter, true);
         Require(demo.Preview.Pending is { Source: "library" } alone && alone.Moves.SequenceEqual(swap.Word) && solve.Draft.Twists(1).SequenceEqual(swap.Word) && demo.Moves.Entries.Count == entries,
             fault, "Shift+Enter did not preview the macro alone, or the draft lost its twists");
-        demo.Preview.Discard(); solve.Draft.Clear(); solve.Library.SetFilter(""); library.Filter.ReleaseFocus(); frame.Flush();
+        // A6 re-check N-5: with nothing matching the filter, Shift+Enter previews nothing; the pending preview stays.
+        Preview kept = demo.Preview.Pending!;
+        foreach (char c in "zz") Type(Godot.Key.A + (c - 'a'), false, c);
+        Type(Godot.Key.Enter, true);
+        Require(solve.Library.Shown.Count == 0 && demo.Preview.Pending is { } still && still.Id == kept.Id && still.Moves.SequenceEqual(kept.Moves) && demo.Moves.Entries.Count == entries &&
+            frame.Notice.Text.Contains(LibraryModel.NoSelection, StringComparison.Ordinal), fault, $"Shift+Enter with nothing selected changed the preview: notice '{frame.Notice.Text}'");
+        demo.Preview.Discard(); solve.Draft.Clear(); solve.Library.SetFilter(""); library.Filter.ReleaseFocus(); library.Filter.Text = ""; frame.Flush();
         Require(demo.Preview.Pending == null && solve.Draft.Count == 0 && frame.IsAncestorOf(demo.History), fault, "the Library step left a preview or a draft behind");
         GD.Print($"LOOKLAB_A6_LIBRARY filter=swap core={swap.Word.Count} changes={changes} history=right");
     }

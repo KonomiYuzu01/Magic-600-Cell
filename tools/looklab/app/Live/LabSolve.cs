@@ -19,7 +19,7 @@ internal sealed class LabSolve
     // The Library dock (ADR-D01.69): sample records; Enter adds a macro to the active phase, Shift+Enter previews it alone.
     public LibraryModel Library { get; } = new();
     public LibraryPanel LibraryView { get; }
-    public const string MacroPreview = "macro:";
+    public const string MacroPreview = LibraryModel.PreviewArgument;
     private readonly LabDemo session; private int sample; private bool staged;
     public AnchorLayer? GlobalAnchors { get; private set; }
     public AnchorLayer? LocalAnchors { get; private set; }
@@ -27,7 +27,7 @@ internal sealed class LabSolve
 
     public static bool Handles(string command) => command is "target.current.set" or "target.next.set" or "target.next.activate" or "target.next.clear" or
         "buffer.assign" or "target.frame.set" or "orbit.switch" or "input.destination.set" or "intent.set" or "operation.phase.select" or "operation.phase.edit" or "operation.phase.append_twist" or
-        "macro.add" or "macro.select" or "macro.filter" or "macro.base.open";
+        "macro.add" or "macro.select" or "macro.filter" or "macro.base.open" or "library.branch.toggle" or "protection.policy.set";
 
     // The two views' projections of a position of an orbit, for the anchors (LabFrame reads them from the views).
     private readonly Func<int, int, (double X, double Y)?>? globalPlace, localPlace;
@@ -70,6 +70,8 @@ internal sealed class LabSolve
         Strip = new RelationStrip(Demo, () => frame.Tokens, seconds);
         Strip.Command += run; Strip.DemoNext += Demo.NextState;
         Rail = new OrbitRail(Demo, () => frame.Tokens); Rail.Command += run;
+        // The Library's signatures are laid out in the rail's order and follow its setting.
+        LibraryView.RailOrder = () => OrbitRailModel.Order(Demo.Atlas, Rail.ByOrbitId); Rail.OrderChanged += LibraryView.Refresh; LibraryView.Refresh();
         frame.SetSeam(Strip); frame.SetPairHead(Rail); frame.HostKeys["F11"] = Demo.NextState;
         frame.Rebuilt += Attach; frame.Recoloured += () => { Strip.Recolour(); Rail.Recolour(); };
     }
@@ -110,11 +112,13 @@ internal sealed class LabSolve
             case "operation.phase.edit": why = Draft.Edit(argument); said = $"{Draft.Count} twists in the draft"; break;
             case "intent.set": Draft.SetGoal(argument); said = Draft.Goal == null ? "Goal: unset" : $"Goal: {Draft.Goal} ({SolvingDemo.Mark})"; break;
             case "macro.add":
-                string? adding = argument ?? Library.Current?.Name; why = Library.Insert(Draft, argument);
+                string? adding = argument ?? Library.Current?.Name; why = Library.Insert(Draft, argument, Demo.State);
                 said = $"{OperationDraft.Phases[Draft.Active]}: {adding} added ({Draft.Count} twists in the draft)"; break;
             case "macro.select": why = Library.Select(argument); said = "Library: " + Library.Selected; break;
             case "macro.filter": Library.SetFilter(argument ?? ""); OpenLibrary(); said = Library.Filtering ? $"Library: {Library.Shown.Count} records match" : "Library: no filter"; break;
             case "macro.base.open": OpenLibrary(); said = "Library"; break;
+            case "library.branch.toggle": why = Library.Toggle(argument); said = "Library: " + argument; break;
+            case "protection.policy.set": why = Draft.SetPolicy(argument); said = $"Check mode: {Draft.Mode}, {Draft.Checked.ToString().ToLowerInvariant()} (demo rule)"; break;
             case "operation.phase.append_twist":
                 string twist = argument ?? SampleTwists[sample++ % SampleTwists.Length];
                 // In Direct a twist key commits its twist; a typed line only stages it (ADR-D01.58).
@@ -135,7 +139,7 @@ internal sealed class LabSolve
     // Shift+Enter in the Library: the macro alone as the preview; the draft keeps its twists.
     public void PreviewMacro(string name)
     {
-        (LibraryRecord? macro, string? why) = Library.Macro(name);
+        (LibraryRecord? macro, string? why) = Library.Macro(name, Demo.State);
         if (why != null) { frame.Say("Preview: " + why, true); return; }
         session.StageMacro(macro!.Name, macro.Word);
     }

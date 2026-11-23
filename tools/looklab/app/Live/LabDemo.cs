@@ -33,7 +33,7 @@ internal sealed class LabDemo
 
     public static bool Handles(string command) => command is "operation.preview" or "operation.preview.commit" or "operation.preview.cancel" or "view.preview.open" or
         "view.preview.scrub" or "session.undo" or "session.redo" or "session.undo.partial" or "session.branch.select" or "session.branch.replay" or "session.rollback" or
-        "layout.undo" or "layout.redo" or "history.dock.mode" or "preview.side.both" or "preview.side.before" or "preview.side.after" or "preview.side.next";
+        "layout.undo" or "layout.redo" or "layout.roll" or "history.dock.mode" or "history.show" or "history.entry.toggle" or "preview.side.both" or "preview.side.before" or "preview.side.after" or "preview.side.next";
 
     // Where the command being carried out came from: a typed line never writes the move history.
     public InputSurface Surface { get; set; } = InputSurface.Key;
@@ -52,7 +52,8 @@ internal sealed class LabDemo
         stage.Pressed += () => run("operation.preview", null);
         Bar.Tools.AddChild(stage);
         Bar.Command += run; Bar.Parameter += SetParameter; PreviewView.Command += run;
-        History.Command += (command, argument) => { if (command == "layout.roll") Restore(Layout.RollTo(int.Parse(argument!, CultureInfo.InvariantCulture))); else run(command, argument); };
+        // Every History action is a registry command, a roll to a layout step included (layout.roll).
+        History.Command += run;
         foreach ((string origin, string name, string time, int sample) in new[] { ("hand", "twist(cell 5, axis 0, +1)", "10:02", 2), ("macro", "my.corner_swap(cell 40)", "10:05", 0),
             ("script", "sweep.6cs on ring 1", "10:11", 1), ("hand", "twist(cell 77, axis 3, -1)", "10:12", 2), ("macro", "my.corner_swap(cell 117)", "10:20", 0) })
             Moves.Commit(origin, name, time, "commit " + name, origin == "hand" ? new[] { name } : Samples[sample].Moves);
@@ -242,6 +243,8 @@ internal sealed class LabDemo
                 // A branch switch passes its confirm gate: the first request only asks, in the History dock, and
                 // only the answer to the question that is open, at the head it was asked at, switches lines.
                 string[] parts = (argument ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries); bool confirmed = parts.Length == 2 && parts[0] == "confirm";
+                // Cancel closes the open question; nothing is recorded.
+                if (parts is ["cancel"]) { Moves.Ask(-1); frame.Say("Kept the current line"); break; }
                 if (Moves.Branches.Count == 0) { frame.Say("There is no kept branch", true); break; }
                 if (!int.TryParse(parts.Length > 0 ? parts[^1] : "0", NumberStyles.None, CultureInfo.InvariantCulture, out int branch)) { frame.Say("Switch branch: it needs the number of a branch", true); break; }
                 if (confirmed)
@@ -266,6 +269,13 @@ internal sealed class LabDemo
             case "preview.side.next": Preview.CycleSide(); break;
             case "session.rollback": Moved(argument != null && Moves.RollTo(int.Parse(argument, CultureInfo.InvariantCulture)), "The history is already there"); break;
             case "layout.undo": Nothing(Restore(Layout.Undo()), "No layout change to undo"); break;
+            case "layout.roll":
+            {
+                bool rolled = int.TryParse(argument, NumberStyles.None, CultureInfo.InvariantCulture, out int step) && Restore(Layout.RollTo(step));
+                Nothing(rolled, argument == null ? "Roll the layout: it needs the number of a layout step" : "The layout history is already there"); break;
+            }
+            case "history.show": History.Show(argument == null ? !History.ShowLayout : argument == "layout"); break;
+            case "history.entry.toggle": if (argument == null) frame.Say("History: it needs the id of an entry", true); else History.Toggle(argument); break;
             case "layout.redo": Nothing(Restore(Layout.Redo()), "No layout change to redo"); break;
             case "history.dock.mode": History.SetPlainList(!History.PlainList); break;
         }

@@ -267,7 +267,7 @@ public sealed partial class HistoryPanel : VBoxContainer
         foreach ((bool layout, string title, string tip) in new[] { (false, "Moves", "The move history: committed transactions"), (true, "Layout", "The layout history: views, workspaces and appearance") })
         {
             Button tab = ChromeWidgets.Tool(title, tip, true, "TabButton"); tab.SetPressedNoSignal(ShowLayout == layout); tab.SetMeta("history", title);
-            tab.Pressed += () => Show(layout); head.AddChild(tab);
+            tab.Pressed += () => Send("history.show", layout ? "layout" : "moves"); head.AddChild(tab);
         }
         head.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         if (ShowLayout)
@@ -292,7 +292,7 @@ public sealed partial class HistoryPanel : VBoxContainer
             HistoryEntry entry = Moves.Entries[i]; int index = i; bool undone = i >= Moves.Cursor;
             if (i == Moves.Cursor - 1) List.AddChild(CursorLine(t));
             bool partial = i == Moves.Cursor - 1 && Moves.Inner > 0;
-            Control row = Row(t, false, undone, entry.Origin, entry.Name, $"{entry.Id}  {entry.Time}", PlainList ? null : () => Toggle(entry.Id),
+            Control row = Row(t, false, undone, entry.Origin, entry.Name, $"{entry.Id}  {entry.Time}", PlainList ? null : () => Send("history.entry.toggle", entry.Id),
                 () => Send("session.rollback", (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)), IsOpen(entry.Id));
             row.SetMeta("entry", entry.Id); List.AddChild(row);
             if (PlainList || !(IsOpen(entry.Id) || partial)) continue;
@@ -319,7 +319,7 @@ public sealed partial class HistoryPanel : VBoxContainer
                 Label ask = ChromeWidgets.Text("Switch lines?", "AccentLabel"); tools.AddChild(ask);
                 Button yes = ChromeWidgets.Tool("Confirm", "Make this branch the line. The later entries of the current line are kept as a branch."); yes.Name = "BranchConfirm";
                 yes.Pressed += () => Send("session.branch.select", "confirm " + at.ToString(System.Globalization.CultureInfo.InvariantCulture)); tools.AddChild(yes);
-                Button no = ChromeWidgets.Tool("Cancel", "Keep the current line"); no.Name = "BranchCancel"; no.Pressed += () => Ask(-1); tools.AddChild(no);
+                Button no = ChromeWidgets.Tool("Cancel", "Keep the current line"); no.Name = "BranchCancel"; no.Pressed += () => Send("session.branch.select", "cancel"); tools.AddChild(no);
             }
             else
             {
@@ -327,7 +327,7 @@ public sealed partial class HistoryPanel : VBoxContainer
                 replay.Pressed += () => Send("session.branch.replay", at.ToString(System.Globalization.CultureInfo.InvariantCulture)); tools.AddChild(replay);
                 string? why = Moves.SelectRefusal(at);
                 Button swap = ChromeWidgets.Tool("Switch", why == null ? "Switch to this branch; it asks first" : "Not now: " + why); swap.Name = "BranchSwitch"; swap.Disabled = why != null;
-                swap.Pressed += () => Ask(at); tools.AddChild(swap);
+                swap.Pressed += () => Send("session.branch.select", at.ToString(System.Globalization.CultureInfo.InvariantCulture)); tools.AddChild(swap);
             }
             List.AddChild(line); List.AddChild(tools);
         }

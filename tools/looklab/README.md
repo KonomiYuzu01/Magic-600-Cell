@@ -1141,8 +1141,9 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
 - Keyboard reach, in the tests that `python tools/looklab/check.py` runs: every key set (the default and each
   preset) opens the palette, closes an overlay and shows the key map; the palette lists every command; every action
   that an element raises by name is a command, or is listed under `pointer_only` in
-  `data/design/screen-words.json` (today only `layout.roll`, History's roll to a layout step); eleven of the twelve
-  solving commands have a key and
+  `data/design/screen-words.json` (empty since the A6 re-check: History's roll to a layout step is the draft row
+  `layout.roll`); on the Library, the History dock and the draft line no button, chip or row acts by itself, each
+  sends a registry command; eleven of the twelve solving commands have a key and
   the twelfth is the held orbit jump.
 - Words per screen, in the sweep of the Godot lane (`check.py --godot`): for each of the five workspaces the sweep
   counts the words of the labels, buttons and empty fields shown in the window and fails over the limit in the same
@@ -1260,3 +1261,31 @@ change. Each fix has a headless test in `tests/A6FixTests.cs`; A5 tests whose sa
 
 Deferred: B-11 (help at the cursor as a geometry-backed term card linked to the Learn layout). The lab has no Learn
 layout and no term cards, so the key's label alone would point at a missing surface; it needs its own step.
+
+### A6 scoped re-check: build fixes
+
+The scoped re-check of the fixes above left build findings open; each fix has a headless test, in
+`tests/A6RecheckTests.cs` or as an extension of the A6 or A5 test it names.
+
+- Checks. A staged draft carries its own prefix check: a prefix is cut from the phases in order and checked under the
+  mode the draft was staged with, so a Strict draft's prefix stays Strict (B-3). A word whose effects move the locked
+  sample orbit fails the draft's check in both modes, as the same twist staged alone (N-2). A twist of a cell outside
+  0 to 599 or an axis outside 0 to 5 is no witness and gives its reason; a Direct twist is checked before it commits
+  (N-3). The sample previews are checked by the sample rule when they are staged (`PreviewSamples`), so one witness
+  shows one collateral however it was staged (N-6).
+- History. A Replay with no branch number (a key bound through the palette) acts on the branch last named in History
+  and refuses when there is none; it never prepares branch 0 by default (Q5). Opening or cancelling the switch
+  question records nothing (`MoveHistory.Asked`), so state-reading tasks keep running and script results stay fresh
+  (N-4). A change of demo state (F11) carries the drafts by state and orbit (N-10).
+- Library. Shift+Enter with nothing selected says so and leaves the pending preview (N-5; the live check presses it on
+  an empty filter). The effect signature has 35 slots in the rail's order and follows the rail's order setting: a full
+  bar where the word moves the orbit, a base-line tick where it was measured not to, a short upright hair where
+  nothing is known. The five sample orbits stand on O34, O06, O00, O17 and O02 (sample mapping, demo data); every
+  other slot is unknown (N-8). The Template binds its roles Target, Buffer A and Buffer B to the strip of the
+  working orbit (a position names a sample cell, sample mapping); Enter adds the bound word and Shift+Enter previews
+  it, and another Target gives another word and a fresh preview (N-9).
+- Commands (N-7). The Library's branch heads, History's Moves and Layout tabs, its entries, its Switch and Cancel and
+  its layout steps, and the check-mode chip send registry commands. The chip uses the command table's
+  `protection.policy.set` (net or strict). Four rows are Look Lab's own proposal, in
+  `data/design/command-rows-draft.json` after the record's five: `library.branch.toggle`, `layout.roll`,
+  `history.show` and `history.entry.toggle`.

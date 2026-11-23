@@ -9,7 +9,5 @@
     "reference": 200,
     "gallery": 215
   },
-  "pointer_only": [
-    "layout.roll"
-  ]
+  "pointer_only": []
 }

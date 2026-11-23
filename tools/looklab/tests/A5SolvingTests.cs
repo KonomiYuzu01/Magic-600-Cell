@@ -207,6 +207,24 @@ internal static partial class Program
         string[] pointerOnly = raised.Where(id => !registry.Commands.ContainsKey(id)).ToArray();
         Check(raised.Count >= 10, "the scan found too few actions: " + raised.Count);
         Sequence(pointerOnly, listed, "actions with no path from the keyboard: " + string.Join(", ", pointerOnly));
+        Check(listed.Length == 0, "an action is still pointer-only: " + string.Join(", ", listed));
+        // A6 re-check N-7: on the solving surfaces (the Library, the History dock and the draft line) a button, a chip
+        // or a row never acts by itself: each action sends a registry command, so a bound key reaches it too.
+        foreach ((string file, string from, string? to) in new[] { ("app/Chrome/Ui/LibraryPanel.cs", "public sealed partial class LibraryPanel", "public sealed partial class SignatureMarks"),
+            ("app/Chrome/Ui/DraftLine.cs", "public sealed partial class DraftLine", null), ("app/Chrome/Ui/SessionPanels.cs", "public sealed partial class HistoryPanel", "private static Control CursorLine") })
+        {
+            string all = File.ReadAllText(Path.Combine(Lab, file)); int start = all.IndexOf(from, StringComparison.Ordinal), end = to == null ? all.Length : all.IndexOf(to, start, StringComparison.Ordinal);
+            Check(start >= 0 && end > start, file + ": the surface was not found");
+            int actions = 0;
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(all.Substring(start, end - start), @"(?<before>[^\n]{0,24})\(\) => (?<call>[A-Za-z_][A-Za-z_.]*)\((?<first>[^,)]*)"))
+            {
+                if (m.Groups["before"].Value.EndsWith("Changed += ", StringComparison.Ordinal) || m.Groups["before"].Value.EndsWith("Draw += ", StringComparison.Ordinal)) continue;
+                actions++;
+                string call = m.Groups["call"].Value;
+                Check(call == "Send" || (call == "Safe.Raise" && m.Groups["first"].Value == "Command"), $"{file}: a widget-only action calls {call}({m.Groups["first"].Value}");
+            }
+            Check(actions >= 2, file + ": the scan found too few actions");
+        }
         // The solving surface from the keyboard alone: eleven commands have a key, and the orbit jump is a held key.
         string[] keyed = { "target.current.set", "target.next.set", "target.next.activate", "target.next.clear", "buffer.assign", "target.frame.set", "input.destination.set", "intent.set",
             "operation.phase.select", "operation.phase.edit", "operation.phase.append_twist" };
@@ -246,7 +264,10 @@ internal static partial class Program
         CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
         string panel = File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/SessionPanels.cs")), lab = File.ReadAllText(Path.Combine(Lab, "app/Live/LabDemo.cs"));
         Check(registry.Commands.ContainsKey("session.branch.select") && lab.Contains("Moves.ConfirmRefusal(branch)", StringComparison.Ordinal), "the branch switch has no command or no gate");
-        Check(System.Text.RegularExpressions.Regex.Matches(panel, "Send\\(\"session.branch.select\"").Count == 1 && panel.Contains("\"confirm \" + at", StringComparison.Ordinal), "the panel switches without the confirm gate");
+        // The panel sends three requests: Switch (which only asks), the answer to the open question, and Cancel.
+        Check(System.Text.RegularExpressions.Regex.Matches(panel, "Send\\(\"session.branch.select\"").Count == 3 && panel.Contains("\"confirm \" + at", StringComparison.Ordinal) &&
+            panel.Contains("Send(\"session.branch.select\", \"cancel\")", StringComparison.Ordinal) && lab.Contains("History.Show(false); Moves.Ask(branch);", StringComparison.Ordinal) &&
+            !lab.Contains("Moves.SelectBranch(", StringComparison.Ordinal), "the panel switches without the confirm gate");
     }
 
     // Stage 10 points 9 to 11: palette aliases and typed arguments, readout facts with lamps, the five panel states.

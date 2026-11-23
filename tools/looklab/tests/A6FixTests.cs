@@ -349,8 +349,9 @@ internal static partial class Program
         Check(library.Current?.Name == "Three-cycle A" && library.Shown.All(r => LibraryModel.BranchOf(r.Kind) == "Macros"), "a fresh Library does not open on the macros");
         foreach (LibraryRecord m in library.Records.Where(r => r.IsMacro))
         {
-            Check(SampleCheck.Check(m.Word).Status == PreviewStatus.Ready && LibraryModel.Signature(m.Word).Count == SampleCheck.Orbits.Count && !LibraryModel.Signature(m.Word)[SampleCheck.Locked] &&
-                LibraryModel.SignatureText(m.Word).Contains("unverified", StringComparison.Ordinal), m.Name + " is not a sample macro the check passes, or its signature claims a certificate");
+            EffectSignature signature = LibraryModel.Signature(m.Word, Atlas.StageOrder);
+            Check(SampleCheck.Check(m.Word).Status == PreviewStatus.Ready && signature.Slots.Count == OrbitAtlas.Count && signature.Mark(SampleCheck.RailOrbits[SampleCheck.Locked]) == SignatureMark.Untouched &&
+                !signature.Certified && LibraryModel.SignatureText(signature).Contains("unverified", StringComparison.Ordinal), m.Name + " is not a sample macro the check passes, or its signature claims a certificate");
         }
         Check(LibraryModel.Branches.Select(b => b.Title).SequenceEqual(new[] { "Macros", "Templates", "Sets", "Blocks", "Saved states", "Built-in" }) &&
             library.Records.Count(r => r.Kind == LibraryKind.BuiltInTool) == 7 && Enum.GetValues<LibraryKind>().Select(LibraryModel.Glyph).Distinct().Count() == 8, "the tree's branches, the shipped tools or one glyph per kind");
@@ -363,7 +364,7 @@ internal static partial class Program
         Check(draft.CanStage && draft.StagedCheck().Status == PreviewStatus.Ready, "the draft with the macro does not stage");
         // Only a macro joins a phase; Direct has no phase; a filter reaches folded branches; a name selects anywhere.
         library.SetFilter("built"); Check(library.IsOpen("Built-in") && library.Shown.Count == 7 && library.Insert(draft) != null && changes == 1, "a built-in tool joined a phase, or a filter missed a folded branch");
-        Check(library.Select("Three-cycle on roles") == null && library.Filter == "" && library.Insert(draft)!.Contains("only a macro", StringComparison.Ordinal), "a Template joined a phase unbound");
+        Check(library.Select("Three-cycle on roles") == null && library.Filter == "" && library.Insert(draft)!.Contains("roles bind to the strip", StringComparison.Ordinal), "a Template joined a phase unbound");
         Check(library.Select("nothing") != null && library.Macro("Orient twin").Macro != null, "a missing record was selected");
         draft.SetRoute("direct"); Check(library.Insert(draft, "Orient twin")!.Contains("Direct", StringComparison.Ordinal) && draft.Twists(1).SequenceEqual(swap.Word), "a macro joined a phase in Direct");
         library.Fold("Macros"); library.SetFilter(""); Check(!library.IsOpen("Macros") && !library.Shown.Any(r => r.IsMacro) && library.Shown.All(r => r.Kind == LibraryKind.Template) && library.Current?.Kind == LibraryKind.Template, "a folded branch still shows its rows");
@@ -383,9 +384,10 @@ internal static partial class Program
             lab.Contains("frame.SetContent(\"library\", solve.LibraryView);", StringComparison.Ordinal), "the lab does not register the Library on the left and History on the right");
         CommandRegistry registry = LabRegistry();
         Check(new[] { "macro.add", "macro.select", "macro.filter", "macro.base.open", "operation.preview" }.All(registry.Commands.ContainsKey), "a Library command is not in the registry");
-        Check(panel.Contains("Filter.GuiInput += Key;", StringComparison.Ordinal) && panel.Contains("when key.ShiftPressed: Send(\"operation.preview\", name == null ? null : \"macro:\" + name)", StringComparison.Ordinal) &&
-            panel.Contains("Godot.Key.KpEnter: Send(\"macro.add\", name)", StringComparison.Ordinal) && solve.Contains("why = Library.Insert(Draft, argument);", StringComparison.Ordinal) &&
-            solve.Contains("public const string MacroPreview = \"macro:\";", StringComparison.Ordinal) && lab.Contains("solve.PreviewMacro(", StringComparison.Ordinal), "the Library's keys do not reach the draft and the preview");
+        Check(panel.Contains("Filter.GuiInput += Key;", StringComparison.Ordinal) && panel.Contains("when key.ShiftPressed: Send(\"operation.preview\", LibraryModel.PreviewRequest(name))", StringComparison.Ordinal) &&
+            panel.Contains("Godot.Key.KpEnter: Send(\"macro.add\", name)", StringComparison.Ordinal) && solve.Contains("why = Library.Insert(Draft, argument, Demo.State);", StringComparison.Ordinal) &&
+            solve.Contains("public const string MacroPreview = LibraryModel.PreviewArgument;", StringComparison.Ordinal) && LibraryModel.PreviewArgument == "macro:" && lab.Contains("solve.PreviewMacro(", StringComparison.Ordinal),
+            "the Library's keys do not reach the draft and the preview");
         IconSet icons = IconSet.Parse(Read("data/design/icons.json"));
         Check(icons.Icons.ContainsKey("panel.library") && Enum.GetValues<LibraryKind>().All(k => icons.Icons.ContainsKey(LibraryModel.Glyph(k))), "a Library glyph has no icon");
     }

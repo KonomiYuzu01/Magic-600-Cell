@@ -16,6 +16,9 @@ public static class SampleCheck
     public static readonly IReadOnlyList<int> Totals = Array.AsReadOnly(new[] { 120, 720, 1200, 600, 2400 });
     // The protected orbit of the samples: sample orbit 4 is locked.
     public const int Locked = 3;
+    // Where the five sample orbits are drawn on the orbit rail, for the effect signature (sample mapping, demo
+    // data): O34, O06, O00 and O02 have the sample orbit's piece count, and O17 stands for the locked one.
+    public static readonly IReadOnlyList<int> RailOrbits = Array.AsReadOnly(new[] { 34, 6, 0, 17, 2 });
     public const string LockedReason = "it moves a protected orbit: sample orbit 4 is locked";
     public const string NotTwists = "a move is not a typed twist, and Look Lab has no engine to check it";
     public const string Mark = " (sample rule, demo data)";
