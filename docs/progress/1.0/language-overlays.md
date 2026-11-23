@@ -57,3 +57,68 @@ The command layer's readings of 23 November 2026 are recorded with their rows in
     16 MiB) are the integrator's defaults.
   - `c600-log` has path dependencies only. A real compressor would be a product dependency and goes to the owner.
 - **Tests.** `rust/c600-log/tests/` (compile gates, dependencies, interchange).
+
+## OV-3. The learning path's step order (chapter 04, EV5.6 and EV5.18)
+
+- **Authority.** The integrator's ruling of 23 November 2026: record the change here, and do not edit EV5.6. The
+  owner chose the manual as the source of first use on 23 November 2026
+  ([decision](../../wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md), item 2.5). The mathematician's
+  pass checks this record together with the learning path. Where the mathematician disagrees with a move, the concept
+  keeps its frozen step and the conflict goes to the integrator.
+- **Clauses.**
+  - Chapter 04's EV5.6, the seven steps and their concepts.
+  - EV5.10's term check: a definition uses terms at its own level or lower.
+  - EV5.18's qualified names.
+- **Reading.** A concept cannot be taught after a concept whose definition uses it. Where a definition taught at an
+  earlier step uses a concept that EV5.6 places at a later step, the concept is taught at the earlier step and
+  revisited at its frozen step. The path is `docs/progress/1.0/glossary/learning-path.json`, with its rows in
+  `terms.json`.
+
+  | Concept (row) | EV5.6 step | Step in the path | Used by (definition at the earlier step) |
+  | --- | --- | --- | --- |
+  | Theorem (`theorem`) | 5 | 1, revisited at 5 | Basis, Reachability claim |
+  | Certificate (`certificate`) | 7 | 1, revisited at 7 | Basis |
+  | Digest (`digest`) | 7 | 1, revisited at 7 | Job result |
+  | Identity level (`identity-level`) | 6 | 1, revisited at 6 | Specification, Digest |
+  | Assistance provenance (`assistance-provenance`) | 4 | 3, revisited at 4 | Workspace record |
+  | Word (`word`) | 4 | Taken from the manual, not taught by the path | The manual's chapter 1 teaches it first |
+  | Flow rule (`flow-rule`) | 6 | Waits at 6 | Not learner-facing until LQ2 decides (EV5.9) |
+
+  Eleven concepts that EV5.6 does not list are taught where a definition first needs them:
+
+  | Concept (row) | Step | Used by |
+  | --- | --- | --- |
+  | View (`view`) | 1 | Base revision |
+  | Statement (`statement`) | 1 | Claim, Standing, Statement form, Negation pair, Evidence graph, Theorem |
+  | Evidence (`evidence`) | 1 | Claim, Evidence words, Verdict |
+  | Admitted domain (`admitted-domain`) | 1 | Covered set |
+  | Sticker (`sticker`) | 1 | Identity level |
+  | Source range (`source-range`) | 2 | Diagnostic |
+  | Keyboard key (`keyboard-key`) | 3 | Binding |
+  | Menu letter (`menu-letter`) | 4 | Cost alphabet |
+  | Revision reference (`revision-reference`) | 4 | Recording |
+  | State derivation (`state-derivation`) | 6 | Derived state |
+  | Gauge (`gauge`) | 7 | Exact transport |
+
+  Specification and Not meant stay at step 1, as EV5.6 places them. Each records a forward use of Principle record,
+  which step 5 teaches, as EV5.6's own note allows. The step numbers do not change. Step 4 now depends on step 3 as
+  well as step 1, because step 3 teaches assistance provenance. The dependency order is:
+  - steps 2 and 3 after step 1;
+  - step 4 after steps 1 and 3;
+  - step 5 after step 4;
+  - step 6 after steps 2, 3 and 5;
+  - step 7 after step 6.
+- **Other readings in the glossary.** These are recorded in `terms.json` and rendered into `glossary.md`.
+  - "Twist" is a homonym with no bare sense: `twist-full` and `twist-jumbling`.
+  - Bare words read as follows. Key is the keyboard key and block the achievement block (EV5.18). Macro is a macro.
+    Witness is the witness word. Chamber is the cut chamber, LP4's reading, since EV5.18 sets only cut chamber against
+    flag chamber. Every other homonym is refused when bare.
+  - "Protection level" reads as identity level, and the flow label's "provenance" as assistance provenance.
+  - Section 6's ambiguous citations are qualified in each row's `source` field, under partition default 19:
+    - "Q7 (a)" becomes "DT-M1 Q7 (a)";
+    - "default 10", "default 9" and "default 7" become "partition default" 10, 9 and 7;
+    - "access policy: LQ14" becomes "LQ14 (access policy)".
+- **What it changes.** No frozen text. The term check (`build.py --check`) and `tests/test_glossary.py` enforce the
+  order.
+- **Tests.** CT-EV5-02 in part (`tests/test_glossary.py`). BS3's branch waits for LQ2. The review clause, and the
+  check of the flow goals against the disclosure data, wait for LP4-11's `c600-command` part.
