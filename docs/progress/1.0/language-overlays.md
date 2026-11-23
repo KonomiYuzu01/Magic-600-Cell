@@ -113,6 +113,10 @@ The command layer's readings of 23 November 2026 are recorded with their rows in
     Witness is the witness word. Chamber is the cut chamber, LP4's reading, since EV5.18 sets only cut chamber against
     flag chamber. Every other homonym is refused when bare.
   - "Protection level" reads as identity level, and the flow label's "provenance" as assistance provenance.
+  - Census rank: EV5.18's row says what the rank counts is not established. The mathematician cites Theory Lemma 6,
+    r(A) = |M(A)| - 1, which holds on all 35 orbits of `census.json`. The row now states it and is learner-facing.
+  - Cap cover uses manual 2.2's definition. That adds an eighth recorded first-use exception, because chapter 2's
+    introduction mentions cover before section 2.1 names cut cells.
   - Section 6's ambiguous citations are qualified in each row's `source` field, under partition default 19:
     - "Q7 (a)" becomes "DT-M1 Q7 (a)";
     - "default 10", "default 9" and "default 7" become "partition default" 10, 9 and 7;
