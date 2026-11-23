@@ -5,6 +5,8 @@ version.workspace = true
 edition.workspace = true
 publish.workspace = true
 
+# The kernel crate only for its container readers (`archive`: DEFLATE and gzip; `json`), never its engines.
 [dependencies]
 c600-digest = { path = "../c600-digest" }
 c600-evidence = { path = "../c600-evidence" }
+c600-kernel = { path = "../c600-kernel" }

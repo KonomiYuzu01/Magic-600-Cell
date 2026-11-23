@@ -21,6 +21,7 @@ version = "0.0.0"
 dependencies = [
  "c600-digest",
  "c600-evidence",
+ "c600-kernel",
 ]
 
 [[package]]

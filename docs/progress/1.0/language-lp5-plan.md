@@ -110,8 +110,9 @@ before the stage pieces start.
      `c600-digest` only, so it has no path to the interpreter, the library, any archive reader's interpretation or a
      producer. It emits KN6.1's `CheckReport` as its own type.
    - `c600-archive` (PS3 research import and exchange): the import table, the FP.22 discriminator for absent-format
-     records, manifest and member checks, the import inventory and `export_check_bundle`; it depends on `c600-digest`
-     and `c600-evidence` only, and executes nothing (PS3.16, PS3.17).
+     records, manifest and member checks, the import inventory and `export_check_bundle`; it depends on `c600-digest`,
+     `c600-evidence` and `c600-kernel`, whose container readers (`archive`: DEFLATE and gzip; `json`) it reuses rather
+     than writing its own, and calls no engine. It executes nothing (PS3.16, PS3.17).
    - `c600-research` (the research host): the overlay rows, the host reads the research entries need, the KN6 job
      adapter that hands a `CheckReport` to `c600-evidence`'s admission (EVD.64: only the kernel writes `independent
      checker`), and the research output panel's rows. It depends on `c600-tools`, `c600-command`, `c600-checkers`,

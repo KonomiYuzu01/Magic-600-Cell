@@ -72,8 +72,8 @@ syntax crate, the interpreter, the kernel and the digest crate.
 The library crate depends on the IR, syntax and digest crates only; its tests also run the checker, the interpreter
 and the kernel.
 LP5's KN6 checkers depend on the kernel, jumbling and digest crates only, so no checker reaches the interpreter, the
-library, an archive reader or a producer (KN6.2). The archive crate depends on the digest crate and the evidence
-library only. The research host depends on the tools crate, the command layer, the session store, the library, the
+library, an archive reader or a producer (KN6.2). The archive crate depends on the digest crate, the evidence library
+and the kernel crate, whose container readers (DEFLATE, gzip, JSON) it reuses; it calls no engine. The research host depends on the tools crate, the command layer, the session store, the library, the
 evidence library, the checkers and the archive crate; the command layer gains no edge (ONE.48). Any other edge
 follows PHS.52 ([LP5 plan](../docs/progress/1.0/language-lp5-plan.md), section 4).
 
