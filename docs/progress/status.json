@@ -174,7 +174,7 @@
       {"id": "r4-stages15-17", "title": "R4 stages 15 to 17 checkers", "weight": 8, "done": false, "evidence": null},
       {"id": "r5-stage18", "title": "R5 stage 18 checkers", "weight": 6, "done": false, "evidence": null},
       {"id": "r6-stage19", "title": "R6 stage 19 checkers", "weight": 6, "done": false, "evidence": null},
-      {"id": "r7-library", "title": "R7 research library entries", "weight": 6, "done": false, "evidence": null},
+      {"id": "r7-library", "title": "R7 research library entries", "weight": 6, "done": true, "evidence": "595c4ca7853989fa3390f3f5df33287845cb8a90"},
       {"id": "r8-repro", "title": "R8 reproducible research work", "weight": 4, "done": false, "evidence": null},
       {"id": "r9-obligation-export", "title": "R9 proof-obligation export", "weight": 3, "done": false, "evidence": null},
       {"id": "r10-panel-rows", "title": "R10 research panel rows", "weight": 4, "done": false, "evidence": null},

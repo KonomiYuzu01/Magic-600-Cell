@@ -3612,10 +3612,13 @@ workspace file.
   compressed witnesses, regional-family recognition, and conditional models. No entry reads state; the search and the
   membership check run over synthetic permutation actions only, carry no witness word, and their four rows are marked
   research tier candidates. A search record keeps its declaration, outcome, stop reason and coverage; only a completed,
-  unbeamed enumeration is a negative, and a reduced negative leaves its family only through a matching lemma, otherwise
-  `LB5:evidence.reduction_scope_mismatch`. Membership answers `OUTSIDE_CERTIFIED_DOMAIN` with k and its scope only
+  unbeamed enumeration is a negative, `complete_lengths` counts only the lengths before the first beam discard, and a
+  reduced negative leaves its family only through a matching lemma, otherwise `LB5:evidence.reduction_scope_mismatch`.
+  Malformed input (no letter, or an image, start point, goal or target outside the action's points) is an error, never
+  a negative or a rejection. Membership answers `OUTSIDE_CERTIFIED_DOMAIN` with k and its scope only
   after a complete enumeration, always with `reachability: not_asserted`. B11 (6,775 digits) computes without
-  expansion. Drafts: an expansion over its bound answers as a value (`admitted: false`), since LB1 registers no code
+  expansion. A row's effects stay within chapter 03's Effect column; its `budgets` is the most an entry may use.
+  Drafts: an expansion over its bound answers as a value (`admitted: false`), since LB1 registers no code
   for it; D[k] is "within k letters of a target point"; a search budget counts examined candidates. Tests: CT-LB1-04,
   CT-LB1-05, CT-LB5-07, CT-LB5-08 and CT-ERR-11, their library parts. Not built here: the host's refusal of research
   tier rows in a solving session (BND.64, CT-BND-16), the entries' puzzle forms over KN2.4's reads and the jumbling
