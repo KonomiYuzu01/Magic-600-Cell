@@ -252,7 +252,13 @@ pub fn read_chain(run: &mut Run, doc: &Value) -> Step<Chain> {
             return Err(reject(names("dir"), format!("the directory {} names two steps", step.dir)));
         }
         let stated = step.letters;
-        let computed = step.x + 2 + form.copies() * step.v;
+        // X + 2 + copies·V from untrusted counts: an overflow is a failed length claim, never a panic or a wrap.
+        let computed = form
+            .copies()
+            .checked_mul(step.v)
+            .and_then(|copies| copies.checked_add(step.x))
+            .and_then(|sum| sum.checked_add(2))
+            .ok_or_else(|| reject(names("letters"), "X + 2 + copies·V overflows the letter count"))?;
         run.claim(&names("letters"), &stated, &computed)?;
         admit(computed, &names("letters"))?;
         run.held(names("admission"), format!("{computed} letters, at most 10^7, before expansion"));

@@ -3625,6 +3625,18 @@ workspace file.
   helper sets, precedence, input digests or start tables fail. The 22 finite-search records (scans, pairs, plus, beam
   and peel) answer `not_applicable` with their scope. The fourteen-table level rebuild is an ignored test (about
   100 s); the 7304 stop runs as its fast representative.
+- R5, stage 18's research-archive sub-checkers (CT-LB5-05, CT-LB5-09, CT-LB1-04's expansion half):
+  `c600-checkers/src/archive/s18` registers `s18.expansion` (gate 1: both `steps.json` forms, each step's exact length
+  admitted at most 10^7 before any word is read, every word file streamed and hashed), `s18.composed` (gate 2: the
+  composed strict′ contract checked letter by letter), `s18.tail_replay` (gate 3: chunked literal replay for T6 steps 1 to
+  3; T6 step 4 and the rule stages keep `historical_check_incomplete` and never pass it), `s18.lattice_run` (the
+  `runner-run/3` record, report, tables, step trees and words) and `s18.lattice_replay` (the lattice phase's 13,231,266
+  twists replayed from T6's stored end table, a fresh check with no archived `check.jsonl` to match). Start tables of
+  later steps are rebuilt by exact replay and marked derived (owner, LP5-3). Stop units and whole-cap outputs answer
+  `not_applicable`; any other departure from a record's form fails, naming the field. The R22B-10 clause covers the
+  stored expanded X and V′ words only; no `r22b10/1` or `/2` certificate is stored. The in-place gate 2 and 3 replays
+  (about 2 to 3 ms per letter in the test profile: about 1 h for T6's gate 2, 30 min each for the rule stages' gate 2
+  and T6's gate 3, 11 h for the lattice phase) are ignored tests; fast synthetic records exercise the same code.
 - R7, the research library's entries (LB1, LB5): `c600-library` holds them as 600 Cell Script in eight modules
   (`research_slp`, `research_bigint`, `research_fixpoints`, `research_flows`, `research_search`, `research_ranks`,
   `research_families`, `research_models`), with eleven catalogue rows in `c600_library::research`: LB1's straight-line

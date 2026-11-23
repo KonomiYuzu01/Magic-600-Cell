@@ -136,6 +136,12 @@ fn ct_lb5_05_archive_mutation_controls_fail_and_the_record_passes() {
         });
         fails(expansion(), &record, &s.inputs);
     }
+    // Counts whose length X + 2 + copies·V overflows fail the length claim; they never panic or wrap.
+    let record = edit(&s.record, |doc| {
+        set(doc, 0, "X", int(i64::MAX));
+        set(doc, 0, "V", int(i64::MAX));
+    });
+    assert_eq!(fails(expansion(), &record, &s.inputs).claim(), Some("steps[0].letters"));
     // A removed preparation: no x file, X = 0 and no hash, the length adjusted; W then claims to start where X ended.
     let record = edit(&s.record, |doc| {
         set(doc, 0, "X", int(0));
