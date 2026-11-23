@@ -322,7 +322,7 @@ fn b3_a_run_alone_causes_no_durable_action() {
 /// stay, and no undo reaches them.
 ///
 /// Observed on 4c20ce30: after the run's job `undo_hint(Undo)` is `None`, the record holds the run's letters at
-/// version 2, and `Ctrl+Z` answers `KN5:stale.undo_superseded` ("no eligible target").
+/// version 2, and `Ctrl+KeyZ` answers `KN5:stale.undo_superseded` ("no eligible target").
 ///
 /// Fixed with B3: the run's invocation is refused, so no job writes `macro` and the history is not cut. (Since LP2's
 /// reading 18 a language-defined row's job that the solver invokes is an undoable action of its own and cuts nothing.)
@@ -366,7 +366,7 @@ fn b4_the_undo_key_still_undoes_the_solvers_write_after_a_runs_write() {
         f.layer.take_program_job().expect("the job the run started");
         f.layer.finish_program_job_with(job, Ok(output(&[("macro", Value::Array(vec![Value::Int(3)]))])));
     }
-    let undo = f.shell.press(&mut f.layer, "Ctrl+Z", false);
+    let undo = f.shell.press(&mut f.layer, "Ctrl+KeyZ", false);
     let undone = matches!(&undo, Ok(Some(receipt)) if matches!(receipt.status, Status::Committed(_)));
     assert!(undone, "the undo key answered {undo:?}");
 }

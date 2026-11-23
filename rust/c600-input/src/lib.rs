@@ -15,27 +15,10 @@
 //! G6 has no keymap table, chapter 05 owns the persisted key-map forms, and the command table, frozen at LP3 (PHS.53),
 //! holds no 1.0 key map; these choices stay drafts until chapter 05's key-map forms settle them.
 //!
-//! - Routing class names (EV4.4; DT-M1 C2 and D3): [`RoutingClass::Capture`], [`RoutingClass::Text`],
-//!   [`RoutingClass::List`] (a list or a view) and [`RoutingClass::Global`]. H-08's eight contexts are not read for
-//!   routing; the engine still decides availability per revision. A focused view is modelled as a list of entries.
-//! - Chord form (EV4.7; K5): a physical key code in the W3C UI Events `code` notation (`KeyQ`, `Digit7`, `ArrowUp`)
-//!   with Ctrl, Shift, Alt and Meta, written `Ctrl+Shift+Enter` with the modifiers in that order. A character intent is
-//!   written `Ctrl+'z'`; only undo and redo use one (Q2 (b)). [`BindingSpec`] and [`Binding`] stand in for chapter 05's
-//!   persisted intent and resolved-map forms.
-//! - Layouts (EV4.7): US QWERTY and French AZERTY, as tables of the characters each key types unshifted and with
-//!   Shift, without dead keys or AltGr levels. A character intent resolves to the key whose unshifted character it is,
-//!   or whose Shift character it is with Shift added; a capital letter is its small letter with Shift.
-//! - Key-map checks (EV4.7): a duplicate of two bindings recorded the same way is `EV4:input.binding_conflict`. A
-//!   collision that exists only because a character intent resolved onto another binding's chord under a declared
-//!   layout is `EV4:input.binding_layout_mismatch`, named with that layout, as is a character that a declared layout
-//!   does not type; an undeclared active layout is the same code with no layout named. The prefix-code check ignores the destination; two bindings for different
-//!   destinations are not duplicates. The class rule (EV4.4; DT-M1 C2 and fix-first item 2: no text-class or
-//!   capture-class binding, since those fields keep their keys; list-class bindings reach only [`LIST_ROWS`], since a
-//!   list takes only its navigation keys) reports `EV4:input.binding_conflict`, read as a binding that conflicts with
-//!   the keys its routing class takes itself. EV4.3 lists no other key-map code and chapter 13 registers no row of its
-//!   own for this rule; a dedicated row would be a change to chapter 13 (PHS.52). A binding with no chord is
-//!   `EV4:input.binding_prefix_conflict` once, since it is a prefix of every sequence, and takes no part in the pair
-//!   checks.
+//! - The key map's model (routing class names, the chord form, the two layout tables, EV4.7's checks, the default
+//!   global map, its placeholder values and the twist keys' exact requests) lives in `c600_command::keys` since LP4-8,
+//!   which keeps its drafts; this crate re-exports it in its old modules ([`binding`], [`chord`], [`keymap`],
+//!   [`layout`]), so the shell's key route and this router share one checked map.
 //! - The allowlist (EV4.6; K4, fix-first item 2): a repeat runs a binding only when its row's H-08 `repeat` flag is set,
 //!   read from the layer's table at the repeat. The stored table sets it on exactly [`REPEAT_ALLOWLIST`] (a test pins
 //!   this); an overlay row's flag is always false.
@@ -54,29 +37,12 @@
 //! - The list or view (EV4.4; C2; DT-J1 O9): the arrows (`list.move` to the previous or next entry, held at the ends),
 //!   Enter (`object.inspect` of the selected entry), Digit1 to Digit9 and Digit0 (`list.row.copy` of rows 1 to 10)
 //!   and Tab or Shift+Tab, which is focus movement inside the shell and has no H-08 row.
-//! - The global map ([`default_specs`]): `Ctrl+Enter` and `Ctrl+Shift+Enter` preview and execute (0.4's keys);
-//!   `Ctrl+'z'` and `Ctrl+'y'` undo and redo; `Escape` closes the innermost transient layer (`transient.close`) and,
-//!   before that, a pending prefix group (C4, K1), so it never cancels a preview; `Ctrl+Shift+Backspace` cancels the
-//!   presented preview; `F9` toggles the on-screen keyboard (0.4's key); the prefix group `Ctrl+KeyG` then `KeyF` or
-//!   `KeyI` toggles the frame display or the inverse; the arrows and `Equal`/`Minus` rotate and zoom the `global`
-//!   view's camera; `Alt+ArrowLeft`/`Alt+ArrowRight` scrub the presented preview; `KeyQ`, `KeyW`, `KeyE` and `KeyR`
-//!   select grip slots 0 to 3; `KeyJ`, `KeyK` and `KeyL`, with Shift for the inverse, are three twist keys, which run
-//!   `twist.apply` in the live destination and `operation.phase.append_twist` in the draft one (C4, C7). The full slot
-//!   block and the seven axis keys (K2) wait for G6.
-//! - Placeholder values: the camera rotations and zoom steps and the camera's view (`"global"`) are fixed JSON
-//!   placeholders.
-//! - The twist keys' exact requests (A6; KN3.7): a twist key types one item of the twist menu the host pins, pressed
-//!   directly ([`Arg::MenuItem`]). It sends the grip's cap as `cap` and KN3.7's binding without its cap as
-//!   `rotation`: the request `LX9B1|M|<set>|<order>|<index>`, the operation `menu_direct` and the menu's two digests,
-//!   in `Binding::to_json`'s form. The host sets those digests in [`Context::menu`] when it pins the menu in the layer
-//!   (`CommandLayer::pin_menu`), since the layer gives no read of its pin; with none, a twist key is refused before
-//!   any envelope with `KN5:input.argument_form`. [`TWIST_KEYS`] maps `KeyJ`, `KeyK` and `KeyL` to items 1, 2 and 3
-//!   and their Shift chords to the inverse items 1, 5 and 9: under the I_a menu's order, at every cap c, the
-//!   half-turn `[2c+1]` and the third-turns `[2c+2]` and `[2c+1, 2c+2]`, and their inverses. An item number names a
-//!   rotation only under the order the binding names. The keys act in the cap's fixed frame, not in a slot's
-//!   transported frame (D11), and K2's other four axes (items 4 and 7 with their inverses 8 and 6, and the half-turns
-//!   10 and 11) have no key. Which key types which exact request settles nothing in the chapters: G6 owns the keys,
-//!   K2's seven axis keys among them.
+//! - The twist keys' requests at the press (A6; KN3.7): a twist key's [`Arg::MenuItem`] sends the grip's cap as `cap`
+//!   and KN3.7's binding without its cap as `rotation`: the request `LX9B1|M|<set>|<order>|<index>`, the operation
+//!   `menu_direct` and the menu's two digests, in `Binding::to_json`'s form. The host sets those digests in
+//!   [`Context::menu`] when it pins the menu in the layer (`CommandLayer::pin_menu`), since the layer gives no read of
+//!   its pin; with none, a twist key is refused before any envelope with `KN5:input.argument_form`. The keys act in the
+//!   cap's fixed frame, not in a slot's transported frame (D11), and K2's other four axes have no key.
 //! - Jumble on (EV4.4; DT-M1 C6): the router reads no Jumble mode, since EV4.4 names the destination as the one input
 //!   mode. With Jumble on, a twist key still sends `twist.apply`, which the layer refuses
 //!   (`KN5:input.retained_tool_needs_jumble_off`). C6's menu-twist row, `jumble.twist.menu`, takes the same rotation
@@ -89,8 +55,11 @@
 //!   `KN5:stale.no_fresh_preview` and no undo target `KN5:stale.undo_superseded`.
 //! - The router changes no workspace or view state itself: the grip, the destination, the selected phase, the list
 //!   selection and the scrub position change when their rows run, and the headless layer does not build those rows
-//!   yet (`KN5:input.row_not_built`). Tests set them directly; [`Context::rebind`] stands in for `grip.rebind`
-//!   (EV4.8).
+//!   yet (`KN5:input.row_not_built`). Tests set them directly.
+//! - The applied grip-slot map (EV4.8; DT-M1 K2, K6; LP4-8): the layer holds it, and only the solver's `grip.rebind`
+//!   changes it ([`c600_command::grip`]). Before the first rebind the host's default map applies, the slot map a
+//!   [`Context`] is made with; [`Router::slots`] reads the applied map at each press, so a slot key resolves against
+//!   the last rebind and nothing else (camera, filter, twist, focus or a restart) derives a new one.
 //! - Prefix groups (K1): a pending group has no time-out; Escape closes it; a key-down that does not continue it closes
 //!   it and runs nothing; a key that a capture field, text field or list takes also closes it, so in a text field a
 //!   character key ends a group and is typed. [`resolve_binding`] therefore answers a third way besides EV4.3's

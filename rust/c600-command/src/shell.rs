@@ -11,10 +11,11 @@
 //! applied is never reported as failed, and when the display's refresh fails the report says "Applied, display out of
 //! date" ([`report`]). The display itself is the host's ([`Refresh`]).
 //!
-//! The keymap is a draft: G6 has no keymap table yet. It follows 0.4 where 0.4 has a key (`Ctrl+Enter`,
-//! `Ctrl+Shift+Enter`) and uses `Ctrl+Z`, `Ctrl+Y` and `Escape` for undo, redo and cancel, and ADR-D01.14's
-//! `Ctrl+Alt+Z` and `Ctrl+Alt+Y` for the layout history's undo and redo (owner, 22 November 2026). [`Shell::bind`] adds
-//! a binding, such as one of a checked user command.
+//! The key map is [`crate::keys`]' checked map, the one the input router of `c600-input` uses too (LP4-8): the draft
+//! default map ([`crate::keys::default_specs`]) under the draft active layout, US QWERTY, declared with French AZERTY.
+//! [`Shell::bind`] adds a binding, such as one of a checked user command, only after EV4.7's checks of the whole map
+//! pass in each routing class and under every declared layout. The shell's key route ([`Shell::press`]) resolves a
+//! sequence in the global routing class; the router adds the focus model, the text field and the held keys.
 //!
 //! The shell keeps the palette it read last ([`Shell::read_palette`], [`crate::palette`]): one read per revision and
 //! generation, and a search of the kept palette for each keystroke, with no engine call (EV4.2, KN5.6).
@@ -23,66 +24,14 @@ use c600_kernel::json::{self, Value};
 
 use crate::budget::Budget;
 use crate::frame::{PresentedFrame, ShownPreview};
+use crate::keys::{resolve_binding, Arg, BindingSpec, ChordIntent, Destination, KeyMap, Resolution, RoutingClass};
+use crate::keys::{RoutingContext, DRAFT_LAYOUT};
 use crate::layer::{Caller, CommandLayer, Invocation};
 use crate::palette::Palette;
 use crate::receipt::{code, ActionHint, CompletionKind, Direction, Error, Receipt, Revision, Status};
 use crate::store::Store;
 use crate::table::{PreviewRule, Row};
 use crate::token::{args_digest, PreviewBinding, Secret, Token, TokenBinding};
-
-/// Where a bound argument comes from, resolved at the press.
-#[derive(Clone, Debug, PartialEq)]
-pub enum ArgSource {
-    /// The editor's current draft.
-    Draft,
-    /// The ID of the preview the shell presented last.
-    PresentedPreview,
-    UndoHint,
-    RedoHint,
-    /// The layout history's hints ([`CommandLayer::layout_hint`]; ADR-D01.14).
-    LayoutUndoHint,
-    LayoutRedoHint,
-    Fixed(Value),
-}
-
-/// One key binding of the draft keymap.
-#[derive(Clone, Debug, PartialEq)]
-pub struct KeyBinding {
-    pub sequence: String,
-    /// `any` or a context name of H-08's vocabulary.
-    pub context: String,
-    pub row: String,
-    pub args: Vec<(String, ArgSource)>,
-}
-
-impl KeyBinding {
-    pub fn new(sequence: &str, context: &str, row: &str, args: &[(&str, ArgSource)]) -> KeyBinding {
-        KeyBinding {
-            sequence: sequence.to_owned(),
-            context: context.to_owned(),
-            row: row.to_owned(),
-            args: args.iter().map(|(name, source)| ((*name).to_owned(), source.clone())).collect(),
-        }
-    }
-}
-
-/// The draft keymap.
-pub fn default_keymap() -> Vec<KeyBinding> {
-    vec![
-        KeyBinding::new("Ctrl+Enter", "operation", "operation.preview", &[("draft", ArgSource::Draft)]),
-        KeyBinding::new(
-            "Ctrl+Shift+Enter",
-            "operation",
-            "operation.execute",
-            &[("preview", ArgSource::PresentedPreview)],
-        ),
-        KeyBinding::new("Escape", "operation", "operation.preview.cancel", &[("preview", ArgSource::PresentedPreview)]),
-        KeyBinding::new("Ctrl+Z", "any", "session.undo", &[("hint", ArgSource::UndoHint)]),
-        KeyBinding::new("Ctrl+Y", "any", "session.redo", &[("hint", ArgSource::RedoHint)]),
-        KeyBinding::new("Ctrl+Alt+Z", "any", crate::layer::LAYOUT_UNDO_ROW, &[("hint", ArgSource::LayoutUndoHint)]),
-        KeyBinding::new("Ctrl+Alt+Y", "any", crate::layer::LAYOUT_REDO_ROW, &[("hint", ArgSource::LayoutRedoHint)]),
-    ]
-}
 
 /// The shell of one launch.
 pub struct Shell {
@@ -92,9 +41,10 @@ pub struct Shell {
     commands: u64,
     /// The engine epoch of the last envelope, which names the shell's command IDs after the first epoch (L10).
     epoch: u64,
-    keymap: Vec<KeyBinding>,
-    /// The focused context.
-    pub context: String,
+    keymap: KeyMap,
+    /// The input destination the key route resolves for (EV4.4; DT-M1 C4): twist keys twist the puzzle when it is
+    /// live and append to the draft when it is the draft.
+    pub destination: Destination,
     /// The editor's draft, `{"recipe": [...]}`.
     pub draft: Option<Value>,
     presented: Option<PreviewBinding>,
@@ -115,8 +65,8 @@ impl Shell {
             nonce: 0,
             commands: 0,
             epoch: 1,
-            keymap: default_keymap(),
-            context: "operation".to_owned(),
+            keymap: KeyMap::default_for(DRAFT_LAYOUT).expect("the draft default map passes EV4.7's checks"),
+            destination: Destination::Live,
             draft: None,
             presented: None,
             sent: Vec::new(),
@@ -132,24 +82,31 @@ impl Shell {
         self.palette = None;
     }
 
-    pub fn keymap(&self) -> &[KeyBinding] {
+    /// The checked key map ([`crate::keys::KeyMap`]).
+    pub fn keymap(&self) -> &KeyMap {
         &self.keymap
     }
 
-    /// Adds a binding of a key sequence in a context to a row with its arguments (draft; EV4.3), so that a checked user
-    /// command is invoked by key as well as from the palette. A sequence the keymap already binds in an overlapping
-    /// context, the same one or `any` on either side, is refused with `EV4:input.binding_conflict`, and the keymap is
-    /// unchanged. The palette shows each row's key sequences, so a binding makes a new read due. LP4-8's checked
-    /// keymap and rebind (EV4.7, EV4.8) replace this draft.
-    pub fn bind(&mut self, binding: KeyBinding) -> Result<(), Error> {
-        let overlaps = |b: &KeyBinding| b.context == "any" || binding.context == "any" || b.context == binding.context;
-        if self.keymap.iter().any(|b| b.sequence == binding.sequence && overlaps(b)) {
-            let detail = format!("`{}` is bound in an overlapping context already", binding.sequence);
-            return Err(Error::new(code::BINDING_CONFLICT, detail));
-        }
-        self.keymap.push(binding);
+    /// Adds a binding of a key sequence in a routing class to a row with its arguments (EV4.3), so that a checked user
+    /// command is invoked by key as well as from the palette. The whole map with the new binding is checked again
+    /// (EV4.7; [`KeyMap::bind`]): a duplicate or prefix conflict in the binding's routing class, or a layout conflict
+    /// under any declared layout, refuses it with the first finding's code (`EV4:input.binding_conflict`,
+    /// `EV4:input.binding_prefix_conflict` or `EV4:input.binding_layout_mismatch`), naming every finding, and the map
+    /// stays as it was. The palette shows each row's key sequences, so a binding makes a new read due.
+    pub fn bind(&mut self, spec: BindingSpec) -> Result<(), Error> {
+        self.keymap = self.keymap.bind(spec).map_err(|findings| {
+            let detail: Vec<String> = findings.iter().map(|finding| finding.detail.clone()).collect();
+            Error::new(findings[0].code, detail.join("; "))
+        })?;
         self.palette = None;
         Ok(())
+    }
+
+    /// Replaces the key map with `keymap`, a map that passed EV4.7's checks when it was applied, such as the router's
+    /// ([`KeyMap::apply`]). The palette is read again.
+    pub fn apply_keymap(&mut self, keymap: KeyMap) {
+        self.keymap = keymap;
+        self.palette = None;
     }
 
     /// The palette (EV4.2, KN5.6): the kept read while it is current for `layer`, at the same revision and generation
@@ -299,54 +256,65 @@ impl Shell {
         Ok(self.send(layer, invocation))
     }
 
-    /// The key route: resolves the binding for `sequence` in the focused context and its arguments at the press, then
-    /// invokes. An auto-repeat (`repeat`) of a row without the `repeat` flag is dropped (`Ok(None)`).
+    /// The key route: resolves the binding of `sequence` in the global routing class for the shell's destination under
+    /// the key map's active layout ([`resolve_binding`]), resolves its relative names at the press, then invokes.
+    /// `sequence` is one or more chords separated by spaces, each a physical chord (`Ctrl+KeyZ`) or a character intent
+    /// (`Ctrl+'z'`) that the active layout resolves. An auto-repeat (`repeat`) of a row without the `repeat` flag is
+    /// dropped (`Ok(None)`). A sequence that binds nothing, or that is only a prefix group, is refused with
+    /// `KN5:input.unknown_row`. The shell resolves the draft, the presented preview, the hints of both histories and the
+    /// revision; a relative name that needs the router's focus, grip or menu (a list, an entry, a grip slot, a menu
+    /// item, a phase or a scrub position) is refused with `KN5:input.argument_form` before any envelope.
     pub fn press<S: Store>(
         &mut self,
         layer: &mut CommandLayer<S>,
         sequence: &str,
         repeat: bool,
     ) -> Result<Option<Receipt>, Error> {
-        let binding = self
-            .keymap
-            .iter()
-            .find(|b| b.sequence == sequence && (b.context == "any" || b.context == self.context))
-            .cloned()
-            .ok_or_else(|| Error::new(code::UNKNOWN_ROW, format!("`{sequence}` is not bound here")))?;
-        let row = layer.table().row(&binding.row).cloned();
-        let row = row.ok_or_else(|| Error::new(code::UNKNOWN_ROW, format!("no row `{}`", binding.row)))?;
+        let unbound = || Error::new(code::UNKNOWN_ROW, format!("`{sequence}` is not bound here"));
+        let layout = *self.keymap.layout();
+        let chords: Option<Vec<_>> = sequence
+            .split_whitespace()
+            .map(|text| ChordIntent::parse(text).and_then(|intent| intent.resolve(&layout)))
+            .collect();
+        let chords = chords.ok_or_else(unbound)?;
+        let context = RoutingContext { class: RoutingClass::Global, destination: self.destination };
+        let binding = match resolve_binding(&chords, context, self.keymap.bindings(), layout.id()) {
+            Resolution::Bound(binding) => binding.clone(),
+            Resolution::Prefix | Resolution::Unhandled => return Err(unbound()),
+        };
+        let row = layer.table().row(&binding.command).cloned();
+        let row = row.ok_or_else(|| Error::new(code::UNKNOWN_ROW, format!("no row `{}`", binding.command)))?;
         if repeat && !row.repeat {
             return Ok(None);
         }
         let mut args = Vec::new();
-        for (name, source) in &binding.args {
-            let value = match source {
-                ArgSource::Draft => {
+        for (name, arg) in &binding.args {
+            let hint = |hint: Option<ActionHint>| {
+                hint.map(|hint| hint.to_json()).ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, "no eligible target"))
+            };
+            let value = match arg {
+                Arg::Fixed(value) => value.clone(),
+                Arg::Draft => {
                     self.draft.clone().ok_or_else(|| Error::new(code::ARGUMENT_FORM, "the editor holds no draft"))?
                 }
-                ArgSource::PresentedPreview => match &self.presented {
+                Arg::PresentedPreview => match &self.presented {
                     Some(p) => Value::Int(p.id as i64),
                     None => return Err(Error::new(code::NO_FRESH_PREVIEW, "no presented preview")),
                 },
-                ArgSource::UndoHint | ArgSource::RedoHint => {
-                    let direction = if *source == ArgSource::UndoHint { Direction::Undo } else { Direction::Redo };
-                    let hint = layer.undo_hint(direction);
-                    let hint = hint.ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, "no eligible target"))?;
-                    hint.to_json()
+                Arg::UndoHint => hint(layer.undo_hint(Direction::Undo))?,
+                Arg::RedoHint => hint(layer.undo_hint(Direction::Redo))?,
+                Arg::LayoutUndoHint => hint(layer.layout_hint(Direction::Undo))?,
+                Arg::LayoutRedoHint => hint(layer.layout_hint(Direction::Redo))?,
+                Arg::Revision => layer.revision().to_json(),
+                other => {
+                    let detail = format!("`{}`: the shell's key route resolves no {other:?}", binding.command);
+                    return Err(Error::new(code::ARGUMENT_FORM, detail));
                 }
-                ArgSource::LayoutUndoHint | ArgSource::LayoutRedoHint => {
-                    let direction =
-                        if *source == ArgSource::LayoutUndoHint { Direction::Undo } else { Direction::Redo };
-                    let hint = layer.layout_hint(direction);
-                    let hint = hint.ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, "no eligible target"))?;
-                    hint.to_json()
-                }
-                ArgSource::Fixed(value) => value.clone(),
             };
             args.push((name.clone(), value));
         }
         let args = Value::Object(args.into_iter().collect());
-        self.invoke(layer, &binding.row, args).map(Some)
+        self.invoke(layer, &binding.command, args).map(Some)
     }
 }
 

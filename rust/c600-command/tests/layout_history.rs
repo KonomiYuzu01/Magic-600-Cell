@@ -186,8 +186,8 @@ fn register_probe(layer: &mut CommandLayer) {
     layer.register_overlay("tool.probe", Kind::Query, &[], Overlay { module: "t".into(), entry: "p".into() }).unwrap();
 }
 
-/// ADR-D01.14: a design-profile step is the layout history's, not the move history's. `Ctrl+Alt+Z` undoes it and
-/// `Ctrl+Alt+Y` redoes it, while `Ctrl+Z` passes over it to the commit before it; each history's redo survives a step of
+/// ADR-D01.14: a design-profile step is the layout history's, not the move history's. `Ctrl+Alt+KeyZ` undoes it and
+/// `Ctrl+Alt+KeyY` redoes it, while `Ctrl+KeyZ` passes over it to the commit before it; each history's redo survives a step of
 /// the other. The steps journal as a workspace transaction and as undo and redo transactions whose rows name the
 /// history, and a reopen rebuilds both histories.
 #[test]
@@ -203,18 +203,18 @@ fn a_layout_step_is_undone_in_its_own_history() {
     assert_eq!(f.layer.availability(LAYOUT_UNDO_ROW), Ok(()));
     assert_eq!(f.layer.availability(LAYOUT_REDO_ROW).unwrap_err().code, code::UNDO_SUPERSEDED);
 
-    let undone = f.press("Ctrl+Alt+Z").unwrap();
+    let undone = f.press("Ctrl+Alt+KeyZ").unwrap();
     assert!(committed(&undone), "{:?}", undone.status);
     assert_eq!(f.payload("design/theme"), None);
     assert_eq!(f.layer.layout_hint(Direction::Redo).map(|h| h.target), Some(step));
     assert_eq!(f.layer.layout_hint(Direction::Undo), None);
     assert_eq!(f.layer.undo_hint(Direction::Undo).map(|h| h.target), Some(commit));
 
-    assert!(committed(&f.press("Ctrl+Z").unwrap()), "the move history undoes the commit");
+    assert!(committed(&f.press("Ctrl+KeyZ").unwrap()), "the move history undoes the commit");
     assert_eq!(f.layer.undo_hint(Direction::Redo).map(|h| h.target), Some(commit));
     assert_eq!(f.layer.layout_hint(Direction::Redo).map(|h| h.target), Some(step), "a move undo keeps the layout redo");
 
-    assert!(committed(&f.press("Ctrl+Alt+Y").unwrap()));
+    assert!(committed(&f.press("Ctrl+Alt+KeyY").unwrap()));
     assert_eq!(f.payload("design/theme"), Some(text("dawn")));
     assert_eq!(f.layer.undo_hint(Direction::Redo).map(|h| h.target), Some(commit), "a layout redo keeps the move redo");
 
@@ -241,7 +241,7 @@ fn a_layout_step_is_undone_in_its_own_history() {
     assert_eq!(g.record("design/theme").map(|v| v.payload.clone()), Some(text("dawn")));
 }
 
-/// Neither history's rows reach the other's steps: with only a layout step, `Ctrl+Z` has no target, and a
+/// Neither history's rows reach the other's steps: with only a layout step, `Ctrl+KeyZ` has no target, and a
 /// `session.undo` carrying the layout hint is `KN5:stale.undo_superseded`; with only a commit, a `layout.undo` carrying
 /// the move hint is refused the same way. Nothing is written for either refusal.
 #[test]
@@ -250,7 +250,7 @@ fn neither_history_reaches_the_others_steps() {
     f.theme("design/theme", "dawn");
     let layout = f.layer.layout_hint(Direction::Undo).expect("the step");
     assert_eq!(f.layer.undo_hint(Direction::Undo), None);
-    assert_eq!(f.press("Ctrl+Z").unwrap_err().code, code::UNDO_SUPERSEDED);
+    assert_eq!(f.press("Ctrl+KeyZ").unwrap_err().code, code::UNDO_SUPERSEDED);
     assert_eq!(f.layer.availability("session.undo").unwrap_err().code, code::UNDO_SUPERSEDED);
     let hint = json::object([("hint", layout.to_json())]);
     let forged = f.shell.invoke(&mut f.layer, "session.undo", hint).unwrap();
@@ -261,7 +261,7 @@ fn neither_history_reaches_the_others_steps() {
     assert!(committed(&g.commit(&word(&[1]))));
     let moves = g.layer.undo_hint(Direction::Undo).expect("the commit");
     assert_eq!(g.layer.layout_hint(Direction::Undo), None);
-    assert_eq!(g.press("Ctrl+Alt+Z").unwrap_err().code, code::UNDO_SUPERSEDED);
+    assert_eq!(g.press("Ctrl+Alt+KeyZ").unwrap_err().code, code::UNDO_SUPERSEDED);
     let hint = json::object([("hint", moves.to_json())]);
     let forged = g.shell.invoke(&mut g.layer, LAYOUT_UNDO_ROW, hint).unwrap();
     assert_eq!(code_of(&forged), code::UNDO_SUPERSEDED);
@@ -282,7 +282,7 @@ fn a_step_of_one_history_cuts_the_others_writes_of_its_records() {
     let write = f.last_order().unwrap();
     assert_eq!(f.layer.layout_hint(Direction::Undo).map(|h| h.target), Some(kept), "the older shared step is cut");
     assert_eq!(f.layer.undo_hint(Direction::Undo).map(|h| h.target), Some(write));
-    assert!(committed(&f.press("Ctrl+Alt+Z").unwrap()));
+    assert!(committed(&f.press("Ctrl+Alt+KeyZ").unwrap()));
     assert_eq!(f.layer.layout_hint(Direction::Undo), None, "the cut step is not reached beneath the kept one");
     assert_eq!(f.payload("shared"), Some(text("moves")));
 
@@ -292,7 +292,7 @@ fn a_step_of_one_history_cuts_the_others_writes_of_its_records() {
     let other = g.last_order().unwrap();
     g.step(DENSITY, json::object([("preset", text("compact"))]), "shared", "layout");
     assert_eq!(g.layer.undo_hint(Direction::Undo).map(|h| h.target), Some(other));
-    assert!(committed(&g.press("Ctrl+Z").unwrap()));
+    assert!(committed(&g.press("Ctrl+KeyZ").unwrap()));
     assert_eq!(g.layer.undo_hint(Direction::Undo), None, "the shared write left the move history");
     assert_eq!(g.payload("shared"), Some(text("layout")));
     assert_eq!(g.payload("other"), None);
@@ -312,13 +312,13 @@ fn a_step_of_one_history_cuts_the_others_writes_of_its_records() {
 fn a_step_of_one_history_cuts_the_others_redo_of_its_records() {
     let mut f = fixture();
     f.theme("design/theme", "dawn");
-    assert!(committed(&f.press("Ctrl+Alt+Z").unwrap()));
+    assert!(committed(&f.press("Ctrl+Alt+KeyZ").unwrap()));
     let undone = f.layer.layout_hint(Direction::Redo).map(|h| h.target).expect("the undone step");
     assert!(matches!(f.write("other", "moves").status, Status::Completed(_)));
     assert_eq!(f.layer.layout_hint(Direction::Redo).map(|h| h.target), Some(undone), "another record cuts nothing");
     assert!(matches!(f.write("design/theme", "moves").status, Status::Completed(_)));
     assert_eq!(f.layer.layout_hint(Direction::Redo), None, "the undone step left the layout redo");
-    assert_eq!(f.press("Ctrl+Alt+Y").unwrap_err().code, code::UNDO_SUPERSEDED);
+    assert_eq!(f.press("Ctrl+Alt+KeyY").unwrap_err().code, code::UNDO_SUPERSEDED);
     assert_eq!(f.payload("design/theme"), Some(text("moves")));
     let g = reopen(&f.layer);
     for direction in [Direction::Undo, Direction::Redo] {
@@ -328,13 +328,13 @@ fn a_step_of_one_history_cuts_the_others_redo_of_its_records() {
 
     let mut g = fixture();
     assert!(matches!(g.write("shared", "moves").status, Status::Completed(_)));
-    assert!(committed(&g.press("Ctrl+Z").unwrap()));
+    assert!(committed(&g.press("Ctrl+KeyZ").unwrap()));
     let undone = g.layer.undo_hint(Direction::Redo).map(|h| h.target).expect("the undone write");
     g.theme("design/theme", "dawn");
     assert_eq!(g.layer.undo_hint(Direction::Redo).map(|h| h.target), Some(undone), "another record cuts nothing");
     g.step(DENSITY, json::object([("preset", text("compact"))]), "shared", "layout");
     assert_eq!(g.layer.undo_hint(Direction::Redo), None, "the undone write left the move redo");
-    assert_eq!(g.press("Ctrl+Y").unwrap_err().code, code::UNDO_SUPERSEDED);
+    assert_eq!(g.press("Ctrl+KeyY").unwrap_err().code, code::UNDO_SUPERSEDED);
     assert_eq!(g.payload("shared"), Some(text("layout")));
     let h = reopen(&g.layer);
     for direction in [Direction::Undo, Direction::Redo] {
@@ -349,7 +349,7 @@ fn both_histories_stepped() -> Fixture {
     let mut f = fixture();
     assert!(committed(&f.commit(&word(&[1]))));
     f.theme("design/theme", "dawn");
-    for keys in ["Ctrl+Alt+Z", "Ctrl+Z", "Ctrl+Alt+Y", "Ctrl+Y"] {
+    for keys in ["Ctrl+Alt+KeyZ", "Ctrl+KeyZ", "Ctrl+Alt+KeyY", "Ctrl+KeyY"] {
         assert!(committed(&f.press(keys).unwrap()), "{keys}");
     }
     let rows: Vec<&str> = f.layer.store().log.iter().map(|t| t.row.as_str()).collect();
@@ -433,7 +433,7 @@ fn no_run_ends_the_pause_the_solver_set() {
     assert!(f.layer.explore(), "the run's pause outlives its run");
     assert_eq!(code_of(&f.run_explore(&run, "a9", false)), code::NOT_GRANTED, "the ended run turns nothing");
     f.explore(false);
-    assert!(committed(&f.press("Ctrl+Z").unwrap()));
+    assert!(committed(&f.press("Ctrl+KeyZ").unwrap()));
 }
 
 /// A new layout step drops the layout history's redo, as a new action drops the move history's; a move-history step
@@ -442,7 +442,7 @@ fn no_run_ends_the_pause_the_solver_set() {
 fn a_new_layout_step_drops_only_the_layout_redo() {
     let mut f = fixture();
     f.theme("design/theme", "dawn");
-    assert!(committed(&f.press("Ctrl+Alt+Z").unwrap()));
+    assert!(committed(&f.press("Ctrl+Alt+KeyZ").unwrap()));
     assert!(f.layer.layout_hint(Direction::Redo).is_some());
     assert!(committed(&f.commit(&word(&[1]))));
     assert!(f.layer.layout_hint(Direction::Redo).is_some(), "a commit keeps the layout redo");
@@ -477,8 +477,8 @@ fn the_explore_state_pauses_commits_before_their_token_is_spent() {
     let asked = f.shell.invoke(&mut f.layer, "operation.preview", draft_args(&word(&[2]))).unwrap();
     assert!(matches!(asked.status, Status::Running(_)), "a preview is no commit: {:?}", asked.status);
     assert_eq!(f.layer.availability(LAYOUT_UNDO_ROW), Ok(()));
-    assert!(committed(&f.press("Ctrl+Alt+Z").unwrap()), "a layout undo is not paused");
-    assert!(committed(&f.press("Ctrl+Alt+Y").unwrap()));
+    assert!(committed(&f.press("Ctrl+Alt+KeyZ").unwrap()), "a layout undo is not paused");
+    assert!(committed(&f.press("Ctrl+Alt+KeyY").unwrap()));
 
     let off = f.explore(false);
     assert_eq!(off.status, Status::Accepted);

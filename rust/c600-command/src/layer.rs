@@ -120,8 +120,10 @@ use crate::budget::Budget;
 use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
+use crate::grip::{slot_map_digest, SlotMap, GRIP_PREFIX, GRIP_REBIND_ROW, SLOT_MAP_PROVENANCE, SLOT_MAP_RECORD};
 use crate::journal::{self, EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT};
 use crate::jumble::{self, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
+use crate::macros::{macro_record, menu_codes, Alphabet, Macro, MACRO_PREFIX, MACRO_PROVENANCE, MACRO_SAVE_ROW};
 use crate::palette::FIND_ROW;
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
@@ -1304,13 +1306,22 @@ impl<S: Store> CommandLayer<S> {
                 if stored_workspace && !matches!(stored.caller, Caller::Shell) {
                     return Err(unadmitted("a workspace row's completion whose caller is not the shell"));
                 }
+                // No job's completion writes the applied grip map or the macro base (EV4.8, EV4.9).
+                if stored.records.iter().any(|write| reserved_by_row(&write.name)) {
+                    return Err(unadmitted("a job's completion that writes the grip map or the macro base"));
+                }
                 self.jobs_issued = self.jobs_issued.max(job);
                 // The records' blocks were read when the job finished (PS1.16), so the replay needs no reader.
                 self.workspace_adoption(meta, job, result, stored.records.clone(), stored.budget)
             }
-            // The record's block was read when the record was written (PS1.16), so the replay needs no reader.
+            // The record's block was read when the record was written (PS1.16), so the replay needs no reader. The
+            // applied grip map and the macro base are written only by their own rows from the shell, as the live path
+            // writes them (EV4.8, EV4.9; B7).
             TransactionKind::Record => match stored.record.clone() {
-                Some(RecordWrite { name, value: Some(value) }) => self.plan_record(meta, name, value),
+                Some(RecordWrite { name, value: Some(value) }) => {
+                    reserved_write(stored, &name, &value).map_err(|detail| unadmitted(&detail))?;
+                    self.plan_record(meta, name, value)
+                }
                 _ => return Err(broken("a record write names no record and value")),
             },
             TransactionKind::Policy => match stored.policy {
@@ -2574,7 +2585,7 @@ impl<S: Store> CommandLayer<S> {
                 self.jumble_mode(REPAIR_LIST_ROW)?;
                 self.exclusive_free()
             }
-            "protection.orbit.set" | POLICY_ROW => Ok(()),
+            "protection.orbit.set" | POLICY_ROW | GRIP_REBIND_ROW | MACRO_SAVE_ROW => Ok(()),
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
                 None => {
@@ -2668,6 +2679,8 @@ impl<S: Store> CommandLayer<S> {
             && row.id != "protection.orbit.set"
             && row.id != POLICY_ROW
             && row.id != RECORD_ROW
+            && row.id != GRIP_REBIND_ROW
+            && row.id != MACRO_SAVE_ROW
             && row.id != WORKSHEET_SAVE_ROW
             && row.id != WORKSHEET_LOAD_ROW
             && row.id != WORKSHEET_COMPARE_ROW
@@ -2816,6 +2829,8 @@ impl<S: Store> CommandLayer<S> {
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
+            GRIP_REBIND_ROW => self.rebind_grip(caller, invocation, request),
+            MACRO_SAVE_ROW => self.save_macro(caller, invocation, request),
             WORKSHEET_SAVE_ROW => self.save_worksheet(caller, invocation, request),
             WORKSHEET_LOAD_ROW => self.load_worksheet(caller, invocation, request),
             WORKSHEET_COMPARE_ROW => self.admit_compare(caller, invocation),
@@ -4428,8 +4443,9 @@ impl<S: Store> CommandLayer<S> {
 
     /// `workspace.set` (M6's record write): writes `payload` with its provenance block under `record` as one durable
     /// action whose receipt is `completed(workspace)`. The host's provenance reader checks the block first (PS1.16); a
-    /// block it refuses, a missing reader or a bad argument writes nothing. A name under `set/` is a saved set's
-    /// ([`crate::sets`]) and is refused with `KN5:input.argument_form`.
+    /// block it refuses, a missing reader or a bad argument writes nothing. A name under `set/`, `grip/` or `macro/`
+    /// is a saved set's, the applied grip map's or the macro base's ([`crate::sets`], [`crate::grip`],
+    /// [`crate::macros`]) and is refused with `KN5:input.argument_form`.
     fn write_record(
         &mut self,
         caller: &Caller,
@@ -4442,7 +4458,7 @@ impl<S: Store> CommandLayer<S> {
         else {
             return refused(code::ARGUMENT_FORM, "`record` and `provenance` are text");
         };
-        saved_set_name(name)?;
+        reserved_name(name)?;
         let Some(reader) = &self.provenance else {
             return refused(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader"));
         };
@@ -4475,7 +4491,7 @@ impl<S: Store> CommandLayer<S> {
             revision,
             recipe: Value::Null,
             orbits: self.protected.orbits().to_vec(),
-            confirm: false,
+            confirm: meta.confirm,
             job: None,
             result: None,
             record: Some(RecordWrite { name: name.clone(), value: Some(value.clone()) }),
@@ -4488,6 +4504,102 @@ impl<S: Store> CommandLayer<S> {
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
+    }
+
+    // ----- grip.rebind -----
+
+    /// `grip.rebind` (EV4.8; [`crate::grip`]): replaces the applied grip-slot map with the transported map `map` from
+    /// `anchor`, as one record write of `grip/map` whose receipt is `completed(workspace)`, undoable as a workspace
+    /// inverse. Refused, writing nothing: a map or anchor of another form (`KN5:input.argument_form`), and an
+    /// `expected_map` that is not the digest of the applied map ([`CommandLayer::slot_map_digest`];
+    /// `KN5:stale.revision_changed`).
+    fn rebind_grip(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let args = &invocation.args;
+        let model = self.kernel.identity().model_id;
+        let map = SlotMap::from_args(args.get("anchor"), args.get("map"), &model)?;
+        if args.get("expected_map").and_then(Value::as_str) != Some(self.slot_map_digest().as_str()) {
+            return refused(code::REVISION_CHANGED, "`expected_map` is not the digest of the applied grip map");
+        }
+        let value = RecordValue { payload: map.to_payload(), provenance: SLOT_MAP_PROVENANCE.to_owned() };
+        let meta = Meta::of(caller, invocation, request);
+        let adoption = self.plan_record(meta, SLOT_MAP_RECORD.to_owned(), value);
+        self.transact(adoption)
+    }
+
+    /// The applied grip-slot map the solver's last rebind wrote, or `None` while the host's default map applies
+    /// (EV4.8).
+    pub fn slot_map(&self) -> Option<SlotMap> {
+        self.record(SLOT_MAP_RECORD).and_then(|value| SlotMap::from_payload(&value.payload))
+    }
+
+    /// The digest `grip.rebind`'s `expected_map` must name: the applied map's ([`crate::grip::slot_map_digest`]).
+    pub fn slot_map_digest(&self) -> String {
+        slot_map_digest(self.record(SLOT_MAP_RECORD).map(|value| &value.payload))
+    }
+
+    // ----- macro.save -----
+
+    /// `macro.save` (EV4.9; [`crate::macros`]): saves `word` under `name` in the macro base as one record write of
+    /// `macro/<name>` whose receipt is `completed(workspace)`, undoable as a workspace inverse. A save under a name
+    /// that holds a macro writes its next version. It neither selects, inserts nor executes the word, and it is
+    /// allowed in either Jumble mode, since one base serves both puzzles. Refused, writing nothing, in this order:
+    /// without `confirm: true` (H-08's `confirm` gate; `KN5:input.confirmation_required`), a name that is not text or
+    /// is empty and a word of another form (`KN5:input.argument_form`), a recipe the kernel refuses (its error), and a
+    /// menu word without a pinned twist menu (`KN5:input.row_not_built`).
+    fn save_macro(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let meta = Meta::of(caller, invocation, request);
+        if !meta.confirm {
+            return refused(code::CONFIRMATION_REQUIRED, "`macro.save` saves only with `confirm: true`");
+        }
+        let args = &invocation.args;
+        let Some(name) = args.get("name").and_then(Value::as_str).filter(|name| !name.is_empty()) else {
+            return refused(code::ARGUMENT_FORM, "a macro's name is a nonempty text");
+        };
+        let word = args.get("word").expect("the names check saw the word");
+        let only = |key: &str| word.get(key).filter(|_| word.as_object().is_some_and(|o| o.len() == 1));
+        let (alphabet, identity, letters) = if let Some(recipe) = only("recipe") {
+            let recipe = self.kernel.recipe(recipe)?;
+            let letters = self.kernel.letters(&recipe)?.into_iter().map(i64::from).collect();
+            (Alphabet::Full, self.kernel.identity(), letters)
+        } else if let Some(letters) = only("menu") {
+            let Some(twists) = &self.twists else {
+                return refused(code::ROW_NOT_BUILT, "a menu word needs the host's pinned twist menu");
+            };
+            let codes = menu_codes(letters, twists.menu.items.len())?;
+            (Alphabet::Menu, twists.context.identity(Some(&*twists.menu)), codes)
+        } else {
+            return refused(code::ARGUMENT_FORM, "a macro's word is `{\"recipe\": [...]}` or `{\"menu\": [...]}`");
+        };
+        let saved = Macro {
+            name: name.to_owned(),
+            alphabet,
+            identity,
+            length: letters.len() as u64,
+            literal: crate::macros::literal_digest(alphabet, &letters),
+            letters,
+            start: self.state_digest().to_owned(),
+            source: word.clone(),
+            keys: alphabet.contracts(),
+        };
+        let value = RecordValue { payload: saved.to_payload(), provenance: MACRO_PROVENANCE.to_owned() };
+        let adoption = self.plan_record(meta, macro_record(name), value);
+        self.transact(adoption)
+    }
+
+    /// The macro base (EV4.9): every macro the records hold, in name order, for both puzzles.
+    pub fn macro_base(&self) -> Vec<Macro> {
+        let records = self.records.iter().filter(|(name, _)| name.starts_with(MACRO_PREFIX));
+        records.filter_map(|(_, record)| record.value.as_ref().and_then(|v| Macro::from_payload(&v.payload))).collect()
     }
 
     // ----- worksheet.save and worksheet.load -----
@@ -4518,7 +4630,7 @@ impl<S: Store> CommandLayer<S> {
         let (Some(source), Some(name)) = (source, name) else {
             return refused(code::ARGUMENT_FORM, "a work sheet is saved from `{\"record\": name}` under a name");
         };
-        saved_set_name(name)?;
+        reserved_name(name)?;
         let (sheet, value) = self.drafted(source)?;
         reader.check(value.provenance.as_bytes())?;
         let provenance = value.provenance.clone();
@@ -5609,6 +5721,11 @@ impl<S: Store> CommandLayer<S> {
     /// under the model the job read. A name that holds a saved set fails it with `KN5:input.saved_set_exists` unless
     /// the invocation carried `replace: true`. A failed job writes nothing.
     fn workspace_writes(&self, program: &ProgramJob, output: JobOutput) -> Result<(String, Vec<RecordWrite>), Error> {
+        // The applied grip map and the macro base are written by their own rows alone (EV4.8, EV4.9).
+        if let Some(name) = output.records.keys().find(|name| reserved_by_row(name)) {
+            let detail = format!("the output's record `{name}` is the grip map's or the macro base's");
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        }
         if program.row != SET_SAVE_ROW {
             if let Some(name) = output.records.keys().find(|name| name.starts_with(SAVED_SET_PREFIX)) {
                 let detail = format!("the output's record `{name}` is a saved set's, which only `set.save` writes");
@@ -5656,11 +5773,54 @@ impl<S: Store> CommandLayer<S> {
 }
 
 /// A record name `workspace.set` and `worksheet.save` refuse: a name under `set/`, which only a `set.save` completion
-/// writes ([`crate::sets`]; draft).
-fn saved_set_name(name: &str) -> Result<(), Error> {
-    match name.starts_with(SAVED_SET_PREFIX) {
-        true => Err(Error::new(code::ARGUMENT_FORM, "a name under `set/` is a saved set's; only `set.save` writes it")),
-        false => Ok(()),
+/// writes ([`crate::sets`]; draft), under `grip/`, which only `grip.rebind` writes ([`crate::grip`]), or under
+/// `macro/`, which only `macro.save` writes ([`crate::macros`]).
+fn reserved_name(name: &str) -> Result<(), Error> {
+    let owner = [(SAVED_SET_PREFIX, SET_SAVE_ROW), (GRIP_PREFIX, GRIP_REBIND_ROW), (MACRO_PREFIX, MACRO_SAVE_ROW)]
+        .into_iter()
+        .find(|(prefix, _)| name.starts_with(prefix));
+    match owner {
+        Some((prefix, row)) => {
+            Err(Error::new(code::ARGUMENT_FORM, format!("a name under `{prefix}` is reserved; only `{row}` writes it")))
+        }
+        None => Ok(()),
+    }
+}
+
+/// Whether record `name` is the applied grip map's or the macro base's, which only `grip.rebind` and `macro.save` write
+/// (EV4.8, EV4.9).
+fn reserved_by_row(name: &str) -> bool {
+    name.starts_with(GRIP_PREFIX) || name.starts_with(MACRO_PREFIX)
+}
+
+/// Whether a stored record write of `name` with `value` is one the live path makes (EV4.8, EV4.9; B7): a write of
+/// `grip/` or `macro/`, and a write under `grip.rebind` or `macro.save`, come only from that row, from the shell, to
+/// its own record with a value that reads; a `macro.save` write also carries its stored confirmation. The reason,
+/// otherwise.
+fn reserved_write(stored: &Transaction, name: &str, value: &RecordValue) -> Result<(), String> {
+    let grip = name.starts_with(GRIP_PREFIX) || stored.row == GRIP_REBIND_ROW;
+    let saved = name.starts_with(MACRO_PREFIX) || stored.row == MACRO_SAVE_ROW;
+    if !grip && !saved {
+        return Ok(());
+    }
+    let shell = matches!(stored.caller, Caller::Shell);
+    let admitted = if grip {
+        shell
+            && stored.row == GRIP_REBIND_ROW
+            && name == SLOT_MAP_RECORD
+            && value.provenance == SLOT_MAP_PROVENANCE
+            && SlotMap::from_payload(&value.payload).is_some()
+    } else {
+        let read = Macro::from_payload(&value.payload);
+        shell
+            && stored.row == MACRO_SAVE_ROW
+            && stored.confirm
+            && value.provenance == MACRO_PROVENANCE
+            && read.is_some_and(|read| macro_record(&read.name) == name)
+    };
+    match admitted {
+        true => Ok(()),
+        false => Err(format!("a write of `{name}` under `{}` that no rebind or macro save makes", stored.row)),
     }
 }
 

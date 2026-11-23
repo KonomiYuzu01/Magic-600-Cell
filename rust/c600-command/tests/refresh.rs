@@ -184,7 +184,7 @@ fn a_refresh_failure_after_a_commit_reports_applied_display_out_of_date() {
 
     // Undo by its key applies, and its report shows the display apart again.
     failing.failure = Some(injected());
-    let undone = f.shell.press(&mut f.layer, "Ctrl+Z", false).unwrap().expect("a bound key");
+    let undone = f.shell.press(&mut f.layer, "Ctrl+KeyZ", false).unwrap().expect("a bound key");
     let undone = report(&f.layer, undone, &mut failing);
     assert!(matches!(undone.receipt.status, Status::Committed(_)));
     assert_eq!(undone.display, DisplayStatus::OutOfDate { revision: f.layer.revision().clone(), error: injected() });

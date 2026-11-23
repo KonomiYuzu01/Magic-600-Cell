@@ -7,14 +7,14 @@
 
 mod common;
 
-use c600_command::{code, digest, draft_args, word_draft, CancelReason, Receipt, Status};
+use c600_command::{code, digest, draft_args, word_draft, CancelReason, Receipt, Status, GRIP_REBIND_ROW};
 use c600_input::{
     default_specs, resolve_binding, Chord, Destination, Focus, KeyEvent, KeyMap, Layout, Resolution, Routed,
     RoutingClass, RoutingContext, LIST_ROWS,
 };
 use c600_kernel::json::{self, Value};
 
-use common::{code_of, fixture, list, pin, rotation, row, sent, slots, text, word, TOOL, TOOL_KEY};
+use common::{code_of, fixture, list, pin, rotation, row, sent, text, word, TOOL, TOOL_KEY};
 
 fn chords(texts: &[&str]) -> Vec<Chord> {
     texts.iter().map(|t| Chord::parse(t).unwrap()).collect()
@@ -237,9 +237,14 @@ fn resolved_arguments_survive_later_camera_focus_hover_and_filter_changes() {
     assert_eq!(sent(&f.tap("KeyJ")), sent(&twist));
 
     // The rebind command alone changes the applied map; what was sent keeps the old caps.
-    f.router.context.rebind(slots("r"));
-    assert_eq!(sent(&f.tap("KeyW")).1, json::object([("cap", text("rc1")), ("frame", text("rf1"))]));
-    assert_eq!(sent(&f.tap("KeyJ")).1, json::object([("cap", text("rc1")), ("rotation", rotation(1))]));
+    let map = (0..4).map(|n| json::object([("cap", Value::Int(100 + n)), ("frame", text(&format!("rf{n}")))]));
+    let expected = Value::String(f.layer.slot_map_digest());
+    let args =
+        json::object([("anchor", Value::Int(5)), ("map", Value::Array(map.collect())), ("expected_map", expected)]);
+    let rebound = f.shell.invoke(&mut f.layer, GRIP_REBIND_ROW, args).unwrap();
+    assert!(matches!(rebound.status, Status::Completed(_)), "{:?}", rebound.status);
+    assert_eq!(sent(&f.tap("KeyW")).1, json::object([("cap", Value::Int(101)), ("frame", text("rf1"))]));
+    assert_eq!(sent(&f.tap("KeyJ")).1, json::object([("cap", Value::Int(101)), ("rotation", rotation(1))]));
     assert_eq!(f.router.log()[0].invocation.args, first[0].invocation.args);
     assert_eq!(f.router.log()[1].invocation.args, first[1].invocation.args);
 

@@ -413,7 +413,7 @@
 //!     its entry runs in the runtime's process (LQ9), and completes when the host reports the entry's result.
 //!   - The layer checks the arguments' forms, as below.
 //!   - The layer does not read a row's `contexts`, for a served row as for any other: the shell's key route resolves
-//!     a binding in the focused context.
+//!     a binding in its routing class ([`keys`]).
 //!   - The layer serves only a view, workspace, query or file row on the `none`, `view` or `program` lane, with no
 //!     action guard or token, whose undo class is `none` or, on a workspace row, `workspace`, and with no gate or
 //!     preview rule except `filter.apply`'s pair (filter previews, below). It can check such a row's admission and
@@ -482,8 +482,8 @@
 //!   - The palette ([`palette`]) lists every row with its label, kind, key sequences and its answer in one
 //!     [`Availability`] read per revision and generation ([`Shell::read_palette`]); a search reads that palette alone.
 //!     An unavailable entry keeps its place with its typed reason. A palette invocation is [`Shell::invoke`], the key
-//!     route's own path, so the same gates apply. [`Shell::bind`] binds a key to a row, refusing a sequence bound in an
-//!     overlapping context with `EV4:input.binding_conflict`.
+//!     route's own path, so the same gates apply. [`Shell::bind`] binds a key to a row after EV4.7's checks of the
+//!     whole key map ([`keys`], LP4-8).
 //!   - `command.find` ([`FIND_ROW`]) opens the palette: after its `query`'s form, and for a run only inside a command
 //!     the solver invoked (`LG3:capability.not_granted` otherwise, as for `view.open`), it is `accepted` with no job
 //!     and changes nothing.
@@ -491,6 +491,11 @@
 //!     first route, which lets an invoked entry point run view and workspace rows and overrules LG3.1 and LG3.5 in
 //!     part, is met here by a workspace overlay the solver invokes: its job's records are written in its own
 //!     completion, one undoable action.
+//! - The applied grip map and the macro base (EV4.8, EV4.9; LP4-8; draft). `grip.rebind` ([`grip`]) is the only
+//!   writer of the applied grip-slot map, the record `grip/map`, and `macro.save` ([`macros`]) the only writer of the
+//!   macro base, the records `macro/<name>` of both puzzles; each write is one record write, undoable as a workspace
+//!   inverse. No other row, no run and no program job writes those names, and a reopen admits a write of one only as
+//!   its own row writes it. Key computation stays the interpreter's: a macro pins its key contracts.
 //! - The report after a command (KN5.22, R-02, ONE.70; CT-KN5-05's command-layer half). [`report`] pairs a receipt
 //!   with the display's status, [`DisplayStatus`]. When the receipt says that its command applied, the display
 //!   refreshes to the head through the host's [`Refresh`]; when that fails, the status is `OutOfDate`, whose message is
@@ -601,9 +606,12 @@ pub mod budget;
 pub mod filter;
 mod forms;
 pub mod frame;
+pub mod grip;
 pub mod journal;
 pub mod jumble;
+pub mod keys;
 pub mod layer;
+pub mod macros;
 pub mod palette;
 pub mod receipt;
 pub mod repair;
@@ -621,13 +629,16 @@ pub use availability::{Availability, AvailabilityKey};
 pub use budget::Budget;
 pub use filter::{FilterPreview, FilterPreviewDeps, ResolvedFilter, FILTER_PREVIEW_ROW, FRESH_FILTER_PREVIEW};
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
+pub use grip::{SlotMap, GRIP_REBIND_ROW, SLOT_MAP_RECORD};
 pub use journal::{EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT, JOURNAL_ROW};
 pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
+pub use keys::{BindingSpec, KeyMap};
 pub use layer::{
     rollback_step, Caller, Clock, CommandLayer, Invocation, JobOutput, MonotonicClock, Preview, PreviewState,
     ProgramJob, Rollback, EXPLORE_ROW, LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
     ROLLBACK_ROW, SETTLE_DRAFT,
 };
+pub use macros::{Alphabet, Macro, MACRO_SAVE_ROW};
 pub use palette::{Palette, PaletteEntry, FIND_ROW};
 pub use receipt::{
     code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
@@ -636,8 +647,7 @@ pub use receipt::{
 pub use repair::REPAIR_LIST_ROW;
 pub use sets::{saved_set_record, SavedSet, REPLACE, SAVED_SET_PREFIX, SET_SAVE_RECORD, SET_SAVE_ROW};
 pub use shell::{
-    draft_args, refresh_display, report, word_draft, ArgSource, DisplayStatus, KeyBinding, Refresh, Report, Shell,
-    DISPLAY_OUT_OF_DATE,
+    draft_args, refresh_display, report, word_draft, DisplayStatus, Refresh, Report, Shell, DISPLAY_OUT_OF_DATE,
 };
 pub use store::{
     identity_from_json, identity_json, policy_from_name, policy_name, Fate, Genesis, History, MemoryStore, Profile,
@@ -665,10 +675,17 @@ pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/src/filter.rs", include_bytes!("filter.rs")),
     ("c600-command/src/forms.rs", include_bytes!("forms.rs")),
     ("c600-command/src/frame.rs", include_bytes!("frame.rs")),
+    ("c600-command/src/grip.rs", include_bytes!("grip.rs")),
     ("c600-command/src/journal.rs", include_bytes!("journal.rs")),
     ("c600-command/src/jumble.rs", include_bytes!("jumble.rs")),
+    ("c600-command/src/keys/binding.rs", include_bytes!("keys/binding.rs")),
+    ("c600-command/src/keys/chord.rs", include_bytes!("keys/chord.rs")),
+    ("c600-command/src/keys/keymap.rs", include_bytes!("keys/keymap.rs")),
+    ("c600-command/src/keys/layout.rs", include_bytes!("keys/layout.rs")),
+    ("c600-command/src/keys/mod.rs", include_bytes!("keys/mod.rs")),
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
+    ("c600-command/src/macros.rs", include_bytes!("macros.rs")),
     ("c600-command/src/palette.rs", include_bytes!("palette.rs")),
     ("c600-command/src/receipt.rs", include_bytes!("receipt.rs")),
     ("c600-command/src/repair.rs", include_bytes!("repair.rs")),
