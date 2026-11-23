@@ -1,9 +1,9 @@
 {
   "schema": 2,
-  "updated": "2026-11-22",
+  "updated": "2026-11-23",
   "current": "1.0-lp3",
   "paid_api_ceiling_usd": 100,
-  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}, {"id": "language", "title": "1.0 language"}],
+  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}, {"id": "language", "title": "1.0 language"}, {"id": "lp4", "title": "1.0 LP4 authoring environment"}],
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "done", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null,
      "items": [
@@ -163,6 +163,27 @@
       {"id": "c8-jumbling-tool", "title": "Jumbling tool (C8)", "weight": 3, "done": true, "evidence": "013900ff"},
       {"id": "c9-owner-runs", "title": "On-screen half and owner-machine runs (C9)", "weight": 3, "done": true, "evidence": "docs/wiki/evidence/c9-sitting-results.md"},
       {"id": "c10-exit", "title": "LP3 exit with H-08 frozen, the whole index run and the owner's sign-off (C10)", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-11-22-c10-lp2-exit.md"}
+     ]},
+    {"id": "1.0-lp4", "track": "lp4", "title": "LP4 authoring environment, functional part", "status": "in_progress", "acceptance": "PHS.29 functional exit: the 51 LP4 tests run whole where their class allows, PHS.27's items have evidence on one candidate, the owner confirms understanding", "acceptance_source": "docs/progress/1.0/language-lp4-plan.md", "blocker": null,
+     "items": [
+      {"id": "plan", "title": "Plan", "weight": 1, "done": true, "evidence": "53498a4a"},
+      {"id": "lp4-1", "title": "LP4-1 editor services", "weight": 4, "done": false, "evidence": null},
+      {"id": "lp4-2", "title": "LP4-2 activation and version separation", "weight": 2, "done": false, "evidence": null},
+      {"id": "lp4-3", "title": "LP4-3 shell write-check-run flow", "weight": 4, "done": false, "evidence": null},
+      {"id": "lp4-4", "title": "LP4-4 overlay rows and palette", "weight": 3, "done": false, "evidence": null},
+      {"id": "phase-1-pr", "title": "Phase I pull request merged", "weight": 1, "done": false, "evidence": null},
+      {"id": "lp4-5", "title": "LP4-5 stepping and inspection", "weight": 4, "done": false, "evidence": null},
+      {"id": "lp4-6", "title": "LP4-6 replay, profile, EV2.9 revision", "weight": 4, "done": false, "evidence": null},
+      {"id": "lp4-7", "title": "LP4-7 declared-part round trip", "weight": 1, "done": false, "evidence": null},
+      {"id": "lp4-8", "title": "LP4-8 bindings, rebind, macros", "weight": 3, "done": false, "evidence": null},
+      {"id": "lp4-9", "title": "LP4-9 recording, playback, conversion", "weight": 7, "done": false, "evidence": null},
+      {"id": "lp4-10", "title": "LP4-10 reference docs and principle records", "weight": 4, "done": false, "evidence": null},
+      {"id": "lp4-11", "title": "LP4-11 glossary, learning fixtures, disclosure", "weight": 3, "done": false, "evidence": null},
+      {"id": "lp4-12", "title": "LP4-12 log format and compiler", "weight": 6, "done": false, "evidence": null},
+      {"id": "lp4-13", "title": "LP4-13 C600 and MPUlt interchange", "weight": 4, "done": false, "evidence": null},
+      {"id": "lp4-14", "title": "LP4-14 document services and rows", "weight": 4, "done": false, "evidence": null},
+      {"id": "lp4-15", "title": "LP4-15 durable rollback step ID (R2-5)", "weight": 1, "done": false, "evidence": null},
+      {"id": "line-pr", "title": "Line pull request merged", "weight": 1, "done": false, "evidence": null}
      ]}
   ]
 }
