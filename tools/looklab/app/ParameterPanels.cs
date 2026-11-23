@@ -115,5 +115,19 @@ internal sealed partial class ParameterPanels : VBoxContainer
     }
 
     private void Refresh(string id, ParameterValue value) => refresh[id](value);
-    public override void _ExitTree() => state.Changed -= Refresh;
+
+    // The frame moves these panels between docks; on return they show the edits made while they were out.
+    private bool listening = true;
+    public override void _EnterTree()
+    {
+        if (listening) return;
+        state.Changed += Refresh; listening = true;
+        foreach (string id in refresh.Keys) refresh[id](state.Preset.Params.Values[id]);
+    }
+
+    public override void _ExitTree()
+    {
+        if (!listening) return;
+        state.Changed -= Refresh; listening = false;
+    }
 }

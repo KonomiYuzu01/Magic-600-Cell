@@ -857,10 +857,10 @@ that must fail its own check:
 
 These check all uniforms, the slice band and six kinds across seven presets,
 exact drag/inertia and shared rotations, exact layout/class texture data with
-the displayed palette report, and settled Local framing for all three layouts.
-Texture checks read back the bound image and require it to equal the exact
-uploaded bytes; if a renderer returns no image, they compare private copies of
-those bytes instead. The line
+the displayed palette report (also after the panels and the view leave the
+tree and return), and settled Local framing for all three layouts. Texture
+checks read back the bound image and require it to equal the exact uploaded
+bytes; if a renderer returns no image, they compare private copies instead.
 `LOOKLAB_LL7_TEXTURE readbacks=... uploads=...` says which path was used.
 
 The GPU lane retains its ten geometry cases and adds six layout cases: each
