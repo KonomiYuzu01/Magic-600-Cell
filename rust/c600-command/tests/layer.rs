@@ -486,7 +486,8 @@ fn a_draft_changed_after_the_press_changes_nothing_committed() {
 fn undo_goes_ahead_while_a_program_job_runs() {
     let mut f = fixture(&[]);
     f.layer.register_overlay("tool.full.inspect", Kind::Query, &[], overlay("inspect")).unwrap();
-    f.layer.register_overlay("tool.full.export", Kind::File, &[], overlay("export")).unwrap();
+    let granted = c600_command::Registration::default().granting(c600_command::Grant::File);
+    f.layer.register_overlay_with("tool.full.export", Kind::File, &[], overlay("export"), granted).unwrap();
     f.layer.set_program_capacity(2);
     assert!(matches!(f.commit(&word(&[1])).status, Status::Committed(_)));
     let query = f.shell.invoke(&mut f.layer, "tool.full.inspect", json::object([])).unwrap();

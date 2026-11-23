@@ -3641,3 +3641,39 @@ LG5.6).
   - the shell's write-check-run flow and its explicit activation control (LP4-3).
 - Evidence kind: source. The process-host tests start the runtime's child on the test machine; nothing is timing,
   input or Windows interaction evidence.
+
+## Status of LP4, LP4-4: overlay rows and the palette
+
+- Overlay rows (KN5.3, EV4.1): `CommandLayer::register_overlay_with` registers a language-defined command with its
+  label and the capabilities the solver granted its module (`Registration`, `Grant`: file, clock, randomness; consent
+  at install, ADR-D01.32). Its kind is view, workspace or query, or file with the file grant. A commit or app row, a
+  file row without the file grant and a row that takes a token are refused with `KN5:input.overlay_row_kind`; an ID a
+  stored row, a service or another overlay holds, the stored puzzle rows and `command.find` among them, with
+  `KN5:input.overlay_row_conflict`. `register_overlay` keeps its signature and grants nothing, so a file row needs the
+  new call.
+- A language-defined row whose stored static verdict failed is refused at invocation with that diagnostic, by key and
+  from the palette alike, so a module that failed its check runs nothing.
+- The palette's data (EV4.2, KN5.6): `Palette::read` lists every row of the table, H-08's 198 and the overlays, with
+  its label, kind, key sequences and its answer in one KN5.6 availability table (a computed binding per row: the
+  argument-independent gates). `Shell::read_palette` reads it once per revision and generation; `Palette::find` searches
+  the kept read with no layer, case-insensitive substrings of the label, row ID or key sequences. Unavailable entries
+  keep their places with their typed reasons. A palette invocation is `Shell::invoke`, the key route's own path.
+- `command.find` is built: after its `query`'s form, and for a run only inside a command the solver invoked, it is
+  `accepted` with no job and changes nothing. No entry can serve it.
+- `Shell::bind` adds a key binding, refusing a sequence bound in an overlapping context with
+  `EV4:input.binding_conflict`.
+- CT-EV4-01 runs whole in `c600-command/tests/palette.rs` (source).
+- Not built:
+  - ranking by the solver's own recency, frequency and pins (ADR-D01.18), glossary terms in the search, aliases
+    (`palette.alias`), pins (`palette.pin`), synonyms (ADR-D01.17), short help and the selection filter of
+    `command.find`'s `object`;
+  - revoking a grant or removing a registered row; the host keeps its registrations for the layer's life;
+  - LP4-8's checked keymap, layouts and rebind (EV4.7, EV4.8): `Shell::bind` is a draft that checks duplicates only;
+  - a run's own invocation of a workspace or file row. ADR-D01.2's first route lets an invoked entry point run view
+    and workspace rows (overruling LG3.1 and LG3.5 in part); the layer still follows the owner's reading of ONE.52 of
+    18 November 2026 (findings B3 and B4), so a workspace entry point the solver invokes writes its records in its own
+    completion, and a run reaches view and query rows only. Whether ADR-D01.2 lifts that reading is the integrator's
+    question;
+  - the palette's generation event (KN5.8's protocol): the shell compares the layer's revision and generation when it
+    reads.
+- Evidence kind: source. Nothing here is Windows input, display or timing evidence.
