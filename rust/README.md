@@ -36,6 +36,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 | `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
+| `c600-log` | The 1.0 log file: what a log holds, its record `c600-log-draft` (`.c600log`), the compiler with its gates, a recorder, and the check, import and export of 0.4 proof logs and MPUlt v1 logs of 600-cell-Full (LP4-12, LP4-13); no path to `c600-run` |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -3867,4 +3868,66 @@ EV3.7), in `c600-editor`, a draft.
   - follow-pick navigation from a drawn instance to its declared part (EV3.5's `follow_pick`, chapter 10's
     `SourceMap`);
   - keeping the directive comments through `format`, which still drops comments (LP4-1).
+- Evidence kind: source. Nothing here is Windows, input, display or timing evidence.
+
+## Status of LP4, LP4-12: the 1.0 log and its compiler
+
+LP4-12 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (ADR-D01.80 to .82 as revision 6's R-2 and R-3
+amend them), in the new crate `c600-log`, a draft.
+
+- What a log holds (`Log`): the model identity (KN0.1); the start state (solved, or its labels in PS1.7's
+  `u32le-base64` carrier); the move history and the layout history (ADR-D01.14 to .16); the saved cursors and the
+  full-state hash at save; the view, the layout and the workspace as recorded values; each open document with its
+  identity (a path, or an untitled id that was never saved), the digest of its last saved bytes and its full contents,
+  with its dirty mark; the embedded macros (FP.12's steps, Nat count and `DigestRef(recipe_expansion)`), Library
+  entries and scripts (text and `DigestRef(source)`), each with its author class (`built_in`, `own`,
+  `forked_built_in`, `imported`, or `unknown`); the preferences as canonical JSON text, recorded and never applied;
+  where the log came from.
+- Histories: each is an append-only list of actions. A node action (commit, partial undo, workspace action, layout
+  step) adds a node whose parent is where the cursor stood; a cursor action (undo, redo, roll, select) moves the
+  cursor, an undo only back on its line, a redo only forward, a roll either way, a select anywhere. An abandoned branch
+  is the nodes no later cursor returns to. A partial undo names its commit and how many of its literal letters stay;
+  its parent is the commit's parent, and the cursor must stand on the commit or on another partial undo of it. A
+  commit carries its legal witness (0.4's word and star steps), its Nat counts and its pre and post full-state hashes.
+- The record (`write`, `read`), DRAFT: an FP.11 record of format `c600-log-draft`, version 1, with null provenance,
+  outside the data core like FP.37's playback state; payload `{log, seal}`, where the seal is the
+  `DigestRef(content)` of the FP.5 bytes of the record with `payload` reduced to `{log}`. The bytes are FP.5's
+  `c600-json-1`, or FP.7's `c600-gzip-stored-1` above 250,000 bytes, read under FP.9's limits and only in their one
+  canonical spelling; FP.10's dispatch comes first, unknown fields are refused, and an unknown optional extension is
+  kept. The extension is `.c600log` (`EXTENSION`).
+- `compile(kernel, bytes)` (ADR-D01.81) runs the gates `format`, `model_match`, `moves` (every node replayed from the
+  start with its legal witness through `c600-kernel`, a state kept only while a later node needs it), `final_hash`,
+  `macros` and `scripts` (each embedded script given to `c600_editor::diagnose`, with the other embedded scripts as its
+  digest-pinned dependencies; nothing runs). Codes: a bad record `PS1:input.persistence_format`,
+  `PS1:input.noncanonical_value` or `PS1:resource_limit.persistence_size`; an unknown format or version, or an unknown
+  required extension, `PS2:input.persistence_version`; a changed byte `PS1:input.digest_mismatch` (the seal, or a clean
+  document's contents against its saved digest); another model `KN1:input.identity_mismatch`; a move without its legal
+  witness the kernel's `KN2:input.recipe_shape` (or its other recipe codes); a replay that disagrees with a pre or post
+  state, or a wrong final hash, `PS3:input.checkpoint_replay`. The result names the SHA-256 of the bytes it compiled
+  (`binds`). Only when `format`, `model_match`, `moves` and `final_hash` all passed does it bind the saved state;
+  otherwise the log is read-only with its problems and no state (R-2). A script's or a macro's problem leaves the
+  state bound and the compile not passed.
+- `Recorder` writes a log action by action with the kernel computing each state, for fixtures and short sessions.
+- Tests (source): `tests/compile.rs` writes a session with an abandoned branch, partial undos, a branch switch, layout
+  steps, open documents, a macro, a Library entry, a built-in script and preferences, and compiles it through every
+  gate to the session's hash; a changed model identity, missing and wrong witnesses, a flipped byte (one named, and a
+  bit flip every 37 bytes), a wrong final hash, bad structure, bad documents and other spellings each fail with their
+  code and no bound state; a dirty document's unsaved contents and saved digest survive saving and reopening.
+  `tests/dependencies.rs` follows the manifests and fails on a path from `c600-log` to `c600-run`, `c600-command` or
+  `c600-session`, or on any dependency that is not a workspace path.
+- Readings: `c600-log` cannot depend on `c600-session` as the plan's selection 1 lists, because `c600-session` depends
+  on `c600-run`; it keeps its own plain history types, and converting the session store's journal and branches into a
+  `Log` is LP4-14's. R-3 is read in its final form: every open document's full contents are kept, clean or dirty, and
+  a clean document's contents must match its saved digest. Embedded scripts are checked without a session identity (a
+  model-independent request).
+- Not built:
+  - LP4-14's document rows (`file.log.*`: New, Open, Save, Save as, Compile, Close, and the import commit with its file
+    check and confirm gates, recovery checkpoint and undo journal), the tabs, the Problems tab, the compile lamp and
+    the signature; saving the live session at exit, and restoring open documents at start with a changed-on-disk mark;
+  - the conversion between `c600-session`'s history and `Log`;
+  - logs of the jumbled puzzle: the identity block reads, `model_match` refuses it, and the replay is 600-cell-Full's;
+  - interpreting the recorded view, layout, workspace and layout steps, and checking Library entries (they are recorded
+    values); the install-time consent a script of another author class needs before it runs (the log records the
+    class);
+  - a chapter 05 table row and an FP.4 row for `c600-log-draft`, which are versioned changes of frozen text.
 - Evidence kind: source. Nothing here is Windows, input, display or timing evidence.
