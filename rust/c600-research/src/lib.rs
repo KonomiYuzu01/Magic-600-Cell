@@ -22,6 +22,12 @@
 //!   `c600_evidence::admit_check_report` (EVD.46).
 //! - [`archived`]: the archive's runs as `c600-archive` imports them: recorded facts that supply no new run (DET.48).
 //!
+//! # Piece R10: the research output panel's rows
+//!
+//! - [`panel`]: the eleven rows of the LP5 plan's section 6 as LP5's block of the command table, the research host
+//!   that serves them through the command layer and answers each from its own data (its file grant, its imports,
+//!   the claim bindings and its check runs through [`job`]), and each answer's revision with charter D2's state.
+//!
 //! The crate reaches the engines through `c600_checkers::engines::Loaded` and the run record's types through
 //! `c600-session`; it has no edge of its own to the kernel, the jumbling engine or the runtime. Its drafts: a check
 //! job's key names the session's language edition and IR version `none`, its metering rule and the checkers' cost rule
@@ -33,6 +39,7 @@
 pub mod archived;
 pub mod evidence;
 pub mod job;
+pub mod panel;
 pub mod record;
 
 pub use job::{Admitted, Budget, Cancel, Check, CheckJob, CheckRun, ChildRun, Det30, Granted, Pinned};

@@ -41,9 +41,9 @@
 //!   the host supplies for one claim group (its typed binding from `c600-archive`'s edition, KN6's registration answer
 //!   for each named checker and the host's answer for each stored input). It answers `ready` or `unavailable` with
 //!   LB5.14's reasons in its order and every known blocker, as a value: it runs no check, adds no evidence leaf and
-//!   refutes nothing. Its catalogue row is [`availability_preflight`], kept outside [`rows`] (R7's eleven rows) until
-//!   R7's catalogue test lists the module and reads chapter 03's Effect column for the row "Certificate builders,
-//!   import and replay", whose "use a granted file on import" is no IR effect.
+//!   refutes nothing. Its catalogue row is [`availability_preflight`], the last of [`rows`] (piece R10): chapter 03's
+//!   Effect column for the row "Certificate builders, import and replay" adds "use a granted file on import", which
+//!   is the host's grant and no IR effect.
 //!
 //! # The human-solve boundary
 //!
@@ -459,8 +459,8 @@ pub fn conditional_models_and_partial_actions() -> CatalogueRow {
     }
 }
 
-/// The preflight part of LB5's row "Certificate builders, import and replay" (LB5.14), outside [`rows`] for now (see
-/// the module documentation).
+/// The preflight part of LB5's row "Certificate builders, import and replay" (LB5.14), the last of [`rows`] (see the
+/// module documentation).
 pub fn availability_preflight() -> CatalogueRow {
     CatalogueRow {
         entry: "Certificate builders, import and replay",
@@ -497,6 +497,7 @@ pub fn rows() -> Vec<CatalogueRow> {
         regional_family_recognition(),
         admitted_domain_membership(),
         bound_calculation_and_compressed_witnesses(),
+        availability_preflight(),
     ]
 }
 

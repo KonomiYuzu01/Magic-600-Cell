@@ -31,6 +31,7 @@ fn modules() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
         (RANKS_MODULE, RANKS_SOURCE, RANKS_EXPORTS.to_vec()),
         (FAMILIES_MODULE, FAMILIES_SOURCE, FAMILIES_EXPORTS.to_vec()),
         (MODELS_MODULE, MODELS_SOURCE, MODELS_EXPORTS.to_vec()),
+        (PREFLIGHT_MODULE, PREFLIGHT_SOURCE, PREFLIGHT_EXPORTS.to_vec()),
     ]
 }
 
@@ -73,7 +74,7 @@ fn research_rows_have_lb1_2_fields_and_cover_every_export_once() {
         .map(|(module, source, exports)| (module, (sha256_hex(source.as_bytes()), exports)))
         .collect();
     let rows = rows();
-    assert_eq!(rows.len(), 11);
+    assert_eq!(rows.len(), 12);
     let mut covered: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     let mut names = BTreeSet::new();
     for row in &rows {
@@ -130,8 +131,9 @@ fn research_row_effects_are_the_checkers_and_no_entry_reads_state() {
     }
 }
 
-/// Chapter 03's Effect column for `entry`, as IR effects: `pure` adds none, and a qualified phrase ("read a snapshot
-/// for instance tests", "seeded randomness if used") counts as its effect.
+/// Chapter 03's Effect column for `entry`, as IR effects: `pure` adds none, a qualified phrase ("read a snapshot
+/// for instance tests", "seeded randomness if used") counts as its effect, and "use a granted file on import" (the row
+/// "Certificate builders, import and replay") adds none, since a file grant is the host's and no IR effect.
 fn chapter_effects(chapter: &str, entry: &str) -> BTreeSet<Effect> {
     let line = chapter
         .lines()
@@ -140,7 +142,7 @@ fn chapter_effects(chapter: &str, entry: &str) -> BTreeSet<Effect> {
     let column = line.split('|').nth(3).expect("an Effect column");
     let mut effects = BTreeSet::new();
     for phrase in column.split([',', ';']).map(str::trim) {
-        if phrase == "pure" {
+        if phrase == "pure" || phrase == "use a granted file on import" {
             continue;
         } else if phrase == "budgets" {
             effects.insert(Effect::Budgets);
