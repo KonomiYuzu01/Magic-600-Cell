@@ -37,6 +37,13 @@
 //! - [`MODELS_SOURCE`], `research_models`: restrictions and quotients of a permutation action that state their maps and
 //!   preserved subjects, recognition of a supplied instance, and conditional bounds whose premises accumulate and are
 //!   discharged only by an identical statement and scope.
+//! - [`PREFLIGHT_SOURCE`], `research_preflight` (piece R1): LB5.14's `check_availability` over the availability data
+//!   the host supplies for one claim group (its typed binding from `c600-archive`'s edition, KN6's registration answer
+//!   for each named checker and the host's answer for each stored input). It answers `ready` or `unavailable` with
+//!   LB5.14's reasons in its order and every known blocker, as a value: it runs no check, adds no evidence leaf and
+//!   refutes nothing. Its catalogue row is [`availability_preflight`], kept outside [`rows`] (R7's eleven rows) until
+//!   R7's catalogue test lists the module and reads chapter 03's Effect column for the row "Certificate builders,
+//!   import and replay", whose "use a granted file on import" is no IR effect.
 //!
 //! # The human-solve boundary
 //!
@@ -95,8 +102,7 @@
 //!   jumbling form of D\[k\] over branch predicates: they wait for the research host's reads (LP5 plan, section 4,
 //!   selection 6).
 //! - Strategies and selectors (P*, P**, P***, T3P chains, routing, WC-PLAN), release structures, theorem-schema
-//!   instance checks, closure-set negative certificates, experiment runs and branches, certificate builders and the
-//!   preflight `check_availability` (R1).
+//!   instance checks, closure-set negative certificates, experiment runs and branches, and certificate builders.
 //! - Seeded randomness in a search, beams other than a fixed width, and reductions other than the local commuting one.
 //! - The host's refusal of a research tier candidate in a solving session: the marker is data here, and the scan that
 //!   reads it is the host's (BND.64, CT-BND-16).
@@ -184,6 +190,13 @@ pub const MODELS_MODULE: &str = "research_models";
 pub const MODELS_EXPORTS: [&str; 6] =
     ["restriction", "quotient", "recognize_instance", "conditional_bound", "combine", "discharge"];
 
+/// The availability preflight source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
+pub const PREFLIGHT_SOURCE: &str = include_str!("research_preflight.6cs");
+/// The availability preflight module.
+pub const PREFLIGHT_MODULE: &str = "research_preflight";
+/// The availability preflight module's exported functions, in source order.
+pub const PREFLIGHT_EXPORTS: [&str; 1] = ["check_availability"];
+
 /// The SHA-256 of [`SLP_SOURCE`], in hex.
 pub fn slp_sha256() -> String {
     sha256_hex(SLP_SOURCE.as_bytes())
@@ -222,6 +235,11 @@ pub fn families_sha256() -> String {
 /// The SHA-256 of [`MODELS_SOURCE`], in hex.
 pub fn models_sha256() -> String {
     sha256_hex(MODELS_SOURCE.as_bytes())
+}
+
+/// The SHA-256 of [`PREFLIGHT_SOURCE`], in hex.
+pub fn preflight_sha256() -> String {
+    sha256_hex(PREFLIGHT_SOURCE.as_bytes())
 }
 
 /// LB1.8's row "Straight-line programs".
@@ -438,6 +456,30 @@ pub fn conditional_models_and_partial_actions() -> CatalogueRow {
         module: MODELS_MODULE,
         functions: &MODELS_EXPORTS,
         source_sha256: models_sha256(),
+    }
+}
+
+/// The preflight part of LB5's row "Certificate builders, import and replay" (LB5.14), outside [`rows`] for now (see
+/// the module documentation).
+pub fn availability_preflight() -> CatalogueRow {
+    CatalogueRow {
+        entry: "Certificate builders, import and replay",
+        level: "Values: one claim group's availability data as the host supplies it: the matrix's reasons, what its \
+                typed binding resolves, the named checkers with KN6's registration answer, the stored inputs with \
+                the host's answer for each, the derived inputs, the missing inputs and the unfinished gates.",
+        effects: &[],
+        backing: "Library code: `research_preflight.check_availability`, LB5.14's preflight over host-supplied data. \
+                  The typed claim bindings are versioned data in `c600-archive` (edition `c600-claim-bindings-1`); \
+                  the host answers registration from KN6's registry and each input from its granted files. \
+                  Certificate builders, import and fresh checks are not built here.",
+        notes: "Preflight only: `ready` with the registered checkers and the inputs, or `unavailable` with LB5.14's \
+                reasons in its order and every known blocker. `ready` is not a pass, and `unavailable` is neither a \
+                failure nor a negative: the answer says `checked: false`, `evidence_leaf: false` and `refutes: \
+                false`. A checker that is not registered is never named with a digest, and a captured label is kept \
+                word for word.",
+        module: PREFLIGHT_MODULE,
+        functions: &PREFLIGHT_EXPORTS,
+        source_sha256: preflight_sha256(),
     }
 }
 

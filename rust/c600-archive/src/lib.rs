@@ -16,6 +16,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod bindings;
 pub mod bundle;
 pub mod discriminator;
 pub mod enumerate;
