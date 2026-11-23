@@ -45,9 +45,17 @@ fn ct_lb5_05_gate3_tail_replay_mutation_gate_on_a_synthetic_three_segment_record
     assert_eq!(scope.computed, "gate 3 for steps[0] to steps[1]");
     let history = report.trace.iter().find(|t| t.claim == "steps[0].history").unwrap();
     assert!(history.computed.contains("a new check"), "{}", history.computed);
-    let chunk = report.trace.iter().find(|t| t.claim == "steps[0].chunks[0]").and_then(|t| t.span.clone()).unwrap();
-    assert_eq!((chunk.from, chunk.to), (0, 5));
-    assert!(report.trace.iter().any(|t| t.claim == "steps[1].chunks.cover" && t.held));
+    // The trace reports each step as chunks that tile its word and chain from its start to its end.
+    let starts = [parse(&s.record).get("start_digest").and_then(Value::as_str).unwrap().to_owned(), s.ends[0].clone()];
+    for (k, start) in starts.iter().enumerate() {
+        let chunks: Vec<_> =
+            report.trace.iter().filter(|t| t.claim.starts_with(&format!("steps[{k}].chunks["))).collect();
+        assert_eq!(chunks.len(), 1);
+        let span = chunks[0].span.clone().unwrap();
+        assert_eq!((span.from, span.to), (0, 5));
+        assert!(chunks[0].computed.starts_with(&format!("{start} -> {}", s.ends[k])), "{}", chunks[0].computed);
+        assert!(report.trace.iter().any(|t| t.claim == format!("steps[{k}].chunks") && t.held));
+    }
     gate_on("synthetic three-segment, gate 3", tail_replay(), &s);
 }
 
@@ -177,6 +185,46 @@ fn ct_lb5_05_archive_mutation_controls_fail_and_the_record_passes() {
         let verdict = fails(kind, &s.record, &replace(&s.inputs, "start", s.wrong_start.clone()));
         assert_eq!(verdict.code(), Some(codes::START_TABLE_MISMATCH));
     }
+}
+
+#[test]
+fn ct_lb5_05_end_table_claims_hold_for_the_chain_end_and_fail_for_a_tampered_one() {
+    // The optional stored table of a chain's end (T6's is stored, the rule's is not), on a synthetic record: it must
+    // carry the last step's end digest and off count, under gate 1 (no state reached) and gate 2 (after the replay).
+    let s = synthetic(true);
+    let mut inputs = s.inputs.clone();
+    inputs.push(("end".to_owned(), s.end_table.clone()));
+    for kind in [expansion(), composed()] {
+        let report = check_owned(kind, &s.record, &inputs);
+        assert_eq!(report.verdict, Verdict::Pass, "{kind:?}: {:#?}", report.trace.last());
+        let held = |claim: &str| report.trace.iter().find(|t| t.claim == claim && t.held).map(|t| t.computed.clone());
+        assert_eq!(held("end.digest").as_deref(), Some(s.ends[1].as_str()), "{kind:?}");
+        assert_eq!(held("end.off").as_deref(), Some("0"), "{kind:?}");
+    }
+    // With the end table supplied, the last end digest is a gate-1 claim too: every leaf of the record is tampered.
+    let f = gate_fixture(
+        "synthetic with its end table, gate 1",
+        expansion(),
+        s.record.clone(),
+        inputs.clone(),
+        &[],
+        &[],
+        ("start", s.wrong_start.clone()),
+    );
+    let report = gate::run(&engines(), &f).expect("a checker");
+    assert!(report.passed(), "{:#?}", report.problems);
+    // A stored end that is not the chain's end (the start table in its place) fails at its digest.
+    let start = s.inputs.iter().find(|(r, _)| r == "start").unwrap().1.clone();
+    let wrong = replace(&inputs, "end", start);
+    for kind in [expansion(), composed()] {
+        assert_eq!(check_owned(kind, &s.record, &wrong).verdict.claim(), Some("end.digest"), "{kind:?}");
+    }
+    // A record whose last end digest names that table: the digests now agree and the off counts do not. Gate 1 sees no
+    // state reached, so the end table's off count is what fails; gate 2's replay stops at the step's end first.
+    let start_digest = parse(&s.record).get("start_digest").and_then(Value::as_str).unwrap().to_owned();
+    let record = edit(&s.record, |doc| set(doc, 1, "end_digest", text(&start_digest)));
+    assert_eq!(check_owned(expansion(), &record, &wrong).verdict.claim(), Some("end.off"));
+    assert_eq!(check_owned(composed(), &record, &wrong).verdict.claim(), Some("steps[1].end_digest"));
 }
 
 #[test]

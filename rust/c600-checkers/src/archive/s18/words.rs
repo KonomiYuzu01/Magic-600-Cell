@@ -11,10 +11,14 @@
 //!   when its name ends in `.gz`; its SHA-256 is that of the decoded bytes (stage 13's run records).
 //!
 //! Every reader checks the declared length before it decodes anything: a length past the admission bound of 10⁷
-//! letters (LB5.12, gate 1) fails at once, and the decoder may not inflate past the bytes the declared length allows.
-//! A word file's letters are then parsed one at a time from the decoded text and hashed as they pass; no list of
-//! letters and no expanded word is built here. The only buffer proportional to a word is the decoded member itself,
-//! bounded by its declared length.
+//! letters (LB5.12, gate 1) fails at once, and the decoder may not inflate past the bytes the declared length allows
+//! ([`decode`]). A word file's letters are then parsed one at a time from the decoded text and hashed as they pass; no
+//! list of letters and no expanded word is built here. The only buffer proportional to a word is its decoded member,
+//! bounded by its declared length: a plain member is read where it lies, never copied, and a gzip member is inflated
+//! once (the kernel's `gunzip` appends each inflated gzip member to its output, so while one is decoded it is briefly
+//! held twice).
+
+use std::borrow::Cow;
 
 use c600_jumble::model::{NP, POLES};
 use c600_kernel::json::{self, Value};
@@ -48,17 +52,22 @@ pub fn admit(letters: u64, claim: &str) -> Step<()> {
     }
 }
 
-/// A stored member's bytes, decoded when its name ends in `.gz`. A gzip member may not inflate past `limit` bytes, and a
-/// member that could not hold `limit` bytes is not the declared one; a plain member longer than `limit` fails.
-pub fn decode(name: &str, bytes: &[u8], limit: usize, claim: &str) -> Step<Vec<u8>> {
+/// A stored member's bytes: inflated when its name ends in `.gz`, otherwise the member as it lies, borrowed and never
+/// copied. `limit` is the most bytes the member may decode to; a member that would decode to more fails.
+pub fn decode<'b>(name: &str, bytes: &'b [u8], limit: usize, claim: &str) -> Step<Cow<'b, [u8]>> {
     if name.ends_with(".gz") {
-        // A gzip member inflates at most 1,032 times its size (RFC 1951), so the bound needs no decoding.
-        let ceiling = bytes.len().saturating_mul(DEFLATE_RATIO);
-        c600_kernel::archive::gunzip(bytes, limit.min(ceiling.max(1))).map_err(|error| {
+        // The size limit is enforced here, while inflating: `gunzip` hands what is left of `limit` to the kernel's
+        // DEFLATE decoder, which refuses any stored block, literal or match that would write past it, so a member that
+        // decodes to more than `limit` bytes fails before more than `limit` bytes are written. The callers pass the
+        // declared size: two bytes a letter for an `ia16` member ([`ia16_member`], which also refuses a member too
+        // short to hold them before inflating), [`text_limit`] for a word file, and 64 MiB for a step tree
+        // (`TREE_LIMIT` in `s18.lattice_run`). No smaller bound is needed: DEFLATE never inflates past 1,032 times
+        // its input.
+        c600_kernel::archive::gunzip(bytes, limit).map(Cow::Owned).map_err(|error| {
             reject(claim, format!("the member {name} does not decode within its declared size: {}", error.0))
         })
     } else if bytes.len() <= limit {
-        Ok(bytes.to_vec())
+        Ok(Cow::Borrowed(bytes))
     } else {
         Err(reject(claim, format!("the member {name} holds {} bytes, more than its declared size allows", bytes.len())))
     }
@@ -85,10 +94,25 @@ pub struct WordFile {
 /// The text of one letter as `json.dumps` writes it.
 fn letter_text(out: &mut Vec<u8>, cap: usize, item: usize) {
     out.push(b'[');
-    out.extend_from_slice(cap.to_string().as_bytes());
+    decimal(out, cap);
     out.extend_from_slice(b", ");
-    out.extend_from_slice(item.to_string().as_bytes());
+    decimal(out, item);
     out.push(b']');
+}
+
+/// Appends a number in decimal, without allocating.
+fn decimal(out: &mut Vec<u8>, mut n: usize) {
+    let mut digits = [0u8; 20];
+    let mut at = digits.len();
+    loop {
+        at -= 1;
+        digits[at] = b'0' + (n % 10) as u8;
+        n /= 10;
+        if n == 0 {
+            break;
+        }
+    }
+    out.extend_from_slice(&digits[at..]);
 }
 
 /// The JSON text of a list of letters, `[[c, i], ...]`.
@@ -351,10 +375,19 @@ pub fn read_unit(bytes: &[u8], claim: &str) -> Step<Vec<u32>> {
 }
 
 /// An `ia16` member of `letters` letters: admitted (at most 10⁷) before anything is decoded, decoded within exactly
-/// its declared size, every code naming a cap and an I_a item. Returns the decoded bytes and their SHA-256.
-pub fn ia16_member(name: &str, bytes: &[u8], letters: u64, claim: &str) -> Step<(Vec<u8>, String)> {
+/// its declared size, every code naming a cap and an I_a item. Returns the decoded bytes (a plain member borrowed where
+/// it lies, a gzip member inflated once) and their SHA-256.
+pub fn ia16_member<'b>(name: &str, bytes: &'b [u8], letters: u64, claim: &str) -> Step<(Cow<'b, [u8]>, String)> {
     admit(letters, &dot(claim, "letters"))?;
     let size = usize::try_from(letters * 2).map_err(|_| reject(claim, "too many letters"))?;
+    // DEFLATE inflates at most 1,032 times its input (a 258-byte match in two bits, RFC 1951), so a gzip member too
+    // short to hold the declared bytes fails before anything is inflated.
+    if name.ends_with(".gz") && size > bytes.len().saturating_mul(DEFLATE_RATIO) {
+        return Err(reject(
+            dot(claim, "letters"),
+            format!("a {}-byte gzip member cannot hold {size} bytes", bytes.len()),
+        ));
+    }
     let decoded = decode(name, bytes, size, &dot(claim, "letters"))?;
     if decoded.len() != size {
         return Err(reject(dot(claim, "letters"), format!("the word holds {} bytes, not {size}", decoded.len())));

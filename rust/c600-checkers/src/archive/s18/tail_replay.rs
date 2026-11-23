@@ -1,23 +1,30 @@
 //! `s18.tail_replay`: stage 18's gate 3, a complete twist-by-twist replay of each step from the actual previous end,
-//! validated as a chain of chunks (matrix family 18/tail_replay; LB5.12; CT-LB5-05, CT-LB5-09).
+//! reported as a chain of chunks (matrix family 18/tail_replay; LB5.12; CT-LB5-05, CT-LB5-09).
 //!
 //! For each step in scope, after gate 1's checks of its record and files ([`super::record::read_step`]): the start is
 //! the stored start table for the first step and, for every later one, the end the replay reached, rebuilt by exact
 //! replay of the stored words under this checker's identity and marked `derived` (LP5-3); its digest and off count
-//! must be the recorded ones and every unit piece off. The step's whole word X·W·V′·W⁻¹(·V′⁻¹) is then played one
-//! twist per letter, every twist admissible, in chunks of at most 20,000 letters as the archive cut its chunks. Each
-//! chunk is a trace step citing the word by its digest and positions, with the digests at its two ends. The replay
-//! counts as complete only when the chunks tile the word, their concatenation is the step's word, every chunk ends
-//! where the next one starts, and the last ends at the recorded end digest (LB5.12); the step must then be strict′.
+//! must be the recorded ones and every unit piece off. The step's whole word X·W·V′·W⁻¹(·V′⁻¹), whose length must be
+//! the recorded one, is then played one twist per letter, every twist admissible, and must end at the recorded end
+//! digest; the step must then be strict′.
+//!
+//! Chunks. The word is played as one continuous replay from the step's start and reported in chunks of at most 20,000
+//! letters, as the archive cut its chunks: each chunk is a trace step citing the word by its digest and positions,
+//! with the digests at its two ends. The archive played its chunks separately, each from a boundary table computed by
+//! exact composition, so it had to check that its chunks tile the word, concatenate to it and chain digest to digest
+//! (LB5.12). Here the chunks are consecutive slices of the one expanded word, played in order on one state, so they
+//! tile it, concatenate to it and chain by construction; none of this is checked again, since such a check could not
+//! fail. What the replay decides is checked: every twist, the end digest and strict′ (and, before it, the expanded
+//! word's length against the record, a check of the expansion itself).
 //!
 //! Scope. The archive records gate 3 complete for T6's steps 1 to 3 and stopped it at the freeze for T6's step 4 and
 //! for the rule's three stages (stage 18 README section 3.3). Those four steps keep `historical_check_incomplete` for
 //! gate 3: they are never replayed or passed here, a record whose first step is one of them is `not_applicable`, and
 //! every later step of a record is out of scope too, since its previous end is reached only through such a step. A
-//! pass covers exactly the steps the trace's `scope` names. A step this checker replays that the archive has no
-//! gate-3 record for (a fixture's) is a new check, recorded as such; no newly completed replay fills a historical gate.
-
-use c600_digest::Sha256;
+//! pass covers exactly the steps the trace's `scope` names. Each step in scope gets its history from the record alone,
+//! before any table is read or letter played: a step whose start and end digests are one of [`COMPLETED`] is a step
+//! the archive records gate 3 complete for, rechecked here; any other (a fixture's) is a new check, recorded as such.
+//! No newly completed replay fills a historical gate.
 
 use super::play::{check_start, check_strict, play, start_note, strict_prime, Letter};
 use super::record::{open, read_step, start_state, word_digest, StepRecord};
@@ -107,6 +114,14 @@ fn find<'t>(table: &'t [(&'t str, &'t str, &'t str)], step: &StepRecord) -> Opti
     table.iter().find(|(_, start, end)| *start == step.start && *end == step.end).map(|(name, _, _)| *name)
 }
 
+/// A step's gate-3 history in the archive, from its recorded start and end digests.
+fn history(step: &StepRecord) -> String {
+    match find(&COMPLETED, step) {
+        Some(name) => format!("{name}: the archive records gate 3 complete; rechecked here"),
+        None => "the archive holds no gate-3 record for this step; a new check".to_owned(),
+    }
+}
+
 fn run(engines: &Engines, run: &mut Run) -> Step<()> {
     let opened = open(engines, run, SCOPE)?;
     let steps = &opened.chain.steps;
@@ -130,6 +145,9 @@ fn run(engines: &Engines, run: &mut Run) -> Step<()> {
         false => format!("gate 3 for steps[0] to steps[{}]; not applicable: {}", first - 1, excluded.join("; ")),
     };
     run.held("scope", scope);
+    for step in &steps[..first] {
+        run.held(dot(&step.path, "history"), history(step));
+    }
 
     let state = start_state(&opened, run)?;
     let mut j = Jumbling::new(opened.ctx, opened.menu.clone(), state);
@@ -139,61 +157,43 @@ fn run(engines: &Engines, run: &mut Run) -> Step<()> {
         let code = if k == 0 { codes::START_TABLE_MISMATCH } else { codes::CERTIFICATE_REJECTED };
         run.compare(&dot(path, "start_digest"), &step.start, &digest, code)?;
         run.held(dot(path, "start"), start_note(k, &digest));
-        run.held(
-            dot(path, "history"),
-            match find(&COMPLETED, step) {
-                Some(name) => format!("{name}: the archive records gate 3 complete; rechecked here"),
-                None => "the archive holds no gate-3 record for this step; a new check".to_owned(),
-            },
-        );
         let words = read_step(run, step, &opened.inverse, true)?;
         check_start(run, path, &j.state, &words.unit, step.off_before)?;
         let before = j.state.clone();
         let word = words.expanded(opened.chain.form, &opened.inverse);
+        run.claim(&dot(path, "letters"), &step.letters, &(word.len() as u64))?;
         let id = word_digest(&word);
 
-        let mut concatenated = Sha256::new();
-        let mut ends: Vec<String> = Vec::new();
-        let mut covered = 0usize;
+        // One continuous replay, reported in chunks: each chunk starts at the digest the one before ended at.
+        let mut start = digest;
+        let chunks = word.len().div_ceil(CHUNK);
         for (n, chunk) in word.chunks(CHUNK).enumerate() {
             let from = n * CHUNK;
-            let start = j.digest();
-            if let Some(previous) = ends.last() {
-                if *previous != start {
-                    let stop =
-                        reject(format!("{path}.chunks[{n}]"), "the chunk does not start where the one before ended");
-                    return Err(run.failed(stop, &start));
-                }
-            }
             for (i, &letter) in chunk.iter().enumerate() {
                 let claim = format!("{path}.letters[{}]", from + i);
                 play(&mut j, letter, Letter::Twist, &claim).map_err(|stop| run.failed(stop, "refused"))?;
             }
-            let bytes: Vec<u8> = chunk.iter().flat_map(|c| c.to_le_bytes()).collect();
-            concatenated.update(&bytes);
             let end = j.digest();
-            let to = from + chunk.len();
-            if from != covered {
-                return Err(reject(format!("{path}.chunks[{n}]"), "the chunks do not tile the word"));
-            }
-            covered = to;
             run.held_span(
                 format!("{path}.chunks[{n}]"),
                 format!("{start} -> {end}, every twist admissible"),
-                Span { word: id.clone(), from: from as u64, to: to as u64 },
+                Span { word: id.clone(), from: from as u64, to: (from + chunk.len()) as u64 },
             );
-            ends.push(end);
+            start = end;
         }
-        let joined = c600_digest::hex(&concatenated.finish());
-        run.claim(&dot(path, "chunks.cover"), &id, &joined)?;
-        run.claim(&dot(path, "letters"), &step.letters, &(covered as u64))?;
-        run.held(dot(path, "chunks.chain"), format!("{} chunks; each starts where the one before ended", ends.len()));
-        let end = j.digest();
+        run.held(
+            dot(path, "chunks"),
+            format!(
+                "{chunks} chunks of at most {CHUNK} letters, consecutive slices of the word played as one replay, so \
+                 they tile it and chain by construction"
+            ),
+        );
+        let end = start;
         if end != step.end {
             let stop = reject(dot(path, "end_digest"), format!("stated {}, computed {end}", step.end));
             return Err(run.failed(stop, &end));
         }
-        run.held_span(dot(path, "end_digest"), &end, Span { word: id.clone(), from: 0, to: covered as u64 });
+        run.held_span(dot(path, "end_digest"), &end, Span { word: id.clone(), from: 0, to: word.len() as u64 });
         let sp = strict_prime(&before, &j.state, &words.unit);
         check_strict(run, path, &sp, step.off_after)?;
     }

@@ -284,6 +284,8 @@ pub struct Synthetic {
     pub wrong_start: Vec<u8>,
     /// The state each step ends at.
     pub ends: Vec<String>,
+    /// A table of the chain's end, for the optional `end` input (not among `inputs`).
+    pub end_table: Vec<u8>,
 }
 
 /// One step's words.
@@ -381,7 +383,13 @@ pub fn synthetic(four: bool) -> Synthetic {
     if !four {
         fields.push(("form", text("three-segment")));
     }
-    Synthetic { record: obj(fields).canonical().into_bytes(), inputs, wrong_start: state_record(&wrong), ends }
+    Synthetic {
+        record: obj(fields).canonical().into_bytes(),
+        inputs,
+        wrong_start: state_record(&wrong),
+        ends,
+        end_table: state_record(&state),
+    }
 }
 
 /// The I_a menu, shared.

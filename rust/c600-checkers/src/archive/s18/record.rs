@@ -83,9 +83,9 @@ pub fn start_state(opened: &Opened, run: &mut Run) -> Step<State> {
     Ok(state)
 }
 
-/// The optional stored table of the chain's end: its digest and off count are the last step's, and, when the chain was
-/// replayed, the digest reached.
-pub fn end_table(opened: &Opened, run: &mut Run, reached: Option<&str>) -> Step<()> {
+/// The optional stored table of the chain's end: its digest and off count are the last step's. A check that replays
+/// the chain has already found every step's recorded end, so this digest is then also the one the replay reached.
+pub fn end_table(opened: &Opened, run: &mut Run) -> Step<()> {
     if run.optional_input("end").is_none() {
         return Ok(());
     }
@@ -94,9 +94,6 @@ pub fn end_table(opened: &Opened, run: &mut Run, reached: Option<&str>) -> Step<
     let digest = state.digest(opened.ctx);
     run.claim("end.digest", &last.end, &digest)?;
     run.claim("end.off", &last.off_after, &(state.off_lattice_count() as u64))?;
-    if let Some(reached) = reached {
-        run.claim("end.reached", &digest, &reached.to_owned())?;
-    }
     Ok(())
 }
 
