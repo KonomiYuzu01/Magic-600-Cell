@@ -3591,6 +3591,19 @@ The plan is [`language-lp5-plan.md`](../docs/progress/1.0/language-lp5-plan.md);
 2026 with every recommended option. The three LP5 crates were added as empty members first, so the pieces share no
 workspace file.
 
+- R2, KN6's independent checker core: `c600-checkers`. `check(engines, certificate, kind)` returns a `CheckReport`
+  with a pass, fail or not-applicable verdict, the checker's ID and source digest, the input digest, the stated inputs
+  with the identities read from them and a per-claim trace; a kind with no checker, or one whose engine was not
+  supplied, is a refusal with `KN6:evidence.no_checker`. Words replay letter by letter through `c600-jumble` and
+  `c600-kernel` with no cache of the checker's own; the crate depends on nothing else but `c600-digest` and calls no
+  chooser inside the engines. Four kinds are built: admissibility and straddlers, `macro-certificate/1`,
+  compressed-word expansion (streamed, length-checked before any letter) and ν and label checkpoints; the three other
+  certificate forms are the crate's drafts (`kn6-admissibility/1`, `kn6-expansion/1`, `kn6-checkpoints/1`). The
+  mutation gate (`gate`) requires every fixture to fail under a tampered claim, a wrong start table and a wrong input
+  digest. The research-archive kind is a family of sub-checkers registered per stage in `src/archive/s14` to `s19`,
+  each with its own ID, source digest and gate (LP5 pieces R3 to R6). All 17 stage 15 macro certificates (R01 to R17)
+  pass in place, read-only. `tests/test_language_scans.py` runs CT-KN6-02's import scan on the crate. An expansion's
+  running time is bounded by the check job's budget (R8), not here.
 - R7, the research library's entries (LB1, LB5): `c600-library` holds them as 600 Cell Script in eight modules
   (`research_slp`, `research_bigint`, `research_fixpoints`, `research_flows`, `research_search`, `research_ranks`,
   `research_families`, `research_models`), with eleven catalogue rows in `c600_library::research`: LB1's straight-line
