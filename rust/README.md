@@ -3616,6 +3616,15 @@ workspace file.
   each with its own ID, source digest and gate (LP5 pieces R3 to R6). All 17 stage 15 macro certificates (R01 to R17)
   pass in place, read-only. `tests/test_language_scans.py` runs CT-KN6-02's import scan on the crate. An expansion's
   running time is bounded by the check job's budget (R8), not here.
+- R3, stage 14's research-archive sub-checkers (CT-LB5-01): `c600-checkers/src/archive/s14` registers `s14.t3p`,
+  `s14.literal`, `s14.locality`, `s14.levels` and `s14.blocks`, each with its own identity and mutation gate. From the
+  stored stage 13 tables, the I_a menu and the model they recompute W3, W5 and the scan certificates, the T3P checks
+  (P0 to P4, the T3P+ edges, Lemma A's replay), the six chains' rounds, words and ends, the replay records'
+  chronological rows, the locality summary, the fourteen level tables (greatest fixed point, λ and its witness) and
+  the co-held, per-grip, jam and moves-522 records at the 7304 stop. All 44 records pass in place, read-only; changed
+  helper sets, precedence, input digests or start tables fail. The 22 finite-search records (scans, pairs, plus, beam
+  and peel) answer `not_applicable` with their scope. The fourteen-table level rebuild is an ignored test (about
+  100 s); the 7304 stop runs as its fast representative.
 - R7, the research library's entries (LB1, LB5): `c600-library` holds them as 600 Cell Script in eight modules
   (`research_slp`, `research_bigint`, `research_fixpoints`, `research_flows`, `research_search`, `research_ranks`,
   `research_families`, `research_models`), with eleven catalogue rows in `c600_library::research`: LB1's straight-line
