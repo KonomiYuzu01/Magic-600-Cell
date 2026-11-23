@@ -4,7 +4,7 @@
 //! module digest opens only on the active version. Every key event here is synthetic; none of this is Windows input
 //! evidence.
 //!
-//! CT-EV1-04 (source, whole by union with `c600-module/tests/ct_ev1_04.rs`: the host's routes, the program job from
+//! CT-EV1-04 (source, part: by union with `c600-module/tests/ct_ev1_04.rs`: the host's routes, the program job from
 //! the palette and from a key on both hosts, the view source, the debugger's route (LP4-5) and a recording's route
 //! (LP4-9), while a draft is broken, unchecked or checked and not active, and on the recording route a step that names
 //! an unchecked or an inactive digest; the broken drafts and the module set's own routes are in that file. Every route

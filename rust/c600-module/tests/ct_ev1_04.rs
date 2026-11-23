@@ -4,8 +4,8 @@
 //! CT-EV1-04 (source, part: the broken drafts, and the routes of the module set in this process: invocation by name,
 //! a route that names a digest, activation, and loading new bytes under the old approval; the host's routes, the
 //! runtime's own process, a program job invoked from the palette and from a key, and a view source, are in
-//! `c600-tools/tests/ct_ev1_04_routes.rs`, which with this file is the whole by union for the routes that exist. The
-//! debugger's and a recording's routes arrive with LP4-5 and LP4-9, which bind through the same set).
+//! `c600-tools/tests/ev1_host.rs`, which with this file is the whole by union, the debugger's route (LP4-5) and a
+//! recording's route (LP4-9) included).
 
 mod ev1;
 mod support;

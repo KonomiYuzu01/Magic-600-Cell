@@ -4365,8 +4365,10 @@ the layout history (`layout.undo`); each test that reads an undo target names it
   `c600_tools::modules::ActiveVersions` over a module set; `c600_tools::modules::bind_job` binds a recording step's job
   pinned to the digest it recorded.
 - Tests:
-  - `c600-command/tests/recording.rs`: CT-EV4-08 to -13 and -15 to -20; CT-PS1-15, -17 and -24 in part; CT-BND-03 in
-    part; CT-ERR-18 whole by union with the parts its doc names; CT-EV4-14 and CT-PS1-25 synthetic (the recorder's
+  - `c600-command/tests/recording.rs`: CT-EV4-08 to -13 and -15 to -20, CT-PS1-15 and -24, and CT-ERR-18, several of
+    them whole by union (`docs/progress/1.0/lp4-ct-index-notes.md`); CT-PS1-17 and CT-BND-03 in part (not run: a
+    rename, which no row builds; a word's file round trip, since no file export or import of a word is built; the
+    macro route, since `macro.save` writes its own block); CT-EV4-14 and CT-PS1-25 synthetic (the recorder's
     injected fates and a reopen); the format packet's `playback` (12), `playback_from` (26), `playback_trace` (3) and
     `playback_arguments` (4) vectors.
   - `c600-durable/tests/ct_ev4_14_playback_crash.rs`: CT-EV4-14 and CT-PS1-25's three crash points on the journal,

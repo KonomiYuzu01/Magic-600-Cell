@@ -469,7 +469,7 @@ fn ct_ev4_11_capture_appends_one_step_per_resolved_invocation() {
     }
 }
 
-/// CT-EV4-08 (whole by union with `ct_ev4_11_capture_appends_one_step_per_resolved_invocation`, which runs what a
+/// CT-EV4-08 (part: by union with `ct_ev4_11_capture_appends_one_step_per_resolved_invocation`, which runs what a
 /// recording retains, and `c600-durable`'s `tests/ps1_44_carrier.rs`, which runs a source conversion through the real
 /// checker and the module set's grants: here, that playback has no rebinding operation; EV4.10 to EV4.14).
 /// The command table's recording rows are the four, and their arguments name a recording, a capture's name, a step and
@@ -548,7 +548,7 @@ fn round_trips(f: &F, name: &str) -> Recording {
     recording
 }
 
-/// CT-PS1-15 (whole by union with `ct_ev4_09_no_token_is_stored_or_replayed`, which plays commits with a new explicit
+/// CT-PS1-15 (part: by union with `ct_ev4_09_no_token_is_stored_or_replayed`, which plays commits with a new explicit
 /// action and token, and `ct_ev4_11_capture_appends_one_step_per_resolved_invocation`: here, the round trip of steps
 /// with a module digest and a word block; PS1.30, EV4.10). A capture holds a rotation and a block step that an entry of
 /// a user module's active version served, each with that version's digest, the block step with the revision it named;
@@ -863,7 +863,7 @@ fn last_child(f: &F, name: &str) -> Receipt {
     f.receipt(&field("command"), &field("request"))
 }
 
-/// CT-EV4-12 (whole by union with `ct_ev4_12_the_eligibility_table_enumerated_whole`, which enumerates the table,
+/// CT-EV4-12 (part: by union with `ct_ev4_12_the_eligibility_table_enumerated_whole`, which enumerates the table,
 /// `ct_ev4_12_playback_plays_only_the_unattended_rows`, and `ct_ev4_16_stale_steps_stop_and_identities_refuse` and
 /// `ct_ev4_16_a_kept_filter_preview_gone_stale_stops_unretargeted`, which check filter freshness at play without
 /// retargeting: here, a no-job query in lane none played live, and file, app, `file_check` and exclusive rows waiting
@@ -1240,7 +1240,7 @@ fn completed_tool() -> RecordedStep {
     step(TOOL, json::object([]), Some(json::object([("name", text("completed")), ("kind", text("query"))])))
 }
 
-/// CT-EV4-16 (whole by union with `ct_ev4_16_stale_steps_stop_and_identities_refuse`: here, a kept filter preview that
+/// CT-EV4-16 (part: by union with `ct_ev4_16_stale_steps_stop_and_identities_refuse`: here, a kept filter preview that
 /// went stale; EV4.14, EV4.22). A `filter.apply` step names a filter preview the layer keeps: while it is fresh the
 /// step plays and applies. Once a commit moves the state, the layer still keeps that filter preview but it is no
 /// longer fresh, and the step stops with `EV4:stale.recording_step` at it, applying nothing, its arguments as
