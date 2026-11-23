@@ -63,6 +63,7 @@ pub mod error;
 pub mod graph;
 pub mod import;
 pub mod model;
+pub mod obligation;
 pub mod sink;
 pub mod word;
 
