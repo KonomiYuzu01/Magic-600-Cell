@@ -19,19 +19,30 @@ public static class SampleCheck
     public const string LockedReason = "it moves a protected orbit: sample orbit 4 is locked";
     public const string NotTwists = "a move is not a typed twist, and Look Lab has no engine to check it";
     public const string Mark = " (sample rule, demo data)";
-    private static readonly Regex Pattern = new(@"^twist\(cell (\d{1,3}), axis (\d), ([+-][12])\)$", RegexOptions.CultureInvariant);
+    // The addresses a twist may name: the 600 cells and the six axes of a cell (the lab's parameter ranges).
+    public const int Cells = 600, Axes = 6;
+    private static readonly Regex Pattern = new(@"^twist\(cell (\d{1,6}), axis (\d{1,3}), ([+-][12])\)$", RegexOptions.CultureInvariant);
 
     public sealed record Twist(int Cell, int Axis, int Turns)
     {
         public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"twist(cell {Cell}, axis {Axis}, {(Turns > 0 ? "+" : "-")}{Math.Abs(Turns)})");
     }
 
-    // A typed twist, or null.
-    public static Twist? Parse(string text)
+    // A typed twist of a cell and an axis that exist, or null.
+    public static Twist? Parse(string text) => Read(text) is { } t && Outside(t) == null ? t : null;
+
+    private static Twist? Read(string text)
     {
         Match m = Pattern.Match(text.Trim());
         return m.Success ? new Twist(int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture), int.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture)) : null;
     }
+
+    private static string? Outside(Twist t) =>
+        t.Cell >= Cells ? $"{t} names cell {t.Cell}, which does not exist: cells are 0 to {Cells - 1}"
+        : t.Axis >= Axes ? $"{t} names axis {t.Axis}, which does not exist: axes are 0 to {Axes - 1}" : null;
+
+    // Why a typed twist names no part of the puzzle, or null. A move that is not a typed twist has its own reason.
+    public static string? Unknown(string move) => Read(move) is { } t ? Outside(t) : null;
 
     // The word reduced: adjacent twists of one cell on one axis merge, and cancel when their turns sum to a
     // multiple of five. Null when a move is not a typed twist.
@@ -67,6 +78,8 @@ public static class SampleCheck
     public static PreviewCheck Check(IReadOnlyList<string> moves, bool locked = true)
     {
         if (moves.Count == 0) return new PreviewCheck(PreviewStatus.Refused, "there is no move to check", Array.Empty<OrbitEffect>(), "Nothing was checked.");
+        // A twist of a cell or an axis that does not exist is no witness (ADR-D01.8).
+        if (moves.Select(Unknown).FirstOrDefault(r => r != null) is { } outside) return new PreviewCheck(PreviewStatus.Refused, outside, Array.Empty<OrbitEffect>(), "Nothing was checked.");
         if (Effects(moves) is not { } effects) return new PreviewCheck(PreviewStatus.Refused, NotTwists, Array.Empty<OrbitEffect>(), "Nothing was checked.");
         int hit = effects[Locked].Moved;
         if (locked && hit > 0) return new PreviewCheck(PreviewStatus.Impossible, LockedReason, effects, $"Would move protected sample orbit 4: {hit} pieces." + Mark);
@@ -80,9 +93,35 @@ public static class SampleCheck
     public static (IReadOnlyList<string> Moves, PreviewCheck Check) Rebuilt(string statement)
     {
         string body = statement.StartsWith("preview ", StringComparison.Ordinal) ? statement.Substring(8) : statement;
-        if (Parse(body) is { } twist) { string[] moves = { twist.ToString() }; return (moves, Check(moves)); }
+        if (Read(body) is { } twist) { string[] moves = { twist.ToString() }; return (moves, Check(moves)); }
         return (Array.Empty<string>(), new PreviewCheck(PreviewStatus.Refused, NoWitness, Array.Empty<OrbitEffect>(), "Nothing was prepared."));
     }
+}
+
+// A sample preview the lab stages (demo data). A sample with a word is checked by the sample rule, exactly as
+// the same word typed, edited or replayed, so one witness always shows one collateral; a sample without a word
+// keeps its stated refusal.
+public sealed record PreviewSample(string Statement, string Source, string Origin, string Name, IReadOnlyList<string> Moves, string? Refusal = null)
+{
+    public PreviewCheck Check() => Refusal is { } why ? new PreviewCheck(PreviewStatus.Refused, why, Array.Empty<OrbitEffect>(), "Nothing was prepared.") : SampleCheck.Check(Moves);
+}
+
+public static class PreviewSamples
+{
+    private static string[] Twists(params (int Cell, int Axis, int Turns)[] moves) => moves.Select(m => new SampleCheck.Twist(m.Cell, m.Axis, m.Turns).ToString()).ToArray();
+
+    public static readonly IReadOnlyList<PreviewSample> All = Array.AsReadOnly(new PreviewSample[]
+    {
+        new("preview my.corner_swap(cell 117)", "own macro", "macro", "my.corner_swap(cell 117)",
+            Twists((117, 2, 1), (341, 0, 1), (117, 2, -1), (341, 0, -1), (117, 2, 1), (88, 3, 2), (117, 2, -1), (88, 3, -2))),
+        new("preview run \"sweep.6cs\" on ring 4", "own program", "script", "sweep.6cs on ring 4",
+            Twists((12, 1, 1), (13, 1, 1), (14, 1, 1), (15, 1, 1), (16, 1, 1), (12, 4, -1), (13, 4, -1), (14, 4, -1), (15, 4, -1), (16, 4, -1), (12, 1, -1), (13, 1, -1))),
+        new("preview twist(cell 402, axis 1, +1)", "typed twist", "hand", "twist(cell 402, axis 1, +1)", Twists((402, 1, 1))),
+        new("preview my.corner_swap(cell 9) |> conjugate(twist(cell 30, axis 0, +1))", "own macro", "macro", "conjugated corner swap",
+            Twists((30, 0, 1), (9, 2, 1), (201, 0, 1), (9, 2, -1), (201, 0, -1), (30, 0, -1))),
+        new("preview shared.pack.solve_layer(2)", "package by another author", "script", "shared.pack.solve_layer(2)", Array.Empty<string>(),
+            "in a solving session a word from a package written by someone else is refused"),
+    });
 }
 
 // Where a command came from. A typed line (the command bar, the console and the palette's typed mode) never

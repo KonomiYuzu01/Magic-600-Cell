@@ -45,6 +45,18 @@ internal static partial class Program
         Check(preview.Take(21) is { Moves.Count: 2 }, "a passing draft did not commit");
         string solve = Read("app/Live/LabSolve.cs");
         Check(solve.Contains("if (Draft.CanStage)", StringComparison.Ordinal) && solve.Contains("Draft.StagedCheck()", StringComparison.Ordinal), "the lab stages the draft without its check");
+        // N-2 (re-check): a word whose own effects move the locked orbit fails in both modes, exactly as the same
+        // twist staged alone.
+        string locking = Twist(30, 0, 1); PreviewCheck alone = SampleCheck.Check(new[] { locking });
+        Check(alone.Status == PreviewStatus.Impossible && alone.Effects[SampleCheck.Locked].Moved > 0, "the locking fixture");
+        foreach (CheckMode mode in new[] { CheckMode.Net, CheckMode.Strict })
+        {
+            var core = new OperationDraft(); core.Edit("core: " + locking); core.SetMode(mode); PreviewCheck c = core.StagedCheck();
+            Check(c.Status == alone.Status && c.Reason == alone.Reason && c.Effects.SequenceEqual(alone.Effects) && core.Checked == CheckResult.Failed && !core.CanCommit,
+                $"{mode} passed a draft whose effects move the locked orbit");
+            preview.Show(core.Statement, "draft", core.Word, c.Status, c.Reason, c.Effects, c.Protection, 40, core.PrefixCheck());
+            Check(preview.Take(41) == null && history.Entries.Count == 0, $"{mode} committed a draft that moves the locked orbit");
+        }
     }
 
     // B-2: a typed line never writes the move history; in Direct a typed twist is staged, never committed.
@@ -82,6 +94,22 @@ internal static partial class Program
         preview.SetScrub(1); Preview? taken = preview.Take(11);
         Check(taken is { Id: 4, Status: PreviewStatus.Ready } && taken.Moves.Count == 1 && taken.Effects.Sum(e => e.Moved) < both.Effects.Sum(e => e.Moved) && preview.Pending == null, "a passing prefix did not commit with its own effects");
         Check(Read("app/Live/LabDemo.cs").Contains("Preview.Recheck = (_, moves) => SampleCheck.Check(moves);", StringComparison.Ordinal), "the lab gives the prefix no recheck");
+        // A draft's prefix keeps the draft's protection policy (re-check). Under Strict, a Prepare twist and its
+        // inverse in Cleanup pass whole; at the scrub after the first twist the prefix is the Prepare alone, which
+        // fails Strict exactly as the same one-twist draft staged on its own, although the sample rule alone passes it.
+        var strict = new OperationDraft(); strict.Edit("prepare: " + Twist(5, 1, 1)); strict.Edit("cleanup: " + Twist(5, 1, -1)); strict.SetMode(CheckMode.Strict);
+        var single = new OperationDraft(); single.Edit("prepare: " + Twist(5, 1, 1)); single.SetMode(CheckMode.Strict);
+        PreviewCheck whole2 = strict.StagedCheck(), alone = single.StagedCheck();
+        Check(whole2.Status == PreviewStatus.Ready && alone.Status == PreviewStatus.Impossible && SampleCheck.Check(new[] { Twist(5, 1, 1) }).Status == PreviewStatus.Ready, "the Strict fixture");
+        int head = history.Revision, kept = history.Entries.Count;
+        preview.Show(strict.Statement, "draft", strict.Word, whole2.Status, whole2.Reason, whole2.Effects, whole2.Protection, 20, strict.PrefixCheck());
+        // A later change of the draft never changes the check the staged preview took.
+        strict.SetMode(CheckMode.Net); preview.SetScrub(1);
+        Check(preview.CommitRefusal(21) == null && preview.Take(21) == null && preview.Pending is { Status: PreviewStatus.Impossible } q && q.Reason == alone.Reason && q.Moves.Count == 1 &&
+            q.Effects.SequenceEqual(alone.Effects) && history.Revision == head && history.Entries.Count == kept, "a draft's prefix lost its Strict check");
+        Check(strict.PrefixCheck()(new[] { Twist(7, 1, 1) }) is { Status: PreviewStatus.Refused, Reason: OperationDraft.NotAPrefix }, "moves that are not a prefix were checked as one");
+        Check(Read("app/Live/LabSolve.cs").Contains("Draft.StagedCheck(), Draft.PrefixCheck())", StringComparison.Ordinal) && Read("app/Live/LabDemo.cs").Contains("Clock(), prefixCheck);", StringComparison.Ordinal),
+            "the lab stages the draft without its prefix check");
     }
 
     // B-13: whatever moves the head, a Direct twist included, makes an older ready preview stale.
@@ -116,7 +144,7 @@ internal static partial class Program
         string macro = "preview my.corner_swap(cell 117)";
         (IReadOnlyList<string> none, PreviewCheck refused) = SampleCheck.Rebuilt(InlineParameters.With(macro, InlineParameters.Find(macro)[0], 118));
         Check(none.Count == 0 && refused.Status == PreviewStatus.Refused && refused.Reason == SampleCheck.NoWitness && refused.Effects.Count == 0, "an edited macro statement kept a witness");
-        string body = Body(Read("app/Live/LabDemo.cs"), "public void SetParameter", "private Sample Of");
+        string body = Body(Read("app/Live/LabDemo.cs"), "public void SetParameter", "private PreviewSample Of");
         Check(body.Contains("SampleCheck.Rebuilt(to)", StringComparison.Ordinal) && !body.Contains("p.Moves", StringComparison.Ordinal) && !body.Contains("p.Effects", StringComparison.Ordinal), "the lab keeps the old witness");
     }
 

@@ -27,6 +27,8 @@ public sealed record Preview(int Id, string Statement, string Source, IReadOnlyL
 {
     // The head of the move history the preview was built at (ADR-D01.9).
     public int Head { get; init; }
+    // The preview's own check of a prefix, when its source has one: a draft's keeps the draft's protection policy.
+    public Func<IReadOnlyList<string>, PreviewCheck>? PrefixCheck { get; init; }
     public bool Evaluated => Effects.Count > 0;
 }
 
@@ -48,7 +50,8 @@ public sealed class PreviewModel
     private int next = 1;
     // The head the session is at now. A preview built at another head is stale and never commits (ADR-D01.9).
     public Func<int>? Head { get; set; }
-    // The host's check of a prefix as its own preview (ADR-D01.12). Without one, a prefix is refused.
+    // The host's check of a prefix as its own preview (ADR-D01.12), for a preview without a prefix check of its
+    // own. Without either, a prefix is refused.
     public Func<string, IReadOnlyList<string>, PreviewCheck>? Recheck { get; set; }
     public const string HeadMoved = "the committed state changed after this preview was built; stage it again";
     public const string NoPrefixCheck = "the prefix has no check of its own here, so it cannot be committed";
@@ -65,12 +68,12 @@ public sealed class PreviewModel
     private double shownAt = double.NegativeInfinity;
 
     public Preview Show(string statement, string source, IReadOnlyList<string> moves, PreviewStatus status, string? reason,
-        IReadOnlyList<OrbitEffect> effects, string protection, double now)
+        IReadOnlyList<OrbitEffect> effects, string protection, double now, Func<IReadOnlyList<string>, PreviewCheck>? prefixCheck = null)
     {
         if (status != PreviewStatus.Ready && string.IsNullOrWhiteSpace(reason)) throw J.Error("preview", "a preview that cannot commit states its reason");
         if (status == PreviewStatus.Ready && (effects.Count == 0 || moves.Count == 0)) throw J.Error("preview", "a preview that can commit has moves and evaluated effects");
         Replaced = Pending != null; if (Replaced) shownAt = now;
-        Pending = new Preview(next++, statement, source, moves.ToArray(), status, status == PreviewStatus.Ready ? null : reason, effects.ToArray(), protection) { Head = Now };
+        Pending = new Preview(next++, statement, source, moves.ToArray(), status, status == PreviewStatus.Ready ? null : reason, effects.ToArray(), protection) { Head = Now, PrefixCheck = prefixCheck };
         Scrub = Pending.Moves.Count;
         Safe.Raise(Changed);
         return Pending;
@@ -127,7 +130,7 @@ public sealed class PreviewModel
         if (Scrub < taken.Moves.Count)
         {
             IReadOnlyList<string> moves = taken.Moves.Take(Scrub).ToArray(); string statement = $"{taken.Statement} |> prefix({Scrub})";
-            PreviewCheck check = Recheck?.Invoke(statement, moves) ?? new PreviewCheck(PreviewStatus.Refused, NoPrefixCheck, Array.Empty<OrbitEffect>(), "Nothing was checked.");
+            PreviewCheck check = taken.PrefixCheck?.Invoke(moves) ?? Recheck?.Invoke(statement, moves) ?? new PreviewCheck(PreviewStatus.Refused, NoPrefixCheck, Array.Empty<OrbitEffect>(), "Nothing was checked.");
             if (check.Status == PreviewStatus.Ready && check.Effects.Count == 0) check = check with { Status = PreviewStatus.Refused, Reason = "the recheck of the prefix gave no effects" };
             taken = new Preview(next++, statement, taken.Source, moves, check.Status, check.Status == PreviewStatus.Ready ? null : check.Reason ?? "the prefix failed its recheck",
                 check.Effects.ToArray(), check.Protection) { Head = Now };

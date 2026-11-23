@@ -138,6 +138,8 @@ internal static partial class Program
             ("A6AnchorsFollowTheViewsProjection", A6AnchorsFollowTheViewsProjection),
             ("A6LibraryInSolve", A6LibraryInSolve),
             ("A6NumericGesturesStayOnTheGrid", A6NumericGesturesStayOnTheGrid),
+            ("A6NonexistentAddressesAreNoWitness", A6NonexistentAddressesAreNoWitness),
+            ("A6OneWitnessOneCollateral", A6OneWitnessOneCollateral),
             ("A5FrameLockedPairRefusesHidingAMainView", A5FrameLockedPairRefusesHidingAMainView),
             ("A5FrameStoredArrangementRoundTripAndWorkspaces", A5FrameStoredArrangementRoundTripAndWorkspaces),
             ("LayoutValidationRefusals", LayoutRefusals),

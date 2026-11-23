@@ -11,31 +11,9 @@ namespace LookLab.App.Live;
 // marked as such on screen. The layout history is real: it records and restores the lab's own arrangement.
 internal sealed class LabDemo
 {
-    private sealed record Sample(string Statement, string Source, string Origin, string Name, string[] Moves, PreviewStatus Status, string? Reason, int[] Moved, string Protection);
-
     public static IReadOnlyList<string> Orbits => SampleCheck.Orbits;
-    private static IReadOnlyList<int> Totals => SampleCheck.Totals;
-    private static string[] Twists(params (int Cell, int Axis, int Turn)[] moves) =>
-        moves.Select(m => $"twist(cell {m.Cell}, axis {m.Axis}, {(m.Turn > 0 ? "+" : "-")}{Math.Abs(m.Turn)})").ToArray();
-    private static readonly Sample[] Samples =
-    {
-        new("preview my.corner_swap(cell 117)", "own macro", "macro", "my.corner_swap(cell 117)",
-            Twists((117, 2, 1), (341, 0, 1), (117, 2, -1), (341, 0, -1), (117, 2, 1), (88, 3, 2), (117, 2, -1), (88, 3, -2)),
-            PreviewStatus.Ready, null, new[] { 0, 6, 0, 0, 3 }, "Protected orbits untouched: 3 of 3."),
-        new("preview run \"sweep.6cs\" on ring 4", "own program", "script", "sweep.6cs on ring 4",
-            Twists((12, 1, 1), (13, 1, 1), (14, 1, 1), (15, 1, 1), (16, 1, 1), (12, 4, -1), (13, 4, -1), (14, 4, -1), (15, 4, -1), (16, 4, -1), (12, 1, -1), (13, 1, -1)),
-            PreviewStatus.Ready, null, new[] { 0, 30, 48, 0, 96 }, "Protected orbits untouched: 3 of 3."),
-        new("preview twist(cell 402, axis 1, +1)", "typed twist", "hand", "twist(cell 402, axis 1, +1)", Twists((402, 1, 1)),
-            PreviewStatus.Ready, null, new[] { 1, 12, 20, 0, 20 }, "Protected orbits untouched: 3 of 3."),
-        new("preview my.corner_swap(cell 9) |> conjugate(twist(cell 30, axis 0, +1))", "own macro", "macro", "conjugated corner swap",
-            Twists((30, 0, 1), (9, 2, 1), (201, 0, 1), (9, 2, -1), (201, 0, -1), (30, 0, -1)),
-            PreviewStatus.Impossible, "it moves a protected orbit: sample orbit 4 is locked", new[] { 0, 6, 0, 4, 3 }, "Would move protected sample orbit 4: 4 pieces."),
-        new("preview shared.pack.solve_layer(2)", "package by another author", "script", "shared.pack.solve_layer(2)", Array.Empty<string>(),
-            PreviewStatus.Refused, "in a solving session a word from a package written by someone else is refused", Array.Empty<int>(), "Nothing was prepared."),
-    };
-    // Effects that were evaluated, or none: an empty list reads as not evaluated, never as untouched.
-    private static OrbitEffect[] Effects(int[] moved) => moved.Length == 0 ? Array.Empty<OrbitEffect>() : Orbits.Select((o, i) => new OrbitEffect(o, moved[i], Totals[i])).ToArray();
-
+    // The samples are checked by the sample rule when they are staged, like any other word (PreviewSamples).
+    private static IReadOnlyList<PreviewSample> Samples => PreviewSamples.All;
     public PreviewModel Preview { get; } = new();
     public MoveHistory Moves { get; } = new();
     public LayoutHistory Layout { get; } = new();
@@ -134,19 +112,19 @@ internal sealed class LabDemo
 
     public void Stage(int? sample = null)
     {
-        Current = (sample ?? nextSample++) % Samples.Length;
-        Sample s = Samples[Current];
-        Preview.Show(s.Statement, s.Source, s.Moves, s.Status, s.Reason, Effects(s.Moved), s.Protection, Clock());
+        Current = (sample ?? nextSample++) % Samples.Count;
+        PreviewSample s = Samples[Current]; PreviewCheck check = s.Check();
+        Preview.Show(s.Statement, s.Source, s.Moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
         OpenPane();
     }
 
-    private (int Id, Sample Sample)? rebuilt;
+    private (int Id, PreviewSample Sample)? rebuilt;
     // A preview the lab built from moves of its own, checked by the sample rule; it remembers how a commit of it
     // (or of its prefix) is named in the history.
     private Preview ShowChecked(string statement, string source, IReadOnlyList<string> moves, PreviewCheck check, string origin, string name)
     {
         Preview shown = Preview.Show(statement, source, moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
-        rebuilt = (shown.Id, new Sample(statement, source, origin, name, moves.ToArray(), check.Status, check.Reason, Array.Empty<int>(), check.Protection));
+        rebuilt = (shown.Id, new PreviewSample(statement, source, origin, name, moves.ToArray()));
         OpenPane(); return shown;
     }
 
@@ -185,20 +163,21 @@ internal sealed class LabDemo
 
     // How a commit is named: a sample by its own name, a preview the lab built by the name it was given, a
     // prefix like the preview it came from.
-    private Sample Of(Preview preview)
+    private PreviewSample Of(Preview preview)
     {
         if (rebuilt is { } r && (r.Id == preview.Id || preview.Statement.StartsWith(r.Sample.Statement + " |> prefix(", StringComparison.Ordinal))) return r.Sample;
         return Samples.FirstOrDefault(s => preview.Statement.StartsWith(s.Statement, StringComparison.Ordinal))
-            ?? new Sample(preview.Statement, preview.Source, "hand", preview.Statement.Replace("preview ", ""), preview.Moves.ToArray(), preview.Status, preview.Reason, Array.Empty<int>(), preview.Protection);
+            ?? new PreviewSample(preview.Statement, preview.Source, "hand", preview.Statement.Replace("preview ", ""), preview.Moves.ToArray());
     }
 
     // A preview that is not one of the samples names its own history entry.
     public Func<Preview, (string Origin, string Name)?>? Named { get; set; }
 
     // The draft is staged with its own check: a failed protection check stops at the preview (ADR-D01.4 items 1
-    // and 2); the Goal never gates (OperationDraft.StagedCheck).
-    public void StageDraft(string statement, IReadOnlyList<string> moves, PreviewCheck check) =>
-        Preview.Show(statement, "draft", moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
+    // and 2); the Goal never gates (OperationDraft.StagedCheck). A prefix of it is rechecked by the draft's own
+    // prefix check, under the draft's protection policy (OperationDraft.PrefixCheck).
+    public void StageDraft(string statement, IReadOnlyList<string> moves, PreviewCheck check, Func<IReadOnlyList<string>, PreviewCheck> prefixCheck) =>
+        Preview.Show(statement, "draft", moves, check.Status, check.Reason, check.Effects, check.Protection, Clock(), prefixCheck);
 
     // A twist in Direct that came from a typed line: staged as the preview, never committed (ADR-D01.58).
     public void StageTwist(string twist)
@@ -215,9 +194,12 @@ internal sealed class LabDemo
         frame.Say($"Library: {name} alone is preview #{shown.Id}", shown.Status != PreviewStatus.Ready);
     }
 
+    // A twist key or a pointer in Direct commits its twist after the same check as any preview: a twist that names
+    // no cell or axis of the puzzle, or moves a protected orbit, is not committed.
     public void CommitDirect(string twist)
     {
         if (Moves.CommitRefusal is { } why) { frame.Say("Not committed: " + why, true); return; }
+        if (SampleCheck.Check(new[] { twist }) is { Status: not PreviewStatus.Ready } failed) { frame.Say("Not committed: " + failed.Reason, true); return; }
         HistoryEntry entry = Moves.Commit("hand", twist, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture), "commit " + twist, new[] { twist })!;
         frame.Say($"Direct: committed {entry.Id}: {entry.Name}");
     }
@@ -242,7 +224,7 @@ internal sealed class LabDemo
                     // The prefix failed its own recheck: it stays as the preview, and nothing is written.
                     frame.Say($"Not committed: the prefix, rechecked as its own preview #{Preview.Pending?.Id}: {Preview.Pending?.Reason}", true); break;
                 }
-                Sample from = Of(taken);
+                PreviewSample from = Of(taken);
                 (string Origin, string Name) named = Named?.Invoke(taken) ?? (from.Origin, from.Name);
                 HistoryEntry entry = Moves.Commit(named.Origin, named.Name, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture), taken.Statement.Replace("preview ", "commit "), taken.Moves)!;
                 frame.Say($"Committed {entry.Id}: {entry.Name} ({entry.Moves.Count} moves{(prefix ? ", a prefix rechecked as its own preview" : "")})");

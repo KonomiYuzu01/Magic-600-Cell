@@ -89,7 +89,7 @@ internal sealed class LabSolve
 
     private void Stage()
     {
-        if (Draft.CanStage) { staged = true; session.StageDraft(Draft.Statement, Draft.Word, Draft.StagedCheck()); Line.Settle(PreviewModel.Settle); }
+        if (Draft.CanStage) { staged = true; session.StageDraft(Draft.Statement, Draft.Word, Draft.StagedCheck(), Draft.PrefixCheck()); Line.Settle(PreviewModel.Settle); }
         else if (staged && session.Preview.Pending is { Source: "draft" }) { staged = false; session.Preview.Discard(); }
     }
 

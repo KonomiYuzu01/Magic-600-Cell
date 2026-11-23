@@ -425,9 +425,19 @@ public sealed class OperationDraft
 
     // Demo evaluation, marked as demo wherever it shows: no engine reads the head here.
     public GoalResult GoalResult => Goal == null ? GoalResult.Unset : Count == 0 ? GoalResult.Unknown : twists[1].Count % 2 == 0 ? GoalResult.Met : GoalResult.Unmet;
-    // A word can pass Net and fail Strict: here a Prepare without a Cleanup fails Strict.
-    public CheckResult Result(CheckMode mode) => Count == 0 ? CheckResult.Unchecked : mode == CheckMode.Net || twists[0].Count == twists[2].Count ? CheckResult.Passed : CheckResult.Failed;
+    // The protection check (demo rule). In both modes a word whose own effects move the locked sample orbit fails.
+    // A word can pass Net and fail Strict: here a Prepare without a Cleanup of as many twists fails Strict.
+    public CheckResult Result(CheckMode mode) => Judge(Snapshot(), mode);
     public CheckResult Checked => Result(Mode);
+
+    private IReadOnlyList<string>[] Snapshot() => twists.Select(t => (IReadOnlyList<string>)t.ToArray()).ToArray();
+
+    private static CheckResult Judge(IReadOnlyList<string>[] phases, CheckMode mode)
+    {
+        if (phases.Sum(p => p.Count) == 0) return CheckResult.Unchecked;
+        if (SampleCheck.Effects(phases.SelectMany(p => p).ToArray()) is { } effects && effects[SampleCheck.Locked].Moved > 0) return CheckResult.Failed;
+        return mode == CheckMode.Net || phases[0].Count == phases[2].Count ? CheckResult.Passed : CheckResult.Failed;
+    }
     // A complete operation in Draft is staged as the preview whatever its check says, so a failure is seen.
     public bool CanStage => Route == InputRoute.Draft && Count > 0;
     // The complete operation is what a commit takes, and only when the protection check in force passes: a failed
@@ -436,16 +446,37 @@ public sealed class OperationDraft
 
     // The check of the staged preview (demo): its effects by the sample rule, its protection by the check in
     // force. A failed check makes the preview impossible, so the commit stops there; the Goal is not asked.
-    public PreviewCheck StagedCheck()
+    public PreviewCheck StagedCheck() => Staged(Snapshot(), Mode);
+
+    // A word that moves the locked orbit is refused in both modes, exactly as the same word staged alone; then the
+    // mode's own rule decides.
+    private static PreviewCheck Staged(IReadOnlyList<string>[] phases, CheckMode mode)
     {
-        PreviewCheck check = SampleCheck.Check(Word, locked: false);
+        PreviewCheck check = SampleCheck.Check(phases.SelectMany(p => p).ToArray());
         if (check.Status != PreviewStatus.Ready) return check;
-        return Checked switch
+        return Judge(phases, mode) switch
         {
-            CheckResult.Passed => check with { Protection = $"{Mode} protection check passed (demo rule)." + SampleCheck.Mark },
-            CheckResult.Failed => check with { Status = PreviewStatus.Impossible, Reason = $"the {Mode} protection check failed (demo rule: Prepare and Cleanup differ)",
-                Protection = $"{Mode} protection check failed (demo rule): the draft stops at the preview." },
+            CheckResult.Passed => check with { Protection = $"{mode} protection check passed (demo rule)." + SampleCheck.Mark },
+            CheckResult.Failed => check with { Status = PreviewStatus.Impossible, Reason = $"the {mode} protection check failed (demo rule: Prepare and Cleanup differ)",
+                Protection = $"{mode} protection check failed (demo rule): the draft stops at the preview." },
             _ => check with { Status = PreviewStatus.Refused, Reason = "the draft's protection is not checked", Protection = "Nothing was checked." },
+        };
+    }
+
+    public const string NotAPrefix = "these moves are not a prefix of the staged draft";
+
+    // The check of a prefix of the staged draft as its own preview (ADR-D01.12): the phases cut in order at the
+    // prefix's length and checked under the mode the draft was staged with, so a prefix keeps the draft's
+    // protection policy. It is taken when the draft is staged; later edits of the draft never change it.
+    public Func<IReadOnlyList<string>, PreviewCheck> PrefixCheck()
+    {
+        IReadOnlyList<string>[] phases = Snapshot(); CheckMode mode = Mode; string[] word = phases.SelectMany(p => p).ToArray();
+        return moves =>
+        {
+            if (moves.Count > word.Length || !moves.SequenceEqual(word.Take(moves.Count))) return new PreviewCheck(PreviewStatus.Refused, NotAPrefix, Array.Empty<OrbitEffect>(), "Nothing was checked.");
+            int left = moves.Count;
+            IReadOnlyList<string>[] cut = phases.Select(p => { int n = Math.Min(left, p.Count); left -= n; return (IReadOnlyList<string>)p.Take(n).ToArray(); }).ToArray();
+            return Staged(cut, mode);
         };
     }
 
