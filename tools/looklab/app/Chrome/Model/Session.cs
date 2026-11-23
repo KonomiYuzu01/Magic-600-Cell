@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Magic600.Chrome;
@@ -163,7 +164,16 @@ public sealed class MoveHistory
     // action closes the question.
     public int Asking { get; private set; } = -1;
     private int askedAt;
+    // A recorded action: the head, the cursor or the line changed, so what reads the state is stale.
     public event Action? Changed;
+    // A switch question opened or closed. Nothing was recorded: the head, the cursor and the revision are those
+    // of before, so no task that reads the state is cancelled and no result goes stale.
+    public event Action? Asked;
+    // The kept branch the solver last named in History, by a Replay or by asking to switch to it. A bare Replay
+    // (a bound key or the palette) acts on it, never on a default; a branch that is no longer kept is no choice.
+    private HistoryBranch? chosen;
+    public int Chosen => chosen == null ? -1 : branches.IndexOf(chosen);
+    public const string NoChosenBranch = "it needs a kept branch: choose one in History first";
     private readonly List<HistoryEntry> entries = new();
     private readonly List<HistoryBranch> branches = new();
     private readonly List<string> actions = new();
@@ -231,8 +241,19 @@ public sealed class MoveHistory
     {
         if (branch >= 0 && SelectRefusal(branch) != null) return false;
         int to = branch < 0 ? -1 : branch;
+        if (to >= 0) chosen = branches[to];
         if (to == Asking && askedAt == Revision) return true;
-        Asking = to; askedAt = Revision; Safe.Raise(Changed); return true;
+        Asking = to; askedAt = Revision; Safe.Raise(Asked); return true;
+    }
+
+    // The branch a Replay acts on: the branch it names, which becomes the chosen one, or without a number the
+    // chosen one. A Replay never prepares branch 0 by default.
+    public (int Branch, string? Why) ReplayTarget(string? argument)
+    {
+        if (argument == null) return Chosen >= 0 ? (Chosen, null) : (-1, NoChosenBranch);
+        if (!int.TryParse(argument, NumberStyles.None, CultureInfo.InvariantCulture, out int branch)) return (-1, "it needs the number of a kept branch");
+        if (branch >= branches.Count) return (-1, "there is no such kept branch");
+        chosen = branches[branch]; return (branch, null);
     }
 
     // Why a confirmation of a switch to this branch is refused now, or null: only an answer to the question that

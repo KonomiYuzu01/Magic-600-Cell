@@ -254,8 +254,12 @@ internal sealed class LabDemo
                 break;
             }
             case "session.branch.replay":
-                if (!int.TryParse(argument ?? "0", NumberStyles.None, CultureInfo.InvariantCulture, out int replayed)) { frame.Say("Replay: it needs the number of a kept branch", true); break; }
+            {
+                // A bare Replay (a bound key, the palette) acts on the branch chosen in History (MoveHistory.ReplayTarget).
+                (int replayed, string? why) = Moves.ReplayTarget(argument);
+                if (why != null) { frame.Say("Replay: " + why, true); break; }
                 ReplayBranch(replayed); break;
+            }
             case "preview.side.both": Preview.SetSide(PreviewSide.Both); break;
             case "preview.side.before": Preview.SetSide(PreviewSide.Before); break;
             case "preview.side.after": Preview.SetSide(PreviewSide.After); break;

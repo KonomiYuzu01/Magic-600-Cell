@@ -236,10 +236,12 @@ public sealed class SolvingDemo
 
     public SolvingDemo(OrbitAtlas atlas) { Atlas = atlas; Reset(); }
 
-    private void Carry(int from)
+    // The draft in hand belongs to the orbit left in the state left; the state and orbit entered get their own.
+    // A change of demo state (F11) carries the drafts like a change of orbit.
+    private void Carry(SolvingState state, int from)
     {
-        if (Draft == null || from == State.Orbit) return;
-        drafts[(State.Id, from)] = Draft.Save();
+        if (Draft == null || (state == State && from == State.Orbit)) return;
+        drafts[(state.Id, from)] = Draft.Save();
         Draft.Load(drafts.TryGetValue((State.Id, State.Orbit), out DraftSnapshot? back) ? back : null);
     }
 
@@ -289,8 +291,17 @@ public sealed class SolvingDemo
         return s;
     }
 
-    public void NextState() { Index = (Index + 1) % States.Count; Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); }
-    public bool Show(string id) { int at = States.ToList().FindIndex(s => s.Id == id); if (at < 0) return false; Index = at; Tell(); return true; }
+    public void NextState()
+    {
+        SolvingState left = State; Index = (Index + 1) % States.Count; Carry(left, left.Orbit);
+        Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next");
+    }
+
+    public bool Show(string id)
+    {
+        int at = States.ToList().FindIndex(s => s.Id == id); if (at < 0) return false;
+        SolvingState left = State; Index = at; Carry(left, left.Orbit); Tell(); return true;
+    }
     private void Tell(params string[] slots) { LastChanged = slots; Safe.Raise(Changed); }
 
     private static int? Number(string? text) => text != null && int.TryParse(text.TrimStart('p', 'c', 'O'), NumberStyles.None, CultureInfo.InvariantCulture, out int n) ? n : null;
@@ -335,7 +346,7 @@ public sealed class SolvingDemo
         int? to = argument == null ? order[(order.ToList().IndexOf(State.Orbit) + 1) % order.Count] : Number(argument);
         if (to == null || to < 0 || to >= OrbitAtlas.Count) return "it needs an orbit from O00 to O34";
         int from = State.Orbit;
-        if (State.SwitchOrbit(to.Value)) { Carry(from); Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); }
+        if (State.SwitchOrbit(to.Value)) { Carry(State, from); Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); }
         return null;
     }
 
@@ -354,7 +365,7 @@ public sealed class SolvingDemo
     {
         if (State.Next is not { } next) return "no Next is set";
         int from = State.Orbit;
-        State.SwitchOrbit(next.Orbit); Carry(from); State.Target = next.Piece; State.Next = null;
+        State.SwitchOrbit(next.Orbit); Carry(State, from); State.Target = next.Piece; State.Next = null;
         Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); return null;
     }
 }

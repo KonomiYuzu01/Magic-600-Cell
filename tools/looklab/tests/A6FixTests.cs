@@ -162,9 +162,21 @@ internal static partial class Program
         h.Ask(0); Check(h.ConfirmRefusal(1) != null && !h.Confirm(1) && h.Asking == 0, "a confirmation for another branch");
         Check(h.Confirm(0) && h.Asking == -1 && !Kept() && !h.Confirm(0), "the open question did not switch lines once");
         h.StepBack(); Check(!h.Ask(0) && h.Asking == -1, "a question while an entry is partly undone"); h.Redo();
+        // N-4 (re-check): opening and cancelling the question records nothing, so a task that reads the state keeps
+        // running and a fresh result stays fresh; a confirmed switch changes the revision and invalidates both.
+        var feedback = new FeedbackModel(); var results = new ResultStore(); var entry = new ScriptEntry("my.6cs", "census", ScriptKind.Read, 3);
+        TaskItem reading = feedback.Start("census", "tasks", true); results.Set(entry, "record { cells: 30 }");
+        int changes = 0, asked = 0; h.Changed += () => { changes++; feedback.StateChanged(); results.StateChanged("a switch"); }; h.Asked += () => asked++;
+        int revision = h.Revision, cursor = h.Cursor;
+        Check(h.Ask(0) && h.Ask(-1) && h.Ask(0) && asked == 3 && changes == 0 && h.Revision == revision && h.Cursor == cursor && feedback.Running == 1 &&
+            feedback.Tasks.Single(t => t.Id == reading.Id).State == TaskState.Running && results.Of(entry.Command)!.Since == null, "asking or cancelling cancelled a task or dimmed a result");
+        Check(h.Confirm(0) && changes == 1 && h.Revision != revision && feedback.Tasks.Single(t => t.Id == reading.Id).State == TaskState.Cancelled && results.Of(entry.Command)!.Since == "a switch",
+            "a confirmed switch left the state readers alone");
         string demo = Read("app/Live/LabDemo.cs"), panel = Read("app/Chrome/Ui/SessionPanels.cs");
         Check(demo.Contains("Moves.ConfirmRefusal(branch)", StringComparison.Ordinal) && demo.Contains("Moves.Confirm(branch)", StringComparison.Ordinal) && !demo.Contains("Moves.SelectBranch(", StringComparison.Ordinal) &&
             panel.Contains("public int Asking => Moves.Asking;", StringComparison.Ordinal), "the lab trusts the word confirm");
+        Check(panel.Contains("moves.Asked += Refresh;", StringComparison.Ordinal) && Body(Read("app/Chrome/Model/Session.cs"), "public bool Ask(int branch)", "public (int Branch").Contains("Safe.Raise(Asked)", StringComparison.Ordinal) &&
+            !Body(Read("app/Chrome/Model/Session.cs"), "public bool Ask(int branch)", "public (int Branch").Contains("Safe.Raise(Changed)", StringComparison.Ordinal), "a question is raised as a change of the state");
     }
 
     // B-4: only evaluated effects may say an orbit is untouched.
@@ -201,6 +213,20 @@ internal static partial class Program
         Check(demo.SwitchOrbit(OrbitAtlas.Name(b)) == null && draft.Statement == wordB && draft.Goal == "B goal" && draft.Mode == CheckMode.Net, "B's draft was not restored");
         draft.SetRoute("direct"); demo.SwitchOrbit(OrbitAtlas.Name(a)); Check(draft.Route == InputRoute.Draft, "A's route"); demo.SwitchOrbit(OrbitAtlas.Name(b)); Check(draft.Route == InputRoute.Direct, "B's route");
         Check(Read("app/Live/LabSolve.cs").Contains("{ Draft = Draft }", StringComparison.Ordinal), "the lab's draft belongs to no orbit");
+        // N-10 (re-check): a change of demo state (F11) keeps the draft of the state left and brings back the
+        // state entered's own, so no state's draft is written under another's.
+        var draft2 = new OperationDraft(); var demo2 = new SolvingDemo(Atlas) { Draft = draft2 };
+        draft2.Edit("core: " + Twist(40, 2, -1)); draft2.SetGoal(null); draft2.SetMode(CheckMode.Strict); string wordM = draft2.Statement;
+        demo2.NextState(); SolvingState endgame = demo2.State; int e = endgame.Orbit;
+        Check(endgame.Id == "endgame" && draft2.Count == 0 && draft2.Goal == null && draft2.Mode == CheckMode.Net, "the mid-solve draft came into the endgame");
+        draft2.Edit("core: " + Twist(77, 3, 1)); draft2.SetGoal("E goal"); string wordE = draft2.Statement;
+        int other = Atlas.StageOrder.First(o => o != e);
+        Check(demo2.SwitchOrbit(OrbitAtlas.Name(other)) == null && draft2.Count == 0 && demo2.SwitchOrbit(OrbitAtlas.Name(e)) == null && draft2.Statement == wordE && draft2.Goal == "E goal",
+            "the endgame draft was not kept across an orbit switch");
+        demo2.NextState(); Check(demo2.State.Id == "fresh" && draft2.Count == 0, "the endgame draft came into the fresh state");
+        demo2.NextState(); Check(demo2.State.Id == "mid" && draft2.Statement == wordM && draft2.Mode == CheckMode.Strict && draft2.Goal == OperationDraft.SampleGoal, "the mid-solve draft was not restored");
+        demo2.NextState(); Check(draft2.Statement == wordE && draft2.Goal == "E goal" && draft2.Mode == CheckMode.Net, "the endgame draft was overwritten");
+        Check(demo2.Show("mid") && draft2.Statement == wordM && demo2.Show("endgame") && draft2.Statement == wordE, "Show did not carry the drafts");
     }
 
     // Q5: replaying a kept branch and choosing the preview's side are commands of the registry.
@@ -228,6 +254,30 @@ internal static partial class Program
         string handles = Body(demo, "public static bool Handles", ";");
         foreach (string id in rows) Check(handles.Contains("\"" + id + "\"", StringComparison.Ordinal) && demo.Contains("case \"" + id + "\":", StringComparison.Ordinal), id + " is not handled by the lab");
         Check(Read("app/Live/LabFrame.cs").Contains("registry.AddRows(File.ReadAllText(Path.Combine(folder, \"command-rows-draft.json\")));", StringComparison.Ordinal), "the lab does not register the draft rows");
+        // Q5 (re-check): a key bound through the palette keeps only the command, so a bare Replay acts on the
+        // branch chosen in History, never on branch 0; with none chosen it refuses. Two kept branches, two words.
+        var h = new MoveHistory();
+        h.Commit("hand", "a", "10:00", "commit a", new[] { Twist(5, 1, 1) }); h.Commit("hand", "b", "10:01", "commit b", new[] { Twist(7, 1, 1) });
+        h.RollTo(1); h.Commit("hand", "c", "10:02", "commit c", new[] { Twist(9, 2, 1) }); h.RollTo(1); h.Commit("hand", "d", "10:03", "commit d", new[] { Twist(11, 3, 1) });
+        Check(h.Branches.Count == 2 && !h.Branches[0].Entries[0].Moves.SequenceEqual(h.Branches[1].Entries[0].Moves), "the two-branch fixture");
+        Check(h.ReplayTarget(null) == (-1, MoveHistory.NoChosenBranch), "a bare Replay with no chosen branch prepared one");
+        int revision = h.Revision, entries = h.Entries.Count; var preview = new PreviewModel { Head = () => h.Revision };
+        Preview Replayed((int Branch, string? Why) target)
+        {
+            string[] moves = h.Branches[target.Branch].Entries.SelectMany(x => x.Moves).ToArray(); PreviewCheck c = SampleCheck.Check(moves);
+            return preview.Show("preview replay", "kept branch", moves, c.Status, c.Reason, c.Effects, c.Protection, 0);
+        }
+        Preview pointer = Replayed(h.ReplayTarget("1"));
+        string palettePath = Read("app/Live/LabFrame.cs"); Check(palettePath.Contains("palette.Bind += row => scripts.Capture(row.Command);", StringComparison.Ordinal), "the palette binding path changed");
+        Keymap bare = Keymap.Parse("{\"format\":\"magic600-design-keymap\",\"version\":1,\"radials\":{},\"bindings\":[{\"key\":\"Shift+R\",\"context\":\"global\",\"command\":\"session.branch.replay\"}]}", registry, keys);
+        Binding? key = bare.Resolve("Shift+R", new[] { "global" });
+        Preview viaKey = Replayed(h.ReplayTarget(key!.Argument));
+        Check(key.Argument == null && viaKey.Moves.SequenceEqual(pointer.Moves) && viaKey.Moves.SequenceEqual(h.Branches[1].Entries[0].Moves) && viaKey.Head == pointer.Head &&
+            h.Revision == revision && h.Entries.Count == entries, "the bound Replay prepared another branch than the pointer");
+        Check(h.Ask(0) && h.ReplayTarget(null).Branch == 0 && h.Ask(-1) && h.ReplayTarget(null).Branch == 0, "asking about a branch did not choose it");
+        Check(h.Confirm(0) == false && h.Ask(0) && h.Confirm(0) && h.Chosen == -1 && h.ReplayTarget(null) == (-1, MoveHistory.NoChosenBranch), "a branch that is no longer kept stayed chosen");
+        string replayCase = Body(demo, "case \"session.branch.replay\":", "case \"preview.side.both\":");
+        Check(replayCase.Contains("Moves.ReplayTarget(argument)", StringComparison.Ordinal) && !replayCase.Contains("?? \"0\"", StringComparison.Ordinal), "a bare Replay still prepares branch 0");
     }
 
     // B-8: the gallery's pane states are the docks' five, Busy among them, drawn by the box the docks use.

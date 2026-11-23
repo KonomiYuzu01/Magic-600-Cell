@@ -249,7 +249,7 @@ public sealed partial class HistoryPanel : VBoxContainer
         AddChild(head); AddChild(new HSeparator());
         var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         List.AddThemeConstantOverride("separation", 0); scroll.AddChild(List); AddChild(scroll);
-        moves.Changed += Refresh; layout.Changed += Refresh; Refresh();
+        moves.Changed += Refresh; moves.Asked += Refresh; layout.Changed += Refresh; Refresh();
     }
 
     public void Show(bool layout) { ShowLayout = layout; Refresh(); }
