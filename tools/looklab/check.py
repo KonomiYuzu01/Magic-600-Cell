@@ -76,6 +76,9 @@ def child_env(temporary):
                 "DOTNET_SKIP_FIRST_TIME_EXPERIENCE", "MSBUILDDISABLENODEREUSE",
                 "DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER", "PYTHONDONTWRITEBYTECODE"):
         env[key] = "1"
+    # A fresh DOTNET_CLI_HOME makes every run a dotnet first run, and a first run appends
+    # the .dotnet/tools folder under that home to the user's PATH for good; hundreds of runs overflowed it.
+    env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0"
     env["NUGET_FALLBACK_PACKAGES"] = ""
     env["LOOKLAB_TEMP_ROOT"] = str(temporary)
     # The Windows Python install-manager alias discovers runtimes through
