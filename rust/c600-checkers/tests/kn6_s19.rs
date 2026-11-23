@@ -118,130 +118,16 @@ fn fixture(
         claims: claims.iter().map(|c| (*c).to_owned()).collect(),
         skip: Vec::new(),
         wrong_start: Some((wrong.0.to_owned(), wrong.1)),
+        optional: Vec::new(),
     }
 }
 
-/// The mutation gate, then the structural mutations of every claim path (see [`structural`]).
+/// The mutation gate, whose structural mutations (a claim's key deleted, renamed or joined by an unknown key, a
+/// claim list emptied or shortened) every fixture must also fail.
 fn assert_gate(fixture: &Fixture) {
     let report = gate::run(&engines(), fixture).expect("a checker");
     assert!(report.passed(), "{}: {:#?}", fixture.name, report.problems);
     assert!(report.tampered() > 0, "{}", fixture.name);
-    assert_structural(fixture);
-}
-
-enum Segment {
-    Key(String),
-    Index(usize),
-}
-
-/// A claim path's segments: `a.b[2][0].c` is `a`, `b`, 2, 0, `c`.
-fn segments(path: &str) -> Vec<Segment> {
-    let mut out = Vec::new();
-    for part in path.split('.') {
-        let (name, mut rest) = match part.split_once('[') {
-            Some((name, rest)) => (name, Some(rest)),
-            None => (part, None),
-        };
-        if !name.is_empty() {
-            out.push(Segment::Key(name.to_owned()));
-        }
-        while let Some(text) = rest {
-            let (index, tail) = text.split_once(']').expect("a closing bracket");
-            out.push(Segment::Index(index.parse().expect("an index")));
-            rest = tail.strip_prefix('[');
-        }
-    }
-    out
-}
-
-fn at<'v>(doc: &'v mut Value, path: &[Segment]) -> &'v mut Value {
-    path.iter().fold(doc, |v, segment| match (segment, v) {
-        (Segment::Key(key), Value::Object(map)) => map.get_mut(key).unwrap_or_else(|| panic!("no {key}")),
-        (Segment::Index(i), Value::Array(items)) => &mut items[*i],
-        _ => panic!("the path does not fit the record"),
-    })
-}
-
-/// The structural mutations of one claim path, as the line's extended gate makes them: the claim's key deleted,
-/// renamed, or joined by an unknown key; the claim's element dropped from its array, or that array emptied; and an
-/// array claim emptied or shortened by one element, an object claim given an unknown key.
-fn structural(doc: &Value, path: &str) -> Vec<(String, Value)> {
-    let segments = segments(path);
-    let (last, parent) = segments.split_last().expect("a claim path");
-    let mut out = Vec::new();
-    let mut edit = |name: &str, change: &dyn Fn(&mut Value)| {
-        let mut copy = doc.clone();
-        change(&mut copy);
-        out.push((format!("{path}: {name}"), copy));
-    };
-    match last {
-        Segment::Key(key) => {
-            edit("key deleted", &|d| {
-                if let Value::Object(map) = at(d, parent) {
-                    map.remove(key);
-                }
-            });
-            edit("key renamed", &|d| {
-                if let Value::Object(map) = at(d, parent) {
-                    let value = map.remove(key).expect("the key");
-                    map.insert(format!("{key}~"), value);
-                }
-            });
-            edit("unknown key added", &|d| {
-                if let Value::Object(map) = at(d, parent) {
-                    map.insert("kn6_unknown".into(), Value::Int(0));
-                }
-            });
-        }
-        Segment::Index(i) => {
-            edit("element dropped", &|d| {
-                if let Value::Array(items) = at(d, parent) {
-                    items.remove(*i);
-                }
-            });
-            edit("array emptied", &|d| {
-                if let Value::Array(items) = at(d, parent) {
-                    items.clear();
-                }
-            });
-        }
-    }
-    let mut copy = doc.clone();
-    match at(&mut copy, &segments) {
-        Value::Array(items) if !items.is_empty() => {
-            edit("claim emptied", &|d| {
-                if let Value::Array(items) = at(d, &segments) {
-                    items.clear();
-                }
-            });
-            edit("claim element dropped", &|d| {
-                if let Value::Array(items) = at(d, &segments) {
-                    items.remove(0);
-                }
-            });
-        }
-        Value::Object(_) => edit("unknown key in the claim", &|d| {
-            if let Value::Object(map) = at(d, &segments) {
-                map.insert("kn6_unknown".into(), Value::Int(0));
-            }
-        }),
-        _ => {}
-    }
-    out
-}
-
-/// Every structural mutation of every claim path fails, and none answers `not_applicable`.
-fn assert_structural(fixture: &Fixture) {
-    let CheckerKind::Archive(id) = fixture.kind else { panic!("an archive kind") };
-    let doc = parse(&fixture.certificate);
-    let inputs: Vec<(&str, Vec<u8>)> = fixture.inputs.iter().map(|(r, b)| (r.as_str(), b.clone())).collect();
-    for claim in &fixture.claims {
-        for (name, mutated) in structural(&doc, claim) {
-            let bytes = mutated.canonical().into_bytes();
-            let report = check_bytes(id, &bytes, &sha(&bytes), &inputs);
-            assert!(report.verdict.is_fail(), "{}: {name}: {:?}", fixture.name, report.verdict);
-        }
-    }
 }
 
 fn matching_inputs() -> Vec<(&'static str, Vec<u8>)> {

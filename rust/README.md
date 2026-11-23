@@ -3612,7 +3612,9 @@ workspace file.
   compressed-word expansion (streamed, length-checked before any letter) and ν and label checkpoints; the three other
   certificate forms are the crate's drafts (`kn6-admissibility/1`, `kn6-expansion/1`, `kn6-checkpoints/1`). The
   mutation gate (`gate`) requires every fixture to fail under a tampered claim, a wrong start table and a wrong input
-  digest. The research-archive kind is a family of sub-checkers registered per stage in `src/archive/s14` to `s19`,
+  digest, and under structural changes of its claims: a key deleted, renamed or joined by an unknown key, a list
+  emptied or shortened by one element (a change that leaves the record unchanged is skipped; `Fixture::optional`
+  names the parts a form may leave out, and no research-archive fixture names any). The research-archive kind is a family of sub-checkers registered per stage in `src/archive/s14` to `s19`,
   each with its own ID, source digest and gate (LP5 pieces R3 to R6). All 17 stage 15 macro certificates (R01 to R17)
   pass in place, read-only. `tests/test_language_scans.py` runs CT-KN6-02's import scan on the crate. An expansion's
   running time is bounded by the check job's budget (R8), not here.
@@ -3623,7 +3625,8 @@ workspace file.
   chronological rows, the locality summary, the fourteen level tables (greatest fixed point, λ and its witness) and
   the co-held, per-grip, jam and moves-522 records at the 7304 stop. All 44 records pass in place, read-only; changed
   helper sets, precedence, input digests or start tables fail. The 22 finite-search records (scans, pairs, plus, beam
-  and peel) answer `not_applicable` with their scope. The fourteen-table level rebuild is an ignored test (about
+  and peel) answer `not_applicable` with their scope, and only when they have exactly their signature's fields; any
+  other record whose shape or format departs from its stage 14 form fails, naming the field. The fourteen-table level rebuild is an ignored test (about
   100 s); the 7304 stop runs as its fast representative.
 - R4, stages 15 to 17's research-archive sub-checkers (CT-LB5-02 to CT-LB5-04, CT-KN6-03's stage 15 to 17 parts):
   `c600-checkers/src/archive/s15` to `s17` register `s15.macro`, `s16.macro` and `s17.macro` (`macro-certificate/1`

@@ -157,6 +157,7 @@ pub fn gate_fixture(
         claims: claims.iter().map(|c| (*c).to_owned()).collect(),
         skip: skip.iter().map(|c| (*c).to_owned()).collect(),
         wrong_start: Some((wrong_start.0.to_owned(), wrong_start.1)),
+        optional: Vec::new(),
     }
 }
 
