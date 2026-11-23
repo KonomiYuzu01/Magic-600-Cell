@@ -80,8 +80,7 @@ The command layer's readings of 23 November 2026 are recorded with their rows in
   | Certificate (`certificate`) | 7 | 1, revisited at 7 | Basis |
   | Digest (`digest`) | 7 | 1, revisited at 7 | Job result |
   | Identity level (`identity-level`) | 6 | 1, revisited at 6 | Specification, Digest |
-  | Assistance provenance (`assistance-provenance`) | 4 | 3, revisited at 4 | Workspace record |
-  | Word (`word`) | 4 | Taken from the manual, not taught by the path | The manual's chapter 1 teaches it first |
+  | Word (`word`) | 4 | Taken from the manual; step 4 revisits its named alphabet and identity | The manual's chapter 1 teaches it first, with jumbling words only |
   | Flow rule (`flow-rule`) | 6 | Waits at 6 | Not learner-facing until LQ2 decides (EV5.9) |
 
   Eleven concepts that EV5.6 does not list are taught where a definition first needs them:
@@ -101,10 +100,10 @@ The command layer's readings of 23 November 2026 are recorded with their rows in
   | Gauge (`gauge`) | 7 | Exact transport |
 
   Specification and Not meant stay at step 1, as EV5.6 places them. Each records a forward use of Principle record,
-  which step 5 teaches, as EV5.6's own note allows. The step numbers do not change. Step 4 now depends on step 3 as
-  well as step 1, because step 3 teaches assistance provenance. The dependency order is:
-  - steps 2 and 3 after step 1;
-  - step 4 after steps 1 and 3;
+  which step 5 teaches, as EV5.6's own note allows. Assistance provenance keeps its frozen step 4. Workspace record,
+  taught at step 3, records a forward use of it, because its "where required" applies only to stored words (PS1.32,
+  LB7.3), which step 4 teaches. The step numbers do not change. The dependency order is:
+  - steps 2, 3 and 4 after step 1;
   - step 5 after step 4;
   - step 6 after steps 2, 3 and 5;
   - step 7 after step 6.
@@ -122,3 +121,7 @@ The command layer's readings of 23 November 2026 are recorded with their rows in
   order.
 - **Tests.** CT-EV5-02 in part (`tests/test_glossary.py`). BS3's branch waits for LQ2. The review clause, and the
   check of the flow goals against the disclosure data, wait for LP4-11's `c600-command` part.
+- **The mathematician's pass, 23 November 2026.** The mathematician agrees with every move above and with the eleven
+  additions. They disagreed with moving assistance provenance to step 3, so it keeps its frozen step, as stated above.
+  They asked that step 4 revisit Word, also stated above. Their findings on the learning path, the principle records
+  and the glossary rows are fixed in the same pull request.
