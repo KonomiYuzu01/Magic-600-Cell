@@ -72,7 +72,7 @@ pub const PRELUDE_DRAFT_1_SHA256: &str = "b9d20ad081ce66289504bdc73ef57ca062f4d8
 
 /// Lean 4 keywords that have the shape of an identifier. A binder or a part of a Lean identifier is never one of
 /// these.
-const LEAN_KEYWORDS: [&str; 70] = [
+const LEAN_KEYWORDS: [&str; 86] = [
     "Prop",
     "Sort",
     "Type",
@@ -80,14 +80,19 @@ const LEAN_KEYWORDS: [&str; 70] = [
     "at",
     "attribute",
     "axiom",
+    "break",
+    "builtin_initialize",
     "by",
     "calc",
     "catch",
     "class",
+    "continue",
     "decreasing_by",
     "def",
     "deriving",
     "do",
+    "elab",
+    "elab_rules",
     "else",
     "end",
     "example",
@@ -100,6 +105,7 @@ const LEAN_KEYWORDS: [&str; 70] = [
     "from",
     "fun",
     "have",
+    "hiding",
     "if",
     "import",
     "in",
@@ -108,18 +114,21 @@ const LEAN_KEYWORDS: [&str; 70] = [
     "infix",
     "infixl",
     "infixr",
+    "initialize",
     "instance",
     "lemma",
     "let",
     "local",
     "macro",
+    "macro_rules",
     "match",
     "mut",
     "mutual",
     "namespace",
-    "noncomputable",
     "nofun",
     "nomatch",
+    "noncomputable",
+    "nonrec",
     "notation",
     "omit",
     "opaque",
@@ -129,6 +138,7 @@ const LEAN_KEYWORDS: [&str; 70] = [
     "prefix",
     "private",
     "protected",
+    "renaming",
     "return",
     "scoped",
     "section",
@@ -142,7 +152,13 @@ const LEAN_KEYWORDS: [&str; 70] = [
     "then",
     "theorem",
     "this",
+    "universe",
+    "unless",
+    "unsafe",
+    "using",
+    "variable",
     "where",
+    "with",
 ];
 
 /// Why a statement was not exported. Each reason has one code; tests read the code and the reason, never the detail
@@ -388,6 +404,21 @@ fn identifier(part: &str) -> bool {
         && !LEAN_KEYWORDS.contains(&part)
 }
 
+/// The names the output itself writes outside the table: the constants and sorts of PS1.46's forms.
+const OUTPUT_NAMES: [&str; 5] = ["False", "Int", "Nat", "Rat", "True"];
+
+/// Whether a binder named `name` would hide a name the output uses: one of [`OUTPUT_NAMES`], or the first part of a
+/// symbol's or a sort's Lean identifier in the table (a binder `C600` would turn `C600.member` into a field access).
+fn shadows(table: &SymbolTable, name: &str) -> bool {
+    OUTPUT_NAMES.contains(&name)
+        || table
+            .symbols
+            .values()
+            .map(|row| row.lean.as_str())
+            .chain(table.sorts.values().map(String::as_str))
+            .any(|lean| lean.split('.').next() == Some(name))
+}
+
 /// A Lean identifier of the table: dotted parts, each an identifier.
 fn lean_name(name: &str) -> bool {
     name.split('.').all(identifier)
@@ -440,7 +471,7 @@ fn prop(value: &Json, table: &SymbolTable, bound: &mut Vec<String>) -> Result<St
             let fields = node(value, &["kind", "name", "p", "sort"])?;
             let mark = if kind == "forall" { "∀" } else { "∃" };
             let name = match fields["name"].as_text() {
-                Some(name) if identifier(name) => name,
+                Some(name) if identifier(name) && !shadows(table, name) => name,
                 _ => return refuse(Reason::Form, "a bound name is no identifier Lean accepts as a binder"),
             };
             bound.push(name.to_string());

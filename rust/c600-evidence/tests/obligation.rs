@@ -350,6 +350,12 @@ fn ct_lb5_11_translator_writes_only_the_vocabulary() {
         (body(&forall("1x", nat_sort, r#"{"kind":"true"}"#)), Reason::Form),
         (body(&forall("x) (h : False", nat_sort, r#"{"kind":"true"}"#)), Reason::Form),
         (body(&forall("", nat_sort, r#"{"kind":"true"}"#)), Reason::Form),
+        (body(&forall("with", nat_sort, r#"{"kind":"true"}"#)), Reason::Form),
+        (body(&forall("universe", nat_sort, r#"{"kind":"true"}"#)), Reason::Form),
+        // A binder may not hide a name the output writes: PS1.46's constants and sorts, or a table identifier's root.
+        (body(&forall("True", nat_sort, r#"{"kind":"true"}"#)), Reason::Form),
+        (body(&forall("Nat", nat_sort, r#"{"kind":"true"}"#)), Reason::Form),
+        (body(&forall("C600", nat_sort, r#"{"kind":"true"}"#)), Reason::Form),
     ];
     for (text, reason) in &cases {
         let error = refused(export(text), text);
@@ -607,8 +613,8 @@ fn ct_err_19_refusals_keep_their_codes_chapters_and_retry() {
 
 // --- CT-EVD-20 for the obligation module ----------------------------------------------------------------------
 
-/// CT-EVD-20 (part: the obligation module folder, which the top-level source list of `tests/sinks.rs` does not read;
-/// the crate's other modules run there): EVD.54. The module names no file, clock, process, network, environment,
+/// CT-EVD-20 (part: the obligation module folder, which `tests/sinks.rs` also scans with the crate's other modules):
+/// EVD.54. The module names no file, clock, process, network, environment,
 /// thread or shared mutable state, and its folder holds exactly the two scanned sources.
 #[test]
 fn ct_evd_20_obligation_module_names_no_effect() {

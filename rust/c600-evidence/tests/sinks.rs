@@ -21,27 +21,39 @@ const PREMISE_UNMET: &str = "EVD:evidence.premise_unmet";
 const INCONSISTENT_FIELDS: &str = "EVD:evidence.inconsistent_fields";
 
 /// The crate's source files, for the scans of CT-EVD-20 and CT-EVD-21.
-const SOURCES: [(&str, &str); 8] = [
+const SOURCES: [(&str, &str); 10] = [
     ("edition.rs", include_str!("../src/edition.rs")),
     ("error.rs", include_str!("../src/error.rs")),
     ("graph.rs", include_str!("../src/graph.rs")),
     ("import.rs", include_str!("../src/import.rs")),
     ("lib.rs", include_str!("../src/lib.rs")),
     ("model.rs", include_str!("../src/model.rs")),
+    ("obligation/json.rs", include_str!("../src/obligation/json.rs")),
+    ("obligation/mod.rs", include_str!("../src/obligation/mod.rs")),
     ("sink.rs", include_str!("../src/sink.rs")),
     ("word.rs", include_str!("../src/word.rs")),
 ];
 
 const WRITERS: [Writer; 4] = [Writer::Kernel, Writer::Host, Writer::Import, Writer::UserProgram];
 
-/// The scanned list must be the whole crate: a new module would otherwise escape the scans.
+/// The `.rs` files under `dir`, as paths relative to `root` with `/` separators, folders included.
+fn rust_files(root: &std::path::Path, dir: &std::path::Path, out: &mut Vec<String>) {
+    for entry in std::fs::read_dir(dir).expect("source directory") {
+        let path = entry.expect("entry").path();
+        if path.is_dir() {
+            rust_files(root, &path, out);
+        } else if path.extension().is_some_and(|e| e == "rs") {
+            let rel = path.strip_prefix(root).expect("under src");
+            out.push(rel.components().map(|c| c.as_os_str().to_string_lossy()).collect::<Vec<_>>().join("/"));
+        }
+    }
+}
+
+/// The scanned list must be the whole crate, module folders included: a new module would otherwise escape the scans.
 fn assert_sources_complete() {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let mut found: Vec<String> = std::fs::read_dir(&dir)
-        .expect("src directory")
-        .map(|e| e.expect("entry").file_name().to_string_lossy().into_owned())
-        .filter(|n| n.ends_with(".rs"))
-        .collect();
+    let mut found = Vec::new();
+    rust_files(&dir, &dir, &mut found);
     found.sort();
     let listed: Vec<String> = SOURCES.iter().map(|(n, _)| n.to_string()).collect();
     assert_eq!(found, listed, "the scans must list every source file of the crate");
@@ -592,8 +604,8 @@ fn ct_evd_28_host_review_cites_a_digested_record() {
 
 // --- CT-EVD-29 ------------------------------------------------------------------------------------------------
 
-/// CT-EVD-29 (part: the record sink; not run: obligation export, LB5.18, which belongs to chapter 03 and has no code
-/// in this crate): EVD.3, EVD.47 and EVD.64. No writer, an import included, can assert check formal proof in 1.0:
+/// CT-EVD-29 (part: the record sink; not run: the obligation export's `file` row, LB5.18, which is `c600-research`'s;
+/// this crate's translator, `obligation`, returns text and writes no evidence field): EVD.3, EVD.47 and EVD.64. No writer, an import included, can assert check formal proof in 1.0:
 /// every such write gets `EVD:capability.field_not_writable` and adds no leaf, whatever it cites.
 #[test]
 fn ct_evd_29_formal_proof_has_no_writer() {

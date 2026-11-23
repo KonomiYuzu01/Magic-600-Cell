@@ -3584,3 +3584,21 @@ run or not applicable is no pass (PHS.63).
   at the meter's budget code or at the host's 60 s view deadline, `KN7:resource_limit.safety_stop`, whichever comes
   first. `c600-lx2/examples/view_limits_probe.rs` measures how far a metered fault runs under the product's view
   limits. Evidence kind: source and synthetic; nothing is timing.
+
+## Status of LP5: research expressiveness
+
+The plan is [`language-lp5-plan.md`](../docs/progress/1.0/language-lp5-plan.md); the owner started LP5 on 23 November
+2026 with every recommended option. The three LP5 crates were added as empty members first, so the pieces share no
+workspace file.
+
+- R9, the proof-obligation translator (LB5.18, PS1.45, PS1.46): `c600-evidence`'s `obligation` module, as pure code.
+  It translates a typed Statement over `c600-obligation-vocabulary-draft-1` into PS1.45's `c600-proof-obligation-draft`
+  Lean 4 text with `by sorry`, and matches the format packet's `obligations` vectors byte for byte. A named statement,
+  an unknown symbol, a wrong arity or a form outside the vocabulary refuses with `LB5:input.obligation_untranslatable`
+  and returns no text; a body whose digest differs refuses with the vector's own code. Symbol table draft 1
+  (`c600-evidence/obligation/symbols-draft-1.json`) is compiled in and pinned by its digest; prelude draft 1
+  (`c600-evidence/obligation/prelude-draft-1.lean`) is pinned by its digest, never compiled in and never run by Lean
+  (LP5-2). The crate keeps its one dependency, so the module has its own strict canonical JSON reader. CT-LB5-11,
+  CT-PS1-26, CT-RTE-23 and CT-ERR-19 run their translator parts (`c600-evidence/tests/obligation.rs`); the `file` row
+  `research.obligation.export`, its grant and the proof that a refusal writes no file come with `c600-research`.
+  `tests/sinks.rs` now scans module folders, so the translator is inside CT-EVD-20's and CT-EVD-21's scans.
