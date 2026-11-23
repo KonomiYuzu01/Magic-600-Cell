@@ -673,9 +673,10 @@ class ScanTests(unittest.TestCase):
         self.assertEqual(len(move_selection_problems(bad)), 1)
 
     def test_ct_kn6_02_no_checker_imports_producer_code(self):
-        """CT-KN6-02 (part: LP2's half, the import scan, run on LP5's checker crate c600-checkers, whose four
-        non-archive kinds and research-archive registration point exist since piece R2; an archive sub-checker that
-        a stage piece adds under src/archive/ is read without a new entry): no workspace source and no Python tool
+        """CT-KN6-02 (whole: LP2's half and LP5's in one import scan, run on LP5's checker crate c600-checkers with its
+        shared core, its four non-archive kinds and the six stage folders of its research-archive kind under
+        src/archive/, which a new stage folder joins without a new entry, on the evidence library's report reader and
+        on LP2's oracle comparison): no workspace source and no Python tool
         defines KN6.1's checker interface unless it is declared with its producers (KN6's checker crate, and one
         reader of a report, the evidence library's admission (EVD.46), which imports neither the interpreter nor the
         session store). No source of the checker crate depends on, names or includes the code of any workspace crate
