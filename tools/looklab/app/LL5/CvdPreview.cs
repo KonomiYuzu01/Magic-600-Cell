@@ -70,8 +70,9 @@ internal sealed partial class CvdPreview : VBoxContainer
             view.Material.GetShaderParameter("cvd_enabled").AsBool());
     }
 
-    public override void _ExitTree()
+    // The views keep the preview while the frame has these controls out of the tree; stop only when freed.
+    public override void _Notification(int what)
     {
-        foreach (LookViewport view in views) view.LookApplied -= Apply;
+        if (what == NotificationPredelete) foreach (LookViewport view in views) view.LookApplied -= Apply;
     }
 }

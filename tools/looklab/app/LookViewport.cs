@@ -128,6 +128,8 @@ internal sealed partial class LookViewport : Node3D
         Environment = new Godot.Environment { BackgroundMode = Godot.Environment.BGMode.Color,
             TonemapMode = Godot.Environment.ToneMapper.Linear, AmbientLightSource = Godot.Environment.AmbientSource.Disabled };
         AddChild(new WorldEnvironment { Environment = Environment });
+        // The view follows the look for its whole life, also while the frame has it out of the tree: the palette
+        // check reads the colouring it draws. It stops when the node is freed (_Notification).
         state.Changed += ParameterChanged;
         ApplyLook();
         if (Animate) Bind(clock.Frame());
@@ -244,5 +246,8 @@ internal sealed partial class LookViewport : Node3D
         return Image.CreateFromData(width, height, false, format, bytes);
     }
     public static ImageTexture FloatTexture(ReadOnlySpan<double> values, int width, int height, Image.Format format) => ImageTexture.CreateFromImage(FloatImage(values, width, height, format));
-    public override void _ExitTree() => state.Changed -= ParameterChanged;
+    public override void _Notification(int what)
+    {
+        if (what == NotificationPredelete) state.Changed -= ParameterChanged;
+    }
 }
