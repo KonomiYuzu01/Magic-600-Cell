@@ -51,7 +51,20 @@ fn ct_lb5_05_gate3_tail_replay_t6_steps_1_to_3_in_place() {
     let record = pinned(&format!("{T6}/steps.json"), T6_STEPS_SHA256);
     let report = timed("gate 3, T6", tail_replay(), &record, &chain_inputs(T6, false));
     assert_eq!(report.verdict, Verdict::Pass, "{:#?}", report.trace.last());
-    assert!(report.trace.iter().all(|t| !t.claim.starts_with("steps[3].")), "step 4 is never replayed for gate 3");
+    // Step 4 is never replayed for gate 3. Its only trace entries are the record form's, which every stage 18 checker
+    // reads for every step (its stated length and admission and the digests and counts that chain it to step 3), never
+    // a history, start, word, chunk, strict′ or end entry of a replay; the scope names it as historically incomplete.
+    const FORM: [&str; 5] = ["letters", "admission", "off_after", "start_digest", "off_before"];
+    assert!(
+        report.trace.iter().filter_map(|t| t.claim.strip_prefix("steps[3].")).all(|rest| FORM.contains(&rest)),
+        "step 4 is never replayed for gate 3"
+    );
+    assert!(
+        report.trace.iter().any(|t| t.claim == "scope"
+            && t.computed.contains("not applicable: steps[3]")
+            && t.computed.contains("historical_check_incomplete")),
+        "the scope names step 4 as historically incomplete"
+    );
     for k in 0..3 {
         let history = report.trace.iter().find(|t| t.claim == format!("steps[{k}].history")).unwrap();
         assert!(history.computed.contains("records gate 3 complete"), "{}", history.computed);
