@@ -6,6 +6,7 @@ use c600_syntax::RawContext;
 
 use crate::context::{IdentityField, ObligationRole};
 use crate::document::{SourceRange, Units};
+use crate::round_trip::Undeclared;
 
 /// The codes the services raise or forward. Forwarded codes keep their own prefix (ERR.7): a syntax diagnostic stays
 /// `LG1`, a checker finding `LG2` or `LG3`.
@@ -29,6 +30,9 @@ pub mod code {
     pub const IR_REJECTED: &str = "LG4:input.ir_rejected";
     /// `LG5:input.module_dependency_missing`: an import names content the module context does not hold (LG5.3).
     pub const DEPENDENCY_MISSING: &str = "LG5:input.module_dependency_missing";
+    /// `EV3:input.round_trip_undeclared`: the selected source part does not declare the requested editable field
+    /// (EV3.7).
+    pub const ROUND_TRIP_UNDECLARED: &str = "EV3:input.round_trip_undeclared";
 }
 
 /// Where a code occurs (ERR.9).
@@ -65,6 +69,8 @@ pub enum Service {
     Rename,
     /// Applying proposed edits to source bytes (EV1.6).
     ApplyEdits,
+    /// The declared-part round trip, `edit_declared_part` (EV3.5, EV3.7).
+    EditDeclaredPart,
 }
 
 /// Whose identity differs.
@@ -124,6 +130,11 @@ pub enum Reason {
     /// The context requires a claim or check that the declaration does not supply (EV1.4); `declared` says whether the
     /// declaration exists.
     ObligationUnmet { declaration: String, role: ObligationRole, declared: bool },
+    /// The source does not declare the requested round-trip edit (EV3.7): the declaration and field named, and why.
+    RoundTripUndeclared { declaration: String, field: String, why: Undeclared },
+    /// A proposed value for a declared field has another type than the field's (EV3.7): the field's declared type
+    /// text and the supplied value's kind.
+    ValueType { declaration: String, field: String, expected: String, supplied: String },
 }
 
 /// An available next action, as data: the kind of action, never a choice made for the solver (ERR.13, ERR.15).
@@ -147,6 +158,8 @@ pub enum NextAction {
     SupplyObligation { declaration: String },
     /// Propose edits that do not overlap.
     SeparateEdits,
+    /// Propose a value of the field's declared type, named by its type text.
+    SupplyValue { expected: String },
 }
 
 /// One diagnostic or refusal.

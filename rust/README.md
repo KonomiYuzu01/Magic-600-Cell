@@ -3829,3 +3829,42 @@ uses this workspace's crates through their public interfaces and changes none of
     launched.
 - Evidence kind: source. The flow test's frames are a fake core's and its keys synthetic; nothing here is Windows
   input, display or timing evidence.
+
+## Status of LP4, LP4-7: the declared-part round trip
+
+LP4-7 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04, EV3.5's `edit_declared_part` and
+EV3.7), in `c600-editor`, a draft.
+
+- `edit_declared_part(document, digest, declaration, field, value, context)` returns the source edits that set one
+  field of a declared part to a typed `PartValue`, the SHA-256 of the edited bytes (the new version, `source_digest`)
+  and the edited draft checked again under the same module context (its diagnostics and verdict, as `diagnose` gives
+  them). The edit replaces exactly the field's literal with its canonical spelling, under the request's digest;
+  `apply_edits` applies it. Nothing is persisted and no program runs (EV1.9). `declared_parts(document, digest)` lists
+  the parts a source declares, each field with its path, declared type text, current value and range.
+- Refusals, each an `Envelope` with service `EditDeclaredPart` and no span: a part the source does not declare is
+  `EV3:input.round_trip_undeclared` with its reason (`Undeclared`: no declaration, no directive, a malformed
+  directive, a field the directive does not list, or a part that is not a literal); a value of another type than the
+  field's is `LG2:type.mismatch` (`Reason::ValueType` with the field's type text and the supplied kind, next action
+  `SupplyValue`); a request for other bytes is `EV1:stale.editor_source`.
+- DRAFT, which freezes with the syntax (PHS.49): the source syntax has no clause for an editable part, so a part is
+  declared by a directive comment on the lines above its declaration, `# @editable parameter|layout|default
+  [field.path ...]`; with no field listed, the one field is `value`, the whole result. A declared part is a `fn` with
+  no generics, parameters, effects, charge or `let`, whose body returns a literal (exact or approximate number, `Q5`,
+  text, boolean, literal word) or a record of literals. A computed value, a command, a view and a declaration without
+  a directive are never round-tripped: nothing is inverted from a drawing (EV3.7). The integrator may replace the
+  directive by a syntax clause at the syntax freeze; the service's data does not change.
+- Tests: CT-EV3-05 runs whole in `c600-editor/tests/ct_ev3_05.rs` (source). It reads the three built-in tools'
+  sources from their crates (`full_600_cell.6cs`, `representations.6cs`, `jumble_checker.6cs`): as shipped they
+  declare no editable part, so every declaration and declared parameter is refused; each tool's fork (its shipped bytes
+  with a declared parameter, layout and default appended) round-trips every declared field, reads it back and checks
+  clean; drawn views, computed values, undeclared fields and malformed directives are refused. CT-EV1-07 now also
+  covers the two round-trip refusals.
+- Not built:
+  - declared parts in the shipped built-in tools: their `.6cs` bytes are hashed into the build strings and LX-4's
+    module set reads them, so adding parts to them is the integrator's change (the tests use forks);
+  - the workspace command that persists a round-tripped layout or parameter with its undo (EV3.7, default 16), the
+    host's fork operation, and activating the new version (LP4-2's `activate_module` does that once it is checked);
+  - follow-pick navigation from a drawn instance to its declared part (EV3.5's `follow_pick`, chapter 10's
+    `SourceMap`);
+  - keeping the directive comments through `format`, which still drops comments (LP4-1).
+- Evidence kind: source. Nothing here is Windows, input, display or timing evidence.
