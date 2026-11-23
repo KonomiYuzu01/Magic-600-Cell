@@ -21,7 +21,7 @@ network.
 | --- | --- |
 | Members | 632: 497 records (417 `.json`, 80 `.json.gz`) and 135 auxiliary (53 `.ia16.gz`, 43 `.md`, 33 `.py`, 5 `.txt`, 1 `.out`); none missing |
 | Manifest self-checks | `record_manifest_sha256`, `full_corpus_manifest_sha256` and the entry count pass |
-| Integrity | 632 pass, 0 fail: stored SHA-256 and bytes; for gzip members the stream, decoded SHA-256 and bytes; canonical SHA-256 of every JSON value |
+| Integrity | 632 pass, 0 fail: stored SHA-256 and bytes; for members whose `.gz` name declares a gzip stream, the stream (checked whatever the first bytes are), decoded SHA-256 and bytes; canonical SHA-256 of every JSON value |
 | Recognition | 265 records declare a top-level `format`; 232 do not (156 of the 417 `.json` files, PS3.11, and 76 compressed records; stage 14: 20, 15: 9, 16: 61, 18: 97, 19: 45) |
 | Discriminator (PS3.12, FP.22) | 10 absent-format records discriminated by an exact (manifest, source, pointer) rule whose member declares its format: nine stage 15 run wrappers at `/run` (`pstar-run/1`), the stage 18 lattice report at `/player` (`literal-lattice/1`); 222 stay recorded (EVD.53) |
 | Interpretation (PS3.10) | 22,513 label occurrences: 19,627 give facts through the import table, 2,886 stay recorded (2,127 of them in absent-format records), 0 unmapped; the enumeration equals the pinned label table occurrence for occurrence, with its 436 prose fields and 10,388 payload booleans |
@@ -138,9 +138,12 @@ The matrix records one stage 18 dependency as missing: the lattice report's `/pl
   no facts on their own.
 - **The bundle (FP.23).** `export_check_bundle` writes FP.23's framing (STORE, `manifest.json` first, members as
   `objects/<sha256>`, 1980-01-01, version 20, the UTF-8 flag). The manifest's `identity` is null, `envelopes` is empty
-  until R1 types the evidence envelopes, and `checkers` is empty until a KN6 checker exists. A missing dependency whose
-  record gives no digest, such as stage 19's q11 cache, cannot be a `DigestRef`, so it is listed in the extension
-  `missing_without_digest` (contradiction candidate C3).
+  until R1 types the evidence envelopes, and `checkers` is empty because the bundle carries no checker reports.
+  `provenance` is null, which FP.11 allows for a record that is neither a word, macro nor workspace record.
+  `extensions` is FP.10's list of optional entries (`required: false`) in name order. A missing dependency whose record
+  gives no digest, such as stage 19's q11 cache, cannot be a `DigestRef`, so it is listed in the extension
+  `missing_without_digest` (contradiction candidate C3). Only bytes that passed import integrity travel: an envelope or
+  member dependency with a failed check is refused, and each record is compared with its corpus manifest's digest.
 - **Git blob identities.** The driver checks each member's Git blob SHA-1 before the grant; product code checks
   SHA-256 only and never runs Git.
 

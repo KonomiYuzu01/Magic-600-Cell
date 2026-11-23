@@ -1,7 +1,7 @@
 //! `import_archive` and `export_check_bundle` on small synthetic archives. The corpus halves of these tests run in
 //! `tests/test_lp5_archive.py` over the Git-blob manifest; these show each check and refusal on bytes built here.
 
-use c600_archive::import::{CheckResult, OccurrenceOutcome, Recognition};
+use c600_archive::import::{CheckResult, OccurrenceOutcome, Recognition, INVALID_FORMAT};
 use c600_archive::{
     export_check_bundle, import_archive, Discrimination, Discriminator, GrantedFile, GrantedFiles, ImportReport,
     ImportTable, ImportTableRef, Limits, LimitsRef, DIGEST_MISMATCH, FORMAT, SCOPE_NOT_IMMUTABLE, SIZE_LIMIT,
@@ -176,28 +176,44 @@ fn ct_ps3_08_synthetic_tampered_gzip_decoded_and_manifest_digests_fail_separatel
     assert_eq!(sm.not_listed, ["s19/README.md"]);
     assert_eq!(sm.rows[0].original_sha256.as_deref(), Some("9".repeat(64).as_str()));
 
-    // A gzip stream corrupted after the corpus manifest pinned it: the stream check fails against both manifests,
-    // and the stage manifest's stored digest fails; the corpus manifest's pin holds.
-    let mut f = stage_fixture();
-    let corrupt = {
-        let (_, stored, _) = &mut f.members[1];
-        let at = stored.len() - 6;
-        stored[at] ^= 1;
-        stored.clone()
-    };
-    f.members[1].2 = Some(br#"{"pose_id":[0,1],"poses":[]}"#.to_vec());
-    let r = run(f.granted());
-    let name = "s19/records/t.json.gz".to_string();
-    assert_eq!(
-        failed(&r),
-        vec![
-            (name.clone(), "gzip_stream", "MANIFEST.json".into()),
-            (name.clone(), "gzip_stream", STAGE.into()),
-            (name.clone(), "stored_sha256", STAGE.into()),
-        ]
-    );
-    assert_eq!(r.refusal(), Some(DIGEST_MISMATCH));
-    assert_eq!(r.members[r.member(&name).unwrap()].stored_sha256.as_deref(), Some(sha256_hex(&corrupt).as_str()));
+    // A gzip stream corrupted after the stage manifest pinned it, in its body or in its signature bytes: the stream
+    // check fails against both manifests, and the stage manifest's stored digest fails. The `.gz` name declares the
+    // stream, so damaged signature bytes do not let the member pass as plain bytes.
+    for signature in [false, true] {
+        let mut f = stage_fixture();
+        let corrupt = {
+            let (_, stored, _) = &mut f.members[1];
+            if signature {
+                stored[0] ^= 0xff;
+                stored[1] ^= 0xff;
+            } else {
+                let at = stored.len() - 6;
+                stored[at] ^= 1;
+            }
+            stored.clone()
+        };
+        f.members[1].2 = Some(br#"{"pose_id":[0,1],"poses":[]}"#.to_vec());
+        let r = run(f.granted());
+        let name = "s19/records/t.json.gz".to_string();
+        assert_eq!(
+            failed(&r),
+            vec![
+                (name.clone(), "gzip_stream", "MANIFEST.json".into()),
+                (name.clone(), "gzip_stream", STAGE.into()),
+                (name.clone(), "stored_sha256", STAGE.into()),
+            ],
+            "signature {signature}"
+        );
+        assert_eq!(r.refusal(), Some(DIGEST_MISMATCH));
+        let m = &r.members[r.member(&name).unwrap()];
+        assert_eq!(m.stored_sha256.as_deref(), Some(sha256_hex(&corrupt).as_str()));
+    }
+
+    // Gzip bytes under a name that declares none are not decoded: they fail as plain bytes against the decoded pin.
+    let r = run(Fixture::new().record("plain.json", SCAN, true).granted());
+    assert!(failed(&r).iter().all(|(_, c, _)| *c != "gzip_stream"));
+    assert!(failed(&r).iter().any(|(_, c, _)| *c == "decoded_sha256"));
+    assert!(matches!(r.members[0].recognition, Recognition::Unparsed(_)));
 
     // A changed decoded content behind a valid stream: the decoded checks fail against both manifests, with the
     // canonical digest that derives from the decoded bytes, and no stream check fails. The stage manifest here still
@@ -271,11 +287,11 @@ fn ct_ps3_09_synthetic_case_only_names_and_a_missing_member() {
 fn ct_ps3_10_synthetic_bundle_declares_missing_dependencies_and_refuses_bad_input() {
     // CT-PS3-10 (part: synthetic envelopes; the corpus bundle runs in tests/test_lp5_archive.py).
     let script = b"print('a producer, carried as data and never run')\n";
-    let f = Fixture::new().record("a.json", SCAN, true).record("b.json", RUN, false).auxiliary("make.py", script);
+    let f = Fixture::new().record("a.json.gz", SCAN, true).record("b.json", RUN, false).auxiliary("make.py", script);
     let r = run(f.granted());
     let limits = Limits::research_archive();
     let a = r
-        .envelope("a.json")
+        .envelope("a.json.gz")
         .unwrap()
         .with_dependency("make.py", Some(&sha256_hex(script)), Some(script.to_vec()), "the producer, as text")
         .with_dependency("cache.npz", None, None, "absent from the archive")
@@ -300,14 +316,47 @@ fn ct_ps3_10_synthetic_bundle_declares_missing_dependencies_and_refuses_bad_inpu
     let payload = manifest.get("payload").unwrap();
     assert_eq!(payload.get("checkers"), Some(&Value::Array(Vec::new())));
     assert_eq!(payload.get("missing").unwrap().as_array().unwrap().len(), 1);
-    let ext = manifest.get("extensions").unwrap();
-    assert_eq!(ext.get("missing_without_digest").unwrap().as_array().unwrap().len(), 1);
+    // FP.10's extension list: unique names in scalar order, every entry optional.
+    let ext = manifest.get("extensions").unwrap().as_array().unwrap();
+    let names: Vec<&str> = ext.iter().map(|x| x.get("name").unwrap().as_str().unwrap()).collect();
+    let mut sorted_names = names.clone();
+    sorted_names.sort();
+    sorted_names.dedup();
+    assert_eq!(names, sorted_names);
+    assert!(ext.iter().all(|x| x.get("required") == Some(&Value::Bool(false)) && x.as_object().unwrap().len() == 3));
+    let value = |name: &str| ext.iter().find(|x| x.get("name").unwrap().as_str() == Some(name)).unwrap().get("value");
+    assert_eq!(value("missing_without_digest").unwrap().as_array().unwrap().len(), 1);
+    assert!(!value("checker_status").unwrap().as_str().unwrap().contains("exists"));
+    assert_eq!(manifest.get("provenance"), Some(&Value::Null));
     assert_eq!(objects.len(), 3);
 
     // Refusals: bytes that disagree with their digest, a revision-bound scope, and the caller's limits.
     let mut bad = a.clone();
     bad.bytes.push(b' ');
     assert_eq!(export_check_bundle(&[bad], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    // The digest compared is the corpus manifest's, not one recomputed from the bytes in hand.
+    let mut forged = a.clone();
+    forged.bytes = b"{}".to_vec();
+    forged.stored_sha256 = sha256_hex(&forged.bytes);
+    assert_eq!(export_check_bundle(&[forged], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    // A record whose stored bytes match their pin but whose decoded content fails its pins is refused, and so is a
+    // dependency carried from such a member.
+    let mut f = Fixture::new().record("c.json.gz", SCAN, true);
+    f.members[0].2 = Some(br#"{"format":"t3p-scan/1","rows":[]}"#.to_vec());
+    let damaged = run(f.granted());
+    assert_eq!(damaged.refusal(), Some(DIGEST_MISMATCH));
+    let c = damaged.envelope("c.json.gz").unwrap();
+    assert_eq!(c.listed_sha256, c.stored_sha256);
+    assert!(c.failed_checks.iter().any(|x| x.starts_with("decoded_sha256")));
+    assert!(c.failed_checks.iter().any(|x| x.starts_with("canonical_sha256")));
+    assert_eq!(export_check_bundle(&[c.clone()], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    let dep = damaged.dependency("c.json.gz", "c.json.gz", Some(&c.stored_sha256), "a damaged member").unwrap();
+    assert!(!dep.failed_checks.is_empty());
+    let with_damaged = b.clone().with(dep);
+    assert_eq!(export_check_bundle(&[with_damaged], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    // A clean member dependency travels.
+    let clean = r.dependency("make.py", "make.py", Some(&sha256_hex(script)), "the producer, as text").unwrap();
+    assert!(export_check_bundle(&[b.clone().with(clean)], LimitsRef(&limits)).is_ok());
     let wrong = b.clone().with_dependency("make.py", Some(&"0".repeat(64)), Some(script.to_vec()), "wrong digest");
     assert_eq!(export_check_bundle(&[wrong], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
     let mut bound = b.clone();
@@ -357,10 +406,11 @@ fn unmapped_values_stay_word_for_word_and_limits_bound_the_import() {
         r.occurrences.iter().filter(|g| matches!(g.outcome, OccurrenceOutcome::Facts { .. })).collect();
     assert_eq!(mapped.len(), 1);
 
-    let f = Fixture::new().record("scan.json", SCAN, true);
+    let f = Fixture::new().record("scan.json.gz", SCAN, true);
     for limits in [
         Limits { max_members: 0, ..Limits::research_archive() },
         Limits { max_member_stored_bytes: 10, ..Limits::research_archive() },
+        Limits { max_total_stored_bytes: 10, ..Limits::research_archive() },
         Limits { max_member_decoded_bytes: 10, ..Limits::research_archive() },
         Limits { max_total_decoded_bytes: 10, ..Limits::research_archive() },
         Limits { max_occurrences: 1, ..Limits::research_archive() },
@@ -371,4 +421,55 @@ fn unmapped_values_stay_word_for_word_and_limits_bound_the_import() {
     let mut g = f.granted();
     g.manifest.bytes = b"{\"format\":\"something else\"}".to_vec();
     assert_eq!(run_with(g, &Limits::research_archive()).unwrap_err().code, FORMAT);
+}
+
+#[test]
+fn a_non_string_or_empty_format_is_malformed_not_absent() {
+    // PS3.11's absence is a missing `format` key; a present key with another value is an invalid format, kept word for
+    // word, and no discriminator is consulted for it.
+    let f = Fixture::new()
+        .record("n.json", r#"{"format":7,"status":"budget"}"#, false)
+        .record("e.json", r#"{"format":"","status":"budget"}"#, false)
+        .record("x.json", r#"{"status":"budget"}"#, false);
+    let r = run(f.granted());
+    let recognition = |n: &str| r.members[r.member(n).unwrap()].recognition.clone();
+    assert_eq!(recognition("n.json"), Recognition::InvalidFormat(Value::Int(7)));
+    assert_eq!(recognition("e.json"), Recognition::InvalidFormat(Value::String(String::new())));
+    assert!(matches!(recognition("x.json"), Recognition::Absent(_)));
+    assert_eq!((r.totals()["invalid_format"], r.totals()["absent_format"]), (2, 1));
+    let absent = r.member("x.json").unwrap();
+    let malformed: Vec<_> = r.occurrences.iter().filter(|g| g.member != absent).collect();
+    assert!(!malformed.is_empty());
+    for g in malformed {
+        assert_eq!(g.outcome, OccurrenceOutcome::Recorded { rule: None, reason: INVALID_FORMAT.to_string() });
+    }
+    assert_eq!(r.totals()["occurrences_absent_format"], 1);
+    assert!(r.envelope("n.json").is_none());
+    let json = r.to_json();
+    let kinds: Vec<String> = json
+        .get("members")
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m.get("recognition").unwrap().get("kind").unwrap().as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(kinds, ["invalid_format", "invalid_format", "absent"]);
+}
+
+#[test]
+fn a_run_record_letter_count_that_overflows_refuses_the_import() {
+    let word = b"\x01\x00".to_vec();
+    let fixture = |letters: &str| {
+        let record = format!(
+            r#"{{"format":"runner-run/3","steps":[{{"word":"w.ia16.gz","encoding":"ia16","word_sha256":"{}","letters":{letters}}}]}}"#,
+            sha256_hex(&word)
+        );
+        Fixture::new().record("run.json", &record, false).auxiliary("w.ia16.gz", &gzip(&word))
+    };
+    let r = run(fixture("1").granted());
+    assert!(failed(&r).is_empty(), "{:?}", failed(&r));
+    assert!(matches!(r.members[r.member("w.ia16.gz").unwrap()].recognition, Recognition::Referenced { .. }));
+    let refused = run_with(fixture(&i64::MAX.to_string()).granted(), &Limits::research_archive()).unwrap_err();
+    assert_eq!(refused.code, FORMAT);
 }

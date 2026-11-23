@@ -10,8 +10,13 @@
 //!   manifest, PS3.14's stage 19 manifest rows against the members they name, and the word digests a run record
 //!   states for its `ia16` members (PS3.13). A source-edition digest is kept as metadata and is never compared with
 //!   public bytes.
+//! - *Decoding* follows the member's declared form: a name ending in `.gz` declares a gzip stream, and the stream is
+//!   checked whatever its first bytes are, so a damaged signature is a failed `gzip_stream` check. The stage 19
+//!   manifest's `transformation` texts declare no compression, so the name is the only declaration in this corpus.
 //! - *Recognition* is the record's own top-level `format`, or its absence with the discriminator's answer (PS3.11,
-//!   PS3.12). An auxiliary member is recognised only when a run record names it with an encoding.
+//!   PS3.12). A `format` key whose value is not a non-empty string is not an absence: the record is recognised as
+//!   having an invalid format, with the value kept word for word. An auxiliary member is recognised only when a run
+//!   record names it with an encoding.
 //! - *Interpretation* enumerates every (format, field, value) occurrence (EVD.48) and gives each exactly one outcome:
 //!   the table's facts, recorded with a reason, or unmapped with its value kept word for word.
 //! - *Recheck* is never run here: KN6's checkers own mathematical rechecks, and no archived producer runs.
@@ -41,6 +46,8 @@ pub const NO_RULE: &str = "no rule in this edition for this (format, field, valu
 pub const OVER_LIMIT: &str = "the (format, field) has more distinct values than EVD.48's limit; kept word for word";
 pub const CLASS_DIFFERS: &str = "the table's class for this triple differs from the enumeration's; kept word for word";
 pub const PREREQUISITE_UNMET: &str = "a rule prerequisite is unmet; kept word for word";
+pub const INVALID_FORMAT: &str =
+    "the record's top-level format is not a non-empty string, so no rule applies (PS3.11); kept word for word";
 
 /// The recheck result of every member: R0 runs no mathematical check.
 pub const RECHECK_NOT_RUN: &str =
@@ -66,6 +73,7 @@ pub struct Limits {
     pub max_members: usize,
     pub max_manifest_bytes: usize,
     pub max_member_stored_bytes: usize,
+    pub max_total_stored_bytes: usize,
     pub max_member_decoded_bytes: usize,
     pub max_total_decoded_bytes: usize,
     pub max_occurrences: usize,
@@ -78,6 +86,7 @@ impl Limits {
             max_members: 4096,
             max_manifest_bytes: 4 << 20,
             max_member_stored_bytes: 64 << 20,
+            max_total_stored_bytes: 256 << 20,
             max_member_decoded_bytes: 64 << 20,
             max_total_decoded_bytes: 256 << 20,
             max_occurrences: 200_000,
@@ -124,6 +133,8 @@ pub enum Recognition {
     Declared(String),
     /// No top-level `format` (PS3.11), with the discriminator's answer kept separately.
     Absent(Discrimination),
+    /// A top-level `format` whose value is not a non-empty string, kept word for word: malformed, not absent.
+    InvalidFormat(Value),
     /// The bytes are not a strict JSON record; the reason never quotes them.
     Unparsed(String),
     /// An auxiliary member that a run record names, with the encoding that record states.
@@ -283,9 +294,14 @@ pub fn import_archive(
         return Err(ArchiveError::limit("members", limits.max_members, input.members.len()));
     }
     let mut granted: BTreeMap<String, Vec<u8>> = BTreeMap::new();
+    let mut stored_total = 0usize;
     for file in input.members {
         if file.bytes.len() > limits.max_member_stored_bytes {
             return Err(ArchiveError::limit("member_stored", limits.max_member_stored_bytes, file.bytes.len()));
+        }
+        stored_total = stored_total.saturating_add(file.bytes.len());
+        if stored_total > limits.max_total_stored_bytes {
+            return Err(ArchiveError::limit("total_stored", limits.max_total_stored_bytes, stored_total));
         }
         if granted.insert(file.name, file.bytes).is_some() {
             return Err(ArchiveError::format("two granted files have the same name"));
@@ -343,7 +359,7 @@ pub fn import_archive(
 
     let mut decoded_total = 0usize;
     let mut values: Vec<Option<Value>> = Vec::new();
-    let mut pending: Vec<(usize, Vec<crate::enumerate::Leaf>)> = Vec::new();
+    let mut pending: Vec<Pending> = Vec::new();
     for (name, role, listed) in entries {
         let index = report.members.len();
         let bytes = granted.remove(&name);
@@ -371,8 +387,9 @@ pub fn import_archive(
                 &stored.len().to_string(),
             ));
             if role == Role::Record {
-                // The stored bytes themselves, not the name or a manifest field, say whether they are a gzip stream.
-                let decoded = if is_gzip(stored) {
+                // The declared form decides: a `.gz` member is a gzip stream and is checked as one, even when its
+                // signature bytes are damaged.
+                let decoded = if declared_gzip(&name) {
                     let (d, check) = decode(stored, limits, &mut decoded_total, &against)?;
                     m.checks.push(check);
                     d
@@ -409,13 +426,15 @@ pub fn import_archive(
         if let Some(v) = &value {
             m.recognition = match v.get("format") {
                 Some(Value::String(f)) if !f.is_empty() => Recognition::Declared(f.clone()),
-                _ => Recognition::Absent(table.discriminator.discriminate(
+                Some(other) => Recognition::InvalidFormat(other.clone()),
+                None => Recognition::Absent(table.discriminator.discriminate(
                     &manifest_sha256,
                     m.stored_sha256.as_deref().unwrap_or(""),
                     v,
                 )),
             };
-            pending.push((index, leaves(v)));
+            let invalid = matches!(m.recognition, Recognition::InvalidFormat(_));
+            pending.push(Pending { member: index, leaves: leaves(v), invalid_format: invalid });
         }
         report.members.push(m);
         values.push(value);
@@ -429,16 +448,24 @@ pub fn import_archive(
     Ok(report)
 }
 
+/// One parsed record's leaves, waiting for interpretation.
+struct Pending {
+    member: usize,
+    leaves: Vec<crate::enumerate::Leaf>,
+    /// The record's top-level `format` is present but not a non-empty string.
+    invalid_format: bool,
+}
+
 fn interpret(
     report: &mut ImportReport,
     table: ImportTableRef<'_>,
-    pending: Vec<(usize, Vec<crate::enumerate::Leaf>)>,
+    pending: Vec<Pending>,
     limits: &Limits,
 ) -> Result<(), ArchiveError> {
     // EVD.48's distinct-value limit per declared (format, field), counted over the whole import.
     let mut distinct: BTreeMap<(String, String), BTreeSet<String>> = BTreeMap::new();
-    for (_, ls) in &pending {
-        for l in ls.iter().filter(|l| l.class == Class::S) {
+    for p in &pending {
+        for l in p.leaves.iter().filter(|l| l.class == Class::S) {
             if let Some(f) = &l.format {
                 distinct.entry((f.clone(), l.field.clone())).or_default().insert(l.value.canonical());
             }
@@ -448,7 +475,7 @@ fn interpret(
         distinct.into_iter().filter(|(_, v)| v.len() > table.table.distinct_value_limit).map(|(k, _)| k).collect();
 
     let mut total = 0usize;
-    for (member, ls) in pending {
+    for Pending { member, leaves: ls, invalid_format } in pending {
         let mut counts = Interpretation::default();
         let mut groups: BTreeMap<(Option<String>, String, String), usize> = BTreeMap::new();
         for l in ls {
@@ -472,12 +499,17 @@ fn interpret(
             }
             counts.occurrences += 1;
             let key = (l.format.clone(), l.field.clone(), l.value.canonical());
+            // A leaf with no enclosing format counts as absent only in a record whose `format` key is missing.
+            let absent = l.format.is_none() && !invalid_format;
             if let Some(&at) = groups.get(&key) {
                 report.occurrences[at].pointers.push(l.pointer);
-                bump(&mut counts, &report.occurrences[at].outcome, l.format.is_none());
+                bump(&mut counts, &report.occurrences[at].outcome, absent);
                 continue;
             }
             let outcome = match &l.format {
+                None if invalid_format => {
+                    OccurrenceOutcome::Recorded { rule: None, reason: INVALID_FORMAT.to_string() }
+                }
                 None => OccurrenceOutcome::Recorded { rule: None, reason: ABSENT_FORMAT.to_string() },
                 Some(f) if over.contains(&(f.clone(), l.field.clone())) => {
                     OccurrenceOutcome::Recorded { rule: None, reason: OVER_LIMIT.to_string() }
@@ -496,7 +528,7 @@ fn interpret(
                     },
                 },
             };
-            bump(&mut counts, &outcome, l.format.is_none());
+            bump(&mut counts, &outcome, absent);
             groups.insert(key, report.occurrences.len());
             report.occurrences.push(Occurrences {
                 member,
@@ -614,7 +646,7 @@ fn stage_manifests(
             checks.push(compare("stored_sha256", &against, &text("sha256").unwrap_or_default(), &sha256_hex(&stored)));
             checks.push(compare("stored_bytes", &against, &num("stored_bytes"), &stored.len().to_string()));
             let expected_decoded = text("uncompressed_sha256").unwrap_or_default();
-            let decoded = if !is_gzip(&stored) {
+            let decoded = if !declared_gzip(&name) {
                 Some(stored)
             } else {
                 let (d, check) = decode(&stored, limits, decoded_total, &against)?;
@@ -673,14 +705,26 @@ fn run_records(
                 continue;
             }
             let against = format!("{run_name} steps[{n}]");
-            let (decoded, check) = decode(&stored, limits, decoded_total, &against)?;
-            report.members[i].checks.push(check);
+            let decoded = if declared_gzip(&report.members[i].name) {
+                let (decoded, check) = decode(&stored, limits, decoded_total, &against)?;
+                report.members[i].checks.push(check);
+                decoded
+            } else {
+                count_decoded(stored.len(), limits, decoded_total)?;
+                Some(stored)
+            };
             if let Some(decoded) = decoded {
                 let digest = sha256_hex(&decoded);
                 report.members[i].decoded_sha256 = Some(digest.clone());
                 let expected = step.get("word_sha256").and_then(Value::as_str).unwrap_or("");
-                let letters =
-                    step.get("letters").and_then(Value::as_i64).map(|l| (2 * l).to_string()).unwrap_or_default();
+                // Two bytes per ia16 letter; a count from the record whose double overflows refuses the import.
+                let letters = match step.get("letters").and_then(Value::as_i64) {
+                    Some(l) => l
+                        .checked_mul(2)
+                        .ok_or(ArchiveError::format("a run record's letter count overflows its byte length"))?
+                        .to_string(),
+                    None => String::new(),
+                };
                 let checks = &mut report.members[i].checks;
                 checks.push(compare("decoded_sha256", &against, expected, &digest));
                 checks.push(compare("decoded_bytes", &against, &letters, &decoded.len().to_string()));
@@ -731,9 +775,10 @@ fn decode(
     }
 }
 
-/// RFC 1952's member signature.
-fn is_gzip(bytes: &[u8]) -> bool {
-    bytes.starts_with(&[0x1f, 0x8b])
+/// The member's declared form: a name ending in `.gz` declares a gzip stream (RFC 1952). The stored bytes never decide
+/// it, so a damaged signature fails the `gzip_stream` check instead of passing as plain bytes.
+fn declared_gzip(name: &str) -> bool {
+    name.ends_with(".gz")
 }
 
 fn count_decoded(n: usize, limits: &Limits, total: &mut usize) -> Result<(), ArchiveError> {
@@ -810,6 +855,17 @@ impl ImportReport {
         self.stored.get(member).and_then(|b| b.as_deref())
     }
 
+    /// Every failed integrity check behind a member's bytes, as `check against` text: the member's own checks and the
+    /// corpus manifest's self-checks, since the manifest's recorded digests are what the member was checked against.
+    pub fn failed_checks(&self, member: usize) -> Vec<String> {
+        let own = self.members.get(member).map(|m| m.checks.as_slice()).unwrap_or(&[]);
+        own.iter()
+            .chain(&self.manifest_checks)
+            .filter(|c| c.result == CheckResult::Fail)
+            .map(|c| format!("{} against {}", c.check, c.against))
+            .collect()
+    }
+
     /// The report's counts. `producers_run` is always zero: nothing here can run one.
     pub fn totals(&self) -> BTreeMap<&'static str, usize> {
         let mut t = BTreeMap::new();
@@ -822,6 +878,7 @@ impl ImportReport {
         t.insert("integrity_fail", count(&|m| m.integrity() == "fail"));
         t.insert("declared", count(&|m| matches!(m.recognition, Recognition::Declared(_))));
         t.insert("absent_format", count(&|m| matches!(m.recognition, Recognition::Absent(_))));
+        t.insert("invalid_format", count(&|m| matches!(m.recognition, Recognition::InvalidFormat(_))));
         t.insert(
             "absent_discriminated",
             count(&|m| matches!(m.recognition, Recognition::Absent(Discrimination::Discriminated { .. }))),
@@ -880,6 +937,9 @@ impl ImportReport {
                     ]),
                 };
                 o(vec![("kind", s("absent")), ("format", Value::Null), ("discrimination", d)])
+            }
+            Recognition::InvalidFormat(v) => {
+                o(vec![("kind", s("invalid_format")), ("format", v.clone()), ("reason", s(INVALID_FORMAT))])
             }
             Recognition::Unparsed(why) => o(vec![("kind", s("unparsed")), ("reason", s(why))]),
             Recognition::Referenced { by, pointer, encoding } => {
@@ -1047,6 +1107,7 @@ impl ImportReport {
                     ("max_members", n(self.limits.max_members)),
                     ("max_manifest_bytes", n(self.limits.max_manifest_bytes)),
                     ("max_member_stored_bytes", n(self.limits.max_member_stored_bytes)),
+                    ("max_total_stored_bytes", n(self.limits.max_total_stored_bytes)),
                     ("max_member_decoded_bytes", n(self.limits.max_member_decoded_bytes)),
                     ("max_total_decoded_bytes", n(self.limits.max_total_decoded_bytes)),
                     ("max_occurrences", n(self.limits.max_occurrences)),

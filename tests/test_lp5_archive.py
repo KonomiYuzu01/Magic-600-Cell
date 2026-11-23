@@ -358,6 +358,8 @@ class Lp5ArchiveTests(unittest.TestCase):
         # PS3.11: 156 of the 417 JSON files have no top-level format; with the 76 compressed records, 232 in all.
         absent = [m for m in r["members"] if m["recognition"]["kind"] == "absent"]
         self.assertEqual(len(absent), 232)
+        # No record has a `format` key whose value is not a non-empty string.
+        self.assertEqual(t["invalid_format"], 0)
         self.assertEqual(sum(not m["name"].endswith(".gz") for m in absent), 156)
         self.assertEqual(sum(m["role"] == "record" and not m["name"].endswith(".gz") for m in r["members"]), 417)
         self.assertTrue(all(m["recognition"]["format"] is None for m in absent))
@@ -427,25 +429,33 @@ class Lp5ArchiveTests(unittest.TestCase):
         stage = S19 + "IMPORT-MANIFEST.json"
         original = self.corpus.bytes[name]
 
-        # A tampered gzip stream: one byte of the compressed body flipped. Its stored digests fail against both
-        # manifests and its stream fails; nothing else does.
-        tampered = bytearray(original)
-        tampered[len(tampered) // 2] ^= 0x55
-        r = self.import_(members={**self.corpus.bytes, name: bytes(tampered)})
-        self.assertEqual(r["refusal"], DIGEST_MISMATCH)
-        got = failed(r)
-        self.assertEqual({(m, c) for m, c, _ in got}, {(name, "stored_sha256"), (name, "gzip_stream")})
-        self.assertEqual({a for m, c, a in got if c == "stored_sha256"}, {MANIFEST, stage})
-        # The same stream with every stored pin moved to it: only the stream check fails.
-        manifest, stage_doc = json.loads(self.corpus.manifest_raw), json.loads(self.corpus.bytes[stage])
-        for x in stage_doc["files"]:
-            if x["path"] == row["path"]:
-                x["sha256"], x["stored_bytes"] = sha(bytes(tampered)), len(tampered)
-        stage_raw = json.dumps(stage_doc, indent=1).encode()
-        repin_record(manifest, name, stored=bytes(tampered))
-        repin_record(manifest, stage, stored=stage_raw, decoded_bytes=stage_raw)
-        r = self.import_(members={**self.corpus.bytes, name: bytes(tampered), stage: stage_raw}, manifest=dump(manifest))
-        self.assertEqual({(m, c) for m, c, _ in failed(r)}, {(name, "gzip_stream")})
+        # A tampered gzip stream: one byte of the compressed body flipped, or the two signature bytes. Its stored
+        # digests fail against both manifests and its stream fails; nothing else does. The `.gz` name declares the
+        # stream, so a damaged signature is still checked as one.
+        for where in ("body", "signature"):
+            tampered = bytearray(original)
+            if where == "body":
+                tampered[len(tampered) // 2] ^= 0x55
+            else:
+                tampered[0] ^= 0xFF
+                tampered[1] ^= 0xFF
+            r = self.import_(members={**self.corpus.bytes, name: bytes(tampered)})
+            self.assertEqual(r["refusal"], DIGEST_MISMATCH)
+            got = failed(r)
+            self.assertEqual({(m, c) for m, c, _ in got}, {(name, "stored_sha256"), (name, "gzip_stream")}, where)
+            self.assertEqual({a for m, c, a in got if c == "stored_sha256"}, {MANIFEST, stage})
+            self.assertEqual({a for m, c, a in got if c == "gzip_stream"}, {MANIFEST, stage})
+            # The same stream with every stored pin moved to it: only the stream check fails.
+            manifest, stage_doc = json.loads(self.corpus.manifest_raw), json.loads(self.corpus.bytes[stage])
+            for x in stage_doc["files"]:
+                if x["path"] == row["path"]:
+                    x["sha256"], x["stored_bytes"] = sha(bytes(tampered)), len(tampered)
+            stage_raw = json.dumps(stage_doc, indent=1).encode()
+            repin_record(manifest, name, stored=bytes(tampered))
+            repin_record(manifest, stage, stored=stage_raw, decoded_bytes=stage_raw)
+            r = self.import_(members={**self.corpus.bytes, name: bytes(tampered), stage: stage_raw},
+                             manifest=dump(manifest))
+            self.assertEqual({(m, c) for m, c, _ in failed(r)}, {(name, "gzip_stream")}, where)
 
         # A tampered decoded content, recompressed, with the stored pins moved: only the decoded checks fail, against
         # both manifests, and the canonical digest that derives from the decoded content.
@@ -459,11 +469,20 @@ class Lp5ArchiveTests(unittest.TestCase):
         stage_raw = json.dumps(stage_doc, indent=1).encode()
         repin_record(manifest, name, stored=restored)
         repin_record(manifest, stage, stored=stage_raw, decoded_bytes=stage_raw)
-        r = self.import_(members={**self.corpus.bytes, name: restored, stage: stage_raw}, manifest=dump(manifest))
+        members = {**self.corpus.bytes, name: restored, stage: stage_raw}
+        r = self.import_(members=members, manifest=dump(manifest))
         got = failed(r)
         self.assertEqual({(m, c) for m, c, _ in got},
                          {(name, "decoded_sha256"), (name, "decoded_bytes"), (name, "canonical_sha256")})
         self.assertEqual({a for m, c, a in got if c == "decoded_sha256"}, {MANIFEST, stage})
+        # Its stored bytes match every stored pin, yet it is never exported: a bundle request for it, or for a record
+        # that names it as a member dependency, refuses on the failed integrity checks (CT-PS3-10's export side).
+        clean = S19 + "IMPORT-MANIFEST.json"
+        for request in ({"envelopes": [{"name": name, "dependencies": []}]},
+                        {"envelopes": [{"name": clean, "dependencies": [
+                            {"name": name, "sha256": sha(restored), "member": name, "reason": "a damaged member"}]}]}):
+            with self.assertRaisesRegex(AssertionError, re.escape(DIGEST_MISMATCH)):
+                run_import(self.binary, self.corpus.grant(members=members, manifest=dump(manifest)), self.dir, request)
 
         # A tampered manifest digest: one row's uncompressed_sha256 in IMPORT-MANIFEST. Against the unchanged
         # Git-blob manifest the stage manifest's own bytes fail; the row fails against the member it names; the
@@ -605,9 +624,17 @@ class Lp5ArchiveTests(unittest.TestCase):
         self.assertEqual(manifest["format"], "c600-research-bundle")
         self.assertEqual(payload["checkers"], [])
         self.assertEqual(payload["missing"], [])
-        self.assertEqual([m["name"] for m in manifest["extensions"]["missing_without_digest"]],
-                         ["records/type-lex-successor-base-cache.npz"])
-        self.assertIn("asserts no replay", manifest["extensions"]["replay"])
+        # FP.10: extensions are a list of optional entries with unique names in scalar order; provenance is null as
+        # FP.11 allows for a record that is neither a word, macro nor workspace record.
+        extensions = manifest["extensions"]
+        ext_names = [x["name"] for x in extensions]
+        self.assertEqual(ext_names, sorted(set(ext_names)))
+        self.assertTrue(all(set(x) == {"name", "required", "value"} and x["required"] is False for x in extensions))
+        ext = {x["name"]: x["value"] for x in extensions}
+        self.assertEqual([m["name"] for m in ext["missing_without_digest"]], ["records/type-lex-successor-base-cache.npz"])
+        self.assertIn("asserts no replay", ext["replay"])
+        self.assertIn("carries no checker", ext["checker_status"])
+        self.assertIsNone(manifest["provenance"])
         self.assertEqual({m["name"] for m in payload["members"]}, set(names))
         self.assertEqual(payload["table"]["content"]["sha256"], sha(TABLE_DATA.read_bytes()))
         q11_source = next(s for s in payload["sources"] if s["name"] == q11)
