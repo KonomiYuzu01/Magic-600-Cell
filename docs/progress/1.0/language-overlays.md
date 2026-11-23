@@ -129,3 +129,33 @@ The command layer's readings of 23 November 2026 are recorded with their rows in
   additions. They disagreed with moving assistance provenance to step 3, so it keeps its frozen step, as stated above.
   They asked that step 4 revisit Word, also stated above. Their findings on the learning path, the principle records
   and the glossary rows are fixed in the same pull request.
+
+## OV-4. Where recordings and playback states are kept (chapter 05, PS1.44; FP.37)
+
+- **Authority.** The integrator's ruling of 23 November 2026 for LP4-9: if the payloads' carrier departs from chapter
+  05's catalogue, the departure is recorded here and no frozen text is edited. PS1.12 says that nothing in the
+  catalogue freezes a format.
+- **Clauses.**
+  - Chapter 05's PS1.16 (the workspace record's carrier), PS1.30 (the recording) and PS1.44 (the playback state).
+  - The catalogue's rows for a recording (`c600-recording-draft`, reserved under FP.4) and a playback state
+    (`c600-playback-draft`, FP.37).
+  - The format packet's FP.12 (a workspace record's fields) and FP.37 (the playback state's wire form).
+- **Reading.**
+  - Recordings and playback states are records of the command layer's journal. That journal has the draft format
+    `c600-command-journal-draft-1` (`rust/c600-session/src/command_store.rs`).
+  - Its record kind `command_workspace` holds `id`, `kind` and `value`. Such a record takes no action number, no
+    transaction cites it, and it creates no undo target, as PS1.44 requires.
+  - A recording's value is a record object under FP.9, of kind `c600-recording-draft`. A playback state's value is
+    inline, of kind `c600-playback-draft`.
+  - The value bytes are draft JSON, not FP.37's wire form. FP.12's `dependencies`, `action` and `revision` fields are
+    not written yet.
+- **What it changes.**
+  - Nothing in the frozen migration format: the command journal is a draft.
+  - FP.37's wire form and its `playback_storage` vectors are written when the command journal moves to the migration
+    format. Until then, a reader built before LP4-9 stops at the new record kind.
+- **Open.** Reset and import are not built on the command layer's path: they answer `KN5:input.row_not_built` and
+  write nothing. A reset or an import that keeps the session must say what happens to a playback state's `actions`
+  map. LP4-14 builds `file.log.import` and states its reading.
+- **Tests.**
+  - CT-EV4-14 and CT-PS1-25 on the journal (`rust/c600-durable/tests/ct_ev4_14_playback_crash.rs`).
+  - The carrier (`rust/c600-durable/tests/ps1_44_carrier.rs`, `rust/c600-session/tests/recorder.rs`).
