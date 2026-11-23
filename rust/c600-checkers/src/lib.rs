@@ -26,6 +26,16 @@
 //! [`gate`] is the reusable mutation gate of KN6.5: for any checker and fixture, a tampered claim, a wrong start table
 //! and a wrong input digest must fail.
 //!
+//! # The cooperative stop (KN7.6, KN7.10; LP5 plan, piece R8)
+//!
+//! [`check_until`] runs a check in a stop scope ([`claims::scoped`]): before each letter a checker produces or applies,
+//! the scope's hook is asked with the units charged so far ([`claims::COST_RULE`]), and a code it answers stops the
+//! check at that letter. A stopped check is [`Checked::Stopped`] with the hook's code and the units that ran: never a
+//! verdict, so a long expansion under a job's budget ends as the job's cut-off. Scopes nest, and a nested check is
+//! charged to every enclosing scope, so it cannot run past what they have left. A check outside every scope charges
+//! nothing and runs as before. [`engines::Loaded`] owns the exact engines for a host that has no edge to the engine
+//! crates.
+//!
 //! # Separation (KN6.2, CT-KN6-02)
 //!
 //! The crate depends on `c600-kernel`, `c600-jumble` and `c600-digest` only. It reaches no interpreter, library,
@@ -42,6 +52,7 @@
 
 pub mod archive;
 pub mod claims;
+pub mod engines;
 pub mod gate;
 pub mod kinds;
 pub mod replay;
@@ -78,14 +89,51 @@ pub fn checker(kind: CheckerKind) -> Option<&'static Checker> {
 
 /// KN6.1: checks `certificate` as a certificate of `kind` on the exact engines.
 pub fn check(engines: &Engines, certificate: &CertificateRef, kind: CheckerKind) -> Result<CheckReport, Refusal> {
-    let checker = checker(kind).ok_or_else(|| Refusal {
+    let checker = checker(kind).ok_or_else(|| no_checker(kind))?;
+    run_checker(engines, certificate, kind, checker)
+}
+
+fn no_checker(kind: CheckerKind) -> Refusal {
+    Refusal {
         code: codes::NO_CHECKER,
         message: match kind {
             CheckerKind::Archive(id) => format!("no research-archive sub-checker is registered as {id}"),
             other => format!("no checker for {}", other.name()),
         },
+    }
+}
+
+/// What a check under a stop hook ended with ([`check_until`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Checked {
+    /// The checker reached its verdict after charging `charged` units.
+    Report { report: CheckReport, charged: u64 },
+    /// The hook, or an enclosing scope's hook, stopped the check before its verdict with `code`, after `charged`
+    /// units. There is no verdict and no report: a stop decides no claim.
+    Stopped { code: &'static str, charged: u64 },
+}
+
+/// KN6.1's check under a cooperative stop (KN7.6, KN7.10): [`check`] run in a stop scope whose hook is asked before
+/// each unit of [`claims::COST_RULE`] with the units the check would have charged, and stops it with the code it
+/// answers. A kind with no checker, an engine the kind needs that was not supplied, and a call from inside a hook are
+/// refusals with `KN6:evidence.no_checker`, as for [`check`], which also refuses a call from inside a hook. A check
+/// started inside a stopped scope is stopped with that scope's code, whether or not it reaches a letter.
+pub fn check_until(
+    engines: &Engines,
+    certificate: &CertificateRef,
+    kind: CheckerKind,
+    hook: impl FnMut(u64) -> Option<&'static str> + 'static,
+) -> Result<Checked, Refusal> {
+    let checker = checker(kind).ok_or_else(|| no_checker(kind))?;
+    let scope = claims::scoped(hook, || run_checker(engines, certificate, kind, checker)).ok_or_else(|| Refusal {
+        code: codes::NO_CHECKER,
+        message: "a check cannot start inside a stop hook".into(),
     })?;
-    run_checker(engines, certificate, kind, checker)
+    match (scope.value, scope.stopped) {
+        (_, Some(code)) => Ok(Checked::Stopped { code, charged: scope.charged }),
+        (Ok(report), None) => Ok(Checked::Report { report, charged: scope.charged }),
+        (Err(refusal), None) => Err(refusal),
+    }
 }
 
 /// Runs one checker on a certificate. [`check`] resolves the checker from the kind; the archive family's tests call
@@ -102,6 +150,11 @@ pub fn run_checker(
             code: codes::NO_CHECKER,
             message: format!("the checker for {} needs an engine that was not supplied", kind.name()),
         });
+    }
+    // Inside a stop hook a check could be neither charged nor stopped (`claims::in_hook`); outside every hook, as
+    // before R8, this never refuses.
+    if claims::in_hook() {
+        return Err(Refusal { code: codes::NO_CHECKER, message: "a check cannot run inside a stop hook".into() });
     }
     let input = c600_digest::sha256_hex(certificate.bytes);
     let mut run = Run::new(certificate);
@@ -120,5 +173,9 @@ pub fn run_checker(
             Err(Stop::NotApplicable { reason }) => Verdict::NotApplicable { reason },
         }
     };
+    // A check whose stop scope was stopped has no verdict: its code is the scope's (KN7.10), never a report.
+    if let Some(code) = claims::stopped() {
+        return Err(Refusal { code, message: "the check was stopped before its verdict".into() });
+    }
     Ok(CheckReport { verdict, checker: checker.sources.identity(), kind, input, inputs: run.inputs, trace: run.trace })
 }

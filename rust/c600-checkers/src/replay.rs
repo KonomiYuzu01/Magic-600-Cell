@@ -44,8 +44,10 @@ impl<'e> Jumbling<'e> {
         Twist::new(ctx, cap, matrix).map_err(|error| reject(claim, format!("the letter's rotation is {error}")))
     }
 
-    /// Applies a twist exactly (no budget, no protection). Only an admissible outcome changes the state.
+    /// Applies a twist exactly (no budget, no protection). Only an admissible outcome changes the state. The letter is
+    /// charged to the open stop scopes first ([`crate::claims::poll`]).
     pub fn apply(&mut self, twist: &Twist, claim: &str) -> Step<Outcome> {
+        crate::claims::poll(1)?;
         self.state
             .apply(self.ctx, twist, None, &[])
             .map_err(|error| reject(claim, format!("the engine stopped: {}", error.0)))
@@ -216,6 +218,7 @@ impl<'k> Full<'k> {
             .replay(&self.state, &ProtectedSet::none())
             .map_err(|refusal| reject(claim, format!("the kernel refused the replay: {refusal}")))?;
         for chunk in letters.chunks(4096) {
+            crate::claims::poll(chunk.len() as u64)?;
             replay.push(chunk).map_err(|refusal| reject(claim, format!("the kernel refused a letter: {refusal}")))?;
         }
         match replay.finish() {

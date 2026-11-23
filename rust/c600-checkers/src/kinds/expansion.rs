@@ -35,7 +35,8 @@ use c600_kernel::{Derivation, ProtectedSet};
 
 use super::{Checker, Needs};
 use crate::claims::{
-    array, at, count, document, dot, field, hex64, int, keys, object, reject, require_format, string, Run, Step, Stop,
+    array, at, count, document, dot, field, hex64, int, keys, object, poll, reject, require_format, string, Run, Step,
+    Stop,
 };
 use crate::replay::{inverse_item, primitive, read_full_state, read_menu, read_state, Jumbling};
 use crate::report::{codes, Sources, Span};
@@ -198,6 +199,9 @@ fn run(engines: &Engines, run: &mut Run) -> Step<()> {
     let mut hash = c600_digest::Sha256::new();
     let mut position = 0u64;
     let mut emit = |letter: i64, engine: &mut Engine, position: &mut u64| -> Step<()> {
+        // Each letter produced, and each 600-cell-Full chunk applied, is charged first (`claims::COST_RULE`): under a
+        // job's budget a long expansion stops here as the job's cut-off, never as a verdict.
+        poll(1)?;
         match alphabet {
             Alphabet::Full => hash.update(&(letter as i32).to_le_bytes()),
             Alphabet::Ia16 => hash.update(&(letter as u16).to_le_bytes()),
@@ -207,6 +211,7 @@ fn run(engines: &Engines, run: &mut Run) -> Step<()> {
             Engine::Full { replay, buffer } => {
                 buffer.push(letter);
                 if buffer.len() == buffer.capacity() {
+                    poll(buffer.len() as u64)?;
                     replay.push(buffer).map_err(|r| reject("replay", format!("the kernel refused a letter: {r}")))?;
                     buffer.clear();
                 }
@@ -277,6 +282,7 @@ fn run(engines: &Engines, run: &mut Run) -> Step<()> {
         let computed = match engine {
             Engine::None => unreachable!("a replay has an engine"),
             Engine::Full { mut replay, buffer } => {
+                poll(buffer.len() as u64)?;
                 replay.push(&buffer).map_err(|r| reject("replay", format!("the kernel refused a letter: {r}")))?;
                 match replay.finish() {
                     Derivation::Derived(derived) => derived.state.digest().to_owned(),

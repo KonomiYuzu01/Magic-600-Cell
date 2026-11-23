@@ -1,7 +1,12 @@
 //! The state of one check while it runs: the certificate, the stated inputs it bound, its per-claim trace, and the
 //! early stop of a failed or inapplicable claim. Every checker of this crate, the archive sub-checkers included, reads
 //! the certificate through these helpers, so a malformed field fails as a claim and never panics.
+//!
+//! It also holds the cooperative stop of a check ([`scoped`], [`poll`]; KN7.6, KN7.10; LP5 plan, piece R8): a host's
+//! budget or cancellation reaches a running checker as a stop at its next letter, never as a verdict. Every checker's
+//! identity lists this file, so it covers the stop rule and the cost rule [`COST_RULE`].
 
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::fmt::Display;
 
@@ -221,4 +226,131 @@ pub fn dot(claim: &str, key: &str) -> String {
     } else {
         format!("{claim}.{key}")
     }
+}
+
+// ------------------------------------------------------------------------------------------- the cooperative stop
+
+/// The cost rule of a check under a stop scope, the declared kernel cost table a check job pins (KN7.8, DET.2): one unit
+/// for each letter a checker produces by expansion and one for each letter it applies on an engine, a 600-cell-Full
+/// replay in chunks of at most 4,096 letters, charged before the letter or the chunk runs. A check outside every scope
+/// charges nothing.
+pub const COST_RULE: &str = "kn6-check-cost-draft-1: one unit per letter produced by an expansion and one unit per \
+letter applied on an engine (600-cell-Full in chunks of at most 4096 letters), charged before the letter or chunk runs";
+
+/// The reason a stopped check gives on its way out. The scope's code, not this reason, is what a caller reads.
+const STOPPED: &str = "the check was stopped before its verdict (KN7.6)";
+
+/// A scope's hook: asked with the units the scope would have charged, it answers the code that stops the scope.
+type Hook = Box<dyn FnMut(u64) -> Option<&'static str>>;
+
+/// One open stop scope: its hook, the units charged inside it and the code that stopped it.
+struct Frame {
+    hook: Hook,
+    charged: u64,
+    stopped: Option<&'static str>,
+}
+
+thread_local! {
+    /// The open scopes of this thread, outermost first. A check runs on one thread (DET.8).
+    static FRAMES: RefCell<Vec<Frame>> = const { RefCell::new(Vec::new()) };
+}
+
+/// What a stop scope ended with: the body's value, the units charged inside the scope, and the code of the stop that
+/// ended it, if one did.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Scoped<T> {
+    pub value: T,
+    pub charged: u64,
+    pub stopped: Option<&'static str>,
+}
+
+/// Pops the innermost frame if the body unwinds.
+struct Pop;
+
+impl Drop for Pop {
+    fn drop(&mut self) {
+        FRAMES.with(|frames| {
+            if let Ok(mut frames) = frames.try_borrow_mut() {
+                frames.pop();
+            }
+        });
+    }
+}
+
+/// Runs `body` in a stop scope. Before each charge of `units` (see [`COST_RULE`]), every open scope is asked, outermost
+/// first, with the units it would have charged including these; the first hook that answers a code stops that scope
+/// and every scope inside it, and nothing is charged. Otherwise every open scope charges the units. A scope inside
+/// another is charged in both, so no nested check runs past what an enclosing scope has left (it mints no allowance);
+/// an inner scope's own stop ends that scope only. Once stopped, a scope stays stopped, and every letter a checker
+/// reaches inside it stops at once. A scope opened inside a stopped scope starts stopped with that scope's code, so a
+/// check that reaches no letter there gives no report either.
+///
+/// A hook decides from its argument and its own state: one that counts units only is deterministic (DET.29), one that
+/// reads a cancellation flag is not. `None` when called from inside a hook: a hook cannot open a scope.
+pub fn scoped<T>(
+    hook: impl FnMut(u64) -> Option<&'static str> + 'static,
+    body: impl FnOnce() -> T,
+) -> Option<Scoped<T>> {
+    let pushed = FRAMES.with(|frames| match frames.try_borrow_mut() {
+        Ok(mut frames) => {
+            let stopped = frames.last().and_then(|frame| frame.stopped);
+            frames.push(Frame { hook: Box::new(hook), charged: 0, stopped });
+            true
+        }
+        Err(_) => false,
+    });
+    if !pushed {
+        return None;
+    }
+    let guard = Pop;
+    let value = body();
+    std::mem::forget(guard);
+    let frame = FRAMES.with(|frames| frames.borrow_mut().pop());
+    Some(match frame {
+        Some(frame) => Scoped { value, charged: frame.charged, stopped: frame.stopped },
+        None => Scoped { value, charged: 0, stopped: None },
+    })
+}
+
+/// Charges `units` to every open scope, or stops: a checker calls it before each letter or chunk it produces or
+/// applies. The stop is returned as an inapplicable claim, so it unwinds through the checker's own error paths; whatever
+/// the checker makes of it, the scope's code decides the outcome, and [`crate::run_checker`] gives no report from a
+/// stopped scope.
+pub fn poll(units: u64) -> Step<()> {
+    FRAMES.with(|frames| {
+        let Ok(mut frames) = frames.try_borrow_mut() else {
+            return Ok(());
+        };
+        if let Some(first) = frames.iter().position(|frame| frame.stopped.is_some()) {
+            let code = frames[first].stopped;
+            for frame in &mut frames[first..] {
+                frame.stopped = frame.stopped.or(code);
+            }
+            return Err(not_applicable(STOPPED));
+        }
+        for i in 0..frames.len() {
+            let total = frames[i].charged.saturating_add(units);
+            if let Some(code) = (frames[i].hook)(total) {
+                for frame in &mut frames[i..] {
+                    frame.stopped = Some(code);
+                }
+                return Err(not_applicable(STOPPED));
+            }
+        }
+        for frame in frames.iter_mut() {
+            frame.charged = frame.charged.saturating_add(units);
+        }
+        Ok(())
+    })
+}
+
+/// The code that stopped the innermost open scope, if one is open and stopped.
+pub fn stopped() -> Option<&'static str> {
+    FRAMES.with(|frames| frames.try_borrow().ok().and_then(|frames| frames.last().and_then(|frame| frame.stopped)))
+}
+
+/// Whether the caller runs inside a scope's hook: [`poll`] holds the open scopes while it asks the hooks, so a check
+/// started there could be neither charged nor stopped, and [`crate::run_checker`] refuses it.
+pub(crate) fn in_hook() -> bool {
+    FRAMES.with(|frames| frames.try_borrow_mut().is_err())
 }
