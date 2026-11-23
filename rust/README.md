@@ -3637,6 +3637,17 @@ workspace file.
   stored expanded X and V′ words only; no `r22b10/1` or `/2` certificate is stored. The in-place gate 2 and 3 replays
   (about 2 to 3 ms per letter in the test profile: about 1 h for T6's gate 2, 30 min each for the rule stages' gate 2
   and T6's gate 3, 11 h for the lattice phase) are ignored tests; fast synthetic records exercise the same code.
+- R6, stage 19's research-archive sub-checkers (CX.15 to CX.17): `c600-checkers/src/archive/s19` registers
+  `s19.pose-table` (a stored pose table's stored and decoded digests, the table checked in full, ending with the
+  engine's state digest), `s19.gamma-matching` (Γ(Y)'s bijection and gauges brute-forced over the changed rows;
+  CT-LB1-05's matching half), `s19.gamma-witness` (the nine-letter forward and inverse witness replayed on both states
+  with the all-piece join), `s19.frontier` (the compact and cleanup exits, which fail the sticker goal) and `s19.ranks`
+  (the fixed weights derived anew from the model's type counts, since `type-height-weight-inputs.json` is absent, and
+  R3, S and R_L checked on the stored blocks with R_L's length premise). q11, the low tails, D[k] admission, the
+  remaining obligations and reachability answer `not_applicable` with their scope; a malformed record fails and names
+  the field. Seven type-lex records stay uncovered because the archive defines no irregular-piece vector I_t for them,
+  and the cap-noninteraction claims wait for the delta_Q5 definition. `tests/kn6_s19.rs` runs every gate on the
+  archive in place, read-only; three slow gates are ignored tests.
 - R7, the research library's entries (LB1, LB5): `c600-library` holds them as 600 Cell Script in eight modules
   (`research_slp`, `research_bigint`, `research_fixpoints`, `research_flows`, `research_search`, `research_ranks`,
   `research_families`, `research_models`), with eleven catalogue rows in `c600_library::research`: LB1's straight-line
