@@ -141,6 +141,26 @@ const RUN: &str =
 const SCAN: &str = r#"{"format":"t3p-scan/1","rows":[{"status":"budget"},{"status":"a word nobody mapped"}]}"#;
 const STAGE: &str = "s19/IMPORT-MANIFEST.json";
 
+/// SYNTHETIC, for these tests only: a KN0.1 jumbling identity block whose digests are SHA-256 of marker texts, not the
+/// model's. The corpus driver (`tests/test_lp5_archive.py`) uses the jumbling model's real values.
+fn synthetic_identity() -> Value {
+    let s = |x: &str| Value::String(x.to_string());
+    c600_kernel::json::object([
+        ("puzzle", s("jumbling")),
+        ("model_id", s(&sha256_hex(b"synthetic model identity for c600-archive tests"))),
+        ("menu_id", s(&sha256_hex(b"synthetic menu identity for c600-archive tests"))),
+        ("menu_order", s(&sha256_hex(b"synthetic menu order for c600-archive tests"))),
+        ("contract_rev", s("synthetic contract revision for c600-archive tests")),
+    ])
+}
+
+/// `identity` with one field replaced.
+fn with_field(identity: &Value, key: &str, value: Value) -> Value {
+    let Value::Object(mut fields) = identity.clone() else { unreachable!() };
+    fields.insert(key.to_string(), value);
+    Value::Object(fields)
+}
+
 /// A stage manifest naming one compressed and one plain member, with original digests unlike the public ones.
 fn stage_fixture() -> Fixture {
     let table = br#"{"pose_id":[0,1],"poses":[]}"#.to_vec();
@@ -298,7 +318,8 @@ fn ct_ps3_10_synthetic_bundle_declares_missing_dependencies_and_refuses_bad_inpu
         .with_dependency("table.json", Some(&"7".repeat(64)), None, "cited with a digest, absent");
     let b = r.envelope("b.json").unwrap();
     assert_eq!(b.format, None);
-    let bundle = export_check_bundle(&[a.clone(), b.clone()], LimitsRef(&limits)).unwrap();
+    let id = synthetic_identity();
+    let bundle = export_check_bundle(&[a.clone(), b.clone()], &id, LimitsRef(&limits)).unwrap();
     assert_eq!(bundle.sha256, sha256_hex(&bundle.zip));
     let zip = Zip::parse(&bundle.zip).unwrap();
     let names = zip.names();
@@ -328,17 +349,58 @@ fn ct_ps3_10_synthetic_bundle_declares_missing_dependencies_and_refuses_bad_inpu
     assert_eq!(value("missing_without_digest").unwrap().as_array().unwrap().len(), 1);
     assert!(!value("checker_status").unwrap().as_str().unwrap().contains("exists"));
     assert_eq!(manifest.get("provenance"), Some(&Value::Null));
+    // FP.11: the caller's identity block, verbatim.
+    assert_eq!(manifest.get("identity"), Some(&id));
     assert_eq!(objects.len(), 3);
+
+    // A missing or malformed identity refuses before anything is written: no identity, null jumbling-only fields,
+    // a missing or an extra field, a digest that is not 64 lowercase hex digits, an unknown puzzle, and a Full block
+    // with a jumbling field set. A Full block with its jumbling-only fields null has the right shape.
+    let mut extra = id.clone();
+    if let Value::Object(fields) = &mut extra {
+        fields.insert("labels".into(), Value::Null);
+    }
+    let mut missing = id.clone();
+    if let Value::Object(fields) = &mut missing {
+        fields.remove("menu_order");
+    }
+    let full = with_field(
+        &with_field(
+            &with_field(&with_field(&id, "puzzle", Value::String("full".into())), "menu_id", Value::Null),
+            "menu_order",
+            Value::Null,
+        ),
+        "contract_rev",
+        Value::Null,
+    );
+    for bad_identity in [
+        Value::Null,
+        Value::Object(Default::default()),
+        with_field(&id, "menu_id", Value::Null),
+        with_field(&id, "menu_order", Value::Null),
+        with_field(&id, "contract_rev", Value::Null),
+        with_field(&id, "contract_rev", Value::String(String::new())),
+        with_field(&id, "model_id", Value::String("A".repeat(64))),
+        with_field(&id, "menu_id", Value::String("assets/manifest.json".into())),
+        with_field(&id, "puzzle", Value::String("other".into())),
+        with_field(&full, "menu_id", id.get("menu_id").unwrap().clone()),
+        extra,
+        missing,
+    ] {
+        let refused = export_check_bundle(&[b.clone()], &bad_identity, LimitsRef(&limits)).unwrap_err();
+        assert_eq!(refused.code, FORMAT, "{bad_identity:?}");
+    }
+    assert!(export_check_bundle(&[b.clone()], &full, LimitsRef(&limits)).is_ok());
 
     // Refusals: bytes that disagree with their digest, a revision-bound scope, and the caller's limits.
     let mut bad = a.clone();
     bad.bytes.push(b' ');
-    assert_eq!(export_check_bundle(&[bad], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    assert_eq!(export_check_bundle(&[bad], &id, LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
     // The digest compared is the corpus manifest's, not one recomputed from the bytes in hand.
     let mut forged = a.clone();
     forged.bytes = b"{}".to_vec();
     forged.stored_sha256 = sha256_hex(&forged.bytes);
-    assert_eq!(export_check_bundle(&[forged], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    assert_eq!(export_check_bundle(&[forged], &id, LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
     // A record whose stored bytes match their pin but whose decoded content fails its pins is refused, and so is a
     // dependency carried from such a member.
     let mut f = Fixture::new().record("c.json.gz", SCAN, true);
@@ -349,21 +411,21 @@ fn ct_ps3_10_synthetic_bundle_declares_missing_dependencies_and_refuses_bad_inpu
     assert_eq!(c.listed_sha256, c.stored_sha256);
     assert!(c.failed_checks.iter().any(|x| x.starts_with("decoded_sha256")));
     assert!(c.failed_checks.iter().any(|x| x.starts_with("canonical_sha256")));
-    assert_eq!(export_check_bundle(&[c.clone()], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    assert_eq!(export_check_bundle(&[c.clone()], &id, LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
     let dep = damaged.dependency("c.json.gz", "c.json.gz", Some(&c.stored_sha256), "a damaged member").unwrap();
     assert!(!dep.failed_checks.is_empty());
     let with_damaged = b.clone().with(dep);
-    assert_eq!(export_check_bundle(&[with_damaged], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    assert_eq!(export_check_bundle(&[with_damaged], &id, LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
     // A clean member dependency travels.
     let clean = r.dependency("make.py", "make.py", Some(&sha256_hex(script)), "the producer, as text").unwrap();
-    assert!(export_check_bundle(&[b.clone().with(clean)], LimitsRef(&limits)).is_ok());
+    assert!(export_check_bundle(&[b.clone().with(clean)], &id, LimitsRef(&limits)).is_ok());
     let wrong = b.clone().with_dependency("make.py", Some(&"0".repeat(64)), Some(script.to_vec()), "wrong digest");
-    assert_eq!(export_check_bundle(&[wrong], LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
+    assert_eq!(export_check_bundle(&[wrong], &id, LimitsRef(&limits)).unwrap_err().code, DIGEST_MISMATCH);
     let mut bound = b.clone();
     bound.revision_bound = true;
-    assert_eq!(export_check_bundle(&[bound], LimitsRef(&limits)).unwrap_err().code, SCOPE_NOT_IMMUTABLE);
+    assert_eq!(export_check_bundle(&[bound], &id, LimitsRef(&limits)).unwrap_err().code, SCOPE_NOT_IMMUTABLE);
     let small = Limits { max_members: 2, ..Limits::research_archive() };
-    assert_eq!(export_check_bundle(&[a, b], LimitsRef(&small)).unwrap_err().code, SIZE_LIMIT);
+    assert_eq!(export_check_bundle(&[a, b], &id, LimitsRef(&small)).unwrap_err().code, SIZE_LIMIT);
 }
 
 #[test]

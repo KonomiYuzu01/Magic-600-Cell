@@ -137,13 +137,17 @@ The matrix records one stage 18 dependency as missing: the lattice report's `/pl
   says the review is pending; until it is recorded, the ten interpretations stay beside the records' absence and give
   no facts on their own.
 - **The bundle (FP.23).** `export_check_bundle` writes FP.23's framing (STORE, `manifest.json` first, members as
-  `objects/<sha256>`, 1980-01-01, version 20, the UTF-8 flag). The manifest's `identity` is null, `envelopes` is empty
-  until R1 types the evidence envelopes, and `checkers` is empty because the bundle carries no checker reports.
+  `objects/<sha256>`, 1980-01-01, version 20, the UTF-8 flag). The manifest's `identity` is the caller's KN0.1
+  identity block, written verbatim after a shape check (KN0.1's field names, 64-hex digests, the jumbling-only fields
+  non-null for jumbling); FP.11 grants it no null, and a missing or malformed block refuses with
+  `PS1:input.persistence_format`. The driver supplies the jumbling model's real block, read in place from
+  `assets/manifest.json` and the binding in `rust/c600-jumble/data/corrections-I_a.json` (the I_a menu). `envelopes` is
+  empty until R1 types the evidence envelopes, and `checkers` is empty because the bundle carries no checker reports.
   `provenance` is null, which FP.11 allows for a record that is neither a word, macro nor workspace record.
   `extensions` is FP.10's list of optional entries (`required: false`) in name order. A missing dependency whose record
   gives no digest, such as stage 19's q11 cache, cannot be a `DigestRef`, so it is listed in the extension
-  `missing_without_digest` (contradiction candidate C3). Only bytes that passed import integrity travel: an envelope or
-  member dependency with a failed check is refused, and each record is compared with its corpus manifest's digest.
+  `missing_without_digest`. Only bytes that passed import integrity travel: an envelope or member dependency with a
+  failed check is refused, and each record is compared with its corpus manifest's digest.
 - **Git blob identities.** The driver checks each member's Git blob SHA-1 before the grant; product code checks
   SHA-256 only and never runs Git.
 
@@ -171,6 +175,8 @@ The matrix records one stage 18 dependency as missing: the lattice report's `/pl
 
 Contradiction candidates (no frozen text is edited):
 
-- **C3, FP.23's `missing:[DigestRef]` and LB5.17's absent caches.** FP.23 lists missing dependencies only as digest
-  references and says a missing dependency "remains listed", while some absent caches are named without a digest. R0
-  keeps them in an extension field; the integrator routes the question.
+- **C3, FP.23's `missing:[DigestRef]` and LB5.17's absent caches: settled with no format change.** FP.23 lists missing
+  dependencies as digest references, and some absent caches are named without a digest. R0 lists those in
+  `missing_without_digest`, an FP.10 optional extension (`required: false`) that has no effect on interpretation:
+  `payload.missing` still holds every missing dependency that has a digest, and one without a digest could not be
+  resolved from either place. The line main agreed on 23 November 2026 that FP.23 needs no change.

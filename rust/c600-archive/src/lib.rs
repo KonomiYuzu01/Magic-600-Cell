@@ -22,7 +22,7 @@ pub mod enumerate;
 pub mod import;
 pub mod table;
 
-pub use bundle::{export_check_bundle, CheckBundle, Dependency, EvidenceEnvelopeRef};
+pub use bundle::{check_identity, export_check_bundle, CheckBundle, Dependency, EvidenceEnvelopeRef};
 pub use discriminator::{Discrimination, Discriminator};
 pub use import::{import_archive, GrantedFile, GrantedFiles, ImportReport, Limits, LimitsRef};
 pub use table::{Facts, ImportTable, ImportTableRef, Outcome};
