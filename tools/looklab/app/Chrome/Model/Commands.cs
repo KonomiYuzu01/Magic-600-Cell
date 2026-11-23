@@ -45,15 +45,22 @@ public sealed class CommandRegistry
     public static CommandRegistry FromTable(string text)
     {
         var registry = new CommandRegistry();
+        registry.AddRows(text);
+        return registry;
+    }
+
+    // Adds rows in the command table's form: {"commands": [{id, label, kind, contexts, note}]}. A host adds the
+    // draft rows of its record this way until they join the table at its freeze; a repeated id is refused.
+    public void AddRows(string text)
+    {
         using JsonDocument d = J.Parse(text);
         if (!d.RootElement.TryGetProperty("commands", out JsonElement rows) || rows.ValueKind != JsonValueKind.Array) throw J.Error("commands", "a command list required");
         foreach (JsonElement row in rows.EnumerateArray())
         {
             string id = J.Text(row, "id");
             string help = row.TryGetProperty("note", out JsonElement note) && note.ValueKind == JsonValueKind.String ? note.GetString()! : "";
-            registry.Add(new ChromeCommand(id, J.Text(row, "label"), J.Text(row, "kind"), Array.AsReadOnly(J.Strings(row.GetProperty("contexts"), id)), help));
+            Add(new ChromeCommand(id, J.Text(row, "label"), J.Text(row, "kind"), Array.AsReadOnly(J.Strings(row.GetProperty("contexts"), id)), help));
         }
-        return registry;
     }
 }
 

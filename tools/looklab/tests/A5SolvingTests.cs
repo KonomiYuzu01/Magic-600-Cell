@@ -103,7 +103,7 @@ internal static partial class Program
         draft.SetGoal(null); Check(draft.GoalResult == GoalResult.Unset && draft.CanCommit, "no Goal");
         // A word can pass Net and fail Strict; the chip never says one "safe".
         Check(draft.Result(CheckMode.Net) == CheckResult.Passed && draft.Result(CheckMode.Strict) == CheckResult.Failed && draft.Checked == CheckResult.Passed, "Net and Strict are one result");
-        draft.SetMode(CheckMode.Strict); Check(draft.Checked == CheckResult.Failed && draft.CanCommit, "Strict");
+        draft.SetMode(CheckMode.Strict); Check(draft.Checked == CheckResult.Failed && draft.CanStage && !draft.CanCommit, "a failed Strict check left the commit open");
         Check(draft.Edit("cleanup: s'") == null && draft.Checked == CheckResult.Passed && draft.Edit("nowhere: x") != null && draft.Edit(null) == null && draft.Twists(1).Count == 1, "editing a phase");
         // The Draft/Direct switch clears held keys, and in Direct no twist joins a phase.
         draft.Hold("O"); draft.Hold("Shift");
@@ -184,7 +184,7 @@ internal static partial class Program
     // Two automatic screen checks: every action has a path from the keyboard, and each screen has a word limit.
     private static void A5ScreenChecksKeyboardAndWords()
     {
-        CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        CommandRegistry registry = LabRegistry();
         string text = Read("data/design/keymap.json"); Keymap keys = Keymap.Parse(text, registry);
         using System.Text.Json.JsonDocument checks = System.Text.Json.JsonDocument.Parse(Read("data/design/screen-words.json"));
         // The palette lists every command and opens from the keyboard in every key set, so a command is a path.
@@ -197,11 +197,11 @@ internal static partial class Program
         }
         var palette = new PaletteModel(registry, keys, (_, _) => null);
         Check(registry.Commands.Keys.All(id => palette.Rows(registry.Commands[id].Label).Any(r => r.Command == id)), "a command is missing from the palette");
-        // Every action an element raises is a command of the registry, or is listed as pointer-only.
+        // Every action an element raises or sends is a command of the registry, or is listed as pointer-only.
         var raised = new SortedSet<string>(StringComparer.Ordinal);
         foreach (string folder in new[] { "app/Chrome/Ui", "app/Live" })
             foreach (string file in Directory.GetFiles(Path.Combine(Lab, folder), "*.cs"))
-                foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "Raise\\(Command, \"([a-z0-9_.]+)\""))
+                foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(file), "(?:Raise\\(Command, |Send\\()\"([a-z0-9_.]+)\""))
                     raised.Add(m.Groups[1].Value);
         string[] listed = checks.RootElement.GetProperty("pointer_only").EnumerateArray().Select(e => e.GetString()!).ToArray();
         string[] pointerOnly = raised.Where(id => !registry.Commands.ContainsKey(id)).ToArray();
@@ -245,7 +245,7 @@ internal static partial class Program
         // The command exists, the lab handles it, and the panel sends it only from its confirm control.
         CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
         string panel = File.ReadAllText(Path.Combine(Lab, "app/Chrome/Ui/SessionPanels.cs")), lab = File.ReadAllText(Path.Combine(Lab, "app/Live/LabDemo.cs"));
-        Check(registry.Commands.ContainsKey("session.branch.select") && lab.Contains("if (!confirmed) {", StringComparison.Ordinal), "the branch switch has no command or no gate");
+        Check(registry.Commands.ContainsKey("session.branch.select") && lab.Contains("Moves.ConfirmRefusal(branch)", StringComparison.Ordinal), "the branch switch has no command or no gate");
         Check(System.Text.RegularExpressions.Regex.Matches(panel, "Send\\(\"session.branch.select\"").Count == 1 && panel.Contains("\"confirm \" + at", StringComparison.Ordinal), "the panel switches without the confirm gate");
     }
 

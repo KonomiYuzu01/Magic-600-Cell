@@ -66,7 +66,7 @@ internal static partial class Program
         Rgb red = new(1, 0, 0), green = new(0, .6, 0);
         Check(ColourMetric.Distance(ColourMetric.Simulate(red, "deutan"), ColourMetric.Simulate(green, "deutan")) < ColourMetric.Distance(red, green), "the simulation does not bring red and green together");
 
-        CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        CommandRegistry registry = LabRegistry();
         CommandIcons commands = CommandIcons.Parse(Read("data/design/command-icons.json")); IconSet icons = IconSet.Parse(Read("data/design/icons.json"));
         Check(commands.Missing(registry.Order).Count == 0, "commands with neither an icon nor the label-only mark: " + string.Join(", ", commands.Missing(registry.Order).Take(5)));
         Check(commands.Icons.Values.Concat(commands.Arguments.Values).All(icons.Icons.ContainsKey) && commands.Icons.Keys.Concat(commands.LabelOnly).All(registry.Commands.ContainsKey), "the command icons name an unknown icon or command");

@@ -49,7 +49,7 @@ internal sealed class LabSolve
         };
         Draft.HeldCleared += () => { Rail!.Jump.Release(); Rail.Refresh(); };
         Draft.Changed += () => { LocalAnchors?.QueueRedraw(); };
-        Demo = new SolvingDemo(OrbitAtlas.Parse(File.ReadAllText(Path.Combine(root, "assets/seed_atlas.json"))));
+        Demo = new SolvingDemo(OrbitAtlas.Parse(File.ReadAllText(Path.Combine(root, "assets/seed_atlas.json")))) { Draft = Draft };
         Strip = new RelationStrip(Demo, () => frame.Tokens, seconds);
         Strip.Command += run; Strip.DemoNext += Demo.NextState;
         Rail = new OrbitRail(Demo, () => frame.Tokens); Rail.Command += run;
@@ -71,7 +71,7 @@ internal sealed class LabSolve
 
     private void Stage()
     {
-        if (Draft.CanCommit) { staged = true; session.StageDraft(Draft.Statement, Draft.Word); Line.Settle(PreviewModel.Settle); }
+        if (Draft.CanStage) { staged = true; session.StageDraft(Draft.Statement, Draft.Word, Draft.StagedCheck()); Line.Settle(PreviewModel.Settle); }
         else if (staged && session.Preview.Pending is { Source: "draft" }) { staged = false; session.Preview.Discard(); }
     }
 
@@ -93,7 +93,8 @@ internal sealed class LabSolve
             case "intent.set": Draft.SetGoal(argument); said = Draft.Goal == null ? "Goal: unset" : $"Goal: {Draft.Goal} ({SolvingDemo.Mark})"; break;
             case "operation.phase.append_twist":
                 string twist = argument ?? SampleTwists[sample++ % SampleTwists.Length];
-                if (Draft.Route == InputRoute.Direct) { session.CommitDirect(twist); return true; }
+                // In Direct a twist key commits its twist; a typed line only stages it (ADR-D01.58).
+                if (Draft.Route == InputRoute.Direct) { if (CommitPaths.DirectTwistCommits(session.Surface)) session.CommitDirect(twist); else session.StageTwist(twist); return true; }
                 Draft.Append(twist); said = $"{OperationDraft.Phases[Draft.Active]}: {twist}"; break;
             default: return false;
         }

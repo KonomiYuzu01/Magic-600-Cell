@@ -133,6 +133,9 @@ public sealed partial class PreviewPanel : VBoxContainer
     private readonly HBoxContainer head = new();
     private readonly HSplitContainer body = new() { SizeFlagsVertical = SizeFlags.ExpandFill };
     private readonly Label stageNote = ChromeWidgets.Text("", "DimLabel");
+    // Every action the view offers is a command of the registry (ADR-D01.17): the side of the comparison and the
+    // move steps. A click on a move line is direct manipulation of the scrub.
+    public event Action<string, string?>? Command;
 
     public PreviewPanel(PreviewModel model, Func<TokenSet> tokens)
     {
@@ -168,11 +171,11 @@ public sealed partial class PreviewPanel : VBoxContainer
         if (p.Status == PreviewStatus.Ready)
         {
             Button side = ChromeWidgets.Tool(Model.Side.ToString(), "What the stage compares: both, before or after. Press for the next."); side.Name = "PreviewSide";
-            side.Pressed += Model.CycleSide; head.AddChild(side);
+            side.Pressed += () => Safe.Raise(Command, "preview.side.next", null); head.AddChild(side);
         }
         head.AddChild(ChromeWidgets.Text($"{Model.Scrub} of {p.Moves.Count}", "DimLabel"));
-        head.AddChild(SessionWidgets.Tool("step.back", "One move back (Left)", t, () => Model.SetScrub(Model.Scrub - 1)));
-        head.AddChild(SessionWidgets.Tool("step.forward", "One move forward (Right)", t, () => Model.SetScrub(Model.Scrub + 1)));
+        head.AddChild(SessionWidgets.Tool("step.back", "One move back (Left)", t, () => Safe.Raise(Command, "view.preview.scrub", "back")));
+        head.AddChild(SessionWidgets.Tool("step.forward", "One move forward (Right)", t, () => Safe.Raise(Command, "view.preview.scrub", "forward")));
         stageNote.Text = p.Status == PreviewStatus.Ready
             ? $"after move {Model.Scrub} of {p.Moves.Count}"
             : "Nothing to draw: " + p.Reason;
@@ -195,6 +198,13 @@ public sealed partial class PreviewPanel : VBoxContainer
             touched.TooltipText = "The range this preview touches over its whole sequence"; touched.MouseFilter = MouseFilterEnum.Pass; Effects.AddChild(touched);
         }
         Effects.AddChild(ChromeWidgets.Text("EFFECT ON EVERY ORBIT", "MicroLabel"));
+        // Only evaluated effects may say an orbit is untouched: a preview refused before anything was prepared
+        // says that nothing was evaluated, and lists no orbit.
+        if (!p.Evaluated)
+        {
+            Label none = ChromeWidgets.Text("Not evaluated: " + (p.Reason ?? "no effect was computed"), "DimLabel", true); none.Name = "EffectsNotEvaluated";
+            none.AutowrapMode = TextServer.AutowrapMode.WordSmart; Effects.AddChild(none);
+        }
         foreach (OrbitEffect effect in p.Effects)
         {
             var line = new HBoxContainer();
@@ -228,11 +238,10 @@ public sealed partial class HistoryPanel : VBoxContainer
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer head = new();
     private readonly HashSet<string> open = new(StringComparer.Ordinal);
-    // The confirm gate of a branch switch: the branch that is being asked about, or -1.
-    public int Asking { get; private set; } = -1;
-    public void Ask(int branch) { Asking = branch; Refresh(); }
-    // Bring a kept branch's moves back as a preview the solver commits.
-    public event Action<int>? Replay;
+    // The confirm gate of a branch switch is the move history's own (ADR-D01.16): the branch being asked about,
+    // or -1. The panel only shows the question and sends the answer.
+    public int Asking => Moves.Asking;
+    public void Ask(int branch) => Moves.Ask(branch);
 
     public HistoryPanel(MoveHistory moves, LayoutHistory layout, Func<TokenSet> tokens)
     {
@@ -297,7 +306,6 @@ public sealed partial class HistoryPanel : VBoxContainer
         }
         if (Moves.Cursor == 0 && Moves.Entries.Count > 0) List.AddChild(CursorLine(t));
         Control start = Row(t, false, false, null, "Start of the session", "", null, () => Send("session.rollback", "0")); List.AddChild(start);
-        if (Asking >= Moves.Branches.Count) Asking = -1;
         for (int b = 0; b < Moves.Branches.Count; b++)
         {
             HistoryBranch branch = Moves.Branches[b]; int at = b;
@@ -310,12 +318,13 @@ public sealed partial class HistoryPanel : VBoxContainer
             {
                 Label ask = ChromeWidgets.Text("Switch lines?", "AccentLabel"); tools.AddChild(ask);
                 Button yes = ChromeWidgets.Tool("Confirm", "Make this branch the line. The later entries of the current line are kept as a branch."); yes.Name = "BranchConfirm";
-                yes.Pressed += () => { Asking = -1; Send("session.branch.select", "confirm " + at.ToString(System.Globalization.CultureInfo.InvariantCulture)); }; tools.AddChild(yes);
+                yes.Pressed += () => Send("session.branch.select", "confirm " + at.ToString(System.Globalization.CultureInfo.InvariantCulture)); tools.AddChild(yes);
                 Button no = ChromeWidgets.Tool("Cancel", "Keep the current line"); no.Name = "BranchCancel"; no.Pressed += () => Ask(-1); tools.AddChild(no);
             }
             else
             {
-                Button replay = ChromeWidgets.Tool("Replay", "Bring this branch's moves back as a preview you commit"); replay.Name = "BranchReplay"; replay.Pressed += () => Safe.Raise(Replay, at); tools.AddChild(replay);
+                Button replay = ChromeWidgets.Tool("Replay", "Bring this branch's moves back as a preview you commit; the replay itself never commits"); replay.Name = "BranchReplay";
+                replay.Pressed += () => Send("session.branch.replay", at.ToString(System.Globalization.CultureInfo.InvariantCulture)); tools.AddChild(replay);
                 string? why = Moves.SelectRefusal(at);
                 Button swap = ChromeWidgets.Tool("Switch", why == null ? "Switch to this branch; it asks first" : "Not now: " + why); swap.Name = "BranchSwitch"; swap.Disabled = why != null;
                 swap.Pressed += () => Ask(at); tools.AddChild(swap);

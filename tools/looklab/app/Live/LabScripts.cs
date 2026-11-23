@@ -452,8 +452,10 @@ internal sealed class LabScripts
         string line = text.Trim().TrimStart('>').Trim().TrimEnd(';').Trim();
         if (line.Length == 0) return;
         Lines.Add(line); feedback.Log(ConsoleRows.Write(ConsoleKind.Typed, line));
-        if (Regex.IsMatch(line, @"^(commit\b|operation\.preview\.commit\b)")) { Say(ConsoleKind.Lock, "A typed line never commits."); return; }
-        quiet = true;
+        if (CommitPaths.TypedRefusal(line) is { } never) { Say(ConsoleKind.Lock, never); return; }
+        // Whatever the line runs knows it came from a typed line, so nothing it runs writes the move history:
+        // in Direct a typed twist is staged, not committed (ADR-D01.58).
+        quiet = true; demo.Surface = InputSurface.TypedLine;
         try
         {
             Match call = Regex.Match(line, @"^(?:preview\s+|run\s+)?([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)\s*(?:\(.*\))?$");
@@ -462,7 +464,7 @@ internal sealed class LabScripts
             else if (registry.Commands.ContainsKey(parts[0])) run(parts[0], parts.Length > 1 ? parts[1].Trim() : null);
             else Fail($"unknown word `{parts[0]}`");
         }
-        finally { quiet = false; }
+        finally { quiet = false; demo.Surface = InputSurface.Key; }
     }
 
     // The next key pressed becomes the binding of the command; Esc leaves it.

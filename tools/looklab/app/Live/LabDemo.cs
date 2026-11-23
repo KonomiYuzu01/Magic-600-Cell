@@ -13,8 +13,8 @@ internal sealed class LabDemo
 {
     private sealed record Sample(string Statement, string Source, string Origin, string Name, string[] Moves, PreviewStatus Status, string? Reason, int[] Moved, string Protection);
 
-    public static readonly string[] Orbits = { "sample orbit 1", "sample orbit 2", "sample orbit 3", "sample orbit 4", "sample orbit 5" };
-    private static readonly int[] Totals = { 120, 720, 1200, 600, 2400 };
+    public static IReadOnlyList<string> Orbits => SampleCheck.Orbits;
+    private static IReadOnlyList<int> Totals => SampleCheck.Totals;
     private static string[] Twists(params (int Cell, int Axis, int Turn)[] moves) =>
         moves.Select(m => $"twist(cell {m.Cell}, axis {m.Axis}, {(m.Turn > 0 ? "+" : "-")}{Math.Abs(m.Turn)})").ToArray();
     private static readonly Sample[] Samples =
@@ -24,15 +24,17 @@ internal sealed class LabDemo
             PreviewStatus.Ready, null, new[] { 0, 6, 0, 0, 3 }, "Protected orbits untouched: 3 of 3."),
         new("preview run \"sweep.6cs\" on ring 4", "own program", "script", "sweep.6cs on ring 4",
             Twists((12, 1, 1), (13, 1, 1), (14, 1, 1), (15, 1, 1), (16, 1, 1), (12, 4, -1), (13, 4, -1), (14, 4, -1), (15, 4, -1), (16, 4, -1), (12, 1, -1), (13, 1, -1)),
-            PreviewStatus.Ready, null, new[] { 0, 30, 48, 10, 96 }, "Protected orbits untouched: 3 of 3."),
+            PreviewStatus.Ready, null, new[] { 0, 30, 48, 0, 96 }, "Protected orbits untouched: 3 of 3."),
         new("preview twist(cell 402, axis 1, +1)", "typed twist", "hand", "twist(cell 402, axis 1, +1)", Twists((402, 1, 1)),
-            PreviewStatus.Ready, null, new[] { 1, 12, 20, 30, 20 }, "Protected orbits untouched: 3 of 3."),
+            PreviewStatus.Ready, null, new[] { 1, 12, 20, 0, 20 }, "Protected orbits untouched: 3 of 3."),
         new("preview my.corner_swap(cell 9) |> conjugate(twist(cell 30, axis 0, +1))", "own macro", "macro", "conjugated corner swap",
             Twists((30, 0, 1), (9, 2, 1), (201, 0, 1), (9, 2, -1), (201, 0, -1), (30, 0, -1)),
             PreviewStatus.Impossible, "it moves a protected orbit: sample orbit 4 is locked", new[] { 0, 6, 0, 4, 3 }, "Would move protected sample orbit 4: 4 pieces."),
         new("preview shared.pack.solve_layer(2)", "package by another author", "script", "shared.pack.solve_layer(2)", Array.Empty<string>(),
-            PreviewStatus.Refused, "in a solving session a word from a package written by someone else is refused", new[] { 0, 0, 0, 0, 0 }, "Nothing was prepared."),
+            PreviewStatus.Refused, "in a solving session a word from a package written by someone else is refused", Array.Empty<int>(), "Nothing was prepared."),
     };
+    // Effects that were evaluated, or none: an empty list reads as not evaluated, never as untouched.
+    private static OrbitEffect[] Effects(int[] moved) => moved.Length == 0 ? Array.Empty<OrbitEffect>() : Orbits.Select((o, i) => new OrbitEffect(o, moved[i], Totals[i])).ToArray();
 
     public PreviewModel Preview { get; } = new();
     public MoveHistory Moves { get; } = new();
@@ -52,18 +54,27 @@ internal sealed class LabDemo
     private const string Cut = "\n\u001e\n";
 
     public static bool Handles(string command) => command is "operation.preview" or "operation.preview.commit" or "operation.preview.cancel" or "view.preview.open" or
-        "view.preview.scrub" or "session.undo" or "session.redo" or "session.undo.partial" or "session.branch.select" or "session.rollback" or "layout.undo" or "layout.redo" or "history.dock.mode";
+        "view.preview.scrub" or "session.undo" or "session.redo" or "session.undo.partial" or "session.branch.select" or "session.branch.replay" or "session.rollback" or
+        "layout.undo" or "layout.redo" or "history.dock.mode" or "preview.side.both" or "preview.side.before" or "preview.side.after" or "preview.side.next";
+
+    // Where the command being carried out came from: a typed line never writes the move history.
+    public InputSurface Surface { get; set; } = InputSurface.Key;
 
     public LabDemo(ChromeFrame frame, Keymap keymap, Action<string, string?> run)
     {
         this.frame = frame;
+        // A preview is built at a head; whatever moves the head makes it stale. A prefix is rechecked by the
+        // sample rule as its own preview before it commits.
+        Preview.Head = () => Moves.Revision; Moves.Changed += Preview.Follow;
+        Preview.Recheck = (_, moves) => SampleCheck.Check(moves);
         Bar = new CommitBar(Preview, () => frame.Tokens) { CommitKeys = keymap.KeysFor("operation.preview.commit", null) };
         PreviewView = new PreviewPanel(Preview, () => frame.Tokens);
         History = new HistoryPanel(Moves, Layout, () => frame.Tokens);
         Button stage = ChromeWidgets.Tool("Stage", "Stage the next sample preview"); stage.Name = "StageSample";
         stage.Pressed += () => run("operation.preview", null);
         Bar.Tools.AddChild(stage);
-        Bar.Command += run; Bar.Parameter += SetParameter; History.Replay += ReplayBranch; History.Command += (command, argument) => { if (command == "layout.roll") Restore(Layout.RollTo(int.Parse(argument!, CultureInfo.InvariantCulture))); else run(command, argument); };
+        Bar.Command += run; Bar.Parameter += SetParameter; PreviewView.Command += run;
+        History.Command += (command, argument) => { if (command == "layout.roll") Restore(Layout.RollTo(int.Parse(argument!, CultureInfo.InvariantCulture))); else run(command, argument); };
         foreach ((string origin, string name, string time, int sample) in new[] { ("hand", "twist(cell 5, axis 0, +1)", "10:02", 2), ("macro", "my.corner_swap(cell 40)", "10:05", 0),
             ("script", "sweep.6cs on ring 1", "10:11", 1), ("hand", "twist(cell 77, axis 3, -1)", "10:12", 2), ("macro", "my.corner_swap(cell 117)", "10:20", 0) })
             Moves.Commit(origin, name, time, "commit " + name, origin == "hand" ? new[] { name } : Samples[sample].Moves);
@@ -111,52 +122,92 @@ internal sealed class LabDemo
         History.Refresh();
     }
 
-    // A preview that was refused before anything was prepared.
+    private void OpenPane() { if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right); }
+
+    // A preview that was refused before anything was prepared: nothing was evaluated, so no orbit reads as
+    // untouched.
     public void Refuse(string statement, string source, string reason)
     {
-        Preview.Show(statement, source, Array.Empty<string>(), PreviewStatus.Refused, reason, Orbits.Select((o, i) => new OrbitEffect(o, 0, Totals[i])).ToArray(), "Nothing was prepared.", Clock());
-        if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right);
+        Preview.Show(statement, source, Array.Empty<string>(), PreviewStatus.Refused, reason, Array.Empty<OrbitEffect>(), "Nothing was prepared.", Clock());
+        OpenPane();
     }
 
     public void Stage(int? sample = null)
     {
         Current = (sample ?? nextSample++) % Samples.Length;
         Sample s = Samples[Current];
-        Preview.Show(s.Statement, s.Source, s.Moves, s.Status, s.Reason, Orbits.Select((o, i) => new OrbitEffect(o, s.Moved[i], Totals[i])).ToArray(), s.Protection, Clock());
-        if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right);
+        Preview.Show(s.Statement, s.Source, s.Moves, s.Status, s.Reason, Effects(s.Moved), s.Protection, Clock());
+        OpenPane();
     }
 
     private (int Id, Sample Sample)? rebuilt;
-    // The later moves of an old line come back as a preview the solver commits (ADR-D01.16).
+    // A preview the lab built from moves of its own, checked by the sample rule; it remembers how a commit of it
+    // (or of its prefix) is named in the history.
+    private Preview ShowChecked(string statement, string source, IReadOnlyList<string> moves, PreviewCheck check, string origin, string name)
+    {
+        Preview shown = Preview.Show(statement, source, moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
+        rebuilt = (shown.Id, new Sample(statement, source, origin, name, moves.ToArray(), check.Status, check.Reason, Array.Empty<int>(), check.Protection));
+        OpenPane(); return shown;
+    }
+
+    // The later moves of an old line come back as a preview the solver commits (ADR-D01.16). The replay never
+    // commits, and its effects are evaluated like any other preview's.
     public void ReplayBranch(int branch)
     {
-        if (branch < 0 || branch >= Moves.Branches.Count) return;
+        if (branch < 0 || branch >= Moves.Branches.Count) { frame.Say("Replay: there is no such kept branch", true); return; }
         HistoryBranch kept = Moves.Branches[branch]; string[] moves = kept.Entries.SelectMany(e => e.Moves).ToArray();
         string name = $"replay of the branch after {kept.From}";
-        Preview shown = Preview.Show("preview " + name, "kept branch", moves, PreviewStatus.Ready, null, Array.Empty<OrbitEffect>(), "not checked (demo)", Clock());
-        rebuilt = (shown.Id, new Sample(shown.Statement, "kept branch", "macro", name, moves, PreviewStatus.Ready, null, new int[Samples[0].Moved.Length], ""));
-        frame.Say($"{moves.Length} moves of the old line are back as a preview");
+        Preview shown = ShowChecked("preview " + name, "kept branch", moves, SampleCheck.Check(moves), "macro", name);
+        frame.Say($"{moves.Length} moves of the old line are back as preview #{shown.Id}" + (shown.Status == PreviewStatus.Ready ? "" : ": " + shown.Reason), shown.Status != PreviewStatus.Ready);
     }
+
     // A host part that owns a preview's source rebuilds it itself and answers true.
     public Func<Preview, int, int, bool>? Reparam { get; set; }
-    public const string NotEvaluated = " Parameters changed: the moves and effects are still the sample's (demo data).";
+    // An edited statement needs its own witness (ADR-D01.11): the old moves never stay ready under a new
+    // statement (SampleCheck.Rebuilt).
     public void SetParameter(int index, int value)
     {
         if (Preview.Pending is not { } p) return;
         IReadOnlyList<StatementParameter> all = InlineParameters.Find(p.Statement); if (index < 0 || index >= all.Count) return;
         string to = InlineParameters.With(p.Statement, all[index], value); if (to == p.Statement) return;
         if (Reparam?.Invoke(p, index, value) == true) return;
-        Sample from = Of(p);
-        Preview shown = Preview.Show(to, p.Source, p.Moves, p.Status, p.Reason, p.Effects, p.Protection.EndsWith(NotEvaluated, StringComparison.Ordinal) ? p.Protection : p.Protection + NotEvaluated, Clock());
-        rebuilt = (shown.Id, from); frame.Say($"Preview rebuilt: {all[index].Name} {InlineParameters.Find(to)[index].Value} (demo data: the moves are the sample's)");
+        string said = $"{all[index].Name} {InlineParameters.Find(to)[index].Value}";
+        (IReadOnlyList<string> moves, PreviewCheck check) = SampleCheck.Rebuilt(to);
+        if (moves.Count > 0)
+        {
+            Preview shown = ShowChecked(to, p.Source, moves, check, "hand", moves[0]);
+            frame.Say($"Preview rebuilt: {said}; its witness is the changed twist, checked again (sample rule)", shown.Status != PreviewStatus.Ready);
+            return;
+        }
+        Preview.Show(to, p.Source, moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
+        rebuilt = null; frame.Say($"Preview changed: {said}; no witness is built for it here, so it cannot be committed", true);
     }
 
-    private Sample Of(Preview preview) => rebuilt is { } r && r.Id == preview.Id ? r.Sample : Samples.FirstOrDefault(s => preview.Statement.StartsWith(s.Statement, StringComparison.Ordinal)) ?? Samples[^1];
+    // How a commit is named: a sample by its own name, a preview the lab built by the name it was given, a
+    // prefix like the preview it came from.
+    private Sample Of(Preview preview)
+    {
+        if (rebuilt is { } r && (r.Id == preview.Id || preview.Statement.StartsWith(r.Sample.Statement + " |> prefix(", StringComparison.Ordinal))) return r.Sample;
+        return Samples.FirstOrDefault(s => preview.Statement.StartsWith(s.Statement, StringComparison.Ordinal))
+            ?? new Sample(preview.Statement, preview.Source, "hand", preview.Statement.Replace("preview ", ""), preview.Moves.ToArray(), preview.Status, preview.Reason, Array.Empty<int>(), preview.Protection);
+    }
 
     // A preview that is not one of the samples names its own history entry.
     public Func<Preview, (string Origin, string Name)?>? Named { get; set; }
-    public void StageDraft(string statement, IReadOnlyList<string> moves) =>
-        Preview.Show(statement, "draft", moves, PreviewStatus.Ready, null, Array.Empty<OrbitEffect>(), "not checked (demo)", Clock());
+
+    // The draft is staged with its own check: a failed protection check stops at the preview (ADR-D01.4 items 1
+    // and 2); the Goal never gates (OperationDraft.StagedCheck).
+    public void StageDraft(string statement, IReadOnlyList<string> moves, PreviewCheck check) =>
+        Preview.Show(statement, "draft", moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
+
+    // A twist in Direct that came from a typed line: staged as the preview, never committed (ADR-D01.58).
+    public void StageTwist(string twist)
+    {
+        string[] moves = { twist.Trim() };
+        Preview shown = ShowChecked("preview " + moves[0], "typed twist", moves, SampleCheck.Check(moves), "hand", moves[0]);
+        frame.Say($"Direct: the typed twist is staged as preview #{shown.Id}; a typed line never commits", shown.Status != PreviewStatus.Ready);
+    }
+
     public void CommitDirect(string twist)
     {
         if (Moves.CommitRefusal is { } why) { frame.Say("Not committed: " + why, true); return; }
@@ -167,24 +218,29 @@ internal sealed class LabDemo
     public void Execute(string command, string? argument)
     {
         void Nothing(bool done, string text) { if (!done) frame.Say(text, true); }
-        void Moved(bool done, string nothing)
-        {
-            if (!done) { frame.Say(nothing, true); return; }
-            frame.Say(Moves.Actions[^1]);
-            if (Preview.Pending is { Status: PreviewStatus.Ready }) Preview.MarkStale("the committed state changed after this preview was built; stage it again");
-        }
+        // A preview built at the old head was made stale by the history itself (PreviewModel.Follow).
+        void Moved(bool done, string nothing) { if (!done) frame.Say(nothing, true); else frame.Say(Moves.Actions[^1]); }
         switch (command)
         {
             case "operation.preview":
                 Stage(argument != null && argument.StartsWith("sample:", StringComparison.Ordinal) ? int.Parse(argument.Substring(7), CultureInfo.InvariantCulture) : null); break;
             case "operation.preview.cancel": Nothing(Preview.Discard(), "There is no preview to discard"); break;
             case "operation.preview.commit":
+            {
+                if (Surface == InputSurface.TypedLine) { frame.Say("Not committed: " + CommitPaths.TypedNeverCommits, true); break; }
                 if ((Preview.CommitRefusal(Clock()) ?? Moves.CommitRefusal) is { } why) { frame.Say("Not committed: " + why, true); break; }
-                Preview taken = Preview.Take(Clock())!; Sample from = Of(taken);
+                bool prefix = Preview.AtPrefix;
+                if (Preview.Take(Clock()) is not { } taken)
+                {
+                    // The prefix failed its own recheck: it stays as the preview, and nothing is written.
+                    frame.Say($"Not committed: the prefix, rechecked as its own preview #{Preview.Pending?.Id}: {Preview.Pending?.Reason}", true); break;
+                }
+                Sample from = Of(taken);
                 (string Origin, string Name) named = Named?.Invoke(taken) ?? (from.Origin, from.Name);
                 HistoryEntry entry = Moves.Commit(named.Origin, named.Name, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture), taken.Statement.Replace("preview ", "commit "), taken.Moves)!;
-                frame.Say($"Committed {entry.Id}: {entry.Name} ({entry.Moves.Count} moves)");
+                frame.Say($"Committed {entry.Id}: {entry.Name} ({entry.Moves.Count} moves{(prefix ? ", a prefix rechecked as its own preview" : "")})");
                 break;
+            }
             case "view.preview.open":
                 if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right); else frame.Model.Activate(PreviewPane);
                 break;
@@ -194,15 +250,27 @@ internal sealed class LabDemo
             case "session.undo.partial": Moved(Moves.StepBack(), "Nothing to step back in"); break;
             case "session.branch.select":
             {
-                // A branch switch passes its confirm gate: the first request only asks, in the History dock.
+                // A branch switch passes its confirm gate: the first request only asks, in the History dock, and
+                // only the answer to the question that is open, at the head it was asked at, switches lines.
                 string[] parts = (argument ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries); bool confirmed = parts.Length == 2 && parts[0] == "confirm";
                 if (Moves.Branches.Count == 0) { frame.Say("There is no kept branch", true); break; }
                 if (!int.TryParse(parts.Length > 0 ? parts[^1] : "0", NumberStyles.None, CultureInfo.InvariantCulture, out int branch)) { frame.Say("Switch branch: it needs the number of a branch", true); break; }
+                if (confirmed)
+                {
+                    if (Moves.ConfirmRefusal(branch) is { } open) { frame.Say("Branch not switched: " + open, true); break; }
+                    Preview.Discard(); Moves.Confirm(branch); frame.Say(Moves.Actions[^1]); break;
+                }
                 if (Moves.SelectRefusal(branch) is { } no) { frame.Say("Branch not switched: " + no, true); break; }
-                if (!confirmed) { History.Show(false); History.Ask(branch); frame.Say("Switch lines? Confirm in History"); break; }
-                Preview.Discard(); Moves.SelectBranch(branch); frame.Say(Moves.Actions[^1]);
+                History.Show(false); Moves.Ask(branch); frame.Say("Switch lines? Confirm in History");
                 break;
             }
+            case "session.branch.replay":
+                if (!int.TryParse(argument ?? "0", NumberStyles.None, CultureInfo.InvariantCulture, out int replayed)) { frame.Say("Replay: it needs the number of a kept branch", true); break; }
+                ReplayBranch(replayed); break;
+            case "preview.side.both": Preview.SetSide(PreviewSide.Both); break;
+            case "preview.side.before": Preview.SetSide(PreviewSide.Before); break;
+            case "preview.side.after": Preview.SetSide(PreviewSide.After); break;
+            case "preview.side.next": Preview.CycleSide(); break;
             case "session.rollback": Moved(argument != null && Moves.RollTo(int.Parse(argument, CultureInfo.InvariantCulture)), "The history is already there"); break;
             case "layout.undo": Nothing(Restore(Layout.Undo()), "No layout change to undo"); break;
             case "layout.redo": Nothing(Restore(Layout.Redo()), "No layout change to redo"); break;

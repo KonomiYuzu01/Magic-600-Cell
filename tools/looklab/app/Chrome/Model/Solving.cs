@@ -229,8 +229,19 @@ public sealed class SolvingDemo
     // What the last command changed, for the strip's change motion: slot names.
     public IReadOnlyList<string> LastChanged { get; private set; } = Array.Empty<string>();
     public event Action? Changed;
+    // The operation draft of the working orbit. Each orbit owns its draft (ADR-D01.63): leaving an orbit, by a
+    // switch or by activating Next, saves the draft and its settings, and the orbit entered gets its own back.
+    public OperationDraft? Draft { get; set; }
+    private readonly Dictionary<(string State, int Orbit), DraftSnapshot> drafts = new();
 
     public SolvingDemo(OrbitAtlas atlas) { Atlas = atlas; Reset(); }
+
+    private void Carry(int from)
+    {
+        if (Draft == null || from == State.Orbit) return;
+        drafts[(State.Id, from)] = Draft.Save();
+        Draft.Load(drafts.TryGetValue((State.Id, State.Orbit), out DraftSnapshot? back) ? back : null);
+    }
 
     public void Reset() { States = new[] { MidSolve(Atlas), Endgame(Atlas), Fresh(Atlas) }; Index = 0; }
 
@@ -323,7 +334,8 @@ public sealed class SolvingDemo
         IReadOnlyList<int> order = Atlas.StageOrder;
         int? to = argument == null ? order[(order.ToList().IndexOf(State.Orbit) + 1) % order.Count] : Number(argument);
         if (to == null || to < 0 || to >= OrbitAtlas.Count) return "it needs an orbit from O00 to O34";
-        if (State.SwitchOrbit(to.Value)) Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next");
+        int from = State.Orbit;
+        if (State.SwitchOrbit(to.Value)) { Carry(from); Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); }
         return null;
     }
 
@@ -341,7 +353,8 @@ public sealed class SolvingDemo
     public string? ActivateNext()
     {
         if (State.Next is not { } next) return "no Next is set";
-        State.SwitchOrbit(next.Orbit); State.Target = next.Piece; State.Next = null;
+        int from = State.Orbit;
+        State.SwitchOrbit(next.Orbit); Carry(from); State.Target = next.Piece; State.Next = null;
         Tell("target", "occupant", "wanted", "buffer_a", "buffer_b", "target_frame", "residual", "next"); return null;
     }
 }
@@ -386,6 +399,7 @@ public enum InputRoute { Draft, Direct }
 public enum GoalResult { Unset, Met, Unmet, Unknown }
 public enum CheckMode { Net, Strict }
 public enum CheckResult { Unchecked, Passed, Failed }
+public sealed record DraftSnapshot(IReadOnlyList<string>[] Phases, int Active, string? Goal, CheckMode Mode, InputRoute Route);
 
 // The draft line (ADR-D01.66): the operation draft in three phases, the route, the Goal and the check mode.
 // The Goal has its own result and never gates a commit: permission is not progress.
@@ -414,8 +428,39 @@ public sealed class OperationDraft
     // A word can pass Net and fail Strict: here a Prepare without a Cleanup fails Strict.
     public CheckResult Result(CheckMode mode) => Count == 0 ? CheckResult.Unchecked : mode == CheckMode.Net || twists[0].Count == twists[2].Count ? CheckResult.Passed : CheckResult.Failed;
     public CheckResult Checked => Result(Mode);
-    // The complete operation is what a commit takes. Nothing about the Goal is asked here.
-    public bool CanCommit => Route == InputRoute.Draft && Count > 0;
+    // A complete operation in Draft is staged as the preview whatever its check says, so a failure is seen.
+    public bool CanStage => Route == InputRoute.Draft && Count > 0;
+    // The complete operation is what a commit takes, and only when the protection check in force passes: a failed
+    // check stops at the preview (ADR-D01.4 items 1 and 2). Nothing about the Goal is asked here.
+    public bool CanCommit => CanStage && Checked == CheckResult.Passed;
+
+    // The check of the staged preview (demo): its effects by the sample rule, its protection by the check in
+    // force. A failed check makes the preview impossible, so the commit stops there; the Goal is not asked.
+    public PreviewCheck StagedCheck()
+    {
+        PreviewCheck check = SampleCheck.Check(Word, locked: false);
+        if (check.Status != PreviewStatus.Ready) return check;
+        return Checked switch
+        {
+            CheckResult.Passed => check with { Protection = $"{Mode} protection check passed (demo rule)." + SampleCheck.Mark },
+            CheckResult.Failed => check with { Status = PreviewStatus.Impossible, Reason = $"the {Mode} protection check failed (demo rule: Prepare and Cleanup differ)",
+                Protection = $"{Mode} protection check failed (demo rule): the draft stops at the preview." },
+            _ => check with { Status = PreviewStatus.Refused, Reason = "the draft's protection is not checked", Protection = "Nothing was checked." },
+        };
+    }
+
+    // What an orbit keeps of its draft while the solver works elsewhere (ADR-D01.63).
+    public DraftSnapshot Save() => new(twists.Select(t => (IReadOnlyList<string>)t.ToArray()).ToArray(), Active, Goal, Mode, Route);
+
+    // The draft of the orbit entered: its own, or an empty one that keeps the route in force.
+    public void Load(DraftSnapshot? from)
+    {
+        InputRoute route = from?.Route ?? Route;
+        for (int i = 0; i < twists.Length; i++) { twists[i].Clear(); if (from != null) twists[i].AddRange(from.Phases[i]); }
+        Active = from?.Active ?? 1; Goal = from?.Goal; Mode = from?.Mode ?? CheckMode.Net;
+        if (route != Route) { Route = route; held.Clear(); Safe.Raise(HeldCleared); }
+        Safe.Raise(Changed);
+    }
 
     // The staged .6cs statement is the draft's projection.
     public string Statement => "preview operation { " + string.Join(" ", Phases.Select((name, i) => $"{name.ToLowerInvariant()} {{ {string.Join("; ", twists[i])} }}")) + " }";

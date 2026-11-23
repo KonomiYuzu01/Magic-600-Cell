@@ -20,8 +20,19 @@ public enum PreviewSide { Both, Before, After }
 // The range a preview touches: how many orbits and how many pieces of them move over the whole sequence.
 public sealed record AffectedRange(int Orbits, int OrbitsTotal, int Moved, int Total);
 
+// An empty list of effects means the effects were not evaluated: only evaluated effects may say an orbit is
+// untouched, and a preview that can commit always has them (ADR-D01.8).
 public sealed record Preview(int Id, string Statement, string Source, IReadOnlyList<string> Moves, PreviewStatus Status,
-    string? Reason, IReadOnlyList<OrbitEffect> Effects, string Protection);
+    string? Reason, IReadOnlyList<OrbitEffect> Effects, string Protection)
+{
+    // The head of the move history the preview was built at (ADR-D01.9).
+    public int Head { get; init; }
+    public bool Evaluated => Effects.Count > 0;
+}
+
+// What the host's check says of a sequence: its status, the reason when it cannot commit, its effects and
+// protection.
+public sealed record PreviewCheck(PreviewStatus Status, string? Reason, IReadOnlyList<OrbitEffect> Effects, string Protection);
 
 // A session holds one pending preview (ADR-D01.8 to ADR-D01.12). A new one replaces the shown one under a new
 // id; after a replacement the commit is ignored for a short settle interval, so a key-down never commits a
@@ -35,10 +46,17 @@ public sealed class PreviewModel
     public PreviewSide Side { get; private set; }
     public event Action? Changed;
     private int next = 1;
+    // The head the session is at now. A preview built at another head is stale and never commits (ADR-D01.9).
+    public Func<int>? Head { get; set; }
+    // The host's check of a prefix as its own preview (ADR-D01.12). Without one, a prefix is refused.
+    public Func<string, IReadOnlyList<string>, PreviewCheck>? Recheck { get; set; }
+    public const string HeadMoved = "the committed state changed after this preview was built; stage it again";
+    public const string NoPrefixCheck = "the prefix has no check of its own here, so it cannot be committed";
+    private int Now => Head?.Invoke() ?? 0;
 
     public void SetSide(PreviewSide side) { if (side == Side) return; Side = side; Safe.Raise(Changed); }
     public void CycleSide() => SetSide((PreviewSide)(((int)Side + 1) % 3));
-    public AffectedRange? Range() => Pending is not { } p ? null
+    public AffectedRange? Range() => Pending is not { Evaluated: true } p ? null
         : new AffectedRange(p.Effects.Count(e => e.Moved > 0), p.Effects.Count, p.Effects.Sum(e => e.Moved), p.Effects.Sum(e => e.Total));
     // How many of a row's cells stand for the moved share of an orbit: none only when nothing moves, all only
     // when everything does.
@@ -50,8 +68,9 @@ public sealed class PreviewModel
         IReadOnlyList<OrbitEffect> effects, string protection, double now)
     {
         if (status != PreviewStatus.Ready && string.IsNullOrWhiteSpace(reason)) throw J.Error("preview", "a preview that cannot commit states its reason");
+        if (status == PreviewStatus.Ready && (effects.Count == 0 || moves.Count == 0)) throw J.Error("preview", "a preview that can commit has moves and evaluated effects");
         Replaced = Pending != null; if (Replaced) shownAt = now;
-        Pending = new Preview(next++, statement, source, moves.ToArray(), status, status == PreviewStatus.Ready ? null : reason, effects.ToArray(), protection);
+        Pending = new Preview(next++, statement, source, moves.ToArray(), status, status == PreviewStatus.Ready ? null : reason, effects.ToArray(), protection) { Head = Now };
         Scrub = Pending.Moves.Count;
         Safe.Raise(Changed);
         return Pending;
@@ -70,11 +89,19 @@ public sealed class PreviewModel
         Pending = Pending with { Status = PreviewStatus.Stale, Reason = reason }; Safe.Raise(Changed);
     }
 
+    // Called when the move history changes: a ready preview built at another head becomes stale, whatever moved
+    // the head (a commit, a Direct twist, an undo or a switch of lines).
+    public void Follow()
+    {
+        if (Pending is { Status: PreviewStatus.Ready } p && Head != null && p.Head != Now) MarkStale(HeadMoved);
+    }
+
     // Why the pending preview cannot be committed now, or null when it can.
     public string? CommitRefusal(double now)
     {
         if (Pending == null) return "there is no preview";
         if (Pending.Status != PreviewStatus.Ready) return Pending.Reason;
+        if (Head != null && Pending.Head != Now) return HeadMoved;
         if (Scrub == 0) return "the scrub is at the start; nothing would be committed";
         if (now - shownAt < Settle) return "the preview has just changed";
         return null;
@@ -87,13 +114,25 @@ public sealed class PreviewModel
         return true;
     }
 
-    // Takes the preview for commit. A scrub short of the end commits the prefix, which is its own preview with
-    // its own id (ADR-D01.12).
+    // A scrub short of the end commits the prefix: in the same action it is prepared and rechecked as its own
+    // preview (ADR-D01.12), and only a passing recheck commits.
+    public bool AtPrefix => Pending != null && Scrub < Pending.Moves.Count;
+
+    // Takes the preview for commit, or null. At a prefix the recheck decides: a prefix that fails it stays as the
+    // pending preview, under its own id and with its own result, and nothing is taken.
     public Preview? Take(double now)
     {
         if (CommitRefusal(now) != null) return null;
         Preview taken = Pending!;
-        if (Scrub < taken.Moves.Count) taken = taken with { Id = next++, Moves = taken.Moves.Take(Scrub).ToArray(), Statement = $"{taken.Statement} |> prefix({Scrub})" };
+        if (Scrub < taken.Moves.Count)
+        {
+            IReadOnlyList<string> moves = taken.Moves.Take(Scrub).ToArray(); string statement = $"{taken.Statement} |> prefix({Scrub})";
+            PreviewCheck check = Recheck?.Invoke(statement, moves) ?? new PreviewCheck(PreviewStatus.Refused, NoPrefixCheck, Array.Empty<OrbitEffect>(), "Nothing was checked.");
+            if (check.Status == PreviewStatus.Ready && check.Effects.Count == 0) check = check with { Status = PreviewStatus.Refused, Reason = "the recheck of the prefix gave no effects" };
+            taken = new Preview(next++, statement, taken.Source, moves, check.Status, check.Status == PreviewStatus.Ready ? null : check.Reason ?? "the prefix failed its recheck",
+                check.Effects.ToArray(), check.Protection) { Head = Now };
+            if (taken.Status != PreviewStatus.Ready) { Pending = taken; Scrub = moves.Count; Replaced = true; shownAt = now; Safe.Raise(Changed); return null; }
+        }
         Pending = null; Scrub = 0; Replaced = false; Safe.Raise(Changed);
         return taken;
     }
@@ -114,13 +153,20 @@ public sealed class MoveHistory
     // Entries up to the cursor are applied. Inside the entry just before the cursor, Inner moves are undone.
     public int Cursor { get; private set; }
     public int Inner { get; private set; }
+    // The head's identity: it changes with every recorded action, so a preview or a question asked at one head
+    // is known to be older than the next.
+    public int Revision { get; private set; }
+    // The confirm gate of a branch switch (ADR-D01.16): the branch the solver was asked about, or -1. Any recorded
+    // action closes the question.
+    public int Asking { get; private set; } = -1;
+    private int askedAt;
     public event Action? Changed;
     private readonly List<HistoryEntry> entries = new();
     private readonly List<HistoryBranch> branches = new();
     private readonly List<string> actions = new();
     private int next = 1;
 
-    private void Did(string action) { actions.Add(action); Safe.Raise(Changed); }
+    private void Did(string action) { actions.Add(action); Revision++; Asking = -1; Safe.Raise(Changed); }
 
     // Why a commit is refused now, or null.
     public string? CommitRefusal => Inner > 0 ? $"{entries[Cursor - 1].Id} is partly undone; redo it or finish the undo first" : null;
@@ -175,6 +221,26 @@ public sealed class MoveHistory
         branch < 0 || branch >= branches.Count ? "there is no such branch"
         : Inner > 0 ? $"{entries[Cursor - 1].Id} is partly undone; redo it or finish the undo first"
         : At(branches[branch].From) < 0 ? $"{branches[branch].From} is not on this line" : null;
+
+    // The first request of a switch only asks; -1 closes the question. A branch that cannot be switched to now
+    // is not asked about.
+    public bool Ask(int branch)
+    {
+        if (branch >= 0 && SelectRefusal(branch) != null) return false;
+        int to = branch < 0 ? -1 : branch;
+        if (to == Asking && askedAt == Revision) return true;
+        Asking = to; askedAt = Revision; Safe.Raise(Changed); return true;
+    }
+
+    // Why a confirmation of a switch to this branch is refused now, or null: only an answer to the question that
+    // is open, for that branch and at the head it was asked at, switches lines.
+    public string? ConfirmRefusal(int branch) =>
+        Asking < 0 ? "no switch is waiting for its confirmation; ask first"
+        : Asking != branch ? $"the open question is about branch {Asking}, not {branch}"
+        : askedAt != Revision ? "the history changed after the question was asked; ask again"
+        : SelectRefusal(branch);
+
+    public bool Confirm(int branch) => ConfirmRefusal(branch) == null && SelectBranch(branch);
 
     // The branch becomes the line and is applied to its end. The later entries of the old line are kept as a
     // branch in its place: nothing is rewritten and nothing is lost.

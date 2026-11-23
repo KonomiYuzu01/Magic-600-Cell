@@ -116,6 +116,8 @@ internal static class LabFrame
         // Commands: the registry is the command table, the keymap and the palette are generated from it. The
         // lab has no engine, so only the commands the frame itself carries out are available here.
         var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(root, "docs/progress/1.0/command-table.json")));
+        // The record's draft rows (replay a kept branch, the preview's sides) join the table at its freeze.
+        registry.AddRows(File.ReadAllText(Path.Combine(folder, "command-rows-draft.json")));
         // The lab shows the solving commands in the owner's words; the table's ids and labels are not edited.
         registry.Relabel(File.ReadAllText(Path.Combine(folder, "command-labels.json")));
         Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);

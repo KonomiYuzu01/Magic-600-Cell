@@ -175,8 +175,17 @@ internal static partial class Program
         Check(second.Id == 2 && preview.Replaced && preview.CommitRefusal(20 + PreviewModel.Settle / 2) != null && preview.Take(20.1) == null && preview.Pending == second, "settle");
         Check(preview.CommitRefusal(20 + PreviewModel.Settle * 1.01) == null, "settle ends");
         preview.SetScrub(9); Equal(preview.Scrub, 3); preview.SetScrub(0); Check(preview.CommitRefusal(30) != null, "an empty prefix commits nothing");
-        preview.SetScrub(2); Preview prefix = preview.Take(30)!;
-        Check(prefix.Id == 3 && prefix.Moves.Count == 2 && prefix.Statement.EndsWith("prefix(2)", StringComparison.Ordinal) && preview.Pending == null, "the prefix is its own preview");
+        // A prefix is prepared and rechecked as its own preview before it commits (ADR-D01.12): with no check of
+        // its own it is refused and stays, under its own id, with nothing evaluated.
+        preview.SetScrub(2);
+        Check(preview.AtPrefix && preview.Take(30) == null && preview.Pending is { Id: 3, Status: PreviewStatus.Refused, Evaluated: false } && preview.Pending.Reason == PreviewModel.NoPrefixCheck && preview.Pending.Moves.Count == 2,
+            "a prefix was taken without a check of its own");
+        preview.Show("preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 31);
+        preview.Recheck = (_, m) => new PreviewCheck(PreviewStatus.Ready, null, new[] { new OrbitEffect("a", m.Count, 10) }, "prefix ok");
+        preview.SetScrub(2); Preview prefix = preview.Take(32)!;
+        Check(prefix.Id == 5 && prefix.Moves.Count == 2 && prefix.Statement.EndsWith("prefix(2)", StringComparison.Ordinal) && prefix.Effects.Single().Moved == 2 && prefix.Protection == "prefix ok" && preview.Pending == null,
+            "the prefix is its own preview, with its own check");
+        preview.Recheck = null;
         Refuse(() => preview.Show("preview c", "x", three, PreviewStatus.Refused, " ", effects, "ok", 40), "preview");
         preview.Show("preview c", "package", Array.Empty<string>(), PreviewStatus.Refused, "not yours", effects, "none", 40);
         Check(preview.CommitRefusal(99) == "not yours" && preview.Take(99) == null, "a refused preview never commits");

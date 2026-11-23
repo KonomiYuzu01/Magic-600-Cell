@@ -1,0 +1,42 @@
+{
+  "format": "magic600-design-command-rows",
+  "version": 1,
+  "note": "Draft command rows of the design-system record (revision 6, Q5): actions the chrome offers that the command table does not hold yet. They join the command table at its freeze; until then Look Lab registers them after the table's rows. Their default keys are drafted with the default keymap, so none is bound here; the palette can bind each one.",
+  "commands": [
+    {
+      "id": "session.branch.replay",
+      "label": "Replay kept branch as preview",
+      "kind": "query",
+      "contexts": ["any"],
+      "note": "Prepares the moves of a kept branch as one preview with its own checks and effects. It never commits; the solver commits the preview like any other (ADR-D01.16). Argument: the branch number."
+    },
+    {
+      "id": "preview.side.both",
+      "label": "Preview: before beside after",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "The preview view's stage compares the committed state with the state after the whole sequence, side by side (ADR-D01.10)."
+    },
+    {
+      "id": "preview.side.before",
+      "label": "Preview: before only",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "The preview view's stage shows the committed state (ADR-D01.10)."
+    },
+    {
+      "id": "preview.side.after",
+      "label": "Preview: after only",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "The preview view's stage shows the state after the whole sequence (ADR-D01.10)."
+    },
+    {
+      "id": "preview.side.next",
+      "label": "Preview: next side",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "Cycles the preview view's stage through both, before and after (ADR-D01.10)."
+    }
+  ]
+}
