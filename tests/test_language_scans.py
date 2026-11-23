@@ -33,9 +33,22 @@ TOOLS = ROOT / "tools"
 # file's open (the owner's reading of finding E1 of the KN5 boundary attack, 18 November 2026,
 # docs/wiki/decisions/owner-decisions-2026-11-18.md; the layer-boundary change approved under PHS.52).
 PLATFORM_LAYER: frozenset[str] = frozenset({"c600-platform"})
-# KN6 checkers, by source path, with the producer modules they must not import (KN6.2). LP2 has none: KN6.1's checker
-# kinds arrive with LP5 (CT-KN6-01, CT-KN6-03).
-KN6_CHECKERS: dict[str, tuple[str, ...]] = {}
+# KN6 checkers, by the source path that defines KN6.1's interface, with the producer modules they must not import
+# (KN6.2). The scan reads every source of that path's crate, so a stage's archive sub-checker (LP5 pieces R3 to R6,
+# `src/archive/sNN/`) is scanned without a new entry. LP5's c600-checkers may reach only the exact engines
+# (c600-kernel, c600-jumble, c600-digest), and inside them no chooser or construction catalogue: exact rotation
+# requests and their nearest-point choice, the shipped corrections, the producer's request writer. Every other
+# workspace crate is a producer here: an interpreter, a library, an archive reader, a research host, a session store,
+# a command layer, a tool or a front end.
+KN6_CHECKERS: dict[str, tuple[str, ...]] = {
+    "rust/c600-checkers/src/report.rs": (
+        "c600_run", "c600_library", "c600_tools", "c600_archive", "c600_research", "c600_session", "c600_command",
+        "c600_syntax", "c600_check", "c600_runtime", "c600_ir", "c600_module", "c600_build", "c600_evidence",
+        "c600_jumble_tool", "c600_durable", "c600_view", "c600_display", "c600_render", "c600_input",
+        "c600_platform", "c600_repr", "c600_a2_filter", "c600_lx2", "c600_lx4",
+        "c600_jumble::rotation", "c600_jumble::corrections", "c600_kernel::request",
+    ),
+}
 # Sources that define KN6.1's `CheckReport` to read one and run no check, with the producer crates they must not
 # import. The evidence library admits a report as one leaf (EVD.46) and reads no program or session (EVD.14, EVD.54),
 # so it imports neither the interpreter that runs programs nor the session store that runs their jobs.
@@ -660,19 +673,71 @@ class ScanTests(unittest.TestCase):
         self.assertEqual(len(move_selection_problems(bad)), 1)
 
     def test_ct_kn6_02_no_checker_imports_producer_code(self):
-        """CT-KN6-02 (part: not run: KN6.1's five checker kinds, which arrive with LP5 (CT-KN6-01, CT-KN6-03), so the
-        Rust half has no checker to scan): no workspace source and no Python tool defines KN6.1's checker interface
-        unless it is declared with its producers (no checker in LP2, and one reader of a report, the evidence
-        library's admission (EVD.46), which imports neither the interpreter nor the session store); LP2's one checker
-        of a producer's output, the O01 to O07 oracle comparison (tools/oracle/compare.py), imports neither the case
-        maker nor the trace replayer nor the 0.4 engine they build references with, by import statement, relative
-        import or dynamic loading. Controls: a
-        planted Rust checker crate that depends on a producer crate, names its search module and includes its file
-        fails three ways while one that uses only an allowed engine passes; planted Python checkers importing a
-        producer statically, relatively and dynamically fail; an undeclared checker interface fails the inventory."""
+        """CT-KN6-02 (part: LP2's half, the import scan, run on LP5's checker crate c600-checkers, whose four
+        non-archive kinds and research-archive registration point exist since piece R2; an archive sub-checker that
+        a stage piece adds under src/archive/ is read without a new entry): no workspace source and no Python tool
+        defines KN6.1's checker interface unless it is declared with its producers (KN6's checker crate, and one
+        reader of a report, the evidence library's admission (EVD.46), which imports neither the interpreter nor the
+        session store). No source of the checker crate depends on, names or includes the code of any workspace crate
+        other than the exact engines (c600-kernel, c600-jumble, c600-digest), nor the engines' chooser and
+        construction modules; its normal dependencies are those three engines, and followed transitively through
+        path dependencies they reach no other workspace crate; every workspace crate outside the engines is a declared
+        producer, so a new crate is a producer until it is shown to be an exact engine. LP2's one checker of a
+        producer's output, the O01 to O07 oracle comparison (tools/oracle/compare.py), imports neither the case maker
+        nor the trace replayer nor the 0.4 engine they build references with, by import statement, relative import or
+        dynamic loading. Controls: a planted Rust checker crate that depends on a producer crate, names its search
+        module and includes its file fails three ways while one that uses only an allowed engine passes; a planted
+        manifest's dependency sub-table, target table, rename and workspace entry are all read as dependencies and its
+        dev dependency is not; planted Python checkers importing a producer statically, relatively and dynamically
+        fail; an undeclared checker interface fails the inventory."""
         self.assertEqual(checker_inventory(self.sources), set(KN6_CHECKERS) | set(KN6_REPORT_READERS))
-        for path, producers in KN6_REPORT_READERS.items():
+        for path, producers in {**KN6_CHECKERS, **KN6_REPORT_READERS}.items():
             self.assertEqual(rust_import_problems(ROOT.joinpath(*Path(path).parts[:2]), producers), [])
+
+        import tomllib
+
+        def normal_dependencies(crate: Path, rust: Path = RUST) -> dict[str, Path | None]:
+            """A crate's normal dependencies ([dependencies] and every [target.*.dependencies], not dev or build), by
+            the name the code uses and the package it names, with the folder of each path dependency; an entry
+            inherited from the workspace resolves through its [workspace.dependencies]."""
+            manifest = tomllib.loads((crate / "Cargo.toml").read_text(encoding="utf-8"))
+            inherited = tomllib.loads((rust / "Cargo.toml").read_text(encoding="utf-8"))
+            inherited = inherited.get("workspace", {}).get("dependencies", {})
+            tables = [manifest.get("dependencies", {})]
+            tables += [target.get("dependencies", {}) for target in manifest.get("target", {}).values()]
+            deps = {}
+            for table in tables:
+                for key, spec in table.items():
+                    base = crate
+                    if isinstance(spec, dict) and spec.get("workspace"):
+                        spec, base = inherited.get(key, {}), rust
+                    spec = spec if isinstance(spec, dict) else {}
+                    folder = (base / spec["path"]).resolve() if "path" in spec else None
+                    for name in {key, spec.get("package", key)}:
+                        deps[name.replace("-", "_")] = folder
+            return deps
+
+        engines = {"c600_kernel", "c600_jumble", "c600_digest"}
+        members = {member.replace("-", "_") for member in workspace_members()}
+        for path, producers in KN6_CHECKERS.items():
+            crate = ROOT.joinpath(*Path(path).parts[:2])
+            name = crate.name.replace("-", "_")
+            # The scan reads real checkers (PHS.63): the shared core, the four kinds and the six stage folders.
+            read = {source.relative_to(crate).as_posix() for source in crate_sources(crate)}
+            expected = {"src/report.rs", "src/claims.rs", "src/replay.rs", "src/gate.rs", "src/archive/mod.rs"}
+            expected |= {f"src/kinds/{kind}.rs" for kind in ("admissibility", "macros", "expansion", "checkpoints")}
+            expected |= {f"src/archive/s{stage}/mod.rs" for stage in range(14, 20)}
+            self.assertLessEqual(expected, read)
+            self.assertEqual(members - engines - {name} - {p.split("::", 1)[0] for p in producers}, set())
+            self.assertEqual(set(normal_dependencies(crate)), engines)
+            reached, todo = set(), [crate]
+            while todo:
+                for dependency, folder in normal_dependencies(todo.pop()).items():
+                    if dependency in members and dependency not in reached:
+                        reached.add(dependency)
+                        self.assertIsNotNone(folder, dependency)
+                        todo.append(folder)
+            self.assertLessEqual(reached, engines, f"{name} reaches {sorted(reached - engines)}")
         self.assertEqual(python_import_problems(ORACLE_CHECKERS), [])
         names = python_imports(ROOT / "tools/oracle/compare.py")
         self.assertTrue({"json", "zlib"} <= names, names)
@@ -696,6 +761,20 @@ class ScanTests(unittest.TestCase):
             self.assertEqual(rust_import_problems(root / "rust/clean", ("producer", "producer::search")), [])
             sources = {"rust/checker/src/lib.rs": lex_rust((root / "rust/checker/src/lib.rs").read_text())}
             self.assertEqual(checker_inventory(sources, root / "tools"), {"rust/checker/src/lib.rs"})
+            # The dependency reader sees a sub-table, a target table, a rename and a workspace entry, and no dev
+            # dependency.
+            write(root / "rust/Cargo.toml", '[workspace.dependencies]\nshared = { path = "shared" }\n')
+            write(root / "rust/forms/Cargo.toml",
+                  '[package]\nname = "forms"\n\n[dependencies.producer]\npath = "../producer"\n\n'
+                  "[target.'cfg(unix)'.dependencies]\n"
+                  'alias = { package = "c600-session", path = "../session" }\n\n'
+                  "[dependencies.shared]\nworkspace = true\n\n"
+                  '[dev-dependencies]\nc600-run = { path = "../run" }\n')
+            self.assertEqual(normal_dependencies(root / "rust/forms", root / "rust"),
+                             {"producer": (root / "rust/producer").resolve(),
+                              "alias": (root / "rust/session").resolve(),
+                              "c600_session": (root / "rust/session").resolve(),
+                              "shared": (root / "rust/shared").resolve()})
 
             write(root / "tools/oracle/make_cases.py", "")
             write(root / "tools/oracle/static_check.py", "from tools.oracle.make_cases import CASES\n")
