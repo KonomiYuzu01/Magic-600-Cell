@@ -35,6 +35,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-render` | The display host's bridge to the S-A2 renderer core: `c600-display`'s `Backend` over the core's ABI 5 through a safe call interface, with a fake core for headless tests, and user stages as HLSL under `m600-stage-hlsl/1` with their binary32 CPU reference; the table of the core's C functions is in `renderer/bridge`, outside this workspace (LP3, C9) |
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
+| `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -67,6 +68,8 @@ The durable crate holds tests only; its dev-dependencies are the session store, 
 syntax crate, the interpreter, the kernel and the digest crate.
 The library crate depends on the IR, syntax and digest crates only; its tests also run the checker, the interpreter
 and the kernel.
+The editor services crate depends on the syntax, checker, IR and digest crates only, so it has no path to the
+interpreter or the command layer and runs no user program (EV1.9).
 
 ## Running the tests
 
@@ -396,8 +399,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Canonical layout (LG1.4, CT-LG1-03). `format` depends on the parsed program only: four-space indents, a blank line
   before each declaration, imports directly after the module line, one `let` or `return` per line, `match` arms and
   closure bodies on lines of their own, and type arguments and generic parameters without spaces (`<T,E>`, as LX-8's
-  type strings). Comments are not retained, as in candidate A, so the layout drops them; retention comes with the
-  authoring services (PHS.21). `c600-syntax/tests/fixtures/canonical.6cs` pins one expected output by its SHA-256.
+  type strings). The layout drops comments, as in candidate A. Since LP4-1 the parse keeps them, and whitespace, as
+  trivia for the authoring services (PHS.21), but no layout keeps them yet.
+  `c600-syntax/tests/fixtures/canonical.6cs` pins one expected output by its SHA-256.
 - Source map (LG4.12). `lower` returns, for each module, the source digest, each function's declaration range and
   the source range of every IR path in each body, so a checker diagnostic's function and path map to source text.
 - What parses but does not lower yet. Lowering refuses each of these with a message naming what it waits for: a
@@ -3575,3 +3579,83 @@ run or not applicable is no pass (PHS.63).
   at the meter's budget code or at the host's 60 s view deadline, `KN7:resource_limit.safety_stop`, whichever comes
   first. `c600-lx2/examples/view_limits_probe.rs` measures how far a metered fault runs under the product's view
   limits. Evidence kind: source and synthetic; nothing is timing.
+
+## Status of LP4-1: the editor services
+
+`c600-editor` holds EV1's editor services (chapter 04, EV1.1 to EV1.12) as a library that LP4-3's C ABI host library
+(`renderer/bridge/editor`, not built yet) wraps. Its API is plain owned data: strings, vectors, enums and byte offsets,
+with no handle kept between calls and no callback. Like the IR, it is a draft until the language's interfaces freeze.
+
+- No user program runs (EV1.9). The crate forbids unsafe code and depends on `c600-syntax`, `c600-check`, `c600-ir`
+  and `c600-digest` only; `tests/dependencies.rs` follows the manifests and fails on any path to `c600-run` or
+  `c600-command`. A shell links it as a library; program execution stays outside the UI thread.
+- Documents and ranges (EV1.1, EV1.10). `Document::open(bytes, units)`, or `open_declared(bytes, "utf8" | "utf16" |
+  "scalar")`, names immutable bytes by their SHA-256 (`digest()`) and keeps the units the host declared. Every service
+  takes the digest its request was built against, and positions in the declared units; another digest is
+  `EV1:stale.editor_source`. `SourceRange { digest, start, end }` is H7's: UTF-8 byte offsets on scalar boundaries,
+  half-open. `offset`, `range`, `host` and `host_in` convert from and to the declared units without rounding. An
+  endpoint inside a scalar or past the end, a reversed range, units other than the declared ones, and bytes that are
+  not pinned source (malformed UTF-8, a CR, a byte-order mark) are `EV1:input.source_range_invalid`, each with its
+  typed reason; for unpinned bytes the reason carries ERR.10's raw context, the raw digest and the offending byte
+  interval, and never a converted position.
+- Subjects and contexts. Every response carries a `Subject`: the source digest, whether the bytes are pinned, the
+  edition and the module context's digest. A `ModuleContext` holds the edition, the session's model identity and the
+  identities the draft supports (KN0.1's five fields), the evidence obligations, and the dependency sources by digest
+  with the identities each supports; `ModuleContext::digest` is a draft canonical text,
+  `c600-editor-context-draft-1`.
+- `parse(document, edition)` (EV1.2): the parsed file with its recovery holes, what was read of each broken
+  declaration (kind, `export`, name, and every binding with the byte span it is visible in), comments and whitespace
+  as trivia, an outline in source order (imports, declarations, holes, comments) and the syntax diagnostics. An
+  encoding fault gives ERR.10's diagnostic with no span.
+- `complete(document, digest, position, context)` (EV1.3): the completion context at the position (comment, text,
+  literal, declaration, signature, new name, type, effects, capabilities, a dependency's members, a field or an
+  expression), the range the prefix replaces, and the candidates, sorted by label only, each with its kind, type,
+  effects, declaring identity (alias, source digest and declaration) and documentation reference. Locals come from the
+  recovered scope, so an incomplete declaration still completes; members come from the pinned dependency. A missing
+  dependency or unknown field types are listed in `missing`. A context whose session identity the draft does not
+  support, or a dependency that supports another identity, is refused with `KN1:input.identity_mismatch`. Nothing
+  ranks candidates or proposes a move (the human-solve boundary).
+- `diagnose(document, digest, context)` (EV1.4): syntax diagnostics; `LG5:input.module_dependency_missing` at an
+  import whose bytes the context does not hold; `KN1:input.identity_mismatch` at the module header or at the import,
+  naming the first differing field; `LG4:input.ir_rejected` for a lowering refusal; the checker's findings forwarded
+  with their own codes and typed context at the range the source map gives, so LG2.22's direct and helper condition
+  refusals and its scalar `exact_required` case pass through unchanged; and `EV1:evidence.obligation_unmet`. The
+  `Verdict` is `Checked(CheckedCandidate)` only for a complete draft that lowers and checks with no finding.
+  `CheckedCandidate` names the source, module, edition, closure digests, IR version, execution contract and context
+  digest, the data that EV1.11's activation names; it grants nothing.
+- `hover` and `definition` (EV1.5, EV1.6) resolve a name in the draft and its pinned dependencies: the declared type
+  or signature, declared effects, the required capabilities, exactness, the module's static check, the checker's
+  inferred effects and capabilities with capability separation's view, the permission `DecidedAtInvocation`, and the
+  defining range under its own source's digest. Each field it cannot resolve says why (`Unresolved`); a missing
+  dependency is never replaced by another version, and no check is invented.
+- `rename(document, digest, position, proposed, context)` (EV1.6) proposes edits, each bound to its source's digest,
+  the draft's first. Renaming a dependency's exported declaration edits that dependency's bytes, named by its old
+  digest, and re-pins each importer's digest literal up the closure in dependency order, so no import keeps naming
+  bytes that changed. The edited closure is checked again, and its diagnostics and verdict are returned: a clash or a
+  malformed name shows there, and the proposed name is not judged first. `apply_edits(document, edits)` applies one
+  source's edits; edits for other bytes are `EV1:stale.editor_source`, overlapping edits and invalid ranges
+  `EV1:input.source_range_invalid`.
+- Envelopes (EV1.12, chapter 13). Every diagnostic and refusal is an `Envelope`: the code, the form, the service that
+  raised it (the event), a typed `Reason`, a typed `NextAction`, the range when it has one, and a summary for display
+  only. `category`, `recoverable` and `retry` follow ERR.8 to ERR.15. The codes are constants in `c600_editor::code`.
+- Additions to `c600-syntax`, additive only, so its other tests run unchanged: `ParsedFile.trivia` (comments and
+  whitespace), `ParsedFile.recovered` (`ast::RecoveredDecl`), `lexemes`, `pinned` (the byte check alone),
+  `type_text`, and the name lists lowering reads (`base_types`, `type_constructors`, `precisions`, `effect_names`,
+  `capability_names`, `orders`) (`c600-syntax/tests/authoring.rs`).
+- Tests. CT-EV1-01, CT-EV1-02, CT-EV1-03, CT-EV1-05 and CT-EV1-07 run whole (`c600-editor/tests/ct_ev1_0N.rs`, each
+  test named by its ID); `tests/completion.rs` covers completion contexts and `tests/dependencies.rs` EV1.9's
+  dependency part.
+- DRAFT: the evidence obligation. The IR draft has no claim types, so a declaration the context requires to supply
+  evidence meets the obligation when it, or a function it calls, has an exact evidence sink (`use_evidence`).
+- Not built, which is no pass (PHS.63):
+  - a layout that keeps comments: `format` still drops them;
+  - inferred types of locals: the checker reports none, so hover gives a local's declared type or says why not;
+  - model and level on hover, and evidence references: the IR draft has no identity tower, levels or claims;
+  - field completion beyond the declared record types of parameters;
+  - renaming a binding inside a recovery hole: such occurrences stay unchanged and are listed in `skipped`;
+  - a missing dependency of a dependency is reported at the draft's import; identities are compared for the draft's
+    direct imports only;
+  - EV1.11's activation (LP4-2 builds it on `CheckedCandidate`) and the C ABI host library (LP4-3).
+- Not run here: CT-EV1-04 and CT-EV1-08 (EV1.7, EV1.8 and EV1.11 need activation), CT-EV1-06 (LX-4's bars, on the
+  owner's machine).
+- Evidence kind: source and synthetic. A pass is not Windows/DirectX, input, long-session or performance evidence.
