@@ -3679,6 +3679,17 @@ workspace file.
   CT-LB1-05, CT-LB5-07, CT-LB5-08 and CT-ERR-11, their library parts. Not built here: the host's refusal of research
   tier rows in a solving session (BND.64, CT-BND-16), the entries' puzzle forms over KN2.4's reads and the jumbling
   form of D[k] (the research host's); strategies, selectors, certificate builders and seeded search.
+- R8, reproducible research work (LB5.7, PS1.31, DET.1 to DET.7, DET.30, DET.48; KN7.3 to KN7.6): `c600-research`'s
+  KN6 check job runs each check through `c600_checkers::check_until` as a child scope of the job. The input is pinned
+  by digest: a session revision opened read-only (the job's engine-owned branch), or a start an archived certificate
+  states. The job's kernel-cost budget reaches the checker as a cooperative stop, so a long expansion ends as the
+  job's cut-off, never as a verdict, and nested checks mint no allowance. Its run record keys the adapter's and
+  checkers' sources and identities, the cost and metering rules and the kernel build. `reproduce` re-seals and re-runs
+  a stored record from its captured bytes and matches the exact payload byte for byte, with digests pinned for CI on
+  Linux. Only a run's own reports reach `admit_check_report`; archived timed stops and data-only members stay recorded
+  facts that supply no run. The checker core gained additive stop scopes and owned engines (`engines::Loaded`);
+  outside every scope nothing changes. Tests: CT-DET-24 and the LP5 halves of CT-DET-01, CT-DET-02, CT-DET-11,
+  CT-LG3-05, CT-LG5-02 and CT-EVD-30; CT-LG3-05's mode refusal is not run, since the store holds JumbleOff only.
 - R9, the proof-obligation translator (LB5.18, PS1.45, PS1.46): `c600-evidence`'s `obligation` module, as pure code.
   It translates a typed Statement over `c600-obligation-vocabulary-draft-1` into PS1.45's `c600-proof-obligation-draft`
   Lean 4 text with `by sorry`, and matches the format packet's `obligations` vectors byte for byte. A named statement,
