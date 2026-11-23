@@ -494,6 +494,13 @@ public sealed class OperationDraft
         twists[Active].Add(twist.Trim()); Safe.Raise(Changed); return true;
     }
 
+    // A library macro joins the active phase as one change, so the draft stages once (ADR-D01.69).
+    public bool AppendAll(IReadOnlyList<string> word)
+    {
+        if (Route == InputRoute.Direct || word.Count == 0 || word.Any(string.IsNullOrWhiteSpace)) return false;
+        twists[Active].AddRange(word.Select(w => w.Trim())); Safe.Raise(Changed); return true;
+    }
+
     // "phase: twist; twist" replaces a phase; no argument takes the last twist of the active phase away.
     public string? Edit(string? argument)
     {

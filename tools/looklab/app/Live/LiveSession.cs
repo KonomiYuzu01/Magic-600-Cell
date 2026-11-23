@@ -295,7 +295,7 @@ internal static class LiveChecks
             Require(specimen.Faces["ui"] == "IBM Plex Sans" && frame.Theme.DefaultFont is FontVariation { BaseFont: FontFile }, fault, "the installed UI face is not in use");
         // Icons: every dock button, the bottom tabs included, names an icon of the set; with the icon font installed it shows the glyph.
         Button[] rail = frame.FindChildren("*", "Button", true, false).Cast<Button>().Where(b => b.HasMeta("dock_panel") && b.HasMeta("icon")).ToArray();
-        Require(rail.Length == 11 && rail.All(b => ChromeIcons.Set!.Icons.ContainsKey(b.GetMeta("icon").AsString()) &&
+        Require(rail.Length == 12 && rail.All(b => ChromeIcons.Set!.Icons.ContainsKey(b.GetMeta("icon").AsString()) &&
             b.Text == (ChromeIcons.Glyph(b.GetMeta("icon").AsString()) ?? ChromeIcons.Fallback(b.GetMeta("icon").AsString()))), fault, "a rail button has no icon");
         GD.Print("LOOKLAB_A5_ICONS installed=" + ChromeIcons.Installed + " set=" + ChromeIcons.Set!.Icons.Count);
         GD.Print("LOOKLAB_A5_SCALE system=" + panel.Look.SystemScale.ToString(System.Globalization.CultureInfo.InvariantCulture) + " body=" + frame.Theme.DefaultFontSize);
@@ -369,6 +369,7 @@ internal static class LiveChecks
         Require(inside && demo.Moves.Cursor == 2 && frame.Press("Ctrl+Enter") && demo.Moves.Entries.Count == 3 && demo.Moves.Branches.Count == 1 &&
             demo.Moves.Branches[0].Entries.Count == entries - 1 && demo.History.List.GetChildren().Count(c => c.HasMeta("entry")) == 3, fault, "the abandoned redo steps were not kept as a branch");
         Require(app.CaptureView().Ui["frame.palette"].Contains("use|workspace.set|layout:analyse|1|", StringComparison.Ordinal), fault, "palette use is not kept");
+        Library(frame, demo, fault);
         Scripts(frame, fault);
         string before = frame.Model.Store();
         bool refused = !frame.Model.Drop("editor", FrameModel.Pair, DropZone.Tab) && !frame.Model.Close(FrameModel.Pair);
@@ -387,6 +388,40 @@ internal static class LiveChecks
         frame.Model.SetFocusMode(true); frame.Flush();
         Require(frame.FindChild("TopBar", true, false) == null && frame.Global.Slot.IsAncestorOf(app.GlobalStage) && !frame.IsAncestorOf(app.ParameterPanel),
             fault, "focus mode shows more than the pair");
+    }
+
+    // B-6 of A6: Solve opens the Library on the left and keeps History in the right dock. Real key events in the
+    // Library's filter: a typed name filters in place, Up and Down move, Enter adds the macro to Core as one change
+    // and Shift+Enter previews it alone; nothing is committed.
+    private static void Library(ChromeFrame frame, LabDemo demo, string fault)
+    {
+        frame.Flush();
+        LabSolve solve = LabFrame.SolveOf(frame); LibraryPanel library = solve.LibraryView;
+        Require(frame.Workspace == "solve" && frame.Model.Docks[DockSide.Left].Open == "library" && frame.Model.Docks[DockSide.Right].Open == "history" &&
+            frame.IsAncestorOf(library) && frame.IsAncestorOf(demo.History), fault, "Solve does not open the Library on the left with History on the right");
+        demo.Preview.Discard(); solve.Draft.Clear();
+        int entries = demo.Moves.Entries.Count, changes = 0;
+        Viewport port = frame.GetViewport();
+        void Type(Godot.Key key, bool shift = false, char text = '\0')
+        {
+            foreach (bool down in new[] { true, false }) port.PushInput(new InputEventKey { Keycode = key, Pressed = down, ShiftPressed = shift, Unicode = down ? text : 0 });
+        }
+        library.Focus();
+        foreach (char c in "swap") Type(Godot.Key.A + (c - 'a'), false, c);
+        Type(Godot.Key.Down); Type(Godot.Key.Up);
+        void Count() => changes++;
+        solve.Draft.Changed += Count; Type(Godot.Key.Enter); solve.Draft.Changed -= Count;
+        LibraryRecord swap = solve.Library.Records.Single(r => r.Name == "Swap pair B");
+        string seen = $"filter '{library.Filter.Text}' (editing {library.Filter.IsEditing()}, focus {library.Filter.HasFocus()}), {solve.Library.Shown.Count} shown, {changes} draft changes, route {solve.Draft.Route}, Core {solve.Draft.Twists(1).Count} twists, " +
+            $"preview {demo.Preview.Pending?.Source ?? "none"} {demo.Preview.Pending?.Status}, notice '{frame.Notice.Text}'";
+        Require(library.Filter.Text == "swap" && solve.Library.Shown.Count == 1 && changes == 1 && solve.Draft.Active == 1 && solve.Draft.Twists(1).SequenceEqual(swap.Word) &&
+            demo.Preview.Pending is { Source: "draft", Status: PreviewStatus.Ready } && demo.Moves.Entries.Count == entries, fault, "a filtered Library macro did not join Core from the keyboard: " + seen);
+        Type(Godot.Key.Enter, true);
+        Require(demo.Preview.Pending is { Source: "library" } alone && alone.Moves.SequenceEqual(swap.Word) && solve.Draft.Twists(1).SequenceEqual(swap.Word) && demo.Moves.Entries.Count == entries,
+            fault, "Shift+Enter did not preview the macro alone, or the draft lost its twists");
+        demo.Preview.Discard(); solve.Draft.Clear(); solve.Library.SetFilter(""); library.Filter.ReleaseFocus(); frame.Flush();
+        Require(demo.Preview.Pending == null && solve.Draft.Count == 0 && frame.IsAncestorOf(demo.History), fault, "the Library step left a preview or a draft behind");
+        GD.Print($"LOOKLAB_A6_LIBRARY filter=swap core={swap.Word.Count} changes={changes} history=right");
     }
 
     // The script interface: entry points are commands, a run ends in a preview or a read result and never in a

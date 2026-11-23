@@ -975,7 +975,7 @@ wired by hand in `app/Live/LabScripts.cs`, their values are sample values,
 and an edited program is checked but not saved.
 
 `python tools/looklab/check.py --godot` adds one result line,
-`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=13 checks=7`, and
+`LOOKLAB_A5_LIVE_PASS reloads=1 refusals=1 restart=kept parts=15 checks=7`, and
 three faults that must fail their own check.
 
 The sweep (`app/Live/Sweep.cs`, mode `a5-sweep`) uses the whole frame the way
@@ -1163,8 +1163,8 @@ three separate marks in three fixed places (solved, lock, Next); the working orb
 - The command `session.branch.select` runs from the palette too: there it only opens the confirm gate in History.
 - Tour stop 18 shows a partial undo inside an entry and a kept branch.
 - Demo data: the entries and moves are the sample session's; the puzzle state does not follow the history.
-- Not shown: names for branches, a tree drawing of more than one level, and restoring a named version. Replay has
-  no command of its own (it is a button only).
+- Not shown: names for branches, a tree drawing of more than one level, and restoring a named version. Replay is the
+  command `session.branch.replay` (a draft row of the record, see the A6 section below).
 
 ### A5 stage 10, points 9 to 11: the palette's row menu, readouts with lamps, the five panel states
 
@@ -1196,7 +1196,9 @@ resets them together. Neither tier has a commit control, and a test reads the so
 
 Every numeric field has the same gestures in both tiers:
 
-- drag the value; Shift is ten times coarser and Alt ten times finer for that drag;
+- drag the value; Shift is ten times coarser and Alt one step a notch for that drag. No gesture goes finer than the
+  step: every value a field takes lies on its grid and its display has the decimals that grid needs, so a change of
+  value always changes what the field shows (Q2 of the A6 review);
 - the value ladder: three rungs of 100, 10 and 1 of the field's steps for each notch, never finer than the step. The
   small ladder beside the value shows the rung, and both tiers show the same one. Changing the rung is not an edit;
 - the keyboard, with the field focused: Left and Right step by the rung, Up and Down change the rung, Enter types a
@@ -1210,10 +1212,45 @@ pop-up under the pointer.
 
 The stage of the preview view compares the committed state with the state after the whole sequence (ADR-D01.10):
 one row of cells for each orbit, the share that will move outlined before and filled after. The button in the head
-steps through both sides, before only and after only. The line under the panes is the scrub, one notch for each move.
+steps through both sides, before only and after only (`preview.side.next`; each side is also its own command,
+`preview.side.both`, `preview.side.before` and `preview.side.after`). The line under the panes is the scrub, one notch
+for each move.
 Above the per-orbit bars one line names the range: how many orbits and how many pieces the sequence moves. The
-comparison is a picture; it has no control and raises no command, and the commit stays on the host's commit bar.
+comparison itself is a picture with no control, and the commit stays on the host's commit bar.
 
 The orbits, their sizes and the moved counts are sample numbers (the orbits are named "sample orbit"). The comparison
 draws the two ends only; the state between them, the collateral pieces one by one and the different animation of a
 preview twist are the core's to draw and are not built here.
+
+### A6 review: build fixes
+
+The A6 review of the A5 build found build defects against rules the record already states, so the record does not
+change. Each fix has a headless test in `tests/A6FixTests.cs`; A5 tests whose sample was the defect were changed.
+
+- Commit safety. A draft whose protection check fails is staged as an impossible preview and never commits (B-1). A
+  typed line never writes the move history; in Direct a typed twist is staged, and only a twist key commits (B-2). A
+  prefix taken at the scrub is prepared and checked again as its own preview before it can commit (B-3). A ready
+  preview remembers the head it was built on and goes stale when anything moves the head, a Direct twist included
+  (B-13). An edited statement is checked again and never keeps its old witness (B-12). A branch switch commits only
+  the answer to the open question, for its branch and at its head (B-5).
+- Effects and drafts. Only evaluated effects may say an orbit is untouched; a preview without them says "Not
+  evaluated" (B-4). Each orbit keeps its own draft; activating Next in another orbit saves the present one (B-7).
+- Gallery, scripts, anchors. The gallery's pane states are the docks' five, Busy among them (B-8). A script's frame
+  follows the recorded author class: a built-in tool has the mark alone, the solver's own script a thin border, other
+  authors a patterned border (B-9). The strip's anchors sit where each view's own projection puts their position, so
+  they follow the camera (B-10, `core/ScenePlaces.cs`; a position of an orbit stands for its p-th piece, sample data).
+- Library (B-6). Solve opens the Library on the left and History on the right. The Library holds macros, Templates,
+  sets, blocks and saved states in one tree with a Built-in branch (sample records). Its filter box filters in place;
+  Up and Down select; Enter adds the selected macro to the active phase (Core by default) as one change
+  (`macro.add`); Shift+Enter previews it alone (`operation.preview` with `macro:<name>`). Rows lead with the kind's
+  glyph and the effect signature on the sample orbits, which reads as unverified. Analyse opens the Library on the
+  left too; History is in the right dock of every layout. The live check drives the filter with real key events and
+  prints `LOOKLAB_A6_LIBRARY filter=swap core=3 changes=1 history=right`.
+- Commands (Q5). Replaying a kept branch (`session.branch.replay`) and the preview's sides (`preview.side.both`,
+  `preview.side.before`, `preview.side.after`, `preview.side.next`) are rows of the registry, added from
+  `data/design/command-rows-draft.json` until the command table takes them; the buttons send these commands.
+- Numeric gestures (Q2). No gesture goes finer than a field's step (Alt drags one step a notch); every value lies
+  on the field's grid and shows with the grid's decimals.
+
+Deferred: B-11 (help at the cursor as a geometry-backed term card linked to the Learn layout). The lab has no Learn
+layout and no term cards, so the key's label alone would point at a missing surface; it needs its own step.

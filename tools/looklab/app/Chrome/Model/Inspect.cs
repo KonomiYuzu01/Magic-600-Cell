@@ -32,7 +32,25 @@ public sealed class InspectField
     internal InspectField(string id, string section, string label, double min, double max, double step, double @default, double value, bool essential, Provenance provenance)
     { Id = id; Section = section; Label = label; Min = min; Max = max; Step = step; Default = @default; Value = value; Essential = essential; Provenance = provenance; }
 
-    public string Display => IsFact ? Fact : Binding != null ? "= " + Binding : Value.ToString(Step >= 1 ? "0" : Step >= .1 ? "0.0" : "0.00", CultureInfo.InvariantCulture);
+    // Every value a field accepts lies on its grid (Min plus whole steps), and the display has the decimals that
+    // grid needs, so a change of value is always a change of what the field shows.
+    public int Decimals
+    {
+        get
+        {
+            for (int d = 0; d < 6; d++)
+            {
+                double scale = Math.Pow(10, d);
+                if (Math.Abs(Step * scale - Math.Round(Step * scale)) < 1e-9 && Math.Abs(Min * scale - Math.Round(Min * scale)) < 1e-9) return d;
+            }
+            return 6;
+        }
+    }
+
+    public string Display => IsFact ? Fact : Binding != null ? "= " + Binding : Value.ToString(Decimals == 0 ? "0" : "0." + new string('0', Decimals), CultureInfo.InvariantCulture);
+
+    // The nearest value on the field's grid, within its range.
+    internal double Snap(double value) => Math.Clamp(Min + Math.Round((value - Min) / Step) * Step, Min, Max);
 }
 
 // The two inspector tiers read this one model (ADR-D01.22): the strip shows the selection and the Essential
@@ -95,19 +113,20 @@ public sealed class InspectorModel
     {
         InspectField field = this[id];
         if (field.IsFact || !double.IsFinite(value)) return false;
-        double snapped = Math.Clamp(field.Min + Math.Round((value - field.Min) / field.Step) * field.Step, field.Min, field.Max);
+        double snapped = field.Snap(value);
         if (snapped == field.Value && field.Binding == null) return false;
         field.Value = snapped; field.Binding = null; field.Provenance = snapped == field.Default ? Provenance.Default : Provenance.Session;
         Safe.Raise(Updated, field); Safe.Raise(Edited, field);
         return true;
     }
 
-    // The value ladder: steps of the field's step, ten times coarser or finer on request.
+    // The value ladder: whole steps of the field's step, ten times coarser on request, never finer than the step.
+    // The result lies on the field's grid like a typed value, so its display always shows the change.
     public bool Nudge(string id, int steps, double scale = 1)
     {
         InspectField field = this[id];
-        if (field.IsFact || steps == 0) return false;
-        double to = Math.Clamp(field.Value + steps * field.Step * scale, field.Min, field.Max);
+        if (field.IsFact || steps == 0 || !(scale >= 1)) return false;
+        double to = field.Snap(field.Value + steps * field.Step * scale);
         if (to == field.Value) return false;
         field.Value = to; field.Binding = null; field.Provenance = to == field.Default ? Provenance.Default : Provenance.Session;
         Safe.Raise(Updated, field); Safe.Raise(Edited, field);

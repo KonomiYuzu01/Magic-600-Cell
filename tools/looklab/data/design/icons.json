@@ -8,6 +8,38 @@
       "glyph": "history",
       "fallback": "H"
     },
+    "panel.library": {
+      "glyph": "library-big",
+      "fallback": "L"
+    },
+    "library.template": {
+      "glyph": "square-function",
+      "fallback": "T"
+    },
+    "library.set.query": {
+      "glyph": "text-search",
+      "fallback": "Q"
+    },
+    "library.set.piece": {
+      "glyph": "puzzle",
+      "fallback": "P"
+    },
+    "library.set.position": {
+      "glyph": "map-pinned",
+      "fallback": "O"
+    },
+    "library.block": {
+      "glyph": "square-dashed",
+      "fallback": "B"
+    },
+    "library.state": {
+      "glyph": "bookmark",
+      "fallback": "V"
+    },
+    "library.tool": {
+      "glyph": "wrench",
+      "fallback": "W"
+    },
     "panel.scripts": {
       "glyph": "file-code",
       "fallback": "S"

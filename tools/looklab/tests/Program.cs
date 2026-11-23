@@ -136,6 +136,8 @@ internal static partial class Program
             ("A6GalleryPaneStatesAreTheDocks", A6GalleryPaneStatesAreTheDocks),
             ("A6ScriptFramesByAuthorClass", A6ScriptFramesByAuthorClass),
             ("A6AnchorsFollowTheViewsProjection", A6AnchorsFollowTheViewsProjection),
+            ("A6LibraryInSolve", A6LibraryInSolve),
+            ("A6NumericGesturesStayOnTheGrid", A6NumericGesturesStayOnTheGrid),
             ("A5FrameLockedPairRefusesHidingAMainView", A5FrameLockedPairRefusesHidingAMainView),
             ("A5FrameStoredArrangementRoundTripAndWorkspaces", A5FrameStoredArrangementRoundTripAndWorkspaces),
             ("LayoutValidationRefusals", LayoutRefusals),

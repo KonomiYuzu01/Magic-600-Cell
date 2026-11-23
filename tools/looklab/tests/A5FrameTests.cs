@@ -7,8 +7,8 @@ internal static partial class Program
     private static FrameModel Frame()
     {
         var frame = new FrameModel();
-        frame.AddDockPanel(DockSide.Left, "history"); frame.AddDockPanel(DockSide.Left, "scripts");
-        frame.AddDockPanel(DockSide.Right, "inspector"); frame.AddDockPanel(DockSide.Bottom, "problems"); frame.AddDockPanel(DockSide.Bottom, "console");
+        frame.AddDockPanel(DockSide.Left, "library"); frame.AddDockPanel(DockSide.Left, "scripts");
+        frame.AddDockPanel(DockSide.Right, "history"); frame.AddDockPanel(DockSide.Right, "inspector"); frame.AddDockPanel(DockSide.Bottom, "problems"); frame.AddDockPanel(DockSide.Bottom, "console");
         return frame;
     }
 
@@ -31,7 +31,7 @@ internal static partial class Program
         Check(frame.Drop("editor", FrameModel.Pair, DropZone.Left) && frame.Resize(frame.Centre, .02) && frame.Centre.Ratio == .1, "a splitter left its range");
         Check(!frame.Resize(PaneNode.Split(true, .5, PaneNode.Group("a"), PaneNode.Group("b")), .5) && !frame.Resize(frame.Centre.A!, .5) && frame.Close("editor"), "a foreign splitter was resized");
         // One panel per dock; the open panel's button collapses the dock.
-        Check(frame.ToggleDock(DockSide.Left, "history") && frame.Docks[DockSide.Left].Open == "history", "dock not opened");
+        Check(frame.ToggleDock(DockSide.Left, "library") && frame.Docks[DockSide.Left].Open == "library", "dock not opened");
         Check(frame.ToggleDock(DockSide.Left, "scripts") && frame.Docks[DockSide.Left].Open == "scripts", "dock shows two panels");
         Check(frame.ToggleDock(DockSide.Left, "scripts") && frame.Docks[DockSide.Left].Open == null, "dock not collapsed");
         Check(!frame.ToggleDock(DockSide.Left, "inspector"), "a panel opened in another dock");

@@ -262,4 +262,71 @@ internal static partial class Program
             frame.Contains("m.GetShaderParameter(\"q\").AsProjection()", StringComparison.Ordinal) && Read("app/Live/LabSolve.cs").Contains("GlobalAnchors.Project = globalPlace; LocalAnchors.Project = localPlace;", StringComparison.Ordinal),
             "the lab places anchors from ids");
     }
+
+    // B-6: Solve's left dock is the Library and History stays in the right dock; a filtered macro joins Core from
+    // the keyboard as one change, and Shift+Enter previews it alone.
+    private static void A6LibraryInSolve()
+    {
+        var library = new LibraryModel();
+        Check(library.Current?.Name == "Three-cycle A" && library.Shown.All(r => LibraryModel.BranchOf(r.Kind) == "Macros"), "a fresh Library does not open on the macros");
+        foreach (LibraryRecord m in library.Records.Where(r => r.IsMacro))
+        {
+            Check(SampleCheck.Check(m.Word).Status == PreviewStatus.Ready && LibraryModel.Signature(m.Word).Count == SampleCheck.Orbits.Count && !LibraryModel.Signature(m.Word)[SampleCheck.Locked] &&
+                LibraryModel.SignatureText(m.Word).Contains("unverified", StringComparison.Ordinal), m.Name + " is not a sample macro the check passes, or its signature claims a certificate");
+        }
+        Check(LibraryModel.Branches.Select(b => b.Title).SequenceEqual(new[] { "Macros", "Templates", "Sets", "Blocks", "Saved states", "Built-in" }) &&
+            library.Records.Count(r => r.Kind == LibraryKind.BuiltInTool) == 7 && Enum.GetValues<LibraryKind>().Select(LibraryModel.Glyph).Distinct().Count() == 8, "the tree's branches, the shipped tools or one glyph per kind");
+        // Filter in place, move by key, add to the active phase (Core by default) as one change.
+        library.SetFilter("swap"); library.Move(1); library.Move(-1);
+        var draft = new OperationDraft(); int changes = 0; draft.Changed += () => changes++;
+        LibraryRecord swap = library.Current!;
+        Check(swap.Name == "Swap pair B" && library.Shown.Count == 1 && draft.Active == 1 && library.Insert(draft) == null && changes == 1 &&
+            draft.Twists(1).SequenceEqual(swap.Word) && draft.Twists(0).Count == 0 && draft.Twists(2).Count == 0, "the filtered macro did not join Core as one change");
+        Check(draft.CanStage && draft.StagedCheck().Status == PreviewStatus.Ready, "the draft with the macro does not stage");
+        // Only a macro joins a phase; Direct has no phase; a filter reaches folded branches; a name selects anywhere.
+        library.SetFilter("built"); Check(library.IsOpen("Built-in") && library.Shown.Count == 7 && library.Insert(draft) != null && changes == 1, "a built-in tool joined a phase, or a filter missed a folded branch");
+        Check(library.Select("Three-cycle on roles") == null && library.Filter == "" && library.Insert(draft)!.Contains("only a macro", StringComparison.Ordinal), "a Template joined a phase unbound");
+        Check(library.Select("nothing") != null && library.Macro("Orient twin").Macro != null, "a missing record was selected");
+        draft.SetRoute("direct"); Check(library.Insert(draft, "Orient twin")!.Contains("Direct", StringComparison.Ordinal) && draft.Twists(1).SequenceEqual(swap.Word), "a macro joined a phase in Direct");
+        library.Fold("Macros"); library.SetFilter(""); Check(!library.IsOpen("Macros") && !library.Shown.Any(r => r.IsMacro) && library.Shown.All(r => r.Kind == LibraryKind.Template) && library.Current?.Kind == LibraryKind.Template, "a folded branch still shows its rows");
+        Refuse(() => new LibraryModel(new[] { library.Records[0], library.Records[0] }), "share a name");
+        // The shipped Solve layout: Library on the left, History on the right; Analyse keeps History one click away.
+        WorkspaceSet shipped = WorkspaceSet.Load(FileAt("data/design/workspaces.json"));
+        var frame = new FrameModel();
+        foreach (string id in new[] { "library", "scripts", "tokens" }) frame.AddDockPanel(DockSide.Left, id);
+        foreach (string id in new[] { "history", "inspector", "slot.1", "slot.2", "tune", "appearance" }) frame.AddDockPanel(DockSide.Right, id);
+        foreach (string id in new[] { "problems", "console", "tasks" }) frame.AddDockPanel(DockSide.Bottom, id);
+        Check(frame.Apply(shipped.Stored["solve"]) && frame.Docks[DockSide.Left].Open == "library" && frame.Docks[DockSide.Right].Open == "history" && frame.Docks[DockSide.Bottom].Open == null,
+            "Solve does not open the Library on the left and History on the right");
+        Check(frame.Apply(shipped.Stored["analyse"]) && frame.Docks[DockSide.Right].Panels.Contains("history"), "History is not reachable in Analyse");
+        // The lab registers the docks so, and the panel's keys send the registry's commands.
+        string lab = Read("app/Live/LabFrame.cs"), panel = Read("app/Chrome/Ui/LibraryPanel.cs"), solve = Read("app/Live/LabSolve.cs");
+        Check(lab.Contains("(DockSide.Left, \"library\", \"Library\", \"panel.library\"", StringComparison.Ordinal) && lab.Contains("(DockSide.Right, \"history\", \"History\", \"panel.history\"", StringComparison.Ordinal) &&
+            lab.Contains("frame.SetContent(\"library\", solve.LibraryView);", StringComparison.Ordinal), "the lab does not register the Library on the left and History on the right");
+        CommandRegistry registry = LabRegistry();
+        Check(new[] { "macro.add", "macro.select", "macro.filter", "macro.base.open", "operation.preview" }.All(registry.Commands.ContainsKey), "a Library command is not in the registry");
+        Check(panel.Contains("Filter.GuiInput += Key;", StringComparison.Ordinal) && panel.Contains("when key.ShiftPressed: Send(\"operation.preview\", name == null ? null : \"macro:\" + name)", StringComparison.Ordinal) &&
+            panel.Contains("Godot.Key.KpEnter: Send(\"macro.add\", name)", StringComparison.Ordinal) && solve.Contains("why = Library.Insert(Draft, argument);", StringComparison.Ordinal) &&
+            solve.Contains("public const string MacroPreview = \"macro:\";", StringComparison.Ordinal) && lab.Contains("solve.PreviewMacro(", StringComparison.Ordinal), "the Library's keys do not reach the draft and the preview");
+        IconSet icons = IconSet.Parse(Read("data/design/icons.json"));
+        Check(icons.Icons.ContainsKey("panel.library") && Enum.GetValues<LibraryKind>().All(k => icons.Icons.ContainsKey(LibraryModel.Glyph(k))), "a Library glyph has no icon");
+    }
+
+    // Q2: no numeric gesture goes finer than the step. Every value a field takes lies on its grid, and the display
+    // has the decimals the grid needs, so keyboard, ladder, typed input and drag agree on what is stored and shown.
+    private static void A6NumericGesturesStayOnTheGrid()
+    {
+        var model = new InspectorModel();
+        InspectField axis = model.AddNumber(InspectorModel.Preview, "p.axis", "axis", 0, 3, 1, 1, 1);
+        InspectField gap = model.AddNumber(InspectorModel.View, "v.gap", "gap", .05, .9, .005, .3, .3);
+        bool Shown(InspectField f) => double.Parse(f.Display, System.Globalization.CultureInfo.InvariantCulture) == Math.Round(f.Value, f.Decimals);
+        Check(!model.Nudge("p.axis", 1, .1) && axis.Value == 1 && axis.Display == "1", "a fine nudge changed a unit-step value");
+        Check(model.Set("p.axis", 2.4) && axis.Value == 2 && axis.Display == "2" && model.Step("p.axis", 1) && axis.Value == 3 && !model.Nudge("p.axis", 1, 10), "typed or laddered unit values left the grid");
+        Check(axis.Decimals == 0 && gap.Decimals == 3 && gap.Display == "0.300", "the display has not the grid's decimals");
+        Check(model.Nudge("v.gap", 1) && Math.Abs(gap.Value - .305) < 1e-12 && gap.Display == "0.305" && Shown(gap), "one step is not shown");
+        Check(model.Set("v.gap", .3124) && Math.Abs(gap.Value - .31) < 1e-12 && gap.Display == "0.310" && Shown(gap), "a typed value is not snapped to the grid");
+        Check(model.Nudge("v.gap", -3, 10) && Math.Abs(gap.Value - .16) < 1e-12 && Shown(gap), "a coarse nudge left the grid");
+        string ui = Read("app/Chrome/Ui/InspectorPanels.cs");
+        Check(!ui.Contains("? .1", StringComparison.Ordinal) && ui.Contains("motion.AltPressed ? 1 :", StringComparison.Ordinal), "a gesture still passes a tenth of a step");
+    }
 }

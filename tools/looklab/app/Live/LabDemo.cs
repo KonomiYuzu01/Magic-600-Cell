@@ -208,6 +208,13 @@ internal sealed class LabDemo
         frame.Say($"Direct: the typed twist is staged as preview #{shown.Id}; a typed line never commits", shown.Status != PreviewStatus.Ready);
     }
 
+    // A library macro alone, as the preview (Shift+Enter in the Library); its effects are evaluated like any other's.
+    public void StageMacro(string name, IReadOnlyList<string> word)
+    {
+        Preview shown = ShowChecked("preview " + name, "library", word, SampleCheck.Check(word), "macro", name);
+        frame.Say($"Library: {name} alone is preview #{shown.Id}", shown.Status != PreviewStatus.Ready);
+    }
+
     public void CommitDirect(string twist)
     {
         if (Moves.CommitRefusal is { } why) { frame.Say("Not committed: " + why, true); return; }

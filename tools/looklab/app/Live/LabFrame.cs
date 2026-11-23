@@ -29,8 +29,9 @@ internal static class LabFrame
     public const string Tune = "tune", Greybox = "greybox", Look = "appearance", Tokens = "tokens";
     private static readonly (DockSide Side, string Id, string Title, string Glyph, string Hint)[] Panels =
     {
-        (DockSide.Left, "history", "History", "panel.history", "No moves yet"),
+        (DockSide.Left, "library", "Library", "panel.library", "No records yet"),
         (DockSide.Left, "scripts", "Scripts", "panel.scripts", "No programs yet"),
+        (DockSide.Right, "history", "History", "panel.history", "No moves yet"),
         (DockSide.Right, "inspector", "Inspector", "panel.inspector", "Nothing selected"),
         (DockSide.Right, "slot.1", "Script panel 1", "panel.slot1", "Empty panel slot"),
         (DockSide.Right, "slot.2", "Script panel 2", "panel.slot2", "Empty panel slot"),
@@ -211,6 +212,7 @@ internal static class LabFrame
                 case "theme.select" when argument == "preset.next": NextPreset(); break;
                 case "theme.select": appearance.Edit(a => a.SetTheme(Next(themes.Select(t => t.Id).ToArray(), a.Theme)), true, true); break;
                 case "density.preset.set": appearance.Edit(a => a.SetDensity(Next(design.Densities, a.Density)), true, false); break;
+                case "operation.preview" when argument != null && argument.StartsWith(LabSolve.MacroPreview, StringComparison.Ordinal): solve.PreviewMacro(argument.Substring(LabSolve.MacroPreview.Length)); break;
                 case var sample when LabDemo.Handles(sample): demo.Execute(command, argument); break;
                 case var solving when LabSolve.Handles(solving): solve.Execute(command, argument, registry.Commands[command].Label); break;
                 default: frame.Say(registry.Commands[command].Label + ": nothing to do for " + argument, true); break;
@@ -260,6 +262,8 @@ internal static class LabFrame
         }
         solve = new LabSolve(frame, root, id => motions.Seconds(id, design, look.ReducedMotion), Execute, demo,
             (orbit, position) => Place(app.View, orbit, position), (orbit, position) => Place(app.Linked.Local, orbit, position)); Solves.Add(frame, solve);
+        // The Library dock of the Solve layout (B-6 of A6): its rows send commands like any other control.
+        frame.SetContent("library", solve.LibraryView);
         frame.SetStrip(solve.Bars(demo.Bar));
         app.ViewParts["frame.bindings"] = (() => inspect.Inspector.Store(), v => inspect.Inspector.Restore(v));
         // Scripts: editor, Scripts dock, console line, panel slots, canvas and the solver's own key bindings.
