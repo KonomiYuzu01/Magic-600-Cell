@@ -1,5 +1,6 @@
 //! The parsed program. Every node keeps its source range in a [`Loc`], which equality ignores, so two parses compare
-//! equal when they hold the same program wherever its text sits (LG1.4).
+//! equal when they hold the same program wherever its text sits (LG1.4). A parsed file also keeps its trivia and, for
+//! each recovery hole, what the parser read of the broken declaration (EV1.2); neither is part of the program.
 
 use crate::{Diagnostic, Span};
 
@@ -27,6 +28,70 @@ pub struct ParsedFile {
     /// Declarations omitted after a syntax error. They are diagnostic values and never lower (LG1.5).
     pub holes: Vec<Span>,
     pub diagnostics: Vec<Diagnostic>,
+    /// What the parser read of each hole's declaration before it stopped, one per hole and in the same order (EV1.2):
+    /// a structure for completion and navigation to read, never an executable meaning.
+    pub recovered: Vec<RecoveredDecl>,
+    /// The comments and whitespace runs after the header's checks, in source order (EV1.2; M7 deferred them,
+    /// PHS.21). They are not part of the program: [`ParsedFile::same_program`] and the canonical layout ignore them.
+    pub trivia: Vec<Trivia>,
+}
+
+/// What a piece of trivia is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TriviaKind {
+    /// A run of spaces, tabs and newlines.
+    Whitespace,
+    /// A `#` comment, up to its line's end and without the newline.
+    Comment,
+}
+
+/// Source text between tokens: a comment or a whitespace run.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Trivia {
+    pub kind: TriviaKind,
+    pub span: Span,
+}
+
+/// How a name inside a declaration is bound.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BindingKind {
+    /// A type or effect parameter, `<T, E>`.
+    Generic,
+    Parameter,
+    Let,
+    ClosureParameter,
+    /// The binder of a `tag(binder)` arm.
+    MatchBinder,
+}
+
+/// A name bound in a declaration that became a recovery hole, as far as the parser read it (EV1.2). It is visible in
+/// the byte interval `[from, to]`: from the end of its binding (after the `;` for a `let`) to the end of its scope,
+/// or to the end of the hole where the scope did not close.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RecoveredBinding {
+    pub name: Name,
+    pub kind: BindingKind,
+    /// The declared type of a parameter.
+    pub ty: Option<TypeExpr>,
+    pub from: usize,
+    pub to: usize,
+}
+
+/// What the parser read of a declaration before it stopped (EV1.2). The hole stays a diagnostic value: nothing here
+/// lowers, and a draft with a hole has no layout (LG1.5).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RecoveredDecl {
+    /// The hole's range, as in [`ParsedFile::holes`].
+    pub hole: Span,
+    /// The token at which parsing stopped.
+    pub stopped: Span,
+    /// The declaration's kind, once its keyword was read; `None` for a broken import or an unknown start.
+    pub kind: Option<DeclKind>,
+    pub exported: bool,
+    /// The declaration's name, once it was read.
+    pub name: Option<Name>,
+    /// The names bound so far, in source order.
+    pub bindings: Vec<RecoveredBinding>,
 }
 
 impl ParsedFile {
