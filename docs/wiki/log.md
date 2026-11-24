@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-24] decision | LP4 and LP5 exit
+The owner signed LP4's exit (0208e78d, pull request 435) and LP5's exit (503736cc, pull requests 433 and 434) on one card with every recommended option; the briefing records both exits with an FP.1 pin refresh of the format packet ([decision](decisions/owner-decisions-2026-11-24-lp4-lp5-exit.md)). The owner-machine sitting and the lattice replay wait for a date the owner sets.
+
 ## [2026-11-23] decision | LP4 and LP5 start
 The owner took every recommended option on the LP4 and LP5 start card: the command layer's open points, LP4's seven items, LP5's four items and one owner sitting ([decision](decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)). LP4 and LP5 continue in the sessions that drafted their plans.
 
