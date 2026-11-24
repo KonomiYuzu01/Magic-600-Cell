@@ -7,8 +7,9 @@
 mod common;
 
 use c600_command::{
-    code, ActionEntry, ChildOutcome, CommandLayer, Fate, Pending, PlayStatus, PlaybackState, RecordedStep, Recorder,
-    Recording, Reopen, Secret, Stop, Table,
+    code, ActionEntry, CancelReason, ChildOutcome, CommandLayer, CommitRecord, Completion, CompletionKind, Error, Fate,
+    Pending, PlayStatus, PlaybackState, Receipt, RecordedStep, Recorder, Recording, Reopen, Secret, Status, Stop,
+    Table,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::ProtectedSet;
@@ -117,6 +118,88 @@ fn writes_are_journal_frames_outside_the_action_order() {
     let (mut store, mut recorder) = reopen(&disk);
     assert_eq!(recorder.load().unwrap(), held);
     assert!(store.history().unwrap().transactions.is_empty(), "the history holds no transaction for them");
+}
+
+/// CT-PS1-15 and CT-PS1-24 (part: the session journal's round trip of a recording whose steps hold every field and
+/// every recorded outcome; not run: capture and playback, which `c600-command`'s `tests/recording.rs` runs).
+/// PS1.16, PS1.30, FP.37: a recording whose steps hold canonical arguments, a word with its source and its provenance
+/// block, the revisions they read, a module digest, the actions taken, completed, committed, refused, failed and
+/// cancelled receipts, and a step with no terminal record is written to the journal and read back unchanged after a
+/// power loss; its object's bytes are the recording's canonical bytes, and the missing terminal stays absent.
+#[test]
+fn a_recording_with_every_field_round_trips_through_the_journal() {
+    let disk = MemDisk::new();
+    let (layer, mut recorder) = create(&disk);
+    let revision = layer.revision().clone();
+    let receipt = |command: &str, status: Status| {
+        Receipt { command: command.into(), request: format!("{command}#r"), job: None, status }.to_json()
+    };
+    let text = |s: &str| Value::String(s.into());
+    let completed =
+        Status::Completed(Completion { kind: CompletionKind::Workspace, revision: revision.clone(), result: None });
+    let commit = CommitRecord { event: "e1".into(), pre: "a".into(), post: "b".into(), revision: revision.clone() };
+    let block = r#"{"parts":[],"producer":"manual","profile":"none"}"#;
+    let word = json::object([
+        ("recipe", json::parse(br#"[{"kind": "word", "moves": [1, -2]}]"#).unwrap()),
+        ("source", json::object([("record", text("word"))])),
+        ("provenance", text(block)),
+    ]);
+    let mut moved = revision.clone();
+    moved.workspace += 1;
+    // Step `n` of `row`, read at `revision`, whose terminal receipt has `status`, or none.
+    let step = |n: usize, row: &str, arguments: Value, status: Option<Status>| RecordedStep {
+        row: row.into(),
+        arguments,
+        word: None,
+        depends: vec![revision.to_json()],
+        module: None,
+        action: None,
+        command: format!("shell/{n}"),
+        request: format!("shell/{n}#r"),
+        outcome: status.map(|status| receipt(&format!("shell/{n}"), status)),
+    };
+    let positions = json::object([
+        ("mode", text("exact")),
+        ("positions", Value::Array(vec![Value::Int(3), Value::Int(-4)])),
+        ("revision", moved.to_json()),
+    ]);
+    let refused = Status::Refused(Error::new(code::CONFIRMATION_REQUIRED, "no confirmation"));
+    let failed = Status::Failed(Error::new(code::ROW_NOT_BUILT, "the entry failed"));
+    let cancelled = Status::Cancelled(CancelReason::Superseded("shell/6".into()));
+    let steps = vec![
+        RecordedStep {
+            action: Some(1),
+            ..step(0, "workspace.set", json::object([("record", text("w"))]), Some(completed.clone()))
+        },
+        RecordedStep {
+            word: Some(word),
+            action: Some(2),
+            ..step(1, "operation.execute", json::object([]), Some(Status::Committed(commit)))
+        },
+        RecordedStep {
+            depends: vec![revision.to_json(), moved.to_json()],
+            module: Some("ef".repeat(32)),
+            ..step(2, "block.add_current", positions, Some(completed))
+        },
+        step(3, "protection.policy.set", json::object([("policy", text("strict \u{2028} \""))]), Some(refused)),
+        step(4, "camera.rotate", json::object([("rotation", text("quarter"))]), Some(failed)),
+        step(5, "camera.rotate", json::object([("rotation", text("half"))]), Some(cancelled)),
+        step(6, "camera.rotate", json::object([("rotation", text("full"))]), None),
+    ];
+    let all = Recording { steps, ..recording("all") };
+    let names: Vec<Option<&str>> = all.steps.iter().map(RecordedStep::status).collect();
+    let want = [Some("completed"), Some("committed"), Some("completed"), Some("refused"), Some("failed")];
+    assert_eq!(names, [&want[..], &[Some("cancelled"), None]].concat());
+    assert_eq!(recorder.save_recording(&all), Fate::Durable);
+
+    drop((layer, recorder));
+    disk.crash();
+    let (_store, mut recorder) = reopen(&disk);
+    let held = recorder.load().unwrap();
+    assert_eq!(held.recordings.get("all"), Some(&all), "every field, unchanged");
+    assert_eq!(held.recordings["all"].steps[6].outcome, None, "the missing terminal stays absent");
+    let digest = c600_digest::sha256_hex(all.to_json().canonical().as_bytes());
+    assert_eq!(disk.durable(&format!("objects/{digest}")), Some(all.to_json().canonical().into_bytes()));
 }
 
 /// A torn final frame, which a power loss during an append leaves, is cut off at open; the earlier frames hold.

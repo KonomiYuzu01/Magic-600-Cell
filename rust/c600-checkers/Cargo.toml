@@ -1,0 +1,13 @@
+[package]
+name = "c600-checkers"
+description = "KN6's independent checkers as kernel code: one small checker per certificate kind, the research-archive kind as a family of sub-checkers, each with its own identity and mutation gate (LP5, R2 to R6)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# KN6.2: the exact engines only. No path to the interpreter, the library, an archive reader's interpretation or a
+# producer's search or construction code; CT-KN6-02's scan in `tests/test_language_scans.py` checks it.
+[dependencies]
+c600-digest = { path = "../c600-digest" }
+c600-jumble = { path = "../c600-jumble" }
+c600-kernel = { path = "../c600-kernel" }

@@ -1,0 +1,50 @@
+edition "6cs-draft-1";
+module research_families requires [];
+import research_flows "95bc91462abfa52077f266b44a2b3bb39971cfa4dfc0e52808949da068f0de8b";
+
+export fn recognize(reference: List<record { kind: Nat, pose: Nat }>, instance: List<record { kind: Nat, pose: Nat }>, gauge: List<record { from: Nat, to: Nat }>) -> record { bijection: List<Int>, check_mode: Text, distinct_fibres: Text, not_transferred: List<Text>, recognized: Bool, reference_pieces: Nat, transferred: List<Text> } effects [] {
+    let edges = repeat(length(instance), record { done = list<record { left: Nat, right: Nat }>(), next = 0 }, fn(s: record { done: List<record { left: Nat, right: Nat }>, next: Nat }) -> record { done: List<record { left: Nat, right: Nat }>, next: Nat } {
+        return record { done = candidates(reference, index(instance, s.next), s.next, gauge, s.done), next = exact_add(s.next, 1) };
+    }).done;
+    let matched = research_flows.max_matching(length(instance), length(reference), edges);
+    let recognized = and(exact_eq(length(instance), length(reference)), matched.perfect);
+    let transferred = match recognized {
+        true => list<Text>("legal_word_language", "legality_along_prefixes", "shape_level_claims");
+        _ => list<Text>();
+    };
+    return record { bijection = bijection(length(instance), matched.matching), check_mode = "exact_transport", distinct_fibres = "not_asserted", not_transferred = list<Text>("distance", "reachability", "sticker_goal"), recognized = recognized, reference_pieces = length(reference), transferred = transferred };
+}
+
+fn candidates(reference: List<record { kind: Nat, pose: Nat }>, piece: record { kind: Nat, pose: Nat }, at: Nat, gauge: List<record { from: Nat, to: Nat }>, done: List<record { left: Nat, right: Nat }>) -> List<record { left: Nat, right: Nat }> effects [] {
+    return repeat(length(reference), record { done = done, next = 0 }, fn(s: record { done: List<record { left: Nat, right: Nat }>, next: Nat }) -> record { done: List<record { left: Nat, right: Nat }>, next: Nat } {
+        let other = index(reference, s.next);
+        let fits = and(exact_eq(piece.kind, other.kind), or(exact_eq(piece.pose, other.pose), gauged(gauge, piece.pose, other.pose)));
+        let grown = match fits {
+            true => push(s.done, record { left = at, right = s.next });
+            _ => s.done;
+        };
+        return record { done = grown, next = exact_add(s.next, 1) };
+    }).done;
+}
+
+fn gauged(gauge: List<record { from: Nat, to: Nat }>, from: Nat, to: Nat) -> Bool effects [] {
+    return repeat(length(gauge), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        let pair = index(gauge, s.next);
+        return record { found = or(s.found, and(exact_eq(pair.from, from), exact_eq(pair.to, to))), next = exact_add(s.next, 1) };
+    }).found;
+}
+
+fn bijection(pieces: Nat, matching: List<record { left: Nat, right: Nat }>) -> List<Int> effects [] {
+    return repeat(pieces, list<Int>(), fn(done: List<Int>) -> List<Int> {
+        let piece = length(done);
+        let found = repeat(length(matching), record { at = -1, next = 0 }, fn(s: record { at: Int, next: Nat }) -> record { at: Int, next: Nat } {
+            let pair = index(matching, s.next);
+            let at = match exact_eq(pair.left, piece) {
+                true => pair.right;
+                _ => s.at;
+            };
+            return record { at = at, next = exact_add(s.next, 1) };
+        }).at;
+        return push(done, found);
+    });
+}

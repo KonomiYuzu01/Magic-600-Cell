@@ -275,7 +275,7 @@ fn fp18_blocks_validate_and_match_the_frozen_digests() {
 
 /// CT-BND-01 (part: workspace and file writes and a forged record; the whole row runs in `conformance_bnd.rs`),
 /// CT-BND-03 (part: the workspace record and file routes; a recording and both conversions, draft and source, run in
-/// `c600-durable`'s `tests/ct_bnd_03_recording_blocks.rs` (LP4-9); not run here: macros, which the command layer and
+/// `c600-durable`'s `tests/ct_bnd_03_recording_blocks.rs` (LP4-9); not run: macros, which the command layer and
 /// the session build (LP3, M6)) and CT-BND-04 (part: two parts read through the workspace and a
 /// file; the whole row runs in `conformance_bnd.rs`): a stored word carries the block the host built, whatever the
 /// program writes, and a later run that reads it through the workspace and a file cites both blocks in read order.

@@ -3,7 +3,7 @@
   "updated": "2026-11-23",
   "current": "1.0-lp3",
   "paid_api_ceiling_usd": 100,
-  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}, {"id": "language", "title": "1.0 language"}, {"id": "lp4", "title": "1.0 LP4 authoring environment"}],
+  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}, {"id": "language", "title": "1.0 language"}, {"id": "lp4", "title": "1.0 LP4 authoring environment"}, {"id": "lp5", "title": "1.0 language LP5 (research expressiveness)"}],
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "done", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null,
      "items": [
@@ -176,7 +176,7 @@
       {"id": "lp4-6", "title": "LP4-6 replay, profile, EV2.9 revision", "weight": 4, "done": true, "evidence": "1eed4ec6"},
       {"id": "lp4-7", "title": "LP4-7 declared-part round trip", "weight": 1, "done": true, "evidence": "9425d160"},
       {"id": "lp4-8", "title": "LP4-8 bindings, rebind, macros", "weight": 3, "done": true, "evidence": "1511961c"},
-      {"id": "lp4-9", "title": "LP4-9 recording, playback, conversion", "weight": 7, "done": false, "evidence": null},
+      {"id": "lp4-9", "title": "LP4-9 recording, playback, conversion", "weight": 7, "done": true, "evidence": "b856841f"},
       {"id": "lp4-10", "title": "LP4-10 reference docs and principle records", "weight": 4, "done": true, "evidence": "67b9a6e3"},
       {"id": "lp4-11", "title": "LP4-11 glossary, learning fixtures, disclosure", "weight": 3, "done": false, "evidence": null},
       {"id": "lp4-12", "title": "LP4-12 log format and compiler", "weight": 6, "done": true, "evidence": "91e70faa"},
@@ -184,6 +184,22 @@
       {"id": "lp4-14", "title": "LP4-14 document services and rows", "weight": 4, "done": false, "evidence": null},
       {"id": "lp4-15", "title": "LP4-15 durable rollback step ID (R2-5)", "weight": 1, "done": true, "evidence": "88e4662f"},
       {"id": "line-pr", "title": "Line pull request merged", "weight": 1, "done": false, "evidence": null}
+     ]},
+    {"id": "1.0-lp5", "track": "lp5", "title": "Language research expressiveness (LP5)", "status": "in_progress", "acceptance": "PHS.31's five acceptance items on one candidate; the 23 LP5 tests and the seven LP2 halves run whole; the owner's PHS.56 understanding confirmation", "acceptance_source": "docs/progress/1.0/language-lp5-plan.md", "blocker": null,
+     "items": [
+      {"id": "plan", "title": "Plan and owner decisions", "weight": 2, "done": true, "evidence": "ce426a7f47c543f398c7d27ec1e5a458c4a9000b"},
+      {"id": "r0-import", "title": "R0 archive import and inventory", "weight": 6, "done": true, "evidence": "4441251250734fd7f21c001045a01534304add9a"},
+      {"id": "r1-bindings", "title": "R1 typed claim bindings and preflight", "weight": 4, "done": true, "evidence": "09e4c47bd8004c41545661a8b76c6899b59c777e"},
+      {"id": "r2-checker-core", "title": "R2 KN6 checker core", "weight": 4, "done": true, "evidence": "c61669b0800514807631dc7ddaf132e11df183e9"},
+      {"id": "r3-stage14", "title": "R3 stage 14 checkers", "weight": 4, "done": true, "evidence": "aa9d149d0b78b1662d65d45a385544ad0d98ff3b"},
+      {"id": "r4-stages15-17", "title": "R4 stages 15 to 17 checkers", "weight": 8, "done": true, "evidence": "cae3407aa73ae7938bfd569002500da7f4d19d22"},
+      {"id": "r5-stage18", "title": "R5 stage 18 checkers", "weight": 6, "done": true, "evidence": "63193e076aa0cc8ab28a018e6fe91b55e057be1c"},
+      {"id": "r6-stage19", "title": "R6 stage 19 checkers", "weight": 6, "done": true, "evidence": "3fdd711f2b63e3cea80b25e68fb5915e0df03d72"},
+      {"id": "r7-library", "title": "R7 research library entries", "weight": 6, "done": true, "evidence": "595c4ca7853989fa3390f3f5df33287845cb8a90"},
+      {"id": "r8-repro", "title": "R8 reproducible research work", "weight": 4, "done": true, "evidence": "5802828c956687e30cdcf8fb0d50fde9d089edc4"},
+      {"id": "r9-obligation-export", "title": "R9 proof-obligation export", "weight": 3, "done": true, "evidence": "5ecc1003fc1e8e146193ef42ab52d3fe61e01e7b"},
+      {"id": "r10-panel-rows", "title": "R10 research panel rows", "weight": 4, "done": true, "evidence": "a08d7211b4b5237af0481500bf38ca65e9116215"},
+      {"id": "exit", "title": "LP5 exit record", "weight": 4, "done": false, "evidence": null}
      ]}
   ]
 }

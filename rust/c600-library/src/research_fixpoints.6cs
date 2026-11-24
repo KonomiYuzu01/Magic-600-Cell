@@ -1,0 +1,86 @@
+edition "6cs-draft-1";
+module research_fixpoints requires [];
+
+export fn least_fixed_point(nodes: List<record { children: List<Nat>, kind: Text }>) -> record { holds: Bool, members: List<Nat>, rounds: Nat } effects [] {
+    return iterate(nodes, uniform(length(nodes), false));
+}
+
+export fn greatest_fixed_point(nodes: List<record { children: List<Nat>, kind: Text }>) -> record { holds: Bool, members: List<Nat>, rounds: Nat } effects [] {
+    return iterate(nodes, uniform(length(nodes), true));
+}
+
+export fn apply_operator(nodes: List<record { children: List<Nat>, kind: Text }>, members: List<Nat>) -> List<Nat> effects [] {
+    return listed(step(nodes, membership(length(nodes), members)));
+}
+
+export fn is_fixed_point(nodes: List<record { children: List<Nat>, kind: Text }>, members: List<Nat>) -> Bool effects [] {
+    let x = membership(length(nodes), members);
+    return exact_eq(step(nodes, x), x);
+}
+
+fn iterate(nodes: List<record { children: List<Nat>, kind: Text }>, start: List<Bool>) -> record { holds: Bool, members: List<Nat>, rounds: Nat } effects [] {
+    let fixed = repeat(exact_add(length(nodes), 1), record { rounds = 0, stable = false, x = start }, fn(s: record { rounds: Nat, stable: Bool, x: List<Bool> }) -> record { rounds: Nat, stable: Bool, x: List<Bool> } {
+        return match s.stable {
+            true => s;
+            _ => advance(nodes, s);
+        };
+    });
+    return record { holds = exact_eq(step(nodes, fixed.x), fixed.x), members = listed(fixed.x), rounds = fixed.rounds };
+}
+
+fn advance(nodes: List<record { children: List<Nat>, kind: Text }>, s: record { rounds: Nat, stable: Bool, x: List<Bool> }) -> record { rounds: Nat, stable: Bool, x: List<Bool> } effects [] {
+    let next = step(nodes, s.x);
+    return match exact_eq(next, s.x) {
+        true => record { rounds = s.rounds, stable = true, x = s.x };
+        _ => record { rounds = exact_add(s.rounds, 1), stable = false, x = next };
+    };
+}
+
+fn step(nodes: List<record { children: List<Nat>, kind: Text }>, x: List<Bool>) -> List<Bool> effects [] {
+    return repeat(length(nodes), list<Bool>(), fn(done: List<Bool>) -> List<Bool> {
+        return push(done, holds_at(index(nodes, length(done)), x));
+    });
+}
+
+fn holds_at(node: record { children: List<Nat>, kind: Text }, x: List<Bool>) -> Bool effects [] {
+    let known = assert(or(exact_eq(node.kind, "and"), exact_eq(node.kind, "or")));
+    let s = repeat(length(node.children), record { any = false, every = true, next = 0 }, fn(s: record { any: Bool, every: Bool, next: Nat }) -> record { any: Bool, every: Bool, next: Nat } {
+        let inside = index(x, index(node.children, s.next));
+        return record { any = or(s.any, inside), every = and(s.every, inside), next = exact_add(s.next, 1) };
+    });
+    return match node.kind {
+        "and" => s.every;
+        _ => s.any;
+    };
+}
+
+fn uniform(n: Nat, value: Bool) -> List<Bool> effects [] {
+    return repeat(n, list<Bool>(), fn(done: List<Bool>) -> List<Bool> {
+        return push(done, value);
+    });
+}
+
+fn membership(n: Nat, members: List<Nat>) -> List<Bool> effects [] {
+    let bounded = assert(repeat(length(members), record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        return record { holds = and(s.holds, exact_less(index(members, s.next), n)), next = exact_add(s.next, 1) };
+    }).holds);
+    return repeat(n, list<Bool>(), fn(done: List<Bool>) -> List<Bool> {
+        return push(done, listed_in(members, length(done)));
+    });
+}
+
+fn listed_in(members: List<Nat>, v: Nat) -> Bool effects [] {
+    return repeat(length(members), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        return record { found = or(s.found, exact_eq(index(members, s.next), v)), next = exact_add(s.next, 1) };
+    }).found;
+}
+
+fn listed(x: List<Bool>) -> List<Nat> effects [] {
+    return repeat(length(x), record { done = list<Nat>(), next = 0 }, fn(s: record { done: List<Nat>, next: Nat }) -> record { done: List<Nat>, next: Nat } {
+        let done = match index(x, s.next) {
+            true => push(s.done, s.next);
+            _ => s.done;
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+}

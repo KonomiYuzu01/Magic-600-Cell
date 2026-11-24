@@ -1,0 +1,62 @@
+edition "6cs-draft-1";
+module research_slp requires [];
+
+export fn program_word(rules: List<record { kind: Text, left: Nat, letters: Word, right: Nat }>) -> CompressedWord effects [] {
+    return repeat(length(rules), record { last = compress(word[]), parts = list<CompressedWord>() }, fn(s: record { last: CompressedWord, parts: List<CompressedWord> }) -> record { last: CompressedWord, parts: List<CompressedWord> } {
+        let rule = index(rules, length(s.parts));
+        let part = match rule.kind {
+            "leaf" => compress(rule.letters);
+            _ => joined(s.parts, rule);
+        };
+        return record { last = part, parts = push(s.parts, part) };
+    }).last;
+}
+
+export fn program_length(rules: List<record { kind: Text, left: Nat, letters: Word, right: Nat }>) -> Nat effects [] {
+    return length(program_word(rules));
+}
+
+export fn program_cost(rules: List<record { kind: Text, left: Nat, letters: Word, right: Nat }>, per_letter: Nat) -> Nat effects [] {
+    return exact_mul(length(program_word(rules)), per_letter);
+}
+
+export fn streamed_length(rules: List<record { kind: Text, left: Nat, letters: Word, right: Nat }>, chunk: Nat) -> record { chunks: Nat, digest: Text, length: Nat, streamed: Nat } effects [] {
+    let positive = assert(not(exact_eq(chunk, 0)));
+    let c = program_word(rules);
+    let walked = walk(c, chunk, 0, 0);
+    return record { chunks = walked.chunks, digest = stream_digest(word_stream(c, chunk)), length = length(c), streamed = walked.streamed };
+}
+
+export fn admitted_expansion(rules: List<record { kind: Text, left: Nat, letters: Word, right: Nat }>, limit: Nat) -> record { admitted: Bool, length: Nat, letters: Word, limit: Nat } effects [] {
+    let c = program_word(rules);
+    return match exact_less(limit, length(c)) {
+        true => record { admitted = false, length = length(c), letters = word[], limit = limit };
+        _ => record { admitted = true, length = length(c), letters = expand(c, 0, length(c)), limit = limit };
+    };
+}
+
+fn joined(parts: List<CompressedWord>, rule: record { kind: Text, left: Nat, letters: Word, right: Nat }) -> CompressedWord effects [] {
+    let concatenation = assert(exact_eq(rule.kind, "concat"));
+    return concat(index(parts, rule.left), index(parts, rule.right));
+}
+
+fn walk(c: CompressedWord, chunk: Nat, at: Nat, chunks: Nat) -> record { chunks: Nat, streamed: Nat } effects [] {
+    return match exact_less(length(c), exact_add(at, chunk)) {
+        true => last_chunk(c, at, chunks);
+        _ => walk(c, chunk, exact_add(at, length(expand(c, at, chunk))), exact_add(chunks, 1));
+    };
+}
+
+fn last_chunk(c: CompressedWord, at: Nat, chunks: Nat) -> record { chunks: Nat, streamed: Nat } effects [] {
+    return match exact_less(at, length(c)) {
+        true => record { chunks = exact_add(chunks, 1), streamed = letters_from(c, at) };
+        _ => record { chunks = chunks, streamed = at };
+    };
+}
+
+fn letters_from(c: CompressedWord, at: Nat) -> Nat effects [] {
+    return match exact_less(at, length(c)) {
+        true => letters_from(c, exact_add(at, length(expand(c, at, 1))));
+        _ => at;
+    };
+}

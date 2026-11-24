@@ -137,6 +137,15 @@ internal static class LL7Checks
         {
             app.State.Load(Presets.Load(Path.Combine(root, "tools/looklab/presets", name), app.State.Schema)); VerifyColouring();
         }
+        // The frame takes panels and views out of the tree and puts them back when it rearranges (23 Nov 2026: a
+        // lower class count after a workspace switch threw in the palette check). Controls first, then the view. The
+        // Hopf rings use every class (a proper ring colouring may not), so a stale colouring shows there.
+        Reattach(app.Panels.GetChildren().OfType<LabControls>().Single()); Reattach(app.GlobalStage);
+        app.State.Set("projection", new EnumValue("hopfRings"));
+        for (int classes = 8; classes >= 4; classes--)
+        {
+            app.State.Set("classes", new IntegerValue(classes)); VerifyColouring();
+        }
         GD.Print($"LOOKLAB_LL7_TEXTURE readbacks={readbacks} uploads={uploads}");
         GD.Print("LOOKLAB_LL7_LAYOUT_PASS kinds=4 classes=5 texture=exact palette=passed checks=1");
 
@@ -167,6 +176,12 @@ internal static class LL7Checks
             Require(panel.Report.ClassPairs.SequenceEqual(pairs.OrderBy(pair => pair.A).ThenBy(pair => pair.B)) &&
                 panel.Report.SameRingAdjacencies == sameRing, check, "palette report differs from the colouring drawn");
         }
+    }
+
+    private static void Reattach(Node node)
+    {
+        Node parent = node.GetParent(); int index = node.GetIndex();
+        parent.RemoveChild(node); parent.AddChild(node); parent.MoveChild(node, index);
     }
 
     private static FocusFrame UniformFrame(LookViewport view)

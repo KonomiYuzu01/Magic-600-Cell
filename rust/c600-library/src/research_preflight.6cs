@@ -1,0 +1,112 @@
+edition "6cs-draft-1";
+module research_preflight requires [];
+
+export fn check_availability(plan: record { bound: Bool, checkers: List<record { id: Text, registered: Bool, source_digest: Text }>, derived: List<record { digest: Text, pointer: Text, role: Text }>, historical: List<Text>, inputs: List<record { path: Text, role: Text, sha256: Text, state: Text }>, label: Text, matrix_reasons: List<Text>, missing: List<record { cites: List<Text>, name: Text }>, resolved: List<Text>, source: Text }) -> record { checked: Bool, checkers: List<record { id: Text, source_digest: Text }>, dependencies: List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>, evidence_leaf: Bool, inputs: List<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }>, kind: Text, label: Text, reasons: List<Text>, refutes: Bool } effects [] {
+    let base = without(plan.matrix_reasons, plan.resolved);
+    let unsupported = listed_text(base, "unsupported_claim");
+    let found = and(exact_less(0, length(plan.checkers)), all_registered(plan.checkers));
+    let no_checker = match unsupported {
+        true => listed_text(base, "no_independent_checker");
+        _ => not(found);
+    };
+    let held = stored(plan.inputs);
+    let historical = listed_text(base, "historical_check_incomplete");
+    let flags = list<Bool>(listed_text(base, "claim_unmapped"), or(listed_text(base, "dependency_missing"), held.missing), or(listed_text(base, "dependency_mismatch"), held.mismatch), no_checker, unsupported, historical);
+    let reasons = match plan.bound {
+        true => ordered(flags);
+        _ => list<Text>("claim_unmapped");
+    };
+    let missing = match listed_text(plan.resolved, "dependency_missing") {
+        true => list<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>();
+        _ => missing_inputs(plan.missing, plan.source);
+    };
+    let gates = match historical {
+        true => historical_gates(plan.historical, plan.source);
+        _ => list<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>();
+    };
+    let dependencies = match plan.bound {
+        true => concat(concat(held.dependencies, missing), gates);
+        _ => list<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>();
+    };
+    return match exact_eq(length(reasons), 0) {
+        true => record { checked = false, checkers = registered(plan.checkers), dependencies = list<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>(), evidence_leaf = false, inputs = concat(held.inputs, derived(plan.derived)), kind = "ready", label = plan.label, reasons = reasons, refutes = false };
+        _ => record { checked = false, checkers = list<record { id: Text, source_digest: Text }>(), dependencies = dependencies, evidence_leaf = false, inputs = list<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }>(), kind = "unavailable", label = plan.label, reasons = reasons, refutes = false };
+    };
+}
+
+fn ordered(flags: List<Bool>) -> List<Text> effects [] {
+    let words = list<Text>("claim_unmapped", "dependency_missing", "dependency_mismatch", "no_independent_checker", "unsupported_claim", "historical_check_incomplete");
+    let same = assert(exact_eq(length(flags), length(words)));
+    return repeat(length(words), record { done = list<Text>(), next = 0 }, fn(s: record { done: List<Text>, next: Nat }) -> record { done: List<Text>, next: Nat } {
+        let done = match index(flags, s.next) {
+            true => push(s.done, index(words, s.next));
+            _ => s.done;
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+}
+
+fn without(values: List<Text>, removed: List<Text>) -> List<Text> effects [] {
+    return repeat(length(values), record { done = list<Text>(), next = 0 }, fn(s: record { done: List<Text>, next: Nat }) -> record { done: List<Text>, next: Nat } {
+        let value = index(values, s.next);
+        let done = match listed_text(removed, value) {
+            true => s.done;
+            _ => push(s.done, value);
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+}
+
+fn all_registered(checkers: List<record { id: Text, registered: Bool, source_digest: Text }>) -> Bool effects [] {
+    return repeat(length(checkers), record { all = true, next = 0 }, fn(s: record { all: Bool, next: Nat }) -> record { all: Bool, next: Nat } {
+        return record { all = and(s.all, index(checkers, s.next).registered), next = exact_add(s.next, 1) };
+    }).all;
+}
+
+fn registered(checkers: List<record { id: Text, registered: Bool, source_digest: Text }>) -> List<record { id: Text, source_digest: Text }> effects [] {
+    return repeat(length(checkers), list<record { id: Text, source_digest: Text }>(), fn(done: List<record { id: Text, source_digest: Text }>) -> List<record { id: Text, source_digest: Text }> {
+        let checker = index(checkers, length(done));
+        return push(done, record { id = checker.id, source_digest = checker.source_digest });
+    });
+}
+
+fn stored(inputs: List<record { path: Text, role: Text, sha256: Text, state: Text }>) -> record { dependencies: List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>, inputs: List<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }>, mismatch: Bool, missing: Bool } effects [] {
+    let start = record { dependencies = list<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>(), inputs = list<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }>(), mismatch = false, missing = false, next = 0 };
+    let held = repeat(length(inputs), start, fn(s: record { dependencies: List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>, inputs: List<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }>, mismatch: Bool, missing: Bool, next: Nat }) -> record { dependencies: List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>, inputs: List<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }>, mismatch: Bool, missing: Bool, next: Nat } {
+        let input = index(inputs, s.next);
+        let known = assert(or(exact_eq(input.state, "present"), or(exact_eq(input.state, "missing"), exact_eq(input.state, "mismatch"))));
+        let blocker = record { cites = list<Text>(), kind = "input", name = "", path = input.path, pointer = "", sha256 = input.sha256, state = input.state };
+        return match input.state {
+            "present" => record { dependencies = s.dependencies, inputs = push(s.inputs, record { digest = input.sha256, kind = "stored", path = input.path, pointer = "", role = input.role }), mismatch = s.mismatch, missing = s.missing, next = exact_add(s.next, 1) };
+            "missing" => record { dependencies = push(s.dependencies, blocker), inputs = s.inputs, mismatch = s.mismatch, missing = true, next = exact_add(s.next, 1) };
+            _ => record { dependencies = push(s.dependencies, blocker), inputs = s.inputs, mismatch = true, missing = s.missing, next = exact_add(s.next, 1) };
+        };
+    });
+    return record { dependencies = held.dependencies, inputs = held.inputs, mismatch = held.mismatch, missing = held.missing };
+}
+
+fn derived(tables: List<record { digest: Text, pointer: Text, role: Text }>) -> List<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }> effects [] {
+    return repeat(length(tables), list<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }>(), fn(done: List<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }>) -> List<record { digest: Text, kind: Text, path: Text, pointer: Text, role: Text }> {
+        let table = index(tables, length(done));
+        return push(done, record { digest = table.digest, kind = "derived", path = "", pointer = table.pointer, role = table.role });
+    });
+}
+
+fn missing_inputs(missing: List<record { cites: List<Text>, name: Text }>, source: Text) -> List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }> effects [] {
+    return repeat(length(missing), list<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>(), fn(done: List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>) -> List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }> {
+        let input = index(missing, length(done));
+        return push(done, record { cites = input.cites, kind = "missing_input", name = input.name, path = source, pointer = "", sha256 = "", state = "missing" });
+    });
+}
+
+fn historical_gates(pointers: List<Text>, source: Text) -> List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }> effects [] {
+    return repeat(length(pointers), list<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>(), fn(done: List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }>) -> List<record { cites: List<Text>, kind: Text, name: Text, path: Text, pointer: Text, sha256: Text, state: Text }> {
+        return push(done, record { cites = list<Text>(), kind = "historical_gate", name = "", path = source, pointer = index(pointers, length(done)), sha256 = "", state = "incomplete" });
+    });
+}
+
+fn listed_text(values: List<Text>, v: Text) -> Bool effects [] {
+    return repeat(length(values), record { found = false, next = 0 }, fn(s: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+        return record { found = or(s.found, exact_eq(index(values, s.next), v)), next = exact_add(s.next, 1) };
+    }).found;
+}

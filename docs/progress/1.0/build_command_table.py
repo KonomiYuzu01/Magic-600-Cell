@@ -25,8 +25,9 @@ DELTA_FORMAT = "c600-command-rows-delta-1"
 # Applied in this order: the language delta may amend a jumbling row. The design delta adds ADR-D01's view and
 # workspace rows, ordinary edits after the LP3 freeze (owner, 22 November 2026, item 3), and the commit delta its
 # commit rows and the rows it moves into the layout history (item 4).
+# The research delta adds LP5's panel rows (item 3.1, docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md).
 DELTA_FILES = ("command-rows-jumbling.json", "command-rows-language.json", "command-rows-design.json",
-               "command-rows-commit.json",
+               "command-rows-commit.json", "command-rows-research.json",
                # LP4's rows, ADR-D01.84; owner decisions of 23 November 2026.
                "command-rows-lp4.json")
 ROW_FIELDS = {"id", "label", "kind", "inventory", "gates", "lane", "preview", "undo", "contexts",

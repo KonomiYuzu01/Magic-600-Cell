@@ -5,21 +5,25 @@
 //! action numbers onto another session's actions. Undo is the move history's (X1, owner decision of 23 November 2026,
 //! item 2.7); EV4.15's single order would read the same here, since no layout step is involved.
 //!
-//! EV4.13 under LG1.3: a source conversion of a recording whose name holds line ends parses, lowers and checks.
+//! EV4.13 under LG1.3: a source conversion of a recording whose name holds line ends parses, lowers and checks; and
+//! a source conversion's module takes the module set's checks and grants exactly as the same source typed by hand.
 
 mod common;
 
-use c600_check::check;
+use c600_check::{check, Grant, Policy};
 use c600_command::{
     code, Direction, PlayStatus, Receipt, Recorder, Status, RECORDING_CONVERT_ROW, RECORDING_PLAY_ROW,
     RECORDING_START_ROW, RECORDING_STOP_ROW,
 };
+use c600_digest::sha256;
 use c600_kernel::json::{self, Value};
+use c600_module::{admit_program, resolve, Entry, Files, Identity, Manifest, Modules};
+use c600_run::provenance::{Author, Profile};
 use c600_session::disk::MemDisk;
 use c600_session::{journal, JournalStore};
 use c600_syntax::{lower, parse};
 use common::layer::{completed, record_draft, Fixture};
-use common::{manual, JOURNAL};
+use common::{checker, contract, manual, JOURNAL};
 
 fn text(s: &str) -> Value {
     Value::String(s.to_owned())
@@ -141,4 +145,88 @@ fn a_source_conversion_parses_whatever_the_recordings_name_holds() {
     let [module] = &lowered.program.modules[..] else { panic!("one module") };
     let exported: Vec<&str> = module.functions.iter().filter(|f| f.exported).map(|f| f.name.as_str()).collect();
     assert_eq!(exported, ["replay"]);
+}
+
+/// The same entry typed by hand: `replay` proposes the word 1 2 for a fresh whole-word preview, in a module of its own.
+const TYPED: &str = "edition \"6cs-draft-1\";\nmodule typed requires [];\n\n\
+                     export command replay() -> record { base: Text, id: Text } effects [preview] {\n    \
+                     let r = propose(word[1, 2], target(\"operation.preview\"));\n    \
+                     return record { base = receipt_base(r), id = receipt_id(r) };\n}\n";
+
+/// The module set's check of the source `text`, whose root module is `module`, for its entry `replay` as an own tool
+/// under `profile` with no grant and the interim policy: the path a typed draft takes (EV1.11, LG5.6), the closure
+/// verified, the entry admitted by `c600-check` (chapter 02's checks, chapter 09's profile grants) and loaded; then
+/// its activation under the host's grant and a bind of the entry. The refusal's code, if any.
+fn module_set(text: &str, module: &str, profile: Profile) -> Result<(), &'static str> {
+    let manifest = Manifest {
+        module: module.into(),
+        edition: "6cs-draft-1".into(),
+        source: sha256(text.as_bytes()),
+        dependencies: vec![],
+        capabilities: vec![],
+        boundary: None,
+        principle: None,
+        supports: vec![Identity::full()],
+    }
+    .bytes();
+    let files = Files::new().with("src/root.6cs", text.as_bytes());
+    let lock = resolve(&manifest, &files).map_err(|r| r.code)?.bytes();
+    let modules = Modules::new(Identity::full(), contract(), checker(), Grant::none());
+    let entry = Entry {
+        module: module.into(),
+        function: "replay".into(),
+        author: Author::Own,
+        profile,
+        grant: Grant::none(),
+        policy: Policy::interim(),
+    };
+    let candidate = modules.check(&manifest, &lock, &files, &[entry]).map_err(|r| r.code)?;
+    modules.activate_module(module, None, candidate.digest, candidate.reference).map_err(|r| r.code)?;
+    modules.bind(module, "replay").map(|_| ()).map_err(|r| r.code)
+}
+
+/// CT-EV4-08 (part: source conversion passes the ordinary checks and grants, on the real checker and the module set;
+/// not run: what a recording retains and that playback has no rebinding operation, which `c600-command`'s
+/// `tests/recording.rs` runs). EV4.13: a source conversion's module goes through what typed source goes through, with
+/// no exemption and no grant of its own. It parses, lowers and checks with no diagnostic; under each profile the
+/// module set approves or refuses its entry `replay` exactly as the same entry typed by hand, in the solving, tool
+/// authoring and research profiles. In tool authoring both are approved, activate and bind, and the checker's
+/// separation reads them as preparing previews and reading no state (capability separation, RTE.24).
+#[test]
+fn ct_ev4_08_a_source_conversion_takes_the_checks_and_grants_of_typed_source() {
+    let mut f = equip(Fixture::create(Box::new(MemDisk::new())));
+    assert!(completed(&f.write("word", &[1, 2], &manual())));
+    assert!(completed(&press(&mut f, RECORDING_START_ROW, json::object([("name", text("r"))]))));
+    let id = f.preview(record_draft("word"));
+    let commit = f.press(id);
+    assert!(matches!(f.shell.send(&mut f.layer, commit).status, Status::Committed(_)));
+    assert!(completed(&press(&mut f, RECORDING_STOP_ROW, json::object([("recording", text("r"))]))));
+    let args = json::object([("recording", text("r")), ("target", text("source"))]);
+    assert!(completed(&press(&mut f, RECORDING_CONVERT_ROW, args)));
+    let record = f.layer.record("source/recording/r").expect("the source record");
+    let source = record.payload.get("source").and_then(|s| s.get("text")).and_then(Value::as_str).unwrap().to_owned();
+    let file = parse(source.as_bytes());
+    assert!(file.diagnostics.is_empty() && file.holes.is_empty(), "{:#?}\n{source}", file.diagnostics);
+    let lowered = lower(&[file]).unwrap_or_else(|error| panic!("{error}\n{source}"));
+    let report = check(&lowered.program).unwrap_or_else(|error| panic!("{error}\n{source}"));
+    assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    let module = lowered.program.modules[0].name.clone();
+
+    for profile in [Profile::Solving, Profile::ToolAuthoring, Profile::Research] {
+        let generated = module_set(&source, &module, profile);
+        assert_eq!(generated, module_set(TYPED, "typed", profile), "{}: as typed source", profile.name());
+    }
+    assert_eq!(module_set(&source, &module, Profile::ToolAuthoring), Ok(()), "approved, activated and bound");
+    let entry = |module: &str| Entry {
+        module: module.into(),
+        function: "replay".into(),
+        author: Author::Own,
+        profile: Profile::ToolAuthoring,
+        grant: Grant::none(),
+        policy: Policy::interim(),
+    };
+    let typed = lower(&[parse(TYPED.as_bytes())]).unwrap_or_else(|error| panic!("{error}"));
+    let separation = admit_program(&lowered.program, &entry(&module)).expect("admitted").separation;
+    assert!(separation.prepares_previews && !separation.reads_state, "{separation:?}");
+    assert_eq!(separation, admit_program(&typed.program, &entry("typed")).expect("admitted").separation);
 }

@@ -1,0 +1,17 @@
+[package]
+name = "c600-research"
+description = "The research host: the research overlay rows and host reads, the KN6 check job adapter whose report alone writes the independent-checker value, reproducible research jobs on engine-owned branches, the obligation export row and the research output panel's rows (LP5, R8 to R10)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# The command layer gains no edge (ONE.48): this crate depends on it, never the reverse.
+[dependencies]
+c600-archive = { path = "../c600-archive" }
+c600-checkers = { path = "../c600-checkers" }
+c600-command = { path = "../c600-command" }
+c600-digest = { path = "../c600-digest" }
+c600-evidence = { path = "../c600-evidence" }
+c600-library = { path = "../c600-library" }
+c600-session = { path = "../c600-session" }
+c600-tools = { path = "../c600-tools" }

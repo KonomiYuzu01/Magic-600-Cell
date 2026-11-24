@@ -659,8 +659,9 @@ are retained, and paths through links are refused.
 `python tools/looklab/check.py --godot` adds three headless result lines: exact
 metrics for the fixed docked layout and 14-step piece-operation flow, refusal
 of an unreachable final command, and exact catalogue coverage in all eight
-contexts on all four layouts: `layouts=4 contexts=32 commands=204 placements=348` (204 with
-`command-rows-lp4.json`'s six document rows, which every layout hides until the owner places them).
+contexts on all four layouts: `layouts=4 contexts=32 commands=215 placements=348` (215 with LP5's research
+delta, `docs/progress/1.0/command-rows-research.json`, and LP4's document rows,
+`docs/progress/1.0/command-rows-lp4.json`, whose rows are hidden in context `any`).
 The harness also requires the refusal-handler and
 catalogue-filter faults to fail their own checks. Core tests cover all six
 flows on all four layouts, progression, refusal/reset, JSON precision and scoped
@@ -857,10 +858,10 @@ that must fail its own check:
 
 These check all uniforms, the slice band and six kinds across seven presets,
 exact drag/inertia and shared rotations, exact layout/class texture data with
-the displayed palette report, and settled Local framing for all three layouts.
-Texture checks read back the bound image and require it to equal the exact
-uploaded bytes; if a renderer returns no image, they compare private copies of
-those bytes instead. The line
+the displayed palette report (also after the panels and the view leave the
+tree and return), and settled Local framing for all three layouts. Texture
+checks read back the bound image and require it to equal the exact uploaded
+bytes; if a renderer returns no image, they compare private copies instead.
 `LOOKLAB_LL7_TEXTURE readbacks=... uploads=...` says which path was used.
 
 The GPU lane retains its ten geometry cases and adds six layout cases: each
