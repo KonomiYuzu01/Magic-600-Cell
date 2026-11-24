@@ -20,7 +20,8 @@ of CT-LB5-11 and CT-RTE-23 and the present text of CT-ERR-19 rest on the same re
 Everything here is source evidence (PHS.31). Two rules of reading apply throughout:
 
 - An ignored test (`#[ignore]`) is not run by the runner, `cargo test --locked --offline` through
-  `tests/test_language_rust.py` in the headless CI (LP5 plan, section 4, selection 9), so it counts as no run. Earlier
+  `tests/test_language_rust.py` and `tests/test_language_rust_checkers.py` in the headless CI (LP5 plan, section
+  4, selection 9), so it counts as no run. Earlier
   commits record some of them passing on earlier candidates: R4's thirteen in a release build at `cae3407a`, R6's
   three at `3fdd711f`. Those runs are not on the exit candidate (PHS.4), and no record shows R3's two or R5's four
   ignored tests run.
