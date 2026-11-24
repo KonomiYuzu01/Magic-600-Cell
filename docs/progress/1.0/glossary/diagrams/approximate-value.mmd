@@ -1,4 +1,5 @@
 flowchart LR
-  E[exact value] -->|explicit conversion, named precision| A[approximate value]
+  L[approximate literal] --> A[approximate value]
+  E[exact value] -->|explicit conversion, named precision| A
   A -. no way back .- E
   A -. decides no legality, protection, equality or evidence .- D[decisions]

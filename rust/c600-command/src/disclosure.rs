@@ -15,7 +15,8 @@
 //!   previews for that principle, waits for LQ2's option set and its joint setting: nothing here is built for it, and
 //!   no learning result grants or withholds a capability.
 //!
-//! The keys' concepts are LP4-11's proposal under the mathematician's review (EV5.14), as the path's steps are.
+//! The mathematician reviewed the keys' concepts with the path's steps and the glossary's rows on 24 November 2026
+//! (EV5.14); their findings are fixed in the keys below, the path and the glossary.
 
 use std::collections::BTreeSet;
 
@@ -39,20 +40,23 @@ const fn key(row: &'static str, step: &'static str, concepts: &'static [&'static
 pub const KEYS: [Key; 27] = [
     // Step 1, use tools and read results.
     key("command.find", "S1", &["Command", "Availability"]),
-    key("object.inspect", "S1", &["Claim", "Scope", "Evidence words"]),
-    key("view.findings", "S1", &["View", "Claim", "Standing", "Evidence words"]),
-    key("view.residuals", "S1", &["View", "Covered set", "Empty answer", "Not found within budget"]),
-    key("operation.check", "S1", &["Check", "Verdict", "Typed partial result"]),
-    key("job.stop", "S1", &["Job", "Budget", "Job result"]),
+    key("object.inspect", "S1", &["Claim", "Scope", "Evidence words", "Canonical ID", "Position"]),
+    key("view.findings", "S1", &["View", "Claim", "Scope", "Standing", "Evidence words"]),
+    // An exact per-orbit query that runs no job: no search outcome applies to it.
+    key("view.residuals", "S1", &["View", "Orbit", "Residual", "Invariant"]),
+    // Check full effect: a job returning the effect with chronological prefix coverage.
+    key("operation.check", "S1", &["Complete effect", "Literal word", "Job", "Verdict", "Typed partial result"]),
+    // Budget stays to contrast a cancelled job, which reads incomplete, with a budget stop.
+    key("job.stop", "S1", &["Job", "Job result", "Incomplete", "Budget"]),
     // Step 3, save layouts and bindings.
-    key("keymap.edit", "S3", &["Binding", "Routing class", "Keyboard key"]),
+    key("keymap.edit", "S3", &["Binding", "Routing class", "Keyboard key", "Workspace undo", "Layout"]),
     key("file.keymap.export", "S3", &["Binding", "Preference"]),
-    key("file.keymap.check", "S3", &["Binding", "Routing class", "Check"]),
+    key("file.keymap.check", "S3", &["Binding", "Routing class", "Digest", "Model identity"]),
     key("file.keymap.apply", "S3", &["Binding", "Workspace undo"]),
     // Step 4, compose recipes and macros (it comes after step 1 only, so its keys need nothing step 3 teaches).
     key("macro.base.open", "S4", &["Macro base", "Macro"]),
     key("macro.select", "S4", &["Macro"]),
-    key("macro.add", "S4", &["Macro", "Word"]),
+    key("macro.add", "S4", &["Macro", "Word", "Recipe", "Work sheet", "Assistance provenance"]),
     key("macro.save", "S4", &["Macro", "Assistance provenance"]),
     key("macro.variant.create", "S4", &["Macro", "Conjugate", "Setup"]),
     key("macro.compare", "S4", &["Macro", "Literal word", "Equality key"]),
@@ -61,12 +65,13 @@ pub const KEYS: [Key; 27] = [
     key("operation.reuse", "S4", &["Recipe", "Preview", "Revision reference"]),
     key("operation.preview", "S4", &["Preview", "Proposal", "Complete effect"]),
     key("operation.execute", "S4", &["Preview", "User-action token", "Protection", "Net and Strict checks"]),
-    key("worksheet.save", "S4", &["Recipe", "Revision"]),
-    key("worksheet.load", "S4", &["Recipe", "Preview"]),
+    key("worksheet.save", "S4", &["Work sheet", "Recipe", "Revision"]),
+    key("worksheet.load", "S4", &["Work sheet", "Recipe", "Preview"]),
     key("recording.start", "S4", &["Recording"]),
     key("recording.stop", "S4", &["Recording"]),
-    key("recording.play", "S4", &["Recording", "Preview"]),
-    key("recording.convert", "S4", &["Recording", "Macro"]),
+    key("recording.play", "S4", &["Recording", "Preview", "User-action token"]),
+    // The draft target holds the literal word (EV4.23); the source target's Module comes at step 6.
+    key("recording.convert", "S4", &["Recording", "Recipe", "Literal word"]),
 ];
 
 /// The goal-flow key of `row`, if a learning step cites it. `operation.check`, which steps 1 and 4 cite, opens at
