@@ -1,0 +1,299 @@
+edition "6cs-draft-1";
+module research_flows requires [];
+
+export fn max_matching(left: Nat, right: Nat, edges: List<record { left: Nat, right: Nat }>) -> record { matching: List<record { left: Nat, right: Nat }>, perfect: Bool, size: Nat } effects [] {
+    let valid = assert(pairs_in_range(left, right, edges));
+    let adjacency = neighbours(left, edges);
+    let mates = repeat(left, record { left_mate = zeros(left), left_matched = uniform(left, false), next = 0, right_mate = zeros(right), right_matched = uniform(right, false) }, fn(s: record { left_mate: List<Nat>, left_matched: List<Bool>, next: Nat, right_mate: List<Nat>, right_matched: List<Bool> }) -> record { left_mate: List<Nat>, left_matched: List<Bool>, next: Nat, right_mate: List<Nat>, right_matched: List<Bool> } {
+        return augment(adjacency, left, right, s);
+    });
+    let pairs = repeat(left, record { done = list<record { left: Nat, right: Nat }>(), next = 0 }, fn(s: record { done: List<record { left: Nat, right: Nat }>, next: Nat }) -> record { done: List<record { left: Nat, right: Nat }>, next: Nat } {
+        let done = match index(mates.left_matched, s.next) {
+            true => push(s.done, record { left = s.next, right = index(mates.left_mate, s.next) });
+            _ => s.done;
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+    return record { matching = pairs, perfect = and(exact_eq(left, right), exact_eq(length(pairs), left)), size = length(pairs) };
+}
+
+export fn check_matching(left: Nat, right: Nat, edges: List<record { left: Nat, right: Nat }>, matching: List<record { left: Nat, right: Nat }>) -> Bool effects [] {
+    return and(pairs_in_range(left, right, matching), and(all_edges(edges, matching), distinct_ends(left, right, matching)));
+}
+
+export fn feasible_flow(nodes: Nat, edges: List<record { capacity: Nat, from: Nat, to: Nat }>, supply: List<Nat>, demand: List<Nat>) -> record { cut: List<Nat>, feasible: Bool, flows: List<Int>, required: Nat, value: Int } effects [] {
+    let valid = assert(network_in_range(nodes, edges, supply, demand));
+    let source = nodes;
+    let sink = exact_add(nodes, 1);
+    let size = exact_add(nodes, 2);
+    let extended = extended_edges(nodes, edges, supply, demand);
+    let required = total(supply);
+    let final = repeat(exact_add(required, 1), record { done = false, flows = int_zeros(length(extended)), value = 0 }, fn(s: record { done: Bool, flows: List<Int>, value: Int }) -> record { done: Bool, flows: List<Int>, value: Int } {
+        return match s.done {
+            true => s;
+            _ => push_flow(extended, size, source, sink, s);
+        };
+    });
+    let reached = residual_search(extended, size, source, final.flows).reached;
+    let cut = repeat(nodes, record { done = list<Nat>(), next = 0 }, fn(s: record { done: List<Nat>, next: Nat }) -> record { done: List<Nat>, next: Nat } {
+        let done = match index(reached, s.next) {
+            true => push(s.done, s.next);
+            _ => s.done;
+        };
+        return record { done = done, next = exact_add(s.next, 1) };
+    }).done;
+    let flows = repeat(length(edges), list<Int>(), fn(done: List<Int>) -> List<Int> {
+        return push(done, index(final.flows, length(done)));
+    });
+    return record { cut = cut, feasible = and(exact_eq(final.value, required), exact_eq(required, total(demand))), flows = flows, required = required, value = final.value };
+}
+
+export fn check_flow(nodes: Nat, edges: List<record { capacity: Nat, from: Nat, to: Nat }>, supply: List<Nat>, demand: List<Nat>, flows: List<Int>) -> Bool effects [] {
+    return and(and(network_in_range(nodes, edges, supply, demand), exact_eq(length(flows), length(edges))), and(within_capacity(edges, flows), conserved(nodes, edges, supply, demand, flows)));
+}
+
+fn augment(adjacency: List<List<Nat>>, left: Nat, right: Nat, s: record { left_mate: List<Nat>, left_matched: List<Bool>, next: Nat, right_mate: List<Nat>, right_matched: List<Bool> }) -> record { left_mate: List<Nat>, left_matched: List<Bool>, next: Nat, right_mate: List<Nat>, right_matched: List<Bool> } effects [] {
+    let u = s.next;
+    let search = repeat(left, record { end = 0, found = false, head = 0, parent = zeros(right), queue = list<Nat>(u), visited = uniform(right, false) }, fn(b: record { end: Nat, found: Bool, head: Nat, parent: List<Nat>, queue: List<Nat>, visited: List<Bool> }) -> record { end: Nat, found: Bool, head: Nat, parent: List<Nat>, queue: List<Nat>, visited: List<Bool> } {
+        return match or(b.found, not(exact_less(b.head, length(b.queue)))) {
+            true => b;
+            _ => scan(index(adjacency, index(b.queue, b.head)), s, b);
+        };
+    });
+    let flipped = match search.found {
+        true => flip(left, u, search.end, search.parent, s);
+        _ => s;
+    };
+    return record { left_mate = flipped.left_mate, left_matched = flipped.left_matched, next = exact_add(u, 1), right_mate = flipped.right_mate, right_matched = flipped.right_matched };
+}
+
+fn scan(nbrs: List<Nat>, s: record { left_mate: List<Nat>, left_matched: List<Bool>, next: Nat, right_mate: List<Nat>, right_matched: List<Bool> }, b: record { end: Nat, found: Bool, head: Nat, parent: List<Nat>, queue: List<Nat>, visited: List<Bool> }) -> record { end: Nat, found: Bool, head: Nat, parent: List<Nat>, queue: List<Nat>, visited: List<Bool> } effects [] {
+    let x = index(b.queue, b.head);
+    let inner = repeat(length(nbrs), record { at = 0, end = b.end, found = b.found, parent = b.parent, queue = b.queue, visited = b.visited }, fn(t: record { at: Nat, end: Nat, found: Bool, parent: List<Nat>, queue: List<Nat>, visited: List<Bool> }) -> record { at: Nat, end: Nat, found: Bool, parent: List<Nat>, queue: List<Nat>, visited: List<Bool> } {
+        let r = index(nbrs, t.at);
+        return match or(t.found, index(t.visited, r)) {
+            true => record { at = exact_add(t.at, 1), end = t.end, found = t.found, parent = t.parent, queue = t.queue, visited = t.visited };
+            _ => match index(s.right_matched, r) {
+                true => record { at = exact_add(t.at, 1), end = t.end, found = false, parent = set_nat(t.parent, r, x), queue = push(t.queue, index(s.right_mate, r)), visited = set_bool(t.visited, r, true) };
+                _ => record { at = exact_add(t.at, 1), end = r, found = true, parent = set_nat(t.parent, r, x), queue = t.queue, visited = set_bool(t.visited, r, true) };
+            };
+        };
+    });
+    return record { end = inner.end, found = inner.found, head = exact_add(b.head, 1), parent = inner.parent, queue = inner.queue, visited = inner.visited };
+}
+
+fn flip(left: Nat, u: Nat, end: Nat, parent: List<Nat>, s: record { left_mate: List<Nat>, left_matched: List<Bool>, next: Nat, right_mate: List<Nat>, right_matched: List<Bool> }) -> record { left_mate: List<Nat>, left_matched: List<Bool>, next: Nat, right_mate: List<Nat>, right_matched: List<Bool> } effects [] {
+    let walked = repeat(left, record { done = false, left_mate = s.left_mate, left_matched = s.left_matched, r = end, right_mate = s.right_mate, right_matched = s.right_matched }, fn(w: record { done: Bool, left_mate: List<Nat>, left_matched: List<Bool>, r: Nat, right_mate: List<Nat>, right_matched: List<Bool> }) -> record { done: Bool, left_mate: List<Nat>, left_matched: List<Bool>, r: Nat, right_mate: List<Nat>, right_matched: List<Bool> } {
+        let l = index(parent, w.r);
+        return match w.done {
+            true => w;
+            _ => record { done = exact_eq(l, u), left_mate = set_nat(w.left_mate, l, w.r), left_matched = set_bool(w.left_matched, l, true), r = index(w.left_mate, l), right_mate = set_nat(w.right_mate, w.r, l), right_matched = set_bool(w.right_matched, w.r, true) };
+        };
+    });
+    return record { left_mate = walked.left_mate, left_matched = walked.left_matched, next = s.next, right_mate = walked.right_mate, right_matched = walked.right_matched };
+}
+
+fn push_flow(extended: List<record { capacity: Nat, from: Nat, to: Nat }>, size: Nat, source: Nat, sink: Nat, s: record { done: Bool, flows: List<Int>, value: Int }) -> record { done: Bool, flows: List<Int>, value: Int } effects [] {
+    let search = residual_search(extended, size, source, s.flows);
+    return match index(search.reached, sink) {
+        true => augmented(extended, size, source, sink, s, search);
+        _ => record { done = true, flows = s.flows, value = s.value };
+    };
+}
+
+fn augmented(extended: List<record { capacity: Nat, from: Nat, to: Nat }>, size: Nat, source: Nat, sink: Nat, s: record { done: Bool, flows: List<Int>, value: Int }, search: record { forward: List<Bool>, head: Nat, parent: List<Nat>, queue: List<Nat>, reached: List<Bool> }) -> record { done: Bool, flows: List<Int>, value: Int } effects [] {
+    let low = repeat(size, record { at = sink, low = 0, started = false }, fn(w: record { at: Nat, low: Int, started: Bool }) -> record { at: Nat, low: Int, started: Bool } {
+        let e = index(search.parent, w.at);
+        let edge = index(extended, e);
+        let forward = index(search.forward, w.at);
+        let residual = match forward {
+            true => exact_add(edge.capacity, exact_mul(-1, index(s.flows, e)));
+            _ => index(s.flows, e);
+        };
+        let lower = match or(not(w.started), exact_less(residual, w.low)) {
+            true => residual;
+            _ => w.low;
+        };
+        let back = match forward {
+            true => edge.from;
+            _ => edge.to;
+        };
+        return match exact_eq(w.at, source) {
+            true => w;
+            _ => record { at = back, low = lower, started = true };
+        };
+    }).low;
+    let flows = repeat(size, record { at = sink, flows = s.flows }, fn(w: record { at: Nat, flows: List<Int> }) -> record { at: Nat, flows: List<Int> } {
+        let e = index(search.parent, w.at);
+        let edge = index(extended, e);
+        let forward = index(search.forward, w.at);
+        let change = match forward {
+            true => low;
+            _ => exact_mul(-1, low);
+        };
+        let back = match forward {
+            true => edge.from;
+            _ => edge.to;
+        };
+        return match exact_eq(w.at, source) {
+            true => w;
+            _ => record { at = back, flows = set_int(w.flows, e, exact_add(index(w.flows, e), change)) };
+        };
+    }).flows;
+    return record { done = false, flows = flows, value = exact_add(s.value, low) };
+}
+
+fn residual_search(extended: List<record { capacity: Nat, from: Nat, to: Nat }>, size: Nat, source: Nat, flows: List<Int>) -> record { forward: List<Bool>, head: Nat, parent: List<Nat>, queue: List<Nat>, reached: List<Bool> } effects [] {
+    return repeat(size, record { forward = uniform(size, false), head = 0, parent = zeros(size), queue = list<Nat>(source), reached = set_bool(uniform(size, false), source, true) }, fn(b: record { forward: List<Bool>, head: Nat, parent: List<Nat>, queue: List<Nat>, reached: List<Bool> }) -> record { forward: List<Bool>, head: Nat, parent: List<Nat>, queue: List<Nat>, reached: List<Bool> } {
+        return match exact_less(b.head, length(b.queue)) {
+            true => expand_node(extended, flows, b);
+            _ => b;
+        };
+    });
+}
+
+fn expand_node(extended: List<record { capacity: Nat, from: Nat, to: Nat }>, flows: List<Int>, b: record { forward: List<Bool>, head: Nat, parent: List<Nat>, queue: List<Nat>, reached: List<Bool> }) -> record { forward: List<Bool>, head: Nat, parent: List<Nat>, queue: List<Nat>, reached: List<Bool> } effects [] {
+    let x = index(b.queue, b.head);
+    let scanned = repeat(length(extended), record { at = 0, forward = b.forward, head = exact_add(b.head, 1), parent = b.parent, queue = b.queue, reached = b.reached }, fn(t: record { at: Nat, forward: List<Bool>, head: Nat, parent: List<Nat>, queue: List<Nat>, reached: List<Bool> }) -> record { at: Nat, forward: List<Bool>, head: Nat, parent: List<Nat>, queue: List<Nat>, reached: List<Bool> } {
+        let edge = index(extended, t.at);
+        let f = index(flows, t.at);
+        let ahead = and(exact_eq(edge.from, x), and(exact_less(f, edge.capacity), not(index(t.reached, edge.to))));
+        let behind = and(exact_eq(edge.to, x), and(exact_less(0, f), not(index(t.reached, edge.from))));
+        return match ahead {
+            true => record { at = exact_add(t.at, 1), forward = set_bool(t.forward, edge.to, true), head = t.head, parent = set_nat(t.parent, edge.to, t.at), queue = push(t.queue, edge.to), reached = set_bool(t.reached, edge.to, true) };
+            _ => match behind {
+                true => record { at = exact_add(t.at, 1), forward = set_bool(t.forward, edge.from, false), head = t.head, parent = set_nat(t.parent, edge.from, t.at), queue = push(t.queue, edge.from), reached = set_bool(t.reached, edge.from, true) };
+                _ => record { at = exact_add(t.at, 1), forward = t.forward, head = t.head, parent = t.parent, queue = t.queue, reached = t.reached };
+            };
+        };
+    });
+    return record { forward = scanned.forward, head = scanned.head, parent = scanned.parent, queue = scanned.queue, reached = scanned.reached };
+}
+
+fn extended_edges(nodes: Nat, edges: List<record { capacity: Nat, from: Nat, to: Nat }>, supply: List<Nat>, demand: List<Nat>) -> List<record { capacity: Nat, from: Nat, to: Nat }> effects [] {
+    let with_sources = repeat(nodes, record { done = edges, next = 0 }, fn(s: record { done: List<record { capacity: Nat, from: Nat, to: Nat }>, next: Nat }) -> record { done: List<record { capacity: Nat, from: Nat, to: Nat }>, next: Nat } {
+        return record { done = push(s.done, record { capacity = index(supply, s.next), from = nodes, to = s.next }), next = exact_add(s.next, 1) };
+    }).done;
+    return repeat(nodes, record { done = with_sources, next = 0 }, fn(s: record { done: List<record { capacity: Nat, from: Nat, to: Nat }>, next: Nat }) -> record { done: List<record { capacity: Nat, from: Nat, to: Nat }>, next: Nat } {
+        return record { done = push(s.done, record { capacity = index(demand, s.next), from = s.next, to = exact_add(nodes, 1) }), next = exact_add(s.next, 1) };
+    }).done;
+}
+
+fn neighbours(left: Nat, edges: List<record { left: Nat, right: Nat }>) -> List<List<Nat>> effects [] {
+    return repeat(left, list<List<Nat>>(), fn(done: List<List<Nat>>) -> List<List<Nat>> {
+        let u = length(done);
+        return push(done, repeat(length(edges), record { done = list<Nat>(), next = 0 }, fn(s: record { done: List<Nat>, next: Nat }) -> record { done: List<Nat>, next: Nat } {
+            let edge = index(edges, s.next);
+            let found = match exact_eq(edge.left, u) {
+                true => push(s.done, edge.right);
+                _ => s.done;
+            };
+            return record { done = found, next = exact_add(s.next, 1) };
+        }).done);
+    });
+}
+
+fn pairs_in_range(left: Nat, right: Nat, pairs: List<record { left: Nat, right: Nat }>) -> Bool effects [] {
+    return repeat(length(pairs), record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        let pair = index(pairs, s.next);
+        return record { holds = and(s.holds, and(exact_less(pair.left, left), exact_less(pair.right, right))), next = exact_add(s.next, 1) };
+    }).holds;
+}
+
+fn all_edges(edges: List<record { left: Nat, right: Nat }>, matching: List<record { left: Nat, right: Nat }>) -> Bool effects [] {
+    return repeat(length(matching), record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        let pair = index(matching, s.next);
+        let listed = repeat(length(edges), record { found = false, next = 0 }, fn(t: record { found: Bool, next: Nat }) -> record { found: Bool, next: Nat } {
+            let edge = index(edges, t.next);
+            return record { found = or(t.found, and(exact_eq(edge.left, pair.left), exact_eq(edge.right, pair.right))), next = exact_add(t.next, 1) };
+        }).found;
+        return record { holds = and(s.holds, listed), next = exact_add(s.next, 1) };
+    }).holds;
+}
+
+fn distinct_ends(left: Nat, right: Nat, matching: List<record { left: Nat, right: Nat }>) -> Bool effects [] {
+    return repeat(length(matching), record { holds = true, lefts = uniform(left, false), next = 0, rights = uniform(right, false) }, fn(s: record { holds: Bool, lefts: List<Bool>, next: Nat, rights: List<Bool> }) -> record { holds: Bool, lefts: List<Bool>, next: Nat, rights: List<Bool> } {
+        let pair = index(matching, s.next);
+        let fresh = and(not(index(s.lefts, pair.left)), not(index(s.rights, pair.right)));
+        return record { holds = and(s.holds, fresh), lefts = set_bool(s.lefts, pair.left, true), next = exact_add(s.next, 1), rights = set_bool(s.rights, pair.right, true) };
+    }).holds;
+}
+
+fn network_in_range(nodes: Nat, edges: List<record { capacity: Nat, from: Nat, to: Nat }>, supply: List<Nat>, demand: List<Nat>) -> Bool effects [] {
+    let ends = repeat(length(edges), record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        let edge = index(edges, s.next);
+        return record { holds = and(s.holds, and(exact_less(edge.from, nodes), exact_less(edge.to, nodes))), next = exact_add(s.next, 1) };
+    }).holds;
+    return and(ends, and(exact_eq(length(supply), nodes), exact_eq(length(demand), nodes)));
+}
+
+fn within_capacity(edges: List<record { capacity: Nat, from: Nat, to: Nat }>, flows: List<Int>) -> Bool effects [] {
+    return repeat(length(edges), record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        let f = index(flows, s.next);
+        return record { holds = and(s.holds, and(not(exact_less(f, 0)), not(exact_less(index(edges, s.next).capacity, f)))), next = exact_add(s.next, 1) };
+    }).holds;
+}
+
+fn conserved(nodes: Nat, edges: List<record { capacity: Nat, from: Nat, to: Nat }>, supply: List<Nat>, demand: List<Nat>, flows: List<Int>) -> Bool effects [] {
+    let balance = repeat(length(edges), record { balance = int_zeros(nodes), next = 0 }, fn(s: record { balance: List<Int>, next: Nat }) -> record { balance: List<Int>, next: Nat } {
+        let edge = index(edges, s.next);
+        let f = index(flows, s.next);
+        let out = set_int(s.balance, edge.from, exact_add(index(s.balance, edge.from), f));
+        return record { balance = set_int(out, edge.to, exact_add(index(out, edge.to), exact_mul(-1, f))), next = exact_add(s.next, 1) };
+    }).balance;
+    return repeat(nodes, record { holds = true, next = 0 }, fn(s: record { holds: Bool, next: Nat }) -> record { holds: Bool, next: Nat } {
+        let net = exact_add(index(balance, s.next), index(demand, s.next));
+        return record { holds = and(s.holds, exact_eq(net, index(supply, s.next))), next = exact_add(s.next, 1) };
+    }).holds;
+}
+
+fn total(values: List<Nat>) -> Nat effects [] {
+    return repeat(length(values), record { next = 0, sum = 0 }, fn(s: record { next: Nat, sum: Nat }) -> record { next: Nat, sum: Nat } {
+        return record { next = exact_add(s.next, 1), sum = exact_add(s.sum, index(values, s.next)) };
+    }).sum;
+}
+
+fn zeros(n: Nat) -> List<Nat> effects [] {
+    return repeat(n, list<Nat>(), fn(done: List<Nat>) -> List<Nat> {
+        return push(done, 0);
+    });
+}
+
+fn int_zeros(n: Nat) -> List<Int> effects [] {
+    return repeat(n, list<Int>(), fn(done: List<Int>) -> List<Int> {
+        return push(done, 0);
+    });
+}
+
+fn uniform(n: Nat, value: Bool) -> List<Bool> effects [] {
+    return repeat(n, list<Bool>(), fn(done: List<Bool>) -> List<Bool> {
+        return push(done, value);
+    });
+}
+
+fn set_nat(values: List<Nat>, at: Nat, value: Nat) -> List<Nat> effects [] {
+    return repeat(length(values), list<Nat>(), fn(done: List<Nat>) -> List<Nat> {
+        return push(done, match exact_eq(length(done), at) {
+            true => value;
+            _ => index(values, length(done));
+        });
+    });
+}
+
+fn set_int(values: List<Int>, at: Nat, value: Int) -> List<Int> effects [] {
+    return repeat(length(values), list<Int>(), fn(done: List<Int>) -> List<Int> {
+        return push(done, match exact_eq(length(done), at) {
+            true => value;
+            _ => index(values, length(done));
+        });
+    });
+}
+
+fn set_bool(values: List<Bool>, at: Nat, value: Bool) -> List<Bool> effects [] {
+    return repeat(length(values), list<Bool>(), fn(done: List<Bool>) -> List<Bool> {
+        return push(done, match exact_eq(length(done), at) {
+            true => value;
+            _ => index(values, length(done));
+        });
+    });
+}

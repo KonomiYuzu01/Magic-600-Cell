@@ -121,7 +121,9 @@ fn overlay_commands_appear_in_the_palette() {
     let table: Vec<String> = f.layer.table().rows().map(|row| row.id.clone()).collect();
     let palette = f.shell.read_palette(&f.layer).clone();
     assert_eq!(ids(palette.entries()), table);
-    assert_eq!(palette.entries().len(), 198 + USER_ROWS.len(), "H-08's 198 rows and the four user commands");
+    // H-08's 209 rows: 198 at the LP3 freeze and LP5's eleven research panel rows, its fifth delta
+    // (`docs/progress/1.0/command-rows-research.json`; CM.19).
+    assert_eq!(palette.entries().len(), 209 + USER_ROWS.len(), "H-08's 209 rows and the four user commands");
 
     for (id, kind, label) in [
         (INSPECT, Kind::Query, "Pairing check"),

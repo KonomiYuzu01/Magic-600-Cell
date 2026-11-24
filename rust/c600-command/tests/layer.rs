@@ -154,8 +154,9 @@ impl Fixture {
 fn the_stored_table_reads() {
     let table = Table::h08();
     // 193 at PR 415, plus ADR-D01's layout.undo, layout.redo, session.undo.partial, operation.preview.commit and
-    // session.rollback (owner, 22 November 2026, item 4).
-    assert_eq!(table.rows().count(), 198);
+    // session.rollback (owner, 22 November 2026, item 4), plus LP5's 11 research panel rows of
+    // command-rows-research.json (owner, 23 November 2026, item 3.1).
+    assert_eq!(table.rows().count(), 209);
     let execute = table.row("operation.execute").unwrap();
     assert_eq!((execute.kind, execute.lane, execute.preview), (Kind::Commit, Lane::Commit, PreviewRule::Required));
     assert!(execute.has_gate("fresh_preview") && execute.has_gate("protection") && execute.takes_token());

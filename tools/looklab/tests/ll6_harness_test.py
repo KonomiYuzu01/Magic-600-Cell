@@ -113,6 +113,7 @@ class CurrentHarnessTests(previous.harness_test.HarnessTests):
                       "LOOKLAB_SMOKE_PASS instances=600 vertices=30480 slots=259800 parameters=42 bytes=123\n"
                       "LOOKLAB_GEOMETRY_PASS cases=10 samples=3000 framed=1 target=RGBA32F\n"
                       "LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives=6096000\n"
+                      "LOOKLAB_LAYOUT_GEOMETRY_PASS cases=6 samples=1800 target=RGBA32F\n"
                       + "".join(RESULTS.values()) + "".join(previous.RESULTS.values()))
             return subprocess.CompletedProcess(arguments, 0, output)
 
@@ -133,7 +134,8 @@ class CurrentHarnessTests(previous.harness_test.HarnessTests):
              patch.object(current, "godot_run", side_effect=runner), patch("runpy.run_path", side_effect=extension), \
              contextlib.redirect_stdout(io.StringIO()):
             current.godot_lane("--godot", self.folder, {"NUGET_PACKAGES": str(self.folder)}, {})
-            self.assertEqual(extensions, [("lane_ll3.py", "headless"), ("lane_ll4.py", "run"), ("lane_ll5.py", "headless"), ("lane_ll6.py", "run")])
+            self.assertEqual(extensions, [("lane_ll3.py", "headless"), ("lane_ll4.py", "run"), ("lane_ll5.py", "headless"), ("lane_ll6.py", "run"),
+                                          ("lane_ll7.py", "run"), ("lane_ll8.py", "run"), ("lane_a5.py", "run")])
             self.assertEqual(len(calls), 21)
             self.assertTrue(all("--headless" in args for args, _ in calls))
             self.assertEqual([kwargs["expected_failure"] for _, kwargs in calls if "expected_failure" in kwargs],
@@ -141,12 +143,12 @@ class CurrentHarnessTests(previous.harness_test.HarnessTests):
                              + [fault for _, fault in FAULTS])
             calls.clear(); extensions.clear()
             current.godot_lane("--godot-gpu", self.folder, {"NUGET_PACKAGES": str(self.folder)}, {})
-            self.assertEqual(extensions, [("lane_ll3.py", "graphics"), ("lane_ll5.py", "graphics")])
-            self.assertEqual(len(calls), 9)
+            self.assertEqual(extensions, [("lane_ll3.py", "graphics"), ("lane_ll5.py", "graphics"), ("lane_ll8.py", "graphics")])
+            self.assertEqual(len(calls), 10)
             self.assertEqual(calls[0][0], ["--headless", "--import"])
             self.assertTrue(all("--headless" not in args and kwargs["graphics"] for args, kwargs in calls[1:]))
             self.assertEqual([kwargs["expected_failure"] for _, kwargs in calls if "expected_failure" in kwargs],
-                             ["float-offset", "transpose-q", "missing-instance", "missing-view-frame", "ll5-wrong-matrix"])
+                             ["float-offset", "transpose-q", "missing-instance", "missing-view-frame", "layout-no-blend", "ll5-wrong-matrix"])
 
 
 if __name__ == "__main__":

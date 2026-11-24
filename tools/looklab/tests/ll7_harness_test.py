@@ -126,14 +126,15 @@ class CurrentHarnessTests(previous.CurrentHarnessTests):
     def test_cpu_and_gpu_lane_schedules(self):
         calls, extensions = self.schedule("--godot")
         self.assertEqual(extensions, [("lane_ll3.py", "headless"), ("lane_ll4.py", "run"), ("lane_ll5.py", "headless"),
-                                      ("lane_ll6.py", "run"), ("lane_ll7.py", "run")])
+                                      ("lane_ll6.py", "run"), ("lane_ll7.py", "run"), ("lane_ll8.py", "run"),
+                                      ("lane_a5.py", "run")])
         self.assertEqual(len(calls), 29)
         self.assertTrue(all("--headless" in args for args, _ in calls))
         self.assertEqual([kwargs["expected_failure"] for _, kwargs in calls if "expected_failure" in kwargs],
                          ["skip-parameter", "wrong-instance-count", "changed-preset-byte", "ll5-disable-cvd", "ll5-disable-null-cost"]
                          + [fault for _, fault in previous.FAULTS] + [fault for _, fault in FAULTS])
         calls, extensions = self.schedule("--godot-gpu")
-        self.assertEqual(extensions, [("lane_ll3.py", "graphics"), ("lane_ll5.py", "graphics")])
+        self.assertEqual(extensions, [("lane_ll3.py", "graphics"), ("lane_ll5.py", "graphics"), ("lane_ll8.py", "graphics")])
         self.assertEqual(len(calls), 10)
         self.assertEqual(calls[0][0], ["--headless", "--import"])
         self.assertTrue(all("--headless" not in args and kwargs["graphics"] for args, kwargs in calls[1:]))

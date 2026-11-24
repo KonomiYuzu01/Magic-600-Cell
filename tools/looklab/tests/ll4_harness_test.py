@@ -21,7 +21,8 @@ lane = module("looklab_ll4", "lane_ll4.py")
 RESULTS = {
     "ll4-metrics": "LOOKLAB_LL4_METRICS_PASS steps=14 checks=1\n",
     "ll4-refusal": "LOOKLAB_LL4_REFUSAL_PASS command=target.next.activate context=any checks=1\n",
-    "ll4-greybox": "LOOKLAB_LL4_GREYBOX_PASS layouts=4 contexts=32 commands=198 placements=348 checks=1\n",
+    # 209 commands: H-08 with LP5's research delta (docs/progress/1.0/command-rows-research.json).
+    "ll4-greybox": "LOOKLAB_LL4_GREYBOX_PASS layouts=4 contexts=32 commands=209 placements=348 checks=1\n",
 }
 
 
