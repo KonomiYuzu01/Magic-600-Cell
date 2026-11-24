@@ -6,6 +6,11 @@ the session that receives it.** The owner's hold on ADR-D02 of 23 November 2026 
 ADR line's selections, and the owner may overrule any of them. It is no ADR, accepts nothing and freezes nothing. A4,
 the ADR text, the shell build and the acceptance runs come after A3 and are only outlined here (section 8).
 
+A1 to A3 status, 24 November 2026: done on the owner's go of 23 November 2026, with A3 allowed up to three rounds
+instead of section 5's one (owner, 23 Nov 2026: up to 3 rounds; three ran); the 152 open rows sit in 28 question groups,
+each with two or three options, the recommended one first, one question left split for A4; the outputs stay private
+in the main checkout's `work/adr-d02/` until A4, which has not started.
+
 Inputs:
 - The owner decisions on ADR-D02:
   - [design and art path](../../wiki/decisions/owner-decisions-2026-11-22-design-art-path.md), items 3 and 4;
