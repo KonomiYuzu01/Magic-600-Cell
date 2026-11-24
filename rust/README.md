@@ -37,6 +37,10 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 | `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
 
+| `c600-checkers` | KN6's independent checkers as kernel code: one per certificate kind, the research-archive kind as a family of sub-checkers with their own identities and mutation gates (LP5, R2 to R6; scaffold) |
+| `c600-archive` | PS3's research archive import and exchange: the versioned import table, records with no format key, manifest and member checks, the import report, the typed claim bindings and the check-bundle export; it executes nothing (LP5, R0 and R1; scaffold) |
+| `c600-research` | The research host: research overlay rows and host reads, the KN6 check job adapter, reproducible research jobs on engine-owned branches, the obligation export row and the research output panel's rows (LP5, R8 to R10; scaffold) |
+
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
@@ -71,6 +75,12 @@ The library crate depends on the IR, syntax and digest crates only; its tests al
 and the kernel.
 The editor services crate depends on the syntax, checker, IR and digest crates only, so it has no path to the
 interpreter or the command layer and runs no user program (EV1.9).
+LP5's KN6 checkers depend on the kernel, jumbling and digest crates only, so no checker reaches the interpreter, the
+library, an archive reader or a producer (KN6.2). The archive crate depends on the digest crate, the evidence library
+and the kernel crate, whose container readers (DEFLATE, gzip, JSON) it reuses; it calls no engine. The research host
+depends on the tools crate, the command layer, the session store, the library, the evidence library, the checkers and
+the archive crate; the command layer gains no edge (ONE.48). Any other edge follows PHS.52 ([LP5
+plan](../docs/progress/1.0/language-lp5-plan.md), section 4).
 
 ## Running the tests
 
@@ -3737,11 +3747,12 @@ LG5.6).
   new call.
 - A language-defined row whose stored static verdict failed is refused at invocation with that diagnostic, by key and
   from the palette alike, so a module that failed its check runs nothing.
-- The palette's data (EV4.2, KN5.6): `Palette::read` lists every row of the table, H-08's 198 and the overlays, with
-  its label, kind, key sequences and its answer in one KN5.6 availability table (a computed binding per row: the
-  argument-independent gates). `Shell::read_palette` reads it once per revision and generation; `Palette::find` searches
-  the kept read with no layer, case-insensitive substrings of the label, row ID or key sequences. Unavailable entries
-  keep their places with their typed reasons. A palette invocation is `Shell::invoke`, the key route's own path.
+- The palette's data (EV4.2, KN5.6): `Palette::read` lists every row of the table, H-08's 209 (with LP5's research rows)
+  and the overlays, with its label, kind, key sequences and its answer in one KN5.6 availability table (a computed
+  binding per row: the argument-independent gates). `Shell::read_palette` reads it once per revision and generation;
+  `Palette::find` searches the kept read with no layer, case-insensitive substrings of the label, row ID or key
+  sequences. Unavailable entries keep their places with their typed reasons. A palette invocation is `Shell::invoke`,
+  the key route's own path.
 - `command.find` is built: after its `query`'s form, and for a run only inside a command the solver invoked, it is
   `accepted` with no job and changes nothing. No entry can serve it.
 - `Shell::bind` adds a key binding, refusing a sequence bound in an overlapping context with
@@ -3829,3 +3840,146 @@ uses this workspace's crates through their public interfaces and changes none of
     launched.
 - Evidence kind: source. The flow test's frames are a fake core's and its keys synthetic; nothing here is Windows
   input, display or timing evidence.
+
+## Status of LP5: research expressiveness
+
+The plan is [`language-lp5-plan.md`](../docs/progress/1.0/language-lp5-plan.md); the owner started LP5 on 23 November
+2026 with every recommended option. The three LP5 crates were added as empty members first, so the pieces share no
+workspace file.
+
+- R0, the research archive import (PS3.10 to PS3.17): `c600-archive` imports the stage 14 to 19 archive from files
+  the test driver grants it out of the Git-blob manifest (`tests/test_lp5_archive.py`, in the headless CI). It uses
+  versioned editions of the import table and of the discriminator for records with no `format` key (PS3.10, PS3.12,
+  FP.22; ten rules, each pinned to the manifest's and the record's stored digests), checks manifests and members
+  (PS3.14, PS3.15), keeps recognition, integrity, interpretation and recheck as separate results, and exports FP.23
+  check bundles that carry the caller's KN0.1 identity, refuse any envelope or dependency whose integrity failed, and
+  list missing dependencies; those with no recorded digest go in the optional FP.10 extension
+  `missing_without_digest`. Gzip is decided by the member's `.gz` name, so damaged signature bytes are a gzip failure.
+  It depends on `c600-digest`, `c600-evidence` and the kernel's container readers only, and calls no engine, process,
+  Git or network. All 497 records import with no integrity failure. The dependency report
+  ([`lp5-r0-dependency-report.md`](../docs/progress/1.0/lp5-r0-dependency-report.md)) finds every stage 18 start table
+  stored or rebuildable by exact replay of stored words, so no LP5 check waits.
+- R1, typed claim bindings and preflight (FR-B08, LB5.14 to LB5.17; owner, LP5-4): `c600-archive::bindings` reads
+  edition 1 of the typed claim bindings (`data/claim-bindings-1.json`, pinned by SHA-256 and written by
+  `data/claim_bindings.py` from the frozen claim matrix's anchors; `--check` confirms the file matches its build). It
+  has one row per claim group (510), each with a typed statement, scope, inputs by digest and the KN6 sub-checkers
+  that read the group, and answers LB5.14's `check_availability` as preflight data, never as a check and never as an
+  evidence leaf. With every sub-checker registered, 286 groups are `ready` and 224 `unavailable` with the matrix's
+  blockers; q11 answers `unavailable([dependency_missing, no_independent_checker], ...)` with its captured string
+  unchanged (LB5.17). Groups a sub-checker answers `not_applicable` are bound scope-only and keep
+  `no_independent_checker`. `c600-library`'s `research_preflight.6cs` states the same rule as language code over
+  host-supplied data, and `c600-research/tests/preflight_bindings.rs` checks the bindings against the KN6 registry.
+- R2, KN6's independent checker core: `c600-checkers`. `check(engines, certificate, kind)` returns a `CheckReport` with
+  a pass, fail or not-applicable verdict, the checker's ID and source digest, the input digest, the stated inputs with
+  the identities read from them and a per-claim trace; a kind with no checker, or one whose engine was not supplied, is
+  a refusal with `KN6:evidence.no_checker`. Words replay letter by letter through `c600-jumble` and `c600-kernel` with
+  no cache of the checker's own; the crate depends on nothing else but `c600-digest` and calls no chooser inside the
+  engines. Four kinds are built: admissibility and straddlers, `macro-certificate/1`, compressed-word expansion
+  (streamed, length-checked before any letter) and ν and label checkpoints; the three other certificate forms are the
+  crate's drafts (`kn6-admissibility/1`, `kn6-expansion/1`, `kn6-checkpoints/1`). The mutation gate (`gate`) requires
+  every fixture to fail under a tampered claim, a wrong start table and a wrong input digest, and under structural
+  changes of its claims: a key deleted, renamed or joined by an unknown key, a list emptied or shortened by one element
+  (a change that leaves the record unchanged is skipped; `Fixture::optional` names the parts a form may leave out, and
+  no research-archive fixture names any). The research-archive kind is a family of sub-checkers registered per stage in
+  `src/archive/s14` to `s19`, each with its own ID, source digest and gate (LP5 pieces R3 to R6). All 17 stage 15 macro
+  certificates (R01 to R17) pass in place, read-only. `tests/test_language_scans.py` runs CT-KN6-02's import scan on the
+  crate. An expansion's running time is bounded by the check job's budget (R8), not here.
+- R3, stage 14's research-archive sub-checkers (CT-LB5-01): `c600-checkers/src/archive/s14` registers `s14.t3p`,
+  `s14.literal`, `s14.locality`, `s14.levels` and `s14.blocks`, each with its own identity and mutation gate. From the
+  stored stage 13 tables, the I_a menu and the model they recompute W3, W5 and the scan certificates, the T3P checks (P0
+  to P4, the T3P+ edges, Lemma A's replay), the six chains' rounds, words and ends, the replay records' chronological
+  rows, the locality summary, the fourteen level tables (greatest fixed point, λ and its witness) and the co-held,
+  per-grip, jam and moves-522 records at the 7304 stop. All 44 records pass in place, read-only; changed helper sets,
+  precedence, input digests or start tables fail. The 22 finite-search records (scans, pairs, plus, beam and peel)
+  answer `not_applicable` with their scope, and only when they have exactly their signature's fields; any other record
+  whose shape or format departs from its stage 14 form fails, naming the field. The fourteen-table level rebuild is an
+  ignored test (about 100 s); the 7304 stop runs as its fast representative.
+- R4, stages 15 to 17's research-archive sub-checkers (CT-LB5-02 to CT-LB5-04, CT-KN6-03's stage 15 to 17 parts):
+  `c600-checkers/src/archive/s15` to `s17` register `s15.macro`, `s16.macro` and `s17.macro` (`macro-certificate/1`
+  and `macro-check/1` through the macro kind, bound to the jam catalogue: stage 15 starts at the chain end and whole
+  descents end at the jam, stages 16 and 17 start at the jam end, and a check record is matched leaf by leaf against a
+  fresh check of its certificate), `s15.pstar` (the clean-pair census recomputed from the exact state), `s16.release`
+  (the literal traces SJ-E1, T2-cx, I-7304 and I-7306 letter by letter, with S, F and max D at the named grips; SJ-E1
+  stays a release), `s16.mobility` (unit mobility at the jams from the full label table), `s16.reductions` (reduced
+  transport against the recorded unreduced case at 7307, never a lemma) and `s17.rr` (Lemma RR's five tails against
+  brute force at `test_rr.py`'s recorded inputs H2 and H2b only, in an exact label calculus checked against the
+  engine). P*, P**, P***, RR, routing, T1, alphabet and transport stop and run records answer `not_applicable` with
+  their bounds; a malformed self-contained record fails at the departing field. `tests/kn6_r4.rs` holds the fast
+  tests; thirteen slower gates are ignored tests.
+- R5, stage 18's research-archive sub-checkers (CT-LB5-05, CT-LB5-09, CT-LB1-04's expansion half):
+  `c600-checkers/src/archive/s18` registers `s18.expansion` (gate 1: both `steps.json` forms, each step's exact length
+  admitted at most 10^7 before any word is read, every word file streamed and hashed), `s18.composed` (gate 2: the
+  composed strict′ contract checked letter by letter), `s18.tail_replay` (gate 3: chunked literal replay for T6 steps 1
+  to 3; T6 step 4 and the rule stages keep `historical_check_incomplete` and never pass it), `s18.lattice_run` (the
+  `runner-run/3` record, report, tables, step trees and words) and `s18.lattice_replay` (the lattice phase's 13,231,266
+  twists replayed from T6's stored end table, a fresh check with no archived `check.jsonl` to match). Start tables of
+  later steps are rebuilt by exact replay and marked derived (owner, LP5-3). Stop units and whole-cap outputs answer
+  `not_applicable`; any other departure from a record's form fails, naming the field. The R22B-10 clause covers the
+  stored expanded X and V′ words only; no `r22b10/1` or `/2` certificate is stored. The in-place gate 2 and 3 replays
+  (about 2 to 3 ms per letter in the test profile: about 1 h for T6's gate 2, 30 min each for the rule stages' gate 2
+  and T6's gate 3, 11 h for the lattice phase) are ignored tests; fast synthetic records exercise the same code.
+- R6, stage 19's research-archive sub-checkers (CX.15 to CX.17): `c600-checkers/src/archive/s19` registers
+  `s19.pose-table` (a stored pose table's stored and decoded digests, the table checked in full, ending with the
+  engine's state digest), `s19.gamma-matching` (Γ(Y)'s bijection and gauges brute-forced over the changed rows;
+  CT-LB1-05's matching half), `s19.gamma-witness` (the nine-letter forward and inverse witness replayed on both states
+  with the all-piece join), `s19.frontier` (the compact and cleanup exits, which fail the sticker goal) and `s19.ranks`
+  (the fixed weights derived anew from the model's type counts, since `type-height-weight-inputs.json` is absent, and
+  R3, S and R_L checked on the stored blocks with R_L's length premise). q11, the low tails, D[k] admission, the
+  remaining obligations and reachability answer `not_applicable` with their scope; a malformed record fails and names
+  the field. Seven type-lex records stay uncovered because the archive defines no irregular-piece vector I_t for them,
+  and the cap-noninteraction claims wait for the delta_Q5 definition. `tests/kn6_s19.rs` runs every gate on the
+  archive in place, read-only; three slow gates are ignored tests.
+- R7, the research library's entries (LB1, LB5): `c600-library` holds them as 600 Cell Script in eight modules
+  (`research_slp`, `research_bigint`, `research_fixpoints`, `research_flows`, `research_search`, `research_ranks`,
+  `research_families`, `research_models`), with eleven catalogue rows in `c600_library::research`: LB1's straight-line
+  programs, big integers and symbolic bounds, finite fixed points, and exact matching and integral flows; LB5's
+  restricted word search, search reductions and gates, admitted-domain membership, ranks, bound calculation and
+  compressed witnesses, regional-family recognition, and conditional models. No entry reads state; the search and the
+  membership check run over synthetic permutation actions only, carry no witness word, and their four rows are marked
+  research tier candidates. A search record keeps its declaration, outcome, stop reason and coverage; only a completed,
+  unbeamed enumeration is a negative, `complete_lengths` counts only the lengths before the first beam discard, and a
+  reduced negative leaves its family only through a matching lemma, otherwise `LB5:evidence.reduction_scope_mismatch`.
+  Malformed input (no letter, or an image, start point, goal or target outside the action's points) is an error, never
+  a negative or a rejection. Membership answers `OUTSIDE_CERTIFIED_DOMAIN` with k and its scope only
+  after a complete enumeration, always with `reachability: not_asserted`. B11 (6,775 digits) computes without
+  expansion. A row's effects stay within chapter 03's Effect column; its `budgets` is the most an entry may use.
+  Drafts: an expansion over its bound answers as a value (`admitted: false`), since LB1 registers no code
+  for it; D[k] is "within k letters of a target point"; a search budget counts examined candidates. Tests: CT-LB1-04,
+  CT-LB1-05, CT-LB5-07, CT-LB5-08 and CT-ERR-11, their library parts. Not built here: the host's refusal of research
+  tier rows in a solving session (BND.64, CT-BND-16), the entries' puzzle forms over KN2.4's reads and the jumbling
+  form of D[k] (the research host's); strategies, selectors, certificate builders and seeded search.
+- R8, reproducible research work (LB5.7, PS1.31, DET.1 to DET.7, DET.30, DET.48; KN7.3 to KN7.6): `c600-research`'s
+  KN6 check job runs each check through `c600_checkers::check_until` as a child scope of the job. The input is pinned
+  by digest: a session revision opened read-only (the job's engine-owned branch), or a start an archived certificate
+  states. The job's kernel-cost budget reaches the checker as a cooperative stop, so a long expansion ends as the
+  job's cut-off, never as a verdict, and nested checks mint no allowance. Its run record keys the adapter's and
+  checkers' sources and identities, the cost and metering rules and the kernel build. `reproduce` re-seals and re-runs
+  a stored record from its captured bytes and matches the exact payload byte for byte, with digests pinned for CI on
+  Linux. Only a run's own reports reach `admit_check_report`; archived timed stops and data-only members stay recorded
+  facts that supply no run. The checker core gained additive stop scopes and owned engines (`engines::Loaded`);
+  outside every scope nothing changes. Tests: CT-DET-24 and the LP5 halves of CT-DET-01, CT-DET-02, CT-DET-11,
+  CT-LG3-05, CT-LG5-02 and CT-EVD-30; CT-LG3-05's mode refusal is not run, since the store holds JumbleOff only.
+- R9, the proof-obligation translator (LB5.18, PS1.45, PS1.46): `c600-evidence`'s `obligation` module, as pure code.
+  It translates a typed Statement over `c600-obligation-vocabulary-draft-1` into PS1.45's `c600-proof-obligation-draft`
+  Lean 4 text with `by sorry`, and matches the format packet's `obligations` vectors byte for byte. A named statement,
+  an unknown symbol, a wrong arity or a form outside the vocabulary refuses with `LB5:input.obligation_untranslatable`
+  and returns no text; a body whose digest differs refuses with the vector's own code. Symbol table draft 1
+  (`c600-evidence/obligation/symbols-draft-1.json`) is compiled in and pinned by its digest; prelude draft 1
+  (`c600-evidence/obligation/prelude-draft-1.lean`) is pinned by its digest, never compiled in and never run by Lean
+  (LP5-2). The crate keeps its one dependency, so the module has its own strict canonical JSON reader. CT-LB5-11,
+  CT-PS1-26, CT-RTE-23 and CT-ERR-19 run their translator parts (`c600-evidence/tests/obligation.rs`); the `file` row
+  `research.obligation.export`, its grant and the proof that a refusal writes no file come with `c600-research`.
+  `tests/sinks.rs` now scans module folders, so the translator is inside CT-EVD-20's and CT-EVD-21's scans.
+- R10, the research output panel's rows (the plan's section 6): `c600-research::panel` adds eleven rows, six
+  queries (`research.archive.inventory`, `research.claims`, `research.check.report`, `evidence.word`,
+  `research.runs`, `research.obligations`), three file rows (`research.archive.import`, `research.bundle.export`,
+  `research.obligation.export`) and two workspace rows with undo `none` (`research.check.run`,
+  `research.run.reproduce`). `panel::Host` serves them through `CommandLayer::serve_row` in research-profile sessions
+  only (a solving session is refused) and answers each from its own data: its file grant, its imports, the claim
+  bindings and its KN6 check runs, never by running language code. Every answer is `{row, revision, research,
+  answer}`, and `Host::read` gives charter D2's state, so an answer read after the revision moved shows as stale. File
+  rows touch only granted files and a refusal writes nothing; check runs and reproductions go through R8's job
+  adapter and are written as `research.run/<sha>` and `research.reproduction/<sha>` workspace records; the obligation
+  export uses R9's translator with LB5.18's grant. LP5's block of rows is
+  `docs/progress/1.0/command-rows-research.json`. `tests/panel.rs` is a headless driver of the panel's whole flow on
+  fresh data; no CT is indexed for R10.

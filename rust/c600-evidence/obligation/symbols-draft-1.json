@@ -1,0 +1,1 @@
+{"sorts":{"Piece":"C600.Piece"},"symbols":{"base":{"arity":0,"lean":"C600.base"},"grade":{"arity":1,"lean":"C600.grade"},"member":{"arity":2,"lean":"C600.member"},"orbit":{"arity":0,"lean":"C600.orbit"}},"vocabulary":"c600-obligation-vocabulary-draft-1"}

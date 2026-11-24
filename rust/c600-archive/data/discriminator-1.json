@@ -1,0 +1,233 @@
+{
+ "edition": "c600-absent-format-discriminator-1",
+ "format": "c600-absent-format-discriminator",
+ "manifest": {
+  "path": "work/experiments/language-lx/envelope-facts/MANIFEST.json",
+  "role": "bytes",
+  "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+ },
+ "review": "pending: written by LP5 piece R0 on 23 November 2026 and not yet reviewed by the integrator; an interpretation produces no facts on its own (FP.22, EVD.53)",
+ "rules": [
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "5140eb64fbb8f4ae9cd1735d842f02c125c58f5cfce809b4fa0a2a466e202063"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/dis1-r04.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "409775d3d14a9808fcf5854c76593597f24ab4166b1987ee19d6efe1410b3f27"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/dis1-r05.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "a8cc3c0479666315f9a5067678d62db8a7c14042af4bc361acb910cc8fa90014"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/dis1-r06.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "7922313803bde37267a2ff4da5b2078cf3b4118f358ad0c935f006fdaf3be317"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/s7302-pstar.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "c31bbcd7928e3652e843f7b57fe65578788aeafb62a5029d61f9c35ceda2c802"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/s7303-pstar.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "2a94829ef477766c8a93fdde27b1d2ea2c151dac95bb471e77c89f4d59650fb1"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/s7304-pstar.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "8861b799a24f03bd1b28aa4bef68f0eced41cfdcd3ffa72a19595b1025afdcec"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/s7305-pstar.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "f02cb9fd55280cab5917a9deee0a2f1f8894bd7cd9a3676138a6e811236091d2"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/s7306-pstar.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "pstar-run/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/run",
+    "source": {
+     "role": "bytes",
+     "sha256": "a32a430ac8ff2b53a9f8ee7b0105abf87f2050f0f6b81d16aaa4eea4c42a5552"
+    }
+   },
+   "source_name": "research/jumbling/restoration/15-lowering-machine/results/runs/s7307-pstar.json"
+  },
+  {
+   "interpretation": {
+    "inner_format": "literal-lattice/1"
+   },
+   "prerequisites": [
+    "the object at the pointer declares inner_format as its own string member format"
+   ],
+   "reason": "the record's own bytes declare the format of the member at the pointer; the record's top-level format stays absent and this interpretation is kept beside it",
+   "selector": {
+    "kind": "absent",
+    "manifest": {
+     "role": "bytes",
+     "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    "pointer": "/player",
+    "source": {
+     "role": "bytes",
+     "sha256": "3067f1f87a36b6c42499f327a0d125a2586f89f21b89ed5cf8a5e272dd641951"
+    }
+   },
+   "source_name": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/lattice/report.json"
+  }
+ ],
+ "version": 1
+}

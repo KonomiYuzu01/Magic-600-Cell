@@ -132,6 +132,10 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_format_inventory.py"],
     ["tests/test_error_registry.py"],
     ["tests/test_language_scans.py"],
+    # LP5's archive import (R0): the Git-blob corpus granted to the c600-archive importer (PS3.10 to PS3.17).
+    ["tests/test_lp5_archive.py"],
+    # LP5's fourth acceptance item: every research input of LP5's acceptance tests is archived and unchanged.
+    ["tests/test_lp5_acceptance_inputs.py"],
     ["tests/test_source_checkout.py"],
     # The command layer (LP3) drives O01 to O07 through its rows on the command and key routes, with undo and redo.
     ["tests/test_lp3_loop.py"],
@@ -305,6 +309,7 @@ SECONDS = {
     "tests/test_jumbling_rust_m8_levels.py": 250,  # an estimate: about 170 s locally with a warm release build
     "tests/test_jumbling_rust_nu.py": 80,  # an estimate: about 40 s locally with a warm release build
     "tests/test_jumbling_rust_corrections.py": 300,  # an estimate: about 165 s locally with a warm release build
+    "tests/test_lp5_archive.py": 150,  # an estimate: about 90 s locally with a warm release build
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

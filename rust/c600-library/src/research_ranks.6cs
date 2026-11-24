@@ -1,0 +1,56 @@
+edition "6cs-draft-1";
+module research_ranks requires [];
+
+export fn rank(q: List<Nat>, sizes: List<Nat>, l: Nat) -> Nat effects [] {
+    let same = assert(exact_eq(length(q), length(sizes)));
+    return repeat(length(q), record { next = 0, value = 0 }, fn(s: record { next: Nat, value: Nat }) -> record { next: Nat, value: Nat } {
+        let weight = exact_add(1, exact_mul(l, index(sizes, s.next)));
+        return record { next = exact_add(s.next, 1), value = exact_add(exact_mul(s.value, weight), index(q, s.next)) };
+    }).value;
+}
+
+export fn lex_less(a: List<Nat>, b: List<Nat>) -> Bool effects [] {
+    let same = assert(exact_eq(length(a), length(b)));
+    return repeat(length(a), record { decided = false, less = false, next = 0 }, fn(s: record { decided: Bool, less: Bool, next: Nat }) -> record { decided: Bool, less: Bool, next: Nat } {
+        let x = index(a, s.next);
+        let y = index(b, s.next);
+        return match or(s.decided, exact_eq(x, y)) {
+            true => record { decided = s.decided, less = s.less, next = exact_add(s.next, 1) };
+            _ => record { decided = true, less = exact_less(x, y), next = exact_add(s.next, 1) };
+        };
+    }).less;
+}
+
+export fn block_decrease(blocks: List<record { after: List<Nat>, before: List<Nat> }>, sizes: List<Nat>, l: Nat) -> record { blocks: Nat, decreasing: Nat, global: Bool, holds: Bool, scope: Text } effects [] {
+    let decreasing = repeat(length(blocks), record { count = 0, next = 0 }, fn(s: record { count: Nat, next: Nat }) -> record { count: Nat, next: Nat } {
+        let block = index(blocks, s.next);
+        let count = match exact_less(rank(block.after, sizes, l), rank(block.before, sizes, l)) {
+            true => exact_add(s.count, 1);
+            _ => s.count;
+        };
+        return record { count = count, next = exact_add(s.next, 1) };
+    }).count;
+    return record { blocks = length(blocks), decreasing = decreasing, global = false, holds = exact_eq(decreasing, length(blocks)), scope = "stored_blocks" };
+}
+
+export fn fixed_length_bound(q: List<Nat>, sizes: List<Nat>, l: Nat) -> record { conclusion: Text, cost: Nat, discharged: Bool, expanded: Bool, measured: Bool, peak: Nat, premises: List<Text>, rank: Nat, restores_stickers: Bool } effects [] {
+    let r = rank(q, sizes, l);
+    let peak = exact_add(exact_add(exact_mul(2, r), 2), exact_mul(2, l));
+    return record { conclusion = "high_phase_cost_and_peak", cost = exact_mul(l, r), discharged = false, expanded = false, measured = false, peak = peak, premises = premises(), rank = r, restores_stickers = false };
+}
+
+export fn conditional_cost(height: Nat, sizes: List<Nat>, l: Nat) -> record { conclusion: Text, cost: Rat, discharged: Bool, expanded: Bool, measured: Bool, premises: List<Text>, restores_stickers: Bool } effects [] {
+    let excess = match exact_less(height, 2) {
+        true => 0;
+        _ => exact_add(height, -2);
+    };
+    let product = repeat(length(sizes), record { next = 0, value = 1 }, fn(s: record { next: Nat, value: Nat }) -> record { next: Nat, value: Nat } {
+        return record { next = exact_add(s.next, 1), value = exact_mul(s.value, exact_add(1, exact_mul(l, index(sizes, s.next)))) };
+    }).value;
+    let cost = exact_mul(exact_mul(excess, exact_add(product, -1)), 1/2);
+    return record { conclusion = "high_phase_cost", cost = cost, discharged = false, expanded = false, measured = false, premises = premises(), restores_stickers = false };
+}
+
+fn premises() -> List<Text> effects [] {
+    return list<Text>("availability", "invariant_domain", "selector", "strict_decrease");
+}

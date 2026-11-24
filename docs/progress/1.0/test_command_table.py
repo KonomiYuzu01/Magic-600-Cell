@@ -39,7 +39,9 @@ class CommandTableTests(unittest.TestCase):
         cls.language = builder.load(HERE / "command-rows-language.json")
         cls.design = builder.load(HERE / "command-rows-design.json")
         cls.commit = builder.load(HERE / "command-rows-commit.json")
-        cls.table = builder.build_table(delta=[cls.delta, cls.language, cls.design, cls.commit])
+        # LP5's research panel rows, the fifth delta (owner, 23 November 2026, item 3.1).
+        cls.research = builder.load(HERE / "command-rows-research.json")
+        cls.table = builder.build_table(delta=[cls.delta, cls.language, cls.design, cls.commit, cls.research])
         cls.by_id = {r["id"]: r for r in cls.table["commands"]}
 
     def build(self, **overrides):
@@ -505,9 +507,11 @@ class CommandTableTests(unittest.TestCase):
             self.assertEqual(self.by_id[name]["lane_target"], {"arg": "view"})
         counts = Counter(r["kind"] for r in self.table["commands"])
         # 175 commands at the LP3 freeze, plus ADR-D01's 14 workspace and 4 view rows (owner, 22 November 2026,
-        # item 3) and its commit rows (item 4), which also make work.layout.set and work.layout.reset workspace rows.
-        self.assertEqual(len(self.table["commands"]), 198)
-        self.assertEqual((counts["workspace"], counts["view"], counts["commit"]), (83, 47, 19))
+        # item 3) and its commit rows (item 4), which also make work.layout.set and work.layout.reset workspace rows,
+        # plus LP5's 11 research panel rows of command-rows-research.json (owner, 23 November 2026, item 3.1): six
+        # queries, three file rows and two workspace rows.
+        self.assertEqual(len(self.table["commands"]), 209)
+        self.assertEqual((counts["workspace"], counts["view"], counts["commit"]), (85, 47, 19))
         for name in ("twist.apply", "jumble.twist.menu"):
             row = self.by_id[name]
             self.assertEqual(row["preview"], "none")
@@ -539,8 +543,11 @@ class CommandTableTests(unittest.TestCase):
         # ADR-D01's rows have their own tests below: the layout history, not session.undo, holds them.
         none = {r["id"] for r in self.table["commands"]
                 if r["kind"] == "workspace" and r["undo"] == "none" and r["source"] != ADR_D01_SOURCE}
+        # The last two are LP5's research workspace rows of command-rows-research.json: a run's record is a fact of
+        # what ran, which no undo removes (LB5.7).
         self.assertEqual(none, {"session.timer.start", "session.timer.stop", "operation.preview.cancel", "grip.select",
-                                "input.destination.set", "recording.start", "recording.stop", "recording.play"})
+                                "input.destination.set", "recording.start", "recording.stop", "recording.play",
+                                "research.check.run", "research.run.reproduce"})
 
     def test_adr_d01_view_and_workspace_rows_are_data_only(self):
         # Owner, 22 November 2026, item 3: ordinary edits after the LP3 freeze, data only, no gate and no commit row.
@@ -580,7 +587,9 @@ class CommandTableTests(unittest.TestCase):
         self.assertFalse({"arrangement.apply", "view.back", "view.forward"} & self.by_id.keys())
         self.assertEqual({r["id"] for r in self.table["commands"] if r["id"].endswith((".undo", ".redo"))},
                          builder.UNDO_ROWS | builder.LAYOUT_UNDO_ROWS)
-        self.assertEqual(builder.DELTA_FILES[-2:], ("command-rows-design.json", "command-rows-commit.json"))
+        # The research delta, command-rows-research.json, comes after the commit delta (item 3.1).
+        self.assertEqual(builder.DELTA_FILES[2:],
+                         ("command-rows-design.json", "command-rows-commit.json", "command-rows-research.json"))
         mutant = deepcopy(self.design)
         next(r for r in mutant["add"] if r["id"] == "explore.set")["kind"] = "commit"
         with self.assertRaisesRegex(builder.TableError, "commit requires commit lane"):
