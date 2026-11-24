@@ -23,6 +23,7 @@
 use c600_kernel::json::{self, Value};
 
 use crate::budget::Budget;
+use crate::disclosure::Disclosure;
 use crate::frame::{PresentedFrame, ShownPreview};
 use crate::keys::{resolve_binding, Arg, BindingSpec, ChordIntent, Destination, KeyMap, Resolution, RoutingClass};
 use crate::keys::{RoutingContext, DRAFT_LAYOUT};
@@ -54,6 +55,9 @@ pub struct Shell {
     pub budget: Option<Budget>,
     /// The palette read last ([`Shell::read_palette`]).
     palette: Option<Palette>,
+    /// Which keys the keyboard and the help show as open (EV5.8; draft). The command layer never reads it, so no
+    /// disclosure state locks a command ([`crate::disclosure`]).
+    pub disclosure: Disclosure,
 }
 
 impl Shell {
@@ -72,6 +76,7 @@ impl Shell {
             sent: Vec::new(),
             budget: Some(Budget::CEILING),
             palette: None,
+            disclosure: Disclosure::new(),
         }
     }
 

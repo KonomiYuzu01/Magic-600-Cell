@@ -4288,9 +4288,9 @@ mathematician's review. It is data and a standard-library Python check outside t
   seed atlas, the `seeds` module source, and the guarded setups' certificate with its digest (a match names the cited
   bytes and checks no certificate).
 - Tests. `tests/test_glossary.py` runs the check on the repository and plants each refusal. It runs CT-EV5-02 in part:
-  the review clause (the mathematician's pass is recorded in OV-3, and its fixes wait for their check), flow goals
-  against the disclosure data (LP4-11's `c600-command` part) and BS3's branch (LQ2) are not run. CI runs
-  `python tests/test_glossary.py`, which also runs the check.
+  the review clause (the mathematician's pass is recorded in OV-3, and its fixes wait for their check) and BS3's
+  branch (LQ2) are not run; the flow goals against the disclosure data run in `c600-command/tests/disclosure.rs`
+  (LP4-11's `c600-command` part, below). CI runs `python tests/test_glossary.py`, which also runs the check.
 - Readings (drafts; OV-3 records them): EV5.6's phrases are resolved to rows; the path teaches four concepts earlier
   than EV5.6 lists them, because definitions at step 1 use them (theorem, certificate, digest and identity level);
   assistance provenance keeps its frozen step 4, and the workspace record of step 3 records a forward use of it, since
@@ -4306,7 +4306,6 @@ mathematician's review. It is data and a standard-library Python check outside t
   - the mathematician's check of the pass's fixes; rows the pass did not change still say in `review` that they wait
     for review, since the pass itself is recorded in OV-3;
   - UI placements for the new rows (`ui` is absent, "not placed yet"), which belong to the design line;
-  - soft disclosure and the flow goals' undisclosed-concept check, LP4-11's `c600-command` part;
   - the human tests of the path (EV5.7, EV5.12), which wait for the owner's form;
   - prose outside the glossary rewritten with EV5.18's qualified names.
 
@@ -4483,3 +4482,22 @@ amend them; owner, 23 November 2026), a draft.
   the host's native profile; a range inside the session's journal; the rows' keys, dialogs and tabs; a host that
   installs the service (the renderer bridge is outside this work).
 - Evidence kind: source and synthetic. No Windows, input, display or timing claim.
+
+## Status of LP4, LP4-11: soft disclosure (`c600-command`)
+
+LP4-11's `c600-command` part (EV5.8, EV5.9; LQ14; DT-M1 K3), a draft under the mathematician's review.
+
+- `c600_command::disclosure`: `KEYS` names every H-08 row the learning path's goal flows cite (27: six at step 1,
+  four at step 3, seventeen at step 4; steps 2 and 5 to 7 cite none), the step that opens it (the first citing it)
+  and the glossary terms it needs. `Disclosure` is the shell's display state (`Shell::disclosure`): steps opened, the
+  saved and reversible "open all", and the "new" status until first use. "Show all keys" (`shows(row, true)`) reads
+  the state and changes nothing. The command layer and the shell's own methods never read it.
+- Tests: `c600-command/tests/disclosure.rs`. CT-EV5-02's flow-goal part: each cited row is a key at its first citing
+  step and needs only learner-facing terms its step or one before it on the path teaches or the path assumes, with
+  six planted refusals. CT-EV5-04 in part: in every disclosure state the palette lists every row, availability and
+  the shell's preparation of every row are unchanged, show all changes nothing, open all reverses, and a source scan
+  finds no reader in the layer. `tests/test_glossary.py`'s marker now points its flow-goal part here.
+- Not run or built: BS3's per-principle capability gate (EV5.9) waits for LQ2's option set, so nothing gates a
+  capability; the review clause of CT-EV5-02 waits for the mathematician's check (every step and LP4-11 row still says
+  so in `review`); the keys' concepts are LP4-11's proposal under that review; the keyboard's and the help's display.
+- Evidence kind: source. No human or display claim.

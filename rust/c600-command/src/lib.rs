@@ -603,6 +603,7 @@
 
 pub mod availability;
 pub mod budget;
+pub mod disclosure;
 pub mod documents;
 pub mod filter;
 mod forms;
@@ -629,6 +630,7 @@ pub mod workspace;
 
 pub use availability::{Availability, AvailabilityKey};
 pub use budget::Budget;
+pub use disclosure::{key_of, Disclosure, Key, KEYS, STEPS};
 pub use documents::{
     document_row, CheckedFile, DocumentKind, Documents, ImportPlan, LogFormat, DOCUMENT_CLOSE_ROW,
     DOCUMENT_COMPILE_ROW, DOCUMENT_NEW_ROW, DOCUMENT_OPEN_ROW, DOCUMENT_ROWS, DOCUMENT_SAVE_AS_ROW, DOCUMENT_SAVE_ROW,
@@ -685,6 +687,7 @@ pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/src/bin/c600-jumble-route.rs", include_bytes!("bin/c600-jumble-route.rs")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
     ("c600-command/src/budget.rs", include_bytes!("budget.rs")),
+    ("c600-command/src/disclosure.rs", include_bytes!("disclosure.rs")),
     ("c600-command/src/documents.rs", include_bytes!("documents.rs")),
     ("c600-command/src/filter.rs", include_bytes!("filter.rs")),
     ("c600-command/src/forms.rs", include_bytes!("forms.rs")),

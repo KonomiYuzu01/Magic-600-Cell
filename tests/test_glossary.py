@@ -4,9 +4,8 @@ CT-EV5-02 (part: the integrated glossary covers chapter 04 section 6's rows, eve
 sense of EV5.18's homonyms has its own row, each step's prerequisite concepts are taught before that step's task, and
 the steps' prerequisites form a DAG; not run: that the proposed changes have been reviewed, because the
 mathematician's pass of 23 November 2026 is recorded in OV-3 only and its fixes wait for their check (each such row
-says so in `review`); that flow
-goals need no undisclosed concept, because the disclosure data is LP4-11's part in c600-command; and BS3's branch of
-EV5.9, which waits for LQ2's option set).
+says so in `review`); and BS3's branch of EV5.9, which waits for LQ2's option set). The part that flow goals need no
+undisclosed concept runs against c600-command's disclosure data in `rust/c600-command/tests/disclosure.rs`.
 
 The check is `docs/progress/1.0/glossary/build.py --check`. These tests run it on the repository's data and on
 planted documents, which shows that each refusal can fail: an unknown term, an ambiguous term or citation, a
