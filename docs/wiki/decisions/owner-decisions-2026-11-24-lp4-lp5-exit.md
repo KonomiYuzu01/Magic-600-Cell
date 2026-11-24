@@ -104,8 +104,10 @@ DET.7 in chapter 09 is amended under PHS.52, as item 2.3 of the
 
 - The progress items `1.0-lp4 line-pr` and `1.0-lp5 exit` are ticked with pull request 435 and this page as evidence,
   and both steps are marked done.
-- The briefing records both exits. The briefing is an input of the frozen migration format packet, so its pin is
-  refreshed under FP.1 in a separate commit.
+- The briefing records both exits (`eecf14c9`). The briefing is an input of the frozen migration format packet, so
+  its pin is refreshed under FP.1 in a separate commit: its SHA-256 goes from `685c27ab...e2e1` to `ad5716de...399d`,
+  and `input_commit` from `5749e0cb` to `eecf14c9`. The packet cites none of the edited lines; the candidate files,
+  `candidate_sha256` and every other pin are unchanged.
 - The integrator drafts the human tests' form and puts it to the owner at the next milestone.
 - The owner-machine sitting waits for the owner's date.
 
