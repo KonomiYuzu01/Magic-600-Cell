@@ -444,6 +444,10 @@ fn a_save_is_checked_and_undone_as_one_workspace_action() {
     // A stored word's form reads (BND.32; `a_macro_of_a_stored_word_keeps_the_words_block`): a missing record is no word.
     let missing = save_args("m", json::object([("record", text("r"))]), Some(true));
     assert_eq!(refused(&mut f, missing), Some(code::NAMED_OBJECT_INVALID));
+    for word in [json::object([("record", Value::Int(5))]), json::object([("record", text("r")), ("x", Value::Int(1))])]
+    {
+        assert_eq!(refused(&mut f, save_args("m", word.clone(), Some(true))), Some(code::ARGUMENT_FORM), "{word:?}");
+    }
     assert!(refused(&mut f, save_args("m", recipe(&[0]), Some(true))).is_some(), "the kernel refuses letter 0");
     assert_eq!(f.layer.macro_base(), Vec::<Macro>::new());
 
@@ -538,6 +542,15 @@ fn a_macro_of_a_stored_word_keeps_the_words_block() {
             s.log[save_at].record.as_mut().unwrap().value.as_mut().unwrap().provenance = "macro.save".into()
         }),
         Box::new(move |s| s.log[set_at].record.as_mut().unwrap().value.as_mut().unwrap().provenance = "other".into()),
+        // Other letters under the record's real block: a macro that reads, but not of the record's word.
+        Box::new(move |s| {
+            let value = s.log[save_at].record.as_mut().unwrap().value.as_mut().unwrap();
+            let mut read = Macro::from_payload(&value.payload).unwrap();
+            read.letters = vec![3];
+            read.length = 1;
+            read.literal = literal_digest(Alphabet::Full, &read.letters);
+            value.payload = read.to_payload();
+        }),
     ];
     for (n, forge) in forgeries.iter().enumerate() {
         let mut forged = store.clone();

@@ -5868,7 +5868,8 @@ fn reserved_by_row(name: &str) -> bool {
 /// `grip/` or `macro/`, and a write under `grip.rebind` or `macro.save`, come only from that row, from the shell, to
 /// its own record with a value that reads; a `macro.save` write also carries its stored confirmation. A macro's block
 /// is the row's own, or, for a stored word, the block of the record its source names, which `records` (the replay's,
-/// at this point of the journal) holds at the content digest the source pins (BND.32). The reason, otherwise.
+/// at this point of the journal) holds at the content digest the source pins, with the macro's letters that record's
+/// word (BND.32). The reason, otherwise.
 fn reserved_write(
     stored: &Transaction,
     name: &str,
@@ -5893,7 +5894,12 @@ fn reserved_write(
             None => value.provenance == MACRO_PROVENANCE,
             Some((record, digest)) => {
                 let held = records.get(record).and_then(|record| record.value.as_ref());
-                held.is_some_and(|held| held.digest() == digest && held.provenance == value.provenance)
+                held.is_some_and(|held| {
+                    held.digest() == digest
+                        && held.provenance == value.provenance
+                        && read.alphabet == Alphabet::Full
+                        && held.operation().as_ref() == Some(&read.letters)
+                })
             }
         };
         shell
