@@ -266,7 +266,13 @@
         "research.check.run",
         "research.run.reproduce",
         "research.bundle.export",
-        "research.obligation.export"
+        "research.obligation.export",
+        "file.document.new",
+        "file.document.open",
+        "file.document.save",
+        "file.document.save_as",
+        "file.document.compile",
+        "file.document.close"
       ]
     },
     "editor": {

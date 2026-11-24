@@ -603,6 +603,8 @@
 
 pub mod availability;
 pub mod budget;
+pub mod disclosure;
+pub mod documents;
 pub mod filter;
 mod forms;
 pub mod frame;
@@ -628,6 +630,12 @@ pub mod workspace;
 
 pub use availability::{Availability, AvailabilityKey};
 pub use budget::Budget;
+pub use disclosure::{key_of, Disclosure, Key, KEYS, STEPS};
+pub use documents::{
+    document_row, CheckedFile, DocumentKind, Documents, ImportPlan, LogFormat, DOCUMENT_CLOSE_ROW,
+    DOCUMENT_COMPILE_ROW, DOCUMENT_NEW_ROW, DOCUMENT_OPEN_ROW, DOCUMENT_ROWS, DOCUMENT_SAVE_AS_ROW, DOCUMENT_SAVE_ROW,
+    EXIT_ROW, LOG_CHECK_ROW, LOG_EXPORT_ROW, LOG_IMPORT_ROW, SESSION_DOCUMENT, WHOLE_SESSION,
+};
 pub use filter::{FilterPreview, FilterPreviewDeps, ResolvedFilter, FILTER_PREVIEW_ROW, FRESH_FILTER_PREVIEW};
 pub use frame::{FrameChain, FrameStamp, HeadlessFrames, PresentedFrame, ShownPreview};
 pub use grip::{SlotMap, GRIP_REBIND_ROW, SLOT_MAP_RECORD};
@@ -679,6 +687,8 @@ pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/src/bin/c600-jumble-route.rs", include_bytes!("bin/c600-jumble-route.rs")),
     ("c600-command/src/bin/c600-lp3-oracle.rs", include_bytes!("bin/c600-lp3-oracle.rs")),
     ("c600-command/src/budget.rs", include_bytes!("budget.rs")),
+    ("c600-command/src/disclosure.rs", include_bytes!("disclosure.rs")),
+    ("c600-command/src/documents.rs", include_bytes!("documents.rs")),
     ("c600-command/src/filter.rs", include_bytes!("filter.rs")),
     ("c600-command/src/forms.rs", include_bytes!("forms.rs")),
     ("c600-command/src/frame.rs", include_bytes!("frame.rs")),
@@ -691,6 +701,7 @@ pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/src/keys/layout.rs", include_bytes!("keys/layout.rs")),
     ("c600-command/src/keys/mod.rs", include_bytes!("keys/mod.rs")),
     ("c600-command/src/layer.rs", include_bytes!("layer.rs")),
+    ("c600-command/src/layer/documents.rs", include_bytes!("layer/documents.rs")),
     ("c600-command/src/layer/playback.rs", include_bytes!("layer/playback.rs")),
     ("c600-command/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-command/src/macros.rs", include_bytes!("macros.rs")),

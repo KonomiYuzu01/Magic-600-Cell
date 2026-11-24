@@ -12,6 +12,11 @@ rust-version = "1.89"
 # The command layer's `Store` and `Reopen`, which `JournalStore` implements (KN5 over KN4's journal).
 c600-command = { path = "../c600-command" }
 c600-digest = { path = "../c600-digest" }
+# The document service's script compile (`documents`): the editor services diagnose a `.6cs` and run nothing.
+c600-editor = { path = "../c600-editor" }
+# The document service's logs (`documents`, LP4-14): the session's history as a `.c600log`, its compile, and the 0.4 and
+# MPUlt interchange. `c600-log` itself keeps no path to `c600-run`.
+c600-log = { path = "../c600-log" }
 # The facts envelope reads into chapter 06's evidence graph and its word function (`persist::facts`).
 c600-evidence = { path = "../c600-evidence" }
 c600-ir = { path = "../c600-ir" }

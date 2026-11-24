@@ -444,7 +444,7 @@ impl Table {
 }
 
 /// The stored rows the command layer builds itself; no entry serves them.
-const LAYER_ROWS: [&str; 24] = [
+const LAYER_ROWS: [&str; 34] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -469,4 +469,15 @@ const LAYER_ROWS: [&str; 24] = [
     crate::recording::RECORDING_STOP_ROW,
     crate::recording::RECORDING_PLAY_ROW,
     crate::recording::RECORDING_CONVERT_ROW,
+    // LP4-14's document and log rows and `app.exit`, which the host's document service answers through the layer.
+    crate::documents::DOCUMENT_NEW_ROW,
+    crate::documents::DOCUMENT_OPEN_ROW,
+    crate::documents::DOCUMENT_SAVE_ROW,
+    crate::documents::DOCUMENT_SAVE_AS_ROW,
+    crate::documents::DOCUMENT_COMPILE_ROW,
+    crate::documents::DOCUMENT_CLOSE_ROW,
+    crate::documents::LOG_EXPORT_ROW,
+    crate::documents::LOG_CHECK_ROW,
+    crate::documents::LOG_IMPORT_ROW,
+    crate::documents::EXIT_ROW,
 ];

@@ -17,7 +17,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
 | `c600-jumble` | The jumbling half of the kernel API (M5): exact poses over Q(√5), K⁺, piece regions, twists and menus, states with their pose tables, the observations, and the adapter `c600-jumble-adapter` that the differential harness drives |
-| `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
+| `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6), and the document service over `c600-log` (LP4-14) |
 | `c600-evidence` | Chapter 06's evidence library as pure code: statements, keys and scopes, the AND/OR graph, grades and editions, the two standing passes, the word function with EVD.32's rows and EVD.40's checks, `CheckReport` admission, EVD.52's import rules and EVD.64's writer check |
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
 | `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
@@ -4299,9 +4299,9 @@ mathematician's review. It is data and a standard-library Python check outside t
   seed atlas, the `seeds` module source, and the guarded setups' certificate with its digest (a match names the cited
   bytes and checks no certificate).
 - Tests. `tests/test_glossary.py` runs the check on the repository and plants each refusal. It runs CT-EV5-02 in part:
-  the review clause (the mathematician's pass is recorded in OV-3, and its fixes wait for their check), flow goals
-  against the disclosure data (LP4-11's `c600-command` part) and BS3's branch (LQ2) are not run. CI runs
-  `python tests/test_glossary.py`, which also runs the check.
+  the review clause (the mathematician's pass is recorded in OV-3, and its fixes wait for their check) and BS3's
+  branch (LQ2) are not run; the flow goals against the disclosure data run in `c600-command/tests/disclosure.rs`
+  (LP4-11's `c600-command` part, below). CI runs `python tests/test_glossary.py`, which also runs the check.
 - Readings (drafts; OV-3 records them): EV5.6's phrases are resolved to rows; the path teaches four concepts earlier
   than EV5.6 lists them, because definitions at step 1 use them (theorem, certificate, digest and identity level);
   assistance provenance keeps its frozen step 4, and the workspace record of step 3 records a forward use of it, since
@@ -4317,7 +4317,6 @@ mathematician's review. It is data and a standard-library Python check outside t
   - the mathematician's check of the pass's fixes; rows the pass did not change still say in `review` that they wait
     for review, since the pass itself is recorded in OV-3;
   - UI placements for the new rows (`ui` is absent, "not placed yet"), which belong to the design line;
-  - soft disclosure and the flow goals' undisclosed-concept check, LP4-11's `c600-command` part;
   - the human tests of the path (EV5.7, EV5.12), which wait for the owner's form;
   - prose outside the glossary rewritten with EV5.18's qualified names.
 
@@ -4574,3 +4573,87 @@ workspace file.
   export uses R9's translator with LB5.18's grant. LP5's block of rows is
   `docs/progress/1.0/command-rows-research.json`. `tests/panel.rs` is a headless driver of the panel's whole flow on
   fresh data; no CT is indexed for R10.
+
+## Status of LP4, LP4-14: documents and the redesigned log rows
+
+LP4-14 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (ADR-D01.79 to .84 as revision 6's R-2 and R-3
+amend them; owner, 23 November 2026), a draft.
+
+- Command table: `docs/progress/1.0/command-rows-lp4.json`, the last entry of `DELTA_FILES`, adds six rows that name
+  ADR-D01.84 as their source: `file.document.new` (app), `.open` (file), `.save` (file), `.save_as` (file), `.compile`
+  (query, a job on the exclusive lane) and `.close` (app), and amends `file.log.export`, `.check` and `.import` under
+  ADR-D01.82 with their arguments (`history: JournalRangeRef`, `format: LogFormat`, `destination: FileRef`;
+  `file: FileDigestRef`; `checked: CheckedFileRef` and the token). `file.log.import` stays a commit with its
+  `file_check` and `confirm` gates; it is no longer a job. Six more rows: 204 on 198, and 215 with LP5's research
+  delta (workspace 85, view 47, query 45, commit 19, file 12, app 7). The counts in `c600-command`'s tests and the
+  Look Lab (`command-icons.json` `labelOnly`, the regenerated layouts, which hide the six rows, `lane_ll4.py`,
+  `ll4_harness_test.py`, its README and `A5FrameTests.cs`) follow; `placements=348` is unchanged.
+- The command layer (`c600_command::documents`, `src/layer/documents.rs`): the host's document service
+  (`Documents`) answers the six rows, the three log rows and `app.exit`; without one each is
+  `KN5:input.row_not_built`, as before. New, open, save, save as, close and exit answer at once; compile, check and
+  export are jobs on the exclusive lane that a commit does not cancel. None changes the labels, the revision or the
+  journal. `file.log.import {checked, token}` checks the solver's confirmation (`KN5:input.confirmation_required`) and
+  the service's plan of a passed `file.log.check` of the same file digest before the token is authenticated, then
+  runs `twist.apply`'s commit steps. It writes the recovery checkpoint, stops every playback state, and commits one
+  retained move whose word is the legal witness from the head back to the session's start and along the log's line,
+  under the protected set and the policy in force.
+- The session store (`c600_session::documents`): `session_log` converts the journal's history into a `.c600log`
+  through `c600-log` (commits with their normalized recipes, undo and redo as cursor moves, or a `select` when the
+  cursor is off the target's line after a node that left the undo stacks alone, records, protection, policy and
+  workspace completions as workspace nodes, layout-history steps and their undo and redo in the layout history);
+  `DocumentStore` is the service over `Files` (`MemFiles`, `FsFiles` with a synced rename). The live session
+  is the first document (`session`), never closed, saved at its file by `app.exit` with every open document and the
+  current preferences. A compile answers the SHA-256 of its bytes and binds a log only when every gate passed. A check
+  records its result by file and SHA-256; the import's plan comes only from a passed check of the file's current
+  bytes (`KN5:stale.result_gone` with no check, the first problem's code for a failed one,
+  `PS1:input.digest_mismatch` for changed bytes). The checkpoint is the session's log before the import, at
+  `<session file>.checkpoint-<n>.c600log`, the first number no file holds. `c600-session` now depends on
+  `c600-log` and `c600-editor`; `c600-log` still has no path to `c600-run`, `c600-command` or `c600-session`.
+- Tests: `c600-command/tests/documents.rs` (a fake service: every row `row_not_built` without one; opening, saving,
+  compiling, checking and exporting change no live state; the gates come before the token's authentication; one
+  undoable entry after the checkpoint that a reopen replays; protection, model, start and state refusals; playback
+  states stopped); `c600-session/tests/documents.rs` (on the journal over a memory disk: the conversion compiles to the
+  session's state, `app.exit` saves the session with a dirty document and the preferences, only a passed log binds, an
+  import between two sessions keeps the current preferences, writes a checkpoint that compiles to the state before
+  it, and `session.undo` returns there). Updated: `layer.rs`, `r05_rows.rs`, `palette.rs` and `profile.rs` (counts),
+  `served_rows.rs` (`app.exit` is a layer row; `app.reconnect` is the stored app row).
+- Readings and departures (recorded, frozen text unchanged):
+  - The import journals as FP.31's `retained_move` under `file.log.import`, not as `import`, so the journal and the
+    migration format do not change; FP.32's voids on import are not written. A partial undo can step back inside the
+    import's witness word.
+  - The import is refused with `KN4:input.branch_path_unproved` when the log does not start at the session's start or
+    the line back to the start crosses a node without a retained word, and with the protection code when the word
+    would move a protected orbit.
+  - Playback states: an import replaces the action numbers a map names, so every state is stopped with
+    `KN7:cancelled.revision_replaced`, its map emptied and its pending child dropped, durably, before the commit; a
+    later `recording.play` starts against the imported session and never resumes against pre-import numbers. A
+    finished state keeps its status and only its map is emptied. A failed checkpoint answers `failed` and stops
+    nothing; a commit that fails after the checkpoint leaves the checkpoint and the stopped states, which lose nothing.
+  - The log's preferences are recorded in the plan and never applied; the service keeps the current ones.
+  - `JournalRangeRef` is `session` only; the check's format follows the file name (`.c600log`, `.c600.json[.gz]`,
+    `.log`); a new log document is an empty log of the model.
+  - A partial undo and a rollback step convert as what the journal holds: a commit of the retained word and cursor
+    moves, not the log's `partial_undo` form.
+- Not built: a session with Jumble on converts to no log (`KN5:input.row_not_built`); MPUlt check and export without
+  the host's native profile; a range inside the session's journal; the rows' keys, dialogs and tabs; a host that
+  installs the service (the renderer bridge is outside this work).
+- Evidence kind: source and synthetic. No Windows, input, display or timing claim.
+
+## Status of LP4, LP4-11: soft disclosure (`c600-command`)
+
+LP4-11's `c600-command` part (EV5.8, EV5.9; LQ14; DT-M1 K3), a draft under the mathematician's review.
+
+- `c600_command::disclosure`: `KEYS` names every H-08 row the learning path's goal flows cite (27: six at step 1,
+  four at step 3, seventeen at step 4; steps 2 and 5 to 7 cite none), the step that opens it (the first citing it)
+  and the glossary terms it needs. `Disclosure` is the shell's display state (`Shell::disclosure`): steps opened, the
+  saved and reversible "open all", and the "new" status until first use. "Show all keys" (`shows(row, true)`) reads
+  the state and changes nothing. The command layer and the shell's own methods never read it.
+- Tests: `c600-command/tests/disclosure.rs`. CT-EV5-02's flow-goal part: each cited row is a key at its first citing
+  step and needs only learner-facing terms its step or one before it on the path teaches or the path assumes, with
+  six planted refusals. CT-EV5-04 in part: in every disclosure state the palette lists every row, availability and
+  the shell's preparation of every row are unchanged, show all changes nothing, open all reverses, and a source scan
+  finds no reader in the layer. `tests/test_glossary.py`'s marker now points its flow-goal part here.
+- Not run or built: BS3's per-principle capability gate (EV5.9) waits for LQ2's option set, so nothing gates a
+  capability; the review clause of CT-EV5-02 waits for the mathematician's check (every step and LP4-11 row still says
+  so in `review`); the keys' concepts are LP4-11's proposal under that review; the keyboard's and the help's display.
+- Evidence kind: source. No human or display claim.

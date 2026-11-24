@@ -97,6 +97,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-log"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-editor",
+ "c600-kernel",
+]
+
+[[package]]
 name = "c600-lx4"
 version = "0.0.0"
 dependencies = [
@@ -174,9 +183,11 @@ version = "0.0.0"
 dependencies = [
  "c600-command",
  "c600-digest",
+ "c600-editor",
  "c600-evidence",
  "c600-ir",
  "c600-kernel",
+ "c600-log",
  "c600-platform",
  "c600-run",
 ]

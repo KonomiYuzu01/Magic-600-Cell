@@ -17,6 +17,8 @@
 
 pub mod command_store;
 pub mod disk;
+/// The host's document service: the live session as the first document and its history as a log (LP4-14 draft).
+pub mod documents;
 pub mod journal;
 pub mod persist;
 /// The command layer's recordings and playback states as workspace records of the session's journal (LP4-9 draft).

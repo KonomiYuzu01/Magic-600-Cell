@@ -387,6 +387,13 @@ impl JournalStore {
         crate::recorder::JournalRecorder(Arc::clone(&self.0))
     }
 
+    /// A reader of this store's history that writes nothing (LP4-14 draft): the document service converts the
+    /// session's move history into a log with it ([`crate::documents`]). Like [`JournalStore::recorder`], the host takes
+    /// it before the layer takes the store.
+    pub fn history_reader(&self) -> HistoryReader {
+        HistoryReader(Arc::clone(&self.0))
+    }
+
     fn inner(&self) -> MutexGuard<'_, Inner> {
         self.0.lock().unwrap_or_else(PoisonError::into_inner)
     }
@@ -547,18 +554,31 @@ impl Store for JournalStore {
     }
 }
 
+/// [`JournalStore::history_reader`]'s reader: the store's [`Reopen::history`] on the same journal, and nothing else.
+pub struct HistoryReader(Arc<Mutex<Inner>>);
+
+impl HistoryReader {
+    /// The genesis, the epochs and every durable transaction in order, as a reopen reads them.
+    pub fn history(&self) -> Result<History, Error> {
+        history(&mut self.0.lock().unwrap_or_else(PoisonError::into_inner))
+    }
+}
+
 impl Reopen for JournalStore {
     fn history(&mut self) -> Result<History, Error> {
-        let mut inner = self.inner();
-        inner.settle();
-        let Some(genesis) = inner.held.genesis.clone() else {
-            return Err(Error::new(code::UNKNOWN_SESSION, "the journal holds no session"));
-        };
-        Ok(History {
-            genesis,
-            epochs: inner.held.epochs.clone(),
-            transactions: inner.held.transactions.clone(),
-            damaged: inner.held.damaged.clone(),
-        })
+        history(&mut self.inner())
     }
+}
+
+fn history(inner: &mut Inner) -> Result<History, Error> {
+    inner.settle();
+    let Some(genesis) = inner.held.genesis.clone() else {
+        return Err(Error::new(code::UNKNOWN_SESSION, "the journal holds no session"));
+    };
+    Ok(History {
+        genesis,
+        epochs: inner.held.epochs.clone(),
+        transactions: inner.held.transactions.clone(),
+        damaged: inner.held.damaged.clone(),
+    })
 }

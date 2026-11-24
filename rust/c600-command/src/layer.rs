@@ -148,6 +148,7 @@ use crate::worksheet::{
 };
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
 
+mod documents;
 mod playback;
 
 /// The mode of a revision with Jumble off: a session starts with Jumble off.
@@ -463,6 +464,12 @@ enum JobKind {
     /// `jumble.repair.list`'s job: the cap the invocation named.
     Repair {
         cap: i64,
+    },
+    /// A document or log job (`file.document.compile`, `file.log.check`, `file.log.export`; LP4-14): its row and the
+    /// invocation's arguments, which the host's document service runs.
+    Document {
+        row: String,
+        args: Value,
     },
 }
 
@@ -965,6 +972,8 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     /// Capture and playback (LP4-9; [`crate::recording`]): the host's recorder, the capture in progress, the stored
     /// recordings and playback states, and the live playback jobs and children.
     rec: playback::Rec,
+    /// The document and log rows (LP4-14; [`crate::documents`]): the host's document service and its answers.
+    docs: documents::Docs,
 }
 
 impl<S: Store> CommandLayer<S> {
@@ -1045,6 +1054,7 @@ impl<S: Store> CommandLayer<S> {
             limbo: None,
             generation: 0,
             rec: playback::Rec::default(),
+            docs: documents::Docs::default(),
         }
     }
 
@@ -2622,6 +2632,7 @@ impl<S: Store> CommandLayer<S> {
                 Some(_) => Ok(()),
                 None => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's view model", row.id))),
             },
+            _ if crate::documents::document_row(&row.id) => self.document_gates(row),
             _ => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id))),
         }
     }
@@ -2707,6 +2718,7 @@ impl<S: Store> CommandLayer<S> {
             && row.id != WORKSHEET_LOAD_ROW
             && row.id != WORKSHEET_COMPARE_ROW
             && !crate::recording::recording_row(&row.id)
+            && !crate::documents::document_row(&row.id)
             && (row.overlay.is_none() || matches!(row.kind, Kind::Query | Kind::View))
     }
 
@@ -2878,6 +2890,7 @@ impl<S: Store> CommandLayer<S> {
             RECORDING_PLAY_ROW => self.recording_play(caller, invocation, &row, args),
             RECORDING_CONVERT_ROW => self.recording_convert(caller, invocation, request, &row, args),
             JOB_STOP_ROW => self.job_stop(&row, args),
+            _ if crate::documents::document_row(&row.id) => self.document_row(caller, invocation, request, &row, args),
             _ if row.overlay.is_some() => {
                 // A language-defined row whose module failed its static check runs nothing: the palette lists it as
                 // unavailable with this diagnostic, and a press by key or palette is refused with it (KN5.4, EV4.2).
@@ -3076,6 +3089,10 @@ impl<S: Store> CommandLayer<S> {
                 }
                 JobKind::Repair { cap } => {
                     self.build_repair(job.id, &(job.scope, job.command), cap);
+                    ran += 1;
+                }
+                JobKind::Document { row, args } => {
+                    self.run_document_job(job.id, &(job.scope, job.command), &row, &args);
                     ran += 1;
                 }
             }
@@ -3683,7 +3700,10 @@ impl<S: Store> CommandLayer<S> {
         }
         let mut keep = VecDeque::new();
         for job in std::mem::take(&mut self.jobs) {
-            if matches!(&job.kind, JobKind::Program(program) if program.kind == Kind::File) {
+            // A document job reads documents and files, not the replaced state, so it finishes too (LP4-14).
+            if matches!(&job.kind, JobKind::Program(program) if program.kind == Kind::File)
+                || matches!(&job.kind, JobKind::Document { .. })
+            {
                 keep.push_back(job);
                 continue;
             }
