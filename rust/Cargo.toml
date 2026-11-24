@@ -32,6 +32,14 @@ opt-level = 2
 [profile.dev.package.c600-jumble]
 opt-level = 2
 
+# LP5's KN6 checkers and the digest crate they hash with: 13% off the stage 14 tests in a debug build (343.6 s to
+# 299.3 s on four test threads, 24 November 2026). Their own check is `tests/test_language_rust_checkers.py`.
+[profile.dev.package.c600-checkers]
+opt-level = 2
+
+[profile.dev.package.c600-digest]
+opt-level = 2
+
 [profile.dev.package."*"]
 opt-level = 2
 debug = false
