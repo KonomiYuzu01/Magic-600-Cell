@@ -1,4 +1,5 @@
 flowchart LR
-  J[journal] --> B1[branch line 1]
-  J --> B2[branch line 2]
-  B2 -. availability in solving sessions: LQ4 .- Q[open question]
+  J[journal] --> A[one active line per session]
+  J --> B[other branches]
+  B -->|can be| V[viewed and compared]
+  P[programs] -. cannot change .- B

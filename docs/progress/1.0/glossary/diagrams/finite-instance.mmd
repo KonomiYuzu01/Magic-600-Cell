@@ -1,4 +1,5 @@
 flowchart LR
-  S[statement] --> I[one input or a declared search set]
+  S[statement] --> T[stands at the threshold, no premise assumed]
+  T --> I[on one input or a declared search set]
   I --> F[finite instance]
   F -. nothing outside the set .- O[other inputs]

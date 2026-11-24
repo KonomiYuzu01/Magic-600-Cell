@@ -1,4 +1,5 @@
 flowchart LR
-  M[model] -->|quotient, restriction, simplification| D[derived model]
-  D --- Dv[derivation]
-  D --- C[claim-preserving maps]
+  M[source model] -->|quotient, restriction, simplification| D[derived model: a value]
+  D --- Mp[recorded map from its source]
+  D --- C[claims the map preserves]
+  D -. never .- A[a new authoritative puzzle]

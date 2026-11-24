@@ -1,16 +1,19 @@
 """The glossary check and the language learning path (LP4-11): EV5.6, EV5.10, EV5.14, EV5.15 and EV5.18.
 
-CT-EV5-02 (part: the integrated glossary covers chapter 04 section 6's rows, every entry has build evidence, each
-sense of EV5.18's homonyms has its own row, each step's prerequisite concepts are taught before that step's task, and
-the steps' prerequisites form a DAG; not run: that the proposed changes have been reviewed, because the
-mathematician's pass of 23 November 2026 is recorded in OV-3 only and its fixes wait for their check (each such row
-says so in `review`); and BS3's branch of EV5.9, which waits for LQ2's option set). The part that flow goals need no
-undisclosed concept runs against c600-command's disclosure data in `rust/c600-command/tests/disclosure.rs`.
+CT-EV5-02 (part: the integrated glossary covers chapter 04 section 6's rows; the proposed changes have been
+reviewed: every row and every step of the path records in `review` the mathematician's review of 24 November 2026
+(EV5.14), and none still waits for it; every entry has build evidence; each sense of EV5.18's homonyms has its own
+row; each step's prerequisite concepts are taught before that step's task, and a row's recorded level forward does
+not excuse a use the path has not taught; and the steps' prerequisites form a DAG. The clause that flow goals need no
+undisclosed concept runs against c600-command's disclosure data in `rust/c600-command/tests/disclosure.rs`; not run:
+Flow rule, which EV5.6 lists at step 6, is not learner-facing until LQ2's option set turns it on (EV5.9), so step 6
+records it as waiting and no step teaches it).
 
 The check is `docs/progress/1.0/glossary/build.py --check`. These tests run it on the repository's data and on
 planted documents, which shows that each refusal can fail: an unknown term, an ambiguous term or citation, a
 definition above its level, a learner-facing definition that uses a row that is not learner-facing, a bare homonym,
-a learning path with a cycle, a concept taught after its use, and a fixture that changed or whose answer is a word.
+a learning path with a cycle, a concept taught after its use (also when its row records the use as a level forward),
+and a fixture that changed or whose answer is a word.
 
 This is source evidence about the glossary's data and the learning path's fixtures. The human tests of the path wait
 for the owner's form (EV5.12); nothing here is a learner's result.
@@ -187,10 +190,16 @@ class Repository(unittest.TestCase):
         self.assertEqual(set(manifest["diagrams"]), {t["id"] for t in self.doc["terms"]})
         self.assertEqual(build.manifest_errors(self.doc), [])
 
-    def test_rows_that_wait_for_review_say_so(self) -> None:
-        for t in self.doc["terms"]:
-            if t.get("origin") != "M6" or "chapter_term" in t:
-                self.assertIn("review", t["review"], t["id"])
+    def test_every_row_and_step_records_the_mathematicians_review(self) -> None:
+        # EV5.14: the mathematician reviewed every row, step and key on 24 November 2026; no row or step still waits.
+        reviewed = "Reviewed by the mathematician on 24 November 2026 (EV5.14): "
+        for item in self.doc["terms"] + self.path["steps"]:
+            review = item.get("review", "")
+            self.assertIn(reviewed, review, item["id"])
+            self.assertTrue(re.search(re.escape(reviewed) + r"(no finding\.|.+?; fixed\.)", review), item["id"])
+            self.assertNotIn("waits for the mathematician", review.lower(), item["id"])
+            for f in item.get("forward", []) + item.get("first_use_forward", []):
+                self.assertNotIn("waits for the mathematician", str(f.get("why", "")).lower(), item["id"])
 
     def test_generated_files_use_lf(self) -> None:
         for path in (build.PAGE, build.TERMS, build.PATH, build.MANIFEST):
@@ -233,6 +242,16 @@ class PlantedPath(unittest.TestCase):
         # Step 4 revisits Word, which the path takes from the manual.
         self.assertIn("Word", self.path["steps"][3]["revisits"])
         self.assertEqual(self.errors(lambda p: None), [])
+
+    def test_a_rows_recorded_level_forward_does_not_excuse_the_path(self) -> None:
+        # The level rule allows a recorded forward reference; the path still teaches the term before its use.
+        doc = copy.deepcopy(self.doc)
+        view = next(t for t in doc["terms"] if t["id"] == "view")
+        view["definition"] = "A presentation of information at one [[revision]], in every [[profile]]."
+        view["forward"] = [{"term": "Profile", "why": "profiles enter at L6"}]
+        self.assertEqual([e for e in build.term_errors(doc) if e.startswith("view:")], [])
+        errs = build.path_errors(doc, self.path)
+        self.assertTrue(any("S1: 'View' uses 'Profile', which no step up to S1 teaches" in e for e in errs), errs)
 
     def test_a_planned_forward_use_must_occur(self) -> None:
         def unplanned(p):

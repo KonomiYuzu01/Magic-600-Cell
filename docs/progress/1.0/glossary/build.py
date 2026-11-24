@@ -23,7 +23,8 @@ The term check (EV5.10, EV5.18) refuses:
 Nothing here repairs a reference by guessing a similar name: an unresolved reference fails.
 
 The learning-path check refuses a step concept that is not a learner-facing row, a concept whose definition uses a
-term no earlier step teaches (unless the manual or the solving glossary teaches it), prerequisites that do not form
+term no earlier step teaches (unless the manual or the solving glossary teaches it, or the step records the use with
+its reason; a row's recorded level forward does not excuse it), prerequisites that do not form
 a DAG, a step order that contradicts the manual's first-use order (owner, 23 November 2026), a fixture whose
 recorded instance is missing, changed or lacks its expected value, and a fixture whose answer is a word or a macro
 (the human-solve boundary: no fixture chooses or outputs a solving macro).
@@ -447,14 +448,14 @@ def path_errors(doc: dict, path: dict) -> list[str]:
         for a in ancestors(sid):
             known |= set(concepts.get(a, []))
         # A step may record that a concept uses a term a later step teaches (EV5.6 reads two record parts at step 1
-        # and the whole record at step 5); a row's recorded forward reference to a higher level is not needed either.
+        # and the whole record at step 5). A row's recorded forward reference to a higher level excuses the level rule
+        # only: the path still teaches the term it uses first, or the step records the use with its reason.
         planned = {(f.get("concept", "").lower(), f.get("uses", "").lower()): f for f in steps[sid].get("forward", [])}
         seen = set()
         for tid in ids:
-            skip = {f.get("term", "").lower() for f in rows[tid].get("forward", [])}
             for _, name in references(rows[tid]["definition"]):
                 used, _ = resolve(names, name)
-                if not used or used in known or used in outside or rows[used]["term"].lower() in skip:
+                if not used or used in known or used in outside:
                     continue
                 key = (rows[tid]["term"].lower(), rows[used]["term"].lower())
                 if key in planned:
@@ -558,7 +559,8 @@ def page(doc: dict, path: dict | None = None) -> str:
            "and are provisional until the owner decides the learning path; the UI locations are the planned surfaces of "
            "solving-workflow section 4, not a layout. Diagrams are rendered locally with the Mermaid CLI; sources and "
            "digests are in `diagrams/`. The language's entries come from chapter 04 section 6 of the language "
-           "architecture (EV5.14, EV5.15, EV5.18); an entry marked for review waits for the mathematician.", ""]
+           "architecture (EV5.14, EV5.15, EV5.18). The mathematician reviewed every entry, step and key on 24 November "
+           "2026 (EV5.14); each entry's review line says what they found.", ""]
     out += ["## Levels", "", "| Level | Name | Workflow step |", "|---|---|---|"]
     out += [f"| {lv['id']} | {lv['name']} | {lv['workflow']} |" for lv in doc["levels"]]
     if doc.get("homonyms"):
@@ -589,7 +591,7 @@ def page(doc: dict, path: dict | None = None) -> str:
                 out.append(f"- Taught at learning-path step {taught[t['id']]}")
             out.append(f"- Source: {t['source']}")
             for f in t.get("forward", []):
-                out.append(f"- Forward reference to {f['term']}, waiting for review: {f['why']}")
+                out.append(f"- Forward reference to {f['term']}: {f['why']}")
             for f in t.get("first_use_forward", []):
                 out.append(f"- Uses {f['term']} before the manual introduces it: {f['why']}")
             if t.get("review"):

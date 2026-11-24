@@ -4,3 +4,5 @@ flowchart LR
   P -->|may propose setups for a named target| U[setup search]
   P -->|may list repairs at a named cap, unranked| R[repair list]
   P -. never chooses, outputs or executes one alone .- X[solving]
+  O[the solver's own tool, in their workspace] -->|word accepted at preview in a solving session| M
+  K[someone else's package] -. word refused at preview there .- M

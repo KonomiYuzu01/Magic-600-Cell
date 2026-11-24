@@ -4,10 +4,9 @@
 //! CT-EV5-02 (part: flow goals need no undisclosed concept: every H-08 row a learning step's goal flow cites is a key
 //! of `c600_command::KEYS` that opens at the first step citing it, and each of its concepts is a learner-facing
 //! glossary row that this step or a step before it on the path teaches, or that the path assumes; planted keys that
-//! need a concept taught later, or by a step off the path, are refused; not run: that the proposed changes have been
-//! reviewed, because every step and every LP4-11 row still records in `review` that it waits for the mathematician's
-//! review (EV5.14), and the keys' concepts are LP4-11's proposal under the same review; the other parts are in
-//! `tests/test_glossary.py`).
+//! need a concept taught later, or by a step off the path, are refused. The mathematician reviewed the keys' concepts
+//! with the path on 24 November 2026 (EV5.14). The other clauses, the review clause among them, run in
+//! `tests/test_glossary.py`, which also names what is not run).
 //! CT-EV5-04 (part: ordinary soft disclosure never locks commands: in every disclosure state, nothing opened, each
 //! step opened in the path's order, and "open all", the palette lists every H-08 row, each row's availability and the
 //! shell's preparation of each row are those of the first state, "show all keys" shows every key and changes no

@@ -1,7 +1,7 @@
 {
  "format": "C600-GLOSSARY-draft",
  "version": 2,
- "note": "Version 2 integrates chapter 04 section 6 of the language architecture (EV5.14, EV5.15) and the senses of EV5.18 in LP4-11. A reference in a definition is written [[Term]] or [[shown text|Term]] and must name one row at or below the definition's level (EV5.10). `learner_facing: false` marks a row that never reaches the interface. `origin` says where a row comes from; `chapter_term` keeps the chapter's row name; `review` says what waits for the mathematician.",
+ "note": "Version 2 integrates chapter 04 section 6 of the language architecture (EV5.14, EV5.15) and the senses of EV5.18 in LP4-11. A reference in a definition is written [[Term]] or [[shown text|Term]] and must name one row at or below the definition's level (EV5.10). `learner_facing: false` marks a row that never reaches the interface. `origin` says where a row comes from; `chapter_term` keeps the chapter's row name; `review` records the mathematician's review (EV5.14) and what it found.",
  "levels": [
   {
    "id": "L1",
@@ -227,6 +227,14 @@
     "Twist, jumbling puzzle"
    ],
    "bare": null
+  },
+  {
+   "word": "Unit",
+   "senses": [
+    "Pose unit",
+    "Clean-step unit"
+   ],
+   "bare": null
   }
  ],
  "terms": [
@@ -237,7 +245,8 @@
    "definition": "One of the 600 tetrahedral cells of the 600-cell; each cell carries 433 [[sticker slots|Sticker slot]].",
    "ui": "Local and Global views (cell outlines); cell names such as C013 in inspection and filters",
    "source": "research/Full_600cell_Puzzle_Theory.tex, Lemma 3; assets/mesh.json (cells, base_stickers)",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "sticker-slot",
@@ -246,7 +255,8 @@
    "definition": "A fixed place for one [[sticker]]; the full model has 600 x 433 = 259,800 slots. The mechanical state always keeps all of them; display [[filters|Filter]] may hide some from drawing, never from the state.",
    "ui": "Views draw all slots unless a display filter hides some; inspection shows slot numbers",
    "source": "AGENTS.md (Mechanics and model); assets/mesh.json",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "label",
@@ -261,7 +271,7 @@
     "label",
     "labels"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "piece",
@@ -276,7 +286,7 @@
     "piece",
     "pieces"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "cap",
@@ -291,7 +301,7 @@
     "cap",
     "caps"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "grip",
@@ -302,7 +312,7 @@
    "source": "Chapter 01 KN1.5; state contract section 1; solving-workflow.md section 4.3; research/Full_600cell_Technical_Report.tex (grips, twists)",
    "origin": "M6",
    "chapter_term": "Grip (scope change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "generator",
@@ -311,12 +321,12 @@
     "Primitive move"
    ],
    "level": "L1",
-   "definition": "One of the 1,200 generators of 600-cell-Full; a negative number is its inverse. Every count says what it counts.",
+   "definition": "One of the 1,200 primitive moves of 600-cell-Full: the half-turn H_c and the third-turn T_c of each of the 600 [[caps|Cap]] (Theory F), numbered 1 to 1,200 (cap c, counted from 0, has 2c+1 for H_c and 2c+2 for T_c); a negative number names the inverse. Every count says what it counts.",
    "ui": "Move counts, macro text, history",
-   "source": "Chapter 01 KN1.5; DT-M1 Terms; AGENTS.md (1,200 legal generators); core.py Model.move",
+   "source": "Chapter 01 KN1.5; DT-M1 Terms; Theory F and Lemma 6; AGENTS.md (1,200 legal generators); core.py Model.move and star_net",
    "origin": "M6",
    "chapter_term": "Generator (scope change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the definition named the word by itself; it now names the half-turn H_c and third-turn T_c of each cap and their numbering (Theory F, Lemma 6); fixed."
   },
   {
    "id": "orbit",
@@ -331,7 +341,7 @@
     "orbit",
     "orbits"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "seed",
@@ -340,7 +350,8 @@
    "definition": "A legal [[word]], one per [[orbit]], whose effect on that orbit is a cycle of three [[pieces|Piece]].",
    "ui": "Macro base (per orbit); star construction details",
    "source": "solving-workflow.md section 2; core.py Model.certify_seed",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "collateral",
@@ -349,7 +360,8 @@
    "definition": "What a [[word]] moves outside the [[orbit]] being worked on; 23 of the 35 raw [[seeds|Seed]] have collateral, and it is always kept, never discarded.",
    "ui": "Complete-effect panel; support and conflict lists before execution",
    "source": "solving-workflow.md section 2; assets/seed_atlas.json (collateral)",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "stage-order",
@@ -360,22 +372,17 @@
    "source": "BND.65; LB2.5; solving-workflow.md section 2; research/Full_600cell_Technical_Report.tex, 'Triangular stage invariant'",
    "origin": "M6",
    "chapter_term": "Stage order (scope change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "protection",
    "term": "Protection",
    "level": "L2",
-   "definition": "The solver's instruction that an [[orbit]], [[position]], [[piece]] or [[block|Achievement block]] must not change; an operation that would change it is refused, not hidden.",
+   "definition": "The solver's instruction that an [[orbit]], [[position]], [[piece]] or a group of pieces the solver declares must not change; an operation that would change it is refused, not hidden.",
    "ui": "Protection indicator on every view; conflict warnings in preview",
    "source": "session.py Session.preview and commit (protected orbits); solving-workflow.md section 3.3",
    "origin": "M6",
-   "forward": [
-    {
-     "term": "Achievement block",
-     "why": "The solving glossary names a block among protected objects at L2; achievement blocks enter at L4."
-    }
-   ]
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the L2 definition linked Achievement block (L4); the link and its forward record are dropped, and the Achievement block row says that a block can be protected; fixed."
   },
   {
    "id": "net-strict",
@@ -386,7 +393,7 @@
    "source": "Chapter 01 KN2.7; partition default 10; solving-workflow.md section 2 (Boundaries, not intermediate steps)",
    "origin": "M6",
    "chapter_term": "Net and Strict checks (scope change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "buffer",
@@ -395,7 +402,8 @@
    "definition": "One of two fixed [[positions|Position]], A and B, chosen for an [[orbit]]; [[pieces|Piece]] pass through them while others are placed. A buffer is a place, not a piece.",
    "ui": "A and B markers in Local; buffer keys",
    "source": "solving-workflow.md section 3.1",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "occupant",
@@ -406,7 +414,7 @@
    "source": "Chapter 01 KN1.9; EV3.8; solving-workflow.md section 3.1",
    "origin": "M6",
    "chapter_term": "Occupant (scope change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "target",
@@ -417,7 +425,7 @@
    "source": "BND.65; LB2.5; solving-workflow.md sections 3.3 and 7",
    "origin": "M6",
    "chapter_term": "Target (scope change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "setup",
@@ -426,7 +434,8 @@
    "definition": "A [[word]] S, chosen for a [[target]], that carries the reference [[position]] to the target X without moving the [[buffers|Buffer]]; a [[star]] runs S^-1 first and S last.",
    "ui": "Prepare phase of the work sheet; proposed setups for a named target",
    "source": "solving-workflow.md sections 3.1 and 7; research/Full_600cell_Puzzle_Theory.tex, Lemma 15",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "relocation",
@@ -435,7 +444,8 @@
    "definition": "The fixed [[word]] that moves the [[seed]]'s three-cycle onto [[buffer]] A, buffer B and a reference [[position]].",
    "ui": "Star construction details",
    "source": "core.py Model.certify_seed (relocation); solving-workflow.md section 3.1",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "star",
@@ -447,7 +457,8 @@
    "origin": "M6",
    "manual": [
     "stars"
-   ]
+   ],
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "home",
@@ -456,7 +467,8 @@
    "definition": "The [[position]] where a [[piece]] belongs when the puzzle is solved.",
    "ui": "Home and current structure toggle; home(C...) filters",
    "source": "core.py Filters (home and current predicates); solving-workflow.md section 3.3",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "block",
@@ -465,11 +477,11 @@
     "Block"
    ],
    "level": "L4",
-   "definition": "A group of [[pieces|Piece]] the solver declares as an achievement, with members, required [[positions|Position]] or relations, a reference and a preservation policy; Home blocks and referenced blocks are distinct.",
+   "definition": "A group of [[pieces|Piece]] the solver declares as an achievement, with members, required [[positions|Position]] or relations, a reference and a preservation policy; Home blocks and referenced blocks are distinct. A block can be put under [[protection]].",
    "ui": "Block panel; block boundary in Local; block protection",
    "source": "solving-workflow.md section 3.3",
    "origin": "M6",
-   "review": " Named per EV5.18: bare block means achievement block."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Its definition now says that a block can be protected, for the Protection row's finding. Named per EV5.18: bare block means achievement block."
   },
   {
    "id": "frame",
@@ -484,7 +496,7 @@
     "frame",
     "frames"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "complete-effect",
@@ -495,7 +507,7 @@
    "source": "Chapter 01 KN5.10; charter S4; solving-workflow.md section 4.1",
    "origin": "M6",
    "chapter_term": "Complete effect (scope change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "work-sheet",
@@ -504,7 +516,8 @@
    "definition": "A saved operation with its roles and three phases, Prepare, Macro and Cleanup; reusing it always triggers a fresh review.",
    "ui": "Work sheet editor; phase editor",
    "source": "solving-workflow.md section 4",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "orientation",
@@ -515,7 +528,7 @@
    "source": "Chapter 01 KN1; DT-L1 M3; core.py PuzzleState (orientation_wrong)",
    "origin": "M6",
    "chapter_term": "Orientation (scope change)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "orientation-transfer",
@@ -524,17 +537,18 @@
    "definition": "The operation P_X(q) = K_{X,q} K_X^-1, built from [[stars|Star]]: on the working [[orbit]] it fixes every [[position]] and moves an [[orientation]] change from X to a [[buffer]]; like every star product, it may also move [[pieces|Piece]] of other orbits ([[collateral]]), which [[preview]] shows.",
    "ui": "Endgame tools; both ends shown in preview",
    "source": "solving-workflow.md section 3.4",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "residual",
    "term": "Residual",
    "level": "L5",
-   "definition": "What is still wrong in an [[orbit]]: [[pieces|Piece]] not at Home, wrong [[buffer]] [[occupants|Occupant]], wrong [[orientations|Orientation]] and unknown [[frames|Frame]]; the final buffer may keep only a residual the [[frame group]] allows.",
+   "definition": "What is still wrong in an [[orbit]]: [[pieces|Piece]] not at Home, wrong [[buffer]] [[occupants|Occupant]], wrong [[orientations|Orientation]] and unknown [[frames|Frame]]. Only the final buffer can keep a residual, and the orbit's [[frame group]] limits it: none for the trivial, C2 and C5 groups, one inside the rotation subgroup for D5, and for A5 one that a certified table [[covers|~]].",
    "ui": "Residuals panel per orbit; stage display; completion",
    "source": "solving-workflow.md section 3.4",
    "origin": "M6",
-   "review": "The mathematician's pass of 23 November 2026 found M17 (frame group, not orientation group); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M17 (frame group, not orientation group). Reviewed by the mathematician on 24 November 2026 (EV5.14): the M17 fix holds, but 'a residual the frame group allows' read as any element of it; the limit is now stated by group (solving workflow section 3.4); fixed."
   },
   {
    "id": "pure-controller",
@@ -543,7 +557,8 @@
    "definition": "A raw [[seed]] followed by corrections of all its [[collateral]] through previously built pure controllers; its net effect touches only its own [[orbit]].",
    "ui": "Macro base (advanced); theory book",
    "source": "solving-workflow.md section 2; research/Full_600cell_Puzzle_Theory.tex (certificate C)",
-   "origin": "M6"
+   "origin": "M6",
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "twist-full",
@@ -554,7 +569,7 @@
    "source": "Overview 3.6; DT-M1 Terms; Theory F; core.py Model.move (primitive IDs +-1..+-1200)",
    "origin": "M6",
    "chapter_term": "Twist, 600-cell-Full (change)",
-   "review": "The mathematician's pass of 23 November 2026 found M11 (600-cell-Full has no menu); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M11 (600-cell-Full has no menu). Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "twist-jumbling",
@@ -565,13 +580,13 @@
    "source": "Overview 3.6; DT-M1 Terms; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "M6",
    "chapter_term": "Twist, jumbling puzzle (change)",
-   "review": "The mathematician's pass of 23 November 2026 found M19 (cite the menu Λ_c of card 6, not core.py); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M19 (cite the menu Λ_c of card 6, not core.py). Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "retained-twist",
    "term": "Retained twist",
    "level": "L1",
-   "definition": "A [[twist|Twist, jumbling puzzle]] in the [[cap]]'s retained rotation subgroup, with the same rotation when Jumble is on.",
+   "definition": "A non-identity rotation of a [[cap]]'s A4, its retained rotation subgroup (11 per cap): a [[twist|Twist, 600-cell-Full]] with Jumble off, and the same rotation as a [[twist|Twist, jumbling puzzle]] with Jumble on.",
    "source": "DT-M1 Outcome C6, Terms",
    "origin": "chapter 04 section 6",
    "chapter_term": "Retained twist",
@@ -579,13 +594,13 @@
     "retained twist",
     "retained twists"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the row named only the jumbling puzzle's twist; it now names the twist of both puzzles; fixed."
   },
   {
    "id": "jumble-twist",
    "term": "Jumble twist",
    "level": "L1",
-   "definition": "An active-menu [[twist|Twist, jumbling puzzle]] outside that retained subgroup, refused when Jumble is off.",
+   "definition": "A [[twist|Twist, jumbling puzzle]] by an element of the active [[menu]] outside the [[cap]]'s retained rotation subgroup (48 per cap under I_a); refused when Jumble is off.",
    "source": "DT-M1 Outcome C6, Terms",
    "origin": "chapter 04 section 6",
    "chapter_term": "Jumble twist",
@@ -593,7 +608,7 @@
     "jumble twist",
     "jumble twists"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): 'that retained subgroup' had no antecedent in the row; fixed."
   },
   {
    "id": "position",
@@ -607,17 +622,17 @@
     "position",
     "positions"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "cut-chamber",
    "term": "Cut chamber",
    "level": "L1",
-   "definition": "One of the 177,120 fixed places a [[piece]] can fill. A [[position]] names one.",
-   "source": "State contract section 2; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md); [theory, cut chambers](../../../../research/Full_600cell_Puzzle_Theory.tex)",
+   "definition": "One of the 177,120 fixed places a [[piece]] can fill. A [[position]] names one. The fixed core, the region of the polytope in no cap, is also a chamber of the cuts, but no piece fills it.",
+   "source": "State contract section 2; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md); [theory, cut chambers](../../../../research/Full_600cell_Puzzle_Theory.tex); [restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Chamber",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). Named per EV5.18 (cut chamber against flag chamber); bare chamber reads as cut chamber here, since flag chambers stay in the theory."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the fixed core is also a chamber of the cuts, which no piece fills (restoration section 2); fixed. Named per EV5.18 (cut chamber against flag chamber); bare chamber reads as cut chamber here, since flag chambers stay in the theory."
   },
   {
    "id": "pose",
@@ -630,7 +645,7 @@
    "manual": [
     "pose"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "sticker",
@@ -640,7 +655,7 @@
    "source": "Chapter 01 KN1.5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Sticker",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "model-identity",
@@ -650,7 +665,7 @@
    "source": "Chapter 01 KN1; INV-7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Model identity",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "canonical-id",
@@ -660,7 +675,7 @@
    "source": "Chapter 01 KN1.5; INV-6",
    "origin": "chapter 04 section 6",
    "chapter_term": "Canonical ID",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "identity-block",
@@ -670,7 +685,7 @@
    "source": "Chapter 01 KN0.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Identity block",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "identity-level",
@@ -680,7 +695,7 @@
    "source": "Chapter 01 KN1.7, KN1.8",
    "origin": "chapter 04 section 6",
    "chapter_term": "Identity level",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "identity-tower",
@@ -690,7 +705,7 @@
    "source": "Chapter 01 KN1.7; DT-L1 R2-E2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Identity tower",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "sticker-class",
@@ -700,7 +715,7 @@
    "source": "Chapter 01 KN1.7; DT-L1 N1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Sticker class",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "region-class",
@@ -710,7 +725,7 @@
    "source": "Chapter 01 KN1.7; DT-L1 N1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Region class",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "frame-group",
@@ -721,17 +736,17 @@
    "source": "Chapter 01 KN1.7 (R_A/S_A); Theory Lemma 7; DT-L1 N1; assets/census.json (orientation_group); solving-workflow.md section 3.4",
    "origin": "M6",
    "chapter_term": "Frame group (change: replaces Orientation group)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "gauge",
    "term": "Gauge",
    "level": "L6",
-   "definition": "A pair (σ, t): σ permutes the [[pieces|Piece]], and each t_A is a rotation carrying A's reference region onto that of σA. Piece A takes the place σA had, so the same regions stay occupied. By [[Theorem]] 1 of note N1 (status: theorem, producer) every [[word]] stays admissible and the two runs stay related by the same gauge. A gauge is not equality and does not carry reachability.",
+   "definition": "A pair (σ, t): σ permutes the [[pieces|Piece]], and each t_A is a rotation carrying A's reference region onto that of σA. Piece A takes the place σA had, so the same regions stay occupied. By [[Theorem]] 1 of note N1 (status: theorem, producer), a [[word]] is admissible from a configuration X exactly when it is admissible from X·γ, X moved by the gauge γ, and the two runs stay related by the same gauge. A gauge is not equality and does not carry reachability.",
    "source": "Chapter 01 KN1.7, KN1.14; DT-L1 N1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Gauge",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): admissibility under a gauge is an equivalence (KN1.14), not 'every word stays admissible'; fixed."
   },
   {
    "id": "shape",
@@ -741,17 +756,17 @@
    "source": "Chapter 01 KN1.7; DT-L1 N1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Shape",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "digest",
    "term": "Digest",
    "level": "L2",
-   "definition": "A short value computed from exact bytes, used to name them. Digests compare only at the same [[level|Identity level]].",
+   "definition": "A short value computed from exact bytes, used to name them. A digest of a state names its [[identity level]], and digests at different identity levels never compare (KN1.8).",
    "source": "Chapter 01 KN1.8",
    "origin": "chapter 04 section 6",
    "chapter_term": "Digest",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the identity-level rule is KN1.8's rule for state digests, not for every digest; fixed."
   },
   {
    "id": "level-qualified-digest",
@@ -761,20 +776,20 @@
    "source": "Chapter 01 KN1.8",
    "origin": "chapter 04 section 6",
    "chapter_term": "Level-qualified digest",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "menu",
    "term": "Menu",
    "level": "L1",
-   "definition": "The pinned set of rotations available to a [[grip]] in the named puzzle.",
-   "source": "Chapter 01 KN1; partition LG2",
+   "definition": "The pinned set of rotations available at each [[grip]] in the jumbling puzzle (under I_a, 60 per grip, the identity included). 600-cell-Full has no menu.",
+   "source": "Chapter 01 KN0.1, KN1; partition LG2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Menu",
    "manual": [
     "menu"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): 600-cell-Full has no menu (KN0.1); fixed."
   },
   {
    "id": "menu-letter",
@@ -784,7 +799,7 @@
    "source": "Chapter 01 KN1.3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Menu letter",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "menu-identity",
@@ -794,7 +809,7 @@
    "source": "Chapter 01 KN1.3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Menu identity",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "menu-order-digest",
@@ -804,7 +819,7 @@
    "source": "Chapter 01 KN1.3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Menu-order digest",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "seat",
@@ -814,7 +829,7 @@
    "source": "DT-M1 Outcome Seats; DT-M1 Q7 (a), only if Q7 picks seats",
    "origin": "chapter 04 section 6",
    "chapter_term": "Seat",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "jumble-on-and-jumble-off",
@@ -824,7 +839,7 @@
    "source": "Overview 3.6; chapter 01 KN0.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Jumble on and Jumble off",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "word",
@@ -838,7 +853,7 @@
     "word",
     "words"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "literal-word",
@@ -848,7 +863,7 @@
    "source": "Chapter 01 KN2.7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Literal word",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "equality-key",
@@ -858,7 +873,7 @@
    "source": "Chapter 01 KN2.7; partition default 10",
    "origin": "chapter 04 section 6",
    "chapter_term": "Equality key",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "recipe",
@@ -868,7 +883,7 @@
    "source": "Partition 4.1, 10.2; chapter 05",
    "origin": "chapter 04 section 6",
    "chapter_term": "Recipe",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "compressed-word",
@@ -881,7 +896,7 @@
    "source": "Chapter 01 KN2.10; chapter 05",
    "origin": "chapter 04 section 6",
    "chapter_term": "Compressed word (straight-line program)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "macro",
@@ -891,7 +906,7 @@
    "source": "EV4.9; DT-J1 Outcome E1, E3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Macro",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "macro-base",
@@ -901,17 +916,17 @@
    "source": "EV4.8, EV4.9; DT-J1 Outcome E1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Macro base",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "cost-alphabet",
    "term": "Cost alphabet",
    "level": "L2",
-   "definition": "The named unit of a [[word]] or action count, such as retained [[generators|Generator]] or [[menu letters|Menu letter]].",
+   "definition": "The named [[unit|~]] of a [[word]] or action count, such as retained [[generators|Generator]] or [[menu letters|Menu letter]].",
    "source": "Chapter 02; partition LG2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Cost alphabet",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Its word unit is marked as an ordinary word, since Unit is now a homonym."
   },
   {
    "id": "admissible",
@@ -921,7 +936,7 @@
    "source": "Chapter 01 KN2.8",
    "origin": "chapter 04 section 6",
    "chapter_term": "Admissible",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "blocked",
@@ -934,7 +949,7 @@
    "manual": [
     "blocked"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "invalid",
@@ -944,7 +959,7 @@
    "source": "Chapter 01 KN2.8",
    "origin": "chapter 04 section 6",
    "chapter_term": "Invalid",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "uncertain",
@@ -954,7 +969,7 @@
    "source": "Chapter 01 KN2.8",
    "origin": "chapter 04 section 6",
    "chapter_term": "Uncertain",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "lattice",
@@ -970,10 +985,10 @@
    "first_use_forward": [
     {
      "term": "Pose",
-     "why": "The manual describes the lattice by slots in chapter 1 and names a pose only in chapter 3; waits for the mathematician's review (EV5.14)."
+     "why": "The manual describes the lattice by slots in chapter 1 and names a pose only in chapter 3; reviewed by the mathematician on 24 November 2026 (EV5.14)."
     }
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "straddler-set",
@@ -983,13 +998,13 @@
    "source": "Chapter 01 KN2.4; DT-J1 fix-first item 3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Straddler set",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "n-total",
    "term": "N",
    "level": "L1",
-   "definition": "The total misalignment: how many times a [[cut cell]], on any rotated cut, is covered on one side and not by pieces of the same [[alignment domain]] on the other.",
+   "definition": "The total misalignment: how many times a [[cut cell]], on any rotated cut, is covered on one side and not by the same [[alignment domain]] on the other, where the fixed core counts as the lattice's alignment domain.",
    "source": "Chapter 03; [restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test)",
    "origin": "chapter 04 section 6",
    "chapter_term": "N",
@@ -999,16 +1014,10 @@
    "first_use_forward": [
     {
      "term": "Cut cell",
-     "why": "Chapter 1 counts cells along a cut; the manual names a cut cell in chapter 2; waits for the mathematician's review (EV5.14)."
+     "why": "Chapter 1 counts cells along a cut; the manual names a cut cell in chapter 2; reviewed by the mathematician on 24 November 2026 (EV5.14)."
     }
    ],
-   "review": "The mathematician's pass of 23 November 2026 found M24 (write alignment domain); the fix waits for the mathematician's review (EV5.14).",
-   "forward": [
-    {
-     "term": "Alignment domain",
-     "why": "The manual teaches domains at L1 (chapter 1) by the pieces that fit one rotated copy of the slot pattern; section 6 proposes the coset form at L6. The mathematician asked for the qualified name (EV5.18)."
-    }
-   ]
+   "review": "The mathematician's pass of 23 November 2026 found M24 (write alignment domain). Reviewed by the mathematician on 24 November 2026 (EV5.14): the M24 fix holds; the fixed core now counts as the lattice's alignment domain, and Alignment domain moves to L1, so the forward record is dropped; fixed."
   },
   {
    "id": "n-c",
@@ -1021,23 +1030,17 @@
    "manual": [
     "misalignment"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "in-out-a",
    "term": "In_c, Out_c, A_c",
    "level": "L1",
-   "definition": "At [[cap]] c's cut: the [[cut cells|Cut cell]] inside [[pieces|Piece]] cover, those outside pieces cover, and those covered on both sides by pieces of one [[alignment domain]].",
-   "source": "[Descent manual](../../../../research/jumbling/manual/02-descent.md)",
+   "definition": "At [[cap]] c's cut: the [[cut cells|Cut cell]] inside [[pieces|Piece]] cover, those that outside pieces or the fixed core cover, and those covered on both sides by one [[alignment domain]], the core counting as the lattice's.",
+   "source": "[Descent manual](../../../../research/jumbling/manual/02-descent.md); [restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test)",
    "origin": "chapter 04 section 6",
    "chapter_term": "In_c, Out_c, A_c",
-   "review": "The mathematician's pass of 23 November 2026 found M24 (write alignment domain); the fix waits for the mathematician's review (EV5.14).",
-   "forward": [
-    {
-     "term": "Alignment domain",
-     "why": "The manual teaches domains at L1 (chapter 1) by the pieces that fit one rotated copy of the slot pattern; section 6 proposes the coset form at L6. The mathematician asked for the qualified name (EV5.18)."
-    }
-   ]
+   "review": "The mathematician's pass of 23 November 2026 found M24 (write alignment domain). Reviewed by the mathematician on 24 November 2026 (EV5.14): the M24 fix holds; the fixed core now counts as the lattice's, and Alignment domain moves to L1, so the forward record is dropped; fixed."
   },
   {
    "id": "floor",
@@ -1050,13 +1053,13 @@
    "manual": [
     "floor"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "cut-cell",
    "term": "Cut cell",
    "level": "L1",
-   "definition": "A pair of neighbouring [[chambers|Cut chamber]] on either side of a [[cap]]'s cut, sharing one face on it.",
+   "definition": "A pair of neighbouring places on either side of a [[cap]]'s cut, sharing one face on it: two [[chambers|Cut chamber]], or a chamber and the fixed core, the region in no cap. The core never moves and counts as on the [[lattice]]. There are 469,800 cut cells, 600 of them against the core.",
    "source": "[Restoration section 2](../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test); [jumbling observation](../jumbling-observation.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Cut cell",
@@ -1064,7 +1067,7 @@
     "cut cell",
     "cut cells"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the 600 cut cells against the fixed core were left out (restoration section 2), so N disagreed with the program's count; fixed."
   },
   {
    "id": "seam",
@@ -1081,10 +1084,10 @@
    "first_use_forward": [
     {
      "term": "Cut cell",
-     "why": "Chapter 1 counts cells along a cut; the manual names a cut cell in chapter 2; waits for the mathematician's review (EV5.14)."
+     "why": "Chapter 1 counts cells along a cut; the manual names a cut cell in chapter 2; reviewed by the mathematician on 24 November 2026 (EV5.14)."
     }
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "u-blocking",
@@ -1094,7 +1097,7 @@
    "source": "Chapter 01 KN2.4; chapter 03; [engineering handoff](../jumbling-handoff/engineering.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "u",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "lowering-count",
@@ -1104,7 +1107,7 @@
    "source": "Chapter 03; [card 7, Terms](../../../../research/jumbling/theory/cards/card-7-lowering-machine.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Lowering count D_x(h)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "depth-phi",
@@ -1114,7 +1117,7 @@
    "source": "Chapter 03; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Depth Φ",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "height",
@@ -1131,20 +1134,20 @@
    "first_use_forward": [
     {
      "term": "Pose",
-     "why": "Chapter 1 measures height before chapter 3 names a pose; waits for the mathematician's review (EV5.14)."
+     "why": "Chapter 1 measures height before chapter 3 names a pose; reviewed by the mathematician on 24 November 2026 (EV5.14)."
     },
     {
      "term": "Retained twist",
-     "why": "Chapter 1 uses the retained puzzle's twists; the manual names a retained twist in chapter 2; waits for the mathematician's review (EV5.14)."
+     "why": "Chapter 1 uses the retained puzzle's twists; the manual names a retained twist in chapter 2; reviewed by the mathematician on 24 November 2026 (EV5.14)."
     }
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "alignment-domain",
    "term": "Alignment domain",
-   "level": "L6",
-   "definition": "A [[coset]] γK⁺ of [[poses|Pose]]: the poses that fit one rotated copy of the [[lattice]]. The [[pieces|Piece]] whose poses lie in one alignment domain share one tree position (card 6, T6).",
+   "level": "L1",
+   "definition": "The [[poses|Pose]] that fit one rotated copy of the [[lattice]]: one coset γK⁺ of the lattice rotations. The [[pieces|Piece]] whose poses lie in one alignment domain share one tree position (card 6, T6).",
    "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Alignment domain",
@@ -1155,10 +1158,10 @@
    "first_use_forward": [
     {
      "term": "Pose",
-     "why": "Chapter 1 describes domains by pieces that fit together; the manual names a pose in chapter 3; waits for the mathematician's review (EV5.14)."
+     "why": "Chapter 1 describes domains by pieces that fit together; the manual names a pose in chapter 3; reviewed by the mathematician on 24 November 2026 (EV5.14)."
     }
    ],
-   "review": "The mathematician's pass of 23 November 2026 found M24 (the definition mixed up the coset with the set of pieces); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M24 (the definition mixed up the coset with the set of pieces). Reviewed by the mathematician on 24 November 2026 (EV5.14): the M24 fix holds; the row moves to L1, where N and In_c, A_c use it, without the coset link; fixed."
   },
   {
    "id": "free-mode",
@@ -1169,7 +1172,7 @@
    "source": "State contract; chapter 02",
    "origin": "chapter 04 section 6",
    "chapter_term": "Free mode",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). Flag: not learner-facing."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Flag: not learner-facing."
   },
   {
    "id": "foreign-load",
@@ -1182,7 +1185,7 @@
    "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md); chapter 03",
    "origin": "chapter 04 section 6",
    "chapter_term": "Foreign load",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). EV5.18: F_x stays foreign load."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. EV5.18: F_x stays foreign load."
   },
   {
    "id": "clean-grip",
@@ -1192,7 +1195,7 @@
    "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Clean grip",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "tame",
@@ -1202,17 +1205,17 @@
    "source": "[Card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Tame",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "domain-id",
    "term": "Domain ID",
    "level": "L6",
-   "definition": "The exact identifier of a [[pose]]'s alignment class, supplied with the [[height]] batch at its input [[revision]].",
+   "definition": "The exact identifier of a [[pose]]'s [[alignment domain]], supplied with the [[height]] batch at its input [[revision]].",
    "source": "Chapter 01 KN2.4; chapter 03",
    "origin": "chapter 04 section 6",
    "chapter_term": "Domain ID",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): 'alignment class' named no registered term; it is the alignment domain (EV5.18); fixed."
   },
   {
    "id": "height-counts",
@@ -1222,7 +1225,7 @@
    "source": "Chapter 01 KN2.4; DT-J1 Outcome A1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Height counts",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "rim-summary",
@@ -1232,7 +1235,7 @@
    "source": "Chapter 01 KN2.4; DT-J1 rule 6",
    "origin": "chapter 04 section 6",
    "chapter_term": "Rim summary",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "lifted",
@@ -1242,7 +1245,7 @@
    "source": "DT-J1 M22, fix-first item 4; chapter 03",
    "origin": "chapter 04 section 6",
    "chapter_term": "Lifted (working term)",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "jumbling-block",
@@ -1255,7 +1258,7 @@
    "manual": [
     "blocks"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "jumbling-frame-domain",
@@ -1265,17 +1268,17 @@
    "source": "Chapter 03; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Jumbling frame domain",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "clean-step-unit",
    "term": "Clean-step unit",
    "level": "L6",
-   "definition": "A [[jumbling block]] or one frame part of a [[block|Jumbling block]], as used by the tail's [[clean-step|Clean step]] contract.",
+   "definition": "A [[jumbling block]] or, when its [[pieces|Piece]] lie in several [[jumbling frame domains|Jumbling frame domain]], the part of it in one of them, as used by the tail's [[clean-step|Clean step]] contract.",
    "source": "Chapter 03; [tail section 3.2](../../../../research/jumbling/manual/03-tail.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Clean-step unit",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): 'frame part' used frame without its qualifier; it is the part in one jumbling frame domain (tail section 3.2); fixed."
   },
   {
    "id": "pose-unit",
@@ -1285,13 +1288,13 @@
    "source": "Chapter 03; [card 6, Terms](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Pose unit",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "clean-step",
    "term": "Clean step",
    "level": "L6",
-   "definition": "A legal [[word]] landing its unit, keeping prior [[lattice]] [[pieces|Piece]] on the lattice and preserving other off pieces outside its free set.",
+   "definition": "A legal [[word]] landing its [[unit|Clean-step unit]], keeping prior [[lattice]] [[pieces|Piece]] on the lattice and every other off piece at its exact pose, except the pieces of its declared free set.",
    "source": "Chapter 03; [tail section 3.2](../../../../research/jumbling/manual/03-tail.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Clean step",
@@ -1299,7 +1302,7 @@
     "clean step",
     "clean steps"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): bare 'unit' where two senses occur; it now links Clean-step unit, and Unit is registered as a homonym with no bare sense; fixed."
   },
   {
    "id": "excursion",
@@ -1309,20 +1312,20 @@
    "source": "Chapter 03; [card 7](../../../../research/jumbling/theory/cards/card-7-lowering-machine.md)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Excursion",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "nu",
    "term": "ν",
    "level": "L5",
-   "definition": "The 45 coordinates read from the [[labels|Label]] of a [[lattice]] configuration: 35 sign bits, 8 [[frame]] bits and two values modulo 5. [[Retained twists|Retained twist]] do not change them, and jumble [[words|Word]] can. Undefined off the lattice.",
+   "definition": "The 45 coordinates read from the [[labels|Label]] of a [[lattice]] configuration: 35 sign bits, 8 [[frame group]] bits and two values modulo 5. [[Retained twists|Retained twist]] do not change them, and jumble [[words|Word]] can. Undefined off the lattice.",
    "source": "Chapter 01 KN2.4; DT-J1 Outcome A3",
    "origin": "chapter 04 section 6",
    "chapter_term": "ν",
    "manual": [
     "ν"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the 8 bits are frame group bits, not frame bits; fixed."
   },
   {
    "id": "nu-correction",
@@ -1339,10 +1342,10 @@
    "first_use_forward": [
     {
      "term": "ν",
-     "why": "Section 4.1 announces the corrections before section 4.3 defines ν; waits for the mathematician's review (EV5.14)."
+     "why": "Section 4.1 announces the corrections before section 4.3 defines ν; reviewed by the mathematician on 24 November 2026 (EV5.14)."
     }
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "repair-list",
@@ -1355,7 +1358,7 @@
    "manual": [
     "repair list"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "retained-checkpoint",
@@ -1365,7 +1368,7 @@
    "source": "Chapter 01 KN2.4; partition default 9",
    "origin": "chapter 04 section 6",
    "chapter_term": "Retained checkpoint",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "label-checkpoint",
@@ -1375,7 +1378,7 @@
    "source": "Chapter 01 KN2.4; DT-J1 O8 (1)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Label checkpoint",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "sticker-test",
@@ -1385,7 +1388,7 @@
    "source": "Chapter 01 KN2.4; DT-J1 O8 (1)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Sticker test",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "revision",
@@ -1395,27 +1398,27 @@
    "source": "Chapter 01 KN0.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Revision",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "revision-reference",
    "term": "Revision reference",
    "level": "L2",
-   "definition": "The session, epoch, identity and state, workspace and [[protection]] [[revisions|Revision]] bound to a result.",
+   "definition": "The session, engine epoch, identity block, mode, journal head, the state, workspace and [[protection]] [[revisions|Revision]], and the state [[digest]] named with its [[identity level]], bound to a result (KN0.2).",
    "source": "Chapter 01 KN0.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Revision reference",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the field list left out mode, journal head and the level-named digest (KN0.2); fixed."
   },
   {
    "id": "base-revision",
    "term": "Base revision",
    "level": "L2",
-   "definition": "The [[revision]] a result or [[view]] read. Once it is replaced, the output is [[stale]] until recomputed.",
+   "definition": "The [[revision]] a result or [[view]] read. Once a later revision changes what the output depends on, the output is [[stale]] until recomputed.",
    "source": "EV3.3; RPI.5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Base revision",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): a replaced revision makes the output stale only when what it depends on changes (RPI.12, RPI.13); fixed."
   },
   {
    "id": "stale",
@@ -1425,7 +1428,7 @@
    "source": "EV3.3; RPI.12, RPI.13",
    "origin": "chapter 04 section 6",
    "chapter_term": "Stale",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "state-reference",
@@ -1435,7 +1438,7 @@
    "source": "Chapter 01 KN0.3",
    "origin": "chapter 04 section 6",
    "chapter_term": "State reference",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "snapshot",
@@ -1445,7 +1448,7 @@
    "source": "Chapter 01 KN2.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Snapshot",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "derived-state",
@@ -1455,17 +1458,17 @@
    "source": "Chapter 01 KN2.11 to KN2.14",
    "origin": "chapter 04 section 6",
    "chapter_term": "Derived state",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "derived-model",
    "term": "Derived model",
    "level": "L6",
-   "definition": "A [[quotient]], restriction or simplified model represented by a [[derivation|State derivation]] and claim-preserving maps.",
+   "definition": "A [[quotient]], restriction or simplified model, held as a value with the recorded map from its source and the claims that map preserves (KN1.12, KN1.13); it is never a new authoritative puzzle.",
    "source": "Chapter 01 KN1.12, KN1.13",
    "origin": "chapter 04 section 6",
    "chapter_term": "Derived model",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): it linked State derivation, a different concept; it now names the recorded map and the claims it preserves (KN1.12, KN1.13); fixed."
   },
   {
    "id": "difference",
@@ -1475,7 +1478,7 @@
    "source": "Partition 4.1; chapters 02, 03",
    "origin": "chapter 04 section 6",
    "chapter_term": "Difference",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "typed-partial-result",
@@ -1485,7 +1488,7 @@
    "source": "Chapter 01 KN0.4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Typed partial result",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "verdict",
@@ -1495,7 +1498,7 @@
    "source": "Chapter 01 KN0.5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Verdict",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "none-off-the-lattice",
@@ -1508,7 +1511,7 @@
    "manual": [
     "off the lattice"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "reachability-claim",
@@ -1518,7 +1521,7 @@
    "source": "Chapter 01 KN2.13; chapter 06",
    "origin": "chapter 04 section 6",
    "chapter_term": "Reachability claim",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "witnessed-reachability",
@@ -1528,7 +1531,7 @@
    "source": "Chapter 01 KN2.13",
    "origin": "chapter 04 section 6",
    "chapter_term": "Witnessed reachability",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "reachable-by-theorem-without-a-witness",
@@ -1538,7 +1541,7 @@
    "source": "Chapter 01 KN2.13",
    "origin": "chapter 04 section 6",
    "chapter_term": "Reachable by theorem without a witness",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "promised-reachability",
@@ -1548,7 +1551,7 @@
    "source": "Chapter 01 KN2.13, KN2.14",
    "origin": "chapter 04 section 6",
    "chapter_term": "Promised reachability",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "proposal",
@@ -1558,7 +1561,7 @@
    "source": "Chapter 01 KN5.9",
    "origin": "chapter 04 section 6",
    "chapter_term": "Proposal",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "preview",
@@ -1568,7 +1571,7 @@
    "source": "Chapter 01 KN5.9",
    "origin": "chapter 04 section 6",
    "chapter_term": "Preview",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "user-action-token",
@@ -1578,7 +1581,7 @@
    "source": "Chapter 01 KN5.14, KN5.15",
    "origin": "chapter 04 section 6",
    "chapter_term": "User-action token",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "receipt",
@@ -1588,7 +1591,7 @@
    "source": "Chapter 01 KN5.21, KN5.23; LI.30",
    "origin": "chapter 04 section 6",
    "chapter_term": "Receipt",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "availability",
@@ -1598,7 +1601,7 @@
    "source": "Chapter 01 KN5.6, KN5.7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Availability",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "claim",
@@ -1608,7 +1611,7 @@
    "source": "Chapter 06; INV-5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Claim",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "statement",
@@ -1618,7 +1621,7 @@
    "source": "Chapter 06 section 2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Statement",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "statement-form",
@@ -1628,7 +1631,7 @@
    "source": "Chapter 06 EVD.9, section 2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Statement form",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "negation-pair",
@@ -1638,7 +1641,7 @@
    "source": "Chapter 06 EVD.9",
    "origin": "chapter 04 section 6",
    "chapter_term": "Negation pair",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "statement-id",
@@ -1648,7 +1651,7 @@
    "source": "Chapter 06; DT-L1 R2-E1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Statement ID",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "statement-key",
@@ -1658,7 +1661,7 @@
    "source": "Chapter 06 EVD.7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Statement key",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "scope",
@@ -1668,7 +1671,7 @@
    "source": "Chapter 06; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Scope",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "covered-set",
@@ -1678,17 +1681,17 @@
    "source": "Chapter 06 section 2; EVD.32. Not the kernel row `covers`",
    "origin": "chapter 04 section 6",
    "chapter_term": "Covered set",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "admitted-domain",
    "term": "Admitted domain",
    "level": "L2",
    "definition": "A named set of inputs with a test for membership, such as D[k]: the certified domain of a bound with parameter k, whose test is the admission check Adm_k.",
-   "source": "Chapter 06 section 2; [stage 19 README](../../../../research/jumbling/restoration/19-height-depth-framework/README.md)",
+   "source": "Chapter 06 section 2; [stage 19 README](../../../../research/jumbling/restoration/19-height-depth-framework/README.md); Chapter 06 EVD.45",
    "origin": "chapter 04 section 6",
    "chapter_term": "Admitted domain",
-   "review": "The mathematician's pass of 23 November 2026 found a nit (the example D[k] was not explained at step 1); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found a nit (the example D[k] was not explained at step 1). Reviewed by the mathematician on 24 November 2026 (EV5.14): the source now cites chapter 06 EVD.45 for Adm_k; fixed."
   },
   {
    "id": "basis",
@@ -1698,7 +1701,7 @@
    "source": "Chapter 06; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Basis",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "check",
@@ -1708,7 +1711,7 @@
    "source": "Chapter 06; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Check",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "premise",
@@ -1718,7 +1721,7 @@
    "source": "Chapter 06; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Premise",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "hypothesis",
@@ -1728,7 +1731,7 @@
    "source": "Chapter 03 LB6.2; chapter 06",
    "origin": "chapter 04 section 6",
    "chapter_term": "Hypothesis",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "lemma",
@@ -1738,7 +1741,7 @@
    "source": "Chapter 06 EVD.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Lemma",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "theorem",
@@ -1748,7 +1751,7 @@
    "source": "Chapter 06 EVD.1, EVD.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Theorem",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "invariant",
@@ -1758,7 +1761,7 @@
    "source": "Chapter 03 LB6.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Invariant",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "counterexample",
@@ -1768,7 +1771,7 @@
    "source": "Chapter 06 EVD.42; chapter 03 LB6.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Counterexample",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "witness",
@@ -1781,17 +1784,17 @@
    "source": "Chapter 01 KN2.13; chapter 06 EVD.44",
    "origin": "chapter 04 section 6",
    "chapter_term": "Witness",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). EV5.18's witness word is this row's reachability case; the witness piece has its own row."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. EV5.18's witness word is this row's reachability case; the witness piece has its own row."
   },
   {
    "id": "declared-domain",
    "term": "Declared domain",
-   "level": "L6",
+   "level": "L2",
    "definition": "The inputs on which an operation or [[claim]] is defined.",
    "source": "Chapters 02, 06; partition 4.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Declared domain",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Its level moves from L6 to L2, for the Specification row's finding: it is the genus of Admitted domain (L2), and step 1 teaches it."
   },
   {
    "id": "goal",
@@ -1801,7 +1804,7 @@
    "source": "Chapter 01 KN1.11; chapter 02",
    "origin": "chapter 04 section 6",
    "chapter_term": "Goal",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "certificate",
@@ -1811,7 +1814,7 @@
    "source": "Chapter 01 KN6; chapter 06",
    "origin": "chapter 04 section 6",
    "chapter_term": "Certificate",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "check-report",
@@ -1821,7 +1824,7 @@
    "source": "Chapter 01 KN6.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Check report",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "evidence",
@@ -1831,17 +1834,17 @@
    "source": "INV-5; chapter 06",
    "origin": "chapter 04 section 6",
    "chapter_term": "Evidence",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "evidence-envelope",
    "term": "Evidence envelope",
    "level": "L6",
-   "definition": "Chapter 05's stored [[evidence]] carrier, whose facts or judgements depend on LQ10.",
-   "source": "Chapters 05, 06; partition LQ10",
+   "definition": "Chapter 05's stored [[evidence]] carrier: identity, immutable scope and a payload of facts, from which chapter 06's versioned functions compute the [[words|Evidence words]].",
+   "source": "Chapter 05 PS1.35; Chapter 06; Owner, 6 November 2026, LQ10",
    "origin": "chapter 04 section 6",
    "chapter_term": "Evidence envelope",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): LQ10 is answered (the envelope stores facts); the row now says so; fixed."
   },
   {
    "id": "result-trace",
@@ -1851,7 +1854,7 @@
    "source": "Chapter 06; EV2.5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Result trace",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "per-claim-trace",
@@ -1861,7 +1864,7 @@
    "source": "Chapter 01 KN6.4; EV2.6",
    "origin": "chapter 04 section 6",
    "chapter_term": "Per-claim trace",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "evidence-words",
@@ -1871,7 +1874,7 @@
    "source": "Chapter 06; EV5.13",
    "origin": "chapter 04 section 6",
    "chapter_term": "Evidence words",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "proved",
@@ -1884,27 +1887,27 @@
    "manual": [
     "proved"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "conditional",
    "term": "Conditional",
    "level": "L2",
-   "definition": "A [[statement]] that stands once every [[premise]] not refuted is assumed; the [[word|Evidence words]] names the premises.",
-   "source": "Chapter 06; partition 8.1",
+   "definition": "The [[word|Evidence words]] shown when a [[statement]] does not stand with no [[premise]] assumed but stands once every premise not refuted is assumed (EVD.32 row 4); the word names those premises.",
+   "source": "Chapter 06 EVD.30, EVD.32; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Conditional",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the truth condition left out that the statement does not stand with no premise assumed (EVD.32 row 4); fixed."
   },
   {
    "id": "finite-instance",
    "term": "Finite instance",
    "level": "L2",
-   "definition": "The [[word|Evidence words]] for a [[statement]] that stands on one input or on a declared search set. Nothing outside that set is claimed.",
-   "source": "Chapter 06; partition 8.1",
+   "definition": "The [[word|Evidence words]] for a [[statement]] that stands at the [[threshold]] with no [[premise]] assumed, on one input or on a declared search set. Nothing outside that set is claimed.",
+   "source": "Chapter 06 EVD.32; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Finite instance",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the statement must stand with no premise assumed (EVD.32 row 2); fixed."
   },
   {
    "id": "not-found-within-budget",
@@ -1917,27 +1920,27 @@
    "source": "Chapter 01 KN7.11; chapter 06",
    "origin": "chapter 04 section 6",
    "chapter_term": "Not found within budget",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). EVD.33's not found (row 5) reads as this word."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. EVD.33's not found (row 5) reads as this word."
   },
   {
    "id": "incomplete",
    "term": "Incomplete",
    "level": "L2",
-   "definition": "The [[job]] was cancelled, failed, or hit a resource stop, so it gives no negative. A search stopped by its own declared [[budget]] reads \"[[not found within budget]]\".",
-   "source": "Chapter 01 KN7; chapter 06",
+   "definition": "The [[job]] was cancelled, ended in error or at a wall-clock or resource stop, or, not being a search, was cut off at its [[budget]]; it gives no negative (KN7.4). A search stopped by its own declared budget or limit reads \"[[not found within budget]]\".",
+   "source": "Chapter 01 KN7; chapter 06 EVD.32",
    "origin": "chapter 04 section 6",
    "chapter_term": "Incomplete",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): a wall-clock stop and a job that is not a search cut off at its budget were missing (EVD.32 row 6); fixed."
   },
   {
    "id": "refuted",
    "term": "Refuted",
    "level": "L2",
-   "definition": "A [[claim]] contradicted by [[evidence]] of the kind required for that [[statement]].",
-   "source": "Chapter 06; partition 8.1",
+   "definition": "A [[claim]] whose negation stands at the [[threshold]] with no [[premise]] assumed, on [[evidence]] of the kind its [[statement]]'s form requires (EVD.42). A refutation that holds only under premises leaves the claim open.",
+   "source": "Chapter 06 EVD.32, EVD.37, EVD.42; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Refuted",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the negation must stand with no premise assumed (EVD.32 row 1); a refutation under premises leaves the claim open; fixed."
   },
   {
    "id": "open",
@@ -1947,7 +1950,7 @@
    "source": "Chapter 06; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Open",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "verified",
@@ -1957,7 +1960,7 @@
    "source": "Chapter 06; H-08",
    "origin": "chapter 04 section 6",
    "chapter_term": "Verified",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "recorded",
@@ -1967,7 +1970,7 @@
    "source": "Chapter 06; partition PS3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Recorded",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "unknown",
@@ -1977,7 +1980,7 @@
    "source": "Chapter 01 KN0.5; INV-5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Unknown",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "unchecked",
@@ -1987,7 +1990,7 @@
    "source": "Chapter 06; H-08",
    "origin": "chapter 04 section 6",
    "chapter_term": "Unchecked",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "computed",
@@ -1997,7 +2000,7 @@
    "source": "Chapter 06; partition PS3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Computed",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "measured",
@@ -2010,7 +2013,7 @@
    "manual": [
     "measured"
    ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "lead",
@@ -2020,7 +2023,7 @@
    "source": "Chapter 06; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Lead",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "reported",
@@ -2030,7 +2033,7 @@
    "source": "Chapter 06; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Reported",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "exact-transport",
@@ -2040,7 +2043,7 @@
    "source": "Chapter 01 KN1.16, KN7.5; chapter 06 EVD.18",
    "origin": "chapter 04 section 6",
    "chapter_term": "Exact transport",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "check-mode",
@@ -2050,7 +2053,7 @@
    "source": "Chapter 06; partition 8.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Check mode",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "grade",
@@ -2060,7 +2063,7 @@
    "source": "Chapter 06 EVD.19",
    "origin": "chapter 04 section 6",
    "chapter_term": "Grade",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "alternative",
@@ -2070,7 +2073,7 @@
    "source": "Chapter 06 EVD.23",
    "origin": "chapter 04 section 6",
    "chapter_term": "Alternative",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "standing",
@@ -2080,7 +2083,7 @@
    "source": "Chapter 06 EVD.30",
    "origin": "chapter 04 section 6",
    "chapter_term": "Standing",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "threshold",
@@ -2090,7 +2093,7 @@
    "source": "Chapter 06 EVD.29 (raising it is LQ3)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Threshold",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "typed-inconsistency",
@@ -2100,7 +2103,7 @@
    "source": "Chapter 06 EVD.32 row 0, EVD.40",
    "origin": "chapter 04 section 6",
    "chapter_term": "Typed inconsistency",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "evidence-graph",
@@ -2110,7 +2113,7 @@
    "source": "Chapter 06 EVD.15, EVD.39",
    "origin": "chapter 04 section 6",
    "chapter_term": "Evidence graph",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "principle-record",
@@ -2120,7 +2123,7 @@
    "source": "Chapter 03; INV-12",
    "origin": "chapter 04 section 6",
    "chapter_term": "Principle record",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "principle",
@@ -2130,17 +2133,17 @@
    "source": "Chapter 03 LB6.2, a working definition with no owner text",
    "origin": "chapter 04 section 6",
    "chapter_term": "Principle",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "decomposition",
    "term": "Decomposition",
    "level": "L2",
-   "definition": "The generated list of the parts a tool calls, down to [[base parts|Decomposition leaf]]. It shows how the tool is built, not why its answer is right.",
+   "definition": "The generated call graph of the parts a tool calls, down to [[base parts|Decomposition leaf]]. It shows how the tool is built, not why its answer is right.",
    "source": "Chapter 03 LB6.2; EV5.4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Decomposition",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the decomposition is a generated call graph, not a list (LB6.2); fixed."
   },
   {
    "id": "decomposition-leaf",
@@ -2150,7 +2153,7 @@
    "source": "Chapter 03 LB6.1, LB6.2 (meaning inferred)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Base part",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). Named per EV5.18 (decomposition leaf against base-tier function); EV5.6 step 5's Base part."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Named per EV5.18 (decomposition leaf against base-tier function); EV5.6 step 5's Base part."
   },
   {
    "id": "step-map",
@@ -2160,7 +2163,7 @@
    "source": "Chapter 03 LB6.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Step map",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "hand-derivation",
@@ -2170,7 +2173,7 @@
    "source": "Chapter 03 LB6.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Hand derivation",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "leaf-specification",
@@ -2180,7 +2183,7 @@
    "source": "Chapter 03 LB6.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Leaf specification",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "worked-instance",
@@ -2190,7 +2193,7 @@
    "source": "Chapter 03 LB6.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Worked instance",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "fixture",
@@ -2200,7 +2203,7 @@
    "source": "Chapter 03 LB6.2; EV5.7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Fixture",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "fork",
@@ -2210,17 +2213,17 @@
    "source": "Chapter 03 LB6.3; EV5.5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Fork",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "editable-parameter",
    "term": "Editable parameter",
    "level": "L2",
-   "definition": "A value a tool's source declares editable. Changing it makes a new version of the tool with no inherited [[evidence]].",
-   "source": "EV3.7; chapter 03 LB6.3",
+   "definition": "A literal value that a tool's source declares editable (EV3.7); a directive on a computed value declares nothing. Changing it makes a new version of the tool with no inherited [[evidence]].",
+   "source": "EV3.7; chapter 03 LB6.3; rust/c600-editor/tests/ct_ev3_05.rs",
    "origin": "chapter 04 section 6",
    "chapter_term": "Editable parameter",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): a directive on a computed value declares nothing (EV3.7), as step 2's fixture shows; fixed."
   },
   {
    "id": "library-entry",
@@ -2230,17 +2233,17 @@
    "source": "Chapter 03",
    "origin": "chapter 04 section 6",
    "chapter_term": "Library entry",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "research-tier",
    "term": "Research tier",
    "level": "L6",
-   "definition": "The entries that search, minimise, [[rank|~]] or select over [[twists|Twist, 600-cell-Full]], [[jumbling twists|Twist, jumbling puzzle]], [[words|Word]] or [[caps|Cap]]. They ship in 1.0 and stay out of the solving [[profile]].",
-   "source": "Chapter 03 LB1.5; EV5.17; owner, 6 November 2026, LQ16",
+   "definition": "The entries marked research tier candidate (LB1.5): those that search, minimise, [[rank|~]] or select over [[twists|Twist, 600-cell-Full]], [[jumbling twists|Twist, jumbling puzzle]], [[words|Word]] or [[caps|Cap]], apart from setup search for a target the solver names and the [[repair list]] at a cap the solver names. They ship in 1.0 and stay out of the solving [[profile]] (BND.64).",
+   "source": "Chapter 03 LB1.5; Chapter 07 BND.27, BND.64; EV5.17; owner, 6 November 2026, LQ16",
    "origin": "chapter 04 section 6",
    "chapter_term": "Research tier",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): LB1.5's two exceptions, setup search for a named target and the repair list at a named cap, were missing; fixed."
   },
   {
    "id": "effect",
@@ -2250,7 +2253,7 @@
    "source": "Chapter 02; partition LG3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Effect",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "capability-declaration",
@@ -2260,7 +2263,7 @@
    "source": "Chapters 02, 09",
    "origin": "chapter 04 section 6",
    "chapter_term": "Capability declaration",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "typed-ir",
@@ -2270,17 +2273,17 @@
    "source": "Chapter 02; partition LG4, LQ9",
    "origin": "chapter 04 section 6",
    "chapter_term": "Typed IR",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "module",
    "term": "Module",
    "level": "L6",
-   "definition": "A digest-addressed source unit with its [[edition|Language edition]], manifest and dependencies.",
+   "definition": "A digest-addressed source [[unit|~]] with its [[edition|Language edition]], manifest and dependencies.",
    "source": "Chapter 02; partition LG5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Module",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Its word unit is marked as an ordinary word, since Unit is now a homonym."
   },
   {
    "id": "module-manifest",
@@ -2290,7 +2293,7 @@
    "source": "Chapter 02",
    "origin": "chapter 04 section 6",
    "chapter_term": "Module manifest",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "lockfile",
@@ -2300,7 +2303,7 @@
    "source": "Chapter 02",
    "origin": "chapter 04 section 6",
    "chapter_term": "Lockfile",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "language-edition",
@@ -2310,7 +2313,7 @@
    "source": "Chapters 02, 05",
    "origin": "chapter 04 section 6",
    "chapter_term": "Language edition",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "profile",
@@ -2320,7 +2323,7 @@
    "source": "Chapters 07, 09; partition LQ1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Profile",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "author-class",
@@ -2330,7 +2333,7 @@
    "source": "Chapter 07; partition BM2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Author class",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "provenance-block",
@@ -2340,7 +2343,7 @@
    "source": "Chapter 07; partition BM2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Provenance block",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "boundary-class",
@@ -2350,7 +2353,7 @@
    "source": "Chapter 07; partition BM5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Boundary class",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "declassifier",
@@ -2360,7 +2363,7 @@
    "source": "Chapter 07; partition BM2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Declassifier",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "flow-rule",
@@ -2371,7 +2374,7 @@
    "source": "Chapter 07 BND.33",
    "origin": "chapter 04 section 6",
    "chapter_term": "Flow rule",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration). Flag: not learner-facing unless LQ2 turns it on. Not taught by the learning path until LQ2 turns it on (EV5.6 step 6 lists it)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Flag: not learner-facing unless LQ2 turns it on. Not taught by the learning path until LQ2 turns it on (EV5.6 step 6 lists it)."
   },
   {
    "id": "flow-label",
@@ -2381,7 +2384,7 @@
    "source": "Chapter 07; partition LQ21",
    "origin": "chapter 04 section 6",
    "chapter_term": "Flow label",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "capability-separation",
@@ -2391,7 +2394,7 @@
    "source": "Chapter 07; partition BM2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Capability separation",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "solving-session",
@@ -2401,7 +2404,7 @@
    "source": "Chapter 07 BND.14",
    "origin": "chapter 04 section 6",
    "chapter_term": "Solving session",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "solve-record",
@@ -2411,7 +2414,7 @@
    "source": "Chapter 07 BND.14, BND.35 (the mathematician's reading; the term is used and never defined)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Solve record",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "sink",
@@ -2421,17 +2424,17 @@
    "source": "Chapter 07 BND.26",
    "origin": "chapter 04 section 6",
    "chapter_term": "Sink",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "transparent-entry",
    "term": "Transparent entry",
    "level": "L6",
-   "definition": "A shipped function on the policy's list whose output carries only the join of its inputs.",
+   "definition": "A shipped function on the policy's list whose output carries only the join of its inputs. It belongs to flow labels, which LQ21 did not select (BND.25).",
    "source": "Chapter 07 BND.25",
    "origin": "chapter 04 section 6",
    "chapter_term": "Transparent entry",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the entry belongs to flow labels, which LQ21 did not select (BND.25); fixed."
   },
   {
    "id": "policy-table",
@@ -2441,7 +2444,7 @@
    "source": "Chapter 07 BND.28",
    "origin": "chapter 04 section 6",
    "chapter_term": "Policy table",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "assistance-summary",
@@ -2451,7 +2454,7 @@
    "source": "Chapter 07 BND.35",
    "origin": "chapter 04 section 6",
    "chapter_term": "Assistance summary",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "pick-record",
@@ -2461,7 +2464,7 @@
    "source": "Chapter 07 BND.54",
    "origin": "chapter 04 section 6",
    "chapter_term": "Pick record",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "job",
@@ -2471,7 +2474,7 @@
    "source": "Chapter 01 KN7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Job",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "job-result",
@@ -2481,7 +2484,7 @@
    "source": "Chapter 01 KN7.3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Job result",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "budget",
@@ -2491,7 +2494,7 @@
    "source": "Chapter 01 KN7.7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Budget",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "lane",
@@ -2501,7 +2504,7 @@
    "source": "Chapter 01 KN7.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Lane",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "kernel-row",
@@ -2511,7 +2514,7 @@
    "source": "Chapter 01 KN5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Kernel row",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "language-overlay",
@@ -2521,7 +2524,7 @@
    "source": "Chapter 01 KN5.3 to KN5.5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Language overlay",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "latest-wins",
@@ -2531,17 +2534,17 @@
    "source": "Chapter 01 KN7.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Latest wins",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "reproducibility-key",
    "term": "Reproducibility key",
    "level": "L6",
-   "definition": "The complete identity of a deterministic run's source, inputs, seed, units and [[budgets|Budget]].",
+   "definition": "The complete identity of a deterministic run's source, inputs, seed, [[units|~]] and [[budgets|Budget]].",
    "source": "Chapter 09",
    "origin": "chapter 04 section 6",
    "chapter_term": "Reproducibility key",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Its word units is marked as an ordinary word, since Unit is now a homonym."
   },
   {
    "id": "run-record",
@@ -2551,33 +2554,27 @@
    "source": "Chapter 05",
    "origin": "chapter 04 section 6",
    "chapter_term": "Run record",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "journal-branch",
    "term": "Journal branch",
    "level": "L6",
-   "definition": "An engine-owned [[journal]] line whose [[availability]] in [[solving sessions|Solving session]] remains LQ4.",
-   "source": "Chapters 01, 08",
+   "definition": "An engine-owned [[journal]] line. Exactly one line per session is active; other branches can be viewed and compared, and programs cannot change them (KN4.6; owner, 6 November 2026, LQ4; ADR-D01.16).",
+   "source": "Chapter 01 KN4.6; chapter 08; owner, 6 November 2026, LQ4; docs/architecture/1.0/design/adr/ADR-D01-design-system.md (ADR-D01.16)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Journal branch",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): LQ4 is answered (KN4.6), and Availability named another concept; fixed."
   },
   {
    "id": "journal",
    "term": "Journal",
    "level": "L2",
-   "definition": "The session store's parent-linked durable events, distinct from the [[debugger]]'s inspection cursor.",
+   "definition": "The session store's parent-linked durable events.",
    "source": "Chapter 01 KN4.1; chapter 08",
    "origin": "chapter 04 section 6",
    "chapter_term": "Journal",
-   "forward": [
-    {
-     "term": "Debugger",
-     "why": "A contrast only: the journal is not the debugger's cursor (L6)."
-    }
-   ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the contrast with the debugger (L6) moves to this note: the journal is not the debugger's inspection cursor; the forward record is dropped; fixed."
   },
   {
    "id": "saved-checkpoint",
@@ -2587,7 +2584,7 @@
    "source": "Chapter 01 KN4; chapter 05",
    "origin": "chapter 04 section 6",
    "chapter_term": "Saved checkpoint",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "workspace-record",
@@ -2597,7 +2594,7 @@
    "source": "Chapter 01 KN4.4; chapter 05",
    "origin": "chapter 04 section 6",
    "chapter_term": "Workspace record",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "filter",
@@ -2607,7 +2604,7 @@
    "source": "Chapter 05; solving workflow section 4.3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Filter",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "preference",
@@ -2617,7 +2614,7 @@
    "source": "Chapter 05; partition PS1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Preference",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "search-space",
@@ -2627,7 +2624,7 @@
    "source": "Chapter 03; partition LB5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Search space",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "search-record",
@@ -2637,7 +2634,7 @@
    "source": "Chapters 03, 05, 06",
    "origin": "chapter 04 section 6",
    "chapter_term": "Search record",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "strategy",
@@ -2647,7 +2644,7 @@
    "source": "Chapter 03; partition LB5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Strategy",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "descent-rank",
@@ -2657,7 +2654,7 @@
    "source": "Chapter 03; partition 10.3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Descent rank",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "view-model-node",
@@ -2667,23 +2664,17 @@
    "source": "Chapter 10; EV3.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "View-model node",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "view",
    "term": "View",
    "level": "L1",
-   "definition": "A presentation of information at one [[revision]]; further views are allowed in every [[profile]].",
+   "definition": "A presentation of information at one [[revision]].",
    "source": "Chapter 10 RPI.81 to RPI.83; EV3.11; owner, 6 November 2026, LQ6",
    "origin": "chapter 04 section 6",
    "chapter_term": "View",
-   "forward": [
-    {
-     "term": "Profile",
-     "why": "Views are allowed in every profile; profiles enter at L6."
-    }
-   ],
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the profile clause (L6) moves to this note: further views are allowed in every profile (RPI.81); the forward record is dropped; fixed."
   },
   {
    "id": "panel",
@@ -2693,7 +2684,7 @@
    "source": "Chapter 10; EV3.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Panel",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "control",
@@ -2703,7 +2694,7 @@
    "source": "Chapter 10; EV3.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Control",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "overlay",
@@ -2713,7 +2704,7 @@
    "source": "Chapter 10; partition EV3",
    "origin": "chapter 04 section 6",
    "chapter_term": "Overlay",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "display-plan",
@@ -2723,7 +2714,7 @@
    "source": "Chapter 10",
    "origin": "chapter 04 section 6",
    "chapter_term": "Display plan",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "display-instance",
@@ -2733,7 +2724,7 @@
    "source": "Chapter 10; partition default 7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Display instance",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "source-map",
@@ -2743,7 +2734,7 @@
    "source": "Chapter 10",
    "origin": "chapter 04 section 6",
    "chapter_term": "Source map",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "source-range",
@@ -2753,7 +2744,7 @@
    "source": "EV1.1, EV1.10",
    "origin": "chapter 04 section 6",
    "chapter_term": "Source range",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "diagnostic",
@@ -2763,7 +2754,7 @@
    "source": "EV1.4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Diagnostic",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "typed-error",
@@ -2773,7 +2764,7 @@
    "source": "Chapter 01 KN5.24; chapter 13",
    "origin": "chapter 04 section 6",
    "chapter_term": "Typed error",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "recovered-parse",
@@ -2783,7 +2774,7 @@
    "source": "EV1.2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Recovered parse",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "editor-service",
@@ -2793,7 +2784,7 @@
    "source": "EV1.1 to EV1.6",
    "origin": "chapter 04 section 6",
    "chapter_term": "Editor service",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "debugger",
@@ -2803,7 +2794,7 @@
    "source": "EV2.1, EV2.6",
    "origin": "chapter 04 section 6",
    "chapter_term": "Debugger",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "deterministic-replay",
@@ -2813,17 +2804,17 @@
    "source": "EV2.3, EV2.4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Deterministic replay",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "cost-profile",
    "term": "Cost profile",
    "level": "L6",
-   "definition": "A report of declared deterministic costs, [[budget]] usage and stop reason in KN7 units.",
+   "definition": "A report of declared deterministic costs, [[budget]] usage and stop reason in KN7 [[units|~]].",
    "source": "EV2.7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Cost profile",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Its word units is marked as an ordinary word, since Unit is now a homonym."
   },
   {
    "id": "round-trip",
@@ -2833,7 +2824,7 @@
    "source": "EV3.7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Round trip",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "command",
@@ -2843,7 +2834,7 @@
    "source": "Chapter 01 KN5; EV4.1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Command",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "binding",
@@ -2853,7 +2844,7 @@
    "source": "EV4.3; DT-M1",
    "origin": "chapter 04 section 6",
    "chapter_term": "Binding",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "recording",
@@ -2863,7 +2854,7 @@
    "source": "EV4.10; chapter 05",
    "origin": "chapter 04 section 6",
    "chapter_term": "Recording",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "routing-class",
@@ -2873,7 +2864,7 @@
    "source": "EV4.4; DT-M1 Outcome C2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Routing class",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "portable-key-layer",
@@ -2883,7 +2874,7 @@
    "source": "EV4.7; DT-M1 Outcome K5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Portable key layer",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "layout",
@@ -2893,17 +2884,17 @@
    "source": "Chapters 05, 10; EV3.7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Layout",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "chart",
    "term": "Chart",
    "level": "L6",
-   "definition": "A display map governed by chapter 10's [[declared domain]] and precision, with a user vertex stage checked under its stage safety contract.",
+   "definition": "A display map governed by its [[chart domain]] and precision, with a user vertex stage checked under its stage safety contract.",
    "source": "Chapter 10 RPI.68 to RPI.80; owner, 6 November 2026, LQ7",
    "origin": "chapter 04 section 6",
    "chapter_term": "Chart",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): a chart's domain is the chart domain, not the declared domain (EV5.18); fixed."
   },
   {
    "id": "display-projection",
@@ -2913,7 +2904,7 @@
    "source": "Chapter 10; charter M2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Display projection",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "section",
@@ -2923,7 +2914,7 @@
    "source": "Chapters 03, 10; partition LB4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Section",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "atlas",
@@ -2933,7 +2924,7 @@
    "source": "Chapters 03, 10; partition LB4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Atlas",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "action",
@@ -2943,7 +2934,7 @@
    "source": "Chapter 03; partition LB4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Action",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "embedding",
@@ -2953,7 +2944,7 @@
    "source": "Chapter 03; partition LB4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Embedding",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "relation",
@@ -2963,7 +2954,7 @@
    "source": "EV3.8; chapters 02, 06",
    "origin": "chapter 04 section 6",
    "chapter_term": "Relation",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "graph",
@@ -2973,7 +2964,7 @@
    "source": "Chapter 03; partition LB4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Graph",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "tree",
@@ -2983,7 +2974,7 @@
    "source": "Chapter 03; partition LB1, LB4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Tree",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "cell-complex",
@@ -2993,7 +2984,7 @@
    "source": "Chapter 03; partition LB4",
    "origin": "chapter 04 section 6",
    "chapter_term": "Cell complex",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "state-graph",
@@ -3003,7 +2994,7 @@
    "source": "Chapters 03, 10; partition LB4",
    "origin": "chapter 04 section 6",
    "chapter_term": "State graph",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "relationship-strip",
@@ -3013,7 +3004,7 @@
    "source": "EV3.8; owner design decisions section 2",
    "origin": "chapter 04 section 6",
    "chapter_term": "Relationship strip",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "competence-check",
@@ -3023,7 +3014,7 @@
    "source": "EV5.7 to EV5.9; LQ14 (access policy)",
    "origin": "chapter 04 section 6",
    "chapter_term": "Competence check",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "soft-disclosure",
@@ -3033,7 +3024,7 @@
    "source": "EV5.8; owner design decisions section 5",
    "origin": "chapter 04 section 6",
    "chapter_term": "Soft disclosure",
-   "review": "Waits for the mathematician's review (EV5.14; LP4-11 integration)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "chart-domain",
@@ -3042,7 +3033,7 @@
    "definition": "Where a [[chart]]'s map is defined.",
    "source": "EV5.18; Chapter 10 RPI.68 to RPI.80",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "level-projection",
@@ -3051,7 +3042,7 @@
    "definition": "The exact, possibly partial map from a value to a coarser [[identity level]], called explicitly; off the [[lattice]] it returns a [[typed partial result]]. The [[label]] projection π is one.",
    "source": "EV5.18; Chapter 01 KN1.9",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "keyboard-key",
@@ -3060,7 +3051,7 @@
    "definition": "A key on the keyboard. A [[binding]] maps key sequences to [[commands|Command]].",
    "source": "EV5.18; EV4.7",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "source-key",
@@ -3069,7 +3060,7 @@
    "definition": "A [[display instance]]'s entry in the [[source map]], which links the drawn occurrence to its canonical object and its source.",
    "source": "EV5.18; Chapter 10 RPI.20, RPI.21",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "tree-branch",
@@ -3078,7 +3069,7 @@
    "definition": "The class b(A) of a [[piece]]'s first step in the jumbling tree, defined only for a piece of [[height]] 2 or more.",
    "source": "EV5.18; [card 6, Model](../../../../research/jumbling/theory/cards/card-6-blocking-structure.md)",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "The mathematician's pass of 23 November 2026 found M18 (defined only at height 2 or more); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M18 (defined only at height 2 or more). Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "evidence-edition",
@@ -3087,7 +3078,7 @@
    "definition": "The version of the four tables that are the only inputs of an [[evidence word|Evidence words]] besides its facts: the order on [[grades|Grade]] and the other tables of EVD.14.",
    "source": "EV5.18; EVD.14",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "matrix-rank",
@@ -3096,7 +3087,7 @@
    "definition": "The rank of a matrix in linear algebra: the largest number of its rows that are linearly independent.",
    "source": "EV5.18; Chapter 03",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "census-rank",
@@ -3105,16 +3096,16 @@
    "definition": "The [[orbit]] field `rank` in the census, the Theory's application rank: r(A) = |M(A)| − 1, one less than the number of [[caps|Cap]] in the complete cap signature M(A) of the orbit's piece positions, the caps whose region holds the piece's [[chamber|Cut chamber]] interior (Theory Lemma 6). It is neither a dimension nor a codimension.",
    "source": "EV5.18; Theory Lemma 6; assets/census.json",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "The mathematician's pass of 23 November 2026 (M9) established what the field counts: r(A) = |M(A)| − 1 (Theory Lemma 6), and rank = len(mask) − 1 holds for all 35 orbits of assets/census.json (LP4-11 follow-up). This replaces EV5.18's 'what it counts is not established', a reading for the integrator; the row is learner-facing. The re-check (M29) added the Theory's name, application rank. The fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 (M9) established what the field counts: r(A) = |M(A)| − 1 (Theory Lemma 6), and rank = len(mask) − 1 holds for all 35 orbits of assets/census.json (LP4-11 follow-up). This replaces EV5.18's 'what it counts is not established', a reading for the integrator; the row is learner-facing. The re-check (M29) added the Theory's name, application rank. Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "assistance-provenance",
    "term": "Assistance provenance",
    "level": "L2",
-   "definition": "The origin of a [[word]]: whether the solver wrote it or a tool supplied it, carried with the word through storage and import.",
-   "source": "EV5.18; partition BM2; PS1.32; LB7.3",
+   "definition": "The record of how a [[word]] entered: typed or picked by the solver, entered by a program, or imported, with its author class and what the producing run may depend on; a missing record reads unknown. It says how the word entered, not who thought of it, and it is carried with the word through storage and import.",
+   "source": "EV5.18; partition BM2; PS1.32; LB7.3; Chapter 07 BND.20, BND.21, BND.23",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): it read as authorship; it now records how the word entered, not who thought of it (BND.20, BND.23); fixed."
   },
   {
    "id": "attribution",
@@ -3123,16 +3114,16 @@
    "definition": "Who authored, reproduced or set the [[scope]] of a record, and its review class.",
    "source": "EV5.18; EVD.6; PS1.35",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "lowering-macro",
    "term": "Lowering macro",
    "level": "L6",
-   "definition": "A [[word]] ending in a [[jumble twist]] that lowers the [[depth Φ]].",
+   "definition": "A [[word]] that ends with a [[jumble twist]] and lowers the [[depth Φ]] from its start to its end.",
    "source": "EV5.18; [stage 15 README](../../../../research/jumbling/restoration/15-lowering-machine/README.md)",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the whole word lowers Φ, not only its last jumble (stage 15, section 1); fixed."
   },
   {
    "id": "macro-certificate",
@@ -3141,7 +3132,7 @@
    "definition": "[[Theorem]] MC's event-by-event [[certificate]] of a [[word]].",
    "source": "EV5.18; [stage 15 README](../../../../research/jumbling/restoration/15-lowering-machine/README.md)",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "cap-cover",
@@ -3154,11 +3145,11 @@
     "cover",
     "covers"
    ],
-   "review": "The mathematician's pass of 23 November 2026 found M10 (the definition did not say what covering is) and their re-check M25 (the order is a hint that can fail: manual 2.2 and 2.6); the fix waits for the mathematician's review (EV5.14).",
+   "review": "The mathematician's pass of 23 November 2026 found M10 (the definition did not say what covering is) and their re-check M25 (the order is a hint that can fail: manual 2.2 and 2.6). Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding.",
    "first_use_forward": [
     {
      "term": "Cut cell",
-     "why": "The chapter 2 introduction names the cover step before section 2.1 names cut cells; section 2.2, which defines covering, comes after both. Waits for the mathematician's review (EV5.14)."
+     "why": "The chapter 2 introduction names the cover step before section 2.1 names cut cells; section 2.2, which defines covering, comes after both. Reviewed by the mathematician on 24 November 2026 (EV5.14)."
     }
    ]
   },
@@ -3169,7 +3160,7 @@
    "definition": "Helpers whose inside sets together cover a target's straddlers.",
    "source": "EV5.18; [card 7](../../../../research/jumbling/theory/cards/card-7-lowering-machine.md)",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "learning-level",
@@ -3178,7 +3169,7 @@
    "definition": "One of the glossary's levels L1 to L6, at which a term is first needed.",
    "source": "EV5.18; charter M6",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "grip-level",
@@ -3187,16 +3178,16 @@
    "definition": "lev(c), a [[grip]]'s level in the lowering machine.",
    "source": "EV5.18; [card 7](../../../../research/jumbling/theory/cards/card-7-lowering-machine.md)",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "witness-piece",
    "term": "Witness piece",
    "level": "L6",
    "definition": "The [[piece]] a [[certificate]] point targets, with its [[grip]] recorded separately.",
-   "source": "EV5.18; Chapter 10 RPI.12, RPI.13",
+   "source": "EV5.18; Chapter 10 RPI.23 and section 3's certified geometric overlay row",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the source cited RPI.12 and RPI.13 instead of RPI.23; fixed."
   },
   {
    "id": "flag-chamber",
@@ -3205,7 +3196,7 @@
    "definition": "A spherical tetrahedron of the 600-cell's barycentric subdivision, one for each flag. The symmetry group permutes them simply transitively, so there are 14,400.",
    "source": "EV5.18; research/Full_600cell_Puzzle_Theory.tex, Coxeter presentation",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "base-tier-function",
@@ -3215,7 +3206,7 @@
    "definition": "A function in the base tier of built-in tools under option BS2 of LQ2.",
    "source": "EV5.18; LQ2",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). Not learner-facing while LQ2's option set is open."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Not learner-facing while LQ2's option set is open."
   },
   {
    "id": "state-derivation",
@@ -3224,7 +3215,7 @@
    "definition": "How a [[derived state]] was computed, by the same exact kernels as the engine.",
    "source": "EV5.18; KN2.11",
    "origin": "EV5.18 sense (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "empty-answer",
@@ -3233,7 +3224,7 @@
    "definition": "A completed exhaustive search that found nothing: a negative over its whole declared set.",
    "source": "EVD.33; partition default 6",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "not-run",
@@ -3242,7 +3233,7 @@
    "definition": "No record of the [[job]], or the import value of EVD.47. It supports nothing.",
    "source": "EVD.33; EVD.41",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "specification",
@@ -3251,13 +3242,7 @@
    "definition": "The [[principle record]]'s part that states the tool's procedure, inputs, parameters and [[budget]], output type, puzzle, [[menu]] and [[level|Identity level]], [[domain|Declared domain]], tie rule, what an [[empty answer]] means and the [[scope]] of a negative answer.",
    "source": "LB6.2",
    "origin": "EV5.6 concept (LP4-11)",
-   "forward": [
-    {
-     "term": "Declared domain",
-     "why": "The record's specification names its domain at L2, while chapter 04 proposes Declared domain at L6."
-    }
-   ],
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): Declared domain moves to L2, so the forward record is dropped; step 1 teaches it; fixed."
   },
   {
    "id": "not-meant",
@@ -3266,7 +3251,7 @@
    "definition": "The [[principle record]]'s part that says what an empty or negative answer does not mean.",
    "source": "LB6.2",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "workspace-undo",
@@ -3275,7 +3260,7 @@
    "definition": "Taking back the latest action on a history; an undo whose action a later action superseded is refused. Puzzle moves and [[layout]] changes keep separate histories.",
    "source": "EV4.15; [owner, 23 November 2026, decision 2.7 (X1)](../../../wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). X1 overrules EV4.15's single undo order (two histories)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. X1 overrules EV4.15's single undo order (two histories)."
   },
   {
    "id": "conjugate",
@@ -3284,7 +3269,7 @@
    "definition": "The [[word]] S⁻¹ M S, read in chronological order: a [[setup]] undone, then M, then the setup. It acts as M acts, at the places the setup carries M's places to; a [[star]] is one.",
    "source": "EV5.6 (step 4, the mathematician's inference); solving-workflow.md section 3.1",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14). The chronological convention follows the star entry."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. The chronological convention follows the star entry."
   },
   {
    "id": "commutator",
@@ -3293,34 +3278,34 @@
    "definition": "The [[word]] M N M⁻¹ N⁻¹ in chronological order: M first, N⁻¹ last. In the seed atlas [H0, T5] expands to 1, 12, 1, −12, since the half-turn H0 is its own inverse. Where M and N have disjoint supports (they move disjoint sets of slots) it changes nothing, so a small overlap gives a small effect.",
    "source": "EV5.6 (step 4, the mathematician's inference); assets/seed_atlas.json",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "The mathematician's pass of 23 November 2026 found M20 (the order is settled; disjoint supports, not no common piece); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M20 (the order is settled; disjoint supports, not no common piece). Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "mixed-statement",
    "term": "Mixed statement",
    "level": "L2",
-   "definition": "A [[statement]] of the form every case has some answer, such as every admitted state having a legal selected [[macro]]. One found case discharges nothing, and one failed budgeted search refutes nothing. At one admitted case, a completed exhaustive search of exactly the whole finite set that 'some' ranges over, under EVD.42's guard, that finds no answer does refute it; an exhaustive search of a smaller set, such as three letters of family R, refutes nothing.",
-   "source": "Chapter 06 section 9 (E2, E3); EVD.42; EV5.6",
+   "definition": "A [[statement]] whose quantifiers mix: every case has some answer (outer every), such as every admitted state having a legal selected [[macro]], or some case has no answer (outer some); each form is the other's negation. For one with outer every, one found case discharges nothing, and one failed budgeted search refutes nothing. At one admitted case, a completed exhaustive search of exactly the whole finite set that 'some' ranges over, under EVD.42's guard, that finds no answer does refute it; an exhaustive search of a smaller set, such as three letters of family R, refutes nothing. One with outer some is refuted only by a proof or a complete [[certificate]].",
+   "source": "Chapter 06 EVD.9, section 9 (E2, E3); EVD.42; EV5.6",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "The mathematician's pass of 23 November 2026 found M2 (a failed budgeted search, not any failed search) and their re-check M26 (the refuting search covers the whole set, under EVD.42's guard); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M2 (a failed budgeted search, not any failed search) and their re-check M26 (the refuting search covers the whole set, under EVD.42's guard). Reviewed by the mathematician on 24 November 2026 (EV5.14): the M2 and M26 fixes hold; the outer-some form, each form's negation, was missing (EVD.9, EVD.42); fixed."
   },
   {
    "id": "approximate-value",
    "term": "Approximate value",
    "level": "L6",
-   "definition": "A value of the approximate type, made from an exact one only by an explicit conversion that names a precision. It never converts back and never decides legality, admissibility, [[protection]], equality of exact objects, goals, [[digests|Digest]] or [[evidence]].",
+   "definition": "A value of the approximate type: an approximate literal, or an exact value converted by an explicit conversion that names a precision. It never converts back and never decides legality, admissibility, [[protection]], equality of exact objects, goals, [[digests|Digest]] or [[evidence]].",
    "source": "LG2.4; LG1.7; INV-4",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): approximate literals were excluded (LG1.7); fixed."
   },
   {
    "id": "human-solve-boundary",
    "term": "Human-solve boundary",
    "level": "L2",
-   "definition": "The rule that the program never chooses or outputs a solving [[macro]] by itself, never executes without the solver's action and never solves automatically. Tools may track, analyse, check, protect and reuse the solver's own macros. Setup search for a target the solver names is allowed, and in the jumbling puzzle's descent, at a cap the solver names, the program may list the repairs that lower N in a neutral order without ranking, and the solver picks one.",
-   "source": "Owner, 2 October 2026; Owner, 17 October 2026 (the repair list); KN2.5",
+   "definition": "The rule that the program never chooses or outputs a solving [[macro]] by itself, never executes without the solver's action and never solves automatically. Tools may track, analyse, check, protect and reuse the solver's own macros. Setup search for a target the solver names is allowed, and in the jumbling puzzle's descent, at a cap the solver names, the program may list the repairs that lower N in a neutral order without ranking, and the solver picks one. A tool the solver writes in their own workspace is not the program: in a solving session its word is accepted at preview, and a word from someone else's package is refused there (owner, 3 November 2026; ADR-D01.8).",
+   "source": "Owner, 2 October 2026; Owner, 17 October 2026 (the repair list); Owner, 3 November 2026; KN2.5; docs/architecture/1.0/design/adr/ADR-D01-design-system.md (ADR-D01.8)",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "The mathematician's pass of 23 November 2026 found M21 (setup search and the 17 October repair-list exception); the fix waits for the mathematician's review (EV5.14)."
+   "review": "The mathematician's pass of 23 November 2026 found M21 (setup search and the 17 October repair-list exception). Reviewed by the mathematician on 24 November 2026 (EV5.14): the M21 fix holds; the solver's own tool's rule (owner, 3 November 2026; ADR-D01.8) was missing; fixed."
   },
   {
    "id": "stabiliser",
@@ -3329,7 +3314,7 @@
    "definition": "The elements of a group that leave a given object unchanged. They form a subgroup.",
    "source": "EV5.6 (step 6), standard mathematics",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "coset",
@@ -3338,7 +3323,7 @@
    "definition": "The set g·H of products of one group element g with every element of a subgroup H. The cosets of H split the group into parts of equal size.",
    "source": "EV5.6 (step 6), standard mathematics",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "quotient",
@@ -3347,7 +3332,7 @@
    "definition": "The set of classes of an equivalence, such as the [[cosets|Coset]] of a subgroup, with the structure that passes to the classes.",
    "source": "EV5.6 (step 6), standard mathematics",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "homomorphism",
@@ -3356,7 +3341,7 @@
    "definition": "A map between groups that preserves products: the image of a product is the product of the images.",
    "source": "EV5.6 (step 6), standard mathematics",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "f2",
@@ -3365,7 +3350,7 @@
    "definition": "The field with two elements, 0 and 1, where 1 + 1 = 0. Sign bits and [[frame]] bits take values in it.",
    "source": "EV5.6 (step 6), standard mathematics",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "f5",
@@ -3374,7 +3359,7 @@
    "definition": "The field with five elements: the integers modulo 5.",
    "source": "EV5.6 (step 6), standard mathematics",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   },
   {
    "id": "q-sqrt5",
@@ -3383,7 +3368,7 @@
    "definition": "The field of numbers a + b√5 with rational a and b. The 600-cell's coordinates are exact in it.",
    "source": "EV5.6 (step 6), standard mathematics; research/Full_600cell_Puzzle_Theory.tex",
    "origin": "EV5.6 concept (LP4-11)",
-   "review": "Written in LP4-11 from the cited source; waits for the mathematician's review (EV5.14)."
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding."
   }
  ]
 }

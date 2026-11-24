@@ -1,4 +1,6 @@
 flowchart LR
-  S[solver wrote it] --> W[word]
-  T[tool supplied it] --> W
-  W --- P[assistance provenance, kept through storage and import]
+  S[typed or picked by the solver] --> W[word]
+  P[entered by a program] --> W
+  I[imported] --> W
+  W --- R["assistance provenance: how it entered, its author class, what the run may depend on"]
+  R -. missing record .- U[unknown]
