@@ -1,0 +1,4 @@
+flowchart LR
+  P[piece pose] --> H[height: distance from the lattice]
+  J[jumble twist] -->|changes it by at most 2| H
+  R[retained twist] -. never changes it .- H

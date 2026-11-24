@@ -1,0 +1,370 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "protection",
+  "entries": [
+    "position_lock",
+    "identity_lock",
+    "block_lock",
+    "net_check",
+    "strict_check",
+    "strict_check_within"
+  ],
+  "level": "L4",
+  "review": "The mathematician's pass of 23 November 2026 found M12 (the failure example kept its hypothesis); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "binding": {
+    "source_sha256": "d1f0c9262131d4da022c08f59a791745f364144ffd0a2624cf76ee17ad4b4582",
+    "closure_sha256": "efa6e4fa72f9ba9a531e34c699461f6778b2e8fb5b9fd5c87c18614fefa669d2",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "4bda5dc03c7342b7a6bdc93de9419ff354d9e112d98153c21dc4f3053b074264",
+    "statements": [
+      "a lock captures the labels at its slots, and a recipe whose effect is the identity changes no captured label"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "position_lock",
+      "function": "a lock of the named slots with the labels they hold at the head",
+      "inputs": "slots: slot IDs",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {kind: position, labels, slots}",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every list of slots",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the lock is one record; an empty slot list gives a lock that protects nothing"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": {
+        "none": "the definition covers every revision: a lock reads the labels at the head"
+      }
+    },
+    {
+      "entry": "identity_lock",
+      "function": "a lock of the named pieces where they are now, with their own labels",
+      "inputs": "pieces: piece IDs",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {kind: identity, labels, slots}",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every list of pieces",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the lock is one record; an empty piece list gives a lock that protects nothing"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": {
+        "none": "the definition covers every revision: a lock reads the labels at the head"
+      }
+    },
+    {
+      "entry": "block_lock",
+      "function": "a lock of the named pieces at their home slots",
+      "inputs": "pieces: piece IDs",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {kind: block, labels, slots}",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every list of pieces",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the lock is one record; an empty piece list gives a lock that protects nothing"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": {
+        "none": "the definition covers every revision: a lock reads the labels at the head"
+      }
+    },
+    {
+      "entry": "net_check",
+      "function": "the Net verdict of a recipe against a lock: whether the end state keeps every locked label",
+      "inputs": "lock; recipe: a list of steps, each a word step or a star step",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the protection report: verdict clear, fails or unknown, with conflicts",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every lock and recipe at the head",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "an empty conflict list goes with verdict clear or unknown; unknown is never a safe verdict (LB2.3)"
+      },
+      "negative_scope": "fails names the locked slots whose labels change; it concerns this recipe and lock only.",
+      "outside_scope": {
+        "none": "the definitions cover every lock and recipe: the verdict is computed exactly by the protection row"
+      }
+    },
+    {
+      "entry": "strict_check",
+      "function": "the Strict verdict: whether every prefix of the recipe's expansion keeps every locked label",
+      "inputs": "lock; recipe: a list of steps, each a word step or a star step",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the protection report",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every lock and recipe at the head",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "an empty conflict list goes with verdict clear or unknown; unknown is never a safe verdict"
+      },
+      "negative_scope": "fails names the first refused prefix; it concerns this recipe and lock only.",
+      "outside_scope": {
+        "none": "the definitions cover every lock and recipe: the verdict is computed exactly by the protection row"
+      }
+    },
+    {
+      "entry": "strict_check_within",
+      "function": "the Strict verdict within a limit of checked prefixes",
+      "inputs": "lock; recipe: a list of steps, each a word step or a star step; limit",
+      "parameters": {
+        "none": "the limit is an input, not a parameter"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the protection report",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every lock, recipe and limit at the head",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "a check cut off by its limit answers unknown with `LB2:protection.incomplete_coverage`, never a completed empty answer (KN7.4)"
+      },
+      "negative_scope": "fails names the first refused prefix within the limit.",
+      "outside_scope": {
+        "none": "the definitions cover every lock and recipe: the verdict is computed exactly by the protection row"
+      }
+    }
+  ],
+  "justification": [
+    {
+      "kind": "by_definition",
+      "statement": "a lock captures the labels at its slots, and a recipe whose effect is the identity changes no captured label",
+      "text": "A lock records the labels its slots hold at the head; Net compares them with the end state's labels, and a recipe whose net effect is the identity leaves every label where it was.",
+      "evidence": {
+        "none": "a definition: the verdicts are defined by comparing captured and end labels"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L4",
+    "input": {
+      "slots": [
+        0,
+        1
+      ],
+      "recipe_word": [
+        5,
+        -5
+      ],
+      "base": "solved"
+    },
+    "expected": [
+      {
+        "claim": "lock_labels",
+        "value": [
+          0,
+          1
+        ],
+        "from_step": 1
+      },
+      {
+        "claim": "net_conflicts",
+        "value": 0,
+        "from_step": 2
+      },
+      {
+        "claim": "net_verdict",
+        "value": "clear",
+        "from_step": 3
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_protection"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "protection.position_lock",
+          "statement": "a lock captures the labels at its slots, and a recipe whose effect is the identity changes no captured label",
+          "step": "step 1"
+        },
+        {
+          "node": "kernel:read_snapshot(labels)",
+          "statement": "a lock captures the labels at its slots, and a recipe whose effect is the identity changes no captured label",
+          "step": "step 1"
+        },
+        {
+          "node": "kernel:read_snapshot(protection)",
+          "statement": "a lock captures the labels at its slots, and a recipe whose effect is the identity changes no captured label",
+          "step": "step 2"
+        },
+        {
+          "node": "protection.report",
+          "statement": "a lock captures the labels at its slots, and a recipe whose effect is the identity changes no captured label",
+          "step": "step 3"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:Concat",
+        "base:ExactAdd",
+        "base:ExactEq",
+        "base:ExactLess",
+        "base:Index",
+        "base:Length",
+        "base:Not",
+        "kernel:read_snapshot(positions)",
+        "protection.block_lock",
+        "protection.homes_of",
+        "protection.identity_lock",
+        "protection.net_check",
+        "protection.slots_of",
+        "protection.strict_check",
+        "protection.strict_check_within"
+      ],
+      "unmapped_steps": []
+    },
+    "reason": {
+      "statement": "a lock captures the labels at its slots, and a recipe whose effect is the identity changes no captured label",
+      "idea": "A lock remembers which sticker sits in each locked slot; a word that undoes itself puts every sticker back, so nothing locked has changed at the end.",
+      "terms": [
+        "protection",
+        "net-strict",
+        "label"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the recipe's net effect is the identity",
+        "outcome": "counterexample: generator 1 alone, [1], is not the identity and moves slot 1; at solved its end state holds label 5 at slot 1, not the captured 1, so Net reports a conflict (counted with core.py on the model)"
+      }
+    ],
+    "not_meant": "clear under Net says nothing about the steps in between, and a verdict never chooses a recipe.",
+    "givens": [
+      {
+        "name": "labels at slots 0 and 1 at solved",
+        "value": [
+          0,
+          1
+        ],
+        "leaf": "kernel:read_snapshot(labels)"
+      },
+      {
+        "name": "the recipe",
+        "value": [
+          5,
+          -5
+        ],
+        "leaf": "kernel:read_snapshot(protection)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "At solved slot s holds label s: the lock captures labels [0, 1].",
+        "result": [
+          0,
+          1
+        ]
+      },
+      {
+        "check": "[5, -5] is generator 5 and its inverse: the end state is the start, so no locked label changes: 0 conflicts.",
+        "result": 0
+      },
+      {
+        "check": "No conflict and the one required end state checked: the verdict is clear.",
+        "result": "clear"
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "protection",
+        "net-strict",
+        "label",
+        "block"
+      ],
+      "records": [
+        "completion"
+      ]
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:read_snapshot(labels)",
+        "spec": "The labels at the named slots, read at the head.",
+        "test": "rust/c600-tools/tests/labels_row.rs::a_library_entry_reads_the_labels_of_named_slots"
+      },
+      {
+        "leaf": "kernel:read_snapshot(positions)",
+        "spec": "Each named piece's home and current slots, read at the head.",
+        "test": "rust/c600-tools/tests/positions_row.rs::a_library_entry_reads_identities_slots_and_orientations"
+      },
+      {
+        "leaf": "kernel:read_snapshot(protection)",
+        "spec": "The protection row: the checked prefixes, conflicts and expansion of a recipe against a lock under Net or Strict; a read changes nothing.",
+        "test": "rust/c600-tools/tests/protection_row.rs::a_library_entry_reads_a_verdict"
+      }
+    ]
+  }
+}

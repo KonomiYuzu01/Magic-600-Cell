@@ -671,7 +671,7 @@
    "disposition": [
     "redesign"
    ],
-   "note": null,
+   "note": "Writes the live session as a log file in the format named: the 1.0 log (ADR-D01.80), or 0.4's C600 proof log and an MPUlt v1 log of 600-cell-Full as interchange (ADR-D01.84). It changes no live state.",
    "lane": "exclusive",
    "arguments": {
     "history": "JournalRangeRef",
@@ -733,6 +733,9 @@
      "decision": "U6-039/6",
      "disposition": "redesign"
     }
+   ],
+   "amendment_sources": [
+    "ADR-D01.82 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026): export follows the redesigned log rows"
    ]
   },
   {
@@ -756,7 +759,7 @@
    "disposition": [
     "redesign"
    ],
-   "note": null,
+   "note": "Checks a log file as a job, a 1.0 log or a C600 or MPUlt interchange file (ADR-D01.81, .84): its format and model identity (model_match), every move replayed with its legal witness and the final full-state hash. The result is bound to the SHA-256 of the bytes it read, which file.log.import's file check names. It changes no live state and runs no script.",
    "lane": "exclusive",
    "arguments": {
     "file": "FileDigestRef"
@@ -792,6 +795,9 @@
      "decision": "U6-039/6",
      "disposition": "redesign"
     }
+   ],
+   "amendment_sources": [
+    "ADR-D01.82 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026): the check is the import's file-check gate"
    ]
   },
   {
@@ -811,12 +817,12 @@
     "any"
    ],
    "repeat": false,
-   "job": true,
+   "job": false,
    "key_0_4": null,
    "disposition": [
     "redesign"
    ],
-   "note": "keeps preferences; leaves a recovery checkpoint",
+   "note": "Makes a checked log the current session: the explicit import commit (ADR-D01.82). It needs a passed file.log.check of the file's current bytes (file_check) and the solver's confirmation (confirm). Before it commits, a recovery checkpoint of the live session is written. It commits the log's saved state as one undoable journal entry, so session.undo returns to the state before it, and it keeps the current preferences: the log's are recorded, never applied (ADR-D01.80). Embedded scripts never run.",
    "lane": "commit",
    "arguments": {
     "checked": "CheckedFileRef",
@@ -845,6 +851,9 @@
      "decision": "U6-039/6",
      "disposition": "redesign"
     }
+   ],
+   "amendment_sources": [
+    "ADR-D01.82 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026): the import commit's gates, recovery checkpoint, undo journal and kept preferences; the commit replays a checked plan and runs no job"
    ]
   },
   {
@@ -8373,7 +8382,7 @@
    "job": false,
    "key_0_4": null,
    "disposition": [],
-   "note": "One solver action rolls the move history back or forward to the state just after a target action (0: the session's start), from an ActionHint whose target names that action (ADR-D01.15). It is k ordinary session.undo or session.redo steps, each its own transaction with its own admission and receipt under the command ID {gesture}#{i}, and the layer adds the gesture, step i and the count k to each step's arguments, so the journal gains no action kind and every span has one encoding. The layer holds the writer for the whole gesture and stops at the first step that does not commit, reporting j of k; each step takes its original permission path, and the press's confirm confirms every release in the span (LI.26). A crash leaves a complete prefix, which a retry finds by LI.30's lookup of the step IDs; there is no all-or-nothing across a crash. The history dock groups the steps by gesture. No run or recording reaches it, and the explore state pauses it. No default key.",
+   "note": "One solver action rolls the move history back or forward to the state just after a target action (0: the session's start), from an ActionHint whose target names that action (ADR-D01.15). It is k ordinary session.undo or session.redo steps, each its own transaction with its own admission and receipt under the command ID {gesture}#{i}/{k}, so a reopen tells a gesture cut at j of k from a whole one by the step IDs alone (R2-5; owner, 23 Nov 2026, decision 4.2), and the layer adds the gesture, step i and the count k to each step's arguments, so the journal gains no action kind and every span has one encoding. The layer holds the writer for the whole gesture and stops at the first step that does not commit, reporting j of k; each step takes its original permission path, and the press's confirm confirms every release in the span (LI.26). A crash leaves a complete prefix, which a retry finds by LI.30's lookup of the step IDs; there is no all-or-nothing across a crash. The history dock groups the steps by gesture. No run or recording reaches it, and the explore state pauses it. No default key.",
    "source": "ADR-D01 (owner, 22 Nov 2026)",
    "arguments": {
     "hint": "ActionHint",
@@ -8658,6 +8667,152 @@
    "arguments": {
     "statement": "Text",
     "destination": "Text"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "file.document.new",
+   "label": "New document",
+   "kind": "app",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Opens a new untitled document of the kind named, a log or a script (.6cs), as a tab beside the live session's (ADR-D01.79). It writes no file and changes no live state; the untitled buffer is kept in the open-document inventory until it is saved or closed (revision 6, R-3). Its default key comes with the keymap, not from 0.4.",
+   "source": "ADR-D01.84 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026)",
+   "arguments": {
+    "kind": "log | script"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "file.document.open",
+   "label": "Open document",
+   "kind": "file",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Reads a log or a script file into a tab (ADR-D01.79). It changes no live state and runs no script (ADR-D01.82). A log opens read-only with no binding, scrub or signature until a compile of its current bytes passes; only a log whose compile passed is bound to its saved state (revision 6, R-2).",
+   "source": "ADR-D01.84 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026)",
+   "arguments": {
+    "file": "FileRef"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "file.document.save",
+   "label": "Save document",
+   "kind": "file",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Writes an open document's bytes to its file, whole and atomically, and records the digest of the saved bytes (ADR-D01.79, revision 6's R-3). Saving the live session's tab writes the session as a log of the 1.0 format. It changes no live state; nothing is written to a document's file until the solver saves.",
+   "source": "ADR-D01.84 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026)",
+   "arguments": {
+    "document": "DocumentRef"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "file.document.save_as",
+   "label": "Save document as",
+   "kind": "file",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Writes an open document's bytes to the file named and makes that file the document's identity (ADR-D01.79). It changes no live state.",
+   "source": "ADR-D01.84 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026)",
+   "arguments": {
+    "document": "DocumentRef",
+    "destination": "FileRef"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "file.document.compile",
+   "label": "Compile document",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Compiles an open document as a job (ADR-D01.81): a script is parsed, checked and lowered; a log runs the gates format, model_match, moves (every move replayed with its legal witness), final_hash, macros and scripts. The result is bound to the SHA-256 of the bytes it compiled, so any edit makes it stale (revision 6, R-2). It never changes live state and never runs a script.",
+   "source": "ADR-D01.84 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026)",
+   "arguments": {
+    "document": "DocumentRef"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "file.document.close",
+   "label": "Close document",
+   "kind": "app",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Closes an open document's tab (ADR-D01.79). The live session's tab is always there and does not close. A dirty document closes only with discard, which drops its unsaved contents; its file is not touched. It changes no live state.",
+   "source": "ADR-D01.84 (ADR-D01-rev5-documents.md; owner, 23 Nov 2026)",
+   "arguments": {
+    "document": "DocumentRef",
+    "discard": "Bool?"
    },
    "slot_map": "preserve",
    "decisions": []

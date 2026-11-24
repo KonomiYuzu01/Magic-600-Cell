@@ -5,8 +5,9 @@
 //! the routes that run such a module:
 //!
 //! - [`bind_job`]: a program job of an overlay row that a user module's entry serves, whichever way the solver invoked
-//!   the row (the palette through the shell, a key through the input router). The host binds it once, when it takes
-//!   the job, and the job's run stays on that version to its end.
+//!   the row (the palette through the shell, a key through the input router, a recording's step, which names the
+//!   version it was recorded under). The host binds it once, when it takes the job, and the job's run stays on that
+//!   version to its end.
 //! - [`bind_view_source`]: a view source that names an overlay row and its checked module's source digest (EV3.2,
 //!   RPI.83). The host's view declaration admits it only when the digest names the row's module's active version.
 //! - [`run_bound_in_process`] and [`ProcessHost::run_bound`] run a binding in this process or in the runtime's own
@@ -25,7 +26,9 @@
 //!   encoding, with `PS1:input.noncanonical_value`, before the entry runs.
 //! - **Built-in entries.** A built-in entry's binding runs in process only (`c600_runtime::bound`, "Admission column").
 
-use c600_command::{Error as LayerError, Overlay, ProgramJob, ViewSourceRef};
+use std::sync::Arc;
+
+use c600_command::{Error as LayerError, ModuleVersions, Overlay, ProgramJob, ViewSourceRef};
 use c600_module::{Binding, BoundRun, Modules, Refusal, RunContext, RunRequest};
 use c600_run::boundary::Store;
 use c600_run::interp::{code, Host, Options};
@@ -68,8 +71,33 @@ fn layer_error(refusal: Refusal) -> LayerError {
 
 /// Binds the program job of an overlay row to the active version of the module its entry belongs to (EV1.11). The
 /// host calls it once, when it takes the job; a refusal is the job's error.
+///
+/// The job of a recording's step names the module digest the step was recorded under ([`ProgramJob::module`]; EV4.10,
+/// EV4.14; LP4-9): the route that names a digest, so the job binds only when that digest names the active version. A
+/// digest no successful check produced is `EV1:input.module_not_checked`, a checked one that is not active
+/// `EV1:stale.activation_base`, and one that is not 64 lowercase hex digits `EV4:input.recording_step_unresolved`.
 pub fn bind_job(modules: &Modules, job: &ProgramJob) -> Result<Binding, LayerError> {
-    modules.bind(&job.overlay.module, &job.overlay.entry).map_err(layer_error)
+    let Some(recorded) = &job.module else {
+        return modules.bind(&job.overlay.module, &job.overlay.entry).map_err(layer_error);
+    };
+    let unresolved = || {
+        let detail = format!("the recorded module digest `{recorded}` is not a SHA-256 in hex");
+        LayerError::new(c600_command::code::RECORDING_STEP_UNRESOLVED, detail)
+    };
+    let digest = unhex(recorded).ok_or_else(unresolved)?;
+    modules.bind_pinned(&job.overlay.module, &job.overlay.entry, digest).map_err(layer_error)
+}
+
+/// The host's reader of its user modules' active versions for the command layer (`c600_command::ModuleVersions`;
+/// EV1.7, EV4.14; LP4-9): the hex closure digest of a module's active version. The layer records it with a step that
+/// an overlay row of the module served, and checks it before the step plays.
+#[derive(Clone)]
+pub struct ActiveVersions(pub Arc<Modules>);
+
+impl ModuleVersions for ActiveVersions {
+    fn active(&self, module: &str) -> Option<String> {
+        self.0.active(module).map(|digest| c600_run::provenance::hex(&digest))
+    }
 }
 
 /// Binds a view source of the overlay row `overlay` serves (EV1.7, EV3.2): an overlay source is admitted only when the

@@ -159,6 +159,9 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_jumbling_rust_corrections.py"],
     # The section 15.3 conformance index (LP2, M8): every LP2 test ID with exactly one state.
     ["tests/test_ct_index.py"],
+    # The glossary and learning path (LP4-11; EV5.6, EV5.10, EV5.15, EV5.18, overlay OV-3): the term check, diagrams and
+    # fixtures, through glossary/build.py --check.
+    ["tests/test_glossary.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
@@ -303,7 +306,9 @@ SECONDS = {
     "tests/test_log_workflow.py": 13, "tests/test_core.py": 12,
     # The workspace without c600-checkers: 1778 s on the Windows runner on 23 November 2026 before LP5, about
     # 2,000 s with LP5's other crates; the checker crate about 1,800 s of tests on 24 November 2026, plus its build.
-    "tests/test_language_rust.py": 2000,
+    # LP4's line adds three crates and 31 test binaries: about 37 s of the workspace's 787 s of test time locally, so
+    # an estimate of 200 s more on the runner, mostly their builds and links, until a CI run measures it.
+    "tests/test_language_rust.py": 2200,
     "tests/test_language_rust_checkers.py": 1900,
     "tests/test_kernel_oracle.py": 90,  # an estimate until a CI run measures it
     "tests/test_oracle.py": 35,  # an estimate: 28 to 30 s locally since the invalid-recipe family

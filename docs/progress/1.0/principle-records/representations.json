@@ -1,0 +1,352 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "representations tool",
+  "module": "representations",
+  "entries": [
+    "filter_counts",
+    "apply_filter",
+    "effect_scope",
+    "save_set",
+    "compare_cells",
+    "layer_predicate"
+  ],
+  "level": "L1",
+  "review": "The mathematician's pass of 23 November 2026 found M15 (distance 0 is a definition, not a certificate); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "binding": {
+    "source_sha256": "7332a75475c8971fa0688462d62736d1ec1b63c5d437d5bd07f890817479cc06",
+    "closure_sha256": "e000501570570e7229aa882592e372357eba967a58df2feea0d98cd860c922f9",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "1d9500b7d2286fb9766baf801ca5f043d9cfc0300f47f00cf615c5d6b379a298",
+    "statements": [
+      "representations entries publish or keep what the solver named and what the kernel rows answer",
+      "the face-step distance between cells is zero from a cell to itself"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "filter_counts",
+      "function": "publishes the counts of pieces and slots in layer `layer` of cell `cell`, read from the `filter.preview` row",
+      "inputs": "predicate: record {cell, layer}, as the solver named it",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a view: record {cell, layer, pieces, slots}",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every cell 0 to 599 and every layer of that cell",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the view is one record of counts; a layer with no piece has the count 0, which is an answer, not an empty one"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "outside the manifest's model: the rows refuse a cell or layer that is not the model's (KN2), and no view is published"
+    },
+    {
+      "entry": "apply_filter",
+      "function": "keeps the named filter preview as the workspace record `filter.apply`",
+      "inputs": "preview: record {epoch, job}, the filter preview the solver applies",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a workspace record `filter.apply`",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every filter preview of the session",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "a preview that is stale or not the session's is refused by the layer; nothing is kept"
+    },
+    {
+      "entry": "effect_scope",
+      "function": "publishes the named effect scope as a view",
+      "inputs": "scope: the scope text the solver chose",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a view of the scope text",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every scope text the shell offers",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "a scope the shell does not offer is the solver's text, shown as given; it filters nothing by itself"
+    },
+    {
+      "entry": "save_set",
+      "function": "keeps the named set of pieces, slots or cells as the workspace record `set.save`",
+      "inputs": "kind, members, name: the set the solver named",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a workspace record `set.save`",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every named set of the model's objects",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the record is kept as named; an empty member list is kept as an empty set the solver named"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "members outside the model are refused by the layer; nothing is kept"
+    },
+    {
+      "entry": "compare_cells",
+      "function": "publishes the fewest face steps between two named cells, read from the `structure.compare` row",
+      "inputs": "first, second: two cells, 0 to 599, as the solver named them",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a view: record {first, second, steps}",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every pair of cells 0 to 599",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "outside the manifest's model: the rows refuse a cell or layer that is not the model's (KN2), and no view is published"
+    },
+    {
+      "entry": "layer_predicate",
+      "function": "keeps the named layer predicate as the workspace record `structure.layer`",
+      "inputs": "cell, layer: the layer the solver named",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a workspace record `structure.layer`",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every cell 0 to 599 and every layer of that cell",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "outside the manifest's model: the rows refuse a cell or layer that is not the model's (KN2), and no view is published"
+    }
+  ],
+  "justification": [
+    {
+      "kind": "by_definition",
+      "statement": "representations entries publish or keep what the solver named and what the kernel rows answer",
+      "text": "Each entry either publishes a view of what one kernel row answers for the solver's named objects, or keeps the solver's named value as a workspace record: it chooses no object and changes no state.",
+      "evidence": {
+        "none": "a definition: the entries' checked source is their own statement"
+      }
+    },
+    {
+      "kind": "by_definition",
+      "statement": "the face-step distance between cells is zero from a cell to itself",
+      "text": "A distance counts the steps of the shortest path between two cells through shared faces; the path from a cell to itself has no step.",
+      "evidence": {
+        "none": "a definition: the path from a cell to itself has no step"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L1",
+    "input": {
+      "cells": [
+        7,
+        7
+      ],
+      "base": "solved"
+    },
+    "expected": [
+      {
+        "claim": "first",
+        "value": 7,
+        "from_step": 1
+      },
+      {
+        "claim": "second",
+        "value": 7,
+        "from_step": 1
+      },
+      {
+        "claim": "steps",
+        "value": 0,
+        "from_step": 2
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_representations"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "representations.compare_cells",
+          "statement": "representations entries publish or keep what the solver named and what the kernel rows answer",
+          "step": "step 1"
+        },
+        {
+          "node": "kernel:read_snapshot(structure.compare)",
+          "statement": "the face-step distance between cells is zero from a cell to itself",
+          "step": "step 2"
+        },
+        {
+          "node": "kernel:publish_view",
+          "statement": "representations entries publish or keep what the solver named and what the kernel rows answer",
+          "step": "step 1"
+        }
+      ],
+      "unmapped_nodes": [
+        "kernel:read_snapshot(filter.preview)",
+        "kernel:write_workspace(filter.apply)",
+        "kernel:write_workspace(set.save)",
+        "kernel:write_workspace(structure.layer)",
+        "representations.apply_filter",
+        "representations.effect_scope",
+        "representations.filter_counts",
+        "representations.layer_predicate",
+        "representations.save_set"
+      ],
+      "unmapped_steps": []
+    },
+    "reason": {
+      "statement": "the face-step distance between cells is zero from a cell to itself",
+      "idea": "To go from a cell to the same cell you take no step, so the distance is 0.",
+      "terms": [
+        "cell"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the two named cells are the same",
+        "outcome": "weaker conclusion: for two different cells the distance is at least 1; the instance does not show its value"
+      }
+    ],
+    "not_meant": "A view shows counts and distances of the objects the solver named. It does not choose a cell, a layer or a set for the solver, and it changes no state.",
+    "givens": [
+      {
+        "name": "first",
+        "value": 7,
+        "leaf": "kernel:read_snapshot(structure.compare)"
+      },
+      {
+        "name": "second",
+        "value": 7,
+        "leaf": "kernel:read_snapshot(structure.compare)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "The solver names cell 7 twice, and the view names the cells it compares.",
+        "result": 7
+      },
+      {
+        "check": "The shortest face-step path from a cell to itself has no step: 0.",
+        "result": 0
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "cell",
+        "piece",
+        "sticker-slot"
+      ],
+      "records": []
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:publish_view",
+        "spec": "A view carries the run's value to the shell; it changes no state.",
+        "test": "rust/c600-repr/tests/served_rows.rs::each_served_row_runs_its_entry_and_completes_as_its_kind_says"
+      },
+      {
+        "leaf": "kernel:read_snapshot(filter.preview)",
+        "spec": "The piece and slot counts of a named layer of a named cell, read from the model.",
+        "test": "rust/c600-repr/tests/served_rows.rs::each_served_row_runs_its_entry_and_completes_as_its_kind_says"
+      },
+      {
+        "leaf": "kernel:read_snapshot(structure.compare)",
+        "spec": "The fewest face steps between two named cells, as 0.4's structure explorer counts them.",
+        "test": "rust/c600-repr/tests/served_rows.rs::each_served_row_runs_its_entry_and_completes_as_its_kind_says"
+      },
+      {
+        "leaf": "kernel:write_workspace(filter.apply)",
+        "spec": "Keeps the applied filter preview in the workspace.",
+        "test": "rust/c600-repr/tests/served_rows.rs::each_served_row_runs_its_entry_and_completes_as_its_kind_says"
+      },
+      {
+        "leaf": "kernel:write_workspace(set.save)",
+        "spec": "Keeps the named set in the workspace.",
+        "test": "rust/c600-repr/tests/served_rows.rs::each_served_row_runs_its_entry_and_completes_as_its_kind_says"
+      },
+      {
+        "leaf": "kernel:write_workspace(structure.layer)",
+        "spec": "Keeps the named layer predicate in the workspace.",
+        "test": "rust/c600-repr/tests/served_rows.rs::each_served_row_runs_its_entry_and_completes_as_its_kind_says"
+      }
+    ]
+  }
+}

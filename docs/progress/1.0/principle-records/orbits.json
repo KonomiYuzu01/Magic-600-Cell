@@ -1,0 +1,234 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "orbits",
+  "entries": [
+    "orbit_catalogue",
+    "orbit_progress",
+    "orbit_residuals"
+  ],
+  "level": "L5",
+  "review": "The mathematician's pass of 23 November 2026 found M8 (orbit -1 presented the fixed centres as one orbit); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "binding": {
+    "source_sha256": "57cf50c1127d096c70897272f88c0f16ac3f1b63d29922f202643383ba5bfcb9",
+    "closure_sha256": "b8d3ab5327d23ae436c0576101a6abdd0e814b390984a4a8255b4851bc7e0bb7",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "bc8aab7cacd3ed4928fb743d7cca1a95fc0ecca6a5632dce27defe2c3d6047dc",
+    "statements": [
+      "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "orbit_catalogue",
+      "function": "each named orbit's pieces, from the kernel's orbit table",
+      "inputs": "named: orbit IDs",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "List<record {orbit, pieces}>",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every list of orbit indices -1 to 34",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": "An empty answer goes with an empty list of named orbits.",
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "outside the model's orbit indices -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
+    },
+    {
+      "entry": "orbit_progress",
+      "function": "per orbit, how many pieces are solved, away from home, wrongly oriented or other",
+      "inputs": "orbit; positions: rows {home, orbit, piece, position, slots} the caller read",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the progress record",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every orbit and positions list",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the record holds counts; zero counts are answers, not an empty one"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "outside the model's orbit indices -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
+    },
+    {
+      "entry": "orbit_residuals",
+      "function": "an orbit's residual: misplaced, misoriented and unknown pieces and the buffers' occupants",
+      "inputs": "members; buffer_a, buffer_b; positions: rows {home, orbit, piece, position, slots} the caller read",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the residual record",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L5",
+      "domain": "every orbit, buffer pair and positions list",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": "Empty lists with complete = true mean the orbit's named pieces are all home and oriented.",
+      "negative_scope": "solved = false names what is still wrong; it never names a next step.",
+      "outside_scope": "outside the model's orbit indices -1 to 34: the row refuses the orbit (KN2:input.named_object_invalid)"
+    }
+  ],
+  "justification": [
+    {
+      "kind": "certificate",
+      "statement": "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell",
+      "text": "Each of the 600 cells has one centre piece that no twist moves, so each centre is a position orbit of its own (Theory, hypothesis R). The orbit table lists them together under the index -1.",
+      "evidence": {
+        "path": "assets/manifest.json",
+        "sha256": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+        "basis": "certificate",
+        "check": "producer",
+        "label": "the model manifest, which pins the orbit table"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L5",
+    "input": {
+      "named": [
+        -1
+      ],
+      "base": "solved"
+    },
+    "expected": [
+      {
+        "claim": "rows",
+        "value": 1,
+        "from_step": 1
+      },
+      {
+        "claim": "orbit",
+        "value": -1,
+        "from_step": 2
+      },
+      {
+        "claim": "pieces",
+        "value": 600,
+        "from_step": 3
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_orbits"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "orbits.orbit_catalogue",
+          "statement": "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell",
+          "step": "step 1"
+        },
+        {
+          "node": "kernel:read_snapshot(orbits)",
+          "statement": "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell",
+          "step": "step 3"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:And",
+        "base:ExactAdd",
+        "base:ExactEq",
+        "base:ExactLess",
+        "base:Index",
+        "base:Length",
+        "base:Or",
+        "base:Push",
+        "base:Repeat",
+        "orbits.at_home",
+        "orbits.away",
+        "orbits.orbit_progress",
+        "orbits.orbit_residuals",
+        "orbits.oriented"
+      ],
+      "unmapped_steps": [
+        "step 2"
+      ]
+    },
+    "reason": {
+      "statement": "-1 is the orbit table's index for the 600 fixed cell centres, which are 600 singleton position orbits, one per cell",
+      "idea": "Every cell has a centre that never moves, so there are as many fixed centres as cells; the table keeps them under one index, -1, although each is an orbit of one position.",
+      "terms": [
+        "cell",
+        "orbit",
+        "piece"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the named index is -1, the fixed cell centres",
+        "outcome": "weaker conclusion: another orbit's piece count is the orbit table's, which the instance does not show"
+      }
+    ],
+    "not_meant": "A catalogue lists pieces; it does not say which piece to solve first.",
+    "givens": [
+      {
+        "name": "cells of the 600-cell",
+        "value": 600,
+        "leaf": "kernel:read_snapshot(orbits)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "One orbit is named, so the answer has 1 row.",
+        "result": 1
+      },
+      {
+        "check": "The row is the named index's: -1.",
+        "result": -1
+      },
+      {
+        "check": "Index -1 lists one centre per cell, and there are 600 cells: 600 pieces, each its own singleton orbit.",
+        "result": 600
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "orbit",
+        "residual",
+        "buffer",
+        "orientation"
+      ],
+      "records": [
+        "completion"
+      ]
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:read_snapshot(orbits)",
+        "spec": "The orbits row: each named orbit's pieces as the kernel's orbit table gives them; a read changes nothing.",
+        "test": "rust/c600-tools/tests/orbits_row.rs::the_row_answers_each_orbits_pieces_as_the_kernel_orbit_table_gives_them"
+      }
+    ]
+  }
+}

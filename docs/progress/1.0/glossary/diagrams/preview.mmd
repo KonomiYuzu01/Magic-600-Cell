@@ -1,0 +1,5 @@
+flowchart LR
+  P[proposal] --> E[engine]
+  E --> Pv["preview: the exact word and its effect"]
+  Pv -. fixed at one base revision .- B[base revision]
+  Pv -->|solver commits| C[commit]

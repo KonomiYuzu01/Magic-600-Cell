@@ -1,4 +1,7 @@
 flowchart LR
-  Op[any operation] -->|expands to| W[word of generators]
-  W --> g1[+17] --> g2[-402] --> g3[+1200] --> gd[...]
-  N[IDs 1..1200; negative = inverse]
+  C["cap c, counted from 0"] --> H["H_c, half-turn: generator 2c+1"]
+  C --> T["T_c, third-turn: generator 2c+2"]
+  H & T --> G["generator m of 600-cell-Full, 1 to 1,200"]
+  G --> I["-m: its inverse"]
+  G --> W[word]
+  W -->|counts| N["count in generators: says what it counts"]

@@ -120,12 +120,17 @@ use crate::budget::Budget;
 use crate::filter::{self, FilterPreview, FilterPreviewDeps, Predicate, ResolvedFilter, FRESH_FILTER_PREVIEW};
 use crate::forms;
 use crate::frame::{FrameChain, FrameStamp, PresentedFrame, ShownPreview};
+use crate::grip::{slot_map_digest, SlotMap, GRIP_PREFIX, GRIP_REBIND_ROW, SLOT_MAP_PROVENANCE, SLOT_MAP_RECORD};
 use crate::journal::{self, EntryKind, JournalEntry, JournalPage, JOURNAL_PAGE_LIMIT};
 use crate::jumble::{self, JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
+use crate::macros::{macro_record, menu_codes, Alphabet, Macro, MACRO_PREFIX, MACRO_PROVENANCE, MACRO_SAVE_ROW};
 use crate::palette::FIND_ROW;
 use crate::receipt::{
     code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
     ResultRef, Revision, Status,
+};
+use crate::recording::{
+    JOB_STOP_ROW, RECORDING_CONVERT_ROW, RECORDING_PLAY_ROW, RECORDING_START_ROW, RECORDING_STOP_ROW,
 };
 use crate::repair::{self, REPAIR_LIST_ROW};
 use crate::sets::{saved_set_record, SavedSet, REPLACE, SAVED_SET_PREFIX, SET_SAVE_RECORD, SET_SAVE_ROW};
@@ -142,6 +147,9 @@ use crate::worksheet::{
     WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use crate::workspace::{Provenance, RecordRead, RecordValue, RecordWrite, ResolvedDraft, WorkspaceRecord, RECORD_ROW};
+
+mod documents;
+mod playback;
 
 /// The mode of a revision with Jumble off: a session starts with Jumble off.
 pub const MODE: &str = "jumble_off";
@@ -168,8 +176,6 @@ pub const ROLLBACK_ROW: &str = "session.rollback";
 /// draft): a preview that replaced one the solver was shown commits only once this long has passed since the first
 /// frame that shows it.
 pub const SETTLE_DRAFT: Duration = Duration::from_millis(250);
-/// The stored row that plays a recording; a run inside its job never replaces a preview (ADR-D01.9).
-const RECORDING_PLAY_ROW: &str = "recording.play";
 
 /// The monotonic clock the layer measures ADR-D01.9's settle interval with: the time since a fixed start. The layer
 /// starts with the process's clock ([`MonotonicClock`]); a host may give it another ([`CommandLayer::set_clock`]).
@@ -383,6 +389,11 @@ pub struct ProgramJob {
     /// The budget the invocation declared, admitted under the ceiling ([`CommandLayer::budget_ceiling`]): the host runs
     /// the entry under it (KN7.7; draft).
     pub budget: Budget,
+    /// The module digest a recorded step names, for a job a playback's step started (EV4.10, EV4.14; LP4-9 draft): the
+    /// hex SHA-256 of the closure of the module's version that was active when the step was recorded. The host binds
+    /// the job to that version and no other (`Modules::bind_pinned`), so a module of the same name never stands in for
+    /// it. `None` for every other job, which binds the active version.
+    pub module: Option<String>,
 }
 
 impl ProgramJob {
@@ -453,6 +464,12 @@ enum JobKind {
     /// `jumble.repair.list`'s job: the cap the invocation named.
     Repair {
         cap: i64,
+    },
+    /// A document or log job (`file.document.compile`, `file.log.check`, `file.log.export`; LP4-14): its row and the
+    /// invocation's arguments, which the host's document service runs.
+    Document {
+        row: String,
+        args: Value,
     },
 }
 
@@ -603,12 +620,27 @@ pub struct Rollback {
     pub stop: Option<Status>,
 }
 
-/// The gesture and step of a multi-step rollback's step from its command ID, `{gesture}#{i}` with i at least 1
-/// (ADR-D01.15; draft). The history dock groups the steps by the gesture.
-pub fn rollback_step(command: &str) -> Option<(&str, u64)> {
-    let (gesture, step) = command.rsplit_once('#')?;
-    let step: u64 = step.parse().ok().filter(|&step| step >= 1)?;
-    (!gesture.is_empty() && step.to_string() == command[gesture.len() + 1..]).then_some((gesture, step))
+/// The gesture, step i and step count k of a multi-step rollback's step from its command ID, `{gesture}#{i}/{k}` with
+/// 1 <= i <= k, both in plain decimal (ADR-D01.15; draft; R2-5, owner, 23 November 2026, decision 4.2). The history
+/// dock groups the steps by the gesture, and k makes "j of k" durable: after a reopen the step ID alone tells a gesture
+/// cut at j of k from a whole one. The older form `{gesture}#{i}` names no step.
+pub fn rollback_step(command: &str) -> Option<(&str, u64, u64)> {
+    let (gesture, tail) = command.rsplit_once('#')?;
+    let (step, of) = tail.split_once('/')?;
+    let decimal = |text: &str| text.parse::<u64>().ok().filter(|n| n.to_string() == text);
+    let (step, of) = (decimal(step)?, decimal(of)?);
+    (!gesture.is_empty() && 1 <= step && step <= of).then_some((gesture, step, of))
+}
+
+/// The last action's place in a multi-step rollback when it was one of its steps (ADR-D01.15; draft), so a replay
+/// admits a step after the first only when it follows its gesture's step before it.
+#[derive(Clone, Debug)]
+struct StepAt {
+    gesture: String,
+    step: u64,
+    of: u64,
+    kind: TransactionKind,
+    epoch: u64,
 }
 
 /// Who turned ADR-D01.39's explore state on (draft): the solver, by `explore.set` from the shell, or a run inside a
@@ -895,10 +927,14 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     rollback: Option<Rollback>,
     /// The gesture, step and kind of the last action when it was a rollback's step (ADR-D01.15; draft), so a replay
     /// admits a step after the first only when it follows the gesture's step before it.
-    last_step: Option<(String, u64, TransactionKind, u64)>,
+    last_step: Option<StepAt>,
     /// The command IDs of the rollback steps the layer journaled or tried, by caller scope, for LI.30's lookup of a
     /// gesture's steps (ADR-D01.15): an ordinary command whose ID looks like a step is no step.
     step_ids: BTreeSet<Key>,
+    /// The step count k of each rollback gesture the layer journaled or tried, by caller scope and gesture ID
+    /// (ADR-D01.15; R2-5): LI.30's lookup builds the step IDs `{gesture}#{i}/{k}` from it, and one gesture ID names
+    /// one gesture whatever its k.
+    gestures: BTreeMap<Key, u64>,
     /// The part blocks the session keeps, each block's text by the SHA-256 hex of its bytes (BND.24, BND.85,
     /// CT-BND-27; draft). Record writes and workspace completions journal them; a replay keeps them again.
     blocks: BTreeMap<String, String>,
@@ -933,6 +969,11 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     recovery: Option<Error>,
     limbo: Option<Adoption>,
     generation: u64,
+    /// Capture and playback (LP4-9; [`crate::recording`]): the host's recorder, the capture in progress, the stored
+    /// recordings and playback states, and the live playback jobs and children.
+    rec: playback::Rec,
+    /// The document and log rows (LP4-14; [`crate::documents`]): the host's document service and its answers.
+    docs: documents::Docs,
 }
 
 impl<S: Store> CommandLayer<S> {
@@ -993,6 +1034,7 @@ impl<S: Store> CommandLayer<S> {
             rollback: None,
             last_step: None,
             step_ids: BTreeSet::new(),
+            gestures: BTreeMap::new(),
             predicates: BTreeMap::new(),
             filters: BTreeMap::new(),
             comparison: None,
@@ -1011,6 +1053,8 @@ impl<S: Store> CommandLayer<S> {
             recovery: None,
             limbo: None,
             generation: 0,
+            rec: playback::Rec::default(),
+            docs: documents::Docs::default(),
         }
     }
 
@@ -1227,26 +1271,31 @@ impl<S: Store> CommandLayer<S> {
                 }
                 // The row names the history and the direction: `layout.undo` and `layout.redo` step the layout history
                 // (ADR-D01.14), `session.undo` and `session.redo` the move history. A multi-step rollback's step is a
-                // move-history step under command `{gesture}#{i}`, and a step after the first follows its gesture's
-                // step before it in the same direction, as the live gesture writes them (ADR-D01.15).
+                // move-history step under command `{gesture}#{i}/{k}`, and a step after the first follows its
+                // gesture's step before it with the same k in the same direction, as the live gesture writes them
+                // (ADR-D01.15; R2-5).
                 let history = match (History::of(&stored.row), stored.row == ROLLBACK_ROW) {
                     (Some((history, named)), false) if named == direction => history,
                     (None, true) => {
-                        let Some((gesture, step)) = rollback_step(&stored.command) else {
-                            return Err(unadmitted("a rollback step whose command names no gesture and step"));
+                        let Some((gesture, step, of)) = rollback_step(&stored.command) else {
+                            return Err(unadmitted("a rollback step whose command names no gesture, step and count"));
                         };
-                        let follows = self.last_step.as_ref().is_some_and(|(last, at, kind, epoch)| {
-                            last == gesture
-                                && step.checked_sub(1) == Some(*at)
-                                && *kind == stored.kind
-                                && *epoch == stored.revision.epoch
+                        let follows = self.last_step.as_ref().is_some_and(|last| {
+                            last.gesture == gesture
+                                && step.checked_sub(1) == Some(last.step)
+                                && last.of == of
+                                && last.kind == stored.kind
+                                && last.epoch == stored.revision.epoch
                         });
                         if step > 1 && !follows {
                             return Err(unadmitted(
                                 "a rollback step that does not follow its gesture's step before it in its epoch",
                             ));
                         }
-                        if step == 1 && self.receipts.contains_key(&(stored.caller.scope(), gesture.to_owned())) {
+                        let gesture_key = (stored.caller.scope(), gesture.to_owned());
+                        if step == 1
+                            && (self.receipts.contains_key(&gesture_key) || self.gestures.contains_key(&gesture_key))
+                        {
                             return Err(unadmitted("a rollback whose gesture ID an earlier action used"));
                         }
                         if self.receipts.contains_key(&(stored.caller.scope(), stored.command.clone())) {
@@ -1279,13 +1328,26 @@ impl<S: Store> CommandLayer<S> {
                 if stored_workspace && !matches!(stored.caller, Caller::Shell) {
                     return Err(unadmitted("a workspace row's completion whose caller is not the shell"));
                 }
+                // No job's completion writes the applied grip map or the macro base, and none comes under their rows,
+                // which run no job and write only their own record (EV4.8, EV4.9).
+                if stored.row == GRIP_REBIND_ROW || stored.row == MACRO_SAVE_ROW {
+                    return Err(unadmitted("a job's completion under the grip map's or the macro base's row"));
+                }
+                if stored.records.iter().any(|write| reserved_by_row(&write.name)) {
+                    return Err(unadmitted("a job's completion that writes the grip map or the macro base"));
+                }
                 self.jobs_issued = self.jobs_issued.max(job);
                 // The records' blocks were read when the job finished (PS1.16), so the replay needs no reader.
                 self.workspace_adoption(meta, job, result, stored.records.clone(), stored.budget)
             }
-            // The record's block was read when the record was written (PS1.16), so the replay needs no reader.
+            // The record's block was read when the record was written (PS1.16), so the replay needs no reader. The
+            // applied grip map and the macro base are written only by their own rows from the shell, as the live path
+            // writes them (EV4.8, EV4.9; B7).
             TransactionKind::Record => match stored.record.clone() {
-                Some(RecordWrite { name, value: Some(value) }) => self.plan_record(meta, name, value),
+                Some(RecordWrite { name, value: Some(value) }) => {
+                    reserved_write(stored, &name, &value, &self.records).map_err(|detail| unadmitted(&detail))?;
+                    self.plan_record(meta, name, value)
+                }
                 _ => return Err(broken("a record write names no record and value")),
             },
             TransactionKind::Policy => match stored.policy {
@@ -1655,8 +1717,8 @@ impl<S: Store> CommandLayer<S> {
         Ok(())
     }
 
-    /// Whether run `run` runs inside a `recording.play` job: its job, or a job of a run that invoked it, plays a
-    /// recording. A chain that does not get older is not followed.
+    /// Whether run `run` runs inside a `recording.play` job: its job, or a job of a run that invoked it, is an unattended
+    /// step a playback started ([`CommandLayer::played_child`]). A chain that does not get older is not followed.
     fn in_recording(&self, run: &str) -> bool {
         let mut run = run.to_owned();
         let mut below = u64::MAX;
@@ -1667,7 +1729,7 @@ impl<S: Store> CommandLayer<S> {
             let Some(program) = self.running.get(&job) else {
                 return false;
             };
-            if program.row == RECORDING_PLAY_ROW {
+            if self.played_child(program) {
                 return true;
             }
             match &program.caller {
@@ -1907,14 +1969,18 @@ impl<S: Store> CommandLayer<S> {
         self.rollback.as_ref()
     }
 
-    /// LI.30's lookup of a gesture's steps (ADR-D01.15; draft): the shell's receipts of `{gesture}#1`, `{gesture}#2`
-    /// and on, in order, up to the first step with none. After a crash a retry finds the complete prefix that landed;
-    /// a step whose transient receipt a restart lost answers `unknown_outcome`.
+    /// LI.30's lookup of a gesture's steps (ADR-D01.15; draft): the shell's receipts of `{gesture}#1/{k}`,
+    /// `{gesture}#2/{k}` and on, in order, up to the first step with none. After a crash a retry finds the complete
+    /// prefix that landed; a step whose transient receipt a restart lost answers `unknown_outcome`. Each receipt's
+    /// command carries k, so after a reopen j landed steps of k tell a cut gesture from a whole one (R2-5).
     pub fn rollback_steps(&self, gesture: &str) -> Vec<Receipt> {
         let scope = Caller::Shell.scope();
+        let Some(&of) = self.gestures.get(&(scope.clone(), gesture.to_owned())) else {
+            return Vec::new();
+        };
         let mut steps = Vec::new();
-        for step in 1.. {
-            let key = (scope.clone(), format!("{gesture}#{step}"));
+        for step in 1..=of {
+            let key = (scope.clone(), format!("{gesture}#{step}/{of}"));
             if !self.step_ids.contains(&key) {
                 break;
             }
@@ -2303,6 +2369,7 @@ impl<S: Store> CommandLayer<S> {
             }
         }
         self.next_epoch();
+        self.end_plays();
         self.generation += 1;
     }
 
@@ -2545,7 +2612,10 @@ impl<S: Store> CommandLayer<S> {
                 self.jumble_mode(REPAIR_LIST_ROW)?;
                 self.exclusive_free()
             }
-            "protection.orbit.set" | POLICY_ROW => Ok(()),
+            "protection.orbit.set" | POLICY_ROW | GRIP_REBIND_ROW | MACRO_SAVE_ROW => Ok(()),
+            RECORDING_START_ROW | RECORDING_STOP_ROW | RECORDING_PLAY_ROW | RECORDING_CONVERT_ROW | JOB_STOP_ROW => {
+                self.recording_gates(row)
+            }
             RECORD_ROW => match self.provenance {
                 Some(_) => Ok(()),
                 None => {
@@ -2562,6 +2632,7 @@ impl<S: Store> CommandLayer<S> {
                 Some(_) => Ok(()),
                 None => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` needs the host's view model", row.id))),
             },
+            _ if crate::documents::document_row(&row.id) => self.document_gates(row),
             _ => Err(Error::new(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id))),
         }
     }
@@ -2585,7 +2656,8 @@ impl<S: Store> CommandLayer<S> {
             .values()
             .filter(|program| self.table.row(&program.row).is_some_and(|row| row.lane == Lane::Program))
             .count();
-        if queued + running >= self.program_capacity {
+        // A live playback holds the program lane too (H-08: `recording.play` is a program-lane job row).
+        if queued + running + self.rec.plays.len() >= self.program_capacity {
             return Err(Error::new(code::LANE_FULL, "the program lane is full"));
         }
         Ok(())
@@ -2628,7 +2700,8 @@ impl<S: Store> CommandLayer<S> {
     /// is the solver's too, not `workspace.set`, which M6 does not grant a program (draft), and not `worksheet.save` or
     /// `worksheet.load`, since a work sheet changes only in a command the solver invokes (LB7.2), and not
     /// `worksheet.compare`, the solver's comparison before a reuse (U6-040; draft), whose job would hold the exclusive
-    /// lane the solver's previews take. Of the rows an entry
+    /// lane the solver's previews take, and not a `recording.*` row: capture and playback are the solver's (EV4.22: RPI.14
+    /// stays true, playback is solver-invoked). Of the rows an entry
     /// runs, an overlay row or a served row, only a query or view row: a run alone causes no durable action, so it
     /// reaches no workspace row, whose completion is a durable write outside the undo order, and no file row (findings
     /// B3 and B4 of the KN5 boundary attack). A run that a solver command started reaches none either: a program
@@ -2639,9 +2712,13 @@ impl<S: Store> CommandLayer<S> {
             && row.id != "protection.orbit.set"
             && row.id != POLICY_ROW
             && row.id != RECORD_ROW
+            && row.id != GRIP_REBIND_ROW
+            && row.id != MACRO_SAVE_ROW
             && row.id != WORKSHEET_SAVE_ROW
             && row.id != WORKSHEET_LOAD_ROW
             && row.id != WORKSHEET_COMPARE_ROW
+            && !crate::recording::recording_row(&row.id)
+            && !crate::documents::document_row(&row.id)
             && (row.overlay.is_none() || matches!(row.kind, Kind::Query | Kind::View))
     }
 
@@ -2713,6 +2790,9 @@ impl<S: Store> CommandLayer<S> {
         if self.receipts.contains_key(&key) || self.lost.contains_key(&key) {
             return self.kernel_outcome(caller, &invocation.command, &request);
         }
+        // A manual step's pending entry is dispatched now (EV4.20); capture reads the invocation before it runs.
+        self.rec.awaiting.remove(&key);
+        let captured = self.capture_begin(caller, &invocation, &request);
         let (job, status) = match self.dispatch(caller, &invocation, &request, &inputs) {
             Ok(answer) => answer,
             Err(error) => (None, Status::Refused(error)),
@@ -2723,8 +2803,11 @@ impl<S: Store> CommandLayer<S> {
             return receipt;
         }
         let receipt = Receipt { command: invocation.command.clone(), request: request.clone(), job, status };
-        let record = self.receipts.entry(key).or_insert(Record { request, receipt, durable: false });
-        record.receipt.clone()
+        let record = self.receipts.entry(key.clone()).or_insert(Record { request, receipt, durable: false });
+        let receipt = record.receipt.clone();
+        self.capture_end(captured, key);
+        self.reconcile_children();
+        receipt
     }
 
     fn dispatch(
@@ -2740,6 +2823,9 @@ impl<S: Store> CommandLayer<S> {
         let Some(row) = self.table.row(&invocation.row).cloned() else {
             return refused(code::UNKNOWN_ROW, format!("no row `{}`", invocation.row));
         };
+        // An unattended playback step plays only the eligible row it was checked for, with no token (EV4.12, EV4.17,
+        // EV4.22): whatever reached this point, nothing else is dispatched while it plays.
+        self.playing_admits(&row, invocation)?;
         if let Caller::Runtime { .. } = caller {
             if matches!(row.kind, Kind::Commit | Kind::App) {
                 return refused(code::COMMIT_ROW_REFUSED, format!("the runtime may not invoke `{}` (KN5.15)", row.id));
@@ -2787,6 +2873,8 @@ impl<S: Store> CommandLayer<S> {
             "protection.orbit.set" => self.set_orbits(caller, invocation, request),
             POLICY_ROW => self.set_policy(caller, invocation, request),
             RECORD_ROW => self.write_record(caller, invocation, request),
+            GRIP_REBIND_ROW => self.rebind_grip(caller, invocation, request),
+            MACRO_SAVE_ROW => self.save_macro(caller, invocation, request),
             WORKSHEET_SAVE_ROW => self.save_worksheet(caller, invocation, request),
             WORKSHEET_LOAD_ROW => self.load_worksheet(caller, invocation, request),
             WORKSHEET_COMPARE_ROW => self.admit_compare(caller, invocation),
@@ -2797,6 +2885,12 @@ impl<S: Store> CommandLayer<S> {
             REPAIR_LIST_ROW => self.admit_repair(caller, invocation),
             VIEW_OPEN_ROW | VIEW_CLOSE_ROW => self.view_row(caller, invocation, &row, args),
             FIND_ROW => self.find_row(caller, &row, args),
+            RECORDING_START_ROW => self.recording_start(&row, args),
+            RECORDING_STOP_ROW => self.recording_stop(&row, args),
+            RECORDING_PLAY_ROW => self.recording_play(caller, invocation, &row, args),
+            RECORDING_CONVERT_ROW => self.recording_convert(caller, invocation, request, &row, args),
+            JOB_STOP_ROW => self.job_stop(&row, args),
+            _ if crate::documents::document_row(&row.id) => self.document_row(caller, invocation, request, &row, args),
             _ if row.overlay.is_some() => {
                 // A language-defined row whose module failed its static check runs nothing: the palette lists it as
                 // unavailable with this diagnostic, and a press by key or palette is refused with it (KN5.4, EV4.2).
@@ -2997,10 +3091,16 @@ impl<S: Store> CommandLayer<S> {
                     self.build_repair(job.id, &(job.scope, job.command), cap);
                     ran += 1;
                 }
+                JobKind::Document { row, args } => {
+                    self.run_document_job(job.id, &(job.scope, job.command), &row, &args);
+                    ran += 1;
+                }
             }
         }
         self.jobs = keep;
-        ran
+        // A playback's user step may be a preview job that just settled (EV4.20).
+        self.reconcile_children();
+        ran + self.run_plays()
     }
 
     fn build_preview(
@@ -3456,6 +3556,8 @@ impl<S: Store> CommandLayer<S> {
         self.revision = transaction.revision.clone();
         self.order = transaction.order;
         self.head = head;
+        // The action each durable invocation took, for a recording's `action` and a playback's map (LI.9, EV4.18).
+        self.rec.took.insert((transaction.caller.scope(), transaction.command.clone()), transaction.order);
         // A record write, or its undo or redo, or a workspace row's writes: each record's version advances and never
         // goes back (KN0.8).
         for RecordWrite { name, value } in transaction.record.iter().chain(&transaction.records) {
@@ -3551,14 +3653,16 @@ impl<S: Store> CommandLayer<S> {
             }
             Tree::None => {}
         }
-        // A rollback's step, for the replay's check of the next one (ADR-D01.15).
-        self.last_step = match transaction.row == ROLLBACK_ROW {
-            true => rollback_step(&transaction.command)
-                .map(|(gesture, step)| (gesture.to_owned(), step, transaction.kind, transaction.revision.epoch)),
-            false => None,
-        };
+        // A rollback's step, for the replay's check of the next one and LI.30's lookup (ADR-D01.15; R2-5).
+        self.last_step = None;
         if transaction.row == ROLLBACK_ROW {
-            self.step_ids.insert((transaction.caller.scope(), transaction.command.clone()));
+            let scope = transaction.caller.scope();
+            if let Some((gesture, step, of)) = rollback_step(&transaction.command) {
+                self.gestures.entry((scope.clone(), gesture.to_owned())).or_insert(of);
+                let (gesture, kind, epoch) = (gesture.to_owned(), transaction.kind, transaction.revision.epoch);
+                self.last_step = Some(StepAt { gesture, step, of, kind, epoch });
+            }
+            self.step_ids.insert((scope, transaction.command.clone()));
         }
         let receipt = transaction.receipt();
         let key = (transaction.caller.scope(), transaction.command.clone());
@@ -3596,7 +3700,10 @@ impl<S: Store> CommandLayer<S> {
         }
         let mut keep = VecDeque::new();
         for job in std::mem::take(&mut self.jobs) {
-            if matches!(&job.kind, JobKind::Program(program) if program.kind == Kind::File) {
+            // A document job reads documents and files, not the replaced state, so it finishes too (LP4-14).
+            if matches!(&job.kind, JobKind::Program(program) if program.kind == Kind::File)
+                || matches!(&job.kind, JobKind::Document { .. })
+            {
                 keep.push_back(job);
                 continue;
             }
@@ -4047,12 +4154,15 @@ impl<S: Store> CommandLayer<S> {
     /// `session.rollback {hint, token}` (ADR-D01.15; draft; the integrator's ruling of 22 November 2026): one solver
     /// action that rolls the move history back or forward to the state just after action `hint.target` (0: the
     /// session's start; [`CommandLayer::rollback_hint`]). It is k ordinary undo or redo steps of the move history, each
-    /// its own transaction with its own admission and receipt under command `{gesture}#{i}`, where the gesture is the
-    /// press's command ID, and with the gesture and step i of k in its arguments; so no journal kind or format changes,
-    /// and every span has one encoding with no branch transition. The layer holds the writer for the whole gesture and
-    /// stops at the first step that does not commit, reporting j of k ([`CommandLayer::rollback`]). A crash leaves a
-    /// complete prefix of steps, which a retry finds by LI.30's lookup of the step command IDs
-    /// ([`CommandLayer::rollback_steps`]); there is no all-or-nothing across a crash.
+    /// its own transaction with its own admission and receipt under command `{gesture}#{i}/{k}`, where the gesture is
+    /// the press's command ID, and with the gesture and step i of k in its arguments; so no journal kind or format
+    /// changes, and every span has one encoding with no branch transition. The layer holds the writer for the whole
+    /// gesture and stops at the first step that does not commit, reporting j of k ([`CommandLayer::rollback`]). A crash
+    /// leaves a complete prefix of steps, which a retry finds by LI.30's lookup of the step command IDs
+    /// ([`CommandLayer::rollback_steps`]); there is no all-or-nothing across a crash. Since each step ID carries k,
+    /// "j of k" is durable: a reopen tells a cut gesture from a whole one by the step IDs alone (R2-5, owner, 23
+    /// November 2026, decision 4.2). A gesture ID names one gesture: a press under an ID whose gesture has steps is
+    /// refused with `command_id_reused`, whatever its k.
     ///
     /// The token binds the hint and the state and protection revisions as `session.undo`'s does; a raced hint is
     /// `undo_superseded` before the revisions are checked. Each step takes `session.undo`'s permission path under the
@@ -4071,7 +4181,7 @@ impl<S: Store> CommandLayer<S> {
             return refused(code::ARGUMENT_FORM, "only the layer names a rollback's gesture and steps");
         }
         let gesture = invocation.command.as_str();
-        if rollback_step(&format!("{gesture}#1")) != Some((gesture, 1)) {
+        if rollback_step(&format!("{gesture}#1/1")) != Some((gesture, 1, 1)) {
             return refused(code::ARGUMENT_FORM, "a rollback's command ID must name its gesture's steps");
         }
         let binding = self.authenticate(invocation)?;
@@ -4092,6 +4202,10 @@ impl<S: Store> CommandLayer<S> {
         if steps.iter().any(|step| taken(&(scope.clone(), step.command.clone()))) {
             return refused(code::COMMAND_ID_REUSED, "a step of the gesture would reuse a command ID");
         }
+        if self.gestures.contains_key(&(scope.clone(), invocation.command.clone())) {
+            return refused(code::COMMAND_ID_REUSED, "the gesture ID names an earlier gesture's steps");
+        }
+        self.gestures.insert((scope.clone(), invocation.command.clone()), of);
         let (mut landed, mut last, mut stop) = (0, None, None);
         for step in &steps {
             let request = self.request(caller, step, &[]);
@@ -4123,15 +4237,15 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// Step `step` of `of` of the rollback `invocation` presses: command `{gesture}#{step}` on the same row, with the
-    /// press's arguments, the gesture and the step in its arguments, and the press's token and epoch.
+    /// Step `step` of `of` of the rollback `invocation` presses: command `{gesture}#{step}/{of}` on the same row, with
+    /// the press's arguments, the gesture, the step and the count in its arguments, and the press's token and epoch.
     fn rollback_invocation(invocation: &Invocation, step: u64, of: u64) -> Invocation {
         let mut args = invocation.args.as_object().cloned().unwrap_or_default();
         args.insert("gesture".to_owned(), Value::String(invocation.command.clone()));
         args.insert("step".to_owned(), Value::Int(step as i64));
         args.insert("of".to_owned(), Value::Int(of as i64));
         Invocation {
-            command: format!("{}#{step}", invocation.command),
+            command: format!("{}#{step}/{of}", invocation.command),
             row: ROLLBACK_ROW.to_owned(),
             args: Value::Object(args),
             token: invocation.token.clone(),
@@ -4390,8 +4504,9 @@ impl<S: Store> CommandLayer<S> {
 
     /// `workspace.set` (M6's record write): writes `payload` with its provenance block under `record` as one durable
     /// action whose receipt is `completed(workspace)`. The host's provenance reader checks the block first (PS1.16); a
-    /// block it refuses, a missing reader or a bad argument writes nothing. A name under `set/` is a saved set's
-    /// ([`crate::sets`]) and is refused with `KN5:input.argument_form`.
+    /// block it refuses, a missing reader or a bad argument writes nothing. A name under `set/`, `grip/` or `macro/`
+    /// is a saved set's, the applied grip map's or the macro base's ([`crate::sets`], [`crate::grip`],
+    /// [`crate::macros`]) and is refused with `KN5:input.argument_form`.
     fn write_record(
         &mut self,
         caller: &Caller,
@@ -4404,7 +4519,7 @@ impl<S: Store> CommandLayer<S> {
         else {
             return refused(code::ARGUMENT_FORM, "`record` and `provenance` are text");
         };
-        saved_set_name(name)?;
+        reserved_name(name)?;
         let Some(reader) = &self.provenance else {
             return refused(code::ROW_NOT_BUILT, format!("`{RECORD_ROW}` needs the host's provenance reader"));
         };
@@ -4437,7 +4552,7 @@ impl<S: Store> CommandLayer<S> {
             revision,
             recipe: Value::Null,
             orbits: self.protected.orbits().to_vec(),
-            confirm: false,
+            confirm: meta.confirm,
             job: None,
             result: None,
             record: Some(RecordWrite { name: name.clone(), value: Some(value.clone()) }),
@@ -4450,6 +4565,129 @@ impl<S: Store> CommandLayer<S> {
         };
         let tree = Tree::Push { node: None, change: Change::Record { name, before, after: Some(value) } };
         Adoption { transaction, state: None, protected: None, head: self.head, tree, preview: None, side: Side::Stay }
+    }
+
+    // ----- grip.rebind -----
+
+    /// `grip.rebind` (EV4.8; [`crate::grip`]): replaces the applied grip-slot map with the transported map `map` from
+    /// `anchor`, as one record write of `grip/map` whose receipt is `completed(workspace)`, undoable as a workspace
+    /// inverse. Refused, writing nothing: a map or anchor of another form (`KN5:input.argument_form`), and an
+    /// `expected_map` that is not the digest of the applied map ([`CommandLayer::slot_map_digest`];
+    /// `KN5:stale.revision_changed`).
+    fn rebind_grip(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let args = &invocation.args;
+        let model = self.kernel.identity().model_id;
+        let map = SlotMap::from_args(args.get("anchor"), args.get("map"), &model)?;
+        if args.get("expected_map").and_then(Value::as_str) != Some(self.slot_map_digest().as_str()) {
+            return refused(code::REVISION_CHANGED, "`expected_map` is not the digest of the applied grip map");
+        }
+        let value = RecordValue { payload: map.to_payload(), provenance: SLOT_MAP_PROVENANCE.to_owned() };
+        let meta = Meta::of(caller, invocation, request);
+        let adoption = self.plan_record(meta, SLOT_MAP_RECORD.to_owned(), value);
+        self.transact(adoption)
+    }
+
+    /// The applied grip-slot map the solver's last rebind wrote, or `None` while the host's default map applies
+    /// (EV4.8).
+    pub fn slot_map(&self) -> Option<SlotMap> {
+        self.record(SLOT_MAP_RECORD).and_then(|value| SlotMap::from_payload(&value.payload))
+    }
+
+    /// The digest `grip.rebind`'s `expected_map` must name: the applied map's ([`crate::grip::slot_map_digest`]).
+    pub fn slot_map_digest(&self) -> String {
+        slot_map_digest(self.record(SLOT_MAP_RECORD).map(|value| &value.payload))
+    }
+
+    // ----- macro.save -----
+
+    /// `macro.save` (EV4.9; [`crate::macros`]): saves `word` under `name` in the macro base as one record write of
+    /// `macro/<name>` whose receipt is `completed(workspace)`, undoable as a workspace inverse. A save under a name
+    /// that holds a macro writes its next version. It neither selects, inserts nor executes the word, and it is
+    /// allowed in either Jumble mode, since one base serves both puzzles. Refused, writing nothing, in this order:
+    /// without `confirm: true` (H-08's `confirm` gate; `KN5:input.confirmation_required`), a name that is not text or
+    /// is empty and a word of another form (`KN5:input.argument_form`), a recipe the kernel refuses (its error), and a
+    /// menu word without a pinned twist menu (`KN5:input.row_not_built`).
+    ///
+    /// A stored word, `word: {"record": r}` (BND.32; draft): the record's letters, or a work sheet's complete
+    /// operation ([`RecordValue::operation`]), saved as a Full word whose record keeps the stored word's provenance
+    /// block, which the host's reader checks as `worksheet.save` checks a sheet's (PS1.16), and whose source pins the
+    /// record's content digest ([`crate::macros::stored_source`]). Refused, writing nothing, also for: no reader
+    /// (`KN5:input.row_not_built`), a record that is missing or holds no word (`KN2:input.named_object_invalid`), a
+    /// block the reader refuses (its error) and letters the kernel refuses (its error).
+    fn save_macro(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
+        let meta = Meta::of(caller, invocation, request);
+        if !meta.confirm {
+            return refused(code::CONFIRMATION_REQUIRED, "`macro.save` saves only with `confirm: true`");
+        }
+        let args = &invocation.args;
+        let Some(name) = args.get("name").and_then(Value::as_str).filter(|name| !name.is_empty()) else {
+            return refused(code::ARGUMENT_FORM, "a macro's name is a nonempty text");
+        };
+        let word = args.get("word").expect("the names check saw the word");
+        let only = |key: &str| word.get(key).filter(|_| word.as_object().is_some_and(|o| o.len() == 1));
+        let mut provenance = MACRO_PROVENANCE.to_owned();
+        let mut source = word.clone();
+        let (alphabet, identity, letters) = if let Some(recipe) = only("recipe") {
+            let recipe = self.kernel.recipe(recipe)?;
+            let letters = self.kernel.letters(&recipe)?.into_iter().map(i64::from).collect();
+            (Alphabet::Full, self.kernel.identity(), letters)
+        } else if let Some(letters) = only("menu") {
+            let Some(twists) = &self.twists else {
+                return refused(code::ROW_NOT_BUILT, "a menu word needs the host's pinned twist menu");
+            };
+            let codes = menu_codes(letters, twists.menu.items.len())?;
+            (Alphabet::Menu, twists.context.identity(Some(&*twists.menu)), codes)
+        } else if let Some(stored) = only("record").and_then(Value::as_str) {
+            // BND.32: a macro of a stored word keeps the word's block.
+            let Some(reader) = &self.provenance else {
+                return refused(code::ROW_NOT_BUILT, "a macro of a stored word needs the host's provenance reader");
+            };
+            let Some(value) = self.records.get(stored).and_then(|record| record.value.as_ref()) else {
+                return refused(code::NAMED_OBJECT_INVALID, "no such record");
+            };
+            let Some(letters) = value.operation() else {
+                let detail = "the record holds neither a list of letters nor a work sheet";
+                return refused(code::NAMED_OBJECT_INVALID, detail);
+            };
+            reader.check(value.provenance.as_bytes())?;
+            self.kernel.word(&letters)?;
+            provenance = value.provenance.clone();
+            source = crate::macros::stored_source(stored, &value.digest());
+            (Alphabet::Full, self.kernel.identity(), letters)
+        } else {
+            let detail = "a macro's word is `{\"recipe\": [...]}`, `{\"menu\": [...]}` or `{\"record\": name}`";
+            return refused(code::ARGUMENT_FORM, detail);
+        };
+        let saved = Macro {
+            name: name.to_owned(),
+            alphabet,
+            identity,
+            length: letters.len() as u64,
+            literal: crate::macros::literal_digest(alphabet, &letters),
+            letters,
+            start: self.state_digest().to_owned(),
+            source,
+            keys: alphabet.contracts(),
+        };
+        let value = RecordValue { payload: saved.to_payload(), provenance };
+        let adoption = self.plan_record(meta, macro_record(name), value);
+        self.transact(adoption)
+    }
+
+    /// The macro base (EV4.9): every macro the records hold, in name order, for both puzzles.
+    pub fn macro_base(&self) -> Vec<Macro> {
+        let records = self.records.iter().filter(|(name, _)| name.starts_with(MACRO_PREFIX));
+        records.filter_map(|(_, record)| record.value.as_ref().and_then(|v| Macro::from_payload(&v.payload))).collect()
     }
 
     // ----- worksheet.save and worksheet.load -----
@@ -4480,7 +4718,7 @@ impl<S: Store> CommandLayer<S> {
         let (Some(source), Some(name)) = (source, name) else {
             return refused(code::ARGUMENT_FORM, "a work sheet is saved from `{\"record\": name}` under a name");
         };
-        saved_set_name(name)?;
+        reserved_name(name)?;
         let (sheet, value) = self.drafted(source)?;
         reader.check(value.provenance.as_bytes())?;
         let provenance = value.provenance.clone();
@@ -5438,6 +5676,7 @@ impl<S: Store> CommandLayer<S> {
             overlay,
             inputs: inputs.to_vec(),
             budget,
+            module: self.child_module(caller, &invocation.command),
         };
         self.jobs.push_back(Job {
             id,
@@ -5539,7 +5778,9 @@ impl<S: Store> CommandLayer<S> {
         };
         self.settle(&key, status);
         self.generation += 1;
-        self.receipts.get(&key).map(|record| record.receipt.clone())
+        let receipt = self.receipts.get(&key).map(|record| record.receipt.clone());
+        self.reconcile_children();
+        receipt
     }
 
     /// The checks a job's output passes before the layer takes it (draft): only a workspace row's job writes records,
@@ -5571,6 +5812,11 @@ impl<S: Store> CommandLayer<S> {
     /// under the model the job read. A name that holds a saved set fails it with `KN5:input.saved_set_exists` unless
     /// the invocation carried `replace: true`. A failed job writes nothing.
     fn workspace_writes(&self, program: &ProgramJob, output: JobOutput) -> Result<(String, Vec<RecordWrite>), Error> {
+        // The applied grip map and the macro base are written by their own rows alone (EV4.8, EV4.9).
+        if let Some(name) = output.records.keys().find(|name| reserved_by_row(name)) {
+            let detail = format!("the output's record `{name}` is the grip map's or the macro base's");
+            return Err(Error::new(code::NAMED_OBJECT_INVALID, detail));
+        }
         if program.row != SET_SAVE_ROW {
             if let Some(name) = output.records.keys().find(|name| name.starts_with(SAVED_SET_PREFIX)) {
                 let detail = format!("the output's record `{name}` is a saved set's, which only `set.save` writes");
@@ -5618,11 +5864,72 @@ impl<S: Store> CommandLayer<S> {
 }
 
 /// A record name `workspace.set` and `worksheet.save` refuse: a name under `set/`, which only a `set.save` completion
-/// writes ([`crate::sets`]; draft).
-fn saved_set_name(name: &str) -> Result<(), Error> {
-    match name.starts_with(SAVED_SET_PREFIX) {
-        true => Err(Error::new(code::ARGUMENT_FORM, "a name under `set/` is a saved set's; only `set.save` writes it")),
-        false => Ok(()),
+/// writes ([`crate::sets`]; draft), under `grip/`, which only `grip.rebind` writes ([`crate::grip`]), or under
+/// `macro/`, which only `macro.save` writes ([`crate::macros`]).
+fn reserved_name(name: &str) -> Result<(), Error> {
+    let owner = [(SAVED_SET_PREFIX, SET_SAVE_ROW), (GRIP_PREFIX, GRIP_REBIND_ROW), (MACRO_PREFIX, MACRO_SAVE_ROW)]
+        .into_iter()
+        .find(|(prefix, _)| name.starts_with(prefix));
+    match owner {
+        Some((prefix, row)) => {
+            Err(Error::new(code::ARGUMENT_FORM, format!("a name under `{prefix}` is reserved; only `{row}` writes it")))
+        }
+        None => Ok(()),
+    }
+}
+
+/// Whether record `name` is the applied grip map's or the macro base's, which only `grip.rebind` and `macro.save` write
+/// (EV4.8, EV4.9).
+fn reserved_by_row(name: &str) -> bool {
+    name.starts_with(GRIP_PREFIX) || name.starts_with(MACRO_PREFIX)
+}
+
+/// Whether a stored record write of `name` with `value` is one the live path makes (EV4.8, EV4.9; B7): a write of
+/// `grip/` or `macro/`, and a write under `grip.rebind` or `macro.save`, come only from that row, from the shell, to
+/// its own record with a value that reads; a `macro.save` write also carries its stored confirmation. A macro's block
+/// is the row's own, or, for a stored word, the block of the record its source names, which `records` (the replay's,
+/// at this point of the journal) holds at the content digest the source pins, with the macro's letters that record's
+/// word (BND.32). The reason, otherwise.
+fn reserved_write(
+    stored: &Transaction,
+    name: &str,
+    value: &RecordValue,
+    records: &BTreeMap<String, WorkspaceRecord>,
+) -> Result<(), String> {
+    let grip = name.starts_with(GRIP_PREFIX) || stored.row == GRIP_REBIND_ROW;
+    let saved = name.starts_with(MACRO_PREFIX) || stored.row == MACRO_SAVE_ROW;
+    if !grip && !saved {
+        return Ok(());
+    }
+    let shell = matches!(stored.caller, Caller::Shell);
+    let admitted = if grip {
+        shell
+            && stored.row == GRIP_REBIND_ROW
+            && name == SLOT_MAP_RECORD
+            && value.provenance == SLOT_MAP_PROVENANCE
+            && SlotMap::from_payload(&value.payload).is_some()
+    } else {
+        let read = Macro::from_payload(&value.payload);
+        let block = |read: &Macro| match read.stored() {
+            None => value.provenance == MACRO_PROVENANCE,
+            Some((record, digest)) => {
+                let held = records.get(record).and_then(|record| record.value.as_ref());
+                held.is_some_and(|held| {
+                    held.digest() == digest
+                        && held.provenance == value.provenance
+                        && read.alphabet == Alphabet::Full
+                        && held.operation().as_ref() == Some(&read.letters)
+                })
+            }
+        };
+        shell
+            && stored.row == MACRO_SAVE_ROW
+            && stored.confirm
+            && read.is_some_and(|read| macro_record(&read.name) == name && block(&read))
+    };
+    match admitted {
+        true => Ok(()),
+        false => Err(format!("a write of `{name}` under `{}` that no rebind or macro save makes", stored.row)),
     }
 }
 

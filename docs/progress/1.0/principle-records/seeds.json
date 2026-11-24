@@ -1,0 +1,262 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "seeds",
+  "entries": [
+    "seed_report",
+    "stage_order"
+  ],
+  "level": "L2",
+  "review": "The mathematician's pass of 23 November 2026 found M7 (the reason said nothing solved is disturbed again; the justification is a topological sort) and their re-check M27 (Kahn's argument is the proof, the test only a check); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "binding": {
+    "source_sha256": "c7cc7fd2ebb07fe63c517be838688fcbd827bf72385b2743dab627025d09341d",
+    "closure_sha256": "99cde9efa5f80cf79f1119ed60b8772648934cda615c25e0408771d78f1083e4",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "5db164db6eb29c910dbce10712d2b34d86dee8e61473208d98a96b3649c22a49",
+    "statements": [
+      "Kahn's argument: in a finite list of rows, repeatedly placing the first listed row with no unplaced predecessor places each row before every row its collateral names, and leaves unplaced exactly the rows on a cycle or held behind one",
+      "stage_order places its rows in Kahn's order, first listed ready row first, and lists the rows it cannot place",
+      "technical-report@85b1fe6626f1276aac29bbe2d51d7a973eb63934:Triangular stage invariant"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "seed_report",
+      "function": "a seed's whole effect: its own orbit's pieces and stickers, its collateral orbits and its support",
+      "inputs": "orbit; seed: a recipe",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the seed report record",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L2",
+      "domain": "every orbit and recipe at the head",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the report is one record; an empty collateral list means the seed moves no other orbit"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The atlas covers the model's 35 seeds. Rows the caller makes up are outside it: stage_order orders them as given, and its answer then says nothing about the model's seeds."
+    },
+    {
+      "entry": "stage_order",
+      "function": "an order of the given orbits in which each comes before every orbit its seed's collateral moves, with the rows a cycle holds back",
+      "inputs": "seeds: rows {orbit, collateral}",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {cycle, order}",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L2",
+      "domain": "every list of rows",
+      "tie_rule": {
+        "none": "ties keep the caller's order: the first listed ready row is placed first, never the orbit ID order"
+      },
+      "empty_answer": "An empty order goes with an empty input; an empty cycle means every row was placed.",
+      "negative_scope": "A nonempty cycle names the rows no order can place; it says nothing about other seeds.",
+      "outside_scope": "The atlas covers the model's 35 seeds. Rows the caller makes up are outside it: stage_order orders them as given, and its answer then says nothing about the model's seeds."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "lemma",
+      "statement": "Kahn's argument: in a finite list of rows, repeatedly placing the first listed row with no unplaced predecessor places each row before every row its collateral names, and leaves unplaced exactly the rows on a cycle or held behind one",
+      "text": "The proof is Kahn's argument (A. B. Kahn, \"Topological sorting of large networks\", Communications of the ACM 5, 1962). A row is placed only when every row whose collateral names it is placed, so it comes after all of them. Placing a row removes its edges, and a finite set of rows with no cycle always has a row with no unplaced predecessor, so every such row is placed. A row on a cycle, or held behind one, always keeps an unplaced predecessor, so it is never placed.",
+      "evidence": {
+        "none": "a proof: Kahn's argument, written out in the text; the test below checks finite instances only"
+      }
+    },
+    {
+      "kind": "replay",
+      "statement": "stage_order places its rows in Kahn's order, first listed ready row first, and lists the rows it cannot place",
+      "text": "The library's test runs stage_order on listed rows, in order, backwards, with ties, with a cycle, a self-edge and rows held behind a cycle, and compares each answer with Kahn's order. It is exact computation over these finite instances: a check of the module, not a proof of the lemma.",
+      "evidence": {
+        "path": "rust/c600-library/tests/seeds.rs",
+        "sha256": "47be73b3fdfcbf0757f6f413e2fe07bbc1a4ea003dd576f012bde7fa4d520262",
+        "basis": "exact_computation",
+        "check": "producer",
+        "label": "LB2 stage order on listed rows, cycles included: exact computation on finite instances (LP3 test)"
+      }
+    },
+    {
+      "kind": "lemma",
+      "statement": "technical-report@85b1fe6626f1276aac29bbe2d51d7a973eb63934:Triangular stage invariant",
+      "text": "The technical report's proposition, at the commit that last changed it: with the certified setup and frame coverage, the orientation corrections and an acyclic raw-seed collateral graph, solving every orbit before the orbits its seed's collateral moves keeps each completed orbit solved at later macro boundaries. The next raw seed fixes the completed orbits, since its collateral lies on later orbits, and every conjugate of it by a legal setup fixes them too. It holds at macro boundaries only (Net): during a macro, pieces of completed orbits can move and return.",
+      "evidence": {
+        "path": "research/Full_600cell_Technical_Report.tex",
+        "sha256": "484ff58e22f67775dad340c7a83fdee257c67128895b32172d83a13a3883746c",
+        "basis": "theorem",
+        "check": "producer",
+        "label": "Technical report, Proposition 'Triangular stage invariant'"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L2",
+    "input": {
+      "rows": [
+        {
+          "orbit": 30,
+          "collateral": []
+        },
+        {
+          "orbit": 26,
+          "collateral": [
+            30
+          ]
+        }
+      ],
+      "source": "assets/seed_atlas.json, orbits 30 and 26"
+    },
+    "expected": [
+      {
+        "claim": "order",
+        "value": [
+          26,
+          30
+        ],
+        "from_step": 3
+      },
+      {
+        "claim": "cycle",
+        "value": [],
+        "from_step": 4
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_seeds"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "seeds.in_degrees",
+          "statement": "Kahn's argument: in a finite list of rows, repeatedly placing the first listed row with no unplaced predecessor places each row before every row its collateral names, and leaves unplaced exactly the rows on a cycle or held behind one",
+          "step": "step 1"
+        },
+        {
+          "node": "seeds.first_ready",
+          "statement": "Kahn's argument: in a finite list of rows, repeatedly placing the first listed row with no unplaced predecessor places each row before every row its collateral names, and leaves unplaced exactly the rows on a cycle or held behind one",
+          "step": "step 2"
+        },
+        {
+          "node": "seeds.released",
+          "statement": "Kahn's argument: in a finite list of rows, repeatedly placing the first listed row with no unplaced predecessor places each row before every row its collateral names, and leaves unplaced exactly the rows on a cycle or held behind one",
+          "step": "step 3"
+        },
+        {
+          "node": "seeds.unplaced",
+          "statement": "Kahn's argument: in a finite list of rows, repeatedly placing the first listed row with no unplaced predecessor places each row before every row its collateral names, and leaves unplaced exactly the rows on a cycle or held behind one",
+          "step": "step 4"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:And",
+        "base:ExactAdd",
+        "base:ExactEq",
+        "base:ExactLess",
+        "base:Index",
+        "base:Length",
+        "base:Not",
+        "base:Or",
+        "base:Push",
+        "base:Repeat",
+        "kernel:read_snapshot(effect)",
+        "seeds.listed",
+        "seeds.other_orbits",
+        "seeds.predecessors",
+        "seeds.row_of",
+        "seeds.seed_report",
+        "seeds.stage_order"
+      ],
+      "unmapped_steps": []
+    },
+    "reason": {
+      "statement": "technical-report@85b1fe6626f1276aac29bbe2d51d7a973eb63934:Triangular stage invariant",
+      "idea": "Solve an orbit before the orbits its seed disturbs. Each later seed, and every setup's version of it, then leaves the finished orbits as they are at the end of each macro, although their pieces may move and come back during one.",
+      "terms": [
+        "seed",
+        "collateral",
+        "stage-order",
+        "orbit"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the rows' collateral forms no cycle",
+        "outcome": "weaker conclusion: rows on a cycle cannot be placed, and the answer lists them in `cycle`"
+      }
+    ],
+    "not_meant": "A stage order is one order the collateral allows; it is not the only one and not a plan the program chooses for the solver. It keeps finished orbits in place at macro boundaries, not after every letter.",
+    "givens": [
+      {
+        "name": "collateral of orbit 26",
+        "value": [
+          30
+        ],
+        "leaf": "assets/seed_atlas.json"
+      },
+      {
+        "name": "collateral of orbit 30",
+        "value": [],
+        "leaf": "assets/seed_atlas.json"
+      }
+    ],
+    "steps": [
+      {
+        "check": "Orbit 30 is in orbit 26's collateral, so 30 has one predecessor, 26.",
+        "result": 1
+      },
+      {
+        "check": "The first listed row with no unplaced predecessor is orbit 26.",
+        "result": 26
+      },
+      {
+        "check": "Placing 26 releases 30, which is placed next: the order is [26, 30].",
+        "result": [
+          26,
+          30
+        ]
+      },
+      {
+        "check": "Every row is placed: no cycle.",
+        "result": []
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "seed",
+        "collateral",
+        "stage-order",
+        "orbit"
+      ],
+      "records": [
+        "recipes"
+      ]
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:read_snapshot(effect)",
+        "spec": "KN2.4's effect row: the complete effect of a recipe at the head.",
+        "test": "rust/c600-tools/tests/effect_row.rs::a_library_entry_reads_a_recipes_effect"
+      }
+    ]
+  }
+}

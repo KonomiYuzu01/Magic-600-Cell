@@ -62,6 +62,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-debug"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-run",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-digest"
 version = "0.0.0"
 
@@ -74,6 +85,26 @@ dependencies = [
  "c600-ir",
  "c600-jumble",
  "c600-kernel",
+]
+
+[[package]]
+name = "c600-docs"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-command",
+ "c600-digest",
+ "c600-evidence",
+ "c600-ir",
+ "c600-jumble",
+ "c600-jumble-tool",
+ "c600-kernel",
+ "c600-library",
+ "c600-module",
+ "c600-repr",
+ "c600-run",
+ "c600-syntax",
+ "c600-tools",
 ]
 
 [[package]]
@@ -173,6 +204,15 @@ dependencies = [
  "c600-kernel",
  "c600-run",
  "c600-syntax",
+]
+
+[[package]]
+name = "c600-log"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-editor",
+ "c600-kernel",
 ]
 
 [[package]]
@@ -292,10 +332,12 @@ dependencies = [
  "c600-check",
  "c600-command",
  "c600-digest",
+ "c600-editor",
  "c600-evidence",
  "c600-ir",
  "c600-jumble",
  "c600-kernel",
+ "c600-log",
  "c600-platform",
  "c600-run",
  "c600-session",
@@ -317,6 +359,7 @@ version = "0.0.0"
 dependencies = [
  "c600-check",
  "c600-command",
+ "c600-debug",
  "c600-digest",
  "c600-display",
  "c600-input",

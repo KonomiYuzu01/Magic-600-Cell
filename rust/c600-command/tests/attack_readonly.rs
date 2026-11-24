@@ -132,7 +132,7 @@ fn previews_reads_and_refusals_change_nothing_durable() {
     assert!(matches!(undone.status, Status::Committed(_)), "{:?}", undone.status);
     let before = f.durable();
 
-    // The solver's previews: presented, replaced, cancelled by the row and by Escape.
+    // The solver's previews: presented, replaced, cancelled by the row and by the cancel key.
     let first = f.preview(&word(&[4]));
     let second = f.preview(&word(&[5, 6]));
     assert_ne!(first, second);
@@ -140,7 +140,7 @@ fn previews_reads_and_refusals_change_nothing_durable() {
     let cancelled = f.shell.invoke(&mut f.layer, "operation.preview.cancel", cancel).unwrap();
     assert!(matches!(cancelled.status, Status::Completed(_)), "{:?}", cancelled.status);
     f.preview(&word(&[7]));
-    let _ = f.shell.press(&mut f.layer, "Escape", false);
+    let _ = f.shell.press(&mut f.layer, "Ctrl+Shift+Backspace", false);
     assert_eq!(f.durable(), before, "the solver's previews and cancels");
 
     // A press on a preview that ended, and a second delivery of the commit's own envelope.

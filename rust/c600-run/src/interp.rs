@@ -114,6 +114,7 @@ use crate::meter::{
     Tariffs, GENERATOR_SIZE,
 };
 use crate::rng::{self, Cursor};
+use crate::step::{Boundary, Gate, Local, Operation, Site, Slot};
 use crate::trace::{self, Relation};
 use crate::value::{
     self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed,
@@ -427,6 +428,23 @@ struct Code {
     /// DET.57's frame slots: parameters, captures, `let` bindings and temporaries.
     slots: u128,
     body: NodeId,
+    /// The source names of the unit's slots, which a stepping stop shows with their values (EV2.12; LP4-5).
+    names: Names,
+}
+
+/// The source names of a code unit's parameters, captures and `let` slots, by slot index (EV2.12; LP4-5). A loop's
+/// value so far is the `let` slot its accumulator names.
+#[derive(Debug, Default)]
+struct Names {
+    params: Vec<String>,
+    captures: Vec<String>,
+    lets: Vec<String>,
+}
+
+impl Code {
+    fn new(params: usize, body: NodeId) -> Code {
+        Code { params, captures: 0, lets: 0, slots: 0, body, names: Names::default() }
+    }
 }
 
 #[derive(Debug)]
@@ -694,7 +712,8 @@ impl Compiler {
     fn function(&mut self, fi: usize, mi: usize, f: &ir::Function, exported: &[bool]) -> Result<(), Refusal> {
         let code = self.loaded.codes.len();
         let body = self.loaded.nodes.len();
-        self.loaded.codes.push(Code { params: f.params.len(), captures: 0, lets: 0, slots: 0, body });
+        self.loaded.codes.push(Code::new(f.params.len(), body));
+        self.loaded.codes[code].names.params = f.params.iter().map(|p| p.name.clone()).collect();
         self.loaded.functions[fi].code = code;
         let mut scope = Vec::new();
         for (i, p) in f.params.iter().enumerate() {
@@ -722,6 +741,7 @@ impl Compiler {
                     if let Some(name) = param {
                         let id = self.id();
                         scope.push(Binding { name: name.to_string(), slot: SlotRef::Param(0), id });
+                        self.loaded.codes[code].names.params.push(name.to_string());
                     }
                     let (captures, uses, closure) = (Vec::new(), Vec::new(), Some((node, unit)));
                     self.contexts.push(Context { code, scope, captures, lets: 0, uses, closure });
@@ -769,6 +789,8 @@ impl Compiler {
                 let ctx = self.contexts.last_mut().expect("a context");
                 let slot = ctx.lets;
                 ctx.lets += 1;
+                let code = ctx.code;
+                self.loaded.codes[code].names.lets.push(name.clone());
                 steps.push(Step::Unbind);
                 steps.push(Step::Visit { expr: body, parent: Some((id, 1)), attach: true });
                 steps.push(Step::Bind { name, slot });
@@ -780,6 +802,8 @@ impl Compiler {
                 let ctx = self.contexts.last_mut().expect("a context");
                 let slot = ctx.lets;
                 ctx.lets += 1;
+                let code = ctx.code;
+                self.loaded.codes[code].names.lets.push(acc.clone());
                 steps.push(Step::Unbind);
                 steps.push(Step::Visit { expr: body, parent: Some((id, 2)), attach: true });
                 steps.push(Step::Bind { name: acc, slot });
@@ -823,7 +847,8 @@ impl Compiler {
             },
             Expr::Closure { params, body, .. } => {
                 let code = self.loaded.codes.len();
-                self.loaded.codes.push(Code { params: params.len(), captures: 0, lets: 0, slots: 0, body: id + 1 });
+                self.loaded.codes.push(Code::new(params.len(), id + 1));
+                self.loaded.codes[code].names.params = params.iter().map(|p| p.name.clone()).collect();
                 let mut scope = Vec::new();
                 for (i, p) in params.iter().enumerate() {
                     let pid = self.id();
@@ -846,7 +871,7 @@ impl Compiler {
                 // unit opens.
                 let code = self.loaded.codes.len();
                 for params in [0, usize::from(status.is_some())] {
-                    self.loaded.codes.push(Code { params, captures: 0, lets: 0, slots: 0, body: 0 });
+                    self.loaded.codes.push(Code::new(params, 0));
                 }
                 steps.push(Step::Leave);
                 steps.push(Step::Visit { expr: otherwise, parent: Some((id, 1)), attach: false });
@@ -974,6 +999,7 @@ impl Compiler {
         let code = &mut self.loaded.codes[ctx.code];
         code.captures = outer.len();
         code.lets = ctx.lets;
+        code.names.captures = order.iter().map(|&i| ctx.captures[i].name.clone()).collect();
         let (node, unit) = ctx.closure.expect("a closure or child context");
         let named = |s: &[SlotRef]| s.iter().any(|s| matches!(s, SlotRef::Capture(_)));
         // A child scope's node is patched once for both of its units: the stop branch adds it only if the body did not.
@@ -1185,6 +1211,8 @@ struct Machine<'a> {
     open: Vec<Open>,
     /// The children the root has started.
     children: u64,
+    /// A stepped run's gate, which sees each boundary before its operation is admitted (EV2.12; LP4-5).
+    gate: Option<&'a mut dyn Gate>,
 }
 
 /// The stop locator of an operation: the call path from the entry (each caller's call site, and each running loop's
@@ -1243,12 +1271,73 @@ fn receipt_field(field: ReceiptField) -> &'static str {
 
 impl<'a> Machine<'a> {
     fn charge(&mut self, node: Option<NodeId>, op: &str, kernel: u128, memory: u128, output: u128) -> Result<(), Stop> {
+        // A stepped run stops at the boundary before the operation (EV2.12): the gate sees the position the meter has
+        // reached and may end the run there with an interruption, as a pending cancellation does.
+        if self.gate.is_some() {
+            let boundary = self.boundary(node, op);
+            if let Some(why) = self.gate.as_mut().and_then(|gate| gate.before(boundary)) {
+                let (at, source) = locate(self.loaded, &self.frames, self.sources, node, op);
+                return Err(self.meter.interrupted(why, &at, source.as_ref()));
+            }
+        }
         let (loaded, frames, sources) = (self.loaded, &self.frames, self.sources);
         if let Some(why) = self.cancel.and_then(|c| c.pending()) {
             let (at, source) = locate(loaded, frames, sources, node, op);
             return Err(self.meter.interrupted(why, &at, source.as_ref()));
         }
         self.meter.charge_at(|| locate(loaded, frames, sources, node, op), kernel, memory, output)
+    }
+
+    /// The stop before an operation (EV2.12; LP4-5): the position the meter has reached, the operation's locator and
+    /// source range, the enclosing call sites, outermost first, and the current frame's bound slots by their source
+    /// names. Building it changes no charge and runs no program code.
+    fn boundary(&self, node: Option<NodeId>, op: &str) -> Boundary {
+        let loaded = self.loaded;
+        let (at, source) = locate(loaded, &self.frames, self.sources, node, op);
+        let operation = |n: NodeId| {
+            let f = &loaded.functions[loaded.nodes[n].function];
+            Operation { module: loaded.modules[f.module].clone(), function: f.name.clone(), path: loaded.path(n) }
+        };
+        let sources = self.sources;
+        let range = |o: &Operation| sources.and_then(|s| s.range(&o.module, &o.function, &o.path));
+        let sites = self
+            .frames
+            .iter()
+            .filter_map(|frame| frame.site)
+            .map(|site| {
+                let operation = operation(site);
+                let source = range(&operation);
+                let label = &loaded.functions[loaded.nodes[site].function].label;
+                Site { at: format!("{label}:{}", operation.path), operation, source }
+            })
+            .collect();
+        let mut locals = Vec::new();
+        if let Some(frame) = self.frames.last() {
+            let names = &loaded.codes[frame.code].names;
+            let local =
+                |name: &String, slot: Slot, value: &Value| Local { name: name.clone(), slot, value: value.clone() };
+            locals.extend(names.params.iter().zip(&frame.params).map(|(n, v)| local(n, Slot::Param, v)));
+            locals.extend(names.captures.iter().zip(&frame.captures).map(|(n, v)| local(n, Slot::Capture, v)));
+            for (name, slot) in names.lets.iter().zip(&frame.lets) {
+                if let Some((value, _)) = slot {
+                    locals.push(local(name, Slot::Let, value));
+                }
+            }
+        }
+        let root = self.meter.root();
+        Boundary {
+            step: root.used.steps,
+            at,
+            op: op.to_owned(),
+            operation: node.map(operation),
+            source,
+            sites,
+            locals,
+            used: root.used,
+            limits: root.limits,
+            live: root.live,
+            scope: self.meter.innermost().name.clone(),
+        }
     }
 
     fn fail(&self, node: Option<NodeId>, op: &str, code: &'static str) -> Stop {
@@ -2875,6 +2964,36 @@ impl Loaded {
         host: &mut dyn Host,
         options: &Options,
     ) -> Result<Run, Refusal> {
+        self.evaluate(module, function, args, host, options, None)
+    }
+
+    /// Runs `module.function` as [`Loaded::run`] does, stopping before each operation at its boundary: `gate` sees
+    /// the run's LG4/DET.20 position there and decides whether the operation goes ahead (EV2.12; LP4-5). The gate
+    /// adds no step, charge or tariff, so a run that `gate` lets through has the charges, rows and result of the same
+    /// run without one. An interruption the gate returns stops the run at that boundary, as a pending cancellation does
+    /// (DET.56, KN7.6). The run stays on the caller's thread; a debugger that steps it drives the gate from a thread of
+    /// its own (`c600-debug`).
+    pub fn run_gated(
+        &self,
+        module: &str,
+        function: &str,
+        args: Vec<Value>,
+        host: &mut dyn Host,
+        options: &Options,
+        gate: &mut dyn Gate,
+    ) -> Result<Run, Refusal> {
+        self.evaluate(module, function, args, host, options, Some(gate))
+    }
+
+    fn evaluate(
+        &self,
+        module: &str,
+        function: &str,
+        args: Vec<Value>,
+        host: &mut dyn Host,
+        options: &Options,
+        gate: Option<&mut dyn Gate>,
+    ) -> Result<Run, Refusal> {
         let f =
             self.function(module, function).ok_or_else(|| rejected(format!("unknown entry {module}.{function}")))?;
         if self.functions[f].params != args.len() {
@@ -2909,6 +3028,11 @@ impl Loaded {
             seed: options.seed,
             open: Vec::new(),
             children: 0,
+            // Each `Some` is a coercion site: the gate's object lifetime shortens to the machine's.
+            gate: match gate {
+                Some(gate) => Some(gate),
+                None => None,
+            },
         };
         let outcome = machine.start(f, input, options.seed);
         let Machine { meter, frames, values, .. } = machine;

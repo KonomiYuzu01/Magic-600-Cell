@@ -46,6 +46,7 @@ KN6_CHECKERS: dict[str, tuple[str, ...]] = {
         "c600_syntax", "c600_check", "c600_runtime", "c600_ir", "c600_module", "c600_build", "c600_evidence",
         "c600_jumble_tool", "c600_durable", "c600_view", "c600_display", "c600_render", "c600_input",
         "c600_platform", "c600_repr", "c600_a2_filter", "c600_lx2", "c600_lx4", "c600_editor",
+        "c600_debug", "c600_log", "c600_docs",
         "c600_jumble::rotation", "c600_jumble::corrections", "c600_kernel::request",
     ),
 }

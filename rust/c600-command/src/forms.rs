@@ -68,8 +68,9 @@ fn revision(value: &Value) -> bool {
 fn form(ty: &str, value: &Value) -> Option<bool> {
     let ty = ty.strip_suffix('?').unwrap_or(ty);
     Some(match ty {
-        "Nat" => nat(value),
+        "Nat" | "JobId" => nat(value),
         "Text" => value.as_str().is_some(),
+        "RecordingRef" => value.as_str().is_some_and(|name| !name.is_empty()),
         "CellId" => cell(value),
         "CellIdPair" => value.as_array().is_some_and(|pair| pair.len() == 2 && pair.iter().all(cell)),
         "RevisionRef" => revision(value),
@@ -78,6 +79,11 @@ fn form(ty: &str, value: &Value) -> Option<bool> {
         "ViewId" => crate::view::view_id(value),
         "ViewSourceRef" => crate::view::ViewSourceRef::from_json(value).is_some(),
         "CanonicalObjectRefs" => value.as_array().is_some_and(|members| members.iter().all(piece)),
+        "Bool" => matches!(value, Value::Bool(_)),
+        "FileRef" | "FileDigestRef" | "DocumentRef" => value.as_str().is_some_and(|name| !name.is_empty()),
+        "CheckedFileRef" => crate::documents::CheckedFile::from_json(value).is_some(),
+        "LogFormat" => value.as_str().and_then(crate::documents::LogFormat::named).is_some(),
+        "JournalRangeRef" => value.as_str() == Some(crate::documents::WHOLE_SESSION),
         _ => {
             let words = choice(ty)?;
             value.as_str().is_some_and(|given| words.contains(&given))
@@ -107,10 +113,15 @@ pub(crate) fn check(row: &Row, args: &BTreeMap<String, Value>, current: &Revisio
 ///   the forms.
 /// - `FilterRef` is a result reference `{"job": Nat, "digest": Text}` and `FilterPreviewRef` `{"epoch": Nat, "job":
 ///   Nat}`, a job and the epoch it ran in ([`crate::filter`]; draft). What they name is checked after the forms.
+/// - `JobId` is a `Nat`, and `RecordingRef` a recording's name, a nonempty text (LP4-9; draft).
 /// - `CanonicalObjectRefs` is a list of pieces or positions, as `set.save`'s `kind` names them, each an integer from 0
 ///   to 177,119 ([`c600_kernel::PIECES`]). An empty list and a repeated member pass, as they do in
 ///   [`c600_kernel::Kernel::protected_pieces`] (draft, after LP3's `save_set`, whose `members` is `List<Nat>`).
 ///   `set.save`'s `replace` is H-08's `Bool?` since the freeze (CM.17); the names check reads it ([`crate::sets`]).
+/// - The document and log rows' types (LP4-14; [`crate::documents`]; draft): `Bool` is a boolean; `FileRef`,
+///   `FileDigestRef` (the file a check reads) and `DocumentRef` are nonempty texts the host's service resolves;
+///   `CheckedFileRef` is `{"file": FileRef, "sha256": 64 hexadecimal digits}`; `LogFormat` is `c600log`, `c600` or
+///   `mpult`; `JournalRangeRef` is `session`, the live session's whole journal.
 /// - A type whose form the layer does not know yet passes unchecked.
 /// - A malformed argument is refused with `KN5:input.argument_form`.
 pub(crate) fn check_forms(row: &Row, args: &BTreeMap<String, Value>) -> Result<(), Error> {

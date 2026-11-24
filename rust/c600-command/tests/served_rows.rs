@@ -8,8 +8,8 @@ use std::sync::{Arc, OnceLock};
 use c600_command::{
     code, digest, draft_args, Caller, CancelReason, CommandLayer, Completion, CompletionKind, Direction, Error,
     HeadlessFrames, Invocation, JobOutput, Kind, MemoryStore, Overlay, PreviewState, Provenance, Receipt, RecordValue,
-    ResultRef, Row, SavedSet, Secret, Shell, Status, Table, TransactionKind, POLICY_ROW, RECORD_ROW,
-    WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    ResultRef, Row, SavedSet, Secret, Shell, Status, Table, TransactionKind, GRIP_REBIND_ROW, MACRO_SAVE_ROW,
+    POLICY_ROW, RECORD_ROW, WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -19,10 +19,13 @@ const SECRET: [u8; 32] = [7; 32];
 const COMPARE: &str = "structure.compare";
 const SAVE: &str = "set.save";
 const SCOPE: &str = "view.effect.scope";
-const PLAY: &str = "recording.play";
+/// A stored row on the `program` lane that the layer does not build, served by an entry. H-08's one row on that lane,
+/// `recording.play`, is the layer's own since LP4-9, so this is its H-08 entry under another ID, added to the stored
+/// table ([`with_stored_play`]): the same shape, served through `serve_row` as `recording.play` was.
+const PLAY: &str = "stored.recording.play";
 
 /// The stored rows the command layer builds itself.
-const LAYER_ROWS: [&str; 11] = [
+const LAYER_ROWS: [&str; 17] = [
     "operation.preview",
     "operation.execute",
     "operation.preview.cancel",
@@ -34,6 +37,13 @@ const LAYER_ROWS: [&str; 11] = [
     WORKSHEET_SAVE_ROW,
     WORKSHEET_LOAD_ROW,
     WORKSHEET_COMPARE_ROW,
+    GRIP_REBIND_ROW,
+    MACRO_SAVE_ROW,
+    // LP4-9: capture, playback and conversion are the layer's own.
+    "recording.start",
+    "recording.stop",
+    "recording.play",
+    "recording.convert",
 ];
 
 /// One row per shape condition, each alone on a row the layer could otherwise serve; the first six are served.
@@ -160,11 +170,28 @@ struct Fixture {
 
 /// A session at the solved state that protects nothing, on H-08's table.
 fn fixture() -> Fixture {
+    fixture_with(Table::h08())
+}
+
+fn fixture_with(table: Table) -> Fixture {
     let k = kernel();
     let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
-    let layer =
-        CommandLayer::new(k, Table::h08(), Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
+    let layer = CommandLayer::new(k, table, Secret::fixed(SECRET), MemoryStore::default(), "s1", start, protected);
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new() }
+}
+
+/// H-08 with `recording.play`'s entry copied under [`PLAY`]: a stored row on the `program` lane that the layer does
+/// not build.
+fn with_stored_play() -> Table {
+    let mut document = json::parse(c600_command::table::H08.as_bytes()).unwrap();
+    let Value::Object(fields) = &mut document else { panic!("the table is an object") };
+    let Some(Value::Array(commands)) = fields.get_mut("commands") else { panic!("the table has a command list") };
+    let play = commands.iter().find(|row| row.get("id").and_then(Value::as_str) == Some("recording.play"));
+    let Some(Value::Object(mut row)) = play.cloned() else { panic!("H-08 holds `recording.play`") };
+    assert_eq!(row.get("lane").and_then(Value::as_str), Some("program"));
+    row.insert("id".into(), Value::String(PLAY.into()));
+    commands.push(Value::Object(row));
+    Table::parse(document.canonical().as_bytes()).unwrap()
 }
 
 impl Fixture {
@@ -338,12 +365,12 @@ fn a_served_view_row_supersedes_its_waiting_invocation() {
     assert_eq!((f.layer.revision(), f.layer.store().log.len()), (&before, 0));
 }
 
-/// A served row keeps H-08's lane (KN7.2; draft): `recording.play`, the stored row on the `program` lane, is held to
-/// the lane's capacity, while `set.save`, on the `none` lane, has no occupancy limit and is admitted when the program
-/// lane is full.
+/// A served row keeps H-08's lane (KN7.2; draft): a served stored row on the `program` lane ([`PLAY`]) is held to the
+/// lane's capacity, while `set.save`, on the `none` lane, has no occupancy limit and is admitted when the program lane
+/// is full.
 #[test]
 fn a_served_row_keeps_its_lane() {
-    let mut f = fixture();
+    let mut f = fixture_with(with_stored_play());
     f.layer.serve_row(PLAY, overlay("play")).unwrap();
     f.layer.serve_row(SAVE, overlay("save_set")).unwrap();
     f.layer.set_program_capacity(1);
@@ -392,12 +419,14 @@ fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
     ];
     let stored = [
         "twist.apply",
-        "app.exit",
+        // `app.exit` is a layer row since LP4-14 (the document service saves the live session), so the LAYER_ROWS
+        // cases below refuse it as a conflict; `app.reconnect` is the stored `app` row here.
+        "app.reconnect",
         "session.checkpoint.save",
         "operation.check",
         "jumble.release.check",
         "jumble.scramble",
-        "macro.save",
+        "keymap.save",
         "file.keymap.check",
         "file.keymap.apply",
     ];
@@ -520,7 +549,7 @@ fn a_commit_and_an_undo_cancel_a_job_building_a_preview_and_a_view_rows_jobs() {
 /// to LI.24.
 #[test]
 fn concurrent_requests_obey_the_lanes_the_layer_builds() {
-    let mut f = fixture();
+    let mut f = fixture_with(with_stored_play());
     f.layer.serve_row(SCOPE, overlay("effect_scope")).unwrap();
     f.layer.serve_row(PLAY, overlay("play")).unwrap();
     f.layer.serve_row(SAVE, overlay("save_set")).unwrap();

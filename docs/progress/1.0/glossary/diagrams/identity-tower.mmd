@@ -1,0 +1,4 @@
+flowchart TB
+  F[finer level] -->|exact projection| M[coarser level]
+  M -->|exact projection| C[coarsest level]
+  F -. partial order .- C

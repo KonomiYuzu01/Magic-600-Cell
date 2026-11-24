@@ -1,0 +1,5 @@
+flowchart LR
+  K[kernel computation] --> D[derived state: immutable]
+  D --- Dv[derivation]
+  D --- C[reachability claim]
+  D -. no session revision .- S[session]

@@ -1,0 +1,14 @@
+[package]
+name = "c600-log"
+description = "The 1.0 log file of 600 Cell Script: its format, its compiler and the C600 and MPUlt interchange (LP4-12, LP4-13)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# Compile replays moves with the kernel and compiles embedded scripts with the editor services; it never runs a script
+# and never touches live state (ADR-D01.81). No path to c600-run, c600-command or c600-session: `tests/dependencies.rs`
+# follows the manifests and fails on any other path dependency.
+[dependencies]
+c600-digest = { path = "../c600-digest" }
+c600-editor = { path = "../c600-editor" }
+c600-kernel = { path = "../c600-kernel" }

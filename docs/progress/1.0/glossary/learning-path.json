@@ -1,0 +1,725 @@
+{
+ "format": "C600-LEARNING-PATH-draft",
+ "version": 1,
+ "note": "The language learning path of EV5.6 (LP4-11): seven steps, each with the concepts it teaches, the command routes it exercises and one fixture task. `concepts` are EV5.6's lists with each phrase resolved to its glossary row; `closure` adds the rows those concepts' definitions use, and the rows the step's keys need (EV5.8), so every concept is taught before its step's task and before its keys open; `revisits` names a concept an earlier step taught; `waiting` names one the path cannot teach yet. `assumed` lists the terms the path takes from the manual (first use is the manual: owner, 23 November 2026) and from the solving glossary. Each fixture reads recorded instances only, at their recorded digests, and its answer is a value the learner reads or checks: no fixture chooses or outputs a word or a macro (the human-solve boundary). The mathematician reviewed the steps, their order, the fixtures and the keys on 24 November 2026 (EV5.14), and their findings are fixed; the human tests wait for the owner's form (EV5.12).",
+ "assumed": [
+  "Word",
+  "Lattice",
+  "Menu",
+  "Piece",
+  "Pose",
+  "Position",
+  "Orbit",
+  "Frame",
+  "N_c",
+  "Floor",
+  "Grip",
+  "Generator",
+  "Target",
+  "Buffer",
+  "Relocation",
+  "Seed",
+  "Achievement block",
+  "Collateral",
+  "Twist, 600-cell-Full",
+  "Twist, jumbling puzzle",
+  "Residual",
+  "Work sheet"
+ ],
+ "steps": [
+  {
+   "id": "S1",
+   "name": "Use tools and read results",
+   "after": [],
+   "concepts": [
+    "Command",
+    "Availability",
+    "Revision",
+    "Base revision",
+    "Stale",
+    "Claim",
+    "Scope",
+    "Covered set",
+    "Basis",
+    "Check",
+    "Evidence words",
+    "Proved",
+    "Conditional",
+    "Finite instance",
+    "Refuted",
+    "Open",
+    "Incomplete",
+    "Typed inconsistency",
+    "Standing",
+    "Threshold",
+    "Premise",
+    "Statement form",
+    "Negation pair",
+    "Witness",
+    "Empty answer",
+    "Not found within budget",
+    "Not run",
+    "Unknown",
+    "None: off the lattice",
+    "Typed partial result",
+    "Verdict",
+    "Job",
+    "Budget",
+    "Job result",
+    "Reachability claim",
+    "Evidence graph",
+    "Specification",
+    "Not meant"
+   ],
+   "closure": [
+    "View",
+    "Statement",
+    "Evidence",
+    "Admitted domain",
+    "Theorem",
+    "Certificate",
+    "Digest",
+    "Identity level",
+    "Sticker",
+    "Declared domain",
+    "Canonical ID",
+    "Model identity",
+    "Literal word",
+    "Complete effect",
+    "Invariant"
+   ],
+   "forward": [
+    {
+     "concept": "Specification",
+     "uses": "Principle record",
+     "why": "EV5.6 reads the record's specification at step 1 and the whole record at step 5."
+    },
+    {
+     "concept": "Not meant",
+     "uses": "Principle record",
+     "why": "EV5.6 reads the record's not-meant part at step 1 and the whole record at step 5."
+    }
+   ],
+   "note": "EV5.6's 'evidence words' are the Evidence words row and the seven word rows Proved, Conditional, Finite instance, Refuted, Open, Incomplete and Typed inconsistency, with Not found within budget; 'every, some and negation' are the Statement form and Negation pair rows; 'empty, not found, not run' (EVD.33) are Empty answer, Not found within budget and Not run; 'record parts specification and not meant' are the Specification and Not meant rows. The closure adds what these definitions use: View, Statement, Evidence, Admitted domain, Declared domain, Theorem, Certificate, Digest, Identity level and Sticker. It also adds what this step's keys need (EV5.8): Canonical ID and Model identity for object.inspect and file.keymap.check, Literal word and Complete effect for operation.check, and Invariant for view.residuals; step 4 revisits Literal word and Complete effect, and step 5 Invariant.",
+   "routes": "H-08 `command.find`, `object.inspect`, `view.findings`, `view.residuals`, `operation.check`, `job.stop`. `invoke` on an overlay row (chapter 01), `word` (chapter 06), `follow_pick` (EV3). Explanation and provenance view: owed",
+   "fixture": {
+    "task": "In the jumbling puzzle under menu I_a, the search record at the 7302 stop ran family R's search with beam 64 to depth 3. Read Φ, family R's beam and depth, whether its search was exhausted, through how many letters it was exhaustive and how many candidates it found. Then give the evidence word for E₃, 'some family-R word with at most three retained letters lowers Φ here', with its scope, and the word for the narrower claim that the two-letter subset was searched exhaustively.",
+    "concepts": [
+     "Evidence words",
+     "Not found within budget",
+     "Budget",
+     "Job result",
+     "Covered set",
+     "Statement form",
+     "Finite instance"
+    ],
+    "reads": [
+     {
+      "path": "research/jumbling/restoration/15-lowering-machine/results/runs/s7302-pstar.json",
+      "sha256": "7922313803bde37267a2ff4da5b2078cf3b4118f358ad0c935f006fdaf3be317",
+      "expect": [
+       {
+        "pointer": "/run/phi",
+        "value": 1094
+       },
+       {
+        "pointer": "/run/steps/3/families/R/beam",
+        "value": 64
+       },
+       {
+        "pointer": "/run/steps/3/families/R/depth",
+        "value": 3
+       },
+       {
+        "pointer": "/run/steps/3/families/R/exhausted",
+        "value": false
+       },
+       {
+        "pointer": "/run/steps/3/families/R/exhaustive_through",
+        "value": 2
+       },
+       {
+        "pointer": "/run/steps/3/families/R/candidates",
+        "value": 0
+       }
+      ]
+     }
+    ],
+    "answer": {
+     "kind": "evidence word",
+     "expected": "E₃ reads not found within budget: family R's beam-64 search of three letters was not exhausted, so it gives no negative over its set. The two-letter subset was searched exhaustively and found none: that narrower claim has its own key and reads finite instance."
+    },
+    "source": "Chapter 06 section 9, E3, its first two rows; EV5.6 step 1's candidate"
+   },
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): the evidence words themselves were taught at no step though the fixture answers with one, Specification used Declared domain (step 5) and View used Profile (step 6), and the path check skipped a use that a row records as a level forward; fixed. The human test of this step waits for the owner's form (EV5.12)."
+  },
+  {
+   "id": "S2",
+   "name": "Change a parameter",
+   "after": [
+    "S1"
+   ],
+   "concepts": [
+    "Editable parameter",
+    "Fork",
+    "Diagnostic",
+    "Typed error"
+   ],
+   "closure": [
+    "Source range"
+   ],
+   "note": "EV5.6's 'new version' and 'a fork inherits no evidence' are said by the Editable parameter and Fork rows. The fixture's fork is CT-EV3-05's: LP4-7's draft directive marks default_layer, a literal, and drawn_size, a computed value; the directive on a computed value declares nothing (EV3.7), so only default_layer is an editable parameter and round-trips.",
+   "routes": "`edit_declared_part` (EV3), `diagnose` (EV1). Workspace command that persists it, host fork operation: owed",
+   "fixture": {
+    "task": "CT-EV3-05 forks the built-in 600-cell-Full tool and puts the editable-parameter directive on two functions: default_layer and drawn_size. Read the fork's declarations: which of the two round-trips, which value does it hold, and why is an edit of the other refused? Then read the built-in's principle record: which file does its certificate argument cite, how much of that evidence does the fork inherit, and what does it keep of the record's cited statements?",
+    "concepts": [
+     "Fork",
+     "Editable parameter"
+    ],
+    "reads": [
+     {
+      "path": "rust/c600-editor/tests/ct_ev3_05.rs",
+      "sha256": "f495b9953fca350283510441a7409aa7fd00d13219681b7ee0bd1630d5afeac7",
+      "expect": [
+       {
+        "text": "# @editable parameter\nfn default_layer() -> Nat effects [] {\n    return 2;\n}"
+       },
+       {
+        "text": "# @editable parameter\nfn drawn_size() -> Nat effects [] {\n    return exact_add(1, 2);\n}"
+       }
+      ]
+     },
+     {
+      "path": "docs/progress/1.0/principle-records/full_600_cell.json",
+      "sha256": "f065414a05cfc025c9a4ef9cd900d278ac86bb9b64f30f1b090357b59cb0a2d9",
+      "expect": [
+       {
+        "pointer": "/justification/1/evidence/path",
+        "value": "assets/manifest.json"
+       },
+       {
+        "pointer": "/binding/statements",
+        "value": [
+         "full_600_cell.preview_word proposes the named word unchanged",
+         "a generator followed by its inverse is the identity permutation of the 259,800 sticker slots"
+        ]
+       }
+      ]
+     }
+    ],
+    "answer": {
+     "kind": "value",
+     "expected": "default_layer round-trips, a parameter holding 2; drawn_size is a computed value, exact_add(1, 2), so an edit of it is refused (EV3:input.round_trip_undeclared). The certificate argument cites assets/manifest.json; the fork inherits none of that evidence, and keeps the record's two cited statements as references, never as evidence (EV5.5)."
+    },
+    "source": "rust/c600-editor/tests/ct_ev3_05.rs (LP4-7, EV3.7); LB6.3; EV5.5"
+   },
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. Its note and task now say that the directive on drawn_size declares nothing, for the Editable parameter row's finding. The human test of this step waits for the owner's form (EV5.12)."
+  },
+  {
+   "id": "S3",
+   "name": "Save layouts and bindings",
+   "after": [
+    "S1"
+   ],
+   "concepts": [
+    "Layout",
+    "Workspace record",
+    "Binding",
+    "Routing class",
+    "Preference",
+    "Workspace undo"
+   ],
+   "closure": [
+    "Keyboard key"
+   ],
+   "note": "EV5.6's 'Binding with absolute arguments' is the Binding row. Workspace undo follows the owner's overrule X1 of 23 November 2026: moves and layouts keep separate histories.",
+   "routes": "H-08 `keymap.edit`, `file.keymap.export`, `file.keymap.check`, `file.keymap.apply`, `grip.capture`. `edit_declared_part`. Save layout: owed",
+   "fixture": {
+    "task": "Read the command table's row for changing a key. Which kind of command is it, which gate does it pass, and which history does its undo use?",
+    "concepts": [
+     "Binding",
+     "Workspace undo",
+     "Workspace record",
+     "Layout"
+    ],
+    "reads": [
+     {
+      "path": "docs/progress/1.0/command-table.json",
+      "live": "The draft command table changes with LP4; the row is read by its ID.",
+      "expect": [
+       {
+        "pointer": "/commands",
+        "where": {
+         "id": "keymap.edit"
+        },
+        "field": "kind",
+        "value": "workspace"
+       },
+       {
+        "pointer": "/commands",
+        "where": {
+         "id": "keymap.edit"
+        },
+        "field": "gates",
+        "value": [
+         "confirm"
+        ]
+       },
+       {
+        "pointer": "/commands",
+        "where": {
+         "id": "keymap.edit"
+        },
+        "field": "undo",
+        "value": "layout"
+       }
+      ]
+     }
+    ],
+    "answer": {
+     "kind": "value",
+     "expected": "a workspace command behind the confirm gate, undone on the layout history"
+    },
+    "source": "H-08 keymap.edit; EV4.15 with the owner's overrule X1"
+   },
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. The human test of this step waits for the owner's form (EV5.12).",
+   "forward": [
+    {
+     "concept": "Workspace record",
+     "uses": "Assistance provenance",
+     "why": "Its 'where required' applies only to stored words (PS1.32, LB7.3), which step 4 teaches (the mathematician's ruling on OV-3, 23 November 2026)."
+    }
+   ]
+  },
+  {
+   "id": "S4",
+   "name": "Compose recipes and macros",
+   "after": [
+    "S1"
+   ],
+   "concepts": [
+    "Equality key",
+    "Cost alphabet",
+    "Setup",
+    "Star",
+    "Conjugate",
+    "Commutator",
+    "Recipe",
+    "Macro",
+    "Macro base",
+    "Proposal",
+    "Preview",
+    "User-action token",
+    "Protection",
+    "Net and Strict checks",
+    "Assistance provenance",
+    "Recording"
+   ],
+   "closure": [
+    "Menu letter",
+    "Revision reference"
+   ],
+   "revisits": [
+    "Word",
+    "Literal word",
+    "Complete effect"
+   ],
+   "note": "Word is taken from the manual, whose chapter 1 shows jumbling words only; this step revisits it for its named alphabet and identity (the mathematician, 23 November 2026). Assistance provenance keeps its frozen step; the workspace record of step 3 records a forward use of it. 'Fresh preview on reuse' (LB7.2) is the Work sheet row's rule, which the path takes from the solving glossary: reusing a work sheet always triggers a fresh review. Literal word and Complete effect are taught at step 1, where operation.check's key opens, and revisited here. Conjugate and commutator at this step are the mathematician's inference (EV5.6).",
+   "routes": "H-08 `macro.base.open`, `macro.select`, `macro.add`, `macro.save`, `macro.variant.create`, `macro.compare`, `operation.new`, `operation.phase.edit`, `operation.reuse`, `operation.check`, `operation.preview`, `operation.execute`, `worksheet.save`, `worksheet.load`. `propose` (chapter 01), `word_key` (chapter 02). `recording.start`, `recording.stop`, `recording.play`, `recording.convert` (EV4)",
+   "fixture": {
+    "task": "Read the seed atlas entry for orbit 26. What is its seed's exact length, what is the outer form of its formula, and which orbits does its collateral move?",
+    "concepts": [
+     "Commutator",
+     "Macro",
+     "Collateral"
+    ],
+    "reads": [
+     {
+      "path": "assets/seed_atlas.json",
+      "sha256": "de41b58067ac8c0bf5339c11e43b828aa4944b6b40e8b2e7e1287e625e898891",
+      "expect": [
+       {
+        "pointer": "/26/orbit",
+        "value": 26
+       },
+       {
+        "pointer": "/26/seed_length",
+        "value": 46
+       },
+       {
+        "pointer": "/26/formula",
+        "value": "[[[[H0, T5], T31], T73], H74]"
+       },
+       {
+        "pointer": "/26/collateral",
+        "value": [
+         30
+        ]
+       }
+      ]
+     }
+    ],
+    "answer": {
+     "kind": "list of objects",
+     "expected": "length 46; a nested commutator; its collateral moves orbit 30 only"
+    },
+    "source": "assets/seed_atlas.json, orbit 26; the solving glossary's Seed and Collateral entries"
+   },
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): 'fresh preview on reuse' was mapped to the Preview row, which does not state it; it is the Work sheet row's rule, and the path now assumes Work sheet; fixed. The human test of this step waits for the owner's form (EV5.12)."
+  },
+  {
+   "id": "S5",
+   "name": "Read a record, state your principle",
+   "after": [
+    "S4"
+   ],
+   "concepts": [
+    "Principle",
+    "Principle record",
+    "Hypothesis",
+    "Lemma",
+    "Counterexample",
+    "Mixed statement",
+    "Decomposition",
+    "Decomposition leaf",
+    "Step map",
+    "Leaf specification",
+    "Worked instance",
+    "Hand derivation",
+    "Fixture"
+   ],
+   "revisits": [
+    "Theorem",
+    "Declared domain",
+    "Invariant"
+   ],
+   "note": "EV5.6's 'Base part' is the Decomposition leaf row (EV5.18), and 'a domain inside its lemma's scope' is the Declared domain row with LB6.2's rule. Declared domain is taught at step 1, where the specification names it, and Invariant at step 1, where view.residuals' key opens; both are revisited here. Stating a principle of one's own has no data route (EV5.9). Theorem is taught at step 1, where a basis names it, and revisited here as a proof.",
+   "routes": "`hover`, `definition` (EV1). Reading a record: owed. Stating your own: owed; no data route exists, and EV5.9 leaves the map to the joint setting",
+   "fixture": {
+    "task": "In the jumbling puzzle under menu I_a, read the floor instance's givens in the manual: after the 40-twist scramble numbered 7101, cap 30 has In_30 = 840, Out_30 = 737 and A_30 = 0. Check N_30 and the floor by hand, as the worked instance's hand derivation does.",
+    "concepts": [
+     "Worked instance",
+     "Hand derivation",
+     "N_c",
+     "Floor"
+    ],
+    "reads": [
+     {
+      "path": "research/jumbling/manual/02-descent.md",
+      "sha256": "4f5ae89c49c64300053064752446d603e82c906baa3c3b86cd6cd97045fde9fd",
+      "expect": [
+       {
+        "text": "Cap 30 has 840 faces on its cut inside and 737 outside, and none is aligned: N_30 = 1,577."
+       },
+       {
+        "text": "840 − 737 = 103"
+       }
+      ]
+     }
+    ],
+    "answer": {
+     "kind": "count",
+     "expected": "N_30 = 840 + 737 − 2·0 = 1,577; floor = 840 − 737 = 103; two steps"
+    },
+    "source": "LB6.2 (the floor shows the split); EV5.6 step 5's candidate"
+   },
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. The human test of this step waits for the owner's form (EV5.12)."
+  },
+  {
+   "id": "S6",
+   "name": "Write tools",
+   "after": [
+    "S2",
+    "S3",
+    "S5"
+   ],
+   "concepts": [
+    "Module",
+    "Module manifest",
+    "Lockfile",
+    "Language edition",
+    "Approximate value",
+    "Snapshot",
+    "State reference",
+    "Derived state",
+    "Cost profile",
+    "Effect",
+    "Capability declaration",
+    "Profile",
+    "Author class",
+    "Provenance block",
+    "View-model node",
+    "Overlay",
+    "Human-solve boundary",
+    "Declassifier",
+    "Capability separation",
+    "Stabiliser",
+    "Coset",
+    "Quotient",
+    "Homomorphism",
+    "F2",
+    "F5",
+    "Q(√5)"
+   ],
+   "closure": [
+    "State derivation"
+   ],
+   "revisits": [
+    "Typed partial result",
+    "Verdict",
+    "Budget",
+    "Job",
+    "Identity level"
+   ],
+   "waiting": [
+    {
+     "term": "Flow rule",
+     "why": "Not learner-facing unless LQ2 turns it on (EV5.9, LQ2's joint setting)."
+    }
+   ],
+   "note": "EV5.6's 'exact against approximate' is the Approximate value row, 'Identity level typing' the Identity level row, and 'view nodes and overlays' the View-model node and Overlay rows. 'Boundary: KN2.5' is the Human-solve boundary row, and 'why a preview is refused' the Capability separation and Declassifier rows: a program either reads state or prepares previews (RTE.24), and declassifiers are the fixed exceptions. Partial results, verdicts, budgets and jobs are read at step 1 and written here. Library explanations stay under LB6 and EV5.17.",
+   "routes": "`parse`, `complete`, `diagnose`, `hover`, `definition`, `rename` (EV1), `debug_step`, `inspect_value` (EV2), `open_snapshot`, `project`, `derive`, `propose` (chapter 01), `publish_view` (chapter 10). Create a module: owed",
+   "fixture": {
+    "task": "Read the library module seeds. Which capabilities does its header request, and which effects does its exported entry stage_order declare?",
+    "concepts": [
+     "Module",
+     "Capability declaration",
+     "Effect"
+    ],
+    "reads": [
+     {
+      "path": "rust/c600-library/src/seeds.6cs",
+      "sha256": "c7cc7fd2ebb07fe63c517be838688fcbd827bf72385b2743dab627025d09341d",
+      "expect": [
+       {
+        "text": "module seeds requires [];"
+       },
+       {
+        "text": "export fn stage_order(seeds: List<record { collateral: List<Int>, orbit: Int }>) -> record { cycle: List<Int>, order: List<Int> } effects []"
+       }
+      ]
+     }
+    ],
+    "answer": {
+     "kind": "list of objects",
+     "expected": "none and none: the module requests no capability and stage_order declares no effect"
+    },
+    "source": "rust/c600-library/src/seeds.6cs; LG3.2"
+   },
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): 'why a preview is refused' mapped to Declassifier only, and Capability separation, the rule that refuses a state-reading preview program, was taught at no step; fixed. The human test of this step waits for the owner's form (EV5.12)."
+  },
+  {
+   "id": "S7",
+   "name": "Maintain modules and evidence",
+   "after": [
+    "S6"
+   ],
+   "concepts": [
+    "Reproducibility key",
+    "Run record",
+    "Deterministic replay",
+    "Check report",
+    "Per-claim trace",
+    "Grade",
+    "Alternative",
+    "Check mode",
+    "Statement ID",
+    "Statement key",
+    "Evidence envelope",
+    "Exact transport",
+    "Evidence edition"
+   ],
+   "closure": [
+    "Gauge"
+   ],
+   "revisits": [
+    "Digest",
+    "Certificate"
+   ],
+   "note": "Digest and Certificate are taught at step 1, where a job result and a basis name them, and revisited here.",
+   "routes": "`replay_run` (EV2), `reproduce` (chapter 09), `check` (chapter 01), `word` (chapter 06), `import_archive`, `export_check_bundle`, `migrate_record` (chapter 05)",
+   "fixture": {
+    "task": "The guarded-setups record cites the certified execution trees by digest. Recompute the table's SHA-256, compare it with the digest in the record, and say what a match shows.",
+    "concepts": [
+     "Digest",
+     "Certificate"
+    ],
+    "reads": [
+     {
+      "path": "docs/progress/1.0/principle-records/guarded_setups.json",
+      "sha256": "47970ef95fdbd97695c0f5805bdd5a22924abb676e7371a4d432adf15070cca1",
+      "expect": [
+       {
+        "pointer": "/justification/0/evidence/sha256",
+        "value": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20"
+       }
+      ]
+     },
+     {
+      "path": "assets/execution_trees.json.gz",
+      "sha256": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20",
+      "expect": []
+     }
+    ],
+    "answer": {
+     "kind": "yes or no",
+     "expected": "yes: the recomputed digest equals the record's. A match shows that these are the cited bytes; it does not check the certificate."
+    },
+    "source": "LB6.2 (records resolve through their recorded digests)"
+   },
+   "review": "Reviewed by the mathematician on 24 November 2026 (EV5.14): no finding. The human test of this step waits for the owner's form (EV5.12)."
+  }
+ ],
+ "first_use": [
+  {
+   "id": "cap",
+   "at": "01-what-you-see.md:5",
+   "section": "1.1 Caps and twists"
+  },
+  {
+   "id": "piece",
+   "at": "01-what-you-see.md:8",
+   "section": "1.1 Caps and twists"
+  },
+  {
+   "id": "menu",
+   "at": "01-what-you-see.md:9",
+   "section": "1.1 Caps and twists"
+  },
+  {
+   "id": "jumble-twist",
+   "at": "01-what-you-see.md:10",
+   "section": "1.1 Caps and twists"
+  },
+  {
+   "id": "lattice",
+   "at": "01-what-you-see.md:11",
+   "section": "1.1 Caps and twists"
+  },
+  {
+   "id": "none-off-the-lattice",
+   "at": "01-what-you-see.md:11",
+   "section": "1.1 Caps and twists"
+  },
+  {
+   "id": "blocked",
+   "at": "01-what-you-see.md:21",
+   "section": "1.2 Blocking"
+  },
+  {
+   "id": "jumbling-block",
+   "at": "01-what-you-see.md:24",
+   "section": "1.2 Blocking"
+  },
+  {
+   "id": "alignment-domain",
+   "at": "01-what-you-see.md:26",
+   "section": "1.3 Domains"
+  },
+  {
+   "id": "proved",
+   "at": "01-what-you-see.md:31",
+   "section": "1.3 Domains"
+  },
+  {
+   "id": "height",
+   "at": "01-what-you-see.md:38",
+   "section": "1.4 Heights"
+  },
+  {
+   "id": "measured",
+   "at": "01-what-you-see.md:44",
+   "section": "1.4 Heights"
+  },
+  {
+   "id": "n-c",
+   "at": "01-what-you-see.md:50",
+   "section": "1.5 Seams and misalignment"
+  },
+  {
+   "id": "seam",
+   "at": "01-what-you-see.md:50",
+   "section": "1.5 Seams and misalignment"
+  },
+  {
+   "id": "n-total",
+   "at": "01-what-you-see.md:65",
+   "section": "1.5 Seams and misalignment"
+  },
+  {
+   "id": "word",
+   "at": "01-what-you-see.md:65",
+   "section": "1.5 Seams and misalignment"
+  },
+  {
+   "id": "label",
+   "at": "01-what-you-see.md:73",
+   "section": "1.6 The one rule of the descent"
+  },
+  {
+   "id": "cap-cover",
+   "at": "02-descent.md:6",
+   "section": "2. The descent"
+  },
+  {
+   "id": "cut-cell",
+   "at": "02-descent.md:30",
+   "section": "2.1 Face match"
+  },
+  {
+   "id": "floor",
+   "at": "02-descent.md:36",
+   "section": "2.1 Face match"
+  },
+  {
+   "id": "retained-twist",
+   "at": "02-descent.md:44",
+   "section": "2.1 Face match"
+  },
+  {
+   "id": "repair-list",
+   "at": "02-descent.md:165",
+   "section": "2.3 Three-twist repair"
+  },
+  {
+   "id": "position",
+   "at": "02-descent.md:192",
+   "section": "2.3 Three-twist repair"
+  },
+  {
+   "id": "clean-step",
+   "at": "03-tail.md:15",
+   "section": "3.2 Clean steps: vacate, act, put back"
+  },
+  {
+   "id": "frame",
+   "at": "03-tail.md:17",
+   "section": "3.2 Clean steps: vacate, act, put back"
+  },
+  {
+   "id": "pose",
+   "at": "03-tail.md:19",
+   "section": "3.2 Clean steps: vacate, act, put back"
+  },
+  {
+   "id": "orbit",
+   "at": "03-tail.md:52",
+   "section": "3.4 Vacating"
+  },
+  {
+   "id": "nu-correction",
+   "at": "04-lattice.md:17",
+   "section": "4.1 Where you are"
+  },
+  {
+   "id": "nu",
+   "at": "04-lattice.md:37",
+   "section": "4.3 What the jumbling can leave behind, and how to remove it"
+  },
+  {
+   "id": "star",
+   "at": "04-lattice.md:131",
+   "section": "4.4 The retained method"
+  }
+ ]
+}

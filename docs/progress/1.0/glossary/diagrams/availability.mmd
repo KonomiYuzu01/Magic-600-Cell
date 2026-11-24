@@ -1,0 +1,4 @@
+flowchart LR
+  C[command] --> Q{can it run now?}
+  Q -->|yes| A[available]
+  Q -->|no| R[unavailable, with the reason]

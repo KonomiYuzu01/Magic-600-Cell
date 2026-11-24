@@ -1,0 +1,4 @@
+flowchart LR
+  S[session point] --> C[saved checkpoint]
+  P[replay path] --> C
+  C -->|reconstruct and validate| S2[state]

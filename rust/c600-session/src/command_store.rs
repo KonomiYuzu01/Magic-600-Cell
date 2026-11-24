@@ -21,7 +21,13 @@
 //! - `{"record": "command_action", "transaction"}` for every durable action, in [`Transaction::to_json`]'s form,
 //!   except that each record value the action writes (`record`'s `value` and each of `records`', when not `null`) is
 //!   a reference `{"object": name}` to its record object. The receipt is a function of the transaction, so the effect
-//!   and its receipt are one write (KN5.23).
+//!   and its receipt are one write (KN5.23);
+//! - `{"record": "command_workspace", "id", "kind", "value"}` for every write of a workspace record outside the action
+//!   order (PS1.16, PS1.44, FP.37; LP4-9): a recording (`kind` `c600-recording-draft`, its `value` a reference to its
+//!   record object) or a playback state (`kind` `c600-playback-draft`, its `value` inline), under the recording's name
+//!   as `id`. It takes no action number, has no receipt and creates no undo target, and no transaction cites it; the
+//!   last record of an id and kind wins. [`JournalStore::recorder`] writes and reads these ([`crate::recorder`]). A
+//!   reader that predates this record stops at it, as at any record it does not read.
 //!
 //! A record object is a value's canonical [`c600_command::RecordValue::to_json`] bytes, named by their SHA-256, which
 //! is the value's content digest ([`c600_command::RecordValue::digest`], KN0.8). It is charged to FP.9's
@@ -32,11 +38,11 @@
 //! frame's 16 MiB draft bound; the frame's other fields, a record write's kept part blocks among them, still are. A
 //! journal written before record objects holds its values inline, and those still read.
 
-use std::cell::RefCell;
 use std::collections::BTreeSet;
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use c600_command::{
-    identity_from_json, identity_json, Error, Fate, Genesis, History, Profile, Reopen, Store, Transaction,
+    identity_from_json, identity_json, Error, Fate, Genesis, History, Profile, Recorded, Reopen, Store, Transaction,
 };
 use c600_digest::sha256_hex;
 use c600_kernel::json::{self, Value};
@@ -54,6 +60,7 @@ pub const FORMAT: &str = "c600-command-journal-draft-1";
 const SESSION: &str = "command_session";
 const EPOCH: &str = "command_epoch";
 const ACTION: &str = "command_action";
+const WORKSPACE: &str = "command_workspace";
 /// A record value's reference to its record object: this one field, the object's name.
 const OBJECT: &str = "object";
 /// FP.9's rows that a record object is charged to.
@@ -62,10 +69,10 @@ const RECORD_ROWS: [&str; 2] = ["record_stored", "record_decoded"];
 /// The objects a record cites, each with its name, in order.
 type Objects = Vec<(String, Vec<u8>)>;
 
-/// A store for one session of the command layer, on a journal.
-pub struct JournalStore(RefCell<Inner>);
+/// A store for one session of the command layer, on a journal. Its [`JournalStore::recorder`] shares the journal.
+pub struct JournalStore(Arc<Mutex<Inner>>);
 
-struct Inner {
+pub(crate) struct Inner {
     journal: journal::Store,
     held: Held,
     /// An append whose fate was unknown: the journal is read again before anything relies on what it holds.
@@ -82,6 +89,8 @@ struct Held {
     transactions: Vec<Transaction>,
     /// Where the history stops early: a damaged frame or a record that does not read (KN5.23).
     damaged: Option<Error>,
+    /// The recordings and playback states of the workspace records outside the action order, the last of each.
+    kept: Recorded,
 }
 
 enum Record {
@@ -96,6 +105,12 @@ enum Record {
     Epoch(u64),
     /// An action's transaction as the frame holds it, before its record objects are read.
     Action(Value),
+    /// A workspace record outside the action order, its value as the frame holds it.
+    Workspace {
+        id: String,
+        kind: String,
+        value: Value,
+    },
 }
 
 fn io(e: std::io::Error) -> Error {
@@ -276,6 +291,11 @@ fn read_record(payload: &[u8]) -> Option<Record> {
         }
         EPOCH if fields == 2 => Some(Record::Epoch(nat(value.get("epoch")?)?)),
         ACTION if fields == 2 => Some(Record::Action(value.get("transaction")?.clone())),
+        WORKSPACE if fields == 4 => Some(Record::Workspace {
+            id: value.get("id")?.as_str()?.to_owned(),
+            kind: value.get("kind")?.as_str()?.to_owned(),
+            value: value.get("value")?.clone(),
+        }),
         _ => None,
     }
 }
@@ -314,6 +334,9 @@ fn load(store: &mut journal::Store, records: Vec<Vec<u8>>, damaged: Option<u64>)
                 }
                 None => false,
             },
+            Some(Record::Workspace { id, kind, mut value }) => {
+                read_object(store, &mut value)? && crate::recorder::keep(&mut held.kept, &id, &kind, &value)
+            }
             _ => false,
         };
         if !read {
@@ -341,7 +364,7 @@ impl JournalStore {
         }
         opened.settle().map_err(io)?;
         let inner = Inner { journal: opened.store, held: Held::default(), unsettled: false, synced: BTreeSet::new() };
-        Ok(JournalStore(RefCell::new(inner)))
+        Ok(JournalStore(Arc::new(Mutex::new(inner))))
     }
 
     /// The store of the session a disk holds, for [`c600_command::CommandLayer::open`]. The journal is settled first: a
@@ -352,7 +375,27 @@ impl JournalStore {
         let opened = journal::Store::open(disk).map_err(open_io)?;
         let mut store = opened.store;
         let held = load(&mut store, opened.records, opened.damaged)?;
-        Ok(JournalStore(RefCell::new(Inner { journal: store, held, unsettled: false, synced: BTreeSet::new() })))
+        let inner = Inner { journal: store, held, unsettled: false, synced: BTreeSet::new() };
+        Ok(JournalStore(Arc::new(Mutex::new(inner))))
+    }
+
+    /// The session's recorder (PS1.30, PS1.44; LP4-9 draft): recordings and playback states as workspace records in
+    /// this journal, outside its action order ([`crate::recorder`]). It shares this store's journal, lock and fates, so
+    /// the host takes it before the layer takes the store, or from [`c600_command::CommandLayer::store`], and installs
+    /// it with [`c600_command::CommandLayer::set_recorder`].
+    pub fn recorder(&self) -> crate::recorder::JournalRecorder {
+        crate::recorder::JournalRecorder(Arc::clone(&self.0))
+    }
+
+    /// A reader of this store's history that writes nothing (LP4-14 draft): the document service converts the
+    /// session's move history into a log with it ([`crate::documents`]). Like [`JournalStore::recorder`], the host takes
+    /// it before the layer takes the store.
+    pub fn history_reader(&self) -> HistoryReader {
+        HistoryReader(Arc::clone(&self.0))
+    }
+
+    fn inner(&self) -> MutexGuard<'_, Inner> {
+        self.0.lock().unwrap_or_else(PoisonError::into_inner)
     }
 }
 
@@ -410,11 +453,58 @@ impl Inner {
             }
         }
     }
+
+    /// Appends a workspace record outside the action order ([`WORKSPACE`]): `value` under `id` and `kind`, as a record
+    /// object that the frame cites when `object` is set, inline otherwise. It takes no action number. An object is
+    /// charged to FP.9's record rows and must read back as itself, as an action's record value; a frame over its draft
+    /// bound is refused. A value that would not read back as its kind under `id`, and a journal that holds no session,
+    /// are refused before anything is written.
+    pub(crate) fn keep(&mut self, id: &str, kind: &str, value: &Value, object: bool) -> Fate {
+        if self.held.genesis.is_none() {
+            return Fate::RolledBack(Error::new(code::UNKNOWN_SESSION, "the journal holds no session"));
+        }
+        if !crate::recorder::keep(&mut Recorded::default(), id, kind, value) {
+            return Fate::RolledBack(Error::new(code::NONCANONICAL_VALUE, "the workspace record does not read back"));
+        }
+        let (cited, objects) = match object {
+            false => (value.clone(), Vec::new()),
+            true => {
+                let bytes = value.canonical().into_bytes();
+                if let Err(error) = charged(&bytes) {
+                    return Fate::RolledBack(error);
+                }
+                if json::parse(&bytes).ok().as_ref() != Some(value) {
+                    return Fate::RolledBack(Error::new(code::NONCANONICAL_VALUE, "the value does not read back"));
+                }
+                let name = sha256_hex(&bytes);
+                (json::object([(OBJECT, text(&name))]), vec![(name, bytes)])
+            }
+        };
+        let record =
+            json::object([("record", text(WORKSPACE)), ("id", text(id)), ("kind", text(kind)), ("value", cited)]);
+        let fate = self.append(&record, &objects);
+        if fate == Fate::Durable {
+            crate::recorder::keep(&mut self.held.kept, id, kind, value);
+        }
+        fate
+    }
+
+    /// The recordings and playback states the journal holds, read again first after a write whose fate was unknown.
+    pub(crate) fn kept(&mut self) -> Result<Recorded, Error> {
+        self.settle();
+        if self.unsettled {
+            return Err(Error::new(code::DISK_FULL, "the session storage could not be read again"));
+        }
+        if self.held.genesis.is_none() {
+            return Err(Error::new(code::UNKNOWN_SESSION, "the journal holds no session"));
+        }
+        Ok(self.held.kept.clone())
+    }
 }
 
 impl Store for JournalStore {
     fn transact(&mut self, transaction: &Transaction) -> Fate {
-        let inner = self.0.get_mut();
+        let mut inner = self.inner();
         if inner.held.genesis.is_none() {
             return Fate::RolledBack(Error::new(code::UNKNOWN_SESSION, "the journal holds no session"));
         }
@@ -432,13 +522,13 @@ impl Store for JournalStore {
     /// Whether the journal holds the action, read again first when an append's fate was unknown; `None` while that
     /// reread fails.
     fn durable(&self, event: &str) -> Option<bool> {
-        let mut inner = self.0.borrow_mut();
+        let mut inner = self.inner();
         inner.settle();
         (!inner.unsettled).then(|| inner.held.transactions.iter().any(|t| t.event == event))
     }
 
     fn begin(&mut self, genesis: &Genesis) -> Fate {
-        let inner = self.0.get_mut();
+        let mut inner = self.inner();
         inner.settle();
         if inner.held.genesis.is_some() {
             return Fate::RolledBack(Error::new(c600_command::code::SESSION_EXISTS, "the journal holds a session"));
@@ -455,7 +545,7 @@ impl Store for JournalStore {
     }
 
     fn begin_epoch(&mut self, epoch: u64) -> Fate {
-        let inner = self.0.get_mut();
+        let mut inner = self.inner();
         let fate = inner.append(&json::object([("record", text(EPOCH)), ("epoch", Value::Int(epoch as i64))]), &[]);
         if fate == Fate::Durable {
             inner.held.epochs.push(epoch);
@@ -464,18 +554,31 @@ impl Store for JournalStore {
     }
 }
 
+/// [`JournalStore::history_reader`]'s reader: the store's [`Reopen::history`] on the same journal, and nothing else.
+pub struct HistoryReader(Arc<Mutex<Inner>>);
+
+impl HistoryReader {
+    /// The genesis, the epochs and every durable transaction in order, as a reopen reads them.
+    pub fn history(&self) -> Result<History, Error> {
+        history(&mut self.0.lock().unwrap_or_else(PoisonError::into_inner))
+    }
+}
+
 impl Reopen for JournalStore {
     fn history(&mut self) -> Result<History, Error> {
-        let inner = self.0.get_mut();
-        inner.settle();
-        let Some(genesis) = inner.held.genesis.clone() else {
-            return Err(Error::new(code::UNKNOWN_SESSION, "the journal holds no session"));
-        };
-        Ok(History {
-            genesis,
-            epochs: inner.held.epochs.clone(),
-            transactions: inner.held.transactions.clone(),
-            damaged: inner.held.damaged.clone(),
-        })
+        history(&mut self.inner())
     }
+}
+
+fn history(inner: &mut Inner) -> Result<History, Error> {
+    inner.settle();
+    let Some(genesis) = inner.held.genesis.clone() else {
+        return Err(Error::new(code::UNKNOWN_SESSION, "the journal holds no session"));
+    };
+    Ok(History {
+        genesis,
+        epochs: inner.held.epochs.clone(),
+        transactions: inner.held.transactions.clone(),
+        damaged: inner.held.damaged.clone(),
+    })
 }

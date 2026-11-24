@@ -17,7 +17,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
 | `c600-jumble` | The jumbling half of the kernel API (M5): exact poses over Q(√5), K⁺, piece regions, twists and menus, states with their pose tables, the observations, and the adapter `c600-jumble-adapter` that the differential harness drives |
-| `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
+| `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6), and the document service over `c600-log` (LP4-14) |
 | `c600-evidence` | Chapter 06's evidence library as pure code: statements, keys and scopes, the AND/OR graph, grades and editions, the two standing passes, the word function with EVD.32's rows and EVD.40's checks, `CheckReport` admission, EVD.52's import rules and EVD.64's writer check |
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
 | `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
@@ -36,6 +36,9 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-lx4` | LX-4's module set (S, M, L and the 50-module W workspace) and seeded edit script, generated from the three LP3 tools and checked by the front end before anything is written; measurement tooling, not product (LP3, C9) |
 | `c600-lx2` | LX-2's metered and forced-kill trials, alone and with a session open, against a runtime child binary the caller names (the product build's on the owner's machine), and the allocator-ceiling, native recursion and native loop trials on its injection device `c600-lx2-child`; measurement tooling, never shipped (LP3, C9) |
 | `c600-editor` | EV1's editor services as a library: digest-pinned documents and source ranges with host-unit conversion, parse with recovery and trivia, completion, diagnostics, hover, definition and rename, each diagnostic and refusal as typed data, for the C ABI host library of LP4-3 (LP4-1) |
+| `c600-debug` | EV2's read-only debugger, replay and cost profile: stepping RT1's evaluator at the run's own LG4/DET.20 positions with suspended kernel calls, value inspection, word references into compressed words, replay with preflight and mismatch reporting, journal travel over a host's query rows, a pinned run's freshness and checker-trace stepping (LP4-5, LP4-6) |
+| `c600-log` | The 1.0 log file: what a log holds, its record `c600-log-draft` (`.c600log`), the compiler with its gates, a recorder, and the check, import and export of 0.4 proof logs and MPUlt v1 logs of 600-cell-Full (LP4-12, LP4-13); no path to `c600-run` |
+| `c600-docs` | EV5's reference docs and principle records: reference entries generated from checked metadata, an entry's decomposition from the checked IR's call graph, `PrincipleRecord` data read and admitted against it (typed nones, resolving digests, derivation-backed claims, stale hand parts), and explanations whose words come from chapter 06's word function, with lazy provenance links and forks that inherit no evidence (LP4-10) |
 
 | `c600-checkers` | KN6's independent checkers as kernel code: one per certificate kind, the research-archive kind as a family of sub-checkers with their own identities and mutation gates (LP5, R2 to R6; scaffold) |
 | `c600-archive` | PS3's research archive import and exchange: the versioned import table, records with no format key, manifest and member checks, the import report, the typed claim bindings and the check-bundle export; it executes nothing (LP5, R0 and R1; scaffold) |
@@ -58,7 +61,9 @@ has no path to the command layer; the module crate gives it the binding a bound 
 The tools crate depends on the syntax, checker, interpreter, IR, digest, kernel and module crates, on the command
 layer, and on the runtime, display and view crates: its host bridge connects the interpreter, in process or in the
 runtime's own process (C3), to the command layer as the runtime's host, its views build on the display contract and the
-view model, and its user-module runs bind through the module crate's set (LP4-2). The library crate is its
+view model, and its user-module runs bind through the module crate's set (LP4-2). It also depends on the debugger
+crate, whose journal rows it serves over the command layer and whose stepped runs of a binding it launches (LP4-5,
+LP4-6). The library crate is its
 dev-dependency, so that its tests run the library's exact-completion entry through the host bridge, and so is the input
 router, so that its tests invoke a user module's row from a key.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
@@ -75,6 +80,9 @@ The library crate depends on the IR, syntax and digest crates only; its tests al
 and the kernel.
 The editor services crate depends on the syntax, checker, IR and digest crates only, so it has no path to the
 interpreter or the command layer and runs no user program (EV1.9).
+The debugger crate depends on the interpreter, syntax, IR and digest crates only, so it has no path to the command
+layer's writes, the session store, the runtime, the module host or any producer code (EV2.1, EV2.6, EV2.8); the
+checker is its dev-dependency.
 LP5's KN6 checkers depend on the kernel, jumbling and digest crates only, so no checker reaches the interpreter, the
 library, an archive reader or a producer (KN6.2). The archive crate depends on the digest crate, the evidence library
 and the kernel crate, whose container readers (DEFLATE, gzip, JSON) it reuses; it calls no engine. The research host
@@ -2613,10 +2621,8 @@ run or not applicable is no pass (PHS.63).
   - The class rule (no text-class or capture-class binding; list-class bindings reach only the list rows) reports
     `EV4:input.binding_conflict`, since chapter 13 has no row of its own for it; a dedicated row is a change to
     chapter 13 (PHS.52).
-  - Two draft key maps exist: the shell's five chords in `c600-command`, which C1's key route uses, and the router's
-    default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
-    which DT-M1 C4 rules out. One map is to remain; the command table's freeze (PHS.53) left both, since H-08 holds
-    no 1.0 key map.
+  - Closed by LP4-8: two draft key maps existed (the shell's five chords and the router's default map). One checked
+    map remains, in `c600_command::keys`, and Escape cancels no preview.
   - The host gives the router the pinned menu's two digests, since the command layer gives no read of its pin; a read
     in `c600-command` would remove the copy. No key binds `jumble.twist.menu`, and K2's other four axes, a slot's
     transported frame (D11) and C6's seat keys have no key.
@@ -3723,8 +3729,8 @@ LG5.6).
 - Crate edges: `c600-runtime` and `c600-tools` depend on `c600-module`, and `c600-tools` has `c600-input` as a
   dev-dependency. `renderer/bridge/Cargo.lock` lists `c600-module` because `c600-runtime` depends on it.
 - Not built:
-  - the debugger's and a recording's routes (LP4-5, LP4-9), which must bind through `Modules::bind` or
-    `Modules::bind_pinned` and extend CT-EV1-04 when they arrive;
+  - a recording's route (LP4-9), which must bind through `Modules::bind` or `Modules::bind_pinned` and extend
+    CT-EV1-04 when it arrives (the debugger's route binds through `Modules::bind_pinned` since LP4-5);
   - a built-in entry's binding on the runtime's process: an approval carries no class rows, so `BoundJob::new` refuses
     it at the admission stage and it runs in process only;
   - the conversion of a program job's JSON arguments to an entry's declared parameters, which waits for the module
@@ -3756,15 +3762,13 @@ LG5.6).
   the key route's own path.
 - `command.find` is built: after its `query`'s form, and for a run only inside a command the solver invoked, it is
   `accepted` with no job and changes nothing. No entry can serve it.
-- `Shell::bind` adds a key binding, refusing a sequence bound in an overlapping context with
-  `EV4:input.binding_conflict`.
+- `Shell::bind` adds a key binding; since LP4-8 it runs EV4.7's checks of the whole map (below).
 - CT-EV4-01 runs whole in `c600-command/tests/palette.rs` (source).
 - Not built:
   - ranking by the solver's own recency, frequency and pins (ADR-D01.18), glossary terms in the search, aliases
     (`palette.alias`), pins (`palette.pin`), synonyms (ADR-D01.17), short help and the selection filter of
     `command.find`'s `object`;
   - revoking a grant or removing a registered row; the host keeps its registrations for the layer's life;
-  - LP4-8's checked keymap, layouts and rebind (EV4.7, EV4.8): `Shell::bind` is a draft that checks duplicates only;
   - a run's own invocation of a workspace or file row. ADR-D01.2's first route lets an invoked entry point run view
     and workspace rows (overruling LG3.1 and LG3.5 in part); the layer still follows the owner's reading of ONE.52 of
     18 November 2026 (findings B3 and B4), so a workspace entry point the solver invokes writes its records in its own
@@ -3773,6 +3777,107 @@ LG5.6).
   - the palette's generation event (KN5.8's protocol): the shell compares the layer's revision and generation when it
     reads.
 - Evidence kind: source. Nothing here is Windows input, display or timing evidence.
+
+## Status of LP4, LP4-15: durable rollback step IDs (R2-5)
+
+- The owner's decision 4.2 of 23 November 2026: each step of `session.rollback` is journaled under the command ID
+  `{gesture}#{i}/{k}` (1 <= i <= k, plain decimal), so "j of k" is durable and a reopen tells a gesture cut at j of k
+  from a whole one by the step IDs alone. `rollback_step` parses the form to (gesture, i, k); the journal format does
+  not change, since the step ID is the command ID the journal already keeps.
+- A reopen admits a step as the live gesture writes it: step 1 under a gesture ID that no earlier action or gesture
+  used, and each later step right after the one before it with the same k, in the same epoch. Step 0, i above k, a
+  number not in plain decimal and the older form `{gesture}#{i}` name no step and stop the replay in read-only
+  recovery (`KN5:consistency.unadmitted_journal_action`). A press under a gesture ID whose gesture has steps is refused
+  with `KN5:input.command_id_reused` whatever its k, live and after a reopen.
+- `CommandLayer::rollback_steps` builds the step IDs from the gesture's k; its receipts' commands carry k.
+- R2-5's reading test in `c600-command/tests/attack_rollback.rs` is now a passing test of the fix
+  (`a_cut_gesture_and_a_whole_one_journal_apart`), and `tests/rollback.rs` gains the crash case and the admission
+  cases. The `session.rollback` row's note in `command-rows-commit.json`, `command-table.json` and `command-table.md`
+  names the new form.
+- Not built: a journal written before this change with a rollback gesture in the older form reopens in read-only
+  recovery; no migration of such a journal is built, since the row was a draft of 22 November 2026.
+- Evidence kind: source.
+
+## Status of LP4, LP4-8: bindings, layouts, rebind and macros
+
+- One checked key map (EV4.3, EV4.4, EV4.7): the key-map model moved from `c600-input` to `c600_command::keys` (chords
+  in W3C `code` names, the US QWERTY and French AZERTY tables, `BindingSpec`, `KeyMap`, EV4.7's checks and the draft
+  default map); `c600-input` re-exports it in its old modules, so the router's API is unchanged. The shell's key
+  route (`Shell::press`) and the router use the same map, which closes C5's open item "one
+  map is to remain": the shell's own five-chord draft map, `KeyBinding` and `ArgSource` are gone, and Escape no longer
+  cancels a preview anywhere (DT-M1 C4: `Ctrl+Shift+Backspace` does; Escape is `transient.close`).
+  `Shell::press` takes a sequence of physical chords or character intents (`Ctrl+'z'`) resolved under the map's active
+  layout, in the global routing class for the shell's destination; a relative name only the router holds (a grip
+  slot, a menu item, a list entry, a phase, a scrub position) is refused before any envelope with
+  `KN5:input.argument_form`. The default map gains `Ctrl+Alt+'z'` and `Ctrl+Alt+'y'` for the layout history's undo and
+  redo (ADR-D01.14), by character as undo and redo are (Q2 (b)).
+- `Shell::bind` replaces LP4-4's draft: it checks the whole map with the new binding (`KeyMap::bind`), duplicates and
+  the prefix-code property per routing class and every check under each declared layout, and refuses with the first
+  finding's code (`EV4:input.binding_conflict`, `EV4:input.binding_prefix_conflict`,
+  `EV4:input.binding_layout_mismatch`), leaving the map and the palette as they were. `Shell::apply_keymap` takes a map
+  that passed the checks, such as one under another active layout. The palette shows key sequences as chord names
+  (`Ctrl+KeyZ`).
+- The applied grip-slot map (EV4.8, PS1.26; DT-M1 K2, Q3 (a), K6): `grip.rebind {anchor, map, expected_map}` is built.
+  It writes the record `grip/map` (anchor, caps and transported frames in slot order, and the model) as one record
+  write, undoable as a workspace inverse, after checking the forms (`KN5:input.argument_form`: a piece anchor, 1 to 600
+  slots of exactly `{cap, frame}`, caps below 600) and that `expected_map` is the digest of the applied map
+  (`CommandLayer::slot_map_digest`; `KN5:stale.revision_changed` otherwise). Before the first rebind the host's default
+  map applies: the slot map the router's `Context` is made with. `Context::rebind` is gone; `Router::slots` reads the
+  layer's applied map at each press, so only the rebind command changes what a slot key or a twist key's grip sends.
+- The macro base (EV4.9; JI.18 to JI.20; DT-J1 E1, DT-M1 K6): `macro.save {word, name}` is built, with H-08's `confirm`
+  gate (`KN5:input.confirmation_required` without `confirm: true`, which the journal keeps). It writes `macro/<name>`
+  holding the alphabet (`full` or `menu`), KN1's identity block (the model's, or the jumbling block with the pinned
+  menu and its order), the literal letters in chronological order, flat (signed generators, or JI.19's `60*grip +
+  item` codes), the exact expanded length, the literal digest (the journal's for a Full word; JI.19's
+  `ia16-expanded-le/1` for a menu word, which reproduces JI.23's digest), the start digest (labels with Jumble off,
+  poses with Jumble on), the source as written (a recipe's words and stars are its named parts) and the key contracts
+  (`word-key/1`; `trace-key/1` under `full-disjoint-support/1` or `jumble-locality/1`). A save neither selects,
+  inserts nor executes; it is allowed in either Jumble mode, so one base serves both puzzles, and a save under a used
+  name writes the next version. `CommandLayer::macro_base` lists it. `macros::check_keys` refuses comparing two
+  macros whose alphabet, identity, key kinds or versions, or independence contract differ with
+  `LB1:input.key_contract_mismatch` (registered in chapter 13).
+- Only their own rows write these records: `workspace.set` and `worksheet.save` refuse names under `grip/` and
+  `macro/` (as under `set/`), a program job's output that writes one fails with `KN2:input.named_object_invalid`, a
+  run reaches neither row (`LG3:capability.not_granted`), no entry can serve them, and a reopen stops in read-only
+  recovery (`KN5:consistency.unadmitted_journal_action`) at a write of one that is not its own row's from the shell,
+  with its confirmation and a record that reads, and at a job's completion under either row, which runs no job (B7).
+- No H-08 row was added: `grip.rebind` and `macro.save` were stored rows. The command table did not change.
+- Tests:
+  - CT-EV4-06 whole (synthetic): `c600-input/tests/keymap.rs` on the specs and `c600-command/tests/keymap.rs` through
+    `Shell::bind` on the shell's one map, with DT-M1's US and French counterexample refused under AZERTY while US is
+    active.
+  - CT-EV4-07 whole (source): `c600-command/tests/rebind_and_macro_base.rs` (the rebind leg on the layer, the
+    reserved-name and replay legs, the macro base for both puzzles across Jumble on and a reopen, the checks of a save,
+    the key contracts) and the rebind leg of `c600-input/tests/routing.rs` (a slot key sends the rebound cap).
+  - CT-EV4-05, headless part only: `c600-input/tests/ime_focus.rs` (synthetic IME composition, text undo under both
+    layouts and focus loss suppress dispatch and clear held keys). Not run: CT-EV4-05 itself, a windows test with
+    actual Windows IME, text undo and focus loss, on the owner's machine.
+- Not built:
+  - the key-map rows `keymap.edit`, `keymap.save`, `keymap.defaults`, `keymap.name` and `file.keymap.*`, and the
+    persisted binding and key-map forms of chapter 05 (CT-PS1-13's round trip); the shell's map is built in code;
+  - the other `macro.*` rows (`macro.base.open`, `macro.select`, `macro.add`, `macro.replace`, `macro.compare`,
+    `macro.variant.create`, `macro.metadata.set`, `macro.filter`, `macro.library.check`, `macro.compose`,
+    `macro.operand.set`, `macro.reference.check`) and `file.macro.*`; a macro's use, where a jumble letter is refused
+    with Jumble off, waits for `macro.add` and `macro.replace`;
+  - named spans with `same_as` and `inverse_of` relations (JI.21), chunked storage and streaming (JI.20, JI.22) and
+    DT-J1 X3's expansion bound. `macro.save` of a `{"record": name}` word is built since 24 November 2026: the
+    macro keeps the record's block (BND.32), its source pins the record's content digest, and a reopen admits the
+    write only against that record as the journal holds it, with the record's letters;
+  - the word and trace keys themselves: they are the interpreter's primitives, and `c600-command` keeps no path to it
+    (ONE.48), so the layer records their contracts and `macro.compare`'s job will compute them;
+  - `grip.select`, `grip.anchor.set` and the transport of frames from an anchor (the map is stored as the rebind gives
+    it); `FrameRef` has no settled form, so a frame is kept as given;
+  - the renderer bridge's rebind: it keeps its one default slot and sends no `grip.rebind`.
+- Callers moved to the map's chords: `c600-tools`' `c600-lp3-source` dismisses a refused commit's preview with
+  `Ctrl+Shift+Backspace` and undoes and redoes with `Ctrl+KeyZ` and `Ctrl+KeyY`. The renderer bridge's host
+  (`renderer/bridge/host`, LP4-3's `m6h_register_row`) gives its shell the router's map, and a row's key is bound by
+  checking the router's specs with the new binding under both declared layouts (`KeyMap::apply`) and applying the
+  result to the router and the shell together, so the palette and the router read one map. The spellings in the
+  bridge's tests, the editor panel and `renderer/shell/README.md` are the map's.
+- Drafts: the record names `grip/map` and `macro/<name>`, their payloads and provenance blocks, the stale code for a
+  raced rebind, the 600-slot bound, the overwrite of a macro by name, and the Full word's literal digest profile, in
+  the crate documentation of `c600_command::grip` and `c600_command::macros`.
+- Evidence kind: source and synthetic. No Windows, IME, device or timing claim.
 
 ## Status of LP4, LP4-3: the shell's write-check-run flow
 
@@ -3791,9 +3896,9 @@ uses this workspace's crates through their public interfaces and changes none of
   is `{"code", "detail"}` (`m6e_last_error`).
 - The host library `c600-shell-host` goes to version 7. `m6h_register_row` registers a module's entry as a language
   overlay row (`tool.<module>.<entry>`, a query row, `register_overlay_with`) and binds its key in the router and the
-  shell's keymap. `m6h_palette` reads the palette. `m6h_invoke` invokes a row from the palette (`Shell::invoke`).
-  `m6h_take_job` and `m6h_finish_job` carry a program job's run (`ModuleRun::of_job`, as JSON) to the editor library
-  and its end back to the layer as the job's result or error. `m6h_set_draft_word` sets the editor's draft,
+  shell's key map, one map since LP4-8. `m6h_palette` reads the palette. `m6h_invoke` invokes a row from the palette
+  (`Shell::invoke`). `m6h_take_job` and `m6h_finish_job` carry a program job's run (`ModuleRun::of_job`, as JSON) to
+  the editor library and its end back to the layer as the job's result or error. `m6h_set_draft_word` sets the editor's draft,
   `m6h_set_focus` the router's text or puzzle focus, and `m6h_answer` gives the JSON answers. The host now builds the
   previews the layer queues (`run_jobs`) at each pump, frame and key, shows a pending preview on the view
   (`show_preview`, with no primitives yet), and reports each confirmed frame that showed it to the layer
@@ -3834,13 +3939,502 @@ uses this workspace's crates through their public interfaces and changes none of
     capability, so a draft that imports or requires one is refused;
   - more than one entry per check, and arguments (a registered row takes none; their conversion waits for LG5.2);
   - persistence of the module set and of the registered rows, which live for one run of the shell; removing or
-    re-keying a row (LP4-8's checked keymap);
+    re-keying a row;
   - the panel's look (ADR-D01's later rounds); hover, definition and rename in the panel; diagnostics drawn in the
     code field; the preview's primitives on the view;
   - the on-screen flow: the shell built offline with the panel (`build_shell.py`, no warnings), and it was never
     launched.
 - Evidence kind: source. The flow test's frames are a fake core's and its keys synthetic; nothing here is Windows
   input, display or timing evidence.
+
+## Status of LP4, LP4-5 and LP4-6: the debugger, replay and profile
+
+LP4-5 and LP4-6 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV2.1 to EV2.12; chapter 02
+LG4.12).
+
+- Stepping (`c600-run`'s `step`, additive). `Loaded::run_gated` calls a `Gate` before each operation is admitted, at the
+  run's own DET.20 position (the root's admitted steps) under the operation's DET.56 locator, with its source range,
+  the enclosing call sites and the frame's bound slots by their source names. The gate adds no step, charge or tariff:
+  a gate that lets everything through leaves rows, charges, stop and output unchanged. The run stays on the caller's
+  thread, since the interpreter starts no thread (CT-DET-21); `c600-debug`'s `stepper` drives a gated run on a thread
+  of the debugger's, one advance at a time: a dispatched host row is a suspended kernel call (`waiting(call)`), and a
+  duplicate request returns its latest result without dispatching or charging again.
+- `c600-debug` is the read-only debugger. `Debugger::debug_step(run, expected_stop, request_id)` answers EV2.12's
+  `StepResult` (`stopped`, `waiting(call)`, `terminal(outcome)` with five distinct reasons, or
+  `unavailable(step_mapping_missing)`), with the stop's source ranges and its call sites' or an explicit
+  `unavailable(source_map_missing | source_bytes_missing)`, and stale requests as `EV2:stale.debug_stop`.
+  `inspect_value` keeps exact values, approximate display values with their precision, partial results and verdicts
+  apart (EV2.2). A stepped run's host is `ReadOnly`, which refuses every preview and sink with
+  `EV2:capability.debug_write_forbidden` before the host behind it sees one. `words` resolves H7 references into
+  literal and compressed words lazily, by occurrence path and offset (EV2.11). `Replayer::replay_run` preflights the
+  record's key (module digests, edition, IR and contract, identity, input, cost units), re-evaluates the computation
+  against the record's captured inputs, inspects its recorded effects without executing them (EV2.9 as the owner read
+  it on 23 November 2026), and compares the trace, outcome, code, stop, coverage, charges, rows, result bytes and output
+  (`EV2:evidence.replay_mismatch` with the field and position); a safety-stopped record is not run and stays incomplete.
+  `profile` is EV2.7's cost profile, equal across cached, uncached and slow runs, with elapsed time as display data
+  only. `journal` reads a host's query rows through the read-only `JournalRows` (EV2.8) and says whether a pinned input
+  is still the head (EV2.10). `checker` steps KN6.4's per-claim trace, bound to its certificate and checker digests.
+- `c600-tools`' `debug` is the host's side: `Rows` serves `JournalRows` over `CommandLayer`'s reading methods,
+  `bind_debug` is the debugger's route through `Modules::bind_pinned`, and `launch` steps a binding behind its boundary
+  with the read-only host outside it; `target` names an executor without a step mapping for the runtime's process.
+- Tests, each naming its ID: CT-EV2-01 whole (`c600-tools/tests/debug_host.rs`, every debugger operation with a live
+  engine behind it; its stepping part also in `c600-debug/tests/stepping.rs`), CT-EV2-02, CT-EV2-11 and CT-LG4-07 whole
+  (`c600-debug/tests/stepping.rs`), CT-EV2-03, CT-EV2-04, CT-EV2-05 and CT-EV2-08 whole (`c600-debug/tests/replay.rs`),
+  CT-EV2-06 whole (`c600-debug/tests/words.rs`), CT-EV2-09 whole (`c600-tools/tests/debug_host.rs`), CT-EV1-04's
+  debugger route (`c600-tools/tests/ev1_host.rs`), CT-EV2-10 whole (`c600-debug/tests/replay.rs`, under DET.7 as amended
+  and overlay OV-1), and parts of CT-EV2-07 (`c600-debug/tests/checker.rs`, `c600-debug/tests/dependencies.rs`).
+  `c600-run/tests/step.rs` covers the gate and `c600-debug/tests/stepper.rs` the stepper.
+- Drafts, which change until the editor protocol and the IR freeze (PHS.49): the stop and value reference texts
+  (`<step>/<locator>`, `<call>/await`, `end`; `<stop>#<index>`, `<stop>#result`, `end#value`), `StepResult`'s fields,
+  the typed `RunRecord` and `ReproKey` the replayer reads, the host-trace events a record holds, the cost profile's
+  budget name (the run's), the journal row forms, the checker trace form, and the literal digests of menu letters and UI
+  actions. Every host row a stepped run performs is a suspended call; a cancellation waits for a call in flight.
+- Not built:
+  - KN6.4's per-claim trace producer: no checker in the workspace writes one, so CT-EV2-07 runs in part, over a trace
+    its test builds, and re-deriving a trace by running a checker as budgeted work is not built;
+  - chapter 05's `RunRecord` and chapter 09's `ReproKey` forms, the session's capture of a run's host trace and a
+    conversion from `c600-session`'s records (the debugger cannot depend on the session store); only tests capture;
+  - opening an old event's snapshot state: travel opens journal entries, and the headless layer serves no snapshot of
+    an old event; the `checkpoints` row is not built there and answers `KN5:input.row_not_built`; chapter 08's snapshot
+    and branch lifecycles;
+  - a step mapping for the runtime's own process and for RT2 and RT3: their sessions are
+    `unavailable(step_mapping_missing)`;
+  - EV2.5's provenance view of evidence and computation edges (only its word references are built), a `Derived`
+    value's derivation and reachability claim in inspection (KN2.11 to KN2.14), and exact transport of a pinned result
+    by a lemma (EV2.10);
+  - the debugger's editor protocol and its C ABI (LP4-3), and replay of a jumbling record with its menu alphabet beyond
+    the identity preflight.
+- Evidence kind: source; CT-EV2-05 is synthetic. Nothing here is Windows input, display or timing evidence.
+
+## Status of LP4, LP4-7: the declared-part round trip
+
+LP4-7 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04, EV3.5's `edit_declared_part` and
+EV3.7), in `c600-editor`, a draft.
+
+- `edit_declared_part(document, digest, declaration, field, value, context)` returns the source edits that set one
+  field of a declared part to a typed `PartValue`, the SHA-256 of the edited bytes (the new version, `source_digest`)
+  and the edited draft checked again under the same module context (its diagnostics and verdict, as `diagnose` gives
+  them). The edit replaces exactly the field's literal with its canonical spelling, under the request's digest;
+  `apply_edits` applies it. Nothing is persisted and no program runs (EV1.9). `declared_parts(document, digest)` lists
+  the parts a source declares, each field with its path, declared type text, current value and range.
+- Refusals, each an `Envelope` with service `EditDeclaredPart` and no span: a part the source does not declare is
+  `EV3:input.round_trip_undeclared` with its reason (`Undeclared`: no declaration, no directive, a malformed
+  directive, a field the directive does not list, or a part that is not a literal); a value of another type than the
+  field's is `LG2:type.mismatch` (`Reason::ValueType` with the field's type text and the supplied kind, next action
+  `SupplyValue`); a request for other bytes is `EV1:stale.editor_source`.
+- DRAFT, which freezes with the syntax (PHS.49): the source syntax has no clause for an editable part, so a part is
+  declared by a directive comment on the lines above its declaration, `# @editable parameter|layout|default
+  [field.path ...]`; with no field listed, the one field is `value`, the whole result. A declared part is a `fn` with
+  no generics, parameters, effects, charge or `let`, whose body returns a literal (exact or approximate number, `Q5`,
+  text, boolean, literal word) or a record of literals. A computed value, a command, a view and a declaration without
+  a directive are never round-tripped: nothing is inverted from a drawing (EV3.7). The integrator may replace the
+  directive by a syntax clause at the syntax freeze; the service's data does not change.
+- Tests: CT-EV3-05 runs whole in `c600-editor/tests/ct_ev3_05.rs` (source). It reads the three built-in tools'
+  sources from their crates (`full_600_cell.6cs`, `representations.6cs`, `jumble_checker.6cs`): as shipped they
+  declare no editable part, so every declaration and declared parameter is refused; each tool's fork (its shipped bytes
+  with a declared parameter, layout and default appended) round-trips every declared field, reads it back and checks
+  clean; drawn views, computed values, undeclared fields and malformed directives are refused. CT-EV1-07 now also
+  covers the two round-trip refusals.
+- Not built:
+  - declared parts in the shipped built-in tools: their `.6cs` bytes are hashed into the build strings and LX-4's
+    module set reads them, so adding parts to them is the integrator's change (the tests use forks);
+  - the workspace command that persists a round-tripped layout or parameter with its undo (EV3.7, default 16), the
+    host's fork operation, and activating the new version (LP4-2's `activate_module` does that once it is checked);
+  - follow-pick navigation from a drawn instance to its declared part (EV3.5's `follow_pick`, chapter 10's
+    `SourceMap`);
+  - keeping the directive comments through `format`, which still drops comments (LP4-1).
+- Evidence kind: source. Nothing here is Windows, input, display or timing evidence.
+
+## Status of LP4, LP4-12: the 1.0 log and its compiler
+
+LP4-12 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (ADR-D01.80 to .82 as revision 6's R-2 and R-3
+amend them), in the new crate `c600-log`, a draft.
+
+- What a log holds (`Log`): the model identity (KN0.1); the start state (solved, or its labels in PS1.7's
+  `u32le-base64` carrier); the move history and the layout history (ADR-D01.14 to .16); the saved cursors and the
+  full-state hash at save; the view, the layout and the workspace as recorded values; each open document with its
+  identity (a path, or an untitled id that was never saved), the digest of its last saved bytes and its full contents,
+  with its dirty mark; the embedded macros (FP.12's steps, Nat count and `DigestRef(recipe_expansion)`), Library
+  entries and scripts (text and `DigestRef(source)`), each with its author class (`built_in`, `own`,
+  `forked_built_in`, `imported`, or `unknown`); the preferences as canonical JSON text, recorded and never applied;
+  where the log came from.
+- Histories: each is an append-only list of actions. A node action (commit, partial undo, workspace action, layout
+  step) adds a node whose parent is where the cursor stood; a cursor action (undo, redo, roll, select) moves the
+  cursor, an undo only back on its line, a redo only forward, a roll either way, a select anywhere. An abandoned branch
+  is the nodes no later cursor returns to. A partial undo names its commit and how many of its literal letters stay;
+  its parent is the commit's parent, and the cursor must stand on the commit or on another partial undo of it. A
+  commit carries its legal witness (0.4's word and star steps), its Nat counts and its pre and post full-state hashes.
+- The record (`write`, `read`), DRAFT: an FP.11 record of format `c600-log-draft`, version 1, with null provenance,
+  outside the data core like FP.37's playback state; payload `{log, seal}`, where the seal is the
+  `DigestRef(content)` of the FP.5 bytes of the record with `payload` reduced to `{log}`. The bytes are FP.5's
+  `c600-json-1`, or FP.7's `c600-gzip-stored-1` above 250,000 bytes, read under FP.9's limits and only in their one
+  canonical spelling; FP.10's dispatch comes first, unknown fields are refused, and an unknown optional extension is
+  kept. The extension is `.c600log` (`EXTENSION`).
+- `compile(kernel, bytes)` (ADR-D01.81) runs the gates `format`, `model_match`, `moves` (every node replayed from the
+  start with its legal witness through `c600-kernel`, a state kept only while a later node needs it), `final_hash`,
+  `macros` and `scripts` (each embedded script given to `c600_editor::diagnose`, with the other embedded scripts as its
+  digest-pinned dependencies; nothing runs). Codes: a bad record `PS1:input.persistence_format`,
+  `PS1:input.noncanonical_value` or `PS1:resource_limit.persistence_size`; an unknown format or version, or an unknown
+  required extension, `PS2:input.persistence_version`; a changed byte `PS1:input.digest_mismatch` (the seal, or a clean
+  document's contents against its saved digest); another model `KN1:input.identity_mismatch`; a move without its legal
+  witness the kernel's `KN2:input.recipe_shape` (or its other recipe codes); a replay that disagrees with a pre or post
+  state, or a wrong final hash, `PS3:input.checkpoint_replay`. The result names the SHA-256 of the bytes it compiled
+  (`binds`). Only when `format`, `model_match`, `moves` and `final_hash` all passed does it bind the saved state;
+  otherwise the log is read-only with its problems and no state (R-2). A script's or a macro's problem leaves the
+  state bound and the compile not passed.
+- `Recorder` writes a log action by action with the kernel computing each state, for fixtures and short sessions.
+- Tests (source): `tests/compile.rs` writes a session with an abandoned branch, partial undos, a branch switch, layout
+  steps, open documents, a macro, a Library entry, a built-in script and preferences, and compiles it through every
+  gate to the session's hash; a changed model identity, missing and wrong witnesses, a flipped byte (one named, and a
+  bit flip every 37 bytes), a wrong final hash, bad structure, bad documents and other spellings each fail with their
+  code and no bound state; a dirty document's unsaved contents and saved digest survive saving and reopening.
+  `tests/dependencies.rs` follows the manifests and fails on a path from `c600-log` to `c600-run`, `c600-command` or
+  `c600-session`, or on any dependency that is not a workspace path.
+- Readings: `c600-log` cannot depend on `c600-session` as the plan's selection 1 lists, because `c600-session` depends
+  on `c600-run`; it keeps its own plain history types, and converting the session store's journal and branches into a
+  `Log` is LP4-14's. R-3 is read in its final form: every open document's full contents are kept, clean or dirty, and
+  a clean document's contents must match its saved digest. Embedded scripts are checked without a session identity (a
+  model-independent request).
+- Not built:
+  - LP4-14's document rows (`file.log.*`: New, Open, Save, Save as, Compile, Close, and the import commit with its file
+    check and confirm gates, recovery checkpoint and undo journal), the tabs, the Problems tab, the compile lamp and
+    the signature; saving the live session at exit, and restoring open documents at start with a changed-on-disk mark;
+  - the conversion between `c600-session`'s history and `Log`;
+  - logs of the jumbled puzzle: the identity block reads, `model_match` refuses it, and the replay is 600-cell-Full's;
+  - interpreting the recorded view, layout, workspace and layout steps, and checking Library entries (they are recorded
+    values); the install-time consent a script of another author class needs before it runs (the log records the
+    class);
+  - a chapter 05 table row and an FP.4 row for `c600-log-draft`, which are versioned changes of frozen text.
+- Evidence kind: source. Nothing here is Windows, input, display or timing evidence.
+
+## Status of LP4, LP4-13: C600 and MPUlt interchange
+
+LP4-13 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md), in `c600-log`: 0.4's proof logs and MPUltimate
+v1 logs of 600-cell-Full checked, imported and exported with 0.4's rules (`log_io.py`, `mpult_log.py`), which are not
+changed.
+
+- `c600::check`, `import` and `export`: `C600-STUDIO-SESSION-v1` (extension `.c600.json.gz`) with `decode_log`'s and
+  `validate_record`'s limits, order and texts: at most 16 MiB stored and 24 MiB expanded, UTF-8 JSON with an optional
+  BOM, a solved root, at most 10,000 transactions and 2,000,000 primitives, every recipe normalized with its counts,
+  and every pre, post and final state replayed. Import makes one commit per transaction and records the preferences
+  without applying them. Export writes the line from the start to the saved cursor as `Session.export` does (a partial
+  undo becomes a transaction of its kept letters), as canonical JSON, raw or in a stored gzip member with no time.
+  Codes: another model `KN1:input.identity_mismatch`, another format `PS2:input.persistence_version`, a cap
+  `PS1:resource_limit.persistence_size`, a replay mismatch `PS3:input.checkpoint_replay`, other faults
+  `PS1:input.persistence_format`.
+- `mpult::NativeProfile` reads 0.4's `C600-NATIVE-PROFILE-v1` with `profile_data`'s checks, plus its format and its
+  `profile_sha256`, which is checked on the file's bytes because 0.4 hashed `translations` with integer keys.
+  `mpult::check`, `import` and `export`: MPUltimate v1 logs of 600-cell-Full (extension `.log`) with `import_native`'s
+  checks: header, description with exact decimals, base36 colors, timer, CRC, macro groups and shuffle boundary, the
+  verified bridge words, the replay of every move with the redo tail, and the colors at the pointer. The caps are
+  0.4's: 16 MiB, 20,000 sequence entries and 10,000 native moves. Over a cap is `PS1:resource_limit.persistence_size`,
+  another puzzle (header, description or dimensions) `KN1:input.identity_mismatch`, another MPUltimate version
+  `PS2:input.persistence_version`, a CRC mismatch `PS1:input.digest_mismatch`, colors that disagree with the replay
+  `PS3:input.checkpoint_replay`. Import keeps the redo tail as moves after the saved cursor (a roll back to the
+  pointer). Export writes the line through the saved cursor and on along the last redo branch, with the pointer at
+  the saved cursor: an unchanged import is written back with its recorded sequence entries, counters and timer, and
+  any other transaction letter by letter through the profile's translations, as `export_native` does.
+- Tests (fixture): `tests/fixtures/make_fixtures.py` made the fixtures with 0.4's own code in the pinned engine
+  environment, and `expected.json` holds what 0.4 returned and the 0.4 sources' digests. `tests/interchange.rs`: the
+  0.4 sources and fixtures are unchanged; the fixtures import to the states 0.4 reaches, transaction by transaction,
+  and compile as logs to the session's hash; export then import is the identity, byte for byte for the raw C600
+  fixture and every MPUlt fixture, and by the JSON inside the gzip one; a session's letter-by-letter MPUlt export
+  equals 0.4's `export_native` bytes; the refusals above each carry their code; the description constant is MPUlt's
+  block.
+- Readings: the MPUlt profile in the fixtures is 0.4's synthetic one (`test_native_bridge.make_fixture`), not an export
+  of the actual MPUlt process, so this is source and fixture evidence only. Unlike 0.4's export, MPUlt export keeps a
+  redo tail and an imported transaction's recorded entries (macro markers and moves of no letter), so that an
+  unchanged import round-trips.
+- Not built:
+  - checks against a profile from the actual MPUlt process on the owner's machine;
+  - C600 export above 16 MiB stored: 0.4 compresses with zlib, this crate writes stored blocks only and refuses;
+  - JSON nested deeper than 128 levels in a 0.4 log, which 0.4's reader accepts and the kernel's parser refuses;
+  - the interchange command rows and file dialogs (LP4-14).
+- Evidence kind: source and fixture. Nothing here is Windows, input, display or timing evidence.
+
+## Status of LP4, LP4-10: reference docs and principle records
+
+LP4-10 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV5.2 to EV5.5 and EV5.13; chapter 03
+LB6), a draft. The crate `c600-docs` depends on the syntax, checker, IR, module and digest crates (the plan's five)
+and on the evidence library, whose word function the explanation words come from (EV5.13). It runs no program and has
+no path to the command layer; its tests run the fixtures, so the command layer, the kernel, the jumbling crates, the
+interpreter, the tools, representations and library crates are its dev-dependencies.
+
+- Reference docs (`reference`). A module's reference is generated from its source and its checked metadata: source
+  and closure digests (the closure of a manifest with the module's supported identity, LG5.3), edition, IR version and
+  contract, requested capabilities, supported identities, and per function its signature, declared and inferred
+  effects, capabilities, grant rows, state reads (capability separation) and the range of its declaration in the
+  source. The comment lines directly above a declaration are carried as written. The principle record is linked by its
+  path and digest, never copied. A draft that does not parse, lower or check is `Status::Broken` with its findings and
+  no entry, and its page says it is not the active tool's documentation (EV1.7).
+- Decompositions (`decompose`). An entry's decomposition is generated from the checked IR before executor lowering:
+  every function the entry reaches in any module of the program, with the checker's inferred effects, capabilities and
+  grant rows; its direct calls; "may call" edges for function values and references (the checker's `reaches` beyond
+  the direct calls); its kernel and host operations as opaque leaves (`kernel:read_snapshot(<row>)`,
+  `kernel:propose(<target>)`, `kernel:publish_view`, `kernel:write_workspace(<record>)`, `kernel:receipt(<field>)`, ...);
+  and its base parts, the IR's own operations (`base:<prim>`, `base:Repeat`, ...). Its digest names the IR version,
+  the contract and every module's source digest. `check_submitted` refuses a submitted graph that omits a derived node,
+  effect or edge or names other source or another IR, with `LB6:evidence.decomposition_mismatch`.
+- Principle records (`record`). A record is the data file `docs/progress/1.0/principle-records/<module>.json`, form
+  `c600-principle-record-draft` version 1, with LB6.2's parts: the specification of each exported entry (function,
+  inputs, parameters, budget, output, puzzle, menu, level, domain, tie rule, the meaning of an empty and of a negative
+  answer, and what the answer means outside the cited statement's scope), the justification (lemma, certificate, replay
+  or "by definition", each with its statement and an evidence reference: a repository file, its SHA-256, basis, check,
+  source label and whether it is imported), the instance (model identity, level, input, expected claims each naming
+  the derivation step it repeats, and the fixture test), the binding (source and closure digests, model identity,
+  decomposition digest, statements) and the parts a person writes (step map with the unmapped nodes and steps on both
+  sides, reason with its glossary terms, failure examples, what an answer does not mean, givens, steps, prerequisite
+  terms and records, and a leaf specification with its oracle test per kernel leaf). Every part is given or a typed
+  none, `{"none": "because ..."}`. `admit` refuses an absent part, a none without its reason, an empty list, an
+  evidence file at other bytes, a fixture or leaf test that names no function, a claim that is not its step's result,
+  a kernel leaf with no specification, a step map whose unmapped lists are not the computed ones, and a prerequisite
+  term that is unknown, not learner-facing or above the record's level (`LB6:evidence.principle_record_incomplete`); a
+  record bound to other source or another closure is `LB6:evidence.decomposition_mismatch`. A record whose
+  decomposition digest is not the current one is `Stale`: every hand-written part is stale, and the step map and leaf
+  specifications wait for the person who refreshes them. `prerequisite_cycle` checks that records form a DAG.
+- Records shipped: the three built-in tools of PHS.22 (`full_600_cell`, `jumble_checker`, `representations`) and
+  the library's twelve modules (`words`, `quadratic`, `word_keys`, `linalg`, `trees`, `recipes`, `completion`,
+  `protection`, `guarded_setups`, `macros`, `seeds`, `orbits`). Each instance runs on the real geometry: the
+  600-cell-Full tool inside the command the solver invokes, through the tools' host bridge, with the layer's preview;
+  the jumbling tool onto the jumbling engine's whole-word check under W-J fixture I_a's menu; state-reading library
+  entries through `Boundary` and the host bridge onto a 600-cell-Full command layer at solved; pure entries on
+  600-cell-Full values (generators, the golden ratio of the vertex coordinates, the seed atlas's collateral, the solved
+  pose), and `linalg` on a plain example matrix over F5, never a correction library's rows (the program never shows a
+  combination of corrections: owner, 22 October 2026, O6 (b)). Evidence files are model assets, research data, the
+  technical report and `c600-library`'s tests, pinned by digest: a change to one makes its record refuse until the
+  digest is refreshed. Leaf specifications name their oracle tests by path and function, not by digest.
+- The mathematician's pass of 23 November 2026, fixed: `linalg`'s instance is a plain matrix (M1); `recipes` says that
+  what remains of a star is the seed's whole effect, its cycle and any collateral, and calls generator 3 the seed role
+  (M3, M13); `jumble_checker` admits the second letter because a twist at c moves only the pieces inside H_c⁺, rigidly,
+  and creates no straddler of c (M6); `seeds` rests on Kahn's argument for its topological sort, with the library's
+  test as a check on finite instances only (M27), and on the technical report's "Triangular stage invariant", which
+  keeps finished orbits in place at macro boundaries only (M7); `orbits` reads -1 as the table's
+  index for 600 singleton position orbits (M8); `protection`'s failure example is [1], which moves slot 1 (M12);
+  `guarded_setups`' empty list means a buffer, since the tables cover every non-buffer position (M14, checked on all 35
+  trees); `representations`' distance 0 is a definition (M15); `trees` says pose (M16). Counted with `core.py` on the
+  model: generator 1 moves 3,094 pieces (4,600 slots), and generators 1 and 45 move disjoint slots.
+- Explanations (`explain`). `explain` builds a tool's explanation from its record and its admission state: the
+  specification, each argument's claim with its word from `c600_evidence::word` at a pinned edition over a graph of the
+  record's facts (statement, scope, bases, checks, job outcome, source labels and check references kept apart), the
+  instance's claim (one instance, a completed or failed producing job, or none when the fixture did not run), the
+  decomposition's roots as collapsed links (`expand` gives a node's calls, kernel leaves and base parts; a long word is
+  a digest and a length until `expand_word` reads letters from bytes of that digest; a named, commit-pinned statement
+  is a lemma link; an imported result links its stored bytes and source label with its producer absent), the parts a
+  person writes and the stale parts. A record's evidence enters through chapter 06's `record` sink as the host's
+  write, so a `formal_proof` or `independent_checker` check is refused and shown as refused. A computed or certified
+  argument's claim covers the recorded inputs only. Where no human review or formal proof is recorded, the claim says
+  so. The author class is shown as data and no word reads it; an explanation takes no score and grants nothing. A
+  fork's explanation keeps the cited statements as references and records none of the parent's evidence.
+- Tests. CT-LB6-01, CT-EV5-01 and CT-EV5-06 run whole (`c600-docs/tests/ct_lb6_01.rs`, `ct_ev5_01.rs`,
+  `ct_ev5_06.rs`). Each record's fixture is `fixture_<module>` in `ct_lb6_01.rs`; it reads the record's input and
+  compares the module's answers with the record's expected claims. `tests/facts.rs` prints, on request
+  (`--ignored`), the generated fields a record's refresh needs.
+- Readings (drafts, to confirm at the next freeze): the record is data beside the module, bound to the closure digest
+  of a manifest with no principle field, since the manifest's `principle` digest cannot be inside what the record
+  binds (LB6.2 "the record is data in the module manifest" is read as "named by the manifest"); the tools' own
+  manifests (`c600_tools::tool::Manifest::principle_record`) still say `false`, since `c600-tools` and
+  `c600-jumble-tool` are not this item's files; the evidence library is a sixth dependency beside the plan's five,
+  since EV5.13 asks for chapter 06's word function.
+- Not built:
+  - the jumbling library's sixteen modules in `c600-jumble-tool` (`jumble_admissibility` to `menu_words`), which have
+    no record yet;
+  - the manifests' `principle` digest and the tools' `principle_record` flag, which wait for `c600-tools`' owner;
+  - commit-pinned lemma citations beyond one: `seeds` cites the technical report's proposition pinned to the commit
+    that last changed the report, since basis theorem needs a commit-pinned record (EVD.64, EVD.65); every other
+    statement is typed;
+  - the mathematician's check of the pass's fixes, and their review of the parts the pass left unchanged, which each
+    record's `review` field names;
+  - a rendered reference or explanation page in the shell or the docs site: `render` gives Markdown text only;
+  - RT4's host decomposition (RTE.80), since RT4 is not built (LB6.6).
+- Evidence kind: source and fixture. The fixtures' instances are the real model's and the research fixtures'; a pass
+  proves no universal lemma and records no human comprehension result (EV5.4).
+
+## Status of LP4, LP4-11: the glossary check and the learning path
+
+LP4-11's glossary and fixture part (chapter 04 EV5.6, EV5.10, EV5.14, EV5.15 and EV5.18), a draft under the
+mathematician's review. It is data and a standard-library Python check outside this workspace:
+`docs/progress/1.0/glossary/` (`terms.json`, `learning-path.json`, `diagrams/`, the generated `glossary.md` and
+`build.py`), tested by `tests/test_glossary.py`. The principle records of LP4-10 name their prerequisite terms in it.
+
+- The term check (`build.py --check`). A definition writes a reference as `[[Term]]` or `[[shown text|Term]]`; it must
+  name one row by its term, an alias or a homonym's declared bare sense, and nothing is resolved by a similar name.
+  The check refuses an unknown term, an ambiguous term (a homonym word without a bare sense), a definition that uses a
+  term above its own level unless the row records that forward reference with its reason, a learner-facing definition
+  that uses a row marked `"learner_facing": false`, a citation without a registered source prefix (a document such as
+  "Theory" or "Chapter 03", a clause prefix such as `KN`, or a repository file or link that exists), a homonym sense
+  without its own row, and a bare homonym word in a definition (`[[covers|~]]` marks an ordinary word). It also checks
+  the diagram manifest (EV5.15) and that `glossary.md` is the output of the data.
+- Integrated entries. `terms.json` (version 2) holds 298 rows: 31 solving rows (the 30 before, with twist split into
+  its two puzzles' senses and frame group replacing orientation group), 230 new rows from chapter 04 section 6's 246
+  entries (the other 16 merged into solving rows with their scope changes), 20 sense rows of EV5.18 that had none, and
+  17 rows for EV5.6's step concepts that had none (empty answer, not
+  run, specification, not meant, workspace undo, conjugate, commutator, mixed statement, approximate value, the
+  human-solve boundary, stabiliser, coset, quotient, homomorphism, F2, F5, Q(√5)). Section 6's ambiguous citations are
+  qualified ("partition default 10", "DT-M1 Q7 (a)", "LQ14 (access policy)"). Every row has its diagram source, its SVG
+  rendered by the local Mermaid CLI 12.0.0 and both digests in the manifest; the changed rows (cap, grip, label, piece,
+  generator, orbit, Net and Strict, complete effect, orientation, frame, occupant, target) got new diagrams.
+- The manual's first use (owner, 23 November 2026). A row's `manual` words name the manual's word for it; `build.py`
+  computes where the manual's chapters first use each, by section, and refuses a definition that uses a term the
+  manual introduces in a later section unless the row records it in `first_use_forward`. Eight such uses are recorded
+  for review (lattice, N, seam, height, alignment domain and cap cover use pose, cut cell or retained twist before the
+  manual names them; the ν-corrections are announced before ν).
+- The mathematician's pass of 23 November 2026 and its re-check, fixed: mixed statement says a failed budgeted search
+  (M2), and an exhaustive search refutes it only over the whole set "some" ranges over, under EVD.42's guard (M26);
+  census rank is the Theory's application rank, r(A) = |M(A)| − 1 (Theory Lemma 6; `rank` = len(`mask`) − 1 on all
+  35 orbits of `assets/census.json`), and is learner-facing, which replaces EV5.18's "what it counts is not
+  established" (M9, M29); cap cover says what covering is (manual 2.2, M10), as a hint about the order that can fail
+  (manual 2.2 and 2.6, M25); the 600-cell-Full twist is a rotation of the cap's A4, a sequence of H_c and T_c
+  (M11), and the jumbling twist cites the menu Λ_c of card 6 (M19); residual names the frame group (M17); tree branch exists at
+  height 2 or more (M18); commutator's order is settled by the atlas, [H0, T5] = 1, 12, 1, −12, and it speaks of
+  disjoint supports (M20); the human-solve boundary allows setup search and the 17 October repair list (M21); In_c,
+  Out_c, A_c, N and alignment domain name the alignment domain, a coset of poses (M24); admitted domain explains D[k].
+  Their diagrams were rendered again.
+- The learning path (`learning-path.json`). EV5.6's seven steps, each with its concepts resolved to rows, the rows
+  their definitions need (`closure`), revisits, waiting rows (the flow rule waits for LQ2), its command routes and one
+  fixture task. The check refuses a cycle among the steps, a concept that is not learner-facing, a concept whose
+  definition uses a term no step up to it teaches (unless the manual or the solving glossary teaches it, as `assumed`
+  names, or the step records the use, as step 1 does for the principle record and step 3 for assistance provenance), a
+  revisit of a concept that neither an earlier step nor the manual teaches, a fixture concept taught after the task, a
+  fixture whose recorded instance is missing, changed or lacks its expected value, and a fixture whose answer is a word
+  or a macro. The fixtures read family R's coverage in the 7302 search record and the floor instance in the manual
+  (both of the jumbling puzzle under menu I_a), CT-EV3-05's fork with its two marked parameters (LP4-7) and the
+  600-cell-Full tool's record, the command table's key-change row (read live by ID, since the draft table changes), the
+  seed atlas, the `seeds` module source, and the guarded setups' certificate with its digest (a match names the cited
+  bytes and checks no certificate).
+- Tests. `tests/test_glossary.py` runs the check on the repository and plants each refusal. It runs CT-EV5-02 in part:
+  the review clause (the mathematician's pass is recorded in OV-3, and its fixes wait for their check) and BS3's
+  branch (LQ2) are not run; the flow goals against the disclosure data run in `c600-command/tests/disclosure.rs`
+  (LP4-11's `c600-command` part, below). CI runs `python tests/test_glossary.py`, which also runs the check.
+- Readings (drafts; OV-3 records them): EV5.6's phrases are resolved to rows; the path teaches four concepts earlier
+  than EV5.6 lists them, because definitions at step 1 use them (theorem, certificate, digest and identity level);
+  assistance provenance keeps its frozen step 4, and the workspace record of step 3 records a forward use of it, since
+  its "where required" applies only to stored words (the mathematician's ruling); step 4 depends on step 1 only and
+  revisits Word, which the manual's chapter 1 shows with jumbling words only; the path adds eleven rows EV5.6 does not
+  list (view,
+  statement, evidence, admitted domain and sticker at step 1, source range at 2, keyboard key at 3, menu letter and
+  revision reference at 4, state derivation at 6, gauge at 7); the manual's first use is read from its chapters, since
+  its README previews terms before they are taught; bare chamber reads as cut
+  chamber and bare key as keyboard key, bare block as achievement block (EV5.18) and bare witness as this glossary's
+  witness; a record's specification uses the declared domain, proposed at L6, at L2, recorded as a forward reference.
+- Not built:
+  - the mathematician's check of the pass's fixes; rows the pass did not change still say in `review` that they wait
+    for review, since the pass itself is recorded in OV-3;
+  - UI placements for the new rows (`ui` is absent, "not placed yet"), which belong to the design line;
+  - the human tests of the path (EV5.7, EV5.12), which wait for the owner's form;
+  - prose outside the glossary rewritten with EV5.18's qualified names.
+
+## Status of LP4, LP4-9: semantic recording, playback and conversion
+
+LP4-9 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (chapter 04 EV4.10 to EV4.23; chapter 05 PS1.30
+and PS1.44; chapter 13's EV4 codes), a draft. Undo follows X1 (owner decision of 23 November 2026,
+`docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md`, item 2.7): the move history (`session.undo`) and
+the layout history (`layout.undo`); each test that reads an undo target names its history.
+
+- Built in the command layer (`c600_command::recording` for the data and the tables, `src/layer/playback.rs` for the
+  layer's side): H-08's `recording.start`, `recording.stop`, `recording.play` and `recording.convert`, and `job.stop`
+  for a playback's job. No command-table row was added and the table did not change.
+- Capture sits in `CommandLayer::invoke`: each invocation of the shell's channel whose row resolves is one
+  `RecordedStep` (row, canonical arguments without a token, an operation preview ID or a confirmation, the word and
+  its block, the revisions it read, the module digest of an overlay step, the action it took (LI.9), its command and
+  request, and its terminal receipt or none). A retry the outcome lookup answers, a run's invocation and a
+  `recording.*` row are not captured. `recording.stop` stores the recording in the host's recorder.
+- Playback is a program-lane job the layer runs itself (`run_jobs`). EV4.22's eligibility table
+  (`recording::eligibility`, enumerated whole in CT-EV4-12) decides which steps play unattended: kind `view` or
+  `workspace` on lane `view` or `none`, and kind `query` on lane `none`, with no job and no `confirm` or `file_check`
+  gate. Every other row is a user step, and so are the integrator's additions: the rows whose change the layer
+  confirms itself (`protection.policy.set`, `protection.orbit.set`, rows with an action guard) and the `recording.*`
+  rows. An unattended child is a new invocation with its own command ID (`{playback}/play/{epoch}/{step}/{n}`), no
+  token, written to the state as `pending` before it is dispatched; while it is dispatched the layer dispatches no
+  other row and no token (`playing_admits`), and a run inside it never replaces a preview (ADR-D01.9). A user step
+  waits for the shell's step action (`Shell::step`, `Shell::step_preview`, `CommandLayer::begin_step`): the shell fills
+  the current revision, hint, presented preview and the solver's confirmation and mints a new token; a word commit
+  takes a fresh whole-word preview of the stored word; an undo or redo is checked against EV4.18's map. Unattended
+  playback cannot commit: a commit-lane row is never eligible, `playing_admits` refuses anything else, and a child that
+  commits is held (EV4.19).
+- EV4.19's two tables (`recording::historical`, `recording::child`), EV4.22's play table (`recording::play_from`),
+  EV4.18's map (`recording::mapped`, `PlaybackState::map`), EV4.14's identity, module and staleness checks, and
+  EV4.20's reconciliation: a pending child is looked up (KN5.23) after the invocation that settles it, after a job's
+  report, at each `recording.play`, at `set_recorder` and at a restart, and advances at most once; an unknown outcome
+  stops and is never retried; an ordinary invocation never moves the cursor; the cursor's writes go to the recorder and
+  are never an undo target. A recorder write that rolls back leaves the layer's state as the recorder's last durable
+  write left it (read back from the recorder); a write whose fate is unknown is read again from the recorder before the
+  next recording row, `job.stop` or step action. A state a job left `running` when it ended on a failed write, with no
+  child pending, stops with `KN5:resource_limit.engine_lost` at the next `recording.play`, as at a restart; that write,
+  like the reconciliation, comes before EV4.22's table decides. `job.stop` answers its write's fate: rolled back, it
+  stops nothing and answers `failed`; unknown, it ends the job and answers `unknown_outcome`.
+- EV4.23's conversion (`recording::convert`) writes nothing unless every step passes; it writes `draft/recording/<name>`
+  (an operation draft whose Macro phase holds the literal word) or `source/recording/<name>` (the generated module text
+  and its calls) as one record write, undoable on the move history. The record's block is the host reader's
+  (`Provenance::assemble`): `c600_tools::workspace::Reader` gives a draft a `manual` block and a source a program block
+  of the generated module (entry `replay`, profile `solving`); both list the contributing words' blocks as parts.
+- The recorder: `c600_command::Recorder`, with `MemoryRecorder` for tests and the session store's
+  `JournalStore::recorder` (`c600_session::recorder::JournalRecorder`): recordings and playback states are workspace
+  records in the session's own journal (PS1.16, PS1.44, FP.37), one draft record kind,
+  `{"record": "command_workspace", "id", "kind", "value"}`, in `c600-command-journal-draft-1`. `kind` is
+  `c600-recording-draft` (the value a record object the frame cites) or `c600-playback-draft` (the value inline, so a
+  playback adds no object per step); `id` is the recording's name; the last record of an id and kind wins. A record
+  takes no action number, has no receipt or undo target and no transaction cites it; it shares the journal's lock,
+  fates, torn-tail cut and read-only recovery. The host's version reader is `c600_command::ModuleVersions`, with
+  `c600_tools::modules::ActiveVersions` over a module set; `c600_tools::modules::bind_job` binds a recording step's job
+  pinned to the digest it recorded.
+- Tests:
+  - `c600-command/tests/recording.rs`: CT-EV4-08 to -13 and -15 to -20, CT-PS1-15 and -24, and CT-ERR-18, several of
+    them whole by union (`docs/progress/1.0/lp4-ct-index-notes.md`); CT-BND-03 whole by union with
+    `c600-run/tests/boundary.rs` (the file route) and `tests/rebind_and_macro_base.rs` (the macro route: since
+    24 November 2026 `macro.save` of a stored word, `{"record": r}`, keeps the record's block, BND.32); CT-PS1-17
+    in part (not run: a rename, which no row builds, and a word's file round trip, since no file export or import
+    of a word is built); CT-EV4-14 and CT-PS1-25 synthetic (the recorder's
+    injected fates and a reopen); the format packet's `playback` (12), `playback_from` (26), `playback_trace` (3) and
+    `playback_arguments` (4) vectors.
+  - `c600-durable/tests/ct_ev4_14_playback_crash.rs`: CT-EV4-14 and CT-PS1-25's three crash points on the journal,
+    which holds the recorder's records, over a memory disk; `c600-durable/tests/ct_bnd_03_recording_blocks.rs`:
+    CT-BND-03 and CT-EV4-10 on C5's reader; `c600-durable/tests/ps1_44_carrier.rs`: the carrier, what reset, import
+    and the recovery checkpoint do to it, and a source conversion whose recording's name holds line ends parses,
+    lowers and checks.
+  - `c600-session/tests/recorder.rs`: the journal recorder's records outside the action order, torn tail, failed
+    writes and records that do not read.
+  - `c600-command/tests/recording.rs` also holds the recorder's failed and unknown writes (a rolled-back state write
+    and the next play's recovery, `job.stop`'s fates, an unknown `recording.stop` read again) and the generated
+    module's one-line comments.
+  - `c600-tools/tests/ev1_host.rs`: CT-EV1-04's recording route, so with `c600-module/tests/ct_ev1_04.rs` CT-EV1-04 is
+    whole by union for every route (palette, key, view source, debugger, recording).
+  - Updated in `c600-command/tests/`: `attack_playback.rs` (the four rows are the layer's now; a served
+    `recording.play` is refused and a run's is `not_granted`), `settle.rs` (a playback's step stands in for the run
+    inside a `recording.play` job), `served_rows.rs` (its served program-lane row is `recording.play`'s H-08 entry under
+    another ID, since H-08 has no other row on that lane), `argument_forms.rs`, `filter_apply.rs`, `job_output.rs`,
+    `one_key.rs` and `attack_reopen.rs` (which served `recording.play` as a stand-in row), and `kn5.rs` (CT-KN5-10's
+    allowlist names `set_recorder`, `set_module_versions` and `begin_step`).
+- Drafts and departures (recorded, frozen text unchanged):
+  - PS1.44 and FP.37 put a playback state in PS1.16's workspace carrier outside the undo order; PS1.12 names the
+    recording's writer and reader. Both live in the session journal's own `command_workspace` records, outside its
+    action order. FP.12's carrier fields `id`, `kind` and `value` are there; `dependencies`, `action` and `revision`
+    are not written, since the record takes no action, and the frame's place in the journal is its position. No
+    frozen format changed: the record kind is a draft addition to `c600-command-journal-draft-1`, which a reader
+    before it stops at, as at any record it does not read. The values are draft JSON (`c600-recording-draft` and
+    `c600-playback-draft`, version 1), not FP.37's bytes; a recording is a record object, a state is inline.
+  - The recordings and states belong to the journal they were written in. The command layer's path builds no reset,
+    import or checkpoint row (`session.reset`, `session.checkpoint.save`, `session.checkpoint.restore`,
+    `file.log.import`, `file.macro.import` are `KN5:input.row_not_built` and write nothing), a new session needs a disk
+    with no journal, and a reopen reads them from the same journal; a reset or import that keeps the session must
+    decide, when it is built, what happens to a playback state whose map names actions before it.
+  - A state still `running` with no live job after a restart stops with `KN5:resource_limit.engine_lost`; the play
+    job's receipt is `completed(workspace)` when the playback waits or finishes, and forwards a child's refusal or
+    failure with its code and detail unchanged (ERR.7).
+  - A negative integer `from` is `EV4:input.recording_state`, as the format packet's `play-from-negative` says, not
+    `KN5:input.argument_form`.
+  - `job.stop` stops a playback's job only; another job is `KN5:input.row_not_built`.
+  - The step's `module` is the closure digest of the module's active version, which `bind_pinned` accepts.
+  - A source conversion names each non-word call in a `#` comment and in its `calls`: the draft edition has no
+    primitive that invokes a stored view or workspace row. Every control character and U+2028 and U+2029 in a comment
+    is written as its `\u{...}` escape, so the module parses whatever the recording's name holds.
+- Not built:
+  - FP.37's wire form of a recording and a playback state, and the format packet's `playback_storage` vectors (18);
+  - a host that installs `JournalStore::recorder` and `ActiveVersions` (the renderer bridge is outside this work), the
+    recording rows' keys and UI, and the step action's UI;
+  - `session.checkpoint.save`: a playback waits at it, and its step action is refused as not built;
+  - CT-BND-03's macro route; CT-EV4-14 on a file-system disk on the owner's machine (memory disks only here);
+  - recording a run's own invocations (a run is part of the job the solver invoked, which is the step).
+- Evidence kind: source and synthetic. No Windows, input, display, long-session or timing claim.
 
 ## Status of LP5: research expressiveness
 
@@ -3984,3 +4578,87 @@ workspace file.
   export uses R9's translator with LB5.18's grant. LP5's block of rows is
   `docs/progress/1.0/command-rows-research.json`. `tests/panel.rs` is a headless driver of the panel's whole flow on
   fresh data; no CT is indexed for R10.
+
+## Status of LP4, LP4-14: documents and the redesigned log rows
+
+LP4-14 of the [LP4 plan](../docs/progress/1.0/language-lp4-plan.md) (ADR-D01.79 to .84 as revision 6's R-2 and R-3
+amend them; owner, 23 November 2026), a draft.
+
+- Command table: `docs/progress/1.0/command-rows-lp4.json`, the last entry of `DELTA_FILES`, adds six rows that name
+  ADR-D01.84 as their source: `file.document.new` (app), `.open` (file), `.save` (file), `.save_as` (file), `.compile`
+  (query, a job on the exclusive lane) and `.close` (app), and amends `file.log.export`, `.check` and `.import` under
+  ADR-D01.82 with their arguments (`history: JournalRangeRef`, `format: LogFormat`, `destination: FileRef`;
+  `file: FileDigestRef`; `checked: CheckedFileRef` and the token). `file.log.import` stays a commit with its
+  `file_check` and `confirm` gates; it is no longer a job. Six more rows: 204 on 198, and 215 with LP5's research
+  delta (workspace 85, view 47, query 45, commit 19, file 12, app 7). The counts in `c600-command`'s tests and the
+  Look Lab (`command-icons.json` `labelOnly`, the regenerated layouts, which hide the six rows, `lane_ll4.py`,
+  `ll4_harness_test.py`, its README and `A5FrameTests.cs`) follow; `placements=348` is unchanged.
+- The command layer (`c600_command::documents`, `src/layer/documents.rs`): the host's document service
+  (`Documents`) answers the six rows, the three log rows and `app.exit`; without one each is
+  `KN5:input.row_not_built`, as before. New, open, save, save as, close and exit answer at once; compile, check and
+  export are jobs on the exclusive lane that a commit does not cancel. None changes the labels, the revision or the
+  journal. `file.log.import {checked, token}` checks the solver's confirmation (`KN5:input.confirmation_required`) and
+  the service's plan of a passed `file.log.check` of the same file digest before the token is authenticated, then
+  runs `twist.apply`'s commit steps. It writes the recovery checkpoint, stops every playback state, and commits one
+  retained move whose word is the legal witness from the head back to the session's start and along the log's line,
+  under the protected set and the policy in force.
+- The session store (`c600_session::documents`): `session_log` converts the journal's history into a `.c600log`
+  through `c600-log` (commits with their normalized recipes, undo and redo as cursor moves, or a `select` when the
+  cursor is off the target's line after a node that left the undo stacks alone, records, protection, policy and
+  workspace completions as workspace nodes, layout-history steps and their undo and redo in the layout history);
+  `DocumentStore` is the service over `Files` (`MemFiles`, `FsFiles` with a synced rename). The live session
+  is the first document (`session`), never closed, saved at its file by `app.exit` with every open document and the
+  current preferences. A compile answers the SHA-256 of its bytes and binds a log only when every gate passed. A check
+  records its result by file and SHA-256; the import's plan comes only from a passed check of the file's current
+  bytes (`KN5:stale.result_gone` with no check, the first problem's code for a failed one,
+  `PS1:input.digest_mismatch` for changed bytes). The checkpoint is the session's log before the import, at
+  `<session file>.checkpoint-<n>.c600log`, the first number no file holds. `c600-session` now depends on
+  `c600-log` and `c600-editor`; `c600-log` still has no path to `c600-run`, `c600-command` or `c600-session`.
+- Tests: `c600-command/tests/documents.rs` (a fake service: every row `row_not_built` without one; opening, saving,
+  compiling, checking and exporting change no live state; the gates come before the token's authentication; one
+  undoable entry after the checkpoint that a reopen replays; protection, model, start and state refusals; playback
+  states stopped); `c600-session/tests/documents.rs` (on the journal over a memory disk: the conversion compiles to the
+  session's state, `app.exit` saves the session with a dirty document and the preferences, only a passed log binds, an
+  import between two sessions keeps the current preferences, writes a checkpoint that compiles to the state before
+  it, and `session.undo` returns there). Updated: `layer.rs`, `r05_rows.rs`, `palette.rs` and `profile.rs` (counts),
+  `served_rows.rs` (`app.exit` is a layer row; `app.reconnect` is the stored app row).
+- Readings and departures (recorded, frozen text unchanged):
+  - The import journals as FP.31's `retained_move` under `file.log.import`, not as `import`, so the journal and the
+    migration format do not change; FP.32's voids on import are not written. A partial undo can step back inside the
+    import's witness word.
+  - The import is refused with `KN4:input.branch_path_unproved` when the log does not start at the session's start or
+    the line back to the start crosses a node without a retained word, and with the protection code when the word
+    would move a protected orbit.
+  - Playback states: an import replaces the action numbers a map names, so every state is stopped with
+    `KN7:cancelled.revision_replaced`, its map emptied and its pending child dropped, durably, before the commit; a
+    later `recording.play` starts against the imported session and never resumes against pre-import numbers. A
+    finished state keeps its status and only its map is emptied. A failed checkpoint answers `failed` and stops
+    nothing; a commit that fails after the checkpoint leaves the checkpoint and the stopped states, which lose nothing.
+  - The log's preferences are recorded in the plan and never applied; the service keeps the current ones.
+  - `JournalRangeRef` is `session` only; the check's format follows the file name (`.c600log`, `.c600.json[.gz]`,
+    `.log`); a new log document is an empty log of the model.
+  - A partial undo and a rollback step convert as what the journal holds: a commit of the retained word and cursor
+    moves, not the log's `partial_undo` form.
+- Not built: a session with Jumble on converts to no log (`KN5:input.row_not_built`); MPUlt check and export without
+  the host's native profile; a range inside the session's journal; the rows' keys, dialogs and tabs; a host that
+  installs the service (the renderer bridge is outside this work).
+- Evidence kind: source and synthetic. No Windows, input, display or timing claim.
+
+## Status of LP4, LP4-11: soft disclosure (`c600-command`)
+
+LP4-11's `c600-command` part (EV5.8, EV5.9; LQ14; DT-M1 K3), a draft under the mathematician's review.
+
+- `c600_command::disclosure`: `KEYS` names every H-08 row the learning path's goal flows cite (27: six at step 1,
+  four at step 3, seventeen at step 4; steps 2 and 5 to 7 cite none), the step that opens it (the first citing it)
+  and the glossary terms it needs. `Disclosure` is the shell's display state (`Shell::disclosure`): steps opened, the
+  saved and reversible "open all", and the "new" status until first use. "Show all keys" (`shows(row, true)`) reads
+  the state and changes nothing. The command layer and the shell's own methods never read it.
+- Tests: `c600-command/tests/disclosure.rs`. CT-EV5-02's flow-goal part: each cited row is a key at its first citing
+  step and needs only learner-facing terms its step or one before it on the path teaches or the path assumes, with
+  six planted refusals. CT-EV5-04 in part: in every disclosure state the palette lists every row, availability and
+  the shell's preparation of every row are unchanged, show all changes nothing, open all reverses, and a source scan
+  finds no reader in the layer. `tests/test_glossary.py`'s marker now points its flow-goal part here.
+- Not run or built: BS3's per-principle capability gate (EV5.9) waits for LQ2's option set, so nothing gates a
+  capability; the review clause of CT-EV5-02 waits for the mathematician's check (every step and LP4-11 row still says
+  so in `review`); the keys' concepts are LP4-11's proposal under that review; the keyboard's and the help's display.
+- Evidence kind: source. No human or display claim.

@@ -1301,7 +1301,7 @@ pub unsafe extern "C" fn m6h_set_focus(handle: *mut ShellHost, focus: u32) -> i3
 
 /// Registers the entry `entry` of the user module `module` as a language overlay row of the session's layer (LP4-3;
 /// KN5.3, EV4.1): row `tool.<module>.<entry>`, a `query` row with no argument and no grant, labelled `label`. With a
-/// non-empty `chord` (c600-input's form, `Ctrl+Shift+KeyR`) the router binds the row's key in the global map and the
+/// non-empty `chord` (the key map's form, `Ctrl+Shift+KeyR`) the router binds the row's key in the global map and the
 /// palette shows it; an empty or null `chord` binds none. Every text is UTF-8 with its length. The caller registers an
 /// entry once its module has a checked and active version; the program job of each invocation binds the version active
 /// when the host takes it. A refused registration (a second one of the row, a key bound already or one the map

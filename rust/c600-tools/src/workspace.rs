@@ -100,6 +100,47 @@ impl Provenance for Reader {
         };
         admitted.map_err(|refusal| Error::new(refusal.code, refusal.detail))
     }
+
+    /// The block of a recording's conversion (EV4.23, BND.24; LP4-9 draft), under the first contract the pins hold:
+    /// target `draft` is the solver's own word, a `manual` block; target `source` is a program's, the generated module
+    /// (its source text's SHA-256) with entry `replay`, profile `solving` and `read_state: no`, which BND.84 refuses at
+    /// preview in a solving session. Both list every contributing word's block in `parts` by content digest, and the
+    /// reader keeps those blocks, so admission reads them (BND.85). A target with no source text, or `draft` with one,
+    /// is refused with `KN5:input.argument_form`; pins with no contract with `KN5:input.row_not_built`.
+    fn assemble(&self, target: &str, source: Option<&str>, parts: &[String]) -> Result<String, Error> {
+        let Some(contract) = self.pins.contracts.first().cloned() else {
+            return Err(Error::new(c600_command::code::ROW_NOT_BUILT, "the reader's pins hold no contract"));
+        };
+        let digests: Vec<[u8; 32]> = parts.iter().map(|part| self.keep(part.as_bytes())).collect();
+        let block = match (target, source) {
+            ("draft", None) => {
+                let mut block = provenance::manual(&contract);
+                if let provenance::Json::Object(fields) = &mut block {
+                    let refs = digests.iter().map(|digest| provenance::digest_ref("content", digest)).collect();
+                    fields.insert("parts".to_owned(), provenance::Json::List(refs));
+                }
+                block
+            }
+            ("source", Some(text)) => {
+                let producer = provenance::Producer {
+                    contract,
+                    checker: None,
+                    author: provenance::Author::Own,
+                    module: c600_digest::sha256(text.as_bytes()),
+                    entry: "replay".to_owned(),
+                    profile: provenance::Profile::Solving,
+                };
+                provenance::program(&producer, false, &digests)
+            }
+            _ => {
+                let detail = format!("no block for target `{target}` with that source");
+                return Err(Error::new(c600_command::code::ARGUMENT_FORM, detail));
+            }
+        };
+        let bytes = provenance::canonical(&block);
+        provenance::read(&bytes).map_err(|code| Error::new(code, "the conversion's block does not read (FP.17)"))?;
+        Ok(String::from_utf8(bytes).expect("canonical JSON is UTF-8"))
+    }
 }
 
 /// The content digests of a block's direct parts; a block that does not read has none.

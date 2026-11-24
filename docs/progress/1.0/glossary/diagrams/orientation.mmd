@@ -1,4 +1,5 @@
 flowchart LR
-  P[piece at Home] --> Q{oriented correctly?}
-  Q -->|yes| S[solved]
-  Q -->|no| W[orientation wrong]
+  P[piece at Home] --> Q{labels read correctly?}
+  Q -->|yes| S[oriented]
+  Q -->|no| W[wrongly oriented]
+  A3[A3's pose-level orientation] -. separate, labels do not read it .- Q

@@ -1,0 +1,5 @@
+flowchart LR
+  B[exact bytes] -->|hash| D[digest]
+  D -->|names| B
+  S[a state's digest] -->|names| L[its identity level]
+  S -. never compares across identity levels .- D2[another level's digest]

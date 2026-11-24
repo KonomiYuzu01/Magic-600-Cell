@@ -1,0 +1,4 @@
+flowchart LR
+  A1[action] --> A2[later action]
+  U[undo of A1] -->|superseded by A2| X[refused]
+  M[move history] -. separate .- L[layout history]

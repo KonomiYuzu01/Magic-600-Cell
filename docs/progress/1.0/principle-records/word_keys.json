@@ -1,0 +1,195 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "word_keys",
+  "entries": [
+    "key",
+    "same_word"
+  ],
+  "level": "L1",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "e63674c3febd69c9e15e4da8a65e17cd6fbc2454c76098b9b0214f42847b8adb",
+    "closure_sha256": "8fc2a32b85748dad1d8274afe879dd1d68de8793c509eda99873de01ba545bd2",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "b71ca142791a1309ea70a8ea3d464f6b71ad518d453be3560682ac66c1ffd4e4",
+    "statements": [
+      "generators with disjoint supports commute, and a swap of neighbouring letters keeps the letters a word holds"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "key",
+      "function": "LB1.8's trace equality key of w under the model's disjoint-support relation: two words get the same key exactly when one turns into the other by swapping neighbouring letters whose generators move disjoint sets of slots",
+      "inputs": "w: a literal word of 600-cell-Full's generators",
+      "parameters": {
+        "none": "the relation is not a parameter: the run pins the model's `full-disjoint-support/1` relation (LB1.10)"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a TraceEqualityKey, never letters (LG2.13)",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every literal word of the model's generators",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The certificate covers the model's supports. A word of a jumbling menu is outside: under the Full relation the run stops with `LB1:input.incompatible_alphabet`."
+    },
+    {
+      "entry": "same_word",
+      "function": "whether the trace equality keys of x and y are equal",
+      "inputs": "x, y: literal words",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Bool",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every pair of literal words of the model's generators",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": "false means the two words are not trace-equal under the disjoint-support relation. They may still have the same effect: equal effects do not need one word to be a reordering of the other.",
+      "outside_scope": "The certificate covers the model's supports; words of a jumbling menu are outside, and the run stops with `LB1:input.incompatible_alphabet`."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "certificate",
+      "statement": "generators with disjoint supports commute, and a swap of neighbouring letters keeps the letters a word holds",
+      "text": "If g and h move disjoint sets of slots, g then h and h then g are the same permutation, so swapping them changes no effect; and a swap never changes which letters a word holds. The supports are the model's.",
+      "evidence": {
+        "path": "assets/manifest.json",
+        "sha256": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc",
+        "basis": "certificate",
+        "check": "producer",
+        "label": "the model manifest, which pins the generators whose supports the relation reads"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L1",
+    "input": {
+      "x": [
+        1,
+        45
+      ],
+      "y": [
+        45,
+        1
+      ],
+      "z": [
+        1,
+        2
+      ]
+    },
+    "expected": [
+      {
+        "claim": "same_x_y",
+        "value": true,
+        "from_step": 2
+      },
+      {
+        "claim": "same_x_z",
+        "value": false,
+        "from_step": 3
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_word_keys"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "word_keys.same_word",
+          "statement": "generators with disjoint supports commute, and a swap of neighbouring letters keeps the letters a word holds",
+          "step": "step 2"
+        },
+        {
+          "node": "word_keys.same_word",
+          "statement": "generators with disjoint supports commute, and a swap of neighbouring letters keeps the letters a word holds",
+          "step": "step 3"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:ExactEq",
+        "base:TraceKey",
+        "word_keys.key"
+      ],
+      "unmapped_steps": [
+        "step 1"
+      ]
+    },
+    "reason": {
+      "statement": "generators with disjoint supports commute, and a swap of neighbouring letters keeps the letters a word holds",
+      "idea": "Two twists that touch no common sticker can be done in either order, so two words that differ only by such swaps are the same word for every purpose of the effect.",
+      "terms": [
+        "twist-full",
+        "sticker-slot"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the swapped letters have disjoint supports",
+        "outcome": "counterexample: generators 1 and 2 share slots, and same_word([1, 2], [2, 1]) is false under the model's relation"
+      }
+    ],
+    "not_meant": "Equal keys do not order or rank words, and different keys do not prove different effects.",
+    "givens": [
+      {
+        "name": "generators 1 and 45 move disjoint sets of slots",
+        "value": true,
+        "leaf": "the model's supports (c600_tools::supports::full_relation)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "Generators 1 and 45 move disjoint sets of slots (given).",
+        "result": true
+      },
+      {
+        "check": "y = [45, 1] is x = [1, 45] with its two neighbouring letters swapped, and their supports are disjoint, so x and y are trace-equal: true.",
+        "result": true
+      },
+      {
+        "check": "x holds the letters 1 and 45 and z holds 1 and 2; a swap never changes which letters a word holds, so x and z are not trace-equal: false.",
+        "result": false
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "generator",
+        "twist-full",
+        "sticker-slot"
+      ],
+      "records": [
+        "words"
+      ]
+    },
+    "leaf_specs": {
+      "none": "the decomposition reaches no kernel leaf: the module is pure (LG3.2), so every part of it is a base part of the IR"
+    }
+  }
+}

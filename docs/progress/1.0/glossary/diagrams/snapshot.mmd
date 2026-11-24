@@ -1,0 +1,3 @@
+flowchart LR
+  R[revision] --> S[snapshot: read-only handle]
+  S -. pinned for its lifetime .- R

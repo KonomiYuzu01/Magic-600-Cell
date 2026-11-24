@@ -1,0 +1,4 @@
+flowchart LR
+  S[search] -->|stopped at its budget or declared limit| N[not found within budget]
+  N -. no negative over the set .- Set[search set]
+  P[part examined completely] -->|may carry| Nc[its own narrower claim]

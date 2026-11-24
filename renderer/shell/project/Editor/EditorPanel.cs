@@ -30,11 +30,11 @@ namespace Magic600.Shell.Editor;
 /// error. A run holds no token and the panel commits nothing: a word the macro returns becomes the editor's draft,
 /// which the solver previews with operation.preview's key (Ctrl+Enter) and commits with the commit key
 /// (Ctrl+Shift+Enter, the key route's token) once a frame showed the preview, both outside the code field, whose text
-/// focus keeps a commit row's key (DT-M1 C4). Undo is session.undo's key (Ctrl+Z).
+/// focus keeps a commit row's key (DT-M1 C4). Undo is session.undo's key (Ctrl+KeyZ).
 /// </summary>
 public sealed class EditorPanel : IShellModule
 {
-    /// <summary>The key the first registered row gets (c600-input's form).</summary>
+    /// <summary>The key the first registered row gets (the checked key map's form, LP4-8).</summary>
     public const string Key = "Ctrl+Shift+KeyR";
     /// <summary>The panel's own palette entries: no row of the command table and no default key.</summary>
     public const string CheckEntry = "editor.check";

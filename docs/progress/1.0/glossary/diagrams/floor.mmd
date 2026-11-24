@@ -1,0 +1,5 @@
+flowchart LR
+  I[In_c] --> F["floor = abs(In_c − Out_c)"]
+  O[Out_c] --> F
+  T[twists of that cap alone] -->|keep In_c and Out_c| F
+  F -->|lower bound on| N[N_c]
