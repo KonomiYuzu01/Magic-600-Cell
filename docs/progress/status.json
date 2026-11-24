@@ -164,7 +164,7 @@
       {"id": "c9-owner-runs", "title": "On-screen half and owner-machine runs (C9)", "weight": 3, "done": true, "evidence": "docs/wiki/evidence/c9-sitting-results.md"},
       {"id": "c10-exit", "title": "LP3 exit with H-08 frozen, the whole index run and the owner's sign-off (C10)", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-11-22-c10-lp2-exit.md"}
      ]},
-    {"id": "1.0-lp4", "track": "lp4", "title": "LP4 authoring environment, functional part", "status": "in_progress", "acceptance": "PHS.29 functional exit: the 51 LP4 tests run whole where their class allows, PHS.27's items have evidence on one candidate, the owner confirms understanding", "acceptance_source": "docs/progress/1.0/language-lp4-plan.md", "blocker": null,
+    {"id": "1.0-lp4", "track": "lp4", "title": "LP4 authoring environment, functional part", "status": "done", "acceptance": "PHS.29 functional exit: the 51 LP4 tests run whole where their class allows, PHS.27's items have evidence on one candidate, the owner confirms understanding", "acceptance_source": "docs/progress/1.0/language-lp4-plan.md", "blocker": null,
      "items": [
       {"id": "plan", "title": "Plan", "weight": 1, "done": true, "evidence": "53498a4a"},
       {"id": "lp4-1", "title": "LP4-1 editor services", "weight": 4, "done": true, "evidence": "f1b206da"},
@@ -183,9 +183,9 @@
       {"id": "lp4-13", "title": "LP4-13 C600 and MPUlt interchange", "weight": 4, "done": true, "evidence": "d4cd3f1d"},
       {"id": "lp4-14", "title": "LP4-14 document services and rows", "weight": 4, "done": true, "evidence": "b8ec74a6"},
       {"id": "lp4-15", "title": "LP4-15 durable rollback step ID (R2-5)", "weight": 1, "done": true, "evidence": "88e4662f"},
-      {"id": "line-pr", "title": "Line pull request merged", "weight": 1, "done": false, "evidence": null}
+      {"id": "line-pr", "title": "Line pull request merged", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/435"}
      ]},
-    {"id": "1.0-lp5", "track": "lp5", "title": "Language research expressiveness (LP5)", "status": "in_progress", "acceptance": "PHS.31's five acceptance items on one candidate; the 23 LP5 tests and the seven LP2 halves run whole; the owner's PHS.56 understanding confirmation", "acceptance_source": "docs/progress/1.0/language-lp5-plan.md", "blocker": null,
+    {"id": "1.0-lp5", "track": "lp5", "title": "Language research expressiveness (LP5)", "status": "done", "acceptance": "PHS.31's five acceptance items on one candidate; the 23 LP5 tests and the seven LP2 halves run whole; the owner's PHS.56 understanding confirmation", "acceptance_source": "docs/progress/1.0/language-lp5-plan.md", "blocker": null,
      "items": [
       {"id": "plan", "title": "Plan and owner decisions", "weight": 2, "done": true, "evidence": "ce426a7f47c543f398c7d27ec1e5a458c4a9000b"},
       {"id": "r0-import", "title": "R0 archive import and inventory", "weight": 6, "done": true, "evidence": "4441251250734fd7f21c001045a01534304add9a"},
@@ -199,7 +199,7 @@
       {"id": "r8-repro", "title": "R8 reproducible research work", "weight": 4, "done": true, "evidence": "5802828c956687e30cdcf8fb0d50fde9d089edc4"},
       {"id": "r9-obligation-export", "title": "R9 proof-obligation export", "weight": 3, "done": true, "evidence": "5ecc1003fc1e8e146193ef42ab52d3fe61e01e7b"},
       {"id": "r10-panel-rows", "title": "R10 research panel rows", "weight": 4, "done": true, "evidence": "a08d7211b4b5237af0481500bf38ca65e9116215"},
-      {"id": "exit", "title": "LP5 exit record", "weight": 4, "done": false, "evidence": null}
+      {"id": "exit", "title": "LP5 exit record", "weight": 4, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-11-24-lp4-lp5-exit.md"}
      ]}
   ]
 }
