@@ -54,7 +54,7 @@ class SelectChecksTests(unittest.TestCase):
         def heavy(changed):
             return {c[0] for c in self.mode(changed)[2] if c[0] in rh.HEAVY_AREAS}
         rust = {"tests/test_language_rust.py"} | {p for p in rh.HEAVY_AREAS if "rust_" in p or "command_route" in p}
-        j1 = set(rh.HEAVY_AREAS) - {"tests/test_language_rust.py"}
+        j1 = set(rh.HEAVY_AREAS) - {"tests/test_language_rust.py", "tests/test_language_rust_checkers.py"}
         self.assertEqual(heavy(["rust/c600-kernel/src/lib.rs"]), rust)
         self.assertEqual(heavy(["research/jumbling/differential/x.py"]), j1)
         self.assertEqual(heavy(["docs/wiki/log.md", "core.py"]), j1)
@@ -72,7 +72,8 @@ class SelectChecksTests(unittest.TestCase):
                 self.assertNotIn(path, light)
         # The slowest checks of the run on main are heavy.
         for path in ("tests/test_jumbling_store_j1.py", "tests/test_jumbling_j1_replay.py",
-                     "tests/test_jumbling_x1_witness.py", "tests/test_language_rust.py"):
+                     "tests/test_jumbling_x1_witness.py", "tests/test_language_rust.py",
+                     "tests/test_language_rust_checkers.py"):
             self.assertIn(path, rh.HEAVY_AREAS)
 
     def test_markdown_that_a_full_check_reads_runs_the_pull_request_checks(self):

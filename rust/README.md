@@ -92,8 +92,9 @@ plan](../docs/progress/1.0/language-lp5-plan.md), section 4).
 
 ## Running the tests
 
-Run `cargo test --locked --offline` in this folder. CI runs it through `tests/test_language_rust.py`, which
-`tools/ci/run_headless.py` lists; a missing Rust toolchain fails that check. Build output goes to `target/`, which Git
+Run `cargo test --locked --offline` in this folder. CI runs it in two checks that `tools/ci/run_headless.py`
+lists, so they land on different Windows shards: `tests/test_language_rust_checkers.py` runs `c600-checkers`, and
+`tests/test_language_rust.py` the rest of the workspace; a missing Rust toolchain fails each. Build output goes to `target/`, which Git
 ignores. Each crate keeps its tests in its `tests/` folder, and a test that covers part of a conformance test names
 the ID and the part (PHS.62). The exactness tests read the frozen
 [`vectors.json`](../docs/architecture/1.0/language/contract-vectors/vectors.json) in place.
