@@ -17,7 +17,9 @@
 //!   values); the start digest, the head's state digest when it was saved (labels with Jumble off, poses with Jumble
 //!   on); the source as the solver wrote it, which names its parts but never supplies letters; and the key contracts
 //!   its word and trace keys are under ([`KeyContracts`]). The provenance block is the row's own
-//!   ([`MACRO_PROVENANCE`]): the solver's command wrote it.
+//!   ([`MACRO_PROVENANCE`]): the solver's command wrote it. A stored word, `{"record": r}`, is the exception (BND.32;
+//!   draft): its macro keeps the record's block, and its source pins the record's content digest
+//!   ([`stored_source`]), so a reopen admits the write only against that record as the journal holds it.
 //! - Key computation is not here: `c600-command` has no path to the interpreter (ONE.48), and the keys are its
 //!   primitives (`word_key`, `trace_key`). The record pins the contracts they are computed under: LG2.18's
 //!   `word-key/1`, and LB1.10's `trace-key/1` under `full-disjoint-support/1` for a Full word or `jumble-locality/1`
@@ -40,7 +42,8 @@ use crate::store::{identity_from_json, identity_json};
 pub const MACRO_SAVE_ROW: &str = "macro.save";
 /// The prefix of a macro's record name.
 pub const MACRO_PREFIX: &str = "macro/";
-/// The provenance block of a macro's record: the solver's own `macro.save` wrote it.
+/// The provenance block of a macro's record when the word is inline: the solver's own `macro.save` wrote it. A macro of
+/// a stored word keeps that word's block instead (BND.32).
 pub const MACRO_PROVENANCE: &str = "macro.save";
 /// LG2.18's word equality key and its version.
 pub const WORD_KEY: &str = "word-key/1";
@@ -54,6 +57,12 @@ pub const MENU_ITEMS: usize = 60;
 /// The record name of macro `name`.
 pub fn macro_record(name: &str) -> String {
     format!("{MACRO_PREFIX}{name}")
+}
+
+/// The source of a macro of the stored word in record `record`, whose value has content digest `digest` (BND.32;
+/// draft): `{"digest": d, "record": r}`.
+pub fn stored_source(record: &str, digest: &str) -> Value {
+    json::object([("digest", Value::String(digest.to_owned())), ("record", Value::String(record.to_owned()))])
 }
 
 /// A word's alphabet (EV4.9: each word is typed by its alphabet).
@@ -143,6 +152,12 @@ impl Macro {
             ("source", self.source.clone()),
             ("start", Value::String(self.start.clone())),
         ])
+    }
+
+    /// The record and content digest a macro of a stored word names ([`stored_source`]); `None` for an inline word.
+    pub fn stored(&self) -> Option<(&str, &str)> {
+        let fields = self.source.as_object().filter(|fields| fields.len() == 2)?;
+        Some((fields.get("record")?.as_str()?, fields.get("digest")?.as_str()?))
     }
 
     /// Reads a record's payload ([`Macro::to_payload`]). `None` unless it has exactly those fields, an alphabet with

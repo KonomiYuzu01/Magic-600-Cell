@@ -1865,8 +1865,8 @@ fn ct_ev4_09_no_token_is_stored_or_replayed() {
 
 /// CT-EV4-10 (whole; EV4.13, EV4.16, EV4.23, on this file's test reader).
 /// CT-BND-03 (part: a word carried through a workspace record, a recording and a conversion to source keeps its block,
-/// BND.32; not run: a file, since the layer builds no file export or import of a word, and a macro, since `macro.save`
-/// takes an inline word and writes its own block, not the word's).
+/// BND.32; the file route is in `c600-run/tests/boundary.rs` and the macro route in `tests/rebind_and_macro_base.rs`,
+/// on this crate's test readers).
 /// CT-PS1-17 (part: a word survives a recording and a source conversion with its block, on this file's test reader;
 /// not run: workspace save and read and the labels of a state-derived word, which `c600-durable`'s
 /// `tests/ct_bnd_03_recording_blocks.rs` runs on C5's reader; rename, since no H-08 row renames a workspace record; and

@@ -436,12 +436,14 @@ fn a_save_is_checked_and_undone_as_one_workspace_action() {
         menu_word(&[(-1, 0)]),
         json::object([("menu", Value::Array(vec![Value::Int(12)]))]),
         json::object([("recipe", word(&[1])), ("menu", Value::Array(Vec::new()))]),
-        json::object([("record", text("r"))]),
         text("1 2"),
     ] {
         assert_eq!(refused(&mut f, save_args("m", word.clone(), Some(true))), Some(code::ARGUMENT_FORM), "{word:?}");
     }
     assert_eq!(refused(&mut f, save_args("", recipe(&[1]), Some(true))), Some(code::ARGUMENT_FORM));
+    // A stored word's form reads (BND.32; `a_macro_of_a_stored_word_keeps_the_words_block`): a missing record is no word.
+    let missing = save_args("m", json::object([("record", text("r"))]), Some(true));
+    assert_eq!(refused(&mut f, missing), Some(code::NAMED_OBJECT_INVALID));
     assert!(refused(&mut f, save_args("m", recipe(&[0]), Some(true))).is_some(), "the kernel refuses letter 0");
     assert_eq!(f.layer.macro_base(), Vec::<Macro>::new());
 
@@ -486,4 +488,77 @@ fn keys_compare_only_under_one_contract() {
     assert_eq!(a.keys.trace, TRACE_KEY);
     assert!(Macro::from_payload(&Macro { keys: m.keys.clone(), ..a.clone() }.to_payload()).is_none());
     assert!(SlotMap::from_payload(&Value::Null).is_none());
+}
+
+fn set_args(record: &str, payload: Value, block: &str) -> Value {
+    json::object([("payload", payload), ("provenance", text(block)), ("record", text(record))])
+}
+
+/// A record payload of plain letters, as M6 stores a word.
+fn plain(letters: &[i64]) -> Value {
+    Value::Array(letters.iter().map(|&letter| Value::Int(letter)).collect())
+}
+
+fn stored(record: &str) -> Value {
+    json::object([("record", text(record))])
+}
+
+/// CT-BND-03 (part: the macro route; the workspace record and file routes are in `c600-run/tests/boundary.rs`, the
+/// recording and both conversions in `c600-durable/tests/ct_bnd_03_recording_blocks.rs`). BND.32 and PS1.16; draft:
+/// `macro.save` of a stored word, `{"record": r}`, saves the record's letters as a Full macro whose record keeps the
+/// record's provenance block, and whose source pins the record and its content digest. A reopen admits that write only
+/// against the record as the journal holds it at that point: a macro with another block, with the row's own block, or
+/// saved from a record whose earlier write the journal changed, is an unadmitted action. Without the host's reader,
+/// from a missing record, from a record that holds no word, and with letters the kernel refuses, the save is refused
+/// and writes nothing.
+#[test]
+fn a_macro_of_a_stored_word_keeps_the_words_block() {
+    let mut f = fixture();
+    assert!(completed(&f.invoke("workspace.set", set_args("word", plain(&[1, 2]), "block-w"))));
+    let held = f.layer.record("word").unwrap().clone();
+    let receipt = f.save("m", stored("word"));
+    assert!(completed(&receipt), "{:?}", receipt.status);
+    let value = f.layer.record("macro/m").unwrap().clone();
+    assert_eq!(value.provenance, "block-w", "the macro keeps the stored word's block");
+    let saved = Macro::from_payload(&value.payload).unwrap();
+    assert_eq!((saved.alphabet, saved.letters.clone(), saved.length), (Alphabet::Full, vec![1, 2], 2));
+    assert_eq!(saved.source, c600_command::macros::stored_source("word", &held.digest()));
+    assert_eq!(saved.stored(), Some(("word", held.digest().as_str())));
+    assert!(completed(&f.save("inline", recipe(&[1, 2]))), "an inline word keeps the row's own block");
+    assert_eq!(f.layer.record("macro/inline").unwrap().provenance, "macro.save");
+
+    let store = f.layer.store().clone();
+    assert_eq!(recovery(store.clone()), None);
+    let reopened = reopen(store.clone());
+    assert_eq!(reopened.layer.record("macro/m"), Some(&value), "a reopen keeps the macro and its block");
+    let (set_at, save_at) = (store.log.len() - 3, store.log.len() - 2);
+    let forgeries: Vec<Box<dyn Fn(&mut MemoryStore)>> = vec![
+        Box::new(move |s| s.log[save_at].record.as_mut().unwrap().value.as_mut().unwrap().provenance = "x".into()),
+        Box::new(move |s| {
+            s.log[save_at].record.as_mut().unwrap().value.as_mut().unwrap().provenance = "macro.save".into()
+        }),
+        Box::new(move |s| s.log[set_at].record.as_mut().unwrap().value.as_mut().unwrap().provenance = "other".into()),
+    ];
+    for (n, forge) in forgeries.iter().enumerate() {
+        let mut forged = store.clone();
+        forge(&mut forged);
+        assert_eq!(recovery(forged), Some(code::UNADMITTED_JOURNAL_ACTION), "forgery {n}");
+    }
+
+    // Refusals write nothing.
+    assert!(completed(&f.invoke("workspace.set", set_args("text", text("not a word"), "block-t"))));
+    assert!(completed(&f.invoke("workspace.set", set_args("zero", plain(&[0]), "block-z"))));
+    let records = f.layer.records().clone();
+    assert_eq!(refusal(&f.save("a", stored("missing"))), Some(code::NAMED_OBJECT_INVALID));
+    assert_eq!(refusal(&f.save("b", stored("text"))), Some(code::NAMED_OBJECT_INVALID));
+    assert!(refusal(&f.save("c", stored("zero"))).is_some(), "a letter the kernel refuses");
+    assert_eq!(f.layer.records(), &records);
+    let k = kernel();
+    let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
+    let table = Table::h08().with_drafts();
+    let layer = CommandLayer::new(k, table, Secret::fixed(SECRET), MemoryStore::default(), "s2", start, protected);
+    let mut bare =
+        Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell"), frames: HeadlessFrames::new(), sent: 0 };
+    assert_eq!(refusal(&bare.save("m", stored("word"))), Some(code::ROW_NOT_BUILT), "no reader");
+    assert!(bare.layer.record("macro/m").is_none());
 }

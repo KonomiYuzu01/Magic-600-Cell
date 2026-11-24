@@ -32,9 +32,8 @@ fn block_of(f: &Fixture, record: &str) -> provenance::Json {
     provenance::read(value.provenance.as_bytes()).expect("the conversion's block reads")
 }
 
-/// CT-BND-03 (part: workspace record, recording, draft and source conversion; not run: a file, since the layer builds
-/// no file export or import of a word, and a macro, since `macro.save` takes an inline word and writes its own block,
-/// not the word's).
+/// CT-BND-03 (part: workspace record, recording, draft and source conversion; the file route is in
+/// `c600-run/tests/boundary.rs` and the macro route in `c600-command/tests/rebind_and_macro_base.rs`).
 /// CT-EV4-10 (part: both conversions keep provenance through parts; a source-produced word is a program's,
 /// `profile: solving`; not run: no laundering and no old permission, in the next test).
 /// The solver writes a word

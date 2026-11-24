@@ -1335,7 +1335,7 @@ impl<S: Store> CommandLayer<S> {
             // writes them (EV4.8, EV4.9; B7).
             TransactionKind::Record => match stored.record.clone() {
                 Some(RecordWrite { name, value: Some(value) }) => {
-                    reserved_write(stored, &name, &value).map_err(|detail| unadmitted(&detail))?;
+                    reserved_write(stored, &name, &value, &self.records).map_err(|detail| unadmitted(&detail))?;
                     self.plan_record(meta, name, value)
                 }
                 _ => return Err(broken("a record write names no record and value")),
@@ -4592,6 +4592,13 @@ impl<S: Store> CommandLayer<S> {
     /// without `confirm: true` (H-08's `confirm` gate; `KN5:input.confirmation_required`), a name that is not text or
     /// is empty and a word of another form (`KN5:input.argument_form`), a recipe the kernel refuses (its error), and a
     /// menu word without a pinned twist menu (`KN5:input.row_not_built`).
+    ///
+    /// A stored word, `word: {"record": r}` (BND.32; draft): the record's letters, or a work sheet's complete
+    /// operation ([`RecordValue::operation`]), saved as a Full word whose record keeps the stored word's provenance
+    /// block, which the host's reader checks as `worksheet.save` checks a sheet's (PS1.16), and whose source pins the
+    /// record's content digest ([`crate::macros::stored_source`]). Refused, writing nothing, also for: no reader
+    /// (`KN5:input.row_not_built`), a record that is missing or holds no word (`KN2:input.named_object_invalid`), a
+    /// block the reader refuses (its error) and letters the kernel refuses (its error).
     fn save_macro(
         &mut self,
         caller: &Caller,
@@ -4608,6 +4615,8 @@ impl<S: Store> CommandLayer<S> {
         };
         let word = args.get("word").expect("the names check saw the word");
         let only = |key: &str| word.get(key).filter(|_| word.as_object().is_some_and(|o| o.len() == 1));
+        let mut provenance = MACRO_PROVENANCE.to_owned();
+        let mut source = word.clone();
         let (alphabet, identity, letters) = if let Some(recipe) = only("recipe") {
             let recipe = self.kernel.recipe(recipe)?;
             let letters = self.kernel.letters(&recipe)?.into_iter().map(i64::from).collect();
@@ -4618,8 +4627,26 @@ impl<S: Store> CommandLayer<S> {
             };
             let codes = menu_codes(letters, twists.menu.items.len())?;
             (Alphabet::Menu, twists.context.identity(Some(&*twists.menu)), codes)
+        } else if let Some(stored) = only("record").and_then(Value::as_str) {
+            // BND.32: a macro of a stored word keeps the word's block.
+            let Some(reader) = &self.provenance else {
+                return refused(code::ROW_NOT_BUILT, "a macro of a stored word needs the host's provenance reader");
+            };
+            let Some(value) = self.records.get(stored).and_then(|record| record.value.as_ref()) else {
+                return refused(code::NAMED_OBJECT_INVALID, "no such record");
+            };
+            let Some(letters) = value.operation() else {
+                let detail = "the record holds neither a list of letters nor a work sheet";
+                return refused(code::NAMED_OBJECT_INVALID, detail);
+            };
+            reader.check(value.provenance.as_bytes())?;
+            self.kernel.word(&letters)?;
+            provenance = value.provenance.clone();
+            source = crate::macros::stored_source(stored, &value.digest());
+            (Alphabet::Full, self.kernel.identity(), letters)
         } else {
-            return refused(code::ARGUMENT_FORM, "a macro's word is `{\"recipe\": [...]}` or `{\"menu\": [...]}`");
+            let detail = "a macro's word is `{\"recipe\": [...]}`, `{\"menu\": [...]}` or `{\"record\": name}`";
+            return refused(code::ARGUMENT_FORM, detail);
         };
         let saved = Macro {
             name: name.to_owned(),
@@ -4629,10 +4656,10 @@ impl<S: Store> CommandLayer<S> {
             literal: crate::macros::literal_digest(alphabet, &letters),
             letters,
             start: self.state_digest().to_owned(),
-            source: word.clone(),
+            source,
             keys: alphabet.contracts(),
         };
-        let value = RecordValue { payload: saved.to_payload(), provenance: MACRO_PROVENANCE.to_owned() };
+        let value = RecordValue { payload: saved.to_payload(), provenance };
         let adoption = self.plan_record(meta, macro_record(name), value);
         self.transact(adoption)
     }
@@ -5839,9 +5866,15 @@ fn reserved_by_row(name: &str) -> bool {
 
 /// Whether a stored record write of `name` with `value` is one the live path makes (EV4.8, EV4.9; B7): a write of
 /// `grip/` or `macro/`, and a write under `grip.rebind` or `macro.save`, come only from that row, from the shell, to
-/// its own record with a value that reads; a `macro.save` write also carries its stored confirmation. The reason,
-/// otherwise.
-fn reserved_write(stored: &Transaction, name: &str, value: &RecordValue) -> Result<(), String> {
+/// its own record with a value that reads; a `macro.save` write also carries its stored confirmation. A macro's block
+/// is the row's own, or, for a stored word, the block of the record its source names, which `records` (the replay's,
+/// at this point of the journal) holds at the content digest the source pins (BND.32). The reason, otherwise.
+fn reserved_write(
+    stored: &Transaction,
+    name: &str,
+    value: &RecordValue,
+    records: &BTreeMap<String, WorkspaceRecord>,
+) -> Result<(), String> {
     let grip = name.starts_with(GRIP_PREFIX) || stored.row == GRIP_REBIND_ROW;
     let saved = name.starts_with(MACRO_PREFIX) || stored.row == MACRO_SAVE_ROW;
     if !grip && !saved {
@@ -5856,11 +5889,17 @@ fn reserved_write(stored: &Transaction, name: &str, value: &RecordValue) -> Resu
             && SlotMap::from_payload(&value.payload).is_some()
     } else {
         let read = Macro::from_payload(&value.payload);
+        let block = |read: &Macro| match read.stored() {
+            None => value.provenance == MACRO_PROVENANCE,
+            Some((record, digest)) => {
+                let held = records.get(record).and_then(|record| record.value.as_ref());
+                held.is_some_and(|held| held.digest() == digest && held.provenance == value.provenance)
+            }
+        };
         shell
             && stored.row == MACRO_SAVE_ROW
             && stored.confirm
-            && value.provenance == MACRO_PROVENANCE
-            && read.is_some_and(|read| macro_record(&read.name) == name)
+            && read.is_some_and(|read| macro_record(&read.name) == name && block(&read))
     };
     match admitted {
         true => Ok(()),
