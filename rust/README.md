@@ -3858,8 +3858,10 @@ LG5.6).
     `macro.variant.create`, `macro.metadata.set`, `macro.filter`, `macro.library.check`, `macro.compose`,
     `macro.operand.set`, `macro.reference.check`) and `file.macro.*`; a macro's use, where a jumble letter is refused
     with Jumble off, waits for `macro.add` and `macro.replace`;
-  - `macro.save` of a `{"record": name}` word, named spans with `same_as` and `inverse_of` relations (JI.21), chunked
-    storage and streaming (JI.20, JI.22) and DT-J1 X3's expansion bound;
+  - named spans with `same_as` and `inverse_of` relations (JI.21), chunked storage and streaming (JI.20, JI.22) and
+    DT-J1 X3's expansion bound. `macro.save` of a `{"record": name}` word is built since 24 November 2026: the
+    macro keeps the record's block (BND.32), its source pins the record's content digest, and a reopen admits the
+    write only against that record as the journal holds it, with the record's letters;
   - the word and trace keys themselves: they are the interpreter's primitives, and `c600-command` keeps no path to it
     (ONE.48), so the layer records their contracts and `macro.compare`'s job will compute them;
   - `grip.select`, `grip.anchor.set` and the transport of frames from an anchor (the map is stored as the rebind gives
@@ -4376,9 +4378,11 @@ the layout history (`layout.undo`); each test that reads an undo target names it
   pinned to the digest it recorded.
 - Tests:
   - `c600-command/tests/recording.rs`: CT-EV4-08 to -13 and -15 to -20, CT-PS1-15 and -24, and CT-ERR-18, several of
-    them whole by union (`docs/progress/1.0/lp4-ct-index-notes.md`); CT-PS1-17 and CT-BND-03 in part (not run: a
-    rename, which no row builds; a word's file round trip, since no file export or import of a word is built; the
-    macro route, since `macro.save` writes its own block); CT-EV4-14 and CT-PS1-25 synthetic (the recorder's
+    them whole by union (`docs/progress/1.0/lp4-ct-index-notes.md`); CT-BND-03 whole by union with
+    `c600-run/tests/boundary.rs` (the file route) and `tests/rebind_and_macro_base.rs` (the macro route: since
+    24 November 2026 `macro.save` of a stored word, `{"record": r}`, keeps the record's block, BND.32); CT-PS1-17
+    in part (not run: a rename, which no row builds, and a word's file round trip, since no file export or import
+    of a word is built); CT-EV4-14 and CT-PS1-25 synthetic (the recorder's
     injected fates and a reopen); the format packet's `playback` (12), `playback_from` (26), `playback_trace` (3) and
     `playback_arguments` (4) vectors.
   - `c600-durable/tests/ct_ev4_14_playback_crash.rs`: CT-EV4-14 and CT-PS1-25's three crash points on the journal,
