@@ -428,6 +428,59 @@ impl<S: Store> CommandLayer<S> {
         ran
     }
 
+    /// What `file.log.import` does to the playback states (LP4-14's reading of the point LP4-9 left open; draft): before
+    /// the import commits, every state is stopped with `KN7:cancelled.revision_replaced` (chapter 13: a commit replaced
+    /// the input revision), its pending child is cleared and its action map is emptied, in one write per state; a live
+    /// playback job ends `cancelled(replaced_revision)`. A later `recording.play` without `from` continues the cursor
+    /// under EV4.22's row for a state stopped with a code, but its map names no action from before the import, so an
+    /// undo or redo step of a recorded action stops as stale under EV4.18 and nothing plays against action numbers from
+    /// before the import. A finished state keeps its status and only its map is emptied. A state already so stopped or
+    /// emptied is not written again. Without a recorder there is no state. A write
+    /// that rolls back, or whose fate is unknown, is the import's failure: the import does not commit, and a state
+    /// already stopped stays stopped, which loses nothing.
+    pub(super) fn stop_playbacks_for_import(&mut self) -> Result<(), Error> {
+        if self.rec.recorder.is_none() {
+            return Ok(());
+        }
+        self.resync()?;
+        let stopped = PlayStatus::Stopped(Stop::Code(code::REVISION_REPLACED.to_owned()));
+        let names: Vec<String> = self.rec.playbacks.keys().cloned().collect();
+        for name in names {
+            let Some(state) = self.rec.playbacks.get(&name).cloned() else { continue };
+            // A finished playback stays finished: only its map, which names pre-import actions, is emptied.
+            let finished = state.status == PlayStatus::Finished;
+            if (finished || state.status == stopped) && state.actions.is_empty() && state.pending.is_none() {
+                continue;
+            }
+            let mut next = state.clone();
+            next.pending = None;
+            next.actions.clear();
+            if !finished {
+                next.status = stopped.clone();
+            }
+            match self.save_state(&name, next) {
+                Fate::Durable => {}
+                Fate::RolledBack(error) => return Err(error),
+                Fate::Unknown => {
+                    return Err(Error::new(
+                        code::COMMIT_FATE,
+                        format!("the recorder cannot say whether `{name}` stopped"),
+                    ))
+                }
+            }
+            if let Some(pending) = &state.pending {
+                let key = (Caller::Shell.scope(), pending.command.clone());
+                self.rec.children.remove(&key);
+                self.rec.awaiting.remove(&key);
+            }
+        }
+        for (_, play) in std::mem::take(&mut self.rec.plays) {
+            self.settle(&play.key, Status::Cancelled(CancelReason::ReplacedRevision));
+        }
+        self.generation += 1;
+        Ok(())
+    }
+
     /// A restart ends the playback jobs (their jobs end with the epoch) and recovers every state as an open does, after
     /// the recorder is read again if a write's fate was unknown.
     pub(super) fn end_plays(&mut self) {

@@ -21,7 +21,8 @@ lane = module("looklab_ll4", "lane_ll4.py")
 RESULTS = {
     "ll4-metrics": "LOOKLAB_LL4_METRICS_PASS steps=14 checks=1\n",
     "ll4-refusal": "LOOKLAB_LL4_REFUSAL_PASS command=target.next.activate context=any checks=1\n",
-    "ll4-greybox": "LOOKLAB_LL4_GREYBOX_PASS layouts=4 contexts=32 commands=198 placements=348 checks=1\n",
+    # commands=204 with command-rows-lp4.json's six document rows (ADR-D01.84), hidden in every layout.
+    "ll4-greybox": "LOOKLAB_LL4_GREYBOX_PASS layouts=4 contexts=32 commands=204 placements=348 checks=1\n",
 }
 
 

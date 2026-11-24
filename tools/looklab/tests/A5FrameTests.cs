@@ -55,7 +55,8 @@ internal static partial class Program
     private static void A5CommandsRegistryKeymapAndPalette()
     {
         CommandRegistry registry = CommandRegistry.FromTable(System.IO.File.ReadAllText(System.IO.Path.Combine(Root, "docs/progress/1.0/command-table.json")));
-        Equal(registry.Order.Count, 198); Equal(registry.Commands["session.new"].Label, "New solve"); Equal(CommandRegistry.Location("view.preview.open"), "view");
+        // 204 with command-rows-lp4.json's six document rows (ADR-D01.84).
+        Equal(registry.Order.Count, 204); Equal(registry.Commands["session.new"].Label, "New solve"); Equal(CommandRegistry.Location("view.preview.open"), "view");
         string text = Read("data/design/keymap.json");
         Keymap keys = Keymap.Parse(text, registry);
         Check(registry.Commands.ContainsKey("radial.view") && keys.Radials["radial.view"].Entries.Count == 6, "a radial menu is not a command");

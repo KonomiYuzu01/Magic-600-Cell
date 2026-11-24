@@ -26,7 +26,9 @@ DELTA_FORMAT = "c600-command-rows-delta-1"
 # workspace rows, ordinary edits after the LP3 freeze (owner, 22 November 2026, item 3), and the commit delta its
 # commit rows and the rows it moves into the layout history (item 4).
 DELTA_FILES = ("command-rows-jumbling.json", "command-rows-language.json", "command-rows-design.json",
-               "command-rows-commit.json")
+               "command-rows-commit.json",
+               # LP4's rows, ADR-D01.84; owner decisions of 23 November 2026.
+               "command-rows-lp4.json")
 ROW_FIELDS = {"id", "label", "kind", "inventory", "gates", "lane", "preview", "undo", "contexts",
               "repeat", "job", "key_0_4", "disposition", "note", "source", "arguments"}
 UNDO_ROWS = {"session.undo", "session.redo"}
@@ -109,6 +111,16 @@ DELTA_REQUIRED_ARGUMENTS = {
     "file.keymap.apply": {"checked"},
     "work.layout.set": {"layout"},
     "work.layout.reset": set(),
+    # LP4's document rows (ADR-D01.84) and the redesigned log rows (ADR-D01.82).
+    "file.document.new": {"kind"},
+    "file.document.open": {"file"},
+    "file.document.save": {"document"},
+    "file.document.save_as": {"document", "destination"},
+    "file.document.compile": {"document"},
+    "file.document.close": {"document"},
+    "file.log.export": {"history", "format", "destination"},
+    "file.log.check": {"file"},
+    "file.log.import": {"checked", "token"},
 }
 SERVICES = [
     {"id": "kernel.snapshot.open", "kind": "service", "caller": "both", "lane": "none",

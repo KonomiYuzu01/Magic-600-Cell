@@ -419,7 +419,9 @@ fn serving_refuses_a_row_the_layer_cannot_check_and_changes_nothing() {
     ];
     let stored = [
         "twist.apply",
-        "app.exit",
+        // `app.exit` is a layer row since LP4-14 (the document service saves the live session), so the LAYER_ROWS
+        // cases below refuse it as a conflict; `app.reconnect` is the stored `app` row here.
+        "app.reconnect",
         "session.checkpoint.save",
         "operation.check",
         "jumble.release.check",

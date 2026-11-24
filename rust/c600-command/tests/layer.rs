@@ -154,8 +154,9 @@ impl Fixture {
 fn the_stored_table_reads() {
     let table = Table::h08();
     // 193 at PR 415, plus ADR-D01's layout.undo, layout.redo, session.undo.partial, operation.preview.commit and
-    // session.rollback (owner, 22 November 2026, item 4).
-    assert_eq!(table.rows().count(), 198);
+    // session.rollback (owner, 22 November 2026, item 4), and 204 with `command-rows-lp4.json`'s six document rows
+    // (ADR-D01.84).
+    assert_eq!(table.rows().count(), 204);
     let execute = table.row("operation.execute").unwrap();
     assert_eq!((execute.kind, execute.lane, execute.preview), (Kind::Commit, Lane::Commit, PreviewRule::Required));
     assert!(execute.has_gate("fresh_preview") && execute.has_gate("protection") && execute.takes_token());
@@ -188,10 +189,14 @@ fn no_row_takes_a_state_or_a_digest_to_adopt() {
     let allowed = [
         "ActionHint",
         "ActionNumber",
+        // `file.document.close`'s `discard` (`command-rows-lp4.json`, ADR-D01.84).
+        "Bool?",
         "CanonicalObjectRef",
         "CapId",
         "CheckedFileRef",
         "CheckpointRef",
+        // An open document's id (`command-rows-lp4.json`, ADR-D01.84).
+        "DocumentRef",
         "ExactRotationRef",
         "FixtureRef",
         "JobId",
@@ -208,6 +213,8 @@ fn no_row_takes_a_state_or_a_digest_to_adopt() {
         "Text",
         "Text?",
         "UserActionToken",
+        // `file.document.new`'s kind (`command-rows-lp4.json`, ADR-D01.84).
+        "log | script",
         "typed|canonical",
     ];
     let (mut state_rows, mut digest_rows, mut changing) = (Vec::new(), Vec::new(), 0);
@@ -245,8 +252,9 @@ fn no_row_takes_a_state_or_a_digest_to_adopt() {
     // 19 before ADR-D01's layout.undo and layout.redo, which take only the shared undo rows' arguments,
     // session.undo.partial, which takes an entry, a move and a token, and operation.preview.commit, which takes a
     // record draft and a token, and session.rollback, which takes the shared undo rows' arguments and the gesture and
-    // step the layer fills.
-    assert_eq!(changing, 24);
+    // step the layer fills. 26 with `command-rows-lp4.json`'s two app rows, `file.document.new` and
+    // `file.document.close` (ADR-D01.84).
+    assert_eq!(changing, 26);
 }
 
 /// CT-KN5-07 (whole): registering an overlay row of kind `commit` or `app` is refused, as is an overlay row that takes
@@ -817,8 +825,9 @@ fn the_runtime_reaches_at_most_a_preview() {
     assert_eq!(f.layer.run_jobs(), 1);
     let rows: Vec<String> =
         f.layer.table().rows().filter(|r| matches!(r.kind, Kind::Commit | Kind::App)).map(|r| r.id.clone()).collect();
-    // 22 before ADR-D01's operation.preview.commit and session.rollback (owner, 22 November 2026, item 4).
-    assert_eq!(rows.len(), 24);
+    // 22 before ADR-D01's operation.preview.commit and session.rollback (owner, 22 November 2026, item 4); 26 with
+    // `command-rows-lp4.json`'s app rows `file.document.new` and `file.document.close` (ADR-D01.84).
+    assert_eq!(rows.len(), 26);
     for row in rows {
         let receipt = f.layer.invoke(&runtime, call(&format!("rt/{row}"), &row, json::object([])));
         assert_eq!(code_of(&receipt), code::COMMIT_ROW_REFUSED, "{row}");

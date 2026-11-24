@@ -276,7 +276,13 @@
         "layout.redo",
         "session.undo.partial",
         "operation.preview.commit",
-        "session.rollback"
+        "session.rollback",
+        "file.document.new",
+        "file.document.open",
+        "file.document.save",
+        "file.document.save_as",
+        "file.document.compile",
+        "file.document.close"
       ]
     },
     "editor": {
