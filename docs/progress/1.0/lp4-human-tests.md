@@ -1,8 +1,9 @@
 # LP4 human tests: form and results
 
-The owner set this form on 25 November 2026, taking every recommended option of the integrator's one-page draft (form
-version 1; [decision](../../wiki/decisions/owner-decisions-2026-11-25.md), section 2). EV5.12 leaves the form and its
-success criteria to the owner, and the mathematician checks their mathematical content. The tests run at minimal scale
+The owner set this form on 25 November 2026, taking every recommended option of the integrator's one-page draft, and
+amended its grading the same day with the three changes the mathematician's pre-check brought: this is form version 2
+([decision](../../wiki/decisions/owner-decisions-2026-11-25.md), items 2 and 7). EV5.12 leaves the form and its success
+criteria to the owner, and the mathematician checks their mathematical content. The tests run at minimal scale
 (decision of 23 November 2026, item 2.2; PHS.27). No pass rate, timing threshold or participant result is invented
 here: a row with no run says so.
 
@@ -24,8 +25,13 @@ here: a row with no run says so.
   instance with its givens, generated decomposition, leaf specifications and prerequisites, with the glossary rows the
   tasks name. It hides what the person is asked to produce: the steps' results, the step map, the reason, the failure
   example, what an answer does not mean and the expected claims.
-- **Critical mistakes:** reading an empty or not-found-within-budget answer as "nothing exists"; reading a fixture pass
-  or a digest match as proof of a general statement or as a checked certificate; giving a fork its parent's evidence.
+- **Critical mistakes:**
+  - reading an empty or not-found-within-budget answer as "nothing exists";
+  - reading a fixture pass or a digest match as proof of a general statement or as a checked certificate;
+  - giving a fork its parent's evidence;
+  - extending a statement beyond its hypotheses;
+  - treating the decomposition or the fixture as the reason (EV5.4);
+  - reading a check, a preview or a view as a recommendation.
 - **Columns:** every recorded value has its own column. There is no combined score.
 - **Boundary:** the tasks only read stored values or check given steps. None asks the program for a word or macro, and
   none opens a personal session (EV5.7).
@@ -50,7 +56,12 @@ here: a row with no run says so.
   reasons.
 - **Recorded per instance:** (a) to (c) right or wrong; (d) yes, partly or no against the mathematician's key; the help
   level of each part; critical mistakes; time from start to "done".
-- **Criterion:** (a) to (d) are all met at help level 0 or 1, for every instance. Time is reported with no bar.
+- **Criterion, by test:**
+  - CT-LB6-04: (a) and (b) are met at help level 0 or 1, for every instance, with no critical mistake in them.
+  - CT-EV5-05, human half: (c) and (d) are met at help level 0 or 1, for every instance, with no critical mistake in
+    them.
+
+  Time is reported with no bar.
 - **Step-count ceiling (LB6.2):** none until these results report.
 - **Length:** about 45 minutes: about 10 to read the glossary rows the sheet prints, then about 10 per instance.
 - **Review half of CT-EV5-05:** the mathematician reviews the three explanations and the shared grammar, and no blocker
@@ -106,16 +117,12 @@ by exact arithmetic on the fixture's menu, and generator 1 is H_0. These finding
   - "without cancelling" is added to the expansion count;
   - the owner-facing hint says "the cap's side of its cut" for H_c⁺.
 
-Pending the owner, so the form stays as set until the owner decides:
-- **Three more critical mistakes (M2):**
-  - extending a statement beyond its hypotheses;
-  - treating the decomposition or the fixture as the reason (EV5.4);
-  - reading a check, preview or view as a recommendation.
-
-  They are watched and recorded in a column of their own, apart from the owner's list.
-- **Adding "no critical mistake" to the criterion.**
-- **Splitting the criterion per test (m5):** CT-LB6-04 on (a) and (b), CT-EV5-05's human half on (c) and (d). As set,
-  the criterion is joint, so a miss in (d) also fails CT-LB6-04.
+Three findings changed the form the owner had set, so they went to the owner, who took every recommended option the
+same day (decision item 7). Version 2 carries them:
+- **M2:** three more critical mistakes join the list: extending a statement beyond its hypotheses, treating the
+  decomposition or the fixture as the reason, and reading a check, a preview or a view as a recommendation.
+- **No critical mistake:** the criterion of CT-LB6-04 and CT-EV5-05 requires it, as CT-EV5-03's does.
+- **m5:** the criterion is split by test. As first set, it was joint, so a miss in (d) also failed CT-LB6-04.
 
 ## Records and evidence
 
@@ -127,7 +134,9 @@ Pending the owner, so the form stays as set until the owner decides:
 
 ### Session pack O, 25 November 2026
 
-Form lp4-human-tests v1 (owner, 25 November 2026). A source digest equals its record's `binding.source_sha256`. A changed input reruns only the tasks that read it (PHS.4).
+The sheet was built under form version 1. Version 2 changes the grading only, and no text the sheet shows, so the sheet
+is unchanged and its results are graded under version 2. A source digest equals its record's `binding.source_sha256`.
+A changed input reruns only the tasks that read it (PHS.4).
 
 | Input | SHA-256 |
 | --- | --- |
@@ -145,12 +154,18 @@ Form lp4-human-tests v1 (owner, 25 November 2026). A source digest equals its re
 
 ### Results
 
-| Tests | Person | Instance | (a) | (b) | (c) | (d) | Help a, b, c, d | Critical mistake | Watched (pending the owner) | Time |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| CT-LB6-04, CT-EV5-05 | O | `jumble_checker` | not run | not run | not run | not run | not run | not run | not run | not run |
-| CT-LB6-04, CT-EV5-05 | O | `full_600_cell` | not run | not run | not run | not run | not run | not run | not run | not run |
-| CT-LB6-04, CT-EV5-05 | O | `representations` | not run | not run | not run | not run | not run | not run | not run | not run |
-| CT-EV5-03 | P1, P2 | S1 to S7 and two transfers | waiting for non-authors | | | | | | | |
+| Person | Instance | (a) | (b) | (c) | (d) | Help a, b, c, d | Critical mistakes | Time |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| O | `jumble_checker` | not run | not run | not run | not run | not run | not run | not run |
+| O | `full_600_cell` | not run | not run | not run | not run | not run | not run | not run |
+| O | `representations` | not run | not run | not run | not run | not run | not run | not run |
+
+| Test | Graded on | Verdict |
+| --- | --- | --- |
+| CT-LB6-04 | (a) and (b) of every instance | not run |
+| CT-EV5-05, human half | (c) and (d) of every instance | not run |
+| CT-EV5-05, review half | the explanations and the shared grammar | part: the shared grammar waits for the theory book |
+| CT-EV5-03 | S1 to S7 and two transfers, P1 and P2 | waiting for non-authors |
 
 ## Still open
 
