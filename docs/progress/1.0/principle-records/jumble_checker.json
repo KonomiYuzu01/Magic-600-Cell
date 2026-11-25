@@ -8,7 +8,7 @@
     "check_named_word"
   ],
   "level": "L1",
-  "review": "The mathematician's pass of 23 November 2026 found M6 (the second letter's admissibility); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M6 (major: the second letter applies because a twist at c moves only the pieces inside H_c⁺, rigidly, and creates no straddler of c, not because of the solved state), fixed in c152350f. The mathematician's scoped re-check of 23 November 2026 confirmed the fix against card 6 and Proposition 2.2. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "dddba17a57b35e56dc8bb64a6ef4ce12fe0e3e057f07f1ce1e9ea8a852f891fb",
     "closure_sha256": "913e6b6ce4d17d6849697dd13b76aca0f3346698d1108c2d0c11386161a5a4d2",

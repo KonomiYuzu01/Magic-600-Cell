@@ -7,7 +7,7 @@
     "setups_for"
   ],
   "level": "L3",
-  "review": "The mathematician's pass of 23 November 2026 found M14 (an empty list at a non-buffer position); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M14 (minor: an empty list means a buffer, since the certified tables cover every non-buffer position), fixed in c152350f. The mathematician's scoped check of 25 November 2026 confirmed the fix on all 35 trees (every non-buffer position has a setup, and no buffer appears) and raised a nit, fixed the same day: at another position the list holds at least one setup. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "d9e0c3696071fb270a6e88f0c47fc5338e6f1fe2adf2f643e71b974150e8aad2",
     "closure_sha256": "6e573f9bee4fce8e16c92bf83c6f76a86298abc87bb2a9f51fb01973c3bd2c16",
@@ -111,7 +111,7 @@
     "failure": [
       {
         "hypothesis": "the named position is a buffer",
-        "outcome": "weaker conclusion: at another position of the orbit the list can hold setups, in the table's order"
+        "outcome": "weaker conclusion: at another position of the orbit the list holds at least one setup, in the table's order"
       }
     ],
     "not_meant": "An empty list does not say that the position cannot be solved; the program never picks a setup or a target.",

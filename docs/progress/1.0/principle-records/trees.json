@@ -13,7 +13,7 @@
     "pose_tree"
   ],
   "level": "L5",
-  "review": "The mathematician's pass of 23 November 2026 found M16 (pose, not orientation); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M16 (minor: pose, not orientation), fixed in c152350f. The mathematician's scoped check of 25 November 2026 confirmed the fix: both terms lists say pose. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "7736d38c80d115ab07b89b5dfc466997ce62dcb211d8228fd93b54fa81796d0b",
     "closure_sha256": "d8d169a289e9349884bdb5b4a54f05daebbf14218f241a806cae64a90793d45b",

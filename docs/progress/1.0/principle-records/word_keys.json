@@ -8,7 +8,7 @@
     "same_word"
   ],
   "level": "L1",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean; no finding. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "e63674c3febd69c9e15e4da8a65e17cd6fbc2454c76098b9b0214f42847b8adb",
     "closure_sha256": "8fc2a32b85748dad1d8274afe879dd1d68de8793c509eda99873de01ba545bd2",

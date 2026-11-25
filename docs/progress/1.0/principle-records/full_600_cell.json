@@ -7,7 +7,7 @@
     "preview_word"
   ],
   "level": "L1",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean; no finding. The pass left two counts unchecked, that generator 1 moves 3,094 pieces and that generators 1 and 45 move disjoint slots; the integrator counted both with core.py on the model (c152350f), and The mathematician's scoped re-check of 23 November 2026 confirmed both, recounted on the shipped assets. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "5d9e13fe6219fd88abe421660762bb5bfbe78694e4a3da1ed3390ca33ad76d2d",
     "closure_sha256": "e334c900bd43636b3ab5f0b7d25b2d8e84b44007ec361f44ebee81079e9fbe67",
