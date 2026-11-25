@@ -30,8 +30,10 @@ This page records the answers in English. It moves no bar and edits no frozen te
    - LP4-1 to LP4-15 are merged.
    - The conformance index for LP4 reads 43 of 51 whole (10 of them by union), 3 part, 0 missing and 5 waiting
      ([index notes](../../progress/1.0/lp4-ct-index-notes.md)).
-   - Reviews: fresh smaller-model reads of the command layer and the session store, and the mathematician's
-     row-by-row review of the glossary, the learning path and the principle records. No blocker or major is open.
+   - Reviews: fresh smaller-model reads of the command layer and the session store; the mathematician's row-by-row
+     review of the glossary's rows and the learning path's steps and keys; and the mathematician's pass over the
+     principle records with its re-check. No blocker or major is open. (Corrected on
+     [25 November 2026](owner-decisions-2026-11-25.md), item 6.)
 2. **LP5's exit on `503736cc`**, the head of pull request 433 (merged as `944ac454`), with pull request 434's CI-only
    follow-up (`0cff06a6`). The exit record is section 12 of the [LP5 plan](../../progress/1.0/language-lp5-plan.md).
    - Preflight answers 286 claim groups `ready` and 224 `unavailable`. Of the 287 checks of the ready groups, 286 pass
