@@ -82,7 +82,10 @@ fields up to date (pull request 437). No blocker or major is open, so the exit's
 - LP4 lands the form, the owner's two self-run sheets and the human-test page in one small pull request.
 - The sitting's pull request records its results.
 - The briefing's 23 and 24 November bullets say the builders, the form, the sitting and ADR-D02's start wait for the
-  owner. Its new bullet records these answers, with an FP.1 pin refresh of the format packet.
+  owner. Its new 25 November bullet (`1f941e6f`) records these answers. The briefing is an input of the frozen
+  migration format packet, so its pin is refreshed under FP.1 in a separate commit: its SHA-256 goes from
+  `ad5716de...399d` to `f930b089...cee5`, and `input_commit` from `eecf14c9` to `1f941e6f`. The packet cites none of
+  the edited lines; the candidate files, `candidate_sha256` and every other pin are unchanged.
 
 ## What this does not do
 
