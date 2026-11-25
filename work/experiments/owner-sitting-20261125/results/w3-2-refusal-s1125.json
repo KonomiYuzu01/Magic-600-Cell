@@ -1,0 +1,12 @@
+{
+  "format": "magic600-l2-refusal-v1",
+  "candidate": "sa2",
+  "mode": "run",
+  "run_id": "20261125T183057626Z-w3",
+  "reasons": [
+    "trace-steps"
+  ],
+  "details": {
+    "trace-steps": "A checked present step does not contain exactly one trace entry."
+  }
+}
