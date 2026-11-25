@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-25
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 25 November 2026 - ADR-D02's A4 may be prepared and then starts; the human tests' form is set as recommended, with the owner running CT-LB6-04 and CT-EV5-05 alone on self-run sheets and CT-EV5-03 waiting for non-authors; the owner-machine sitting runs on 25 November 2026 and the lattice replay waits for the owner's word; Fable writes the ADR-D02 and ADR-D03 build frameworks and Opus builds, in the subscription with no API; and a correction to the 24 November page's review sentence.
+summary: Owner decisions of 25 November 2026 - ADR-D02's A4 may be prepared and then starts; the human tests' form is set as recommended, with the owner running CT-LB6-04 and CT-EV5-05 alone on self-run sheets and CT-EV5-03 waiting for non-authors; the owner-machine sitting runs on 25 November 2026 and the lattice replay waits for the owner's word; Fable writes the ADR-D02 and ADR-D03 build frameworks and Opus builds, in the subscription with no API; a correction to the 24 November page's review sentence; and three amendments to the human tests' grading.
 related: [owner-decisions-2026-11-24-lp4-lp5-exit, owner-decisions-2026-11-23-a7-freeze, owner-decisions-2026-11-16-time-saving]
 supersedes: []
 claims:
@@ -12,6 +12,7 @@ claims:
   - {id: owner-sitting-2026-11-25, evidence_kind: decision, checked_at: 2026-11-25}
   - {id: lattice-replay-held, evidence_kind: decision, checked_at: 2026-11-25}
   - {id: d02-d03-builders, evidence_kind: decision, checked_at: 2026-11-25}
+  - {id: human-test-grading-amended, evidence_kind: decision, checked_at: 2026-11-25}
 ---
 
 # Owner decisions, 25 November 2026: human tests, the sitting, and ADR-D02
@@ -81,6 +82,20 @@ the learning path's seven steps and 27 keys. The principle records had the mathe
 (`c152350f`) with its re-check (`0af6fa70`), and a scoped check on 25 November 2026 that also brought their review
 fields up to date (pull request 437). No blocker or major is open, so the exit's conclusion stands. The sentence on the
 24 November page is corrected in place.
+
+## 7. Three amendments to the human tests' grading
+
+Later the same day LP4 brought three amendments from the mathematician's check of the form, the sheet and the
+answer keys. They change the form the owner had set (item 2), so they went to the owner, who took every recommended
+option:
+- Three more critical mistakes: extending a statement beyond its hypotheses; treating the decomposition or the
+  fixture as the reason (EV5.4); reading a check, a preview or a view as a recommendation.
+- The criterion of CT-LB6-04 and CT-EV5-05 also requires no critical mistake, as CT-EV5-03's does.
+- The criterion is split by test: CT-LB6-04 is graded on (a) checking each step and (b) mapping it to the
+  decomposition, and CT-EV5-05 on (c) expanding the entry and (d) stating the reason and what an answer does not
+  mean. As first set, a miss in (d) also failed CT-LB6-04.
+
+The form page carries them (pull request 439), and the owner's results are graded under the amended form.
 
 ## What follows
 
