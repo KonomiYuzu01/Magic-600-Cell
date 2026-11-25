@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-25] decision | Human tests' form, owner-machine sitting, ADR-D02's A4 and builders
+The owner set the human tests' form (the owner runs CT-LB6-04 and CT-EV5-05 alone; CT-EV5-03 waits for non-authors), set the owner-machine sitting for 25 November 2026 with the lattice replay held, let ADR-D02's A4 be prepared and started, and named Fable and Opus as the ADR-D02 and ADR-D03 builders in the subscription ([decision](decisions/owner-decisions-2026-11-25.md)). The 24 November page's review sentence is corrected.
+
 ## [2026-11-24] decision | LP4 and LP5 exit
 The owner signed LP4's exit (0208e78d, pull request 435) and LP5's exit (503736cc, pull requests 433 and 434) on one card with every recommended option; the briefing records both exits with an FP.1 pin refresh of the format packet ([decision](decisions/owner-decisions-2026-11-24-lp4-lp5-exit.md)). The owner-machine sitting and the lattice replay wait for a date the owner sets.
 
