@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-25] decision | The two icon tiers
+The owner took the recommendation for tier 2 content glyphs: coloured from the scene's encoding tokens, high quality, and animated only on a state or view change. Tier 1 command icons stay monochrome, the icon values come in a separate icon ADR in freeze round 3, and three.js may serve only as an authoring and preview tool. It matches the frozen ADR-D01.53 to ADR-D01.55 ([decision](decisions/owner-decisions-2026-11-25-icon-tiers.md)).
+
 ## [2026-11-24] decision | LP4 and LP5 exit
 The owner signed LP4's exit (0208e78d, pull request 435) and LP5's exit (503736cc, pull requests 433 and 434) on one card with every recommended option; the briefing records both exits with an FP.1 pin refresh of the format packet ([decision](decisions/owner-decisions-2026-11-24-lp4-lp5-exit.md)). The owner-machine sitting and the lattice replay wait for a date the owner sets.
 
