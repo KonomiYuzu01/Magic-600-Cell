@@ -25,7 +25,9 @@ const EXPORT: &str = "tool.export";
 /// `tests/saved_sets.rs`.)
 const STORE: &str = "tool.store";
 /// A stored workspace row whose undo class is `none`, which the tests serve: no undo reaches its job's writes.
-const PLAY: &str = "recording.play";
+/// A stored workspace row whose undo class is `none`, which an entry serves here (`recording.play` played this part
+/// until LP4-9 built it in the layer).
+const PLAY: &str = "session.timer.start";
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -74,7 +76,7 @@ fn preview_args(id: u64) -> Value {
 }
 
 fn play_args() -> Value {
-    json::object([("from", Value::Int(0)), ("recording", text("r1"))])
+    json::object([])
 }
 
 fn value(payload: Value, provenance: &str) -> RecordValue {
@@ -428,7 +430,7 @@ fn a_workspace_rows_records_pass_the_hosts_reader_or_nothing_is_written() {
     assert_eq!(f.layer.store().log.len(), 1);
 }
 
-/// No undo reaches the writes of a job of a stored row whose undo class is `none` (`recording.play`), so an undo or
+/// No undo reaches the writes of a job of a stored row whose undo class is `none` (`session.timer.start`), so an undo or
 /// redo of an earlier write of the same record would write over them. Those earlier writes leave both stacks when the
 /// job's records are written, and the writes of other records and the commits keep their places. A reopen cuts the
 /// history the same way (draft).

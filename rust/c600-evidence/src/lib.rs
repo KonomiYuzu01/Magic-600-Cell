@@ -53,7 +53,8 @@
 //! The label-table importer and its corpus walk (EVD.48 to EVD.51; CT-EVD-14, 15's mapping half, 16, 23), the FP.19 and
 //! FP.20 wire encoding, KN6's checkers (this crate only admits their reports), EV5's display and teaching (EVD.39),
 //! the display of independence and common failure points (EVD.28), PS3.12's dispatch of absent-format records
-//! (EVD.53), obligation export (LB5.18), storage of the envelope (chapter 05, the M6 session store), the command layer,
+//! (EVD.53), the obligation export's `file` row and its grant (LB5.18; `c600-research`'s, while the translator is
+//! [`obligation`]), storage of the envelope (chapter 05, the M6 session store), the command layer,
 //! the runtime process and the jumbling half.
 
 #![forbid(unsafe_code)]
@@ -63,6 +64,7 @@ pub mod error;
 pub mod graph;
 pub mod import;
 pub mod model;
+pub mod obligation;
 pub mod sink;
 pub mod word;
 

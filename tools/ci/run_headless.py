@@ -121,8 +121,10 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     [_LANGUAGE + "contract-vectors/check_vectors.py"],
     [_LANGUAGE + "claim-matrix/check_matrix.py"],
     [_LANGUAGE + "kernel-interface/check_annex.py"],
-    # The Rust workspace of the language (LP2): cargo test --locked --offline in rust/.
+    # The Rust workspace of the language (LP2): cargo test --locked --offline in rust/, without LP5's KN6 checker
+    # crate, whose tests run in the next check so that the two land on different shards.
     ["tests/test_language_rust.py"],
+    ["tests/test_language_rust_checkers.py"],
     # C9's foreign bridge half and the shell's native host library outside that workspace (CT-RPI-01): cargo test
     # --locked --offline --workspace in renderer/bridge.
     ["tests/test_render_ffi.py"],
@@ -132,6 +134,10 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_format_inventory.py"],
     ["tests/test_error_registry.py"],
     ["tests/test_language_scans.py"],
+    # LP5's archive import (R0): the Git-blob corpus granted to the c600-archive importer (PS3.10 to PS3.17).
+    ["tests/test_lp5_archive.py"],
+    # LP5's fourth acceptance item: every research input of LP5's acceptance tests is archived and unchanged.
+    ["tests/test_lp5_acceptance_inputs.py"],
     ["tests/test_source_checkout.py"],
     # The command layer (LP3) drives O01 to O07 through its rows on the command and key routes, with undo and redo.
     ["tests/test_lp3_loop.py"],
@@ -153,13 +159,17 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_jumbling_rust_corrections.py"],
     # The section 15.3 conformance index (LP2, M8): every LP2 test ID with exactly one state.
     ["tests/test_ct_index.py"],
+    # The glossary and learning path (LP4-11; EV5.6, EV5.10, EV5.15, EV5.18, overlay OV-3): the term check, diagrams and
+    # fixtures, through glossary/build.py --check.
+    ["tests/test_glossary.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
 # A check that needs longer, with its own limit. `cargo test` on the whole Rust workspace took 1045 s on the
 # Windows runner on 17 November 2026 (main e5cbf494) and about 2250 s on 20 November 2026, and it grows with every
-# crate and test file. The shard job's own limit is 120 minutes.
-LONG_CHECK_SECONDS = {"tests/test_language_rust.py": 3600}
+# crate and test file. LP5's checker crate took about 1,800 s of it in a debug build on 24 November 2026, so it
+# runs as a check of its own with the same limit. The shard job's own limit is 120 minutes.
+LONG_CHECK_SECONDS = {"tests/test_language_rust.py": 3600, "tests/test_language_rust_checkers.py": 3600}
 
 
 def time_limit(check: list[str]) -> int:
@@ -207,6 +217,7 @@ HEAVY_AREAS: dict[str, tuple[str, ...]] = {
         "leads_repair", "leads_covers", "leads_scale")},
     "tests/test_jumbling_word_check.py": _J1 + ("docs/progress/1.0/jumbling-midstage.md",),
     "tests/test_language_rust.py": _RUST,
+    "tests/test_language_rust_checkers.py": _RUST,
     **{f"tests/test_jumbling_{name}.py": _RUST + _J1 for name in (
         "rust_candidate", "command_route", "rust_attacks", "rust_m8_observations", "rust_m8_levels",
         "rust_nu", "rust_corrections")},
@@ -293,7 +304,12 @@ SECONDS = {
     "tests/test_stop_gate.py": 16, "tests/test_checkout_bytes.py": 15,
     "tests/test_print_identity.py": 14, "tests/test_b412_fixture.py": 13,
     "tests/test_log_workflow.py": 13, "tests/test_core.py": 12,
-    "tests/test_language_rust.py": 2300,  # about 2250 s on the Windows runner on 20 November 2026
+    # The workspace without c600-checkers: 1778 s on the Windows runner on 23 November 2026 before LP5, about
+    # 2,000 s with LP5's other crates; the checker crate about 1,800 s of tests on 24 November 2026, plus its build.
+    # LP4's line adds three crates and 31 test binaries: about 37 s of the workspace's 787 s of test time locally, so
+    # an estimate of 200 s more on the runner, mostly their builds and links, until a CI run measures it.
+    "tests/test_language_rust.py": 2200,
+    "tests/test_language_rust_checkers.py": 1900,
     "tests/test_kernel_oracle.py": 90,  # an estimate until a CI run measures it
     "tests/test_oracle.py": 35,  # an estimate: 28 to 30 s locally since the invalid-recipe family
     "tests/test_lp3_loop.py": 120,  # an estimate until a CI run measures it
@@ -305,6 +321,7 @@ SECONDS = {
     "tests/test_jumbling_rust_m8_levels.py": 250,  # an estimate: about 170 s locally with a warm release build
     "tests/test_jumbling_rust_nu.py": 80,  # an estimate: about 40 s locally with a warm release build
     "tests/test_jumbling_rust_corrections.py": 300,  # an estimate: about 165 s locally with a warm release build
+    "tests/test_lp5_archive.py": 150,  # an estimate: about 90 s locally with a warm release build
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

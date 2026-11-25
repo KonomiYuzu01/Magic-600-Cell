@@ -5,8 +5,9 @@ members = [
     "c600-ir", "c600-check", "c600-digest", "c600-syntax", "c600-run", "c600-kernel", "c600-session",
     "c600-evidence", "c600-command", "c600-view", "c600-display", "c600-module", "c600-runtime", "c600-tools",
     "c600-input", "c600-jumble", "c600-durable", "c600-a2-filter", "c600-repr", "c600-jumble-tool",
-    "c600-library", "c600-platform", "c600-build", "c600-render", "c600-lx4", "c600-lx2",
-    "c600-editor",
+    "c600-library", "c600-platform", "c600-build", "c600-render", "c600-lx4", "c600-lx2", "c600-checkers",
+    "c600-archive", "c600-research",
+    "c600-editor", "c600-debug", "c600-log", "c600-docs",
 ]
 
 [workspace.package]
@@ -29,6 +30,14 @@ debug = "line-tables-only"
 opt-level = 2
 
 [profile.dev.package.c600-jumble]
+opt-level = 2
+
+# LP5's KN6 checkers and the digest crate they hash with: 13% off the stage 14 tests in a debug build (343.6 s to
+# 299.3 s on four test threads, 24 November 2026). Their own check is `tests/test_language_rust_checkers.py`.
+[profile.dev.package.c600-checkers]
+opt-level = 2
+
+[profile.dev.package.c600-digest]
 opt-level = 2
 
 [profile.dev.package."*"]

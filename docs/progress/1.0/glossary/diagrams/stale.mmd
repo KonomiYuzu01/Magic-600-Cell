@@ -1,0 +1,4 @@
+flowchart LR
+  O[output read at revision r] --> Q{dependencies match the current revision?}
+  Q -->|no| S[stale: keeps its revision mark]
+  S -. never shown as current .- C[current]

@@ -36,8 +36,8 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     - `correctness` is the session's correctness control, `journal-reopen-and-kernel-replay`, with its record as
       `correctness_detail`: the live state, the state a reopen of the journal replays, and the kernel's own replay of
       every committed press from the solved state must agree, and the newest presented frame's revision must show
-      the replay's state after that many presses. An undo or redo (Ctrl+Z, Ctrl+Y on the draft map) is shown but
-      fails the control, since its replay knows only twists. Without a session, `correctness` is `fail` with
+      the replay's state after that many presses. An undo or redo (Ctrl+KeyZ, Ctrl+KeyY on the checked key map) is
+      shown but fails the control, since its replay knows only twists. Without a session, `correctness` is `fail` with
       `correctness_control` `none`.
     - The core does not report its swap chain's address, so there is no `swap_chain` and no PresentMon cross-check.
 

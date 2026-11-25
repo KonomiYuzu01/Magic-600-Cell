@@ -1,0 +1,429 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "recipes",
+  "entries": [
+    "word_step",
+    "star_step",
+    "star_word",
+    "frame_image",
+    "frame_maps",
+    "effect_report",
+    "orbit_report"
+  ],
+  "level": "L4",
+  "review": "The mathematician's pass of 23 November 2026 found M3 (the reason said only the cycle remains) and M13 (the seed role); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "binding": {
+    "source_sha256": "0d40695d5ac113896a28347ffc77a86b91ffcd2459d213060e7f177eee448582",
+    "closure_sha256": "929c8ff62cdee9977f381bc6531cf6d1d4dd9f48226df11e3fcb76f1b3de30f8",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "0df827be4ab51679ceeda3121c4f11234cb9ad18daa86ef638b91fa1642b9d7f",
+    "statements": [
+      "a star is setup^-1 relocation^-1 seed relocation setup in chronological order",
+      "a word followed by its inverse has the identity effect"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "word_step",
+      "function": "the recipe step that applies the literal word `letters`",
+      "inputs": "letters: a literal word",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a recipe step of kind word",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every literal word",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "nothing lies outside: the step is built from the caller's letters as given"
+    },
+    {
+      "entry": "star_step",
+      "function": "the recipe step of the kernel's star at frame node `node` of orbit `orbit`, with sign",
+      "inputs": "orbit, node, sign",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a recipe step of kind star",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every orbit, node and sign",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The test evidence covers its recorded recipes. A recipe the kernel cannot expand (a star whose certificate fails) is outside: the row refuses it and the run stops with that code."
+    },
+    {
+      "entry": "star_word",
+      "function": "the literal word setup⁻¹ relocation⁻¹ seed relocation setup",
+      "inputs": "setup, relocation, seed: literal words",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a literal word",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every three literal words",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": "The result is empty exactly when all three words are empty.",
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "nothing lies outside: the word is built from the caller's words as given"
+    },
+    {
+      "entry": "frame_image",
+      "function": "the slots the recipe's net effect sends the frame's slots to",
+      "inputs": "recipe: a list of steps, each a word step or a star step; frame: slots",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "List<Nat>",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every recipe and frame at the session's head",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": "An empty image goes with an empty frame.",
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The test evidence covers its recorded recipes. A recipe the kernel cannot expand (a star whose certificate fails) is outside: the row refuses it and the run stops with that code."
+    },
+    {
+      "entry": "frame_maps",
+      "function": "whether the recipe's net effect sends the slots `from` to `to`, in order",
+      "inputs": "recipe: a list of steps, each a word step or a star step; from, to: slots",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "Bool",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every recipe and two slot lists",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": "false means the images of `from` are not `to`; it says nothing about other recipes.",
+      "outside_scope": "The test evidence covers its recorded recipes. A recipe the kernel cannot expand (a star whose certificate fails) is outside: the row refuses it and the run stops with that code."
+    },
+    {
+      "entry": "effect_report",
+      "function": "the recipe's complete effect: moved pieces and stickers, the support per orbit, the net map and the expansion's digest",
+      "inputs": "recipe: a list of steps, each a word step or a star step",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the effect row's record",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every recipe at the session's head",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the answer is one value, never an empty collection"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The test evidence covers its recorded recipes. A recipe the kernel cannot expand (a star whose certificate fails) is outside: the row refuses it and the run stops with that code."
+    },
+    {
+      "entry": "orbit_report",
+      "function": "the recipe's support split into the orbits the caller selected and the others",
+      "inputs": "recipe: a list of steps, each a word step or a star step; orbits: the selected orbits",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "record {moved_stickers, net_sha256, others, selected, support}",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every recipe and orbit list",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the report is one record; an empty `selected` list means the recipe moves no selected orbit"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The test evidence covers its recorded recipes. A recipe the kernel cannot expand (a star whose certificate fails) is outside: the row refuses it and the run stops with that code."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "by_definition",
+      "statement": "a star is setup^-1 relocation^-1 seed relocation setup in chronological order",
+      "text": "star_word concatenates the inverse of the setup, the inverse of the relocation, the seed, the relocation and the setup, in that chronological order.",
+      "evidence": {
+        "path": "rust/c600-library/tests/recipes.rs",
+        "sha256": "e00850b267a5af6e3cdfa6e0ceabc5be8fac52bc1d1e23d24ef87ff2a08f5a90",
+        "basis": "exact_computation",
+        "check": "producer",
+        "label": "LB2 recipe constructors (LP3 test)"
+      }
+    },
+    {
+      "kind": "lemma",
+      "statement": "a word followed by its inverse has the identity effect",
+      "text": "Every generator is a permutation of the slots and its negative letter is the inverse permutation, so a word followed by its inverse moves nothing.",
+      "evidence": {
+        "none": "a definition: the inverse of a permutation undoes it"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L4",
+    "input": {
+      "setup": [
+        1
+      ],
+      "relocation": [
+        2
+      ],
+      "seed": [
+        3
+      ],
+      "recipe_word": [
+        5,
+        -5
+      ],
+      "base": "solved",
+      "roles": "generators 1, 2 and 3 stand in the setup, relocation and seed roles; generator 3 is no seed of the atlas, whose seeds have 46 letters or more"
+    },
+    "expected": [
+      {
+        "claim": "star_word",
+        "value": [
+          -1,
+          -2,
+          3,
+          2,
+          1
+        ],
+        "from_step": 1
+      },
+      {
+        "claim": "effect_primitive_count",
+        "value": 2,
+        "from_step": 2
+      },
+      {
+        "claim": "effect_moved_pieces",
+        "value": 0,
+        "from_step": 3
+      },
+      {
+        "claim": "effect_support_rows",
+        "value": 0,
+        "from_step": 4
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_recipes"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "recipes.star_word",
+          "statement": "a star is setup^-1 relocation^-1 seed relocation setup in chronological order",
+          "step": "step 1"
+        },
+        {
+          "node": "recipes.effect_report",
+          "statement": "a word followed by its inverse has the identity effect",
+          "step": "step 2"
+        },
+        {
+          "node": "kernel:read_snapshot(effect)",
+          "statement": "a word followed by its inverse has the identity effect",
+          "step": "step 3"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:Concat",
+        "base:ExactAdd",
+        "base:ExactEq",
+        "base:ExactLess",
+        "base:Index",
+        "base:Inverse",
+        "base:Length",
+        "base:Or",
+        "base:Push",
+        "base:Repeat",
+        "recipes.below",
+        "recipes.frame_image",
+        "recipes.frame_maps",
+        "recipes.image",
+        "recipes.images",
+        "recipes.named",
+        "recipes.orbit_report",
+        "recipes.rows_in",
+        "recipes.star_step",
+        "recipes.word_step"
+      ],
+      "unmapped_steps": [
+        "step 4"
+      ]
+    },
+    "reason": {
+      "statement": "a star is setup^-1 relocation^-1 seed relocation setup in chronological order",
+      "idea": "A star carries the seed to the place you named and carries everything back afterwards, so what remains is the seed's whole effect carried there: its cycle and any collateral.",
+      "terms": [
+        "star",
+        "setup",
+        "relocation",
+        "seed"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "the relocation and the setup are applied again after the seed",
+        "outcome": "counterexample: without them the word [-1, -2, 3] leaves the setup's and the relocation's effect in place"
+      }
+    ],
+    "not_meant": "A star word built from the solver's setup, relocation and seed is a literal word; recipes never chooses a setup or a target, and an effect report shows what a recipe does, not whether it helps.",
+    "givens": [
+      {
+        "name": "setup",
+        "value": [
+          1
+        ],
+        "leaf": "input named by the caller"
+      },
+      {
+        "name": "relocation",
+        "value": [
+          2
+        ],
+        "leaf": "input named by the caller"
+      },
+      {
+        "name": "the seed role",
+        "value": [
+          3
+        ],
+        "leaf": "input named by the caller"
+      },
+      {
+        "name": "recipe word",
+        "value": [
+          5,
+          -5
+        ],
+        "leaf": "kernel:read_snapshot(effect)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "setup⁻¹ = [-1], relocation⁻¹ = [-2], then [3] in the seed role, the relocation [2] and the setup [1]: [-1, -2, 3, 2, 1].",
+        "result": [
+          -1,
+          -2,
+          3,
+          2,
+          1
+        ]
+      },
+      {
+        "check": "The recipe is one word step of two letters, 5 and -5: 2 primitive moves.",
+        "result": 2
+      },
+      {
+        "check": "Generator 5 followed by its inverse is the identity: 0 pieces move.",
+        "result": 0
+      },
+      {
+        "check": "No piece moves, so no orbit has a support row: 0 rows.",
+        "result": 0
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "star",
+        "setup",
+        "relocation",
+        "seed",
+        "complete-effect",
+        "frame"
+      ],
+      "records": [
+        "words"
+      ]
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:read_snapshot(effect)",
+        "spec": "KN2.4's effect row: the complete effect of a recipe at the head, with its net map, support and expansion digest; a read changes nothing.",
+        "test": "rust/c600-tools/tests/effect_row.rs::a_library_entry_reads_a_recipes_effect"
+      }
+    ]
+  }
+}

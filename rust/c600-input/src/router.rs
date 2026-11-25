@@ -102,7 +102,7 @@ impl Focus {
     }
 }
 
-/// One grip slot of the applied slot map: an absolute cap and its transported frame (EV4.8).
+/// One grip slot of a slot map: an absolute cap and its transported frame (EV4.8).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Slot {
     /// `CapId`.
@@ -111,8 +111,10 @@ pub struct Slot {
     pub frame: Value,
 }
 
-/// The context relative names resolve against. Only [`Context::rebind`] changes the applied slot map (EV4.8); the
-/// camera, hover and filter fields are here so tests can change them, and no argument reads them.
+/// The context relative names resolve against. Its slot map is the host's default map, fixed when the context is made;
+/// the applied map is the solver's last `grip.rebind` in the command layer, or this default before the first one
+/// ([`Router::slots`]; EV4.8, DT-M1 K6). The camera, hover and filter fields are here so tests can change them, and no
+/// argument reads them, so none of them derives a new applied map.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Context {
     pub destination: Destination,
@@ -147,14 +149,9 @@ impl Context {
         }
     }
 
-    /// The applied slot map.
+    /// The host's default slot map, which applies until the solver's first rebind.
     pub fn slots(&self) -> &[Slot] {
         &self.slots
-    }
-
-    /// Replaces the applied slot map, as the solver's rebind command (`grip.rebind`) does once it is built.
-    pub fn rebind(&mut self, slots: Vec<Slot>) {
-        self.slots = slots;
     }
 }
 
@@ -241,6 +238,19 @@ impl Router {
 
     pub fn keymap(&self) -> &KeyMap {
         &self.keymap
+    }
+
+    /// The applied grip-slot map (EV4.8): the map of the solver's last `grip.rebind`, which `layer` holds, or the
+    /// context's default map before the first one. Only the rebind command changes it.
+    pub fn slots<S: Store>(&self, layer: &CommandLayer<S>) -> Vec<Slot> {
+        match layer.slot_map() {
+            Some(map) => map
+                .slots
+                .into_iter()
+                .map(|slot| Slot { cap: Value::Int(i64::from(slot.cap)), frame: slot.frame })
+                .collect(),
+            None => self.context.slots.clone(),
+        }
     }
 
     /// Checks and applies a new key map; on a finding the current map stays (EV4.7).
@@ -433,7 +443,8 @@ impl Router {
             Focus::List(list) => Ok(list),
             _ => Err(missing("no list or view has the focus")),
         };
-        let slot = |n: usize| self.context.slots.get(n).ok_or_else(|| missing("no such grip slot"));
+        let slots = self.slots(layer);
+        let slot = |n: usize| slots.get(n).ok_or_else(|| missing("no such grip slot"));
         let mut args = BTreeMap::new();
         for (name, arg) in &binding.args {
             let value = match arg {
@@ -446,6 +457,11 @@ impl Router {
                 Arg::UndoHint | Arg::RedoHint => {
                     let direction = if *arg == Arg::UndoHint { Direction::Undo } else { Direction::Redo };
                     let hint = layer.undo_hint(direction);
+                    hint.ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, "no eligible target"))?.to_json()
+                }
+                Arg::LayoutUndoHint | Arg::LayoutRedoHint => {
+                    let direction = if *arg == Arg::LayoutUndoHint { Direction::Undo } else { Direction::Redo };
+                    let hint = layer.layout_hint(direction);
                     hint.ok_or_else(|| Error::new(code::UNDO_SUPERSEDED, "no eligible target"))?.to_json()
                 }
                 Arg::Revision => layer.revision().to_json(),

@@ -1,0 +1,5 @@
+flowchart LR
+  W[legal word] -->|lands| U[its clean-step unit]
+  W -->|keeps| L[prior lattice pieces on the lattice]
+  W -->|keeps| O[every other off piece at its exact pose]
+  O -. except .- F[its declared free set]

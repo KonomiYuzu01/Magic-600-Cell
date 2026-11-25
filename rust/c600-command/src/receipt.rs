@@ -50,9 +50,32 @@ pub mod code {
     pub const JUMBLE_OFF_NOT_SHOWN_REACHABLE: &str = "KN5:input.jumble_off_not_shown_reachable";
     /// A language-defined row whose required kernel row the table does not hold (LI.20).
     pub const OVERLAY_DEPENDENCY_MISSING: &str = "KN5:input.overlay_dependency_missing";
-    /// A key binding whose sequence the shell's keymap already binds in an overlapping context (EV4.3, EV4.7;
-    /// [`crate::Shell::bind`]).
+    /// Two bindings resolve to the same chord sequence in one routing class (EV4.3, EV4.7; [`crate::keys::check`]). As
+    /// a draft reading, also a binding that conflicts with the keys its routing class takes itself.
     pub const BINDING_CONFLICT: &str = "EV4:input.binding_conflict";
+    /// A complete binding is also a prefix of another sequence in its routing class, or has no chord (EV4.7).
+    pub const BINDING_PREFIX_CONFLICT: &str = "EV4:input.binding_prefix_conflict";
+    /// A binding recorded by character does not resolve under a declared layout, two bindings collide only through
+    /// that resolution, or the active layout is not declared (EV4.7).
+    pub const BINDING_LAYOUT_MISMATCH: &str = "EV4:input.binding_layout_mismatch";
+    /// Two macros whose key kind, version, alphabet, identity or independence contract differ: their keys are not
+    /// compared (EV4.9, LG2.23; [`crate::macros::check_keys`]).
+    pub const KEY_CONTRACT_MISMATCH: &str = "LB1:input.key_contract_mismatch";
+    /// A recorded step that lacks a required command, module, object or input mapping (EV4.13, EV4.14).
+    pub const RECORDING_STEP_UNRESOLVED: &str = "EV4:input.recording_step_unresolved";
+    /// An unattended step's arguments name a revision or preview that is not current, or a current undo or redo hint
+    /// does not target the played action mapped from the recorded target (EV4.14, EV4.18).
+    pub const STALE_RECORDING_STEP: &str = "EV4:stale.recording_step";
+    /// The model identity or an input digest differs from the recording's (EV4.14).
+    pub const RECORDING_IDENTITY_MISMATCH: &str = "EV4:input.recording_identity_mismatch";
+    /// A recorded step with no known terminal outcome: playback and conversion stop at it (EV4.19).
+    pub const RECORDING_STEP_OUTCOME_UNKNOWN: &str = "EV4:input.recording_step_outcome_unknown";
+    /// A start while recording, a stop with no recording, or a play or `from` that EV4.22's table does not allow.
+    pub const RECORDING_STATE: &str = "EV4:input.recording_state";
+    /// A recording that cannot become the target; nothing is written (EV4.23).
+    pub const RECORDING_NOT_CONVERTIBLE: &str = "EV4:input.recording_not_convertible";
+    /// The engine was lost (KN5.23); a playback found `running` with no live job at a reopen stops with it.
+    pub const ENGINE_LOST: &str = "KN5:resource_limit.engine_lost";
 
     /// Drafts that chapter 13 does not register yet.
     pub const UNKNOWN_ROW: &str = "KN5:input.unknown_row";

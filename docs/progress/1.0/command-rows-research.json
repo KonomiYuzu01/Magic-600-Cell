@@ -1,0 +1,260 @@
+{
+  "format": "c600-command-rows-delta-1",
+  "add": [
+    {
+      "id": "research.archive.inventory",
+      "label": "Read archive inventory",
+      "kind": "query",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Per record of a published import: its Git blob and SHA-256, its stage, its format or the absence of one, and recognition, integrity and interpretation as separate results, with the import table's edition (PS3.14, PS3.17). The newest import unless manifest names one by its SHA-256. The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "manifest": "Text?",
+        "stage": "Nat?"
+      }
+    },
+    {
+      "id": "research.claims",
+      "label": "Read claims and preflight",
+      "kind": "query",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Per claim group of the claim bindings: family, statement and scope phrase (EVD.36), the original label word for word, check mode, data status, LB5.14's preflight (ready, or unavailable with its reasons and dependencies) and the latest check verdict beside it. Preflight is no verdict; unavailable refutes nothing. The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "group": "Text?",
+        "stage": "Nat?"
+      }
+    },
+    {
+      "id": "research.check.report",
+      "label": "Read check report",
+      "kind": "query",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "One check's KN6 CheckReport from a run the host holds: verdict, checker and its source digest, the certificate's and inputs' digests and the per-claim trace by reference, steppable without the producer (KN6.4). The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "run": "Text",
+        "check": "Nat"
+      }
+    },
+    {
+      "id": "evidence.word",
+      "label": "Read evidence word",
+      "kind": "query",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "c600-evidence's Word for a claim group's statement: the word, the claim, the decision row, the scope phrase, named premises and the source label, for the binding's key and for each key a check run of the group covers (EVD.32, EVD.46). The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "group": "Text"
+      }
+    },
+    {
+      "id": "research.runs",
+      "label": "Read research runs",
+      "kind": "query",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Per run: its engine-owned branch (the pinned input), ReproKey digest, outcome, stop reason, declared coverage, DET.30 reading, output digests and reproduction status; and the archive's runs as recorded, which supply no new run (DET.48). The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "group": "Text?"
+      }
+    },
+    {
+      "id": "research.obligations",
+      "label": "Read open obligations",
+      "kind": "query",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "The record-only anchors of the claim bindings, stage 19's remaining obligations among them, with their export status, and the obligations the host exported or refused (LB5.18). The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "group": "Text?"
+      }
+    },
+    {
+      "id": "research.archive.import",
+      "label": "Import research archive",
+      "kind": "file",
+      "inventory": [],
+      "gates": [],
+      "lane": "program",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Reads granted files only: the corpus manifest and the members named. Publishes the import's envelopes only through this invoked command, and none when an integrity check fails; runs no producer (PS3.17). The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "manifest": "Text",
+        "members": "List<Text>"
+      }
+    },
+    {
+      "id": "research.check.run",
+      "label": "Run independent check",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "program",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "A KN6 check job at a digest-pinned input, through the research host's job adapter (LB5.7); its run record is written as a workspace record in this row's completion. A group's check first resolves the claim: it runs only when LB5.14's preflight is ready and the checker and certificate are the group's. The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "group": "Text?",
+        "checker": "Text",
+        "certificate": "Text",
+        "inputs": "Map<Text,Text>",
+        "level": "labels|poses",
+        "digest": "Text",
+        "puzzle": "full|jumbling"
+      }
+    },
+    {
+      "id": "research.run.reproduce",
+      "label": "Reproduce research run",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "program",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "DET.7's reproduce of a stored run record: a refusal, not run, or the exact payload compared byte for byte; the reproduction status is written as a workspace record in this row's completion. The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "run": "Text"
+      }
+    },
+    {
+      "id": "research.bundle.export",
+      "label": "Export check bundle",
+      "kind": "file",
+      "inventory": [],
+      "gates": [],
+      "lane": "program",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "PS3.17's check bundle of published records with their dependencies, missing ones declared, written to a granted file only. The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "records": "List<Text>",
+        "destination": "Text"
+      }
+    },
+    {
+      "id": "research.obligation.export",
+      "label": "Export proof obligation",
+      "kind": "file",
+      "inventory": [],
+      "gates": [],
+      "lane": "program",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "LB5.18's export of a typed statement as PS1.45's Lean 4 text with by sorry, written to a granted file only; an untranslatable statement refuses with LB5:input.obligation_untranslatable and writes nothing. No process, network, evidence promotion or commit gate. The research host answers it from its own data, never by running language code (KN5.5); the answer carries the revision it was computed at, so the panel shows ONE.12's stale and pending states. It reads and checks: it chooses, ranks and applies no solving word (PHS.7). Draft ID (LP5 plan section 6).",
+      "source": "LP5 plan section 6 (owner, 23 Nov 2026, LP5-1: item 3.1 of docs/wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md)",
+      "arguments": {
+        "statement": "Text",
+        "destination": "Text"
+      }
+    }
+  ],
+  "amend": []
+}

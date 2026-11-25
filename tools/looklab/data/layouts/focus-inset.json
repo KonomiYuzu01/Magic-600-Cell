@@ -276,7 +276,24 @@
         "layout.redo",
         "session.undo.partial",
         "operation.preview.commit",
-        "session.rollback"
+        "session.rollback",
+        "research.archive.inventory",
+        "research.claims",
+        "research.check.report",
+        "evidence.word",
+        "research.runs",
+        "research.obligations",
+        "research.archive.import",
+        "research.check.run",
+        "research.run.reproduce",
+        "research.bundle.export",
+        "research.obligation.export",
+        "file.document.new",
+        "file.document.open",
+        "file.document.save",
+        "file.document.save_as",
+        "file.document.compile",
+        "file.document.close"
       ]
     },
     "editor": {

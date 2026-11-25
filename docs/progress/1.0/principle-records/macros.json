@@ -1,0 +1,239 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "macros",
+  "entries": [
+    "macro_report",
+    "macro_comparison"
+  ],
+  "level": "L4",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "fe30c6f55a3ce8cc577a9d5fc2a07d7f0f36343c5b8efbb710d7fe831e703dd5",
+    "closure_sha256": "bae69e6c8cbd06aae14952639da50a4af7006c94cc4a4a6bbc75518b650cecff",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "02f6b856afde1fd48dfb3e014b5b07fc17c09f17df45edb31d8e9df420941f4f",
+    "statements": [
+      "two recipes with the identity effect have the same net map, and different literal words have different expansions"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "macro_report",
+      "function": "a named macro's whole effect and its replay under the session's protection",
+      "inputs": "name; recipe: a list of steps, each a word step or a star step",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the macro report record",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every named recipe at the head",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the report is one record; an empty support means the macro moves nothing"
+      },
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": {
+        "none": "the definitions cover every recipe: the effect and replay rows answer exactly"
+      }
+    },
+    {
+      "entry": "macro_comparison",
+      "function": "the shared and one-sided support of two named macros, and whether their net maps and expansions are equal",
+      "inputs": "first, first_recipe, second, second_recipe",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "the comparison record",
+      "puzzle": "600-cell-Full",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L4",
+      "domain": "every two named recipes at the head",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": {
+        "none": "the comparison is one record; empty lists mean neither macro moves an orbit the other does not"
+      },
+      "negative_scope": "same_net = false means the two net maps differ; it ranks neither macro.",
+      "outside_scope": {
+        "none": "the definitions cover every recipe: the effect and replay rows answer exactly"
+      }
+    }
+  ],
+  "justification": [
+    {
+      "kind": "lemma",
+      "statement": "two recipes with the identity effect have the same net map, and different literal words have different expansions",
+      "text": "The net map is the permutation the recipe performs, so two identities have the same net map; the expansion is the literal word, so different words have different expansion digests.",
+      "evidence": {
+        "none": "a definition: net map and expansion are defined from the recipe"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L4",
+    "input": {
+      "first": [
+        5,
+        -5
+      ],
+      "second": [
+        7,
+        -7
+      ],
+      "base": "solved"
+    },
+    "expected": [
+      {
+        "claim": "same_net",
+        "value": true,
+        "from_step": 1
+      },
+      {
+        "claim": "same_expansion",
+        "value": false,
+        "from_step": 2
+      },
+      {
+        "claim": "both",
+        "value": [],
+        "from_step": 3
+      },
+      {
+        "claim": "only_first",
+        "value": [],
+        "from_step": 3
+      },
+      {
+        "claim": "only_second",
+        "value": [],
+        "from_step": 3
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_macros"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "kernel:read_snapshot(effect)",
+          "statement": "two recipes with the identity effect have the same net map, and different literal words have different expansions",
+          "step": "step 1"
+        },
+        {
+          "node": "macros.macro_comparison",
+          "statement": "two recipes with the identity effect have the same net map, and different literal words have different expansions",
+          "step": "step 2"
+        },
+        {
+          "node": "macros.orbits_in",
+          "statement": "two recipes with the identity effect have the same net map, and different literal words have different expansions",
+          "step": "step 3"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:ExactAdd",
+        "base:ExactEq",
+        "base:Index",
+        "base:Length",
+        "base:Or",
+        "base:Push",
+        "base:Repeat",
+        "kernel:read_snapshot(replay)",
+        "macros.listed",
+        "macros.macro_report",
+        "macros.support_orbits"
+      ],
+      "unmapped_steps": []
+    },
+    "reason": {
+      "statement": "two recipes with the identity effect have the same net map, and different literal words have different expansions",
+      "idea": "Two words that each undo themselves do the same thing, nothing, though they are different words.",
+      "terms": [
+        "complete-effect",
+        "orbit"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "both recipes are identities",
+        "outcome": "weaker conclusion: for other recipes the net maps can differ, and the support lists then name the orbits each moves"
+      }
+    ],
+    "not_meant": "A comparison ranks neither macro and recommends neither.",
+    "givens": [
+      {
+        "name": "first",
+        "value": [
+          5,
+          -5
+        ],
+        "leaf": "kernel:read_snapshot(effect)"
+      },
+      {
+        "name": "second",
+        "value": [
+          7,
+          -7
+        ],
+        "leaf": "kernel:read_snapshot(effect)"
+      }
+    ],
+    "steps": [
+      {
+        "check": "Both words are a generator and its inverse: both net maps are the identity, so they are equal.",
+        "result": true
+      },
+      {
+        "check": "The literal words [5, -5] and [7, -7] differ, so their expansions differ.",
+        "result": false
+      },
+      {
+        "check": "Neither moves an orbit, so the shared and one-sided supports are empty.",
+        "result": []
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "complete-effect",
+        "protection",
+        "orbit"
+      ],
+      "records": [
+        "recipes",
+        "protection"
+      ]
+    },
+    "leaf_specs": [
+      {
+        "leaf": "kernel:read_snapshot(effect)",
+        "spec": "KN2.4's effect row: the complete effect of a recipe at the head.",
+        "test": "rust/c600-tools/tests/effect_row.rs::a_library_entry_reads_a_recipes_effect"
+      },
+      {
+        "leaf": "kernel:read_snapshot(replay)",
+        "spec": "The replay row: a recipe replayed under the session's protected orbits, with conflicts and the refused prefix.",
+        "test": "rust/c600-tools/tests/replay_row.rs::a_library_entry_replays_a_recipe_under_the_sessions_protected_orbits"
+      }
+    ]
+  }
+}

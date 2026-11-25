@@ -295,8 +295,9 @@ fn a_run_reaches_no_commit_or_token_row_in_any_profile() {
             }
         }
         // 19 commit and app rows before ADR-D01's layout.undo, layout.redo, session.undo.partial,
-        // operation.preview.commit and session.rollback (owner, 22 November 2026, item 4).
-        assert_eq!((commit_rows, token_rows), (24, 1), "{profile:?}");
+        // operation.preview.commit and session.rollback (owner, 22 November 2026, item 4); 26 with
+        // `command-rows-lp4.json`'s app rows `file.document.new` and `file.document.close` (ADR-D01.84).
+        assert_eq!((commit_rows, token_rows), (26, 1), "{profile:?}");
         assert_eq!((f.layer.store().log.len(), f.layer.revision().state), (log, state), "{profile:?}");
     }
 }

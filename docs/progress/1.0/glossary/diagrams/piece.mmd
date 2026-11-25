@@ -1,6 +1,6 @@
 flowchart LR
-  subgraph P[Piece]
+  subgraph P[piece: rigid, labelled]
     s1[sticker] --- s2[sticker] --- s3[sticker]
   end
-  P -->|occupies| Pos[one position]
-  Pos -->|its slots| Sl[slot set]
+  P -->|on the lattice| O[occupies slots]
+  P -->|off the lattice| X[slot occupancy undefined]

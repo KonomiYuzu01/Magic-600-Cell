@@ -1,0 +1,5 @@
+flowchart LR
+  S[statement] --> N{stands with no premise assumed?}
+  N -->|no| A[assume every premise not refuted]
+  A --> T{clears the threshold?}
+  T -->|yes| C[conditional, naming the premises]

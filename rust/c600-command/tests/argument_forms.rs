@@ -6,8 +6,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use c600_command::{
-    code, digest, draft_args, CommandLayer, HeadlessFrames, Kind, MemoryStore, Overlay, Receipt, Secret, Shell, Status,
-    Table, POLICY_ROW, RECORD_ROW, WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
+    code, digest, draft_args, identity_json, CommandLayer, HeadlessFrames, Kind, MemoryRecorder, MemoryStore, Overlay,
+    PlayStatus, Receipt, Recorded, RecordedStep, Recording, Secret, Shell, Status, Table, POLICY_ROW, RECORD_ROW,
+    WORKSHEET_COMPARE_ROW, WORKSHEET_LOAD_ROW, WORKSHEET_SAVE_ROW,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -62,6 +63,40 @@ fn parse(text: &str) -> Value {
 
 fn text(s: &str) -> Value {
     Value::String(s.to_owned())
+}
+
+/// A recording of `steps` refused invocations of `camera.rotate`, which playback passes over (EV4.19).
+fn passed_over(name: &str, steps: usize) -> Recording {
+    let refused = json::object([
+        ("command", text("shell/1")),
+        ("request", text("r")),
+        ("job", Value::Null),
+        (
+            "status",
+            json::object([
+                ("name", text("refused")),
+                ("error", json::object([("code", text(code::ROW_NOT_BUILT)), ("detail", text("not built"))])),
+            ]),
+        ),
+    ]);
+    let step = |n: usize| RecordedStep {
+        row: "camera.rotate".into(),
+        arguments: json::object([("rotation", text("quarter")), ("view", text("main"))]),
+        word: None,
+        depends: Vec::new(),
+        module: None,
+        action: None,
+        command: format!("shell/{n}"),
+        request: "r".into(),
+        outcome: Some(refused.clone()),
+    };
+    Recording {
+        name: name.into(),
+        session: "s1".into(),
+        identity: identity_json(&kernel().identity()),
+        started: Value::Null,
+        steps: (0..steps).map(step).collect(),
+    }
 }
 
 fn overlay(entry: &str) -> Overlay {
@@ -184,14 +219,19 @@ fn a_served_rows_arguments_have_their_types_forms() {
     assert_eq!(rows, [COMPARE, COMPARE, LAYER, SAVE, SAVE, SAVE, SAVE, SCOPE]);
 }
 
-/// An argument of an optional type may be left out: `recording.play`'s `from` is `Nat?`. Given, it has `Nat`'s form;
-/// left out, the job's arguments do not hold it. Every other argument must be given, and no other name may be. The
-/// names come before the row's arm, so a row the layer does not build is refused as not built once its names fit, with
-/// its optional argument left out or given.
+/// An argument of an optional type may be left out: `recording.play`'s `from` is `Nat?`. Given, it has `Nat`'s form,
+/// except that a negative integer is refused with `EV4:input.recording_state` as EV4.22 says; left out, the playback
+/// starts where EV4.22's table says. Every other argument must be given, and no other name may
+/// be. The names come before the row's arm, so a row the layer does not build is refused as not built once its names
+/// fit, with its optional argument left out or given. The layer plays a recording itself (LP4-9), so no program job is
+/// taken; each playback here passes over its recorded refusals and finishes.
 #[test]
 fn an_optional_argument_may_be_left_out() {
-    let mut f = fixture(&[PLAY]);
-    f.layer.set_program_capacity(8);
+    let mut f = fixture(&[]);
+    let recorder = MemoryRecorder::new();
+    let recordings = [("r1", 1), ("r2", 13)].map(|(name, steps)| (name.to_owned(), passed_over(name, steps)));
+    recorder.put(Recorded { recordings: recordings.into_iter().collect(), playbacks: Default::default() });
+    f.layer.set_recorder(Box::new(recorder.clone())).unwrap();
     let fields =
         |pairs: &[(&str, Value)]| Value::Object(pairs.iter().map(|(k, v)| ((*k).to_owned(), v.clone())).collect());
     let given = [
@@ -201,9 +241,14 @@ fn an_optional_argument_may_be_left_out() {
     ];
     for args in &given {
         assert!(running(&f.invoke(PLAY, args.clone())), "{args:?}");
+        f.layer.run_jobs();
+        let name = args.get("recording").and_then(Value::as_str).unwrap();
+        assert_eq!(f.layer.playback(name).map(|state| state.status.clone()), Some(PlayStatus::Finished), "{args:?}");
     }
+    // A negative integer is outside EV4.22's table, as one past the end is: the format packet's `play-from-negative`.
+    let negative = fields(&[("from", Value::Int(-1)), ("recording", text("r1"))]);
+    assert_eq!(refusal(&f.invoke(PLAY, negative)), code::RECORDING_STATE);
     let refused = [
-        fields(&[("from", Value::Int(-1)), ("recording", text("r1"))]),
         fields(&[("from", text("2")), ("recording", text("r1"))]),
         fields(&[("from", Value::Null), ("recording", text("r1"))]),
         fields(&[("from", Value::Int(0))]),
@@ -213,8 +258,7 @@ fn an_optional_argument_may_be_left_out() {
     for args in &refused {
         assert_eq!(refusal(&f.invoke(PLAY, args.clone())), code::ARGUMENT_FORM, "{args:?}");
     }
-    let taken: Vec<Value> = f.take_all().into_iter().map(|(_, args)| args).collect();
-    assert_eq!(taken, given);
+    assert!(f.take_all().is_empty());
 
     // `token.override.reset`, which nothing serves here, takes `name: TokenName` and `theme: ThemeFamilyId?`.
     // (`command.find`, which this test used before LP4-4 built it, is in `tests/palette.rs`.)
@@ -327,7 +371,8 @@ fn an_overlay_rows_forms_come_before_a_stale_revision() {
     assert_eq!(f.take_all(), [("tool.forms".to_owned(), args(599, &current, "draft"))]);
 }
 
-/// None of the layer's own rows takes an optional argument, so every argument their arms read was given.
+/// None of these layer rows takes an optional argument, so every argument their arms read was given. (`recording.play`,
+/// the layer's own since LP4-9, takes `from: Nat?`, which its arm reads as optional: `an_optional_argument_may_be_left_out`.)
 #[test]
 fn the_layers_own_rows_take_no_optional_argument() {
     let table = Table::h08().with_drafts();

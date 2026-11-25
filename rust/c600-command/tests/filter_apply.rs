@@ -30,7 +30,9 @@ const APPLY: &str = "filter.apply";
 /// reading 18).
 const NOTE: &str = "tool.full.note";
 /// A stored workspace row whose undo class is `none`, which the tests serve: no undo reaches its job's writes.
-const PLAY: &str = "recording.play";
+/// A stored workspace row whose undo class is `none`, which an entry serves here (`recording.play` played this part
+/// until LP4-9 built it in the layer).
+const PLAY: &str = "session.timer.start";
 
 /// The record the test's predicate job writes, and the record its apply job writes.
 const PREDICATE: &str = "layer";
@@ -218,10 +220,10 @@ impl Fixture {
         self.finish(job, output(Value::Null, &[(FILTERED, payload)]))
     }
 
-    /// A job of `recording.play`, a stored row whose undo class is `none`, whose output writes `payload` to `name`: no
+    /// A job of `session.timer.start`, a stored row whose undo class is `none`, whose output writes `payload` to `name`: no
     /// undo reaches the write.
     fn play(&mut self, name: &str, payload: Value) -> Receipt {
-        let job = self.start(PLAY, json::object([("from", Value::Int(0)), ("recording", text("r1"))]));
+        let job = self.start(PLAY, json::object([]));
         self.finish(job, output(Value::Null, &[(name, payload)]))
     }
 

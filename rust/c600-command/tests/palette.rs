@@ -24,11 +24,12 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
+use c600_command::keys::{Arg, RoutingClass};
+use c600_command::Dependency;
 use c600_command::{
-    code, draft_args, Binding, Caller, CommandLayer, Error, Grant, Invocation, KeyBinding, Kind, Lane, MemoryStore,
+    code, draft_args, Binding, BindingSpec, Caller, CommandLayer, Error, Grant, Invocation, Kind, Lane, MemoryStore,
     Metadata, Overlay, Palette, Registration, Secret, Shell, Status, Table, FIND_ROW,
 };
-use c600_command::{ArgSource, Dependency};
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
 
@@ -101,6 +102,11 @@ fn fixture() -> Fixture {
     Fixture { layer, shell: Shell::new(Secret::fixed(SECRET), "shell") }
 }
 
+/// A global-class binding of `sequence` to `row` with no arguments.
+fn global(sequence: &[&str], row: &str) -> BindingSpec {
+    BindingSpec::new(sequence, RoutingClass::Global, row, vec![])
+}
+
 fn ids<'a>(entries: impl IntoIterator<Item = &'a c600_command::PaletteEntry>) -> Vec<&'a str> {
     entries.into_iter().map(|entry| entry.row.as_str()).collect()
 }
@@ -115,7 +121,10 @@ fn overlay_commands_appear_in_the_palette() {
     let table: Vec<String> = f.layer.table().rows().map(|row| row.id.clone()).collect();
     let palette = f.shell.read_palette(&f.layer).clone();
     assert_eq!(ids(palette.entries()), table);
-    assert_eq!(palette.entries().len(), 198 + USER_ROWS.len(), "H-08's 198 rows and the four user commands");
+    // H-08's 215 rows: 198 at the LP3 freeze, LP5's eleven research panel rows, its fifth delta
+    // (`docs/progress/1.0/command-rows-research.json`; CM.19), and LP4's six document rows
+    // (`docs/progress/1.0/command-rows-lp4.json`; ADR-D01.84).
+    assert_eq!(palette.entries().len(), 215 + USER_ROWS.len(), "H-08's 215 rows and the four user commands");
 
     for (id, kind, label) in [
         (INSPECT, Kind::Query, "Pairing check"),
@@ -131,7 +140,7 @@ fn overlay_commands_appear_in_the_palette() {
     let stored = palette.entry(FIND_ROW).unwrap();
     assert_eq!((stored.label.as_str(), stored.kind, stored.language_defined), ("Find command", Kind::View, false));
     let undo = palette.entry("session.undo").unwrap();
-    assert_eq!((undo.label.as_str(), undo.keys.as_slice()), ("Undo", ["Ctrl+Z".to_owned()].as_slice()));
+    assert_eq!((undo.label.as_str(), undo.keys.as_slice()), ("Undo", ["Ctrl+KeyZ".to_owned()].as_slice()));
     assert!(palette
         .entries()
         .iter()
@@ -142,15 +151,15 @@ fn overlay_commands_appear_in_the_palette() {
     assert_eq!(ids(palette.find("pairing")), USER_ROWS);
     assert_eq!(ids(palette.find("PAIRING View")), [VIEW]);
     assert_eq!(ids(palette.find("user.export")), [EXPORT]);
-    assert_eq!(ids(palette.find("ctrl+z")), ["session.undo"]);
+    assert_eq!(ids(palette.find("ctrl+keyz")), ["session.undo"]);
     assert_eq!(palette.find("").len(), palette.entries().len());
     assert!(palette.find("pairing nowhere").is_empty());
 
     // A key bound to the user command shows in its entry and finds it.
-    f.shell.bind(KeyBinding::new("Ctrl+Alt+P", "any", INSPECT, &[])).unwrap();
+    f.shell.bind(global(&["Ctrl+Alt+KeyP"], INSPECT)).unwrap();
     let palette = f.shell.read_palette(&f.layer);
-    assert_eq!(palette.entry(INSPECT).unwrap().keys, ["Ctrl+Alt+P"]);
-    assert_eq!(ids(palette.find("ctrl+alt+p")), [INSPECT]);
+    assert_eq!(palette.entry(INSPECT).unwrap().keys, ["Ctrl+Alt+KeyP"]);
+    assert_eq!(ids(palette.find("ctrl+alt+keyp")), [INSPECT]);
 }
 
 /// CT-EV4-01, part 2 (EV4.1; KN5.3, KN5.15): a language-defined command registers only as a view, workspace or query
@@ -292,9 +301,9 @@ fn availability_comes_from_the_stored_table_and_runs_no_program() {
 fn a_checked_command_is_invoked_by_key_or_by_palette() {
     let mut f = fixture();
     f.layer.set_program_capacity(8);
-    f.shell.bind(KeyBinding::new("Ctrl+Alt+P", "any", INSPECT, &[])).unwrap();
+    f.shell.bind(global(&["Ctrl+Alt+KeyP"], INSPECT)).unwrap();
 
-    let by_key = f.shell.press(&mut f.layer, "Ctrl+Alt+P", false).unwrap().unwrap();
+    let by_key = f.shell.press(&mut f.layer, "Ctrl+Alt+KeyP", false).unwrap().unwrap();
     let Status::Running(key_job) = by_key.status else { panic!("{:?}", by_key.status) };
     let found = f.shell.read_palette(&f.layer).find("pairing check");
     let chosen = ids(found)[0].to_owned();
@@ -319,7 +328,7 @@ fn a_checked_command_is_invoked_by_key_or_by_palette() {
         Metadata { diagnostic: Some(Error::new(TYPE_MISMATCH, "a declared type does not hold")), ..Default::default() };
     f.layer.declare_overlay(INSPECT, failed).unwrap();
     assert_eq!(f.shell.read_palette(&f.layer).entry(INSPECT).unwrap().availability, Err(TYPE_MISMATCH));
-    let by_key = f.shell.press(&mut f.layer, "Ctrl+Alt+P", false).unwrap().unwrap();
+    let by_key = f.shell.press(&mut f.layer, "Ctrl+Alt+KeyP", false).unwrap().unwrap();
     let by_palette = f.shell.invoke(&mut f.layer, INSPECT, empty()).unwrap();
     for receipt in [by_key, by_palette] {
         assert_eq!((receipt.job, receipt.status.code()), (None, Some(TYPE_MISMATCH)), "{:?}", receipt.status);
@@ -335,7 +344,8 @@ fn a_checked_command_is_invoked_by_key_or_by_palette() {
 fn command_find_opens_the_palette_and_changes_nothing() {
     let mut f = fixture();
     let query = || json::object([("query", text("pairing"))]);
-    f.shell.bind(KeyBinding::new("F1", "any", FIND_ROW, &[("query", ArgSource::Fixed(text("pairing")))])).unwrap();
+    let find = BindingSpec::new(&["F1"], RoutingClass::Global, FIND_ROW, vec![("query", Arg::Fixed(text("pairing")))]);
+    f.shell.bind(find).unwrap();
     let palette = f.shell.read_palette(&f.layer).clone();
     let entry = palette.entry(FIND_ROW).unwrap();
     assert_eq!((entry.availability, entry.keys.as_slice()), (Ok(()), ["F1".to_owned()].as_slice()));
@@ -376,26 +386,26 @@ fn command_find_opens_the_palette_and_changes_nothing() {
     assert_eq!(refused.code, code::OVERLAY_ROW_CONFLICT);
 }
 
-/// CT-EV4-01, part 6 (EV4.3; draft until LP4-8's checked keymap): the shell binds a key to a row in a context, and a
-/// sequence the keymap already binds in an overlapping context, the same one or `any` on either side, is refused with
-/// `EV4:input.binding_conflict` and leaves the keymap as it was. The same sequence in two other contexts binds.
+/// CT-EV4-01, part 6 (EV4.3, EV4.7; LP4-8): the shell binds a key to a row only after EV4.7's checks of its whole key
+/// map. A sequence the map already binds in the same routing class is refused with `EV4:input.binding_conflict` and
+/// leaves the map and the palette's keys as they were; the same sequence in another routing class binds.
+/// `tests/keymap.rs` runs CT-EV4-06's checks on the shell's map whole.
 #[test]
-fn a_binding_in_an_overlapping_context_is_refused() {
+fn a_binding_the_key_map_refuses_leaves_the_palette_as_it_was() {
     let mut f = fixture();
-    let keymap = f.shell.keymap().to_vec();
-    let refused = f.shell.bind(KeyBinding::new("Ctrl+Z", "operation", INSPECT, &[])).unwrap_err();
+    let keymap = f.shell.keymap().clone();
+    let refused = f.shell.bind(BindingSpec::new(&["Ctrl+'z'"], RoutingClass::Global, INSPECT, vec![])).unwrap_err();
     assert_eq!(refused.code, code::BINDING_CONFLICT);
-    assert_eq!(f.shell.keymap(), keymap.as_slice());
+    assert_eq!(f.shell.keymap(), &keymap);
+    assert!(f.shell.read_palette(&f.layer).entry(INSPECT).unwrap().keys.is_empty());
 
-    f.shell.bind(KeyBinding::new("Ctrl+Alt+P", "operation", INSPECT, &[])).unwrap();
-    f.shell.bind(KeyBinding::new("Ctrl+Alt+P", "view", VIEW, &[])).unwrap();
-    for context in ["any", "operation"] {
-        let refused = f.shell.bind(KeyBinding::new("Ctrl+Alt+P", context, NOTE, &[])).unwrap_err();
-        assert_eq!(refused.code, code::BINDING_CONFLICT, "{context}");
-    }
-    assert_eq!(f.shell.keymap().len(), keymap.len() + 2);
+    f.shell.bind(global(&["Ctrl+Alt+KeyP"], INSPECT)).unwrap();
+    f.shell.bind(BindingSpec::new(&["Ctrl+Alt+KeyP"], RoutingClass::List, "list.move", vec![])).unwrap();
+    let refused = f.shell.bind(global(&["Ctrl+Alt+KeyP"], NOTE)).unwrap_err();
+    assert_eq!(refused.code, code::BINDING_CONFLICT);
+    assert_eq!(f.shell.keymap().bindings().len(), keymap.bindings().len() + 2);
     let palette = f.shell.read_palette(&f.layer);
-    assert_eq!((palette.entry(INSPECT).unwrap().keys.len(), palette.entry(VIEW).unwrap().keys.len()), (1, 1));
+    assert_eq!((palette.entry(INSPECT).unwrap().keys.len(), palette.entry(NOTE).unwrap().keys.len()), (1, 0));
 }
 
 /// CT-EV4-01, part 7 (KN5.5, ONE.48): the command layer's crate names only the kernel's crates as its dependencies, so

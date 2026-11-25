@@ -1,0 +1,194 @@
+{
+  "format": "c600-principle-record-draft",
+  "version": 1,
+  "tool": "library",
+  "module": "words",
+  "entries": [
+    "power"
+  ],
+  "level": "L1",
+  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "binding": {
+    "source_sha256": "703cc0d0d1ae66e3b64ac8cd62e4500c0ff8851258e28303452d85ebb53297dc",
+    "closure_sha256": "baeb60422a9619a301256d8e1e0d9bc83ecc1d81bf5977544f6f6d0b954f6dbd",
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "decomposition_sha256": "87e23303093ebb4c59dc40d435e7f66a6b2cb879a0ba7d487707450fb9ad1f16",
+    "statements": [
+      "words.power(w, n) writes w n times, or the inverse of w -n times"
+    ]
+  },
+  "specification": [
+    {
+      "entry": "power",
+      "function": "power(w, n) is w written n times one after another for n > 0, the empty word for n = 0, and the inverse of w written -n times for n < 0",
+      "inputs": "w: a literal word; n: an integer",
+      "parameters": {
+        "none": "the entry has no parameter beyond its inputs"
+      },
+      "budget": {
+        "none": "the entry sets no budget of its own: a run is bounded by the run limits of the job that runs it (KN7.7)"
+      },
+      "output": "a literal word of |n| times the length of w",
+      "puzzle": "any: the entry reads no puzzle state; the instance's values are 600-cell-Full's",
+      "menu": {
+        "none": "600-cell-Full has no menu: its 1,200 generators are the model's"
+      },
+      "level": "L1",
+      "domain": "every literal word and every integer n whose result fits the run's budget",
+      "tie_rule": {
+        "none": "the answer is one value: the entry ranks nothing and chooses among nothing"
+      },
+      "empty_answer": "The result is empty exactly when n = 0 or w is empty.",
+      "negative_scope": {
+        "none": "the entry answers no yes-or-no question, so it has no negative answer"
+      },
+      "outside_scope": "The test evidence covers its recorded words. A result too long for the run's budget is outside: the run stops with its budget code and returns no word."
+    }
+  ],
+  "justification": [
+    {
+      "kind": "by_definition",
+      "statement": "words.power(w, n) writes w n times, or the inverse of w -n times",
+      "text": "The entry recurses on n: n = 0 gives the empty word, n > 0 gives w followed by power(w, n - 1), and n < 0 gives the inverse of w followed by power(w, n + 1).",
+      "evidence": {
+        "path": "rust/c600-library/tests/ct_lb1_03.rs",
+        "sha256": "b6da437fdcfa822947b317e83228b19f80bef42ff48a03009db1ff436cb0ae32",
+        "basis": "exact_computation",
+        "check": "producer",
+        "label": "LB1 words built letter by letter (LP2 test)"
+      }
+    }
+  ],
+  "instance": {
+    "model_identity": "{\"contract_rev\":null,\"menu_id\":null,\"menu_order\":null,\"model_id\":\"58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9\",\"puzzle\":\"full\"}",
+    "level": "L1",
+    "input": {
+      "w": [
+        1,
+        -2
+      ],
+      "n": [
+        2,
+        -1,
+        0
+      ]
+    },
+    "expected": [
+      {
+        "claim": "power_2",
+        "value": [
+          1,
+          -2,
+          1,
+          -2
+        ],
+        "from_step": 1
+      },
+      {
+        "claim": "power_minus_1",
+        "value": [
+          2,
+          -1
+        ],
+        "from_step": 2
+      },
+      {
+        "claim": "power_0",
+        "value": [],
+        "from_step": 3
+      }
+    ],
+    "fixture": "rust/c600-docs/tests/ct_lb6_01.rs::fixture_words"
+  },
+  "by_hand": {
+    "step_map": {
+      "map": [
+        {
+          "node": "words.power",
+          "statement": "words.power(w, n) writes w n times, or the inverse of w -n times",
+          "step": "step 1"
+        },
+        {
+          "node": "words.power",
+          "statement": "words.power(w, n) writes w n times, or the inverse of w -n times",
+          "step": "step 2"
+        },
+        {
+          "node": "words.power",
+          "statement": "words.power(w, n) writes w n times, or the inverse of w -n times",
+          "step": "step 3"
+        }
+      ],
+      "unmapped_nodes": [
+        "base:Concat",
+        "base:ExactAdd",
+        "base:ExactEq",
+        "base:ExactLess",
+        "base:Inverse"
+      ],
+      "unmapped_steps": []
+    },
+    "reason": {
+      "statement": "words.power(w, n) writes w n times, or the inverse of w -n times",
+      "idea": "Doing a word n times is writing it n times; doing it a negative number of times is doing its inverse that many times.",
+      "terms": [
+        "generator",
+        "twist-full"
+      ]
+    },
+    "failure": [
+      {
+        "hypothesis": "n is an integer",
+        "outcome": "weaker conclusion: the type checker refuses a non-integer n before any run, so the entry says nothing about it"
+      }
+    ],
+    "not_meant": "power builds a literal word and never reduces it: power(w, 2) followed by power(w, -2) is a word four times as long as w, not the empty word, though its effect is the identity.",
+    "givens": [
+      {
+        "name": "w",
+        "value": [
+          1,
+          -2
+        ],
+        "leaf": "input named by the caller"
+      },
+      {
+        "name": "n",
+        "value": 2,
+        "leaf": "input named by the caller"
+      }
+    ],
+    "steps": [
+      {
+        "check": "n = 2: w twice, [1, -2] then [1, -2].",
+        "result": [
+          1,
+          -2,
+          1,
+          -2
+        ]
+      },
+      {
+        "check": "n = -1: the inverse of w once, its letters reversed and each negated: [2, -1].",
+        "result": [
+          2,
+          -1
+        ]
+      },
+      {
+        "check": "n = 0: the empty word.",
+        "result": []
+      }
+    ],
+    "prerequisites": {
+      "terms": [
+        "generator",
+        "twist-full"
+      ],
+      "records": []
+    },
+    "leaf_specs": {
+      "none": "the decomposition reaches no kernel leaf: the module is pure (LG3.2), so every part of it is a base part of the IR"
+    }
+  }
+}

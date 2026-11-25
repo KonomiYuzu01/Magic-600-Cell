@@ -1,7 +1,8 @@
 //! Attack tests on ADR-D01's row 2, the multi-step rollback `session.rollback` (ADR-D01.15). They come from the
-//! fable-solver's attack on 6d32e6bf: the leads R2-1 to R2-4 and R2-7 to R2-9 were confirmed and are closed here; R2-5,
-//! R2-6 and R2-10 are readings for the integrator, and their tests pin the behaviour as it stands; the other tests are
-//! the attacker's refuted paths, kept as guards.
+//! fable-solver's attack on 6d32e6bf: the leads R2-1 to R2-4 and R2-7 to R2-9 were confirmed and are closed here; R2-6
+//! and R2-10 are readings for the integrator, and their tests pin the behaviour as it stands; R2-5 was a reading too,
+//! and the owner's decision 4.2 of 23 November 2026 closed it with the step ID `{gesture}#{i}/{k}` (LP4-15), so its
+//! test now passes on the fix; the other tests are the attacker's refuted paths, kept as guards.
 
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
@@ -179,7 +180,7 @@ impl Fixture {
 
 // ----- Closed findings -----
 
-/// R2-1: a press under an empty command ID would land steps `#1`, `#2`, which name no gesture, so a reopen would
+/// R2-1: a press under an empty command ID would land steps `#1/2`, `#2/2`, which name no gesture, so a reopen would
 /// refuse the journal the session wrote. The press is refused, and nothing lands.
 #[test]
 fn an_empty_gesture_id_is_refused() {
@@ -188,7 +189,7 @@ fn an_empty_gesture_id_is_refused() {
     f.commit(&[2]);
     f.commit(&[3]);
     let (order, digest) = (f.last_order(), f.digest());
-    assert_eq!(rollback_step("#1"), None);
+    assert_eq!(rollback_step("#1/1"), None);
     assert_eq!(code_of(&f.roll_as(a, "")), code::ARGUMENT_FORM);
     assert_eq!((f.last_order(), f.digest()), (order, digest));
     assert!(committed(&f.roll(a)));
@@ -206,19 +207,27 @@ fn a_crafted_step_number_opens_in_recovery() {
     assert!(committed(&f.undo_as("u2")));
     let unadmitted = Some(Some(code::UNADMITTED_JOURNAL_ACTION));
     // The attacker's journal: a commit under the rollback row as step `u64::MAX`, an undo as step 2.
+    let max = u64::MAX;
     let mut store = f.layer.store().clone();
     store.log[1].row = ROLLBACK_ROW.to_owned();
-    store.log[1].command = format!("x#{}", u64::MAX);
+    store.log[1].command = format!("x#{max}/{max}");
     store.log[3].row = ROLLBACK_ROW.to_owned();
-    store.log[3].command = "x#2".to_owned();
+    store.log[3].command = format!("x#2/{max}");
     assert_eq!(catch_unwind(AssertUnwindSafe(|| recovery(store))).ok(), unadmitted);
-    // Two undos as steps 1 and `u64::MAX` of one gesture.
+    // Two undos as steps 1 and `u64::MAX` of one gesture of `u64::MAX` steps.
     let mut store = f.layer.store().clone();
-    for (at, step) in [(3, 1), (4, u64::MAX)] {
+    for (at, step) in [(3, 1), (4, max)] {
         store.log[at].row = ROLLBACK_ROW.to_owned();
-        store.log[at].command = format!("x#{step}");
+        store.log[at].command = format!("x#{step}/{max}");
     }
     assert_eq!(catch_unwind(AssertUnwindSafe(|| recovery(store))).ok(), unadmitted);
+    // A lone first step of a gesture of `u64::MAX` steps replays, and its lookup stops at the steps that exist.
+    let mut store = f.layer.store().clone();
+    store.log[4].row = ROLLBACK_ROW.to_owned();
+    store.log[4].command = format!("x#1/{max}");
+    let g = catch_unwind(AssertUnwindSafe(|| open(store))).expect("no panic");
+    assert_eq!(g.recovery(), None);
+    assert_eq!(g.rollback_steps("x").len(), 1);
 }
 
 /// R2-3: the rollback row journals only undo and redo steps. A commit, a protection change and a record write
@@ -232,13 +241,13 @@ fn the_rollback_row_replays_only_undo_and_redo_steps() {
     for at in 0..3 {
         let mut store = f.layer.store().clone();
         store.log[at].row = ROLLBACK_ROW.to_owned();
-        store.log[at].command = format!("g{at}#1");
+        store.log[at].command = format!("g{at}#1/1");
         assert_eq!(recovery(store), Some(code::UNADMITTED_JOURNAL_ACTION), "{:?}", f.layer.store().log[at].kind);
     }
 }
 
 /// R2-4: LI.30's lookup of a gesture's steps reads only the rollback steps the layer wrote: neither an ordinary undo
-/// under `x#1` nor the press of a gesture named `g#1` is a step of a gesture, before a restart or after one.
+/// under `x#1/1` nor the press of a gesture named `g#1/2` is a step of a gesture, before a restart or after one.
 #[test]
 fn the_lookup_reads_only_the_layers_steps() {
     let mut f = fixture();
@@ -246,12 +255,12 @@ fn the_lookup_reads_only_the_layers_steps() {
     f.commit(&[2]);
     f.commit(&[3]);
     f.commit(&[4]);
-    assert!(committed(&f.undo_as("x#1")));
+    assert!(committed(&f.undo_as("x#1/1")));
     assert!(f.layer.rollback_steps("x").is_empty());
-    let press = f.roll_as(a, "g#1");
+    let press = f.roll_as(a, "g#1/2");
     assert!(committed(&press), "{:?}", press.status);
     assert!(f.layer.rollback_steps("g").is_empty());
-    assert_eq!(f.layer.rollback_steps("g#1").len(), 2);
+    assert_eq!(f.layer.rollback_steps("g#1/2").len(), 2);
     // A gesture `x` would reuse the ordinary undo's ID as its first step: refused, and still no step after a restart.
     let (order, digest) = (f.last_order(), f.digest());
     let refused = f.roll_as(0, "x");
@@ -260,24 +269,31 @@ fn the_lookup_reads_only_the_layers_steps() {
     f.layer.restart(Secret::fixed(SECRET));
     assert_eq!(f.layer.outcome("x", &refused.request).map(|r| r.status), Some(Status::UnknownOutcome));
     assert!(f.layer.rollback_steps("x").is_empty());
-    assert_eq!(f.layer.rollback_steps("g#1").len(), 2);
+    assert_eq!(f.layer.rollback_steps("g#1/2").len(), 2);
 }
 
-/// R2-4: an ordinary undo under `g#3` after gesture `g` of two steps is no third step of it, live or after a reopen.
+/// R2-4: an ordinary undo under `g#3/4` after gesture `g` was cut at 2 of 4 by a crash is no third step of it, live
+/// or after a reopen, though its ID is the one the gesture's third step would have had.
 #[test]
 fn an_ordinary_command_does_not_extend_a_gesture() {
     let mut f = fixture();
-    f.commit(&[1]);
-    let b = f.commit(&[2]);
+    let a = f.commit(&[1]);
+    f.commit(&[2]);
     f.commit(&[3]);
     f.commit(&[4]);
-    assert!(committed(&f.roll_as(b, "g")));
-    assert_eq!(f.layer.rollback_steps("g").len(), 2);
-    assert!(committed(&f.undo_as("g#3")));
-    assert_eq!(f.layer.rollback_steps("g").len(), 2);
+    f.commit(&[5]);
+    f.layer.store_mut().inject.extend([Fate::Durable, Fate::Durable, Fate::Unknown]);
+    assert_eq!(f.roll_as(a, "g").status, Status::UnknownOutcome);
+    f.layer = open(f.layer.store().clone());
+    f.shell.restart(Secret::fixed(SECRET));
+    assert_eq!(f.layer.recovery(), None);
+    let steps = f.layer.rollback_steps("g");
+    assert_eq!(steps.iter().map(|s| s.command.as_str()).collect::<Vec<_>>(), ["g#1/4", "g#2/4"]);
+    assert!(committed(&f.undo_as("g#3/4")));
+    assert_eq!(f.layer.rollback_steps("g"), steps);
     let g = open(f.layer.store().clone());
     assert_eq!(g.recovery(), None);
-    assert_eq!(g.rollback_steps("g").len(), 2);
+    assert_eq!(g.rollback_steps("g"), steps);
 }
 
 /// R2-7: a reopen admits only what a live press writes: no gesture whose ID an earlier action used, and no gesture
@@ -296,11 +312,12 @@ fn a_reused_gesture_id_or_a_gesture_across_epochs_does_not_replay() {
     assert_eq!(recovery(f.layer.store().clone()), None);
     let mut store = f.layer.store().clone();
     let n = store.log.len();
-    store.log[n - 2].command = "g#1".into();
-    store.log[n - 1].command = "g#2".into();
+    store.log[n - 2].command = "g#1/2".into();
+    store.log[n - 1].command = "g#2/2".into();
     assert_eq!(recovery(store), Some(code::UNADMITTED_JOURNAL_ACTION));
 
-    // (b) A gesture of one step, a restart (a new epoch), and an ordinary undo relabelled as the gesture's step 2.
+    // (b) A gesture of one step, a restart (a new epoch), and an ordinary undo relabelled as the gesture's step 2, with
+    // the gesture's step relabelled as step 1 of 2 so that only the epoch differs.
     let mut h = fixture();
     h.commit(&[1]);
     let b = h.commit(&[2]);
@@ -314,8 +331,11 @@ fn a_reused_gesture_id_or_a_gesture_across_epochs_does_not_replay() {
     let mut store = h.layer.store().clone();
     let n = store.log.len();
     assert_ne!(store.log[n - 2].revision.epoch, store.log[n - 1].revision.epoch);
+    assert_eq!(store.log[n - 2].command, format!("{}#1/1", first.command));
+    store.log[n - 2].command = format!("{}#1/2", first.command);
+    assert_eq!(recovery(store.clone()), None, "a gesture cut at 1 of 2");
     store.log[n - 1].row = ROLLBACK_ROW.to_owned();
-    store.log[n - 1].command = format!("{}#2", first.command);
+    store.log[n - 1].command = format!("{}#2/2", first.command);
     assert_eq!(recovery(store), Some(code::UNADMITTED_JOURNAL_ACTION));
 }
 
@@ -382,11 +402,13 @@ fn an_unknown_step_answers_unknown_outcome_over_its_landed_prefix() {
     assert!(display.0.is_empty());
 }
 
-/// R2-5 (a reading, the known limit): "j of k" is not durable. The journal holds no step argument (`gesture`,
-/// `step`, `of`, the hint), only their digest in `request`, so after a reopen a gesture cut at 2 of 3 and a whole
-/// gesture of 2 look the same.
+// ----- R2-5, closed by the owner's decision 4.2 of 23 November 2026 (LP4-15) -----
+
+/// R2-5: "j of k" is durable. The journal still holds no step argument (`gesture`, `step`, `of`, the hint), only their
+/// digest in `request`, but each step's command ID is `{gesture}#{i}/{k}`, so after a reopen a gesture cut at 2 of 3
+/// and a whole gesture of 2 journal apart and the step IDs alone tell them apart. The format does not change.
 #[test]
-fn a_cut_gesture_and_a_whole_one_journal_alike() {
+fn a_cut_gesture_and_a_whole_one_journal_apart() {
     let mut cut = fixture();
     cut.commit(&[1]);
     cut.commit(&[2]);
@@ -406,27 +428,47 @@ fn a_cut_gesture_and_a_whole_one_journal_alike() {
         let log = f.layer.store().log.iter().skip(3);
         log.map(|t| c600_command::Transaction { request: String::new(), ..t.clone() }).collect()
     };
-    assert_eq!(strip(&cut), strip(&whole));
+    let (cut_log, whole_log) = (strip(&cut), strip(&whole));
+    assert_ne!(cut_log, whole_log);
+    let commands = |log: &[c600_command::Transaction]| log.iter().map(|t| t.command.clone()).collect::<Vec<_>>();
+    let gesture = &press.command;
+    assert_eq!(commands(&cut_log), [format!("{gesture}#1/3"), format!("{gesture}#2/3")]);
+    assert_eq!(commands(&whole_log), [format!("{gesture}#1/2"), format!("{gesture}#2/2")]);
+    let blank = |log: Vec<c600_command::Transaction>| {
+        log.into_iter().map(|t| c600_command::Transaction { command: String::new(), ..t }).collect::<Vec<_>>()
+    };
+    assert_eq!(blank(cut_log), blank(whole_log), "only the step IDs differ");
     let (g, h) = (open(cut.layer.store().clone()), open(whole.layer.store().clone()));
-    assert_eq!((g.rollback(), h.rollback()), (None, None));
-    assert_eq!(g.rollback_steps(&press.command).len(), h.rollback_steps(&other.command).len());
+    assert_eq!((g.recovery(), h.recovery()), (None, None));
+    assert_eq!((g.rollback(), h.rollback()), (None, None), "the report itself is transient");
+    let extent = |layer: &CommandLayer, gesture: &str| {
+        let steps = layer.rollback_steps(gesture);
+        assert!(steps.iter().all(committed), "{steps:?}");
+        let (_, landed, of) = rollback_step(&steps.last().unwrap().command).unwrap();
+        assert_eq!(landed, steps.len() as u64);
+        (landed, of)
+    };
+    assert_eq!(extent(&g, &press.command), (2, 3), "cut at 2 of 3");
+    assert_eq!(extent(&h, &other.command), (2, 2), "whole at 2 of 2");
 }
 
 // ----- Refuted paths -----
 
-/// A gesture ID that contains `#` lands and replays; its steps parse to the whole gesture.
+/// A gesture ID that contains `#` and `/`, itself in a step's form, lands and replays; its steps parse to the whole
+/// gesture.
 #[test]
 fn gesture_id_with_hash() {
     let mut f = fixture();
     let a = f.commit(&[1]);
     f.commit(&[2]);
     f.commit(&[3]);
-    let press = f.roll_as(a, "a#1");
+    let press = f.roll_as(a, "a#1/1");
     assert!(committed(&press));
-    assert_eq!(f.layer.rollback_steps("a#1").len(), 2);
-    assert_eq!(rollback_step("a#1#2"), Some(("a#1", 2)));
+    assert_eq!(f.layer.rollback_steps("a#1/1").len(), 2);
+    assert!(f.layer.rollback_steps("a").is_empty());
+    assert_eq!(rollback_step("a#1/1#2/2"), Some(("a#1/1", 2, 2)));
     assert_eq!(recovery(f.layer.store().clone()), None);
-    // A second gesture `a` would write `a#1`, the press ID of the first gesture: refused.
+    // A second gesture `a` of one step would write `a#1/1`, the press ID of the first gesture: refused.
     let again = f.roll_as(0, "a");
     assert_eq!(code_of(&again), code::COMMAND_ID_REUSED);
 }
@@ -460,7 +502,7 @@ fn a_step_envelope_commits_nothing() {
     f.commit(&[3]);
     let extra = [("gesture", text("g")), ("step", Value::Int(1)), ("of", Value::Int(2))];
     let args = f.roll_args(a, &extra);
-    let forged = f.renamed(ROLLBACK_ROW, args, "g#1");
+    let forged = f.renamed(ROLLBACK_ROW, args, "g#1/2");
     let (order, digest) = (f.last_order(), f.digest());
     assert_eq!(code_of(&f.shell.send(&mut f.layer, forged)), code::ARGUMENT_FORM);
     assert_eq!((f.last_order(), f.digest()), (order, digest));
@@ -470,9 +512,10 @@ fn a_step_envelope_commits_nothing() {
     let order = f.last_order();
     let step = f.layer.rollback_steps("h")[0].clone();
     let hint = f.layer.undo_hint(Direction::Redo).unwrap();
-    let redo = f.renamed("session.redo", json::object([("hint", hint.to_json())]), "h#1");
+    assert_eq!(step.command, "h#1/2");
+    let redo = f.renamed("session.redo", json::object([("hint", hint.to_json())]), "h#1/2");
     assert_eq!(code_of(&f.shell.send(&mut f.layer, redo)), code::COMMAND_ID_REUSED);
-    assert_eq!(f.layer.outcome("h#1", &step.request).map(|r| r.status), Some(step.status.clone()));
+    assert_eq!(f.layer.outcome("h#1/2", &step.request).map(|r| r.status), Some(step.status.clone()));
     assert_eq!(f.last_order(), order);
 }
 
@@ -499,7 +542,8 @@ fn retry_idempotency() {
     assert_eq!(late.status, Status::UnknownOutcome);
     assert_eq!(f.layer.rollback_steps(&press.command).len(), 2);
     assert_eq!((f.last_order(), f.digest()), (order, digest.clone()));
-    // A reopen: the same envelope is of another epoch, and a new press under the same ID reuses the step IDs.
+    // A reopen: the same envelope is of another epoch, and a new press under the same ID names the earlier gesture,
+    // though its one step's ID `{gesture}#1/1` is new (R2-5).
     let mut g = open(f.layer.store().clone());
     assert_eq!(code_of(&g.invoke(&Caller::Shell, press.clone())), code::EPOCH_CHANGED);
     f.layer = g;
@@ -562,7 +606,7 @@ fn layout_rows_in_the_span() {
     let mut store = f.layer.store().clone();
     let n = store.log.len();
     store.log[n - 1].row = ROLLBACK_ROW.to_owned();
-    store.log[n - 1].command = "lay#1".into();
+    store.log[n - 1].command = "lay#1/1".into();
     assert!(recovery(store).is_some());
 }
 

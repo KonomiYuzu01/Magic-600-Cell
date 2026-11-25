@@ -1,0 +1,5 @@
+flowchart LR
+  I[fixed input] --> F[fixture]
+  E[expected results] --> F
+  F -. kept apart from .- S[the solver's session]
+  F -->|pass| R[tool reproduced those results there, nothing wider]

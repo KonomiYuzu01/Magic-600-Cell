@@ -1,0 +1,5 @@
+flowchart LR
+  S[source with errors] --> P[recovered parse]
+  P --> K[invalid or missing spans kept]
+  P --> E[editor services]
+  P -. no executable gaps .- X[execution]

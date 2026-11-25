@@ -2,8 +2,9 @@
 
 Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
 [decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
-[the overview](00-overview.md), section 3, and its status says what the freeze covers. Amended once under PHS.52 at
-LP3's command-table freeze, in DET.65 (owner, 20 November 2026).
+[the overview](00-overview.md), section 3, and its status says what the freeze covers. Amended twice under PHS.52: at
+LP3's command-table freeze, in DET.65 (owner, 20 November 2026), and for LP4's replay contract, in DET.7 (owner,
+23 November 2026).
 
 This chapter defines the identity of a reproducible run and the limits on its execution. It uses `Budget`, `JobResult`,
 snapshots and kernel costs from [chapter 01](01-kernel.md). Chapter 02 owns types, effects and the IR; chapter 05 owns
@@ -102,6 +103,23 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
     errors:  LG4:input.repro_input_missing, LG4:input.repro_key_mismatch, LG3:capability.grant_mismatch,
              KN7:budget.*, LG4:evidence.reproducibility_mismatch
   ```
+
+  Amended under PHS.52 for LP4 (owner,
+  [23 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-23-lp4-lp5-start.md), item 2.3), which settles
+  EV2.9's option. The debugger's replay operation (`replay_run`, EV2.3), applied to a run with workspace, file or
+  preview effects, inspects the recorded effects and never re-executes them:
+  - each read is answered from the input the record captured;
+  - each preview and sink is compared with the recorded effect at the same trace position;
+  - no live host serves `replay_run`, so it grants no ambient file or clock and writes nothing.
+
+  An effect the record does not hold is `EV2:capability.debug_write_forbidden`. The replay reports its kind:
+  - a complete re-execution, for a run with no effects;
+  - a re-evaluation whose effects were inspected.
+
+  An inspection never claims re-execution. EV2.9's other option, isolated replay sinks, is not adopted. `reproduce`
+  above is unchanged: an external action it takes still needs the current host grant and command gates. What a run record holds for this
+  replay is recorded beside chapter 05, whose bytes stay frozen as a file of the format candidate:
+  [overlay OV-1](../../../../progress/1.0/language-overlays.md).
 
 ## 2. Deterministic evaluation
 

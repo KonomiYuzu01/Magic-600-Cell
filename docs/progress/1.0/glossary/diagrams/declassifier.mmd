@@ -1,0 +1,4 @@
+flowchart LR
+  P[policy] -->|enables| D[declassifier: fixed entry]
+  D -->|permits| F[a named information flow]
+  Pr[program] -. cannot declare one .- D

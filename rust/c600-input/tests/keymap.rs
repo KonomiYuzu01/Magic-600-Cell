@@ -1,5 +1,7 @@
-//! CT-EV4-06's synthetic half (EV4.7): the key-map checks test duplicates and the prefix-code property separately in
-//! each routing class and under every declared layout, and any finding refuses the whole map before it applies.
+//! CT-EV4-06 (synthetic, part: the key-map checks on the specs, EV4.7; LP4-8). They test duplicates and the
+//! prefix-code property separately in each routing class and under every declared layout, and any finding refuses
+//! the whole map before it applies. `c600-command/tests/keymap.rs` runs the same checks through `Shell::bind` on the
+//! shell's one map; the two files are the whole by union.
 //! CT-PS1-13 (part: the findings a stored map must report, duplicates, a complete binding that is also a prefix
 //! and a layout conversion that collides; not run: the round trip of `c600-binding` and `c600-key-map` records,
 //! which no writer stores yet).
@@ -54,8 +56,8 @@ fn chord(text: &str) -> Chord {
 
 /// CT-EV4-06, the control (EV4.7; DT-M1 Q2 (b)): the draft default map passes every check under both declared
 /// layouts, although the same arrows sit in the list class and the global class and every twist key has a live and a
-/// draft binding. Its physical bindings resolve alike under both layouts; undo and redo, recorded by character, resolve
-/// per layout and name the layout they resolved under.
+/// draft binding. Its physical bindings resolve alike under both layouts; undo and redo of both histories, recorded by
+/// character, resolve per layout and name the layout they resolved under.
 #[test]
 fn the_default_map_passes_every_check_under_both_declared_layouts() {
     let specs = default_specs();
@@ -78,6 +80,16 @@ fn the_default_map_passes_every_check_under_both_declared_layouts() {
             }
             "session.redo" => {
                 assert_eq!((&a.sequence, &b.sequence), (&vec![chord("Ctrl+KeyY")], &vec![chord("Ctrl+KeyY")]));
+                assert_eq!((a.layout, b.layout), (Some("us-qwerty"), Some("fr-azerty")));
+            }
+            "layout.undo" => {
+                let (us, fr) = (vec![chord("Ctrl+Alt+KeyZ")], vec![chord("Ctrl+Alt+KeyW")]);
+                assert_eq!((&a.sequence, &b.sequence), (&us, &fr));
+                assert_eq!((a.layout, b.layout), (Some("us-qwerty"), Some("fr-azerty")));
+            }
+            "layout.redo" => {
+                let both = vec![chord("Ctrl+Alt+KeyY")];
+                assert_eq!((&a.sequence, &b.sequence), (&both, &both));
                 assert_eq!((a.layout, b.layout), (Some("us-qwerty"), Some("fr-azerty")));
             }
             _ => {

@@ -1,0 +1,4 @@
+flowchart LR
+  Q[lattice value asked] --> A{piece on the lattice?}
+  A -->|no| N["None: off the lattice (known absence)"]
+  A -->|not enough known| U[Unknown]

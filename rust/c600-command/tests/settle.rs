@@ -10,9 +10,9 @@ use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use c600_command::{
-    code, draft_args, word_draft, Caller, Clock, CommandLayer, Error, FrameChain, HeadlessFrames, Invocation, Kind,
-    MemoryStore, Overlay, PreviewState, Provenance, Receipt, Secret, Shell, Status, Table, ONE_KEY_ROW, RECORD_ROW,
-    SETTLE_DRAFT,
+    code, draft_args, identity_json, word_draft, Caller, Clock, CommandLayer, Error, FrameChain, HeadlessFrames,
+    Invocation, Kind, MemoryRecorder, MemoryStore, Overlay, PlayStatus, PreviewState, Provenance, Receipt, Recorded,
+    RecordedStep, Recording, Secret, Shell, Status, Table, ONE_KEY_ROW, RECORDING_PLAY_ROW, RECORD_ROW, SETTLE_DRAFT,
 };
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
@@ -20,7 +20,9 @@ use c600_kernel::Kernel;
 const SECRET: [u8; 32] = [7; 32];
 /// A tool's query row, which the solver invokes to run the tool.
 const TOOL: &str = "tool.propose";
-const PLAY: &str = "recording.play";
+/// The row a recording's unattended step plays here: a view row on the view lane with no job flag, which a tool's entry
+/// serves, so the step runs as a program job whose run is inside the playback (LP4-9).
+const ROTATE: &str = "camera.rotate";
 
 fn kernel() -> Arc<Kernel> {
     static KERNEL: OnceLock<Arc<Kernel>> = OnceLock::new();
@@ -78,8 +80,8 @@ struct Fixture {
     sent: u64,
 }
 
-/// A session at the solved state that protects nothing, with the test reader, a tool row, a served `recording.play`
-/// and the manual clock at zero.
+/// A session at the solved state that protects nothing, with the test reader, a tool row, a served `camera.rotate`, a
+/// recorder holding `r1`, one completed `camera.rotate`, and the manual clock at zero.
 fn fixture() -> Fixture {
     let k = kernel();
     let (start, protected) = (k.solved(), k.protected_set(&[]).unwrap());
@@ -88,7 +90,11 @@ fn fixture() -> Fixture {
     layer.set_provenance(Box::new(Reader));
     let overlay = Overlay { module: "tools/propose".into(), entry: "run".into() };
     layer.register_overlay(TOOL, Kind::Query, &[], overlay).unwrap();
-    layer.serve_row(PLAY, Overlay { module: "tools/recording".into(), entry: "play".into() }).unwrap();
+    layer.serve_row(ROTATE, Overlay { module: "tools/camera".into(), entry: "rotate".into() }).unwrap();
+    let recorder = MemoryRecorder::new();
+    let recordings = [("r1".to_owned(), rotation())].into_iter().collect();
+    recorder.put(Recorded { recordings, playbacks: Default::default() });
+    layer.set_recorder(Box::new(recorder)).unwrap();
     let clock = Manual::default();
     layer.set_clock(Box::new(clock.clone()));
     let shell = Shell::new(Secret::fixed(SECRET), "shell");
@@ -107,6 +113,18 @@ impl Fixture {
 
     fn tool_run(&mut self) -> String {
         self.solver_run(TOOL, json::object([]))
+    }
+
+    /// The run of a playback's unattended step: the solver plays `r1`, the playback dispatches its one step, a served
+    /// view row, and the host takes the step's job. Returns the step's run.
+    fn playback_run(&mut self) -> String {
+        let args = json::object([("recording", text("r1"))]);
+        let receipt = self.shell.invoke(&mut self.layer, RECORDING_PLAY_ROW, args).unwrap();
+        assert!(matches!(receipt.status, Status::Running(_)), "the play: {:?}", receipt.status);
+        self.layer.run_jobs();
+        let program = self.layer.take_program_job().expect("the step's job");
+        assert_eq!(program.row, ROTATE);
+        program.run()
     }
 
     /// One envelope on run `run`'s channel, with no token.
@@ -171,6 +189,29 @@ impl Fixture {
 
 fn code_of(receipt: &Receipt) -> Option<&'static str> {
     receipt.status.code()
+}
+
+/// `r1`: one `camera.rotate` that completed when it was recorded, an unattended step under EV4.22's table.
+fn rotation() -> Recording {
+    let completed = json::object([
+        ("command", text("shell/1")),
+        ("request", text("r")),
+        ("job", Value::Int(1)),
+        ("status", json::object([("name", text("completed")), ("kind", text("view_published"))])),
+    ]);
+    let step = RecordedStep {
+        row: ROTATE.into(),
+        arguments: json::object([("rotation", text("quarter")), ("view", text("main"))]),
+        word: None,
+        depends: Vec::new(),
+        module: None,
+        action: None,
+        command: "shell/1".into(),
+        request: "r".into(),
+        outcome: Some(completed),
+    };
+    let identity = identity_json(&kernel().identity());
+    Recording { name: "r1".into(), session: "s1".into(), identity, started: Value::Null, steps: vec![step] }
 }
 
 fn committed(receipt: &Receipt) -> bool {
@@ -342,15 +383,16 @@ fn the_host_sets_the_interval() {
     assert!(committed(&f.chord()), "a zero interval");
 }
 
-/// A recording never replaces a preview: a run inside a `recording.play` job is refused with `not_granted` while a
-/// preview is pending, shown or not, and the pending preview stays. Once the playback is reported, a tool's run
+/// A recording never replaces a preview: a run inside a `recording.play` job, the run of a step the playback dispatched,
+/// is refused with `not_granted` while a preview is pending, shown or not, and the pending preview stays. Once the
+/// step is reported and the playback ends, a tool's run
 /// replaces the shown preview as before. With no preview pending, the recording's run prepares one, which replaced
 /// nothing. (A run that the recording's run invoked is inside the recording too:
 /// `the_mark_passes_on_and_a_nested_run_is_inside_the_recording`.)
 #[test]
 fn a_recording_never_replaces_a_preview() {
     let mut f = fixture();
-    let playback = f.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let playback = f.playback_run();
     let mine = f.solver_preview(&[1]);
     let refused = f.runtime(&playback, "operation.preview", draft_args(&word(&[2])));
     assert_eq!(code_of(&refused), Some(code::NOT_GRANTED), "{:?}", refused.status);
@@ -360,9 +402,11 @@ fn a_recording_never_replaces_a_preview() {
     assert_eq!(code_of(&refused), Some(code::NOT_GRANTED), "{:?}", refused.status);
     assert_eq!(f.layer.preview_state(mine), Some(PreviewState::Presented), "the shown preview stays");
 
-    // The playback ends; a tool's run replaces the shown preview.
+    // The step is reported and the playback ends; a tool's run replaces the shown preview.
     let job = playback.strip_prefix("job-").and_then(|n| n.parse().ok()).expect("a job's run");
-    f.layer.finish_program_job(job, Ok(Value::Null)).expect("the playback is reported");
+    f.layer.finish_program_job(job, Ok(Value::Null)).expect("the step is reported");
+    f.layer.run_jobs();
+    assert_eq!(f.layer.playback("r1").map(|state| state.status.clone()), Some(PlayStatus::Finished));
     let tool = f.tool_run();
     let theirs = f.run_preview(&tool, &[2]);
     assert_eq!(f.layer.preview().map(|p| p.replaced), Some(Some(mine)));
@@ -371,7 +415,7 @@ fn a_recording_never_replaces_a_preview() {
     assert!(committed(&f.chord()));
 
     let mut g = fixture();
-    let playback = g.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let playback = g.playback_run();
     let played = g.run_preview(&playback, &[3]);
     assert_eq!(g.layer.preview().map(|p| (p.id, p.replaced)), Some((played, None)));
 }
@@ -382,7 +426,7 @@ fn a_recording_never_replaces_a_preview() {
 #[test]
 fn a_recording_never_ends_the_solvers_preview() {
     let mut f = fixture();
-    let playback = f.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let playback = f.playback_run();
     let mine = f.solver_preview(&[1]);
     let cancel = json::object([("preview", Value::Int(mine as i64))]);
     let refused = f.runtime(&playback, "operation.preview.cancel", cancel);
@@ -392,7 +436,7 @@ fn a_recording_never_ends_the_solvers_preview() {
     assert_eq!(code_of(&again), Some(code::NOT_GRANTED), "{:?}", again.status);
 
     let mut g = fixture();
-    let playback = g.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let playback = g.playback_run();
     let played = g.run_preview(&playback, &[3]);
     let cancel = json::object([("preview", Value::Int(played as i64))]);
     let own = g.runtime(&playback, "operation.preview.cancel", cancel);
@@ -519,7 +563,7 @@ fn a_preview_a_run_prepared_always_settles() {
     assert_eq!(f.layer.revision().digest, end_of(&[2]));
 
     let mut g = fixture();
-    let playback = g.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let playback = g.playback_run();
     let played = g.run_preview(&playback, &[3]);
     g.show(played);
     assert_eq!(code_of(&g.chord()), Some(code::PREVIEW_SETTLING), "a recording's preview in an empty slot");
@@ -602,7 +646,7 @@ fn the_mark_passes_on_and_a_nested_run_is_inside_the_recording() {
 
     let mut g = fixture();
     g.layer.set_program_capacity(2);
-    let playback = g.solver_run(PLAY, json::object([("recording", text("r1"))]));
+    let playback = g.playback_run();
     let nested = g.runtime(&playback, TOOL, json::object([]));
     let Status::Running(_) = nested.status else { panic!("the nested tool: {:?}", nested.status) };
     let inner = g.layer.take_program_job().expect("the nested job").run();

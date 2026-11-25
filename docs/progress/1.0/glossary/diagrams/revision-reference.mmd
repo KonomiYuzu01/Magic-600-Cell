@@ -1,0 +1,6 @@
+flowchart LR
+  Res[result] --> RR[revision reference]
+  RR --> S[session, engine epoch, identity block, mode]
+  RR --> H[journal head]
+  RR --> W[state, workspace and protection revisions]
+  RR --> D[state digest named with its identity level]

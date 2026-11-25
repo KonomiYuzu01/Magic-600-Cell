@@ -1,0 +1,3 @@
+flowchart LR
+  V[result or view] -->|read| B[base revision]
+  B -->|a later revision changes what it depends on| St[stale until recomputed]

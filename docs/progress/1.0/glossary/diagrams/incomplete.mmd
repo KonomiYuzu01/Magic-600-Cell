@@ -1,0 +1,5 @@
+flowchart LR
+  J[job] -->|"cancelled, error, wall-clock or resource stop"| I[incomplete]
+  J2[job that is not a search] -->|cut off at its budget| I
+  I -. gives no negative .- N[negative]
+  B[search stopped by its own declared budget or limit] --> NF[not found within budget]

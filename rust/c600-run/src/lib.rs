@@ -16,6 +16,8 @@
 //! - [`trace`] is LB1.10's trace key `trace-key/1` of a Full word under the independence relation a run pins (LP2
 //!   draft).
 //! - [`contract`] runs a whole-state contract once per revision (LG4.10; LP2 draft).
+//! - [`step`] stops a run at each of its LG4/DET.20 boundaries and shows a gate where it is, on the caller's thread
+//!   (EV2.12; LP4-5).
 
 #![forbid(unsafe_code)]
 
@@ -29,5 +31,6 @@ pub mod menu_key;
 pub mod meter;
 pub mod provenance;
 pub mod rng;
+pub mod step;
 pub mod trace;
 pub mod value;

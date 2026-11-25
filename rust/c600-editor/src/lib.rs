@@ -20,6 +20,9 @@
 //! - [`hover`] and [`definition`] resolve names in the digest-pinned dependency graph (EV1.5, EV1.6).
 //! - [`rename`] proposes digest-bound edits and the check of the resulting draft; [`apply_edits`] applies them
 //!   (EV1.6).
+//! - [`edit_declared_part`] gives the source edits for one field of a part its source declares editable, a
+//!   parameter, layout or default, and the edited draft's check (EV3.5, EV3.7; LP4-7); [`declared_parts`] lists those
+//!   parts. Any other part is `EV3:input.round_trip_undeclared`.
 //! - Every diagnostic and refusal is an [`Envelope`]: the code, the service, a typed [`Reason`] and a typed
 //!   [`NextAction`] (EV1.12). Handling never reads its summary.
 //!
@@ -38,6 +41,7 @@ mod index;
 mod navigate;
 mod parse;
 mod rename;
+mod round_trip;
 
 pub use complete::{complete, Candidate, CandidateKind, Completion, CompletionContext, DeclIdentity, Missing};
 pub use context::{Dependency, IdentityField, ModelIdentity, ModuleContext, Obligation, ObligationRole};
@@ -50,3 +54,7 @@ pub use navigate::{
 };
 pub use parse::{parse, OutlineItem, OutlineKind, Parse};
 pub use rename::{apply_edits, rename, Edit, Rename};
+pub use round_trip::{
+    declared_parts, edit_declared_part, DeclaredField, DeclaredPart, PartKind, PartValue, RoundTrip, Undeclared,
+    DIRECTIVE, WHOLE,
+};
