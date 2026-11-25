@@ -191,7 +191,7 @@
      },
      {
       "path": "docs/progress/1.0/principle-records/full_600_cell.json",
-      "sha256": "7b1ccf6685258901c962fda29a0fed4dfd062007f5ff064400141c9cf179e4ac",
+      "sha256": "0109449c7b387d7d78192f2ed6cb211fe34ab1327ddc758f8c6ee42fceb9a416",
       "expect": [
        {
         "pointer": "/justification/1/evidence/path",
