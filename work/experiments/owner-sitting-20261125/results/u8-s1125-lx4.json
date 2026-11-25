@@ -1,0 +1,4073 @@
+{
+  "format": "magic600-c9-measure-record-v1",
+  "measurement": "lx4-editor-latency",
+  "evidence_kind": "performance",
+  "synthetic": false,
+  "created_utc": "2026-11-25T22:20:07Z",
+  "build_identity": "c9-product-a9d908ad262ee306",
+  "inputs": [
+    {
+      "role": "20261125T185719Z:events.jsonl",
+      "name": "events.jsonl",
+      "bytes": 128487287,
+      "sha256": "fd40b4199d4d2feabeb5a80004ba76e3cfc03a9812609eca3fad0c31a26e21ef"
+    },
+    {
+      "role": "20261125T185719Z:lx4-posts.jsonl",
+      "name": "lx4-posts.jsonl",
+      "bytes": 23880317,
+      "sha256": "2db3502ccd57c0480cecfdb6bd3d5b77b84a78c74306390cf98abe99848b8148"
+    },
+    {
+      "role": "20261125T203833Z:events.jsonl",
+      "name": "events.jsonl",
+      "bytes": 129412483,
+      "sha256": "bc081547c703d2c148385aa3fcae819eac3d8cbf500d5a7509d17c42018352c4"
+    },
+    {
+      "role": "20261125T203833Z:lx4-posts.jsonl",
+      "name": "lx4-posts.jsonl",
+      "bytes": 23925155,
+      "sha256": "4fe6d28b954f998bce527ea9f43407588341cb9964c1164b4405553ec7c3fc78"
+    },
+    {
+      "role": "e2",
+      "name": "u8-s1125-e2.json",
+      "bytes": 95923,
+      "sha256": "e427cf74aa15392392e606a90dfa418a410ab67b0dec07481ddcd66e6572d64b"
+    },
+    {
+      "role": "gate-reference",
+      "name": "w3-summary-s1125.json",
+      "bytes": 4265,
+      "sha256": "dfeb57046a97302ed57e1652ee5d09fd6e970973a256c194224c23ecb44a1d67"
+    }
+  ],
+  "tools": {
+    "python": "3.15.1",
+    "implementation": "CPython",
+    "tool": {
+      "name": "lx4.py",
+      "sha256": "a9c1466fd154010fa0038b429826fc5e5586724ac286ca21fd9bbca232d58434"
+    },
+    "helpers": {
+      "c9/evidence.py": "f24d58da56dc8e407c36f704cbc2ec3f33369165337af2745eed442bb52e29bf",
+      "b412_summary.py": "40015c19b73771181dac836f6aeb8979724a775cb239c20b9857aa23de936acc",
+      "c9/key_to_frame.py": "35fa0305d5f1d1f8c162e1913c7c20551c5573a2e25650f392d888be032611b7"
+    }
+  },
+  "command": [
+    "python",
+    "-B",
+    "tools/perf/c9/lx4.py",
+    "analyze",
+    "--fixtures",
+    "work/loop-memory/c9-acceptance/lx4-fixtures",
+    "work/c9-runs/u8-off-s1125",
+    "work/c9-runs/u8-on-s1125",
+    "--e2",
+    "work/c9-runs/u8-s1125-e2.json",
+    "--out",
+    "work/c9-runs/u8-s1125-lx4.json",
+    "--gate-reference",
+    "work/loop-memory/c9-acceptance/w3-summary-s1125.json"
+  ],
+  "bar": {
+    "text": "RTE.49 p95/p99 bars per metric and size (S/M/L), W dependents 1,000/1,500 ms, every bar below 100 ms raised to 100 ms (owner, 22 November 2026, item 1); RTE.53: every bar in each of three series at S, M and L on both puzzles, with the renderer gate and charter E2 in the same runs",
+    "rule": "timed post to the core-confirmed present of the first frame showing the endpoint, matched by frame id; nearest-rank p95 and p99 per puzzle, series, size and metric over the samples with a confirmed frame; 10,800 S/M/L samples accounted for, each sample without a confirmed frame counted apart in the confirmation gap, a known limit (owner, 22 November 2026, item 10)",
+    "bars_ms": {
+      "echo": {
+        "S": [
+          100,
+          100
+        ],
+        "M": [
+          100,
+          100
+        ],
+        "L": [
+          100,
+          100
+        ]
+      },
+      "syntax": {
+        "S": [
+          100,
+          100
+        ],
+        "M": [
+          100,
+          100
+        ],
+        "L": [
+          100,
+          150
+        ]
+      },
+      "completion": {
+        "S": [
+          100,
+          150
+        ],
+        "M": [
+          100,
+          150
+        ],
+        "L": [
+          150,
+          250
+        ]
+      },
+      "diagnostics": {
+        "S": [
+          150,
+          250
+        ],
+        "M": [
+          200,
+          300
+        ],
+        "L": [
+          500,
+          750
+        ]
+      },
+      "stale": {
+        "S": [
+          100,
+          150
+        ],
+        "M": [
+          100,
+          150
+        ],
+        "L": [
+          100,
+          150
+        ]
+      },
+      "rerun": {
+        "S": [
+          250,
+          400
+        ],
+        "M": [
+          250,
+          400
+        ],
+        "L": [
+          500,
+          750
+        ]
+      },
+      "dependents": {
+        "W": [
+          1000,
+          1500
+        ]
+      }
+    },
+    "samples": 10800,
+    "source": [
+      "RTE.47",
+      "RTE.48",
+      "RTE.49",
+      "RTE.51",
+      "RTE.52",
+      "RTE.53",
+      "CT-RTE-12",
+      "CT-EV1-06",
+      "owner decision 2026-11-22 (LX bars, items 1, 2 and 10)"
+    ]
+  },
+  "result": {
+    "fixtures": {
+      "manifest_sha256": "59fda7577046e47d90f46c2fa1fb29ed2227ebd01c1222892d002bd8d0eb7511",
+      "edits_sha256": "03f50471fcb0e3358ed884ec10b3b9a7cf4225cf287b874cee9435dfd173a88a",
+      "modules": 53,
+      "edits": 16
+    },
+    "runs": [
+      {
+        "run_id": "20261125T185719Z",
+        "build_identity": "c9-product-a9d908ad262ee306",
+        "synthetic": false,
+        "puzzle": "jumble-off",
+        "failures": {},
+        "unconfirmed": 742,
+        "contradictions": [],
+        "status": "valid",
+        "reasons": []
+      },
+      {
+        "run_id": "20261125T203833Z",
+        "build_identity": "c9-product-a9d908ad262ee306",
+        "synthetic": false,
+        "puzzle": "jumble-on",
+        "failures": {},
+        "unconfirmed": 702,
+        "contradictions": [],
+        "status": "valid",
+        "reasons": []
+      }
+    ],
+    "decision": "fail-gate-or-e2",
+    "series": [
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "L",
+        "metric": "completion",
+        "stats": {
+          "n": 1,
+          "mean": 137.9874,
+          "p50": 137.9874,
+          "p95": 137.9874,
+          "p99": 137.9874,
+          "max": 137.9874,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "L",
+        "metric": "diagnostics",
+        "stats": {
+          "mean": null,
+          "p50": null,
+          "p95": null,
+          "p99": null,
+          "max": null,
+          "n": 1,
+          "timed": 0,
+          "unconfirmed": 1
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "L",
+        "metric": "echo",
+        "stats": {
+          "n": 1,
+          "mean": 72.2947,
+          "p50": 72.2947,
+          "p95": 72.2947,
+          "p99": 72.2947,
+          "max": 72.2947,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "L",
+        "metric": "rerun",
+        "stats": {
+          "n": 1,
+          "mean": 138.962,
+          "p50": 138.962,
+          "p95": 138.962,
+          "p99": 138.962,
+          "max": 138.962,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "L",
+        "metric": "stale",
+        "stats": {
+          "mean": null,
+          "p50": null,
+          "p95": null,
+          "p99": null,
+          "max": null,
+          "n": 1,
+          "timed": 0,
+          "unconfirmed": 1
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "L",
+        "metric": "syntax",
+        "stats": {
+          "n": 1,
+          "mean": 92.0061,
+          "p50": 92.0061,
+          "p95": 92.0061,
+          "p99": 92.0061,
+          "max": 92.0061,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "M",
+        "metric": "completion",
+        "stats": {
+          "n": 1,
+          "mean": 89.7865,
+          "p50": 89.7865,
+          "p95": 89.7865,
+          "p99": 89.7865,
+          "max": 89.7865,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "M",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 1,
+          "mean": 90.6493,
+          "p50": 90.6493,
+          "p95": 90.6493,
+          "p99": 90.6493,
+          "max": 90.6493,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          200,
+          300
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "M",
+        "metric": "echo",
+        "stats": {
+          "n": 1,
+          "mean": 74.788,
+          "p50": 74.788,
+          "p95": 74.788,
+          "p99": 74.788,
+          "max": 74.788,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "M",
+        "metric": "rerun",
+        "stats": {
+          "n": 1,
+          "mean": 109.0432,
+          "p50": 109.0432,
+          "p95": 109.0432,
+          "p99": 109.0432,
+          "max": 109.0432,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "M",
+        "metric": "stale",
+        "stats": {
+          "n": 1,
+          "mean": 76.1852,
+          "p50": 76.1852,
+          "p95": 76.1852,
+          "p99": 76.1852,
+          "max": 76.1852,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "M",
+        "metric": "syntax",
+        "stats": {
+          "n": 1,
+          "mean": 90.0359,
+          "p50": 90.0359,
+          "p95": 90.0359,
+          "p99": 90.0359,
+          "max": 90.0359,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "S",
+        "metric": "completion",
+        "stats": {
+          "n": 1,
+          "mean": 88.8193,
+          "p50": 88.8193,
+          "p95": 88.8193,
+          "p99": 88.8193,
+          "max": 88.8193,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "S",
+        "metric": "diagnostics",
+        "stats": {
+          "mean": null,
+          "p50": null,
+          "p95": null,
+          "p99": null,
+          "max": null,
+          "n": 1,
+          "timed": 0,
+          "unconfirmed": 1
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "S",
+        "metric": "echo",
+        "stats": {
+          "n": 1,
+          "mean": 76.7371,
+          "p50": 76.7371,
+          "p95": 76.7371,
+          "p99": 76.7371,
+          "max": 76.7371,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "S",
+        "metric": "rerun",
+        "stats": {
+          "n": 1,
+          "mean": 106.7584,
+          "p50": 106.7584,
+          "p95": 106.7584,
+          "p99": 106.7584,
+          "max": 106.7584,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "S",
+        "metric": "stale",
+        "stats": {
+          "n": 1,
+          "mean": 73.9685,
+          "p50": 73.9685,
+          "p95": 73.9685,
+          "p99": 73.9685,
+          "max": 73.9685,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "S",
+        "metric": "syntax",
+        "stats": {
+          "n": 1,
+          "mean": 93.5651,
+          "p50": 93.5651,
+          "p95": 93.5651,
+          "p99": 93.5651,
+          "max": 93.5651,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 0,
+        "size": "W",
+        "metric": "dependents",
+        "stats": {
+          "n": 1,
+          "mean": 209.161,
+          "p50": 209.161,
+          "p95": 209.161,
+          "p99": 209.161,
+          "max": 209.161,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          1000,
+          1500
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "L",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 140.6534988095238,
+          "p50": 140.7047,
+          "p95": 143.6153,
+          "p99": 144.4762,
+          "max": 144.4762,
+          "timed": 84,
+          "unconfirmed": 16
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "L",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 162.43516835443037,
+          "p50": 158.8306,
+          "p95": 176.4137,
+          "p99": 182.0624,
+          "max": 182.0624,
+          "timed": 79,
+          "unconfirmed": 21
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "L",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.29595185185185,
+          "p50": 74.3279,
+          "p95": 77.1286,
+          "p99": 78.2347,
+          "max": 78.2347,
+          "timed": 81,
+          "unconfirmed": 19
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "L",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 145.622332,
+          "p50": 141.9128,
+          "p95": 159.3199,
+          "p99": 161.072,
+          "max": 161.3043,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "L",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.11498873239437,
+          "p50": 74.0727,
+          "p95": 77.4902,
+          "p99": 78.1461,
+          "max": 78.1461,
+          "timed": 71,
+          "unconfirmed": 29
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "L",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.0311172413793,
+          "p50": 90.8962,
+          "p95": 93.7,
+          "p99": 94.6098,
+          "max": 94.6098,
+          "timed": 87,
+          "unconfirmed": 13
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "M",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 90.34001011235955,
+          "p50": 90.0412,
+          "p95": 93.4729,
+          "p99": 94.3369,
+          "max": 94.3369,
+          "timed": 89,
+          "unconfirmed": 11
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "M",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.30983295454546,
+          "p50": 91.0906,
+          "p95": 94.0402,
+          "p99": 98.2081,
+          "max": 98.2081,
+          "timed": 88,
+          "unconfirmed": 12
+        },
+        "bar_ms": [
+          200,
+          300
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "M",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.99480352941175,
+          "p50": 75.2095,
+          "p95": 77.5652,
+          "p99": 78.3059,
+          "max": 78.3059,
+          "timed": 85,
+          "unconfirmed": 15
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "M",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 111.871117,
+          "p50": 108.8181,
+          "p95": 126.4025,
+          "p99": 127.4278,
+          "max": 140.2205,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "M",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.14231139240506,
+          "p50": 74.145,
+          "p95": 77.0703,
+          "p99": 77.3012,
+          "max": 77.3012,
+          "timed": 79,
+          "unconfirmed": 21
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "M",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.38501860465117,
+          "p50": 91.4252,
+          "p95": 94.26,
+          "p99": 99.3802,
+          "max": 99.3802,
+          "timed": 86,
+          "unconfirmed": 14
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "S",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 91.17298837209303,
+          "p50": 91.2717,
+          "p95": 93.9506,
+          "p99": 97.7634,
+          "max": 97.7634,
+          "timed": 86,
+          "unconfirmed": 14
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "S",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.07776172839506,
+          "p50": 90.9557,
+          "p95": 93.9728,
+          "p99": 94.4412,
+          "max": 94.4412,
+          "timed": 81,
+          "unconfirmed": 19
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "S",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.280178125,
+          "p50": 74.2117,
+          "p95": 77.4102,
+          "p99": 77.7318,
+          "max": 77.7318,
+          "timed": 96,
+          "unconfirmed": 4
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "S",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 111.668549,
+          "p50": 108.7527,
+          "p95": 126.6382,
+          "p99": 127.363,
+          "max": 127.7134,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "S",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.18365777777778,
+          "p50": 74.2275,
+          "p95": 77.0543,
+          "p99": 77.6072,
+          "max": 77.6072,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "S",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.04626477272727,
+          "p50": 91.0161,
+          "p95": 94.0869,
+          "p99": 94.7826,
+          "max": 94.7826,
+          "timed": 88,
+          "unconfirmed": 12
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 1,
+        "size": "W",
+        "metric": "dependents",
+        "stats": {
+          "n": 100,
+          "mean": 196.57862500000002,
+          "p50": 192.8064,
+          "p95": 208.8466,
+          "p99": 210.1367,
+          "max": 210.1367,
+          "timed": 80,
+          "unconfirmed": 20
+        },
+        "bar_ms": [
+          1000,
+          1500
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "L",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 141.63068625,
+          "p50": 141.5894,
+          "p95": 143.7692,
+          "p99": 181.0287,
+          "max": 181.0287,
+          "timed": 80,
+          "unconfirmed": 20
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "L",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 161.0406211111111,
+          "p50": 158.4039,
+          "p95": 176.7141,
+          "p99": 178.1682,
+          "max": 178.1682,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "L",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.44937532467532,
+          "p50": 73.7165,
+          "p95": 77.6672,
+          "p99": 78.2917,
+          "max": 78.2917,
+          "timed": 77,
+          "unconfirmed": 23
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "L",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 143.101684,
+          "p50": 141.3638,
+          "p95": 157.7604,
+          "p99": 161.0521,
+          "max": 161.7347,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "L",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.61965578947368,
+          "p50": 74.6182,
+          "p95": 77.3087,
+          "p99": 81.8183,
+          "max": 81.8183,
+          "timed": 95,
+          "unconfirmed": 5
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "L",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.48483333333333,
+          "p50": 91.5722,
+          "p95": 94.1107,
+          "p99": 95.1663,
+          "max": 95.1663,
+          "timed": 81,
+          "unconfirmed": 19
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "M",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 89.29838139534883,
+          "p50": 88.974,
+          "p95": 92.4205,
+          "p99": 98.4027,
+          "max": 98.4027,
+          "timed": 86,
+          "unconfirmed": 14
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "M",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 90.71129156626506,
+          "p50": 90.6012,
+          "p95": 93.641,
+          "p99": 98.7469,
+          "max": 98.7469,
+          "timed": 83,
+          "unconfirmed": 17
+        },
+        "bar_ms": [
+          200,
+          300
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "M",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 75.07644125,
+          "p50": 75.3599,
+          "p95": 77.97,
+          "p99": 82.3636,
+          "max": 82.3636,
+          "timed": 80,
+          "unconfirmed": 20
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "M",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 111.923701,
+          "p50": 109.07,
+          "p95": 126.5891,
+          "p99": 132.2094,
+          "max": 143.0444,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "M",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.19974235294119,
+          "p50": 74.2814,
+          "p95": 76.9357,
+          "p99": 78.2756,
+          "max": 78.2756,
+          "timed": 85,
+          "unconfirmed": 15
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "M",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 90.65113734939759,
+          "p50": 90.4078,
+          "p95": 93.7794,
+          "p99": 99.1797,
+          "max": 99.1797,
+          "timed": 83,
+          "unconfirmed": 17
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "S",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 90.93479733333334,
+          "p50": 90.9325,
+          "p95": 93.731,
+          "p99": 98.5569,
+          "max": 98.5569,
+          "timed": 75,
+          "unconfirmed": 25
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "S",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.3331869047619,
+          "p50": 91.1323,
+          "p95": 94.2076,
+          "p99": 95.109,
+          "max": 95.109,
+          "timed": 84,
+          "unconfirmed": 16
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "S",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.00881315789474,
+          "p50": 74.152,
+          "p95": 76.9576,
+          "p99": 77.9488,
+          "max": 77.9488,
+          "timed": 76,
+          "unconfirmed": 24
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "S",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 111.31953,
+          "p50": 109.1148,
+          "p95": 126.7316,
+          "p99": 127.2535,
+          "max": 140.3725,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "S",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.45331555555555,
+          "p50": 74.2401,
+          "p95": 77.5677,
+          "p99": 81.9551,
+          "max": 81.9551,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "S",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 90.70443414634147,
+          "p50": 90.6347,
+          "p95": 94.0427,
+          "p99": 99.0542,
+          "max": 99.0542,
+          "timed": 82,
+          "unconfirmed": 18
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 2,
+        "size": "W",
+        "metric": "dependents",
+        "stats": {
+          "n": 100,
+          "mean": 195.35981999999998,
+          "p50": 192.0662,
+          "p95": 209.465,
+          "p99": 215.7593,
+          "max": 215.7593,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          1000,
+          1500
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "L",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 141.31036493506494,
+          "p50": 141.5571,
+          "p95": 144.2273,
+          "p99": 144.5017,
+          "max": 144.5017,
+          "timed": 77,
+          "unconfirmed": 23
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "L",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 164.08047325581396,
+          "p50": 159.556,
+          "p95": 176.721,
+          "p99": 215.5958,
+          "max": 215.5958,
+          "timed": 86,
+          "unconfirmed": 14
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "L",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.84836741573034,
+          "p50": 75.0655,
+          "p95": 77.5833,
+          "p99": 78.3298,
+          "max": 78.3298,
+          "timed": 89,
+          "unconfirmed": 11
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "L",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 143.762542,
+          "p50": 142.1622,
+          "p95": 157.3901,
+          "p99": 159.5348,
+          "max": 174.9515,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "L",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.7826425531915,
+          "p50": 74.8277,
+          "p95": 77.3283,
+          "p99": 78.0796,
+          "max": 78.0796,
+          "timed": 94,
+          "unconfirmed": 6
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "L",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 92.32652025316456,
+          "p50": 92.2154,
+          "p95": 94.8065,
+          "p99": 99.1111,
+          "max": 99.1111,
+          "timed": 79,
+          "unconfirmed": 21
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "M",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 91.1660023255814,
+          "p50": 91.5569,
+          "p95": 93.6698,
+          "p99": 98.3585,
+          "max": 98.3585,
+          "timed": 86,
+          "unconfirmed": 14
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "M",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.23952469135803,
+          "p50": 91.5181,
+          "p95": 94.1015,
+          "p99": 94.9954,
+          "max": 94.9954,
+          "timed": 81,
+          "unconfirmed": 19
+        },
+        "bar_ms": [
+          200,
+          300
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "M",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.8788511627907,
+          "p50": 74.7352,
+          "p95": 77.7366,
+          "p99": 78.5152,
+          "max": 78.5152,
+          "timed": 86,
+          "unconfirmed": 14
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "M",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 110.928561,
+          "p50": 108.8144,
+          "p95": 125.0562,
+          "p99": 127.1865,
+          "max": 127.3342,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "M",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.82590246913581,
+          "p50": 74.9923,
+          "p95": 77.3224,
+          "p99": 81.3451,
+          "max": 81.3451,
+          "timed": 81,
+          "unconfirmed": 19
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "M",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.38465119047619,
+          "p50": 90.966,
+          "p95": 94.3102,
+          "p99": 98.9859,
+          "max": 98.9859,
+          "timed": 84,
+          "unconfirmed": 16
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "S",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 90.99972359550561,
+          "p50": 90.9115,
+          "p95": 94.154,
+          "p99": 94.5726,
+          "max": 94.5726,
+          "timed": 89,
+          "unconfirmed": 11
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "S",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.43440752688173,
+          "p50": 91.4068,
+          "p95": 94.0234,
+          "p99": 94.7689,
+          "max": 94.7689,
+          "timed": 93,
+          "unconfirmed": 7
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "S",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.29260333333333,
+          "p50": 74.174,
+          "p95": 77.7678,
+          "p99": 78.3345,
+          "max": 78.3345,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "S",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 109.538992,
+          "p50": 108.0697,
+          "p95": 125.6451,
+          "p99": 127.2808,
+          "max": 127.4447,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "S",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.26627391304348,
+          "p50": 74.129,
+          "p95": 77.2159,
+          "p99": 81.9927,
+          "max": 81.9927,
+          "timed": 92,
+          "unconfirmed": 8
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "S",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.60535333333333,
+          "p50": 91.5946,
+          "p95": 94.3937,
+          "p99": 95.3025,
+          "max": 95.3025,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-off",
+        "series": 3,
+        "size": "W",
+        "metric": "dependents",
+        "stats": {
+          "n": 100,
+          "mean": 198.39154025974025,
+          "p50": 192.9046,
+          "p95": 210.7809,
+          "p99": 211.5651,
+          "max": 211.5651,
+          "timed": 77,
+          "unconfirmed": 23
+        },
+        "bar_ms": [
+          1000,
+          1500
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "L",
+        "metric": "completion",
+        "stats": {
+          "n": 1,
+          "mean": 138.3115,
+          "p50": 138.3115,
+          "p95": 138.3115,
+          "p99": 138.3115,
+          "max": 138.3115,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "L",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 1,
+          "mean": 174.0545,
+          "p50": 174.0545,
+          "p95": 174.0545,
+          "p99": 174.0545,
+          "max": 174.0545,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "L",
+        "metric": "echo",
+        "stats": {
+          "n": 1,
+          "mean": 74.3844,
+          "p50": 74.3844,
+          "p95": 74.3844,
+          "p99": 74.3844,
+          "max": 74.3844,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "L",
+        "metric": "rerun",
+        "stats": {
+          "n": 1,
+          "mean": 157.8173,
+          "p50": 157.8173,
+          "p95": 157.8173,
+          "p99": 157.8173,
+          "max": 157.8173,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "L",
+        "metric": "stale",
+        "stats": {
+          "n": 1,
+          "mean": 77.7349,
+          "p50": 77.7349,
+          "p95": 77.7349,
+          "p99": 77.7349,
+          "max": 77.7349,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "L",
+        "metric": "syntax",
+        "stats": {
+          "n": 1,
+          "mean": 89.2847,
+          "p50": 89.2847,
+          "p95": 89.2847,
+          "p99": 89.2847,
+          "max": 89.2847,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "M",
+        "metric": "completion",
+        "stats": {
+          "n": 1,
+          "mean": 92.8319,
+          "p50": 92.8319,
+          "p95": 92.8319,
+          "p99": 92.8319,
+          "max": 92.8319,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "M",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 1,
+          "mean": 90.7514,
+          "p50": 90.7514,
+          "p95": 90.7514,
+          "p99": 90.7514,
+          "max": 90.7514,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          200,
+          300
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "M",
+        "metric": "echo",
+        "stats": {
+          "n": 1,
+          "mean": 77.5135,
+          "p50": 77.5135,
+          "p95": 77.5135,
+          "p99": 77.5135,
+          "max": 77.5135,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "M",
+        "metric": "rerun",
+        "stats": {
+          "n": 1,
+          "mean": 115.4854,
+          "p50": 115.4854,
+          "p95": 115.4854,
+          "p99": 115.4854,
+          "max": 115.4854,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "M",
+        "metric": "stale",
+        "stats": {
+          "n": 1,
+          "mean": 74.0663,
+          "p50": 74.0663,
+          "p95": 74.0663,
+          "p99": 74.0663,
+          "max": 74.0663,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "M",
+        "metric": "syntax",
+        "stats": {
+          "n": 1,
+          "mean": 93.4535,
+          "p50": 93.4535,
+          "p95": 93.4535,
+          "p99": 93.4535,
+          "max": 93.4535,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "S",
+        "metric": "completion",
+        "stats": {
+          "n": 1,
+          "mean": 93.7625,
+          "p50": 93.7625,
+          "p95": 93.7625,
+          "p99": 93.7625,
+          "max": 93.7625,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "S",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 1,
+          "mean": 92.5554,
+          "p50": 92.5554,
+          "p95": 92.5554,
+          "p99": 92.5554,
+          "max": 92.5554,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "S",
+        "metric": "echo",
+        "stats": {
+          "mean": null,
+          "p50": null,
+          "p95": null,
+          "p99": null,
+          "max": null,
+          "n": 1,
+          "timed": 0,
+          "unconfirmed": 1
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "S",
+        "metric": "rerun",
+        "stats": {
+          "n": 1,
+          "mean": 126.0361,
+          "p50": 126.0361,
+          "p95": 126.0361,
+          "p99": 126.0361,
+          "max": 126.0361,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "S",
+        "metric": "stale",
+        "stats": {
+          "n": 1,
+          "mean": 73.6217,
+          "p50": 73.6217,
+          "p95": 73.6217,
+          "p99": 73.6217,
+          "max": 73.6217,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "S",
+        "metric": "syntax",
+        "stats": {
+          "n": 1,
+          "mean": 89.3168,
+          "p50": 89.3168,
+          "p95": 89.3168,
+          "p99": 89.3168,
+          "max": 89.3168,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 0,
+        "size": "W",
+        "metric": "dependents",
+        "stats": {
+          "n": 1,
+          "mean": 205.0482,
+          "p50": 205.0482,
+          "p95": 205.0482,
+          "p99": 205.0482,
+          "max": 205.0482,
+          "timed": 1,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          1000,
+          1500
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "L",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 141.76291688311687,
+          "p50": 141.2191,
+          "p95": 144.6983,
+          "p99": 182.0447,
+          "max": 182.0447,
+          "timed": 77,
+          "unconfirmed": 23
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "L",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 168.36785555555556,
+          "p50": 173.1752,
+          "p95": 177.8042,
+          "p99": 178.1346,
+          "max": 178.1346,
+          "timed": 81,
+          "unconfirmed": 19
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "L",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 75.07267113402062,
+          "p50": 75.0176,
+          "p95": 78.3471,
+          "p99": 78.6925,
+          "max": 78.6925,
+          "timed": 97,
+          "unconfirmed": 3
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "L",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 145.735216,
+          "p50": 142.3985,
+          "p95": 159.1463,
+          "p99": 160.7054,
+          "max": 164.5439,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "L",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.62154782608695,
+          "p50": 74.7269,
+          "p95": 77.3128,
+          "p99": 78.0685,
+          "max": 78.0685,
+          "timed": 92,
+          "unconfirmed": 8
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "L",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.50938101265822,
+          "p50": 91.0351,
+          "p95": 94.5826,
+          "p99": 94.9066,
+          "max": 94.9066,
+          "timed": 79,
+          "unconfirmed": 21
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "M",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 90.90582247191011,
+          "p50": 90.6982,
+          "p95": 94.1372,
+          "p99": 94.6553,
+          "max": 94.6553,
+          "timed": 89,
+          "unconfirmed": 11
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "M",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.25460681818181,
+          "p50": 91.043,
+          "p95": 94.274,
+          "p99": 98.2239,
+          "max": 98.2239,
+          "timed": 88,
+          "unconfirmed": 12
+        },
+        "bar_ms": [
+          200,
+          300
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "M",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 75.21789887640449,
+          "p50": 75.4512,
+          "p95": 78.1573,
+          "p99": 78.5264,
+          "max": 78.5264,
+          "timed": 89,
+          "unconfirmed": 11
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "M",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 109.66334699999999,
+          "p50": 108.2552,
+          "p95": 125.2769,
+          "p99": 126.8973,
+          "max": 127.3432,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "M",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.78699,
+          "p50": 74.6167,
+          "p95": 78.0059,
+          "p99": 82.2704,
+          "max": 82.2704,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "M",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.76083333333334,
+          "p50": 91.4793,
+          "p95": 94.6977,
+          "p99": 99.4462,
+          "max": 99.4462,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "S",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 91.41025111111111,
+          "p50": 91.2563,
+          "p95": 94.3033,
+          "p99": 98.6997,
+          "max": 98.6997,
+          "timed": 90,
+          "unconfirmed": 10
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "S",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.50337356321839,
+          "p50": 91.6884,
+          "p95": 94.2854,
+          "p99": 95.1296,
+          "max": 95.1296,
+          "timed": 87,
+          "unconfirmed": 13
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "S",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.98074186046512,
+          "p50": 74.9779,
+          "p95": 78.0341,
+          "p99": 78.7647,
+          "max": 78.7647,
+          "timed": 86,
+          "unconfirmed": 14
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "S",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 109.719601,
+          "p50": 108.0142,
+          "p95": 125.6781,
+          "p99": 138.3208,
+          "max": 141.9097,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "S",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.46249294117646,
+          "p50": 74.5747,
+          "p95": 77.1051,
+          "p99": 81.9734,
+          "max": 81.9734,
+          "timed": 85,
+          "unconfirmed": 15
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "S",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.56645934065935,
+          "p50": 91.3212,
+          "p95": 94.6043,
+          "p99": 94.8334,
+          "max": 94.8334,
+          "timed": 91,
+          "unconfirmed": 9
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 1,
+        "size": "W",
+        "metric": "dependents",
+        "stats": {
+          "n": 100,
+          "mean": 195.23744933333333,
+          "p50": 191.9796,
+          "p95": 209.9016,
+          "p99": 225.4192,
+          "max": 225.4192,
+          "timed": 75,
+          "unconfirmed": 25
+        },
+        "bar_ms": [
+          1000,
+          1500
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "L",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 141.32830120481927,
+          "p50": 141.7935,
+          "p95": 143.9307,
+          "p99": 144.6836,
+          "max": 144.6836,
+          "timed": 83,
+          "unconfirmed": 17
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "L",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 164.90666823529412,
+          "p50": 160.2548,
+          "p95": 175.993,
+          "p99": 177.0867,
+          "max": 177.0867,
+          "timed": 85,
+          "unconfirmed": 15
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "L",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 75.06788289473684,
+          "p50": 75.2757,
+          "p95": 77.9724,
+          "p99": 78.3549,
+          "max": 78.3549,
+          "timed": 76,
+          "unconfirmed": 24
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "L",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 147.23746300000002,
+          "p50": 142.4065,
+          "p95": 160.7558,
+          "p99": 174.3294,
+          "max": 176.4194,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "L",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.64497528089888,
+          "p50": 74.686,
+          "p95": 77.4801,
+          "p99": 81.8223,
+          "max": 81.8223,
+          "timed": 89,
+          "unconfirmed": 11
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "L",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.95534358974359,
+          "p50": 91.5901,
+          "p95": 94.9662,
+          "p99": 99.244,
+          "max": 99.244,
+          "timed": 78,
+          "unconfirmed": 22
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "M",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 90.68138051948053,
+          "p50": 90.9087,
+          "p95": 93.7574,
+          "p99": 94.4861,
+          "max": 94.4861,
+          "timed": 77,
+          "unconfirmed": 23
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "M",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.5741656716418,
+          "p50": 91.7783,
+          "p95": 93.7786,
+          "p99": 95.0542,
+          "max": 95.0542,
+          "timed": 67,
+          "unconfirmed": 33
+        },
+        "bar_ms": [
+          200,
+          300
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "M",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.3085578313253,
+          "p50": 73.9997,
+          "p95": 77.2439,
+          "p99": 77.9305,
+          "max": 77.9305,
+          "timed": 83,
+          "unconfirmed": 17
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "M",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 112.40214900000001,
+          "p50": 108.6191,
+          "p95": 126.6246,
+          "p99": 143.2302,
+          "max": 143.6436,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "M",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.58249512195123,
+          "p50": 74.6808,
+          "p95": 77.4753,
+          "p99": 81.4953,
+          "max": 81.4953,
+          "timed": 82,
+          "unconfirmed": 18
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "M",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.60060131578948,
+          "p50": 91.4524,
+          "p95": 94.9387,
+          "p99": 95.4102,
+          "max": 95.4102,
+          "timed": 76,
+          "unconfirmed": 24
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "S",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 90.53634235294118,
+          "p50": 90.1982,
+          "p95": 94.0431,
+          "p99": 94.3413,
+          "max": 94.3413,
+          "timed": 85,
+          "unconfirmed": 15
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "S",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.20562317073171,
+          "p50": 91.4738,
+          "p95": 94.2926,
+          "p99": 94.8039,
+          "max": 94.8039,
+          "timed": 82,
+          "unconfirmed": 18
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "S",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 75.26843690476191,
+          "p50": 75.3062,
+          "p95": 77.7833,
+          "p99": 78.5859,
+          "max": 78.5859,
+          "timed": 84,
+          "unconfirmed": 16
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "S",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 108.844527,
+          "p50": 106.3711,
+          "p95": 124.5206,
+          "p99": 126.6537,
+          "max": 137.1953,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "S",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 73.32315487804878,
+          "p50": 73.1973,
+          "p95": 76.7131,
+          "p99": 82.3264,
+          "max": 82.3264,
+          "timed": 82,
+          "unconfirmed": 18
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "S",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.91277142857143,
+          "p50": 91.853,
+          "p95": 94.4501,
+          "p99": 99.1122,
+          "max": 99.1122,
+          "timed": 84,
+          "unconfirmed": 16
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 2,
+        "size": "W",
+        "metric": "dependents",
+        "stats": {
+          "n": 100,
+          "mean": 197.8941894117647,
+          "p50": 193.3436,
+          "p95": 209.9761,
+          "p99": 211.3113,
+          "max": 211.3113,
+          "timed": 85,
+          "unconfirmed": 15
+        },
+        "bar_ms": [
+          1000,
+          1500
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "L",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 140.85567021276597,
+          "p50": 140.6328,
+          "p95": 143.9137,
+          "p99": 148.472,
+          "max": 148.472,
+          "timed": 94,
+          "unconfirmed": 6
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "L",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 161.24001030927835,
+          "p50": 158.9943,
+          "p95": 176.208,
+          "p99": 177.1013,
+          "max": 177.1013,
+          "timed": 97,
+          "unconfirmed": 3
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "L",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.83711041666668,
+          "p50": 74.769,
+          "p95": 77.6835,
+          "p99": 78.2984,
+          "max": 78.2984,
+          "timed": 96,
+          "unconfirmed": 4
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "L",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 144.588297,
+          "p50": 141.9856,
+          "p95": 159.4671,
+          "p99": 161.1685,
+          "max": 174.2699,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          500,
+          750
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "L",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.88392604166667,
+          "p50": 75.1254,
+          "p95": 77.6534,
+          "p99": 77.9047,
+          "max": 77.9047,
+          "timed": 96,
+          "unconfirmed": 4
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "L",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.61572637362637,
+          "p50": 91.5617,
+          "p95": 94.7878,
+          "p99": 98.9831,
+          "max": 98.9831,
+          "timed": 91,
+          "unconfirmed": 9
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "M",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 90.98198924731183,
+          "p50": 90.7742,
+          "p95": 94.2781,
+          "p99": 94.9326,
+          "max": 94.9326,
+          "timed": 93,
+          "unconfirmed": 7
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "M",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.03590315789474,
+          "p50": 90.703,
+          "p95": 94.1545,
+          "p99": 95.0694,
+          "max": 95.0694,
+          "timed": 95,
+          "unconfirmed": 5
+        },
+        "bar_ms": [
+          200,
+          300
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "M",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 74.95547,
+          "p50": 75.1634,
+          "p95": 77.8655,
+          "p99": 82.48,
+          "max": 82.48,
+          "timed": 80,
+          "unconfirmed": 20
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "M",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 110.59118699999999,
+          "p50": 108.7781,
+          "p95": 124.8637,
+          "p99": 127.3137,
+          "max": 138.1018,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "M",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.58462470588235,
+          "p50": 74.2741,
+          "p95": 77.5961,
+          "p99": 82.2263,
+          "max": 82.2263,
+          "timed": 85,
+          "unconfirmed": 15
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "M",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.7765,
+          "p50": 91.9204,
+          "p95": 94.1378,
+          "p99": 99.0829,
+          "max": 99.0829,
+          "timed": 82,
+          "unconfirmed": 18
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "S",
+        "metric": "completion",
+        "stats": {
+          "n": 100,
+          "mean": 90.91899047619047,
+          "p50": 90.7301,
+          "p95": 94.0599,
+          "p99": 98.3114,
+          "max": 98.3114,
+          "timed": 84,
+          "unconfirmed": 16
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "S",
+        "metric": "diagnostics",
+        "stats": {
+          "n": 100,
+          "mean": 91.10294186046512,
+          "p50": 91.0526,
+          "p95": 93.7311,
+          "p99": 99.1521,
+          "max": 99.1521,
+          "timed": 86,
+          "unconfirmed": 14
+        },
+        "bar_ms": [
+          150,
+          250
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "S",
+        "metric": "echo",
+        "stats": {
+          "n": 100,
+          "mean": 75.18392911392405,
+          "p50": 74.8535,
+          "p95": 78.4588,
+          "p99": 82.7101,
+          "max": 82.7101,
+          "timed": 79,
+          "unconfirmed": 21
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "S",
+        "metric": "rerun",
+        "stats": {
+          "n": 100,
+          "mean": 108.17206200000001,
+          "p50": 107.8654,
+          "p95": 123.2342,
+          "p99": 125.0819,
+          "max": 125.4641,
+          "timed": 100,
+          "unconfirmed": 0
+        },
+        "bar_ms": [
+          250,
+          400
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "S",
+        "metric": "stale",
+        "stats": {
+          "n": 100,
+          "mean": 74.68524878048781,
+          "p50": 74.6923,
+          "p95": 77.3727,
+          "p99": 82.0902,
+          "max": 82.0902,
+          "timed": 82,
+          "unconfirmed": 18
+        },
+        "bar_ms": [
+          100,
+          150
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "S",
+        "metric": "syntax",
+        "stats": {
+          "n": 100,
+          "mean": 91.30638658536586,
+          "p50": 91.3091,
+          "p95": 93.94,
+          "p99": 98.7471,
+          "max": 98.7471,
+          "timed": 82,
+          "unconfirmed": 18
+        },
+        "bar_ms": [
+          100,
+          100
+        ],
+        "met": true
+      },
+      {
+        "puzzle": "jumble-on",
+        "series": 3,
+        "size": "W",
+        "metric": "dependents",
+        "stats": {
+          "n": 100,
+          "mean": 195.2831010752688,
+          "p50": 192.246,
+          "p95": 210.3988,
+          "p99": 210.7858,
+          "max": 210.7858,
+          "timed": 93,
+          "unconfirmed": 7
+        },
+        "bar_ms": [
+          1000,
+          1500
+        ],
+        "met": true
+      }
+    ],
+    "accounting": {
+      "sml_samples": 10800,
+      "w_samples": 600,
+      "turns": 600,
+      "smoke_samples": 40
+    },
+    "timed_sml_samples": 9460,
+    "unconfirmed_sml_samples": 1340,
+    "confirmation_gap": {
+      "source": "owner decision 2026-11-22 (LX bars), item 10",
+      "judged": false,
+      "rule": "a sample whose endpoint frame has no confirmed display is counted here and not in its cell's percentiles",
+      "runs": [
+        {
+          "run_id": "20261125T185719Z",
+          "puzzle": "jumble-off",
+          "status": "valid",
+          "unconfirmed": 742,
+          "cells": [
+            {
+              "series": 0,
+              "size": "L",
+              "metric": "diagnostics",
+              "unconfirmed": 1
+            },
+            {
+              "series": 0,
+              "size": "L",
+              "metric": "stale",
+              "unconfirmed": 1
+            },
+            {
+              "series": 0,
+              "size": "S",
+              "metric": "diagnostics",
+              "unconfirmed": 1
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "completion",
+              "unconfirmed": 16
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "diagnostics",
+              "unconfirmed": 21
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "echo",
+              "unconfirmed": 19
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "stale",
+              "unconfirmed": 29
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "syntax",
+              "unconfirmed": 13
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "completion",
+              "unconfirmed": 11
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "diagnostics",
+              "unconfirmed": 12
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "echo",
+              "unconfirmed": 15
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "stale",
+              "unconfirmed": 21
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "syntax",
+              "unconfirmed": 14
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "completion",
+              "unconfirmed": 14
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "diagnostics",
+              "unconfirmed": 19
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "echo",
+              "unconfirmed": 4
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "stale",
+              "unconfirmed": 10
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "syntax",
+              "unconfirmed": 12
+            },
+            {
+              "series": 1,
+              "size": "W",
+              "metric": "dependents",
+              "unconfirmed": 20
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "completion",
+              "unconfirmed": 20
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "diagnostics",
+              "unconfirmed": 10
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "echo",
+              "unconfirmed": 23
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "stale",
+              "unconfirmed": 5
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "syntax",
+              "unconfirmed": 19
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "completion",
+              "unconfirmed": 14
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "diagnostics",
+              "unconfirmed": 17
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "echo",
+              "unconfirmed": 20
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "stale",
+              "unconfirmed": 15
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "syntax",
+              "unconfirmed": 17
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "completion",
+              "unconfirmed": 25
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "diagnostics",
+              "unconfirmed": 16
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "echo",
+              "unconfirmed": 24
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "stale",
+              "unconfirmed": 10
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "syntax",
+              "unconfirmed": 18
+            },
+            {
+              "series": 2,
+              "size": "W",
+              "metric": "dependents",
+              "unconfirmed": 10
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "completion",
+              "unconfirmed": 23
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "diagnostics",
+              "unconfirmed": 14
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "echo",
+              "unconfirmed": 11
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "stale",
+              "unconfirmed": 6
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "syntax",
+              "unconfirmed": 21
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "completion",
+              "unconfirmed": 14
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "diagnostics",
+              "unconfirmed": 19
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "echo",
+              "unconfirmed": 14
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "stale",
+              "unconfirmed": 19
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "syntax",
+              "unconfirmed": 16
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "completion",
+              "unconfirmed": 11
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "diagnostics",
+              "unconfirmed": 7
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "echo",
+              "unconfirmed": 10
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "stale",
+              "unconfirmed": 8
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "syntax",
+              "unconfirmed": 10
+            },
+            {
+              "series": 3,
+              "size": "W",
+              "metric": "dependents",
+              "unconfirmed": 23
+            }
+          ]
+        },
+        {
+          "run_id": "20261125T203833Z",
+          "puzzle": "jumble-on",
+          "status": "valid",
+          "unconfirmed": 702,
+          "cells": [
+            {
+              "series": 0,
+              "size": "S",
+              "metric": "echo",
+              "unconfirmed": 1
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "completion",
+              "unconfirmed": 23
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "diagnostics",
+              "unconfirmed": 19
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "echo",
+              "unconfirmed": 3
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "stale",
+              "unconfirmed": 8
+            },
+            {
+              "series": 1,
+              "size": "L",
+              "metric": "syntax",
+              "unconfirmed": 21
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "completion",
+              "unconfirmed": 11
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "diagnostics",
+              "unconfirmed": 12
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "echo",
+              "unconfirmed": 11
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "stale",
+              "unconfirmed": 10
+            },
+            {
+              "series": 1,
+              "size": "M",
+              "metric": "syntax",
+              "unconfirmed": 10
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "completion",
+              "unconfirmed": 10
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "diagnostics",
+              "unconfirmed": 13
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "echo",
+              "unconfirmed": 14
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "stale",
+              "unconfirmed": 15
+            },
+            {
+              "series": 1,
+              "size": "S",
+              "metric": "syntax",
+              "unconfirmed": 9
+            },
+            {
+              "series": 1,
+              "size": "W",
+              "metric": "dependents",
+              "unconfirmed": 25
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "completion",
+              "unconfirmed": 17
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "diagnostics",
+              "unconfirmed": 15
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "echo",
+              "unconfirmed": 24
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "stale",
+              "unconfirmed": 11
+            },
+            {
+              "series": 2,
+              "size": "L",
+              "metric": "syntax",
+              "unconfirmed": 22
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "completion",
+              "unconfirmed": 23
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "diagnostics",
+              "unconfirmed": 33
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "echo",
+              "unconfirmed": 17
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "stale",
+              "unconfirmed": 18
+            },
+            {
+              "series": 2,
+              "size": "M",
+              "metric": "syntax",
+              "unconfirmed": 24
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "completion",
+              "unconfirmed": 15
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "diagnostics",
+              "unconfirmed": 18
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "echo",
+              "unconfirmed": 16
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "stale",
+              "unconfirmed": 18
+            },
+            {
+              "series": 2,
+              "size": "S",
+              "metric": "syntax",
+              "unconfirmed": 16
+            },
+            {
+              "series": 2,
+              "size": "W",
+              "metric": "dependents",
+              "unconfirmed": 15
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "completion",
+              "unconfirmed": 6
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "diagnostics",
+              "unconfirmed": 3
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "echo",
+              "unconfirmed": 4
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "stale",
+              "unconfirmed": 4
+            },
+            {
+              "series": 3,
+              "size": "L",
+              "metric": "syntax",
+              "unconfirmed": 9
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "completion",
+              "unconfirmed": 7
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "diagnostics",
+              "unconfirmed": 5
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "echo",
+              "unconfirmed": 20
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "stale",
+              "unconfirmed": 15
+            },
+            {
+              "series": 3,
+              "size": "M",
+              "metric": "syntax",
+              "unconfirmed": 18
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "completion",
+              "unconfirmed": 16
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "diagnostics",
+              "unconfirmed": 14
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "echo",
+              "unconfirmed": 21
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "stale",
+              "unconfirmed": 18
+            },
+            {
+              "series": 3,
+              "size": "S",
+              "metric": "syntax",
+              "unconfirmed": 18
+            },
+            {
+              "series": 3,
+              "size": "W",
+              "metric": "dependents",
+              "unconfirmed": 7
+            }
+          ]
+        }
+      ]
+    },
+    "gate_same_run_checked": false,
+    "gate_reference": {
+      "counted_as_gate": false,
+      "accepted_by": null,
+      "sha256": "dfeb57046a97302ed57e1652ee5d09fd6e970973a256c194224c23ecb44a1d67",
+      "build_identities": [
+        "dcd47faaa4891b8d26ed7e18421127f09015574fcf3bec50f25d6358596a7d1c"
+      ],
+      "verdicts": {
+        "w3": "insufficient-runs"
+      }
+    },
+    "limitations": [
+      "the module set's views read no host rows on either puzzle (NoHost), so jumble-off and jumble-on time the same rerun path; RTE.51 does not require jumbling rows, and the bars are unchanged",
+      "the rerun endpoint's frame is the first confirmed frame that drew the run's reference publication; the host does not draw the run's value yet"
+    ]
+  },
+  "verdict": "not-met",
+  "reasons": [
+    "e2-not-met-in-these-runs",
+    "gate-summary-other-build"
+  ],
+  "passes_bar": false,
+  "drafts": [
+    "metric to edit-kind mapping",
+    "schedule order and smoke series",
+    "message protocol Magic600.LX4.*",
+    "lx4 rows in magic600-c9-shell-events-v1",
+    "post timeout 10 s, pace 1 s",
+    "gate summary checked for build and verdict only",
+    "fixture set DRAFT until RTE.51 step 1 freezes it"
+  ],
+  "redactions": 0
+}

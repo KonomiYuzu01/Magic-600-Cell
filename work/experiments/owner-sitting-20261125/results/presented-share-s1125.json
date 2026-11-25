@@ -1,0 +1,240 @@
+{
+  "bucket_seconds": 300,
+  "evidence": "actual_windows_directx: what the shell's own logs show; nothing about what the screen showed",
+  "format": "magic600-owner-sitting-20261125-presented-share-v1",
+  "runs": [
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": true,
+      "frames": 4883,
+      "frames_without_presented_row": 1717,
+      "inputs": {
+        "events.jsonl": "3c449ac61efed3af87ea32e01e2c31a2d126df193fc530cf5fd38188b199d4cf",
+        "launch.json": "75efc5a62838a58d9fe4859a7b79ba0bad674ad385142bd225b196edb0b7ec4f"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.352
+      ],
+      "presented_rows": 3166,
+      "presented_sequence_steps": {
+        "1": 2465,
+        "2": 187,
+        "3": 17,
+        "4": 489,
+        "5": 7
+      },
+      "run_id": "20261125T171636Z",
+      "share_without_presented_row": 0.3516,
+      "started_utc": "2026-11-25T17:16:36Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": true,
+      "frames": 7253,
+      "frames_without_presented_row": 2908,
+      "inputs": {
+        "events.jsonl": "1970c9a9e5fde0ef8a73b36ea18902705527a1811c5307f8f669c8704fcda7a8",
+        "launch.json": "48ec02909fc0aca0d147966a45173d5c456b54ebb20f40a27e1fa3e9e7c14f69"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.401
+      ],
+      "presented_rows": 4345,
+      "presented_sequence_steps": {
+        "1": 3831,
+        "10": 1,
+        "108": 1,
+        "109": 1,
+        "113": 1,
+        "120": 1,
+        "15": 1,
+        "151": 1,
+        "2": 487,
+        "206": 1,
+        "218": 1,
+        "23": 1,
+        "25": 1,
+        "3": 3,
+        "394": 1,
+        "4": 3,
+        "5": 3,
+        "630": 1,
+        "85": 1,
+        "9": 1,
+        "95": 1,
+        "99": 1
+      },
+      "run_id": "20261125T171831Z",
+      "share_without_presented_row": 0.4009,
+      "started_utc": "2026-11-25T17:18:31Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": true,
+      "frames": 39706,
+      "frames_without_presented_row": 23,
+      "inputs": {
+        "events.jsonl": "12af8ef7d7bfa294a3822669477d00ce86393281f0e7184926bf464b0e57e87e",
+        "launch.json": "ee9ffa3e2a66c4a609464559c3e473f8362089db41907f9327b23fa11632d3a3"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.0,
+        0.001,
+        0.001
+      ],
+      "presented_rows": 39683,
+      "presented_sequence_steps": {
+        "1": 39671,
+        "2": 7,
+        "4": 4
+      },
+      "run_id": "20261125T172659Z",
+      "share_without_presented_row": 0.0006,
+      "started_utc": "2026-11-25T17:26:59Z",
+      "window_arguments": [
+        "--windowed",
+        "--resolution",
+        "2400x1400"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": false,
+      "frames": 61812,
+      "frames_without_presented_row": 10980,
+      "inputs": {
+        "events.jsonl": "2659f377a96ad2589bf1c5975ef8389c27c52f3c0f302d87c8043b22cfc902ad",
+        "launch.json": "51b4595be505b81aba8c14011b4be3a6cfb175d40e505a05b825dc7c637b57d1"
+      },
+      "lx2_injection": true,
+      "lx4": true,
+      "per_five_minutes": [
+        0.13,
+        0.184,
+        0.202,
+        0.21
+      ],
+      "presented_rows": 50832,
+      "presented_sequence_steps": {
+        "1": 41129,
+        "2": 8432,
+        "3": 1266,
+        "4": 4
+      },
+      "run_id": "20261125T183900Z",
+      "share_without_presented_row": 0.1776,
+      "started_utc": "2026-11-25T18:39:00Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": false,
+      "frames": 363177,
+      "frames_without_presented_row": 60230,
+      "inputs": {
+        "events.jsonl": "fd40b4199d4d2feabeb5a80004ba76e3cfc03a9812609eca3fad0c31a26e21ef",
+        "launch.json": "06a80f633eda23eebf1a3183d204b8f1d15e732defb724c78c3cf1b05d5aca70"
+      },
+      "lx2_injection": false,
+      "lx4": true,
+      "per_five_minutes": [
+        0.131,
+        0.164,
+        0.161,
+        0.175,
+        0.207,
+        0.194,
+        0.184,
+        0.198,
+        0.211,
+        0.194,
+        0.197,
+        0.197,
+        0.113,
+        0.084,
+        0.094,
+        0.11,
+        0.171,
+        0.174,
+        0.185,
+        0.175,
+        0.161
+      ],
+      "presented_rows": 302947,
+      "presented_sequence_steps": {
+        "1": 242986,
+        "2": 59708,
+        "3": 238,
+        "4": 14
+      },
+      "run_id": "20261125T185719Z",
+      "share_without_presented_row": 0.1658,
+      "started_utc": "2026-11-25T18:57:19Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": false,
+      "frames": 363344,
+      "frames_without_presented_row": 55971,
+      "inputs": {
+        "events.jsonl": "bc081547c703d2c148385aa3fcae819eac3d8cbf500d5a7509d17c42018352c4",
+        "launch.json": "6a4d72c7a4c27046e0ed65f20a6f15a25633f5569a846f772db2f9b6ed14c94f"
+      },
+      "lx2_injection": false,
+      "lx4": true,
+      "per_five_minutes": [
+        0.102,
+        0.098,
+        0.099,
+        0.1,
+        0.174,
+        0.174,
+        0.155,
+        0.169,
+        0.199,
+        0.213,
+        0.215,
+        0.214,
+        0.186,
+        0.17,
+        0.187,
+        0.205,
+        0.121,
+        0.106,
+        0.095,
+        0.111,
+        0.074
+      ],
+      "presented_rows": 307373,
+      "presented_sequence_steps": {
+        "1": 251649,
+        "2": 55480,
+        "3": 242,
+        "4": 1
+      },
+      "run_id": "20261125T203833Z",
+      "share_without_presented_row": 0.154,
+      "started_utc": "2026-11-25T20:38:33Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    }
+  ]
+}

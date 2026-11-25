@@ -1,0 +1,123 @@
+{
+  "evidence": "actual_windows_directx: what the shell's own logs show; nothing about what the screen showed",
+  "format": "magic600-owner-sitting-20261125-run-v1",
+  "inputs": {
+    "events.jsonl": "3c449ac61efed3af87ea32e01e2c31a2d126df193fc530cf5fd38188b199d4cf",
+    "launch.json": "75efc5a62838a58d9fe4859a7b79ba0bad674ad385142bd225b196edb0b7ec4f",
+    "session/journal": "27fde1dbefe81201e9ab41cbba3f4d4c6c51ac33c431984acffbb4ecff53532c"
+  },
+  "journal_rows": {
+    "twist.apply": 29
+  },
+  "keys": [
+    {
+      "frame_id": 2378,
+      "seconds": 39.6,
+      "seq": 0
+    },
+    {
+      "frame_id": 2437,
+      "seconds": 40.62,
+      "seq": 1
+    },
+    {
+      "frame_id": 2466,
+      "seconds": 41.12,
+      "seq": 2
+    },
+    {
+      "frame_id": 3423,
+      "seconds": 57.09,
+      "seq": 3
+    },
+    {
+      "frame_id": 4489,
+      "seconds": 74.87,
+      "seq": 4
+    }
+  ],
+  "label": "owner-ev4-05",
+  "launch": {
+    "build_identity": "c9-product-a9d908ad262ee306",
+    "cold_start": false,
+    "command": [
+      "Godot_v4.7.2-stable_mono_win64.exe",
+      "--path",
+      "<build>/shell/project",
+      "--rendering-driver",
+      "d3d12",
+      "--render-thread",
+      "safe",
+      "--windowed",
+      "--log-file",
+      "<out>/godot.log"
+    ],
+    "echo": false,
+    "editor": true,
+    "exit_code": 0,
+    "format": "magic600-c9-launch-v1",
+    "lx2_injection": null,
+    "lx4": false,
+    "lx4_fixtures": null,
+    "puzzle": "jumble-off",
+    "run_id": "20261125T171636Z",
+    "seconds": 84.455,
+    "started_utc": "2026-11-25T17:16:36Z"
+  },
+  "revisions_drawn": [
+    [
+      25,
+      25
+    ],
+    [
+      26,
+      26
+    ],
+    [
+      27,
+      27
+    ],
+    [
+      28,
+      28
+    ],
+    [
+      29,
+      29
+    ],
+    [
+      30,
+      30
+    ]
+  ],
+  "row_counts": {
+    "frame": 4883,
+    "key": 5,
+    "presented": 3166,
+    "run": 1,
+    "ui_frame": 4883
+  },
+  "run": {
+    "build_identity": "c9-product-a9d908ad262ee306",
+    "correctness": "pass",
+    "correctness_control": "journal-reopen-and-kernel-replay",
+    "correctness_detail": {
+      "committed": 29,
+      "control": "journal-reopen-and-kernel-replay",
+      "expected_shown": "ce5a1550d670164d06e9dfd2af18dde7f2b6ba729693935599057065b525d532",
+      "live": "ce5a1550d670164d06e9dfd2af18dde7f2b6ba729693935599057065b525d532",
+      "other_changes": 0,
+      "pass": true,
+      "refused": 0,
+      "reopen_error": null,
+      "reopened": "ce5a1550d670164d06e9dfd2af18dde7f2b6ba729693935599057065b525d532",
+      "replay_error": null,
+      "replayed": "ce5a1550d670164d06e9dfd2af18dde7f2b6ba729693935599057065b525d532",
+      "shown": "ce5a1550d670164d06e9dfd2af18dde7f2b6ba729693935599057065b525d532",
+      "shown_revision": 30
+    },
+    "foreground_throughout": false,
+    "run_id": "20261125T171636Z",
+    "synthetic": false
+  }
+}

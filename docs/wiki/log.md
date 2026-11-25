@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-25] update | The owner-machine sitting of 25 November
+Recorded the sitting of 25 November 2026 on bb416a2c in [owner-sitting-2026-11-25-results](evidence/owner-sitting-2026-11-25-results.md): the greybox flow and CT-EV4-05's text legs ran on screen, the stutter under runtime loss is unchanged, and LX-2 and LX-4 read not-met on a much larger confirmation gap than on 21 November, whose cause is not established; reading (a)'s halves and LP5's lattice replay did not run.
+
 ## [2026-11-25] decision | Human tests' form, owner-machine sitting, ADR-D02's A4 and builders
 The owner set the human tests' form (the owner runs CT-LB6-04 and CT-EV5-05 alone; CT-EV5-03 waits for non-authors), set the owner-machine sitting for 25 November 2026 with the lattice replay held, let ADR-D02's A4 be prepared and started, and named Fable and Opus as the ADR-D02 and ADR-D03 builders in the subscription ([decision](decisions/owner-decisions-2026-11-25.md)). The 24 November page's review sentence is corrected.
 
