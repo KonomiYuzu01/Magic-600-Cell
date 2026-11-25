@@ -46,9 +46,14 @@ two sheets take about 45 minutes.
 
 ## 3. The owner-machine sitting runs on 25 November 2026
 
-The attended sitting of [24 November 2026](owner-decisions-2026-11-24-lp4-lp5-exit.md), item 6, runs on 25 November
-2026: the stutter fix's device re-run, reading (a)'s owner-machine halves, LX-4's editor bars on LP4's candidate,
-CT-EV4-05's Windows half and the greybox flow. Its results land in their own pull request.
+The sitting of [24 November 2026](owner-decisions-2026-11-24-lp4-lp5-exit.md), item 6, runs on 25 November 2026, on
+one build from `bb416a2c` (the same code as LP4's candidate `0208e78d`):
+- attended, about 25 minutes: CT-EV4-05's Windows half and the greybox flow;
+- unattended after it, with the machine kept quiet: the stutter fix's device re-run, then LX-4's editor bars (about
+  3 hours 25 minutes, with a fresh gate reference from the same build).
+
+Reading (a)'s owner-machine halves do not run: the post-freeze on-screen line that builds most of their harness has not
+started. They stay with that line. The sitting's results, and what did not run, land in their own pull request.
 
 ## 4. The lattice replay waits for the owner's word
 
