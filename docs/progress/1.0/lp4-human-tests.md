@@ -1,9 +1,10 @@
 # LP4 human tests: form and results
 
 The owner set this form on 25 November 2026, taking every recommended option of the integrator's one-page draft (form
-version 1). EV5.12 leaves the form and its success criteria to the owner, and the mathematician checks their
-mathematical content. The tests run at minimal scale (decision of 23 November 2026, item 2.2; PHS.27). No pass rate,
-timing threshold or participant result is invented here: a row with no run says so.
+version 1; [decision](../../wiki/decisions/owner-decisions-2026-11-25.md), section 2). EV5.12 leaves the form and its
+success criteria to the owner, and the mathematician checks their mathematical content. The tests run at minimal scale
+(decision of 23 November 2026, item 2.2; PHS.27). No pass rate, timing threshold or participant result is invented
+here: a row with no run says so.
 
 ## Who runs which test
 
