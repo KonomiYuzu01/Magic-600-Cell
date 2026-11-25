@@ -8,7 +8,7 @@
     "stage_order"
   ],
   "level": "L2",
-  "review": "The mathematician's pass of 23 November 2026 found M7 (the reason said nothing solved is disturbed again; the justification is a topological sort) and their re-check M27 (Kahn's argument is the proof, the test only a check); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M7 (major: finished orbits are back in place at macro boundaries only, and the justification is a topological sort with the technical report's triangular stage invariant as a lemma), fixed in c152350f. The mathematician's scoped re-check of 23 November 2026 confirmed the M7 fix and found M27 (minor: Kahn's argument is the proof, the library's test a separate check), fixed in 0af6fa70; the scoped check of 25 November 2026 confirmed the M27 fix (the digest of seeds.rs matches and the argument is correct) and raised a nit, fixed the same day: the proof names the rows neither on a cycle nor held behind one, a set that holds all their predecessors and has no cycle. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "c7cc7fd2ebb07fe63c517be838688fcbd827bf72385b2743dab627025d09341d",
     "closure_sha256": "99cde9efa5f80cf79f1119ed60b8772648934cda615c25e0408771d78f1083e4",
@@ -78,7 +78,7 @@
     {
       "kind": "lemma",
       "statement": "Kahn's argument: in a finite list of rows, repeatedly placing the first listed row with no unplaced predecessor places each row before every row its collateral names, and leaves unplaced exactly the rows on a cycle or held behind one",
-      "text": "The proof is Kahn's argument (A. B. Kahn, \"Topological sorting of large networks\", Communications of the ACM 5, 1962). A row is placed only when every row whose collateral names it is placed, so it comes after all of them. Placing a row removes its edges, and a finite set of rows with no cycle always has a row with no unplaced predecessor, so every such row is placed. A row on a cycle, or held behind one, always keeps an unplaced predecessor, so it is never placed.",
+      "text": "The proof is Kahn's argument (A. B. Kahn, \"Topological sorting of large networks\", Communications of the ACM 5, 1962). A row is placed only when every row whose collateral names it is placed, so it comes after all of them. Placing a row removes its edges. The rows neither on a cycle nor held behind one form a finite set that holds all their predecessors and has no cycle, so while any of them is unplaced, one of them has no unplaced predecessor; hence every such row is placed. A row on a cycle, or held behind one, always keeps an unplaced predecessor, so it is never placed.",
       "evidence": {
         "none": "a proof: Kahn's argument, written out in the text; the test below checks finite instances only"
       }

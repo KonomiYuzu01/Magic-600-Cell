@@ -9,7 +9,7 @@
     "orbit_residuals"
   ],
   "level": "L5",
-  "review": "The mathematician's pass of 23 November 2026 found M8 (orbit -1 presented the fixed centres as one orbit); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M8 (major: -1 is the table's index for the 600 singleton position orbits of the fixed centres, not one orbit), fixed in c152350f. The mathematician's scoped re-check of 23 November 2026 confirmed the fix (Theory, hypothesis R). The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "57cf50c1127d096c70897272f88c0f16ac3f1b63d29922f202643383ba5bfcb9",
     "closure_sha256": "b8d3ab5327d23ae436c0576101a6abdd0e814b390984a4a8255b4851bc7e0bb7",
