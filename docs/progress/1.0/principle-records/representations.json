@@ -12,7 +12,7 @@
     "layer_predicate"
   ],
   "level": "L1",
-  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M15 (minor: distance 0 from a cell to itself holds by definition, not by a certificate), fixed in c152350f. The mathematician's scoped check of 25 November 2026 confirmed the fix: the argument's kind is by definition, with no evidence. The leaf specifications and test paths are engineering bindings and were not part of the review.",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M15 (minor: distance 0 from a cell to itself holds by definition, not by a certificate), fixed in c152350f. The mathematician's scoped check of 25 November 2026 confirmed the fix: the argument's kind is by definition, with no evidence. The leaf specifications and test paths are engineering bindings and were not part of the review. The owner's human test of 26 November 2026 (post-run check M30) found that the first statement's text said the entries change no state, while three of them write the workspace: it now says that they change no puzzle state and that an entry that keeps a value writes only that workspace record. The mathematician's scoped check of 26 November 2026 found the new clause true of all six entries, and corrected the text's first clause for effect_scope, which publishes the solver's own named text and reads no kernel row.",
   "binding": {
     "source_sha256": "7332a75475c8971fa0688462d62736d1ec1b63c5d437d5bd07f890817479cc06",
     "closure_sha256": "e000501570570e7229aa882592e372357eba967a58df2feea0d98cd860c922f9",
@@ -197,7 +197,7 @@
     {
       "kind": "by_definition",
       "statement": "representations entries publish or keep what the solver named and what the kernel rows answer",
-      "text": "Each entry either publishes a view of what one kernel row answers for the solver's named objects, or keeps the solver's named value as a workspace record: it chooses no object and changes no state.",
+      "text": "Each entry publishes a view of what one kernel row answers for the solver's named objects, or of the solver's own named text, or keeps the solver's named value as a workspace record: it chooses no object and changes no puzzle state, and an entry that keeps a value writes only that workspace record.",
       "evidence": {
         "none": "a definition: the entries' checked source is their own statement"
       }
