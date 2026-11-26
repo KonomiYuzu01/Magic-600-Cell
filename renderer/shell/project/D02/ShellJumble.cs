@@ -544,6 +544,11 @@ internal sealed partial class D02Driver : Node
                 Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = button, Pressed = false, Position = at, GlobalPosition = at, Factor = 1 });
             }
         }
+        else if (step.TryGetProperty("click", out var click))
+        {
+            // ADR-D02 B17: a left click at fractions of the Global opening (D02/ShellPick.cs).
+            _doing = ShellPick.ScriptClick(_frame.Opening, click);
+        }
         else if (step.TryGetProperty("cancel_older", out _))
         {
             // B10's Q3.b check in the shell (C2-1): the jobs' clock is held, the whole screen is read, and the host
@@ -721,6 +726,7 @@ internal sealed partial class D02Driver : Node
                 json.WriteNumber("sent", sent);
             }
             json.WriteEndObject();
+            ShellPick.Dump(json);
             // B11: the covers lines, the inspect line, the cap map's marks and the focus layers' keys.
             if (ShellJumble.Host is { } shown)
             {

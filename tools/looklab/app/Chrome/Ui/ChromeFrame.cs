@@ -365,7 +365,7 @@ public sealed partial class ChromeFrame : Control
 
     private void Build()
     {
-        dirty = false; HoveredView = null;
+        dirty = false; HoveredView = null; builtFor = GetViewportRect().Size;
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip); ChromeWidgets.Detach(seam); ChromeWidgets.Detach(pairHead);
