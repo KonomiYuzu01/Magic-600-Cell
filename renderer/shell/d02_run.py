@@ -723,8 +723,55 @@ IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280"}
 
 # The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.
 def expect_two_views(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """B18c: the script ran to its end; the frame rows decide (check_two_views_events)."""
-    return [] if dumps else ["the two-views run wrote no screen"]
+    """B18c: the script ran to its end; the frame rows decide (check_two_views_events). ADR-D01.41: the drags at its
+    end decide the linked rotation (check_local_drag)."""
+    return check_local_drag(dumps) if dumps else ["the two-views run wrote no screen"]
+
+
+def same(a, b) -> bool:
+    return a is not None and b is not None and len(a) == len(b) and all(abs(x - y) < 1e-6 for x, y in zip(a, b))
+
+
+def check_local_drag(dumps: list[dict]) -> list[str]:
+    """ADR-D01.40/.41: a drag that starts in Local turns the linked rotation, so both views are sent a turned camera;
+    so does a drag in Global. Unlinked, a drag in Local turns only Local and one in Global only Global; linking again
+    sends Local the shared rotation. Each mark is the wait after its step, when the shell has sent the cameras."""
+    steps = [dump["do"] for dump in dumps]
+    marks = ["drag 160 0 in local", "wait 701 ms", "wait 702 ms", "wait 703 ms", "wait 704 ms", "wait 705 ms"]
+    if any(mark not in steps for mark in marks):
+        return [f"the steps written were {steps}"]
+    before = dumps[steps.index(marks[0]) - 1]
+    rows = [before] + [dumps[steps.index(mark)] for mark in marks[1:]]
+    if any(not isinstance(row.get("rotation"), dict) for row in rows):
+        return ["a step's dump has no rotation"]
+    start, local, glob, unlinked_local, unlinked_global, relinked = (row["rotation"] for row in rows)
+    problems = []
+    if not start["linked"] or not local["linked"]:
+        problems.append("Local's rotation was not linked by default")
+    if not rows[1]["camera_turns"] > rows[0]["camera_turns"]:
+        problems.append("the drag in Local did not turn the linked camera")
+    for name, before_row, after_row in (("in Local", start, local), ("in Global", local, glob)):
+        if same(before_row["sent_global"], after_row["sent_global"]):
+            problems.append(f"the linked drag {name} did not turn Global")
+        if same(before_row["sent_local"], after_row["sent_local"]):
+            problems.append(f"the linked drag {name} did not turn Local")
+        if not same(after_row["sent_local"], after_row["global"]["spin"]):
+            problems.append(f"after the linked drag {name} Local was not sent the shared spin")
+    if unlinked_local["linked"]:
+        problems.append("the link step did not unlink Local")
+    if not same(unlinked_local["sent_global"], glob["sent_global"]):
+        problems.append("the unlinked drag in Local turned Global")
+    if same(unlinked_local["sent_local"], glob["sent_local"]):
+        problems.append("the unlinked drag in Local did not turn Local")
+    if not same(unlinked_global["sent_local"], unlinked_local["sent_local"]):
+        problems.append("the unlinked drag in Global turned Local")
+    if same(unlinked_global["sent_global"], unlinked_local["sent_global"]):
+        problems.append("the unlinked drag in Global did not turn Global")
+    if not relinked["linked"] or not same(relinked["sent_local"], relinked["global"]["spin"]):
+        problems.append("linking again did not return Local to the shared rotation")
+    print(f"local drag: linked turns {rows[0]['camera_turns']} to {rows[1]['camera_turns']}; unlinked Local turns "
+          f"{unlinked_local['local']['turns']}; {len(problems)} problems")
+    return problems
 
 
 def frame_rows(events: Path) -> list[dict]:

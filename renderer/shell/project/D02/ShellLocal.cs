@@ -85,6 +85,108 @@ public static class ShellLocal
     /// </summary>
     public static bool AutoFrame { get; set; } = true;
 
+    /// <summary>
+    /// ADR-D01.41: the 4D rotation of Global and Local is linked by default and can be unlinked. While linked both
+    /// views draw from the one camera (<see cref="ShellJumble.Camera"/>), which a drag starting in either view turns,
+    /// so both turn together. Unlinked, Local draws from <see cref="Own"/>, which starts where the shared rotation was
+    /// and only a drag in Local turns; linking again returns Local to the shared rotation. No command row switches the
+    /// link yet (row request <c>camera.link</c>); a D02 run's <c>link</c> step sets it.
+    /// </summary>
+    public static bool Linked
+    {
+        get => _linked;
+        set
+        {
+            if (value == _linked)
+            {
+                return;
+            }
+            _linked = value;
+            if (!value)
+            {
+                Array.Copy(ShellJumble.Camera.Q, Own.Q, 16);
+                Array.Copy(ShellJumble.Camera.Spin, Own.Spin, 16);
+            }
+            // Both views are sent again: Local takes its new rotation, Global keeps its own.
+            ShellJumble.Camera.Dirty = true;
+            Own.Dirty = true;
+        }
+    }
+
+    private static bool _linked = true;
+
+    /// <summary>Local's own rotation while unlinked.</summary>
+    public static ShellCamera Own { get; } = new();
+
+    /// <summary>The rotation Local draws from: the shared one while linked, else its own.</summary>
+    public static ShellCamera Camera(ShellCamera shared) => _linked ? shared : Own;
+
+    private static float[]? _sentGlobal, _sentLocal;
+
+    /// <summary>Records the camera the shell last sent for a view (for a D02 run's dump).</summary>
+    public static void Sent(ulong view, float[] camera)
+    {
+        if (view == HostLibrary.Local)
+        {
+            _sentLocal = camera;
+        }
+        else
+        {
+            _sentGlobal = camera;
+        }
+    }
+
+    /// <summary>
+    /// Writes the rotation context into a D02 run's screen dump: the link, both views' rotations (Q and the layout
+    /// spin, row-major) and the cameras the core was last sent for each view.
+    /// </summary>
+    public static void Dump(Utf8JsonWriter json)
+    {
+        var shared = ShellJumble.Camera;
+        json.WriteStartObject("rotation");
+        json.WriteBoolean("linked", _linked);
+        json.WriteBoolean("auto_frame", AutoFrame);
+        Write(json, "global", shared);
+        Write(json, "local", Camera(shared));
+        Write(json, "sent_global", _sentGlobal);
+        Write(json, "sent_local", _sentLocal);
+        json.WriteEndObject();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, ShellCamera camera)
+    {
+        json.WriteStartObject(name);
+        json.WriteNumber("turns", camera.Turns);
+        Write(json, "q", camera.Q);
+        Write(json, "spin", camera.Spin);
+        json.WriteEndObject();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, double[] values)
+    {
+        json.WriteStartArray(name);
+        foreach (var value in values)
+        {
+            json.WriteNumberValue(value);
+        }
+        json.WriteEndArray();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, float[]? values)
+    {
+        if (values is null)
+        {
+            json.WriteNull(name);
+            return;
+        }
+        json.WriteStartArray(name);
+        foreach (var value in values)
+        {
+            json.WriteNumberValue((double)value);
+        }
+        json.WriteEndArray();
+    }
+
     private static int? _cap, _selected;
     private static bool _selectionNewer;
 

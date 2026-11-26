@@ -146,7 +146,11 @@ public partial class Shell : Control
         }
         try
         {
-            _chrome = new ShellChrome(this, folder, _host != IntPtr.Zero);
+            _chrome = new ShellChrome(this, folder, _host != IntPtr.Zero, () => RotationLinked);
+            if (_chrome.Sample is { } sample && D02.ShellJumble.On)
+            {
+                WireSample(sample);
+            }
             if (_echo is { } echo)
             {
                 MoveChild(echo, -1);
@@ -156,6 +160,117 @@ public partial class Shell : Control
         {
             GD.PushError($"the frame did not open: {error.Message}");
         }
+    }
+
+    /// <summary>ADR-D01.41: the rotation link the frames mark: none without Local, else whether Local is linked.</summary>
+    internal bool? RotationLinked => _localOpen ? D02.ShellLocal.Linked : null;
+
+    // ADR-D01.22 under --d02: Global's shape as last sent (cell shrink, sticker shrink, d4 and the opening's zoom, which
+    // the wheel scales) and its projection, or null while the core is not open; and each view's frame field as last seen.
+    private float[]? _globalShape;
+    private uint _globalProjection = HostLibrary.ProjectionPerspective;
+    private readonly Dictionary<string, double> _frameSeen = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Sample mode under --d02: the hooks of the shared library that the host sets. ADR-D01.62: the strip's anchors sit
+    /// where the core draws each view (its own projection, ported to Chrome/Model/CorePlaces.cs). ADR-D01.22: a View
+    /// edit in the inspector is drawn on the view it is written for, and Global's section starts from what is drawn.
+    /// </summary>
+    private void WireSample(LookLab.App.Live.SampleMount sample)
+    {
+        var opening = D02.ShellShape.Read(D02.ShellShape.OpeningPath());
+        if (sample.Places is { } places)
+        {
+            sample.GlobalView = () => _hopf || _chrome?.Opening() is not { Size.X: > 0, Size.Y: > 0 } g ? null
+                : new Magic600.Chrome.CoreView(_camera.Q, (_globalShape ?? opening)[0], (_globalShape ?? opening)[1], opening[2],
+                    D02.ShellShape.SentZoom(HostLibrary.View) ?? opening[3], (double)g.Size.X / g.Size.Y,
+                    _globalProjection == HostLibrary.ProjectionOrthographic);
+            // Local draws from its own rotation while unlinked (ADR-D01.41). Its spin is sent column-major as it lies
+            // (SpinOf), so the row-major rotation the core draws Local with is the spin transposed.
+            sample.LocalView = () => _localShape is not { } shape || _localCap is not int cap || cap < 0 || cap >= 600
+                || _chrome?.LocalOpening() is not { Size.X: > 0, Size.Y: > 0 } l ? null
+                : new Magic600.Chrome.CoreView(Transposed(D02.ShellLocal.Camera(_camera).Spin), 1 - shape.Gap, shape.StickerShrink, shape.D4,
+                    D02.ShellShape.SentZoom(HostLibrary.Local) ?? 1, (double)l.Size.X / l.Size.Y, shape.Projection == HostLibrary.ProjectionOrthographic,
+                    places.CellCentre(cap), D02.ShellLocal.FocusCos, shape.Spread);
+        }
+        if (_host == IntPtr.Zero || _hostLibrary is null)
+        {
+            return;
+        }
+        // Global's shape was set from opening.json when the core opened (Open): the section shows what is drawn.
+        _globalShape = opening;
+        sample.Views.Sync("Global", Magic600.Chrome.ViewFields.CellShrink, opening[0]);
+        sample.Views.Sync("Global", Magic600.Chrome.ViewFields.StickerShrink, opening[1]);
+        foreach (var view in Magic600.Chrome.ViewFields.Views)
+        {
+            _frameSeen[view] = sample.Views.Value(view, Magic600.Chrome.ViewFields.Frame);
+        }
+        sample.ApplyView = ApplyView;
+    }
+
+    /// <summary>
+    /// ADR-D01.22: draws a view's View fields on the core (cell shrink, sticker shrink and projection; 1 is
+    /// orthographic) and answers why it did not, or null. Global's shape keeps the wheel's zoom; Local's new shape and
+    /// focus are sent again by the follow code at the next step. The core draws no frame marks, so the frame field is
+    /// answered with a reason.
+    /// </summary>
+    private string? ApplyView(string view, Magic600.Chrome.ViewFields fields)
+    {
+        if (_host == IntPtr.Zero || _hostLibrary is not { } library)
+        {
+            return "the core is not open";
+        }
+        var cell = (float)fields.Value(view, Magic600.Chrome.ViewFields.CellShrink);
+        var sticker = (float)fields.Value(view, Magic600.Chrome.ViewFields.StickerShrink);
+        var projection = fields.Value(view, Magic600.Chrome.ViewFields.Projection) == 1
+            ? HostLibrary.ProjectionOrthographic : HostLibrary.ProjectionPerspective;
+        if (view == "Global" && _globalShape is { } global)
+        {
+            var shape = new[] { cell, sticker, global[2], global[3] };
+            var code = D02.ShellShape.Set(library, _host, HostLibrary.View, shape);
+            if (code == HostLibrary.Ok)
+            {
+                code = D02.ShellShape.ApplyZoom(library, _host, HostLibrary.View, D02.ShellJumble.Zoom.Factor(HostLibrary.View));
+            }
+            if (code == HostLibrary.Ok)
+            {
+                code = library.SetViewFocus(_host, HostLibrary.View, projection, HostLibrary.FocusNone, -1, 1);
+            }
+            if (code != HostLibrary.Ok)
+            {
+                return $"the core refused it ({code}: {library.LastError(_host)})";
+            }
+            _globalShape = shape;
+            _globalProjection = projection;
+        }
+        else if (view == "Local" && _localOpen && _localShape is { } local)
+        {
+            _localShape = local with { Projection = projection, Gap = 1 - cell, StickerShrink = sticker };
+            _localCap = -1;
+            _paned = default;
+        }
+        else
+        {
+            return $"{view} is not open";
+        }
+        var frame = fields.Value(view, Magic600.Chrome.ViewFields.Frame);
+        if (_frameSeen.TryGetValue(view, out var seen) && seen != frame)
+        {
+            _frameSeen[view] = frame;
+            return "the core draws no frame marks yet; the value is kept here";
+        }
+        return null;
+    }
+
+    /// <summary>A row-major 4×4 rotation from one sent column-major as it lies (see <see cref="SpinOf"/>).</summary>
+    private static double[] Transposed(double[] m)
+    {
+        var t = new double[16];
+        for (var i = 0; i < 16; i++)
+        {
+            t[i] = m[i % 4 * 4 + i / 4];
+        }
+        return t;
     }
 
     private void Open(string core, string host, string assets)
@@ -331,7 +446,7 @@ public partial class Shell : Control
     public override void _Input(InputEvent @event)
     {
         var qpc = EventLog.Now();
-        var turned = D02.ShellJumble.On && _camera.Follow(@event, InOpening);
+        var turned = D02.ShellJumble.On && Turn(@event);
         if (turned)
         {
             GetViewport().SetInputAsHandled();
@@ -409,6 +524,26 @@ public partial class Shell : Control
     private bool InOpening(Vector2 point) =>
         (_chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize()))
             .HasPoint(new Vector2I((int)point.X, (int)point.Y));
+
+    /// <summary>
+    /// ADR-D01.40/.41: a drag that starts in Global's opening or in Local's drawn opening turns the rotation that view
+    /// draws from. Linked (the default) both views draw from the one camera, so a drag in either turns both together;
+    /// unlinked, a drag in Local turns only Local's own rotation and a drag in Global only Global's. Each camera keeps
+    /// the three-pixel rule, so a click in either view still picks.
+    /// </summary>
+    private bool Turn(InputEvent input)
+    {
+        if (D02.ShellLocal.Linked)
+        {
+            return _camera.Follow(input, point => InOpening(point) || InLocal(point));
+        }
+        var global = _camera.Follow(input, InOpening);
+        var local = D02.ShellLocal.Own.Follow(input, InLocal);
+        return global || local;
+    }
+
+    /// <summary>A window point in Local's drawn opening (through the pane layout's hit), outside Global's.</summary>
+    private bool InLocal(Vector2 point) => _localOpen && ViewAt(point) == HostLibrary.Local;
 
     /// <summary>ADR-D02 B17: a window point in a drawn view as a pixel of the core's surface, or none.</summary>
     private (uint X, uint Y)? SurfacePoint(Vector2 point)
@@ -549,13 +684,16 @@ public partial class Shell : Control
         _layout = layout;
     }
 
-    /// <summary>Local's camera: the layout spin as Look Lab's LocalShape.Frame takes it (column-major as it lies).</summary>
-    private static float[] LocalCamera()
+    /// <summary>
+    /// A rotation's layout spin as a view camera, as Look Lab's LocalShape.Frame takes it (column-major as it lies):
+    /// Local's camera, and Global's on a Hopf layout.
+    /// </summary>
+    private static float[] SpinOf(D02.ShellCamera camera)
     {
         var m = new float[16];
         for (var i = 0; i < 16; i++)
         {
-            m[i] = (float)_camera.Spin[i];
+            m[i] = (float)camera.Spin[i];
         }
         return m;
     }
@@ -626,15 +764,25 @@ public partial class Shell : Control
         {
             SetPanes(library, global, layout);
         }
-        if (D02.ShellJumble.On && _camera.Dirty)
+        var turning = D02.ShellLocal.Camera(_camera);
+        if (D02.ShellJumble.On && (_camera.Dirty || turning.Dirty))
         {
-            Require(library, "m6h_set_camera", library.SetCamera(_host, _hopf ? LocalCamera() : _camera.ColumnMajor()));
-            // B18c: Local turns with the linked 3D spin, as Look Lab's Local does; the core turns the cap's pole to +w.
+            if (_camera.Dirty)
+            {
+                var camera = _hopf ? SpinOf(_camera) : _camera.ColumnMajor();
+                Require(library, "m6h_set_camera", library.SetCamera(_host, camera));
+                D02.ShellLocal.Sent(HostLibrary.View, camera);
+            }
+            // B18c: Local turns with its 3D spin, as Look Lab's Local does, the linked one unless Local is unlinked
+            // (ADR-D01.41); the core turns the cap's pole to +w.
             if (_localOpen)
             {
-                Require(library, "m6h_set_view_camera", library.SetViewCamera(_host, HostLibrary.Local, LocalCamera()));
+                var spin = SpinOf(turning);
+                Require(library, "m6h_set_view_camera", library.SetViewCamera(_host, HostLibrary.Local, spin));
+                D02.ShellLocal.Sent(HostLibrary.Local, spin);
             }
             _camera.Dirty = false;
+            turning.Dirty = false;
         }
         if (D02.ShellJumble.On)
         {
