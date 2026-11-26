@@ -66,11 +66,14 @@ here: a row with no run says so.
 - **Length:** about 45 minutes: about 10 to read the glossary rows the sheet prints, then about 10 per instance.
 - **Review half of CT-EV5-05:** the mathematician reviews the three explanations and the shared grammar, and no blocker
   or major stays open. Each principle record's `review` field records its passes:
-  - `jumble_checker`: the pass of 23 November 2026 found M6, and its scoped re-check that day confirmed the fix.
+  - `jumble_checker`: the pass of 23 November 2026 found M6, and its scoped re-check that day confirmed the fix. After
+    the human test, the record took M25 (below), and the scoped check of 26 November 2026 found the new text true and
+    its four minor points applied.
   - `full_600_cell`: the pass of 23 November 2026 found nothing, and the re-check recounted its generator claims. The
     pre-check below corrected its step map.
   - `representations`: the pass of 23 November 2026 found M15, and the scoped check of 25 November 2026 confirmed the
-    fix.
+    fix. After the human test, the record took M30 (below), and the scoped check of 26 November 2026 found the new
+    clause true of all six entries and corrected the text for `effect_scope`.
 
   The glossary's rows were reviewed row by row on 24 November 2026. The shared grammar of EV5.11 waits for the theory
   book, which is not written, so CT-EV5-05 stays part after the human half passes, until that review.
@@ -169,8 +172,10 @@ The records and the generated material are the same for both sheets. A source di
 
 The owner ran sheet version 2 on 26 November 2026. The answers were graded twice and independently: first by LP4's line
 main against the key, then by the mathematician, who also classified each miss. Where the two gradings differed, the
-mathematician's ruling stands, and the section below lists each ruling. The exception is M24: it would turn a verdict
-from not met to pass after the run, and on the owner's own result, so it waits for the owner's word.
+mathematician's ruling stands, and the section below lists each ruling. M24 turned a verdict from not met to pass after
+the run, on the owner's own result, so it went to the owner. On 26 November 2026 the owner let it count as ruled, set
+no rerun after the fixes, and closed the human-test line with this record
+([decision](../../wiki/decisions/owner-decisions-2026-11-26-human-tests.md)).
 
 The owner opened no hint on version 1, so nothing carries over. The owner never pressed "done": each time runs from that
 instance's start to the next start or to the export, and the owner went back to `full_600_cell` once after starting
@@ -179,18 +184,19 @@ instance's start to the next start or to the export, and the owner went back to 
 | Person | Instance | (a) | (b) | (c) | (d) | Help a, b, c, d | Critical mistakes | Time |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | O | `jumble_checker` | wrong: step 2's reason covers the first letter only (the person's) | wrong as keyed, step 1; right with the key fixed (M22) | right | yes | 0, 0, 0, 1 | none | about 13 min |
-| O | `full_600_cell` | right; step 5 on the sheet's wording (M23) | wrong as keyed, steps 1 and 3; right with the key fixed (M22) | right | partly under M3 as written; yes under post-run ruling M24, which waits for the owner's word | 1, 0, 0, 0 | none | about 76 min, with the shared reading |
+| O | `full_600_cell` | right; step 5 on the sheet's wording (M23) | wrong as keyed, steps 1 and 3; right with the key fixed (M22) | right | yes on post-run ruling M24, which the owner let count; partly under M3 as written | 1, 0, 0, 0 | none | about 76 min, with the shared reading |
 | O | `representations` | wrong: step 1 gives no reason (the person's) | wrong as keyed, step 2; right with the key fixed (M22) | right | yes | 0, 0, 0, 0 | none | about 13 min |
 
 | Test | Graded on | Verdict |
 | --- | --- | --- |
-| CT-LB6-04 | (a) and (b) of every instance | not met, run of 26 November 2026: (a) of `jumble_checker` and `representations`, both the person's; it holds under every ruling |
-| CT-EV5-05, human half | (c) and (d) of every instance | open, run of 26 November 2026. Not met under the key as written (M3): `full_600_cell`'s (d) is partly. Pass under post-run ruling M24, which waits for the owner's word: (c) right and (d) yes for every instance at help level 0 or 1, no critical mistake |
+| CT-LB6-04 | (a) and (b) of every instance | not met, run of 26 November 2026: (a) of `jumble_checker` and `representations`, both the person's; it holds under every ruling. The owner set no rerun |
+| CT-EV5-05, human half | (c) and (d) of every instance | pass, run of 26 November 2026: (c) right and (d) yes for every instance at help level 0 or 1, no critical mistake. `full_600_cell`'s (d) is yes on post-run ruling M24, which the owner let count on 26 November 2026; under M3 as written it would be partly, and the half not met |
 | CT-EV5-05, review half | the explanations and the shared grammar | part: the shared grammar waits for the theory book |
 | CT-EV5-03 | S1 to S7 and two transfers, P1 and P2 | waiting for non-authors |
 
-A rerun of CT-LB6-04 waits for the owner's word and for M21's fix. Under PHS.4, a rerun takes only the tasks whose
-inputs change.
+The results bind to the pack's digests above. After the run, and by the owner's decision without a rerun,
+`jumble_checker.json` and `representations.json` changed for M25 and M30 (below). Their tasks would rerun under PHS.4,
+but the owner set no rerun.
 
 ### Post-run check of 26 November 2026
 
@@ -217,16 +223,16 @@ The misses and their findings:
 
 | Finding | Severity | What | Disposition |
 | --- | --- | --- | --- |
-| M21 | blocker for a rerun of (b) | The givens tables' source column ("this value is given by") names a leaf for the input, which contradicts the sheet's "none" rule for steps the person derives from the input. | deferred: fixed before any rerun of (b) |
+| M21 | blocker for a rerun of (b) | The givens tables' source column ("this value is given by") names a leaf for the input, which contradicts the sheet's "none" rule for steps the person derives from the input. | not fixed: it concerns the sheet only, and no sheet runs again; any future sheet fixes it first |
 | M22 | major | Four accepted sets are narrower than M1's rule that the key accepts every defensible node set: `full_600_cell` step 1 (add the preview leaf) and step 3 ("none"), `jumble_checker` steps 1, 4 and 5 (add the preview leaf), `representations` step 2 (add `kernel:publish_view`). | adopted as a ruling: the table shows both gradings, and the verdict does not change |
-| M23 | major | `full_600_cell`'s step 5 also reads as the puzzle's state after the preview, which is always the base. | adopted as a ruling; the rewording waits for a rerun |
-| M24 | major | The (d) question does not say what counts as a limit. M3's rule in the key also contradicts `representations`' accepted answer, which includes "it changes no state". A clause that rules out a misreading counts as a limit; one that repeats the input, output or domain row does not. | waits for the owner's word: as a ruling for `full_600_cell`'s (d), it would turn the human half of CT-EV5-05 from not met to pass. The wording waits for a rerun |
-| M25 | minor | `jumble_checker`'s same-cap argument for step 2 is in no justification statement, and the sheet does not say that item 12 is a jumble. | deferred: a record change, so it reruns that record's tasks |
-| M26 | minor | `jumble_checker`'s first given holds a fixture path in its leaf field. | deferred |
-| M27 | minor | With "done" never pressed, there is no time to done and the answers never locked; the export should warn. | deferred |
+| M23 | major | `full_600_cell`'s step 5 also reads as the puzzle's state after the preview, which is always the base. | adopted as a ruling; the rewording is for any future sheet |
+| M24 | major | The (d) question does not say what counts as a limit. M3's rule in the key also contradicts `representations`' accepted answer, which includes "it changes no state". A clause that rules out a misreading counts as a limit; one that repeats the input, output or domain row does not. | adopted as a ruling for `full_600_cell`'s (d): the owner let it count on 26 November 2026, so the human half of CT-EV5-05 passes. The wording is for any future sheet |
+| M25 | minor | `jumble_checker`'s same-cap argument for step 2 is in no justification statement, and the sheet does not say that item 12 is a jumble. | fixed in the record without a rerun: a fourth statement, a lemma pinned to card 6 at its last commit, states the same-cap argument; the step map maps step 2 to the preview leaf on it; and step 2's text says that item 12 is a jumble |
+| M26 | minor | `jumble_checker`'s first given holds a fixture path in its leaf field. | kept, with evidence: the record format defines a given's leaf as "the named leaf call or certificate the given is read from", and the pinned menu is that certificate |
+| M27 | minor | With "done" never pressed, there is no time to done and the answers never locked; the export should warn. | not fixed: the sheet only; for any future sheet |
 | M28 | minor | This page listed only sheet version 1's digest. | adopted: the pack table lists both sheets |
-| M29 | minor | "Why?" is printed on some (a) steps only. | deferred |
-| M30 | minor | `representations`' first justification says that the entries change no state, but three of them write the workspace. | deferred |
+| M29 | minor | "Why?" is printed on some (a) steps only. | not fixed: the sheet only; for any future sheet |
+| M30 | minor | `representations`' first justification says that the entries change no state, but three of them write the workspace. | fixed in the record without a rerun: the entries change no puzzle state, and an entry that keeps a value writes only that workspace record; the scoped check also corrected the text for `effect_scope` |
 
 ## Still open
 

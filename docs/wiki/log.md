@@ -2,8 +2,11 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | LP4 human tests: M24 counts, no rerun, the line ends
+The owner let the mathematician's post-run ruling M24 count, set no rerun after the fixes, and closed the human-test line with its results pull request ([decision](decisions/owner-decisions-2026-11-26-human-tests.md)). `jumble_checker` and `representations` take the record fixes M25 and M30.
+
 ## [2026-11-26] update | LP4 human tests: the owner's run
-The owner withdrew the first self-run sheet unanswered because its material was too thin and not in plain language. The owner then ran version 2, which adds a plain-language guide. Graded under form version 2 in [LP4 human tests](../progress/1.0/lp4-human-tests.md): CT-LB6-04 is not met (two reasons in part (a), the person's), and CT-EV5-05's human half is open (not met under the key as written, and a pass under a post-run ruling that waits for the owner's word). The mathematician's post-run findings M21 to M30, one a blocker for any rerun of part (b), are dispositioned there.
+The owner withdrew the first self-run sheet unanswered because its material was too thin and not in plain language. The owner then ran version 2, which adds a plain-language guide. Graded under form version 2 in [LP4 human tests](../progress/1.0/lp4-human-tests.md): CT-LB6-04 is not met (two reasons in part (a), the person's), and CT-EV5-05's human half passes on post-run ruling M24, which the owner let count. The mathematician's post-run findings M21 to M30 are dispositioned there.
 
 ## [2026-11-26] update | The twist's core preparation and menu resolve
 Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) that the core's preparation spent 9 of its 10 ms building a check message for each of the 259,800 slots, which it now builds only for a failure (with its GPU resources reused, 1.2 ms), and that the twist menu now keeps its exact twists for the 32 caps used most recently, which halves the commit's key call headless with every answer unchanged.
