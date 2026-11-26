@@ -173,7 +173,7 @@ class HopfRings(unittest.TestCase):
         self.assertIn("uint chart = min(asuint(hopfRows[2461 + e / 4][e % 4]), 599u);",
                       text(ROOT / "renderer" / "core" / "shaders" / "geometry.hlsl"))
         self.assertEqual(shell.count("SetViewLayout("), 1)
-        self.assertIn("library.SetCamera(_host, _hopf ? LocalCamera() : _camera.ColumnMajor())", shell)
+        self.assertIn("var camera = _hopf ? SpinOf(_camera) : _camera.ColumnMajor();", shell)
         self.assertEqual(json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))["params"]["projection"],
                          "hopfRings")
         hopf = text(PROJECT / "D02" / "ShellHopf.cs")
@@ -298,7 +298,19 @@ class ShellPanes(unittest.TestCase):
         self.assertIn("return HostLibrary.Local;", self.shell)
 
     def test_local_turns_with_the_linked_spin(self):
-        self.assertIn("library.SetViewCamera(_host, HostLibrary.Local, LocalCamera())", self.shell)
+        self.assertIn("var spin = SpinOf(turning);", self.shell)
+        self.assertIn("library.SetViewCamera(_host, HostLibrary.Local, spin)", self.shell)
+
+    def test_a_drag_in_local_turns_the_linked_rotation(self):
+        # ADR-D01.40/.41: linked, a drag in either view turns the one camera; unlinked, Local turns its own.
+        self.assertIn("return _camera.Follow(input, point => InOpening(point) || InLocal(point));", self.shell)
+        self.assertIn("var local = D02.ShellLocal.Own.Follow(input, InLocal);", self.shell)
+        local = text(PROJECT / "D02" / "ShellLocal.cs")
+        self.assertIn("public static ShellCamera Camera(ShellCamera shared) => _linked ? shared : Own;", local)
+        self.assertIn("private static bool _linked = true;", local)
+        script = json.loads(text(SHELL / "d02_scripts" / "two-views.json"))
+        self.assertIn({"drag": [160, 0], "in": "local"}, script["steps"])
+        self.assertIn({"link": False}, script["steps"])
 
     def test_the_frame_row_names_composite_frames(self):
         log = text(PROJECT / "EventLog.cs")
@@ -351,6 +363,32 @@ class TwoViewsRun(unittest.TestCase):
         script = json.loads(text(SHELL / "d02_scripts" / "two-views.json"))
         self.assertIn({"text": "> jumble.cap.name 150"}, script["steps"])
         self.assertIn({"chord": "Ctrl+Z"}, script["steps"])
+
+    def rotation(self, linked, turns, spin, sent_global, sent_local):
+        return {"linked": linked, "auto_frame": True, "global": {"turns": turns, "q": [0] * 16, "spin": spin},
+                "local": {"turns": 0, "q": [0] * 16, "spin": spin}, "sent_global": sent_global,
+                "sent_local": sent_local}
+
+    def drag_dumps(self, unlinked_turns_global=False):
+        a, b, c, d, e = ([float(i)] * 16 for i in range(5))
+        rows = [("wait 4000 ms", self.rotation(True, 0, a, a, a)), ("drag 160 0 in local", None),
+                ("wait 701 ms", self.rotation(True, 10, b, b, b)), ("drag 0 100", None),
+                ("wait 702 ms", self.rotation(True, 20, c, c, c)), ("link off", None), ("drag -120 0 in local", None),
+                ("wait 703 ms", self.rotation(False, 20, c, d if unlinked_turns_global else c, d)),
+                ("drag 0 -80", None), ("wait 704 ms", self.rotation(False, 30, e, e, d)), ("link on", None),
+                ("wait 705 ms", self.rotation(True, 30, e, e, e))]
+        dumps = []
+        for step, rotation in rows:
+            dumps.append({"do": step, "camera_turns": rotation["global"]["turns"] if rotation else 0,
+                          **({"rotation": rotation} if rotation else {})})
+        return dumps
+
+    def test_the_drag_check_reads_both_views(self):
+        run = shell_module("d02_run")
+        self.assertEqual(run.check_local_drag(self.drag_dumps()), [])
+        leak = run.check_local_drag(self.drag_dumps(unlinked_turns_global=True))
+        self.assertTrue(any("unlinked drag in Local turned Global" in p for p in leak), leak)
+        self.assertTrue(any("steps written" in p for p in run.check_local_drag(self.drag_dumps()[:3])))
 
     def test_a_good_run_passes(self):
         rows = [{"frame_id": 1, "engine_revision": 302}, {"frame_id": 2, "engine_revision": 302, "panes": 2, "held": 0},
