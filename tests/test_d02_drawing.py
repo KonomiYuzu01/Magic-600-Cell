@@ -522,10 +522,78 @@ class LocalReframes(unittest.TestCase):
 
     def test_local_frames_the_newer_source(self):
         local = text(PROJECT / "D02" / "ShellLocal.cs")
-        self.assertIn("public static bool AutoFrame { get; set; } = true;", local)
-        self.assertIn("return AutoFrame && _selectionNewer && _selected is int cell ? cell : _cap;", local)
+        # Step C-.40: the rule is the shared library's LocalPlan, for both puzzles.
+        self.assertIn("public static bool AutoFrame { get => Plan.AutoFrame; set => Plan.AutoFrame = value; }", local)
+        self.assertIn("public static int? Frame(int? namedCap) => Plan.Follow(namedCap, ShellJumble.Host?.LocalCap.Shown, ShellPick.Selection?.Cell);",
+                      local)
+        plan = text(CHROME / "Model" / "LocalPlan.cs")
+        self.assertIn("public bool AutoFrame { get; set; } = true;", plan)
+        self.assertIn("BySelection = AutoFrame && selectionNewer && selected != null;", plan)
+        self.assertIn("Framed = BySelection ? selected : Cap;", plan)
         self.assertIn("int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);", text(PROJECT / "Shell.cs"))
         self.assertIn("public int? Cell => Slot is uint slot ? (int)(slot / 433) : null;", text(PROJECT / "D02" / "ShellPick.cs"))
+
+
+class LocalOnTheBasePuzzle(unittest.TestCase):
+    """Step C-.40 (ADR-D01.40): Local draws on the base puzzle (Jumble off) with no D02 state, through the D02 path."""
+
+    def test_the_plan_knows_the_puzzle_and_draws_cell_zero(self):
+        local = text(PROJECT / "D02" / "ShellLocal.cs")
+        self.assertIn('new(System.Environment.GetEnvironmentVariable("M600_PUZZLE") == EventLog.Puzzles[1]);', local)
+        plan = text(CHROME / "Model" / "LocalPlan.cs")
+        self.assertIn("Cap = Jumble ? namedCap ?? hostCap : Default;", plan)
+        self.assertIn("public const int Default = LocalCap.Default;", plan)
+        program = text(ROOT / "tools" / "looklab" / "tests" / "Program.cs")
+        self.assertIn('("D02LocalPlanDrawsCellZeroOnTheBasePuzzle", D02LocalPlanDrawsCellZeroOnTheBasePuzzle)', program)
+        self.assertIn('("D02LocalPlanKeepsTheJumbleRule", D02LocalPlanKeepsTheJumbleRule)', program)
+
+    def test_the_jumble_sentence_hides_and_the_readout_shows(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        self.assertIn("host.SetDrawnWithoutCap(live && !ShellLocal.Plan.Jumble);", chrome)
+        self.assertIn('ViewLine.Set(Frame.Local, "LocalPlanLine", words, LocalPlan.Hint, Frame.Tokens.C("text.dim"));', chrome)
+        self.assertIn("_chrome?.LocalLine(D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
+        host = text(CHROME / "Ui" / "JumbleHost.cs")
+        self.assertIn("Surface.SetDrawn(LocalCap.Shown != null || drawnWithoutCap);", host)
+        self.assertIn('ViewLine.Set(view, "JumbleLocalDefault", LocalWords, hint, frame.Tokens.C("text.dim"));', host)
+
+    def test_the_base_local_run(self):
+        d02_run = shell_module("d02_run")
+        script = json.loads(text(ROOT / "renderer" / "shell" / "d02_scripts" / "base-local.json"))
+        self.assertEqual(script["puzzle"], "jumble-off")
+        self.assertIn("base-local", d02_run.EXPECT)
+        self.assertNotIn("base-local", d02_run.ON_FIXTURE)
+        self.assertNotIn("base-local", d02_run.IN_SAMPLE_MODE)
+
+    def plan(self, framed, by_selection=False, cap=0):
+        words = (f"Local frames cell {framed}, the selected sticker's cell. Clear the selection to return to cell 0."
+                 if by_selection else f"Local shows cell {framed}'s turning region by default. Select a sticker to frame its cell.")
+        return {"jumble": False, "cap": cap, "framed": framed, "by_selection": by_selection, "words": words}
+
+    def dump(self, do, framed, slot=None, by_selection=False, opening=True, lines=None):
+        selection = None if slot is None else {"piece": 1, "sticker": slot, "slot": slot, "lattice": True}
+        plan = self.plan(framed, by_selection)
+        return {"do": do, "pick": {"selection": selection}, "local_plan": plan, "local": {"opening": opening},
+                "lines": lines if lines is not None else [["view:Local", plan["words"]]]}
+
+    def test_the_base_local_check(self):
+        d02_run = shell_module("d02_run")
+        steps = d02_run.BASE_LOCAL_STEPS
+        # The first two clicks hit a sticker of cell 17, the third misses, the corner click clears.
+        hit = 433 * 17 + 5
+        dumps = [self.dump(do, 17, slot=hit, by_selection=True) if i in (3, 4, 5, 6) else self.dump(do, 0)
+                 for i, do in enumerate(steps)]
+        self.assertEqual(d02_run.base_local_problems(dumps), [])
+        # A run whose clicks all miss (the host picks only in Jumble) keeps Local on cell 0 and passes.
+        self.assertEqual(d02_run.base_local_problems([self.dump(do, 0) for do in steps]), [])
+        # Local hidden, a Jumble plan, or a selection that did not re-frame are each found.
+        hidden = [dict(d, local={"opening": False}) if i == 1 else d for i, d in enumerate(dumps)]
+        self.assertTrue(any("opening" in p for p in d02_run.base_local_problems(hidden)))
+        jumble = [dict(d, local_plan=dict(d["local_plan"], jumble=True)) if i == 1 else d for i, d in enumerate(dumps)]
+        self.assertTrue(any("Jumble" in p for p in d02_run.base_local_problems(jumble)))
+        stuck = [self.dump(d["do"], 0, slot=d["pick"]["selection"]["slot"]) if d["pick"]["selection"] else d for d in dumps]
+        self.assertTrue(any("selected" in p for p in d02_run.base_local_problems(stuck)))
+        unworded = [dict(d, lines=[]) if i == 1 else d for i, d in enumerate(dumps)]
+        self.assertTrue(any("readout" in p for p in d02_run.base_local_problems(unworded)))
 
 
 class PickRun(unittest.TestCase):
@@ -639,6 +707,40 @@ class HopfRun(unittest.TestCase):
         problems = check(rows[:20])
         self.assertTrue(any("fewer than 30" in p for p in problems) and any("one-view frames after" in p for p in problems),
                         problems)
+
+
+class TintRun(unittest.TestCase):
+    """B15: the tint run's check recomputes the bytes the shell sent to the core from the sample, piece by piece."""
+
+    def test_the_script_the_check_and_the_shell_side_exist(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["tint"], run.expect_tint)
+        self.assertIn("tint", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "tint.json"))
+        waits = [f"wait {step['wait_ms']} ms" for step in script["steps"] if "wait_ms" in step]
+        self.assertEqual(waits, [mark for mark, _, _ in run.TINT_STEPS])
+        self.assertIn("ShellTint.Attach(host, frame);", text(PROJECT / "ShellChrome.cs"))
+        self.assertIn("ShellTint.Dump(json, _frame);", text(PROJECT / "D02" / "ShellJumble.cs"))
+        style = text(PROJECT / "D02" / "ShellStyle.cs")
+        self.assertIn("var outline = _tintOutline is null ? new byte[PieceCount] : (byte[])_tintOutline.Clone();", style)
+        self.assertIn("fill[piece] = (byte)(_tintFill[piece] | _focus[piece]);", style)
+
+    def test_a_good_run_passes_and_a_wrong_byte_is_named(self):
+        run = shell_module("d02_run")
+        tables = run.tint_tables("wj-ia-300")
+        self.assertEqual(len(tables["ids"]), 177120)
+        self.assertEqual(sorted(set(tables["classes"]) - {0}), [1, 2, 3, 4])
+        dumps = [{"do": mark, "tint": run.tint_expected(tables, mode, focused, None, 7 if mode == "height" else None)}
+                 for mark, mode, focused in run.TINT_STEPS]
+        self.assertEqual(run.expect_tint(dumps, {}, "wj-ia-300", tables), [])
+        self.assertTrue(dumps[0]["tint"]["line"].startswith("Contact classes · 1 "), dumps[0]["tint"]["line"])
+        self.assertEqual(dumps[4]["tint"]["dims"], [True, True])
+        dumps[2]["tint"]["outline_sha256"] = dumps[3]["tint"]["outline_sha256"]
+        problems = run.expect_tint(dumps, {}, "wj-ia-300", tables)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("after 'wait 812 ms' (off-lattice) outline_sha256", problems[0])
+        dumps[5]["tint"]["fill_sha256"] = run.tint_expected(tables, "height", None, None, 7)["fill_sha256"]
+        self.assertTrue(any("domain 5 focused) fill_sha256" in p for p in run.expect_tint(dumps, {}, "wj-ia-300", tables)))
 
 
 if __name__ == "__main__":

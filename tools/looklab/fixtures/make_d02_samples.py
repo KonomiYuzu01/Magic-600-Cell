@@ -24,7 +24,9 @@ import argparse
 import base64
 import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import time
 import zlib
@@ -37,6 +39,16 @@ FORMAT = 'magic600-d02-sample/1'
 PIECES = 177120
 SEAM_CHUNK = 4096
 SEAM_BUDGET = 10 ** 12
+# The Rust build folder: D02_CARGO_TARGET names another cargo target directory (a worktree's own, B15).
+TARGET = Path(os.environ['D02_CARGO_TARGET']) if os.environ.get('D02_CARGO_TARGET') else ROOT / 'rust' / 'target'
+EXE = '.exe' if os.name == 'nt' else ''
+ADAPTER = TARGET / 'release' / f'c600-jumble-adapter{EXE}'
+# B15: the domain contact graph (rust/c600-display, `cargo build --release -p c600-display --bin c600-jumble-contacts`).
+CONTACTS = TARGET / 'release' / f'c600-jumble-contacts{EXE}'
+RECORDS = ROOT / 'work' / 'build' / 'd02-contacts'
+CONTACT_METHOD = ('rust/c600-display c600-jumble-contacts: two domains touch when seam faces they hold on opposite '
+                  'sides of one world hyperplane share positive 3-volume (separating axes in binary64, relative '
+                  'tolerance 1e-7; ADR-D02 A4 method); contacts on off-grip cuts count')
 RELEASE_CHECKS = 12
 REPAIR_ROWS = 9
 
@@ -58,7 +70,6 @@ SOLVED = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
 CORRECTIONS = (0, 35)
 # Not built in B1, with the step that builds each from its consumer's rule.
 NOT_BUILT = {
-    'contact.json': 'B15 builds it: the contact graph of the alignment domains needs the seam-face geometry',
     'hidden-piece masks': 'B16 builds them, under jumbling-observation.md rule 5',
 }
 FULL_STATES = ('wj-ia-300', 'wj-ia-end', 'ia-40', 'deep-1', 'deep-2')
@@ -203,6 +214,7 @@ class Builder:
         self.out = out
         self.files = {}
         self.index = []
+        self.pending = []
 
     def put(self, relative, obj):
         assert relative not in self.files, relative
@@ -258,8 +270,17 @@ class Builder:
                                          'grip_n': rim['grip_n'], 'rows': rim['rows']})
             j1 = self.r.j1_from_record(record)
             assert j1.digest() == digest, f'{sid}: the simulator reads the record as {j1.digest()}'
-            self.put(f'{sid}/style.json', self.style(sid, digest, heights, record, j1))
-            files += ['rim.json', 'style.json']
+            style = self.style(sid, digest, heights, record, j1)
+            self.put(f'{sid}/style.json', style)
+            self.put(f'{sid}/poses.json', {
+                'format': FORMAT, 'state': sid, 'digest': digest, 'count': PIECES,
+                'encoding': 'u32le per piece, zlib then base64: the style.json row (pose table order) of each piece',
+                'sha256': record['pose_ids']['sha256'],
+                'data': base64.b64encode(zlib.compress(ids.tobytes(), 9)).decode('ascii')})
+            RECORDS.mkdir(parents=True, exist_ok=True)
+            (RECORDS / f'{sid}.json').write_text(json.dumps(record), encoding='utf-8')
+            self.pending.append((sid, RECORDS / f'{sid}.json', style))
+            files += ['rim.json', 'style.json', 'poses.json', 'contact.json']
             if caps:
                 for cap in pick_caps(rim['rows']):
                     self.put(f'{sid}/cap-{cap}.json', self.cap(engine, j1, sid, digest, rim['rows'][cap]))
@@ -294,6 +315,36 @@ class Builder:
         lattice_domain = domains.index(lattice_domains.pop()) if lattice_domains else None
         return {'format': FORMAT, 'state': sid, 'digest': digest, 'lattice_key': heights['lattice_key'],
                 'domains': domains, 'lattice_domain': lattice_domain, 'rows': rows}
+
+    def contacts(self):
+        """B15: every full state's domain contact graph, from one run of the Rust contact binary over the states'
+        records; each answer's digest and domain keys must be the state's."""
+        if not self.pending:
+            return
+        command = [str(CONTACTS), str(self.r.R.ASSETS)] + [str(path) for _, path, _ in self.pending]
+        done = subprocess.run(command, capture_output=True, text=True, check=False)
+        if done.returncode != 0:
+            raise AssertionError(f'c600-jumble-contacts exited with {done.returncode}: {done.stderr[-2000:]}')
+        lines = done.stdout.splitlines()
+        assert len(lines) == len(self.pending), (len(lines), len(self.pending))
+        for (sid, _, style), line in zip(self.pending, lines):
+            graph = json.loads(line)
+            assert graph['digest'] == style['digest'], sid
+            assert sorted(graph['domains']) == style['domains'], f'{sid}: the contact graph has other domains'
+            index = [style['domains'].index(key) for key in graph['domains']]
+            lattice = style['lattice_domain']
+            assert lattice is None or graph['domains'][0] == style['lattice_key'], sid
+            edges = sorted(sorted([index[a], index[b]]) + [on, off] for a, b, on, off in graph['edges'])
+            classes = contact_classes(len(style['domains']), edges, lattice)
+            used = sorted({c for c in classes if 1 <= c <= 6})
+            self.put(f'{sid}/contact.json', {
+                'format': FORMAT, 'state': sid, 'digest': style['digest'], 'method': CONTACT_METHOD,
+                'domains': len(style['domains']), 'lattice_domain': lattice,
+                'edges': edges, 'edges_with_lattice': sum(1 for a, b, *_ in edges if lattice in (a, b)),
+                'edges_off_grip': sum(1 for *_, off in edges if off),
+                'seam_faces': graph['seam_faces'], 'planes': graph['planes'],
+                'classes': classes, 'class_count': len(used), 'overflow': classes.count(7)})
+            log(sid, 'contacts', len(edges), 'classes', len(used), 'overflow', classes.count(7))
 
     # ------------------------------------------------------------------ one named cap
     def cap(self, engine, j1, sid, digest, rim_row):
@@ -348,7 +399,7 @@ class Builder:
         stages = wj['stages']
         assert len(records) == 841, len(records)
         menu = wj['menu']
-        with r.R.RustJumbleEngine() as e:
+        with r.R.RustJumbleEngine(binary=ADAPTER) as e:
             e.start(menu)
             identity = e.identity()
             model = e.model()
@@ -409,6 +460,7 @@ class Builder:
             e.start(menu)
             self.put('corrections.json', {'format': FORMAT, 'catalogue': e.corrections(),
                                           'nu_constants': e.nu_constants()})
+        self.contacts()
         self.put('states.json', {
             'format': FORMAT,
             'generator': 'tools/looklab/fixtures/make_d02_samples.py',
@@ -423,6 +475,27 @@ class Builder:
             'not_built': NOT_BUILT,
             'states': self.index,
         })
+
+
+def contact_classes(n, edges, lattice):
+    """ADR-D02.21's first class assignment (no earlier view state), the one `ContactClasses.Assign` makes with an
+    empty memory: DSatur over the off-lattice domains and their mutual contacts. The next domain is the one whose
+    neighbours hold the most distinct classes, then the one with the most neighbours, then the lowest index; it takes
+    the lowest class 1 to 6 its neighbours leave, or 7, the overflow state, when all six are taken. The lattice domain
+    is neutral (0)."""
+    adj = [set() for _ in range(n)]
+    for a, b, *_ in edges:
+        if lattice not in (a, b):
+            adj[a].add(b)
+            adj[b].add(a)
+    classes = [0] * n
+    todo = [d for d in range(n) if d != lattice]
+    while todo:
+        d = min(todo, key=lambda d: (-len({classes[x] for x in adj[d] if classes[x]}), -len(adj[d]), d))
+        taken = {classes[x] for x in adj[d]}
+        classes[d] = next((c for c in range(1, 7) if c not in taken), 7)
+        todo.remove(d)
+    return classes
 
 
 def apply_records(engine, records):
@@ -558,7 +631,7 @@ def main(argv=None):
     started = time.perf_counter()
     if args.layout:
         research = Research()
-        with research.R.RustJumbleEngine() as e:
+        with research.R.RustJumbleEngine(binary=ADAPTER) as e:
             e.start(read_json(WJ)['menu'])
             model = e.model()
         (OUT / 'cap-layout.json').write_bytes(dump(cap_layout(model, read_json(HOPF), model_normals())))

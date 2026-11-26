@@ -9,7 +9,7 @@ namespace Magic600.Chrome;
 // adopted revision's mode, draws the mode cell in the top bar and the Jumble mark on every view border, switches the
 // strip and the rail to the undefined numeral on the exact lattice flag, and puts Local's sections in Local. It adds
 // one panel, the cap map, to the existing bottom dock, and no layout and no dock.
-public sealed class JumbleHost
+public sealed partial class JumbleHost
 {
     public IJumbleSource Source { get; }
     public ChromeSettings Settings { get; } = new();
@@ -25,6 +25,9 @@ public sealed class JumbleHost
     public LocalCap LocalCap { get; } = new();
     // Whether a state is bound, so that Local can draw; the shell gives it, and a host without one binds none.
     private Func<bool> stateBound = () => false;
+    // Whether Local draws without a Jumble cap (the base puzzle's LocalPlan draws cell 0 there): its empty sentence then
+    // never shows, since Local is drawn.
+    private bool drawnWithoutCap;
     // Local's empty sentence, which is also the hint on its readout while it draws a cap that is not named.
     private readonly string hint;
     public CapThreshold Threshold { get; private set; } = CapThreshold.None;
@@ -39,6 +42,8 @@ public sealed class JumbleHost
     public static readonly IReadOnlySet<string> Carried = new HashSet<string>(StringComparer.Ordinal)
         { "jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear", "jumble.seat.hold",
           "jumble.focus.straddlers", "jumble.focus.domain", "jumble.focus.height",
+          // B15: the one tint channel's mode (CR-14's draft row).
+          JumbleTint.Row,
           // The Focus layer, the 0.4 Piece Filter (owner, 26 November 2026), on the bound state's pose rows.
           "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose",
           // B26: the ν-corrections' set (CR-14's mark row) and its check.
@@ -138,6 +143,7 @@ public sealed class JumbleHost
         source.Changed += Follow;
         frame.Rebuilt += Place;
         frame.Rebuilt += () => { if (GodotObject.IsInstanceValid(CapMap)) CapMap.Refresh(); };
+        WireTint();
         Follow(source.State);
     }
 
@@ -180,6 +186,7 @@ public sealed class JumbleHost
         FilterEditor.Bind(Filter);
         SyncFilter();
         Recount();
+        Reclass();
     }
 
     // The Focus layer entry on Global's border, beside its focus-layer keys (the default Solve view).
@@ -353,11 +360,18 @@ public sealed class JumbleHost
     // Local's readout while it draws a cap that is not named, or none.
     public string? LocalWords => LocalCap.Words(hint);
 
-    // The cap Local draws follows the naming and the binding; the empty sentence shows only while it draws none.
+    // The shell says whether Local draws without a Jumble cap (the base puzzle, ADR-D01.40).
+    public void SetDrawnWithoutCap(bool value)
+    {
+        drawnWithoutCap = value;
+        FollowLocal();
+    }
+
+    // The cap Local draws follows the naming and the binding; the empty sentence shows only while Local draws nothing.
     private void FollowLocal()
     {
         LocalCap.Follow(Naming.Named, stateBound());
-        Surface.SetDrawn(LocalCap.Shown != null);
+        Surface.SetDrawn(LocalCap.Shown != null || drawnWithoutCap);
     }
 
     // The threshold, the named cap and its meeting caps over the cap map, and the threshold row on Global's border.
@@ -392,6 +406,7 @@ public sealed class JumbleHost
         "jumble.focus.domain" or "jumble.focus.height" when Style == null => "no state is bound",
         "jumble.focus.domain" when Whole(argument) is not int d || d >= Style!.Domains.Count => "it needs a domain number, 0 to " + (Style!.Domains.Count - 1) + ", as in > jumble.focus.domain 5",
         "jumble.focus.height" when Whole(argument) == null => "it needs k, as in > jumble.focus.height 4",
+        JumbleTint.Row when argument != null && JumbleTint.Parse(argument) == null => "it needs a mode: none, contact, height or off-lattice; without one it steps to the next",
         "jumble.corrections.mark" or "jumble.corrections.check" when Corrections.Model == null => "the build has no ν-correction catalogue",
         "jumble.corrections.mark" when MarkOf(argument) == null => "it needs a row id and a multiplicity, as in > jumble.corrections.mark 35 +1",
         _ => null,
@@ -422,8 +437,9 @@ public sealed class JumbleHost
                 FocusOn(JumbleFocus.StraddlersOf(Naming.Named, Naming.Named is int n && RecordSource != null ? RecordSource(n) : null));
                 break;
             case "jumble.focus.domain" when Style != null && Whole(argument) is int d && d < Style.Domains.Count:
-                domainShown = d; FocusOn(JumbleFocus.DomainOf(Style, d));
+                domainShown = d; FocusOn(JumbleFocus.DomainOf(Style, d)); DimOthers();
                 break;
+            case JumbleTint.Row: SetTint(argument); break;
             case "jumble.focus.height" when Style != null && Whole(argument) is int k:
                 heightShown = k; FocusOn(JumbleFocus.HeightOf(Style, k));
                 break;
@@ -483,28 +499,12 @@ public sealed class JumbleHost
         Row(frame.Global, "JumbleTotals", totals, totalsMarked, Source.State.Mode);
         Row(frame.Local, "JumbleCap", cap ?? Array.Empty<ReadoutSlot>(), capMarked, Source.State.Mode && cap != null);
         DefaultLine(frame.Local);
+        Legends();
         Border(frame.Global, Source.State.Mode && Threshold.IsSet && CapThreshold.OnGlobalBorder(frame.Model.Docks[DockSide.Bottom].Open));
     }
 
     // Local's readout while it draws a cap that is not named: it says so, with the hint, which its tooltip repeats.
-    private void DefaultLine(ViewFrame view)
-    {
-        if (!GodotObject.IsInstanceValid(view)) return;
-        Label? line = view.Readouts.GetNodeOrNull<Label>("JumbleLocalDefault");
-        if (LocalWords is not { } words)
-        {
-            if (line != null) { view.Readouts.RemoveChild(line); line.QueueFree(); }
-            return;
-        }
-        if (line == null)
-        {
-            line = ChromeWidgets.Text("", "MicroLabel"); line.Name = "JumbleLocalDefault";
-            line.AutowrapMode = TextServer.AutowrapMode.WordSmart; line.MouseFilter = Control.MouseFilterEnum.Pass;
-            line.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill; view.Readouts.AddChild(line);
-        }
-        line.Text = words; line.TooltipText = hint;
-        line.AddThemeColorOverride("font_color", frame.Tokens.C("text.dim"));
-    }
+    private void DefaultLine(ViewFrame view) => ViewLine.Set(view, "JumbleLocalDefault", LocalWords, hint, frame.Tokens.C("text.dim"));
 
     // ADR-D02.15: while the cap map's dock is closed, the threshold field and its count stay on Global's border.
     private void Border(ViewFrame view, bool on)
