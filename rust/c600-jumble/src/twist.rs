@@ -5,8 +5,8 @@
 //! float request (`params.requested`), is an adapter error and no refusal. A twist's rotation plane, which a swept
 //! preview needs, is named exactly by the engine ([`rotation_plane`]).
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::collections::{HashMap, VecDeque};
+use std::sync::{Arc, Mutex, PoisonError};
 
 use c600_kernel::json::Value;
 
@@ -242,6 +242,21 @@ pub struct Menu {
     pub identity: String,
     /// The menu-order digest: the same keys in item order.
     pub order: String,
+    /// The twists at the caps used most recently, newest first ([`Menu::for_cap`]).
+    kept: Mutex<VecDeque<KeptCap>>,
+}
+
+/// How many caps' twists a menu keeps (C9, 26 Nov 2026). Building a cap's twists was the largest pure cost of a twist's
+/// commit (about 5 ms for the 60-item menu); one cap's twists take about 200 KB.
+const KEPT_CAPS: usize = 32;
+
+/// One cap's twists with the model, frame and pole they were built from.
+struct KeptCap {
+    cap: usize,
+    model: Vec<(String, String)>,
+    frame: Mat4,
+    pole: Vec4,
+    twists: Arc<[Twist]>,
 }
 
 impl Menu {
@@ -305,14 +320,43 @@ impl Menu {
                 return Err("menu record identity disagrees with exact matrices".into());
             }
         }
-        Ok(Menu { name, items, keys, identity, order })
+        Ok(Menu { name, items, keys, identity, order, kept: Mutex::new(VecDeque::new()) })
     }
 
-    /// The menu's twists at cap c, in item order.
+    /// The menu's twists at cap c, in item order. The twists of the [`KEPT_CAPS`] caps used most recently are kept and
+    /// reused only while `ctx`'s model identity (the digests of its model files, from which its K⁺ table is built) and
+    /// its frame and pole at c equal the ones they were built from, so a kept answer is the one a fresh build gives. A
+    /// build that fails is not kept.
     pub fn for_cap(&self, ctx: &Context, c: usize) -> Result<Vec<Twist>, RecordError> {
         let f = ctx.kplus.matrix(ctx.kplus.frame_idx[c], &ctx.model);
+        let pole = ctx.model.poles.get(c);
+        if let Some(twists) = pole.and_then(|pole| self.kept_at(c, &ctx.model.identity, f, pole)) {
+            return Ok(twists.to_vec());
+        }
         let ft = transpose(f);
-        self.items.iter().map(|(_, m)| Twist::new(ctx, c, matmul(&matmul(f, m), &ft))).collect()
+        let twists: Vec<Twist> =
+            self.items.iter().map(|(_, m)| Twist::new(ctx, c, matmul(&matmul(f, m), &ft))).collect::<Result<_, _>>()?;
+        if let Some(pole) = pole {
+            self.keep(c, &ctx.model.identity, f, pole, &twists);
+        }
+        Ok(twists)
+    }
+
+    fn kept_at(&self, cap: usize, model: &[(String, String)], frame: &Mat4, pole: &Vec4) -> Option<Arc<[Twist]>> {
+        let mut kept = self.kept.lock().unwrap_or_else(PoisonError::into_inner);
+        let at = kept.iter().position(|k| k.cap == cap && k.model == model && k.frame == *frame && k.pole == *pole)?;
+        let entry = kept.remove(at)?;
+        let twists = entry.twists.clone();
+        kept.push_front(entry);
+        Some(twists)
+    }
+
+    fn keep(&self, cap: usize, model: &[(String, String)], frame: &Mat4, pole: &Vec4, twists: &[Twist]) {
+        let mut kept = self.kept.lock().unwrap_or_else(PoisonError::into_inner);
+        kept.retain(|k| k.cap != cap);
+        let model = model.to_vec();
+        kept.push_front(KeptCap { cap, model, frame: frame.clone(), pole: pole.clone(), twists: twists.into() });
+        kept.truncate(KEPT_CAPS);
     }
 
     pub fn contains(&self, ctx: &Context, twist: &Twist) -> bool {

@@ -416,3 +416,33 @@ fn identical_requests_give_identical_choices_and_records() {
     assert_eq!(wire::token_of_binary64(0x8000_0000_0000_0000).unwrap(), "0:0");
     assert_eq!(wire::token_of_binary64(0).unwrap(), "0:0");
 }
+
+/// C9 (26 Nov 2026): a menu keeps the twists of the caps used most recently (`Menu::for_cap`). Every answer equals a
+/// fresh build's: at a cap asked for the first time, at the same cap asked again, past the number of kept caps, and at
+/// a cap whose kept twists were dropped.
+#[test]
+fn a_menu_s_kept_twists_equal_a_fresh_build_at_every_cap() {
+    use c600_jumble::q5::{matmul, transpose};
+    use c600_jumble::twist::Twist;
+    let menu = pinned();
+    let fresh = |cap: usize| -> Vec<Twist> {
+        let f = ctx().kplus.matrix(ctx().kplus.frame_idx[cap], &ctx().model);
+        let ft = transpose(f);
+        menu.items
+            .iter()
+            .map(|(_, m)| Twist::new(ctx(), cap, matmul(&matmul(f, m), &ft)).expect("a menu twist"))
+            .collect()
+    };
+    let same = |a: &[Twist], b: &[Twist]| {
+        a.len() == b.len()
+            && a.iter().zip(b).all(|(x, y)| x.grip == y.grip && *x.matrix == *y.matrix && x.kidx == y.kidx)
+    };
+    let caps: Vec<usize> = (0..40).map(|i| (i * 37) % 600).chain([0, 37, 74, 1443 % 600]).collect();
+    for cap in caps {
+        let expected = fresh(cap);
+        let first = menu.for_cap(ctx(), cap).expect("the menu at the cap");
+        let again = menu.for_cap(ctx(), cap).expect("the menu at the cap, kept");
+        assert!(same(&expected, &first), "cap {cap}: the menu's twists differ from a fresh build");
+        assert!(same(&expected, &again), "cap {cap}: the kept twists differ from a fresh build");
+    }
+}
