@@ -223,7 +223,7 @@ internal static class LiveChecks
             app.View.Material.GetShaderParameter("focus_cos").AsDouble() < -1.5 && app.State.Preset.Params.Choice("projection") != "",
             fault, "Local does not draw its own shape of the moving cells");
         // The two inspector tiers read one model; a View field acts on the lab, stays in range and resets.
-        LabInspect inspect = LabFrame.InspectOf(frame);
+        SampleInspect inspect = LabFrame.InspectOf(frame);
         double gapWas = app.State.Preset.Params.Number("gap"), gapDefault = inspect.Inspector["view.gap"].Default;
         frame.Model.ShowDock(DockSide.Right, "inspector"); frame.Flush();
         ValueField gapField = inspect.Panel.Fields.Single(f => f.Field.Id == "view.gap");
@@ -436,7 +436,7 @@ internal static class LiveChecks
 
     private static void Scripts(ChromeFrame frame, string fault)
     {
-        LabScripts scripts = LabFrame.ScriptsOf(frame); LabDemo demo = LabFrame.DemoOf(frame); LabInspect inspect = LabFrame.InspectOf(frame);
+        LabScripts scripts = LabFrame.ScriptsOf(frame); LabDemo demo = LabFrame.DemoOf(frame); SampleInspect inspect = LabFrame.InspectOf(frame);
         Require(scripts.Programs.Count == 4 && scripts.Find("script.sweep.ring") is { Kind: ScriptKind.Preview } && scripts.Find("script.census.orbits") is { Kind: ScriptKind.Read } &&
             scripts.Find("script.layout.stacked") is { Kind: ScriptKind.View } && scripts.Programs.All(p => SixCs.Diagnose(p.Source).Count == 0), fault, "the sample programs or their entry points are missing");
         demo.Preview.Discard(); int entries = demo.Moves.Entries.Count;

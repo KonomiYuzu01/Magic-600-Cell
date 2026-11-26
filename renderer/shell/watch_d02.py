@@ -2,10 +2,11 @@
 
   python renderer/shell/watch_d02.py [--state ID] [--build DIR] [--follow] [--runs DIR]
 
-Run it from a PowerShell on the desktop. It starts the newest product build (or --build) with the frame, Jumble on and
-D02 on, in a fresh run folder under work/d02-watch/. The window never sits on top and never takes the foreground (the
-owner, 26 November 2026): it opens behind the window you are using, and you switch to it when you want to look. Close
-it as any window; the command ends with it.
+Run it from a PowerShell on the desktop. It starts the newest product build (or --build) with the frame, Jumble on,
+sample mode (ADR-D01's whole frame on sample data, marked as such) and D02 on, in a fresh run folder under
+work/d02-watch/. The window never sits on top and never takes the foreground (the owner, 26 November 2026): it opens
+behind the window you are using, and you switch to it when you want to look. Close it as any window; the command ends
+with it.
 
 --follow keeps one window across build steps. Every few seconds it checks:
 - a data-only change (tools/looklab/data/samples or tools/looklab/data/design): the running shell reloads the data in
@@ -53,7 +54,7 @@ def launch_arguments(build: Path, out: Path, state: str | None, place: dict | No
     """launch.py's arguments for a watched start: the frame, Jumble on, D02 on with a data-only reload, and the old
     window's place and size on a restart. Nothing asks for the foreground or for a topmost window."""
     arguments = [sys.executable, "-B", str(HERE / "launch.py"), "--out", str(out), "--build", str(build), "--frame",
-                 "--puzzle", "jumble-on", "--d02", "--d02-data", str(DATA)]
+                 "--puzzle", "jumble-on", "--sample", "--d02", "--d02-data", str(DATA)]
     if state:
         arguments += ["--d02-state", state]
     if place:

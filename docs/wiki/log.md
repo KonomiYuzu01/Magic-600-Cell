@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | ADR-D01's frame in the product on sample data; B5 and B6 without a stop
+The owner asked for ADR-D01's whole frame in the product shell while ADR-D02 is built, and for B5 and B6 to follow without a stop for the owner's check ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), section 7). This pulls the frame on sample data, part of ADR-D03's scope, into ADR-D02's pull request; [the framework](../progress/1.0/adr-d02-build-framework.md) records it as step B4a.
+
 ## [2026-11-26] decision | The log flow joins stage 2's acceptance; LP6 waits for ADR-D03 and K2
 The owner added the log and document flow as the sixth flow of stage 2's usable acceptance and set LP6's start for when the ADR-D03 and K2 lines start ([decision](decisions/owner-decisions-2026-11-26-log-flow.md)). The backend parts the flow still needs are indexed with K2's greybox stage.
 

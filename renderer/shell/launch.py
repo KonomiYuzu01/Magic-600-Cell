@@ -49,6 +49,11 @@ fresh session copy; and the seconds since the previous product exit, from `work/
 every launch rewrites when the shell exits, or null when there is none or it is from another boot (DRAFT: "this sign-in"
 read as "this boot").
 
+Sample mode (B4a): `--sample` (with `--frame` only) adds `M600_SAMPLE=1`, which mounts ADR-D01's whole frame on sample
+data, marked by a "sample" chip: the strip, the rail, the draft line, the Library, the inspector's tiers, Problems,
+Console, Tasks, the editor and scripts, the key map and the pick layers. The views, History, the readouts and the
+session's undo and redo stay the real session's.
+
 ADR-D02's build (B4): `--d02` (with `--frame` only) adds `M600_D02=1`, which turns the frame's D02 surfaces on, and
 starts the shell for watching: never on top and never taking the foreground (the owner, 26 November 2026). The process
 gets STARTUPINFO with SW_SHOWNOACTIVATE, and `M600_D02_FOREGROUND` names the window that had the foreground just before
@@ -97,7 +102,7 @@ SHELL_VARIABLES = ("M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS
                    "M600_LX4_DLL", "M600_LX4_FIXTURES", "M600_SESSION_FIXTURE", "M600_RUNTIME",
                    "M600_EXIT_AT_FIRST_FRAME", "M600_LX2", "M600_CHROME", "M600_EDITOR", "M600_EDITOR_DLL",
                    "M600_D02", "M600_D02_STATE", "M600_D02_FIXTURE", "M600_D02_SCRIPT", "M600_D02_FOREGROUND",
-                   "M600_D02_DATA")
+                   "M600_D02_DATA", "M600_SAMPLE")
 # The file of an LX-4 fixture folder that the launcher checks and records (renderer/bridge/lx4's fixtures.rs).
 LX4_MANIFEST = "MANIFEST.json"
 # LX-2's fault variables, which the injection child reads at its start: a run starts with them unset, and only LX-2's
@@ -166,7 +171,7 @@ def d02_folder(d02: bool, fixture: Path | None) -> Path | None:
 def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, base: dict | None = None,
                 puzzle: str = PUZZLES[0], lx4: Path | None = None, cold_start: bool = False,
                 lx2_injection: Path | None = None, frame: bool = False, editor: bool = False,
-                d02: dict | None = None) -> dict:
+                d02: dict | None = None, sample: bool = False) -> dict:
     """The process environment: `base` (default: this process's) without any shell variable or LX-2 fault variable,
     then the launch's. `lx4` is LX-4's fixture folder, which turns its module on with the build's library.
     `lx2_injection` replaces the build's runtime with LX-2's injection child. `editor` turns the editor panel on
@@ -188,6 +193,8 @@ def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, 
         env["M600_EXIT_AT_FIRST_FRAME"] = "1"
     if frame:
         env["M600_CHROME"] = "1"
+    if sample:
+        env["M600_SAMPLE"] = "1"
     if editor:
         env.update({"M600_EDITOR": "1", "M600_EDITOR_DLL": str(build / build_product.EDITOR_DLL)})
     if lx2_injection is not None:
@@ -386,6 +393,8 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
                         help="charter E3: wait 20 s since the previous exit; the shell quits at its first correct frame")
     parser.add_argument("--frame", action="store_true",
                         help="open the frame (A5): the chrome library over the window, the core under the Global view")
+    parser.add_argument("--sample", action="store_true",
+                        help="sample mode (B4a): ADR-D01's whole frame on sample data, marked as such; needs --frame")
     parser.add_argument("--editor", action="store_true",
                         help="LP4-3: create the editor panel of the write-check-run flow in the shell")
     parser.add_argument("--position", help="the window's top left corner as X,Y (a watched restart keeps its place)")
@@ -419,6 +428,10 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
             raise LaunchError("--position must be X,Y")
         fixtures = lx4_folder(args.lx4, args.lx4_fixtures)
         manifest = None if fixtures is None else injection_record(fixtures / LX4_MANIFEST)["sha256"]
+        if args.sample and not args.frame:
+            raise LaunchError("--sample needs --frame: sample mode fills the frame")
+        if args.sample and args.cold_start:
+            raise LaunchError("--cold-start measures the product; a sample-mode start is not measured")
         if args.d02 and not args.frame:
             raise LaunchError("--d02 needs --frame: the D02 surfaces live in the frame")
         if not args.d02 and (args.d02_state or args.d02_script is not None or args.d02_data is not None):
@@ -447,7 +460,7 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
                    if value}
         env = environment(product, build, out, run_id, args.echo, puzzle=args.puzzle, lx4=fixtures,
                           cold_start=args.cold_start, lx2_injection=child, frame=args.frame, editor=args.editor,
-                          d02=d02)
+                          d02=d02, sample=args.sample)
     except (LaunchError, build_product.ProductError, OSError) as error:
         out_stream(f"launch: {error}")
         return 2
@@ -496,7 +509,7 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
         stream.write(json.dumps({"format": FORMAT, "run_id": run_id, "build_identity": product["identity"],
                                  "echo": args.echo, "puzzle": args.puzzle, "lx4": args.lx4,
                                  "lx4_fixtures": None if manifest is None else {"manifest_sha256": manifest},
-                                 "lx2_injection": injection, "editor": args.editor,
+                                 "lx2_injection": injection, "editor": args.editor, "sample": args.sample,
                                  "d02": None if d02 is None else {
                                      "state": args.d02_state,
                                      "fixture": None if d02_fixture is None else {

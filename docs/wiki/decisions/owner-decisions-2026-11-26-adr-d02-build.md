@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-26-adr-d02-build
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; and the build waits for the owner's go before B1.
+summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; the build waits for the owner's go before B1; and, later that day, ADR-D01's whole frame enters the product shell on sample data in this build (part of ADR-D03's scope), after which B5 and B6 run without a stop for the owner's check.
 related: [owner-decisions-2026-11-26-adr-d02-a4, owner-decisions-2026-11-25, owner-decisions-2026-11-22-adr-line-evening, owner-decisions-2026-11-22-design-art-path]
 supersedes: []
 claims:
@@ -13,6 +13,8 @@ claims:
   - {id: two-drawn-views, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: measure-before-r5, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: watching-window-never-on-top, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: d01-frame-on-sample-data, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: b5-b6-without-stop, evidence_kind: decision, checked_at: 2026-11-26}
 ---
 
 # Owner decisions on ADR-D02's build framework
@@ -93,3 +95,26 @@ The integrator's reading:
 - Gate measurement runs that need the foreground by design keep their own foreground rules. They run in quiet windows
   arranged with the owner.
 - The framework's section 1, B1, B4 and C1 carry the rule.
+
+## 7. ADR-D01's frame in the product on sample data, then B5 and B6 without a stop
+
+Asked in the design-system ADR line on the afternoon of 26 November 2026, after B4 landed, and relayed to the ADR-D02
+session. The owner's question, translated: "Why is D01's Look Lab frame not connected now? And the build just now was
+not shown either?" The integrator listed the work on one message: fix the dock bug, mount ADR-D01's whole frame in the
+product on sample data, then B5 and B6. The owner's answer, translated: "Do all of it, then go on to B5 and B6; no need
+to stop and wait for me to check."
+
+The integrator's reading:
+- A new step, B4a, mounts ADR-D01's whole frame in the product shell on sample data behind a launch switch
+  (`launch.py --sample`), with a visible "sample" chip: the relationship strip and the orbit rail, the draft line with
+  its Goal and Net/Strict chip, the Library and its signatures, the inspector's tiers, Problems, Console and Tasks, the
+  editor, the Scripts dock and the script panel slots, the key map drawn as a keyboard, the pick and focus layer keys,
+  and the readouts where data exists. Sample facts never pass for the real session's: the session's History dock, its
+  readouts and its undo and redo stay its own.
+- This pulls part of ADR-D03's scope, the frame in the product on sample data, into ADR-D02's pull request. One copy:
+  the shell stages Look Lab's sample wiring and shares it, never duplicates it. Global anchors need the core's
+  projection and are left out; Local stays with B18a to B18c, and the look and palette with B14.
+- B5 and B6 follow at once. C1, the checkpoint after B6, runs the integrator's own checks and records them; it does not
+  stop for the owner. The integrator reports what landed when B6 is done.
+- The watching window stays open from the session's process through this work, and every new build goes into it, under
+  section 6's rule.

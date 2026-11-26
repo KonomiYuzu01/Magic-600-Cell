@@ -58,7 +58,7 @@ internal static class Sweep
         }
         tree.Root.Size = new Vector2I(1600, 900); await Frames(3);
         Trace("window " + session.GetViewport().GetVisibleRect() + " frame " + session.Frame.GetGlobalRect());
-        ChromeFrame frame = session.Frame; LabKit kit = LabFrame.KitOf(frame); LabInspect inspect = LabFrame.InspectOf(frame);
+        ChromeFrame frame = session.Frame; LabKit kit = LabFrame.KitOf(frame); SampleInspect inspect = LabFrame.InspectOf(frame);
         if (fault == "a5-missing-token") frame.Tokens.C("no.such.token");
         if (fault == "a5-listener-throws") inspect.Feedback.Changed += () => throw new InvalidOperationException("injected listener failure");
         // The ten-second sample task ends; a command must still run after it.

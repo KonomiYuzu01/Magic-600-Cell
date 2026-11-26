@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using Godot;
+using LookLab.App.Live;
 using Magic600.Chrome;
 using Magic600.Shell.D02;
 
@@ -41,8 +42,17 @@ public sealed class ShellChrome
 
     public ChromeFrame Frame { get; }
     public MoveHistory Moves { get; } = new();
+    /// <summary>
+    /// Sample mode (B4a): ADR-D01's whole frame on sample data, behind launch.py --sample, or null when it is off. The
+    /// views, the History dock, the readouts and the session's undo and redo stay the real session's.
+    /// </summary>
+    internal SampleMount? Sample { get; }
+    /// <summary>Whether sample mode is on: launch.py --sample sets M600_SAMPLE=1.</summary>
+    public static bool SampleOn => System.Environment.GetEnvironmentVariable("M600_SAMPLE") == "1";
+    public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts and History (sample) hold sample data. The views, History, the revision and the history position are this session's.";
     private readonly bool _live;
     private readonly Readout _revision, _position;
+    private readonly Readout? _queue;
     private readonly HashSet<Key> _taken = new();
     private readonly Func<string, string?, string?> _unavailable;
     private ulong _shown;
@@ -132,6 +142,7 @@ public sealed class ShellChrome
             ShellJumble.AddRows(registry, folder);
         }
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
+        SampleMount? sample = null;
         var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
         frame.AddPane("gallery", "Gallery", gallery);
         string? Unavailable(string command, string? argument) => command switch
@@ -140,6 +151,7 @@ public sealed class ShellChrome
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
             _ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,
+            _ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),
             _ => NotHere,
         };
         _unavailable = Unavailable;
@@ -153,6 +165,12 @@ public sealed class ShellChrome
         frame.OverlayCommands.Add("transient.close");
         frame.OverlayCommands.Add("help.open");
         frame.OverlayCommands.Add("command.find");
+        if (SampleOn)
+        {
+            sample = Sample = new SampleMount(frame, registry, keymap, ProjectSettings.GlobalizePath("res://sample-root"),
+                id => motions.Seconds(id, design, look.ReducedMotion), Execute,
+                k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet);
+        }
 
         void ApplyLook(bool rebuild, bool scene) => frame.ApplyTokens(look.Resolve(), rebuild);
         appearance.Changed += ApplyLook;
@@ -171,13 +189,18 @@ public sealed class ShellChrome
                 frame.Say($"{registry.Commands[command].Label}: {why}", true);
                 return;
             }
+            sample?.Echo(command, argument);
             switch (command)
             {
                 case "command.find": palette.Open(); break;
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
-                case var menu when keymap.Radials.ContainsKey(menu): radial.Open(keymap.Radials[menu], frame.GetLocalMousePosition()); break;
+                case var menu when keymap.Radials.ContainsKey(menu):
+                    radial.Open(sample != null ? sample.WithContext(keymap.Radials[menu]) : keymap.Radials[menu], frame.GetLocalMousePosition());
+                    break;
                 case "transient.close":
+                    sample?.Keys.Shown.Pin(false);
                     if (frame.OpenOverlay is { } open) open.Close();
+                    else if (sample != null && sample.Inspect.Feedback.CancelLatest()) { }
                     else if (frame.Model.FocusMode) frame.Model.SetFocusMode(false);
                     else if (frame.Model.PairMaximised) frame.Model.SetPairMaximised(false);
                     break;
@@ -190,6 +213,7 @@ public sealed class ShellChrome
                 case "theme.select" when argument == "preset.next": NextPreset(); break;
                 case "theme.select": appearance.Edit(a => a.SetTheme(themes[(Array.FindIndex(themes, t => t.Id == a.Theme) + 1) % themes.Length].Id), true, true); break;
                 case "density.preset.set": NextDensity(); break;
+                case var handled when sample != null && sample.Handles(handled): sample.Execute(command, argument); break;
             }
         }
         palette.Run += row => Execute(row.Command, row.Argument);
@@ -209,7 +233,10 @@ public sealed class ShellChrome
         // The commit bar is the frame's own; the host stages no preview yet, so it stays empty.
         var bar = new CommitBar(new PreviewModel(), () => frame.Tokens) { CommitKeys = keymap.KeysFor("operation.preview.commit", null) };
         bar.Command += Execute;
-        frame.SetStrip(bar);
+        if (sample == null)
+        {
+            frame.SetStrip(bar);
+        }
         history.Command += (command, argument) => frame.Say(registry.Commands.TryGetValue(command, out var named) ? named.Label + ": " + NotHere : NotHere, true);
 
         var find = SessionWidgets.Tool("search", $"Find a command ({keymap.KeysFor("command.find", null)})", frame.Tokens, palette.Open);
@@ -226,6 +253,19 @@ public sealed class ShellChrome
         }
         frame.BarTools.AddChild(SessionWidgets.Chip(live ? "core" : "no core", frame.Tokens.C(live ? "severity.ok" : "severity.warning"),
             live ? "The core draws the Global view beneath the window" : "The shell was started without the core: nothing is drawn"));
+        if (sample != null)
+        {
+            var chip = SessionWidgets.Chip("sample", frame.Tokens.C("text.dim"), SampleWords);
+            chip.Name = "SampleChip";
+            frame.BarTools.AddChild(chip);
+            _queue = new Readout("QueueReadout", "readout.queue", "Script runs waiting or running (sample)", () => frame.Tokens);
+            frame.BarTools.AddChild(_queue);
+            frame.BarTools.MoveChild(_queue, 0);
+            var clock = new Godot.Timer { WaitTime = .25, Autostart = true, Name = "SampleQueueClock" };
+            clock.Timeout += () => { if (GodotObject.IsInstanceValid(_queue)) _queue.Show(HistoryReadouts.Queue(sample.Scripts.Queue.Active.Count())); };
+            frame.AddChild(clock);
+            sample.Changed += Describe;
+        }
         if (ShellJumble.On)
         {
             ShellJumble.Attach(parent, frame, palette);
@@ -241,7 +281,7 @@ public sealed class ShellChrome
         }
         void Icons()
         {
-            _revision.Dress(); _position.Dress();
+            _revision.Dress(); _position.Dress(); _queue?.Dress();
             ChromeIcons.Apply(find, "search", frame.Tokens.Px("icon.small")); ChromeIcons.Apply(help, "help.keys", frame.Tokens.Px("icon.small"));
             ChromeIcons.Apply(preset, "preset.next", frame.Tokens.Px("icon.small"));
         }
@@ -261,7 +301,7 @@ public sealed class ShellChrome
             return;
         }
         _revision.Set("r " + _shown.ToString("0000", CultureInfo.InvariantCulture));
-        _position.Set($"{Moves.Cursor}/{Moves.Entries.Count}");
+        _position.Show(HistoryReadouts.Position(Moves));
         Frame.Global.ClearMarks();
         if (_live)
         {
@@ -273,6 +313,8 @@ public sealed class ShellChrome
             Frame.Global.SetStatus("not drawn", Array.Empty<string>(), null);
         }
         Frame.Local.SetStatus("not drawn yet", Array.Empty<string>(), null);
+        Sample?.Marks(Frame.Global);
+        Sample?.Marks(Frame.Local);
     }
 
     /// <summary>The window pixels of the Global view's opening; empty while the view is not on screen.</summary>

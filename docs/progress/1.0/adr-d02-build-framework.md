@@ -175,6 +175,27 @@ relative path is from the repository root.
 - **Checkpoint:** no.
 - **Depends:** B2.
 
+### B4a. ADR-D01's frame in the product on sample data
+- **Goal:** the owner sees ADR-D01's whole frame in the product shell on sample data while D02 is built (owner, 26 November 2026: [the decision page](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-build.md), section 7). This pulls part of ADR-D03's scope into this pull request.
+- **Items:** none new.
+- **Files:**
+  - `tools/looklab/app/Live/LabInspect.cs` split into new `SampleInspect.cs` (the shared sample inspector, Problems, Console and Tasks) and Look Lab's own View fields; `LabFrame.cs`, `LabScripts.cs`, `LiveSession.cs`, `Sweep.cs` follow the type;
+  - new `tools/looklab/app/Live/SampleMount.cs`;
+  - `renderer/shell/build_shell.py`, `launch.py`, `watch_d02.py`, `renderer/shell/project/ShellChrome.cs`;
+  - `tests/test_renderer_shell.py`.
+- **As built (integrator, 26 November 2026):**
+  - The dock bug first (commit `af8a1bb1`): the shell gave the Library and History docks no content, so the Solve and Analyse layouts left them closed. The shell now puts its History on the right and the Library on the left, as the layouts name them, and the "Reference" layout is called "Learn".
+  - `launch.py --sample` (needs `--frame`, refuses `--cold-start`, never in a measured run) sets `M600_SAMPLE=1` and records `sample` in `launch.json`. `watch_d02.py` always starts it.
+  - With it on, `ShellChrome` builds a `SampleMount`, which mounts Look Lab's sample wiring on the shell's frame: the relationship strip on the seam and the orbit rail; the draft line with Goal and Net/Strict over the sample commit bar; the Library dock with its signatures; the inspector strip and panel; Problems, Console and Tasks with their badges and a sample task; the editor; the Scripts dock and the script panel slots; the key map drawn as a keyboard (help key held, or pinned); the pick-layer keys 6 to 0 and F10 beside each view; and the panel states on F12. A grey "sample" chip in the bar says so.
+  - The real session keeps its own parts. `SampleMount.Handles` never takes `session.undo` or `session.redo`; the sample history is a dock panel of its own, "History (sample)"; the History dock, the position readout and the queue readout read the session's moves. The draft rows of `ShellJumble` are refused before sample mode is asked.
+  - One copy: `build_shell.py` stages `LabDemo.cs`, `LabSolve.cs`, `LabScripts.cs`, `SampleInspect.cs` and `SampleMount.cs` from `tools/looklab/app/Live/` to `project/Live/`, and the sample programs, packages, key maps and the seed atlas they read to `project/sample-root/`. None of the five reads Look Lab's engine.
+  - Not drawn: Global anchors (they need the core's projection), Local's own content (B18a to B18c) and the look and palette (B14).
+- **Check:** `python tests/test_renderer_shell.py` (52 tests, with the new `SampleMode` and `ShellDocks` classes); `python tools/looklab/check.py` (LookLab.Tests 159 of 159) and `python tools/looklab/check.py --godot` (exit 0), since Look Lab's sources changed; `python renderer/shell/build_shell.py` and `build_product.py` (PASS, `c9-product-0d21b48f094c05dc`), and that build in the watching window in sample mode.
+- **Owner sees:** the frame with the Library dock, the session's History, the strip and the rail, the draft line, the inspector strip, the sample chip and the task readout, in the watching window.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B4.
+
 ### B5. Session fixtures at the sample states, and the state digest
 - **Goal:** the shell opens a real Jumble session at a sample state, and the chrome knows which sample matches it.
 - **Items:** none new.

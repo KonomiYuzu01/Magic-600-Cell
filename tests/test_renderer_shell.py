@@ -1291,5 +1291,82 @@ class ShellDocks(unittest.TestCase):
                     self.assertIn(side, placed.get(panel, set()), f"{layout['name']}: {panel} is not in the {side} dock")
         self.assertEqual([layout["name"] for layout in layouts], ["Solve", "Script", "Analyse", "Learn", "Gallery"])
 
+class SampleMode(unittest.TestCase):
+    """B4a: ADR-D01's whole frame in the product shell on sample data (launch.py --sample), with Look Lab's sample
+    wiring staged from its one copy, a visible sample chip, and the real session's parts kept apart."""
+
+    setUp = ProductBuild.setUp
+    launched = D02Launch.launched
+
+    def test_the_build_stages_the_shared_wiring_and_its_data(self):
+        build_shell = shell_module("build_shell")
+        project = self.temp / "staged"
+        build_shell.stage(project)
+        live = ROOT / "tools" / "looklab" / "app" / "Live"
+        for name in build_shell.LIVE_FILES:
+            self.assertEqual((project / "Live" / name).read_bytes(), (live / name).read_bytes(), name)
+        self.assertTrue((project / "sample-root" / "assets" / "seed_atlas.json").is_file())
+        for pattern in build_shell.SAMPLE_ROOT_GLOBS:
+            found = sorted(ROOT.glob(pattern))
+            self.assertTrue(found, pattern)
+            for path in found:
+                self.assertTrue((project / "sample-root" / path.relative_to(ROOT)).is_file(), path.name)
+        # One copy: the shell's own sources hold none of the shared wiring.
+        for name in build_shell.LIVE_FILES:
+            self.assertFalse(list(SHELL.rglob(name)), name)
+        # The shared wiring needs nothing of Look Lab's engine.
+        for name in build_shell.LIVE_FILES:
+            self.assertNotIn("LookLab.Core", text(live / name), name)
+            self.assertNotIn("LabApp", text(live / name), name)
+
+    def test_sample_needs_the_frame_and_is_never_measured(self):
+        def refuse(*args, **kwargs):
+            raise AssertionError("a refused launch started a process")
+        for flags in (["--sample"], ["--frame", "--sample", "--cold-start"]):
+            out = self.temp / "refused"
+            self.assertEqual(self.launch.main(["--out", str(out), "--build", str(self.build), *flags], popen=refuse,
+                                              out_stream=lambda line: None), 2, flags)
+            self.assertFalse(out.exists(), flags)
+
+    def test_a_sample_launch_sets_the_switch_and_records_it(self):
+        code, started, out = self.launched(["--frame", "--sample"])
+        self.assertEqual(code, 0)
+        self.assertEqual((started["env"]["M600_SAMPLE"], started["env"]["M600_CHROME"]), ("1", "1"))
+        self.assertTrue(json.loads((out / "launch.json").read_text(encoding="utf-8"))["sample"])
+        shutil.rmtree(out)
+        code, started, out = self.launched(["--frame"])
+        self.assertNotIn("M600_SAMPLE", started["env"])
+        self.assertFalse(json.loads((out / "launch.json").read_text(encoding="utf-8"))["sample"])
+        product = self.build_product.verify(self.build)
+        env = self.launch.environment(product, self.build, self.temp / "run", "r1", False, base={"M600_SAMPLE": "1"})
+        self.assertNotIn("M600_SAMPLE", env)
+
+    def test_the_real_session_keeps_its_parts(self):
+        mount = text(ROOT / "tools" / "looklab" / "app" / "Live" / "SampleMount.cs")
+        self.assertIn('Kept = new HashSet<string>(StringComparer.Ordinal) { "session.undo", "session.redo" };', mount)
+        self.assertIn("public bool Handles(string command) => !Kept.Contains(command) &&", mount)
+        # The sample history is a panel of its own; the History dock stays the session's.
+        self.assertIn('frame.AddDockPanel(DockSide.Right, HistoryPanel, "History (sample)", "panel.history", Demo.History);', mount)
+        self.assertNotIn('SetContent("history"', mount)
+        chrome = text(PROJECT / "ShellChrome.cs")
+        self.assertIn('public static bool SampleOn => System.Environment.GetEnvironmentVariable("M600_SAMPLE") == "1";', chrome)
+        self.assertIn('SessionWidgets.Chip("sample", frame.Tokens.C("text.dim"), SampleWords);', chrome)
+        self.assertIn("_ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),", chrome)
+        self.assertLess(chrome.index("_ when ShellJumble.On && ShellJumble.Drafts.Contains(command)"),
+                        chrome.index("_ when sample != null && sample.Handles(command)"))
+        # The History dock and the position readout read this session's moves.
+        self.assertIn('frame.AddDockPanel(DockSide.Right, "history", "History", "panel.history", history);', chrome)
+        self.assertIn("_position.Show(HistoryReadouts.Position(Moves));", chrome)
+        # Look Lab builds its inspector on the shared one, with its own View fields.
+        self.assertIn("inspect = LabInspect.Create(app, frame, demo);", text(ROOT / "tools" / "looklab" / "app" / "Live" / "LabFrame.cs"))
+
+    def test_the_watch_command_starts_sample_mode(self):
+        watch = shell_module("watch_d02")
+        arguments = watch.launch_arguments(self.build, self.temp / "watched", None)
+        self.assertIn("--sample", arguments)
+        lines = []
+        self.assertEqual(self.launch.main(arguments[3:] + ["--dry-run"], popen=None, out_stream=lines.append), 0, lines)
+        self.assertIn("env: M600_SAMPLE=1", lines)
+
 if __name__ == "__main__":
     unittest.main()

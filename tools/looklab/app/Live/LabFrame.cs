@@ -18,8 +18,8 @@ internal static class LabFrame
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabKit> Kits = new();
     public static LabKit KitOf(ChromeFrame frame) => Kits.TryGetValue(frame, out LabKit? kit) ? kit : throw new InvalidOperationException("the frame has no lab kit");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabDemo> Demos = new();
-    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabInspect> Inspects = new();
-    public static LabInspect InspectOf(ChromeFrame frame) => Inspects.TryGetValue(frame, out LabInspect? inspect) ? inspect : throw new InvalidOperationException("the frame has no lab inspector");
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, SampleInspect> Inspects = new();
+    public static SampleInspect InspectOf(ChromeFrame frame) => Inspects.TryGetValue(frame, out SampleInspect? inspect) ? inspect : throw new InvalidOperationException("the frame has no lab inspector");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabScripts> AllScripts = new();
     public static LabScripts ScriptsOf(ChromeFrame frame) => AllScripts.TryGetValue(frame, out LabScripts? scripts) ? scripts : throw new InvalidOperationException("the frame has no lab scripts");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabSolve> Solves = new();
@@ -179,7 +179,7 @@ internal static class LabFrame
         find.Pressed += palette.Open; help.Pressed += () => keys.Shown.Pin(!keys.Shown.Pinned);
         frame.BarTools.AddChild(find); frame.BarTools.AddChild(help);
         string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
-        LabDemo demo = null!; LabInspect inspect = null!; LabSolve solve = null!;
+        LabDemo demo = null!; SampleInspect inspect = null!; LabSolve solve = null!;
         void Execute(string command, string? argument)
         {
             if (Unavailable(command, argument) is { } why) { frame.Say($"{registry.Commands[command].Label}: {why}", true); return; }
@@ -241,7 +241,7 @@ internal static class LabFrame
         // The sample session: commit bar under the views, the preview view and the History dock.
         demo = new LabDemo(frame, keymap, Execute); Demos.Add(frame, demo);
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
-        inspect = new LabInspect(app, frame, demo); Inspects.Add(frame, inspect);
+        inspect = LabInspect.Create(app, frame, demo); Inspects.Add(frame, inspect);
         // The solving surface on the pair's body: the relationship strip on the seam, anchors in both views.
         // The anchors sit where each view's own projection puts the sample slot of their position (B-10 of A6).
         var places = new ScenePlaces(root, app.View.Geometry);

@@ -60,7 +60,7 @@ internal sealed class LabScripts
     private static readonly string[] Tints = { "state.preview", "accent.strong", "severity.ok", "severity.warning" };
     private readonly ChromeFrame frame;
     private readonly LabDemo demo;
-    private readonly LabInspect inspect;
+    private readonly SampleInspect inspect;
     private readonly FeedbackModel feedback;
     private readonly CommandRegistry registry;
     private readonly Keymap defaults;
@@ -73,7 +73,7 @@ internal sealed class LabScripts
     private bool quiet;
     private string exported = "";
 
-    public LabScripts(ChromeFrame frame, LabDemo demo, LabInspect inspect, CommandRegistry registry, Keymap defaults, string root, Action<string, string?> run, Action<Keymap> keysChanged)
+    public LabScripts(ChromeFrame frame, LabDemo demo, SampleInspect inspect, CommandRegistry registry, Keymap defaults, string root, Action<string, string?> run, Action<Keymap> keysChanged)
     {
         this.frame = frame; this.demo = demo; this.inspect = inspect; feedback = inspect.Feedback; this.registry = registry; this.defaults = defaults; this.run = run; this.keysChanged = keysChanged; Keys = defaults;
         this.root = root; exportPath = Path.Combine(root, "work/loop-memory/looklab/keymap-export.json");
