@@ -1263,6 +1263,14 @@ RESEARCH_PANE_STEPS = ["start", "wait 2000 ms", "command workspace.set layout:an
 RESEARCH_FAIL_LINES = ["first claim that does not hold: cycle.closes", "code: KN6:evidence.certificate_rejected"]
 
 
+def research_chip(index: int, research: dict) -> list[str]:
+    """C5-9: the sample chip's words name Research among the parts that hold sample data."""
+    chip = research.get("chip", "")
+    if not chip.startswith("Sample mode:") or "Research hold sample data" not in chip:
+        return [f"step {index}: the sample chip says {chip!r}"]
+    return []
+
+
 def expect_research_pane(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """Solve shows no research pane; Analyse shows it with the Fail row open on its first failing claim and the code;
     the first object.inspect folds the row and the second opens it again; the head says the evidence is synthetic."""
@@ -1275,6 +1283,7 @@ def expect_research_pane(dumps: list[dict], source: dict, state: str | None) -> 
         if research.get("evidence") != "synthetic" or "evidence: synthetic" not in research.get("head", ""):
             problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}, head "
                             f"{research.get('head')!r}")
+        problems += research_chip(index, research)
         if shown is not None and research.get("pane") is not shown:
             problems.append(f"step {index}: the research pane is {'hidden' if shown else 'shown'}")
         if (research.get("open") == RESEARCH_FAIL) != opened:
@@ -1322,8 +1331,10 @@ def expect_research(dumps: list[dict], source: dict, state: str | None) -> list[
     history = dumps[0].get("research", {}).get("history_entries")
     for index, dump in enumerate(dumps):
         research = dump.get("research", {})
-        if research.get("evidence") != "synthetic":
-            problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}")
+        if research.get("evidence") != "synthetic" or "evidence: synthetic" not in research.get("head", ""):
+            problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}, head "
+                            f"{research.get('head')!r}")
+        problems += research_chip(index, research)
         if research.get("pane") is not (index >= 2):
             problems.append(f"step {index}: the research pane is {'shown' if research.get('pane') else 'hidden'}")
         tab = "Obligations" if index in (13, 14) else "Runs" if index >= 2 else "Claims"

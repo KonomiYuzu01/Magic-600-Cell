@@ -38,8 +38,9 @@ public static class ShellResearch
         return Path.Combine(data, data.EndsWith("samples", StringComparison.Ordinal) ? "" : "samples", "research");
     }
 
-    /// <summary>Mounts the pane; with the sample on, loads the sample, registers its draft rows and shows the model.</summary>
-    public static void Load(ChromeFrame frame, CommandRegistry registry, bool sampleOn, Func<int> historyEntries)
+    /// <summary>Mounts the pane and registers its draft rows from ADR-D02's draft file whether or not D02 is on (C5-5),
+    /// so a research control never names an unregistered row; with the sample on, loads the sample and shows the model.</summary>
+    public static void Load(ChromeFrame frame, CommandRegistry registry, string folder, bool sampleOn, Func<int> historyEntries)
     {
         _frame = frame;
         _history = historyEntries;
@@ -47,6 +48,7 @@ public static class ShellResearch
         frame.AddPane(ResearchPane.PaneId, ResearchPane.Title, pane);
         Model = null;
         DraftIds.Clear();
+        DraftIds.UnionWith(ResearchRows.AddDrafts(registry, File.ReadAllText(Path.Combine(folder, "command-rows-d02.json"))));
         if (!sampleOn)
         {
             return;
@@ -54,10 +56,6 @@ public static class ShellResearch
         try
         {
             var source = new SampleResearchSource(File.ReadAllText(Path.Combine(ResearchFolder(), "panel.json")));
-            var drafts = new CommandRegistry();
-            drafts.AddRows(source.DraftRows);
-            registry.AddRows(source.DraftRows);
-            DraftIds.UnionWith(drafts.Order);
             var model = new ResearchModel(source, source.Evidence);
             if (model.Claims.FirstOrDefault(c => c.Verdict.Kind == VerdictKind.Fail) is { } failing)
             {
@@ -89,6 +87,9 @@ public static class ShellResearch
     {
         json.WriteStartObject("research");
         json.WriteBoolean("pane", Pane != null && GodotObject.IsInstanceValid(Pane) && Pane.IsVisibleInTree());
+        // C5-9: the sample chip's words, which name Research among the parts holding sample data.
+        json.WriteString("chip", _frame != null && GodotObject.IsInstanceValid(_frame.BarTools)
+            && _frame.BarTools.GetNodeOrNull<Control>("SampleChip") is { } chip ? chip.TooltipText : "");
         if (Model is { } model)
         {
             json.WriteString("evidence", model.Evidence);

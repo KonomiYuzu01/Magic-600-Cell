@@ -55,7 +55,7 @@ public sealed class ShellChrome
     internal TuningPanel? Tuning { get; }
     /// <summary>Whether sample mode is on: launch.py --sample sets M600_SAMPLE=1.</summary>
     public static bool SampleOn => System.Environment.GetEnvironmentVariable("M600_SAMPLE") == "1";
-    public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts and History (sample) hold sample data. The views, History, the revision and the history position are this session's.";
+    public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts, History (sample) and Research hold sample data. The views, History, the revision and the history position are this session's.";
     private readonly bool _live;
     // ADR-D01.41: the rotation link's state from the host: null with no Local view, true linked, false unlinked.
     private readonly Func<bool?> _rotationLink;
@@ -176,9 +176,9 @@ public sealed class ShellChrome
             registry.AddRows(draftRows);
             sampleDrafts = drafts.Order.ToArray();
         }
-        // B28: the research pane, a centre peer of the pair in Analyse; in sample mode it reads the synthetic sample and
-        // registers its draft row.
-        ShellResearch.Load(frame, registry, SampleOn, () => Moves.Entries.Count);
+        // B28: the research pane, a centre peer of the pair in Analyse; it registers its draft rows in either mode (C5-5),
+        // and in sample mode reads the synthetic sample.
+        ShellResearch.Load(frame, registry, folder, SampleOn, () => Moves.Entries.Count);
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
