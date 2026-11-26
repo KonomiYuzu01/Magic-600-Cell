@@ -279,7 +279,15 @@ internal static partial class Program
             ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy),
             ("D02LocalCapDrawsTheLowestCapUntilOneIsNamed", D02LocalCapDrawsTheLowestCapUntilOneIsNamed),
             ("D02LocalPlanDrawsCellZeroOnTheBasePuzzle", D02LocalPlanDrawsCellZeroOnTheBasePuzzle),
-            ("D02LocalPlanKeepsTheJumbleRule", D02LocalPlanKeepsTheJumbleRule)
+            ("D02LocalPlanKeepsTheJumbleRule", D02LocalPlanKeepsTheJumbleRule),
+            ("D02TintModesExclusive", D02TintModesExclusive),
+            ("D02ContactColouringIsProper", D02ContactColouringIsProper),
+            ("D02FourClassesAtWj300AndDeepExports", D02FourClassesAtWj300AndDeepExports),
+            ("D02OneClassAtIa40", D02OneClassAtIa40),
+            ("D02ClassStickyAcrossCommitUndoRedoBranchReopen", D02ClassStickyAcrossCommitUndoRedoBranchReopen),
+            ("D02OverflowNeverReusesAcrossContact", D02OverflowNeverReusesAcrossContact),
+            ("D02OffLatticeFromFlagNotHeights", D02OffLatticeFromFlagNotHeights),
+            ("D02StraddlerLayerOnlyAtBlockedCap", D02StraddlerLayerOnlyAtBlockedCap)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

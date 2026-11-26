@@ -1215,6 +1215,136 @@ EXPECT["library-branch"] = expect_library_branch
 IN_SAMPLE_MODE.add("library-branch")
 
 
+# B15 (ADR-D02.20, .21, .23, .24, .30): the tint channel on a state's session fixture. The entry slot's contact classes
+# are on at open; the palette row switches to the height ramp, the off-lattice outline and back to the classes; a
+# domain focus dims the other domains; the height ramp then draws under that dim, and none leaves the dim alone. After
+# each step the dump names the bytes last sent to the core on each channel by their sha256; the expectation recomputes
+# them piece by piece from the sample's pose rows, pose ids and contact classes, with the dump's hover and selection
+# outlines on top.
+TINT_FOCUS_DOMAIN = 5
+TINT_STEPS = [("wait 5001 ms", "contact", None), ("wait 811 ms", "height", None), ("wait 812 ms", "off-lattice", None),
+              ("wait 813 ms", "contact", None), ("wait 814 ms", "contact", TINT_FOCUS_DOMAIN),
+              ("wait 815 ms", "height", TINT_FOCUS_DOMAIN), ("wait 816 ms", "none", TINT_FOCUS_DOMAIN)]
+
+
+def tint_tables(state: str) -> dict:
+    """A sample state's pose ids (each piece's pose row), its rows' domain, height, lattice flag and count, and its
+    first contact classes (contact.json: the classes an empty class memory gives)."""
+    import array
+    import base64
+    import hashlib
+    import zlib
+    poses = load(SAMPLES / state / "poses.json")
+    raw = zlib.decompress(base64.b64decode(poses["data"]))
+    if hashlib.sha256(raw).hexdigest() != poses["sha256"]:
+        raise ValueError(f"{state}: poses.json's pose ids differ from their digest")
+    ids = array.array("I")
+    ids.frombytes(raw)
+    if sys.byteorder != "little":
+        ids.byteswap()
+    style = load(SAMPLES / state / "style.json")
+    contact = load(SAMPLES / state / "contact.json")
+    rows = style["rows"]
+    return {"state": state, "ids": ids, "domain": [row["domain"] for row in rows],
+            "height": [row["heights"][0] for row in rows], "count": [row["count"] for row in rows],
+            "lattice": [isinstance(row.get("k"), int) for row in rows], "lattice_domain": style["lattice_domain"],
+            "classes": contact["classes"]}
+
+
+def class_entry(c: int) -> int:
+    """JumbleTint.ClassEntry: classes 1 to 6 are palette entries 3 to 8, the overflow state 9, the lattice none."""
+    return 2 + c if 1 <= c <= 6 else 9 if c == 7 else 0
+
+
+def height_entry(h: int) -> int:
+    """JumbleTint.HeightEntry: the ramp's steps 2, 4, 6 and above 6 are entries 10 to 13; height 0 is untinted."""
+    return 0 if h <= 0 else 10 if h <= 2 else 11 if h <= 4 else 12 if h <= 6 else 13
+
+
+def tint_line(tables: dict, mode: str) -> str:
+    """The legend's line for a mode with its counts of pieces (JumbleTint.Line)."""
+    rows = range(len(tables["domain"]))
+    classes, domain = tables["classes"], tables["domain"]
+
+    def count(keep) -> str:
+        return f"{sum(tables['count'][r] for r in rows if keep(r)):,}"
+    if mode == "contact":
+        parts = [f"{c} {count(lambda r, c=c: classes[domain[r]] == c)}" for c in range(1, 7) if c in classes]
+        over = classes.count(7)
+        if over:
+            parts.append(f"overflow {over:,} {'domain' if over == 1 else 'domains'} {count(lambda r: classes[domain[r]] == 7)}")
+        if tables["lattice_domain"] >= 0:
+            parts.append(f"lattice neutral {count(lambda r: domain[r] == tables['lattice_domain'])}")
+        return "Contact classes · " + " · ".join(parts)
+    if mode == "height":
+        largest = max(tables["height"], default=0)
+        labels = ["2", "4", "6", "above 6" + (f" (largest {largest})" if largest > 6 else "")]
+        return "Height · " + " · ".join(f"{label} {count(lambda r, e=10 + s: height_entry(tables['height'][r]) == e)}"
+                                        for s, label in enumerate(labels))
+    if mode == "off-lattice":
+        return f"Off-lattice outline · {count(lambda r: not tables['lattice'][r])} pieces"
+    return ""
+
+
+def tint_expected(tables: dict, mode: str, focused: int | None, hover: int | None, selection: int | None) -> dict:
+    """What a step's dump must say: the mode, the classes, the sha256 of the outline bytes (the mode's under the
+    hover's and the selection's outlines) and of the fill bytes (the height ramp with the dim bit on every piece
+    outside the focused domain; empty when none), the focus dim in both views, and the legend on both borders."""
+    import hashlib
+    rows = range(len(tables["domain"]))
+    outline_row, fill_row = [0] * len(rows), [0] * len(rows)
+    if mode == "contact":
+        outline_row = [class_entry(tables["classes"][tables["domain"][r]]) for r in rows]
+    elif mode == "height":
+        fill_row = [height_entry(tables["height"][r]) for r in rows]
+    elif mode == "off-lattice":
+        outline_row = [0 if tables["lattice"][r] else 14 for r in rows]
+    if focused is not None:
+        fill_row = [f | (0 if tables["domain"][r] == focused else 0x80) for r, f in zip(rows, fill_row)]
+    outline = bytearray(outline_row[p] for p in tables["ids"])
+    if hover is not None:
+        outline[hover] = 2
+    if selection is not None:
+        outline[selection] = 1
+    fill = bytes(fill_row[p] for p in tables["ids"]) if any(fill_row) else None
+    line = tint_line(tables, mode)
+    return {"mode": mode, "bound": tables["state"], "classes": tables["classes"], "moved": [], "hover": hover,
+            "selection": selection,
+            "outline_sha256": hashlib.sha256(bytes(outline)).hexdigest(),
+            "fill_sha256": hashlib.sha256(fill).hexdigest() if fill is not None else "",
+            "focus": "none" if focused is None else "dimmed", "dims": [focused is not None] * 2,
+            "line": line, "global_legend": line, "local_legend": line}
+
+
+def expect_tint(dumps: list[dict], source: dict, state: str | None, tables: dict | None = None) -> list[str]:
+    """The tint script: after each step the bytes sent to the core equal the sample's, piece by piece."""
+    if state is None or not (SAMPLES / state / "contact.json").is_file():
+        return ["the tint script needs a sample state with a contact graph"]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(mark not in by_step for mark, _, _ in TINT_STEPS):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    tables = tables if tables is not None else tint_tables(state)
+    problems = []
+    for mark, mode, focused in TINT_STEPS:
+        tint = by_step[mark].get("tint")
+        if not isinstance(tint, dict):
+            problems.append(f"after '{mark}' the dump has no tint")
+            continue
+        want = tint_expected(tables, mode, focused, tint.get("hover"), tint.get("selection"))
+        for key, value in want.items():
+            if tint.get(key) != value:
+                said = f"{mode}" + ("" if focused is None else f", domain {focused} focused")
+                problems.append(f"after '{mark}' ({said}) {key} is {str(tint.get(key))[:120]!r}, not {str(value)[:120]!r}")
+    if not problems:
+        print(f"tint: {len(TINT_STEPS)} steps, the bytes sent equal {state}'s piece by piece; "
+              f"classes {sorted(set(tables['classes']) - {0})}; " + tint_line(tables, "contact"))
+    return problems
+
+
+EXPECT["tint"] = expect_tint
+ON_FIXTURE.add("tint")
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

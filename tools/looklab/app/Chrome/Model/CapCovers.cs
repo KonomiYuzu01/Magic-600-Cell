@@ -149,18 +149,20 @@ public sealed class PoseStyle
     public int LatticeDomain { get; }
     // The rows' digest: the state a saved focus layer was made for.
     public string Digest { get; private init; } = "";
-    private readonly (int Domain, int Height, long Count)[] rows;
+    private readonly (int Domain, int Height, long Count, bool Lattice)[] rows;
 
-    private PoseStyle(IReadOnlyList<string> domains, int lattice, (int, int, long)[] rows) { Domains = domains; LatticeDomain = lattice; this.rows = rows; }
+    private PoseStyle(IReadOnlyList<string> domains, int lattice, (int, int, long, bool)[] rows) { Domains = domains; LatticeDomain = lattice; this.rows = rows; }
 
     public static PoseStyle Read(string text)
     {
         using JsonDocument document = JsonDocument.Parse(text);
         JsonElement root = document.RootElement;
         string[] domains = root.GetProperty("domains").EnumerateArray().Select(d => d.GetString()!).ToArray();
-        // The piece's height is its left height (heights[0]), as the totals' n_h count it.
+        // The piece's height is its left height (heights[0]), as the totals' n_h count it. A row's pose is on the
+        // lattice exactly when it has a K+ index k (B15: the off-lattice outline reads this flag, never heights).
         var rows = root.GetProperty("rows").EnumerateArray()
-            .Select(r => (r.GetProperty("domain").GetInt32(), r.GetProperty("heights")[0].GetInt32(), r.GetProperty("count").GetInt64())).ToArray();
+            .Select(r => (r.GetProperty("domain").GetInt32(), r.GetProperty("heights")[0].GetInt32(), r.GetProperty("count").GetInt64(),
+                r.TryGetProperty("k", out JsonElement k) && k.ValueKind == JsonValueKind.Number)).ToArray();
         if (rows.Any(r => r.Item1 < 0 || r.Item1 >= domains.Length || r.Item2 < 0 || r.Item3 < 0)) throw new FormatException("style: a row outside its domains or with a negative height or count");
         return new PoseStyle(domains, root.GetProperty("lattice_domain").GetInt32(), rows)
         {
@@ -172,6 +174,12 @@ public sealed class PoseStyle
     // The pose rows as the focus layer's `=` expressions read them (PieceFilter.cs).
     public IReadOnlyList<PoseRow> Rows => rows.Select(r => new PoseRow(r.Domain, r.Height, r.Count)).ToArray();
     public long InDomain(int domain) => rows.Where(r => r.Domain == domain).Sum(r => r.Count);
+    // The pose rows one by one (B15's tint bytes are per pose row).
+    public int RowCount => rows.Length;
+    public int RowDomain(int row) => rows[row].Domain;
+    public int RowHeight(int row) => rows[row].Height;
+    public long RowPieces(int row) => rows[row].Count;
+    public bool RowOnLattice(int row) => rows[row].Lattice;
     public long HeightAtLeast(int k) => rows.Where(r => r.Height >= k).Sum(r => r.Count);
 }
 
