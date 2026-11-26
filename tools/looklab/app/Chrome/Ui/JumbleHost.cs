@@ -30,7 +30,14 @@ public sealed class JumbleHost
     // The draft rows (CR-14, and CR-19's seat key as B10's stand-in) this host carries out.
     public static readonly IReadOnlySet<string> Carried = new HashSet<string>(StringComparer.Ordinal)
         { "jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear", "jumble.seat.hold",
-          "jumble.focus.straddlers", "jumble.focus.domain", "jumble.focus.height" };
+          "jumble.focus.straddlers", "jumble.focus.domain", "jumble.focus.height",
+          // The Focus layer, the 0.4 Piece Filter (owner, 26 November 2026), on the bound state's pose rows.
+          "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose" };
+    public static readonly IReadOnlySet<string> FilterRows = new HashSet<string>(StringComparer.Ordinal)
+        { "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose" };
+    // The Focus layer: its model for the bound state (null while none is bound), and its editor in the right dock.
+    public PieceFilterModel? Filter { get; private set; }
+    public FocusLayerEditor FilterEditor { get; }
     // B11: the named cap's covers with the hover's inspect line, its raw record (the straddlers' count), the bound
     // state's pose rows (the domain and height counts), and the views' focus layers the three predicates join.
     public CapCovers? Covers { get; private set; }
@@ -94,6 +101,10 @@ public sealed class JumbleHost
         CapMap.ThresholdTyped += text => SetThreshold(text);
         Naming.Changed += _ => Named();
         frame.AddDockPanel(DockSide.Bottom, EntrySlot.CapMapPanel, title, "panel.capmap", CapMap);
+        FilterEditor = new FocusLayerEditor(() => frame.Tokens);
+        frame.AddDockPanel(DockSide.Right, FocusLayerEditor.PanelId, "Focus layer", "layer.cycle", FilterEditor);
+        frame.Rebuilt += DressFilter;
+        DressFilter();
         // The bottom dock is a chrome setting both ways: the entry opens the cap map there, and a panel the researcher
         // opens there is theirs, so Jumble off leaves it.
         Settings.Set("dock.bottom", frame.Model.Docks[DockSide.Bottom].Open);
@@ -133,7 +144,46 @@ public sealed class JumbleHost
     public void SetMeeting(MeetingCaps? value) { meeting = value; Named(); }
 
     // The bound state's pose rows; the domain and height layers count again from them.
-    public void SetStyle(PoseStyle? value) { Style = value; Recount(); }
+    public void SetStyle(PoseStyle? value)
+    {
+        Style = value;
+        // The Focus layer counts the bound state's pose rows; saved layers stay, and load only for their own state.
+        var kept = Filter?.Saved ?? Array.Empty<SavedFilter>();
+        if (Filter != null) Filter.Changed -= SyncFilter;
+        Filter = value == null ? null : new PieceFilterModel(value.Rows, value.LatticeDomain, value.Domains.Count, () => Source.State.Revision, value.Digest);
+        if (Filter != null) { foreach (var s in kept) Filter.Keep(s); Filter.Changed += SyncFilter; }
+        FilterEditor.Bind(Filter);
+        SyncFilter();
+        Recount();
+    }
+
+    // The Focus layer entry on Global's border, beside its focus-layer keys (the default Solve view).
+    private void DressFilter()
+    {
+        if (!GodotObject.IsInstanceValid(frame) || frame.Global is not { } global || !GodotObject.IsInstanceValid(global)) return;
+        if (global.Tools.GetNodeOrNull("FocusLayerEntry") != null) return;
+        global.Tools.AddChild(new FocusLayerEntry(OpenFilter));
+    }
+
+    // filter.open: the editor shows in the right dock with the expression focused.
+    public void OpenFilter()
+    {
+        frame.Model.ShowDock(DockSide.Right, FocusLayerEditor.PanelId);
+        Callable.From(() => { if (GodotObject.IsInstanceValid(FilterEditor.Expression) && FilterEditor.Expression.IsInsideTree()) FilterEditor.Expression.GrabFocus(); }).CallDeferred();
+    }
+
+    // The applied filter is a focus layer in every view, focused when it first applies; cleared, it goes.
+    private void SyncFilter()
+    {
+        PredicateLayer? layer = Filter?.Layer();
+        foreach (FocusLayers layers in Layers)
+        {
+            if (layer == null) { layers.RemovePredicate(PieceFilterModel.LayerId); continue; }
+            bool fresh = layers.Predicates.All(p => p.Id != PieceFilterModel.LayerId);
+            layers.AddPredicate(layer);
+            if (fresh && layers.Focused != PieceFilterModel.LayerId) layers.Focus(PieceFilterModel.LayerId);
+        }
+    }
 
     // Every predicate a view already has, counted at the named cap and the bound state; a layer that no longer reads
     // (a domain the new state lacks) keeps its label with a pending count and dims nothing.
@@ -268,6 +318,12 @@ public sealed class JumbleHost
 
     public string? Unavailable(string command, string? argument) => command switch
     {
+        _ when FilterRows.Contains(command) && Filter == null => "no state is bound: the focus layer counts the bound sample state's pieces",
+        "filter.preset" when PieceFilterModel.Presets.All(p => p.Name != argument) => "it needs a preset: " + string.Join(", ", PieceFilterModel.Presets.Select(p => p.Name)),
+        "filter.save" when string.IsNullOrWhiteSpace(argument) => "it needs a name, as in > filter.save lattice",
+        "filter.load" when string.IsNullOrWhiteSpace(argument) => "it needs a saved name",
+        "structure.filter.compose" when !Enum.TryParse<FilterComposition>(argument, true, out _) => "it needs replace, intersect, union or subtract",
+        _ when FilterRows.Contains(command) => null,
         _ when !Source.State.Mode => "Jumble is off",
         "jumble.cap.name" when argument == null => "it needs a cap number, as in > jumble.cap.name 150",
         "jumble.cap.name" when CapNaming.Typed(argument) == null => "no cap is numbered " + argument + "; caps are 0 to 599",
@@ -288,6 +344,15 @@ public sealed class JumbleHost
     {
         switch (command)
         {
+            case "filter.open": OpenFilter(); break;
+            case "filter.preview": if (argument != null) Filter?.SetText(argument); Filter?.Run(); OpenFilter(); break;
+            // The palette's Enter asked for it.
+            case "filter.apply": Filter?.Apply(UserEvent.Key("palette Enter")); OpenFilter(); break;
+            case "filter.edit": Filter?.Edit(); OpenFilter(); break;
+            case "filter.preset": Filter?.Preset(argument!); OpenFilter(); break;
+            case "filter.save": Filter?.Save(argument!); OpenFilter(); break;
+            case "filter.load": Filter?.Load(argument!); OpenFilter(); break;
+            case "structure.filter.compose": if (Enum.TryParse(argument, true, out FilterComposition c)) Filter?.Compose(c); OpenFilter(); break;
             case "jumble.cap.name": if (CapNaming.Typed(argument) is int cap) Name(cap); break;
             case "jumble.cap.unname": Naming.Unname(); break;
             case "jumble.capmap.threshold.set": SetThreshold(argument ?? ""); break;

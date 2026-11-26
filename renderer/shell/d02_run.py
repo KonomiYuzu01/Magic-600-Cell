@@ -231,6 +231,55 @@ def expect_rotate(dumps: list[dict], source: dict, state: str | None) -> list[st
     return problems
 
 
+def pose_count(state: str, keep) -> tuple[int, int]:
+    """The pieces of a sample state's pose rows that `keep(domain, height, lattice)` holds, and all of them."""
+    style = load(SAMPLES / state / "style.json")
+    rows = [(row["domain"], row["heights"][0], row["count"]) for row in style["rows"]]
+    lattice = style["lattice_domain"]
+    return sum(n for d, h, n in rows if keep(d, h, lattice)), sum(n for _, _, n in rows)
+
+
+def expect_focus_layer(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The Focus layer script (owner, 26 November 2026): the entry reads "Focus layer =" on Global's border; a preview
+    shows its exact count of the bound state's pieces before anything applies; the apply adds the layer to Global's
+    focus-layer keys with that count; an intersect composes with it in place; the palette finds the rows by the alias
+    "piece filter" under their Focus layer labels."""
+    if state is None or not (SAMPLES / state / "style.json").is_file():
+        return ["the focus-layer script needs a sample state with pose rows"]
+    by_step = {dump["do"]: dump for dump in dumps}
+    marks = ["wait 801 ms", "wait 802 ms", "wait 503 ms", "wait 804 ms", "wait 805 ms", "wait 806 ms"]
+    if any(mark not in by_step for mark in marks):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    layers = [by_step[mark].get("focus_layer") for mark in marks]
+    if any(not isinstance(layer, dict) for layer in layers):
+        return ["a step's dump has no focus layer"]
+    off, total = pose_count(state, lambda d, h, lattice: d != lattice)
+    both, _ = pose_count(state, lambda d, h, lattice: d != lattice and h >= 4)
+    problems = []
+    first, applied, _, second, again, _ = layers
+    if first["entry"] != "Focus layer =":
+        problems.append(f"Global's border has no Focus layer entry ({first['entry']!r})")
+    if first["dock"] != "focus_layer.editor":
+        problems.append(f"the editor is not open in the right dock ({first['dock']!r})")
+    if not first["line"].startswith(f"{off:,} of {total:,} pieces · replace · live query · rev "):
+        problems.append(f"the preview reads {first['line']!r}, not {off:,} of {total:,} pieces")
+    if any(key.startswith("= ") for key in first["keys"]):
+        problems.append("the layer applied at its preview")
+    if f"= not lattice · {off:,}" not in applied["keys"]:
+        problems.append(f"the applied layer is not on Global's keys: {applied['keys']}")
+    if not second["line"].startswith(f"{both:,} of {total:,} pieces · intersect · live query"):
+        problems.append(f"the intersect preview reads {second['line']!r}, not {both:,}")
+    expected = f"= not lattice and height >= 4 · {both:,}"
+    if expected not in again["keys"] or sum(key.startswith("= ") for key in again["keys"]) != 1:
+        problems.append(f"the composed layer did not replace the first in place: {again['keys']}")
+    palette = texts(by_step["wait 806 ms"], "overlay:CommandPalette")
+    for label in ("Open focus layer", "Preview focus layer counts", "Apply focus layer"):
+        if label not in palette:
+            problems.append(f"the palette did not find {label!r} by the alias 'piece filter'")
+    print(f"focus layer: not lattice {off:,} of {total:,}; and height >= 4 {both:,}; keys {again['keys']}")
+    return problems
+
+
 # The wheel zoom (owner, 26 November 2026: "我现在没法zoom in"): wheel up zooms in, one notch multiplies the zoom by
 # 1.1, and the zoom stays within 0.5 to 4 times the opening's. The core multiplies the projected picture by the zoom
 # (geometry.hlsl), so a larger zoom sent is a larger picture.
@@ -546,10 +595,11 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
 
 
 EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
-          "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom}
+          "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
+          "focus-layer": expect_focus_layer}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
-ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair"}
+ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer"}
 IN_SAMPLE_MODE = {"host"}
 
 

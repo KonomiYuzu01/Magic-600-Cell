@@ -19,6 +19,24 @@
     "jumble.repair.list": "Repair list",
     "jumble.straddlers": "Straddlers",
     "jumble.nu": "ν marks",
-    "jumble.corrections.check": "ν-correction check"
+    "jumble.corrections.check": "ν-correction check",
+    "filter.open": "Open focus layer",
+    "filter.preview": "Preview focus layer counts",
+    "filter.apply": "Apply focus layer",
+    "filter.edit": "Edit focus layer",
+    "filter.preset": "Stage focus layer preset",
+    "filter.save": "Save focus layer",
+    "filter.load": "Load focus layer for review",
+    "structure.filter.compose": "Compose focus layer"
+  },
+  "aliases": {
+    "filter.open": "piece filter · Piece Filter · filter",
+    "filter.preview": "piece filter · Piece Filter · filter",
+    "filter.apply": "piece filter · Piece Filter · filter",
+    "filter.edit": "piece filter · Piece Filter · filter",
+    "filter.preset": "piece filter · Piece Filter · filter",
+    "filter.save": "piece filter · Piece Filter · filter",
+    "filter.load": "piece filter · Piece Filter · filter",
+    "structure.filter.compose": "piece filter · Piece Filter · filter"
   }
 }

@@ -1622,8 +1622,10 @@ class D02Host(unittest.TestCase):
         host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
         self.assertIn("bool undefined = JumbleNumerals.Undefined(state);", host)
         self.assertEqual(host.count("SetUndefined("), 2)
-        # The host adds one panel to the existing bottom dock and no layout, no dock and no command.
-        self.assertEqual(host.count("AddDockPanel("), 1)
+        # The host adds one panel to the existing bottom dock, and the Focus layer editor to the right dock (owner,
+        # 26 November 2026: the 0.4 Piece Filter in the default view), and no layout and no command.
+        self.assertEqual(host.count("AddDockPanel("), 2)
+        self.assertIn('frame.AddDockPanel(DockSide.Right, FocusLayerEditor.PanelId, "Focus layer", "layer.cycle", FilterEditor);', host)
         for word in ("AddLayout", "Commands.", "Invoke("):
             self.assertNotIn(word, host)
         icons = json.loads(text(ROOT / "tools" / "looklab" / "data" / "design" / "icons.json"))
@@ -1869,7 +1871,11 @@ class D02Repair(unittest.TestCase):
         # C2-1's nit: a UserEvent is made only by an input handler, in the list control.
         app = ROOT / "tools" / "looklab" / "app"
         makers = sorted(path.name for path in app.rglob("*.cs") if "UserEvent.Key(" in text(path) or "UserEvent.Click(" in text(path))
-        self.assertEqual(makers, ["JumbleLists.cs"])
+        self.assertEqual(makers, ["JumbleHost.cs", "JumbleLists.cs", "PieceFilterUi.cs"])
+        # The host makes one, for the palette's Enter on filter.apply; the focus layer editor makes its Apply click.
+        host_text = text(app / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertEqual(host_text.count("UserEvent."), 1)
+        self.assertIn('case "filter.apply": Filter?.Apply(UserEvent.Key("palette Enter"));', host_text)
 
     def test_every_staging_entry_admits_its_origin(self):
         """C2-6: the preview, the repair stage and typed twists take a required origin and admit it themselves, with
@@ -2014,6 +2020,58 @@ class D02Zoom(unittest.TestCase):
         self.assertIn("the wheel turned the camera", run.expect_zoom(turned, {}, None))
         self.assertTrue((SHELL / "d02_scripts" / "zoom.json").is_file())
 
+
+
+class D02FocusLayer(unittest.TestCase):
+    """The Focus layer, the 0.4 Piece Filter in the default view (owner, 26 November 2026: "Focus layer加别名就行"):
+    ADR-D01's word on screen, "piece filter" a palette alias, exact counts before apply, and nothing narrowed."""
+
+    def test_the_word_is_focus_layer_and_piece_filter_an_alias(self):
+        design = ROOT / "tools" / "looklab" / "data" / "design"
+        labels = json.loads(text(design / "command-labels.json"))
+        rows = ("filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load",
+                "structure.filter.compose")
+        for row in rows:
+            self.assertIn("focus layer", labels["labels"][row].lower())
+            self.assertNotIn("filter", labels["labels"][row].lower())
+            self.assertIn("piece filter", labels["aliases"][row])
+        commands = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "Commands.cs")
+        self.assertIn("|| (r.Shipped?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false));", commands)
+        ui = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "PieceFilterUi.cs")
+        self.assertIn('public const string Words = "Focus layer =";', ui)
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn('global.Tools.AddChild(new FocusLayerEntry(OpenFilter));', host)
+
+    def test_the_filter_never_narrows_the_model(self):
+        model = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "PieceFilter.cs")
+        # It reads pose rows and makes a focus layer; it names no totals, protection, collateral, key or label.
+        for word in ("Totals", "Protection", "Collateral", "Keymap", "Bind(", "Relabel", "Readout"):
+            self.assertNotIn(word, model)
+        self.assertIn("public PredicateLayer? Layer()", model)
+        self.assertIn('if (asked == null) return "a filter applies only on the solver' + chr(39) + 's key or click";', model)
+
+    def test_the_focus_layer_expectation_counts_from_the_rows(self):
+        run = shell_module("d02_run")
+        self.assertIn("focus-layer", run.ON_FIXTURE)
+        off, total = run.pose_count("wj-ia-300", lambda d, h, lattice: d != lattice)
+        both, _ = run.pose_count("wj-ia-300", lambda d, h, lattice: d != lattice and h >= 4)
+        self.assertEqual((off, total, both), (120343, 177120, 3128))
+
+        def dumps(first_line=f"{off:,} of {total:,} pieces · replace · live query · rev 300", final=f"= not lattice and height >= 4 · {both:,}"):
+            def layer(line="", keys=()):
+                return {"entry": "Focus layer =", "dock": "focus_layer.editor", "line": line, "expression": "", "keys": list(keys)}
+            palette = [["overlay:CommandPalette", label] for label in ("Open focus layer", "Preview focus layer counts", "Apply focus layer")]
+            return [{"do": "start", "lines": []},
+                    {"do": "wait 801 ms", "lines": [], "focus_layer": layer(first_line)},
+                    {"do": "wait 802 ms", "lines": [], "focus_layer": layer(keys=[f"= not lattice · {off:,}"])},
+                    {"do": "wait 503 ms", "lines": [], "focus_layer": layer(keys=[f"= not lattice · {off:,}"])},
+                    {"do": "wait 804 ms", "lines": [], "focus_layer": layer(f"{both:,} of {total:,} pieces · intersect · live query · rev 300")},
+                    {"do": "wait 805 ms", "lines": [], "focus_layer": layer(keys=[final])},
+                    {"do": "wait 806 ms", "lines": palette, "focus_layer": layer()}]
+        self.assertEqual(run.expect_focus_layer(dumps(), {}, "wj-ia-300"), [])
+        self.assertEqual(len(run.expect_focus_layer(dumps(first_line="120,000 of 177,120 pieces"), {}, "wj-ia-300")), 1)
+        self.assertEqual(len(run.expect_focus_layer(dumps(final="= height >= 4 · 3,128"), {}, "wj-ia-300")), 1)
+        self.assertTrue((SHELL / "d02_scripts" / "focus-layer.json").is_file())
 
 if __name__ == "__main__":
     unittest.main()

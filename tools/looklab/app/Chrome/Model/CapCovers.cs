@@ -145,6 +145,8 @@ public sealed class PoseStyle
 {
     public IReadOnlyList<string> Domains { get; }
     public int LatticeDomain { get; }
+    // The rows' digest: the state a saved focus layer was made for.
+    public string Digest { get; private init; } = "";
     private readonly (int Domain, int Height, long Count)[] rows;
 
     private PoseStyle(IReadOnlyList<string> domains, int lattice, (int, int, long)[] rows) { Domains = domains; LatticeDomain = lattice; this.rows = rows; }
@@ -158,10 +160,15 @@ public sealed class PoseStyle
         var rows = root.GetProperty("rows").EnumerateArray()
             .Select(r => (r.GetProperty("domain").GetInt32(), r.GetProperty("heights")[0].GetInt32(), r.GetProperty("count").GetInt64())).ToArray();
         if (rows.Any(r => r.Item1 < 0 || r.Item1 >= domains.Length || r.Item2 < 0 || r.Item3 < 0)) throw new FormatException("style: a row outside its domains or with a negative height or count");
-        return new PoseStyle(domains, root.GetProperty("lattice_domain").GetInt32(), rows);
+        return new PoseStyle(domains, root.GetProperty("lattice_domain").GetInt32(), rows)
+        {
+            Digest = root.TryGetProperty("digest", out JsonElement digest) && digest.ValueKind == JsonValueKind.String ? digest.GetString()! : "",
+        };
     }
 
     public long Pieces => rows.Sum(r => r.Count);
+    // The pose rows as the focus layer's `=` expressions read them (PieceFilter.cs).
+    public IReadOnlyList<PoseRow> Rows => rows.Select(r => new PoseRow(r.Domain, r.Height, r.Count)).ToArray();
     public long InDomain(int domain) => rows.Where(r => r.Domain == domain).Sum(r => r.Count);
     public long HeightAtLeast(int k) => rows.Where(r => r.Height >= k).Sum(r => r.Count);
 }

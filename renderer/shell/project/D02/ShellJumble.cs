@@ -692,6 +692,24 @@ internal sealed partial class D02Driver : Node
                 json.WriteNumber("unasked", shown.Ledger.Count);
                 json.WriteEndObject();
             }
+            // The Focus layer (owner, 26 November 2026): its entry on Global's border, the right dock, the editor's line
+            // and Global's focus-layer keys.
+            if (ShellJumble.Host is { } filtered)
+            {
+                json.WriteStartObject("focus_layer");
+                var entry = _frame.Global is { } g && GodotObject.IsInstanceValid(g) ? g.Tools.GetNodeOrNull<Button>("FocusLayerEntry") : null;
+                json.WriteString("entry", entry?.Text ?? "");
+                json.WriteString("dock", _frame.Model.Docks[DockSide.Right].Open ?? "");
+                json.WriteString("line", filtered.Filter?.PreviewLine() ?? "");
+                json.WriteString("expression", filtered.FilterEditor.Expression.Text);
+                json.WriteStartArray("keys");
+                foreach (var layer in filtered.Layers.Count > 0 ? filtered.Layers[0].Predicates : Array.Empty<PredicateLayer>())
+                {
+                    json.WriteStringValue(FocusLayers.KeyText(layer));
+                }
+                json.WriteEndArray();
+                json.WriteEndObject();
+            }
             json.WriteNumber("cancels", _cancels);
             if (_screenBefore is { } before)
             {

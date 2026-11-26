@@ -18,6 +18,9 @@ public sealed class CommandRegistry
     private readonly List<string> order = new();
     public IReadOnlyDictionary<string, ChromeCommand> Commands => commands;
     public IReadOnlyList<string> Order => order;
+    private readonly Dictionary<string, string> shipped = new(StringComparer.Ordinal);
+    // A command's shipped search words, or null.
+    public string? ShippedAlias(string id) => shipped.TryGetValue(id, out string? words) ? words : null;
 
     public void Add(ChromeCommand command)
     {
@@ -31,6 +34,15 @@ public sealed class CommandRegistry
     public void Relabel(string text)
     {
         using JsonDocument d = J.Parse(text);
+        // Shipped aliases (owner, 26 November 2026: the Focus layer rows keep "piece filter" as a search word): a
+        // query matches them as it matches the solver's own aliases, and they never reorder the rows.
+        if (d.RootElement.TryGetProperty("aliases", out JsonElement aliases))
+            foreach (JsonProperty alias in aliases.EnumerateObject())
+            {
+                if (!commands.ContainsKey(alias.Name)) throw J.Error(alias.Name, "an alias for an unknown command");
+                string words = alias.Value.GetString() ?? ""; if (string.IsNullOrWhiteSpace(words)) throw J.Error(alias.Name, "an empty alias");
+                shipped[alias.Name] = words;
+            }
         foreach (JsonProperty label in d.RootElement.GetProperty("labels").EnumerateObject())
         {
             if (!commands.TryGetValue(label.Name, out ChromeCommand? command)) throw J.Error(label.Name, "a label for an unknown command");
@@ -161,6 +173,8 @@ public sealed record PaletteRow(string Command, string? Argument, string Label, 
     public string Id => Command + "|" + (Argument ?? "");
     // The solver's own second name for the row; a query matches it too.
     public string? Alias { get; init; }
+    // The host's shipped search words for the row (command-labels.json's aliases); a query matches them too.
+    public string? Shipped { get; init; }
 }
 
 // The palette's rows (ADR-D01.18). A query only filters; the order comes from the solver's own pins, recency
@@ -186,7 +200,7 @@ public sealed class PaletteModel
     {
         ChromeCommand c = registry.Commands[command];
         string id = command + "|" + (argument ?? "");
-        return new PaletteRow(command, argument, label ?? c.Label, CommandRegistry.Location(command), keymap.KeysFor(command, argument), unavailable(command, argument), c.Help, pins.Contains(id)) { Alias = aliases.TryGetValue(id, out string? alias) ? alias : null };
+        return new PaletteRow(command, argument, label ?? c.Label, CommandRegistry.Location(command), keymap.KeysFor(command, argument), unavailable(command, argument), c.Help, pins.Contains(id)) { Alias = aliases.TryGetValue(id, out string? alias) ? alias : null, Shipped = registry.ShippedAlias(command) };
     }
 
     public IReadOnlyList<PaletteRow> Rows(string query)
@@ -197,7 +211,8 @@ public sealed class PaletteModel
         foreach (RadialEntry e in keymap.Bindings.Select(b => new RadialEntry(b.Command, b.Argument, b.Label)).Concat(keymap.Radials.Values.SelectMany(r => r.Entries)))
             if (e.Argument != null && seen.Add(e.Command + "|" + e.Argument)) rows.Add(Row(e.Command, e.Argument, e.Label));
         string[] terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        bool Matches(PaletteRow r) => terms.All(t => r.Label.Contains(t, StringComparison.OrdinalIgnoreCase) || r.Command.Contains(t, StringComparison.OrdinalIgnoreCase) || (r.Alias?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false));
+        bool Matches(PaletteRow r) => terms.All(t => r.Label.Contains(t, StringComparison.OrdinalIgnoreCase) || r.Command.Contains(t, StringComparison.OrdinalIgnoreCase) || (r.Alias?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (r.Shipped?.Contains(t, StringComparison.OrdinalIgnoreCase) ?? false));
         return rows.Where(Matches).Select((row, index) => (row, index))
             .OrderByDescending(x => x.row.Pinned)
             .ThenByDescending(x => uses.TryGetValue(x.row.Id, out var u) ? u.Last : 0)

@@ -1,0 +1,85 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "focus-layer",
+  "note": "The Focus layer, the 0.4 Piece Filter in the default view (owner, 26 November 2026: \"Focus layer加别名就行\"), on wj-ia-300's session fixture: the entry on Global's border, a preview with its exact count before apply, an apply, an intersect composed with it, and the palette finding the rows by the alias \"piece filter\".",
+  "steps": [
+    {
+      "wait_ms": 25000
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> filter.preview not lattice"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 801
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> filter.apply"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 802
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> structure.filter.compose intersect"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 503
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> filter.preview height >= 4"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 804
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> filter.apply"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 805
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "piece filter"
+    },
+    {
+      "wait_ms": 806
+    },
+    {
+      "chord": "Escape"
+    },
+    {
+      "wait_ms": 307
+    }
+  ]
+}
