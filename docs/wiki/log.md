@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | The research line's goal is a proof of coverage; Lean starts with LP6
+The owner set the jumbling research line's final goal as a proof that every configuration that can arise is covered, with no scramble test, said that ADR-D02's 12c is a product target unrelated to the research line, and placed a narrow Lean line for the product's correctness proofs with LP6 ([decision](decisions/owner-decisions-2026-11-26-research-goal.md)). The research stays stopped.
+
 ## [2026-11-26] decision | The log flow joins stage 2's acceptance; LP6 waits for ADR-D03 and K2
 The owner added the log and document flow as the sixth flow of stage 2's usable acceptance and set LP6's start for when the ADR-D03 and K2 lines start ([decision](decisions/owner-decisions-2026-11-26-log-flow.md)). The backend parts the flow still needs are indexed with K2's greybox stage.
 
