@@ -186,6 +186,37 @@ public static class ShellJumble
         return File.Exists(path) ? PoseStyle.Read(File.ReadAllText(path)) : null;
     }
 
+    /// <summary>B15: the bound state's domain contact graph (contact.json), or null.</summary>
+    public static ContactGraph? Contact()
+    {
+        if (Bound is not { } state)
+        {
+            return null;
+        }
+        var path = Path.Combine(JumbleFolder(), state, "contact.json");
+        return File.Exists(path) ? ContactGraph.Read(File.ReadAllText(path)) : null;
+    }
+
+    /// <summary>
+    /// B15: the bound state's pose ids (poses.json), each piece's pose row checked against the digest and the style's
+    /// row count, with the state digest they belong to; null without a bound state or the file.
+    /// </summary>
+    public static (int[] Poses, string Digest)? Poses(int rows)
+    {
+        if (Bound is not { } state)
+        {
+            return null;
+        }
+        var path = Path.Combine(JumbleFolder(), state, "poses.json");
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+        var text = File.ReadAllText(path);
+        using var document = JsonDocument.Parse(text);
+        return (JumbleTint.Poses(text, rows), document.RootElement.GetProperty("digest").GetString() ?? "");
+    }
+
     /// <summary>The 80 caps meeting each cap (B9), from the samples' meeting-caps.json; none when the build has none.</summary>
     public static MeetingCaps? Meeting()
     {
@@ -900,6 +931,8 @@ internal sealed partial class D02Driver : Node
                 json.WriteEndArray();
                 json.WriteEndObject();
             }
+            // B15: the tint channel as the core was sent it.
+            ShellTint.Dump(json, _frame);
             if (_frame != null && GodotObject.IsInstanceValid(_frame))
             {
                 // The Library in the left dock (the command step's sample-mode run): the dock's panel, whether the

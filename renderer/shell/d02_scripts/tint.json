@@ -1,0 +1,32 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "tint",
+  "note": "B15's run on a state's session fixture (wj-ia-300): the entry's contact classes are on at open; the palette's jumble.tint.mode switches to the height ramp, the off-lattice outline and back to the classes; jumble.focus.domain 5 dims the other domains; the height ramp then draws under that dim, and none leaves the dim alone. Each step's dump names the bytes sent to the core, which the run recomputes from the sample piece by piece.",
+  "steps": [
+    {"wait_ms": 5001},
+    {"chord": "F1"},
+    {"text": "> jumble.tint.mode height"},
+    {"chord": "Enter"},
+    {"wait_ms": 811},
+    {"chord": "F1"},
+    {"text": "> jumble.tint.mode off-lattice"},
+    {"chord": "Enter"},
+    {"wait_ms": 812},
+    {"chord": "F1"},
+    {"text": "> jumble.tint.mode contact"},
+    {"chord": "Enter"},
+    {"wait_ms": 813},
+    {"chord": "F1"},
+    {"text": "> jumble.focus.domain 5"},
+    {"chord": "Enter"},
+    {"wait_ms": 814},
+    {"chord": "F1"},
+    {"text": "> jumble.tint.mode height"},
+    {"chord": "Enter"},
+    {"wait_ms": 815},
+    {"chord": "F1"},
+    {"text": "> jumble.tint.mode none"},
+    {"chord": "Enter"},
+    {"wait_ms": 816}
+  ]
+}

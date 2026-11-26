@@ -357,6 +357,8 @@ public sealed class ShellChrome
             jumbleClock.Timeout += host.Tick;
             frame.AddChild(jumbleClock);
             ShellJumble.Host = host;
+            // B15: the tint channel and the focus layers, drawn by the core.
+            ShellTint.Attach(host, frame);
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
             Jumble.Changed += Describe;
