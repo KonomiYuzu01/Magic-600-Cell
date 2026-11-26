@@ -169,7 +169,8 @@ The records and the generated material are the same for both sheets. A source di
 
 The owner ran sheet version 2 on 26 November 2026. The answers were graded twice and independently: first by LP4's line
 main against the key, then by the mathematician, who also classified each miss. Where the two gradings differed, the
-mathematician's ruling stands, and the section below lists each ruling.
+mathematician's ruling stands, and the section below lists each ruling. The exception is M24: it would turn a verdict
+from not met to pass after the run, and on the owner's own result, so it waits for the owner's word.
 
 The owner opened no hint on version 1, so nothing carries over. The owner never pressed "done": each time runs from that
 instance's start to the next start or to the export, and the owner went back to `full_600_cell` once after starting
@@ -178,13 +179,13 @@ instance's start to the next start or to the export, and the owner went back to 
 | Person | Instance | (a) | (b) | (c) | (d) | Help a, b, c, d | Critical mistakes | Time |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | O | `jumble_checker` | wrong: step 2's reason covers the first letter only (the person's) | wrong as keyed, step 1; right with the key fixed (M22) | right | yes | 0, 0, 0, 1 | none | about 13 min |
-| O | `full_600_cell` | right; step 5 on the sheet's wording (M23) | wrong as keyed, steps 1 and 3; right with the key fixed (M22) | right | yes on ruling M24; partly under M3 as written | 1, 0, 0, 0 | none | about 76 min, with the shared reading |
+| O | `full_600_cell` | right; step 5 on the sheet's wording (M23) | wrong as keyed, steps 1 and 3; right with the key fixed (M22) | right | partly under M3 as written; yes under post-run ruling M24, which waits for the owner's word | 1, 0, 0, 0 | none | about 76 min, with the shared reading |
 | O | `representations` | wrong: step 1 gives no reason (the person's) | wrong as keyed, step 2; right with the key fixed (M22) | right | yes | 0, 0, 0, 0 | none | about 13 min |
 
 | Test | Graded on | Verdict |
 | --- | --- | --- |
 | CT-LB6-04 | (a) and (b) of every instance | not met, run of 26 November 2026: (a) of `jumble_checker` and `representations`, both the person's; it holds under every ruling |
-| CT-EV5-05, human half | (c) and (d) of every instance | pass, run of 26 November 2026: (c) right and (d) yes for every instance at help level 0 or 1, no critical mistake. `full_600_cell`'s (d) is yes on ruling M24, made after the run. Under M3 as written it is partly, and the half is not met |
+| CT-EV5-05, human half | (c) and (d) of every instance | open, run of 26 November 2026. Not met under the key as written (M3): `full_600_cell`'s (d) is partly. Pass under post-run ruling M24, which waits for the owner's word: (c) right and (d) yes for every instance at help level 0 or 1, no critical mistake |
 | CT-EV5-05, review half | the explanations and the shared grammar | part: the shared grammar waits for the theory book |
 | CT-EV5-03 | S1 to S7 and two transfers, P1 and P2 | waiting for non-authors |
 
@@ -219,7 +220,7 @@ The misses and their findings:
 | M21 | blocker for a rerun of (b) | The givens tables' source column ("this value is given by") names a leaf for the input, which contradicts the sheet's "none" rule for steps the person derives from the input. | deferred: fixed before any rerun of (b) |
 | M22 | major | Four accepted sets are narrower than M1's rule that the key accepts every defensible node set: `full_600_cell` step 1 (add the preview leaf) and step 3 ("none"), `jumble_checker` steps 1, 4 and 5 (add the preview leaf), `representations` step 2 (add `kernel:publish_view`). | adopted as a ruling: the table shows both gradings, and the verdict does not change |
 | M23 | major | `full_600_cell`'s step 5 also reads as the puzzle's state after the preview, which is always the base. | adopted as a ruling; the rewording waits for a rerun |
-| M24 | major | The (d) question does not say what counts as a limit. M3's rule in the key also contradicts `representations`' accepted answer, which includes "it changes no state". A clause that rules out a misreading counts as a limit; one that repeats the input, output or domain row does not. | adopted as a ruling for `full_600_cell`'s (d); the wording waits for a rerun |
+| M24 | major | The (d) question does not say what counts as a limit. M3's rule in the key also contradicts `representations`' accepted answer, which includes "it changes no state". A clause that rules out a misreading counts as a limit; one that repeats the input, output or domain row does not. | waits for the owner's word: as a ruling for `full_600_cell`'s (d), it would turn the human half of CT-EV5-05 from not met to pass. The wording waits for a rerun |
 | M25 | minor | `jumble_checker`'s same-cap argument for step 2 is in no justification statement, and the sheet does not say that item 12 is a jumble. | deferred: a record change, so it reruns that record's tasks |
 | M26 | minor | `jumble_checker`'s first given holds a fixture path in its leaf field. | deferred |
 | M27 | minor | With "done" never pressed, there is no time to done and the answers never locked; the export should warn. | deferred |
