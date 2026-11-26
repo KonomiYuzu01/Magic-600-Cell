@@ -55,6 +55,18 @@ spent over three hours of one afternoon in local test runs, product-window scrip
    `tier: full`); nobody waits for it, and a red full run on main is fixed first by the line that caused it. The merge
    rule names the per-commit checks and the fast tier.
 
+## The rule-file pins
+
+`AGENTS.md` and the briefing are inputs of the format packet, so their pins are refreshed under FP.1:
+- `AGENTS.md`, SHA-256 `9c473c758e257b58a67d175382582d3d3879aff63d03f5d0e2c281ba5f2f5800` to
+  `25032ece2fb4839bfaa40fc3f9a92c17a08ccc8a2141948d79552ad8267cd1cd`;
+- `docs/development-guide/AGENT_BRIEFING.md`, SHA-256
+  `3eef53ce444431ba6095468eafdcf8099c38757d3bd67e91745e514a09a733fc` to
+  `e14175bb6123b01fba81fa53b5419fac3ad9da491d98499c80aa075f82cff262`;
+- `input_commit`, `73270a39b9589504268777200fdeb3b729c05769` to `6a36a9356fa69c0351d331344e49c29269385ba1`, the last commit that edits them.
+
+The packet cites none of the edited lines. The candidate files, `candidate_sha256` and every other pin are unchanged.
+
 ## What this does not do
 
 - It deletes no check: checks move between tiers, and every one still runs in CI's full tier and in stage 3.
