@@ -365,7 +365,7 @@ fn word(record: &Value) -> Vec<i32> {
 #[test]
 fn the_abi_versions() {
     assert_eq!(m6e_abi_version(), 1);
-    assert_eq!(m6h_abi_version(), 12);
+    assert_eq!(m6h_abi_version(), 13);
 }
 
 #[test]

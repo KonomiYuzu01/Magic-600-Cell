@@ -3,6 +3,7 @@
 // visibility. A slot that is not drawn is placed outside the clip volume, so
 // it enters neither pass (F02). The fragment stages have no discard and change
 // no depth, stencil or coverage.
+#define SA2_LAYOUT 1 // ABI 10: the product passes read the Hopf table (t18)
 #include "draw.hlsl"
 StructuredBuffer<uint> slotVisible : register(t15); // 1 = drawn
 StructuredBuffer<uint> instanceIds : register(t16); // the ID pass value; 0 = no instance

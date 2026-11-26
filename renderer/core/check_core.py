@@ -3,7 +3,8 @@
 --stages DXC_DIR also runs C9 U5's user-stage check on WARP only (never a hardware adapter), with dxcompiler.dll and
 dxil.dll copied from DXC_DIR beside the built DLL. --poses also runs the product pose check on WARP only, --shape
 (ABI 6) the view shape check on WARP only, --style (ABI 7) the piece style check on WARP only, --panes (ABI 8) the
-composite frame check on WARP only, and --focus (ABI 9) the view focus check on WARP only.
+composite frame check on WARP only, --focus (ABI 9) the view focus check on WARP only, and --hopf (ABI 10) the view
+layout check on WARP only, on Look Lab's tools/looklab/fixtures/hopf-rings.json.
 
 Derived from work/experiments/renderer-sa2/native/check_native.py (see PROVENANCE.md).
 """
@@ -89,6 +90,8 @@ def check_result(executable, build, mode, vectors, stages=False, poses=False, wa
         arguments.append("--poses")
     if warp_mode and warp_mode != "poses":
         arguments.append(f"--{warp_mode}")
+    if warp_mode == "hopf":
+        arguments.append(str(Path(__file__).resolve().parents[2] / "tools" / "looklab" / "fixtures" / "hopf-rings.json"))
     if mode != "cpu":
         arguments.append("--debug")
     timeout = 300 if mode == "cpu" else 900 if stages or poses or warp_mode else 7200
@@ -148,6 +151,8 @@ def main():
                         help="also run ABI 6's WARP check of a view's shape (sa2_view_shape)")
     parser.add_argument("--style", action="store_true",
                         help="also run ABI 7's WARP check of the piece style (sa2_style_set, sa2_view_style_set)")
+    parser.add_argument("--hopf", action="store_true",
+                        help="also run ABI 10's WARP check of a view's layout (sa2_view_layout_set) on Look Lab's Hopf rings")
     parser.add_argument("--focus", action="store_true",
                         help="also run ABI 9's WARP check of a view's focus (sa2_view_focus)")
     parser.add_argument("--panes", action="store_true",
@@ -198,10 +203,13 @@ def main():
             check_result(executable, build, "warp", vectors, warp_mode="panes")
         if options.focus:
             check_result(executable, build, "warp", vectors, warp_mode="focus")
+        if options.hopf:
+            check_result(executable, build, "warp", vectors, warp_mode="hopf")
         summary = " (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"
         warp = " and ".join(name for name, run in (("stage", options.stages), ("pose", options.poses),
                                                    ("shape", options.shape), ("style", options.style),
-                                                   ("panes", options.panes), ("focus", options.focus)) if run)
+                                                   ("panes", options.panes), ("focus", options.focus),
+                                                   ("hopf", options.hopf)) if run)
         if warp:
             summary = f" (CPU, WARP and hardware; WARP {warp} checks)" if options.gpu else f" (CPU and the WARP {warp} checks; no hardware run)"
         print("check_core: ok" + summary)

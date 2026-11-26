@@ -1495,11 +1495,11 @@ class D02Fixtures(unittest.TestCase):
 
     def test_the_host_gives_the_state_digest_and_the_shell_binds_only_by_it(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 12;", lib)
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 13;", lib)
         self.assertIn('pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32', lib)
-        self.assertIn("public const uint AbiVersion = 12;", text(PROJECT / "HostLibrary.cs"))
-        self.assertIn("refuses another version than its `AbiVersion` (12 since ADR-D02 B18c's view focus; 11 at "
-                      "B18b's two views; 10 at B14's style, 9 at the view shape, 8 at B5)",
+        self.assertIn("public const uint AbiVersion = 13;", text(PROJECT / "HostLibrary.cs"))
+        self.assertIn("refuses another version than its `AbiVersion` (13 since ADR-D02 B23's Hopf rings; 12 at B18c's "
+                      "view focus; 11 at B18b's two views; 10 at B14's style, 9 at the view shape, 8 at B5)",
                       text(SHELL / "README.md"))
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
         # A sample binds by its state digest and its two pose-array digests (checkpoint C1: pose ids are ranks in a
@@ -1535,7 +1535,9 @@ class D02Shape(unittest.TestCase):
         self.assertIn("ShellJumble.On ? Set(library, host, HostLibrary.View, Read(OpeningPath())) : "
                       "HostLibrary.Ok", shape)
         self.assertIn("var code = library.SetViewShape(host, view, shape);", shape)
-        self.assertIn('return new[] { 1.0f - gap, sticker, D4, Zoom };', shape)
+        self.assertIn('return new[] { 1.0f - gap, sticker, D4, zoom };', shape)
+        # B23: with the Hopf rings the file's field of view gives the zoom, as Look Lab's does.
+        self.assertIn("zoom = (float)(1 / Math.Tan(fov.GetDouble() / 2));", shape)
         self.assertIn('GetProperty("gap")', shape)
         self.assertIn('GetProperty("stickerShrink")', shape)
         self.assertIn('ProjectSettings.GlobalizePath("res://look/opening.json")', shape)

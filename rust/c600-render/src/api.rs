@@ -4,7 +4,7 @@
 
 use crate::abi::{
     Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2Pane, Sa2PaneRow, Sa2PickRow, Sa2PollRow, Sa2PresentedRow,
-    Sa2ViewFocus, Sa2ViewShape, Sa2ViewStyle, Status,
+    Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, Status,
 };
 
 /// The pose path arrays of a posed engine state.
@@ -86,6 +86,12 @@ pub trait CoreAbi {
     /// answers `UNSUPPORTED`.
     fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
         let _ = (view, focus);
+        Err(Status::UNSUPPORTED)
+    }
+    /// ABI 10's `sa2_view_layout_set`: the layout of `view`'s frames, or `None` for the chain. A core without it
+    /// answers `UNSUPPORTED`.
+    fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
+        let _ = (view, layout);
         Err(Status::UNSUPPORTED)
     }
     /// ABI 7's `sa2_style_set`: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear

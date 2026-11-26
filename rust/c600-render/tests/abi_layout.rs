@@ -1,4 +1,4 @@
-//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 9 row's field names, offsets and
+//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 10 row's field names, offsets and
 //! size under the C rules of x64 (each against the header's static_assert too) and every constant. The header is
 //! read, not copied, so a header change fails here. The function table's signatures are checked in `renderer/bridge`.
 
@@ -243,6 +243,10 @@ fn every_row_has_the_header_layout() {
     let focus = rust_struct!(Sa2ViewFocus { struct_size, projection, focus_cell, focus_cos, spread, reserved });
     assert_eq!(c_struct(&h, "sa2_view_focus"), focus, "sa2_view_focus");
     assert_eq!(Sa2ViewFocus::new().struct_size, 24, "new() sets struct_size");
+    // ABI 10: a view's layout.
+    let layout = rust_struct!(Sa2ViewLayout { struct_size, kind, j, k, origins, ring_of, half_step });
+    assert_eq!(c_struct(&h, "sa2_view_layout"), layout, "sa2_view_layout");
+    assert_eq!(Sa2ViewLayout::new().struct_size, 1560, "new() sets struct_size");
     let sizes = [
         Sa2PollRow::new().struct_size,
         Sa2FrameInput::new().struct_size,
@@ -313,6 +317,9 @@ fn every_constant_has_the_header_value() {
         ("PROJECTION_PERSPECTIVE".into(), i64::from(PROJECTION_PERSPECTIVE)),
         ("PROJECTION_ORTHOGRAPHIC".into(), i64::from(PROJECTION_ORTHOGRAPHIC)),
         ("FOCUS_NONE".into(), i64::from(FOCUS_NONE)),
+        ("LAYOUT_CHAIN".into(), i64::from(LAYOUT_CHAIN)),
+        ("LAYOUT_HOPF_RINGS".into(), i64::from(LAYOUT_HOPF_RINGS)),
+        ("HOPF_RINGS".into(), i64::from(HOPF_RINGS)),
     ];
     for code in 0..=10 {
         rust.push((Status(code).name().to_owned(), i64::from(code)));

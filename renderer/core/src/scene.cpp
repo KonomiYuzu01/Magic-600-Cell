@@ -127,6 +127,7 @@ struct ProductGpu {
     struct Targets { Buffer visible, instances; };
     Spares<Upload> spare_uploads;
     Spares<Targets> spare_targets;
+    Buffer hopf; // ABI 10: the Hopf table (t18), written once from the product state on the first frame that has it
     std::map<uint64_t, Pick> picks; // by pick ticket
     ComPtr<ID3D12Resource> id_target; // R32_UINT at the scene's size, created on the first pick
     ComPtr<ID3D12DescriptorHeap> id_heap;
@@ -319,11 +320,12 @@ struct Scene::Impl {
     // the pose path. ABI 4's product signature appends root SRVs t15 and t16
     // (appended = 2); W1..W4 and W-J keep appended = 0.
     ComPtr<ID3D12RootSignature> signature(UINT appended, const wchar_t* label) {
-        D3D12_ROOT_PARAMETER params[20]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        D3D12_ROOT_PARAMETER params[21]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         params[0].Descriptor.ShaderRegister = 0;
         for (UINT i = 1; i <= 7; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 1; }
         for (UINT i = 8; i <= 9; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV; params[i].Descriptor.ShaderRegister = i - 8; }
         for (UINT i = 10; i < 18 + appended; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 3; }
+        if (appended == 3) params[20].Descriptor.ShaderRegister = 18; // ABI 10: the Hopf table (t18; t17 is the style's)
         D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 18 + appended; d.pParameters = params;
         d.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> blob, error;
@@ -702,7 +704,7 @@ struct Scene::Impl {
         const auto directory = module_path().parent_path();
         const auto blob = [&](const char* file) { return scene_bytes(directory / file); };
         const auto id_ps = blob("id_ps.dxil"), product_ps = blob("product_ps.dxil"), product_vs = blob("product_vs.dxil");
-        p->root = signature(2, L"SA2 product root signature");
+        p->root = signature(3, L"SA2 product root signature"); // ABI 10: t15, t16 and t18
         p->draw_pso = graphics(product_vs, product_ps, p->root.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, L"SA2 product pipeline");
         p->id_pso = graphics(product_vs, id_ps, p->root.Get(), DXGI_FORMAT_R32_UINT, L"SA2 ID pass pipeline");
         const uint64_t pose_sizes[] = {uint64_t(SA2_PIECES) * 4, uint64_t(SA2_MAX_POSES) * 64, uint64_t(SA2_MAX_POSES) * 4};
@@ -813,6 +815,8 @@ struct Scene::Impl {
         auto c = constants(shape, rotation, float(width) / float(height), 0);
         c.poseEnabled = pose_count ? 1u : 0u; c.poseCount = std::max(pose_count, 1u);
         c.cs = view.cell_shrink; c.ss = view.sticker_shrink; c.d4 = view.d4; c.zoom = view.zoom;
+        // ABI 10: the Hopf rings replace the projection chain, its focus included.
+        if (view.layout == SA2_LAYOUT_HOPF_RINGS) { c.viewFlags = 8u; return c; }
         // ABI 9: the view's focus. Unset, every field keeps W-J's zero and the frame draws as ABI 8.
         if (view.projection == SA2_PROJECTION_ORTHOGRAPHIC) c.viewFlags |= 1u;
         if (view.spread > 1.0f) { c.viewFlags |= 4u; c.focusSpread = view.spread; }
@@ -840,6 +844,16 @@ struct Scene::Impl {
         }
         return c;
     }
+    // ABI 10: writes the Hopf table once into its upload buffer (the product state refuses a different one).
+    void hopf_sync(const HopfTable* table) {
+        auto& p = product_gpu();
+        if (!table || p.hopf.resource) return;
+        const uint64_t bytes = uint64_t(table->size()) * sizeof((*table)[0]);
+        auto made = buffer(bytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        name(made.resource.Get(), L"SA2 Hopf table");
+        std::memcpy(map(made), table->data(), size_t(bytes)); made.resource->Unmap(0, nullptr);
+        p.hopf = std::move(made);
+    }
     // ABI 9: the unit centre of a cell in the world (cell centres have length 1 there: the shaders divide by the
     // normal's length), as geometry.hlsl's homePoint places the cell's normal.
     std::array<float, 4> cell_centre(uint32_t cell) const {
@@ -856,13 +870,14 @@ struct Scene::Impl {
     // ABI 7: the styled root signature: the product's twenty parameters, then root SRV t17 (the piece style) and
     // root CBV b1 (the style slot).
     ComPtr<ID3D12RootSignature> styled_signature() {
-        D3D12_ROOT_PARAMETER params[22]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        D3D12_ROOT_PARAMETER params[23]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         params[0].Descriptor.ShaderRegister = 0;
         for (UINT i = 1; i <= 7; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 1; }
         for (UINT i = 8; i <= 9; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV; params[i].Descriptor.ShaderRegister = i - 8; }
         for (UINT i = 10; i < 21; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 3; }
         params[21].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; params[21].Descriptor.ShaderRegister = 1;
-        D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 22; d.pParameters = params;
+        params[22].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[22].Descriptor.ShaderRegister = 18; // ABI 10
+        D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 23; d.pParameters = params;
         d.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> blob, error;
         hr(device, D3D12SerializeRootSignature(&d, D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), "D3D12SerializeRootSignature(styled)");
@@ -930,6 +945,8 @@ struct Scene::Impl {
             list->SetGraphicsRootConstantBufferView(21, style_constants->resource->GetGPUVirtualAddress());
         }
         list->SetGraphicsRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress());
+        // ABI 10: the Hopf table, or any live buffer while no view names the rings (the shaders read it only then).
+        list->SetGraphicsRootShaderResourceView(style ? 22 : 20, (p.hopf.resource ? p.hopf : geometry[0]).resource->GetGPUVirtualAddress());
         const Buffer* srv[] = {&geometry[0], &geometry[1], &geometry[2], &geometry[3], &geometry[4], &copy.labels, &geometry[5]};
         for (UINT i = 0; i < 7; ++i) list->SetGraphicsRootShaderResourceView(i + 1, srv[i]->resource->GetGPUVirtualAddress());
         // t7..t16: slot -> piece, pose index, rows, lattice, destination, overlay points, straddles, offsets, visibility, instance IDs.
@@ -1417,6 +1434,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     scene_require(pso != nullptr && (format == DXGI_FORMAT_B8G8R8A8_UNORM || format == DXGI_FORMAT_R8G8B8A8_UNORM),
         "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
     g.initialize(list); g.product_initialize(list);
+    g.hopf_sync(product.hopf());
     auto& copy = p.copies[plan.copy];
     if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style);
     p.pane_count[ring] = 0; // ABI 8: a one-view frame
@@ -1439,6 +1457,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     list->ResolveQueryData(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring, 1, p.query_read.resource.Get(),
                            ring * QueryStride + StatisticsOffset);
 }
+std::array<float, 4> Scene::cell_centre(uint32_t cell) const { return gpu->cell_centre(cell); }
 std::pair<uint64_t, uint64_t> Scene::product_results(uint32_t ring) {
     auto& g = *gpu; auto& p = g.product_gpu();
     scene_require(ring < SA2_RING_SLOTS, "ring slot out of range", SA2_E_INVALID_ARGUMENT);
@@ -1487,6 +1506,7 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
     const bool surface = format == DXGI_FORMAT_B8G8R8A8_UNORM;
     scene_require(surface || format == DXGI_FORMAT_R8G8B8A8_UNORM, "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
     g.initialize(list); g.product_initialize(list);
+    g.hopf_sync(product.hopf());
     auto& copy = p.copies[plan.copy];
     if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style);
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
@@ -1524,6 +1544,7 @@ uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12Comm
     scene_require(p.picks.find(ticket) == p.picks.end(), "the pick already has GPU resources", SA2_E_WRONG_STATE);
     g.product_set(input.set_ticket);
     // Resources first: a failure here leaves the scene usable.
+    g.hopf_sync(product.hopf());
     g.make_id_target(record.width, record.height);
     ProductGpu::Pick pick;
     std::tie(pick.allocator, pick.list) = g.product_list(L"SA2 ID pass command list");

@@ -242,6 +242,14 @@ unsafe extern "C" fn view_focus_set(ctx: *mut c_void, view: u64, focus: *const S
     code(unsafe { shim(ctx) }.fake.view_focus_set(view, focus), |()| ())
 }
 
+unsafe extern "C" fn view_layout_set(ctx: *mut c_void, view: u64, layout: *const Sa2ViewLayout) -> i32 {
+    let layout = unsafe { layout.as_ref() };
+    if layout.is_some_and(|l| !sized::<Sa2ViewLayout>(l.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_layout_set(view, layout), |()| ())
+}
+
 unsafe extern "C" fn style_set(ctx: *mut c_void, revision: u64, bytes: *const u8, channel: u32) -> i32 {
     let bytes = (!bytes.is_null()).then(|| unsafe { std::slice::from_raw_parts(bytes, PIECES) });
     code(unsafe { shim(ctx) }.fake.style_set(revision, bytes, channel), |()| ())
@@ -309,6 +317,7 @@ pub fn functions() -> CoreFunctions {
         frame_submit_panes,
         frame_panes,
         view_focus_set,
+        view_layout_set,
     }
 }
 
@@ -322,7 +331,7 @@ impl Shimmed {
     pub fn new(fake: FakeCore, pad: usize) -> Shimmed {
         let shim = Box::into_raw(Box::new(Shim { fake, pad }));
         // SAFETY: the table is the shim's and the context a live shim, which this value owns and frees last.
-        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 9");
+        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 10");
         Shimmed { dll, shim }
     }
 }
@@ -400,6 +409,9 @@ impl CoreAbi for Shimmed {
     }
     fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
         self.dll.view_focus_set(view, focus)
+    }
+    fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
+        self.dll.view_layout_set(view, layout)
     }
 }
 

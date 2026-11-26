@@ -848,6 +848,23 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B22.
+- **As built, bare (drawing track, 26 November 2026):** the Hopf-ring opening, pulled ahead of B22 as noted under B6a.
+  - The core gains ABI 10, `sa2_view_layout_set`, and the host version 13, `m6h_set_view_layout`. The 1560-byte row carries Look Lab's `fixtures/hopf-rings.json`: J, K, the 20 ring origins, and each cell's ring and half-step.
+  - The core checks the rings against its own cells, then builds Look Lab's `GlobalLayout` ring charts into one table that the product passes read at t18.
+    - Each cell centre must project onto its ring's plane at the phase of its half-step, within 0.01 of a half-step.
+    - The projected length must exceed 0.99. Ring cells lie at 0.99555, not 1: they wind as a helix around the great circle, not on it.
+  - With `--d02`, when the opening file names `hopfRings`, Global opens on the rings. Its zoom is the file's 1/tan(fov/2), and the linked 3D spin turns it.
+  - Departure: the chart is chosen in the shader from the posed centre of the sticker's own cell, in Hopf coordinates: the nearest of the 20 base points, then the nearest phase along that ring. The host's per-revision nearest-cell assignment stays B22's.
+  - Not built yet:
+    - the preset row and the palette switch;
+    - the no-sweep rule;
+    - `--chart hopf` as a separate flag (the check is `--hopf`).
+  - Checks:
+    - `check_core.py --hopf` passed on CPU and WARP. On the CPU, the table puts the 20 ring centres on a dodecahedron's vertices. The chain layout and NULL draw byte-identically. Seven malformed or unfitting rows are refused. The camera turns the rings. Another view keeps the chain, and a third view with the same rings draws the same picture. The WARP picture covered 9,874 pixels, centred.
+    - `d02_run.py --script hopf --state wj-ia-300` passed: opening zoom 2.2095 = 1/tan(0.425), 2.6735 after two notches, 316 one-view frames.
+    - `tests/test_d02_drawing.py` passed 28 of 28, `test_renderer_shell.py` 84 of 84, `test_renderer_core.py` 26 of 26 and `test_renderer_acceptance.py` 54 of 54.
+    - `cargo test -p c600-render`, the bridge workspace and `test_render_ffi.py` passed, including `the_host_sets_a_view_layout`.
+  - Not checked: the product window's picture of posed pieces on the rings, and a hardware run of `--hopf`.
 
 ### B24. Gate sitting 2
 - **Goal:** gate rows for the slice, the raw view, both presets and the three-pane cases, plus the occlusion measure.

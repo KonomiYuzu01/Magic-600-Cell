@@ -272,6 +272,16 @@ impl<C: CoreAbi> RenderBackend<C> {
         self.core.view_shape_set(view.0, shape.as_ref()).map_err(|status| self.error(status))
     }
 
+    /// ABI 10: the layout `view`'s frames and their ID passes draw with, or `None` for the chain. The core checks the
+    /// Hopf rings against its own cells and keeps the layout across a recovery.
+    pub fn set_view_layout(&mut self, view: ViewId, layout: Option<&Sa2ViewLayout>) -> Result<(), Error> {
+        if layout.is_some_and(|l| !l.in_range()) {
+            return Err(Error::invalid("a view layout value is not finite or lies outside its range"));
+        }
+        let row = layout.map(|l| Sa2ViewLayout { struct_size: Sa2ViewLayout::new().struct_size, ..*l });
+        self.core.view_layout_set(view.0, row.as_ref()).map_err(|status| self.error(status))
+    }
+
     /// ABI 9: the focus `view`'s frames and their ID passes draw with, or `None` for the defaults. The core keeps it
     /// across a recovery. A value out of the header's range is refused before the core is asked.
     pub fn set_view_focus(&mut self, view: ViewId, focus: Option<Sa2ViewFocus>) -> Result<(), Error> {

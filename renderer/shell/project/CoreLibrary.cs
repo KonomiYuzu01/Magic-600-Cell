@@ -12,7 +12,7 @@ namespace Magic600.Shell;
 public sealed class CoreLibrary : IDisposable
 {
     /// <summary>The ABI this shell speaks; the core's sa2_abi_version must answer it.</summary>
-    public const uint AbiVersion = 9;
+    public const uint AbiVersion = 10;
 
     /// <summary>
     /// The exports of c600-render-ffi's SYMBOLS, in its order. tests/test_renderer_shell.py checks the two lists
@@ -43,6 +43,7 @@ public sealed class CoreLibrary : IDisposable
         "sa2_frame_submit_panes",
         "sa2_frame_panes",
         "sa2_view_focus_set",
+        "sa2_view_layout_set",
     };
 
     /// <summary>

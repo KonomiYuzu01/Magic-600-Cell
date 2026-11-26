@@ -100,11 +100,21 @@ struct ViewShape {
     // ABI 9: the view's focus (sa2_view_focus_set); the defaults draw exactly as ABI 8.
     uint32_t projection = SA2_PROJECTION_PERSPECTIVE, focus_cell = SA2_FOCUS_NONE;
     float focus_cos = -1.0f, spread = 1.0f;
+    uint32_t layout = SA2_LAYOUT_CHAIN; // ABI 10: the view's layout (sa2_view_layout_set)
     bool operator==(const ViewShape&) const = default;
 };
 ViewShape view_shape(const sa2_view_shape* shape); // validates (SA2_E_INVALID_ARGUMENT); NULL gives the defaults
 // ABI 9: validates a focus (SA2_E_INVALID_ARGUMENT) and writes it into `shape`; NULL writes the defaults.
 void view_focus(const sa2_view_focus* focus, ViewShape& shape);
+// ABI 10: the Hopf-ring table the product shaders read (register t18), 2611 float4: the 600 cells' ring charts (rows 0
+// to 2, then the translation), the rings' origins, their origins times J, their base points (w: the ring's half-step
+// parity), J, then the 600 cells by ring and place along it (as uint bits, four to an element).
+constexpr size_t HopfTableRows = 2611;
+using HopfTable = std::vector<std::array<float, 4>>;
+// Validates a layout's struct (SA2_E_INVALID_ARGUMENT); NULL is the chain.
+uint32_t view_layout_kind(const sa2_view_layout* layout);
+// Builds the Hopf table from the rings and the core's own cell centres; rings that do not fit them are refused.
+HopfTable hopf_table(const sa2_view_layout& layout, const std::function<std::array<float, 4>(uint32_t)>& centre);
 // ABI 7: a style slot (sa2_view_style_set), as the styled pass reads it (register b1): 16 palette entries, the three
 // matrix rows (xyz), then the modes. 320 bytes, inside one 256-byte-aligned constant buffer.
 struct ViewStyle {
@@ -283,6 +293,9 @@ public:
 
     // ABI 6: a view's shape; the defaults until it is set. Kept across a recovery.
     void set_shape(uint64_t view, const ViewShape& shape);
+    // ABI 10: the shared Hopf table; a second, different table is refused (the GPU copy is written once).
+    void set_hopf(HopfTable table);
+    const HopfTable* hopf() const { return hopf_.empty() ? nullptr : &hopf_; }
     ViewShape shape(uint64_t view) const;
     // ABI 7: the adopted revision's piece style (a channel, or null to clear it) and the style slots. Kept across a
     // recovery; an adoption drops the piece style.
@@ -382,6 +395,7 @@ private:
     std::map<uint64_t, std::pair<uint64_t, uint64_t>> surfaces_; // surface -> (last sequence, newest surface_generation)
     std::map<uint64_t, uint64_t> views_; // view -> newest view_generation
     std::map<uint64_t, ViewShape> shapes_; // ABI 6: view -> shape, for views whose shape is not the default
+    HopfTable hopf_; // ABI 10
     std::optional<PieceStyle> style_; // ABI 7: the adopted revision's piece style
     uint64_t style_version_ = 0;
     std::array<std::optional<ViewStyle>, SA2_STYLE_SLOTS> view_styles_; // ABI 7: slots 1..4

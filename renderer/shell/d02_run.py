@@ -685,6 +685,52 @@ EXPECT["two-views"] = expect_two_views
 ON_FIXTURE.add("two-views")
 EVENT_CHECKS = {"two-views": check_two_views_events}
 
+# B23, bare: the Hopf-ring opening. The shell sets the layout only when the opening file names the rings, and the same
+# file's field of view gives the zoom, so the zoom sent is the run's sign that Global opened on the rings (a refused
+# layout stops the shell before its first frame).
+OPENING = ROOT / "tools" / "looklab" / "data" / "opening.json"
+HOPF_STEPS = ["start", "wait 2500 ms", "wheel 2", "wait 1000 ms"]
+HOPF_FRAMES = 30
+
+
+def expect_hopf(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The hopf script: Global is sent the opening file's Hopf zoom, 1/tan(fov/2), and two wheel notches scale it."""
+    import math
+    if [dump["do"] for dump in dumps] != HOPF_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    params = json.loads(OPENING.read_text(encoding="utf-8"))["params"]
+    if params.get("projection") != "hopfRings":
+        return ["the opening file does not name the hopfRings projection"]
+    zooms = [dump.get("zoom") for dump in dumps]
+    if any(not isinstance(zoom, dict) or "sent" not in zoom for zoom in zooms[1:]):
+        return ["a step's dump has no zoom sent to the core"]
+    opening = 1 / math.tan(params["fieldOfView"] / 2)
+    problems = []
+    if abs(zooms[1]["sent"] - opening) > 1e-4:
+        problems.append(f"Global opened at zoom {zooms[1]['sent']:.4f}, not the Hopf rings' {opening:.4f}")
+    if abs(zooms[3]["sent"] - opening * ZOOM_STEP ** 2) > 1e-4:
+        problems.append(f"two notches sent zoom {zooms[3]['sent']:.4f}, not {opening * ZOOM_STEP ** 2:.4f}")
+    print(f"hopf: opening zoom {zooms[1]['sent']:.4f} (1/tan(fov/2) = {opening:.4f}); +2 notches {zooms[3]['sent']:.4f}")
+    return problems
+
+
+def check_hopf_events(events: Path) -> list[str]:
+    """B23: the shell drew at least HOPF_FRAMES frames, all one-view frames (no cap is named)."""
+    frames = frame_rows(events)
+    problems = []
+    if len(frames) < HOPF_FRAMES:
+        problems.append(f"the run wrote {len(frames)} frame rows, fewer than {HOPF_FRAMES}")
+    paned = [row for row in frames if "panes" in row]
+    if paned:
+        problems.append(f"{len(paned)} composite frames although no cap was named")
+    print(f"hopf: {len(frames)} frames, revisions {sorted({row.get('engine_revision') for row in frames})}")
+    return problems
+
+
+EXPECT["hopf"] = expect_hopf
+ON_FIXTURE.add("hopf")
+EVENT_CHECKS["hopf"] = check_hopf_events
+
 
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
