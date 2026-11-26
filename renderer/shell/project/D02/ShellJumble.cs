@@ -101,6 +101,20 @@ public static class ShellJumble
         return File.Exists(path) ? CapMapModel.Read(File.ReadAllText(path)) : CapMapModel.Pending();
     }
 
+    /// <summary>The Jumble host, for the script driver's checks (B10's cancels).</summary>
+    public static JumbleHost? Host { get; set; }
+
+    /// <summary>A named cap's twelve release checks (B10) from the bound sample's record of the cap; none without one.</summary>
+    public static IReadOnlyDictionary<int, TwistCheck> TwistChecks(int cap)
+    {
+        if (Bound is not { } state)
+        {
+            return new Dictionary<int, TwistCheck>();
+        }
+        var path = Path.Combine(JumbleFolder(), state, "cap-" + cap + ".json");
+        return File.Exists(path) ? TwistCheck.FromRecord(File.ReadAllText(path)) : new Dictionary<int, TwistCheck>();
+    }
+
     /// <summary>The 80 caps meeting each cap (B9), from the samples' meeting-caps.json; none when the build has none.</summary>
     public static MeetingCaps? Meeting()
     {
@@ -278,6 +292,8 @@ internal sealed partial class D02Driver : Node
     private int _next = -1, _wait = -1;
     private double _sleep;
     private string _doing = "start";
+    // B10: the older releases the script cancelled, and how many of those cancels changed the screen.
+    private int _cancels, _screenChanges;
 
     public D02Driver(ChromeFrame frame)
     {
@@ -435,6 +451,25 @@ internal sealed partial class D02Driver : Node
             _doing = "drag " + dx.ToString(CultureInfo.InvariantCulture) + " " + dy.ToString(CultureInfo.InvariantCulture);
             Drag(_frame.Opening, new Vector2(dx, dy));
         }
+        else if (step.TryGetProperty("cancel_older", out _))
+        {
+            // B10's Q3.b check in the shell: cancel every release at the named cap that is no longer the latest
+            // request, and count each cancel that changed the kept list on screen (N-1 says none may).
+            _doing = "cancel older";
+            if (ShellJumble.Host?.Checks is { } kept)
+            {
+                foreach (var release in kept.Released.Where(r => r != kept.Pending).ToArray())
+                {
+                    var before = kept.Screen();
+                    kept.Cancel(release);
+                    _cancels++;
+                    if (!before.SequenceEqual(kept.Screen()))
+                    {
+                        _screenChanges++;
+                    }
+                }
+            }
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -442,7 +477,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a cancel_older or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -511,6 +546,14 @@ internal sealed partial class D02Driver : Node
             json.WriteBoolean("owner_acted", D02Window.OwnerActed);
             json.WriteEndObject();
             json.WriteNumber("camera_turns", ShellJumble.Camera.Turns);
+            json.WriteNumber("cancels", _cancels);
+            json.WriteNumber("screen_changes_on_cancel", _screenChanges);
+            json.WriteStartArray("kept");
+            foreach (var line in ShellJumble.Host?.Checks?.Screen() ?? Array.Empty<string>())
+            {
+                json.WriteStringValue(line);
+            }
+            json.WriteEndArray();
             json.WriteStartArray("lines");
             foreach (var (group, text) in ScreenText.Of(_frame))
             {

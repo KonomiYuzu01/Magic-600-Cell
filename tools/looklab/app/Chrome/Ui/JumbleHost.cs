@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace Magic600.Chrome;
@@ -26,9 +27,19 @@ public sealed class JumbleHost
     private CapMapModel map = CapMapModel.Pending();
     private MeetingCaps? meeting;
     private string? refused;
-    // The draft rows (CR-14) this host carries out.
+    // The draft rows (CR-14, and CR-19's seat key as B10's stand-in) this host carries out.
     public static readonly IReadOnlySet<string> Carried = new HashSet<string>(StringComparer.Ordinal)
-        { "jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear" };
+        { "jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear", "jumble.seat.hold" };
+    // B10: the kept twist checks at the named cap and revision, the session's release record, and the sample jobs'
+    // tick clock with the cap record's results.
+    public KeptChecks? Checks { get; private set; }
+    public Func<int, IReadOnlyDictionary<int, TwistCheck>>? CheckSource { get; set; }
+    private readonly ReleaseRecord releases = new();
+    private readonly SampleJobs jobs = new(3);
+    private IReadOnlyDictionary<int, TwistCheck> results = new Dictionary<int, TwistCheck>();
+    private readonly List<(long Tick, int Item)> seat = new();
+    // A seat's twelve twists at the rhythm of B10's Q3.b test: faster than a check (three ticks), with a few pauses.
+    public static readonly IReadOnlyList<int> SeatRhythm = Array.AsReadOnly(new[] { 0, 1, 2, 6, 7, 12, 13, 14, 15, 20, 21, 22 });
     // The facts changed: the host draws its view marks again (Marks).
     public event Action? Changed;
     private readonly ChromeFrame frame;
@@ -113,6 +124,18 @@ public sealed class JumbleHost
     private void Named()
     {
         int? cap = Naming.Named;
+        int revision = (int)Source.State.Revision;
+        if (Checks?.Cap != cap || Checks?.Revision != revision)
+        {
+            // Try numbers restart at each commit: a new cap or revision has its own list.
+            Checks = cap is int named ? new KeptChecks(releases, named, revision) : null;
+            seat.Clear();
+            if (Checks != null) Checks.Changed += () => { Local.SetCount("twist_check", Checks?.Entries.Count ?? 0); Surface.SetChecks(Checks); };
+            Local.SetCount("twist_check", 0);
+            Surface.SetChecks(Checks);
+        }
+        // The bound state's results for the named cap: a binding that comes after the naming brings them.
+        results = cap is int c2 && CheckSource != null ? CheckSource(c2) : new Dictionary<int, TwistCheck>();
         Local.SetCount("named_cap", cap == null ? 0 : 1);
         CapReadout? readout = cap is int c ? (CapRecord != null ? CapRecord(c) : null) ?? map.Readout(c) : null;
         SetCap(readout);
@@ -139,6 +162,9 @@ public sealed class JumbleHost
         "jumble.cap.unname" when Naming.Named == null => "no cap is named",
         "jumble.capmap.threshold.set" when argument == null => "it needs formulas: N_c ≥ k, N_c ≤ k or N_c = F_c",
         "jumble.capmap.threshold.clear" when !Threshold.IsSet => "no threshold is set",
+        "jumble.seat.hold" when Checks == null => "name a cap first",
+        "jumble.seat.hold" when argument != "1" => "the samples hold seat 1's twelve checks only",
+        "jumble.seat.hold" when results.Count == 0 => "the samples hold no twist checks at cap " + Checks!.Cap,
         _ => null,
     };
 
@@ -150,7 +176,31 @@ public sealed class JumbleHost
             case "jumble.cap.unname": Naming.Unname(); break;
             case "jumble.capmap.threshold.set": SetThreshold(argument ?? ""); break;
             case "jumble.capmap.threshold.clear": ClearThreshold(); break;
+            case "jumble.seat.hold": HoldSeat(); break;
         }
+    }
+
+    // B10's stand-in for holding seat 1 and pressing its twelve twist keys (CR-19 routes the chords): the twelve
+    // releases at the Q3.b rhythm, from the next tick. The Twist check section opens to show them.
+    public void HoldSeat()
+    {
+        if (Checks == null) return;
+        seat.Clear();
+        for (int i = 0; i < SeatRhythm.Count; i++) seat.Add((jobs.Now + 1 + SeatRhythm[i], i + 1));
+        if (Local.Open != "twist_check") Local.Toggle("twist_check");
+    }
+
+    // One tick of the sample jobs' clock: due checks complete (only the latest is taken), then due releases are made.
+    public void Tick()
+    {
+        foreach (var (release, item) in jobs.Tick())
+            if (Checks != null && results.TryGetValue(item, out TwistCheck? check)) Checks.Complete(release, check);
+        foreach (var (_, item) in seat.Where(s => s.Tick == jobs.Now).ToArray())
+        {
+            if (Checks == null) break;
+            jobs.Request(Checks.Release(item), item);
+        }
+        seat.RemoveAll(s => s.Tick <= jobs.Now);
     }
 
     public IReadOnlyList<ReadoutSlot> Totals => totals;

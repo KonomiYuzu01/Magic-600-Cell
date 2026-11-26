@@ -390,6 +390,20 @@ relative path is from the repository root.
   - A folded row is written inside `Release` from the release record alone. A cancel of a non-latest release is a no-op.
   - `SampleJobs`: a tick clock that completes sample results.
 - **Check:** `D02Q3bTwelveTwists` asserts the four points of ADR-D02.36. `d02_run.py --script q3b` repeats it in the shell and prints `screen_changes_on_cancel=0`.
+- **As built (integrator, 26 November 2026):**
+  - `Model/TwistChecks.cs`:
+    - `TwistCheck` reads a release-check row: the twisted cap's N_c after the twist, the floor, ΔN, Δn_h and the named cap's Δu.
+    - `KeptChecks` has `Release`, `Complete` and `Cancel`. A release supersedes the pending check and folds it in the same call, from the release record alone. A run of consecutive superseded releases is one `FoldedRow`, and a completed row or a cancelled release ends the run. Only the latest release's result is taken. Cancelling the latest withdraws it (J-7), and cancelling any other release is a no-op (N-1).
+    - `CheckRow` carries the try number at the cap and revision, superseded releases counted. `FoldedRow` holds only its releases and twists.
+    - `SampleJobs` is a tick clock that completes each request three ticks later.
+  - `Ui/JumbleLists.cs`: `TwistCheckList` shows the columns `try | twist | N_c | floor | ΔN | Δn_h | Δu`, a completed row with its session release on hover, and a folded row "not checked:" with the twists' glyphs (`cap·item`). Local's Twist check section shows it and counts its rows.
+  - The host keeps one list per named cap and revision, and the shell ticks it every 150 ms.
+  - `jumble.seat.hold 1` (CR-19's row) stands in for holding seat 1 and pressing its twelve twist keys, until CR-19 routes the chords. It releases the cap record's twelve twists at the test's rhythm and opens the Twist check section. Other seats and caps without a record say why they are unavailable.
+  - Not built here: the word check's collapsed row ("lifted"), which needs a word's sample record; it goes with the repair steps in B12 and B13.
+  - Checks:
+    - `D02Q3bTwelveTwists` runs on wj-ia-300 at cap 150 and asserts the four points of ADR-D02.36: completed rows in release order, each folded row written in the frame of its superseding release, folded rows with glyphs only, and the screen identical over every cancel of an older release. It also checks J-7, the try numbers and the cells.
+    - The console lane passed 183 of 183, and `test_renderer_shell.py` 66 of 66.
+    - `d02_run.py --script q3b` passed on wj-ia-300 (`c9-product-60f9ef04a1776cf7`). It printed `screen_changes_on_cancel=0 cancels=99`, and the kept list equals the rhythm's own result: four folded runs and the completed checks 3, 5, 9 and 12. The first run failed only its foreground check, because another window took the front in the first five seconds; the rerun passed.
 - **Owner sees:** hold a seat key; rows and folded rows build with no flicker.
 - **Machine:** H, W.
 - **Checkpoint:** no.

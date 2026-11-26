@@ -250,10 +250,91 @@ def expect_name_cap(dumps: list[dict], source: dict, state: str | None) -> list[
     return problems
 
 
-EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap}
+# B10: a seat's twelve twists at the Q3.b rhythm (JumbleHost.SeatRhythm), each check three ticks long.
+SEAT_RHYTHM = [0, 1, 2, 6, 7, 12, 13, 14, 15, 20, 21, 22]
+CHECK_TICKS = 3
+
+
+def q3b_kept(record: dict) -> list[str]:
+    """The kept list the rhythm must give at the record's cap, line for line as KeptChecks.Screen() writes it: only the
+    latest release's check completes; a release folds the pending one, and a run of consecutive superseded releases
+    is one row "not checked:" with the twists' glyphs."""
+    checks = record["release_checks"]
+    rows = dict(zip(checks["items"], checks["rows"]))
+    cap = record["cap"]
+    at = {tick: item for item, tick in enumerate(SEAT_RHYTHM, start=1)}
+    entries, queue, pending, release = [], [], None, 0
+
+    def signed(value):
+        return "undefined" if value is None else (f"+{value}" if value > 0 else str(value))
+
+    for tick in range(SEAT_RHYTHM[-1] + CHECK_TICKS + 2):
+        for done in sorted(q for q in queue if q[2] <= tick):
+            if pending and pending[0] == done[0]:
+                entries.append(("row", pending))
+                pending = None
+        queue = [q for q in queue if q[2] > tick]
+        if tick in at:
+            release += 1
+            if pending:
+                if entries and entries[-1][0] == "fold" and entries[-1][1][-1][0] + 1 == pending[0]:
+                    entries[-1][1].append(pending)
+                else:
+                    entries.append(("fold", [pending]))
+            pending = (release, release, at[tick])
+            queue.append((release, at[tick], tick + CHECK_TICKS))
+    lines = []
+    for kind, value in entries:
+        if kind == "fold":
+            lines.append("not checked: " + " ".join(f"{cap}·{item}" for _, _, item in value))
+            continue
+        _, tried, item = value
+        row = rows[item]
+        heights = [(k.replace("n_above_6", "above 6").replace("_", ""), row["delta_n_h"].get(k, 0))
+                   for k in ("n_0", "n_2", "n_4", "n_6", "n_above_6")]
+        changed = " ".join(f"{k} {signed(v)}" for k, v in heights if v)
+        n_c = (row.get("rim_after") or {}).get("N_c")
+        lines.append(" | ".join([str(tried), f"{row['letter_cap']}·{item}", "undefined" if n_c is None else str(n_c),
+                                 "undefined" if row["floor"] is None else str(row["floor"]), signed(row["delta_N"]),
+                                 changed or "0", signed(row["delta_u"])]))
+    return lines
+
+
+def expect_q3b(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B10's q3b script: the kept list equals the rhythm's own result (completed rows in release order, each run of
+    superseded releases folded as "not checked:" with its glyphs only), Local's Twist check section shows it with its
+    count, and no cancel of an older release changed the screen (printed as screen_changes_on_cancel)."""
+    if state is None or not (SAMPLES / state / "cap-150.json").is_file():
+        return ["the q3b script needs a sample state with a record of cap 150"]
+    if len(dumps) < 3 or dumps[-1]["do"] != "wait 1000 ms":
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    last, problems = dumps[-1], []
+    changes, cancels = last.get("screen_changes_on_cancel"), last.get("cancels", 0)
+    print(f"screen_changes_on_cancel={changes} cancels={cancels}")
+    if changes != 0:
+        problems.append(f"{changes} cancels of an older release changed the screen")
+    if cancels < 10:
+        problems.append(f"only {cancels} older releases were cancelled")
+    wanted = q3b_kept(load(SAMPLES / state / "cap-150.json"))
+    if last.get("kept") != wanted:
+        problems.append(f"the kept list is {last.get('kept')}, the rhythm gives {wanted}")
+    folded = [line for line in wanted if line.startswith("not checked:")]
+    if not folded or len(folded) == len(wanted):
+        problems.append("the rhythm did not give both completed and folded rows")
+    if f"▾ Twist check · {len(wanted)}" not in texts(last):
+        problems.append(f"Local's open Twist check section does not count {len(wanted)} rows")
+    shown = texts(last, "view:Local")
+    for line in folded:
+        if line not in shown:
+            problems.append(f"Local does not show the folded row {line!r}")
+    return problems
+
+
+EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
+          "q3b": expect_q3b}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
-ON_FIXTURE = {"bind", "host", "name-cap"}
+ON_FIXTURE = {"bind", "host", "name-cap", "q3b"}
 IN_SAMPLE_MODE = {"host"}
 
 

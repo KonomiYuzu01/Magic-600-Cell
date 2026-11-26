@@ -291,6 +291,12 @@ public sealed class ShellChrome
             // B9: the 80 meeting caps of a named cap, and its own record where the bound sample has one.
             host.CapRecord = ShellJumble.CapRecord;
             host.SetMeeting(ShellJumble.Meeting());
+            // B10: the kept twist checks, from the cap record's release checks, on the sample jobs' tick clock.
+            host.CheckSource = ShellJumble.TwistChecks;
+            var jumbleClock = new Godot.Timer { Name = "JumbleClock", WaitTime = 0.15, Autostart = true };
+            jumbleClock.Timeout += host.Tick;
+            frame.AddChild(jumbleClock);
+            ShellJumble.Host = host;
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
             Jumble.Changed += Describe;

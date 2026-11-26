@@ -1640,6 +1640,33 @@ class D02NameCap(unittest.TestCase):
         self.assertTrue(run.expect_name_cap(dumps(), {}, "on-zero"))
 
 
+class D02Q3b(unittest.TestCase):
+    """B10: the q3b script's expectation is the Q3.b rhythm's own result, and it fails on a cancel that changed the
+    screen or on a list that differs."""
+
+    def test_the_q3b_expectation_follows_the_rhythm(self):
+        run = shell_module("d02_run")
+        self.assertIn("q3b", run.ON_FIXTURE)
+        self.assertTrue((SHELL / "d02_scripts" / "q3b.json").is_file())
+        self.assertEqual(run.SEAT_RHYTHM, [0, 1, 2, 6, 7, 12, 13, 14, 15, 20, 21, 22])
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn("SeatRhythm = Array.AsReadOnly(new[] { 0, 1, 2, 6, 7, 12, 13, 14, 15, 20, 21, 22 });", host)
+        self.assertIn("private readonly SampleJobs jobs = new(" + str(run.CHECK_TICKS) + ");", host)
+        record = json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / "wj-ia-300" / "cap-150.json"))
+        kept = run.q3b_kept(record)
+        self.assertEqual([line.startswith("not checked:") for line in kept], [True, False, True, False, True, False, True, False])
+        self.assertEqual(kept[0], "not checked: 150·1 150·2")
+        lines = [["view:Local", f"▾ Twist check · {len(kept)}"]] + [["view:Local", line] for line in kept if line.startswith("not")]
+
+        def dumps(changes=0, rows=kept):
+            return [{"do": "start", "lines": []}, {"do": "wait 2000 ms", "lines": []},
+                    {"do": "wait 1000 ms", "lines": lines, "kept": rows, "cancels": 99, "screen_changes_on_cancel": changes}]
+        self.assertEqual(run.expect_q3b(dumps(), {}, "wj-ia-300"), [])
+        self.assertEqual(len(run.expect_q3b(dumps(changes=1), {}, "wj-ia-300")), 1)
+        self.assertEqual(len(run.expect_q3b(dumps(rows=kept[1:]), {}, "wj-ia-300")), 1)
+        self.assertTrue(run.expect_q3b(dumps(), {}, "ia-40"))
+
+
 class D02Rotation(unittest.TestCase):
     """The view rotation the owner asked for on 26 November 2026: with --d02 a left-button drag in the Global opening
     turns the core's 4D camera as Look Lab's drag does, a click stays a click, and without --d02 nothing changes."""

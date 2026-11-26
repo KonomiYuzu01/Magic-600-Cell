@@ -221,7 +221,8 @@ internal static partial class Program
             ("D02ThresholdNeverReorders", D02ThresholdNeverReorders),
             ("D02NoJobBeforeNaming", D02NoJobBeforeNaming),
             ("D02HoverNamesNothing", D02HoverNamesNothing),
-            ("D02MeetingCapsAre80", D02MeetingCapsAre80)
+            ("D02MeetingCapsAre80", D02MeetingCapsAre80),
+            ("D02Q3bTwelveTwists", D02Q3bTwelveTwists)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

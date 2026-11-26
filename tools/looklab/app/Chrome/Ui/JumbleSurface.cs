@@ -19,6 +19,8 @@ public sealed partial class JumbleSurface : VBoxContainer
     // The named cap's Tier 2 facts in their fixed order (ADR-D02.19), shown in the Named cap section; none while no
     // cap is named.
     private IReadOnlyList<(string Label, string Fact)>? facts;
+    // The named cap's kept twist checks (B10), shown in the Twist check section.
+    private KeptChecks? checks;
 
     public JumbleSurface(LocalAccordion accordion, Func<TokenSet> tokens, IReadOnlyDictionary<string, string> names, string emptySentence, string emptyBody)
     {
@@ -29,6 +31,12 @@ public sealed partial class JumbleSurface : VBoxContainer
         AddChild(sentence); AddChild(sections);
         accordion.Changed += () => { if (IsInstanceValid(this)) Refresh(); };
         Refresh();
+    }
+
+    public void SetChecks(KeptChecks? value)
+    {
+        checks = value;
+        if (IsInstanceValid(this)) Refresh();
     }
 
     public void SetFacts(IReadOnlyList<(string Label, string Fact)>? value)
@@ -60,6 +68,8 @@ public sealed partial class JumbleSurface : VBoxContainer
                 }
                 sections.AddChild(grid);
             }
+            else if (open && section == "twist_check" && checks != null && checks.Entries.Count > 0)
+                sections.AddChild(new TwistCheckList(checks, tokens) { Name = "LocalBody_" + section });
             else if (open)
             {
                 Label body = ChromeWidgets.Text(emptyBody, "DimLabel"); body.Name = "LocalBody_" + section;
