@@ -20,7 +20,11 @@ public sealed partial class ResearchPane : VBoxContainer
     public HBoxContainer Tabs { get; } = new() { Name = "ResearchTabs" };
     public Label Head { get; } = ChromeWidgets.Text("", "MicroLabel");
     public Label Carried { get; } = ChromeWidgets.Text("", "MicroLabel");
-    public VBoxContainer List { get; } = new() { Name = "ResearchRows", SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill, ClipContents = true };
+    public VBoxContainer List { get; } = new() { Name = "ResearchRows" };
+    // The list's window: a plain control, so the lines' wrapped heights never reach the layout (a container that held the
+    // list grew with each rebuild of fresh, zero-width labels, and the rebuild on its resize never settled: the shell hung
+    // when Analyse first showed the pane). The list hangs from its top and the window clips it.
+    private readonly Control view = new() { Name = "ResearchView", ClipContents = true, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
     // The first line in view, and the lines the list holds now.
     public int First { get; private set; }
     public int Built => List.GetChildCount();
@@ -48,9 +52,11 @@ public sealed partial class ResearchPane : VBoxContainer
         AddChild(Tabs); AddChild(Head); AddChild(Carried);
         var body = new HBoxContainer { Name = "ResearchBody", SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         List.AddThemeConstantOverride("separation", 0);
-        body.AddChild(List); body.AddChild(bar); AddChild(body);
+        view.AddChild(List); List.SetAnchorsAndOffsetsPreset(LayoutPreset.TopWide);
+        body.AddChild(view); body.AddChild(bar); AddChild(body);
         bar.ValueChanged += value => { if (!laying) { First = (int)value; Lay(); } };
-        List.Resized += Lay;
+        view.Resized += Lay;
+        view.GuiInput += Wheel;
         List.GuiInput += Wheel;
         model.Changed += Refresh;
         Refresh();
@@ -96,7 +102,7 @@ public sealed partial class ResearchPane : VBoxContainer
         Lay();
     }
 
-    private int Window(TokenSet t) => VirtualRows.Range(lines.Count, t.Px("row.height"), First * (double)t.Px("row.height"), Math.Max(List.Size.Y, t.Px("row.height") * 8), 0).Count;
+    private int Window(TokenSet t) => VirtualRows.Range(lines.Count, t.Px("row.height"), First * (double)t.Px("row.height"), Math.Max(view.Size.Y, t.Px("row.height") * 8), 0).Count;
 
     // Builds the lines from First that the list's height can show; a wrapped line may push the last ones out of view.
     private void Lay()

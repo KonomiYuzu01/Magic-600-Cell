@@ -1215,6 +1215,53 @@ EXPECT["library-branch"] = expect_library_branch
 IN_SAMPLE_MODE.add("library-branch")
 
 
+# B28: the research pane in Analyse on the synthetic sample. The first failing claim group opens at load, so one
+# workspace tab away the owner sees the Fail row expanded to its first failing claim; object.inspect on that group folds
+# it and opens it again through the palette's path. No error reaches the error lamp.
+RESEARCH_FAIL = "research.claim/16/macro:sample/stage-16/macro-i7303.json#"
+RESEARCH_PANE_STEPS = ["start", "wait 2000 ms", "command workspace.set layout:analyse", "wait 1500 ms",
+                       f"command object.inspect {RESEARCH_FAIL}", f"command object.inspect {RESEARCH_FAIL}",
+                       "wait 3000 ms"]
+RESEARCH_FAIL_LINES = ["first claim that does not hold: cycle.closes", "code: KN6:evidence.certificate_rejected"]
+
+
+def expect_research_pane(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Solve shows no research pane; Analyse shows it with the Fail row open on its first failing claim and the code;
+    the first object.inspect folds the row and the second opens it again; the head says the evidence is synthetic."""
+    if [dump["do"] for dump in dumps] != RESEARCH_PANE_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    for index, (shown, opened) in enumerate([(None, True), (False, True), (None, True), (True, True), (True, False),
+                                             (True, True), (True, True)]):
+        research = dumps[index].get("research", {})
+        if research.get("evidence") != "synthetic" or "evidence: synthetic" not in research.get("head", ""):
+            problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}, head "
+                            f"{research.get('head')!r}")
+        if shown is not None and research.get("pane") is not shown:
+            problems.append(f"step {index}: the research pane is {'hidden' if shown else 'shown'}")
+        if (research.get("open") == RESEARCH_FAIL) != opened:
+            problems.append(f"step {index}: the open object is {research.get('open')!r}")
+        lines = [line for line in research.get("lines", []) if line.get("ref") == RESEARCH_FAIL]
+        rows = [line for line in lines if line.get("kind") == "Row"]
+        if len(rows) != 1 or rows[0].get("verdict") != "fails within on one instance":
+            problems.append(f"step {index}: the Fail row reads {[row.get('verdict') for row in rows]}")
+        details = [line["text"] for line in lines if line.get("kind") == "Detail"]
+        if (details[:2] == RESEARCH_FAIL_LINES) != opened:
+            problems.append(f"step {index}: the Fail row's lines are {details[:2]}")
+    for dump in dumps:
+        errors = dump.get("errors", {})
+        if errors.get("lamp") is not True:
+            problems.append(f"step {dump['step']}: the frame carries no error lamp")
+        if errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {dump['step']}: the error lamp counts {errors.get('count')} "
+                            f"({errors.get('failures')} caught), the last: {errors.get('last')!r}")
+    return problems
+
+
+EXPECT["research-pane"] = expect_research_pane
+IN_SAMPLE_MODE.add("research-pane")
+
+
 # B15 (ADR-D02.20, .21, .23, .24, .30): the tint channel on a state's session fixture. The entry slot's contact classes
 # are on at open; the palette row switches to the height ramp, the off-lattice outline and back to the classes; a
 # domain focus dims the other domains; the height ramp then draws under that dim, and none leaves the dim alone. After
