@@ -584,6 +584,16 @@ relative path is from the repository root.
   - The never-hidden set of `jumbling-observation.md` rule 5 is forced visible in the preparation's visibility bytes.
   - The hidden-piece masks per named cap, added to `make_d02_samples.py` here from B1.
 - **Check:** `check_core.py --lines` on WARP: a line layer covers pixels only within two pixels of its projected segments; an empty layer changes nothing. Then `d02_run.py --script overlays`: hidden count equals the sample; the never-hidden set stays visible under every focus layer.
+- **As built, drawing track (B16, 26 November 2026):**
+  - The overlays reuse the core's one line drawing, the outline channel of B14's style path, as the integrator's brief asked, so there is no `sa2_lines_set`, `lines.hlsl` or `check_core.py --lines`, and the core, the bridge and the host are unchanged. The overlay takes palette entry 15, the one the tint's plan leaves free, over the tint and under the selection's and the hover's outlines.
+  - Chrome (`Model/JumbleOverlay.cs`; `Ui/JumbleOverlays.cs`, a part of `JumbleHost`): while a cap is named (the default cap is not), its cut's trace at piece resolution: an admissible cap's inside set, whose border is the cut, or a blocked cap's straddlers, which lie across it. A focused repair row's step k outlines that step's moving set in place of the trace (ADR-D02.34). Rule 5's never-hidden set (a blocked named cap's straddlers, the focused step's moving set) and every overlay piece break through every focus layer, and the overlay pieces a focus layer would hide are counted exactly. Certificate-point glyphs stay off; a blocked cap's line counts its certificate points in their place. The overlay's line shows on Global's and Local's borders (`ViewLine`).
+  - Shell (`D02/ShellTint.cs`, `D02/ShellStyle.cs`): the overlay's bytes go on the outline channel with the tint's, `SetFocusViews` takes the breakthrough, and the dump's `overlay` object names the layer, the counts, the line on each border, the pieces sent with entry 15 and the kept pieces that still carry the dim bit.
+  - Readings, for the owner:
+    - The trace is drawn as outlined pieces, not as line segments in four dimensions. Constant line data per cap needs the core line layer planned above (`sa2_lines_set`), which stays a candidate.
+    - A hidden piece that matters shows in full with its outline, not as an outline alone: the core has no outline-only draw, and a style bit for one is requested.
+    - The overlay's colour is `state.preview`; a slot `line.jumble.overlay` is requested.
+    - No hidden-piece masks were added to `make_d02_samples.py`: the exact count comes from the cap records' masks and the focus layer at run time. Protection conflicts (rule 5, item 3) do not arise on the Jumble sample states.
+  - Checks: `check.py`'s console lane passed 252 of 252 with the four `D02Overlay*` tests; `test_shared_chrome.py` (12 OK), `build_product.py` (PASS), `test_renderer_shell.py` (95 OK), `test_d02_drawing.py` (51 OK, with `OverlaysRun`), `tools/wiki/lint.py` (ok). `d02_run.py --script overlays --state wj-ia-300` passed at 1280x720: in six steps the overlay's counts, its line on both borders and the outline and fill bytes equal the sample's piece by piece, and under the domain focus, dimmed and then hidden by F10, no overlay or never-hidden piece carries the dim bit.
 - **Owner sees:** name a cap and its cut trace appears; step a repair row and the moving set outlines.
 - **Machine:** H, W.
 - **Checkpoint:** no.
@@ -1017,6 +1027,7 @@ relative path is from the repository root.
   - Departure: the rows sit in their own dock panel, not in `LibraryPanel.cs`, as B25's Word panel does; the product shell's Library holds the lab's sample records until K2. Shift+Enter previews the row's ν effect in the panel; staging its letters as a commit-bar preview waits for K2's backend.
   - `build_d02_fixtures.py` now builds the correction states as on-zero plus their catalogue letters. nu-c0 (9 letters) is written; nu-c35 is 5,629 letters; its write ran over ten minutes without finishing and was stopped (risk R2), so it is not written yet. The `nu-band` script needs only nu-c0.
   - Checks: the five console tests; `d02_run.py --script nu-band --state nu-c0` PASS (the band under the rail, 35 cells, b8 and b25 marked, both dials at 0, 9 fixed dots; c00 and c35 marked, c35 previewed, the set checked: ν after this set is b25, nu-c35's ν). One earlier run failed only its foreground check, when another window took the foreground (`owner_acted`); the rerun passed.
+  - Long word fixtures (26 November 2026): the time is not in Python. `build_d02_fixtures.py` runs the host's Rust writer, and a pose-move session costs about the same to write, to check at the close and to reopen: the command layer derives each pose move from the head and, every 64 moves (`POSE_CHAIN` in `c600-command`), replays the whole jumbling journal flat from solved, so each pass grows with the square of the word's length (nu-c35's first 1,024 letters: commits 39.1 s, control 44.2 s, timed reopen 41.1 s). The writer now times its reopen on a thread beside the control (`fixture::write_word_with`; the copy gets an empty `lock` file, since the live layer may still hold the session's), not after it; the records are byte-identical. Measured: the first 1,024 letters, each run alone, 124.7 s before and 74.7 s after; nu-c35 with both writers running side by side, 3,565.9 s before and 2,749.2 s after; nu-c35 with the new writer alone, 2,034.6 s (commits about 767 s). nu-c35 is written and matches the sample's three digests (nu-c0 and wj-ia-300 were rebuilt through the script first and match too). Its `reopen_ms`, 1,243,834, is timed beside the control and overstates a launch: the old writer's timed reopen of the same session, run alone, took 765,022 ms, which a product launch at nu-c35 pays each time (risk R2). Making long pose-move sessions fast to write and to reopen needs the command layer to keep a flat reachability claim without replaying from solved; that is a layer change, not a fixture script change.
 
 ### B27. Keys, terms and the remaining unavailable states
 - **Goal:** the held seat keys, the glossary check, and a named state for what still waits.
@@ -1122,6 +1133,26 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B15. CR-16.
+- **As built (B30 agent, 26 November 2026):**
+  - `Model/Tuning.cs`:
+    - `TuningValue`: a family, its scene look and the five seed knobs (ADR-D01.50), written into an `Appearance` and nothing else.
+    - `Tuning`: `Open(frame)` shows the panel as a tab of the current layout's right dock. `SetFamily`, `SetLook`, `SetKnob` (clamped to the knob's range) and `Tune`, which reads `theme.tune`'s `knob=value[,...]`.
+    - `Strip(knob)`: the knob's live ramp strip of twelve steps. Tone, contrast and black level show the neutral ramp, and accent hue the accent ramp. Grid intensity shows the grid line's mix across its range, with its current step marked.
+    - The compare: slots A and B, and the shown slot is the live tuning. `Swap` shows the other slot and keeps the live tuning in the slot it leaves, so two swaps are no change. `Hold` draws the other slot. `Release` restores the appearance exactly, through `Appearance.Store` and `Restore`. Every edit is refused while a compare is held.
+    - The model holds only the appearance and its slots: no session, no puzzle state.
+  - `Ui/TuningPanel.cs`:
+    - Family and Look choices.
+    - Each knob is a slider with its value and its ramp strip, drawn as the token specimen draws its swatches.
+    - Set A, Set B, Swap, and Hold. Hold is held with the pointer, or with Space or Enter while it has the focus. The compare line and a status line for refusals.
+    - Every edit goes through `AppearancePanel.Edit`, so the frame recolours in place. It is rebuilt only when a swap or a hold crosses families.
+    - The knob slider, its value and the titles are shared with the Appearance panel through `AppearancePanel.KnobSlider`, `KnobValue`, `KnobText` and `Title`.
+  - The shell:
+    - `ShellChrome` registers the panel in the right dock while Jumble is on, with the glyph `panel.tuning` (`sliders-vertical`). Its rows are `tuning.open`, `tuning.slot.set`, `tuning.slot.swap`, `tuning.compare.hold` and the command table's `theme.tune`.
+    - `ShellTint` redraws on the frame's `Recoloured`, so a knob change sends the core the new tint palette through `m6h_set_view_style`. The tint dump gains `palette_sha256`.
+    - The `ShellJumble` dump gains `tuning`: the right dock, shown and folded, the slots, the hold, the frame's window colour, and the head's state digest.
+  - Draft row `tuning.open` (CR-16) in `command-rows-d02.json`.
+  - The panel reads no sample data; the runs use `wj-ia-300`'s session fixture.
+  - Below 1600 px the right dock's panel folds to its rail (owner, 26 November 2026). So at 1280x720 the row opens the panel in the model and on the rail, and the knobs are one `theme.tune` row away. `d02_run.py --script tuning` passes there, with the click on the knob finding none. `tuning-wide` runs the same steps at 1920x1080 with the panel shown, including the click on the tone knob. Both runs keep the state digest and the tint bytes after every step.
 
 ### B31. The tuning panel: presets, Advanced, simulation, Save checks
 - **Goal:** complete ADR-D02.47.
@@ -1264,6 +1295,25 @@ Each checkpoint is one read of the named diff range against the questions below,
   - the subagent stayed inside its cap;
   - section 4 still matches the code.
 - Owner is shown: the J1 session and the report.
+
+**Refinement, after C6, then the freeze (owner, 26 November 2026).**
+- Fable's refinement scan reads the built product once more and gives the one build round its list. Before it, the build runs no
+  stop; after the build round come the two Astra rounds, then D02's freeze card.
+- Visual check (owner, 26 November 2026, 21:59 UTC): the scan goes through every D02 view one at a time: Global with each chart
+  preset (the 20 rings, the ring sheet, the Hopf rings), Local, the cut slice, the raw view, the tints and the overlays. For each
+  view it asks whether a researcher can see the structure the research needs (contact classes, caps, the cut, what moves, what
+  never hides, the ν band), and whether anything is drawn wrong, unreadable or misleading.
+- Output: every visual problem found, each marked `functional` or `taste`.
+  - Functional: the structure cannot be seen or operated (rotate, pick, focus), is drawn wrong, or misses the frame-rate rows. All
+    are fixed in the one build round before the two Astra rounds. The base puzzle's sticker pick (ADR-D01.40, host
+    `resolve_sticker`) counts here.
+  - Taste: colour values, materials, motion and polish. They are recorded for K2's art line (UI/UX freeze rounds 3 and 4) and are
+    not fixed in D02.
+- The freeze card shows the owner the list once, with what was fixed, to confirm. The owner is not asked to look for problems.
+- The freeze card also lists, for the owner's acceptance with ADR-D02: the draft command rows (`camera.link`, Local's auto-framing
+  switch, `jumble.seat.hold`, XM1 and G6, `research.record.read`, the researcher-name write, `tuning.open` and the rest of
+  `command-rows-d02.json`), the design slots `tint.jumble.off_lattice` and `line.jumble.overlay` (each adds a name to ADR-D01's
+  frozen round-1 slot list), and the eleven glossary additions of ADR-D02 section 15. Until then the draft rows and fallbacks stay.
 
 ## 4. Item map
 

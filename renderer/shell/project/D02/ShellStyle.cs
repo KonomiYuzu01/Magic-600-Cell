@@ -39,6 +39,8 @@ public static class ShellStyle
 
     /// <summary>The fill channel's bytes last sent, or null when none are.</summary>
     public static byte[]? SentFill { get; private set; }
+    /// <summary>B30: the tint palette last sent with the view styles (64 floats), or null.</summary>
+    public static float[]? SentPalette { get; private set; }
 
     /// <summary>The hovered and the selected piece the last sent outline marks.</summary>
     public static int? SentHover { get; private set; }
@@ -81,11 +83,13 @@ public static class ShellStyle
     /// ADR-D01.46 per view: the dim set from the view whose layers dim (Global's first), and each style slot dims only
     /// while its own view's layers dim with the same focused predicate. With both views dimming, Global's mode (dimmed or
     /// hidden) serves both. <paramref name="member"/> gives a view's focused predicate's members, piece by piece.
+    /// B16: no focus layer dims or hides a piece <paramref name="breaksThrough"/> names (jumbling-observation.md rule 5).
     /// </summary>
-    public static void SetFocusViews(FocusLayers? global, FocusLayers? local, Func<FocusLayers, Func<int, bool>?> member)
+    public static void SetFocusViews(FocusLayers? global, FocusLayers? local, Func<FocusLayers, Func<int, bool>?> member,
+                                     Func<int, bool>? breaksThrough = null)
     {
         var source = global is { Dimming: true } ? global : local;
-        SetFocus(source, source is null ? null : member(source));
+        SetFocus(source, source is null ? null : member(source), breaksThrough);
         _slotDims[1] = _focus is not null && global is { Dimming: true } && global.Focused == source!.Focused;
         _slotDims[2] = _focus is not null && local is { Dimming: true } && local.Focused == source!.Focused;
     }
@@ -181,6 +185,7 @@ public static class ShellStyle
                 return code;
             }
         }
+        SentPalette = _tintPalette;
         _revision = revision;
         _dirty = false;
         return HostLibrary.Ok;

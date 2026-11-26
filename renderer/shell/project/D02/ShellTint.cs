@@ -27,11 +27,14 @@ public static class ShellTint
         _frame = frame;
         ShellJumble.BindingChanged += Bind;
         host.TintChanged += Draw;
+        host.OverlayChanged += Draw;
         foreach (var layers in host.Layers)
         {
             layers.Changed += Draw;
         }
         frame.Rebuilt += Draw;
+        // B30: a knob recolours the frame in place; the core gets the new palette, so the tinted pieces follow.
+        frame.Recoloured += Draw;
         Bind();
     }
 
@@ -65,10 +68,13 @@ public static class ShellTint
             return;
         }
         var (outline, fill) = host.TintBytes();
-        ShellStyle.SetTint(outline, fill, _frame is { } frame && GodotObject.IsInstanceValid(frame) ? Palette(frame.Tokens) : null);
+        // B16 (ADR-D02.26): the overlay's lines on the outline channel over the tint, its hidden count with the focus.
+        host.OverlayWords();
+        ShellStyle.SetTint(JumbleOverlay.Outline(outline, host.Overlay.Lines), fill,
+                           _frame is { } frame && GodotObject.IsInstanceValid(frame) ? Palette(frame.Tokens) : null);
         var global = host.Layers.Count > 0 ? host.Layers[0] : null;
         var local = host.Layers.Count > 1 ? host.Layers[1] : null;
-        ShellStyle.SetFocusViews(global, local, host.FocusMember);
+        ShellStyle.SetFocusViews(global, local, host.FocusMember, JumbleOverlay.BreaksThrough(host.Overlay));
     }
 
     /// <summary>The core's 16-entry palette with the tint's entries 3 to 14 in the theme's colours.</summary>
@@ -82,6 +88,12 @@ public static class ShellTint
             palette[4 * entry + 2] = (float)colour.B;
             palette[4 * entry + 3] = (float)alpha;
         }
+        // B16: the overlay's lines.
+        var line = tokens.Colour(JumbleOverlay.Slot);
+        palette[4 * JumbleOverlay.Entry] = (float)line.R;
+        palette[4 * JumbleOverlay.Entry + 1] = (float)line.G;
+        palette[4 * JumbleOverlay.Entry + 2] = (float)line.B;
+        palette[4 * JumbleOverlay.Entry + 3] = 1;
         return palette;
     }
 
@@ -114,6 +126,7 @@ public static class ShellTint
         json.WriteNumber("remembered", host.ClassMemory.Memory.Count);
         json.WriteString("outline_sha256", Sha(ShellStyle.SentOutline));
         json.WriteString("fill_sha256", Sha(ShellStyle.SentFill));
+        json.WriteString("palette_sha256", ShellStyle.SentPalette is { } sent ? Sha(System.Runtime.InteropServices.MemoryMarshal.AsBytes(sent.AsSpan()).ToArray()) : "");
         Piece(json, "hover", ShellStyle.SentHover);
         Piece(json, "selection", ShellStyle.SentSelection);
         json.WriteString("focus", ShellStyle.FocusMode);
@@ -125,6 +138,48 @@ public static class ShellTint
         {
             var row = view is not null && GodotObject.IsInstanceValid(view) ? view.Readouts.GetNodeOrNull<TintLegendRow>(TintLegendRow.NodeName) : null;
             json.WriteString(name, row is not null && row.IsVisibleInTree() ? row.Line : "");
+        }
+        json.WriteEndObject();
+        Overlay(json, host, frame);
+    }
+
+    /// <summary>
+    /// B16's dump: the overlay's layer, cap and step, its pieces, never-hidden set and hidden count, the certificate
+    /// points, its line on each border, and what the bytes last sent carry: the pieces with the overlay's entry on the
+    /// outline channel, and the never-hidden or overlay pieces that a focus layer still dims or hides on the fill.
+    /// </summary>
+    private static void Overlay(Utf8JsonWriter json, JumbleHost host, ChromeFrame? frame)
+    {
+        var view = host.Overlay;
+        json.WriteStartObject("overlay");
+        json.WriteString("layer", view.Layer.ToString());
+        if (view.Cap is int cap) json.WriteNumber("cap", cap); else json.WriteNull("cap");
+        json.WriteString("step", view.Step);
+        json.WriteNumber("pieces", view.Pieces);
+        json.WriteNumber("never_hidden", view.NeverHiddenCount);
+        json.WriteNumber("hidden", host.OverlayHidden);
+        if (view.CertificatePoints is long points) json.WriteNumber("certificate_points", points); else json.WriteNull("certificate_points");
+        json.WriteString("line", host.OverlayLine);
+        var outline = ShellStyle.SentOutline;
+        var fill = ShellStyle.SentFill;
+        var keep = JumbleOverlay.BreaksThrough(view);
+        long entries = 0, kept = 0, dimmed = 0;
+        for (var piece = 0; piece < ShellStyle.PieceCount; piece++)
+        {
+            if (outline is not null && outline[piece] == JumbleOverlay.Entry) entries++;
+            if (keep is not null && keep(piece))
+            {
+                kept++;
+                if (fill is not null && (fill[piece] & HostLibrary.DimSet) != 0) dimmed++;
+            }
+        }
+        json.WriteNumber("outline_entries", entries);
+        json.WriteNumber("kept", kept);
+        json.WriteNumber("kept_dimmed", dimmed);
+        foreach (var (name, v) in new[] { ("global_line", frame?.Global), ("local_line", frame?.Local) })
+        {
+            var label = v is not null && GodotObject.IsInstanceValid(v) ? v.Readouts.GetNodeOrNull<Label>(JumbleOverlay.LineName) : null;
+            json.WriteString(name, label is not null && label.IsVisibleInTree() ? label.Text : "");
         }
         json.WriteEndObject();
     }

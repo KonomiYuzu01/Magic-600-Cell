@@ -83,7 +83,7 @@ def overlay(dump: dict) -> list[str]:
 
 
 def expect_smoke(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """B4's smoke script: D02 is on; the palette lists the CR-16 draft rows, each marked; Escape closes it."""
+    """B4's smoke script: D02 is on; the palette lists the CR-16 draft rows (B30 added tuning.open), each marked; Escape closes it."""
     problems = []
     if [dump["do"] for dump in dumps] != ["start", "chord F1", "text tuning.", "chord Escape", "wait 6000 ms"]:
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
@@ -96,8 +96,8 @@ def expect_smoke(dumps: list[dict], source: dict, state: str | None) -> list[str
         problems.append("step 1: F1 did not open the palette")
     drafts = {row["label"] for row in source["rows"]}
     wanted = palette_matches("tuning.", source["rows"], source["table"])[:12]
-    if len(wanted) != 8 or not set(wanted) <= drafts:
-        problems.append(f"the data: tuning. matches {wanted}, not the eight CR-16 draft rows")
+    if len(wanted) != 9 or not set(wanted) <= drafts:
+        problems.append(f"the data: tuning. matches {wanted}, not the nine CR-16 draft rows")
     shown = overlay(dumps[2])
     labels = [text for text in shown if text in drafts]
     if labels != wanted:
@@ -1390,6 +1390,211 @@ def expect_tint(dumps: list[dict], source: dict, state: str | None, tables: dict
 
 EXPECT["tint"] = expect_tint
 ON_FIXTURE.add("tint")
+
+
+# B16 (ADR-D02.26, .34; jumbling-observation.md rule 5): the overlays as lines on the outline channel. No overlay while
+# no cap is named; cap 150's trace (its inside set); a domain focus dimmed, then hidden by F10, with every overlay piece
+# kept out of the dim set and counted; a focused repair row's step 2 outlines its moving set in place of the trace; the
+# blocked cap 0 outlines its straddlers with the certificate points counted. After each step the expectation recomputes
+# the outline and fill bytes sent to the core from the sample's masks, pose ids and contact classes, piece by piece.
+OVERLAY_DOMAIN = 5
+OVERLAY_STEPS = [("wait 5001 ms", None, None, None), ("wait 1501 ms", 150, None, None),
+                 ("wait 1502 ms", 150, None, "dimmed"), ("wait 1503 ms", 150, None, "hidden"),
+                 ("wait 1504 ms", 150, 2, "hidden"), ("wait 1505 ms", 0, None, "hidden")]
+
+
+def overlay_mask(mask: dict, pieces: int) -> list[bool]:
+    """A sample piece mask (bits-le-zlib-base64), checked against its digest and count."""
+    import base64
+    import hashlib
+    import zlib
+    raw = zlib.decompress(base64.b64decode(mask["data"]))
+    if hashlib.sha256(raw).hexdigest() != mask["sha256"]:
+        raise ValueError("a piece mask differs from its digest")
+    bits = [bool(raw[p >> 3] & (1 << (p & 7))) for p in range(pieces)]
+    if sum(bits) != mask["count"]:
+        raise ValueError("a piece mask differs from its count")
+    return bits
+
+
+def overlay_expected(tables: dict, state: str, cap: int | None, step: int | None, focus: str | None,
+                     hover: int | None, selection: int | None) -> dict:
+    """What a step's dump must say: the layer and its pieces, the never-hidden count, the exact hidden count under the
+    domain focus, and the sha256 of the outline bytes (the contact classes, the overlay's entry 15 on its pieces, then
+    the hover's and the selection's outlines) and of the fill bytes (the dim bit on every piece outside the focused
+    domain that is neither an overlay piece nor never-hidden)."""
+    import hashlib
+    ids, domain = tables["ids"], tables["domain"]
+    pieces = len(ids)
+    lines, never, points, label = None, None, None, ""
+    if cap is not None:
+        record = load(SAMPLES / state / f"cap-{cap}.json")
+        masks = record.get("masks", {})
+        straddlers = overlay_mask(masks["straddlers"], pieces) if "straddlers" in masks else None
+        inside = overlay_mask(masks["inside"], pieces) if "inside" in masks else None
+        moving = None
+        if step is not None:
+            row = next(r for r in record["repair_steps"] if r["row"] == 1)
+            moving = overlay_mask(row["moving_sets"][step - 1], pieces)
+            label = f"Repair {step} of {len(row['letters'])}"
+        points = record.get("straddlers", {}).get("certificate_points")
+        lines = moving or straddlers or inside
+        never = moving or straddlers
+    keep = [bool((lines and lines[p]) or (never and never[p])) for p in range(pieces)]
+    outline = bytearray(class_entry(tables["classes"][domain[ids[p]]]) for p in range(pieces))
+    for p in range(pieces):
+        if lines and lines[p]:
+            outline[p] = 15
+    if hover is not None:
+        outline[hover] = 2
+    if selection is not None:
+        outline[selection] = 1
+    fill = None
+    if focus is not None:
+        fill = bytes(0x80 if domain[ids[p]] != OVERLAY_DOMAIN and not keep[p] else 0 for p in range(pieces))
+    count = sum(lines) if lines else 0
+    hidden = sum(1 for p in range(pieces) if lines and lines[p] and domain[ids[p]] != OVERLAY_DOMAIN) if focus else 0
+    layer = "None" if not lines else "MovingSet" if step is not None else "CutTrace"
+    return {"layer": layer, "cap": cap, "step": label, "pieces": count, "never_hidden": sum(never) if never else 0,
+            "hidden": hidden, "certificate_points": points, "outline_entries": sum(1 for b in outline if b == 15),
+            "kept": sum(keep), "kept_dimmed": 0,
+            "outline_sha256": hashlib.sha256(bytes(outline)).hexdigest(),
+            "fill_sha256": hashlib.sha256(fill).hexdigest() if fill is not None else "", "focus": focus or "none"}
+
+
+def overlay_words(want: dict) -> str:
+    """JumbleOverlay.Words for an expectation."""
+    if want["cap"] is None:
+        return ""
+    glyphs = f" · {want['certificate_points']:,} certificate points (glyphs wait for their gate row)" if want["certificate_points"] is not None else ""
+    kept = f" · {want['hidden']:,} kept from the filter, outlined" if want["hidden"] else ""
+    if want["layer"] == "MovingSet":
+        head = f"{want['step']} · moving set outlined, never hidden"
+    elif want["certificate_points"] is not None:
+        head = f"Cut of cap {want['cap']:,} · straddlers outlined, never hidden"
+    else:
+        head = f"Cut of cap {want['cap']:,} · inside set outlined"
+    return f"{head} · {want['pieces']:,} pieces{kept}{glyphs}"
+
+
+def expect_overlays(dumps: list[dict], source: dict, state: str | None, tables: dict | None = None) -> list[str]:
+    """The overlays script: after each step the overlay's counts, its line on both borders and the bytes sent to the
+    core equal the sample's, piece by piece; no never-hidden or overlay piece carries the dim bit."""
+    if state is None or not (SAMPLES / state / "cap-150.json").is_file() or not (SAMPLES / state / "cap-0.json").is_file():
+        return ["the overlays script needs a sample state with records of caps 150 and 0"]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(mark not in by_step for mark, _, _, _ in OVERLAY_STEPS):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    tables = tables if tables is not None else tint_tables(state)
+    problems = []
+    for mark, cap, step, focus in OVERLAY_STEPS:
+        overlay, tint = by_step[mark].get("overlay"), by_step[mark].get("tint")
+        if not isinstance(overlay, dict) or not isinstance(tint, dict):
+            problems.append(f"after '{mark}' the dump has no overlay or tint")
+            continue
+        want = overlay_expected(tables, state, cap, step, focus, tint.get("hover"), tint.get("selection"))
+        line = overlay_words(want)
+        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", line)]:
+            said = overlay if key not in ("outline_sha256", "fill_sha256", "focus") else tint
+            if said.get(key) != value:
+                problems.append(f"after '{mark}' {key} is {str(said.get(key))[:120]!r}, not {str(value)[:120]!r}")
+    if not problems:
+        named = by_step["wait 1501 ms"]["overlay"]
+        stepped = by_step["wait 1504 ms"]["overlay"]
+        print(f"overlays: {len(OVERLAY_STEPS)} steps, the bytes sent equal {state}'s piece by piece; "
+              f"{named['line']}; under the hidden focus: {stepped['line']}")
+    return problems
+
+
+EXPECT["overlays"] = expect_overlays
+ON_FIXTURE.add("overlays")
+
+
+TUNING_KNOBS = [("wait 702 ms", "tone", 0.05, True), ("wait 703 ms", "contrast", 1.15, True),
+                ("wait 704 ms", "blackLevel", 0.08, True), ("wait 705 ms", "accentHue", 40.0, False),
+                ("wait 706 ms", "gridIntensity", 0.9, False)]
+
+
+def tuning_knob(live: str, knob: str) -> float | None:
+    """A knob's value in the dump's live tuning ("graphite · solving · accentHue=195 blackLevel=0 ...")."""
+    for word in live.split():
+        if word.startswith(knob + "="):
+            return float(word.split("=", 1)[1])
+    return None
+
+
+def expect_tuning(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B30's tuning script: the palette's row opens the panel in the right dock; each knob step shows its value, the
+    knobs that move the tint's ramps send the core a new palette and the frame's window colour moves with tone; a
+    click on the panel's tone knob moves it; two swaps come back; the held compare draws slot B and the release
+    puts slot A back. After every step the head's state digest and the tint bytes are the open's."""
+    marks = ["wait 701 ms"] + [m for m, _, _, _ in TUNING_KNOBS] + [f"wait {n} ms" for n in range(707, 712)]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(mark not in by_step for mark in marks):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    tuning = {mark: by_step[mark].get("tuning") for mark in marks}
+    tint = {mark: by_step[mark].get("tint") or {} for mark in marks}
+    if any(not isinstance(t, dict) for t in tuning.values()):
+        return ["a step's dump has no tuning (is D02 on and the panel built?)"]
+    first = tuning["wait 701 ms"]
+    # Below 1600 px the right dock's panel folds to its rail (owner, 26 November 2026): the row opens it in the
+    # model and the rail, and the panel shows once the window is wide enough.
+    folded = first.get("folded") is True
+    if first.get("right_dock") != "tuning" or first.get("shown") is not (not folded):
+        problems.append(f"after tuning.open the right dock shows {first.get('right_dock')!r}, shown {first.get('shown')}, "
+                        f"folded {first.get('folded')} at {first.get('window_width')} px")
+    if not first.get("state_digest"):
+        problems.append("the head's state digest is not read")
+    if not tint["wait 701 ms"].get("palette_sha256"):
+        problems.append("no tint palette was sent to the core at the open")
+    for mark in marks:
+        t = tuning[mark]
+        if t.get("state_digest") != first.get("state_digest"):
+            problems.append(f"after '{mark}' the state digest is {t.get('state_digest')!r}, not the open's")
+        if t.get("status"):
+            problems.append(f"after '{mark}' the panel refused: {t.get('status')!r}")
+        same_pointer = (tint[mark].get("hover"), tint[mark].get("selection")) == \
+            (tint["wait 701 ms"].get("hover"), tint["wait 701 ms"].get("selection"))
+        for key in ("outline_sha256", "fill_sha256"):
+            if same_pointer and tint[mark].get(key) != tint["wait 701 ms"].get(key):
+                problems.append(f"after '{mark}' the tint's {key} moved")
+    before = "wait 701 ms"
+    for mark, knob, value, moves in TUNING_KNOBS:
+        shown = tuning_knob(tuning[mark].get("live", ""), knob)
+        if shown is None or abs(shown - value) > 1e-6:
+            problems.append(f"after '{mark}' {knob} is {shown}, not {value}")
+        if moves and tint[mark].get("palette_sha256") == tint[before].get("palette_sha256"):
+            problems.append(f"after '{mark}' {knob} sent the core no new palette")
+        before = mark
+    if tuning["wait 702 ms"].get("window") == first.get("window"):
+        problems.append("tone did not move the frame's window colour")
+    tone = tuning_knob(tuning["wait 707 ms"].get("live", ""), "tone")
+    if folded:
+        # The folded panel has no knob to click: the click finds nothing and changes nothing.
+        if tone is None or abs(tone - 0.05) > 1e-6:
+            problems.append(f"with the panel folded the click moved tone to {tone}")
+    elif tone is None or abs(tone) > 0.01 or tint["wait 707 ms"].get("palette_sha256") == tint["wait 706 ms"].get("palette_sha256"):
+        problems.append(f"the click on the panel's tone knob left tone at {tone} or sent no new palette")
+    tuned, opening = tuning["wait 707 ms"].get("live"), first.get("live")
+    for mark, slot, live, holding in (("wait 708 ms", "B", opening, False), ("wait 709 ms", "A", tuned, False),
+                                      ("wait 710 ms", "A", opening, True), ("wait 711 ms", "A", tuned, False)):
+        t = tuning[mark]
+        if (t.get("slot"), t.get("live"), t.get("holding")) != (slot, live, holding):
+            problems.append(f"after '{mark}' slot {t.get('slot')}, holding {t.get('holding')}, live {t.get('live')!r}; "
+                            f"expected slot {slot}, holding {holding}, live {live!r}")
+    if not problems:
+        print(f"tuning: {len(marks)} steps; the panel opened in the right dock "
+              f"({'folded to its rail' if folded else 'shown'} at {first.get('window_width')} px); the state digest "
+              f"{str(first.get('state_digest'))[:16]} held; tone, contrast and black level sent new palettes; "
+              "two swaps and the held compare came back")
+    return problems
+
+
+EXPECT["tuning"] = expect_tuning
+EXPECT["tuning-wide"] = expect_tuning
+ON_FIXTURE.add("tuning")
+ON_FIXTURE.add("tuning-wide")
 
 
 def window_problems(dumps: list[dict]) -> list[str]:

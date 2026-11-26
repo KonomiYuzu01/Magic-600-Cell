@@ -16,9 +16,20 @@
 # candidate with J1 on the same pinned inputs and keys; the LP2 workflow (lp2-full.yml) compares the
 # two systems' payloads with each other.
 #
-# The plan job selects the jobs with tools/ci/run_headless.py (owner, 19 November 2026): a pull
-# request runs `cargo test` only when it selects tests/test_language_rust.py, and each J1
-# comparison only when it selects that check; every push to main and the nightly run run all.
+# CI has two tiers (owner, 26 November 2026); the plan job selects the jobs with
+# tools/ci/run_headless.py --plan-github.
+# - The fast tier runs on every pull request and should finish in about 10 to 15 minutes.
+#   `cargo test` runs only for the workspace members that hold a changed file, one `-p` per
+#   member, or the whole workspace when a file of the workspace itself changes (rust/Cargo.toml,
+#   rust/Cargo.lock, rust/.cargo/, rust/vendor/ and the like); a change outside rust/ runs no
+#   cargo test. A J1 comparison runs when the pull request selects its check (owner, 19 November
+#   2026) and its recorded time on the Windows runner is at most 180 seconds
+#   (FAST_BUDGET_SECONDS); the slower ones wait for the full tier.
+# - The full tier runs `cargo test` on the whole workspace and every J1 comparison. It runs on
+#   every push to main, every night, for a pull request that changes the CI itself, and on a
+#   manual run with the tier input `full` (the default), so an author can run it on a branch.
+#   Nobody waits for it. A manual run with the tier `fast` selects the jobs from the branch's
+#   diff against main.
 name: Linux Rust tests
 
 on:
@@ -28,6 +39,12 @@ on:
   schedule:
     - cron: "17 18 * * *" # nightly full run on main
   workflow_dispatch:
+    inputs:
+      tier:
+        description: "full runs every job; fast runs the jobs of the branch's changes against main"
+        type: choice
+        options: [full, fast]
+        default: full
 
 permissions:
   contents: read
@@ -42,6 +59,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       rust: ${{ steps.plan.outputs.rust }}
+      packages: ${{ steps.plan.outputs.packages }}
       j1: ${{ steps.plan.outputs.j1 }}
     steps:
       - name: Check out the exact committed bytes
@@ -55,14 +73,11 @@ jobs:
         id: plan
         env:
           RUN_HEADLESS_BASE: ${{ github.event.pull_request.base.sha }}
+          RUN_HEADLESS_TIER: ${{ inputs.tier }} # empty except on a manual run
         run: |
-          python3 tools/ci/run_headless.py --plan > "$RUNNER_TEMP/plan.txt"
-          head -n 1 "$RUNNER_TEMP/plan.txt"
-          if grep -qx tests/test_language_rust.py "$RUNNER_TEMP/plan.txt"; then rust=true; else rust=false; fi
-          j1=$(sed -n 's|^tests/test_jumbling_rust_\(.*\)\.py$|"\1"|p' "$RUNNER_TEMP/plan.txt" | paste -sd, -)
-          echo "rust=$rust" >> "$GITHUB_OUTPUT"
-          echo "j1=[$j1]" >> "$GITHUB_OUTPUT"
-          echo "rust=$rust j1=[$j1]"
+          python3 tools/ci/run_headless.py --plan-github > "$RUNNER_TEMP/plan.txt"
+          cat "$RUNNER_TEMP/plan.txt"
+          cat "$RUNNER_TEMP/plan.txt" >> "$GITHUB_OUTPUT"
 
   cargo-test:
     needs: plan
@@ -86,7 +101,10 @@ jobs:
           cargo --version
 
       - name: Run the Rust tests with the locked, vendored crates
-        run: cargo test --locked --offline --no-fail-fast
+        env:
+          # `--workspace`, or one `-p` per changed member in the fast tier; split into words on purpose.
+          PACKAGES: ${{ needs.plan.outputs.packages }}
+        run: cargo test --locked --offline --no-fail-fast $PACKAGES
 
   j1:
     needs: plan
