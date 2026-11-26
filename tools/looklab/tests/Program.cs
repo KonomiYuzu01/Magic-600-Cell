@@ -242,7 +242,8 @@ internal static partial class Program
             ("D02PaneLayoutIsBoundingBox", D02PaneLayoutIsBoundingBox),
             ("D02PanesNeverOverlap", D02PanesNeverOverlap),
             ("D02FifthPaneRefused", D02FifthPaneRefused),
-            ("D02HitResolvesItsView", D02HitResolvesItsView)
+            ("D02HitResolvesItsView", D02HitResolvesItsView),
+            ("D02GroundCutsBothOpenings", D02GroundCutsBothOpenings)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

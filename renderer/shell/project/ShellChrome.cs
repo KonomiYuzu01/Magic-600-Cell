@@ -106,7 +106,7 @@ public sealed class ShellChrome
             look.FollowSystem(DisplayServer.IsDarkMode());
         }
         look.SetSystemScale(Math.Clamp(Math.Round(DisplayServer.ScreenGetDpi() / 96.0 * 4) / 4, 1, 3));
-        var frame = Frame = new ChromeFrame(look.Resolve(), WorkspaceSet.Load(Path.Combine(folder, "workspaces.json"))) { OpenGround = live };
+        var frame = Frame = new ChromeFrame(look.Resolve(), WorkspaceSet.Load(Path.Combine(folder, "workspaces.json"))) { OpenGround = live, LocalDrawn = live && ShellJumble.On };
         frame.Name = "ShellChrome";
         parent.AddChild(frame);
         // A check's aid: M600_FRAME_PICTURE names a file that gets the window's own picture (the frame without the
@@ -357,7 +357,7 @@ public sealed class ShellChrome
             Frame.Global.SetStatus("not drawn", Array.Empty<string>(), null);
         }
         Frame.Local.ClearMarks();
-        Frame.Local.SetStatus("not drawn yet", Array.Empty<string>(), null);
+        Frame.Local.SetStatus(Frame.LocalDrawn ? null : "not drawn yet", Array.Empty<string>(), null);
         Jumble?.Marks(Frame.Global);
         Jumble?.Marks(Frame.Local);
         Sample?.Marks(Frame.Global);
@@ -365,11 +365,16 @@ public sealed class ShellChrome
     }
 
     /// <summary>The window pixels of the Global view's opening; empty while the view is not on screen.</summary>
-    public Rect2I Opening()
-    {
-        var area = Frame.Opening;
-        return new Rect2I((int)Math.Round(area.Position.X), (int)Math.Round(area.Position.Y), (int)Math.Floor(area.Size.X), (int)Math.Floor(area.Size.Y));
-    }
+    public Rect2I Opening() => Pixels(Frame.Opening);
+
+    /// <summary>
+    /// The window pixels of Local's drawn opening (ADR-D02 B18c): the top of Local's slot while a cap is named; empty
+    /// without --d02, while no cap is named, or while Local is not on screen.
+    /// </summary>
+    public Rect2I LocalOpening() => Pixels(Frame.LocalOpening);
+
+    private static Rect2I Pixels(Rect2 area) =>
+        new((int)Math.Round(area.Position.X), (int)Math.Round(area.Position.Y), (int)Math.Floor(area.Size.X), (int)Math.Floor(area.Size.Y));
 
     /// <summary>
     /// The one router's question (no key does both): whether the chrome takes this key event. A key-down the chrome

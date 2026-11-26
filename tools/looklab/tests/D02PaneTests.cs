@@ -69,4 +69,28 @@ internal static partial class Program
         Check(ViewPanes.Hit(layout, 772, 100) == null && ViewPanes.Hit(layout, 1090, 100) == null && ViewPanes.Hit(layout, 500, 534) == null, "a point outside the panes hit one");
         Check(ViewPanes.Takes("Local", "Local") && !ViewPanes.Takes("Local", "Global"), "a reply naming another view was taken");
     }
+
+    // The ground mask cuts both openings: no ground piece covers a pixel of Global's or Local's opening, the pieces
+    // never overlap, and together with the openings they cover the window exactly.
+    private static void D02GroundCutsBothOpenings()
+    {
+        var all = new PaneRect(0, 0, 1280, 720);
+        PaneRect[] openings = { GlobalOpening.Rect, LocalOpening.Rect with { Height = 300 } };
+        var pieces = ViewPanes.Ground(all, openings);
+        long area = pieces.Sum(p => (long)p.Width * p.Height);
+        long holes = openings.Sum(o => (long)o.Width * o.Height);
+        Check(area + holes == (long)all.Width * all.Height, "the ground and the openings cover " + (area + holes) + " pixels");
+        Check(pieces.All(p => !p.IsEmpty && openings.All(o => !p.Overlaps(o))), "a ground piece covers an opening");
+        for (int i = 0; i < pieces.Count; i++)
+            for (int j = i + 1; j < pieces.Count; j++)
+                Check(!pieces[i].Overlaps(pieces[j]), "ground pieces " + i + " and " + j + " overlap");
+        bool Ground(int x, int y) => pieces.Any(p => p.Contains(x, y));
+        Check(!Ground(300, 200) && !Ground(800, 100) && Ground(780, 100) && Ground(800, 400) && Ground(5, 5), "the ground at the probes is wrong");
+        // One opening alone, as before B18c, and an opening reaching past the window.
+        Check(ViewPanes.Ground(all, new[] { GlobalOpening.Rect }).Sum(p => (long)p.Width * p.Height) == 1280L * 720 - 560L * 470, "one opening's ground");
+        Check(ViewPanes.Ground(all, new[] { new PaneRect(1200, 600, 200, 200) }).Sum(p => (long)p.Width * p.Height) == 1280L * 720 - 80L * 120, "a clipped opening's ground");
+        // Local's opening: a square of the slot's width, at most 60% of its height, and none while nothing is drawn.
+        Check(ViewPanes.OpeningHeight(300, 700, true) == 300 && ViewPanes.OpeningHeight(300, 400, true) == 240 && ViewPanes.OpeningHeight(300, 700, false) == 0,
+            "the opening heights are " + ViewPanes.OpeningHeight(300, 700, true) + ", " + ViewPanes.OpeningHeight(300, 400, true));
+    }
 }

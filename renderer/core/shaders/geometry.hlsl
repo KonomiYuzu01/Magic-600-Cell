@@ -23,7 +23,11 @@ cbuffer Constants : register(b0) {
     uint sampleCount;
     float4 turnU, turnV;
     uint poseEnabled, overlayMode, overlayCount, poseCount;
-    float previewAngle, maxAngle, pad0, pad1;
+    float previewAngle, maxAngle;
+    uint viewFlags; // ABI 9: bit 0 orthographic, bit 1 the focus test, bit 2 the spread; 0 draws as ABI 8
+    float focusSpread;
+    float4 focusPole; // the focus pole in the world, before Q
+    float focusCos, pad2, pad3, pad4;
 };
 struct Projection {
     float4 clip;
@@ -45,11 +49,36 @@ float4 posedPoint(uint slot, float4 world) {
 Projection projectWorld(float4 world) {
     world = mul(Q, world);
     float3 p = d4 * world.xyz / (d4 - world.w);
+    if ((viewFlags & 1u) != 0) p = world.xyz; // ABI 9: orthographic
     float z = 5 - p.z;
     Projection result;
     result.clip = float4(p.x*zoom/aspect, p.y*zoom, 100.0/(100.0-0.05)*(z-0.05), z);
     result.projected = p;
     result.slot = 0;
+    return result;
+}
+// ABI 9: a cell-frame point (already divided by the radius) in the world, before the pose.
+float4 framePoint(uint cell, float4 v) {
+    return frames[cell*4] * v.x + frames[cell*4+1] * v.y + frames[cell*4+2] * v.z + frames[cell*4+3] * v.w;
+}
+// ABI 9's focus (sa2_view_focus_set): a sticker whose posed, unshrunk centre lies outside the focus cap is placed
+// outside the clip volume; the spread moves the rest by (spread - 1) times their posed cell centre's projection.
+Projection focusVertex(Projection result, uint cell, uint slot, uint local) {
+    if ((viewFlags & 2u) != 0) {
+        float4 centre = posedPoint(slot, framePoint(cell, centers[local] / radius));
+        if (dot(centre, focusPole) < focusCos) {
+            result.clip = float4(0, 0, -1, 1);
+            return result;
+        }
+    }
+    if ((viewFlags & 4u) != 0) {
+        float4 c = mul(Q, posedPoint(slot, framePoint(cell, N0 / radius)));
+        float factor = (viewFlags & 1u) != 0 ? 1.0 : d4 / (d4 - c.w);
+        float3 p = result.projected + c.xyz * factor * (focusSpread - 1);
+        float z = 5 - p.z;
+        result.clip = float4(p.x*zoom/aspect, p.y*zoom, 100.0/(100.0-0.05)*(z-0.05), z);
+        result.projected = p;
+    }
     return result;
 }
 Projection projectVertex(uint cell, uint vi) {
@@ -62,6 +91,7 @@ Projection projectVertex(uint cell, uint vi) {
         world += ((c-1)*x-s*y)*turnU + (s*x+(c-1)*y)*turnV;
     }
     Projection result = projectWorld(world);
+    if (viewFlags > 1u) result = focusVertex(result, cell, slot, local);
     result.slot = slot;
     return result;
 }

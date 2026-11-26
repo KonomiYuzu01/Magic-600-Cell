@@ -36,9 +36,13 @@ struct Constants {
     uint32_t sampleCount;
     std::array<float, 4> planeU, planeV;
     uint32_t poseEnabled, overlayMode, overlayCount, poseCount;
-    float previewAngle, maxAngle, pad0 = 0, pad1 = 0;
+    float previewAngle, maxAngle;
+    uint32_t viewFlags = 0; // ABI 9: bit 0 orthographic, bit 1 the focus test, bit 2 the spread (W-J's pad0)
+    float focusSpread = 0; // W-J's pad1
+    std::array<float, 4> focusPole{}; // ABI 9: the focus pole in the world, before the camera
+    float focusCos = 0, pad2 = 0, pad3 = 0, pad4 = 0;
 };
-static_assert(sizeof(Constants) == 176);
+static_assert(sizeof(Constants) == 208);
 // The model fields the constants read, from S-B's reader (W1..W4) or W-J's.
 struct Shape {
     std::array<float, 4> normal{}, plane_u{}, plane_v{};
@@ -809,7 +813,45 @@ struct Scene::Impl {
         auto c = constants(shape, rotation, float(width) / float(height), 0);
         c.poseEnabled = pose_count ? 1u : 0u; c.poseCount = std::max(pose_count, 1u);
         c.cs = view.cell_shrink; c.ss = view.sticker_shrink; c.d4 = view.d4; c.zoom = view.zoom;
+        // ABI 9: the view's focus. Unset, every field keeps W-J's zero and the frame draws as ABI 8.
+        if (view.projection == SA2_PROJECTION_ORTHOGRAPHIC) c.viewFlags |= 1u;
+        if (view.spread > 1.0f) { c.viewFlags |= 4u; c.focusSpread = view.spread; }
+        if (view.focus_cell != SA2_FOCUS_NONE) {
+            const auto pole = cell_centre(view.focus_cell);
+            c.viewFlags |= 2u; c.focusPole = pole; c.focusCos = view.focus_cos;
+            // The rotation T taking the pole to +w (Look Lab's LocalShape.Frame), then the camera: Q' = camera * T.
+            std::array<double, 16> t{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+            const double dot = pole[3];
+            if (dot > -1 + 1e-9) {
+                const double sum[4] = {pole[0], pole[1], pole[2], pole[3] + 1.0};
+                for (int i = 0; i < 4; ++i)
+                    for (int j = 0; j < 4; ++j) t[j * 4 + i] += -sum[i] * sum[j] / (1 + dot) + (i == 3 ? 2.0 * pole[j] : 0.0);
+            } else {
+                t[10] = -1; t[15] = -1;
+            }
+            sb::Matrix turned{};
+            for (int i = 0; i < 4; ++i)
+                for (int j = 0; j < 4; ++j) {
+                    double value = 0;
+                    for (int k = 0; k < 4; ++k) value += double(c.q[k * 4 + i]) * t[j * 4 + k];
+                    turned[j * 4 + i] = float(value);
+                }
+            c.q = turned;
+        }
         return c;
+    }
+    // ABI 9: the unit centre of a cell in the world (cell centres have length 1 there: the shaders divide by the
+    // normal's length), as geometry.hlsl's homePoint places the cell's normal.
+    std::array<float, 4> cell_centre(uint32_t cell) const {
+        const auto& frames = jumble ? jumble->frames : assets->frames;
+        scene_require(frames.size() >= size_t(cell + 1) * 16, "the model's cell frames are missing", SA2_E_INVALID_ARGUMENT);
+        double centre[4] = {0, 0, 0, 0}, length = 0;
+        for (int k = 0; k < 4; ++k)
+            for (int i = 0; i < 4; ++i) centre[i] += double(frames[(size_t(cell) * 4 + k) * 4 + i]) * double(shape.normal[k]);
+        for (double v : centre) length += v * v;
+        length = std::sqrt(length);
+        scene_require(length > 0, "a cell centre has no length", SA2_E_INVALID_ARGUMENT);
+        return {float(centre[0] / length), float(centre[1] / length), float(centre[2] / length), float(centre[3] / length)};
     }
     // ABI 7: the styled root signature: the product's twenty parameters, then root SRV t17 (the piece style) and
     // root CBV b1 (the style slot).

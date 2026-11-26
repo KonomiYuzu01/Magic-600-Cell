@@ -69,4 +69,39 @@ public static class ViewPanes
 
     // Whether a pick reply may be taken: only from the view the click resolved to (B18c drops any other).
     public static bool Takes(string clicked, string replied) => string.Equals(clicked, replied, StringComparison.Ordinal);
+
+    // The chrome's opaque ground over `all` with every opening cut out (B18c: Global's and Local's), as rectangles in
+    // horizontal bands that cover every pixel of `all` outside the openings exactly once and no pixel inside one.
+    public static IReadOnlyList<PaneRect> Ground(PaneRect all, IReadOnlyList<PaneRect> openings)
+    {
+        var holes = new List<PaneRect>();
+        foreach (PaneRect o in openings)
+        {
+            int left = Math.Max(o.X, all.X), top = Math.Max(o.Y, all.Y), right = Math.Min(o.Right, all.Right), bottom = Math.Min(o.Bottom, all.Bottom);
+            if (right > left && bottom > top) holes.Add(new PaneRect(left, top, right - left, bottom - top));
+        }
+        var edges = new SortedSet<int> { all.Y, all.Bottom };
+        foreach (PaneRect h in holes) { edges.Add(h.Y); edges.Add(h.Bottom); }
+        var ys = edges.ToArray();
+        var pieces = new List<PaneRect>();
+        for (int i = 0; i + 1 < ys.Length; i++)
+        {
+            int top = ys[i], bottom = ys[i + 1];
+            if (top < all.Y || bottom > all.Bottom || bottom <= top) continue;
+            int x = all.X;
+            foreach (PaneRect h in holes.Where(h => h.Y <= top && h.Bottom >= bottom).OrderBy(h => h.X))
+            {
+                if (h.X > x) pieces.Add(new PaneRect(x, top, h.X - x, bottom - top));
+                x = Math.Max(x, h.Right);
+            }
+            if (all.Right > x) pieces.Add(new PaneRect(x, top, all.Right - x, bottom - top));
+        }
+        return pieces;
+    }
+
+    // Local's drawn opening at the top of its slot (B18c): the slot's width, as tall as it is wide but at most
+    // `MaxOpeningShare` of the slot's height; none while Local has nothing to draw, so its empty sentence takes the place.
+    public const double MaxOpeningShare = .6;
+    public static int OpeningHeight(int width, int height, bool shown) =>
+        shown && width > 0 && height > 0 ? (int)Math.Floor(Math.Min(width, height * MaxOpeningShare)) : 0;
 }

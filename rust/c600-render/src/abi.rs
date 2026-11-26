@@ -1,12 +1,13 @@
-//! ABI 8's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
+//! ABI 9's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
 //! `renderer/core/include/sa2_interop.h`, x64 layout. `tests/abi_layout.rs` checks every name, offset, size and
 //! constant against the header.
 
 use std::mem::size_of;
 
 /// `SA2_ABI_VERSION`. ABI 6 adds a view's shape ([`Sa2ViewShape`]); ABI 7 the piece style and the style slots
-/// ([`Sa2ViewStyle`]); ABI 8 the composite frame ([`Sa2Pane`], [`Sa2PaneRow`]).
-pub const ABI_VERSION: u32 = 8;
+/// ([`Sa2ViewStyle`]); ABI 8 the composite frame ([`Sa2Pane`], [`Sa2PaneRow`]); ABI 9 a view's focus
+/// ([`Sa2ViewFocus`]).
+pub const ABI_VERSION: u32 = 9;
 /// `SA2_SLOTS`: the labelled sticker slots of 600-cell-Full.
 pub const SLOTS: usize = 259_800;
 /// `SA2_PIECES`: the length of a pose index.
@@ -108,6 +109,14 @@ pub const SHAPE_DEFAULT_ZOOM: f32 = 1.15;
 pub const SHAPE_D4_MAX: f32 = 64.0;
 /// `SA2_SHAPE_ZOOM_MAX`.
 pub const SHAPE_ZOOM_MAX: f32 = 64.0;
+
+// ABI 9: a view's focus (`sa2_view_focus`).
+/// `SA2_PROJECTION_PERSPECTIVE`.
+pub const PROJECTION_PERSPECTIVE: u32 = 0;
+/// `SA2_PROJECTION_ORTHOGRAPHIC`.
+pub const PROJECTION_ORTHOGRAPHIC: u32 = 1;
+/// `SA2_FOCUS_NONE`.
+pub const FOCUS_NONE: u32 = 0xFFFF_FFFF;
 
 // ABI 7: the piece style (`sa2_style_set`) and the style slots (`sa2_view_style`).
 /// `SA2_STYLE_CHANNEL_FILL`.
@@ -301,6 +310,16 @@ rows! {
         reserved: u32,
     }
 
+    /// `sa2_view_focus` (ABI 9).
+    Sa2ViewFocus {
+        struct_size: u32,
+        projection: u32,
+        focus_cell: u32,
+        focus_cos: f32,
+        spread: f32,
+        reserved: u32,
+    }
+
     /// `sa2_counter_values`.
     Sa2CounterValues {
         struct_size: u32,
@@ -434,5 +453,29 @@ impl Sa2ViewShape {
             && within(self.sticker_shrink, 0.0, 1.0)
             && within(self.d4, 1.0, SHAPE_D4_MAX)
             && within(self.zoom, 0.0, SHAPE_ZOOM_MAX)
+    }
+}
+
+impl Sa2ViewFocus {
+    /// The focus every view draws with until one is set: perspective, no pole, spread 1.
+    pub fn defaults() -> Sa2ViewFocus {
+        Sa2ViewFocus {
+            projection: PROJECTION_PERSPECTIVE,
+            focus_cell: FOCUS_NONE,
+            focus_cos: -1.0,
+            spread: 1.0,
+            ..Sa2ViewFocus::new()
+        }
+    }
+
+    /// The header's ranges: a known projection, a cell below 600 or `FOCUS_NONE`, focus_cos in [-1, 1] and spread in
+    /// [1, 3], each finite.
+    pub fn in_range(&self) -> bool {
+        (self.projection == PROJECTION_PERSPECTIVE || self.projection == PROJECTION_ORTHOGRAPHIC)
+            && (self.focus_cell == FOCUS_NONE || self.focus_cell < 600)
+            && self.focus_cos.is_finite()
+            && (-1.0..=1.0).contains(&self.focus_cos)
+            && self.spread.is_finite()
+            && (1.0..=3.0).contains(&self.spread)
     }
 }

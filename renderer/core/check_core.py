@@ -2,8 +2,8 @@
 
 --stages DXC_DIR also runs C9 U5's user-stage check on WARP only (never a hardware adapter), with dxcompiler.dll and
 dxil.dll copied from DXC_DIR beside the built DLL. --poses also runs the product pose check on WARP only, --shape
-(ABI 6) the view shape check on WARP only, --style (ABI 7) the piece style check on WARP only, and --panes (ABI 8) the
-composite frame check on WARP only.
+(ABI 6) the view shape check on WARP only, --style (ABI 7) the piece style check on WARP only, --panes (ABI 8) the
+composite frame check on WARP only, and --focus (ABI 9) the view focus check on WARP only.
 
 Derived from work/experiments/renderer-sa2/native/check_native.py (see PROVENANCE.md).
 """
@@ -148,6 +148,8 @@ def main():
                         help="also run ABI 6's WARP check of a view's shape (sa2_view_shape)")
     parser.add_argument("--style", action="store_true",
                         help="also run ABI 7's WARP check of the piece style (sa2_style_set, sa2_view_style_set)")
+    parser.add_argument("--focus", action="store_true",
+                        help="also run ABI 9's WARP check of a view's focus (sa2_view_focus)")
     parser.add_argument("--panes", action="store_true",
                         help="also run ABI 8's WARP check of the composite frame (sa2_frame_submit_panes)")
     options = parser.parse_args()
@@ -194,10 +196,12 @@ def main():
             check_result(executable, build, "warp", vectors, warp_mode="style")
         if options.panes:
             check_result(executable, build, "warp", vectors, warp_mode="panes")
+        if options.focus:
+            check_result(executable, build, "warp", vectors, warp_mode="focus")
         summary = " (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"
         warp = " and ".join(name for name, run in (("stage", options.stages), ("pose", options.poses),
                                                    ("shape", options.shape), ("style", options.style),
-                                                   ("panes", options.panes)) if run)
+                                                   ("panes", options.panes), ("focus", options.focus)) if run)
         if warp:
             summary = f" (CPU, WARP and hardware; WARP {warp} checks)" if options.gpu else f" (CPU and the WARP {warp} checks; no hardware run)"
         print("check_core: ok" + summary)

@@ -1,0 +1,18 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "two-views",
+  "note": "B18c's run on wj-ia-300's session fixture: before a cap is named Local is not drawn and frames are one-view frames; naming cap 150 draws Local beside Global as the second pane of composite frames (orthographic, only the cap's turning region, pulled apart); two twists (J, the router's KeyJ) and an undo keep both views on one revision.",
+  "steps": [
+    {"wait_ms": 2500},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 4000},
+    {"chord": "J"},
+    {"wait_ms": 700},
+    {"chord": "J"},
+    {"wait_ms": 700},
+    {"chord": "Ctrl+Z"},
+    {"wait_ms": 4000}
+  ]
+}

@@ -85,6 +85,12 @@ public partial class Shell : Control
     private static D02.ShellCamera _camera => D02.ShellJumble.Camera;
     private Rect2I _wanted;
     private int _steady;
+    // ADR-D02 B18c: Local is open (with --d02), the cap it is focused on (-1 before the first step), and the two openings
+    // the pane table was last set for (both empty while one-view frames are drawn).
+    private bool _localOpen;
+    private int? _localCap = -1;
+    private (Rect2I Global, Rect2I Local) _paned;
+    private Magic600.Chrome.PaneLayout? _layout;
 
     public override void _Ready()
     {
@@ -187,6 +193,11 @@ public partial class Shell : Control
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         // ADR-D02 (owner, 26 November 2026: smaller stickers): with --d02 the view takes the owner's opening shape.
         Require(hostLibrary, "m6h_set_view_shape", D02.ShellShape.Apply(hostLibrary, _host));
+        // ADR-D02 B18c: with --d02 Local opens beside Global with its own shape, hidden until a cap is named.
+        if (D02.ShellJumble.On)
+        {
+            OpenLocal(hostLibrary);
+        }
         _log = EventLog.FromEnvironment();
         if (_log is { } log)
         {
@@ -365,8 +376,141 @@ public partial class Shell : Control
         (_chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize()))
             .HasPoint(new Vector2I((int)point.X, (int)point.Y));
 
-    /// <summary>The drawn view under a window point: Global in its opening, else none.</summary>
-    private ulong? ViewAt(Vector2 point) => InOpening(point) ? HostLibrary.View : null;
+    /// <summary>
+    /// The drawn view under a window point: Global in its opening, Local in its drawn opening (B18c, through the pane
+    /// layout's hit), else none.
+    /// </summary>
+    private ulong? ViewAt(Vector2 point)
+    {
+        if (InOpening(point))
+        {
+            return HostLibrary.View;
+        }
+        if (_layout is { } layout && Magic600.Chrome.ViewPanes.Hit(layout, (int)point.X, (int)point.Y) is { View: "Local" })
+        {
+            return HostLibrary.Local;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// ADR-D02 B18c: opens Local with local-view.json's shape (through <see cref="D02.ShellShape.Set"/>, so the wheel
+    /// scales Local's own zoom), orthographic and spread, hidden until a cap is named.
+    /// </summary>
+    private void OpenLocal(HostLibrary library)
+    {
+        var shape = D02.ShellLocal.Read(D02.ShellLocal.ShapePath());
+        Require(library, "m6h_open_local", library.OpenLocal(_host));
+        _localOpen = true;
+        Require(library, "m6h_set_view_visible", library.SetViewVisible(_host, HostLibrary.Local, false));
+        Require(library, "m6h_set_view_shape", D02.ShellShape.Set(library, _host, HostLibrary.Local, D02.ShellLocal.ViewShape(shape, 1)));
+        Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local, shape.Projection, HostLibrary.FocusNone,
+            -1, shape.Spread));
+        _localShape = shape;
+    }
+
+    private D02.ShellLocal.Shape? _localShape;
+
+    /// <summary>
+    /// ADR-D02 B18c: follows the named cap. Local is focused on it (its pole centred, only its turning region drawn) and
+    /// shown, and the chrome opens Local's slot; with no cap Local is hidden and its empty sentence takes the place.
+    /// </summary>
+    private void FollowLocalCap(HostLibrary library)
+    {
+        if (!_localOpen || _localShape is not { } shape)
+        {
+            return;
+        }
+        int? cap = _chrome?.Jumble?.Naming.Named;
+        if (cap == _localCap)
+        {
+            return;
+        }
+        _localCap = cap;
+        var cell = cap is int c and >= 0 and < 600 ? (uint)c : HostLibrary.FocusNone;
+        Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local, shape.Projection, cell,
+            cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos, shape.Spread));
+        Require(library, "m6h_set_view_visible", library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone));
+        if (_chrome is { } chrome)
+        {
+            chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;
+        }
+    }
+
+    /// <summary>
+    /// ADR-D02 B18c: the surface's window rectangle and the pane layout for the openings: Global's alone, or the
+    /// bounding box of Global's and Local's while Local is drawn.
+    /// </summary>
+    private (Rect2I Area, Magic600.Chrome.PaneLayout? Layout) Openings(Rect2I global)
+    {
+        if (!_localOpen || _chrome is not { } chrome || global.Size.X <= 0 || global.Size.Y <= 0)
+        {
+            return (global, null);
+        }
+        var local = chrome.LocalOpening();
+        if (local.Size.X <= 0 || local.Size.Y <= 0)
+        {
+            return (global, null);
+        }
+        try
+        {
+            var layout = Magic600.Chrome.ViewPanes.Layout(new[]
+            {
+                new Magic600.Chrome.PaneSpec("Global", new Magic600.Chrome.PaneRect(global.Position.X, global.Position.Y, global.Size.X, global.Size.Y)),
+                new Magic600.Chrome.PaneSpec("Local", new Magic600.Chrome.PaneRect(local.Position.X, local.Position.Y, local.Size.X, local.Size.Y)),
+            });
+            var s = layout.Surface;
+            return (new Rect2I(s.X, s.Y, s.Width, s.Height), layout);
+        }
+        catch (ArgumentException)
+        {
+            return (global, null);
+        }
+    }
+
+    /// <summary>
+    /// ADR-D02 B18c: sets the host's pane table for the layout the surface now has: Global in pane 0 and Local in pane
+    /// 1, or no pane (one-view frames) while Local is not drawn. Called once the surface has its new rectangle and
+    /// viewport, so the panes lie inside it.
+    /// </summary>
+    private void SetPanes(HostLibrary library, Rect2I global, Magic600.Chrome.PaneLayout? layout)
+    {
+        var local = layout is null ? default : _chrome!.LocalOpening();
+        if (_paned == (layout is null ? default : global, local))
+        {
+            return;
+        }
+        Require(library, "m6h_clear_pane", library.ClearPane(_host, 0));
+        Require(library, "m6h_clear_pane", library.ClearPane(_host, 1));
+        if (layout is not null)
+        {
+            var views = new[] { HostLibrary.View, HostLibrary.Local };
+            for (var i = 0; i < 2; i++)
+            {
+                var r = layout.Panes[i].Rect;
+                Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i, views[i], r.X, r.Y, (uint)r.Width, (uint)r.Height, 0));
+            }
+            var aspect = layout.Panes[1].Rect.Height > 0 ? (double)layout.Panes[1].Rect.Width / layout.Panes[1].Rect.Height : 1;
+            if (_localShape is { } shape)
+            {
+                Require(library, "m6h_set_view_shape", D02.ShellShape.Set(library, _host, HostLibrary.Local, D02.ShellLocal.ViewShape(shape, aspect)));
+                Require(library, "m6h_set_view_shape", D02.ShellShape.ApplyZoom(library, _host, HostLibrary.Local, D02.ShellJumble.Zoom.Factor(HostLibrary.Local)));
+            }
+        }
+        _paned = (layout is null ? default : global, local);
+        _layout = layout;
+    }
+
+    /// <summary>Local's camera: the layout spin as Look Lab's LocalShape.Frame takes it (column-major as it lies).</summary>
+    private static float[] LocalCamera()
+    {
+        var m = new float[16];
+        for (var i = 0; i < 16; i++)
+        {
+            m[i] = (float)_camera.Spin[i];
+        }
+        return m;
+    }
 
     /// <summary>
     /// Follows the foreground: the logs count it lost once the window had it and lost it, or if it never had it.
@@ -407,8 +551,11 @@ public partial class Shell : Control
             return;
         }
         // With the frame (A5) the core's surface lies under the Global view's opening and follows it once the opening
-        // has kept one place for a few steps; without the frame it lies under the whole window.
-        var area = _chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
+        // has kept one place for a few steps; without the frame it lies under the whole window. ADR-D02 B18c: while
+        // Local is drawn, the surface covers the bounding box of both openings, and each is a pane of the frame.
+        FollowLocalCap(library);
+        var global = _chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
+        var (area, layout) = Openings(global);
         _steady = area == _wanted ? _steady + 1 : 0;
         _wanted = area;
         if (area != _area && area.Size.X > 0 && area.Size.Y > 0 && (_chrome is null || _steady >= 6))
@@ -427,9 +574,18 @@ public partial class Shell : Control
             }
             _area = area;
         }
+        if (_localOpen && area == _area)
+        {
+            SetPanes(library, global, layout);
+        }
         if (D02.ShellJumble.On && _camera.Dirty)
         {
             Require(library, "m6h_set_camera", library.SetCamera(_host, _camera.ColumnMajor()));
+            // B18c: Local turns with the linked 3D spin, as Look Lab's Local does; the core turns the cap's pole to +w.
+            if (_localOpen)
+            {
+                Require(library, "m6h_set_view_camera", library.SetViewCamera(_host, HostLibrary.Local, LocalCamera()));
+            }
             _camera.Dirty = false;
         }
         if (D02.ShellJumble.On)

@@ -228,6 +228,42 @@ fn the_c_interface_refuses_what_it_cannot_use() {
 }
 
 #[test]
+fn the_host_sets_a_view_focus() {
+    let shim = Box::into_raw(Box::new(Shim { fake: FakeCore::on_surface(SIZE), pad: 0 }));
+    // SAFETY: the host uses the shim only inside its calls, never at the same time as the test.
+    let fake = || unsafe { &mut (*shim).fake };
+    let (code, host) = create(&functions(), shim, &assets_path());
+    assert_eq!(code, M6H_OK, "{}", last_error(ptr::null_mut()));
+    let local = LOCAL.0;
+    let cap = 121.0f32 / 125.0;
+    // SAFETY: a live handle, or null where the refusal is the point.
+    unsafe {
+        // Local is not open yet: its focus is refused and nothing reaches the core.
+        assert_eq!(m6h_set_view_focus(host, local, 1, 150, cap, 1.7), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_open_local(host), M6H_OK, "{}", last_error(host));
+        assert_eq!(m6h_set_view_focus(host, local, 1, 150, cap, 1.7), M6H_OK, "{}", last_error(host));
+        let focus = fake().focuses[&local];
+        assert_eq!((focus.projection, focus.focus_cell, focus.focus_cos, focus.spread), (1, 150, cap, 1.7));
+        // Out-of-range values change nothing: a projection, a cell, a threshold or a spread outside its range.
+        for (projection, cell, cos, spread) in
+            [(2, 150, cap, 1.7), (1, 600, cap, 1.7), (1, 150, f32::NAN, 1.7), (1, 150, 1.5, 1.7), (1, 150, cap, 0.5), (1, 150, cap, 3.5)]
+        {
+            assert_eq!(m6h_set_view_focus(host, local, projection, cell, cos, spread), M6H_E_INVALID_ARGUMENT);
+        }
+        assert_eq!(fake().focuses[&local].focus_cell, 150);
+        // No cell, the whole view: still a focus (orthographic), so the core keeps it.
+        assert_eq!(m6h_set_view_focus(host, local, 1, u32::MAX, -1.0, 1.7), M6H_OK);
+        assert_eq!(fake().focuses[&local].focus_cell, u32::MAX);
+        // The default (perspective, none, -1, 1) clears it; Global's focus is the default throughout.
+        assert_eq!(m6h_set_view_focus(host, local, 0, u32::MAX, -1.0, 1.0), M6H_OK);
+        assert!(fake().focuses.is_empty());
+        assert_eq!(m6h_set_view_focus(ptr::null_mut(), local, 0, u32::MAX, -1.0, 1.0), M6H_E_INVALID_ARGUMENT);
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}
+
+#[test]
 fn the_host_sets_its_view_shape() {
     let shim = Box::into_raw(Box::new(Shim { fake: FakeCore::on_surface(SIZE), pad: 0 }));
     // SAFETY: the host uses the shim only inside its calls, never at the same time as the test.

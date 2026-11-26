@@ -306,9 +306,9 @@ class InteropTests(unittest.TestCase):
                   if re.fullmatch(r"SA2_(ABI_VERSION|OK|E_\w+|QUEUE_\w+|BARRIERS_\w+|STATE_\w+|SCENE_NO_VRAM)", name)}
         self.assertEqual(sorted(wanted - {name for _, name, _ in constants}), [])
 
-    def test_abi_version_8_is_required(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["8u"])
-        self.assertIn("public const uint SA2_ABI_VERSION = 8;", self.native)
+    def test_abi_version_9_is_required(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["9u"])
+        self.assertIn("public const uint SA2_ABI_VERSION = 9;", self.native)
         self.assertIn("if (sa2_abi_version() != SA2_ABI_VERSION)", self.native)
         loads = re.findall(r'Export\("(\w+)"\)', self.native)
         self.assertEqual(loads[0], "sa2_abi_version", "the version is checked before any other export")

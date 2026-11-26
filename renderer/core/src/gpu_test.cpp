@@ -1149,6 +1149,105 @@ void product_shape(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ABI 9's WARP check (--warp --focus): a view's focus (ADR-D02 B18c, Local's own shape). The default focus draws
+// byte-identically to no call; Local's shape with the pole of cell 150 turned to +w draws the whole view, the cap test
+// (121/125) draws fewer pixels around the target's centre, the spread changes the picture, a later shape keeps the
+// focus, a refused focus changes nothing and NULL restores the default. The three pictures go beside the report.
+void product_focus(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    expect(sa2_view_focus_set(nullptr, 1, nullptr) == SA2_E_INVALID_ARGUMENT, "a focus was set without a context");
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2), I = double_rotation(0, 3, 0, 1, 2, 0);
+    const auto unset = frames.draw(1, 1, 0, Q);
+    const sa2_view_focus defaults{sizeof(sa2_view_focus), SA2_PROJECTION_PERSPECTIVE, SA2_FOCUS_NONE, -1.0f, 1.0f, 0};
+    api(ctx, sa2_view_focus_set(ctx, 1, &defaults));
+    expect(frames.draw(1, 1, 0, Q) == unset, "the default focus does not draw byte-identically to no call");
+    const auto background = unset[0];
+    const auto covered = [&](const std::vector<uint32_t>& picture) {
+        return uint64_t(std::count_if(picture.begin(), picture.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    // Local's shape from local-view.json (gap 0.3, sticker shrink 0.6, d4 2) on view 2, zoomed to the cap.
+    const sa2_view_shape local{sizeof(sa2_view_shape), 0.7f, 0.6f, 2.0f, 4.5f, 0};
+    api(ctx, sa2_view_shape_set(ctx, 2, &local));
+    const auto shaped = frames.draw(1, 2, 0, I);
+    sa2_view_focus whole{sizeof(sa2_view_focus), SA2_PROJECTION_ORTHOGRAPHIC, 150, -1.0f, 1.0f, 0};
+    api(ctx, sa2_view_focus_set(ctx, 2, &whole));
+    const auto centred = frames.draw(1, 2, 0, I);
+    auto cap = whole;
+    cap.focus_cos = 121.0f / 125.0f;
+    api(ctx, sa2_view_focus_set(ctx, 2, &cap));
+    const auto only = frames.draw(1, 2, 0, I);
+    auto apart = cap;
+    apart.spread = 1.7f;
+    api(ctx, sa2_view_focus_set(ctx, 2, &apart));
+    const auto spread = frames.draw(1, 2, 0, I);
+    expect(frames.draw(1, 1, 0, Q) == unset, "another view drew with view 2's focus");
+    const auto cover_whole = covered(centred), cover_cap = covered(only), cover_spread = covered(spread);
+    // The cap's covered pixels lie around the target's centre: their bounding box holds it.
+    int left = int(harness.width), right = -1, top = int(harness.height), bottom = -1;
+    for (uint32_t y = 0; y < harness.height; ++y)
+        for (uint32_t x = 0; x < harness.width; ++x)
+            if (only[size_t(y) * harness.width + x] != background) {
+                left = std::min(left, int(x)); right = std::max(right, int(x)); top = std::min(top, int(y)); bottom = std::max(bottom, int(y));
+            }
+    std::cout << "view focus: " << uint64_t(harness.width) * harness.height << " pixels; covered whole " << cover_whole << ", cap "
+              << cover_cap << ", cap spread " << cover_spread << "; the cap spans x " << left << ".." << right << ", y " << top
+              << ".." << bottom << std::endl;
+    expect(centred != shaped, "the pole turned to +w and the orthographic projection changed nothing");
+    expect(cover_cap > 0 && cover_cap < cover_whole, "the cap test does not draw fewer pixels than the whole view");
+    expect(left < int(harness.width) / 2 && right > int(harness.width) / 2 && top < int(harness.height) / 2 && bottom > int(harness.height) / 2,
+           "the cap is not centred on the target");
+    expect(cover_spread > 0 && spread != only, "the spread changed nothing");
+    // A shape set later keeps the focus; a refused focus changes nothing; NULL restores the default and keeps the shape.
+    api(ctx, sa2_view_shape_set(ctx, 2, &local));
+    expect(frames.draw(1, 2, 0, I) == spread, "a shape set dropped the view's focus");
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    for (int field = 0; field < 8; ++field) {
+        auto bad = apart;
+        switch (field) {
+        case 0: bad.struct_size = 20; break;
+        case 1: bad.projection = 2; break;
+        case 2: bad.focus_cell = 600; break;
+        case 3: bad.focus_cos = nan; break;
+        case 4: bad.focus_cos = 1.5f; break;
+        case 5: bad.spread = 0.5f; break;
+        case 6: bad.spread = 3.5f; break;
+        default: bad.reserved = 1; break;
+        }
+        expect(sa2_view_focus_set(ctx, 2, &bad) == SA2_E_INVALID_ARGUMENT, "a malformed or out-of-range focus was accepted");
+    }
+    expect(frames.draw(1, 2, 0, I) == spread, "a refused focus changed the view's frames");
+    api(ctx, sa2_view_focus_set(ctx, 2, nullptr));
+    expect(frames.draw(1, 2, 0, I) == shaped, "a NULL focus did not restore the default");
+    if (!options.out.empty()) {
+        const auto write = [&](const std::vector<uint32_t>& picture, const char* name) {
+            std::ofstream file(options.out.parent_path() / name, std::ios::binary);
+            file << "P6\n" << harness.width << " " << harness.height << "\n255\n";
+            for (uint32_t pixel : picture) {
+                const char rgb[3] = {char(pixel & 0xff), char((pixel >> 8) & 0xff), char((pixel >> 16) & 0xff)};
+                file.write(rgb, 3);
+            }
+        };
+        write(centred, "warp-focus-whole.ppm"); write(only, "warp-focus-cap.ppm"); write(spread, "warp-focus-spread.ppm");
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_view_focus_set(ctx, 2, &apart) == SA2_E_WRONG_STATE, "a focus was set without a loaded scene");
+    harness.finish(options.debug);
+}
+
 // ABI 7 (ADR-D02 B14): --warp --style. Over the unposed home labels at the scene's size: a fill tint and an outline on
 // a quarter of the pieces change only pixels those pieces cover (a frame of only those pieces bounds them); an empty
 // mask, and a slot whose style changes nothing, draw byte-identically to no style; a style for another revision is
@@ -1559,6 +1658,12 @@ void run_poses(Suite& suite, const Options& options) {
 void run_shape(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the shape check runs on WARP only");
     suite.check("view shape warp", [&] { product_shape(options); });
+}
+
+// ABI 9: --warp --focus. Only WARP; parse refuses any other mode.
+void run_focus(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the focus check runs on WARP only");
+    suite.check("view focus warp", [&] { product_focus(options); });
 }
 
 // ABI 8: --warp --panes. Only WARP; parse refuses any other mode.

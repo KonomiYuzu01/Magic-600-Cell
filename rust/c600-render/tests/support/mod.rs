@@ -162,7 +162,7 @@ pub fn scenario<C: Driver>(core: C) {
     assert_eq!(backend.adopt_engine(&bundle(state, &base)), Ok(12));
     assert_eq!(backend.core.fake().adoptions, [(12, labels[0] as u32)]);
     let report = backend.describe_backend().expect("a live core describes itself");
-    assert_eq!((report.interface_version, report.device_epoch, report.backend_build.len()), (8, 1, 64));
+    assert_eq!((report.interface_version, report.device_epoch, report.backend_build.len()), (9, 1, 64));
     for row in ["F01", "F02", "F18", "F20", "J01", "J02"] {
         match &report.features[row] {
             Support::Supported { layout_version, limits: declared, stages } => {
@@ -322,7 +322,7 @@ pub fn route_b<C: Driver>(core: C) {
     let mut backend = RenderBackend::new(core, limits());
     assert_eq!(backend.adopt_engine(&bundle(state, &base)), Ok(12));
     let report = backend.describe_backend().expect("a live core describes itself");
-    assert_eq!((report.interface_version, report.device_epoch), (8, 1));
+    assert_eq!((report.interface_version, report.device_epoch), (9, 1));
     for row in ["F01", "F02", "F18", "F20", "F22", "F23"] {
         assert!(matches!(report.features[row], Support::Supported { .. }), "{row}");
     }

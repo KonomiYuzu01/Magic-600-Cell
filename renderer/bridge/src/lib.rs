@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 22] = [
+pub const SYMBOLS: [&str; 23] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -37,9 +37,10 @@ pub const SYMBOLS: [&str; 22] = [
     "sa2_view_style_set",
     "sa2_frame_submit_panes",
     "sa2_frame_panes",
+    "sa2_view_focus_set",
 ];
 
-/// The ABI 8 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
+/// The ABI 9 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
 /// language can fill it.
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -72,6 +73,8 @@ pub struct CoreFunctions {
         unsafe extern "C" fn(*mut c_void, *const Sa2FrameInput, *const Sa2Pane, u32, *mut u64) -> i32,
     /// ABI 8: a composite frame's pane rows.
     pub frame_panes: unsafe extern "C" fn(*mut c_void, u64, *mut Sa2PaneRow, u32, *mut u32) -> i32,
+    /// ABI 9: a view's focus.
+    pub view_focus_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewFocus) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -278,6 +281,13 @@ impl CoreAbi for DllCore {
         // SAFETY: `reason` is a live i32.
         let status = Status(unsafe { (self.functions.device_status)(self.context, &mut reason) });
         (status, reason)
+    }
+
+    fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
+        let row = focus.map(|f| Sa2ViewFocus { struct_size: size_of::<Sa2ViewFocus>() as u32, ..*f });
+        let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewFocus);
+        // SAFETY: `pointer` is null or a live, sized row.
+        Status(unsafe { (self.functions.view_focus_set)(self.context, view, pointer) }).check()
     }
 
     fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
