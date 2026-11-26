@@ -1997,7 +1997,10 @@ class RunnerTests(unittest.TestCase):
         for name in ('SceneBuild', 'StageBuild', 'ProductBuild'):
             self.assertIn(f"[string]${name} = ''", self.text)
             self.assertIn(f'-{name} is needed for', self.function('Test-Inputs').replace('-$key', f'-{name}'))
-        self.assertIn("'--build', $ProductBuild", self.function('Invoke-ShellRun'))
+        run = self.function('Invoke-ShellRun')
+        self.assertIn('$product = if ($Build) { $Build } else { $ProductBuild }', run)
+        self.assertIn("'--build', $product", run)
+        self.assertNotIn("'--build', $ProductBuild", run)
 
     def test_the_suffix_and_the_retries(self):
         self.assertIn("[ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]*$')]\n    [string]$Suffix", self.text)
@@ -2053,6 +2056,55 @@ class RunnerTests(unittest.TestCase):
             self.assertNotIn(word, code)
         child = (ROOT / 'rust/c600-lx2/src/bin/c600-lx2-child.rs').read_text(encoding='utf-8')
         self.assertNotIn('SetErrorMode', child)
+
+    def test_u4_runs_a_scene_again_until_three_runs_exit_0(self):
+        self.assertIn('[ValidateRange(0, 3)]\n    [int]$SceneRetries = 2', self.text)
+        u4 = self.function('Invoke-U4')
+        self.assertIn('while ($passed -lt $count -and $i -lt $count + $SceneRetries)', u4)
+        self.assertIn('if ("$($script:SceneCode)" -eq \'0\') { $passed++ }', u4)
+        # Every run made goes to the gate, a refused one too (renderer_gate.py lists it as invalid).
+        self.assertIn('if ($run) { $made += $run }', u4)
+        self.assertIn('Invoke-Gate "U4/$scene/gate" $made', u4)
+        scene = self.text.split('function Invoke-Scene(', 1)[1].split('\nfunction ', 1)[0]
+        self.assertIn('$script:SceneCode = $code', scene)
+        self.assertIn('$script:SceneCode = 0', scene.split('if ($DryRun) {', 1)[1].split('\n    }\n', 1)[0])
+
+    def test_gap_is_named_only_and_compares_builds_with_their_own_checkouts(self):
+        self.assertIn("[ValidateSet('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8', 'GAP')]", self.text)
+        # The default steps stay the runbook's; GAP runs only when named, after U8.
+        self.assertIn("[string[]]$Steps = @('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8'),", self.text)
+        self.assertIn("$order = @('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8', 'GAP')", self.text)
+        plan = self.function('Get-GapPlan')
+        self.assertIn('$from = Get-Checkout $build', plan)
+        self.assertIn("Poster = (Join-Path $from 'tools\\perf\\c9\\lx4.py')", plan)
+        self.assertIn('Fixtures = (Join-Path $from $Fixtures)', plan)
+        self.assertLess(plan.index('foreach ($build in $CompareBuilds)'), plan.index('Window = @()'))
+        self.assertLess(plan.index('Window = @()'), plan.index("Window = @('--resolution', $GapResolution)"))
+        self.assertIn("$GapResolution = '2400x1400'", self.text)
+        gap = self.function('Invoke-GAP')
+        self.assertIn('-Build $entry.Build -From $entry.From', gap)
+        self.assertIn('-CloseAfter 600', gap)
+        self.assertIn('-Hold', gap)
+        self.assertIn("'--puzzle', 'jumble-off'", gap)
+        self.assertIn("$Share = 'work/experiments/owner-sitting-20261125/presented_share.py'", self.text)
+        self.assertTrue((ROOT / 'work/experiments/owner-sitting-20261125/presented_share.py').is_file())
+        self.assertIn('"$Runs\\gap$Tag-share.json"', gap)
+        run = self.function('Invoke-ShellRun')
+        self.assertIn("$launcher = if ($From) { Join-Path $From 'renderer\\shell\\launch.py' } else { 'renderer/shell/launch.py' }", run)
+        self.assertIn("'-B', '-u', $launcher, '--build', $product", run)
+
+    def test_gap_builds_skip_the_head_check_but_not_their_checkouts(self):
+        inputs = self.function('Test-Inputs')
+        self.assertIn("ProductBuild = @('U3', 'U6', 'U7', 'U8', 'GAP')", inputs)
+        gap = inputs.split("if ($Steps -contains 'GAP') {", 1)[1].split("if ($Steps -contains 'U4'", 1)[0]
+        self.assertIn('[IO.Path]::IsPathRooted($build)', gap)
+        self.assertIn('$record.dirty -ne $false', gap)
+        self.assertIn('& git -C $from diff --quiet $record.head HEAD -- renderer/shell', gap)
+        self.assertNotIn('$script:HeadFull', gap)
+        self.assertIn('"$Runs\\gap$Tag-$_"; "$Runs\\gap$Tag-$_.presentmon.csv"', inputs)
+        # The log names the compared builds by identity and commit, never by their full path.
+        self.assertIn("$compared = \"; compared builds:", self.text)
+        self.assertNotIn('$CompareBuilds -join', self.text)
 
     def test_u8_records_the_gate_summary_as_a_reference(self):
         u8 = self.function('Invoke-U8')

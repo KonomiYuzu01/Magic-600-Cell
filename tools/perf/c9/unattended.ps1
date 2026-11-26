@@ -13,7 +13,20 @@ PHS.64), is refused before anything starts. U6 launches the product build once, 
 -Suffix r2 appends "-r2" to every run folder, capture, record and gate summary this script writes, so a rerun never
 meets an earlier run's files.
 -Retries (0 to 2, default 2) is how often an aborted shell run is run again.
+-SceneRetries (0 to 3, default 2) is how often U4 runs a scene again after a run that did not exit 0 (a finalizer
+refusal, for example), so that each scene gets three runs that exit 0 when it can (U8 cites U4's W3 summary).
 -DryRun starts nothing: it checks the inputs, prints every command and runs each tool's own dry run.
+
+GAP, named only with -Steps, is the confirmation gap's A/B (owner-machine sitting of 25 November 2026, follow-up 3).
+It is not a runbook step and measures no bar. It runs after U8, in runs of 600 s each with LX-4's module on jumble-off
+and its poster, the shell topmost and holding the foreground as in U8:
+- first each build in -CompareBuilds, a full path to a product build of another commit
+  (<checkout>\work\build\c9-product\<stamp>). Each one is launched by its own checkout's launch.py and poster, with
+  that checkout's LX-4 fixtures. Its checkout's renderer\shell must equal the build's commit. These builds are
+  exempt from the HEAD check;
+- then -ProductBuild in the project's default window;
+- then -ProductBuild once more at 2400x1400.
+presented_share.py then counts each run's frames without a presented row.
 
 Every step writes one line to work\c9-runs\unattended.log (UTC time, step, exit code, run folder, notes). A failing
 step is recorded and the script goes on with the next one. Child output goes to work\c9-runs\unattended\<stamp>\.
@@ -32,15 +45,18 @@ shells itself (CloseMainWindow, the same message as the close button). Leave the
 [CmdletBinding()]
 param(
     [switch]$DryRun,
-    [ValidateSet('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8')]
+    [ValidateSet('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8', 'GAP')]
     [string[]]$Steps = @('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8'),
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]*$')]
     [string]$Suffix = '',
     [string]$SceneBuild = '',
     [string]$StageBuild = '',
     [string]$ProductBuild = '',
+    [string[]]$CompareBuilds = @(),
     [ValidateRange(0, 2)]
-    [int]$Retries = 2
+    [int]$Retries = 2,
+    [ValidateRange(0, 3)]
+    [int]$SceneRetries = 2
 )
 
 $ErrorActionPreference = 'Continue'
@@ -51,6 +67,8 @@ $Acceptance = 'work\loop-memory\c9-acceptance'
 $Fixtures = "$Acceptance\lx4-fixtures"
 $Child = 'rust\target\release\c600-lx2-child.exe'
 $Watcher = 'tools/perf/c9/foreground.py'
+$Share = 'work/experiments/owner-sitting-20261125/presented_share.py'
+$GapResolution = '2400x1400'
 $PresentMon = 'C:\Program Files\Intel\PresentMon\PresentMonConsoleApplication\PresentMon-2.6.0-x64.exe'
 $GodotName = 'Godot_v4.7.2-stable_mono_win64.exe'
 $Declare = @('frame_generation=false', 'upscaling=false')
@@ -69,6 +87,7 @@ $Python = $null
 $Cargo = $null
 $script:HeadFull = $null
 $script:Sessions = @()
+$script:SceneCode = $null
 
 function Get-Utc { [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ') }
 
@@ -187,16 +206,20 @@ function Get-WatchReason([string]$Label, [int]$Code) {
 # One shell run: foreground.py, PresentMon (optional), the poster (optional), launch.py last; the close and abort
 # rules; then the poster's end, PresentMon's stop, and the capture's copy into the run folder, or on an abort both set
 # aside as <name>.aborted-<n>. Returns 'done', 'aborted' or 'kept' (aborted, but the folder could not be set aside).
+# -Build launches another product build than -ProductBuild, and -From runs another checkout's launch.py (GAP only).
 function Invoke-ShellRun {
     param([string]$Step, [string]$Name, [int]$Attempt, [string[]]$LaunchArgs = @(), [int]$CaptureSeconds = 0,
-          [string[]]$Poster = @(), [int]$CloseAfter = 0, [int]$PosterGrace = 0, [int]$Cap = 600, [switch]$Hold)
+          [string[]]$Poster = @(), [int]$CloseAfter = 0, [int]$PosterGrace = 0, [int]$Cap = 600, [switch]$Hold,
+          [string]$Build = '', [string]$From = '')
     $run = "$Runs\$Name"
     $csv = "$Runs\$Name.presentmon.csv"
     $session = "magic600-c9-$Name"
     $label = if ($Attempt) { "$Name.retry$Attempt" } else { $Name }
     $captureArgs = @('--v1_metrics', '--qpc_time', '--process_name', $GodotName, '--output_file', $csv,
         '--session_name', $session, '--timed', "$CaptureSeconds", '--terminate_after_timed', '--no_console_stats')
-    $launchCommand = @('-B', '-u', 'renderer/shell/launch.py', '--build', $ProductBuild, '--out', $run) + $LaunchArgs
+    $product = if ($Build) { $Build } else { $ProductBuild }
+    $launcher = if ($From) { Join-Path $From 'renderer\shell\launch.py' } else { 'renderer/shell/launch.py' }
+    $launchCommand = @('-B', '-u', $launcher, '--build', $product, '--out', $run) + $LaunchArgs
     $watchArgs = @('-B', '-u', $Watcher, '--window-of', $GodotName)
     if ($Hold) { $watchArgs += '--hold' }
     $posterArgs = @($Poster | ForEach-Object { $_.Replace('{run}', $run) })
@@ -218,7 +241,7 @@ function Invoke-ShellRun {
             Invoke-Dry "$Name-poster" $Python (@('-B') + @($Poster | ForEach-Object { $_.Replace('{run}', $dryFolder) }) + @('--dry-run'))
         }
         Write-Host "  [$Step] launch, last: python $($launchCommand -join ' ')"
-        Invoke-Dry "$Name-launch" $Python (@('-B', 'renderer/shell/launch.py', '--build', $ProductBuild, '--out', $dryFolder) + $LaunchArgs + @('--dry-run'))
+        Invoke-Dry "$Name-launch" $Python (@('-B', $launcher, '--build', $product, '--out', $dryFolder) + $LaunchArgs + @('--dry-run'))
         Write-Host "  [$Step] close: $rule"
         Write-Host "  [$Step] $abortRule; then set aside as $Name.aborted-<n> and run again, at most $Retries times"
         if ($CaptureSeconds) { Write-Host "  [$Step] then stop PresentMon (--terminate_existing_session) and copy $csv to $run\presentmon.csv" }
@@ -336,11 +359,12 @@ function Invoke-ShellRun {
 # A shell run with at most $Retries reruns after an abort.
 function Invoke-ShellStep {
     param([string]$Step, [string]$Name, [string[]]$LaunchArgs = @(), [int]$CaptureSeconds = 0,
-          [string[]]$Poster = @(), [int]$CloseAfter = 0, [int]$PosterGrace = 0, [int]$Cap = 600, [switch]$Hold)
+          [string[]]$Poster = @(), [int]$CloseAfter = 0, [int]$PosterGrace = 0, [int]$Cap = 600, [switch]$Hold,
+          [string]$Build = '', [string]$From = '')
     for ($attempt = 0; $attempt -le $Retries; $attempt++) {
         $result = Invoke-ShellRun -Step $Step -Name $Name -Attempt $attempt -LaunchArgs $LaunchArgs `
             -CaptureSeconds $CaptureSeconds -Poster $Poster -CloseAfter $CloseAfter -PosterGrace $PosterGrace `
-            -Cap $Cap -Hold:$Hold
+            -Cap $Cap -Hold:$Hold -Build $Build -From $From
         if ($result -eq 'done') { return }
         if ($result -eq 'kept') { Write-Log $Step 'gave-up' "$Runs\$Name" 'the aborted run could not be set aside'; return }
         if ($DryRun) { return }
@@ -413,6 +437,7 @@ function Invoke-Scene([string]$Step, [string]$Scene, [string]$Build) {
         [IO.File]::WriteAllText((Join-Path $Root "$Out\$(Get-Label $Step).txt"), $text + "`n", $Utf8)
         $idle = $text -split "`n" | Where-Object { $_ -match 'idle|administrator|build verified' } | Select-Object -First 2
         Write-Host "      dry run: exit $code | $($idle -join ' | ')"
+        $script:SceneCode = 0
         return
     }
     Wait-Gate $Step
@@ -423,6 +448,7 @@ function Invoke-Scene([string]$Step, [string]$Scene, [string]$Build) {
     $note = $null
     try { & $sceneScript @params | Out-Host; $code = $LASTEXITCODE }
     catch { $code = 'error'; $note = $_.Exception.Message -replace '\s+', ' ' }
+    $script:SceneCode = $code
     $new = @(Get-Stamps | Where-Object { $before -notcontains $_ })
     $run = if ($new.Count) { "$Acceptance\$($new[-1])" } else { $null }
     Write-Log $Step $code $run $note
@@ -452,11 +478,23 @@ function Invoke-U3 {
     $null = Invoke-Step 'U3/ui_skew' $Python @('-B', '-u', 'tools/perf/c9/ui_skew.py', "$Runs\u3$Tag", '--out', "$Runs\u3$Tag-skew.json") 600 "$Runs\u3$Tag-skew.json"
 }
 
+# Each scene runs until three runs exit 0, with at most -SceneRetries more runs after one that did not (the 25 Nov
+# 2026 sitting lost W3's second run to a finalizer refusal, so U8's gate reference had two runs). The gate reads every
+# run made; renderer_gate.py lists a refused one among its invalid runs.
 function Invoke-U4 {
     $count = if ($DryRun) { 1 } else { 3 }
     foreach ($scene in 'S4', 'I_a', 'I_b', 'w3') {
         $made = @()
-        foreach ($i in 1..$count) { $run = Invoke-Scene "U4/$scene.$i" $scene $SceneBuild; if ($run) { $made += $run } }
+        $passed = 0
+        $i = 0
+        while ($passed -lt $count -and $i -lt $count + $SceneRetries) {
+            $i++
+            $script:SceneCode = $null
+            $run = Invoke-Scene "U4/$scene.$i" $scene $SceneBuild
+            if ($run) { $made += $run }
+            if ("$($script:SceneCode)" -eq '0') { $passed++ }
+            if ($DryRun) { break }
+        }
         Invoke-Gate "U4/$scene/gate" $made "$Acceptance\$scene-summary$Tag.json"
     }
 }
@@ -536,6 +574,42 @@ function Invoke-U8 {
     $null = Invoke-Step 'U8/analyze' $Python $analyze 900 "$Runs\u8$Tag-lx4.json"
 }
 
+# The checkout a product build was made in: <checkout>\work\build\c9-product\<stamp>.
+function Get-Checkout([string]$Build) {
+    try { (Get-Item -LiteralPath $Build -ErrorAction Stop).Parent.Parent.Parent.Parent.FullName } catch { $null }
+}
+
+# The plan of GAP's runs: each -CompareBuilds build with its own checkout's launcher, poster and fixtures, then
+# -ProductBuild with this checkout's in the default window and at $GapResolution.
+function Get-GapPlan {
+    $plan = @()
+    foreach ($build in $CompareBuilds) {
+        $from = Get-Checkout $build
+        $plan += @{ Build = $build; From = $from; Fixtures = (Join-Path $from $Fixtures)
+                    Poster = (Join-Path $from 'tools\perf\c9\lx4.py'); Window = @() }
+    }
+    $plan += @{ Build = $ProductBuild; From = ''; Fixtures = $Fixtures; Poster = 'tools/perf/c9/lx4.py'; Window = @() }
+    $plan += @{ Build = $ProductBuild; From = ''; Fixtures = $Fixtures; Poster = 'tools/perf/c9/lx4.py'
+                Window = @('--resolution', $GapResolution) }
+    for ($n = 1; $n -le $plan.Count; $n++) { $plan[$n - 1].Name = "gap$Tag-$n" }
+    $plan
+}
+
+# GAP (the header says what it is): 600 s runs, closed by the script; the poster is stopped 120 s after the close at
+# the latest. A run that was aborted every time has no folder and is left out of the count.
+function Invoke-GAP {
+    $made = @()
+    foreach ($entry in Get-GapPlan) {
+        $poster = @($entry.Poster, 'post', '--fixtures', $entry.Fixtures, '--puzzle', 'jumble-off', '--run', '{run}', '--turn-key', 'KeyJ')
+        Invoke-ShellStep -Step "GAP/$($entry.Name)" -Name $entry.Name -Build $entry.Build -From $entry.From `
+            -LaunchArgs (@('--lx4', '--lx4-fixtures', $entry.Fixtures, '--puzzle', 'jumble-off') + $entry.Window) `
+            -CaptureSeconds 900 -Poster $poster -CloseAfter 600 -Cap 660 -Hold
+        if ($DryRun -or (Test-Path -LiteralPath (Join-Path $Root "$Runs\$($entry.Name)") -PathType Container)) { $made += "$Runs\$($entry.Name)" }
+    }
+    if (-not $made.Count) { Write-Log 'GAP/share' 'skipped' $null 'no run folder'; return }
+    $null = Invoke-Step 'GAP/share' $Python (@('-B', '-u', $Share) + $made + @('--out', "$Runs\gap$Tag-share.json")) 600 "$Runs\gap$Tag-share.json"
+}
+
 # The commit a build was made from (product.json's head, or the acceptance identity's source head), 'a changed tree'
 # for a product build made from one, or $null when its record is unreadable.
 function Get-BuildHead([string]$Folder, [string]$File) {
@@ -557,7 +631,7 @@ function Test-Inputs {
     if (-not $Cargo -and $Steps -contains 'U7') { $problems += 'cargo is not on PATH (U7 fault trials)' }
     if (-not (Test-Path -LiteralPath $PresentMon -PathType Leaf)) { $problems += 'PresentMon 2.6.0 is not at its pinned path' }
     if (-not (Test-Path -LiteralPath (Join-Path $Root $Watcher) -PathType Leaf)) { $problems += "missing $Watcher" }
-    $builds = @{ SceneBuild = @('U4'); StageBuild = @('U5'); ProductBuild = @('U3', 'U6', 'U7', 'U8') }
+    $builds = @{ SceneBuild = @('U4'); StageBuild = @('U5'); ProductBuild = @('U3', 'U6', 'U7', 'U8', 'GAP') }
     $given = @{ SceneBuild = $SceneBuild; StageBuild = $StageBuild; ProductBuild = $ProductBuild }
     foreach ($key in $builds.Keys) {
         $needs = @($builds[$key] | Where-Object { $Steps -contains $_ })
@@ -572,8 +646,27 @@ function Test-Inputs {
             elseif ($built -ne $script:HeadFull) { $problems += "-$key was built from $built, not HEAD $($script:HeadFull)" }
         }
     }
-    if ($Steps | Where-Object { $_ -in 'U7', 'U8' }) {
+    if ($Steps | Where-Object { $_ -in 'U7', 'U8', 'GAP' }) {
         if (-not (Test-Path -LiteralPath (Join-Path $Root $Fixtures) -PathType Container)) { $problems += "missing folder $Fixtures" }
+    }
+    if ($Steps -contains 'GAP') {
+        if (-not (Test-Path -LiteralPath (Join-Path $Root $Share) -PathType Leaf)) { $problems += "missing $Share" }
+        foreach ($build in $CompareBuilds) {
+            # Another commit's build: exempt from the HEAD check, but its own checkout's launcher must match it.
+            $record = $null
+            try { $record = [IO.File]::ReadAllText((Join-Path $build 'product.json')) | ConvertFrom-Json } catch { }
+            $from = Get-Checkout $build
+            if (-not [IO.Path]::IsPathRooted($build)) { $problems += "-CompareBuilds $build is not a full path" }
+            elseif (-not $record -or $record.dirty -ne $false -or -not $record.head) { $problems += "no product.json of a clean tree in $build (-CompareBuilds)" }
+            elseif (-not $from) { $problems += "no checkout above $build (-CompareBuilds)" }
+            else {
+                foreach ($file in 'renderer\shell\launch.py', 'tools\perf\c9\lx4.py', $Fixtures) {
+                    if (-not (Test-Path -LiteralPath (Join-Path $from $file))) { $problems += "missing $file in the checkout of $build" }
+                }
+                $null = & git -C $from diff --quiet $record.head HEAD -- renderer/shell 2>$null
+                if ($LASTEXITCODE -ne 0) { $problems += "the checkout of $build has another renderer\shell than its commit $($record.head)" }
+            }
+        }
     }
     if ($Steps -contains 'U4' -and -not (Test-Path -LiteralPath (Join-Path $Root "$Acceptance\wj-data") -PathType Container)) { $problems += "missing folder $Acceptance\wj-data" }
     if ($Steps -contains 'U7' -and -not (Test-Path -LiteralPath (Join-Path $Root $Child) -PathType Leaf)) { $problems += "missing $Child" }
@@ -584,6 +677,7 @@ function Test-Inputs {
         U6 = @("$Runs\e3$Tag-warmup", "$Runs\e3$Tag-warmup.json", "$Runs\e3$Tag-1", "$Runs\e3$Tag-2", "$Runs\e3$Tag-3", "$Runs\e3$Tag.json")
         U7 = @("$Runs\u7$Tag", "$Runs\u7$Tag-sessions", "$Runs\u7$Tag-faults.json", "$Runs\u7$Tag.presentmon.csv", "$Runs\u7$Tag-lx2.json")
         U8 = @("$Runs\u8-off$Tag", "$Runs\u8-on$Tag", "$Runs\u8-off$Tag.presentmon.csv", "$Runs\u8-on$Tag.presentmon.csv", "$Runs\u8$Tag-e2.json", "$Runs\u8$Tag-lx4.json")
+        GAP = @(@(1..($CompareBuilds.Count + 2) | ForEach-Object { "$Runs\gap$Tag-$_"; "$Runs\gap$Tag-$_.presentmon.csv" }) + @("$Runs\gap$Tag-share.json"))
     }
     foreach ($step in $Steps) {
         if (-not $outputs.ContainsKey($step)) { continue }
@@ -603,7 +697,7 @@ try {
     $null = New-Item -ItemType Directory -Force -Path (Join-Path $Root $Out)
     $head = (& git -C $Root rev-parse --short=12 HEAD 2>$null)
     $script:HeadFull = (& git -C $Root rev-parse HEAD 2>$null)
-    $order = @('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8') | Where-Object { $Steps -contains $_ }
+    $order = @('U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8', 'GAP') | Where-Object { $Steps -contains $_ }
     Write-Host "unattended: $(if ($DryRun) { 'DRY RUN, nothing starts' } else { 'leave the machine alone until it prints unattended: done' })"
     Write-Host "  folder $Root, head $head, steps $($order -join ' '), suffix '$Suffix', retries $Retries, log $Log, child output $Out"
     $problems = @(Test-Inputs)
@@ -613,7 +707,15 @@ try {
         Write-Host 'unattended: nothing was started.'
         return
     }
-    Write-Log 'start' 0 $null "head $head; steps $($order -join ','); suffix '$Suffix'; builds scene '$SceneBuild' stage '$StageBuild' product '$ProductBuild'$(if ($DryRun) { '; dry run' })"
+    $compared = ''
+    if ($Steps -contains 'GAP') {
+        # The compared builds by identity and commit; their full paths stay out of the log.
+        $names = @($CompareBuilds | ForEach-Object {
+            try { $record = [IO.File]::ReadAllText((Join-Path $_ 'product.json')) | ConvertFrom-Json; "$($record.identity) ($($record.head.Substring(0, 12)))" }
+            catch { Split-Path -Leaf $_ } })
+        $compared = "; compared builds: $(if ($names.Count) { $names -join ', ' } else { 'none' })"
+    }
+    Write-Log 'start' 0 $null "head $head; steps $($order -join ','); suffix '$Suffix'; builds scene '$SceneBuild' stage '$StageBuild' product '$ProductBuild'$compared$(if ($DryRun) { '; dry run' })"
     if (-not $DryRun) {
         if (-not ('C9Unattended.Power' -as [type])) {
             Add-Type -Namespace C9Unattended -Name Power -MemberDefinition '[System.Runtime.InteropServices.DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint flags);'
