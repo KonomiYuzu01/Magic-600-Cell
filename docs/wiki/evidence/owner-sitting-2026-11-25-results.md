@@ -290,6 +290,9 @@ The cause is not established. What the records rule out or leave open:
 window and the same desktop, and then tonight's build at both window sizes, would decide. Each needs a quiet machine
 and the foreground.
 
+Follow-up, 26 November 2026: [presented-gap-2026-11-26](presented-gap-2026-11-26.md) traces the gap to a sampling
+race that the window and the desktop decide, not the build, and records the fix in the core.
+
 ## What it does not show
 
 - No result for other hardware, resolutions or refresh rates, or long sessions.

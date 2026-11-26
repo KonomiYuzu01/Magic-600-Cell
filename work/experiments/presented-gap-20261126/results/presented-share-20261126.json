@@ -1,0 +1,359 @@
+{
+  "bucket_seconds": 300,
+  "evidence": "actual_windows_directx: what the shell's own logs show; nothing about what the screen showed",
+  "format": "magic600-owner-sitting-20261125-presented-share-v1",
+  "runs": [
+    {
+      "build_identity": "c9-product-2efda50d54592f20",
+      "editor": null,
+      "frames": 3548,
+      "frames_without_presented_row": 1940,
+      "inputs": {
+        "events.jsonl": "124cf04f12a9d31296c0e80e71678cd3032221cbb9ebf15f46984d6200f14ee7",
+        "launch.json": "1ec69faca55d31475138f49798264933b0fcf474a346709977feab7ff9a105ff"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.547
+      ],
+      "presented_rows": 1608,
+      "presented_sequence_steps": {
+        "1": 1229,
+        "10": 7,
+        "11": 6,
+        "12": 3,
+        "13": 3,
+        "14": 7,
+        "15": 1,
+        "16": 3,
+        "17": 3,
+        "2": 158,
+        "22": 2,
+        "26": 2,
+        "27": 3,
+        "29": 1,
+        "3": 56,
+        "31": 1,
+        "32": 12,
+        "33": 4,
+        "4": 74,
+        "42": 1,
+        "5": 10,
+        "6": 11,
+        "65": 1,
+        "7": 2,
+        "71": 1,
+        "8": 4,
+        "9": 2
+      },
+      "run_id": "20261126T073455Z",
+      "share_without_presented_row": 0.5468,
+      "started_utc": "2026-11-26T07:34:55Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": false,
+      "frames": 3568,
+      "frames_without_presented_row": 1545,
+      "inputs": {
+        "events.jsonl": "6ca6864479f261188ffb1d35fd624c94bb5164605fc20bce85dcd6cd19d105b6",
+        "launch.json": "2d30122fb61b803edc8fcb6d2726976e21663eefe809b59df5acdb17394655ec"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.433
+      ],
+      "presented_rows": 2023,
+      "presented_sequence_steps": {
+        "1": 1303,
+        "13": 1,
+        "17": 1,
+        "2": 324,
+        "21": 2,
+        "3": 110,
+        "30": 1,
+        "31": 1,
+        "4": 260,
+        "5": 13,
+        "6": 2,
+        "7": 1,
+        "8": 2,
+        "9": 1
+      },
+      "run_id": "20261126T073607Z",
+      "share_without_presented_row": 0.433,
+      "started_utc": "2026-11-26T07:36:07Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-2efda50d54592f20",
+      "editor": null,
+      "frames": 3599,
+      "frames_without_presented_row": 3045,
+      "inputs": {
+        "events.jsonl": "b58066e21aa7656fbb2ee903a4efd3212eb7da0878622c8781126e2d4b7b4227",
+        "launch.json": "55c0c4210c3c9ec7a59472516191cef4bd0ffa627aaa6629cffacb6434f3aa48"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.846
+      ],
+      "presented_rows": 554,
+      "presented_sequence_steps": {
+        "1": 441,
+        "10": 1,
+        "103": 1,
+        "105": 1,
+        "11": 1,
+        "116": 1,
+        "13": 3,
+        "141": 1,
+        "16": 2,
+        "17": 2,
+        "19": 1,
+        "2": 32,
+        "20": 1,
+        "23": 1,
+        "24": 1,
+        "25": 1,
+        "275": 1,
+        "3": 13,
+        "32": 2,
+        "323": 1,
+        "4": 11,
+        "44": 1,
+        "5": 6,
+        "507": 1,
+        "58": 1,
+        "6": 5,
+        "65": 1,
+        "7": 9,
+        "8": 4,
+        "9": 5,
+        "94": 1
+      },
+      "run_id": "20261126T073720Z",
+      "share_without_presented_row": 0.8461,
+      "started_utc": "2026-11-26T07:37:20Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": false,
+      "frames": 3568,
+      "frames_without_presented_row": 75,
+      "inputs": {
+        "events.jsonl": "1ee84708c196f2144b22678f1238111b00328d5e494ed7e4fa58aa95dd612a7c",
+        "launch.json": "55366b87673e25dba9df06dcaf99880d57a6f5ff828bbb473e281cafdf12acfc"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.021
+      ],
+      "presented_rows": 3493,
+      "presented_sequence_steps": {
+        "1": 3421,
+        "2": 71
+      },
+      "run_id": "20261126T073832Z",
+      "share_without_presented_row": 0.021,
+      "started_utc": "2026-11-26T07:38:32Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": false,
+      "frames": 3506,
+      "frames_without_presented_row": 1651,
+      "inputs": {
+        "events.jsonl": "10a6158b7a54db6c920a7d319135be6dff2537418d88f08d01e477c80dd64133",
+        "launch.json": "9746e287a61f89b728b2f240f3fa3adaa64a0b3936d9926f6a7c06839346f7ec"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.471
+      ],
+      "presented_rows": 1855,
+      "presented_sequence_steps": {
+        "1": 902,
+        "2": 603,
+        "3": 7,
+        "4": 337,
+        "5": 5
+      },
+      "run_id": "20261126T074255Z",
+      "share_without_presented_row": 0.4709,
+      "started_utc": "2026-11-26T07:42:55Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306+core-fix",
+      "editor": false,
+      "frames": 3502,
+      "frames_without_presented_row": 4,
+      "inputs": {
+        "events.jsonl": "d3955c9306e6628a85959506f79023295ca5e037d1fe522fc42518572b9e28cf",
+        "launch.json": "da5cc9f659b7033a54bd6969076c04c391ef2458b7e53cb516e36c8e3a37edcc"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.001
+      ],
+      "presented_rows": 3498,
+      "presented_sequence_steps": {
+        "1": 3497
+      },
+      "run_id": "20261126T074406Z",
+      "share_without_presented_row": 0.0011,
+      "started_utc": "2026-11-26T07:44:06Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": false,
+      "frames": 3502,
+      "frames_without_presented_row": 2818,
+      "inputs": {
+        "events.jsonl": "bb0ae6f432703db360147b233081d2285b25e54758611d3c2b77656c7299ea40",
+        "launch.json": "886109387f8e0df08fe2015b0611f0e8df79f6c86982383a26c17d11173e8c1a"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.805
+      ],
+      "presented_rows": 684,
+      "presented_sequence_steps": {
+        "1": 442,
+        "10": 2,
+        "106": 1,
+        "11": 3,
+        "112": 1,
+        "12": 1,
+        "13": 5,
+        "14": 3,
+        "143": 1,
+        "15": 3,
+        "16": 3,
+        "17": 4,
+        "18": 2,
+        "19": 2,
+        "2": 76,
+        "20": 2,
+        "21": 3,
+        "22": 2,
+        "23": 2,
+        "24": 1,
+        "26": 1,
+        "28": 5,
+        "3": 21,
+        "30": 1,
+        "31": 3,
+        "32": 9,
+        "33": 3,
+        "34": 1,
+        "4": 19,
+        "41": 1,
+        "46": 1,
+        "5": 13,
+        "50": 1,
+        "55": 1,
+        "6": 15,
+        "62": 1,
+        "64": 1,
+        "66": 1,
+        "69": 1,
+        "7": 10,
+        "76": 1,
+        "8": 7,
+        "89": 1,
+        "9": 6
+      },
+      "run_id": "20261126T074517Z",
+      "share_without_presented_row": 0.8047,
+      "started_utc": "2026-11-26T07:45:17Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306+core-fix",
+      "editor": false,
+      "frames": 3512,
+      "frames_without_presented_row": 1653,
+      "inputs": {
+        "events.jsonl": "669b049c4e724ec30d7dc158bb2c29123abcbdfe274b7e9387247f97be18a9d1",
+        "launch.json": "abd564f89746adec6a3cd34ff775118ef66982c5b2509563fa53a44eb9ddcc95"
+      },
+      "lx2_injection": false,
+      "lx4": false,
+      "per_five_minutes": [
+        0.471
+      ],
+      "presented_rows": 1859,
+      "presented_sequence_steps": {
+        "1": 1751,
+        "10": 4,
+        "11": 1,
+        "12": 1,
+        "128": 1,
+        "13": 2,
+        "15": 4,
+        "16": 2,
+        "17": 1,
+        "18": 3,
+        "2": 22,
+        "21": 1,
+        "22": 1,
+        "24": 1,
+        "25": 2,
+        "27": 1,
+        "28": 1,
+        "298": 1,
+        "3": 20,
+        "31": 1,
+        "33": 1,
+        "37": 2,
+        "4": 9,
+        "46": 1,
+        "47": 1,
+        "48": 1,
+        "5": 7,
+        "51": 1,
+        "55": 1,
+        "6": 2,
+        "61": 1,
+        "62": 1,
+        "63": 1,
+        "7": 5,
+        "9": 2,
+        "95": 1
+      },
+      "run_id": "20261126T074628Z",
+      "share_without_presented_row": 0.4707,
+      "started_utc": "2026-11-26T07:46:28Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    }
+  ]
+}

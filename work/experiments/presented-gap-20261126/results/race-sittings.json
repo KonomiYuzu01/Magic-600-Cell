@@ -1,0 +1,426 @@
+{
+  "evidence": "actual_windows_directx: what the shell's own logs show; nothing about what the screen showed",
+  "format": "magic600-presented-gap-20261126-race-v1",
+  "runs": [
+    {
+      "build_identity": "c9-product-2efda50d54592f20",
+      "frame_call_ms": null,
+      "frames": 363302,
+      "inputs": {
+        "events.jsonl": "6b612b337060fb092f06d87552db4ebf8c270469248134cb07b1571ebefce25b"
+      },
+      "missed_between_confirmed": {
+        "1": 3,
+        "2": 7884,
+        "3": 1,
+        "4": 1,
+        "not between confirmed": 635
+      },
+      "missed_in_steps_2_to_4": 8521,
+      "missed_in_steps_5_up": 0,
+      "run_id": "20261121T133423Z",
+      "sample_offset_us": {
+        "0": {
+          "not_posted": 2,
+          "posted": 0
+        },
+        "100": {
+          "not_posted": 43,
+          "posted": 0
+        },
+        "1000": {
+          "not_posted": 1773,
+          "posted": 80
+        },
+        "1100": {
+          "not_posted": 1332,
+          "posted": 141
+        },
+        "1200": {
+          "not_posted": 1185,
+          "posted": 316
+        },
+        "1300": {
+          "not_posted": 1070,
+          "posted": 330
+        },
+        "1400": {
+          "not_posted": 781,
+          "posted": 363
+        },
+        "1500": {
+          "not_posted": 483,
+          "posted": 395
+        },
+        "1600": {
+          "not_posted": 202,
+          "posted": 506
+        },
+        "1700": {
+          "not_posted": 78,
+          "posted": 574
+        },
+        "1800": {
+          "not_posted": 29,
+          "posted": 478
+        },
+        "1900": {
+          "not_posted": 16,
+          "posted": 489
+        },
+        "200": {
+          "not_posted": 35160,
+          "posted": 0
+        },
+        "2000+": {
+          "not_posted": 229,
+          "posted": 3838
+        },
+        "300": {
+          "not_posted": 61431,
+          "posted": 1
+        },
+        "400": {
+          "not_posted": 77826,
+          "posted": 2
+        },
+        "500": {
+          "not_posted": 124787,
+          "posted": 165
+        },
+        "600": {
+          "not_posted": 21825,
+          "posted": 281
+        },
+        "700": {
+          "not_posted": 9218,
+          "posted": 187
+        },
+        "800": {
+          "not_posted": 6265,
+          "posted": 178
+        },
+        "900": {
+          "not_posted": 2631,
+          "posted": 87
+        }
+      },
+      "sample_time": "ui_frame pre-draw qpc",
+      "steps": {
+        "1": 346582,
+        "2": 7889,
+        "3": 283,
+        "4": 22
+      },
+      "without_presented_row": 8525
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "frame_call_ms": {
+        "median": 16.207,
+        "p95": 16.576
+      },
+      "frames": 363177,
+      "inputs": {
+        "events.jsonl": "fd40b4199d4d2feabeb5a80004ba76e3cfc03a9812609eca3fad0c31a26e21ef"
+      },
+      "missed_between_confirmed": {
+        "1": 4,
+        "2": 59641,
+        "3": 63,
+        "not between confirmed": 521
+      },
+      "missed_in_steps_2_to_4": 60226,
+      "missed_in_steps_5_up": 0,
+      "run_id": "20261125T185719Z",
+      "sample_offset_us": {
+        "0": {
+          "not_posted": 3,
+          "posted": 0
+        },
+        "100": {
+          "not_posted": 3265,
+          "posted": 106
+        },
+        "1000": {
+          "not_posted": 59,
+          "posted": 65
+        },
+        "1100": {
+          "not_posted": 37,
+          "posted": 52
+        },
+        "1200": {
+          "not_posted": 13,
+          "posted": 37
+        },
+        "1300": {
+          "not_posted": 10,
+          "posted": 12
+        },
+        "1400": {
+          "not_posted": 1,
+          "posted": 13
+        },
+        "1500": {
+          "not_posted": 6,
+          "posted": 16
+        },
+        "1600": {
+          "not_posted": 0,
+          "posted": 6
+        },
+        "1700": {
+          "not_posted": 3,
+          "posted": 8
+        },
+        "1800": {
+          "not_posted": 7,
+          "posted": 5
+        },
+        "1900": {
+          "not_posted": 2,
+          "posted": 8
+        },
+        "200": {
+          "not_posted": 47954,
+          "posted": 1299
+        },
+        "2000+": {
+          "not_posted": 278,
+          "posted": 1224
+        },
+        "300": {
+          "not_posted": 37674,
+          "posted": 20561
+        },
+        "400": {
+          "not_posted": 103341,
+          "posted": 46680
+        },
+        "500": {
+          "not_posted": 22508,
+          "posted": 4887
+        },
+        "600": {
+          "not_posted": 4430,
+          "posted": 1467
+        },
+        "700": {
+          "not_posted": 4076,
+          "posted": 1604
+        },
+        "800": {
+          "not_posted": 743,
+          "posted": 241
+        },
+        "900": {
+          "not_posted": 176,
+          "posted": 70
+        }
+      },
+      "sample_time": "returned_qpc",
+      "steps": {
+        "1": 242986,
+        "2": 59708,
+        "3": 238,
+        "4": 14
+      },
+      "without_presented_row": 60230
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "frame_call_ms": {
+        "median": 16.25,
+        "p95": 16.625
+      },
+      "frames": 7253,
+      "inputs": {
+        "events.jsonl": "1970c9a9e5fde0ef8a73b36ea18902705527a1811c5307f8f669c8704fcda7a8"
+      },
+      "missed_between_confirmed": {
+        "2": 487,
+        "not between confirmed": 2420
+      },
+      "missed_in_steps_2_to_4": 502,
+      "missed_in_steps_5_up": 2405,
+      "run_id": "20261125T171831Z",
+      "sample_offset_us": {
+        "0": {
+          "not_posted": 41,
+          "posted": 1
+        },
+        "100": {
+          "not_posted": 324,
+          "posted": 3
+        },
+        "1000": {
+          "not_posted": 1,
+          "posted": 0
+        },
+        "1100": {
+          "not_posted": 0,
+          "posted": 1
+        },
+        "1200": {
+          "not_posted": 1,
+          "posted": 1
+        },
+        "1500": {
+          "not_posted": 0,
+          "posted": 1
+        },
+        "200": {
+          "not_posted": 1150,
+          "posted": 29
+        },
+        "2000+": {
+          "not_posted": 1,
+          "posted": 7
+        },
+        "300": {
+          "not_posted": 694,
+          "posted": 228
+        },
+        "400": {
+          "not_posted": 1203,
+          "posted": 238
+        },
+        "500": {
+          "not_posted": 240,
+          "posted": 39
+        },
+        "600": {
+          "not_posted": 73,
+          "posted": 14
+        },
+        "700": {
+          "not_posted": 29,
+          "posted": 8
+        },
+        "800": {
+          "not_posted": 12,
+          "posted": 1
+        },
+        "900": {
+          "not_posted": 5,
+          "posted": 0
+        }
+      },
+      "sample_time": "returned_qpc",
+      "steps": {
+        "1": 3831,
+        "10": 1,
+        "108": 1,
+        "109": 1,
+        "113": 1,
+        "120": 1,
+        "15": 1,
+        "151": 1,
+        "2": 487,
+        "206": 1,
+        "218": 1,
+        "23": 1,
+        "25": 1,
+        "3": 3,
+        "394": 1,
+        "4": 3,
+        "5": 3,
+        "630": 1,
+        "85": 1,
+        "9": 1,
+        "95": 1,
+        "99": 1
+      },
+      "without_presented_row": 2908
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "frame_call_ms": {
+        "median": 16.199,
+        "p95": 16.478
+      },
+      "frames": 39706,
+      "inputs": {
+        "events.jsonl": "12af8ef7d7bfa294a3822669477d00ce86393281f0e7184926bf464b0e57e87e"
+      },
+      "missed_between_confirmed": {
+        "1": 1,
+        "2": 6,
+        "not between confirmed": 15
+      },
+      "missed_in_steps_2_to_4": 19,
+      "missed_in_steps_5_up": 0,
+      "run_id": "20261125T172659Z",
+      "sample_offset_us": {
+        "100": {
+          "not_posted": 35,
+          "posted": 0
+        },
+        "1000": {
+          "not_posted": 26,
+          "posted": 0
+        },
+        "1100": {
+          "not_posted": 9,
+          "posted": 2
+        },
+        "1200": {
+          "not_posted": 5,
+          "posted": 0
+        },
+        "1300": {
+          "not_posted": 1,
+          "posted": 0
+        },
+        "1400": {
+          "not_posted": 2,
+          "posted": 0
+        },
+        "200": {
+          "not_posted": 1816,
+          "posted": 0
+        },
+        "2000+": {
+          "not_posted": 0,
+          "posted": 6
+        },
+        "300": {
+          "not_posted": 6455,
+          "posted": 1
+        },
+        "400": {
+          "not_posted": 23933,
+          "posted": 2
+        },
+        "500": {
+          "not_posted": 6044,
+          "posted": 0
+        },
+        "600": {
+          "not_posted": 904,
+          "posted": 0
+        },
+        "700": {
+          "not_posted": 280,
+          "posted": 0
+        },
+        "800": {
+          "not_posted": 104,
+          "posted": 0
+        },
+        "900": {
+          "not_posted": 58,
+          "posted": 0
+        }
+      },
+      "sample_time": "returned_qpc",
+      "steps": {
+        "1": 39671,
+        "2": 7,
+        "4": 4
+      },
+      "without_presented_row": 23
+    }
+  ]
+}
