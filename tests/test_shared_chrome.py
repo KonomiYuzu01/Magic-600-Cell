@@ -52,7 +52,7 @@ class Staged(unittest.TestCase):
 
     def test_the_ported_files_are_staged_as_they_are(self):
         for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs", "Model/CorePlaces.cs", "Model/LayoutTracker.cs", "Ui/FrameLayout.cs",
-                         "Model/ViewFields.cs", "Model/Inspect.cs", "Ui/InspectorPanels.cs"):
+                         "Model/ViewFields.cs", "Model/Inspect.cs", "Ui/InspectorPanels.cs", "Model/ViewLink.cs", "Ui/ViewLinkMarks.cs"):
             self.assertEqual(self.staged(relative), (CHROME / relative).read_bytes(), relative)
 
 
@@ -192,6 +192,26 @@ class ViewSection(unittest.TestCase):
         self.assertIn("views = new ViewFields(inspector, specs, false,", lab)
         self.assertNotIn("ViewEdited", lab)
         self.assertNotIn("ViewEdited", text(LIVE / "SampleInspect.cs"))
+
+
+
+class LinkMark(unittest.TestCase):
+    """Item 5 (ADR-D01.41): the rotation-link mark in one copy, drawn from each host's link state; Look Lab keeps no
+    mark of its own."""
+
+    def test_one_copy_of_the_mark(self):
+        model = text(CHROME / "Model" / "ViewLink.cs")
+        self.assertIn("public static LinkMark? Of(bool? linked) => linked switch", model)
+        self.assertIn('public const string Glyph = "mark.link";', model)
+        ui = text(CHROME / "Ui" / "ViewLinkMarks.cs")
+        self.assertIn("public static void Mark(ViewFrame view, Func<bool?> linked)", ui)
+        self.assertIn("public static void Mark(ChromeFrame frame, Func<bool?> linked)", ui)
+
+    def test_look_lab_draws_the_shared_mark(self):
+        lab = text(LIVE / "LabFrame.cs")
+        self.assertIn("ViewLink.Mark(view, Linked);", lab)
+        for path in sorted(LIVE.glob("*.cs")):
+            self.assertNotIn('"mark.link"', text(path), path.name)
 
 
 if __name__ == "__main__":
