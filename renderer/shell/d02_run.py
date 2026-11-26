@@ -372,6 +372,9 @@ def expect_nu_band(dumps: list[dict], source: dict, state: str | None) -> list[s
     return problems
 
 
+CORE_MIN_TEXTURE = 128  # SA2_MIN_TEXTURE_PX, renderer/core/include/sa2_interop.h
+
+
 def expect_fit(dumps: list[dict], source: dict, state: str | None, vertical: bool = True) -> list[str]:
     """The frame fits the window (owner, 26 November 2026: "看不到"): at the script's resolution the top bar, the docks,
     Global and Local lie wholly inside the window, and Local is at least 0.2 of the pair (ADR-D01's minimum). In a
@@ -388,6 +391,12 @@ def expect_fit(dumps: list[dict], source: dict, state: str | None, vertical: boo
         if x < -0.5 or x + w > width + 0.5 or (vertical and (y < -0.5 or y + h > height + 0.5)):
             problems.append(f"the {key.replace('_', ' ')} lies outside the {width:.0f}x{height:.0f} window: "
                             f"x {x:.0f} to {x + w:.0f}, y {y:.0f} to {y + h:.0f}")
+    # A view under the core's smallest surface (SA2_MIN_TEXTURE_PX) is a frame that never laid out (26 November
+    # 2026: a rebuild loop left Global at 86 px while the right edge still fitted).
+    for key in ("global", "local"):
+        if key in frame and (frame[key][2] < CORE_MIN_TEXTURE or frame[key][3] < CORE_MIN_TEXTURE):
+            problems.append(f"{key.title()} is {frame[key][2]:.0f}x{frame[key][3]:.0f} px, under the core's "
+                            f"{CORE_MIN_TEXTURE} px surface: the frame did not lay out")
     if "global" in frame and "local" in frame:
         share = frame["local"][2] / (frame["global"][2] + frame["local"][2])
         if share < 0.2:

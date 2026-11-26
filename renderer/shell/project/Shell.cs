@@ -543,6 +543,9 @@ public partial class Shell : Control
     }
 
     /// <summary>A window point in Local's drawn opening (through the pane layout's hit), outside Global's.</summary>
+    // SA2_MIN_TEXTURE_PX of renderer/core/include/sa2_interop.h.
+    private const int CoreMinTexture = 128;
+
     private bool InLocal(Vector2 point) => _localOpen && ViewAt(point) == HostLibrary.Local;
 
     /// <summary>ADR-D02 B17: a window point in a drawn view as a pixel of the core's surface, or none.</summary>
@@ -744,7 +747,9 @@ public partial class Shell : Control
         var (area, layout) = Openings(global);
         _steady = area == _wanted ? _steady + 1 : 0;
         _wanted = area;
-        if (area != _area && area.Size.X > 0 && area.Size.Y > 0 && (_chrome is null || _steady >= 6))
+        // The core refuses a surface under SA2_MIN_TEXTURE_PX (sa2_interop.h) on a side: a smaller opening (a frame
+        // still laying out) keeps the last surface instead of failing every frame.
+        if (area != _area && area.Size.X >= CoreMinTexture && area.Size.Y >= CoreMinTexture && (_chrome is null || _steady >= 6))
         {
             if (area.Position != _area.Position)
             {
