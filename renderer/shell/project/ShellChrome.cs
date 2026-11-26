@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Godot;
 using Magic600.Chrome;
+using Magic600.Shell.D02;
 
 namespace Magic600.Shell;
 
@@ -122,6 +123,11 @@ public sealed class ShellChrome
         frame.SetMainViews(global, ChromeBody.PaneState("notdrawn", "Local view: not drawn yet"));
 
         var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(folder, "command-table.json")));
+        // ADR-D02's build (B4): with D02 on, its draft rows follow the table's and the Jumble rows show their display names.
+        if (ShellJumble.On)
+        {
+            ShellJumble.AddRows(registry, folder);
+        }
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
         frame.AddPane("gallery", "Gallery", gallery);
@@ -130,6 +136,7 @@ public sealed class ShellChrome
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
+            _ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,
             _ => NotHere,
         };
         _unavailable = Unavailable;
@@ -216,6 +223,10 @@ public sealed class ShellChrome
         }
         frame.BarTools.AddChild(SessionWidgets.Chip(live ? "core" : "no core", frame.Tokens.C(live ? "severity.ok" : "severity.warning"),
             live ? "The core draws the Global view beneath the window" : "The shell was started without the core: nothing is drawn"));
+        if (ShellJumble.On)
+        {
+            ShellJumble.Attach(parent, frame, palette);
+        }
 
         void Dress()
         {

@@ -903,6 +903,9 @@ class FakeMachine:
             raise self.images
         return list(self.images)
 
+    def foreground(self):
+        return 4242
+
 
 class ColdStart(unittest.TestCase):
     """Charter E3's launch: the pause, the cold flags and the sealed startup log that cold_start.py reads."""
@@ -1023,6 +1026,236 @@ class ColdStart(unittest.TestCase):
         self.assertIn("_startup?.SessionOpened(EventLog.Now());", shell)
         self.assertIn("_startup?.RuntimeLoaded(EventLog.Now());", shell)
 
+
+class D02Launch(unittest.TestCase):
+    """ADR-D02 build step B4: the D02 switch, staging, the scripted runner and the watch command, over the fake build.
+    Nothing is built, and the only process started is a trivial Python."""
+
+    setUp = ProductBuild.setUp
+
+    def launched(self, flags):
+        started = {}
+
+        class Process:
+            def wait(self):
+                return 0
+
+        def popen(arguments, cwd, env, **options):
+            started.update(arguments=arguments, env=env, options=options)
+            return Process()
+        out = self.temp / "run"
+        code = self.launch.main(["--out", str(out), "--build", str(self.build), *flags], popen=popen,
+                                out_stream=lambda line: None, machine=FakeMachine(), state=self.temp / "last-exit.json")
+        return code, started, out
+
+    def d02_inputs(self):
+        fixture = self.temp / "d02-fixture"
+        (fixture / "session").mkdir(parents=True)
+        (fixture / "fixture.json").write_bytes(b'{"state": "wj-ia-300"}')
+        (fixture / "session" / "journal").write_bytes(b"d02 journal")
+        script = self.temp / "smoke.json"
+        script.write_bytes(b'{"format": "magic600-d02-script/1"}')
+        data = self.temp / "data"
+        (data / "samples").mkdir(parents=True)
+        return fixture, script, data
+
+    def test_the_build_stages_the_samples_and_the_d02_sources(self):
+        build_shell = shell_module("build_shell")
+        project = self.temp / "staged"
+        build_shell.stage(project)
+        samples = ROOT / "tools" / "looklab" / "data" / "samples"
+        self.assertEqual((project / "samples" / "jumble" / "states.json").read_bytes(),
+                         (samples / "jumble" / "states.json").read_bytes())
+        for name in ("command-rows-d02.json", "jumble-words.json", "command-table.json", "command-labels.json"):
+            self.assertTrue((project / "design" / name).is_file(), name)
+        for name in ("Chrome/Ui/ScreenText.cs", "Chrome/Model/ToolSlots.cs", "D02/ShellJumble.cs", "D02/D02Window.cs"):
+            self.assertTrue((project / name).is_file(), name)
+        self.assertIn("stage(project)", text(SHELL / "build_shell.py"))
+
+    def test_d02_needs_the_frame_and_its_options_need_d02(self):
+        def refuse(*args, **kwargs):
+            raise AssertionError("a refused launch started a process")
+        fixture, script, data = self.d02_inputs()
+        empty = self.temp / "empty-fixture"
+        empty.mkdir()
+        for flags in (["--d02"], ["--frame", "--d02-state", "wj-ia-300"], ["--frame", "--d02-script", str(script)],
+                      ["--frame", "--d02-fixture", str(fixture)], ["--frame", "--d02-data", str(data)],
+                      ["--frame", "--d02", "--cold-start"], ["--frame", "--d02", "--d02-fixture", str(empty)],
+                      ["--frame", "--d02", "--d02-script", str(self.temp / "missing.json")],
+                      ["--frame", "--d02", "--d02-data", str(empty)], ["--frame", "--d02", "--position", "12"]):
+            out = self.temp / "refused"
+            self.assertEqual(self.launch.main(["--out", str(out), "--build", str(self.build), *flags], popen=refuse,
+                                              out_stream=lambda line: None), 2, flags)
+            self.assertFalse(out.exists(), flags)
+
+    def test_a_d02_launch_shows_without_activation_and_records_no_private_path(self):
+        fixture, script, data = self.d02_inputs()
+        code, started, out = self.launched(["--frame", "--puzzle", "jumble-on", "--d02", "--d02-state", "wj-ia-300",
+                                            "--d02-fixture", str(fixture), "--d02-script", str(script),
+                                            "--d02-data", str(data), "--position", "100,80"])
+        self.assertEqual(code, 0)
+        env, options, arguments = started["env"], started["options"], started["arguments"]
+        self.assertEqual((env["M600_D02"], env["M600_CHROME"], env["M600_D02_STATE"]), ("1", "1", "wj-ia-300"))
+        self.assertEqual(env["M600_D02_SCRIPT"], str(script.resolve()))
+        self.assertEqual(env["M600_D02_FIXTURE"], str(fixture.resolve() / "fixture.json"))
+        self.assertEqual(env["M600_SESSION_FIXTURE"], env["M600_D02_FIXTURE"])
+        self.assertEqual(env["M600_D02_DATA"], str(data.resolve()))
+        # The window that had the foreground before the launch, which the shell hands it back to.
+        self.assertEqual(env["M600_D02_FOREGROUND"], "4242")
+        info = options["startupinfo"]
+        self.assertTrue(info.dwFlags & self.launch.STARTF_USESHOWWINDOW)
+        self.assertEqual((self.launch.STARTF_USESHOWWINDOW, self.launch.SW_SHOWNOACTIVATE, info.wShowWindow), (1, 4, 4))
+        self.assertEqual(arguments[arguments.index("--position") + 1], "100,80")
+        for flag in ("-t", "--always-on-top", "-f", "--fullscreen", "-m", "--maximized"):
+            self.assertNotIn(flag, arguments)
+        self.assertEqual((out / "session" / "journal").read_bytes(), b"d02 journal")
+        record = json.loads((out / "launch.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["d02"], {
+            "state": "wj-ia-300", "fixture": {"sha256": hashlib.sha256(b'{"state": "wj-ia-300"}').hexdigest()},
+            "script": {"name": "smoke.json",
+                       "sha256": hashlib.sha256(b'{"format": "magic600-d02-script/1"}').hexdigest()},
+            "data_reload": True})
+        for temp in {str(self.temp), str(self.temp.resolve())}:
+            self.assertNotIn(temp, json.dumps(record))
+            self.assertNotIn(temp.replace("\\", "/"), json.dumps(record))
+
+    def test_without_d02_a_launch_is_unchanged(self):
+        code, started, out = self.launched(["--frame"])
+        self.assertEqual(code, 0)
+        self.assertEqual(started["options"], {}, "a measured run gets no STARTUPINFO")
+        self.assertFalse([key for key in started["env"] if key.startswith("M600_D02")])
+        self.assertIsNone(json.loads((out / "launch.json").read_text(encoding="utf-8"))["d02"])
+        product = self.build_product.verify(self.build)
+        env = self.launch.environment(product, self.build, self.temp / "run", "r1", False,
+                                      base={"M600_D02": "1", "m600_d02_foreground": "9", "M600_D02_SCRIPT": "s"})
+        self.assertFalse([key for key in env if key.upper().startswith("M600_D02")])
+
+    def test_no_topmost_flag_and_no_activation_outside_the_gate_path(self):
+        sources = list(SHELL.rglob("*.cs")) + list(SHELL.glob("*.py")) + list(
+            (ROOT / "tools" / "looklab" / "app" / "Chrome").rglob("*.cs"))
+        self.assertTrue(any(path.name == "D02Window.cs" for path in sources))
+        for path in sources:
+            body = text(path)
+            for pattern in ("HWND_TOPMOST", "AlwaysOnTop", "always-on-top", "always_on_top", "BringWindowToTop",
+                            "SetActiveWindow", "MoveToForeground", "AllowSetForegroundWindow",
+                            "AttachThreadInput", "WindowFlags.NoFocus"):
+                self.assertNotIn(pattern, body, f"{path.name}: {pattern}")
+            # user32's SetFocus is never imported (HostLibrary.SetFocus is the router's text-field focus, not a window's).
+            self.assertIsNone(re.search(r"extern\s+\w+\s+SetFocus\s*\(|EntryPoint\s*=\s*\"SetFocus\"", body), path.name)
+            calls = re.findall(r"SetForegroundWindow\((\w+)\)", body)
+            if calls:
+                # The one activation is the hand-back: of the window that had the foreground, never the shell's own.
+                self.assertEqual((path.name, calls), ("D02Window.cs", ["previous"]))
+        window = text(PROJECT / "D02" / "D02Window.cs")
+        self.assertIn("SetWindowPos(own, previous, 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);", window)
+        self.assertEqual(len(re.findall(r"SetWindowPos\(own", window)), 1)
+        self.assertNotIn("always_on_top", text(PROJECT / "project.godot"))
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn("if (D02.ShellJumble.On)\n        {\n            D02.D02Window.Settle();", shell)
+
+    def test_the_draft_rows_are_registered_only_with_d02_on(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        table_at = chrome.index("CommandRegistry.FromTable(")
+        rows_at = chrome.index("ShellJumble.AddRows(registry, folder);")
+        self.assertLess(table_at, rows_at)
+        self.assertLess(rows_at, chrome.index("Keymap.Load("))
+        self.assertLess(chrome.index("new CommandPalette("), chrome.index("ShellJumble.Attach(parent, frame, palette);"))
+        self.assertIn("_ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,", chrome)
+        jumble = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertIn('System.Environment.GetEnvironmentVariable("M600_D02") == "1"', jumble)
+        # Relabel refuses a label for an unknown command: every label names a table row or a D02 draft row.
+        design = ROOT / "tools" / "looklab" / "data" / "design"
+        known = {row["id"] for row in json.loads((ROOT / "docs/progress/1.0/command-table.json").read_text(
+            encoding="utf-8"))["commands"]} | {row["id"] for row in json.loads(
+            (design / "command-rows-d02.json").read_text(encoding="utf-8"))["commands"]}
+        labels = json.loads((design / "command-labels.json").read_text(encoding="utf-8"))["labels"]
+        self.assertFalse(set(labels) - known)
+
+    def smoke_dumps(self, source, d02_run):
+        window = {"foreground": False, "topmost": False, "gave_back": 0}
+        rows = d02_run.palette_matches("tuning.", source["rows"], source["table"])
+        listed = [["overlay:CommandPalette", "tuning."]]
+        for label in rows:
+            listed += [["overlay:CommandPalette", label], ["overlay:CommandPalette", "draft row"],
+                       ["overlay:CommandPalette", "tuning"]]
+        return [{"step": 0, "do": "start", "window": window, "lines": [["frame", "D02 · no state"]]},
+                {"step": 1, "do": "chord F1", "window": window, "lines": [["overlay:CommandPalette", "No command"]]},
+                {"step": 2, "do": "text tuning.", "window": window, "lines": listed},
+                {"step": 3, "do": "chord Escape", "window": window, "lines": [["frame", "D02 · no state"]]},
+                {"step": 4, "do": "wait 6000 ms", "window": window, "lines": [["frame", "D02 · no state"]]}]
+
+    def test_the_smoke_expectation_reads_the_data_and_sees_a_missing_row(self):
+        d02_run = shell_module("d02_run")
+        source = d02_run.data()
+        script = json.loads((SHELL / "d02_scripts" / "smoke.json").read_text(encoding="utf-8"))
+        self.assertEqual((script["format"], script["name"], len(script["steps"])), ("magic600-d02-script/1", "smoke", 4))
+        dumps = self.smoke_dumps(source, d02_run)
+        self.assertEqual(len(d02_run.palette_matches("tuning.", source["rows"], source["table"])), 8)
+        self.assertEqual(d02_run.expect_smoke(dumps, source, None), [])
+        self.assertEqual(d02_run.window_problems(dumps), [])
+        dumps[2]["lines"] = [line for line in dumps[2]["lines"] if line[1] != "Tuning: swap compare slots"]
+        self.assertTrue(d02_run.expect_smoke(dumps, source, None))
+        dumps[4]["window"] = {"foreground": False, "topmost": True, "gave_back": 1}
+        self.assertEqual(d02_run.window_problems(dumps), ["step 4: the shell's window is topmost"])
+
+    def test_a_run_fails_when_the_foreground_moves(self):
+        d02_run = shell_module("d02_run")
+        source = d02_run.data()
+        dumps = self.smoke_dumps(source, d02_run)
+
+        def launcher(arguments, popen, out_stream):
+            out = Path(arguments[arguments.index("--out") + 1])
+            out.mkdir()
+            popen([sys.executable, "-c", "pass"], cwd=str(self.temp), env=None).wait()
+            (out / d02_run.SCREEN).write_text("".join(json.dumps(dump) + "\n" for dump in dumps), encoding="utf-8")
+            return 0
+
+        class Desktop:
+            def __init__(self, windows):
+                self.answers = list(windows)
+
+            def foreground(self):
+                return self.answers.pop(0)
+
+            def windows_of(self, pid):
+                return [77]
+
+            def topmost(self, window):
+                return False
+        code, record = d02_run.run("smoke", self.temp / "kept", None, None, desktop=Desktop([5, 5]),
+                                   launcher=launcher, sleep=lambda seconds: None)
+        self.assertEqual((code, record["steps"], record["mismatches"], record["foreground_kept"]), (0, 5, [], True))
+        code, record = d02_run.run("smoke", self.temp / "moved", None, None, desktop=Desktop([5, 6]),
+                                   launcher=launcher, sleep=lambda seconds: None)
+        self.assertEqual(code, 1)
+        self.assertIn("the foreground changed during the first five seconds", record["mismatches"])
+        with self.assertRaises(ValueError):
+            d02_run.run("smoke", self.temp / "other", None, "no-such-state", desktop=Desktop([5, 5]),
+                        launcher=launcher)
+
+    def test_the_watch_command_starts_a_watched_window_and_follows(self):
+        watch = shell_module("watch_d02")
+        place = {"position": [10, 20], "size": [800, 600], "topmost": False, "gave_back": 0}
+        arguments = watch.launch_arguments(self.build, self.temp / "watched", "wj-ia-300", place)
+        for flag in ("--frame", "--d02", "--d02-data"):
+            self.assertIn(flag, arguments)
+        self.assertEqual(arguments[arguments.index("--puzzle") + 1], "jumble-on")
+        self.assertEqual(arguments[arguments.index("--position") + 1], "10,20")
+        self.assertEqual(arguments[arguments.index("--resolution") + 1], "800x600")
+        for flag in ("-t", "--always-on-top", "--cold-start"):
+            self.assertNotIn(flag, arguments)
+        lines = []
+        self.assertEqual(self.launch.main(arguments[3:] + ["--dry-run"], popen=None, out_stream=lines.append), 0, lines)
+        self.assertIn("env: M600_D02=1", lines)
+        # A data-only change is seen.
+        data = self.temp / "data"
+        (data / "samples").mkdir(parents=True)
+        (data / "design").mkdir()
+        (data / "design" / "system.json").write_text("{}", encoding="utf-8")
+        before = watch.data_digest(data)
+        (data / "samples" / "new.json").write_text("{}", encoding="utf-8")
+        self.assertNotEqual(watch.data_digest(data), before)
+        self.assertTrue(str(watch.WATCH_ROOT).replace("\\", "/").endswith("work/d02-watch"))
 
 if __name__ == "__main__":
     unittest.main()

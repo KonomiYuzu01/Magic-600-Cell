@@ -82,6 +82,11 @@ public partial class Shell : Control
 
     public override void _Ready()
     {
+        // ADR-D02's watched start (B4): when Godot activated the window, the foreground goes straight back.
+        if (D02.ShellJumble.On)
+        {
+            D02.D02Window.Settle();
+        }
         GetViewport().TransparentBg = true;
         if (InputLog.Requested())
         {

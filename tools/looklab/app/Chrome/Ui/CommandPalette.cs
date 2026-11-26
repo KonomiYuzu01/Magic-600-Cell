@@ -46,6 +46,8 @@ public abstract partial class ChromeOverlay : Control
 public sealed partial class CommandPalette : ChromeOverlay
 {
     public const int Shown = 12;
+    // A host's draft rows (ADR-D02's command-rows-d02.json): each row shows the words "draft row".
+    public ISet<string> DraftRows { get; } = new HashSet<string>(StringComparer.Ordinal);
     public PaletteModel Model { get; }
     public LineEdit Query { get; } = new() { PlaceholderText = "Search commands, or > to type one", ClearButtonEnabled = true, Name = "PaletteQuery" };
     public Label Help { get; } = new() { ThemeTypeVariation = "DimLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart, Name = "PaletteHelp" };
@@ -175,6 +177,7 @@ public sealed partial class CommandPalette : ChromeOverlay
             Label label = ChromeWidgets.Text(row.Label, row.Unavailable == null ? "" : "DimLabel", true); line.AddChild(label);
             if (row.Alias != null) { Label alias = ChromeWidgets.Text("= " + row.Alias, "AccentLabel"); alias.TooltipText = "Your alias for this row"; line.AddChild(alias); }
             if (row.Unavailable != null) { Label tag = ChromeWidgets.Text("unavailable", "MicroLabel"); tag.AddThemeColorOverride("font_color", tokens.C("severity.warning")); line.AddChild(tag); }
+            if (DraftRows.Contains(row.Command)) { Label draft = ChromeWidgets.Text("draft row", "MicroLabel"); draft.TooltipText = "Not in the command table yet: a row this build asks for"; line.AddChild(draft); }
             line.AddChild(ChromeWidgets.Text(row.Location, "MicroLabel"));
             if (row.Keys.Length > 0)
             {

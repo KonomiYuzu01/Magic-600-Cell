@@ -1,0 +1,11 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "smoke",
+  "note": "B4's smoke run: the frame opens with D02 on; F1 opens the palette; typing tuning. lists the eight CR-16 draft rows, each marked as a draft row; Escape closes the palette; the window then stays open for six seconds, so the run can read the foreground five seconds after the launch.",
+  "steps": [
+    {"chord": "F1"},
+    {"text": "tuning."},
+    {"chord": "Escape"},
+    {"wait_ms": 6000}
+  ]
+}

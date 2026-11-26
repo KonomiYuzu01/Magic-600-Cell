@@ -29,6 +29,8 @@ BUILD_ROOT = ROOT / "work" / "build" / "c9-shell"
 # The repository holds no second copy of them.
 CHROME = ROOT / "tools" / "looklab" / "app" / "Chrome"
 DESIGN = ROOT / "tools" / "looklab" / "data" / "design"
+# ADR-D02's sample data (B1), which the D02 surfaces read behind M600_D02=1; staged as samples/.
+SAMPLES = ROOT / "tools" / "looklab" / "data" / "samples"
 COMMANDS = ROOT / "docs" / "progress" / "1.0" / "command-table.json"
 CSPROJ = "Magic600Shell.csproj"
 ASSEMBLY = ".godot/mono/temp/bin/Debug/Magic600Shell.dll"
@@ -46,6 +48,16 @@ def dotnet_version() -> str:
     return completed.stdout.strip() if completed.returncode == 0 else f"unavailable (exit {completed.returncode})"
 
 
+def stage(project: Path) -> None:
+    """Copy the shell project and the frame's sources into `project` (a new folder): the chrome library as Chrome/,
+    the design data with the command table as design/, and ADR-D02's samples as samples/."""
+    shutil.copytree(PROJECT, project, ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
+    shutil.copytree(CHROME, project / "Chrome", ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
+    shutil.copytree(DESIGN, project / "design")
+    shutil.copy2(COMMANDS, project / "design" / "command-table.json")
+    shutil.copytree(SAMPLES, project / "samples")
+
+
 def build(executable: str | None, out: Path | None = None) -> Path:
     """Build into `out` (a new folder; default work/build/c9-shell/<stamp>/) and return it."""
     executable, nupkgs = prepare_host.locate_without_launch(executable)
@@ -58,10 +70,7 @@ def build(executable: str | None, out: Path | None = None) -> Path:
     out.mkdir(parents=True)
     logs.mkdir()
     private.mkdir()
-    shutil.copytree(PROJECT, project, ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
-    shutil.copytree(CHROME, project / "Chrome", ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
-    shutil.copytree(DESIGN, project / "design")
-    shutil.copy2(COMMANDS, project / "design" / "command-table.json")
+    stage(project)
     env = prepare_host.offline_environment(private, nupkgs)
     print(f"dotnet build: {project}", flush=True)
     prepare_host.run_logged(build_command(), project, env, 900, logs / "dotnet-build")

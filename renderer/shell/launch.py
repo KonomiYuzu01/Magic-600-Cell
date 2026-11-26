@@ -3,6 +3,8 @@
   python -B renderer/shell/launch.py --out NEW_FOLDER [--build DIR] [--run-id ID] [--echo] [--resolution WxH]
                                      [--puzzle jumble-off|jumble-on] [--lx4 --lx4-fixtures DIR]
                                      [--lx2-injection CHILD] [--editor] [--cold-start] [--dry-run]
+                                     [--position X,Y] [--d02 [--d02-state ID] [--d02-fixture DIR] [--d02-script FILE]
+                                     [--d02-data DIR]]
 
 The launcher recomputes every part of the product build (`build_product.verify`; default: the newest build under
 work/build/c9-product), creates the run folder `--out`, which must not exist yet, and starts the pinned Godot (the
@@ -47,6 +49,20 @@ fresh session copy; and the seconds since the previous product exit, from `work/
 every launch rewrites when the shell exits, or null when there is none or it is from another boot (DRAFT: "this sign-in"
 read as "this boot").
 
+ADR-D02's build (B4): `--d02` (with `--frame` only) adds `M600_D02=1`, which turns the frame's D02 surfaces on, and
+starts the shell for watching: never on top and never taking the foreground (the owner, 26 November 2026). The process
+gets STARTUPINFO with SW_SHOWNOACTIVATE, and `M600_D02_FOREGROUND` names the window that had the foreground just before
+the launch, so that the shell hands the foreground straight back to it if Godot activates its own window at creation
+(Godot 4.7's show_window does so whenever Windows lets it, for example after 200 s without owner input). Without
+`--d02` nothing of this applies, so the measured C9 runs are unchanged. `--d02-state ID` names the sample state the
+surfaces read (`M600_D02_STATE`). `--d02-fixture DIR` runs on a D02 session fixture (B5: a folder with `fixture.json`
+and `session/`) instead of the build's own; `--d02-script FILE` makes the shell play a D02 script and quit
+(`M600_D02_SCRIPT`). Neither is part of the build: `launch.json` records only the SHA-256 of the fixture's
+`fixture.json` and the script's name and SHA-256, never a path. `--d02-data DIR` (the watch command's) names the
+checkout's tools/looklab/data, which the shell reads again when the watch command asks for a data-only reload
+(`M600_D02_DATA`; recorded as a flag only). `--position X,Y` places the window (a watched restart opens where the old
+window was).
+
 It waits for the shell to exit and writes `launch.json` (`magic600-c9-launch-v1`) beside the shell's logs, with the
 build's own folder and the run folder written as `<build>` and `<out>`.
 
@@ -79,7 +95,9 @@ RECORD = "launch.json"
 SHELL_VARIABLES = ("M600_CORE_DLL", "M600_HOST_DLL", "M600_ASSETS", "M600_EVENTS_DIR", "M600_BUILD_IDENTITY",
                    "M600_RUN_ID", "M600_INPUT_ECHO", "M600_SESSION_DIR", "M600_TWIST_MENU", "M600_PUZZLE", "M600_LX4",
                    "M600_LX4_DLL", "M600_LX4_FIXTURES", "M600_SESSION_FIXTURE", "M600_RUNTIME",
-                   "M600_EXIT_AT_FIRST_FRAME", "M600_LX2", "M600_CHROME", "M600_EDITOR", "M600_EDITOR_DLL")
+                   "M600_EXIT_AT_FIRST_FRAME", "M600_LX2", "M600_CHROME", "M600_EDITOR", "M600_EDITOR_DLL",
+                   "M600_D02", "M600_D02_STATE", "M600_D02_FIXTURE", "M600_D02_SCRIPT", "M600_D02_FOREGROUND",
+                   "M600_D02_DATA")
 # The file of an LX-4 fixture folder that the launcher checks and records (renderer/bridge/lx4's fixtures.rs).
 LX4_MANIFEST = "MANIFEST.json"
 # LX-2's fault variables, which the injection child reads at its start: a run starts with them unset, and only LX-2's
@@ -98,6 +116,11 @@ PAUSE_S = 20
 CLOCK_SLACK_S = 60
 # The puzzles the shell's run row may name (EventLog.Puzzles); its host runs both.
 PUZZLES = ("jumble-off", "jumble-on")
+# A D02 session fixture's record (B5), the only file of the folder the launcher reads.
+D02_FIXTURE = "fixture.json"
+# A watched start (the owner's window rule): STARTF_USESHOWWINDOW with SW_SHOWNOACTIVATE.
+STARTF_USESHOWWINDOW = 0x00000001
+SW_SHOWNOACTIVATE = 4
 
 
 class LaunchError(Exception):
@@ -108,22 +131,46 @@ def run_id_now() -> str:
     return dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
-def command(product: dict, build: Path, out: Path, resolution: str | None = None) -> list[str]:
+def command(product: dict, build: Path, out: Path, resolution: str | None = None,
+            position: str | None = None) -> list[str]:
     arguments = [product["godot"]["executable"], "--path", str(build / build_product.PROJECT),
                  "--rendering-driver", "d3d12", "--render-thread", "safe", "--windowed",
                  "--log-file", str(out / "godot.log")]
     if resolution:
         arguments += ["--resolution", resolution]
+    if position:
+        arguments += ["--position", position]
     return arguments
+
+
+def no_activation():
+    """The STARTUPINFO of a watched start: the window shows without activation (the owner's window rule)."""
+    info = subprocess.STARTUPINFO()
+    info.dwFlags |= STARTF_USESHOWWINDOW
+    info.wShowWindow = SW_SHOWNOACTIVATE
+    return info
+
+
+def d02_folder(d02: bool, fixture: Path | None) -> Path | None:
+    """A D02 session fixture folder, resolved; LaunchError without --d02 or without its record and session."""
+    if fixture is None:
+        return None
+    if not d02:
+        raise LaunchError("--d02-fixture needs --d02")
+    folder = fixture.resolve()
+    if not (folder / D02_FIXTURE).is_file() or not (folder / SESSION).is_dir():
+        raise LaunchError(f"--d02-fixture: the folder needs {D02_FIXTURE} and {SESSION}/ (B5's fixture writer)")
+    return folder
 
 
 def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, base: dict | None = None,
                 puzzle: str = PUZZLES[0], lx4: Path | None = None, cold_start: bool = False,
-                lx2_injection: Path | None = None, frame: bool = False, editor: bool = False) -> dict:
+                lx2_injection: Path | None = None, frame: bool = False, editor: bool = False,
+                d02: dict | None = None) -> dict:
     """The process environment: `base` (default: this process's) without any shell variable or LX-2 fault variable,
     then the launch's. `lx4` is LX-4's fixture folder, which turns its module on with the build's library.
     `lx2_injection` replaces the build's runtime with LX-2's injection child. `editor` turns the editor panel on
-    with the build's editor library."""
+    with the build's editor library. `d02` holds the D02 variables of a watched start (B4)."""
     env = {key: value for key, value in (os.environ if base is None else base).items()
            if key.upper() not in SHELL_VARIABLES + LX2_FAULT_VARIABLES}
     env.update({"M600_CORE_DLL": str(build / build_product.CORE_DLL), "M600_HOST_DLL": str(build / build_product.HOST_DLL),
@@ -146,6 +193,10 @@ def environment(product: dict, build: Path, out: Path, run_id: str, echo: bool, 
     if lx2_injection is not None:
         env["M600_RUNTIME"] = str(lx2_injection)
         env["M600_LX2"] = "1"
+    if d02 is not None:
+        env.update({"M600_D02": "1", **d02})
+        if "M600_D02_FIXTURE" in d02:
+            env["M600_SESSION_FIXTURE"] = d02["M600_D02_FIXTURE"]
     return env
 
 
@@ -209,6 +260,12 @@ class Machine:
 
     def sleep(self, seconds: float) -> None:
         time.sleep(seconds)
+
+    def foreground(self) -> int:
+        """The window that has the foreground now, as a number; 0 when there is none."""
+        user32 = self._ctypes.WinDLL("user32")
+        user32.GetForegroundWindow.restype = self._wintypes.HWND
+        return int(user32.GetForegroundWindow() or 0)
 
     def process_images(self) -> list[str]:
         """The image path of every running process this user may query."""
@@ -288,6 +345,11 @@ def seal(out: Path, run: dict, process_start: int) -> None:
     body.unlink(missing_ok=True)
 
 
+def position_ok(position: str) -> bool:
+    parts = position.split(",")
+    return len(parts) == 2 and all(part.lstrip("-").isdigit() for part in parts)
+
+
 def check_out(out: Path) -> Path:
     out = out.resolve()
     if out.exists():
@@ -326,6 +388,16 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
                         help="open the frame (A5): the chrome library over the window, the core under the Global view")
     parser.add_argument("--editor", action="store_true",
                         help="LP4-3: create the editor panel of the write-check-run flow in the shell")
+    parser.add_argument("--position", help="the window's top left corner as X,Y (a watched restart keeps its place)")
+    parser.add_argument("--d02", action="store_true",
+                        help="ADR-D02's build: the frame's D02 surfaces, a window that never takes the foreground")
+    parser.add_argument("--d02-state", metavar="ID", help="the sample state the D02 surfaces read; needs --d02")
+    parser.add_argument("--d02-fixture", type=Path, metavar="DIR",
+                        help="run on this D02 session fixture (B5) instead of the build's; needs --d02")
+    parser.add_argument("--d02-script", type=Path, metavar="FILE",
+                        help="play this D02 script in the shell, which then quits; needs --d02")
+    parser.add_argument("--d02-data", type=Path, metavar="DIR",
+                        help="the data folder a data-only reload reads (the watch command's); needs --d02")
     parser.add_argument("--dry-run", action="store_true", help="check and print; create and start nothing")
     args = parser.parse_args(argv)
     try:
@@ -343,13 +415,39 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
             if not child.is_file():
                 raise LaunchError(f"--lx2-injection: no file {child.name}")
             injection = injection_record(child)
+        if args.position and not position_ok(args.position):
+            raise LaunchError("--position must be X,Y")
         fixtures = lx4_folder(args.lx4, args.lx4_fixtures)
         manifest = None if fixtures is None else injection_record(fixtures / LX4_MANIFEST)["sha256"]
+        if args.d02 and not args.frame:
+            raise LaunchError("--d02 needs --frame: the D02 surfaces live in the frame")
+        if not args.d02 and (args.d02_state or args.d02_script is not None or args.d02_data is not None):
+            raise LaunchError("--d02-state, --d02-script and --d02-data need --d02")
+        if args.d02_data is not None and not (args.d02_data / "samples").is_dir():
+            raise LaunchError("--d02-data: the folder needs samples/ (tools/looklab/data)")
+        if args.d02 and args.cold_start:
+            raise LaunchError("--cold-start measures the product; a watched D02 start is not measured")
+        d02_fixture = d02_folder(args.d02, args.d02_fixture)
+        script = None
+        if args.d02_script is not None:
+            script = args.d02_script.resolve()
+            if not script.is_file():
+                raise LaunchError(f"--d02-script: no file {script.name}")
         out = check_out(args.out)
         run_id = args.run_id or run_id_now()
-        arguments = command(product, build, out, args.resolution)
+        arguments = command(product, build, out, args.resolution, args.position)
+        d02 = None
+        if args.d02:
+            fixture_record = None if d02_fixture is None else str(d02_fixture / D02_FIXTURE)
+            d02 = {key: value for key, value in (("M600_D02_STATE", args.d02_state),
+                                                  ("M600_D02_FIXTURE", fixture_record),
+                                                  ("M600_D02_SCRIPT", None if script is None else str(script)),
+                                                  ("M600_D02_DATA", None if args.d02_data is None
+                                                   else str(args.d02_data.resolve())))
+                   if value}
         env = environment(product, build, out, run_id, args.echo, puzzle=args.puzzle, lx4=fixtures,
-                          cold_start=args.cold_start, lx2_injection=child, frame=args.frame, editor=args.editor)
+                          cold_start=args.cold_start, lx2_injection=child, frame=args.frame, editor=args.editor,
+                          d02=d02)
     except (LaunchError, build_product.ProductError, OSError) as error:
         out_stream(f"launch: {error}")
         return 2
@@ -366,7 +464,8 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
     machine = machine or Machine()
     out.mkdir(parents=True)
     try:
-        shutil.copytree(build / build_product.fixture_session(args.puzzle), out / SESSION)
+        shutil.copytree(build / build_product.fixture_session(args.puzzle) if d02_fixture is None
+                        else d02_fixture / SESSION, out / SESSION)
     except OSError as error:
         out_stream(f"launch: the session fixture did not copy: {error}")
         return 2
@@ -379,8 +478,13 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
                               | ({str(child)} if child is not None else set()))
     frequency = machine.qpc_frequency()
     started, clock = dt.datetime.now(dt.timezone.utc), time.monotonic()
+    options = {}
+    if d02 is not None:
+        # The window that has the foreground now gets it back if Godot activates the shell's window (B4).
+        env["M600_D02_FOREGROUND"] = str(machine.foreground())
+        options["startupinfo"] = no_activation()
     process_start = machine.qpc()
-    process = popen(arguments, cwd=str(build / build_product.PROJECT), env=env)
+    process = popen(arguments, cwd=str(build / build_product.PROJECT), env=env, **options)
     code = process.wait()
     record_exit(machine, state)
     seconds = round(time.monotonic() - clock, 3)
@@ -393,6 +497,12 @@ def main(argv: list[str] | None = None, popen=subprocess.Popen, out_stream=print
                                  "echo": args.echo, "puzzle": args.puzzle, "lx4": args.lx4,
                                  "lx4_fixtures": None if manifest is None else {"manifest_sha256": manifest},
                                  "lx2_injection": injection, "editor": args.editor,
+                                 "d02": None if d02 is None else {
+                                     "state": args.d02_state,
+                                     "fixture": None if d02_fixture is None else {
+                                         "sha256": injection_record(d02_fixture / D02_FIXTURE)["sha256"]},
+                                     "script": None if script is None else injection_record(script),
+                                     "data_reload": args.d02_data is not None},
                                  "cold_start": args.cold_start, "command": sanitized(arguments, build, out),
                                  "started_utc": started.strftime("%Y-%m-%dT%H:%M:%SZ"), "seconds": seconds,
                                  "exit_code": code}, indent=2) + "\n")
