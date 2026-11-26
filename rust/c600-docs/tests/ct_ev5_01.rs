@@ -266,12 +266,14 @@ fn ct_ev5_01_an_imported_result_traces_to_its_bytes_and_source_label() {
     let e = explanation(&s, FixtureOutcome::NotRun, None);
     let path = "research/jumbling/fixtures/wj-I_a.json";
     let bytes = c600_digest::sha256_hex(&common::resolve(path).unwrap());
-    let imported: Vec<&Link> = e.arguments.iter().filter_map(|a| a.link.as_ref()).collect();
+    // The record's other links (its card-pinned lemma) are not imported results.
+    let is_imported = |l: &&Link| matches!(l, Link::Imported { .. });
+    let imported: Vec<&Link> = e.arguments.iter().filter_map(|a| a.link.as_ref()).filter(is_imported).collect();
     let [Link::Imported { path: p, bytes_sha256, source_label, producer }] = &imported[..] else {
         panic!("one imported link: {imported:?}")
     };
     assert_eq!((p.as_str(), bytes_sha256, *producer), (path, &bytes, "absent"));
-    let view = e.arguments.iter().find(|a| a.link.is_some()).unwrap();
+    let view = e.arguments.iter().find(|a| a.link.as_ref().is_some_and(|l| is_imported(&l))).unwrap();
     assert!(view.claim.source_labels.contains(source_label));
     assert!(view.claim.check_references.contains(&bytes));
 }

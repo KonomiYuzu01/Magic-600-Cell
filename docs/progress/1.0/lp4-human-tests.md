@@ -66,11 +66,14 @@ here: a row with no run says so.
 - **Length:** about 45 minutes: about 10 to read the glossary rows the sheet prints, then about 10 per instance.
 - **Review half of CT-EV5-05:** the mathematician reviews the three explanations and the shared grammar, and no blocker
   or major stays open. Each principle record's `review` field records its passes:
-  - `jumble_checker`: the pass of 23 November 2026 found M6, and its scoped re-check that day confirmed the fix.
+  - `jumble_checker`: the pass of 23 November 2026 found M6, and its scoped re-check that day confirmed the fix. After
+    the human test, the record took M25 (below), and the scoped check of 26 November 2026 found the new text true and
+    its four minor points applied.
   - `full_600_cell`: the pass of 23 November 2026 found nothing, and the re-check recounted its generator claims. The
     pre-check below corrected its step map.
   - `representations`: the pass of 23 November 2026 found M15, and the scoped check of 25 November 2026 confirmed the
-    fix.
+    fix. After the human test, the record took M30 (below), and the scoped check of 26 November 2026 found the new
+    clause true of all six entries and corrected the text for `effect_scope`.
 
   The glossary's rows were reviewed row by row on 24 November 2026. The shared grammar of EV5.11 waits for the theory
   book, which is not written, so CT-EV5-05 stays part after the human half passes, until that review.
@@ -132,11 +135,23 @@ same day (decision item 7). Version 2 carries them:
 - **What results are:** human evidence only, while fixture passes stay source evidence (EV5.4). No result certifies
   understanding (EV5.16) or grants a capability (EV5.9).
 
-### Session pack O, 25 November 2026
+### Session pack O, 25 and 26 November 2026
 
-The sheet was built under form version 1. Version 2 changes the grading only, and no text the sheet shows, so the sheet
-is unchanged and its results are graded under version 2. A source digest equals its record's `binding.source_sha256`.
-A changed input reruns only the tasks that read it (PHS.4).
+The first sheet was built on 25 November 2026 under form version 1. Version 2 changes the grading only, and no text the
+sheet shows.
+
+The owner withdrew that sheet on 26 November 2026, before answering any part and before opening any hint, because its
+material was too thin and not in plain language. This is a finding against the material, not a result: the printed
+records alone did not serve as the explanation view that EV5.6 still owes.
+
+Sheet version 2 (26 November 2026) asks the same questions in plain Chinese and checks against version 1's key. Ahead of
+each record it adds a hand-written plain-language guide in Chinese, standing in for the owed explanation view. It also
+folds the record's English text after the guide, and adds a reading guide to the decomposition's format and two
+diagrams. It hides what version 1 hid. The mathematician checked the guide, the hints and the key before the run: no
+blocker, and the two majors (wording that would have marked a right part (b) wrong) were fixed and re-checked.
+
+The records and the generated material are the same for both sheets. A source digest equals its record's
+`binding.source_sha256`. A changed input reruns only the tasks that read it (PHS.4).
 
 | Input | SHA-256 |
 | --- | --- |
@@ -150,22 +165,74 @@ A changed input reruns only the tasks that read it (PHS.4).
 | `full_600_cell` generated decomposition | `2ef91cd6a0906f7196ee3dc3dbbf1401280cee157ba88704a4b9b00fe161d316` |
 | `representations` source | `7332a75475c8971fa0688462d62736d1ec1b63c5d437d5bd07f890817479cc06` |
 | `representations` generated decomposition | `b0eaddf5df284e419825deeef8c97fa94da6c95e85bbd38046dc6fe78e85cf5c` |
-| the self-run sheet of O (private) | `16c3f38b0aed8bd8579c508b7e0f2089d92abfdf773c08769b745e2725de59f6` |
+| the self-run sheet of O, version 1, withdrawn (private) | `16c3f38b0aed8bd8579c508b7e0f2089d92abfdf773c08769b745e2725de59f6` |
+| the self-run sheet of O, version 2 (private) | `8a756256f0b68eb76298db1e24af4c92d4c12ee16b8130874d4db47734256521` |
 
 ### Results
 
+The owner ran sheet version 2 on 26 November 2026. The answers were graded twice and independently: first by LP4's line
+main against the key, then by the mathematician, who also classified each miss. Where the two gradings differed, the
+mathematician's ruling stands, and the section below lists each ruling. M24 turned a verdict from not met to pass after
+the run, on the owner's own result, so it went to the owner. On 26 November 2026 the owner let it count as ruled, set
+no rerun after the fixes, and closed the human-test line with this record
+([decision](../../wiki/decisions/owner-decisions-2026-11-26-human-tests.md)).
+
+The owner opened no hint on version 1, so nothing carries over. The owner never pressed "done": each time runs from that
+instance's start to the next start or to the export, and the owner went back to `full_600_cell` once after starting
+`representations`.
+
 | Person | Instance | (a) | (b) | (c) | (d) | Help a, b, c, d | Critical mistakes | Time |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| O | `jumble_checker` | not run | not run | not run | not run | not run | not run | not run |
-| O | `full_600_cell` | not run | not run | not run | not run | not run | not run | not run |
-| O | `representations` | not run | not run | not run | not run | not run | not run | not run |
+| O | `jumble_checker` | wrong: step 2's reason covers the first letter only (the person's) | wrong as keyed, step 1; right with the key fixed (M22) | right | yes | 0, 0, 0, 1 | none | about 13 min |
+| O | `full_600_cell` | right; step 5 on the sheet's wording (M23) | wrong as keyed, steps 1 and 3; right with the key fixed (M22) | right | yes on post-run ruling M24, which the owner let count; partly under M3 as written | 1, 0, 0, 0 | none | about 76 min, with the shared reading |
+| O | `representations` | wrong: step 1 gives no reason (the person's) | wrong as keyed, step 2; right with the key fixed (M22) | right | yes | 0, 0, 0, 0 | none | about 13 min |
 
 | Test | Graded on | Verdict |
 | --- | --- | --- |
-| CT-LB6-04 | (a) and (b) of every instance | not run |
-| CT-EV5-05, human half | (c) and (d) of every instance | not run |
+| CT-LB6-04 | (a) and (b) of every instance | not met, run of 26 November 2026: (a) of `jumble_checker` and `representations`, both the person's; it holds under every ruling. The owner set no rerun |
+| CT-EV5-05, human half | (c) and (d) of every instance | pass, run of 26 November 2026: (c) right and (d) yes for every instance at help level 0 or 1, no critical mistake. `full_600_cell`'s (d) is yes on post-run ruling M24, which the owner let count on 26 November 2026; under M3 as written it would be partly, and the half not met |
 | CT-EV5-05, review half | the explanations and the shared grammar | part: the shared grammar waits for the theory book |
 | CT-EV5-03 | S1 to S7 and two transfers, P1 and P2 | waiting for non-authors |
+
+The results bind to the pack's digests above. After the run, and by the owner's decision without a rerun,
+`jumble_checker.json` and `representations.json` changed for M25 and M30 (below). Their tasks would rerun under PHS.4,
+but the owner set no rerun.
+
+### Post-run check of 26 November 2026
+
+The mathematician applied these rules to every answer:
+- a misspelt node name counts when it names exactly one node;
+- a reason that the sheet asked for but that appears nowhere in the instance is not met (the sheet asks for one on every
+  step);
+- a reason written in another part of the same instance counts for the step it names;
+- a node set larger than the key accepts is wrong as the key is written;
+- when a question has two readings that both fit the sheet, the answer is graded on the reading under which it is right,
+  and the ambiguity is filed against the material.
+
+There is no critical mistake. `jumble_checker`'s step 2 comes close to extending a statement beyond its hypotheses: the
+answer leaves out the second letter's argument, but it makes no claim about the state after the first letter. The
+verdict is the same either way.
+
+The misses and their findings:
+- **The person's:** `jumble_checker` (a) step 2 and `representations` (a) step 1. The sheet gave what each needed. Its
+  background says that a cap's pieces stay on the cap's side of its cut, and its preamble asks for a reason on every
+  step. M25 and M29 below are smaller contributions from the material.
+- **The material's, part (b):** every (b) miss. These are the added `kernel:propose(operation.preview)` in steps 1 of
+  `full_600_cell` and `jumble_checker`, the "none" in `full_600_cell`'s step 3, and the added `kernel:publish_view` in
+  `representations`' step 2.
+
+| Finding | Severity | What | Disposition |
+| --- | --- | --- | --- |
+| M21 | blocker for a rerun of (b) | The givens tables' source column ("this value is given by") names a leaf for the input, which contradicts the sheet's "none" rule for steps the person derives from the input. | not fixed: it concerns the sheet only, and no sheet runs again; any future sheet fixes it first |
+| M22 | major | Four accepted sets are narrower than M1's rule that the key accepts every defensible node set: `full_600_cell` step 1 (add the preview leaf) and step 3 ("none"), `jumble_checker` steps 1, 4 and 5 (add the preview leaf), `representations` step 2 (add `kernel:publish_view`). | adopted as a ruling: the table shows both gradings, and the verdict does not change |
+| M23 | major | `full_600_cell`'s step 5 also reads as the puzzle's state after the preview, which is always the base. | adopted as a ruling; the rewording is for any future sheet |
+| M24 | major | The (d) question does not say what counts as a limit. M3's rule in the key also contradicts `representations`' accepted answer, which includes "it changes no state". A clause that rules out a misreading counts as a limit; one that repeats the input, output or domain row does not. | adopted as a ruling for `full_600_cell`'s (d): the owner let it count on 26 November 2026, so the human half of CT-EV5-05 passes. The wording is for any future sheet |
+| M25 | minor | `jumble_checker`'s same-cap argument for step 2 is in no justification statement, and the sheet does not say that item 12 is a jumble. | fixed in the record without a rerun: a fourth statement, a lemma pinned to card 6 at its last commit, states the same-cap argument; the step map maps step 2 to the preview leaf on it; and step 2's text says that item 12 is a jumble |
+| M26 | minor | `jumble_checker`'s first given holds a fixture path in its leaf field. | kept, with evidence: the record format defines a given's leaf as "the named leaf call or certificate the given is read from", and the pinned menu is that certificate |
+| M27 | minor | With "done" never pressed, there is no time to done and the answers never locked; the export should warn. | not fixed: the sheet only; for any future sheet |
+| M28 | minor | This page listed only sheet version 1's digest. | adopted: the pack table lists both sheets |
+| M29 | minor | "Why?" is printed on some (a) steps only. | not fixed: the sheet only; for any future sheet |
+| M30 | minor | `representations`' first justification says that the entries change no state, but three of them write the workspace. | fixed in the record without a rerun: the entries change no puzzle state, and an entry that keeps a value writes only that workspace record; the scoped check also corrected the text for `effect_scope` |
 
 ## Still open
 
@@ -174,4 +241,6 @@ A changed input reruns only the tasks that read it (PHS.4).
 
 ## Owner hours
 
-About 1 hour: about 45 minutes for the sheets and about 15 to read the result.
+Planned: about 1 hour, about 45 minutes for the sheets and about 15 to read the result. Actual, on 26 November 2026:
+about 1 hour 41 minutes from the first start to the export of sheet version 2. Before that, the owner spent some time on
+version 1 before withdrawing it.

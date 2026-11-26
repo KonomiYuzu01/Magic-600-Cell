@@ -8,7 +8,7 @@
     "check_named_word"
   ],
   "level": "L1",
-  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M6 (major: the second letter applies because a twist at c moves only the pieces inside H_c⁺, rigidly, and creates no straddler of c, not because of the solved state), fixed in c152350f. The mathematician's scoped re-check of 23 November 2026 confirmed the fix against card 6 and Proposition 2.2. The leaf specifications and test paths are engineering bindings and were not part of the review.",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M6 (major: the second letter applies because a twist at c moves only the pieces inside H_c⁺, rigidly, and creates no straddler of c, not because of the solved state), fixed in c152350f. The mathematician's scoped re-check of 23 November 2026 confirmed the fix against card 6 and Proposition 2.2. The leaf specifications and test paths are engineering bindings and were not part of the review. The owner's human test of 26 November 2026 (post-run check M25) found that step 2's same-cap argument stood in no justification statement and that the record did not say that item 12 is a jumble: the fourth statement, a lemma with card 6 as its evidence, and step 2's text now say both. Post-run check M26, that the first given's leaf field holds the pinned menu rather than a leaf, is kept as it is: the record format defines a given's leaf as the leaf call or certificate the given is read from. The mathematician's scoped check of 26 November 2026 found the new text true, the lemma as Proposition 2.2 of the theory draft and the menu numbering on the fixture's menu in exact arithmetic; its four minor points are applied: the binding lists the fourth statement, the step map maps step 2 to the preview leaf on the lemma, and two wordings.",
   "binding": {
     "source_sha256": "dddba17a57b35e56dc8bb64a6ef4ce12fe0e3e057f07f1ce1e9ea8a852f891fb",
     "closure_sha256": "913e6b6ce4d17d6849697dd13b76aca0f3346698d1108c2d0c11386161a5a4d2",
@@ -17,7 +17,8 @@
     "statements": [
       "jumble_checker entries propose the named word unchanged",
       "the pinned I_a menu replays J1's journal with its recorded digests",
-      "a menu letter followed by its inverse at the same cap returns every piece to its pose"
+      "a menu letter followed by its inverse at the same cap returns every piece to its pose",
+      "jumbling-theory-card-6@491663cb04a1065a0e94a8300fd225991c6cba95:After an admissible letter at a cap, every letter at the same cap is admissible"
     ]
   },
   "specification": [
@@ -99,6 +100,18 @@
       "evidence": {
         "none": "a definition: an inverse rotation undoes the rotation"
       }
+    },
+    {
+      "kind": "lemma",
+      "statement": "jumbling-theory-card-6@491663cb04a1065a0e94a8300fd225991c6cba95:After an admissible letter at a cap, every letter at the same cap is admissible",
+      "text": "Card 6's statement of the theory draft's Propositions 1.2, 2.2 and 2.4, at the commit that last changed the card: A twist at a cap c turns the pieces inside H_c⁺, the cap's side of its cut, as one rigid body that maps H_c⁺ onto itself, and leaves every other piece in place, so it creates no straddler of c's cut. After an admissible letter at c, every letter at c is therefore admissible. The argument holds at the same cap only: a piece that the first letter takes off the lattice can straddle another cap's cut (card 6: pieces of height 2 can block grips of other classes).",
+      "evidence": {
+        "path": "research/jumbling/theory/cards/card-6-blocking-structure.md",
+        "sha256": "a69bbd2bde0f5811f764b5ee21212520ca2b9bde4f3ed3c40e055137630d73be",
+        "basis": "theorem",
+        "check": "producer",
+        "label": "Card 6, theory draft Propositions 1.2, 2.2 and 2.4"
+      }
     }
   ],
   "instance": {
@@ -170,6 +183,11 @@
           "node": "kernel:propose(operation.preview)",
           "statement": "a menu letter followed by its inverse at the same cap returns every piece to its pose",
           "step": "step 3"
+        },
+        {
+          "node": "kernel:propose(operation.preview)",
+          "statement": "jumbling-theory-card-6@491663cb04a1065a0e94a8300fd225991c6cba95:After an admissible letter at a cap, every letter at the same cap is admissible",
+          "step": "step 2"
         }
       ],
       "unmapped_nodes": [
@@ -177,7 +195,6 @@
         "kernel:receipt(Id)"
       ],
       "unmapped_steps": [
-        "step 2",
         "step 5"
       ]
     },
@@ -215,7 +232,7 @@
         "result": 2
       },
       {
-        "check": "At solved no piece straddles cap 0's cut, so the first letter applies. A twist at a cap c moves only the pieces inside H_c⁺, rigidly within it, so it creates no straddler of c, and the second letter at the same cap 0 applies too: the word is admissible. The argument holds at the same cap only: card 6 shows that pieces of height 2 can block grips of other classes.",
+        "check": "At solved no piece straddles cap 0's cut, so the first letter applies. Item 12 is a jumble (under I_a, items 0 to 11 are the retained rotations, item 0 the identity, and items 12 to 59 the jumbles), so after it cap 0's pieces are off the lattice, and the solved state no longer decides the second letter. A twist at a cap c moves only the pieces inside H_c⁺, rigidly within it, so it creates no straddler of c, and the second letter at the same cap 0 applies too: the word is admissible. The argument holds at the same cap only: card 6 shows that pieces of height 2 can block grips of other classes.",
         "result": true
       },
       {
