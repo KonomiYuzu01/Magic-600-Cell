@@ -204,7 +204,13 @@ internal static partial class Program
             ("D02EntryIsChromeOnly", D02EntryIsChromeOnly),
             ("D02UndefinedSwitchesOnLatticeFlagNotPendingN", D02UndefinedSwitchesOnLatticeFlagNotPendingN),
             ("D02MarkOnEveryViewBorder", D02MarkOnEveryViewBorder),
-            ("D02PanelsMoveFreely", D02PanelsMoveFreely)
+            ("D02PanelsMoveFreely", D02PanelsMoveFreely),
+            ("D02TotalNPendingUntilSeamFactsAll", D02TotalNPendingUntilSeamFactsAll),
+            ("D02TotalNIncompleteAfterCutOff", D02TotalNIncompleteAfterCutOff),
+            ("D02TotalNIsNotSumOfCaps", D02TotalNIsNotSumOfCaps),
+            ("D02BlockedCapReadoutUndefined", D02BlockedCapReadoutUndefined),
+            ("D02Above6MaxUndefinedAtZero", D02Above6MaxUndefinedAtZero),
+            ("D02TotalsMatchSample", D02TotalsMatchSample)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

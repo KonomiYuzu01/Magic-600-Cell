@@ -17,9 +17,11 @@ namespace Magic600.Shell.D02;
 /// - at every later check, when its own window has the foreground it hands it back, and otherwise it places itself
 ///   just behind the window that has the foreground, so it does not cover the owner's work.
 /// Each hand-back places the shell's window just behind the window that gets the foreground back. The later checks stop
-/// for good once the owner presses a mouse button anywhere, or once the window moves or changes size (a drag, a
-/// maximise): from then on the owner's clicks and switches stand. Keys do not stop them, since keys typed elsewhere
-/// land in the shell while Godot holds the foreground. The shell never activates itself, never raises its own window,
+/// for good once the owner presses a mouse button anywhere, once the window moves or changes size (a drag, a
+/// maximise), or once the shell's window comes back to the front after a check found another window there: only the
+/// owner brings it back (a click, the taskbar, Alt+Tab), even while a long session open held the checks up (checkpoint
+/// C1, 26 November 2026). From then on the owner's clicks and switches stand. Keys alone do not stop them, since keys
+/// typed elsewhere land in the shell while Godot holds the foreground. The shell never activates itself, never raises its own window,
 /// never asks for the foreground for itself and never sets a topmost flag; it stops the taskbar flash a refused
 /// activation starts.
 /// </summary>
@@ -32,6 +34,8 @@ internal static class D02Window
     private const int VkLButton = 0x01, VkRButton = 0x02, VkMButton = 0x04;
     /// <summary>SetWindowPos's HWND_NOTOPMOST: behind every topmost window, and it clears the topmost style.</summary>
     private static readonly IntPtr HwndNoTopmost = new(-2);
+    /// <summary>SetWindowPos's HWND_BOTTOM: behind every other window.</summary>
+    private static readonly IntPtr HwndBottom = new(1);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct FlashInfo
@@ -76,6 +80,8 @@ internal static class D02Window
     public static bool OwnerActed { get; private set; }
 
     private static bool _checked;
+    // A check found another window in front: from then on the shell's window comes back only by the owner's act.
+    private static bool _sawElsewhere;
     private static Vector2I _position, _size;
 
     private static IntPtr Own() => (IntPtr)DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
@@ -111,6 +117,12 @@ internal static class D02Window
         }
         var previous = Previous();
         var foreground = GetForegroundWindow();
+        if (!first && foreground == own && _sawElsewhere)
+        {
+            // Back in front after another window had it: the owner switched to the shell, and the switch stands.
+            OwnerActed = true;
+            return;
+        }
         if (foreground == own && previous != IntPtr.Zero && previous != own && IsWindow(previous))
         {
             // The previous window gets its foreground back; the shell sits just behind it, not activated.
@@ -123,22 +135,31 @@ internal static class D02Window
             // Shown without activation, the window may still sit above the owner's work: it goes just behind it.
             Behind(own, foreground);
         }
+        if (GetForegroundWindow() is var now && now != own && now != IntPtr.Zero)
+        {
+            _sawElsewhere = true;
+        }
         var flash = new FlashInfo { Size = (uint)Marshal.SizeOf<FlashInfo>(), Window = own, Flags = FlashwStop };
         FlashWindowEx(ref flash);
     }
 
     /// <summary>
     /// Places the shell's window just behind <paramref name="other"/>, without activating it. Windows makes a window
-    /// topmost when it lands among topmost windows, so behind a topmost window the shell goes behind every topmost
-    /// window instead, and a topmost style that appears anyway is cleared at once.
+    /// topmost when it lands among topmost windows, so behind a topmost window (the taskbar, for one) the shell goes
+    /// behind the window the owner had in front at the launch, or behind every window when that one is gone; it never
+    /// goes to the top of the normal windows (checkpoint C1). A topmost style that appears anyway is cleared at once.
     /// </summary>
     private static void Behind(IntPtr own, IntPtr other)
     {
-        var after = IsTopmost(other) ? HwndNoTopmost : other;
+        var previous = Previous();
+        var after = !IsTopmost(other) ? other
+            : previous != IntPtr.Zero && previous != own && IsWindow(previous) && !IsTopmost(previous) ? previous
+            : HwndBottom;
         SetWindowPos(own, after, 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);
         if (IsTopmost(own))
         {
             SetWindowPos(own, HwndNoTopmost, 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);
+            SetWindowPos(own, HwndBottom, 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);
         }
     }
 

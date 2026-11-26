@@ -29,6 +29,10 @@ DIGESTS = {
     'deep-1': '1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace',
     'deep-2': 'bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299',
     's7001-9': SOLVED,
+    # Pinned by B1's two equal runs and by the tracked bytes since (checkpoint C1 asked for constants).
+    'wj-ia-300': '88d8b110bbf0eae42ca22a857c289ee36c5204d0f82631d5b56317611b9ab9cd',
+    'nu-c0': '3d7669e3933bbc1644f30daad23c04cb8e677916b82b5038e57ad7423d303f00',
+    'nu-c35': '80642dd327e7c86b085019db9fda41c87a2f540386d2bfeb90397bf1abf325d1',
 }
 # Counts the build framework's section 6 states.
 COUNTS = {
@@ -185,6 +189,8 @@ class SampleTests(unittest.TestCase):
             totals = read(f'{sid}/totals.json')
             self.assertEqual(totals['correction']['id'], cid, sid)
             self.assertEqual(totals['N'], 0, sid)
+            # ν at the corrected state equals the correction's row (build framework section 6).
+            self.assertEqual(totals['nu']['nu'], rows[cid]['row'], sid)
 
 
 if __name__ == '__main__':

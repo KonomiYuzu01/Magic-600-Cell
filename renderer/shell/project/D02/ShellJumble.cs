@@ -55,6 +55,28 @@ public static class ShellJumble
     /// <summary>The binding chip's words for a bound sample state.</summary>
     public static string BoundWords(string state) => "bound · " + state;
 
+    /// <summary>The sentences of the design folder's jumble-words.json, by id.</summary>
+    public static Dictionary<string, string> Sentences(string folder)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(folder, "jumble-words.json")));
+        return document.RootElement.GetProperty("sentences").EnumerateArray()
+            .ToDictionary(s => s.GetProperty("id").GetString()!, s => s.GetProperty("text").GetString()!, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Global's totals (B7): the bound sample state's totals, whose seam facts cover the whole state (the sample
+    /// builder refuses a state whose seams are incomplete, cut off or cancelled); pending while no state is bound.
+    /// </summary>
+    public static GlobalTotals Totals()
+    {
+        if (Bound is not { } state)
+        {
+            return GlobalTotals.Pending;
+        }
+        var path = Path.Combine(JumbleFolder(), state, "totals.json");
+        return File.Exists(path) ? GlobalTotals.Read(File.ReadAllText(path), SeamCoverage.Complete) : GlobalTotals.Pending;
+    }
+
     /// <summary>The folder of the D02 jumble samples: under M600_D02_DATA when set, else the build's staged copy.</summary>
     public static string JumbleFolder()
     {
@@ -63,7 +85,7 @@ public static class ShellJumble
         return Path.Combine(data, data.EndsWith("samples", StringComparison.Ordinal) ? "" : "samples", "jumble");
     }
 
-    /// <summary>Reads every sample state's pose-array digests from its state.json header (B1); answers how many.</summary>
+    /// <summary>Reads every sample state's three digests from its state.json header (B1); answers how many.</summary>
     public static int LoadSamples()
     {
         Samples.Clear();
@@ -75,7 +97,8 @@ public static class ShellJumble
             var id = entry.GetProperty("state").GetString() ?? "";
             using var state = JsonDocument.Parse(File.ReadAllText(Path.Combine(folder, id, "state.json")));
             var digests = state.RootElement.GetProperty("digests");
-            var key = Key(digests.GetProperty("pose_ids_sha256").GetString(), digests.GetProperty("pose_lattice_sha256").GetString());
+            var key = Key(digests.GetProperty("adapter").GetString(), digests.GetProperty("pose_ids_sha256").GetString(),
+                digests.GetProperty("pose_lattice_sha256").GetString());
             if (!Samples.TryGetValue(key, out var ids))
             {
                 Samples[key] = ids = new List<string>();
@@ -86,31 +109,52 @@ public static class ShellJumble
         return count;
     }
 
-    private static string Key(string? ids, string? lattice) => ids + "/" + lattice;
+    // A pose id is a rank in a table compacted per state, so two states can share both pose-array digests; the state
+    // digest tells them apart (checkpoint C1). A fixture's three digests equal its sample's (build_d02_fixtures.py).
+    private static string Key(string? state, string? ids, string? lattice) => state + "/" + ids + "/" + lattice;
 
     /// <summary>
-    /// Binds the sample state whose two pose-array digests equal the session head's (B5). <paramref name="digests"/> is
-    /// m6h_state_digest's answer, read at each newly shown revision, which also feeds the Jumble facts (B6). Several states with the same poses bind the asked
-    /// one when it is among them, else the first in the index's order. With none, or with Jumble off, nothing is bound.
+    /// Binds the sample state whose state digest and two pose-array digests equal the session head's (B5).
+    /// <paramref name="digests"/> is m6h_state_digest's answer, read at each newly shown revision, which also feeds the
+    /// Jumble facts (B6). Several states with the same digests bind the asked one when it is among them, else the first
+    /// in the index's order. With none, or with Jumble off, nothing is bound. An answer that does not read unbinds and
+    /// keeps the numerals undefined (<see cref="Unknown"/>).
     /// </summary>
     public static void Bind(string digests, long revision)
     {
-        Feed.Adopt(JumbleFeed.Read(digests, revision));
         string? bound = null;
         try
         {
             using var document = JsonDocument.Parse(digests);
             var root = document.RootElement;
             if (root.GetProperty("pose_ids_sha256").ValueKind == JsonValueKind.String
-                && Samples.TryGetValue(Key(root.GetProperty("pose_ids_sha256").GetString(), root.GetProperty("pose_lattice_sha256").GetString()), out var ids))
+                && Samples.TryGetValue(Key(root.GetProperty("digest").GetString(), root.GetProperty("pose_ids_sha256").GetString(),
+                    root.GetProperty("pose_lattice_sha256").GetString()), out var ids))
             {
                 bound = Asked is { } asked && ids.Contains(asked) ? asked : ids[0];
             }
         }
         catch (Exception error) when (error is JsonException or KeyNotFoundException or InvalidOperationException)
         {
-            bound = null;
+            Unknown(revision);
+            return;
         }
+        Feed.Adopt(JumbleFeed.Read(digests, revision));
+        Rebind(bound);
+    }
+
+    /// <summary>
+    /// The head's facts could not be read at this revision (checkpoint C1): nothing is bound, and with Jumble on the
+    /// numerals are undefined rather than the last revision's.
+    /// </summary>
+    public static void Unknown(long revision)
+    {
+        Feed.Adopt(Feed.State with { LatticeFlag = false, Revision = revision });
+        Rebind(null);
+    }
+
+    private static void Rebind(string? bound)
+    {
         if (bound != Bound)
         {
             Bound = bound;

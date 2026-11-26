@@ -1149,13 +1149,23 @@ class D02Launch(unittest.TestCase):
                 # The one activation is the hand-back: of the window that had the foreground, never the shell's own.
                 self.assertEqual((path.name, calls), ("D02Window.cs", ["previous"]))
         window = text(PROJECT / "D02" / "D02Window.cs")
-        # The window only ever goes behind another one (the previous or the current foreground window), or behind
-        # every topmost window when that one is topmost; never to the top, and never activated.
+        # The window only ever goes behind another one (the previous or the current foreground window); behind a
+        # topmost window it goes behind the launch's previous window, or to the bottom (checkpoint C1); never to the
+        # top of the normal windows, and never activated. A topmost style that appears anyway is cleared, then bottom.
         self.assertEqual(re.findall(r"SetWindowPos\(own, (\w+), 0, 0, 0, 0, SwpNoSize \| SwpNoMove \| SwpNoActivate\);",
-                                    window), ["after", "HwndNoTopmost"])
-        self.assertEqual(len(re.findall(r"SetWindowPos\(", window)), 3)  # the import and the two calls
-        self.assertIn("var after = IsTopmost(other) ? HwndNoTopmost : other;", window)
+                                    window), ["after", "HwndNoTopmost", "HwndBottom"])
+        self.assertEqual(len(re.findall(r"SetWindowPos\(", window)), 4)  # the import and the three calls
+        self.assertIn("var after = !IsTopmost(other) ? other", window)
+        self.assertIn(": previous != IntPtr.Zero && previous != own && IsWindow(previous) && !IsTopmost(previous) ? previous", window)
+        self.assertIn("            : HwndBottom;", window)
         self.assertIn("private static readonly IntPtr HwndNoTopmost = new(-2);", window)
+        self.assertIn("private static readonly IntPtr HwndBottom = new(1);", window)
+        # Back in front after a check found another window there: only the owner brings it back, so the checks stop,
+        # even after a long session open held them up (checkpoint C1).
+        settle_body = window[window.index("public static void Settle()"):]
+        self.assertLess(settle_body.index("if (!first && foreground == own && _sawElsewhere)"),
+                        settle_body.index("SetForegroundWindow(previous);"))
+        self.assertIn("_sawElsewhere = true;", settle_body)
         self.assertEqual(re.findall(r"Behind\(own, (\w+)\);", window), ["previous", "foreground"])
         # After the first check, a mouse button or a moved or resized window ends the checks for good: the owner's own
         # clicks and switches stand. Keys do not count.
@@ -1487,13 +1497,16 @@ class D02Fixtures(unittest.TestCase):
         self.assertIn("public const uint AbiVersion = 8;", text(PROJECT / "HostLibrary.cs"))
         self.assertIn("refuses another version than its `AbiVersion` (8 since ADR-D02 B5)", text(SHELL / "README.md"))
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
-        # A sample binds by its two pose-array digests; the asked state only breaks a tie between equal poses.
-        self.assertIn('Samples.TryGetValue(Key(root.GetProperty("pose_ids_sha256").GetString(), '
-                      'root.GetProperty("pose_lattice_sha256").GetString()), out var ids)', jumble)
+        # A sample binds by its state digest and its two pose-array digests (checkpoint C1: pose ids are ranks in a
+        # table compacted per state); the asked state only breaks a tie between equal states.
+        self.assertIn('Key(root.GetProperty("digest").GetString(), root.GetProperty("pose_ids_sha256").GetString(),', jumble)
+        self.assertIn('root.GetProperty("pose_lattice_sha256").GetString()), out var ids)', jumble)
+        self.assertIn('var key = Key(digests.GetProperty("adapter").GetString(), digests.GetProperty("pose_ids_sha256").GetString(),', jumble)
         self.assertIn("bound = Asked is { } asked && ids.Contains(asked) ? asked : ids[0];", jumble)
         self.assertEqual(jumble.count("Bound = "), 1)
         shell = text(PROJECT / "Shell.cs")
-        self.assertIn("if (D02.ShellJumble.On && _session && _shownRevision != _boundRevision)", shell)
+        self.assertIn("if (D02.ShellJumble.On && _session && _adoptedRevision != _boundRevision)", shell)
+        self.assertIn("_adoptedRevision = frame.EngineRevision;", shell)
         self.assertEqual(shell.count("StateDigest("), 1)
 
 
@@ -1507,13 +1520,19 @@ class D02Host(unittest.TestCase):
         start = chrome.index("        if (ShellJumble.On)\n        {\n            ShellJumble.Attach(parent, frame, palette);")
         block = chrome[start:chrome.index("\n        }\n", start)]
         self.assertEqual(chrome.count("new JumbleHost("), 1)
-        self.assertIn("Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing);", block)
+        self.assertIn('Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing, sentences["totals.unit"], '
+                      'sentences["totals.above"]);', block)
+        # B7: Global's totals follow the binding, pending while nothing is bound.
+        self.assertIn("ShellJumble.BindingChanged += () => host.SetTotals(ShellJumble.Totals());", block)
         self.assertIn("frame.SetMainViews(global, Jumble.Surface);", block)
         # The feed adopts only what m6h_state_digest answered at a newly shown revision.
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
         self.assertIn("Feed.Adopt(JumbleFeed.Read(digests, revision));", jumble)
-        self.assertEqual(jumble.count("Feed.Adopt("), 1)
-        self.assertIn("D02.ShellJumble.Bind(library.Answer(_host), (long)_shownRevision);", text(PROJECT / "Shell.cs"))
+        # An answer that does not read, or a failed call, unbinds and keeps the numerals undefined (checkpoint C1).
+        self.assertIn("Feed.Adopt(Feed.State with { LatticeFlag = false, Revision = revision });", jumble)
+        self.assertEqual(jumble.count("Feed.Adopt("), 2)
+        self.assertIn("D02.ShellJumble.Unknown((long)_adoptedRevision);", text(PROJECT / "Shell.cs"))
+        self.assertIn("D02.ShellJumble.Bind(library.Answer(_host), (long)_adoptedRevision);", text(PROJECT / "Shell.cs"))
 
     def test_the_numerals_switch_on_the_lattice_flag_and_the_entry_is_chrome_only(self):
         model = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "Jumble.cs")

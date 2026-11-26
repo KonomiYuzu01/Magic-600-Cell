@@ -273,7 +273,12 @@ public sealed class ShellChrome
             ShellJumble.Attach(parent, frame, palette);
             // B6: the Jumble host in Solve, fed at each shown revision; Local shows its sections.
             var (names, empty, nothing) = ShellJumble.Words(folder);
-            Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing);
+            var sentences = ShellJumble.Sentences(folder);
+            Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing, sentences["totals.unit"], sentences["totals.above"]);
+            // B7: Global's totals follow the bound state, pending while none is bound.
+            var host = Jumble;
+            ShellJumble.BindingChanged += () => host.SetTotals(ShellJumble.Totals());
+            host.SetTotals(ShellJumble.Totals());
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
             Jumble.Changed += Describe;

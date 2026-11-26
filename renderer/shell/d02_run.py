@@ -166,7 +166,8 @@ def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]
         problems.append("step 1: the cap map is not open in the bottom dock")
     if not any("contact classes · armed" in text and "never hidden · armed" in text for text in every):
         problems.append("step 1: the cap map's legend does not show the entry's armed modes")
-    undefined = every.count("undefined")
+    # The strip and the rail are in the frame; the totals on the view borders have their own undefined slots (B7).
+    undefined = texts(shown, "frame").count("undefined")
     if off and undefined < 2:
         problems.append(f"step 1: the strip and the rail are not undefined off the lattice ({undefined} undefined numerals)")
     if not off and undefined:

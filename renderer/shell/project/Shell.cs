@@ -57,6 +57,8 @@ public partial class Shell : Control
     private ulong _shownRevision;
     /// <summary>The shown revision at which ADR-D02 last bound a sample state to the session (B5).</summary>
     private ulong _boundRevision;
+    // The engine revision the last submitted frame drew: the adopted head, shown on screen or not.
+    private ulong _adoptedRevision;
     private Vector2I _size;
     /// <summary>The 3D frame submitted in this process frame, for the next ui_frame row.</summary>
     private ulong? _submittedThisFrame;
@@ -428,6 +430,7 @@ public partial class Shell : Control
         {
             _log?.Frame(frame, submitted, returned);
             _submittedThisFrame = frame.Sequence;
+            _adoptedRevision = frame.EngineRevision;
             if (_session && _firstSubmitted is null && frame.EngineRevision >= _openRevision
                 && frame.PublicationRevision >= _openRevision)
             {
@@ -477,13 +480,19 @@ public partial class Shell : Control
             }
         } while (count == _presented.Length);
         _chrome?.Shown(_shownRevision);
-        // ADR-D02 B5: at each newly shown revision, the sample state whose pose digests equal the head's binds.
-        if (D02.ShellJumble.On && _session && _shownRevision != _boundRevision)
+        // ADR-D02 B5: at each newly adopted revision, the sample state whose digests equal the head's binds. It follows
+        // the revision a submitted frame drew, not the one confirmed on screen: a window behind the owner's presents
+        // nothing, and the facts must still follow the session (checkpoint C1).
+        if (D02.ShellJumble.On && _session && _adoptedRevision != _boundRevision)
         {
-            _boundRevision = _shownRevision;
+            _boundRevision = _adoptedRevision;
             if (library.StateDigest(_host) == HostLibrary.Ok)
             {
-                D02.ShellJumble.Bind(library.Answer(_host), (long)_shownRevision);
+                D02.ShellJumble.Bind(library.Answer(_host), (long)_adoptedRevision);
+            }
+            else
+            {
+                D02.ShellJumble.Unknown((long)_adoptedRevision);
             }
         }
     }

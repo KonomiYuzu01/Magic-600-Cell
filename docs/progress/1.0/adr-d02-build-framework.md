@@ -217,6 +217,10 @@ relative path is from the repository root.
   - `build_d02_fixtures.py` rebuilds each state's word from the records its sample was made from. A W-J journal record is a menu letter: its grip and the base index of its label (`I_a[17]` is item 17). A replay of all 841 records as letters through the adapter reached `wj-ia-300`, `wj-ia-420` and `wj-ia-end` with the samples' digests before any fixture was written. Letters of the menu's identity item (item 0) are left out: they move no piece, and the command layer refuses them (`KN2:input.recipe_shape`); the stop-40 restorer has four, so `ia-40`'s word has 98 letters. The fixture's three digests must equal the sample's `state.json`, or it is removed. The two `nu-c` states wait for B26, whose correction words come from the adapter.
   - Written and matching on the integrator's machine (release build, write time and reopen time): `on-zero` (0 letters; 1.1 s, 0.4 s), `s7001-0` to `s7001-9` (10 to 19 letters; about 1.3 s, 0.3 s each), `ia-40` (98; 19.5 s, 5.3 s), `wj-ia-300` (300; 70.5 s, 17.5 s), `wj-ia-420` (420; 182 s, 37.8 s), `wj-ia-end` (841; 447 s, 139 s). The reopen time grows faster than the commit count (risk R2), so `deep-1` and `deep-2`, at about 3,300 commits, are not written at B5; they are written for the gate sittings, or once a faster reopen exists.
   - `ShellJumble.Bind`: at each newly shown revision `Shell.cs` reads `m6h_state_digest` and binds the sample state whose two pose-array digests equal the head's, never by name; several states with equal poses (`on-zero` and `s7001-9`) bind the asked one. A chip says `bound · <state>` or `unbound · stale`. `watch_d02.py --state ID` and `d02_run.py` open the state's fixture when it is written.
+  - Amended at checkpoint C1:
+    - The key also takes the state digest (the answer's `digest` against the sample's `digests.adapter`). A pose id is a rank in a table compacted per state, so two states can share both pose-array digests.
+    - Binding follows the revision each submitted frame draws, not the revision confirmed on screen: a window behind a window that fully covers it presents nothing.
+    - An answer that does not read, or a failed call, unbinds and keeps the numerals undefined.
   - The bind run: the router turns cap 0 only (`grip.select` is not built), and cap 0 is blocked at `wj-ia-300`, so a twist key there is refused; on `wj-ia-300` the run shows the sample bound from the open. The whole cycle runs on `on-zero`: `M600_D02_RUN_PASS script=bind steps=6 mismatches=0` on `c9-product-6ef62b1b3f8d4577`, bound at the open, unbound after one twist, bound again after the undo, with the foreground kept and no topmost window. Script chords use Godot's key names (`J`, `Ctrl+Z`); a name Godot does not know is now written into the dump instead of being skipped.
 - **Owner sees:** `watch_d02.py --state wj-ia-300` shows the jumbled pieces, posed, under the frame.
 - **Machine:** H for tests; W for the run. Record each fixture's open time: a deep fixture replays about 3,300 commits (risk R2).
@@ -296,6 +300,17 @@ relative path is from the repository root.
   - `CapReadout`: In, Out, A, N_c, floor, u.
   - Fixed tabular slots, one neutral change mark, the unit word "seams", no colour by value.
 - **Check:** `D02TotalNPendingUntilSeamFactsAll`; `D02TotalNIncompleteAfterCutOff`; `D02TotalNIsNotSumOfCaps`; `D02BlockedCapReadoutUndefined`; `D02Above6MaxUndefinedAtZero`; `D02TotalsMatchSample`.
+- **As built (integrator, 26 November 2026):**
+  - `Model/JumbleReadouts.cs`:
+    - `SeamCoverage`, which makes N and its two parts pending before `seam_facts(all)` covers the state and incomplete after a cut-off;
+    - `GlobalTotals.Read(totals, coverage)`, which reads N from the state's totals, never from the caps;
+    - `CapReadout.Read(capRecord)`: a blocked cap has In, Out, A, N_c and the floor undefined, and its u is the straddler count; an admissible cap has u = 0; a cap with no certified rim row is pending throughout;
+    - `ReadoutChanges`, one neutral mark for a value that changed; a slot that held no value before is not marked.
+  - `Ui/JumbleReadouts.cs`: `ReadoutRow`. Each slot has a label, the change mark, and a right-aligned numeral in a slot six digits wide. A slot with no value says its state's word in that state's role. Nothing is coloured by value, and nothing is a gauge.
+  - `JumbleHost` puts the totals on Global's border and the named cap's readout on Local's while Jumble is on. A rebuilt frame gets fresh rows.
+  - In the shell, the totals follow the binding and are pending while nothing is bound. The words "seams" and "above 6" come from `jumble-words.json`. The cap readout waits for B9, where a cap is named.
+  - The sample builder accepts only complete seam facts. So the shell reads the bound state's totals as covered, and the pending and incomplete readings are tested on the model.
+  - Checks: the console lane passed 171 of 171, with the six named tests. `d02_run.py --script host` passed on `ia-40` and `on-zero` (`c9-product-fabd043e0bc26316`). On `ia-40` Global's border reads N 1192 seams, 1057 on grip, 135 off grip, 6 domains, 860 off the lattice, n2 860, n4 0, n6 0, above 6 0, and max undefined.
 - **Owner sees:** the totals on Global's border at a deep export.
 - **Machine:** H, W.
 - **Checkpoint:** no.
@@ -863,6 +878,24 @@ Each checkpoint is one read of the named diff range against the questions below,
   - the watching window starts without activation and is never topmost (section 1);
   - no protected file is in the diff.
 - Owner is shown: the W-J state posed under the frame, with the Jumble cell and marks.
+- **Record (integrator, 26 November 2026):** Fable read B1 to B6 at `7a2d3b16`. Six of the eight questions hold; questions 3 and 7 had findings.
+  - C1-1 (question 7, major): the hand-back's later checks ran by frame time. After a long session open they could take the foreground back from an owner who had clicked the window meanwhile.
+    - Adopted. A check that finds the shell back in front after another window had the front stops the checks for good: only the owner brings it back.
+    - Not run: the W test of a real click during a 17-second open.
+  - C1-6 (question 7, minor): behind a topmost foreground window the shell went to the top of the normal windows.
+    - Adopted. It goes behind the launch's previous window, or to the bottom.
+    - An Alt+Tab to the shell now stands, by C1-1's rule.
+  - C1-2 (question 2, minor): two states can share both pose-array digests.
+    - Adopted. The state digest joins the key, binding follows the adopted revision (B5's amended note), and a failed read unbinds (C1-5, adopted).
+  - C1-3 (question 3, minor): a request at another revision did not make the shown result stale.
+    - Adopted, with a console test.
+  - C1-4 (question 3, minor), two parts:
+    - A completed result that tried less than all is now an error, with a test. Adopted.
+    - The empty word's cap and revision: deferred to B12, whose empty line names them ("Cap c, rev r: ...").
+  - C1-7 (question 1, minor): `wj-ia-300`'s and both `nu-c` digests were unpinned.
+    - Adopted. They are now constants in `tests/test_d02_samples.py`, which also checks ν against the correction's row.
+    - Contact classes are checked at B15. The G3 state is recorded at B19.
+  - C1-8 (question 6, nit): the dock sides and the Library panel are unconditional with `--frame`. Kept: they are ADR-D01's frame (B4a), not D02's.
 
 **C2, after B13.**
 - Fable checks:

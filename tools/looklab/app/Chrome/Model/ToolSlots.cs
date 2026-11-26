@@ -52,6 +52,9 @@ public sealed class ToolSlot
     public void Request(long release, string digest, string parameters)
     {
         if (Latest is long latest && release <= latest) throw new ArgumentException("release numbers increase: " + release + " after " + latest);
+        // A request for another revision than the one shown makes the shown result stale first, so a cancel never
+        // brings back a result for another revision (J-7; checkpoint C1).
+        if (digest != Shown) Invalidate(digest);
         if (State != SlotState.Pending) settled = (State, Result, Reason);
         Latest = release; this.digest = digest; this.parameters = parameters; Shown = digest; open = true;
         Set(SlotState.Pending, Result, null);
@@ -76,6 +79,10 @@ public sealed class ToolSlot
         {
             case JobEnd.Completed when result.Coverage == null:
                 Set(SlotState.Error, null, "a completed result without coverage");
+                break;
+            case JobEnd.Completed when result.Coverage.Tried != result.Coverage.Total:
+                // A completed job tried everything; one that did not is no negative claim (J-7; checkpoint C1).
+                Set(SlotState.Error, null, "a completed result that tried " + result.Coverage.Tried + " of " + result.Coverage.Total);
                 break;
             case JobEnd.Completed:
                 Set(SlotState.Ready, result, null);

@@ -54,6 +54,10 @@ internal static partial class Program
         // A job that ends cancelled does the same; superseded pending requests keep the state before them.
         slot.Request(4, "rev-a", "cap 150"); slot.Request(5, "rev-a", "cap 150");
         Check(slot.Finish(new ToolResult(5, "rev-a", "cap 150", JobEnd.Cancelled)) && D02Screen(slot) == ready, "a cancelled end did not return to the ready result");
+        // A request for another revision makes the shown result stale first, so its cancel never brings back the old
+        // revision's result as ready (J-7; checkpoint C1).
+        slot.Request(6, "rev-b", "cap 150");
+        Check(slot.Cancel(6) && slot.State == SlotState.Stale && slot.Shown == "rev-b", "a cancel at another revision brought back the old revision's result");
     }
 
     // N-1, as the owner read it (ADR-D02.36): cancelling a job that is no longer the latest request changes nothing.
@@ -79,11 +83,13 @@ internal static partial class Program
         Check(slot.Word(words).Text.Contains("without coverage", StringComparison.Ordinal), "the error does not name the missing coverage");
         slot.Request(2, "rev-a", "cap 150"); slot.Finish(new ToolResult(2, "rev-a", "cap 150", JobEnd.Completed, D02Coverage(9, 9)));
         Check(slot.State == SlotState.Ready && slot.Word(words).Text == "none (9 of 9 tried)", "an empty completed list does not name its coverage: " + slot.Word(words).Text);
-        slot.Request(3, "rev-a", "cap 150"); slot.Finish(new ToolResult(3, "rev-a", "cap 150", JobEnd.CutOff, D02Coverage(3, 9)));
+        slot.Request(6, "rev-a", "cap 150"); slot.Finish(new ToolResult(6, "rev-a", "cap 150", JobEnd.Completed, D02Coverage(3, 9)));
+        Check(slot.State == SlotState.Error && slot.Result == null, "a completed result that did not try everything was taken as a negative claim");
+        slot.Request(7, "rev-a", "cap 150"); slot.Finish(new ToolResult(7, "rev-a", "cap 150", JobEnd.CutOff, D02Coverage(3, 9)));
         Check(slot.State == SlotState.BudgetStopped && slot.Word(words).Text == "Not found within budget (3 of 9)", "a cut-off: " + slot.Word(words).Text);
-        slot.Request(4, "rev-a", "cap 150"); slot.Finish(new ToolResult(4, "rev-a", "cap 150", JobEnd.CutOff, null, "seam facts cut off"));
+        slot.Request(8, "rev-a", "cap 150"); slot.Finish(new ToolResult(8, "rev-a", "cap 150", JobEnd.CutOff, null, "seam facts cut off"));
         Check(slot.Word(words).Text == "Incomplete: seam facts cut off", "an incomplete result: " + slot.Word(words).Text);
-        slot.Request(5, "rev-a", "cap 150"); slot.Finish(new ToolResult(5, "rev-a", "cap 150", JobEnd.Error, null, "adapter stopped"));
+        slot.Request(9, "rev-a", "cap 150"); slot.Finish(new ToolResult(9, "rev-a", "cap 150", JobEnd.Error, null, "adapter stopped"));
         Check(slot.State == SlotState.Error && slot.Word(words).Text.Contains("adapter stopped", StringComparison.Ordinal), "an error does not show its reason");
     }
 
