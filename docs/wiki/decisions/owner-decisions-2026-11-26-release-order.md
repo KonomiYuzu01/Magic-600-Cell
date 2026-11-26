@@ -111,6 +111,17 @@ translated:
   publishing need the owner's machine or authorization. A test that needs people other than the authors, such as
   CT-EV5-03, cannot be done by agents.
 
+## The briefing pin
+
+The briefing records these decisions. It is an input of the format packet, so its pin is refreshed under FP.1:
+- `docs/development-guide/AGENT_BRIEFING.md`, SHA-256
+  `46e4e61c033b6a2cb3afb07cd9d133ab7d65767183af3a4d26e0b96c084f857c` to
+  `3eef53ce444431ba6095468eafdcf8099c38757d3bd67e91745e514a09a733fc`;
+- `input_commit`, `3bdc30c095b12ffd0133534d005e1e1eaf12a012` to `73270a39b9589504268777200fdeb3b729c05769`, the last
+  commit that edits the briefing.
+
+The packet cites none of the edited lines. The candidate files, `candidate_sha256` and every other pin are unchanged.
+
 ## What this does not do
 
 - It moves no bar and edits no frozen text.
