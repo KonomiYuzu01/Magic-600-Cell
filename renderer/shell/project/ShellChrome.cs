@@ -55,6 +55,8 @@ public sealed class ShellChrome
     public static bool SampleOn => System.Environment.GetEnvironmentVariable("M600_SAMPLE") == "1";
     public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts and History (sample) hold sample data. The views, History, the revision and the history position are this session's.";
     private readonly bool _live;
+    // ADR-D01.41: the rotation link's state from the host: null with no Local view, true linked, false unlinked.
+    private readonly Func<bool?> _rotationLink;
     private readonly Readout _revision, _position;
     private readonly Readout? _queue;
     private readonly HashSet<Key> _taken = new();
@@ -89,9 +91,10 @@ public sealed class ShellChrome
         return File.Exists(Path.Combine(folder, "system.json")) ? folder : null;
     }
 
-    public ShellChrome(Control parent, string folder, bool live)
+    public ShellChrome(Control parent, string folder, bool live, Func<bool?>? rotationLink = null)
     {
         _live = live;
+        _rotationLink = rotationLink ?? (() => Frame?.LocalDrawn == true ? true : null);
         ChromeFonts.SetRoots(PackageFolders(folder));
         var iconSet = IconSet.Load(Path.Combine(folder, "icons.json"));
         ChromeIcons.Use(iconSet);
@@ -400,6 +403,7 @@ public sealed class ShellChrome
         }
         Frame.Local.ClearMarks();
         Frame.Local.SetStatus(Frame.LocalDrawn ? null : "not drawn yet", Array.Empty<string>(), null);
+        ViewLink.Mark(Frame, _rotationLink);
         Jumble?.Marks(Frame.Global);
         Jumble?.Marks(Frame.Local);
         Sample?.Marks(Frame.Global);
