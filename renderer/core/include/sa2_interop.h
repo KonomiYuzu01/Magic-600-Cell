@@ -1252,7 +1252,10 @@ SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_vi
  * posed centre of the sticker's own cell in Hopf coordinates (its ring by the nearest base point, its place by the
  * phase along that ring), so a sticker whose piece is not posed uses its own cell's chart. The placed point turns
  * by the upper 3 x 3 of the frame's camera (the shell sends the linked 3D spin) and is drawn at the view's zoom, as
- * the chain's projected point is; d4 and the focus are unused.
+ * the chain's projected point is; d4 and the focus are unused. SA2_LAYOUT_RING_SHEET (ADR-D02 B22, added to ABI 10
+ * before any release) lays the same cells flat as GlobalLayout's ring sheet: 20 rows of 30 cell charts (SheetDx 0.68,
+ * SheetDy 0.57, SheetScale 0.6), the chart of the cell with ring r and half-step h centred at
+ * (0.408 (h/2 - 14.75), -0.342 (r - 9.5), 0); it is chosen as for the rings and does not turn with the camera.
  * The rings come from Look Lab's tools/looklab/fixtures/hopf-rings.json: J and K (unit pure quaternions, the real
  * part first, as the world's x), each ring's origin and each cell's ring and half-step. The core checks them against
  * its own cell centres (each centre must project onto its ring's plane, spanned by origin and origin * J, at the
@@ -1263,11 +1266,12 @@ SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_vi
  */
 #define SA2_LAYOUT_CHAIN 0u
 #define SA2_LAYOUT_HOPF_RINGS 1u
+#define SA2_LAYOUT_RING_SHEET 2u
 #define SA2_HOPF_RINGS 20u
 
 typedef struct sa2_view_layout {
     uint32_t struct_size; /* sizeof(sa2_view_layout); 1560 on x64 */
-    uint32_t kind; /* SA2_LAYOUT_CHAIN or SA2_LAYOUT_HOPF_RINGS; with the chain the rest is unused */
+    uint32_t kind; /* SA2_LAYOUT_CHAIN, SA2_LAYOUT_HOPF_RINGS or SA2_LAYOUT_RING_SHEET; with the chain the rest is unused */
     float j[4]; /* J, a unit pure quaternion (j[0] = 0) */
     float k[4]; /* K, a unit pure quaternion orthogonal to J */
     float origins[80]; /* ring r's origin at 4r: a unit point of its fibre at half-step 0 */

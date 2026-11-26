@@ -319,6 +319,7 @@ fn every_constant_has_the_header_value() {
         ("FOCUS_NONE".into(), i64::from(FOCUS_NONE)),
         ("LAYOUT_CHAIN".into(), i64::from(LAYOUT_CHAIN)),
         ("LAYOUT_HOPF_RINGS".into(), i64::from(LAYOUT_HOPF_RINGS)),
+        ("LAYOUT_RING_SHEET".into(), i64::from(LAYOUT_RING_SHEET)),
         ("HOPF_RINGS".into(), i64::from(HOPF_RINGS)),
     ];
     for code in 0..=10 {

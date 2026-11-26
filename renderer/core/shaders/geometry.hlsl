@@ -24,7 +24,7 @@ cbuffer Constants : register(b0) {
     float4 turnU, turnV;
     uint poseEnabled, overlayMode, overlayCount, poseCount;
     float previewAngle, maxAngle;
-    uint viewFlags; // ABI 9: bit 0 orthographic, bit 1 the focus test, bit 2 the spread; 0 draws as ABI 8; ABI 10: bit 3 the Hopf rings
+    uint viewFlags; // ABI 9: bit 0 orthographic, bit 1 the focus test, bit 2 the spread; 0 draws as ABI 8; ABI 10: bit 3 the Hopf rings, bit 4 laid flat as the ring sheet (B22)
     float focusSpread;
     float4 focusPole; // the focus pole in the world, before Q
     float focusCos, pad2, pad3, pad4;
@@ -92,7 +92,8 @@ float4 qmul(float4 a, float4 b) {
 }
 // ABI 10 (viewFlags bit 3): the Hopf rings. The chart is the cell nearest the posed centre p of the sticker's own cell
 // in Hopf coordinates: the ring whose base point is nearest Im(p J p*), then the place whose phase along that ring is
-// nearest. The chart places the posed point; the camera's upper 3 x 3 turns it (the linked spin).
+// nearest. The chart places the posed point; the camera's upper 3 x 3 turns it (the linked spin). With bit 4 (B22) the
+// chart is the cell's ring-sheet chart, from row 2611 on, and the camera does not turn it.
 Projection hopfVertex(float4 world, uint cell, uint slot) {
     float4 p = normalize(posedPoint(slot, framePoint(cell, N0 / radius)));
     float4 j = hopfRows[2460];
@@ -109,9 +110,11 @@ Projection hopfVertex(float4 world, uint cell, uint slot) {
     place = ((place % 30) + 30) % 30;
     uint e = ring * 30 + uint(place);
     uint chart = asuint(hopfRows[2461 + e / 4][e % 4]);
-    float3 placed = float3(dot(hopfRows[chart*4], world), dot(hopfRows[chart*4+1], world), dot(hopfRows[chart*4+2], world))
-                  + hopfRows[chart*4+3].xyz;
-    float3 q = mul(Q, float4(placed, 0)).xyz;
+    bool sheet = (viewFlags & 16u) != 0;
+    uint first = (sheet ? 2611u : 0u) + chart * 4;
+    float3 placed = float3(dot(hopfRows[first], world), dot(hopfRows[first+1], world), dot(hopfRows[first+2], world))
+                  + hopfRows[first+3].xyz;
+    float3 q = sheet ? placed : mul(Q, float4(placed, 0)).xyz;
     float z = 5 - q.z;
     Projection result;
     result.clip = float4(q.x*zoom/aspect, q.y*zoom, 100.0/(100.0-0.05)*(z-0.05), z);

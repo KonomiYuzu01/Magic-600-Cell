@@ -123,6 +123,8 @@ pub const FOCUS_NONE: u32 = 0xFFFF_FFFF;
 pub const LAYOUT_CHAIN: u32 = 0;
 /// `SA2_LAYOUT_HOPF_RINGS`.
 pub const LAYOUT_HOPF_RINGS: u32 = 1;
+/// `SA2_LAYOUT_RING_SHEET` (ADR-D02 B22).
+pub const LAYOUT_RING_SHEET: u32 = 2;
 /// `SA2_HOPF_RINGS`.
 pub const HOPF_RINGS: u32 = 20;
 
@@ -418,12 +420,12 @@ impl Sa2ViewLayout {
         }
     }
 
-    /// The checks a caller can make without the core's cells: a known kind and, for the Hopf rings, finite values,
+    /// The checks a caller can make without the core's cells: a known kind and, for the Hopf rings and the ring sheet, finite values,
     /// rings below 20 and half-steps below 60. Whether the rings fit the cells only the core can tell.
     pub fn in_range(&self) -> bool {
         match self.kind {
             LAYOUT_CHAIN => true,
-            LAYOUT_HOPF_RINGS => {
+            LAYOUT_HOPF_RINGS | LAYOUT_RING_SHEET => {
                 self.j.iter().chain(&self.k).chain(&self.origins).all(|v| v.is_finite())
                     && self.ring_of.iter().all(|&r| u32::from(r) < HOPF_RINGS)
                     && self.half_step.iter().all(|&h| h < 60)

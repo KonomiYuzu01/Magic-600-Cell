@@ -584,6 +584,26 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B9, B14.
+- **As built, part 1 (drawing track, 26 November 2026):** picks, with ADR-D01.41's shared selection and hover.
+  - c600-render's bridge stamps every slot of the posed row in the ID pass as its home slot + 1. The plan still carries no instance of a posed primitive (J13).
+  - The host's version 14 adds `m6h_pick_request` (surface pixel, newest frame; in a composite frame the pane under the point answers) and `m6h_pick_poll`.
+    - A hit resolves through `jumble::PoseProjection` to the sticker's piece, the slot it occupies (none off the lattice) and the lattice flag.
+    - A hit whose frame drew a revision the head has left is dropped as stale, as is one the core finds stale.
+  - The shell (`D02/ShellPick.cs`) keeps one selection and one hover for both views.
+    - A click that did not turn the camera selects. A click on no sticker clears the selection.
+    - The pointer hovers, with at most one hover pick in flight, one every 80 ms.
+  - `D02/ShellStyle.cs` outlines the selection (the core's marked colour) and the hover through B14's style path. It sends them again for each drawn revision. Global's pane uses style slot 1 and Local's slot 2.
+  - Reused: c600-display's `PoseProjection` (J13) and the core's ID pass; nothing new in the core.
+  - Waiting on the integrator (`ShellJumble.cs`):
+    - the script's `click` step, through `ShellPick.ScriptClick`;
+    - the dump's pick context, `ShellPick.Dump`;
+    - the inspector's tier 1 line and the pick-and-key naming of a cap (`ShellPick.Selection.Cell`).
+  - Checks:
+    - Host tests `a_jumble_pick_resolves_to_its_piece` and `a_stale_jumble_pick_is_dropped` passed; the first compares the slot with the projection's. All 23 turns tests passed.
+    - `cargo test -p c600-render`, the bridge workspace and `test_render_ffi.py` passed.
+    - `tests/test_d02_drawing.py` passed 37 of 37 and `test_renderer_shell.py` 84 of 84.
+    - With the outlines on, `d02_run.py --script hopf` and `--script two-views` (632 two-pane frames) passed on `wj-ia-300`.
+    - `--script pick` waits for the `click` step.
 
 ### B18. The sweep and the half-turn
 - **Goal:** a committed jumble twist is swept; a half-turn cuts and outlines.
@@ -837,6 +857,26 @@ relative path is from the repository root.
 - **Machine:** H, W. Record the assignment's time per revision.
 - **Checkpoint:** no.
 - **Depends:** B8, B15, B18c. CR-14.
+- **As built, bare (drawing track, 26 November 2026):** the ring sheet as a second kind of B23's layout. It was added to ABI 10 before any release, so the host stays at version 13.
+  - `SA2_LAYOUT_RING_SHEET` (2u) builds Look Lab's `GlobalLayout` sheet charts into the same Hopf table, from row 2611 on: SheetDx 0.68, SheetDy 0.57, SheetScale 0.6. Each cell's centre sits at (0.408 (h/2 - 14.75), -0.342 (r - 9.5)).
+  - The chart is chosen as for the rings. The camera does not turn the sheet.
+  - The shell holds the sheet back (`ShellHopf.Opens`). An opening file that names `ringSheet` keeps Global on the chain and logs a warning.
+    - Reason: on the owner's GPU the sheet's first product frames removed the core's device (`DXGI_ERROR_DEVICE_HUNG`, 0x887a0006). Each recovery hung again.
+    - It happened with and without the jumbled fixture. The same data folder naming `hopfRings` passed (316 frames), and the product's own core draws the sheet correctly on WARP.
+    - Not found yet. The shader differs from the rings only in the table offset (row 2611 on) and in skipping the camera turn.
+    - `d02_run.py --script ring-sheet` reads its own data folder through `--d02-data`. It stays red until the sheet is let through.
+  - Not built yet:
+    - the host's per-revision nearest-cell assignment (the shader's Hopf-coordinate choice stands in for it);
+    - the wrap mark and the caption;
+    - the no-sweep rule and the moved-set outline;
+    - the palette's preset rows (the command table is left alone);
+    - a click in a chart selecting the piece it shows.
+  - Checks:
+    - `check_core.py --hopf` passed. On the CPU, each cell's centre lies at its own place on the sheet, 600 distinct places. On WARP the sheet covered 50,820 pixels around the centre, differs from the rings and is not turned by the camera, and view 3's rings stayed as they were.
+    - `tests/test_d02_drawing.py` passed 30 of 30, `test_renderer_core.py` 26 of 26 and `test_renderer_shell.py` 84 of 84.
+    - `cargo test -p c600-render`, the bridge workspace and `test_render_ffi.py` passed.
+    - With the sheet held back, `d02_run.py --script hopf --state wj-ia-300` passed again: 317 frames. Its first try failed only on the foreground rule, with a browser window in front; the retry passed.
+    - `--script ring-sheet` drew 316 chain frames with no device removal, and stays red as intended.
 
 ### B23. Global chart preset: the Hopf rings
 - **Goal:** `view.preset.global.hopf_rings`.

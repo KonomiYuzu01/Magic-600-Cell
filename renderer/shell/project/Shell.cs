@@ -88,7 +88,7 @@ public partial class Shell : Control
     // ADR-D02 B18c: Local is open (with --d02), the cap it is focused on (-1 before the first step), and the two openings
     // the pane table was last set for (both empty while one-view frames are drawn).
     private bool _localOpen;
-    // ADR-D02 B23: Global is drawn as the Hopf rings, so its camera is the linked 3D spin.
+    // ADR-D02 B23: Global is drawn as the Hopf rings, so its camera is the linked 3D spin (the ring sheet ignores it).
     private bool _hopf;
     private int? _localCap = -1;
     private (Rect2I Global, Rect2I Local) _paned;
@@ -195,13 +195,19 @@ public partial class Shell : Control
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         // ADR-D02 (owner, 26 November 2026: smaller stickers): with --d02 the view takes the owner's opening shape.
         Require(hostLibrary, "m6h_set_view_shape", D02.ShellShape.Apply(hostLibrary, _host));
-        // ADR-D02 B23 (bare): with --d02 and an opening file that names the Hopf rings, Global opens on them, turned
-        // by the linked 3D spin.
-        if (D02.ShellJumble.On && D02.ShellHopf.Named(D02.ShellShape.OpeningPath()))
+        // ADR-D02 B23 and B22 (bare): with --d02 and an opening file that names the Hopf rings or the ring sheet, Global
+        // opens on it; the rings turn with the linked 3D spin, the sheet lies flat.
+        var layout = D02.ShellJumble.On ? D02.ShellHopf.Kind(D02.ShellShape.OpeningPath()) : D02.ShellHopf.Chain;
+        if (layout != D02.ShellHopf.Chain && !D02.ShellHopf.Opens(layout))
+        {
+            GD.PushWarning("ADR-D02 B22: the ring sheet is held back (it hangs the GPU); Global opens on the chain");
+            layout = D02.ShellHopf.Chain;
+        }
+        if (layout != D02.ShellHopf.Chain)
         {
             Require(hostLibrary, "m6h_set_view_layout", hostLibrary.SetViewLayout(_host, HostLibrary.View,
-                D02.ShellHopf.Layout(D02.ShellHopf.RingsPath())));
-            _hopf = true;
+                D02.ShellHopf.Layout(D02.ShellHopf.RingsPath(), layout)));
+            _hopf = layout == D02.ShellHopf.Rings;
             _camera.Dirty = true; // the first step sends the spin as Global's camera
         }
         // ADR-D02 B18c: with --d02 Local opens beside Global with its own shape, hidden until a cap is named.
@@ -325,9 +331,26 @@ public partial class Shell : Control
     public override void _Input(InputEvent @event)
     {
         var qpc = EventLog.Now();
-        if (D02.ShellJumble.On && _camera.Follow(@event, InOpening))
+        var turned = D02.ShellJumble.On && _camera.Follow(@event, InOpening);
+        if (turned)
         {
             GetViewport().SetInputAsHandled();
+        }
+        // ADR-D02 B17: a click (a release that did not turn the camera) picks in the view under it; the pointer hovers.
+        if (D02.ShellJumble.On && _session)
+        {
+            switch (@event)
+            {
+                case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } up when !turned:
+                    if (SurfacePoint(up.Position) is { } at)
+                    {
+                        D02.ShellPick.Click(at.X, at.Y);
+                    }
+                    break;
+                case InputEventMouseMotion move:
+                    D02.ShellPick.Point(SurfacePoint(move.Position));
+                    break;
+            }
         }
         // The wheel zooms the view under the pointer (owner, 26 November 2026); it takes no focus.
         if (D02.ShellJumble.On && D02.ShellJumble.Zoom.Follow(@event, ViewAt))
@@ -386,6 +409,18 @@ public partial class Shell : Control
     private bool InOpening(Vector2 point) =>
         (_chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize()))
             .HasPoint(new Vector2I((int)point.X, (int)point.Y));
+
+    /// <summary>ADR-D02 B17: a window point in a drawn view as a pixel of the core's surface, or none.</summary>
+    private (uint X, uint Y)? SurfacePoint(Vector2 point)
+    {
+        if (ViewAt(point) is null)
+        {
+            return null;
+        }
+        var x = (int)point.X - _area.Position.X;
+        var y = (int)point.Y - _area.Position.Y;
+        return x >= 0 && y >= 0 && x < _area.Size.X && y < _area.Size.Y ? ((uint)x, (uint)y) : null;
+    }
 
     /// <summary>
     /// The drawn view under a window point: Global in its opening, Local in its drawn opening (B18c, through the pane
@@ -499,7 +534,8 @@ public partial class Shell : Control
             for (var i = 0; i < 2; i++)
             {
                 var r = layout.Panes[i].Rect;
-                Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i, views[i], r.X, r.Y, (uint)r.Width, (uint)r.Height, 0));
+                // B17: Global's pane draws with style slot 1, Local's with slot 2 (D02.ShellStyle sets both).
+                Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i, views[i], r.X, r.Y, (uint)r.Width, (uint)r.Height, (uint)i + 1));
             }
             var aspect = layout.Panes[1].Rect.Height > 0 ? (double)layout.Panes[1].Rect.Width / layout.Panes[1].Rect.Height : 1;
             if (_localShape is { } shape)
@@ -606,6 +642,12 @@ public partial class Shell : Control
                 Require(library, "m6h_set_view_shape", D02.ShellShape.ApplyZoom(library, _host, view, D02.ShellJumble.Zoom.Factor(view)));
             }
         }
+        // ADR-D02 B17: the selection and hover outlines, sent again for each revision a frame draws; a refusal (before
+        // the first posed adoption) is retried at the next step.
+        if (D02.ShellJumble.On && _session)
+        {
+            D02.ShellStyle.Apply(library, _host, _adoptedRevision);
+        }
         _submittedThisFrame = null;
         var submitted = EventLog.Now();
         var code = library.Frame(_host, out var frame);
@@ -615,6 +657,11 @@ public partial class Shell : Control
             _log?.Frame(frame, submitted, returned);
             _submittedThisFrame = frame.Sequence;
             _adoptedRevision = frame.EngineRevision;
+            // ADR-D02 B17: the clicks and hovers of this step ask the ID pass on the frame just submitted.
+            if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))
+            {
+                D02.ShellStyle.Invalidate();
+            }
             if (_session && _firstSubmitted is null && frame.EngineRevision >= _openRevision
                 && frame.PublicationRevision >= _openRevision)
             {

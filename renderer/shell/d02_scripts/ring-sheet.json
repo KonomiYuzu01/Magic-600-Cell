@@ -1,0 +1,16 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "ring-sheet",
+  "note": "B22, bare: on a data folder whose opening file names the ringSheet projection (a copy of Look Lab's samples), Global opens on the ring sheet, the 20 Hopf rings laid flat as 20 rows of 30 cell charts, at the file's field of view, on wj-ia-300's session fixture; two wheel notches scale the zoom by 1.1 squared.",
+  "steps": [
+    {
+      "wait_ms": 2500
+    },
+    {
+      "wheel": 2
+    },
+    {
+      "wait_ms": 1000
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "pick",
+  "note": "B17 on wj-ia-300's session fixture: clicks at fixed points of the Global opening, each answered by the core's ID pass through the host. A hit selects the piece of the sticker under the point (the model's slot_piece of its home slot); a click on no sticker, the last one in the opening's corner, clears the selection. No pick is stale, since no twist happens.",
+  "steps": [
+    {
+      "wait_ms": 2500
+    },
+    {
+      "click": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.42,
+        0.38
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.58,
+        0.62
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.35,
+        0.5
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.65,
+        0.5
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.5,
+        0.3
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.5,
+        0.7
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.02,
+        0.02
+      ]
+    },
+    {
+      "wait_ms": 600
+    }
+  ]
+}

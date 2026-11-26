@@ -106,10 +106,12 @@ struct ViewShape {
 ViewShape view_shape(const sa2_view_shape* shape); // validates (SA2_E_INVALID_ARGUMENT); NULL gives the defaults
 // ABI 9: validates a focus (SA2_E_INVALID_ARGUMENT) and writes it into `shape`; NULL writes the defaults.
 void view_focus(const sa2_view_focus* focus, ViewShape& shape);
-// ABI 10: the Hopf-ring table the product shaders read (register t18), 2611 float4: the 600 cells' ring charts (rows 0
+// ABI 10: the Hopf-ring table the product shaders read (register t18), 5011 float4: the 600 cells' ring charts (rows 0
 // to 2, then the translation), the rings' origins, their origins times J, their base points (w: the ring's half-step
-// parity), J, then the 600 cells by ring and place along it (as uint bits, four to an element).
-constexpr size_t HopfTableRows = 2611;
+// parity), J, the 600 cells by ring and place along it (as uint bits, four to an element), then from HopfSheetRow the
+// 600 cells' ring-sheet charts (B22), laid out as the ring charts.
+constexpr size_t HopfSheetRow = 2611;
+constexpr size_t HopfTableRows = HopfSheetRow + 2400;
 using HopfTable = std::vector<std::array<float, 4>>;
 // Validates a layout's struct (SA2_E_INVALID_ARGUMENT); NULL is the chain.
 uint32_t view_layout_kind(const sa2_view_layout* layout);

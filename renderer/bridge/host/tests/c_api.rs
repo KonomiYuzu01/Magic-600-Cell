@@ -287,7 +287,7 @@ fn the_host_sets_a_view_layout() {
         for change in 0..4 {
             let mut bad = rings;
             match change {
-                0 => bad.kind = 2,
+                0 => bad.kind = 3,
                 1 => bad.ring_of[0] = 20,
                 2 => bad.half_step[0] = 60,
                 _ => bad.origins[0] = f32::NAN,

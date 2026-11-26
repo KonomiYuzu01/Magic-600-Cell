@@ -5,9 +5,10 @@
 //! What the bridge decides, because the core's interface and the host's types differ:
 //! - A publication becomes per-slot rows: the one retained primitive's visibility and interaction sets, and each
 //!   instance on the slot its sticker occupies under the primitive's labels (or the slot it names); or the one posed
-//!   primitive (J02), every slot drawn and none pickable. Other primitives, a second sticker primitive, an instance
-//!   of a posed primitive, two instances on one slot and instance IDs that do not fit the ID pass's u32 (or are 0)
-//!   are refused.
+//!   primitive (J02), every slot drawn and each stamped in the ID pass as its home slot + 1 (ADR-D02 B17), which the
+//!   shell host resolves to the sticker's piece. Other primitives, a second sticker primitive, a plan instance of a
+//!   posed primitive, two instances on one slot and instance IDs that do not fit the ID pass's u32 (or are 0) are
+//!   refused.
 //! - A jumbling engine bundle (render/1 section 7) is adopted as the core's pose path over the home labels: every
 //!   sticker keeps its own colour and moves with its piece's pose, as W-J draws it.
 //! - The core reports no limit profile and no stages: every supported row carries the profile the bridge was given.
@@ -404,6 +405,17 @@ impl<C: CoreAbi> RenderBackend<C> {
         }
     }
 
+    /// The core's ID of the newest submitted frame, if any (ADR-D02 B17: the shell host picks on it).
+    pub fn newest_frame(&self) -> Option<u64> {
+        self.frames.back().map(|record| record.id)
+    }
+
+    /// A pick's raw row, as the core answers it (ADR-D02 B17). Unlike [`RenderBackend::poll_pick`] it does not hold
+    /// the reply to the frame's first view, so a pick in a composite frame's other pane names that pane's view.
+    pub fn poll_pick_row(&mut self, ticket: PickTicket) -> Result<crate::abi::Sa2PickRow, Error> {
+        self.core.pick_poll(ticket.0).map_err(|status| self.error(status))
+    }
+
     /// RPI.22's ID pass at pixel `(x, y)` of a submitted frame.
     pub fn request_pick(&mut self, frame: u64, x: u32, y: u32) -> Result<PickTicket, Error> {
         self.core.pick_request(frame, x, y).map(PickTicket).map_err(|status| self.error(status))
@@ -785,11 +797,14 @@ fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
     }
     let Some((plan, index, primitive)) = stickers else { return Ok(rows) };
     let Primitive::Retained(input) = primitive else {
-        // J02's posed row: every sticker is drawn where its piece's pose puts it, and none is pickable.
+        // J02's posed row: every sticker is drawn where its piece's pose puts it. ADR-D02 B17: the ID pass stamps each
+        // drawn sticker as its home slot + 1, so a hit names the sticker, which the shell host resolves to its piece;
+        // the plan still carries no instance of a posed primitive (J13).
         if !plan.instances.is_empty() {
-            return Err(Error::unsupported("J13", "the core's ID pass stamps no instance of a posed primitive"));
+            return Err(Error::unsupported("J13", "the core's ID pass stamps no plan instance of a posed primitive"));
         }
         rows.visibility.fill(1);
+        rows.instances.iter_mut().zip(1u32..).for_each(|(instance, id)| *instance = id);
         return Ok(rows);
     };
     let labels = input.labels.as_u32();

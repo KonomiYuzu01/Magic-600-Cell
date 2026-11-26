@@ -1495,11 +1495,11 @@ class D02Fixtures(unittest.TestCase):
 
     def test_the_host_gives_the_state_digest_and_the_shell_binds_only_by_it(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 13;", lib)
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 14;", lib)
         self.assertIn('pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32', lib)
-        self.assertIn("public const uint AbiVersion = 13;", text(PROJECT / "HostLibrary.cs"))
-        self.assertIn("refuses another version than its `AbiVersion` (13 since ADR-D02 B23's Hopf rings; 12 at B18c's "
-                      "view focus; 11 at B18b's two views; 10 at B14's style, 9 at the view shape, 8 at B5)",
+        self.assertIn("public const uint AbiVersion = 14;", text(PROJECT / "HostLibrary.cs"))
+        self.assertIn("refuses another version than its `AbiVersion` (14 since ADR-D02 B17's picks; 13 at B23's Hopf "
+                      "rings; 12 at B18c's view focus; 11 at B18b's two views; 10 at B14's style, 9 at the view shape, 8 at B5)",
                       text(SHELL / "README.md"))
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
         # A sample binds by its state digest and its two pose-array digests (checkpoint C1: pose ids are ranks in a
@@ -1929,7 +1929,7 @@ class D02Rotation(unittest.TestCase):
 
     def test_the_drag_turns_the_camera_only_with_d02(self):
         shell = text(PROJECT / "Shell.cs")
-        self.assertIn("if (D02.ShellJumble.On && _camera.Follow(@event, InOpening))", shell)
+        self.assertIn("var turned = D02.ShellJumble.On && _camera.Follow(@event, InOpening);", shell)
         self.assertIn("if (D02.ShellJumble.On && _camera.Dirty)", shell)
         self.assertEqual(shell.count("SetCamera("), 1)
         camera = text(PROJECT / "D02" / "ShellCamera.cs")

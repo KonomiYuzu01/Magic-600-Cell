@@ -19,6 +19,8 @@ use std::ptr;
 use std::sync::Arc;
 
 use c600_display::jumble;
+use c600_display::pick::{Partial, Projection};
+use c600_display::plan::{ObjectId, StateRef};
 use c600_display::produce::{self, GeometryInput};
 use c600_display::validate::{validate, validate_engine_bundle, EngineBundle, LimitProfile};
 use c600_kernel::json::{self, Value};
@@ -242,7 +244,7 @@ fn int(record: &Value, key: &str) -> Option<i64> {
 
 #[test]
 fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
-    assert_eq!(m6h_abi_version(), 13);
+    assert_eq!(m6h_abi_version(), 14);
     let run = Run::new();
     let folder = fresh("pass");
 
@@ -813,7 +815,8 @@ fn posed_record(bundle: &EngineBundle) -> (u64, u32, [String; 3]) {
 /// LX-4, jumble-on half, at the C interface (a draft): a jumble-on session commits `jumble.on`, and the core adopts
 /// the posed bundle of the solved poses at revision 2 over the home labels: the pose arrays it received are those of
 /// the layer's head (render/1 section 7). A twist key adopts the next poses at revision 3, and the view's publication
-/// for it draws every slot with no pickable instance (J13 stays unsupported).
+/// for it draws every slot, each stamped in the ID pass as its home slot + 1 (ADR-D02 B17; the plan still carries no
+/// instance, J13).
 #[test]
 fn a_jumble_on_session_commits_jumble_on_and_the_core_adopts_its_posed_row() {
     let geometry = GeometryInput::load(&assets()).expect("the geometry");
@@ -835,10 +838,110 @@ fn a_jumble_on_session_commits_jumble_on_and_the_core_adopts_its_posed_row() {
     assert_ne!(run.fake().posed[0].2[0], run.fake().posed[1].2[0], "the press moved pieces to new poses");
     assert_eq!(run.fake().prepared.len(), prepared + 1, "the view is published again");
     let (_, instances, visibility) = run.fake().prepared.last().expect("a preparation").clone();
-    assert!(instances.is_empty() && visibility.iter().all(|&v| v == 1), "every slot drawn, none pickable");
+    assert!(visibility.iter().all(|&v| v == 1), "every slot drawn");
+    assert_eq!(instances.len(), visibility.len(), "every slot pickable");
+    assert!(instances.iter().all(|(&slot, &id)| id as usize == slot + 1), "each slot stamped as its home slot + 1");
     turns.check(None);
     let _ = std::fs::remove_dir_all(&folder);
     let _ = std::fs::remove_dir_all(&layer);
+}
+
+/// A pick at target pixel `(x, y)` of the newest frame, answered by the fake's ID pass.
+fn pick(run: &Run, x: u32, y: u32) -> M6hPick {
+    let mut ticket = 0u64;
+    // SAFETY: a live handle and a writable ticket.
+    assert_eq!(unsafe { m6h_pick_request(run.host, x, y, &mut ticket) }, M6H_OK, "{}", last_error(run.host));
+    let mut out = M6hPick::default();
+    // SAFETY: a live handle and a writable row.
+    assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut out) }, M6H_OK, "{}", last_error(run.host));
+    assert_eq!(out.state, M6H_PICK_PENDING, "the ID pass has not run yet");
+    run.fake().complete();
+    // SAFETY: as above.
+    assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut out) }, M6H_OK, "{}", last_error(run.host));
+    // SAFETY: as above; an answered pick is forgotten.
+    assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut M6hPick::default()) }, M6H_E_INVALID_ARGUMENT);
+    out
+}
+
+/// ADR-D02 B17: in a jumble-on session a pick resolves the sticker under the point to its piece and the slot it
+/// occupies, through the pose projection, at the revision the frame drew. A point with no sticker is no hit.
+#[test]
+fn a_jumble_pick_resolves_to_its_piece() {
+    let run = Run::new();
+    let folder = fresh("jumble-pick");
+    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let (mut turns, layer) = jumble_on("jumble-pick-layer");
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 3));
+    run.settle();
+    assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
+    let Head::Jumbled(exact, state) = turns.head().expect("the head") else { panic!("a jumbled head") };
+    // The posed publication of revision 3 becomes ready and the view installs it.
+    run.fake().complete();
+    run.settle();
+    let frame = run.frame();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (3, 3));
+    // The slots c600-display's pose projection gives (J13), which the host must answer.
+    let projection = jumble::PoseProjection::new(&exact, &state).expect("the pose projection");
+    let subject = StateRef::Snapshot(jumble::revision(&exact, &state, 3));
+    let slot_of = |s: u32| match projection.slot(&subject, &ObjectId::Sticker(s)) {
+        Partial::Total(slot) => slot,
+        _ => M6H_NONE,
+    };
+    // A sticker of a piece the twist moved to another slot, and one it left at home.
+    let moved = (0..exact.model.slot_piece.len() as u32)
+        .find(|&s| {
+            state.pose_of(exact.model.slot_piece[s as usize] as usize).kidx().is_some_and(|k| k != 0) && slot_of(s) != s
+        })
+        .expect("the twist moved a sticker to another slot");
+    let still = (0..exact.model.slot_piece.len() as u32)
+        .find(|&s| state.pose_of(exact.model.slot_piece[s as usize] as usize).kidx() == Some(0))
+        .expect("the twist left a piece at home");
+    run.fake().place(10, 20, moved as usize);
+    run.fake().place(11, 20, still as usize);
+    let hit = pick(&run, 10, 20);
+    assert_eq!((hit.state, hit.hit, hit.engine_revision), (M6H_PICK_READY, 1, 3));
+    assert_eq!((hit.sticker, hit.piece), (moved, exact.model.slot_piece[moved as usize]));
+    assert_eq!(hit.lattice, 1);
+    assert_eq!(hit.slot, slot_of(moved), "the pose projection's slot");
+    assert_ne!(hit.slot, moved, "a turned piece's sticker sits in another slot");
+    let home = pick(&run, 11, 20);
+    assert_eq!((home.hit, home.sticker, home.slot), (1, still, still), "a piece at home occupies its home slots");
+    let empty = pick(&run, 12, 20);
+    assert_eq!((empty.state, empty.hit, empty.sticker, empty.piece), (M6H_PICK_READY, 0, M6H_NONE, M6H_NONE));
+    let _ = std::fs::remove_dir_all(&folder);
+    let _ = std::fs::remove_dir_all(&layer);
+}
+
+/// ADR-D02 B17: a pick whose frame drew a revision the head has since moved past is dropped as stale, never resolved
+/// against the newer state; so is one the core finds stale. Without a frame there is nothing to pick.
+#[test]
+fn a_stale_jumble_pick_is_dropped() {
+    let run = Run::new();
+    let folder = fresh("jumble-pick-stale");
+    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let mut ticket = 0u64;
+    // SAFETY: a live handle and a writable ticket.
+    assert_eq!(unsafe { m6h_pick_request(run.host, 1, 1, &mut ticket) }, M6H_E_UNAVAILABLE, "no frame yet");
+    run.fake().complete();
+    run.settle();
+    let frame = run.frame();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (2, 2));
+    run.fake().place(10, 20, 5);
+    // SAFETY: as above.
+    assert_eq!(unsafe { m6h_pick_request(run.host, 10, 20, &mut ticket) }, M6H_OK, "{}", last_error(run.host));
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 3));
+    run.settle();
+    run.fake().complete();
+    let mut out = M6hPick::default();
+    // SAFETY: a live handle and a writable row.
+    assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut out) }, M6H_OK, "{}", last_error(run.host));
+    assert_eq!((out.state, out.hit, out.piece), (M6H_PICK_STALE, 0, M6H_NONE), "the twist moved the head past the frame");
+    // A point outside the frame is refused before the core is asked; a null ticket is refused.
+    // SAFETY: as above.
+    assert_ne!(unsafe { m6h_pick_request(run.host, 1 << 20, 0, &mut ticket) }, M6H_OK);
+    // SAFETY: as above.
+    assert_eq!(unsafe { m6h_pick_request(run.host, 1, 1, ptr::null_mut()) }, M6H_E_INVALID_ARGUMENT);
+    let _ = std::fs::remove_dir_all(&folder);
 }
 
 /// LX-4's jumble-on fixture (a draft): the product's fixture keys all commit `jumble.twist.menu` after `jumble.on`,

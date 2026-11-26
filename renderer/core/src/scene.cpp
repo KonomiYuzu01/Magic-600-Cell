@@ -815,8 +815,10 @@ struct Scene::Impl {
         auto c = constants(shape, rotation, float(width) / float(height), 0);
         c.poseEnabled = pose_count ? 1u : 0u; c.poseCount = std::max(pose_count, 1u);
         c.cs = view.cell_shrink; c.ss = view.sticker_shrink; c.d4 = view.d4; c.zoom = view.zoom;
-        // ABI 10: the Hopf rings replace the projection chain, its focus included.
+        // ABI 10: the Hopf rings (bit 3) or the ring sheet (bits 3 and 4, B22) replace the projection chain, its focus
+        // included.
         if (view.layout == SA2_LAYOUT_HOPF_RINGS) { c.viewFlags = 8u; return c; }
+        if (view.layout == SA2_LAYOUT_RING_SHEET) { c.viewFlags = 8u | 16u; return c; }
         // ABI 9: the view's focus. Unset, every field keeps W-J's zero and the frame draws as ABI 8.
         if (view.projection == SA2_PROJECTION_ORTHOGRAPHIC) c.viewFlags |= 1u;
         if (view.spread > 1.0f) { c.viewFlags |= 4u; c.focusSpread = view.spread; }
