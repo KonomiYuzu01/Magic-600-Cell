@@ -94,6 +94,20 @@ pub trait CoreAbi {
         let _ = (view, layout);
         Err(Status::UNSUPPORTED)
     }
+    /// ADR-D02 B18's `sa2_transform_set` (added to ABI 10 before any release): the adopted revision's transform, the
+    /// plane's rows u and v, the angle, the moving set (`PIECES` bytes of 0 or 1) and the phase, or `None` to clear
+    /// it. A core without it answers `UNSUPPORTED`.
+    fn transform_set(
+        &mut self,
+        revision: u64,
+        plane: &[[f32; 4]; 2],
+        angle: f32,
+        moving: Option<&[u8]>,
+        phase: f32,
+    ) -> Result<(), Status> {
+        let _ = (revision, plane, angle, moving, phase);
+        Err(Status::UNSUPPORTED)
+    }
     /// ABI 7's `sa2_style_set`: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear
     /// it.
     fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status>;

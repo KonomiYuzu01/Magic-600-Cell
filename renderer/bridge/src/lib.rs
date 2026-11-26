@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 24] = [
+pub const SYMBOLS: [&str; 25] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -39,6 +39,7 @@ pub const SYMBOLS: [&str; 24] = [
     "sa2_frame_panes",
     "sa2_view_focus_set",
     "sa2_view_layout_set",
+    "sa2_transform_set",
 ];
 
 /// The ABI 10 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
@@ -78,6 +79,8 @@ pub struct CoreFunctions {
     pub view_focus_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewFocus) -> i32,
     /// ABI 10: a view's layout.
     pub view_layout_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewLayout) -> i32,
+    /// ADR-D02 B18 (added to ABI 10 before any release): the adopted revision's transform.
+    pub transform_set: unsafe extern "C" fn(*mut c_void, u64, *const f32, *const f32, f32, *const u8, f32) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -305,6 +308,23 @@ impl CoreAbi for DllCore {
         let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewShape);
         // SAFETY: `pointer` is null or a live, sized row.
         Status(unsafe { (self.functions.view_shape_set)(self.context, view, pointer) }).check()
+    }
+
+    fn transform_set(
+        &mut self,
+        revision: u64,
+        plane: &[[f32; 4]; 2],
+        angle: f32,
+        moving: Option<&[u8]>,
+        phase: f32,
+    ) -> Result<(), Status> {
+        if moving.is_some_and(|bytes| bytes.len() != PIECES) {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        let pointer = moving.map_or(std::ptr::null(), <[u8]>::as_ptr);
+        let (u, v) = (plane[0].as_ptr(), plane[1].as_ptr());
+        // SAFETY: `pointer` is null or PIECES readable bytes; `u` and `v` are four readable floats each.
+        Status(unsafe { (self.functions.transform_set)(self.context, revision, u, v, angle, pointer, phase) }).check()
     }
 
     fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {

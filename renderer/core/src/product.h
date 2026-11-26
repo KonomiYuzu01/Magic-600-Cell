@@ -101,6 +101,10 @@ struct ViewShape {
     uint32_t projection = SA2_PROJECTION_PERSPECTIVE, focus_cell = SA2_FOCUS_NONE;
     float focus_cos = -1.0f, spread = 1.0f;
     uint32_t layout = SA2_LAYOUT_CHAIN; // ABI 10: the view's layout (sa2_view_layout_set)
+    // ADR-D02 B18: the transform's turn of the moving pieces, written into a frame's or pane's shape when it is
+    // planned (Product::turn); a view's stored shape never carries one. 0: no piece turns.
+    std::array<float, 4> turn_u{}, turn_v{};
+    float turn = 0.0f;
     bool operator==(const ViewShape&) const = default;
 };
 ViewShape view_shape(const sa2_view_shape* shape); // validates (SA2_E_INVALID_ARGUMENT); NULL gives the defaults
@@ -130,12 +134,13 @@ struct ViewStyle {
 static_assert(sizeof(ViewStyle) == 336);
 ViewStyle view_style(const sa2_view_style* style); // validates (SA2_E_INVALID_ARGUMENT)
 // ABI 7: one revision's piece style, packed per piece as the styled pass reads it (register t17): the fill byte, then
-// the outline byte << 8.
+// the outline byte << 8; ADR-D02 B18: bit 16 marks a moving piece of the transform (t4 in the product passes).
 struct PieceStyle {
     uint64_t revision = 0, version = 0; // version: the style's upload key, never 0
     std::vector<uint32_t> packed; // SA2_PIECES
     std::array<bool, 2> any{}; // per channel: a non-zero byte
     bool dim = false; // a fill byte has SA2_STYLE_DIM
+    bool moving = false; // ADR-D02 B18: a piece has the moving bit
 };
 void validate_piece_style(const uint8_t* bytes, uint32_t channel); // SA2_E_INVALID_ARGUMENT
 void validate_frame_input(const sa2_frame_input* input);
@@ -310,6 +315,10 @@ public:
     const PieceStyle* piece_style() const { return style_ ? &*style_ : nullptr; }
     // Whether a frame with this slot draws styled, and with what (false: the unchanged product pipeline).
     bool styled(uint32_t slot, ViewStyle& out) const;
+    // ADR-D02 B18 (ABI 10): the adopted revision's transform (a NULL mask clears it); an adoption drops it. turn()
+    // writes its turn into a planned frame's or pane's shape.
+    void set_transform(uint64_t revision, const float* u, const float* v, float angle, const uint8_t* mask, float phase);
+    void turn(ViewShape& shape) const;
 
     void check_prepare(const PreparedData& data) const; // removal, epoch, GPU capacity
     uint64_t reserve_ticket() { return next_ticket_++; }
@@ -410,6 +419,8 @@ private:
     HopfTable hopf_; // ABI 10
     std::optional<PieceStyle> style_; // ABI 7: the adopted revision's piece style
     uint64_t style_version_ = 0;
+    struct Turn { std::array<float, 4> u{}, v{}; float angle = 0.0f; };
+    std::optional<Turn> transform_; // ADR-D02 B18: the plane and the drawn angle (phase - 1) * angle
     std::array<std::optional<ViewStyle>, SA2_STYLE_SLOTS> view_styles_; // ABI 7: slots 1..4
     std::map<uint64_t, Pick> picks_;
     Counters counters_;

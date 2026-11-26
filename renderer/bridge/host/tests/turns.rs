@@ -711,6 +711,26 @@ fn jumble_on(name: &str) -> (Turns, String) {
     (turns, folder)
 }
 
+/// ADR-D02 B18: a committed jumble twist carries its certified transform. Before the commit the letter's row names an
+/// engine plane and an angle in (0, pi], and its moving set is exactly the pieces whose pose the commit changes.
+#[test]
+fn a_committed_jumble_twist_carries_its_certified_transform() {
+    let (mut turns, _folder) = jumble_on("jumble-transform");
+    let pose_ids = |turns: &mut Turns| turns.pose_index().expect("the head").1.expect("Jumble on").0;
+    let before = pose_ids(&mut turns);
+    // Menu item 0 is the identity, which turns no plane and has no swept preview; item 1 is a turn.
+    let identity = turns.twist_transform(0, 0).expect("a row").expect("the identity is admissible");
+    assert!(identity.plane.is_none() && identity.angle == 0.0, "the identity turns no plane");
+    let row = turns.twist_transform(0, 1).expect("a row").expect("an admissible twist at the solved poses");
+    assert!(row.plane.is_some(), "the engine names the twist's plane");
+    assert!(row.angle > 0.0 && row.angle <= std::f32::consts::PI, "the angle {} lies in (0, pi]", row.angle);
+    turns.twist_letter(0, 1).expect("the letter commits");
+    let after = pose_ids(&mut turns);
+    let changed: Vec<u32> = (0..before.len()).filter(|&p| before[p] != after[p]).map(|p| p as u32).collect();
+    assert!(!changed.is_empty(), "the twist moved pieces");
+    assert_eq!(row.moving.as_u32(), changed, "the certified moving set is the pieces the commit turned");
+}
+
 /// LX-4, jumble-on half (a draft): a new jumble-on session commits `jumble.on` at once; the router's twist keys then
 /// commit `jumble.twist.menu` with the same menu item as the row's `letter`, its cap and the layer's revision; a
 /// repeat is no press; the retained state stays the one the crossing entered from; and the control at the close
@@ -935,7 +955,11 @@ fn a_stale_jumble_pick_is_dropped() {
     let mut out = M6hPick::default();
     // SAFETY: a live handle and a writable row.
     assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut out) }, M6H_OK, "{}", last_error(run.host));
-    assert_eq!((out.state, out.hit, out.piece), (M6H_PICK_STALE, 0, M6H_NONE), "the twist moved the head past the frame");
+    assert_eq!(
+        (out.state, out.hit, out.piece),
+        (M6H_PICK_STALE, 0, M6H_NONE),
+        "the twist moved the head past the frame"
+    );
     // A point outside the frame is refused before the core is asked; a null ticket is refused.
     // SAFETY: as above.
     assert_ne!(unsafe { m6h_pick_request(run.host, 1 << 20, 0, &mut ticket) }, M6H_OK);

@@ -815,6 +815,9 @@ struct Scene::Impl {
         auto c = constants(shape, rotation, float(width) / float(height), 0);
         c.poseEnabled = pose_count ? 1u : 0u; c.poseCount = std::max(pose_count, 1u);
         c.cs = view.cell_shrink; c.ss = view.sticker_shrink; c.d4 = view.d4; c.zoom = view.zoom;
+        // ADR-D02 B18: the transform turns the moving pieces (their bit in t4) in the plane (u, v); without one theta
+        // keeps W-J's zero and no piece turns.
+        if (view.turn != 0.0f) { c.planeU = view.turn_u; c.planeV = view.turn_v; c.theta = view.turn; }
         // ABI 10: the Hopf rings (bit 3) or the ring sheet (bits 3 and 4, B22) replace the projection chain, its focus
         // included.
         if (view.layout == SA2_LAYOUT_HOPF_RINGS) { c.viewFlags = 8u; return c; }
@@ -953,7 +956,7 @@ struct Scene::Impl {
     void product_draw(ID3D12GraphicsCommandList* list, ID3D12PipelineState* pipeline, Buffer& constants_buffer, ProductGpu::EngineCopy& copy,
                       uint64_t set_ticket, D3D12_CPU_DESCRIPTOR_HANDLE rtv, UINT width, UINT height, const float* colour, const D3D12_RECT* pixel,
                       const Buffer* style = nullptr, const Buffer* style_constants = nullptr, const D3D12_RECT* area = nullptr,
-                      bool clear = true) {
+                      bool clear = true, bool turning = false) {
         auto& p = product_gpu();
         const auto [visible, instances] = product_set(set_ticket);
         list->SetPipelineState(pipeline); list->SetGraphicsRootSignature(style ? p.styled_root.Get() : p.root.Get());
@@ -964,7 +967,8 @@ struct Scene::Impl {
         list->SetGraphicsRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress());
         // ABI 10: the Hopf table, or any live buffer while no view names the rings (the shaders read it only then).
         list->SetGraphicsRootShaderResourceView(style ? 22 : 20, (p.hopf.resource ? p.hopf : geometry[0]).resource->GetGPUVirtualAddress());
-        const Buffer* srv[] = {&geometry[0], &geometry[1], &geometry[2], &geometry[3], &geometry[4], &copy.labels, &geometry[5]};
+        // ADR-D02 B18: a turning frame reads the moving bit from the copy's piece style at t4.
+        const Buffer* srv[] = {&geometry[0], &geometry[1], &geometry[2], &geometry[3], turning ? &copy.style : &geometry[4], &copy.labels, &geometry[5]};
         for (UINT i = 0; i < 7; ++i) list->SetGraphicsRootShaderResourceView(i + 1, srv[i]->resource->GetGPUVirtualAddress());
         // t7..t16: slot -> piece, pose index, rows, lattice, destination, overlay points, straddles, offsets, visibility, instance IDs.
         const Buffer* additional[] = {&extra[0], &copy.pose[0], &copy.pose[1], &copy.pose[2], &extra[1], &extra[2], &extra[3], &extra[4], visible, instances};
@@ -1467,7 +1471,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
         style = plan.style ? &copy.style : &p.no_instances;
     }
     g.product_draw(list, pso, p.cb[ring], copy, plan.set_ticket, target, input.viewport_width, input.viewport_height, colour, nullptr,
-                   style, style ? &p.style_cb[ring] : nullptr);
+                   style, style ? &p.style_cb[ring] : nullptr, nullptr, true, plan.shape.turn != 0.0f);
     list->EndQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring + 1);
     list->ResolveQueryData(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring, 2, p.query_read.resource.Get(), ring * QueryStride);
@@ -1545,7 +1549,7 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
         const D3D12_RECT area{LONG(pane.pane.x), LONG(pane.pane.y), LONG(pane.pane.x + int64_t(pane.pane.width)), LONG(pane.pane.y + int64_t(pane.pane.height))};
         list->BeginQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
         g.product_draw(list, pso, p.pane_cb[slot], copy, pane.set_ticket, target, input.viewport_width, input.viewport_height, colour, nullptr,
-                       style, style ? &p.pane_style_cb[slot] : nullptr, &area, i == 0);
+                       style, style ? &p.pane_style_cb[slot] : nullptr, &area, i == 0, pane.shape.turn != 0.0f);
         list->EndQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
         list->ResolveQueryData(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot), 1, p.pane_read.resource.Get(),
                                uint64_t(ring) * 512 + i * 128);
@@ -1590,7 +1594,7 @@ uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12Comm
         const Buffer* style = input.styled ? (input.piece_style ? &copy.style : &p.no_instances) : nullptr;
         g.product_draw(list, pipeline, stored.constants, copy, input.set_ticket,
                        p.id_heap->GetCPUDescriptorHandleForHeapStart(), input.width, input.height, zero, &pixel, style,
-                       style ? &stored.style : nullptr, pane ? &area : nullptr);
+                       style ? &stored.style : nullptr, pane ? &area : nullptr, true, input.shape.turn != 0.0f);
         g.texture_barrier(list, p.id_target.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
         D3D12_TEXTURE_COPY_LOCATION destination{}; destination.pResource = stored.read.resource.Get();
         destination.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;

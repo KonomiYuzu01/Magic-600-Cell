@@ -102,8 +102,8 @@ use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::{
-    piece_style_valid, Sa2Pane, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES, STYLE_CHANNEL_FILL,
-    STYLE_CHANNEL_OUTLINE, STYLE_SLOTS, TARGET_SURFACE,
+    piece_style_valid, Sa2Pane, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES,
+    STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_SLOTS, TARGET_SURFACE,
 };
 use c600_render::backend::PickTicket;
 use c600_render::{DisplayTime, PaneSpec, RenderBackend};
@@ -887,7 +887,10 @@ impl ShellHost {
     fn resolve_sticker(&mut self, sticker: u32) -> Result<(u32, u32, bool), Failure> {
         let head = self.turns()?.head().map_err(|e| (M6H_E_SESSION, e))?;
         let Head::Jumbled(exact, state) = head else {
-            return Err((M6H_E_HOST, "a hit on a sticker without Jumble: the retained view stamps no sticker".to_owned()));
+            return Err((
+                M6H_E_HOST,
+                "a hit on a sticker without Jumble: the retained view stamps no sticker".to_owned(),
+            ));
         };
         let piece = *exact
             .model
@@ -1297,7 +1300,10 @@ pub unsafe extern "C" fn m6h_set_view_focus(
                 return Err((M6H_E_INVALID_ARGUMENT, format!("view {view} is not an open view of this host")));
             }
             if !focus.in_range() {
-                return Err((M6H_E_INVALID_ARGUMENT, "a view focus value is not finite or out of its range".to_owned()));
+                return Err((
+                    M6H_E_INVALID_ARGUMENT,
+                    "a view focus value is not finite or out of its range".to_owned(),
+                ));
             }
             let focus = (focus != Sa2ViewFocus::defaults()).then_some(focus);
             shell.host.backend.set_view_focus(id, focus).map_err(host_error)
@@ -1402,7 +1408,10 @@ pub unsafe extern "C" fn m6h_set_view_layout(handle: *mut ShellHost, view: u64, 
                 return Err((M6H_E_INVALID_ARGUMENT, format!("view {view} is not an open view of this host")));
             }
             if row.is_some_and(|l| l.struct_size as usize != std::mem::size_of::<Sa2ViewLayout>() || !l.in_range()) {
-                return Err((M6H_E_INVALID_ARGUMENT, "a view layout row has another size or a value out of range".to_owned()));
+                return Err((
+                    M6H_E_INVALID_ARGUMENT,
+                    "a view layout row has another size or a value out of range".to_owned(),
+                ));
             }
             shell.host.backend.set_view_layout(id, row.as_ref()).map_err(host_error)
         })
@@ -1470,6 +1479,99 @@ pub unsafe extern "C" fn m6h_set_piece_style(
                 ));
             }
             shell.host.backend.set_piece_style(revision, pieces.as_deref(), channel).map_err(host_error)
+        })
+    }
+}
+
+/// Sets the adopted revision's transform (ADR-D02 B18; the core's `sa2_transform_set`, added to ABI 10 before any
+/// release): `plane` holds the engine-named plane's u then v (8 floats), `angle` the twist's angle (R(angle) turns u
+/// toward v and is the twist), `moving` one byte per piece (177,120; 1 for a piece that turns) and `phase` 0..1. The
+/// moving pieces draw turned by R((phase - 1) * angle): phase 1 draws the revision's own poses and phase 0 the poses
+/// before the twist that entered it, so a sweep runs the phase from 0 to 1 after a commit, and a turn preview of a
+/// twist not yet committed passes the negated angle at phase 0. A null `moving` with `count` 0 clears it. The core
+/// drops it at the next adoption. A wrong count, a byte other than 0 or 1, or a value out of range answers
+/// [`M6H_E_INVALID_ARGUMENT`] and changes nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `plane` is null or points to 8 readable floats; `moving`
+/// is null or points to `count` readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_transform(
+    handle: *mut ShellHost,
+    plane: *const f32,
+    angle: f32,
+    moving: *const u8,
+    count: u32,
+    phase: f32,
+) -> i32 {
+    // SAFETY: `count` readable bytes and 8 readable floats (the contract).
+    let bytes = (!moving.is_null()).then(|| unsafe { std::slice::from_raw_parts(moving, count as usize) });
+    // SAFETY: the contract.
+    let rows = (!plane.is_null()).then(|| unsafe { std::slice::from_raw_parts(plane, 8) });
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let revision = shell.revision;
+            let plane = match (bytes, rows) {
+                (None, _) if count == 0 => [[0.0; 4]; 2],
+                (Some(bytes), Some(rows)) if bytes.len() == PIECES => {
+                    [[rows[0], rows[1], rows[2], rows[3]], [rows[4], rows[5], rows[6], rows[7]]]
+                }
+                _ => {
+                    return Err((
+                        M6H_E_INVALID_ARGUMENT,
+                        "a transform is a plane with one byte per piece, or null with count 0".to_owned(),
+                    ))
+                }
+            };
+            shell.host.backend.set_transform(revision, &plane, angle, bytes, phase).map_err(host_error)
+        })
+    }
+}
+
+/// The certified transform row (ADR-D02 B18, row J03) of item `item` of the pinned menu at cap `cap` at the session's
+/// head, without committing it ([`turns::Turns::twist_transform`]). On [`M6H_OK`] `out_status` is 1 and the row is
+/// written: `out_plane` (8 floats, u then v), `out_angle` (in (0, pi]) and `out_moving` (177,120 bytes, 1 for a moving
+/// piece); or it is 0 and nothing else is written, when the twist is not admissible there (blocked, uncertain, refused
+/// or protected) or turns no plane: no moving set is guessed, so a caller draws no sweep and no preview. A session
+/// without Jumble answers [`M6H_E_SESSION`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `out_plane` points to 8 writable floats, `out_angle` and
+/// `out_status` to one writable value each and `out_moving` to 177,120 writable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_twist_transform(
+    handle: *mut ShellHost,
+    cap: u32,
+    item: u64,
+    out_plane: *mut f32,
+    out_angle: *mut f32,
+    out_moving: *mut u8,
+    out_status: *mut u32,
+) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if out_plane.is_null() || out_angle.is_null() || out_moving.is_null() || out_status.is_null() {
+                return Err((M6H_E_INVALID_ARGUMENT, "an output is null".to_owned()));
+            }
+            let row = shell.turns()?.twist_transform(cap, item).map_err(|e| (M6H_E_SESSION, e))?;
+            let Some((row, plane)) = row.and_then(|row| row.plane.as_ref().map(|p| p.as_f32()).map(|p| (row, p)))
+            else {
+                out_status.write(0);
+                return Ok(());
+            };
+            let mut moving = vec![0u8; PIECES];
+            for piece in row.moving.as_u32() {
+                moving[piece as usize] = 1;
+            }
+            std::ptr::copy_nonoverlapping(plane.as_ptr(), out_plane, 8);
+            std::ptr::copy_nonoverlapping(moving.as_ptr(), out_moving, PIECES);
+            out_angle.write(row.angle);
+            out_status.write(1);
+            Ok(())
         })
     }
 }

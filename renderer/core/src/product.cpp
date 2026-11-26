@@ -297,6 +297,7 @@ uint64_t Product::adopt(EngineImage image) {
     state(!image_ || image.revision > image_->revision, "engine revision must increase");
     image_ = std::move(image);
     style_.reset(); // ABI 7: a piece style is bound to its revision
+    transform_.reset(); // ADR-D02 B18: so is a transform
     return image_->revision;
 }
 
@@ -330,8 +331,56 @@ void Product::set_style(uint64_t revision, const uint8_t* bytes, uint32_t channe
     }
     style_->any[channel] = any;
     if (channel == SA2_STYLE_CHANNEL_FILL) style_->dim = dim;
-    if (!style_->any[0] && !style_->any[1] && !style_->dim) { style_.reset(); return; }
+    if (!style_->any[0] && !style_->any[1] && !style_->dim && !style_->moving) { style_.reset(); return; }
     style_->version = ++style_version_;
+}
+// ADR-D02 B18 (ABI 10): device-free, as the piece style. The moving bit shares the style's word per piece (bit 16), so
+// a new moving set uploads with the copy; a changed phase, plane or angle changes only the frame's constants.
+void Product::set_transform(uint64_t revision, const float* u, const float* v, float angle, const uint8_t* mask, float phase) {
+    if (mask) {
+        argument(u != nullptr && v != nullptr, "a transform's plane is NULL");
+        double uu = 0, vv = 0, uv = 0;
+        for (int i = 0; i < 4; ++i) {
+            argument(std::isfinite(u[i]) && std::isfinite(v[i]), "a transform's plane is not finite");
+            uu += double(u[i]) * u[i]; vv += double(v[i]) * v[i]; uv += double(u[i]) * v[i];
+        }
+        const double tolerance = SA2_TRANSFORM_PLANE_TOLERANCE;
+        argument(std::abs(uu - 1) <= tolerance && std::abs(vv - 1) <= tolerance && std::abs(uv) <= tolerance,
+                 "a transform's plane is not two orthogonal unit vectors");
+        const auto within = [](float value, float low, float high) { return std::isfinite(value) && value >= low && value <= high; };
+        argument(within(angle, -3.14159274f, 3.14159274f), "a transform's angle must be finite and within -pi..pi");
+        argument(within(phase, 0.0f, 1.0f), "a transform's phase must be finite and within 0..1");
+        for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) argument(mask[piece] <= 1, "a moving byte is not 0 or 1");
+    }
+    state(image_.has_value(), "no engine image adopted");
+    argument(revision == image_->revision, "a transform names a revision other than the adopted one");
+    if (!mask) {
+        transform_.reset();
+        if (!style_ || !style_->moving) return;
+    } else if (!style_) {
+        style_ = PieceStyle{revision, 0, std::vector<uint32_t>(SA2_PIECES, 0u), {}, false};
+    }
+    bool any = false, changed = false;
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        const uint32_t bit = mask && mask[piece] ? 0x10000u : 0u;
+        auto& packed = style_->packed[piece];
+        changed = changed || (packed & 0x10000u) != bit;
+        packed = (packed & ~0x10000u) | bit;
+        any = any || bit != 0;
+    }
+    style_->moving = any;
+    if (any) {
+        Turn t; std::copy(u, u + 4, t.u.begin()); std::copy(v, v + 4, t.v.begin()); t.angle = (phase - 1.0f) * angle;
+        transform_ = t;
+    } else {
+        transform_.reset();
+    }
+    if (!style_->any[0] && !style_->any[1] && !style_->dim && !style_->moving) { style_.reset(); return; }
+    if (changed || style_->version == 0) style_->version = ++style_version_;
+}
+void Product::turn(ViewShape& shape) const {
+    if (!transform_ || transform_->angle == 0.0f) return;
+    shape.turn_u = transform_->u; shape.turn_v = transform_->v; shape.turn = transform_->angle;
 }
 void Product::set_view_style(uint32_t slot, const sa2_view_style* style) {
     argument(slot >= 1 && slot <= SA2_STYLE_SLOTS, "a style slot is 1..SA2_STYLE_SLOTS");
@@ -491,6 +540,7 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
     out.image = &*image_;
     out.pose_count = image_->pose_count;
     out.shape = shape(input.view);
+    turn(out.shape); // ADR-D02 B18
     if (style_) { out.style = &style_->packed; out.style_version = style_->version; }
     out.styled = styled(1, out.view_style); // ABI 7: a one-view frame uses style slot 1
     if (input.resource_set) {
@@ -548,6 +598,7 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         made.pane = pane;
         made.publication_generation = i == 0 ? input.publication_generation : 0;
         made.shape = shape(pane.view);
+        turn(made.shape); // ADR-D02 B18
         made.styled = pane.style != 0 && styled(pane.style, made.view_style);
         if (pane.resource_set) {
             const Entry* entry = set_entry(pane.resource_set);

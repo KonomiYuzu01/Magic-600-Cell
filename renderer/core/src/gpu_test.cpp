@@ -1082,6 +1082,73 @@ void product_poses(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ADR-D02 B18's WARP check (--warp --sweep): a committed twist's transform. Revision 1 has every piece at the identity;
+// revision 2 is entered by a twist that turns the even pieces by R, a rotation of the plane (e0, e1). With the
+// transform of that twist on revision 2, phase 1 draws revision 2 byte-identically, phase 0 draws revision 1 (within
+// rounding), a half phase draws neither, a cleared transform draws revision 2 again, and refused calls change nothing.
+void product_sweep(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    const auto all = pose_set(harness, 1, std::vector<uint8_t>(SA2_SLOTS, 1));
+    const double angle = 0.9;
+    const Rows R = double_rotation(0, 1, angle, 2, 3, 0), Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    std::vector<float> table(32, 0.0f);
+    for (int i = 0; i < 4; ++i) table[i * 5] = 1.0f;
+    for (int i = 0; i < 16; ++i) table[16 + i] = float(R[i]);
+    std::vector<int32_t> posed(SA2_PIECES);
+    std::vector<uint8_t> moving(SA2_PIECES);
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) { posed[piece] = int32_t(piece % 2 == 0); moving[piece] = uint8_t(piece % 2 == 0); }
+    PoseFrames frames{harness};
+    adopt_poses(harness, 1, std::vector<int32_t>(SA2_PIECES, 0), std::vector<float>(table.begin(), table.begin() + 16), {0});
+    const auto before = frames.draw(1, 1, all, Q);
+    adopt_poses(harness, 2, posed, table, {0, -1});
+    const auto after = frames.draw(2, 1, all, Q);
+    const float u[4] = {1, 0, 0, 0}, v[4] = {0, 1, 0, 0};
+    auto* ctx = harness.ctx;
+    const auto refused = [&](int32_t status, const char* what) { expect(status == SA2_E_INVALID_ARGUMENT, what); };
+    refused(sa2_transform_set(ctx, 1, u, v, float(angle), moving.data(), 0.0f), "a transform of another revision was not refused");
+    refused(sa2_transform_set(ctx, 2, u, u, float(angle), moving.data(), 0.0f), "a degenerate plane was not refused");
+    refused(sa2_transform_set(ctx, 2, u, v, float(angle), moving.data(), 1.5f), "a phase above 1 was not refused");
+    refused(sa2_transform_set(ctx, 2, u, v, 4.0f, moving.data(), 0.0f), "an angle above pi was not refused");
+    std::vector<uint8_t> bad(moving); bad[3] = 2;
+    refused(sa2_transform_set(ctx, 2, u, v, float(angle), bad.data(), 0.0f), "a moving byte of 2 was not refused");
+    expect(frames.draw(2, 1, all, Q) == after, "a refused transform changed the frame");
+    api(ctx, sa2_transform_set(ctx, 2, u, v, float(angle), moving.data(), 1.0f));
+    const auto one = frames.draw(2, 1, all, Q);
+    api(ctx, sa2_transform_set(ctx, 2, u, v, float(angle), moving.data(), 0.0f));
+    const auto zero = frames.draw(2, 1, all, Q);
+    api(ctx, sa2_transform_set(ctx, 2, u, v, float(angle), moving.data(), 0.5f));
+    const auto half = frames.draw(2, 1, all, Q);
+    api(ctx, sa2_transform_set(ctx, 2, u, v, float(angle), nullptr, 0.0f));
+    const auto cleared = frames.draw(2, 1, all, Q);
+    const auto background = before[0];
+    const auto covered = [&](const std::vector<uint32_t>& image) {
+        return uint64_t(std::count_if(image.begin(), image.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    const auto differing = [](const std::vector<uint32_t>& x, const std::vector<uint32_t>& y) {
+        uint64_t count = 0;
+        for (size_t i = 0; i < x.size(); ++i)
+            for (int shift = 0; shift < 32; shift += 8)
+                if (std::abs(int((x[i] >> shift) & 0xff) - int((y[i] >> shift) & 0xff)) > 2) { ++count; break; }
+        return count;
+    };
+    const auto cover = covered(before), apart = differing(before, after), back = differing(zero, before);
+    const auto half_before = differing(half, before), half_after = differing(half, after);
+    std::cout << "transform: covered " << cover << "; revisions differ at " << apart << ", phase 0 vs revision 1 at " << back
+              << ", phase 0.5 vs revision 1 at " << half_before << " and vs revision 2 at " << half_after << '\n' << std::flush;
+    expect(cover >= uint64_t(harness.width) * harness.height / 20, "a transform-check frame covers less than 5% of the target");
+    expect(apart * 5 >= cover, "the twist moved too little to check (under 20% of the covered pixels differ)");
+    expect(one == after, "phase 1 does not draw the revision byte-identically");
+    expect(back * 100 <= cover, "phase 0 does not draw the revision before the twist (over 1% differ)");
+    expect(half_before * 10 >= cover && half_after * 10 >= cover, "phase 0.5 draws like an endpoint (under 10% differ)");
+    expect(cleared == after, "a cleared transform does not draw the revision byte-identically");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
 // ABI 6's WARP check (--warp --shape): a view's shape. The default shape draws byte-identically to no call, a
 // smaller sticker shrink covers fewer pixels, the owner's opening values draw, and a refused shape changes nothing.
 void product_shape(const Options& options) {
@@ -2006,6 +2073,12 @@ void product_hopf(const Options& options) {
     api(ctx, sa2_scene_unload(ctx));
     expect(sa2_view_layout_set(ctx, 1, &layout) == SA2_E_WRONG_STATE, "a layout was set without a loaded scene");
     harness.finish(options.debug);
+}
+
+// ADR-D02 B18: --warp --sweep. Only WARP; parse refuses any other mode.
+void run_sweep(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the transform check runs on WARP only");
+    suite.check("transform warp", [&] { product_sweep(options); });
 }
 
 // ABI 10: --warp --hopf FILE. Only WARP; parse refuses any other mode.

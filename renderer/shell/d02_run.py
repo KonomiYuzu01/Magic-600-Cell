@@ -751,14 +751,51 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
     return problems
 
 
-EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
+def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B18's part for B20: the default cap 0 (blocked in wj-ia-300) has no twist row; after `> jumble.cap.name 150`
+    the row of item 1 has a unit orthogonal plane, an angle in (0, pi] and moves exactly cap 150's inside set."""
+    import hashlib
+    import math
+    steps = ["start", "wait 3000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 2500 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None or not (SAMPLES / state / "cap-150.json").is_file():
+        return ["the twist-row script needs a sample state with cap 150's record"]
+    rows = load(SAMPLES / state / "rim.json")["rows"]
+    problems = []
+    before, named = dumps[1].get("turn"), dumps[5].get("turn")
+    if before is None or named is None:
+        return ["a dump has no turn row"]
+    if before.get("cap") != 0 or before.get("code") != 0:
+        problems.append(f"step 1: the turn row reads cap {before.get('cap')} with code {before.get('code')}, not cap 0")
+    if (rows[0]["status"] == "admissible") != (before.get("status") == 1):
+        problems.append(f"step 1: cap 0 is {rows[0]['status']} but the turn row's status is {before.get('status')}")
+    if named.get("cap") != 150 or named.get("code") != 0 or named.get("status") != 1:
+        return problems + [f"step 5: the turn row is {named}"]
+    inside = overlay_mask(load(SAMPLES / state / "cap-150.json")["masks"]["inside"], 177_120)
+    packed = bytearray((len(inside) + 7) // 8)
+    for piece, bit in enumerate(inside):
+        if bit:
+            packed[piece >> 3] |= 1 << (piece & 7)
+    if named["moving"] != sum(inside) or named["moving_sha256"] != hashlib.sha256(bytes(packed)).hexdigest():
+        problems.append(f"step 5: the row moves {named['moving']} pieces, not cap 150's inside set of {sum(inside)}")
+    if not 0 < named["angle"] <= math.pi + 1e-6:
+        problems.append(f"step 5: the angle {named['angle']} is outside (0, pi]")
+    u, v = named["plane"][:4], named["plane"][4:]
+    dot = lambda a, b: sum(x * y for x, y in zip(a, b))
+    if abs(dot(u, u) - 1) > 1e-3 or abs(dot(v, v) - 1) > 1e-3 or abs(dot(u, v)) > 1e-3:
+        problems.append(f"step 5: the plane {named['plane']} is not unit and orthogonal")
+    return problems
+
+
+EXPECT = {"twist-row": expect_twist_row, "smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
           "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
           "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band,
           "fit-2000": expect_fit, "fit-1280": lambda dumps, source, state: expect_fit(dumps, source, state, vertical=False)}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are. The twist scripts (bind and
 # two-views) run in sample mode as well, so they show that J reaches the session's router there too.
-ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
+ON_FIXTURE = {"twist-row", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
 IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"}
 
 

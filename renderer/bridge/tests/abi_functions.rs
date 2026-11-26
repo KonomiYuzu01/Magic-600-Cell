@@ -139,6 +139,7 @@ fn every_function_of_the_table_has_the_header_signature() {
         ty(&f.frame_panes),
         ty(&f.view_focus_set),
         ty(&f.view_layout_set),
+        ty(&f.transform_set),
     ];
     assert_eq!(fields.len(), SYMBOLS.len());
     // Controls: the comparison sees whole signatures, array parameters as pointers and `void` as no parameters.
