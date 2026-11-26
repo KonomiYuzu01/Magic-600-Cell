@@ -188,7 +188,11 @@ internal static partial class Program
             ("CostValidationRefusals", CostRefusals),
             ("ThemeSetAllStructureMatchesAndDiffers", ThemeSets),
             ("ThemeSetFieldOfViewIsStructure", ThemeFieldOfView),
-            ("ReadmeFormatsParametersAndPrivacy", ReadmeContract)
+            ("ReadmeFormatsParametersAndPrivacy", ReadmeContract),
+            ("D02RolesExistInBothThemes", D02RolesExistInBothThemes),
+            ("D02MotionRowsStaticUnderReducedMotion", D02MotionRowsStaticUnderReducedMotion),
+            ("D02DraftRowsAbsentFromTable", D02DraftRowsAbsentFromTable),
+            ("D02WordsMatchRecord", D02WordsMatchRecord)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

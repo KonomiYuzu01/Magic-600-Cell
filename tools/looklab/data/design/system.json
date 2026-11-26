@@ -645,6 +645,166 @@
     "syntax.comment": {
       "group": "syntax",
       "meaning": "A comment."
+    },
+    "numeral.undefined": {
+      "group": "state",
+      "meaning": "An exact numeral or mark set whose input is not defined, such as ν off the lattice: never zero, stale, pending or unknown (ADR-D01 revision 6, J-3).",
+      "cue": "a dotted box with no numeral"
+    },
+    "commit.bar.whole_only": {
+      "group": "encoding",
+      "meaning": "Commit bar: a whole-only preview; the prefix action is unavailable and the bar states the reason (ADR-D01 revision 6).",
+      "cue": "the words \"Whole only\" and one bracket over the whole word"
+    },
+    "mark.practice": {
+      "group": "encoding",
+      "meaning": "The practice mark on a view border (ADR-D01 revision 4).",
+      "cue": "a tab on the view border's corner"
+    },
+    "mark.jumble": {
+      "group": "encoding",
+      "meaning": "The Jumble mark on every view border while Jumble is on, differing in shape from the practice mark (ADR-D02.6).",
+      "cue": "a notched corner on the view border"
+    },
+    "slot.tool.empty": {
+      "group": "state",
+      "meaning": "Tool slot: empty; nothing was requested (ADR-D01.61, revision 6).",
+      "cue": "a dash in the slot"
+    },
+    "slot.tool.pending": {
+      "group": "state",
+      "meaning": "Tool slot: a job runs for the current revision and the latest release.",
+      "cue": "an hourglass glyph"
+    },
+    "slot.tool.ready": {
+      "group": "state",
+      "meaning": "Tool slot: a completed, matching result with its coverage.",
+      "cue": "a solid bar at the slot's left edge"
+    },
+    "slot.tool.stale": {
+      "group": "state",
+      "meaning": "Tool slot: the result was computed before the current revision.",
+      "cue": "a dashed frame and the word \"stale\""
+    },
+    "slot.tool.refused": {
+      "group": "state",
+      "meaning": "Tool slot: the request was refused; the failing fact is named.",
+      "cue": "the failing fact as text after a stop glyph"
+    },
+    "slot.tool.budget_stopped": {
+      "group": "state",
+      "meaning": "Tool slot: the job reached its budget; no negative claim is made.",
+      "cue": "a stop bar at the line's end and the words \"within budget\""
+    },
+    "slot.tool.error": {
+      "group": "state",
+      "meaning": "Tool slot: the job failed, or a completed result came without coverage; the reason is shown.",
+      "cue": "a cross glyph and the reason as text"
+    },
+    "pattern.cap.blocked": {
+      "group": "encoding",
+      "meaning": "Cap class: blocked; no N_c is shown (ADR-D02.27).",
+      "cue": "a dark solid ground with a bar glyph that is not a slash"
+    },
+    "pattern.cap.closed": {
+      "group": "encoding",
+      "meaning": "Cap class: closed.",
+      "cue": "a plain cell"
+    },
+    "pattern.cap.at_floor": {
+      "group": "encoding",
+      "meaning": "Cap class: at floor (N_c = F_c > 0).",
+      "cue": "a corner bracket"
+    },
+    "pattern.cap.above_floor": {
+      "group": "encoding",
+      "meaning": "Cap class: above floor.",
+      "cue": "the N_c numeral only"
+    },
+    "pattern.cut.inside_only": {
+      "group": "encoding",
+      "meaning": "Cut cell in the slice: inside only (ADR-D02.27).",
+      "cue": "a \"/\" hatch"
+    },
+    "pattern.cut.outside_only": {
+      "group": "encoding",
+      "meaning": "Cut cell in the slice: outside only.",
+      "cue": "a \"\\\" hatch"
+    },
+    "pattern.preview": {
+      "group": "encoding",
+      "meaning": "The turn preview of the cut slice: a ghost of the inside layer (ADR-D02.17).",
+      "cue": "a ghost at reduced opacity"
+    },
+    "tint.jumble.contact_class.1": {
+      "group": "encoding",
+      "meaning": "Contact class 1 of an alignment domain, on the outline channel (ADR-D02.21).",
+      "cue": "the class numeral 1 in Tier 1"
+    },
+    "tint.jumble.contact_class.2": {
+      "group": "encoding",
+      "meaning": "Contact class 2 of an alignment domain, on the outline channel.",
+      "cue": "the class numeral 2 in Tier 1"
+    },
+    "tint.jumble.contact_class.3": {
+      "group": "encoding",
+      "meaning": "Contact class 3 of an alignment domain, on the outline channel.",
+      "cue": "the class numeral 3 in Tier 1"
+    },
+    "tint.jumble.contact_class.4": {
+      "group": "encoding",
+      "meaning": "Contact class 4 of an alignment domain, on the outline channel.",
+      "cue": "the class numeral 4 in Tier 1"
+    },
+    "tint.jumble.contact_class.5": {
+      "group": "encoding",
+      "meaning": "Contact class 5 of an alignment domain, on the outline channel.",
+      "cue": "the class numeral 5 in Tier 1"
+    },
+    "tint.jumble.contact_class.6": {
+      "group": "encoding",
+      "meaning": "Contact class 6 of an alignment domain, on the outline channel.",
+      "cue": "the class numeral 6 in Tier 1"
+    },
+    "tint.jumble.contact_class.overflow": {
+      "group": "encoding",
+      "meaning": "Contact class overflow: a state that needs more than six classes; never reuses a class across a contact, and states its count.",
+      "cue": "a double outline and the overflow count"
+    },
+    "tint.jumble.height.2": {
+      "group": "encoding",
+      "meaning": "Height ramp, step 2: one neutral-hue lightness ramp over the pieces' heights (ADR-D02.23).",
+      "cue": "the height numeral in Tier 1"
+    },
+    "tint.jumble.height.4": {
+      "group": "encoding",
+      "meaning": "Height ramp, step 4.",
+      "cue": "the height numeral in Tier 1"
+    },
+    "tint.jumble.height.6": {
+      "group": "encoding",
+      "meaning": "Height ramp, step 6.",
+      "cue": "the height numeral in Tier 1"
+    },
+    "tint.jumble.height.above": {
+      "group": "encoding",
+      "meaning": "Height ramp, the overflow step above 6, carrying the largest height's numeral.",
+      "cue": "the largest height's numeral"
+    },
+    "material.exposed_face": {
+      "group": "encoding",
+      "meaning": "An exposed face: a plain neutral matte, its lightness outside the sticker band, with no status pattern (ADR-D02.25).",
+      "cue": "matte, with no pattern"
+    },
+    "material.exposed_face.tinted": {
+      "group": "encoding",
+      "meaning": "An exposed face tinted with its piece's contact class, when the researcher turns it on.",
+      "cue": "the contact class numeral on inspect"
+    },
+    "state.exposed_face.unavailable": {
+      "group": "state",
+      "meaning": "The exposed-face geometry does not exist yet: nothing is drawn in the hole.",
+      "cue": "the words \"exposed faces unavailable\" on the view border and in Tier 1"
     }
   },
   "components": {

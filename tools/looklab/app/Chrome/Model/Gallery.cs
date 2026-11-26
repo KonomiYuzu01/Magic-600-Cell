@@ -10,25 +10,33 @@ namespace Magic600.Chrome;
 // The motion table (ADR-D01.55, ADR-D01.56): every motion of the frame with its meaning, a duration token, a
 // curve token and the static picture that says the same without moving. A sound cue is a slot only: an id with
 // its visual equivalent; no audio is played. No entry differs with whether a check result is good or bad.
-public sealed record MotionEntry(string Id, string Meaning, string Duration, string Curve, string Static, string? Cue);
+// Version 2 (ADR-D02.37) adds the Jumble rows and a reserved row that is off: it is listed, never played.
+public sealed record MotionEntry(string Id, string Meaning, string Duration, string Curve, string Static, string? Cue, bool Off = false);
 
 public sealed class MotionTable
 {
+    public int Version { get; }
     public IReadOnlyList<MotionEntry> Entries { get; }
     public MotionEntry this[string id] => Entries.First(e => e.Id == id);
 
-    private MotionTable(IReadOnlyList<MotionEntry> entries) { Entries = entries; }
+    private MotionTable(int version, IReadOnlyList<MotionEntry> entries) { Version = version; Entries = entries; }
 
     public static MotionTable Parse(string text, DesignSystem system)
     {
-        using JsonDocument d = J.Parse(text); JsonElement root = J.Root(d, "magic600-design-motion", "motions");
+        using JsonDocument d = J.Parse(text); JsonElement root = d.RootElement;
+        J.Keys(root, "document", "format", "version", "motions");
+        if (J.Text(root, "format") != "magic600-design-motion") throw J.Error("format", "expected magic600-design-motion");
+        if (!root.GetProperty("version").TryGetInt32(out int version) || version is not (1 or 2)) throw J.Error("version", "only versions 1 and 2 are supported");
         var entries = new List<MotionEntry>();
         foreach (JsonElement m in root.GetProperty("motions").EnumerateArray())
         {
-            J.Keys(m, "motion", "id", "meaning", "duration", "curve", "static", "cue");
+            JsonElement o = default;
+            bool off = m.ValueKind == JsonValueKind.Object && m.TryGetProperty("off", out o);
+            if (off && (version < 2 || o.ValueKind != JsonValueKind.True)) throw J.Error("off", "a reserved row is a version 2 key and only true");
+            J.Keys(m, "motion", off ? new[] { "id", "meaning", "duration", "curve", "static", "cue", "off" } : new[] { "id", "meaning", "duration", "curve", "static", "cue" });
             string id = J.Text(m, "id");
             var entry = new MotionEntry(id, J.Text(m, "meaning"), J.Text(m, "duration"), J.Text(m, "curve"), J.Text(m, "static"),
-                m.GetProperty("cue").ValueKind == JsonValueKind.Null ? null : J.Text(m, "cue"));
+                m.GetProperty("cue").ValueKind == JsonValueKind.Null ? null : J.Text(m, "cue"), off);
             if (entries.Any(e => e.Id == id)) throw J.Error(id, "repeated motion");
             if (!system.Durations.ContainsKey(entry.Duration)) throw J.Error(id, "unknown duration token " + entry.Duration);
             if (!system.Curves.ContainsKey(entry.Curve)) throw J.Error(id, "unknown curve token " + entry.Curve);
@@ -37,11 +45,12 @@ public sealed class MotionTable
             entries.Add(entry);
         }
         if (entries.Count == 0) throw J.Error("motions", "empty");
-        return new MotionTable(entries);
+        return new MotionTable(version, entries);
     }
 
-    // Seconds a motion takes: none under reduced motion, where its static equivalent shows at once.
-    public double Seconds(string id, DesignSystem system, bool reduced) => reduced ? 0 : system.Durations[this[id].Duration] / 1000;
+    // Seconds a motion takes: none under reduced motion, where its static equivalent shows at once, and none for
+    // a reserved row that is off.
+    public double Seconds(string id, DesignSystem system, bool reduced) => reduced || this[id].Off ? 0 : system.Durations[this[id].Duration] / 1000;
 
     // The eased share of the way at a share of the time, for a curve token (a cubic Bezier through 0,0 and 1,1).
     public static double Ease(double[] curve, double time)

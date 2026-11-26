@@ -13,6 +13,12 @@
     "intent.set": "Set Goal",
     "operation.phase.select": "Select phase Prepare / Core / Cleanup",
     "operation.phase.edit": "Edit phase twists",
-    "operation.phase.append_twist": "Append twist to phase"
+    "operation.phase.append_twist": "Append twist to phase",
+    "jumble.release.check": "Twist check",
+    "jumble.covers": "Cap covers",
+    "jumble.repair.list": "Repair list",
+    "jumble.straddlers": "Straddlers",
+    "jumble.nu": "ν marks",
+    "jumble.corrections.check": "ν-correction check"
   }
 }

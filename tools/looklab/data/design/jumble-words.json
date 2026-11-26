@@ -1,0 +1,358 @@
+{
+  "format": "magic600-design-jumble-words",
+  "version": 1,
+  "note": "Every sentence ADR-D02 quotes for its surfaces, with the item that quotes it, and its display names. Each text is the record's words byte for byte, line wraps joined (D02WordsMatchRecord); a template with its example rebuilds the text. Rows give the display name of a command-table row; the row's own table label stays a palette synonym.",
+  "record": "docs/architecture/1.0/design/adr/ADR-D02-jumble-research.md",
+  "sentences": [
+    {
+      "id": "ring_sheet.caption",
+      "item": "ADR-D02.9",
+      "text": "only row neighbours are face neighbours"
+    },
+    {
+      "id": "local.empty",
+      "item": "ADR-D02.12",
+      "text": "Name a cap: click its cell, or type its number."
+    },
+    {
+      "id": "legend.at_floor",
+      "item": "ADR-D02.14",
+      "text": "at floor (N_c = F_c > 0)"
+    },
+    {
+      "id": "raw.antipode",
+      "item": "ADR-D02.18",
+      "text": "antipode"
+    },
+    {
+      "id": "raw.caption",
+      "item": "ADR-D02.18",
+      "text": "No raw view certifies no holes; N = 0 does."
+    },
+    {
+      "id": "totals.above",
+      "item": "ADR-D02.22",
+      "text": "above 6"
+    },
+    {
+      "id": "totals.unit",
+      "item": "ADR-D02.22",
+      "text": "seams"
+    },
+    {
+      "id": "exposed.unavailable",
+      "item": "ADR-D02.25",
+      "text": "exposed faces unavailable"
+    },
+    {
+      "id": "word.part",
+      "item": "ADR-D02.31",
+      "text": "part j of p, twist k of n",
+      "template": "part {part} of {parts}, twist {twist} of {twists}",
+      "example": {
+        "part": "j",
+        "parts": "p",
+        "twist": "k",
+        "twists": "n"
+      }
+    },
+    {
+      "id": "word.lattice",
+      "item": "ADR-D02.31",
+      "text": "On the lattice, ν = 0: labels pass to 600-cell-Full"
+    },
+    {
+      "id": "repair.columns",
+      "item": "ADR-D02.32",
+      "text": "# | x d | y z | ΔN"
+    },
+    {
+      "id": "repair.step",
+      "item": "ADR-D02.32",
+      "text": "Repair k of m",
+      "template": "Repair {step} of {steps}",
+      "example": {
+        "step": "k",
+        "steps": "m"
+      }
+    },
+    {
+      "id": "repair.whole",
+      "item": "ADR-D02.32",
+      "text": "Whole repair only"
+    },
+    {
+      "id": "repair.empty",
+      "item": "ADR-D02.32",
+      "text": "Cap 150, rev r: no repair lowers N (k of k pairs tried)",
+      "template": "Cap {cap}, rev {revision}: no repair lowers N ({tried} of {total} pairs tried)",
+      "example": {
+        "cap": "150",
+        "revision": "r",
+        "tried": "k",
+        "total": "k"
+      }
+    },
+    {
+      "id": "repair.cut_off",
+      "item": "ADR-D02.32",
+      "text": "Not found within budget (j of k tried)",
+      "template": "Not found within budget ({tried} of {total} tried)",
+      "example": {
+        "tried": "j",
+        "total": "k"
+      }
+    },
+    {
+      "id": "checks.columns",
+      "item": "ADR-D02.35",
+      "text": "try | twist | N_c | floor | ΔN | Δn_h | Δu"
+    },
+    {
+      "id": "checks.folded",
+      "item": "ADR-D02.35",
+      "text": "not checked:"
+    },
+    {
+      "id": "covers.covered_by",
+      "item": "ADR-D02.38",
+      "text": "covered by"
+    },
+    {
+      "id": "covers.covers",
+      "item": "ADR-D02.38",
+      "text": "covers"
+    },
+    {
+      "id": "covers.undefined",
+      "item": "ADR-D02.38",
+      "text": "undefined"
+    },
+    {
+      "id": "corrections.after",
+      "item": "ADR-D02.39",
+      "text": "ν after this set"
+    },
+    {
+      "id": "corrections.labels",
+      "item": "ADR-D02.39",
+      "text": "labels not predicted"
+    },
+    {
+      "id": "result.none",
+      "item": "ADR-D02.40",
+      "text": "none (k of k tried)",
+      "template": "none ({tried} of {total} tried)",
+      "example": {
+        "tried": "k",
+        "total": "k"
+      }
+    },
+    {
+      "id": "result.cut_off",
+      "item": "ADR-D02.40",
+      "text": "Not found within budget (j of k)",
+      "template": "Not found within budget ({tried} of {total})",
+      "example": {
+        "tried": "j",
+        "total": "k"
+      }
+    },
+    {
+      "id": "result.incomplete",
+      "item": "ADR-D02.40",
+      "text": "Incomplete: <reason>",
+      "template": "Incomplete: {reason}",
+      "example": {
+        "reason": "<reason>"
+      }
+    },
+    {
+      "id": "result.not_run",
+      "item": "ADR-D02.40",
+      "text": "Not run"
+    },
+    {
+      "id": "refusal.research",
+      "item": "ADR-D02.40",
+      "text": "Refused at preview: uses a research run's output."
+    },
+    {
+      "id": "refusal.jumble_off",
+      "item": "ADR-D02.40",
+      "text": "Jumble off needs N = 0 and ν = 0."
+    },
+    {
+      "id": "refusal.jumble_twists",
+      "item": "ADR-D02.40",
+      "text": "Jumble twists need Jumble on."
+    },
+    {
+      "id": "research.pinned",
+      "item": "ADR-D02.45",
+      "text": "pinned: input <digest>",
+      "template": "pinned: input {digest}",
+      "example": {
+        "digest": "<digest>"
+      }
+    },
+    {
+      "id": "research.derived",
+      "item": "ADR-D02.45",
+      "text": "derived; reachability open"
+    },
+    {
+      "id": "verdict.pass",
+      "item": "ADR-D02.46",
+      "text": "holds within <scope>",
+      "template": "holds within {scope}",
+      "example": {
+        "scope": "<scope>"
+      }
+    },
+    {
+      "id": "verdict.fail",
+      "item": "ADR-D02.46",
+      "text": "fails within <scope>",
+      "template": "fails within {scope}",
+      "example": {
+        "scope": "<scope>"
+      }
+    },
+    {
+      "id": "verdict.not_applicable",
+      "item": "ADR-D02.46",
+      "text": "not applicable (scope only)"
+    },
+    {
+      "id": "verdict.not_checked",
+      "item": "ADR-D02.46",
+      "text": "not checked"
+    },
+    {
+      "id": "verdict.cut_off",
+      "item": "ADR-D02.46",
+      "text": "not found within budget"
+    },
+    {
+      "id": "verdict.reproduced",
+      "item": "ADR-D02.46",
+      "text": "reproduced: bytes equal"
+    },
+    {
+      "id": "verdict.differs",
+      "item": "ADR-D02.46",
+      "text": "differs at byte k",
+      "template": "differs at byte {byte}",
+      "example": {
+        "byte": "k"
+      }
+    },
+    {
+      "id": "verdict.replayed",
+      "item": "ADR-D02.46",
+      "text": "replayed from record, not re-executed"
+    },
+    {
+      "id": "verdict.model",
+      "item": "ADR-D02.46",
+      "text": "reviewed by a model, not checked"
+    },
+    {
+      "id": "verdict.copy",
+      "item": "ADR-D02.46",
+      "text": "Solving previews refuse it"
+    }
+  ],
+  "names": [
+    {
+      "id": "cap_map",
+      "item": "ADR-D02.41",
+      "text": "Cap map"
+    },
+    {
+      "id": "cut_slice",
+      "item": "ADR-D02.41",
+      "text": "Cut slice"
+    },
+    {
+      "id": "raw_view",
+      "item": "ADR-D02.41",
+      "text": "Raw view"
+    },
+    {
+      "id": "straddlers",
+      "item": "ADR-D02.41",
+      "text": "Straddlers"
+    },
+    {
+      "id": "cap_covers",
+      "item": "ADR-D02.41",
+      "text": "Cap covers"
+    },
+    {
+      "id": "twist_check",
+      "item": "ADR-D02.41",
+      "text": "Twist check"
+    },
+    {
+      "id": "word_check",
+      "item": "ADR-D02.41",
+      "text": "Word check"
+    },
+    {
+      "id": "repair_list",
+      "item": "ADR-D02.41",
+      "text": "Repair list"
+    },
+    {
+      "id": "nu_marks",
+      "item": "ADR-D02.41",
+      "text": "ν marks"
+    },
+    {
+      "id": "nu_corrections",
+      "item": "ADR-D02.41",
+      "text": "ν-corrections"
+    },
+    {
+      "id": "nu_correction_check",
+      "item": "ADR-D02.41",
+      "text": "ν-correction check"
+    },
+    {
+      "id": "retained_checkpoint",
+      "item": "ADR-D02.41",
+      "text": "retained checkpoint"
+    },
+    {
+      "id": "label_checkpoint",
+      "item": "ADR-D02.41",
+      "text": "label checkpoint"
+    },
+    {
+      "id": "sticker_test",
+      "item": "ADR-D02.41",
+      "text": "sticker test"
+    }
+  ],
+  "synonyms": {
+    "Twist check": [
+      "Release check"
+    ]
+  },
+  "rows": {
+    "jumble.release.check": "Twist check",
+    "jumble.covers": "Cap covers",
+    "jumble.repair.list": "Repair list",
+    "jumble.straddlers": "Straddlers",
+    "jumble.nu": "ν marks",
+    "jumble.corrections.check": "ν-correction check"
+  },
+  "never": [
+    {
+      "item": "ADR-D02.18",
+      "text": "mirrored"
+    }
+  ]
+}

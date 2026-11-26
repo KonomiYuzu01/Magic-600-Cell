@@ -100,6 +100,13 @@ relative path is from the repository root.
   - Draft rows, each with its `request` (CR-14 to CR-17, CR-19).
   - Every sentence the record quotes, and the display names.
 - **Check:** `D02RolesExistInBothThemes`; `D02MotionRowsStaticUnderReducedMotion`; `D02DraftRowsAbsentFromTable` (fails the day a row lands, so the draft row is deleted); `D02WordsMatchRecord` (byte equality).
+- **As built (integrator, 26 November 2026):**
+  - The seven slot roles take revision 6's names, `slot.tool.{empty, pending, ready, stale, refused, budget_stopped, error}`, as ADR-D02.7 says; no `slot.tool.state.*` level.
+  - The motion table's parser reads versions 1 and 2. A reserved row carries `"off": true`, a version 2 key, and takes no time.
+  - 30 draft rows: CR-14 has 18, CR-15 one (`jumble.repair.stage`, a workspace row that never commits), CR-16 eight, CR-17 two and CR-19 one (`jumble.seat.hold`). All are label-only in `command-icons.json`, and A5's icon check also knows them.
+  - `command-labels.json` shows six table rows by their display names. Making their table labels palette synonyms is B27's.
+  - `jumble-words.json` holds 41 sentences with their items, 14 display names, the synonym, the six rows and one word the record forbids ("mirrored"). The check joins the record's line wraps before comparing bytes.
+  - Theme values are labelled placeholders for round 3: contact classes on six hues, the height ramp on the neutral ramp in order.
 - **Owner sees:** nothing yet.
 - **Machine:** H.
 - **Checkpoint:** no.

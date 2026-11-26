@@ -69,7 +69,9 @@ internal static partial class Program
         CommandRegistry registry = LabRegistry();
         CommandIcons commands = CommandIcons.Parse(Read("data/design/command-icons.json")); IconSet icons = IconSet.Parse(Read("data/design/icons.json"));
         Check(commands.Missing(registry.Order).Count == 0, "commands with neither an icon nor the label-only mark: " + string.Join(", ", commands.Missing(registry.Order).Take(5)));
-        Check(commands.Icons.Values.Concat(commands.Arguments.Values).All(icons.Icons.ContainsKey) && commands.Icons.Keys.Concat(commands.LabelOnly).All(registry.Commands.ContainsKey), "the command icons name an unknown icon or command");
+        // ADR-D02's draft rows are registered by the shell only with D02 on; their marks name known commands too.
+        var d02 = new CommandRegistry(); d02.AddRows(Read("data/design/command-rows-d02.json"));
+        Check(commands.Icons.Values.Concat(commands.Arguments.Values).All(icons.Icons.ContainsKey) && commands.Icons.Keys.Concat(commands.LabelOnly).All(id => registry.Commands.ContainsKey(id) || d02.Commands.ContainsKey(id)), "the command icons name an unknown icon or command");
         Keymap keys = Keymap.Parse(Read("data/design/keymap.json"), registry);
         Check(keys.Radials.Values.SelectMany(r => r.Entries).All(e => commands.Of(e.Command, e.Argument) != null), "a radial entry has no icon");
         Check(FocusLayers.Layers.All(l => icons.Icons.ContainsKey(l.Icon)) && icons.Icons.Keys.Count(k => k.StartsWith("glyph.", StringComparison.Ordinal)) >= 6, "a layer or content glyph is missing");
