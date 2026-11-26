@@ -295,5 +295,338 @@
       "context": "global",
       "command": "intent.set"
     }
-  ]
+  ],
+  "seats": {
+    "note": "ADR-D02.42's four held seat keys (DT-M1 Q7 (a)). Seat k is the right coset A4_c\u00b7g^k of the cap's retained group, for the pinned fifth-turn g = I_a[12]. Its key tapped alone types g^k; held with a retained twist key r it types r\u00b7g^k, g^k performed first. Items index the pinned I_a menu of research/jumbling/fixtures/wj-I_a.json, and D02HeldSeatShowsTwelveTwistsWithOrders recomputes every item and order from it exactly. The seat keys, the eleven retained twist keys and the glyphs are placeholders until XM1 and G6; CR-19 routes the chords.",
+    "menu": "I_a",
+    "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+    "fifth_turn": 12,
+    "retained": [
+      {
+        "key": "I",
+        "item": 1,
+        "order": 2
+      },
+      {
+        "key": "Semicolon",
+        "item": 2,
+        "order": 3
+      },
+      {
+        "key": "Apostrophe",
+        "item": 3,
+        "order": 3
+      },
+      {
+        "key": "Comma",
+        "item": 4,
+        "order": 3
+      },
+      {
+        "key": "Period",
+        "item": 5,
+        "order": 3
+      },
+      {
+        "key": "Slash",
+        "item": 6,
+        "order": 3
+      },
+      {
+        "key": "BracketLeft",
+        "item": 7,
+        "order": 3
+      },
+      {
+        "key": "BracketRight",
+        "item": 8,
+        "order": 3
+      },
+      {
+        "key": "Minus",
+        "item": 9,
+        "order": 3
+      },
+      {
+        "key": "Equal",
+        "item": 10,
+        "order": 2
+      },
+      {
+        "key": "QuoteLeft",
+        "item": 11,
+        "order": 2
+      }
+    ],
+    "held": [
+      {
+        "seat": 1,
+        "key": "Z",
+        "glyph": "S1",
+        "label": "Seat 1",
+        "twists": [
+          {
+            "item": 12,
+            "order": 5
+          },
+          {
+            "with": "I",
+            "item": 24,
+            "order": 5
+          },
+          {
+            "with": "Semicolon",
+            "item": 25,
+            "order": 2
+          },
+          {
+            "with": "Apostrophe",
+            "item": 26,
+            "order": 5
+          },
+          {
+            "with": "Comma",
+            "item": 27,
+            "order": 5
+          },
+          {
+            "with": "Period",
+            "item": 28,
+            "order": 5
+          },
+          {
+            "with": "Slash",
+            "item": 16,
+            "order": 5
+          },
+          {
+            "with": "BracketLeft",
+            "item": 20,
+            "order": 3
+          },
+          {
+            "with": "BracketRight",
+            "item": 29,
+            "order": 3
+          },
+          {
+            "with": "Minus",
+            "item": 30,
+            "order": 2
+          },
+          {
+            "with": "Equal",
+            "item": 31,
+            "order": 3
+          },
+          {
+            "with": "QuoteLeft",
+            "item": 32,
+            "order": 2
+          }
+        ]
+      },
+      {
+        "seat": 2,
+        "key": "X",
+        "glyph": "S2",
+        "label": "Seat 2",
+        "twists": [
+          {
+            "item": 33,
+            "order": 5
+          },
+          {
+            "with": "I",
+            "item": 59,
+            "order": 3
+          },
+          {
+            "with": "Semicolon",
+            "item": 22,
+            "order": 3
+          },
+          {
+            "with": "Apostrophe",
+            "item": 56,
+            "order": 5
+          },
+          {
+            "with": "Comma",
+            "item": 55,
+            "order": 2
+          },
+          {
+            "with": "Period",
+            "item": 58,
+            "order": 5
+          },
+          {
+            "with": "Slash",
+            "item": 57,
+            "order": 2
+          },
+          {
+            "with": "BracketLeft",
+            "item": 54,
+            "order": 5
+          },
+          {
+            "with": "BracketRight",
+            "item": 18,
+            "order": 5
+          },
+          {
+            "with": "Minus",
+            "item": 52,
+            "order": 3
+          },
+          {
+            "with": "Equal",
+            "item": 15,
+            "order": 5
+          },
+          {
+            "with": "QuoteLeft",
+            "item": 53,
+            "order": 2
+          }
+        ]
+      },
+      {
+        "seat": 3,
+        "key": "C",
+        "glyph": "S3",
+        "label": "Seat 3",
+        "twists": [
+          {
+            "item": 39,
+            "order": 5
+          },
+          {
+            "with": "I",
+            "item": 19,
+            "order": 3
+          },
+          {
+            "with": "Semicolon",
+            "item": 34,
+            "order": 5
+          },
+          {
+            "with": "Apostrophe",
+            "item": 42,
+            "order": 3
+          },
+          {
+            "with": "Comma",
+            "item": 13,
+            "order": 5
+          },
+          {
+            "with": "Period",
+            "item": 36,
+            "order": 3
+          },
+          {
+            "with": "Slash",
+            "item": 35,
+            "order": 5
+          },
+          {
+            "with": "BracketLeft",
+            "item": 41,
+            "order": 2
+          },
+          {
+            "with": "BracketRight",
+            "item": 37,
+            "order": 2
+          },
+          {
+            "with": "Minus",
+            "item": 17,
+            "order": 5
+          },
+          {
+            "with": "Equal",
+            "item": 40,
+            "order": 5
+          },
+          {
+            "with": "QuoteLeft",
+            "item": 38,
+            "order": 2
+          }
+        ]
+      },
+      {
+        "seat": 4,
+        "key": "S",
+        "glyph": "S4",
+        "label": "Seat 4",
+        "twists": [
+          {
+            "item": 45,
+            "order": 5
+          },
+          {
+            "with": "I",
+            "item": 47,
+            "order": 5
+          },
+          {
+            "with": "Semicolon",
+            "item": 48,
+            "order": 5
+          },
+          {
+            "with": "Apostrophe",
+            "item": 21,
+            "order": 2
+          },
+          {
+            "with": "Comma",
+            "item": 50,
+            "order": 3
+          },
+          {
+            "with": "Period",
+            "item": 14,
+            "order": 2
+          },
+          {
+            "with": "Slash",
+            "item": 43,
+            "order": 3
+          },
+          {
+            "with": "BracketLeft",
+            "item": 49,
+            "order": 5
+          },
+          {
+            "with": "BracketRight",
+            "item": 51,
+            "order": 5
+          },
+          {
+            "with": "Minus",
+            "item": 44,
+            "order": 5
+          },
+          {
+            "with": "Equal",
+            "item": 46,
+            "order": 3
+          },
+          {
+            "with": "QuoteLeft",
+            "item": 23,
+            "order": 2
+          }
+        ]
+      }
+    ]
+  }
 }

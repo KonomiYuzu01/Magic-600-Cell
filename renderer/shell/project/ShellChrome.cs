@@ -288,6 +288,8 @@ public sealed class ShellChrome
             if (sample != null)
             {
                 host.Layers = sample.Layers.Values.ToArray();
+                // B27: the key map's four held seat entries (ADR-D02.42), from this build's keymap.
+                sample.Keys.Seats = SeatKeys.Read(File.ReadAllText(Path.Combine(folder, "keymap.json")));
             }
             else
             {

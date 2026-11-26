@@ -262,7 +262,11 @@ internal static partial class Program
             ("D02HitResolvesItsView", D02HitResolvesItsView),
             ("D02GroundCutsBothOpenings", D02GroundCutsBothOpenings),
             ("D02PortErrorLogShowsEachFailureOnce", D02PortErrorLogShowsEachFailureOnce),
-            ("D02PortCaughtListenerReachesTheLog", D02PortCaughtListenerReachesTheLog)
+            ("D02PortCaughtListenerReachesTheLog", D02PortCaughtListenerReachesTheLog),
+            ("D02HeldSeatShowsTwelveTwistsWithOrders", D02HeldSeatShowsTwelveTwistsWithOrders),
+            ("D02NoDuplicateChordAmongD02Bindings", D02NoDuplicateChordAmongD02Bindings),
+            ("D02GlobalNamesItsChain", D02GlobalNamesItsChain),
+            ("D02ExposedFacesUnavailableOnBorderAndTier1", D02ExposedFacesUnavailableOnBorderAndTier1)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

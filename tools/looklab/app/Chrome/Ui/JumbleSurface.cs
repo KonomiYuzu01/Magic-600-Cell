@@ -122,6 +122,8 @@ public sealed partial class CapMapPanel : VBoxContainer
     private readonly Label head, legend, counts, status;
     private readonly HFlowContainer classes = new() { Name = "CapMapClasses" };
     public LineEdit ThresholdField { get; }
+    // The adopted revision's Jumble facts: the named cap's Tier 1 says what is unavailable while Jumble is on.
+    public JumbleState State { get; set; } = JumbleState.Off();
     // The researcher wrote formulas in the threshold field and pressed Enter (an empty field clears it).
     public event Action<string>? ThresholdTyped;
     private string? said;
@@ -179,7 +181,7 @@ public sealed partial class CapMapPanel : VBoxContainer
         ThresholdCounts? c = Map.Threshold.Counts(Map.Map);
         counts.Text = said ?? (c is ThresholdCounts n ? CapThreshold.Line(n) : "no threshold");
         counts.AddThemeColorOverride("font_color", t.C(said != null ? "state.invalid" : "text.dim"));
-        status.Text = Map.Named is int cap && Map.Layout != null ? Tier1(cap) + " · " + Map.Meeting.Count + " meeting caps"
+        status.Text = Map.Named is int cap && Map.Layout != null ? JumbleViews.Tier1(Tier1(cap) + " · " + Map.Meeting.Count + " meeting caps", State)
             : Map.Typed.Length > 0 ? "cap " + Map.Typed + "…  Enter names it" : "no cap named";
         status.AddThemeColorOverride("font_color", t.C(Map.Named != null ? "text" : "text.dim"));
         foreach (Node child in classes.GetChildren()) { classes.RemoveChild(child); child.QueueFree(); }

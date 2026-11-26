@@ -112,6 +112,8 @@ public sealed class CapCovers
 public sealed class CoversInspect
 {
     public int? Inspected { get; private set; }
+    // The adopted revision's Jumble facts: Tier 1 says what is unavailable while Jumble is on (ADR-D02.25).
+    public JumbleState State { get; set; } = JumbleState.Off();
     public event Action? Changed;
 
     public void Hover(int? cap)
@@ -127,7 +129,7 @@ public sealed class CoversInspect
         if (Inspected is not int cap) return "";
         var (kind, id, numerals) = CapFacts.Tier1(map, cap);
         string Word(Numeral n) => n.Kind == NumeralKind.Value ? n.Text : n.Word;
-        return kind + " " + id + " · " + CapMapModel.Word(map.Class(cap)) + " · " + string.Join(" · ", numerals.Select(n => n.Label + " " + Word(n.Value)));
+        return JumbleViews.Tier1(kind + " " + id + " · " + CapMapModel.Word(map.Class(cap)) + " · " + string.Join(" · ", numerals.Select(n => n.Label + " " + Word(n.Value))), State);
     }
 }
 
