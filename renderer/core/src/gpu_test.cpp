@@ -1438,6 +1438,144 @@ sa2_pane make(uint64_t view, uint64_t set, int32_t x, int32_t y, uint32_t w, uin
 }
 }
 
+// ADR-D02 B17 (ADR-D01.46, added to ABI 10): --warp --style also checks the focus layers drawn in the core. The pieces
+// = 1 (mod 4) are marked (SA2_STYLE_DIM in their fill byte). Hiding them draws what a set without them draws (at most
+// 1% of the covered pixels differ by more than 2 in a channel). A pick follows the style its frame drew with: where the
+// unstyled frame shows a marked piece, the hiding frame's pick names an unmarked piece or none (at least once the one
+// behind) and the dimming frame's names none; where it shows an unmarked piece, both answer as the unstyled pick does,
+// as an outline-only style does everywhere. A single styled pane covering the target picks as the one-view frame, and
+// a styled frame whose engine copy has taken another piece style answers SA2_PICK_STALE_ENGINE.
+void product_focus_layers(const Options& options) {
+    using panes_check::pick;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    const auto pieces = sa2::scene_slot_pieces();
+    const auto marked = [&](uint32_t instance) { return instance != 0 && pieces[instance - 1] % 4 == 1; };
+    std::vector<uint8_t> rest(SA2_SLOTS, 0);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) rest[slot] = uint8_t(pieces[slot] % 4 != 1);
+    const auto set_pick = panes_check::pickable_set(harness, 1, 1), set_rest = pose_set(harness, 2, rest);
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const auto unstyled = frames.draw(1, 1, set_pick, Q);
+    const uint64_t unstyled_frame = frames.frame;
+    const auto rest_only = frames.draw(1, 2, set_rest, Q); // drawn before any style, through the unchanged pipeline
+    const auto background = unstyled[0];
+    // Up to eight sample points where the unstyled pick names a marked piece and eight where it names another.
+    std::vector<std::pair<uint32_t, uint32_t>> points;
+    std::vector<uint32_t> answers;
+    uint32_t on_marked = 0, on_rest = 0, drawn = 0, empty = 0;
+    for (uint32_t y = 3; y < harness.height && (on_marked < 8 || on_rest < 8); y += 7)
+        for (uint32_t x = 5; x < harness.width && (on_marked < 8 || on_rest < 8); x += 11) {
+            if (unstyled[size_t(y) * harness.width + x] == background) continue;
+            ++drawn;
+            const auto row = pick(harness, unstyled_frame, x, y);
+            expect(row.state == SA2_PICK_READY, "an unstyled pick was not ready");
+            if (row.instance == 0) { ++empty; continue; }
+            uint32_t& count = marked(row.instance) ? on_marked : on_rest;
+            if (count >= 8) continue;
+            ++count;
+            points.push_back({x, y});
+            answers.push_back(row.instance);
+        }
+    std::cout << "focus layers: " << drawn << " drawn sample points, " << empty << " without an instance; " << on_marked
+              << " on marked pieces, " << on_rest << " on others" << std::endl;
+    expect(on_marked == 8 && on_rest == 8, "the unstyled frame offers too few sample points");
+    const auto picks = [&](uint64_t frame) {
+        std::vector<uint32_t> out;
+        for (const auto& [x, y] : points) {
+            const auto row = pick(harness, frame, x, y);
+            expect(row.state == SA2_PICK_READY, "a pick on a styled frame was not ready");
+            out.push_back(row.instance);
+        }
+        return out;
+    };
+    std::vector<uint8_t> fill(SA2_PIECES, 0), outline(SA2_PIECES, 0);
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        if (piece % 4 != 1) continue;
+        fill[piece] = SA2_STYLE_DIM;
+        outline[piece] = 5;
+    }
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    sa2_view_style style{};
+    style.struct_size = sizeof(style);
+    const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1}, black[4] = {0, 0, 0, 1};
+    std::copy(std::begin(identity), std::end(identity), std::begin(style.matrix));
+    std::copy(std::begin(black), std::end(black), style.palette + 4 * 5);
+    style.dim_mode = 5;
+    expect(sa2_view_style_set(ctx, 1, &style) == SA2_E_INVALID_ARGUMENT, "an unknown dim mode was accepted");
+    // Hidden: the picture of the set without the marked pieces, and no pick names one.
+    style.dim_mode = SA2_STYLE_HIDE_MARKED;
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    const auto hidden = frames.draw(1, 1, set_pick, Q);
+    const uint64_t hidden_frame = frames.frame;
+    const auto hidden_picks = picks(hidden_frame);
+    uint64_t covered = 0, apart = 0;
+    for (size_t i = 0; i < hidden.size(); ++i) {
+        covered += rest_only[i] != background || hidden[i] != background;
+        bool distant = false; // (windows.h defines far)
+        for (int shift = 0; shift < 32; shift += 8) {
+            const int a = int((hidden[i] >> shift) & 0xFF), b = int((rest_only[i] >> shift) & 0xFF);
+            distant = distant || std::abs(a - b) > 2;
+        }
+        apart += distant;
+    }
+    uint32_t revealed = 0;
+    for (size_t i = 0; i < points.size(); ++i) {
+        expect(!marked(hidden_picks[i]), "a hidden piece was picked");
+        if (!marked(answers[i])) expect(hidden_picks[i] == answers[i], "hiding changed the pick of a piece in front");
+        else revealed += hidden_picks[i] != 0;
+    }
+    std::cout << "focus layers: hiding the marked pieces covers " << covered << " pixels, " << apart
+              << " apart from the set without them; " << revealed << " of 8 hidden points pick the piece behind" << std::endl;
+    expect(covered > 0 && apart * 100 <= covered, "hiding the marked pieces does not draw the set without them");
+    expect(revealed > 0, "no hidden point picked the piece behind it");
+    // A single styled pane covering the target picks as the one-view frame.
+    auto pane = panes_check::make(1, set_pick, 0, 0, harness.width, harness.height, Q);
+    pane.style = 1;
+    frames.draw_panes(1, {pane});
+    expect(picks(frames.frame) == hidden_picks, "a styled pane does not pick as its one-view frame");
+    // Dimmed: drawn, and no pick names a marked piece in front.
+    style.dim_mode = SA2_STYLE_DIM_MARKED;
+    style.dim_amount = 0.75f;
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    expect(frames.draw(1, 1, set_pick, Q) != unstyled, "the dim did not change the frame");
+    const auto dimmed_picks = picks(frames.frame);
+    for (size_t i = 0; i < points.size(); ++i)
+        expect(dimmed_picks[i] == (marked(answers[i]) ? 0u : answers[i]), "a dimmed piece was picked or a shown one was not");
+    // An outline alone leaves every pick as it was.
+    style.dim_mode = SA2_STYLE_DIM_NONE;
+    style.dim_amount = 0;
+    style.tint_mode = SA2_STYLE_TINT_OUTLINE;
+    style.outline_width = 0.12f;
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    api(ctx, sa2_style_set(ctx, 1, outline.data(), SA2_STYLE_CHANNEL_OUTLINE));
+    expect(frames.draw(1, 1, set_pick, Q) != unstyled, "the outline did not change the frame");
+    expect(picks(frames.frame) == answers, "an outline changed a pick");
+    // Three more piece styles take every engine copy; the hiding frame's copy no longer holds its style.
+    for (uint8_t entry = 6; entry <= 8; ++entry) {
+        outline[1] = entry;
+        api(ctx, sa2_style_set(ctx, 1, outline.data(), SA2_STYLE_CHANNEL_OUTLINE));
+        frames.draw(1, 1, set_pick, Q);
+    }
+    const auto stale = pick(harness, hidden_frame, points[0].first, points[0].second);
+    expect(stale.state == SA2_PICK_STALE && stale.stale == SA2_PICK_STALE_ENGINE, "a pick on a styled frame whose copy changed style was not stale");
+    expect(pick(harness, unstyled_frame, points[0].first, points[0].second).instance == answers[0], "an unstyled frame's pick changed");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
 void product_panes(const Options& options) {
     using namespace panes_check;
     const Rows Q1 = double_rotation(0, 3, 0.35, 1, 2, 0.2), Q2 = double_rotation(0, 2, 0.9, 1, 3, 0.4);
@@ -1737,8 +1875,36 @@ void hopf_dodecahedron(const sa2_view_layout& layout) {
     expect(places.size() == 600, "two cells share a place on the ring sheet");
 }
 
+// B22: the ring sheet named before any rings, on a fresh context: the core builds the Hopf table for the sheet too.
+// It once did not, and the shaders read t18 past another buffer (DXGI_ERROR_DEVICE_HUNG on the owner's GPU).
+std::vector<uint32_t> product_sheet_first(const Options& options, const sa2_view_layout& layout) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    auto sheet = layout;
+    sheet.kind = SA2_LAYOUT_RING_SHEET;
+    api(ctx, sa2_view_layout_set(ctx, 1, &sheet));
+    PoseFrames frames{harness};
+    const auto flat = frames.draw(1, 1, 0, double_rotation(0, 3, 0, 1, 2, 0));
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+    return flat;
+}
+
 void product_hopf(const Options& options) {
     const auto layout = hopf_layout(options.hopf);
+    const auto sheet_first = product_sheet_first(options, layout);
     hopf_dodecahedron(layout);
     Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
     harness.make_ring(640, 360);
@@ -1817,6 +1983,7 @@ void product_hopf(const Options& options) {
                && sheet_bottom > int(harness.height) / 2, "the ring sheet is not around the picture's centre");
     expect(frames.draw(1, 1, 0, turned) == flat, "the camera turned the ring sheet");
     expect(frames.draw(1, 3, 0, I) == rings, "the ring sheet on view 1 changed view 3's rings");
+    expect(flat == sheet_first, "the ring sheet named before any rings drew another picture");
     if (!options.out.empty()) {
         std::ofstream file(options.out.parent_path() / "warp-sheet.ppm", std::ios::binary);
         file << "P6\n" << harness.width << " " << harness.height << "\n255\n";
@@ -1863,6 +2030,7 @@ void run_panes(Suite& suite, const Options& options) {
 void run_style(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the style check runs on WARP only");
     suite.check("piece style warp", [&] { product_style(options); });
+    suite.check("focus layers warp", [&] { product_focus_layers(options); }); // ADR-D02 B17 (ABI 10)
 }
 
 // C9 U5c: --warp --measure-stages DIR. Only WARP; parse refuses any other mode.

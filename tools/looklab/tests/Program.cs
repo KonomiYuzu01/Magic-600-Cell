@@ -263,10 +263,21 @@ internal static partial class Program
             ("D02GroundCutsBothOpenings", D02GroundCutsBothOpenings),
             ("D02PortErrorLogShowsEachFailureOnce", D02PortErrorLogShowsEachFailureOnce),
             ("D02PortCaughtListenerReachesTheLog", D02PortCaughtListenerReachesTheLog),
+            ("D02PortPlacesMapPositionsAsLookLab", D02PortPlacesMapPositionsAsLookLab),
+            ("D02PortPlacesFollowTheCoresProjection", D02PortPlacesFollowTheCoresProjection),
+            ("D02PortPlacesFocusAsTheCore", D02PortPlacesFocusAsTheCore),
+            ("D02PortLayoutTrackerNamesAndRestoresSteps", D02PortLayoutTrackerNamesAndRestoresSteps),
+            ("D02PortAppearanceRestoresInPlace", D02PortAppearanceRestoresInPlace),
+            ("D02PortViewFieldsKeepEachViewAndWriteTheScope", D02PortViewFieldsKeepEachViewAndWriteTheScope),
+            ("D02PortViewLinkMarksEachState", D02PortViewLinkMarksEachState),
             ("D02HeldSeatShowsTwelveTwistsWithOrders", D02HeldSeatShowsTwelveTwistsWithOrders),
             ("D02NoDuplicateChordAmongD02Bindings", D02NoDuplicateChordAmongD02Bindings),
             ("D02GlobalNamesItsChain", D02GlobalNamesItsChain),
-            ("D02ExposedFacesUnavailableOnBorderAndTier1", D02ExposedFacesUnavailableOnBorderAndTier1)
+            ("D02ExposedFacesUnavailableOnBorderAndTier1", D02ExposedFacesUnavailableOnBorderAndTier1),
+            ("D02CapPromptListsCapsInIdOrder", D02CapPromptListsCapsInIdOrder),
+            ("D02CapPromptEnterNamesTheChosenCap", D02CapPromptEnterNamesTheChosenCap),
+            ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy),
+            ("D02LocalCapDrawsTheLowestCapUntilOneIsNamed", D02LocalCapDrawsTheLowestCapUntilOneIsNamed)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

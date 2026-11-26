@@ -127,6 +127,21 @@ public sealed class CapNaming
     // Hovering inspects: it changes what the tooltip reads, never the named cap.
     public void Hover(int? cap) => Hovered = cap is >= 0 and < CapLayout.Caps ? cap : null;
 
+    // What hovering a cell says first (owner's bug report, 26 November 2026: nothing said that a click names a cap).
+    public const string Hint = "click to name this cap";
+
+    // Why a click on a cap, or the prompt's Enter, names nothing now; null when it names the cap. A blocked cap is named
+    // like any other (ADR-D02.30 speaks of the named blocked cap); while Jumble is off no cap is named, as the row is
+    // unavailable then.
+    public static string? Refusal(int cap, bool jumbleOn, int? named) =>
+        cap is < 0 or >= CapLayout.Caps ? "no cap is numbered " + cap.ToString(CultureInfo.InvariantCulture) + "; caps are 0 to 599"
+        : !jumbleOn ? "Jumble is off: a cap is named only while Jumble is on"
+        : named == cap ? "cap " + cap.ToString(CultureInfo.InvariantCulture) + " is already named; F1 › jumble.cap.unname un-names it"
+        : null;
+
+    // A cell's tooltip: the hint, or why a click names nothing, over what the cell shows.
+    public static string Tip(string? refusal, string describe) => (refusal ?? Hint) + "\n" + describe;
+
     // A typed cap number, "150" or "cap 150"; null when the text names no cap.
     public static int? Typed(string? text)
     {

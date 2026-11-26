@@ -151,6 +151,10 @@ pub const STYLE_DIM_NONE: u32 = 0;
 pub const STYLE_DIM_MARKED: u32 = 1;
 /// `SA2_STYLE_DIM_UNMARKED`.
 pub const STYLE_DIM_UNMARKED: u32 = 2;
+/// `SA2_STYLE_HIDE_MARKED` (ADR-D02 B17, ABI 10): the marked pieces are not drawn and not picked.
+pub const STYLE_HIDE_MARKED: u32 = 3;
+/// `SA2_STYLE_HIDE_UNMARKED` (ADR-D02 B17, ABI 10).
+pub const STYLE_HIDE_UNMARKED: u32 = 4;
 /// `SA2_STYLE_OUTLINE_MAX`.
 pub const STYLE_OUTLINE_MAX: f32 = 0.5;
 /// `SA2_STYLE_MATRIX_MAX`.
@@ -474,7 +478,7 @@ impl Sa2ViewStyle {
     pub fn in_range(&self) -> bool {
         let within = |v: f32, low: f32, high: f32| v.is_finite() && v >= low && v <= high;
         self.tint_mode & !(STYLE_TINT_FILL | STYLE_TINT_OUTLINE) == 0
-            && self.dim_mode <= STYLE_DIM_UNMARKED
+            && self.dim_mode <= STYLE_HIDE_UNMARKED
             && within(self.dim_amount, 0.0, 1.0)
             && within(self.outline_width, 0.0, STYLE_OUTLINE_MAX)
             && self.palette.iter().all(|&v| within(v, 0.0, 1.0))

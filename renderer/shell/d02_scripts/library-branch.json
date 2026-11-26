@@ -1,0 +1,12 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "library-branch",
+  "resolution": "2000x1200",
+  "note": "Sample mode, no state, at the owner's 2000x1200 (below 1440 wide the left dock folds its panel to the rail): the script player's command step runs a row as the palette does (ShellChrome.Run). macro.base.open shows the Library in the left dock with every branch folded; library.branch.toggle with the argument Built-in opens that branch, so the Library lists the shipped tools (before the fix the row threw inside SampleMount and nothing opened); the error lamp counts no failure at any step. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"command": "macro.base.open"},
+    {"command": "library.branch.toggle", "argument": "Built-in"},
+    {"wait_ms": 3000}
+  ]
+}

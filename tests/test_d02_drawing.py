@@ -163,11 +163,17 @@ class HopfRings(unittest.TestCase):
         self.assertIn("var layout = D02.ShellJumble.On ? D02.ShellHopf.Kind(D02.ShellShape.OpeningPath()) : D02.ShellHopf.Chain;",
                       shell)
         self.assertIn("_hopf = layout == D02.ShellHopf.Rings;", shell)
-        # B22: the ring sheet is held back in the shell while it hangs the hardware GPU.
+        # B22: the shell opens Global on either layout; the core builds the Hopf table for the sheet too.
         self.assertIn("if (layout != D02.ShellHopf.Chain && !D02.ShellHopf.Opens(layout))", shell)
-        self.assertIn("public static bool Opens(uint kind) => kind == Rings;", text(PROJECT / "D02" / "ShellHopf.cs"))
+        self.assertIn("public static bool Opens(uint kind) => kind == Rings || kind == Sheet;", text(PROJECT / "D02" / "ShellHopf.cs"))
+        core = text(ROOT / "renderer" / "core" / "src" / "interop.cpp")
+        self.assertIn("if (kind == SA2_LAYOUT_HOPF_RINGS || kind == SA2_LAYOUT_RING_SHEET)", core)
+        self.assertIn('argument(shape.layout == SA2_LAYOUT_CHAIN || !hopf_.empty(), "a Hopf layout needs the Hopf table");',
+                      text(ROOT / "renderer" / "core" / "src" / "product.cpp"))
+        self.assertIn("uint chart = min(asuint(hopfRows[2461 + e / 4][e % 4]), 599u);",
+                      text(ROOT / "renderer" / "core" / "shaders" / "geometry.hlsl"))
         self.assertEqual(shell.count("SetViewLayout("), 1)
-        self.assertIn("library.SetCamera(_host, _hopf ? LocalCamera() : _camera.ColumnMajor())", shell)
+        self.assertIn("var camera = _hopf ? SpinOf(_camera) : _camera.ColumnMajor();", shell)
         self.assertEqual(json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))["params"]["projection"],
                          "hopfRings")
         hopf = text(PROJECT / "D02" / "ShellHopf.cs")
@@ -268,7 +274,8 @@ class ShellPanes(unittest.TestCase):
     def test_local_follows_the_named_cap(self):
         body = self.shell[self.shell.index("private void FollowLocalCap(HostLibrary library)"):]
         body = body[:body.index("\n    }\n")]
-        self.assertIn("int? cap = _chrome?.Jumble?.Naming.Named;", body)
+        # B17 (ADR-D01.41): the named cap, or a newer selection while auto-framing is on.
+        self.assertIn("int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);", body)
         self.assertIn("cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos", body)
         self.assertIn("library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone)", body)
         self.assertIn("chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;", body)
@@ -291,7 +298,19 @@ class ShellPanes(unittest.TestCase):
         self.assertIn("return HostLibrary.Local;", self.shell)
 
     def test_local_turns_with_the_linked_spin(self):
-        self.assertIn("library.SetViewCamera(_host, HostLibrary.Local, LocalCamera())", self.shell)
+        self.assertIn("var spin = SpinOf(turning);", self.shell)
+        self.assertIn("library.SetViewCamera(_host, HostLibrary.Local, spin)", self.shell)
+
+    def test_a_drag_in_local_turns_the_linked_rotation(self):
+        # ADR-D01.40/.41: linked, a drag in either view turns the one camera; unlinked, Local turns its own.
+        self.assertIn("return _camera.Follow(input, point => InOpening(point) || InLocal(point));", self.shell)
+        self.assertIn("var local = D02.ShellLocal.Own.Follow(input, InLocal);", self.shell)
+        local = text(PROJECT / "D02" / "ShellLocal.cs")
+        self.assertIn("public static ShellCamera Camera(ShellCamera shared) => _linked ? shared : Own;", local)
+        self.assertIn("private static bool _linked = true;", local)
+        script = json.loads(text(SHELL / "d02_scripts" / "two-views.json"))
+        self.assertIn({"drag": [160, 0], "in": "local"}, script["steps"])
+        self.assertIn({"link": False}, script["steps"])
 
     def test_the_frame_row_names_composite_frames(self):
         log = text(PROJECT / "EventLog.cs")
@@ -325,8 +344,9 @@ class ChromeOpening(unittest.TestCase):
 
 
 class TwoViewsRun(unittest.TestCase):
-    """The two-views run's event check reads the frame rows: one-view frames before a cap is named, then composite
-    frames of two drawn panes at every revision the run reached."""
+    """The two-views run: Local is never empty (owner, 26 November 2026), so the dumps show the default cap 0 framed
+    before the naming and cap 150 after it, and the event check reads composite frames of two drawn panes at every
+    revision the run reached, with no one-view frame after the first composite one."""
 
     def check(self, rows):
         run = shell_module("d02_run")
@@ -344,6 +364,55 @@ class TwoViewsRun(unittest.TestCase):
         script = json.loads(text(SHELL / "d02_scripts" / "two-views.json"))
         self.assertIn({"text": "> jumble.cap.name 150"}, script["steps"])
         self.assertIn({"chord": "Ctrl+Z"}, script["steps"])
+        written = [f"wait {step['wait_ms']} ms" if "wait_ms" in step else f"chord {step['chord']}" if "chord" in step
+                   else f"text {step['text']}" for step in script["steps"][:len(run.TWO_VIEWS_STEPS) - 1]]
+        self.assertEqual(["start"] + written, run.TWO_VIEWS_STEPS)
+
+    def test_the_dumps_show_the_default_then_the_named_cap(self):
+        run = shell_module("d02_run")
+
+        def dumps(default=True, kept=150):
+            out = []
+            for index, do in enumerate(run.TWO_VIEWS_STEPS):
+                named = index >= 4
+                cap = 150 if named else 0 if default else -1
+                words = "" if named or not default else run.LOCAL_DEFAULT
+                lines = [["view:Local", words or run.LOCAL_EMPTY]] if not named else []
+                local = {"cap": cap, "framed": kept if named else cap, "opening": cap >= 0, "words": words}
+                out.append({"step": index, "do": do, "lines": lines, "named": 150 if named else -1, "local": local})
+            return out
+        self.assertEqual(run.expect_two_views(dumps(), {}, "wj-ia-300"), [])
+        empty = run.expect_two_views(dumps(default=False), {}, "wj-ia-300")
+        self.assertEqual(len(empty), 4, empty)
+        self.assertTrue(empty[0].startswith("step 1: Local draws cap -1"), empty)
+        self.assertEqual(len(run.expect_two_views(dumps(kept=0), {}, "wj-ia-300")), 7)
+        self.assertTrue(run.expect_two_views(dumps()[:6], {}, "wj-ia-300"))
+
+    def rotation(self, linked, turns, spin, sent_global, sent_local):
+        return {"linked": linked, "auto_frame": True, "global": {"turns": turns, "q": [0] * 16, "spin": spin},
+                "local": {"turns": 0, "q": [0] * 16, "spin": spin}, "sent_global": sent_global,
+                "sent_local": sent_local}
+
+    def drag_dumps(self, unlinked_turns_global=False):
+        a, b, c, d, e = ([float(i)] * 16 for i in range(5))
+        rows = [("wait 4000 ms", self.rotation(True, 0, a, a, a)), ("drag 160 0 in local", None),
+                ("wait 701 ms", self.rotation(True, 10, b, b, b)), ("drag 0 100", None),
+                ("wait 702 ms", self.rotation(True, 20, c, c, c)), ("link off", None), ("drag -120 0 in local", None),
+                ("wait 703 ms", self.rotation(False, 20, c, d if unlinked_turns_global else c, d)),
+                ("drag 0 -80", None), ("wait 704 ms", self.rotation(False, 30, e, e, d)), ("link on", None),
+                ("wait 705 ms", self.rotation(True, 30, e, e, e))]
+        dumps = []
+        for step, rotation in rows:
+            dumps.append({"do": step, "camera_turns": rotation["global"]["turns"] if rotation else 0,
+                          **({"rotation": rotation} if rotation else {})})
+        return dumps
+
+    def test_the_drag_check_reads_both_views(self):
+        run = shell_module("d02_run")
+        self.assertEqual(run.check_local_drag(self.drag_dumps()), [])
+        leak = run.check_local_drag(self.drag_dumps(unlinked_turns_global=True))
+        self.assertTrue(any("unlinked drag in Local turned Global" in p for p in leak), leak)
+        self.assertTrue(any("steps written" in p for p in run.check_local_drag(self.drag_dumps()[:3])))
 
     def test_a_good_run_passes(self):
         rows = [{"frame_id": 1, "engine_revision": 302}, {"frame_id": 2, "engine_revision": 302, "panes": 2, "held": 0},
@@ -352,9 +421,12 @@ class TwoViewsRun(unittest.TestCase):
         self.assertEqual(self.check(rows), [])
 
     def test_the_failures_are_named(self):
-        early = self.check([{"frame_id": 1, "engine_revision": 302, "panes": 2, "held": 0},
-                            {"frame_id": 2, "engine_revision": 303, "panes": 2, "held": 0}])
-        self.assertTrue(any("before any cap was named" in p for p in early), early)
+        self.assertEqual(self.check([{"frame_id": 1, "engine_revision": 302, "panes": 2, "held": 0},
+                                     {"frame_id": 2, "engine_revision": 303, "panes": 2, "held": 0}]), [])
+        emptied = self.check([{"frame_id": 1, "engine_revision": 302, "panes": 2, "held": 0},
+                              {"frame_id": 2, "engine_revision": 303},
+                              {"frame_id": 3, "engine_revision": 303, "panes": 2, "held": 0}])
+        self.assertEqual(emptied, ["1 one-view frames after Local was drawn (the first: frame 2)"])
         undrawn = self.check([{"frame_id": 1, "engine_revision": 302}, {"frame_id": 2, "engine_revision": 302, "panes": 2, "held": 0},
                               {"frame_id": 3, "engine_revision": 303, "panes": 2, "held": 1}])
         self.assertTrue(any("[303] were never drawn" in p for p in undrawn), undrawn)
@@ -411,6 +483,51 @@ class Picks(unittest.TestCase):
         self.assertIn("#define SA2_PIECES 177120u", text(CORE / "include" / "sa2_interop.h"))
 
 
+class FocusLayersInTheCore(unittest.TestCase):
+    """B17, ADR-D01.46 (added to the core's ABI 10 before any release): the pieces a focus layer leaves out are dimmed
+    or hidden by the style slots, and the ID pass follows the style the frame drew with, so neither is picked."""
+
+    def test_the_core_hides_and_picks_follow_visibility(self):
+        header = text(CORE / "include" / "sa2_interop.h")
+        self.assertIn("#define SA2_STYLE_HIDE_MARKED 3u", header)
+        self.assertIn("#define SA2_STYLE_HIDE_UNMARKED 4u", header)
+        self.assertIn("Picking follows visibility", header)
+        styled = text(CORE / "shaders" / "styled.hlsl")
+        self.assertIn("if ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet)) result.position = float4(0, 0, -1, 1);", styled)
+        self.assertIn("uint styledIdPs(StyledOut input) : SV_Target {", styled)
+        scene = text(CORE / "src" / "scene.cpp")
+        self.assertIn("auto* pipeline = input.styled ? g.styled_id_pipeline() : p.id_pso.Get();", scene)
+        self.assertIn("compile_embedded_shader(styled_id_ps.dxil styled.hlsl styledIdPs ps_6_0)", text(CORE / "CMakeLists.txt"))
+        self.assertIn("foreach(name styled_vs styled_ps styled_id_ps)", text(CORE / "embed_dxil.cmake"))
+        product = text(CORE / "src" / "product.cpp")
+        self.assertIn("(record->styled && copy.style != record->style_version)", product)
+        self.assertIn('suite.check("focus layers warp", [&] { product_focus_layers(options); });', text(CORE / "src" / "gpu_test.cpp"))
+        abi = text(ROOT / "rust" / "c600-render" / "src" / "abi.rs")
+        self.assertIn("pub const STYLE_HIDE_MARKED: u32 = 3;", abi)
+        self.assertIn("&& self.dim_mode <= STYLE_HIDE_UNMARKED", abi)
+
+    def test_the_shell_composes_the_focus_through_the_chrome_model(self):
+        style = text(PROJECT / "D02" / "ShellStyle.cs")
+        self.assertIn("public static void SetFocus(FocusLayers? layers, Func<int, bool>? member, Func<int, bool>? breaksThrough = null)", style)
+        self.assertIn("if (layers.ShownPiece(member(piece), breaksThrough?.Invoke(piece) ?? false) < 1)", style)
+        self.assertIn("style.DimMode = _hide ? HostLibrary.HideMarked : HostLibrary.DimMarked;", style)
+        self.assertIn("public const uint HideMarked = 3, HideUnmarked = 4;", text(PROJECT / "HostLibrary.cs"))
+        # ShownPiece's quarter is the core's dim amount.
+        self.assertIn("public const float DimAmount = 0.75f;", style)
+        self.assertIn("Inactive == InactiveMode.Dimmed ? .25 : 0", text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "Gallery.cs"))
+
+
+class LocalReframes(unittest.TestCase):
+    """B17, ADR-D01.41: Local re-frames on a selection change while auto-framing is on, else follows the named cap."""
+
+    def test_local_frames_the_newer_source(self):
+        local = text(PROJECT / "D02" / "ShellLocal.cs")
+        self.assertIn("public static bool AutoFrame { get; set; } = true;", local)
+        self.assertIn("return AutoFrame && _selectionNewer && _selected is int cell ? cell : _cap;", local)
+        self.assertIn("int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);", text(PROJECT / "Shell.cs"))
+        self.assertIn("public int? Cell => Slot is uint slot ? (int)(slot / 433) : null;", text(PROJECT / "D02" / "ShellPick.cs"))
+
+
 class PickRun(unittest.TestCase):
     """The pick run's check reads each click's answer from the dump after its wait."""
 
@@ -458,7 +575,8 @@ class PickRun(unittest.TestCase):
 
 
 class HopfRun(unittest.TestCase):
-    """The hopf run: the zoom sent is the opening file's Hopf zoom, and the frames are one-view frames."""
+    """The hopf run: the zoom sent is the opening file's Hopf zoom, and Local draws the default cap: composite frames,
+    and no one-view frame after the first of them (owner, 26 November 2026: Local is never empty)."""
 
     def dumps(self, base, after):
         steps = ["start", "wait 2500 ms", "wheel 2", "wait 1000 ms"]
@@ -502,18 +620,25 @@ class HopfRun(unittest.TestCase):
         base = 1 / math.tan(fov / 2)
         self.assertEqual(run.expect_ring_sheet(self.dumps(base, base * 1.21), {}, None), [])
 
-    def test_the_frames_are_one_view_frames(self):
+    def test_local_draws_the_default_cap(self):
         run = shell_module("d02_run")
         temp = Path(tempfile.mkdtemp(prefix="d02-hopf-run-"))
         self.addCleanup(shutil.rmtree, temp, True)
         events = temp / "events.jsonl"
+
+        def check(rows):
+            events.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            return run.check_hopf_events(events)
         rows = [{"t": "frame", "frame_id": i, "engine_revision": 302} for i in range(1, 31)]
-        events.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
-        self.assertEqual(run.check_hopf_events(events), [])
-        rows[5]["panes"], rows[5]["held"] = 2, 0
-        events.write_text("".join(json.dumps(row) + "\n" for row in rows[:20]), encoding="utf-8")
-        problems = run.check_hopf_events(events)
-        self.assertTrue(any("fewer than 30" in p for p in problems) and any("composite" in p for p in problems), problems)
+        for row in rows[2:]:
+            row["panes"], row["held"] = 2, 0
+        self.assertEqual(check(rows), [])
+        never = check([{"t": "frame", "frame_id": i, "engine_revision": 302} for i in range(1, 31)])
+        self.assertEqual(never, ["no composite frame: Local never drew the default cap"])
+        rows[10] = {"t": "frame", "frame_id": 11, "engine_revision": 302}
+        problems = check(rows[:20])
+        self.assertTrue(any("fewer than 30" in p for p in problems) and any("one-view frames after" in p for p in problems),
+                        problems)
 
 
 if __name__ == "__main__":

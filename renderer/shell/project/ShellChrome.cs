@@ -36,11 +36,13 @@ public sealed class ShellChrome
     };
     private static readonly (string Id, string Title)[] Panes =
     {
-        ("editor", "Editor"), ("preview", "Preview"), ("canvas", "Canvas"), ("reference", "Reference"), ("scriptview", "Script view"), ("greybox", "Greybox"),
+        ("editor", "Editor"), ("preview", "Preview"), ("canvas", "Canvas"), ("reference", "Learn"),("scriptview", "Script view"), ("greybox", "Greybox"),
     };
     public const string NotHere = "not in this build yet";
 
     public ChromeFrame Frame { get; }
+    /// <summary>Runs a row as the palette does (unavailable reason, echo, then the row): the D02 script player's command step.</summary>
+    public static Action<string, string?>? Run { get; private set; }
     public MoveHistory Moves { get; } = new();
     /// <summary>
     /// Sample mode (B4a): ADR-D01's whole frame on sample data, behind launch.py --sample, or null when it is off. The
@@ -53,6 +55,8 @@ public sealed class ShellChrome
     public static bool SampleOn => System.Environment.GetEnvironmentVariable("M600_SAMPLE") == "1";
     public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts and History (sample) hold sample data. The views, History, the revision and the history position are this session's.";
     private readonly bool _live;
+    // ADR-D01.41: the rotation link's state from the host: null with no Local view, true linked, false unlinked.
+    private readonly Func<bool?> _rotationLink;
     private readonly Readout _revision, _position;
     private readonly Readout? _queue;
     private readonly HashSet<Key> _taken = new();
@@ -87,9 +91,10 @@ public sealed class ShellChrome
         return File.Exists(Path.Combine(folder, "system.json")) ? folder : null;
     }
 
-    public ShellChrome(Control parent, string folder, bool live)
+    public ShellChrome(Control parent, string folder, bool live, Func<bool?>? rotationLink = null)
     {
         _live = live;
+        _rotationLink = rotationLink ?? (() => Frame?.LocalDrawn == true ? true : null);
         ChromeFonts.SetRoots(PackageFolders(folder));
         var iconSet = IconSet.Load(Path.Combine(folder, "icons.json"));
         ChromeIcons.Use(iconSet);
@@ -117,7 +122,9 @@ public sealed class ShellChrome
         }
         frame.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
-        var history = new HistoryPanel(Moves, new LayoutHistory(), () => frame.Tokens);
+        // ADR-D01.14: the layout history, shared by History's dock and the layout rows.
+        var layouts = new LayoutHistory();
+        var history = new HistoryPanel(Moves, layouts, () => frame.Tokens);
         frame.AddDockPanel(DockSide.Right, "history", "History", "panel.history", history);
         foreach (var panel in Panels)
         {
@@ -143,13 +150,27 @@ public sealed class ShellChrome
         {
             ShellJumble.AddRows(registry, folder);
         }
+        // Sample mode registers the draft rows Look Lab registers (Library branches, replay, preview sides, History and the
+        // layout roll), so the sample's controls reach a row; the palette marks each one "draft row" (owner's bug list,
+        // 26 November 2026: the Library branches would not open).
+        string[] sampleDrafts = [];
+        if (SampleOn)
+        {
+            var draftRows = File.ReadAllText(Path.Combine(folder, "command-rows-draft.json"));
+            var drafts = new CommandRegistry();
+            drafts.AddRows(draftRows);
+            registry.AddRows(draftRows);
+            sampleDrafts = drafts.Order.ToArray();
+        }
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         SampleMount? sample = null;
+        LayoutTracker? layoutTracker = null;
         var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
         frame.AddPane("gallery", "Gallery", gallery);
         string? Unavailable(string command, string? argument) => command switch
         {
-            "command.find" or "transient.close" or "help.open" or "motion.reduced.set" => null,
+            "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
+            _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
             // B9: the naming and threshold draft rows work; the other draft rows wait for their steps.
@@ -161,6 +182,7 @@ public sealed class ShellChrome
         _unavailable = Unavailable;
         var commands = new PaletteModel(registry, keymap, Unavailable);
         var palette = new CommandPalette(commands, () => frame.Tokens);
+        palette.DraftRows.UnionWith(sampleDrafts);
         frame.Overlays.AddChild(palette);
         var sheet = new ShortcutSheet(registry, keymap, () => frame.Tokens);
         frame.Overlays.AddChild(sheet);
@@ -173,7 +195,8 @@ public sealed class ShellChrome
         {
             sample = Sample = new SampleMount(frame, registry, keymap, ProjectSettings.GlobalizePath("res://sample-root"),
                 id => motions.Seconds(id, design, look.ReducedMotion), Execute,
-                k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet);
+                k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet, layouts);
+            sample.Look = appearance;
         }
         // Failures show in Problems with the error lamp, in every mode, and go to the run's errors.log.
         ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
@@ -213,6 +236,11 @@ public sealed class ShellChrome
                     break;
                 case "workspace.set" when argument == "layout:focus": frame.Model.SetFocusMode(!frame.Model.FocusMode); break;
                 case "workspace.set" when argument == "layout:maximise": frame.Model.SetPairMaximised(!frame.Model.PairMaximised); break;
+                // The layout reset button and the row are one path (owner's bug list, 26 November 2026).
+                case "workspace.reset": frame.SelectWorkspace(frame.Workspace); break;
+                case var layout when layoutTracker != null && LayoutTracker.Handles(layout):
+                    if (layoutTracker.Execute(command, argument) is { } still) frame.Say(still, true);
+                    break;
                 case "workspace.set":
                     if (!frame.SelectWorkspace(argument!.Substring(argument.IndexOf(':') + 1))) frame.Say("No workspace is named " + argument, true);
                     break;
@@ -224,10 +252,21 @@ public sealed class ShellChrome
                 case var handled when sample != null && sample.Handles(handled): sample.Execute(command, argument); break;
             }
         }
+        Run = Execute;
         palette.Run += row => Execute(row.Command, row.Argument);
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
         frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
+        frame.RowCommand += Execute;
+        // Without the sample mount the shell tracks the layout itself (with it, SampleMount does).
+        if (sample == null)
+        {
+            var tracker = layoutTracker = FrameLayout.Tracker(frame, layouts);
+            tracker.Restored += history.Refresh;
+            history.Command += Execute;
+            Callable.From(() => tracker.Track(FrameLayout.State(frame, () => look.Store(), () => ""),
+                FrameLayout.Apply(frame, v => { if (v.Length > 0) appearance.Edit(a => a.Restore(v), true, true); }, _ => { }))).CallDeferred();
+        }
         gallery.Asked += what =>
         {
             if (what == "preset") NextPreset();
@@ -366,6 +405,7 @@ public sealed class ShellChrome
         }
         Frame.Local.ClearMarks();
         Frame.Local.SetStatus(Frame.LocalDrawn ? null : "not drawn yet", Array.Empty<string>(), null);
+        ViewLink.Mark(Frame, _rotationLink);
         Jumble?.Marks(Frame.Global);
         Jumble?.Marks(Frame.Local);
         Sample?.Marks(Frame.Global);

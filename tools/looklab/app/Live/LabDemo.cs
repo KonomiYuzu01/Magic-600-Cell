@@ -8,7 +8,8 @@ using Magic600.Chrome;
 namespace LookLab.App.Live;
 
 // The lab has no engine, so the preview, the commit bar and the move history are driven by sample data that is
-// marked as such on screen. The layout history is real: it records and restores the lab's own arrangement.
+// marked as such on screen. The layout history is real: it records and restores the host's own arrangement through
+// the shared LayoutTracker.
 internal sealed class LabDemo
 {
     public static IReadOnlyList<string> Orbits => SampleCheck.Orbits;
@@ -16,7 +17,8 @@ internal sealed class LabDemo
     private static IReadOnlyList<PreviewSample> Samples => PreviewSamples.All;
     public PreviewModel Preview { get; } = new();
     public MoveHistory Moves { get; } = new();
-    public LayoutHistory Layout { get; } = new();
+    public LayoutTracker Tracker { get; }
+    public LayoutHistory Layout => Tracker.Layout;
     public CommitBar Bar { get; }
     public PreviewPanel PreviewView { get; }
     public HistoryPanel History { get; }
@@ -26,10 +28,6 @@ internal sealed class LabDemo
     private int nextSample;
     // The sample that is staged, or -1.
     public int Current { get; private set; } = -1;
-    private Func<IReadOnlyList<string>>? layoutState;
-    private Action<IReadOnlyList<string>>? layoutApply;
-    private bool restoring;
-    private const string Cut = "\n\u001e\n";
 
     public static bool Handles(string command) => command is "operation.preview" or "operation.preview.commit" or "operation.preview.cancel" or "view.preview.open" or
         "view.preview.scrub" or "session.undo" or "session.redo" or "session.undo.partial" or "session.branch.select" or "session.branch.replay" or "session.rollback" or
@@ -38,9 +36,11 @@ internal sealed class LabDemo
     // Where the command being carried out came from: a typed line never writes the move history.
     public InputSurface Surface { get; set; } = InputSurface.Key;
 
-    public LabDemo(ChromeFrame frame, Keymap keymap, Action<string, string?> run)
+    // `layout`: the host's own layout history, which its History dock shows; a new one otherwise.
+    public LabDemo(ChromeFrame frame, Keymap keymap, Action<string, string?> run, LayoutHistory? layout = null)
     {
         this.frame = frame;
+        Tracker = FrameLayout.Tracker(frame, layout);
         // A preview is built at a head; whatever moves the head makes it stale. A prefix is rechecked by the
         // sample rule as its own preview before it commits.
         Preview.Head = () => Moves.Revision; Moves.Changed += Preview.Follow;
@@ -57,49 +57,17 @@ internal sealed class LabDemo
         foreach ((string origin, string name, string time, int sample) in new[] { ("hand", "twist(cell 5, axis 0, +1)", "10:02", 2), ("macro", "my.corner_swap(cell 40)", "10:05", 0),
             ("script", "sweep.6cs on ring 1", "10:11", 1), ("hand", "twist(cell 77, axis 3, -1)", "10:12", 2), ("macro", "my.corner_swap(cell 117)", "10:20", 0) })
             Moves.Commit(origin, name, time, "commit " + name, origin == "hand" ? new[] { name } : Samples[sample].Moves);
-        frame.Rebuilt += () => { Bar.Refresh(); PreviewView.Refresh(); History.Refresh(); RecordLayout(); };
-        frame.Recoloured += () => { Bar.Refresh(); PreviewView.Refresh(); History.Refresh(); RecordLayout(); };
+        frame.Rebuilt += () => { Bar.Refresh(); PreviewView.Refresh(); History.Refresh(); };
+        frame.Recoloured += () => { Bar.Refresh(); PreviewView.Refresh(); History.Refresh(); };
+        Tracker.Restored += History.Refresh;
     }
 
-    // The layout history keeps the lab's stored arrangement parts: appearance, workspace and pane layout.
-    public void TrackLayout(Func<IReadOnlyList<string>> state, Action<IReadOnlyList<string>> apply)
-    {
-        layoutState = state; layoutApply = apply; Layout.Record("Opened", string.Join(Cut, state()));
-    }
-
-    private void RecordLayout()
-    {
-        if (restoring || layoutState == null || Layout.Cursor < 0) return;
-        string[] before = Layout.Steps[Layout.Cursor].State.Split(Cut); IReadOnlyList<string> now = layoutState();
-        string name = "Arrange panes"; string? merge = null;
-        if (now[0] != before[0])
-        {
-            string changed = now[0].Split('\n').Except(before[0].Split('\n')).FirstOrDefault() ?? "appearance";
-            name = "Appearance: " + changed.Replace("=", " ");
-            string key = changed.Split('=')[0]; if (key.StartsWith("knob.", StringComparison.Ordinal) || key == "scale") merge = key;
-        }
-        else if (now[1] != before[1]) name = "Workspace: " + frame.Workspaces.Names[frame.Workspace];
-        else if (now.Count > 4 && before.Length > 4 && now[4] != before[4]) name = "Key bindings";
-        Layout.Record(name, string.Join(Cut, now), merge);
-    }
-
-    private bool Restore(LayoutStep? step)
-    {
-        if (step == null || layoutApply == null) return false;
-        restoring = true;
-        try { layoutApply(step.State.Split(Cut)); frame.Flush(); } finally { restoring = false; }
-        History.Refresh();
-        return true;
-    }
+    // The layout history keeps the host's stored arrangement parts (FrameLayout): appearance, workspace, pane layout,
+    // view labels and key bindings.
+    public void TrackLayout(Func<IReadOnlyList<string>> state, Action<IReadOnlyList<string>> apply) => Tracker.Track(state, apply);
 
     // One named step of the layout history for everything the change does.
-    public void LayoutRun(string name, Action change)
-    {
-        restoring = true;
-        try { change(); frame.Flush(); } finally { restoring = false; }
-        if (layoutState != null) Layout.Record(name, string.Join(Cut, layoutState()));
-        History.Refresh();
-    }
+    public void LayoutRun(string name, Action change) => Tracker.Run(name, change);
 
     private void OpenPane() { if (!frame.Model.IsOpen(PreviewPane)) frame.Model.Drop(PreviewPane, FrameModel.Pair, DropZone.Right); }
 
@@ -268,16 +236,13 @@ internal sealed class LabDemo
             case "preview.side.after": Preview.SetSide(PreviewSide.After); break;
             case "preview.side.next": Preview.CycleSide(); break;
             case "session.rollback": Moved(argument != null && Moves.RollTo(int.Parse(argument, CultureInfo.InvariantCulture)), "The history is already there"); break;
-            case "layout.undo": Nothing(Restore(Layout.Undo()), "No layout change to undo"); break;
-            case "layout.roll":
-            {
-                bool rolled = int.TryParse(argument, NumberStyles.None, CultureInfo.InvariantCulture, out int step) && Restore(Layout.RollTo(step));
-                Nothing(rolled, argument == null ? "Roll the layout: it needs the number of a layout step" : "The layout history is already there"); break;
-            }
+            // The layout steps run in the shared LayoutTracker; a step it cannot take is said.
+            case "layout.undo":
+            case "layout.redo":
+            case "layout.roll": if (Tracker.Execute(command, argument) is { } still) frame.Say(still, true); break;
             // Without an argument History shows its default view, the moves.
             case "history.show": History.Show(argument == "layout"); break;
             case "history.entry.toggle": if (argument == null) frame.Say("History: it needs the id of an entry", true); else History.Toggle(argument); break;
-            case "layout.redo": Nothing(Restore(Layout.Redo()), "No layout change to redo"); break;
             case "history.dock.mode": History.SetPlainList(!History.PlainList); break;
         }
     }

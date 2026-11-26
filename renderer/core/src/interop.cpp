@@ -2046,7 +2046,10 @@ int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layo
         const auto kind = sa2::view_layout_kind(layout);
         auto& scene = product_scene(ctx);
         auto merged = scene.product.shape(view);
-        if (kind == SA2_LAYOUT_HOPF_RINGS)
+        // B22: the ring sheet reads the same table (its charts from row HopfSheetRow on), so either kind builds it. A
+        // sheet named before any rings once left the table unbuilt and the shaders read past another buffer (t18 is a
+        // root SRV, which nothing bounds): DXGI_ERROR_DEVICE_HUNG on hardware.
+        if (kind == SA2_LAYOUT_HOPF_RINGS || kind == SA2_LAYOUT_RING_SHEET)
             scene.product.set_hopf(sa2::hopf_table(*layout, [&](uint32_t cell) { return scene.cell_centre(cell); }));
         merged.layout = kind;
         scene.product.set_shape(view, merged);

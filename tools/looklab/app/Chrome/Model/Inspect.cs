@@ -21,10 +21,12 @@ public sealed class InspectField
     public double Min { get; }
     public double Max { get; }
     public double Step { get; }
-    public double Default { get; }
+    public double Default { get; internal set; }
     public double Value { get; internal set; }
     public string? Binding { get; internal set; }
     public Provenance Provenance { get; internal set; }
+    // A choice field's named values: its value is the index of the one in force (ADR-D01.22's projection, frame).
+    public IReadOnlyList<string>? Choices { get; internal init; }
 
     internal InspectField(string id, string section, string label, string fact)
     { Id = id; Section = section; Label = label; IsFact = true; Fact = fact; }
@@ -47,7 +49,7 @@ public sealed class InspectField
         }
     }
 
-    public string Display => IsFact ? Fact : Binding != null ? "= " + Binding : Value.ToString(Decimals == 0 ? "0" : "0." + new string('0', Decimals), CultureInfo.InvariantCulture);
+    public string Display => IsFact ? Fact : Binding != null ? "= " + Binding : Choices is { } named ? named[(int)Math.Clamp(Math.Round(Value), 0, named.Count - 1)] : Value.ToString(Decimals == 0 ? "0" : "0." + new string('0', Decimals), CultureInfo.InvariantCulture);
 
     // The nearest value on the field's grid, within its range.
     internal double Snap(double value) => Math.Clamp(Min + Math.Round((value - Min) / Step) * Step, Min, Max);
@@ -76,6 +78,25 @@ public sealed class InspectorModel
     public int Rung(string id) => rungs.TryGetValue(id, out int rung) ? rung : Rungs.Count - 1;
     // What the docked inspector holds beyond the strip.
     public int Beyond => fields.Count - Essentials.Count();
+    // The View section's scope (revision 6, Q3): the scopes the host offers (Both only when its views share their
+    // values) and the one in force; ViewFields reads it.
+    public ViewScope Scope { get; private set; } = ViewScope.Both;
+    public IReadOnlyList<ViewScope> Scopes { get; private set; } = new[] { ViewScope.Both };
+    public event Action<ViewScope>? ScopeChanged;
+
+    public void OfferScopes(IReadOnlyList<ViewScope> scopes)
+    {
+        if (scopes.Count == 0 || scopes[0] != ViewScope.Both || scopes.Distinct().Count() != scopes.Count) throw J.Error("scope", "Both first, each scope once");
+        Scopes = scopes.ToArray(); if (!Scopes.Contains(Scope)) Scope = ViewScope.Both;
+        Safe.Raise(Changed);
+    }
+
+    public bool SetScope(ViewScope scope)
+    {
+        if (scope == Scope || !Scopes.Contains(scope)) return false;
+        Scope = scope; Safe.Raise(ScopeChanged, scope); Safe.Raise(Changed);
+        return true;
+    }
 
     public InspectField this[string id] => fields.FirstOrDefault(f => f.Id == id) ?? throw J.Error(id, "unknown field");
 
@@ -92,6 +113,16 @@ public sealed class InspectorModel
         return field;
     }
 
+    // A choice among named values, for View or Preview: its value is the index of the named value in force.
+    public InspectField AddChoice(string section, string id, string label, IReadOnlyList<string> choices, int @default, int value, bool essential = false, Provenance provenance = Provenance.Default)
+    {
+        if (choices.Count < 2 || choices.Distinct(StringComparer.Ordinal).Count() != choices.Count) throw J.Error(id, "a choice needs two or more distinct names");
+        if (section != View && section != Preview) throw J.Error(id, "a choice belongs to View or Preview; puzzle state is read-only");
+        if (@default < 0 || @default >= choices.Count || value < 0 || value >= choices.Count) throw J.Error(id, "default or value is not one of the choices");
+        var field = new InspectField(id, section, label, 0, choices.Count - 1, 1, @default, value, essential, provenance) { Choices = choices.ToArray() }; Add(field);
+        return field;
+    }
+
     private void Add(InspectField field)
     {
         if (fields.Any(f => f.Id == field.Id)) throw J.Error(field.Id, "duplicate field");
@@ -100,6 +131,16 @@ public sealed class InspectorModel
 
     // Removes the fields of a section, for parameters that follow what is staged.
     public void Clear(string section) { if (fields.RemoveAll(f => f.Section == section) > 0) Safe.Raise(Changed); }
+
+    // The host shows another view's value and default in a field (the View scope changed); it is not an edit.
+    public void Rebase(string id, double value, double @default, Provenance provenance)
+    {
+        InspectField field = this[id];
+        if (field.IsFact) return;
+        double first = Math.Clamp(@default, field.Min, field.Max);
+        if (field.Value == value && field.Default == first && field.Provenance == provenance) return;
+        field.Default = first; field.Value = Math.Clamp(value, field.Min, field.Max); field.Provenance = provenance; Safe.Raise(Updated, field);
+    }
 
     // The host reports a value that changed elsewhere; it is not an edit.
     public void Sync(string id, double value, Provenance provenance)
@@ -170,6 +211,13 @@ public sealed class InspectorModel
             if (expression.Length == 0) return "an expression follows the = sign";
             field.Binding = expression; field.Provenance = Provenance.Script;
             Safe.Raise(Updated, field); Safe.Raise(Edited, field);
+            return null;
+        }
+        if (field.Choices is { } named)
+        {
+            int at = named.ToList().FindIndex(c => string.Equals(c, text, StringComparison.OrdinalIgnoreCase));
+            if (at < 0) return "expected one of " + string.Join(", ", named);
+            Set(id, at);
             return null;
         }
         if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value) || !double.IsFinite(value)) return "expected a number, or = and an expression";

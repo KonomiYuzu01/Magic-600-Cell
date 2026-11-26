@@ -71,6 +71,17 @@ public sealed class Appearance
         return string.Join("\n", lines);
     }
 
+    // A stored appearance put back in place (the layout history's undo), whole or refused whole: hosts that hold this
+    // instance keep it.
+    public void Restore(string stored)
+    {
+        Appearance kept = Parse(stored, system, themes);
+        Theme = kept.Theme; Density = kept.Density; DisplayScale = kept.DisplayScale; HighContrast = kept.HighContrast; SceneLook = kept.SceneLook;
+        OtherCharacter = kept.OtherCharacter; ReducedMotion = kept.ReducedMotion;
+        knobs.Clear();
+        foreach (var family in kept.knobs) knobs[family.Key] = new SortedDictionary<string, double>(family.Value, StringComparer.Ordinal);
+    }
+
     // A stored appearance is applied whole or refused whole.
     public static Appearance Parse(string stored, DesignSystem system, IReadOnlyList<ThemeFamily> themes)
     {

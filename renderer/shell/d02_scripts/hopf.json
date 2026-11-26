@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "hopf",
-  "note": "B23, bare: with --d02 and the owner's opening file naming the hopfRings projection, Global opens on Look Lab's 20 Hopf rings of 30 cells at the file's field of view (zoom 1/tan(fov/2)), on wj-ia-300's session fixture, so the posed pieces are drawn on their rings; two wheel notches scale that zoom by 1.1 squared. No cap is named, so every frame is a one-view frame.",
+  "note": "B23, bare: with --d02 and the owner's opening file naming the hopfRings projection, Global opens on Look Lab's 20 Hopf rings of 30 cells at the file's field of view (zoom 1/tan(fov/2)), on wj-ia-300's session fixture, so the posed pieces are drawn on their rings; two wheel notches scale that zoom by 1.1 squared. No cap is named, so Local draws the default cap 0 (owner, 26 November 2026: Local is never empty) and, once it is drawn, every frame is a composite frame.",
   "steps": [
     {
       "wait_ms": 2500

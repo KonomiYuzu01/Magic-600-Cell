@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | ADR-D02's build: all of ADR-D01 as the base, one shared UI library, the order of work and the week's quota
+The owner made all of ADR-D01 the base of D02's build, put all UI and wiring in the shared library with reuse first, cancelled the evening's other runs so D02 builds through the night, set the order of work on parallel tracks with slow generation in Rust, and asked that the whole of D02 fit this week's quota ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), sections 14 to 18).
+
 ## [2026-11-26] decision | ADR-D02's build: the owner's view in the product, no checkpoint stops, Fable then Astra
 Watching the product window, the owner asked that it turn with the mouse, open on the owner's view of 22 November with smaller stickers, and show only the turning cells in Local; that the build not stop at checkpoints and run as fast as possible, with the drawing as a second track; and that the finished build get one Fable refinement round, then two Astra rounds, then the freeze ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), sections 8 to 11).
 
