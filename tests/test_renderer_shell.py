@@ -1596,6 +1596,50 @@ class D02Host(unittest.TestCase):
         self.assertTrue(run.expect_host(dumps("Jumble · on the lattice", 0), {}, None))
 
 
+class D02NameCap(unittest.TestCase):
+    """B9: the four CR-14 draft rows for naming and the threshold work through the palette, the host carries them out
+    without invoking the command registry, and the name-cap expectation sees each part it checks."""
+
+    def test_the_host_carries_the_naming_and_threshold_rows(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        self.assertIn("_ when Jumble != null && Jumble.Handles(command) => Jumble.Unavailable(command, argument),", chrome)
+        self.assertLess(chrome.index("Jumble.Handles(command) => Jumble.Unavailable"), chrome.index("ShellJumble.Drafts.Contains(command)"))
+        self.assertIn("case var jumble when Jumble != null && Jumble.Handles(jumble): Jumble.Execute(command, argument); break;", chrome)
+        self.assertIn("host.SetMeeting(ShellJumble.Meeting());", chrome)
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        for row in ("jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear"):
+            self.assertIn(f'"{row}"', host)
+        rows = json.loads(text(ROOT / "tools" / "looklab" / "data" / "design" / "command-rows-d02.json"))["commands"]
+        self.assertTrue({"jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear"}
+                        <= {row["id"] for row in rows if row["request"] == "CR-14"})
+
+    def test_the_name_cap_expectation_sees_each_part(self):
+        run = shell_module("d02_run")
+        self.assertIn("name-cap", run.ON_FIXTURE)
+        self.assertNotIn("name-cap", run.IN_SAMPLE_MODE)
+        self.assertTrue((SHELL / "d02_scripts" / "name-cap.json").is_file())
+        rows = json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / "ia-40" / "rim.json"))["rows"]
+        row = rows[30]
+        admissible = [r for r in rows if r["status"] == "admissible"]
+        members = sum(1 for r in admissible if r["N_c"] >= 50)
+        blocked = sum(1 for r in rows if r["status"] == "blocked")
+        counts = f"members {members} · non-members {len(admissible) - members} · blocked {blocked} · pending 0"
+        panel = "panel:jumble.cap_map"
+        steps = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 30", "chord Enter", "wait 1500 ms", "chord F1",
+                 "text > jumble.capmap.threshold.set N_c >= 50", "chord Enter", "wait 3000 ms"]
+        unnamed = [[panel, "no cap named"], ["view:Local", "▸ Named cap · 0"], ["view:Local", "Name a cap: click its cell, or type its number."]]
+        tier1 = [[panel, f"cap 30 · N_c {row['N_c']} · floor {row['F_c']} · u 0 · 80 meeting caps"], ["view:Local", "▸ Named cap · 1"]]
+        tier1 += [["view:Local", str(row[key])] for key in ("In_c", "Out_c", "A_c", "N_c")]
+
+        def dumps(count=counts):
+            out = [{"do": do, "lines": unnamed} for do in steps[:5]] + [{"do": do, "lines": tier1} for do in steps[5:9]]
+            return out + [{"do": steps[9], "lines": tier1 + [[panel, count], [panel, "N_c ≥ 50"]]}]
+        self.assertEqual(run.expect_name_cap(dumps(), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_name_cap(dumps(counts.replace("blocked", "blocked 0 ·", 1)), {}, "ia-40")), 1)
+        self.assertTrue(run.expect_name_cap(dumps()[:5], {}, "ia-40"))
+        self.assertTrue(run.expect_name_cap(dumps(), {}, "on-zero"))
+
+
 class D02Rotation(unittest.TestCase):
     """The view rotation the owner asked for on 26 November 2026: with --d02 a left-button drag in the Global opening
     turns the core's 4D camera as Look Lab's drag does, a click stays a click, and without --d02 nothing changes."""

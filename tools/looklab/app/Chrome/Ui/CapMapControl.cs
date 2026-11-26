@@ -12,8 +12,10 @@ namespace Magic600.Chrome;
 //   at floor     a corner bracket and its N_c (N_c = F_c > 0);
 //   above floor  its N_c numeral only;
 //   pending      ADR-D01's pending ring, while the cap has no certified and completed rim row.
-// The columns are cyclic: a dashed wrap mark runs down both sides. Hovering a cell only inspects it (its tooltip);
-// naming a cap comes with B9.
+// The columns are cyclic: a dashed wrap mark runs down both sides. Over the patterns (B9): the threshold's members
+// carry the Query set outline, the named cap ADR-D01's selection brackets, and its 80 meeting caps a small square in
+// the cell's corner, which is neither an outline nor a dim. A click on a cell, or a typed number and Enter while the
+// map has focus, names a cap; hovering a cell only inspects it (its tooltip).
 public sealed partial class CapMapControl : Control
 {
     // The widest numeral a cell keeps room for: N_c stays below 10,000 (it counts seams at one cap).
@@ -26,17 +28,61 @@ public sealed partial class CapMapControl : Control
 
     public CapLayout? Layout { get; private set; }
     public CapMapModel Map { get; private set; } = CapMapModel.Pending();
+    public CapThreshold Threshold { get; private set; } = CapThreshold.None;
+    public int? Named { get; private set; }
+    public IReadOnlyList<int> Meeting { get; private set; } = Array.Empty<int>();
+    // Where hovering goes: it inspects and names nothing.
+    public CapNaming? Naming { get; set; }
+    // The digits typed while the map has focus.
+    public string Typed { get; private set; } = "";
+    // A cell was clicked, or a typed number entered: the host names that cap.
+    public event Action<int>? Picked;
+    public event Action? TypedChanged;
+    private HashSet<int> members = new();
+    private HashSet<int> meeting = new();
 
     public CapMapControl(Func<TokenSet> tokens)
     {
-        this.tokens = tokens; Name = "CapMapCells"; MouseFilter = MouseFilterEnum.Pass;
+        this.tokens = tokens; Name = "CapMapCells"; MouseFilter = MouseFilterEnum.Stop; FocusMode = FocusModeEnum.All;
         TooltipText = "Cap map"; SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         Restyle();
     }
 
+    // The threshold's members, the named cap and its meeting caps, over the classes.
+    public void Mark(CapThreshold threshold, int? named, IReadOnlyList<int> meetingCaps)
+    {
+        Threshold = threshold; Named = named; Meeting = meetingCaps;
+        members = new HashSet<int>(threshold.Members(Map)); meeting = new HashSet<int>(meetingCaps);
+        QueueRedraw();
+    }
+
+    public override void _GuiInput(InputEvent e)
+    {
+        switch (e)
+        {
+            case InputEventMouseMotion motion:
+                Naming?.Hover(CapAt(motion.Position));
+                break;
+            case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } press when CapAt(press.Position) is int cap:
+                GrabFocus(); Picked?.Invoke(cap); AcceptEvent();
+                break;
+            case InputEventKey { Pressed: true } key:
+                int digit = key.Keycode is >= Key.Key0 and <= Key.Key9 ? (int)(key.Keycode - Key.Key0) : key.Keycode is >= Key.Kp0 and <= Key.Kp9 ? (int)(key.Keycode - Key.Kp0) : -1;
+                if (digit >= 0 && Typed.Length < 3) Type(Typed + digit.ToString(CultureInfo.InvariantCulture));
+                else if (key.Keycode == Key.Backspace && Typed.Length > 0) Type(Typed[..^1]);
+                else if (key.Keycode == Key.Escape && Typed.Length > 0) Type("");
+                else if (key.Keycode is Key.Enter or Key.KpEnter && CapNaming.Typed(Typed) is int typed) { Type(""); Picked?.Invoke(typed); }
+                else break;
+                AcceptEvent();
+                break;
+        }
+    }
+
+    private void Type(string text) { Typed = text; Safe.Raise(TypedChanged); }
+
     public void Show(CapLayout? layout, CapMapModel map)
     {
-        Layout = layout; Map = map; Restyle();
+        Layout = layout; Map = map; members = new HashSet<int>(Threshold.Members(map)); Restyle();
     }
 
     // The cell size follows the theme's micro type: room for the widest numeral and a hairline gap.
@@ -60,7 +106,9 @@ public sealed partial class CapMapControl : Control
             for (int c = 0; c < CapLayout.Columns; c++)
             {
                 int cap = Layout.At(r, c);
-                Cell(this, t, font, size, new Rect2(gutter + c * cell.X, r * cell.Y, cell.X, cell.Y), Map.Class(cap), Map.Numeral(cap)?.ToString(CultureInfo.InvariantCulture));
+                var box = new Rect2(gutter + c * cell.X, r * cell.Y, cell.X, cell.Y);
+                Cell(this, t, font, size, box, Map.Class(cap), Map.Numeral(cap)?.ToString(CultureInfo.InvariantCulture));
+                Over(this, t, box, members.Contains(cap), meeting.Contains(cap), Named == cap);
             }
         float height = CapLayout.Rows * cell.Y, line = Math.Max(1, t.Px("border.width"));
         Color mark = t.C("text.dim");
@@ -104,6 +152,32 @@ public sealed partial class CapMapControl : Control
         on.DrawString(font, new Vector2(inner.End.X - width - line, baseline), numeral, HorizontalAlignment.Left, -1, size, ink);
     }
 
+    // The marks over a cell's pattern: the Query set outline at a threshold member, the meeting square, the selection
+    // brackets at the named cap.
+    public static void Over(CanvasItem on, TokenSet t, Rect2 box, bool member, bool meets, bool named)
+    {
+        float line = Math.Max(1, t.Px("border.width"));
+        if (member) on.DrawRect(box.Grow(-line / 2), t.C("accent.strong"), false, Math.Max(1.5f, 1.5f * line));
+        if (meets)
+        {
+            float side = Math.Max(3, Mathf.Floor(box.Size.Y * .3f));
+            on.DrawRect(new Rect2(box.Position.X + line, box.End.Y - side - line, side, side), t.C("text"));
+        }
+        if (!named) return;
+        float w = Math.Max(2, t.Px("focus.width")), arm = Math.Min(box.Size.X, box.Size.Y) * .45f;
+        Color ink = t.C("state.selected");
+        Rect2 outer = box.Grow(w / 2);
+        foreach ((Vector2 corner, Vector2 dx, Vector2 dy) in new[]
+        {
+            (outer.Position, Vector2.Right, Vector2.Down), (new Vector2(outer.End.X, outer.Position.Y), Vector2.Left, Vector2.Down),
+            (new Vector2(outer.Position.X, outer.End.Y), Vector2.Right, Vector2.Up), (outer.End, Vector2.Left, Vector2.Up),
+        })
+        {
+            on.DrawLine(corner, corner + dx * arm, ink, w);
+            on.DrawLine(corner, corner + dy * arm, ink, w);
+        }
+    }
+
     // The cap under a point of the sheet, if any.
     public int? CapAt(Vector2 point)
     {
@@ -126,7 +200,9 @@ public sealed partial class CapMapControl : Control
             CapClass.Pending => "no certified rim row yet",
             _ => "N_c " + Map.Nc(cap)?.ToString(CultureInfo.InvariantCulture),
         };
-        return $"cap {cap} · ring {row + 1}, place {column + 1} · {CapMapModel.Word(k)} · {nc}";
+        string marks = (Threshold.Member(Map, cap) == true ? " · threshold member" : "") + (meeting.Contains(cap) ? " · meets the named cap" : "")
+            + (Named == cap ? " · named" : "");
+        return $"cap {cap} · ring {row + 1}, place {column + 1} · {CapMapModel.Word(k)} · {nc}{marks}";
     }
 }
 

@@ -152,6 +152,8 @@ public sealed class ShellChrome
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
+            // B9: the naming and threshold draft rows work; the other draft rows wait for their steps.
+            _ when Jumble != null && Jumble.Handles(command) => Jumble.Unavailable(command, argument),
             _ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,
             _ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),
             _ => NotHere,
@@ -215,6 +217,7 @@ public sealed class ShellChrome
                 case "theme.select" when argument == "preset.next": NextPreset(); break;
                 case "theme.select": appearance.Edit(a => a.SetTheme(themes[(Array.FindIndex(themes, t => t.Id == a.Theme) + 1) % themes.Length].Id), true, true); break;
                 case "density.preset.set": NextDensity(); break;
+                case var jumble when Jumble != null && Jumble.Handles(jumble): Jumble.Execute(command, argument); break;
                 case var handled when sample != null && sample.Handles(handled): sample.Execute(command, argument); break;
             }
         }
@@ -285,6 +288,9 @@ public sealed class ShellChrome
             };
             host.SetTotals(ShellJumble.Totals());
             host.SetCapMap(layout, ShellJumble.CapMap());
+            // B9: the 80 meeting caps of a named cap, and its own record where the bound sample has one.
+            host.CapRecord = ShellJumble.CapRecord;
+            host.SetMeeting(ShellJumble.Meeting());
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
             Jumble.Changed += Describe;

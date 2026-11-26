@@ -16,6 +16,19 @@ public sealed class JumbleHost
     public LocalAccordion Local { get; } = new();
     public JumbleSurface Surface { get; }
     public CapMapPanel CapMap { get; }
+    // B9: the named cap, the threshold, the meeting caps and the job gate (ADR-D02.15, .16, .19).
+    public CapNaming Naming { get; } = new();
+    public CapThreshold Threshold { get; private set; } = CapThreshold.None;
+    public CapJobs Jobs { get; }
+    // A named cap's own record (u at a blocked cap needs its straddlers), where the source has one.
+    public Func<int, CapReadout?>? CapRecord { get; set; }
+    private CapLayout? layout;
+    private CapMapModel map = CapMapModel.Pending();
+    private MeetingCaps? meeting;
+    private string? refused;
+    // The draft rows (CR-14) this host carries out.
+    public static readonly IReadOnlySet<string> Carried = new HashSet<string>(StringComparer.Ordinal)
+        { "jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear" };
     // The facts changed: the host draws its view marks again (Marks).
     public event Action? Changed;
     private readonly ChromeFrame frame;
@@ -38,12 +51,17 @@ public sealed class JumbleHost
         Surface = new JumbleSurface(Local, () => frame.Tokens, names, emptySentence, emptyBody);
         string title = names.TryGetValue("cap_map", out string? name) ? name : "Cap map";
         CapMap = new CapMapPanel(Settings, () => frame.Tokens, title);
+        Jobs = new CapJobs(Naming);
+        CapMap.Map.Naming = Naming;
+        CapMap.Map.Picked += cap => Name(cap);
+        CapMap.ThresholdTyped += text => SetThreshold(text);
+        Naming.Changed += _ => Named();
         frame.AddDockPanel(DockSide.Bottom, EntrySlot.CapMapPanel, title, "panel.capmap", CapMap);
         // The bottom dock is a chrome setting both ways: the entry opens the cap map there, and a panel the researcher
         // opens there is theirs, so Jumble off leaves it.
         Settings.Set("dock.bottom", frame.Model.Docks[DockSide.Bottom].Open);
         Settings.Changed += key => { if (key == "dock.bottom" && !following) Dock(); };
-        frame.Model.Changed += () => { if (!following) Settings.Set("dock.bottom", frame.Model.Docks[DockSide.Bottom].Open); };
+        frame.Model.Changed += () => { if (!following) Settings.Set("dock.bottom", frame.Model.Docks[DockSide.Bottom].Open); Place(); };
         source.Changed += Follow;
         frame.Rebuilt += Place;
         frame.Rebuilt += () => { if (GodotObject.IsInstanceValid(CapMap)) CapMap.Refresh(); };
@@ -66,10 +84,73 @@ public sealed class JumbleHost
         Place();
     }
 
-    // The cap map for the bound state, or every cap pending while none is bound (ADR-D02.13, .14).
+    // The cap map for the bound state, or every cap pending while none is bound (ADR-D02.13, .14). A named cap stays
+    // named, and its readout follows the new state.
     public void SetCapMap(CapLayout? layout, CapMapModel map)
     {
+        this.layout = layout; this.map = map;
         if (GodotObject.IsInstanceValid(CapMap)) CapMap.Show(layout, map);
+        Named();
+    }
+
+    public void SetMeeting(MeetingCaps? value) { meeting = value; Named(); }
+
+    public bool Name(int cap) => Naming.Name(cap);
+
+    // Formulas from the field or the palette; an empty text clears the threshold. A formula that does not read
+    // leaves the threshold as it was and says why.
+    public bool SetThreshold(string text)
+    {
+        try { Threshold = CapThreshold.Parse(text); refused = null; }
+        catch (FormatException e) { refused = e.Message; }
+        Remark();
+        return refused == null;
+    }
+
+    public void ClearThreshold() { Threshold = CapThreshold.None; refused = null; Remark(); }
+
+    // The named cap changed, or the state under it: the readout, Local's facts, the section count and the map.
+    private void Named()
+    {
+        int? cap = Naming.Named;
+        Local.SetCount("named_cap", cap == null ? 0 : 1);
+        CapReadout? readout = cap is int c ? (CapRecord != null ? CapRecord(c) : null) ?? map.Readout(c) : null;
+        SetCap(readout);
+        Surface.SetFacts(readout != null && layout != null ? CapFacts.Tier2(map, layout, readout) : null);
+        Remark();
+    }
+
+    // The threshold, the named cap and its meeting caps over the cap map, and the threshold row on Global's border.
+    private void Remark()
+    {
+        if (!GodotObject.IsInstanceValid(CapMap)) return;
+        IReadOnlyList<int> meets = Naming.Named is int c && meeting != null ? meeting.Of(c) : Array.Empty<int>();
+        CapMap.Mark(Threshold, Naming.Named, meets, refused);
+        Place();
+    }
+
+    public bool Handles(string command) => Carried.Contains(command);
+
+    public string? Unavailable(string command, string? argument) => command switch
+    {
+        _ when !Source.State.Mode => "Jumble is off",
+        "jumble.cap.name" when argument == null => "it needs a cap number, as in > jumble.cap.name 150",
+        "jumble.cap.name" when CapNaming.Typed(argument) == null => "no cap is numbered " + argument + "; caps are 0 to 599",
+        "jumble.cap.unname" when Naming.Named == null => "no cap is named",
+        "jumble.capmap.threshold.set" when argument == null => "it needs formulas: N_c ≥ k, N_c ≤ k or N_c = F_c",
+        "jumble.capmap.threshold.clear" when !Threshold.IsSet => "no threshold is set",
+        _ => null,
+    };
+
+    public void Execute(string command, string? argument)
+    {
+        switch (command)
+        {
+            case "jumble.cap.name": if (CapNaming.Typed(argument) is int cap) Name(cap); break;
+            case "jumble.cap.unname": Naming.Unname(); break;
+            case "jumble.capmap.threshold.set": SetThreshold(argument ?? ""); break;
+            case "jumble.capmap.threshold.clear": ClearThreshold(); break;
+        }
     }
 
     public IReadOnlyList<ReadoutSlot> Totals => totals;
@@ -81,6 +162,34 @@ public sealed class JumbleHost
         if (!GodotObject.IsInstanceValid(frame) || frame.Global == null || frame.Local == null) return;
         Row(frame.Global, "JumbleTotals", totals, totalsMarked, Source.State.Mode);
         Row(frame.Local, "JumbleCap", cap ?? Array.Empty<ReadoutSlot>(), capMarked, Source.State.Mode && cap != null);
+        Border(frame.Global, Source.State.Mode && Threshold.IsSet && CapThreshold.OnGlobalBorder(frame.Model.Docks[DockSide.Bottom].Open));
+    }
+
+    // ADR-D02.15: while the cap map's dock is closed, the threshold field and its count stay on Global's border.
+    private void Border(ViewFrame view, bool on)
+    {
+        if (!GodotObject.IsInstanceValid(view)) return;
+        HBoxContainer? row = view.Tools.GetNodeOrNull<HBoxContainer>("JumbleThreshold");
+        if (!on)
+        {
+            if (row != null) { view.Tools.RemoveChild(row); row.QueueFree(); }
+            return;
+        }
+        TokenSet t = frame.Tokens;
+        if (row == null)
+        {
+            row = new HBoxContainer { Name = "JumbleThreshold" };
+            var field = new LineEdit { Name = "Field", CustomMinimumSize = new Vector2(180, 0), TooltipText = "The cap map's threshold; Enter sets it, an empty field clears it" };
+            field.TextSubmitted += text => SetThreshold(text);
+            row.AddChild(field);
+            row.AddChild(ChromeWidgets.Text("", "MicroLabel"));
+            view.Tools.AddChild(row); view.Tools.MoveChild(row, 0);
+        }
+        var edit = row.GetNode<LineEdit>("Field");
+        if (!edit.HasFocus()) edit.Text = Threshold.Formula;
+        var count = row.GetChild<Label>(1);
+        count.Text = refused ?? (Threshold.Counts(map) is ThresholdCounts c ? CapThreshold.Line(c) : "");
+        count.AddThemeColorOverride("font_color", t.C(refused != null ? "state.invalid" : "text.dim"));
     }
 
     private void Row(ViewFrame view, string name, IReadOnlyList<ReadoutSlot> slots, IReadOnlySet<int> marked, bool on)

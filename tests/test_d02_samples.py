@@ -69,7 +69,7 @@ class SampleTests(unittest.TestCase):
         self.assertEqual(set(self.index['not_built']), {'contact.json', 'hidden-piece masks'})
 
     def test_every_file_listed_exists_and_nothing_else(self):
-        listed = {'states.json', 'corrections.json', 'cap-layout.json'}
+        listed = {'states.json', 'corrections.json', 'cap-layout.json', 'meeting-caps.json'}
         for row in self.index['states']:
             listed |= {f"{row['state']}/{name}" for name in row['files']}
         present = {str(p.relative_to(SAMPLES)).replace('\\', '/') for p in SAMPLES.rglob('*') if p.is_file()}
@@ -206,6 +206,36 @@ class SampleTests(unittest.TestCase):
                 d = row[(j + 1) % 30]
                 self.assertAlmostEqual(dots[c, d], nearest[c], places=9)
                 self.assertAlmostEqual(dots[c, d], nearest[d], places=9)
+
+    def test_meeting_caps_are_j1s_rule(self):
+        # B9: every cap meets 80 caps, J1's meeting_caps: n_c·n_d at least the 81st largest n_0·n_x. The products
+        # fall on a few levels, so the float threshold is taken halfway to the next level, and the relation is
+        # symmetric. Each named cap's covers record has the same domain.
+        import numpy
+        doc = read('meeting-caps.json')
+        self.assertEqual(doc['format'], FORMAT)
+        self.assertEqual(doc['model'], read('cap-layout.json')['model'])
+        with numpy.load(ROOT / 'assets' / 'model.npz') as z:
+            normals = numpy.asarray(z['normals'], dtype=numpy.float64)
+        unit = normals / numpy.linalg.norm(normals, axis=1, keepdims=True)
+        dots = unit @ unit.T
+        levels = sorted(dots[0], reverse=True)
+        self.assertGreater(levels[80] - levels[81], 1e-3)
+        threshold = (levels[80] + levels[81]) / 2
+        expected = [[d for d in range(600) if d != c and dots[c, d] > threshold] for c in range(600)]
+        self.assertEqual(doc['caps'], expected)
+        self.assertEqual({len(row) for row in doc['caps']}, {80})
+        for c, row in enumerate(doc['caps']):
+            for d in row:
+                self.assertIn(c, doc['caps'][d])
+        named = 0
+        for path in sorted(SAMPLES.glob('*/cap-*.json')):
+            record = json.loads(path.read_text(encoding='utf-8'))
+            domain = record['covers'].get('domain')
+            if domain is not None:
+                self.assertEqual(domain, doc['caps'][record['cap']], path.name)
+                named += 1
+        self.assertGreaterEqual(named, 5)
 
     def test_corrections(self):
         doc = read('corrections.json')

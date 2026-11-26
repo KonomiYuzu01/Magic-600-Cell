@@ -354,6 +354,28 @@ relative path is from the repository root.
   - No slot leaves `Empty` before a cap is named; hovering only inspects.
   - Tier 1 and Tier 2 facts in a fixed order.
 - **Check:** `D02NoDefaultThreshold`; `D02ThresholdCountsBlockedApart`; `D02ThresholdNeverReorders`; `D02NoJobBeforeNaming`; `D02HoverNamesNothing`; `D02MeetingCapsAre80`. Then `d02_run.py --script name-cap`, by keys only.
+- **As built (integrator, 26 November 2026):**
+  - `make_d02_samples.py` writes `meeting-caps.json`: J1's `meeting_caps` for every cap, from the model's poles (cap d meets cap c when n_c·n_d is at least the 81st largest n_0·n_x). The float products fall on separate levels, so the builder takes the threshold between them, and it checks that every cap meets 80 and that the relation is symmetric. `test_d02_samples.py` checks it again, and checks that every named cap's covers record has the same domain.
+  - `Model/CapThreshold.cs`:
+    - `CapPredicate` reads the three formulas, `N_c ≥ k`, `N_c ≤ k` and `N_c = F_c`, also written `>=` and `<=`. Any other formula is refused with the reason.
+    - `CapThreshold` is a set of predicates that a member meets together. There is no default. `Counts()` gives members, non-members, blocked and pending apart; a blocked cap is never tested. Members come in cap-id order.
+    - `CapNaming` holds the named cap, plus a hover that names nothing. `MeetingCaps` refuses anything but 600 symmetric rows of 80.
+    - `CapJobs` keeps every Jumble slot Empty until a cap is named.
+    - `CapFacts` gives Tier 1 (the kind, the id, and N_c, the floor and u) and Tier 2 (the facts in one fixed order).
+  - `CapMapModel` keeps the certified row's In, Out, A, N_c and F_c, and gives the named cap's readout. At a blocked cap, u stays pending unless the cap's own record gives its straddlers.
+  - The map draws, over the patterns:
+    - the Query set outline at each threshold member;
+    - the named cap with ADR-D01's selection brackets;
+    - each of its 80 meeting caps with a small square in the cell's corner, which is neither an outline nor a dim.
+  - A click on a cell names a cap, and so does typing its number and pressing Enter while the map has focus. Hovering only inspects.
+  - The panel has the threshold field with its four counts, and the named cap's Tier 1 line with its meeting caps. Local's Named cap section counts the named cap and shows the Tier 2 facts when it is open. The empty sentence goes once a cap is named.
+  - While the dock is closed or holds another panel, the threshold field and its counts sit on Global's border.
+  - The four CR-14 draft rows, `jumble.cap.name`, `jumble.cap.unname`, `jumble.capmap.threshold.set` and `.clear`, now work through the palette, which still marks them as draft rows. The host carries them out without invoking the command registry. The other draft rows still say they wait for their steps.
+  - Picking a sticker and the frame's docked inspector wait for B17. Until then the tiers show in the panel and in Local.
+  - Checks:
+    - The console lane passed 182 of 182, with the six named tests. `test_d02_samples.py` passed 11 of 11 and `test_renderer_shell.py` 65 of 65.
+    - `d02_run.py --script name-cap` passed on `ia-40` by keys only (`c9-product-b25915b566040b47`). `> jumble.cap.name 30` reads cap 30 · N_c 165 · floor 41 · u 0 · 80 meeting caps. `> jumble.capmap.threshold.set N_c >= 50` reads members 9 · non-members 566 · blocked 25 · pending 0, as the rim rows count them.
+    - `--script host` passed again on `ia-40`.
 - **Owner sees:** type a cap number and read the three threshold counts.
 - **Machine:** H, W.
 - **Checkpoint:** no.

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Num = Magic600.Chrome.Numeral;
 
 namespace Magic600.Chrome;
 
@@ -49,12 +50,18 @@ public sealed class CapLayout
 public sealed class CapMapModel
 {
     private readonly CapClass[] classes;
-    private readonly long?[] nc;
+    // The certified rim row's In_c, Out_c, A_c, N_c and F_c, per cap; none at a blocked or pending cap.
+    private readonly long?[] inC, outC, aC, nc, fc;
 
-    private CapMapModel(CapClass[] classes, long?[] nc) { this.classes = classes; this.nc = nc; }
+    private CapMapModel(CapClass[] classes)
+    {
+        this.classes = classes;
+        inC = new long?[CapLayout.Caps]; outC = new long?[CapLayout.Caps]; aC = new long?[CapLayout.Caps];
+        nc = new long?[CapLayout.Caps]; fc = new long?[CapLayout.Caps];
+    }
 
     // Before a state is bound, or for a state with no rim record: every cap pending.
-    public static CapMapModel Pending() => new(Enumerable.Repeat(CapClass.Pending, CapLayout.Caps).ToArray(), new long?[CapLayout.Caps]);
+    public static CapMapModel Pending() => new(Enumerable.Repeat(CapClass.Pending, CapLayout.Caps).ToArray());
 
     // A state's rim record (`magic600-d02-sample/1` rim.json). A row counts only when the record is complete and the
     // row is certified (blocked or admissible); an uncertain or missing row leaves its cap pending.
@@ -63,22 +70,22 @@ public sealed class CapMapModel
         using JsonDocument document = JsonDocument.Parse(rim);
         JsonElement root = document.RootElement;
         bool complete = root.TryGetProperty("complete", out JsonElement c) && c.ValueKind == JsonValueKind.True;
-        var classes = Enumerable.Repeat(CapClass.Pending, CapLayout.Caps).ToArray();
-        var nc = new long?[CapLayout.Caps];
+        var map = Pending();
+        long? Number(JsonElement row, string key) => row.TryGetProperty(key, out JsonElement v) && v.ValueKind == JsonValueKind.Number ? v.GetInt64() : null;
         foreach (JsonElement row in root.GetProperty("rows").EnumerateArray())
         {
             int cap = row.GetProperty("cap").GetInt32();
             if (cap < 0 || cap >= CapLayout.Caps) throw new FormatException("a rim row names no cap: " + cap);
             string status = row.TryGetProperty("status", out JsonElement s) && s.ValueKind == JsonValueKind.String ? s.GetString()! : "";
             if (!complete || status is not ("blocked" or "admissible")) continue;
-            if (status == "blocked") { classes[cap] = CapClass.Blocked; continue; }
-            if (row.GetProperty("N_c").ValueKind != JsonValueKind.Number) continue;
-            long n = row.GetProperty("N_c").GetInt64();
+            if (status == "blocked") { map.classes[cap] = CapClass.Blocked; continue; }
+            if (Number(row, "N_c") is not long n) continue;
             bool atFloor = row.TryGetProperty("at_floor", out JsonElement f) && f.ValueKind == JsonValueKind.True;
-            classes[cap] = n == 0 ? CapClass.Closed : atFloor ? CapClass.AtFloor : CapClass.AboveFloor;
-            if (n > 0) nc[cap] = n;
+            map.classes[cap] = n == 0 ? CapClass.Closed : atFloor ? CapClass.AtFloor : CapClass.AboveFloor;
+            map.nc[cap] = n; map.fc[cap] = Number(row, "F_c");
+            map.inC[cap] = Number(row, "In_c"); map.outC[cap] = Number(row, "Out_c"); map.aC[cap] = Number(row, "A_c");
         }
-        return new CapMapModel(classes, nc);
+        return map;
     }
 
     public CapClass Class(int cap) => classes[cap];
@@ -89,6 +96,20 @@ public sealed class CapMapModel
 
     // The N_c of an admissible cap, 0 at a closed one; null at a blocked or pending cap.
     public long? Nc(int cap) => classes[cap] == CapClass.Closed ? 0 : Numeral(cap);
+
+    // The floor F_c of an admissible cap; null at a blocked or pending cap.
+    public long? Floor(int cap) => classes[cap] is CapClass.Blocked or CapClass.Pending ? null : fc[cap];
+
+    // The named cap's readout from its rim row (ADR-D02.22): a blocked cap's u needs its straddlers, which the rim
+    // row does not carry, so it is pending until the cap's own record gives it.
+    public CapReadout Readout(int cap) => classes[cap] switch
+    {
+        CapClass.Blocked => new CapReadout(cap, Num.Undefined, Num.Undefined, Num.Undefined, Num.Undefined, Num.Undefined, Num.Pending),
+        CapClass.Pending => new CapReadout(cap, Num.Pending, Num.Pending, Num.Pending, Num.Pending, Num.Pending, Num.Pending),
+        _ => new CapReadout(cap, Of(inC[cap]), Of(outC[cap]), Of(aC[cap]), Of(nc[cap]), Of(fc[cap]), Num.Of(0)),
+    };
+
+    private static Num Of(long? value) => value is long v ? Num.Of(v) : Num.Undefined;
 
     public IReadOnlyDictionary<CapClass, int> Counts() =>
         Enum.GetValues<CapClass>().ToDictionary(k => k, k => classes.Count(x => x == k));

@@ -156,6 +156,29 @@ def cap_layout(model, hopf, normals):
                        'row neighbours are face neighbours, and the last column neighbours the first'}
 
 
+def meeting_caps(model, normals):
+    """meeting-caps.json (B9): the 80 caps meeting each cap, J1's `meeting_caps` (rust/c600-jumble/src/observe/cuts.rs).
+
+    Cap d meets cap c when n_c·n_d is at least the 81st largest product n_0·n_x, the cap itself being the first; every
+    cap meets 80. The adapter decides this exactly in Q(√5). Here the products are floats, but they fall on the
+    600-cell's few levels: the check below asserts that the 81st and the 82nd largest products lie on different levels,
+    far apart, so the threshold sits between levels and no float error can move a cap across it. The relation must be
+    symmetric, and the covers records of the named caps (their `domain`) must match it.
+    """
+    unit = normals / ((normals * normals).sum(axis=1, keepdims=True) ** 0.5)
+    dots = unit @ unit.T
+    levels = sorted(dots[0], reverse=True)
+    threshold, gap = levels[80], levels[80] - levels[81]
+    assert gap > 1e-6, 'the 81st and 82nd products of cap 0 share a level'
+    caps = [[d for d in range(600) if d != c and dots[c, d] >= threshold - gap / 2] for c in range(600)]
+    assert all(len(row) == 80 for row in caps), 'a cap does not meet 80 caps'
+    assert all(c in caps[d] for c in range(600) for d in caps[c]), 'the meeting relation is not symmetric'
+    return {'format': FORMAT, 'kind': 'meeting-caps', 'model': model['files']['assets/model.npz'],
+            'rule': "J1's meeting_caps: cap d meets cap c when n_c·n_d is at least the 81st largest n_0·n_x; every cap "
+                    'meets 80, listed in cap-id order',
+            'caps': caps}
+
+
 def model_normals():
     """The 600 pole normals of the tracked assets/model.npz, as the adapter reads them."""
     import numpy
@@ -288,9 +311,11 @@ class Builder:
                                  'exact_evaluations': row['exact_evaluations']}
             masks['straddlers'] = mask(row['pieces'])
             doc['covers'] = refusable(lambda: engine.covers(cap))
+            assert doc['covers'].get('domain') in (None, self.meeting['caps'][cap]), f'cap {cap}: covers differ from meeting-caps.json'
             doc['repair_list'] = {'completed': refusable(lambda: engine.repair_list(cap))}
         else:
             doc['covers'] = engine.covers(cap)
+            assert doc['covers'].get('domain') in (None, self.meeting['caps'][cap]), f'cap {cap}: covers differ from meeting-caps.json'
             completed = engine.repair_list(cap)
             doc['repair_list'] = {'completed': completed,
                                   'cut_off': engine.repair_list(cap, max_pairs=3),
@@ -328,6 +353,8 @@ class Builder:
             identity = e.identity()
             model = e.model()
             self.put('cap-layout.json', cap_layout(model, read_json(HOPF), model_normals()))
+            self.meeting = meeting_caps(model, model_normals())
+            self.put('meeting-caps.json', self.meeting)
             start = e.record()['digest']
             start_case = start == stages['start']['digest']
             self.state(e, 'on-zero', 'start(I_a), no twist', stages['start']['digest'], full=False)
@@ -514,7 +541,8 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--write', action='store_true', help='rebuild the tracked samples')
     mode.add_argument('--verify', action='store_true', help='rebuild into a temporary folder and compare')
-    mode.add_argument('--layout', action='store_true', help="write cap-layout.json only (B8), from the adapter's model")
+    mode.add_argument('--layout', action='store_true',
+                      help="write the model's files only, cap-layout.json (B8) and meeting-caps.json (B9)")
     args = parser.parse_args(argv)
     started = time.perf_counter()
     if args.layout:
@@ -523,7 +551,8 @@ def main(argv=None):
             e.start(read_json(WJ)['menu'])
             model = e.model()
         (OUT / 'cap-layout.json').write_bytes(dump(cap_layout(model, read_json(HOPF), model_normals())))
-        log('wrote cap-layout.json')
+        (OUT / 'meeting-caps.json').write_bytes(dump(meeting_caps(model, model_normals())))
+        log('wrote cap-layout.json and meeting-caps.json')
         return 0
     builder = Builder(Research(), OUT)
     builder.build()

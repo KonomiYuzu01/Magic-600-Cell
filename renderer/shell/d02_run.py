@@ -204,10 +204,56 @@ def expect_rotate(dumps: list[dict], source: dict, state: str | None) -> list[st
     return problems
 
 
-EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate}
+def expect_name_cap(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B9's name-cap script, by keys only: before naming, no cap is named and Local shows its empty sentence; after
+    `> jumble.cap.name 30`, the panel's Tier 1 line, the Named cap count and Local's readout follow cap 30's rim row;
+    after `> jumble.capmap.threshold.set N_c >= 50`, the field reads the formula and the four counts are the rim's."""
+    steps = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 30", "chord Enter", "wait 1500 ms", "chord F1",
+             "text > jumble.capmap.threshold.set N_c >= 50", "chord Enter", "wait 3000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None or not (SAMPLES / state / "rim.json").is_file():
+        return ["the name-cap script needs a sample state with rim rows"]
+    rows = load(SAMPLES / state / "rim.json")["rows"]
+    row, problems = rows[30], []
+    before, named, done = dumps[1], dumps[5], dumps[9]
+    if "no cap named" not in texts(before) or "▸ Named cap · 0" not in texts(before):
+        problems.append("step 1: a cap is named before any key")
+    if "Name a cap: click its cell, or type its number." not in texts(before):
+        problems.append("step 1: Local does not show its empty sentence")
+    if row["status"] == "admissible":
+        tier1 = f"cap 30 · N_c {row['N_c']} · floor {row['F_c']} · u 0 · 80 meeting caps"
+    else:
+        tier1 = "cap 30 · N_c undefined · floor undefined"
+    if not any(text.startswith(tier1) for text in texts(named, "panel:jumble.cap_map")):
+        problems.append(f"step 5: the cap map's panel does not read {tier1!r}")
+    if "▸ Named cap · 1" not in texts(named):
+        problems.append("step 5: Local's Named cap section does not count the named cap")
+    if "Name a cap: click its cell, or type its number." in texts(named):
+        problems.append("step 5: Local still shows its empty sentence with a cap named")
+    local = texts(named, "view:Local")
+    if row["status"] == "admissible" and not all(str(row[key]) in local for key in ("In_c", "Out_c", "A_c", "N_c")):
+        problems.append("step 5: Local's readout does not show cap 30's rim row")
+    admissible = [r for r in rows if r["status"] == "admissible"]
+    members = sum(1 for r in admissible if r["N_c"] >= 50)
+    blocked = sum(1 for r in rows if r["status"] == "blocked")
+    pending = 600 - len(admissible) - blocked
+    line = f"members {members} · non-members {len(admissible) - members} · blocked {blocked} · pending {pending}"
+    if line not in texts(done, "panel:jumble.cap_map"):
+        problems.append(f"step 9: the threshold counts are not {line!r}")
+    if "N_c ≥ 50" not in texts(done, "panel:jumble.cap_map"):
+        problems.append("step 9: the threshold field does not read N_c ≥ 50")
+    if not any(text.startswith("cap 30 ·") for text in texts(done, "panel:jumble.cap_map")):
+        problems.append("step 9: setting the threshold unnamed the cap")
+    if overlay(done):
+        problems.append("step 9: an overlay is still open")
+    return problems
+
+
+EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
-ON_FIXTURE = {"bind", "host"}
+ON_FIXTURE = {"bind", "host", "name-cap"}
 IN_SAMPLE_MODE = {"host"}
 
 

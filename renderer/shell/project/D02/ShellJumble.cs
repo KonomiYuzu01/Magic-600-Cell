@@ -101,6 +101,27 @@ public static class ShellJumble
         return File.Exists(path) ? CapMapModel.Read(File.ReadAllText(path)) : CapMapModel.Pending();
     }
 
+    /// <summary>The 80 caps meeting each cap (B9), from the samples' meeting-caps.json; none when the build has none.</summary>
+    public static MeetingCaps? Meeting()
+    {
+        var path = Path.Combine(JumbleFolder(), "meeting-caps.json");
+        return File.Exists(path) ? MeetingCaps.Read(File.ReadAllText(path)) : null;
+    }
+
+    /// <summary>
+    /// A named cap's readout from the bound sample's own record of it (cap-&lt;id&gt;.json), which carries a blocked
+    /// cap's straddler count; null when the sample has no record of that cap, and the rim row stands in.
+    /// </summary>
+    public static CapReadout? CapRecord(int cap)
+    {
+        if (Bound is not { } state)
+        {
+            return null;
+        }
+        var path = Path.Combine(JumbleFolder(), state, "cap-" + cap + ".json");
+        return File.Exists(path) ? CapReadout.Read(File.ReadAllText(path)) : null;
+    }
+
     /// <summary>The folder of the D02 jumble samples: under M600_D02_DATA when set, else the build's staged copy.</summary>
     public static string JumbleFolder()
     {

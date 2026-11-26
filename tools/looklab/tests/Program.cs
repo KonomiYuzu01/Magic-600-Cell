@@ -215,7 +215,13 @@ internal static partial class Program
             ("D02NoNumeralAtBlockedCap", D02NoNumeralAtBlockedCap),
             ("D02UncertainRimRowIsPending", D02UncertainRimRowIsPending),
             ("D02CapMapMatchesRim", D02CapMapMatchesRim),
-            ("D02CapLayoutIsRingSheet", D02CapLayoutIsRingSheet)
+            ("D02CapLayoutIsRingSheet", D02CapLayoutIsRingSheet),
+            ("D02NoDefaultThreshold", D02NoDefaultThreshold),
+            ("D02ThresholdCountsBlockedApart", D02ThresholdCountsBlockedApart),
+            ("D02ThresholdNeverReorders", D02ThresholdNeverReorders),
+            ("D02NoJobBeforeNaming", D02NoJobBeforeNaming),
+            ("D02HoverNamesNothing", D02HoverNamesNothing),
+            ("D02MeetingCapsAre80", D02MeetingCapsAre80)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)
