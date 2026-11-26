@@ -28,7 +28,7 @@ claims:
   - {id: os1125-u8-lx4-not-met, evidence_kind: performance, path: work/experiments/owner-sitting-20261125/results/u8-s1125-lx4.json, sha256: eedc660489ee9435eb992e7f58a17585fb3ba21c391a88fd72050e08295fb572, checked_at: 2026-11-25}
   - {id: os1125-presented-share-tonight, evidence_kind: actual_windows_directx, path: work/experiments/owner-sitting-20261125/results/presented-share-s1125.json, sha256: f61ca64965d6da462f4d489aee501c4f4384bd3a0d49ff1dc8b104f37e205a71, checked_at: 2026-11-25}
   - {id: os1125-presented-share-c9, evidence_kind: actual_windows_directx, path: work/experiments/owner-sitting-20261125/results/presented-share-c9-20261121.json, sha256: 1f13adc7dba95db68ff7f19f9b9e100458001705355e52a48ffb9ae652dd7737, checked_at: 2026-11-25}
-  - {id: os1125-chrome-off-without-env, evidence_kind: source, path: renderer/shell/project/Shell.cs, line: 143, sha256: c549d7ca0ce932826aab4f0b1c7c503956fdd6f3b3ce2a40135d45f328a41610, checked_at: 2026-11-26}
+  - {id: os1125-chrome-off-without-env, evidence_kind: source, path: renderer/shell/project/Shell.cs, line: 143, sha256: 082777d493dd4bdf1fd5062b42299379b008331317d438fd8a0198ab442cb0d8, checked_at: 2026-11-26}
   - {id: os1125-lx4-l-slowdown-found, evidence_kind: performance, path: work/experiments/lx4-latency-20261126/README.md, sha256: 715980aa091b970ab4c14df6cf9c464e26a6024674367d5f746f3a7a3caea876, checked_at: 2026-11-26}
 ---
 

@@ -608,6 +608,7 @@ public partial class Shell : Control
             return;
         }
         int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);
+        _chrome?.LocalLine(D02.ShellLocal.Plan.Words);
         if (cap == _localCap)
         {
             return;
