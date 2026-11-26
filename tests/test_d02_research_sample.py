@@ -20,6 +20,8 @@ SAMPLE = ROOT / "tools" / "looklab" / "data" / "samples" / "research" / "panel.j
 PANEL = ROOT / "rust" / "c600-research" / "src" / "panel"
 REVISION = ROOT / "rust" / "c600-command" / "src" / "receipt.rs"
 TABLE = ROOT / "docs" / "progress" / "1.0" / "command-table.json"
+D02_ROWS = ROOT / "tools" / "looklab" / "data" / "design" / "command-rows-d02.json"
+BINDINGS = ROOT / "rust" / "c600-archive" / "data" / "claim-bindings-1.json"
 READ_ROWS = ["research.archive.inventory", "research.claims", "research.runs", "research.obligations"]
 DRAFT_ROW = "research.record.read"
 # B29: the run's declaration and start are draft rows; reproduction is a table row the sample answers for its own run.
@@ -96,13 +98,24 @@ class ResearchSample(unittest.TestCase):
         table = json.loads(TABLE.read_text(encoding="utf-8"))
         ids = {command["id"] for command in table["commands"]}
         self.assertNotIn(DRAFT_ROW, ids)
-        drafts = [command["id"] for command in self.doc["draft_rows"]["commands"]]
+        # C5-7: the pane's draft rows are ADR-D02's, in command-rows-d02.json, not the sample's.
+        self.assertNotIn("draft_rows", self.doc)
+        rows = json.loads(D02_ROWS.read_text(encoding="utf-8"))["commands"]
+        drafts = [command["id"] for command in rows if command["id"] in [DRAFT_ROW] + RUN_DRAFTS]
         self.assertEqual(drafts, [DRAFT_ROW] + RUN_DRAFTS)
+        self.assertEqual([c["request"] for c in rows if c["id"] in drafts], ["B28", "B29", "B29"])
         for row in drafts:
             self.assertNotIn(row, ids)
         self.assertIn(REPRODUCE, ids)
         for row in READ_ROWS:
             self.assertIn(row, ids)
+
+    def test_no_sample_record_shares_a_file_name_with_the_archive(self):
+        # C5-10: every sample name is made up, so no sample record's file name is a real archive record's.
+        names = set(re.findall(r"sample/stage-\d+/([A-Za-z0-9_.-]+\.json)", SAMPLE.read_text(encoding="utf-8")))
+        self.assertGreater(len(names), 5)
+        real = {path.rsplit("/", 1)[-1] for path in re.findall(r"[A-Za-z0-9_./-]+\.json", BINDINGS.read_text(encoding="utf-8"))}
+        self.assertEqual(sorted(names & real), [])
 
     def test_every_verdict_kind_is_covered(self):
         rows = self.answers["research.claims"]["answer"]["rows"]

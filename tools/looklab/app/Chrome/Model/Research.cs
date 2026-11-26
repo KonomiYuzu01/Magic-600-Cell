@@ -55,18 +55,16 @@ public sealed class SampleResearchSource : IResearchSource
     private readonly HashSet<string> started = new(StringComparer.Ordinal);
     public string Evidence { get; }
     public string Note { get; }
-    // The draft rows the sample's pane needs, as a command-rows document.
-    public string DraftRows { get; }
+    // The draft rows the pane needs are ADR-D02's, in data/design/command-rows-d02.json (ResearchRows.AddDrafts, C5-7).
     private readonly Dictionary<string, string> answers = new(StringComparer.Ordinal);
 
     public SampleResearchSource(string text)
     {
         using JsonDocument d = J.Parse(text);
-        JsonElement root = J.Root(d, Format, "evidence", "note", "answers", "draft_rows");
+        JsonElement root = J.Root(d, Format, "evidence", "note", "answers");
         Evidence = J.Text(root, "evidence");
         if (Evidence != Synthetic) throw J.Error("evidence", "the research sample is synthetic");
         Note = J.Text(root, "note");
-        DraftRows = root.GetProperty("draft_rows").GetRawText();
         JsonElement all = root.GetProperty("answers");
         J.Keys(all, "answers", Rows.ToArray());
         foreach (string row in Rows) answers[row] = all.GetProperty(row).GetRawText();
@@ -204,8 +202,23 @@ public static class ResearchRows
     {
         Records, Claims, Runs, Obligations, Open, RecordRead, Name, Copy, Save, Declare, Start, Reproduce, Trace, RunView,
     });
-    // Rows the command table does not hold yet: the sample's draft rows, row requests of B28 and B29.
-    public static readonly IReadOnlyList<string> Drafts = Array.AsReadOnly(new[] { RecordRead, Declare, Start });
+    // Rows the command table does not hold yet, all in ADR-D02's draft file data/design/command-rows-d02.json: the row
+    // requests of B28 and B29 (record read, declare, start) and the two CR-17 rows (C5-7).
+    public static readonly IReadOnlyList<string> Drafts = Array.AsReadOnly(new[] { RecordRead, Declare, Start, Trace, RunView });
+
+    // Registers the research pane's draft rows from command-rows-d02.json whenever the pane is mounted, D02 on or off
+    // (C5-5): a row the registry already holds (D02 on registers the whole file) is not added again. Gives the rows,
+    // for the palette's draft mark; a draft row missing from the file is refused.
+    public static IReadOnlyList<string> AddDrafts(CommandRegistry registry, string d02Rows)
+    {
+        using JsonDocument d = J.Parse(d02Rows);
+        JsonElement[] rows = d.RootElement.GetProperty("commands").EnumerateArray().Where(r => Drafts.Contains(J.Text(r, "id"))).ToArray();
+        foreach (string row in Drafts)
+            if (!rows.Any(r => J.Text(r, "id") == row)) throw J.Error(row, "a research draft row missing from command-rows-d02.json");
+        JsonElement[] missing = rows.Where(r => !registry.Commands.ContainsKey(J.Text(r, "id"))).ToArray();
+        if (missing.Length > 0) registry.AddRows(JsonSerializer.Serialize(new { commands = missing }));
+        return Drafts;
+    }
     // A declaration's argument to research.run.declare: seed=<n>, depth=<n> or budget=<steps>.
     public static readonly IReadOnlyList<string> Fields = Array.AsReadOnly(new[] { "seed", "depth", "budget" });
     public static (string Field, long Value)? ParseField(string? argument)
@@ -246,11 +259,14 @@ public sealed record ResearchClaim(string Group, string Family, int Stage, strin
 
 // A run as research.runs answers it: its branch (the pinned input) is read-only and never turns stale. B29 adds the
 // run's code, the steps its cut-off covered, its checks' verdict kinds and, for a run of research.run.start, the seed,
-// depth and budget it recorded.
+// depth and budget it recorded. Its Verdict is what its checks said, by the rule that words a claim group's latest check.
 public sealed record ResearchRun(string Run, string? Group, string Level, string Digest, string Identity, string Outcome, string Reading,
-    string? Code = null, string? Covered = null, IReadOnlyList<string>? Checks = null, int? Seed = null, int? Depth = null, RunBudget? Budget = null)
+    string? Code = null, string? Covered = null, IReadOnlyList<string>? Checks = null, int? Seed = null, int? Depth = null, RunBudget? Budget = null,
+    ResearchVerdict? Verdict = null)
 {
-    // ADR-D01.61's budget-stopped state: a run that reached its budget is cut off, never a verdict (ADR-D02.4).
+    // ADR-D01.61's budget-stopped state: a run that reached its budget is cut off, never a verdict (ADR-D02.4). A run the
+    // researcher cancelled (outcome `cancelled`, reading `cut_off`) is budget-stopped too: ADR-D02.45 and .46 have no
+    // words for a run stopped by its researcher (C5-3, a freeze-card item), and it is never a Pass or a Fail.
     public SlotState State => Reading == "cut_off" || Budget is { } b && long.TryParse(Covered, NumberStyles.None, CultureInfo.InvariantCulture, out long c) && c >= b.Steps
         ? SlotState.BudgetStopped : Outcome == "completed" ? SlotState.Ready : SlotState.Error;
     public bool Started => Budget != null;
@@ -304,8 +320,11 @@ public sealed record ResearchLine(ResearchLineKind Kind, string Text, string? Re
 // it to Argument. A control with a reason (Why) is drawn unavailable, its reason shown.
 public sealed record ResearchControl(string Label, string Row, string? Argument, bool TakesText = false, string? Why = null);
 
-// A copy or a save: its row, the object's reference and digest, the origin Research and its note.
-public sealed record ResearchTransfer(string Row, string Ref, string Digest, Origin Origin, string Note);
+// A copy or a save: its row, the object's reference and digest, the origin Research, its note and the evidence class
+// of the answers it came from (C5-11: a copy of the synthetic sample says so). A save also names the granted file the
+// research host wrote and that file's sha256.
+public sealed record ResearchTransfer(string Row, string Ref, string Digest, Origin Origin, string Note, string Evidence,
+    string? Destination = null, string? Written = null);
 
 public sealed class ResearchModel
 {
@@ -413,13 +432,14 @@ public sealed class ResearchModel
     private static ResearchRun ReadRun(JsonElement row)
     {
         JsonElement branch = row.GetProperty("branch"), reading = row.GetProperty("reading");
-        string[] checks = row.TryGetProperty("checks", out JsonElement list)
-            ? list.EnumerateArray().Select(c => c.GetProperty("verdict") is { ValueKind: JsonValueKind.Object } v ? J.Text(v, "kind") : "none").ToArray()
-            : Array.Empty<string>();
+        JsonElement[] verdicts = row.TryGetProperty("checks", out JsonElement list)
+            ? list.EnumerateArray().Select(c => c.GetProperty("verdict")).ToArray() : Array.Empty<JsonElement>();
+        string[] checks = verdicts.Select(v => v.ValueKind == JsonValueKind.Object ? J.Text(v, "kind") : "none").ToArray();
         int? Number(string id) => row.TryGetProperty(id, out JsonElement n) && n.ValueKind == JsonValueKind.Number ? n.GetInt32() : null;
         RunBudget? budget = row.TryGetProperty("budget", out JsonElement b) && b.ValueKind == JsonValueKind.Number ? new RunBudget(b.GetInt64()) : null;
         return new ResearchRun(J.Text(row, "run"), Optional(row, "group"), J.Text(branch, "level"), J.Text(branch, "digest"), J.Text(branch, "identity"),
-            J.Text(row, "outcome"), J.Text(reading, "kind"), Optional(row, "code"), Optional(reading, "covered"), checks, Number("seed"), Number("depth"), budget);
+            J.Text(row, "outcome"), J.Text(reading, "kind"), Optional(row, "code"), Optional(reading, "covered"), checks, Number("seed"), Number("depth"), budget,
+            CheckVerdict(reading, verdicts));
     }
 
     private static ResearchObligation ReadObligation(JsonElement row) =>
@@ -452,22 +472,7 @@ public sealed class ResearchModel
     {
         JsonElement latest = row.GetProperty("latest_check");
         if (latest.ValueKind != JsonValueKind.Null)
-        {
-            JsonElement reading = latest.GetProperty("reading");
-            switch (J.Text(reading, "kind"))
-            {
-                case "cut_off": return new ResearchVerdict(VerdictKind.CutOff, Reason: "covered " + J.Text(reading, "covered"));
-                case "not_run": return new ResearchVerdict(VerdictKind.NotChecked, Reason: "the check did not run");
-                case "open": return new ResearchVerdict(VerdictKind.NotChecked, Reason: "open: " + J.Text(reading, "code"));
-            }
-            JsonElement[] verdicts = latest.GetProperty("verdicts").EnumerateArray().Where(v => v.ValueKind == JsonValueKind.Object).ToArray();
-            if (verdicts.FirstOrDefault(v => J.Text(v, "kind") == "fail") is { ValueKind: JsonValueKind.Object } fail)
-                return new ResearchVerdict(VerdictKind.Fail, J.Text(fail, "claim"), J.Text(fail, "code"), J.Text(fail, "reason"));
-            if (verdicts.FirstOrDefault(v => J.Text(v, "kind") == "not_applicable") is { ValueKind: JsonValueKind.Object } na)
-                return new ResearchVerdict(VerdictKind.NotApplicable, Reason: J.Text(na, "reason"));
-            if (verdicts.Length > 0 && verdicts.All(v => J.Text(v, "kind") == "pass")) return new ResearchVerdict(VerdictKind.Pass);
-            return new ResearchVerdict(VerdictKind.NotChecked, Reason: "the check reached no report");
-        }
+            return CheckVerdict(latest.GetProperty("reading"), latest.GetProperty("verdicts").EnumerateArray().ToArray());
         JsonElement preflight = row.GetProperty("preflight");
         if (J.Text(preflight, "kind") == "ready") return new ResearchVerdict(VerdictKind.NotChecked, Reason: "preflight: ready; the check has not run");
         string[] reasons = J.Strings(preflight.GetProperty("reasons"), "reasons");
@@ -475,11 +480,36 @@ public sealed class ResearchModel
         return new ResearchVerdict(VerdictKind.NotChecked, Reasons: reasons, Dependencies: dependencies);
     }
 
-    // A dependency word for word: its kind, then its own fields.
+    // What a check said, from its reading and its checks' verdicts: a claim group's latest check, or a run's checks.
+    // A check stopped by its own cap keeps no verdict and no report (answers.rs gives null; job.rs, Job::reading), so a
+    // null entry adds nothing to evidence: the check is a pass only when every entry is an object of kind `pass`, and
+    // any null entry leaves it not checked (C5-1). A Fail is still the first claim that does not hold.
+    public static ResearchVerdict CheckVerdict(JsonElement reading, IReadOnlyList<JsonElement> entries)
+    {
+        switch (J.Text(reading, "kind"))
+        {
+            case "cut_off": return new ResearchVerdict(VerdictKind.CutOff, Reason: "covered " + J.Text(reading, "covered"));
+            case "not_run": return new ResearchVerdict(VerdictKind.NotChecked, Reason: "the check did not run");
+            case "open": return new ResearchVerdict(VerdictKind.NotChecked, Reason: "open: " + J.Text(reading, "code"));
+        }
+        JsonElement[] verdicts = entries.Where(v => v.ValueKind == JsonValueKind.Object).ToArray();
+        if (verdicts.FirstOrDefault(v => J.Text(v, "kind") == "fail") is { ValueKind: JsonValueKind.Object } fail)
+            return new ResearchVerdict(VerdictKind.Fail, J.Text(fail, "claim"), J.Text(fail, "code"), J.Text(fail, "reason"));
+        if (verdicts.Length != entries.Count) return new ResearchVerdict(VerdictKind.NotChecked, Reason: "a check reached no report");
+        if (verdicts.FirstOrDefault(v => J.Text(v, "kind") == "not_applicable") is { ValueKind: JsonValueKind.Object } na)
+            return new ResearchVerdict(VerdictKind.NotApplicable, Reason: J.Text(na, "reason"));
+        if (verdicts.Length > 0 && verdicts.All(v => J.Text(v, "kind") == "pass")) return new ResearchVerdict(VerdictKind.Pass);
+        return new ResearchVerdict(VerdictKind.NotChecked, Reason: "the check reached no report");
+    }
+
+    // A dependency word for word: its kind, then every field LP5 gives it (answers.rs: a missing input's name, source
+    // and cites; an input's path, state and sha256; a historical gate's source and pointer).
     private static string Dependency(JsonElement d) => J.Text(d, "kind") switch
     {
-        "missing_input" => "missing_input: " + J.Text(d, "name"),
-        "input" => "input: " + J.Text(d, "path") + " (" + J.Text(d, "state") + ")",
+        "missing_input" => "missing_input: " + J.Text(d, "name") + " · source " + J.Text(d, "source") + " · cites "
+            + (d.GetProperty("cites").EnumerateArray().Select(c => c.GetString() ?? throw J.Error("cites", "expected text")).ToArray() is { Length: > 0 } cites
+                ? string.Join(", ", cites) : "none"),
+        "input" => "input: " + J.Text(d, "path") + " (" + J.Text(d, "state") + ") · sha256 " + J.Text(d, "sha256"),
         "historical_gate" => "historical_gate: " + J.Text(d, "source") + " " + J.Text(d, "pointer"),
         string other => other,
     };
@@ -579,16 +609,17 @@ public sealed class ResearchModel
         _ => null,
     };
 
-    // A run's line: budget-stopped is "not found within budget", never a verdict; a completed run words its checks
-    // with its claim group's scope.
+    // A run's line: budget-stopped is "not found within budget", never a verdict; a completed run words its checks as
+    // the Claims tab words its claim group (C5-2): the same rule, in the group's scope phrase. A run with no claim group
+    // has no scope to word a verdict in, so it reads "not checked" and its expanded row says it names no claim group.
     public string RunLine(ResearchRun run)
     {
         if (run.State == SlotState.BudgetStopped) return ResearchWords.CutOff;
         if (run.State != SlotState.Ready) return "stopped: " + run.Outcome + (run.Code is { } code ? " · " + code : "");
-        string scope = Claims.FirstOrDefault(c => c.Group == run.Group)?.Scope ?? "its run";
-        IReadOnlyList<string> checks = run.Checks ?? Array.Empty<string>();
-        return checks.Contains("fail") ? ResearchWords.Fails(scope) : checks.Count > 0 && checks.All(c => c == "pass") ? ResearchWords.Holds(scope) : ResearchWords.NotChecked;
+        return ClaimOfRun(run) is { } claim ? ResearchWords.VerdictLine(run.Verdict ?? new ResearchVerdict(VerdictKind.NotChecked), claim.Scope) : ResearchWords.NotChecked;
     }
+
+    private ResearchClaim? ClaimOfRun(ResearchRun run) => run.Group == null ? null : Claims.FirstOrDefault(c => c.Group == run.Group);
 
     private static string Many(int count, string word) => count + " " + word + (count == 1 ? "" : "s");
 
@@ -622,19 +653,41 @@ public sealed class ResearchModel
         return true;
     }
 
-    public ResearchTransfer Copy(string reference) => Carry(ResearchRows.Copy, reference);
-    public ResearchTransfer Save(string reference) => Carry(ResearchRows.Save, reference);
-
-    private ResearchTransfer Carry(string row, string reference)
+    public ResearchTransfer Copy(string reference)
     {
         if (!Known(reference)) throw new ArgumentException("no research object " + reference);
-        Transfer = new ResearchTransfer(row, reference, Digest(reference), Origin.Research, ResearchWords.CopyNote);
+        return Carry(new ResearchTransfer(ResearchRows.Copy, reference, Digest(reference), Origin.Research, ResearchWords.CopyNote, Evidence));
+    }
+
+    // Saves a record as research.bundle.export does (C5-6): LP5's check bundle of the record, written to a granted file
+    // named for it. Only the research host writes one; when the source refuses the row (the sample does), nothing is
+    // saved, the carried line stays as it was and the words say why.
+    public (bool Done, string Words) Save(string reference)
+    {
+        if (RecordOf(reference) is not { } record) return (false, "a bundle saves records");
+        string destination = BundleFile(record);
+        JsonElement answer;
+        try { answer = Answer(ResearchRows.Save, Source.ExportBundle(new[] { record.Name }, destination)); }
+        catch (NotSupportedException e) { return (false, "not saved: " + e.Message); }
+        Carry(new ResearchTransfer(ResearchRows.Save, reference, Digest(reference), Origin.Research, ResearchWords.CopyNote, Evidence,
+            J.Text(answer, "destination"), J.Text(answer, "sha256")));
+        return (true, TransferLine());
+    }
+
+    // The granted file a record's check bundle is written to: the record's own file name, as a bundle.
+    public static string BundleFile(ResearchRecord record) =>
+        System.IO.Path.GetFileNameWithoutExtension(record.Name) + ".check-bundle.zip";
+
+    private ResearchTransfer Carry(ResearchTransfer transfer)
+    {
+        Transfer = transfer;
         Raise();
-        return Transfer;
+        return transfer;
     }
 
     public string TransferLine() => Transfer is not { } t ? ""
-        : $"{(t.Row == ResearchRows.Copy ? "copied" : "saved")} {Shown(t.Ref)} · origin {t.Origin} · {t.Note}";
+        : (t.Row == ResearchRows.Copy ? "copied " + Shown(t.Ref) : $"saved {Shown(t.Ref)} to {t.Destination} · sha256 {t.Written}")
+            + $" · origin {t.Origin} · evidence {t.Evidence} · {t.Note}";
 
     // A record's digest is its bytes' SHA-256; a part's is its record's; a claim group's is its statement's id.
     // A run's is its run digest (LP5's research.run/<run>); an obligation's its statement's id.
@@ -732,7 +785,7 @@ public sealed class ResearchModel
             case ResearchRows.RecordRead or ResearchRows.Open: Toggle(target); return (true, (Open == target ? "opened " : "folded ") + Shown(target));
             case ResearchRows.Copy: Copy(target); return (true, TransferLine());
             case ResearchRows.Save when !target.StartsWith(RecordRef, StringComparison.Ordinal): return (false, "a bundle saves records");
-            default: Save(target); return (true, TransferLine());
+            default: return Save(target);
         }
     }
 
@@ -877,6 +930,8 @@ public sealed class ResearchModel
         if (run.State == SlotState.BudgetStopped)
             foreach (string line in ResearchWords.Expanded(new ResearchVerdict(VerdictKind.CutOff, Reason: run.Covered is { } c ? "covered " + c : null)))
                 lines.Add(new ResearchLine(ResearchLineKind.Detail, line, reference, 1));
+        if (run.State == SlotState.Ready && ClaimOfRun(run) == null)
+            lines.Add(new ResearchLine(ResearchLineKind.Detail, "no claim group: its checks have no scope to be worded in", reference, 1));
         if (run.Code != null) lines.Add(new ResearchLine(ResearchLineKind.Detail, "code: " + run.Code, reference, 1));
         if (run.Checks is { Count: > 0 } checks)
             lines.Add(new ResearchLine(ResearchLineKind.Detail, "checks: " + string.Join(", ", checks.GroupBy(c => c).Select(g => $"{g.Key} {g.Count()}")), reference, 1));

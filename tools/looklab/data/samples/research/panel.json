@@ -90,7 +90,7 @@
       "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
      },
      {
-      "name": "sample/stage-16/twocarrier-7304.json",
+      "name": "sample/stage-16/twocarrier-s16b.json",
       "role": "record",
       "stage": 16,
       "git_blob": "4b8e265fb578e2075de76fe330112a87b25a6eb7",
@@ -135,7 +135,7 @@
       "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
      },
      {
-      "name": "sample/stage-18/steps.json",
+      "name": "sample/stage-18/composed-s18c.json",
       "role": "record",
       "stage": 18,
       "git_blob": "c4f2267160dd560e7c89bbc856939eda3a747a7d",
@@ -341,7 +341,7 @@
       }
      },
      {
-      "group": "16/reductions:sample/stage-16/twocarrier-7304.json#",
+      "group": "16/reductions:sample/stage-16/twocarrier-s16b.json#",
       "family": "16/reductions",
       "stage": 16,
       "statement": {
@@ -367,7 +367,7 @@
        "inputs": [
         {
          "role": "trace",
-         "path": "sample/stage-16/twocarrier-7304.json",
+         "path": "sample/stage-16/twocarrier-s16b.json",
          "sha256": "b0932c6c21950ee815db6476579ac76914a7c486ea30a3479c6541929d9c48fc"
         }
        ]
@@ -464,7 +464,7 @@
       }
      },
      {
-      "group": "18/composed:sample/stage-18/steps.json#/steps/0,/steps/1,/steps/2",
+      "group": "18/composed:sample/stage-18/composed-s18c.json#/steps/0,/steps/1,/steps/2",
       "family": "18/composed",
       "stage": 18,
       "statement": {
@@ -486,7 +486,7 @@
        "dependencies": [
         {
          "kind": "historical_gate",
-         "source": "sample/stage-18/steps.json",
+         "source": "sample/stage-18/composed-s18c.json",
          "pointer": "/steps/1"
         },
         {
@@ -630,7 +630,7 @@
      {
       "run": "5f43018433469f5d8e8bf125de34c7e8e07fe7c0adf004ec2612b32701462eba",
       "record": "research.run/5f43018433469f5d8e8bf125de34c7e8e07fe7c0adf004ec2612b32701462eba",
-      "group": "16/reductions:sample/stage-16/twocarrier-7304.json#",
+      "group": "16/reductions:sample/stage-16/twocarrier-s16b.json#",
       "branch": {
        "level": "poses",
        "digest": "fa69ce50a616f556304c3b100991325f0f806a028bfe76b96f85964672883969",
@@ -738,7 +738,7 @@
       "exports": []
      },
      {
-      "group": "16/reductions:sample/stage-16/twocarrier-7304.json#",
+      "group": "16/reductions:sample/stage-16/twocarrier-s16b.json#",
       "family": "16/reductions",
       "stage": 16,
       "statement": "d23abb454f3624ce1d2ab1c77ab4edf414d9d3ec6419ef3ddcfc6d4c5f3d9528",
@@ -747,7 +747,7 @@
       "exports": []
      },
      {
-      "group": "18/composed:sample/stage-18/steps.json#/steps/0,/steps/1,/steps/2",
+      "group": "18/composed:sample/stage-18/composed-s18c.json#/steps/0,/steps/1,/steps/2",
       "family": "18/composed",
       "stage": 18,
       "statement": "d13a580e61231d5233ff85160f2f652c81c940b1056fdf2619898a797eaad929",
@@ -921,7 +921,7 @@
       ]
      },
      {
-      "name": "sample/stage-16/twocarrier-7304.json",
+      "name": "sample/stage-16/twocarrier-s16b.json",
       "family": "16/reductions",
       "finding": "Two carriers reduce a jam to a known case; the record states the scope of the reduction and makes no claim the checker reads.",
       "twists": 36,
@@ -976,7 +976,7 @@
       ]
      },
      {
-      "name": "sample/stage-18/steps.json",
+      "name": "sample/stage-18/composed-s18c.json",
       "family": "18/composed",
       "finding": "The composed tail of steps 0 to 2; the historical check of step 1 never finished, so the composition is recorded but not checked.",
       "twists": 104,
@@ -1076,39 +1076,5 @@
     }
    }
   }
- },
- "draft_rows": {
-  "format": "magic600-design-command-rows",
-  "version": 1,
-  "note": "The research pane's draft rows: the command table has no row that reads a record's finding and named parts (B28), and none that declares or starts a research run on the seed pool within a budget (B29). Row requests of build steps B28 and B29.",
-  "commands": [
-   {
-    "id": "research.record.read",
-    "label": "Read research record",
-    "kind": "query",
-    "contexts": [
-     "global"
-    ],
-    "note": "Reads a research record's one-paragraph finding and its tree of named parts with their lengths (ADR-D02.44, ADR-D02.49), and opens it in place in the research pane. Argument: the record."
-   },
-   {
-    "id": "research.run.declare",
-    "label": "Declare research run",
-    "kind": "workspace",
-    "contexts": [
-     "global"
-    ],
-    "note": "Declares one field of the next research run before it starts (ADR-D02.4, ADR-D02.52): seed=<7401 to 7499> (its words name the scored block), depth=<twists> or budget=<steps>. A seed outside the pool is refused."
-   },
-   {
-    "id": "research.run.start",
-    "label": "Start research run",
-    "kind": "workspace",
-    "contexts": [
-     "global"
-    ],
-    "note": "Starts the declared research run (ADR-D02.4, ADR-D02.50): refused until its budget, seed and depth are declared. The run records its budget; a run that reaches it stops as cut off, never a verdict. It commits nothing, so History shows no research run."
-   }
-  ]
  }
 }

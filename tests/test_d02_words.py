@@ -67,14 +67,14 @@ VARIABLES = set("dijkmnprxyz")
 
 PLAIN_WORDS = {
     "a", "above", "after", "and", "antipode", "applicable", "apply", "are", "at", "beside", "by", "byte", "bytes",
-    "certifies", "chain", "checked", "checker", "clear", "click", "clip", "compare", "covered", "cut", "differs",
+    "certifies", "chain", "checked", "checker", "clear", "click", "clip", "compare", "covered", "cut", "declare", "differs",
     "does", "entry", "equal", "export", "exposed", "face", "faces", "fails", "file", "focus", "free", "from", "hold",
     "holds", "holes", "in", "input", "into", "it", "least", "live", "lowers", "map", "mark",
     "marks", "mode", "model", "name", "need", "needs", "neighbours", "no", "none", "not", "numbered", "of", "on", "one",
-    "only", "or", "output", "pairs", "part", "pass", "pinned", "predicted", "preset", "radius", "raw",
+    "only", "or", "output", "pairs", "part", "pass", "pinned", "predicted", "preset", "radius", "raw", "read",
     "re-executed", "record", "refuse", "refused", "release", "replayed", "reproduced", "research", "revert", "reviewed",
     "ring", "rings", "row", "run", "save", "set", "sheet", "shell", "simulation", "slice", "slot", "slots", "solving",
-    "split", "stage", "step", "swap", "the", "this", "tint", "to", "tried", "try", "tuning",
+    "split", "stage", "start", "step", "swap", "the", "this", "tint", "to", "tried", "try", "tuning",
     "un-name", "unavailable", "uses", "whole", "within", "selector",
 }
 

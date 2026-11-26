@@ -87,9 +87,11 @@ internal static partial class Program
     }
 
     private static readonly string[] D02Requests = { "CR-14", "CR-15", "CR-16", "CR-17", "CR-19" };
+    // The research pane's own row requests (C5-7): build steps B28 (research.record.read) and B29 (declare, start).
+    private static readonly string[] D02StepRequests = { "B28", "B29" };
 
-    // Section 15: each draft row names its request; none is in the command table, and the test fails the day one
-    // lands there, so the draft row is deleted.
+    // Section 15: each draft row names its request (or a research build step's row request); none is in the command
+    // table, and the test fails the day one lands there, so the draft row is deleted.
     private static void D02DraftRowsAbsentFromTable()
     {
         string text = Read("data/design/command-rows-d02.json");
@@ -100,7 +102,8 @@ internal static partial class Program
         {
             string id = row.GetProperty("id").GetString()!;
             string? request = row.TryGetProperty("request", out JsonElement value) ? value.GetString() : null;
-            Check(request != null && D02Requests.Contains(request), id + " names no request of section 15");
+            Check(request != null && (D02Requests.Contains(request) || D02StepRequests.Contains(request) && id.StartsWith("research.", StringComparison.Ordinal)),
+                id + " names no request of section 15");
             requests.Add(id, request!);
         }
         Check(D02Requests.All(r => requests.ContainsValue(r)), "a request has no draft row");
