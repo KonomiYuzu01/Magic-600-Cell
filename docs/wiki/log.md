@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] update | The twist's core preparation and menu resolve
+Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) that the core's preparation spent 9 of its 10 ms building a check message for each of the 259,800 slots, which it now builds only for a failure (with its GPU resources reused, 1.2 ms), and that the twist menu now keeps its exact twists for the 32 caps used most recently, which halves the commit's key call headless with every answer unchanged.
+
 ## [2026-11-26] update | The twist key's stall moves off the frame thread
 Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) where the twist key's time on the frame thread went (the commit, with its journal sync a small share, and the view's build and checks) and the change that builds and checks the view's work on a worker thread and adopts it at the next frame call, leaving the commit boundary as it was. On screen on the real core the key call fell from 57 to 18 ms and the refreshes without a frame from 3.35 to 2.0 per key; a short wait after a frame's submission keeps the press at the frame it had before, and the core's per-twist GPU buffers are what is left besides the commit.
 

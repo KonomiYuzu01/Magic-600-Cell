@@ -155,7 +155,8 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(values["SHADERS"], built)
         self.assertEqual(len(built), 8)
         self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
-        self.assertEqual(len(values["CPU_CHECKS"]), 36)
+        self.assertEqual(len(values["CPU_CHECKS"]), 37)
+        self.assertIn("preparation reuse", values["CPU_CHECKS"])  # C9, 26 Nov 2026
         self.assertTrue({"wj arguments", "wj scene state", "wj reader refusals", "wj protocol controls",
                          "wj native writer"} <= values["CPU_CHECKS"])
         self.assertTrue({"product arguments", "product adopt", "product tickets", "product frames", "product reports",

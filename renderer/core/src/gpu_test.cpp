@@ -1036,6 +1036,16 @@ void product_poses(const Options& options) {
     expect(a_odd == b_odd, "pieces at pose 0 drew differently next to posed pieces than with an identity table");
     expect(moved * 100 <= std::max(cover_even, cover_b), "posed pieces do not draw as the unposed pieces under the camera Q R (over 1% differ)");
     expect(unposed * 5 >= cover_even, "posed pieces draw like unposed ones (under 20% of their pixels differ)");
+    // C9 (26 Nov 2026): sets prepared after others were retired and their frames completed take the released resources
+    // (a completed upload's allocator, list and staging, and a released set's buffers) and draw as new sets do.
+    api(harness.ctx, sa2_retire(harness.ctx, set_odd));
+    api(harness.ctx, sa2_retire(harness.ctx, set_none));
+    api(harness.ctx, sa2_drain(harness.ctx, harness.wait));
+    const auto again_odd = pose_set(harness, 4, odd), again_none = pose_set(harness, 5, none);
+    const auto again_even = pose_set(harness, 6, even);
+    expect(frames.draw(2, 4, again_odd, Q) == b_odd, "an odd set prepared from released resources draws differently");
+    expect(frames.draw(2, 5, again_none, Q) == clear, "an empty set prepared from released resources draws differently");
+    expect(frames.draw(2, 6, again_even, Q) == c_even, "an even set prepared from released resources draws differently");
     api(harness.ctx, sa2_drain(harness.ctx, harness.wait));
     api(harness.ctx, sa2_scene_unload(harness.ctx));
     harness.finish(options.debug);
@@ -1154,6 +1164,56 @@ void run_poses(Suite& suite, const Options& options) {
 // C9 U5c: --warp --measure-stages DIR. Only WARP; parse refuses any other mode.
 void run_measure(const Options& options) {
     measure_stages(options);
+}
+
+// C9 (26 Nov 2026): the shell's per-twist preparation, timed. Each round prepares a full set on one view (every slot
+// drawn and pickable), waits until it is ready, activates it and retires the previous set, as the shell's backend does
+// for each twist; one JSON line per round gives the duration of the sa2_prepare call alone.
+void run_measure_prepare(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    const std::vector<uint8_t> visible(SA2_SLOTS, 1), interaction(SA2_SLOTS, 1);
+    std::vector<uint32_t> instances(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) instances[slot] = slot + 1;
+    std::ofstream out(options.out, std::ios::binary);
+    expect(static_cast<bool>(out), "could not open the --out file");
+    uint64_t previous = 0;
+    for (uint32_t round = 1; round <= options.prepares; ++round) {
+        sa2_preparation preparation{};
+        preparation.struct_size = sizeof(preparation);
+        preparation.command = round; preparation.view = 1;
+        preparation.view_generation = 1; preparation.publication_generation = round;
+        preparation.device_epoch = 1; preparation.base_revision = 1;
+        preparation.visibility = visible.data(); preparation.interaction = interaction.data(); preparation.instances = instances.data();
+        uint64_t ticket = 0;
+        const auto started = std::chrono::steady_clock::now();
+        api(ctx, sa2_prepare(ctx, &preparation, &ticket));
+        const auto ended = std::chrono::steady_clock::now();
+        const auto until = ended + std::chrono::milliseconds(harness.wait);
+        for (;;) {
+            sa2_poll_row row{sizeof(sa2_poll_row)};
+            api(ctx, sa2_poll(ctx, ticket, &row));
+            if (row.state == SA2_TICKET_READY) {
+                const uint8_t digest[32]{};
+                api(ctx, sa2_activate(ctx, row.resource_set, digest));
+                if (previous) api(ctx, sa2_retire(ctx, previous));
+                previous = row.resource_set;
+                break;
+            }
+            expect(row.state == SA2_TICKET_PENDING, "a measured preparation was cancelled or failed");
+            expect(std::chrono::steady_clock::now() < until, "a measured preparation did not become ready in time");
+            Sleep(1);
+        }
+        const double ms = std::chrono::duration<double, std::milli>(ended - started).count();
+        out << "{\"round\": " << round << ", \"prepare_ms\": " << ms << "}\n";
+    }
+    expect(static_cast<bool>(out), "could not write the --out file");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
 }
 
 int run_child(const Options& options) {
