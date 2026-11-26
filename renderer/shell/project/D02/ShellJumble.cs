@@ -634,6 +634,16 @@ internal sealed partial class D02Driver : Node
                 _doing += " (not found)";
             }
         }
+        else if (step.TryGetProperty("cap_hover", out var capHover))
+        {
+            // The owner's bug report of 26 November 2026: the pointer over a cap map cell, through the shell's input.
+            _doing = "cap hover " + capHover.GetInt32().ToString(CultureInfo.InvariantCulture) + CapPointer(capHover.GetInt32(), false);
+        }
+        else if (step.TryGetProperty("cap_click", out var capClick))
+        {
+            // A left click on a cap map cell, through the shell's input.
+            _doing = "cap click " + capClick.GetInt32().ToString(CultureInfo.InvariantCulture) + CapPointer(capClick.GetInt32(), true);
+        }
         else if (step.TryGetProperty("click_control", out var clicked))
         {
             // A left click at the centre of a control of the frame, found by its name (the cap prompt's rows), through
@@ -655,7 +665,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a click_control or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a click_control or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -688,6 +698,26 @@ internal sealed partial class D02Driver : Node
         Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at, ButtonMask = MouseButtonMask.Left });
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
+    }
+
+    /// <summary>The pointer to a cap map cell's centre, and for a click a press and a release there; "" when the cell
+    /// is on screen, else why nothing was sent.</summary>
+    private static string CapPointer(int cap, bool click)
+    {
+        if (ShellJumble.Host?.CapMap.Map is not { } map || !GodotObject.IsInstanceValid(map) || !map.IsVisibleInTree() || map.CellRect(cap) is not Rect2 cell)
+        {
+            return " (no cap map cell)";
+        }
+        var at = map.GetGlobalRect().Position + cell.GetCenter();
+        if (click)
+        {
+            Click(at);
+        }
+        else
+        {
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+        }
+        return "";
     }
 
     /// <summary>A left-button drag from the opening's centre, in ten motion steps, through the shell's input.</summary>
@@ -762,6 +792,12 @@ internal sealed partial class D02Driver : Node
                 var marks = shown.CapMap.Map;
                 json.WriteString("map_marks", marks.Threshold.Formula + "|" + marks.Named + "|" + string.Join(",", marks.Meeting) + "|" + shown.Naming.Hovered);
                 json.WriteNumber("named", shown.Naming.Named ?? -1);
+                // The cap map's hovered cell, the pointer's shape over it and its tooltip.
+                json.WriteStartObject("cap_map");
+                json.WriteNumber("hovered", marks.Hovered ?? -1);
+                json.WriteString("cursor", marks.MouseDefaultCursorShape.ToString());
+                json.WriteString("tooltip", marks.Hovered is int hovered ? marks.TipAt(hovered) : "");
+                json.WriteEndObject();
                 // The cap prompt (jumble.cap.name without a number): open or not, its field, its rows' count, the
                 // highlighted cap (-1: none), the caps shown and what its last Enter said.
                 json.WriteStartObject("cap_prompt");

@@ -70,4 +70,21 @@ internal static partial class Program
         prompt.Move(1);
         Check(prompt.Said == null, "a key kept the old reason");
     }
+
+    // A cap map cell's tooltip says that a click names the cap; a click that names nothing says why: Jumble is off,
+    // or the cap is already named. A blocked cap is named like any other (ADR-D02.30's named blocked cap).
+    private static void D02CapMapClickSaysWhy()
+    {
+        Equal(CapNaming.Hint, "click to name this cap", "the hint");
+        Check(CapNaming.Refusal(0, true, null) == null && CapNaming.Refusal(150, true, 30) == null, "a cap refused while Jumble is on");
+        Equal(CapNaming.Refusal(150, false, null), "Jumble is off: a cap is named only while Jumble is on", "Jumble off");
+        Equal(CapNaming.Refusal(150, true, 150), "cap 150 is already named; F1 › jumble.cap.unname un-names it", "the named cap");
+        Equal(CapNaming.Refusal(600, true, null), "no cap is numbered 600; caps are 0 to 599", "a cap outside the map");
+        Equal(CapNaming.Tip(null, "cap 0 · ring 1, place 1 · blocked"), "click to name this cap\ncap 0 · ring 1, place 1 · blocked", "a nameable cell's tip");
+        Equal(CapNaming.Tip("Jumble is off: a cap is named only while Jumble is on", "cap 7"),
+            "Jumble is off: a cap is named only while Jumble is on\ncap 7", "a refused cell's tip");
+        // The blocked cap in ia-40's first ring is nameable.
+        CapMapModel map = Rim("ia-40");
+        Check(map.Class(0) == CapClass.Blocked && CapNaming.Refusal(0, true, null) == null, "a blocked cap is refused");
+    }
 }

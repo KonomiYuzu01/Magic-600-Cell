@@ -109,7 +109,8 @@ public sealed class JumbleHost
         CapMap = new CapMapPanel(Settings, () => frame.Tokens, title);
         Jobs = new CapJobs(Naming);
         CapMap.Map.Naming = Naming;
-        CapMap.Map.Picked += cap => Name(cap);
+        CapMap.Map.Refusal = Refusal;
+        CapMap.Map.Picked += cap => Click(cap);
         Prompt = new CapPromptOverlay(new CapPrompt(() => map, Refusal), () => frame.Tokens, () => Naming.Named);
         Prompt.Picked += cap => Click(cap);
         frame.Overlays.AddChild(Prompt);

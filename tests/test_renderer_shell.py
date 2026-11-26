@@ -1788,6 +1788,52 @@ class D02CapPrompt(unittest.TestCase):
         self.assertTrue(run.expect_cap_prompt(dumps(), {}, "on-zero"))
 
 
+class D02CapHover(unittest.TestCase):
+    """The owner's bug report of 26 November 2026: the cap map's cells say on hover that a click names the cap, and a
+    click that names nothing says why; the run's expectation sees each part it checks."""
+
+    def test_the_map_names_through_the_host(self):
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn("CapMap.Map.Picked += cap => Click(cap);", host)
+        self.assertIn("CapMap.Map.Refusal = Refusal;", host)
+        self.assertIn("if (Refusal(cap) is { } why) { frame.Say(why, true); return false; }", host)
+        cells = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "CapMapControl.cs")
+        self.assertIn("MouseDefaultCursorShape = cap == null ? CursorShape.Arrow : CursorShape.PointingHand;", cells)
+        self.assertIn("CapNaming.Tip(Refusal?.Invoke(cap), Describe(cap))", cells)
+
+    def test_the_cap_hover_expectation_sees_each_part(self):
+        run = shell_module("d02_run")
+        self.assertIn("cap-hover", run.ON_FIXTURE)
+        self.assertNotIn("cap-hover", run.IN_SAMPLE_MODE)
+        script = json.loads(text(SHELL / "d02_scripts" / "cap-hover.json"))
+        written = []
+        for step in script["steps"]:
+            (kind, value), = step.items()
+            written.append({"wait_ms": f"wait {value} ms", "cap_hover": f"cap hover {value}", "cap_click": f"cap click {value}"}[kind])
+        self.assertEqual(["start"] + written, run.CAP_HOVER_STEPS)
+        refused = "cap 1 is already named; F1 › jumble.cap.unname un-names it"
+        panel = "panel:jumble.cap_map"
+
+        def dumps(cursor="PointingHand", said=True, tip=run.HINT):
+            out = []
+            for index, do in enumerate(run.CAP_HOVER_STEPS):
+                hovered = {2: 1, 3: 1, 4: 1, 5: 0, 6: 0}.get(index, -1)
+                named = {3: 1, 4: 1, 5: 1, 6: 0}.get(index, -1)
+                first = refused if index == 4 else tip
+                cell = {"hovered": hovered, "cursor": cursor if hovered >= 0 else "Arrow",
+                        "tooltip": f"{first}\ncap {hovered} · ring 1" if hovered >= 0 else ""}
+                lines = [[panel, "no cap named"]] if named < 0 else [[panel, f"cap {named} · N_c 0"]]
+                if index == 4 and said:
+                    lines.append(["frame", refused])
+                out.append({"do": do, "lines": lines, "cap_map": cell, "named": named})
+            return out
+        self.assertEqual(run.expect_cap_hover(dumps(), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_cap_hover(dumps(cursor="Arrow"), {}, "ia-40")), 2)
+        self.assertEqual(len(run.expect_cap_hover(dumps(said=False), {}, "ia-40")), 1)
+        self.assertEqual(len(run.expect_cap_hover(dumps(tip="cap"), {}, "ia-40")), 2)
+        self.assertTrue(run.expect_cap_hover(dumps()[:5], {}, "ia-40"))
+
+
 class D02Q3b(unittest.TestCase):
     """B10: the q3b script's expectation is the Q3.b rhythm's own result, and it fails on a cancel that changed the
     screen or on a list that differs."""

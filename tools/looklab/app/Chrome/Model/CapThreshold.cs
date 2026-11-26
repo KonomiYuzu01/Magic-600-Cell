@@ -139,6 +139,9 @@ public sealed class CapNaming
         : named == cap ? "cap " + cap.ToString(CultureInfo.InvariantCulture) + " is already named; F1 › jumble.cap.unname un-names it"
         : null;
 
+    // A cell's tooltip: the hint, or why a click names nothing, over what the cell shows.
+    public static string Tip(string? refusal, string describe) => (refusal ?? Hint) + "\n" + describe;
+
     // A typed cap number, "150" or "cap 150"; null when the text names no cap.
     public static int? Typed(string? text)
     {

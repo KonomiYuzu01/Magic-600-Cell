@@ -269,7 +269,8 @@ internal static partial class Program
             ("D02PortLayoutTrackerNamesAndRestoresSteps", D02PortLayoutTrackerNamesAndRestoresSteps),
             ("D02PortAppearanceRestoresInPlace", D02PortAppearanceRestoresInPlace),
             ("D02CapPromptListsCapsInIdOrder", D02CapPromptListsCapsInIdOrder),
-            ("D02CapPromptEnterNamesTheChosenCap", D02CapPromptEnterNamesTheChosenCap)
+            ("D02CapPromptEnterNamesTheChosenCap", D02CapPromptEnterNamesTheChosenCap),
+            ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

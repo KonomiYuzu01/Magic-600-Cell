@@ -954,6 +954,50 @@ def expect_cap_prompt(dumps: list[dict], source: dict, state: str | None) -> lis
 EXPECT["cap-prompt"] = expect_cap_prompt
 ON_FIXTURE.add("cap-prompt")
 
+# The owner's bug report of 26 November 2026: a cap map cell says on hover that a click names it, and a click that
+# names nothing says why in the status line.
+CAP_HOVER_STEPS = ["start", "wait 2000 ms", "cap hover 1", "cap click 1", "cap click 1", "cap hover 0", "cap click 0",
+                   "wait 2000 ms"]
+HINT = "click to name this cap"
+
+
+def expect_cap_hover(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Hovering cap 1 raises it with a pointing hand and the hint over its facts, naming nothing; a click names it; a
+    second click says in the status line that it is already named; the blocked cap 0 is hovered with the hint and named
+    by a click."""
+    if [dump["do"] for dump in dumps] != CAP_HOVER_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None or not (SAMPLES / state / "rim.json").is_file():
+        return ["the cap-hover script needs a sample state with rim rows"]
+    problems = []
+
+    def cell(index: int) -> dict:
+        return dumps[index].get("cap_map", {})
+    for index, cap in ((2, 1), (5, 0)):
+        shown = cell(index)
+        if shown.get("hovered") != cap or shown.get("cursor") != "PointingHand":
+            problems.append(f"step {index}: cap {shown.get('hovered')} is hovered with the {shown.get('cursor')} pointer, "
+                            f"expected cap {cap} with a pointing hand")
+        if not shown.get("tooltip", "").startswith(f"{HINT}\ncap {cap} · "):
+            problems.append(f"step {index}: cap {cap}'s tooltip reads {shown.get('tooltip')!r}")
+    if dumps[2].get("named") != -1 or "no cap named" not in texts(dumps[2], "panel:jumble.cap_map"):
+        problems.append("step 2: hovering named a cap")
+    for index, cap in ((3, 1), (4, 1), (6, 0)):
+        if dumps[index].get("named") != cap:
+            problems.append(f"step {index}: cap {dumps[index].get('named')} is named, expected cap {cap}")
+    refused = "cap 1 is already named; F1 › jumble.cap.unname un-names it"
+    if refused not in texts(dumps[4], "frame"):
+        problems.append(f"step 4: the status line does not say {refused!r}")
+    if not cell(4).get("tooltip", "").startswith(refused + "\ncap 1 · "):
+        problems.append(f"step 4: the named cap's tooltip reads {cell(4).get('tooltip')!r}")
+    if refused in texts(dumps[3], "frame"):
+        problems.append("step 3: the first click was refused")
+    return problems
+
+
+EXPECT["cap-hover"] = expect_cap_hover
+ON_FIXTURE.add("cap-hover")
+
 
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
