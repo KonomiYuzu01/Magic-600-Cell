@@ -79,11 +79,14 @@ public sealed partial class LayerKeys : HBoxContainer
     private readonly Func<TokenSet> tokens; private readonly Func<string, string> keyOf;
     private readonly Dictionary<string, Button> keys = new(StringComparer.Ordinal);
     private readonly Button cycle; private readonly Label mode = ChromeWidgets.Text("", "MicroLabel");
+    // The predicate layers with their counts (ADR-D01.46 as revision 4 reads it; ADR-D02's B11), after the cycle key.
+    private readonly HBoxContainer predicates = new() { Name = "LayerPredicates" };
 
-    public LayerKeys(FocusLayers layers, Func<TokenSet> tokens, Func<string, string> keyOf)
+    // Without `picks`, only the cycling key and the predicate keys show (ADR-D02's views, where no pick layer is drawn).
+    public LayerKeys(FocusLayers layers, Func<TokenSet> tokens, Func<string, string> keyOf, bool picks = true)
     {
         Layers = layers; this.tokens = tokens; this.keyOf = keyOf; Name = "LayerKeys";
-        foreach (var layer in FocusLayers.Layers)
+        foreach (var layer in picks ? FocusLayers.Layers : Array.Empty<(string Id, string Key, string Icon, string Name)>())
         {
             Button key = ChromeWidgets.Tool("", $"Pick {layer.Name.ToLowerInvariant()} ({keyOf(layer.Id)})", true); key.Name = "Layer" + layer.Id;
             ChromeIcons.Apply(key, layer.Icon, tokens().Px("icon.small"));
@@ -92,7 +95,7 @@ public sealed partial class LayerKeys : HBoxContainer
         }
         cycle = ChromeWidgets.Tool("", ""); cycle.Name = "LayerCycle"; ChromeIcons.Apply(cycle, "layer.cycle", tokens().Px("icon.small"));
         cycle.Pressed += () => Layers.Cycle();
-        AddChild(cycle); AddChild(mode);
+        AddChild(cycle); AddChild(mode); AddChild(predicates);
         Layers.Changed += Refresh; TreeExiting += () => Layers.Changed -= Refresh;
         Refresh();
     }
@@ -104,6 +107,17 @@ public sealed partial class LayerKeys : HBoxContainer
         string now = Layers.Inactive.ToString().ToLowerInvariant();
         cycle.TooltipText = $"The other layers show {now}. Press for the next way ({keyOf("cycle")})";
         mode.Text = Layers.Inactive == InactiveMode.Normal ? "" : now;
+        foreach (Node child in predicates.GetChildren()) { predicates.RemoveChild(child); child.QueueFree(); }
+        foreach (PredicateLayer layer in Layers.Predicates)
+        {
+            bool focused = Layers.Focused == layer.Id;
+            string tip = (focused ? "Un-focus " : "Focus ") + layer.Label + "; the cycling key (" + keyOf("cycle") + ") dims or hides the rest"
+                + (layer.Applies ? "" : ". It dims nothing here");
+            Button key = ChromeWidgets.Tool(FocusLayers.KeyText(layer), tip, true); key.Name = "Predicate_" + layer.Id;
+            key.SetPressedNoSignal(focused);
+            string id = layer.Id; key.Pressed += () => Layers.Focus(id);
+            predicates.AddChild(key);
+        }
     }
 }
 

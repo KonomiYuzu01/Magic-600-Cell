@@ -29,7 +29,17 @@ public sealed class JumbleHost
     private string? refused;
     // The draft rows (CR-14, and CR-19's seat key as B10's stand-in) this host carries out.
     public static readonly IReadOnlySet<string> Carried = new HashSet<string>(StringComparer.Ordinal)
-        { "jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear", "jumble.seat.hold" };
+        { "jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear", "jumble.seat.hold",
+          "jumble.focus.straddlers", "jumble.focus.domain", "jumble.focus.height" };
+    // B11: the named cap's covers with the hover's inspect line, its raw record (the straddlers' count), the bound
+    // state's pose rows (the domain and height counts), and the views' focus layers the three predicates join.
+    public CapCovers? Covers { get; private set; }
+    public CoversInspect Inspect { get; } = new();
+    public Func<int, CapCovers?>? CoversSource { get; set; }
+    public Func<int, string?>? RecordSource { get; set; }
+    public PoseStyle? Style { get; private set; }
+    public IReadOnlyList<FocusLayers> Layers { get; set; } = Array.Empty<FocusLayers>();
+    private int? domainShown, heightShown;
     // B10: the kept twist checks at the named cap and revision, the session's release record, and the sample jobs'
     // tick clock with the cap record's results.
     public KeptChecks? Checks { get; private set; }
@@ -106,6 +116,66 @@ public sealed class JumbleHost
 
     public void SetMeeting(MeetingCaps? value) { meeting = value; Named(); }
 
+    // The bound state's pose rows; the domain and height layers count again from them.
+    public void SetStyle(PoseStyle? value) { Style = value; Recount(); }
+
+    // Every predicate a view already has, counted at the named cap and the bound state; a layer that no longer reads
+    // (a domain the new state lacks) keeps its label with a pending count and dims nothing.
+    private void Recount()
+    {
+        int? named = Naming.Named;
+        foreach (FocusLayers layers in Layers)
+            foreach (PredicateLayer layer in layers.Predicates.ToArray())
+            {
+                PredicateLayer next = layer.Id switch
+                {
+                    JumbleFocus.Straddlers => JumbleFocus.StraddlersOf(named, named is int n && RecordSource != null ? RecordSource(n) : null),
+                    JumbleFocus.Domain when Style != null && domainShown is int d && d < Style.Domains.Count => JumbleFocus.DomainOf(Style, d),
+                    JumbleFocus.Height when Style != null && heightShown is int k => JumbleFocus.HeightOf(Style, k),
+                    JumbleFocus.Domain or JumbleFocus.Height => layer with { Count = Numeral.Pending, Applies = false },
+                    _ => layer,
+                };
+                layers.AddPredicate(next);
+            }
+    }
+
+    // Where no sample gives the views their focus layers, the host keeps one set per view and dresses each view with
+    // the cycling key and the predicate keys only; the cycling key is the sample's F10 (ADR-D01.46), aimed at the view
+    // with focus.
+    public void OwnLayers()
+    {
+        var own = new Dictionary<string, FocusLayers>(StringComparer.Ordinal) { ["global"] = new FocusLayers(), ["local"] = new FocusLayers() };
+        Layers = new[] { own["global"], own["local"] };
+        void Dress()
+        {
+            if (!GodotObject.IsInstanceValid(frame)) return;
+            foreach ((ViewFrame? view, string id) in new[] { (frame.Global, "global"), (frame.Local, "local") })
+                if (view != null && GodotObject.IsInstanceValid(view) && view.Tools.GetNodeOrNull("LayerKeys") == null)
+                {
+                    var keys = new LayerKeys(own[id], () => frame.Tokens, key => key == "cycle" ? "F10" : "", picks: false);
+                    view.Tools.AddChild(keys); view.Tools.MoveChild(keys, 0);
+                }
+        }
+        Dress();
+        frame.Rebuilt += Dress;
+        if (!frame.HostKeys.ContainsKey("F10")) frame.HostKeys["F10"] = () => own[frame.Local.Focused ? "local" : "global"].Cycle();
+    }
+
+    // A focus row: the predicate joins every view's layers with its count; run again with the same predicate, it
+    // un-focuses. The cycling key then dims or hides the rest (ADR-D01.46, ADR-D02.30).
+    private void FocusOn(PredicateLayer layer)
+    {
+        foreach (FocusLayers layers in Layers)
+        {
+            bool same = layers.Focused == layer.Id && layers.Predicates.First(p => p.Id == layer.Id).Label == layer.Label;
+            layers.AddPredicate(layer);
+            if (same || layers.Focused != layer.Id) layers.Focus(layer.Id);
+        }
+    }
+
+    private static int? Whole(string? argument) =>
+        int.TryParse(argument?.Trim(), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int value) ? value : null;
+
     public bool Name(int cap) => Naming.Name(cap);
 
     // Formulas from the field or the palette; an empty text clears the threshold. A formula that does not read
@@ -137,6 +207,13 @@ public sealed class JumbleHost
         // The bound state's results for the named cap: a binding that comes after the naming brings them.
         results = cap is int c2 && CheckSource != null ? CheckSource(c2) : new Dictionary<int, TwistCheck>();
         Local.SetCount("named_cap", cap == null ? 0 : 1);
+        // Cap covers: a completed answer for the named cap, or none; the inspect line starts empty.
+        Covers = cap is int c3 && CoversSource != null ? CoversSource(c3) : null;
+        Inspect.Hover(null);
+        Local.SetCount("cap_covers", Covers?.Rows.Count ?? 0);
+        Surface.SetCovers(Covers, Inspect, () => map);
+        // The straddlers layer stays focused across named caps and counts at the new one (ADR-D02.30).
+        Recount();
         CapReadout? readout = cap is int c ? (CapRecord != null ? CapRecord(c) : null) ?? map.Readout(c) : null;
         SetCap(readout);
         Surface.SetFacts(readout != null && layout != null ? CapFacts.Tier2(map, layout, readout) : null);
@@ -165,6 +242,10 @@ public sealed class JumbleHost
         "jumble.seat.hold" when Checks == null => "name a cap first",
         "jumble.seat.hold" when argument != "1" => "the samples hold seat 1's twelve checks only",
         "jumble.seat.hold" when results.Count == 0 => "the samples hold no twist checks at cap " + Checks!.Cap,
+        "jumble.focus.straddlers" or "jumble.focus.domain" or "jumble.focus.height" when Layers.Count == 0 => "no view here takes focus layers",
+        "jumble.focus.domain" or "jumble.focus.height" when Style == null => "no state is bound",
+        "jumble.focus.domain" when Whole(argument) is not int d || d >= Style!.Domains.Count => "it needs a domain number, 0 to " + (Style!.Domains.Count - 1) + ", as in > jumble.focus.domain 5",
+        "jumble.focus.height" when Whole(argument) == null => "it needs k, as in > jumble.focus.height 4",
         _ => null,
     };
 
@@ -177,6 +258,15 @@ public sealed class JumbleHost
             case "jumble.capmap.threshold.set": SetThreshold(argument ?? ""); break;
             case "jumble.capmap.threshold.clear": ClearThreshold(); break;
             case "jumble.seat.hold": HoldSeat(); break;
+            case "jumble.focus.straddlers":
+                FocusOn(JumbleFocus.StraddlersOf(Naming.Named, Naming.Named is int n && RecordSource != null ? RecordSource(n) : null));
+                break;
+            case "jumble.focus.domain" when Style != null && Whole(argument) is int d && d < Style.Domains.Count:
+                domainShown = d; FocusOn(JumbleFocus.DomainOf(Style, d));
+                break;
+            case "jumble.focus.height" when Style != null && Whole(argument) is int k:
+                heightShown = k; FocusOn(JumbleFocus.HeightOf(Style, k));
+                break;
         }
     }
 

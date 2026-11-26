@@ -281,12 +281,25 @@ public sealed class ShellChrome
             // B7: Global's totals follow the bound state, pending while none is bound; B8: so does the cap map.
             var host = Jumble;
             var layout = ShellJumble.Layout();
+            // B11: the focus layers of Global and Local take the three predicates; the pose rows count them.
+            if (sample != null)
+            {
+                host.Layers = sample.Layers.Values.ToArray();
+            }
+            else
+            {
+                host.OwnLayers();
+            }
+            host.CoversSource = ShellJumble.Covers;
+            host.RecordSource = ShellJumble.Record;
             ShellJumble.BindingChanged += () =>
             {
                 host.SetTotals(ShellJumble.Totals());
+                host.SetStyle(ShellJumble.Style());
                 host.SetCapMap(layout, ShellJumble.CapMap());
             };
             host.SetTotals(ShellJumble.Totals());
+            host.SetStyle(ShellJumble.Style());
             host.SetCapMap(layout, ShellJumble.CapMap());
             // B9: the 80 meeting caps of a named cap, and its own record where the bound sample has one.
             host.CapRecord = ShellJumble.CapRecord;

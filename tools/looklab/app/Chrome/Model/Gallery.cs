@@ -163,6 +163,9 @@ public sealed record StickerPalette(string Id, string Name, string Family, IRead
 // of a complete operation break through every layer (ADR-D01.4 item 8).
 public enum InactiveMode { Normal, Dimmed, Hidden }
 
+// A predicate focus layer: its id, its label, its count, and whether it applies here.
+public sealed record PredicateLayer(string Id, string Label, Numeral Count, bool Applies);
+
 public sealed class FocusLayers
 {
     public static readonly IReadOnlyList<(string Id, string Key, string Icon, string Name)> Layers = Array.AsReadOnly(new[]
@@ -184,6 +187,44 @@ public sealed class FocusLayers
         if (Layers.All(l => l.Id != layer) || !(value >= 0 && value <= 1)) return false;
         opacity[layer] = value; Safe.Raise(Changed); return true;
     }
+
+    // Predicate focus layers (ADR-D01.46 as revision 4 reads it; ADR-D02's B11): a predicate with its count beside it,
+    // on the same cycling key. One predicate is focused at a time, and none by default; while one is focused and the
+    // cycle is not Normal, its members show and the rest take the cycle's mode. A predicate that does not apply here
+    // (the straddlers at an unblocked cap) dims nothing.
+    private readonly List<PredicateLayer> predicates = new();
+    public IReadOnlyList<PredicateLayer> Predicates => predicates;
+    public string? Focused { get; private set; }
+
+    // Adds a predicate, or updates its label and count in place; the focus stays where it was.
+    public void AddPredicate(string id, string label, Numeral count, bool applies = true)
+    {
+        if (string.IsNullOrEmpty(id) || Layers.Any(l => l.Id == id)) throw new ArgumentException("a predicate layer needs its own id: " + id);
+        var layer = new PredicateLayer(id, label, count, applies);
+        int at = predicates.FindIndex(p => p.Id == id);
+        if (at >= 0 && predicates[at] == layer) return;
+        if (at >= 0) predicates[at] = layer; else predicates.Add(layer);
+        Safe.Raise(Changed);
+    }
+
+    public void AddPredicate(PredicateLayer layer) => AddPredicate(layer.Id, layer.Label, layer.Count, layer.Applies);
+
+    // Focuses a predicate, or none; the focused predicate again un-focuses it.
+    public bool Focus(string? id)
+    {
+        if (id != null && predicates.All(p => p.Id != id)) return false;
+        Focused = Focused == id ? null : id; Safe.Raise(Changed); return true;
+    }
+
+    // Whether the focused predicate dims or hides its non-members now.
+    public bool Dimming => Inactive != InactiveMode.Normal && Focused is string f && predicates.First(p => p.Id == f).Applies;
+
+    // How strongly a piece shows under the focused predicate: a member or a breakthrough fully, the rest by the mode.
+    public double ShownPiece(bool member, bool breaksThrough = false) =>
+        breaksThrough || member || !Dimming ? 1 : Inactive == InactiveMode.Dimmed ? .25 : 0;
+
+    // A predicate's key text: its label and its count.
+    public static string KeyText(PredicateLayer layer) => layer.Label + " · " + (layer.Count.Kind == NumeralKind.Value ? layer.Count.Value.ToString("N0", CultureInfo.InvariantCulture) : layer.Count.Word);
 
     // How strongly an element shows: the active layer fully, the others by the inactive mode, a breakthrough always.
     public double Shown(string layer, bool breaksThrough = false) =>

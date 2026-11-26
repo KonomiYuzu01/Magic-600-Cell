@@ -21,6 +21,11 @@ public sealed partial class JumbleSurface : VBoxContainer
     private IReadOnlyList<(string Label, string Fact)>? facts;
     // The named cap's kept twist checks (B10), shown in the Twist check section.
     private KeptChecks? checks;
+    // The named cap's covers (B11), shown in the Cap covers section, with its hover's inspect line and the table's fold.
+    private CapCovers? covers;
+    private CoversInspect? inspect;
+    private Func<CapMapModel> map = CapMapModel.Pending;
+    private bool coversTable;
 
     public JumbleSurface(LocalAccordion accordion, Func<TokenSet> tokens, IReadOnlyDictionary<string, string> names, string emptySentence, string emptyBody)
     {
@@ -36,6 +41,12 @@ public sealed partial class JumbleSurface : VBoxContainer
     public void SetChecks(KeptChecks? value)
     {
         checks = value;
+        if (IsInstanceValid(this)) Refresh();
+    }
+
+    public void SetCovers(CapCovers? value, CoversInspect inspect, Func<CapMapModel> map)
+    {
+        covers = value; this.inspect = inspect; this.map = map;
         if (IsInstanceValid(this)) Refresh();
     }
 
@@ -70,6 +81,8 @@ public sealed partial class JumbleSurface : VBoxContainer
             }
             else if (open && section == "twist_check" && checks != null && checks.Entries.Count > 0)
                 sections.AddChild(new TwistCheckList(checks, tokens) { Name = "LocalBody_" + section });
+            else if (open && section == "cap_covers" && covers != null && inspect != null)
+                sections.AddChild(new CapCoversList(covers, inspect, map, coversTable, wide => { coversTable = wide; Refresh(); }, tokens) { Name = "LocalBody_" + section });
             else if (open)
             {
                 Label body = ChromeWidgets.Text(emptyBody, "DimLabel"); body.Name = "LocalBody_" + section;

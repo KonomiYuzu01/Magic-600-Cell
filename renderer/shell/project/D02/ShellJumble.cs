@@ -115,6 +115,31 @@ public static class ShellJumble
         return File.Exists(path) ? TwistCheck.FromRecord(File.ReadAllText(path)) : new Dictionary<int, TwistCheck>();
     }
 
+    /// <summary>A named cap's raw record in the bound sample (cap-&lt;id&gt;.json), or null without one.</summary>
+    public static string? Record(int cap)
+    {
+        if (Bound is not { } state)
+        {
+            return null;
+        }
+        var path = Path.Combine(JumbleFolder(), state, "cap-" + cap + ".json");
+        return File.Exists(path) ? File.ReadAllText(path) : null;
+    }
+
+    /// <summary>A named cap's completed covers answer (B11), from its record; none at a blocked cap or without one.</summary>
+    public static CapCovers? Covers(int cap) => Record(cap) is { } record ? CapCovers.FromRecord(record) : null;
+
+    /// <summary>The bound state's pose rows (style.json), which count the domain and height focus layers (B11).</summary>
+    public static PoseStyle? Style()
+    {
+        if (Bound is not { } state)
+        {
+            return null;
+        }
+        var path = Path.Combine(JumbleFolder(), state, "style.json");
+        return File.Exists(path) ? PoseStyle.Read(File.ReadAllText(path)) : null;
+    }
+
     /// <summary>The 80 caps meeting each cap (B9), from the samples' meeting-caps.json; none when the build has none.</summary>
     public static MeetingCaps? Meeting()
     {
@@ -470,6 +495,22 @@ internal sealed partial class D02Driver : Node
                 }
             }
         }
+        else if (step.TryGetProperty("open", out var open))
+        {
+            // B11: opens one of Local's sections, as a click on its header does; an open section stays open.
+            _doing = "open " + open.GetString();
+            if (ShellJumble.Host is { } host && host.Local.Open != open.GetString())
+            {
+                host.Local.Toggle(open.GetString()!);
+            }
+        }
+        else if (step.TryGetProperty("hover_cover", out var hover))
+        {
+            // B11: hovering an id in Cap covers, as the pointer over it does. The dump shows the inspect line and the
+            // cap map's marks, which must not change.
+            _doing = "hover cover " + hover.GetInt32().ToString(CultureInfo.InvariantCulture);
+            ShellJumble.Host?.Inspect.Hover(hover.GetInt32());
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -477,7 +518,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a cancel_older or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a cancel_older, an open, a hover_cover or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -553,6 +594,25 @@ internal sealed partial class D02Driver : Node
                 json.WriteNumberValue(value);
             }
             json.WriteEndArray();
+            // B11: the covers lines, the inspect line, the cap map's marks and the focus layers' keys.
+            if (ShellJumble.Host is { } shown)
+            {
+                json.WriteStartArray("covers");
+                foreach (var line in shown.Covers?.Lines() ?? Array.Empty<string>())
+                {
+                    json.WriteStringValue(line);
+                }
+                json.WriteEndArray();
+                json.WriteString("inspect", shown.Inspect.Line(shown.CapMap.Map.Map));
+                var marks = shown.CapMap.Map;
+                json.WriteString("map_marks", marks.Threshold.Formula + "|" + marks.Named + "|" + string.Join(",", marks.Meeting) + "|" + shown.Naming.Hovered);
+                json.WriteStartArray("focus");
+                foreach (var layers in shown.Layers)
+                {
+                    json.WriteStringValue(string.Join(" / ", layers.Predicates.Select(FocusLayers.KeyText)) + " | focused " + (layers.Focused ?? "none") + " | " + layers.Inactive);
+                }
+                json.WriteEndArray();
+            }
             json.WriteNumber("cancels", _cancels);
             json.WriteNumber("screen_changes_on_cancel", _screenChanges);
             json.WriteStartArray("kept");

@@ -222,7 +222,11 @@ internal static partial class Program
             ("D02NoJobBeforeNaming", D02NoJobBeforeNaming),
             ("D02HoverNamesNothing", D02HoverNamesNothing),
             ("D02MeetingCapsAre80", D02MeetingCapsAre80),
-            ("D02Q3bTwelveTwists", D02Q3bTwelveTwists)
+            ("D02Q3bTwelveTwists", D02Q3bTwelveTwists),
+            ("D02CoversUndefinedIsListed", D02CoversUndefinedIsListed),
+            ("D02CoversTableHas80RowsBothDirections", D02CoversTableHas80RowsBothDirections),
+            ("D02HoverInCoversMarksNoCapMapCell", D02HoverInCoversMarksNoCapMapCell),
+            ("D02FocusLayerCountsMatchSample", D02FocusLayerCountsMatchSample)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

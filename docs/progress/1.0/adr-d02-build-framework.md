@@ -423,6 +423,22 @@ relative path is from the repository root.
   - The four lines in cap-id order and the 80-row table, with blocked meeting caps listed as undefined.
   - `FocusLayers.AddPredicate(id, label, count)` on the existing cycle key, with three layers: straddlers, one domain, height at least k. Their drawing comes in B15.
 - **Check:** `D02CoversUndefinedIsListed`; `D02CoversTableHas80RowsBothDirections`; `D02HoverInCoversMarksNoCapMapCell`; `D02FocusLayerCountsMatchSample`.
+- **As built (integrator, 26 November 2026):**
+  - `Model/CapCovers.cs`:
+    - `CapCovers.FromRecord` reads a completed `covers` answer from a cap record: its 80 meeting caps in cap-id order, each with "d covers c" and "c covers d" as yes, no or undefined with its reason. A blocked named cap's record has no completed answer (J1's job is an error there), so the slot shows none.
+    - The slot's four lines: the domain line, then "covered by", "covers" and "undefined" in cap-id order. Each list says how many of the 80 it answered, so an empty list never reads "no" where answers are undefined. The three heads are the word record's (`covers.covered_by`, `covers.covers`, `covers.undefined`). `Table()` is the expanded form: 80 rows, `cap | covers c | c covers`.
+    - Reading: ADR-D02.38's "alignment-domain line" is built as the answer's domain statement that JI.12 and ENG-0J's M4 require: "The 80 caps that meet cap c · at least 10 aligned face pieces a side". This goes to the refinement round as a named reading.
+    - `CoversInspect` is the hover's own state: hovering an id shows that cap's Tier 1 on the slot's inspect line, and it touches neither the named cap, the cap map's hover nor its marks (`CapMarks`).
+    - `PoseStyle` reads a state's pose rows, and `JumbleFocus` builds the three predicates with their counts: the named cap's straddlers (the record's straddler mask at a blocked cap; 0 at an unblocked cap, where the layer dims nothing; pending without a record), one alignment domain, and height at least k (the pieces' left height, as the totals' n_h count it).
+  - `Model/Gallery.cs`: `FocusLayers.AddPredicate(id, label, count, applies)`, `Focus(id)` (the focused predicate again un-focuses; none by default), `Dimming` and `ShownPiece(member)`. The predicates use the existing cycling key: while one is focused, the cycle's dimmed or hidden mode applies to its non-members. `LayerKeys` shows each predicate as a key with its count, after the cycling key.
+  - `Ui/JumbleLists.cs`: `CapCoversList` under the named-cap cell, with hoverable ids, the inspect line and the table behind a fold.
+  - The host carries the draft rows `jumble.focus.straddlers`, `jumble.focus.domain <id>` and `jumble.focus.height <k>` (CR-14). A row adds its predicate to both views' layers and focuses it; the same row again un-focuses it. The straddlers recount at every named cap and stay focused.
+  - Departure: the product shell outside sample mode had no focus layers, so the host keeps one set per view there (`OwnLayers`), with the cycling key on F10 as in the sample and the predicate keys only (no pick layers, which the product does not draw). The drawing of all three layers comes in B15.
+  - Checks:
+    - Console lane: `D02CoversUndefinedIsListed`, `D02CoversTableHas80RowsBothDirections`, `D02HoverInCoversMarksNoCapMapCell` and `D02FocusLayerCountsMatchSample` pass; the lane passed 187 of 187. The counts are cross-checked against the totals: height at least 2 equals the off-lattice count, and the lattice domain holds exactly n_0's pieces.
+    - `test_renderer_shell.py` passed 73 of 73, with `D02Covers`.
+    - `d02_run.py --script covers` passed on wj-ia-300 (`c9-product-568c5effe6cd5b26`): cap 150 is covered by 36 of 80 meeting caps, covers 0 of the 3 answered, and 77 answers are undefined (blocked). Hovering cap 8 inspected it with the cap map's marks unchanged. The focus keys read "Height ≥ 4 · 3,128", "Domain 22 (lattice) · 56,777" and "Straddlers · 0" in both views.
+    - On the same build, `rotate` (on-zero), `name-cap` (ia-40) and `q3b` (wj-ia-300) passed again.
 - **Owner sees:** Cap covers under the named-cap cell; the focus key shows each layer's count.
 - **Machine:** H, W.
 - **Checkpoint:** no.

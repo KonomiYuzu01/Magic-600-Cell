@@ -1,0 +1,28 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "covers",
+  "note": "B11's run on wj-ia-300's session fixture: name cap 150 by the palette's typed mode, open Local's Cap covers section, hover meeting cap 8 in it, then focus the three predicate layers by their rows (height at least 4, the lattice domain 22, the straddlers). Cap covers shows its domain line and its three lists in cap-id order; the hover inspects cap 8 and leaves the cap map's marks as they were; each view's focus keys show the layers with their counts.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 1500},
+    {"open": "cap_covers"},
+    {"wait_ms": 1000},
+    {"hover_cover": 8},
+    {"wait_ms": 1000},
+    {"chord": "F1"},
+    {"text": "> jumble.focus.height 4"},
+    {"chord": "Enter"},
+    {"wait_ms": 1000},
+    {"chord": "F1"},
+    {"text": "> jumble.focus.domain 22"},
+    {"chord": "Enter"},
+    {"wait_ms": 1000},
+    {"chord": "F1"},
+    {"text": "> jumble.focus.straddlers"},
+    {"chord": "Enter"},
+    {"wait_ms": 2500}
+  ]
+}

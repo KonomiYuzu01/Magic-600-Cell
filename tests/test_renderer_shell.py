@@ -1742,6 +1742,59 @@ class D02Q3b(unittest.TestCase):
         self.assertTrue(run.expect_q3b(dumps(), {}, "ia-40"))
 
 
+class D02Covers(unittest.TestCase):
+    """B11: the covers script's expectation reads the record as CapCovers does, with the word record's heads, and it
+    fails on a hover that marked the cap map or on a focus key without the sample's count."""
+
+    def test_the_covers_expectation_follows_the_record(self):
+        run = shell_module("d02_run")
+        self.assertIn("covers", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "covers.json"))
+        self.assertEqual(len(script["steps"]) + 1, len(run.COVERS_STEPS))
+        model = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "CapCovers.cs")
+        words = {s["id"]: s["text"] for s in json.loads(text(ROOT / "tools" / "looklab" / "data" / "design" / "jumble-words.json"))["sentences"]}
+        for key in ("covers.covered_by", "covers.covers", "covers.undefined"):
+            self.assertIn(f'("{words[key]} · "', model)
+        samples = ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / "wj-ia-300"
+        record = json.loads(text(samples / "cap-150.json"))
+        lines = run.covers_lines(record)
+        self.assertEqual(lines[0], "The 80 caps that meet cap 150 · at least 10 aligned face pieces a side")
+        self.assertTrue(lines[1].startswith("covered by · 36 of 80 answered: 8 10 14 "))
+        self.assertEqual(lines[2], "covers · 0 of 3 answered")
+        self.assertTrue(lines[3].startswith("undefined · 77 (blocked): 8 10 14 "))
+        style = json.loads(text(samples / "style.json"))
+        lattice = style["lattice_domain"]
+        n4 = sum(r["count"] for r in style["rows"] if r["heights"][0] >= 4)
+        nd = sum(r["count"] for r in style["rows"] if r["domain"] == lattice)
+        marks = "|150|" + ",".join(map(str, range(80))) + "|"
+
+        def dumps(hover_marks=marks, straddlers="Straddlers · 0"):
+            out = [{"do": do, "lines": []} for do in run.COVERS_STEPS]
+            out[7].update(covers=lines, map_marks=marks, lines=[["view:Local", "▾ Cap covers · 80"], ["view:Local", lines[0]]])
+            out[9].update(inspect="cap 8 · blocked · N_c undefined", map_marks=hover_marks)
+            for step, key, focused in ((13, f"Height ≥ 4 · {n4:,}", "jumble.height"),
+                                       (17, f"Domain {lattice} (lattice) · {nd:,}", "jumble.domain"),
+                                       (21, straddlers, "jumble.straddlers")):
+                out[step]["focus"] = [f"{key} | focused {focused} | Normal"] * 2
+            return out
+        self.assertEqual(run.expect_covers(dumps(), {}, "wj-ia-300"), [])
+        self.assertEqual(len(run.expect_covers(dumps(hover_marks="|150||8"), {}, "wj-ia-300")), 1)
+        self.assertEqual(len(run.expect_covers(dumps(straddlers="Straddlers · 12"), {}, "wj-ia-300")), 2)
+        self.assertTrue(run.expect_covers(dumps(), {}, "ia-40"))
+
+    def test_the_host_carries_the_three_focus_rows_and_no_new_key(self):
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        for row in ("jumble.focus.straddlers", "jumble.focus.domain", "jumble.focus.height"):
+            self.assertIn(f'"{row}"', host)
+        rows = json.loads(text(ROOT / "tools" / "looklab" / "data" / "design" / "command-rows-d02.json"))["commands"]
+        ids = {row["id"] for row in rows}
+        self.assertTrue({"jumble.focus.straddlers", "jumble.focus.domain", "jumble.focus.height"} <= ids)
+        # The predicates join the existing cycling key (ADR-D01.46): the layer keys bind no new key.
+        keys = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "Gallery.cs")
+        self.assertIn("LayerPredicates", keys)
+        self.assertNotIn("HostKeys", keys)
+
+
 class D02Rotation(unittest.TestCase):
     """The view rotation the owner asked for on 26 November 2026: with --d02 a left-button drag in the Global opening
     turns the core's 4D camera as Look Lab's drag does, a click stays a click, and without --d02 nothing changes."""

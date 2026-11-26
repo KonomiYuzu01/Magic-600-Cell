@@ -357,11 +357,89 @@ def expect_q3b(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     return problems
 
 
+# B11: the covers script's steps, and its lines as CapCovers.Lines() writes them from a cap record.
+COVERS_STEPS = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 1500 ms",
+                "open cap_covers", "wait 1000 ms", "hover cover 8", "wait 1000 ms",
+                "chord F1", "text > jumble.focus.height 4", "chord Enter", "wait 1000 ms",
+                "chord F1", "text > jumble.focus.domain 22", "chord Enter", "wait 1000 ms",
+                "chord F1", "text > jumble.focus.straddlers", "chord Enter", "wait 2500 ms"]
+
+
+def covers_lines(record: dict) -> list[str]:
+    """Cap covers' four lines for a cap record: the domain line, then "covered by", "covers" and "undefined" in cap-id
+    order, each with how many of the 80 it answered."""
+    covers = record["covers"]
+    cap, threshold = covers["parameters"]["cap"], covers["parameters"]["threshold"]
+
+    def answer(side: dict) -> str:
+        return "undefined" if side.get("status") == "not_applicable" else ("yes" if side["covers"] else "no")
+    rows = [(a["cap"], answer(a["d_covers_c"]), answer(a["c_covers_d"]),
+             a["c_covers_d"].get("reason") or a["d_covers_c"].get("reason")) for a in covers["answers"]]
+
+    def line(head: str, caps: list[int]) -> str:
+        return head + (": " + " ".join(map(str, caps)) if caps else "")
+    by = [c for c, b, _, _ in rows if b == "yes"]
+    of = [c for c, _, o, _ in rows if o == "yes"]
+    undefined = [(c, r) for c, b, o, r in rows if "undefined" in (b, o)]
+    reasons = sorted({r or "undefined" for _, r in undefined})
+    return [f"The {len(covers['domain'])} caps that meet cap {cap} · at least {threshold} aligned face pieces a side",
+            line(f"covered by · {len(by)} of {sum(1 for _, b, _, _ in rows if b != 'undefined')} answered", by),
+            line(f"covers · {len(of)} of {sum(1 for _, _, o, _ in rows if o != 'undefined')} answered", of),
+            line(f"undefined · {len(undefined)}" + (f" ({', '.join(reasons)})" if reasons else ""), [c for c, _ in undefined])]
+
+
+def expect_covers(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B11's covers script: after naming cap 150 and opening Cap covers, the slot's lines equal the record's (domain
+    line, then covered by, covers and undefined in cap-id order) and the section counts the 80 meeting caps; hovering
+    cap 8 inspects it and leaves the cap map's marks unchanged; each focus row adds its predicate with the sample's
+    count and focuses it, in both views."""
+    if [dump["do"] for dump in dumps] != COVERS_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None or not (SAMPLES / state / "cap-150.json").is_file():
+        return ["the covers script needs a sample state with a record of cap 150"]
+    record = load(SAMPLES / state / "cap-150.json")
+    style = load(SAMPLES / state / "style.json")
+    problems = []
+    opened, hovered = dumps[7], dumps[9]
+    wanted = covers_lines(record)
+    if opened.get("covers") != wanted:
+        problems.append(f"step 7: Cap covers reads {opened.get('covers')}, the record gives {wanted}")
+    if "▾ Cap covers · 80" not in texts(opened, "view:Local"):
+        problems.append("step 7: Local's open Cap covers section does not count 80 meeting caps")
+    if not any(text.startswith("The 80 caps that meet cap 150") for text in texts(opened, "view:Local")):
+        problems.append("step 7: Local does not show the domain line")
+    if not str(hovered.get("inspect", "")).startswith("cap 8 · "):
+        problems.append(f"step 9: hovering 8 inspects {hovered.get('inspect')!r}")
+    if hovered.get("map_marks") != opened.get("map_marks"):
+        problems.append(f"step 9: hovering in Cap covers changed the cap map's marks ({opened.get('map_marks')} to {hovered.get('map_marks')})")
+    if "|150|" not in str(opened.get("map_marks")):
+        problems.append(f"step 7: the cap map does not mark cap 150 as named ({opened.get('map_marks')})")
+
+    def at_least(k: int) -> int:
+        return sum(r["count"] for r in style["rows"] if r["heights"][0] >= k)
+
+    def in_domain(d: int) -> int:
+        return sum(r["count"] for r in style["rows"] if r["domain"] == d)
+    lattice = style["lattice_domain"]
+    keys = [(13, f"Height ≥ 4 · {at_least(4):,}", "jumble.height"),
+            (17, f"Domain {lattice} (lattice) · {in_domain(lattice):,}", "jumble.domain"),
+            (21, "Straddlers · 0", "jumble.straddlers")]
+    for step, key, focused in keys:
+        focus = dumps[step].get("focus") or []
+        if len(focus) != 2:
+            problems.append(f"step {step}: {len(focus)} views take focus layers, not Global and Local")
+        for view in focus:
+            if key not in view or f"| focused {focused} |" not in view:
+                problems.append(f"step {step}: a view's focus keys read {view!r}, not {key!r} focused")
+    print(f"covers: {wanted[1].split(':')[0]}; {wanted[3].split(':')[0]}; focus {(dumps[21].get('focus') or ['none'])[0]}")
+    return problems
+
+
 EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
-          "q3b": expect_q3b}
+          "q3b": expect_q3b, "covers": expect_covers}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
-ON_FIXTURE = {"bind", "host", "name-cap", "q3b"}
+ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers"}
 IN_SAMPLE_MODE = {"host"}
 
 
