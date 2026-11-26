@@ -41,8 +41,16 @@ relative path is from the repository root.
 **How the owner watches.**
 - Opus ends every step with a product build: `python renderer/shell/build_product.py`.
 - The owner runs one command from a PowerShell on the desktop: `python renderer/shell/watch_d02.py [--state <id>]`. It picks the newest build and a fresh run folder and calls `launch.py --frame --puzzle jumble-on` with the D02 options.
-- There is no live reload. The owner closes and reruns the command after a step lands.
+- `watch_d02.py --follow` keeps one window across steps (below). Without it, the owner closes and reruns the command after a step lands.
 - Each step's "Owner sees" line says what to look at. Each checkpoint has a short sitting.
+
+**The watching window never sits on top and never takes focus** (owner, 26 November 2026; added by the integrator). The owner works in other apps and switches to the window to look now and then.
+- Every window the build starts for watching is a normal window: `watch_d02.py`, its `--follow` restarts, and the W runs of `d02_run.py` and `track_j.py`. It is never topmost: no `WS_EX_TOPMOST`, no always-on-top flag.
+- It never takes the foreground: no activation, raise or `SetForegroundWindow`, neither at launch nor on a reload, rebuild or restart.
+- `launch.py` starts the shell without activation: STARTUPINFO with `STARTF_USESHOWWINDOW` and `wShowWindow = SW_SHOWNOACTIVATE` (4). Today it passes none (`renderer/shell/launch.py:383`).
+- The shell must honour it. Godot's own showing of its main window may activate it, so B4 starts by reading how Godot 4.7's Windows display server shows the main window, and keeps it from activating. One lead: the main window's no-focus flag at start, cleared after the first frame without activating.
+- `--follow` prefers reloading in place to restarting. A data-only change (samples, design data) is reloaded in the running shell. A new build is started without activation at the old window's rectangle, and the old window closes after it.
+- Not covered: the gate rows (machine mark G) that need the foreground by design, as C9's `--topmost` probe does. They keep their own foreground rules and run in quiet windows arranged with the owner.
 
 **Machine marks.**
 - **H:** headless; no window, no GPU.
@@ -72,7 +80,8 @@ relative path is from the repository root.
 - **Decide first:** assert that `start(I_a)` then `record()['digest']` equals the W-J fixture's `stages.start.digest`. If it does not, the seed 7001 chain compares through `j1_from_record`. Record the case in `states.json`.
 - **Check:** `python tests/test_d02_samples.py` (no adapter) checks the format, section 6's digests and counts, and that the rim classes sum to 600. `make_d02_samples.py --verify` prints `D02_SAMPLES_PASS states=<n>`.
 - **Owner sees:** nothing yet.
-- **Machine:** H. About two minutes per deep state.
+- **Machine:** H. About two minutes per deep state. The adapter build is a cargo build in the worktree's own target dir: never in a quiet window, and `cargo clean` for that target dir when the build line ends.
+- **The owner's window rule:** B1 opens no window. From B4 on, every watching window follows section 1: never on top, never taking focus.
 - **Checkpoint:** no.
 - **Depends:** the adapter build named in the packet.
 
@@ -126,7 +135,13 @@ relative path is from the repository root.
   - `ScreenText.Of(Control)`: the visible text of the frame, pane by pane.
   - A script player in `ShellJumble`. It feeds each step's chord to the frame's own key entry (`ShellChrome.Takes`, then the session router), writes `d02-screen.jsonl` after each step, and quits.
   - `d02_run.py --script <name> --out <new folder>` launches, compares each dump with the expectation Python computes from the sample files, and prints `M600_D02_RUN_PASS script=<name> steps=<n> mismatches=0`.
-- **Check:** new cases in `tests/test_renderer_shell.py`: D02 staging; the three launch options over the fake build; no D02 variable without `--d02`; no private path in `launch.json`. Then `python renderer/shell/d02_run.py --script smoke`.
+  - The owner's window rule (section 1): `launch.py` passes the no-activation STARTUPINFO; the shell keeps its main window from activating; `watch_d02.py --follow` reloads data in place and restarts a new build without activation at the old window's rectangle.
+- **Check:** new cases in `tests/test_renderer_shell.py`:
+  - D02 staging; the three launch options over the fake build; no D02 variable without `--d02`; no private path in `launch.json`;
+  - the fake `popen` receives STARTUPINFO with `STARTF_USESHOWWINDOW` and `SW_SHOWNOACTIVATE`;
+  - a source scan of `renderer/shell/` and the chrome library finds no topmost flag and no window activation outside the gate path.
+
+  Then `python renderer/shell/d02_run.py --script smoke`, which also records the foreground window before the launch and five seconds after it. The two must be equal, and the shell's window must not carry `WS_EX_TOPMOST`.
 - **Owner sees:** the frame opens with D02 on; the palette lists the draft rows.
 - **Machine:** H, then W for the smoke run.
 - **Checkpoint:** no.
@@ -739,6 +754,7 @@ Each checkpoint is one read of the named diff range against the questions below,
   - the undefined numeral switches on the lattice flag only;
   - the entry slot is chrome only;
   - nothing D02 runs without `--d02`;
+  - the watching window starts without activation and is never topmost (section 1);
   - no protected file is in the diff.
 - Owner is shown: the W-J state posed under the frame, with the Jumble cell and marks.
 
@@ -1083,4 +1099,7 @@ Findings of the two-view addition:
   sections 4, 5, 8 and 9. Its cited files and lines exist on this branch.
 - **F15 to F18:** adopt. F16 means G9 to G11 are the first measured values for the four-view envelope; a failing row
   lowers the pane ceiling and never moves the gate. **R6:** adopt; B18c's picture check and the owner's eye at C3.
+- **The owner's window rule** (26 November 2026, said in the design-system ADR line and relayed here): the watching
+  window never sits on top and never takes focus. The integrator wrote it into section 1, B1 and B4; gate rows keep
+  their own foreground rules.
 - B1 waits for the owner's go.

@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-26-adr-d02-build
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; and the build waits for the owner's go before B1.
+summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; and the build waits for the owner's go before B1.
 related: [owner-decisions-2026-11-26-adr-d02-a4, owner-decisions-2026-11-25, owner-decisions-2026-11-22-adr-line-evening, owner-decisions-2026-11-22-design-art-path]
 supersedes: []
 claims:
@@ -12,6 +12,7 @@ claims:
   - {id: build-waits-for-go, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: two-drawn-views, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: measure-before-r5, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: watching-window-never-on-top, evidence_kind: decision, checked_at: 2026-11-26}
 ---
 
 # Owner decisions on ADR-D02's build framework
@@ -78,3 +79,17 @@ The question: may the drawing candidates be built and measured behind the `--d02
 owner took the recommended option: yes. After the gate sittings, R5 goes to the owner once, with the measured numbers.
 R5 is a revision of the frozen render chapters; the top integrator writes it and the owner signs it. Nothing ships
 before then.
+
+## 6. The watching window never sits on top and never takes focus
+
+Said in the design-system ADR line the same day and relayed to the ADR-D02 session. The owner's words, translated: "I
+have told the top integrator when B1 starts. One more requirement: the live-build script must not put the window on
+top. I may be doing other things, and I will look at the build now and then."
+
+The integrator's reading:
+- Every window the build starts for the owner to watch is a normal window. It is never topmost and never takes the
+  foreground, neither at launch nor on a reload, rebuild or restart. The owner switches to it to look.
+- Reloading in place is preferred to restarting, so no fresh window appears at each step.
+- Gate measurement runs that need the foreground by design keep their own foreground rules. They run in quiet windows
+  arranged with the owner.
+- The framework's section 1, B1, B4 and C1 carry the rule.
