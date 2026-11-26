@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | ADR-D02: open research and the A4 picks
+The owner made open research ADR-D02's core (25 November 2026) and answered A4 with every recommended option except item 9, Q3.b, taken as the owner's reading of the frozen J-7 and N-1, and item 12c, the base targets: at most 3,000 hours of real time for a true expert's full solve without jumbling, and substantive progress on restoration theory for the jumbled puzzle ([decision](decisions/owner-decisions-2026-11-26-adr-d02-a4.md)).
+
 ## [2026-11-26] update | The confirmation gap's cause and the core's in-wait sample
 Recorded in [presented-gap-2026-11-26](evidence/presented-gap-2026-11-26.md) why far fewer frames were confirmed as presented at the sitting of 25 November (a sampling race that the window and desktop decide, not the build), the core's fix (one more statistics sample inside a product frame's wait) and its interleaved runs, and that the stutter in LX-2's runtime-losing faults comes from the turn key's synchronous commit.
 
@@ -10,6 +13,9 @@ Recorded the sitting of 25 November 2026 on bb416a2c in [owner-sitting-2026-11-2
 
 ## [2026-11-25] decision | Human tests' form, owner-machine sitting, ADR-D02's A4 and builders
 The owner set the human tests' form (the owner runs CT-LB6-04 and CT-EV5-05 alone; CT-EV5-03 waits for non-authors), set the owner-machine sitting for 25 November 2026 with the lattice replay held, let ADR-D02's A4 be prepared and started, and named Fable and Opus as the ADR-D02 and ADR-D03 builders in the subscription ([decision](decisions/owner-decisions-2026-11-25.md)). The 24 November page's review sentence is corrected.
+
+## [2026-11-25] decision | The two icon tiers
+The owner took the recommendation for tier 2 content glyphs: coloured from the scene's encoding tokens, high quality, and animated only on a state or view change. Tier 1 command icons stay monochrome, the icon values come in a separate icon ADR in freeze round 3, and three.js may serve only as an authoring and preview tool. It matches the frozen ADR-D01.53 to ADR-D01.55 ([decision](decisions/owner-decisions-2026-11-25-icon-tiers.md)).
 
 ## [2026-11-24] decision | LP4 and LP5 exit
 The owner signed LP4's exit (0208e78d, pull request 435) and LP5's exit (503736cc, pull requests 433 and 434) on one card with every recommended option; the briefing records both exits with an FP.1 pin refresh of the format packet ([decision](decisions/owner-decisions-2026-11-24-lp4-lp5-exit.md)). The owner-machine sitting and the lattice replay wait for a date the owner sets.
