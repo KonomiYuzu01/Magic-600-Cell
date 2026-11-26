@@ -242,6 +242,8 @@ internal static class LabFrame
         demo = new LabDemo(frame, keymap, Execute); Demos.Add(frame, demo);
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
         inspect = LabInspect.Create(app, frame, demo); Inspects.Add(frame, inspect);
+        // Failures show: the shared error lamp lists them in Problems (ChromeErrors).
+        ChromeErrors.Mount(frame, inspect.Feedback, "look-lab");
         // The solving surface on the pair's body: the relationship strip on the seam, anchors in both views.
         // The anchors sit where each view's own projection puts the sample slot of their position (B-10 of A6).
         var places = new ScenePlaces(root, app.View.Geometry);
@@ -323,7 +325,6 @@ internal static class LabFrame
         foreach (var layer in FocusLayers.Layers) { string id = layer.Id; frame.HostKeys[LayerKey(id)] = () => Aimed().SetPick(id); }
         frame.HostKeys["F10"] = () => Aimed().Cycle();
         app.ViewParts["frame.layers"] = (() => layers["global"].Store() + "|" + layers["local"].Store(), v => { string[] kept = v.Split('|'); if (kept.Length == 2) { layers["global"].Restore(kept[0]); layers["local"].Restore(kept[1]); } });
-        frame.AlertPressed += () => frame.Model.ShowDock(DockSide.Bottom, "problems");
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         // Every default comes from the workspace; the right dock starts collapsed (ADR-D01.22).
         frame.MarkBaseline();

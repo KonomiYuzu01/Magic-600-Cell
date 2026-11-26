@@ -19,6 +19,8 @@ internal sealed class SampleMount
 {
     public const string HistoryPanel = "history.sample";
     public const int SampleCells = 20;
+    // The source a failure names in Problems in the product.
+    public const string ErrorSource = "shell";
     // Commands the host's real session carries out: sample mode never takes them.
     public static readonly IReadOnlySet<string> Kept = new HashSet<string>(StringComparer.Ordinal) { "session.undo", "session.redo" };
     public LabDemo Demo { get; }
@@ -49,6 +51,8 @@ internal sealed class SampleMount
         frame.AddDockPanel(DockSide.Right, HistoryPanel, "History (sample)", "panel.history", Demo.History);
         frame.SetContent(LabDemo.PreviewPane, Demo.PreviewView);
         Inspect = new SampleInspect(frame, Demo, SampleCells);
+        // Failures show: the shared error lamp lists them in Problems beside the sample rows (ChromeErrors).
+        ChromeErrors.Mount(frame, Inspect.Feedback, ErrorSource);
         Solve = new LabSolve(frame, root, seconds, run, Demo);
         frame.SetContent("library", Solve.LibraryView);
         frame.SetStrip(Solve.Bars(Demo.Bar));
@@ -73,7 +77,6 @@ internal sealed class SampleMount
         frame.HostKeys["F10"] = () => Aimed().Cycle();
         foreach (FocusLayers changed in layers.Values) changed.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Safe.Raise(Changed); };
         Demo.Preview.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Safe.Raise(Changed); };
-        frame.AlertPressed += () => frame.Model.ShowDock(DockSide.Bottom, "problems");
         frame.Contexts = () => Demo.Preview.Pending != null ? new[] { "preview" } : Array.Empty<string>();
     }
 

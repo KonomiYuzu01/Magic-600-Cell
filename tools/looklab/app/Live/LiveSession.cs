@@ -66,19 +66,10 @@ internal sealed partial class LiveSession : Control
         window.Size = size; window.Position = screen.Position + (screen.Size - size) / 2;
     }
 
-    private int lamp;
-
     public override void _Process(double delta)
     {
         sincePoll += delta; sinceSave += delta; open += delta;
-        // Failures show: the error lamp counts them and the Problems panel lists them.
-        if (LabErrors.Count != lamp && IsInstanceValid(Frame))
-        {
-            IReadOnlyList<string> all = LabErrors.All;
-            for (int i = lamp; i < all.Count; i++) LabFrame.InspectOf(Frame).Feedback.Report(Severity.Error, all[i].Split('\n')[0], "look-lab", 0);
-            lamp = all.Count;
-            Frame.SetAlert(lamp, lamp == 0 ? "" : all[0].Split('\n')[0]);
-        }
+        // Failures show through the frame's shared error lamp (ChromeErrors, mounted by LabFrame).
         // A picture of the window, four and twelve seconds after it opened, beside the kept view: what the lab looked like.
         if (pictured < 2 && open >= PictureSeconds * (1 + 2 * pictured) && DisplayServer.GetName() != "headless")
         {
@@ -167,7 +158,7 @@ internal sealed partial class LiveSession : Control
     public void Closing(bool quit)
     {
         if (IsInstanceValid(App)) Keep();
-        if (quit) { LabErrors.Remove(); GetTree().Quit(); }
+        if (quit) { ChromeErrors.Remove(); GetTree().Quit(); }
     }
 }
 
