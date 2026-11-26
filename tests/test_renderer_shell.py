@@ -1811,17 +1811,35 @@ class D02Repair(unittest.TestCase):
         local = [["view:Local", f"▾ Repair list · {len(rows)}"]] + [["view:Local", c] for c in
                  ("#", "x d", "y z", "ΔN", f"{first[0]} {first[1]}", f"{first[2]} {first[3]}", str(first[4]))]
 
-        def dumps(picks=(2,), opened_focus=0):
+        staged = "[" + " ".join(f"{c}·{i}" for c, i in {s["row"]: s for s in record["repair_steps"]}[2]["letters"]) + "]"
+
+        def dumps(picks=(2,), opened_focus=0, unasked=0):
             out = [{"do": do, "lines": []} for do in run.REPAIR_STEPS]
-            out[7].update(lines=local, repair={"rows": len(rows), "focused": opened_focus, "step": "", "picks": []})
+            out[7].update(lines=local, repair={"rows": len(rows), "focused": opened_focus, "step": "", "picks": []},
+                          stage={"word": "", "bar": "", "spans": 0, "records": 0, "asked": 0, "unasked": 0})
             out[12]["repair"] = {"rows": len(rows), "focused": 2, "step": "Repair 1 of 3", "picks": []}
             out[14].update(repair={"rows": len(rows), "focused": 2, "step": "Repair 2 of 3", "picks": []},
                            lines=[["view:Local", f"Repair 2 of 3 · moving {moving:,}"]])
             out[16]["repair"] = {"rows": len(rows), "focused": 2, "step": "Repair 2 of 3", "picks": list(picks)}
+            out[16]["stage"] = {"word": staged, "bar": "Whole repair only", "spans": 1, "records": 1, "asked": 3, "unasked": unasked}
+            out[16]["lines"] = [["view:Local", "Whole repair only"], ["view:Local", "Staged: " + staged]]
             return out
         self.assertEqual(run.expect_repair(dumps(), {}, "wj-ia-300"), [])
         self.assertEqual(len(run.expect_repair(dumps(opened_focus=1), {}, "wj-ia-300")), 1)
         self.assertEqual(len(run.expect_repair(dumps(picks=()), {}, "wj-ia-300")), 1)
+        # B13: an unasked act on the boundary ledger fails the run.
+        self.assertEqual(len(run.expect_repair(dumps(unasked=1), {}, "wj-ia-300")), 1)
+        self.assertEqual(staged, "[150·1 215·21 150·1]")
+
+    def test_only_the_pick_handler_stages(self):
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertEqual(host.count("Stage.Stage("), 1)
+        pick = host[host.index("public void Pick(RepairRow row, UserEvent asked)"):]
+        self.assertIn("Stage.Stage(Repair, row, RepairSteps, asked);", pick[:pick.index(chr(10) + "    }")])
+        ui = "".join(text(path) for path in (ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui").glob("*.cs"))
+        self.assertEqual(ui.count(".Stage("), 1)
+        lists = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleLists.cs")
+        self.assertIn('Picked?.Invoke(focused, UserEvent.Key("Enter"))', lists)
 
     def test_the_list_takes_its_own_keys_and_the_words_are_the_record(self):
         frame = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "ChromeFrame.cs")

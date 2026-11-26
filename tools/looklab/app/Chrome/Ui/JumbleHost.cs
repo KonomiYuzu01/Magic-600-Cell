@@ -46,10 +46,13 @@ public sealed class JumbleHost
     public RepairSteps RepairSteps { get; private set; } = new();
     public RepairScrub Scrub { get; } = new();
     public string RepairVariant { get; set; } = "completed";
-    // The solver's picks, in order; B13 stages them.
+    // The solver's picks, in order, and B13's stage: each pick stages its row as a sealed, whole-only span of the
+    // sample preview, through the boundary ledger.
     public IReadOnlyList<RepairRow> Picks => picks;
     private readonly List<RepairRow> picks = new();
     public event Action<RepairRow>? RepairPicked;
+    public BoundaryLedger Ledger { get; } = new();
+    public RepairStage Stage { get; }
     // B10: the kept twist checks at the named cap and revision, the session's release record, and the sample jobs'
     // tick clock with the cap record's results.
     public KeptChecks? Checks { get; private set; }
@@ -81,6 +84,8 @@ public sealed class JumbleHost
         Entry = new EntrySlot(Settings);
         Surface = new JumbleSurface(Local, () => frame.Tokens, names, emptySentence, emptyBody);
         Surface.RepairPicked += Pick;
+        Stage = new RepairStage(Ledger);
+        Surface.AddChild(new RepairStageBar(Stage, () => frame.Tokens));
         string title = names.TryGetValue("cap_map", out string? name) ? name : "Cap map";
         CapMap = new CapMapPanel(Settings, () => frame.Tokens, title);
         Jobs = new CapJobs(Naming);
@@ -150,10 +155,13 @@ public sealed class JumbleHost
             }
     }
 
-    // The solver picked a repair row (a digit or Enter in the list's context). Only a pick reaches here; B13 stages it.
-    public void Pick(RepairRow row)
+    // The solver picked a repair row (a digit or Enter in the list's context), with the key that did it. Only a pick
+    // reaches here, and only here is a row staged (ADR-D02.33).
+    public void Pick(RepairRow row, UserEvent asked)
     {
+        if (Repair == null) return;
         picks.Add(row);
+        Stage.Stage(Repair, row, RepairSteps, asked);
         Safe.Raise(RepairPicked, row);
     }
 
@@ -235,6 +243,7 @@ public sealed class JumbleHost
         // The repair list: the record's result for the named cap at this revision; no row is focused when it opens.
         string? record = cap is int c4 && RecordSource != null ? RecordSource(c4) : null;
         Repair = record != null ? RepairListModel.From(record, revision, RepairVariant) : null;
+        if (Repair != null) Repair.Ledger = Ledger;
         RepairSteps = record != null ? RepairSteps.From(record) : new RepairSteps();
         Scrub.Show(null);
         Local.SetCount("repair_list", Repair?.Rows.Count ?? 0);

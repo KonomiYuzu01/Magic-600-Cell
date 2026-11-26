@@ -637,6 +637,15 @@ internal sealed partial class D02Driver : Node
                 }
                 json.WriteEndArray();
                 json.WriteEndObject();
+                // B13: the staged word, its bar, the repair-pair records and the boundary ledger's unasked acts.
+                json.WriteStartObject("stage");
+                json.WriteString("word", shown.Stage.Word.Text());
+                json.WriteString("bar", shown.Stage.Bar);
+                json.WriteNumber("spans", shown.Stage.Word.Spans.Count);
+                json.WriteNumber("records", shown.Stage.Records.Count);
+                json.WriteNumber("asked", shown.Ledger.Asked);
+                json.WriteNumber("unasked", shown.Ledger.Count);
+                json.WriteEndObject();
             }
             json.WriteNumber("cancels", _cancels);
             json.WriteNumber("screen_changes_on_cancel", _screenChanges);

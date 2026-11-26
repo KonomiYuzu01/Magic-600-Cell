@@ -58,6 +58,10 @@ public sealed class PreviewModel
     public const string NoPrefixCheck = "the prefix has no check of its own here, so it cannot be committed";
     private int Now => Head?.Invoke() ?? 0;
 
+    // ADR-D02.40 (build step B13): whether a word of this origin is admitted at preview; a research run's output is
+    // refused in a solving session, with its sentence.
+    public static string? Admit(Origin origin, bool solvingSession) => PreviewAdmission.Admit(origin, solvingSession);
+
     public void SetSide(PreviewSide side) { if (side == Side) return; Side = side; Safe.Raise(Changed); }
     public void CycleSide() => SetSide((PreviewSide)(((int)Side + 1) % 3));
     public AffectedRange? Range() => Pending is not { Evaluated: true } p ? null

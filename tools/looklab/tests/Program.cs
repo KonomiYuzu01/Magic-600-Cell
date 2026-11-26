@@ -233,7 +233,12 @@ internal static partial class Program
             ("D02RepairDigitsOnlyInContext", D02RepairDigitsOnlyInContext),
             ("D02RepairEmptyNamesCapRevisionAndCoverage", D02RepairEmptyNamesCapRevisionAndCoverage),
             ("D02RepairCutOffIsNotEmpty", D02RepairCutOffIsNotEmpty),
-            ("D02RepairTwoTwistRowHasTwoSteps", D02RepairTwoTwistRowHasTwoSteps)
+            ("D02RepairTwoTwistRowHasTwoSteps", D02RepairTwoTwistRowHasTwoSteps),
+            ("D02StageOnlyFromPick", D02StageOnlyFromPick),
+            ("D02SealedSpanRemovedWhole", D02SealedSpanRemovedWhole),
+            ("D02TypedTwistsAreOrdinaryWord", D02TypedTwistsAreOrdinaryWord),
+            ("D02ResearchOriginRefusedInSolvingSession", D02ResearchOriginRefusedInSolvingSession),
+            ("D02BoundaryCountZeroOverScriptedSession", D02BoundaryCountZeroOverScriptedSession)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

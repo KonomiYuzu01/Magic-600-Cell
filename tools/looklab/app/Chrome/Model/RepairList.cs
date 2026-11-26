@@ -36,6 +36,8 @@ public sealed class RepairListModel
     public string Pin { get; }
     public int? Focused { get; private set; }
     public event Action? Changed;
+    // B13: every focus names the key that asked for it; one without counts on the boundary ledger.
+    public BoundaryLedger? Ledger { get; set; }
 
     private RepairListModel(int cap, int revision, JobEnd end, IReadOnlyList<RepairRow> rows, Coverage? coverage, string? reason, string pin)
     {
@@ -120,12 +122,13 @@ public sealed class RepairListModel
     private static string Short(string digest) => digest.Length > 12 ? digest[..12] : digest;
 
     // Arrow keys: the first press focuses the first (or the last) row; focus stays inside the list.
-    public void Down() => Move(+1);
-    public void Up() => Move(-1);
+    public void Down(UserEvent? asked = null) => Move(+1, asked);
+    public void Up(UserEvent? asked = null) => Move(-1, asked);
 
-    private void Move(int by)
+    private void Move(int by, UserEvent? asked)
     {
         if (Rows.Count == 0) return;
+        Ledger?.Record("focus", "a repair row at cap " + Cap, asked);
         int next = Focused is int f ? Math.Clamp(f + by, 1, Rows.Count) : by > 0 ? 1 : Rows.Count;
         if (next == Focused) return;
         Focused = next; Safe.Raise(Changed);

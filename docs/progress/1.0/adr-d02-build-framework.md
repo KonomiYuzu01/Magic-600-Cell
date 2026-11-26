@@ -485,6 +485,22 @@ relative path is from the repository root.
   - `enum Origin { Solver, Library, Research }`. `PreviewModel.Admit` refuses `Research` in a solving session, with its sentence.
   - `BoundaryLedger`: it counts any staging, focusing, ordering or applying that carries no user event.
 - **Check:** `D02StageOnlyFromPick`; `D02SealedSpanRemovedWhole`; `D02TypedTwistsAreOrdinaryWord`; `D02ResearchOriginRefusedInSolvingSession`; `D02BoundaryCountZeroOverScriptedSession`. Then `d02_run.py --script repair`.
+- **As built (integrator, 26 November 2026):**
+  - `Model/Boundary.cs`:
+    - `UserEvent`: the key or click that asked for an act. Only input handlers make one.
+    - `BoundaryLedger` counts every staging, focusing, ordering or applying that names no user event, and refuses an act it does not know.
+    - `enum Origin { Solver, Library, Research }`, and `PreviewModel.Admit(origin, solving)` in `Model/Session.cs`, which refuses a research run's output in a solving session with the word record's sentence.
+    - `StagedWord` holds letters with `SealedSpan`s. A typed twist is an ordinary letter, even when it spells a repair row. Removing a letter inside a span removes the whole span, and editing inside one is refused.
+    - `RepairStage.Stage(list, row, steps, asked)` stages a picked row as one sealed span and writes a `RepairPairRecord` to the sample preview: the cap, the revision, the row, x, d, y, z, ΔN, the pin, the menu, the tie rule and the asking key. Without a user event nothing is staged and the ledger counts the act. While a span is staged, the bar reads "Whole repair only" and any prefix through it is refused.
+  - `RepairListModel.Down` and `Up` take the key that asked and record each focus on the ledger.
+  - The host stages only in `Pick(row, asked)`, which only the list's digit or Enter handler reaches. `test_renderer_shell.py` pins that the UI has one `Stage(` call, and that it sits in `Pick`.
+  - Departure: the framework names `Ui/DraftLine.cs`, but the product shell has no draft line until K2 (the sample's draft line exists only in sample mode). The staged word and its bar show in Local, under the sections, as `RepairStageBar`, with a control that removes the last span whole. CR-15's engine preview and record write still wait for the row and K2.
+  - Fixed on the way: the new controls subscribed to their models in their constructors and unsubscribed on `TreeExiting`. A frame rebuild takes Local out of the tree once, so the stage bar stopped hearing the stage. They now subscribe on `TreeEntered`.
+  - Checks:
+    - Console lane: `D02StageOnlyFromPick`, `D02SealedSpanRemovedWhole`, `D02TypedTwistsAreOrdinaryWord`, `D02ResearchOriginRefusedInSolvingSession` and `D02BoundaryCountZeroOverScriptedSession` pass; the lane passed 199 of 199.
+    - `test_renderer_shell.py` passed 76 of 76.
+    - `d02_run.py --script repair` passed on wj-ia-300 (`c9-product-d665047970de3a1d`). Typing 2 in the focused list staged `[150·1 215·21 150·1]` as one sealed span, the bar read "Whole repair only", one repair-pair record was written, and the ledger counted 3 asked acts and 0 unasked.
+    - On the same build, `covers`, `q3b` and `host` (wj-ia-300), `name-cap` (ia-40) and `rotate` (on-zero) passed again.
 - **Owner sees:** press 2 in the list; one sealed span appears and the bar reads "Whole repair only".
 - **Machine:** H, W.
 - **Checkpoint:** yes, C2.

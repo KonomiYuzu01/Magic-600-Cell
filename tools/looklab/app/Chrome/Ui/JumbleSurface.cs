@@ -31,8 +31,8 @@ public sealed partial class JumbleSurface : VBoxContainer
     private RepairSteps? repairSteps;
     private RepairScrub? scrub;
     private bool repairCoverage;
-    // The solver picked a repair row in the list.
-    public event Action<RepairRow>? RepairPicked;
+    // The solver picked a repair row in the list, with the key that did it.
+    public event Action<RepairRow, UserEvent>? RepairPicked;
 
     public JumbleSurface(LocalAccordion accordion, Func<TokenSet> tokens, IReadOnlyDictionary<string, string> names, string emptySentence, string emptyBody)
     {
@@ -97,7 +97,7 @@ public sealed partial class JumbleSurface : VBoxContainer
             else if (open && section == "repair_list" && repair != null && repairSteps != null && scrub != null && repair.End != JobEnd.Cancelled)
             {
                 var control = new RepairListControl(repair, repairSteps, scrub, repairCoverage, wide => { repairCoverage = wide; Refresh(); }, tokens) { Name = "LocalBody_" + section };
-                control.Picked += row => RepairPicked?.Invoke(row);
+                control.Picked += (row, asked) => RepairPicked?.Invoke(row, asked);
                 sections.AddChild(control);
             }
             else if (open && section == "cap_covers" && covers != null && inspect != null)

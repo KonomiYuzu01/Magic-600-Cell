@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace Magic600.Chrome;
@@ -97,8 +98,9 @@ public sealed partial class CapCoversList : VBoxContainer
                 }
             AddChild(grid);
         }
-        inspect.Changed += Show; TreeExiting += () => inspect.Changed -= Show;
-        Show();
+        // Subscribed while in the tree: a frame rebuild takes the view out and puts it back.
+        TreeEntered += () => { inspect.Changed += Show; Show(); };
+        TreeExiting += () => inspect.Changed -= Show;
     }
 
     private void Show()
@@ -157,8 +159,8 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
     private readonly VBoxContainer rows = new() { Name = "RepairRows" };
     private readonly ScrollContainer scroll = new() { Name = "RepairScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
     private readonly Label step = new() { Name = "RepairStep" };
-    // The solver picked a row: by a digit or Enter, in the list's context.
-    public event Action<RepairRow>? Picked;
+    // The solver picked a row: by a digit or Enter, in the list's context, with the key that did it.
+    public event Action<RepairRow, UserEvent>? Picked;
 
     public RepairListControl(RepairListModel list, RepairSteps steps, RepairScrub scrub, bool expanded, Action<bool> expand, Func<TokenSet> tokens)
     {
@@ -193,9 +195,8 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
             AddChild(more);
             if (expanded) AddChild(Line(list.CoverageLine() ?? "", "text.dim", "RepairCoverage"));
         }
-        list.Changed += Show; scrub.Changed += Show;
+        TreeEntered += () => { list.Changed += Show; scrub.Changed += Show; Show(); };
         TreeExiting += () => { list.Changed -= Show; scrub.Changed -= Show; };
-        Show();
     }
 
     private Label Line(string text, string role, string name)
@@ -247,16 +248,55 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
         int digit = key.Keycode is >= Key.Key0 and <= Key.Key9 ? (int)(key.Keycode - Key.Key0) : key.Keycode is >= Key.Kp0 and <= Key.Kp9 ? (int)(key.Keycode - Key.Kp0) : -1;
         switch (key.Keycode)
         {
-            case Key.Down: list.Down(); break;
-            case Key.Up: list.Up(); break;
+            case Key.Down: list.Down(UserEvent.Key("Down")); break;
+            case Key.Up: list.Up(UserEvent.Key("Up")); break;
             // The preview's step keys (view.preview.scrub: Left back, Right forward).
             case Key.Left: scrub.Scrub("back"); break;
             case Key.Right: scrub.Scrub("forward"); break;
             case Key.Escape: list.Unfocus(); break;
-            case Key.Enter or Key.KpEnter when list.Enter(contexts) is RepairRow focused: Picked?.Invoke(focused); break;
-            case var _ when digit >= 0 && list.Digit(digit, contexts) is RepairRow row: Picked?.Invoke(row); break;
+            case Key.Enter or Key.KpEnter when list.Enter(contexts) is RepairRow focused: Picked?.Invoke(focused, UserEvent.Key("Enter")); break;
+            case var _ when digit >= 0 && list.Digit(digit, contexts) is RepairRow row: Picked?.Invoke(row, UserEvent.Key(digit.ToString(System.Globalization.CultureInfo.InvariantCulture))); break;
             default: return;
         }
         AcceptEvent();
+    }
+}
+
+// The staged word under Local's sections (build step B13): the word with each sealed span in brackets, the bar's
+// "Whole repair only" while a span is staged, and a remove control that takes the last span away whole. The product
+// shell has no draft line until K2, so the sample preview shows here.
+public sealed partial class RepairStageBar : HBoxContainer
+{
+    private readonly RepairStage stage;
+    private readonly Func<TokenSet> tokens;
+    private readonly Label word = new() { Name = "StageWord" };
+    private readonly Label bar = new() { Name = "StageBar" };
+    private readonly Button remove;
+
+    public RepairStageBar(RepairStage stage, Func<TokenSet> tokens)
+    {
+        Name = "RepairStageBar"; this.stage = stage; this.tokens = tokens;
+        TokenSet t = tokens();
+        AddThemeConstantOverride("separation", t.Px("space.2"));
+        word.ClipText = true; word.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        word.TooltipText = "The staged word (sample preview): a copied repair row is a sealed span, removed whole and never edited";
+        remove = ChromeWidgets.Tool("Remove span", "Remove the last sealed span, whole");
+        remove.Name = "StageRemove";
+        remove.Pressed += () => { if (stage.Word.Spans.LastOrDefault() is { } span) stage.Remove(span.Start); };
+        AddChild(word); AddChild(bar); AddChild(remove);
+        TreeEntered += () => { stage.Changed += Show; Show(); };
+        TreeExiting += () => stage.Changed -= Show;
+        Show();
+    }
+
+    private void Show()
+    {
+        if (!IsInstanceValid(this)) return;
+        TokenSet t = tokens();
+        Visible = stage.Word.Letters.Count > 0;
+        word.Text = "Staged: " + stage.Word.Text();
+        bar.Text = stage.Bar;
+        bar.AddThemeColorOverride("font_color", t.C("state.pending"));
+        remove.Disabled = stage.Word.Spans.Count == 0;
     }
 }

@@ -472,7 +472,22 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
         problems.append(f"step 14: the step label is {(stepped.get('repair') or {}).get('step')!r}, not {label!r} on screen")
     if (picked.get("repair") or {}).get("picks") != [2]:
         problems.append(f"step 16: the picks are {(picked.get('repair') or {}).get('picks')}, not [2]")
-    print(f"repair: {len(rows)} rows; {label}; picks {(picked.get('repair') or {}).get('picks')}")
+    # B13: the pick staged row 2 as one sealed span with the whole-only bar, wrote one repair-pair record, and every
+    # staging and focusing carried its key.
+    letters = " ".join(f"{cap}·{item}" for cap, item in steps[2]["letters"])
+    stage = picked.get("stage") or {}
+    if stage.get("word") != f"[{letters}]" or stage.get("spans") != 1 or stage.get("records") != 1:
+        problems.append(f"step 16: the stage is {stage}, not one sealed span [{letters}]")
+    if stage.get("bar") != "Whole repair only" or "Whole repair only" not in texts(picked, "view:Local"):
+        problems.append("step 16: the bar does not read Whole repair only")
+    if f"Staged: [{letters}]" not in texts(picked, "view:Local"):
+        problems.append("step 16: Local does not show the staged span")
+    if stage.get("unasked") != 0 or stage.get("asked") != 3:
+        problems.append(f"step 16: the boundary ledger counted {stage.get('unasked')} unasked and {stage.get('asked')} asked acts, not 0 and 3")
+    if (opened.get("stage") or {}).get("spans") != 0:
+        problems.append("step 7: a span was staged before any pick")
+    print(f"repair: {len(rows)} rows; {label}; picks {(picked.get('repair') or {}).get('picks')}; staged {stage.get('word')} "
+          f"{stage.get('bar')!r}; unasked {stage.get('unasked')}")
     return problems
 
 
