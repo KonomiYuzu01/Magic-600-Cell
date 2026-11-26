@@ -319,6 +319,7 @@ dependencies = [
  "c600-module",
  "c600-platform",
  "c600-run",
+ "c600-session",
  "c600-syntax",
  "num-bigint",
  "num-integer",

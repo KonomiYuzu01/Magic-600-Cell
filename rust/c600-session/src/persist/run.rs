@@ -49,6 +49,8 @@ pub mod codes {
     pub const GRANT_MISMATCH: &str = "LG3:capability.grant_mismatch";
     pub const REPRODUCIBILITY: &str = "LG4:evidence.reproducibility_mismatch";
     pub const SAFETY_STOP: &str = "KN7:resource_limit.safety_stop";
+    /// A runtime that died or broke its protocol (KN7.13, DET.43): an `error` outcome with no summary.
+    pub const RUNTIME_LOST: &str = "KN7:resource_limit.runtime_lost";
 }
 
 const PAYLOAD: [&str; 7] = ["key", "key_version", "key_digest", "result", "safety_stop", "continues", "checks"];
@@ -137,17 +139,58 @@ pub struct Record {
     pub provenance: Json,
 }
 
-/// How a run ended: the interpreter's terminal record, or a wall-clock safety stop that left none (KN7.10).
+/// How a run ended: the interpreter's terminal record, or a stop by the host side that left none: a wall-clock safety
+/// stop (KN7.10) or a runtime fault (KN7.13).
 #[derive(Clone, Copy, Debug)]
 pub enum Ending<'a> {
-    Run { summary: &'a Summary, output: Option<&'a [u8]> },
+    Run {
+        summary: &'a Summary,
+        output: Option<&'a [u8]>,
+    },
     SafetyStop,
+    /// A runtime fault that left no summary (DET.17, DET.43; an LP2 draft until the IR freeze, PHS.49): an `error`
+    /// outcome with the fault's stop code and no boundary or counters. Like any error it reads open and supports no
+    /// negative claim (DET.30), and reproduction answers `not run`.
+    Fault {
+        code: &'a str,
+    },
+}
+
+/// What the runtime's caller reports when a run left no summary, as a plain value so that this crate keeps no edge to
+/// `c600-runtime`: the caller fills it from the runtime's own fault (its `FaultKind::Deadline` is [`Fault::Deadline`],
+/// every other kind is [`Fault::RuntimeLost`]) and measures the elapsed time (an LP2 draft until the IR freeze).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Fault {
+    /// The run passed its wall-clock deadline after this many milliseconds: a safety stop (KN7.10, ERR.16).
+    Deadline { elapsed_ms: u128 },
+    /// The runtime process was lost: an error (KN7.13, ERR.19).
+    RuntimeLost,
+}
+
+impl Fault {
+    /// The ending to hand to [`exact`].
+    pub fn ending(self) -> Ending<'static> {
+        match self {
+            Fault::Deadline { .. } => Ending::SafetyStop,
+            Fault::RuntimeLost => Ending::Fault { code: codes::RUNTIME_LOST },
+        }
+    }
+
+    /// The value for [`Record::safety_stop`]: the elapsed time of a deadline, and nothing for a lost runtime.
+    pub fn safety_stop(self) -> Option<u128> {
+        match self {
+            Fault::Deadline { elapsed_ms } => Some(elapsed_ms),
+            Fault::RuntimeLost => None,
+        }
+    }
 }
 
 /// DET.30's coverage of a run record.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Coverage {
-    /// The run completed: its answer covers its declared set, and an empty answer reads `Empty`.
+    /// The run completed: its answer covers its declared set. An empty answer (an empty list or set as the value) is a
+    /// complete enumeration that found nothing and keeps this reading, so it may deny (DET.30's `Empty`); the answer's
+    /// bytes are in [`Record::value`], and this draft has no separate variant.
     Complete,
     /// A deterministic budget ended the run: its covered set, the outputs published before the stop boundary, is kept
     /// and the unexamined part is open. Without a checked witness it reads `not found within budget`.
@@ -251,13 +294,22 @@ pub fn policy_identity(declassifiers: &[&str]) -> Pin {
 
 /// DET.6's exact payload: the outcome, its stop code and deterministic stop boundary, the used counters, the child
 /// ledger, the returned value's bytes and the values published before the stop, by digest. Meter rows and live
-/// counters are host diagnostics and stay out. A safety stop has no boundary and no counters.
+/// counters are host diagnostics and stay out. A safety stop and a runtime fault have no boundary and no counters.
 pub fn exact(ending: &Ending, published: &[Vec<u8>]) -> Json {
     let outputs = Json::List(published.iter().map(|bytes| digest_ref("bytes", bytes)).collect());
     match ending {
         Ending::SafetyStop => Json::object([
             ("outcome", Json::text("cut_off")),
             ("code", Json::text(codes::SAFETY_STOP)),
+            ("stop", Json::Null),
+            ("used", Json::Null),
+            ("children", Json::List(Vec::new())),
+            ("value", Json::Null),
+            ("outputs", outputs),
+        ]),
+        Ending::Fault { code } => Json::object([
+            ("outcome", Json::text("error")),
+            ("code", Json::text(code)),
             ("stop", Json::Null),
             ("used", Json::Null),
             ("children", Json::List(Vec::new())),

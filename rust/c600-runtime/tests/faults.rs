@@ -193,6 +193,10 @@ fn rehearsal_child_announces_an_oversized_frame() {
     recovers(rt, session);
 }
 
+/// CT-LG4-04 (part: a wall-clock safety stop that the runtime process produced ends the run as `cut_off` with
+/// `KN7:resource_limit.safety_stop`, a stop that does not repeat; not run: the stop's run record, in
+/// `c600-session/tests/persist_run.rs` and `fault_records.rs`, the cache's charges, in `c600-session/tests/jobs.rs`,
+/// and the four resources, in `c600-run/tests/conformance_lg4.rs`).
 /// Rehearsal: the child hangs; the run's wall-clock safety stop ends it as cut off (ERR.16). The deadline is a
 /// timeout of the rehearsal, not a measurement.
 #[test]

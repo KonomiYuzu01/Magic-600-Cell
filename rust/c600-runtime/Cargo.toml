@@ -29,3 +29,8 @@ lx2-faults = []
 name = "c600-runtime-hooked"
 path = "src/bin/c600-runtime-hooked.rs"
 required-features = ["lx2-faults"]
+
+[dev-dependencies]
+# The fault records glue test (tests/fault_records.rs): the runtime faults reported to a run record. The session store
+# never depends on this crate, so the edge exists in this crate tests only.
+c600-session = { path = "../c600-session" }

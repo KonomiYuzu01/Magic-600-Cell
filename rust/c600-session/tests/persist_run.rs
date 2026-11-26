@@ -21,8 +21,8 @@ use c600_session::persist::codec::{self, canonical, Json};
 use c600_session::persist::codes::{DIGEST, FORMAT, PROVENANCE, VERSION};
 use c600_session::persist::record::{self, Read};
 use c600_session::persist::run::{
-    self, capture, codes, exact, policy_identity, reading, reproduce, Admission, Captured, Coverage, Ending, Grant,
-    Inputs, Key, Parameters, Record, Reproduction, Seed,
+    self, capture, codes, exact, policy_identity, reading, reproduce, Admission, Captured, Coverage, Ending, Fault,
+    Grant, Inputs, Key, Parameters, Record, Reproduction, Seed,
 };
 use c600_syntax::{lower, parse};
 
@@ -635,10 +635,6 @@ fn ct_det_04_consulted_inputs_enter_the_key_while_the_puzzle_digest_stays() {
 /// CT-DET-09 (part: a search cut off by its step limit is kept in a run record with its stop boundary, reads as within
 /// its budget and never complete, and the same key reproduces the same cut-off (`ct_ps1_16_*` above); not run: the
 /// record under a kernel-cost, memory or output cut-off, and a cut-off that two limits reach together).
-/// CT-DET-13 (part: a record of a completed run reads complete and may deny; a cut-off within its budget, a wall-clock
-/// safety stop and a cancellation read open and never deny, and `reproduce` answers `not run` for the open ones; a
-/// checked witness counts once; not run: an empty completed enumeration read as complete, the record of a host error,
-/// and a safety stop that the runtime process produced).
 /// CT-DET-14 (whole), DET.29, DET.30, KN7.4, PS1.31: a search cut off by its budget keeps the witness it published; a
 /// separate check record confirms it, and it then counts, once; a check that reads open itself, as under a clock grant,
 /// confirms nothing. The unexamined domain stays open: the record never supports a negative claim. A continuation has
@@ -721,6 +717,118 @@ fn ct_det_14_a_checked_witness_survives_an_interrupted_search() {
     ]);
     let wrong = Record { continues: Some(not_a_run), ..continued.clone() };
     assert_eq!(wrong.write().unwrap_err().code, VERSION);
+}
+
+// ------------------------------------------------------------------------------------------------- CT-DET-13
+
+/// A completed enumeration of a declared set that finds nothing.
+const NOTHING: &str = "edition \"6cs-draft-1\";\nmodule m requires [];\n\n\
+                       export fn main() -> List<Nat> effects [] {\n    return list<Nat>();\n}\n";
+
+/// The canonical bytes of any value, as a run outputs it.
+fn value_bytes(value: &Value) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    c600_run::encode::encode(value, &mut bytes).unwrap();
+    bytes
+}
+
+/// CT-LG4-04 (part: the record half of the wall-clock safety stop, which a runtime fault reports through `run::Fault`
+/// and which reads open, never reproduces and keeps its elapsed time outside the key and the exact payload; not run:
+/// the other halves, in `conformance_lg4.rs`, `jobs.rs` (the cache) and `c600-runtime`'s `faults.rs` (the deadline)).
+/// CT-DET-13 (whole: an empty completed enumeration, a deterministic cut-off without a
+/// witness and a run that did not run are three distinct readings: the first is a completed run whose value is the
+/// empty list, so it reads complete and may deny; the second reads `within budget`, publishes nothing and never denies;
+/// the third reproduces as `not run`. A host refusal ends the run as an `error` that reads open and denies nothing, and
+/// reproduces as `not run`. A runtime fault that leaves no summary is recorded through `run::Fault`: a passed deadline
+/// as a safety stop that keeps its elapsed time outside the key and the exact payload, a lost runtime as an `error`
+/// with `KN7:resource_limit.runtime_lost`; both read open and reproduce as `not run`, and what the run published before
+/// the fault stays in the record. Not run: a fault record made by a real runtime process, which
+/// `c600-runtime/tests/fault_records.rs` maps to `run::Fault` code for code).
+/// The record's `Empty` is the answer's: this draft has no separate coverage variant for it (a reading for the freeze
+/// card).
+#[test]
+fn ct_det_13_empty_cut_off_not_run_and_faults_read_distinctly() {
+    // An empty completed enumeration: complete, empty, may deny.
+    let (empty, empty_bytes, empty_available) = Job::new(NOTHING, "main", &[]).record();
+    assert_eq!((empty.outcome(), empty.code()), ("completed", None));
+    let nothing = sha256_hex(&value_bytes(&Value::list(Vec::new())));
+    assert_eq!(empty.value(), Some(nothing.as_str()), "the answer is the empty list");
+    assert_eq!(empty.outputs(), Vec::<&str>::new());
+    let read = reading(&empty, &[]);
+    assert_eq!((read.coverage.clone(), read.may_deny()), (Coverage::Complete, true));
+    let now = Admission::of(&empty.key);
+    assert_eq!(reproduce(&empty_bytes, &empty_available, &now, rerun), Reproduction::Same(empty.result.clone()));
+
+    // A deterministic cut-off without a witness: open for the unexamined part, never complete, never empty.
+    let mut none_yet = Job::new(SEARCH, "main", &[100, 49]);
+    none_yet.limits = Amounts { steps: 20, ..WIDE };
+    let (cut, _, _) = none_yet.record();
+    assert_eq!((cut.outcome(), cut.code()), ("cut_off", Some(meter::code::STEPS)));
+    assert_eq!((cut.value(), cut.outputs()), (None, Vec::<&str>::new()), "no answer and no witness");
+    let read = reading(&cut, &[]);
+    assert_eq!(
+        (read.coverage.clone(), read.witnesses.clone(), read.may_deny()),
+        (Coverage::WithinBudget, vec![], false)
+    );
+
+    // Not run: a stop that cannot repeat has no examined set and answers `not run`, never `Empty`.
+    let deadline = Fault::Deadline { elapsed_ms: 1_500 };
+    let stopped = |fault: Fault, published: &[Vec<u8>]| {
+        let key = Job::new(NOTHING, "main", &[]).key(Vec::new());
+        let result = exact(&fault.ending(), published);
+        let record = Record { safety_stop: fault.safety_stop(), ..recorded(key, result, NOTHING.as_bytes()) };
+        let bytes = record.write().unwrap_or_else(|r| panic!("{r}"));
+        (Record::read(&bytes).unwrap(), bytes)
+    };
+    let (timed_out, timed_out_bytes) = stopped(deadline, &[]);
+    let answer = reproduce(&timed_out_bytes, &empty_available, &now, rerun);
+    assert_eq!(answer, Reproduction::NotRun(codes::SAFETY_STOP.into()));
+    let read = reading(&timed_out, &[]);
+    assert_eq!((read.coverage.clone(), read.may_deny()), (Coverage::Open(codes::SAFETY_STOP.into()), false));
+    let readings = [reading(&empty, &[]).coverage, reading(&cut, &[]).coverage, read.coverage];
+    assert!(readings.iter().enumerate().all(|(i, a)| readings[i + 1..].iter().all(|b| a != b)), "three readings");
+
+    // A host refusal: the executor's host answers a request with a refusal, so the run ends as an error.
+    let (refused, refused_bytes, refused_available) = Job::new(READS, "main", &[]).record();
+    assert_eq!(refused.outcome(), "error", "{:?}", refused.code());
+    let code = refused.code().expect("an error has its code").to_owned();
+    assert_eq!((refused.value(), field(&refused.result, &["outcome"])), (None, &Json::text("error")));
+    let read = reading(&refused, &[]);
+    assert_eq!((read.coverage.clone(), read.may_deny()), (Coverage::Open(code.clone()), false));
+    let now = Admission::of(&refused.key);
+    let answer = reproduce(&refused_bytes, &refused_available, &now, watched_never);
+    assert_eq!(answer, Reproduction::NotRun(code), "an error is not run again");
+
+    // A passed deadline keeps its elapsed time out of the key and the exact payload (DET.17); a published output stays.
+    let published = [nat_bytes(7)];
+    let (late, late_bytes) = stopped(Fault::Deadline { elapsed_ms: 9_000 }, &published);
+    assert_eq!(late.safety_stop, Some(9_000));
+    assert_eq!(late.outputs(), [sha256_hex(&nat_bytes(7))], "what was published before the stop stays");
+    assert_eq!(late.key.digest(), timed_out.key.digest());
+    assert_ne!(late_bytes, timed_out_bytes);
+    assert_eq!(late.outcome(), "cut_off");
+
+    // A lost runtime: an error with the runtime-lost code, no boundary, no counters, no elapsed time.
+    let (lost, lost_bytes) = stopped(Fault::RuntimeLost, &published);
+    assert_eq!((lost.outcome(), lost.code()), ("error", Some(codes::RUNTIME_LOST)));
+    assert_eq!(codes::RUNTIME_LOST, "KN7:resource_limit.runtime_lost");
+    assert_eq!(lost.safety_stop, None);
+    assert_eq!(field(&lost.result, &["stop"]), &Json::Null);
+    assert_eq!(field(&lost.result, &["used"]), &Json::Null);
+    assert_eq!((lost.value(), lost.outputs()), (None, vec![sha256_hex(&nat_bytes(7)).as_str()]));
+    let read = reading(&lost, &[]);
+    assert_eq!((read.coverage.clone(), read.may_deny()), (Coverage::Open(codes::RUNTIME_LOST.into()), false));
+    let answer = reproduce(&lost_bytes, &empty_available, &now, watched_never);
+    assert_eq!(answer, Reproduction::NotRun(codes::RUNTIME_LOST.into()));
+    assert_eq!(Record::read(&lost_bytes).unwrap(), lost, "the fault record reads back");
+    // An elapsed time belongs to a safety stop only.
+    let observed = Record { safety_stop: Some(5), ..lost.clone() };
+    assert_eq!(observed.write().unwrap_err().code, FORMAT);
+}
+
+/// A reproduction runner that must never be called: admission answers `not run` first.
+fn watched_never(_: &Key, _: &Inputs) -> Result<Json, Reproduction> {
+    panic!("a record that cannot repeat is not run");
 }
 
 // ------------------------------------------------------------------------------------------------- CT-BND-23

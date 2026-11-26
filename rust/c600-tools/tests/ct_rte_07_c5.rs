@@ -148,6 +148,9 @@ fn recovers(mut rt: Runtime, limits: Amounts) {
     assert_eq!((host.served, rt.spawns()), (10, spawns + 1), "ten ticks in a fresh child");
 }
 
+/// CT-LG4-04 (part: the key B10's wall-clock safety stop ends the run cut off with `KN7:resource_limit.safety_stop` in
+/// a runtime process; not run: the stop's run record, in `c600-session/tests/persist_run.rs`, the cache's charges, in
+/// `c600-session/tests/jobs.rs`, and the four resources, in `c600-run/tests/conformance_lg4.rs`).
 /// B10: the host blocks in each tick for 20 ms; the run's safety stop of 1 ms cuts it off once a call returns.
 #[test]
 fn ct_rte_07_full_b10_safety_stop() {

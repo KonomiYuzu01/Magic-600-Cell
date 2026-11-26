@@ -121,7 +121,9 @@ fn ct_lg4_02_a_whole_state_operation_is_one_host_row() {
 }
 
 /// CT-LG4-04 (part: the four deterministic resources; not run: cache hits and eviction, as the interpreter keeps no
-/// cache yet, and the wall-clock safety stop, which is not built): a run that reads the state, proposes and returns a
+/// cache (the session's derived-query cache is in `c600-session/tests/jobs.rs`), and the wall-clock safety stop, which
+/// the runtime process and the run record carry (`c600-runtime/tests/faults.rs`, `c600-session/tests/persist_run.rs`)):
+/// a run that reads the state, proposes and returns a
 /// text stops with each resource's own code when that resource alone is one unit short of what the run used, at the
 /// same position on a repeat; a kernel cost one unit short of the preview's tariff stops before the engine is asked.
 #[test]

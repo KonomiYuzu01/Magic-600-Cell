@@ -59,6 +59,9 @@ fn repeated_runs_of_one_key_stop_at_the_same_step() {
 /// CT-DET-08 (part: the session's derived-query cache: each of five budget cases run cold, warm and after an eviction
 /// keeps its outcome, stop, every charge and its value, so a cache hit is charged as a miss; not run: a value store
 /// and the eviction of its values, which no crate builds yet).
+/// CT-LG4-04 (part: a derived-query cache hit and a recomputation after an eviction charge the same as a cold run;
+/// not run: the wall-clock safety stop's halves, in `persist_run.rs` (the record) and `c600-runtime`'s `faults.rs`
+/// (the deadline), and the four resources' separate exhaustion, in `c600-run`'s `conformance_lg4.rs`).
 /// CT-KN7-02 (whole) and PHS.19's budget row: each declared-budget case, run cold, warm from the derived-query cache
 /// and again after an eviction, stops at the same step with the same coverage and charges. A cache hit is charged as a
 /// miss (KN7.8).
