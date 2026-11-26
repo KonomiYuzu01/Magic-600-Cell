@@ -96,7 +96,11 @@ fn ct_det_01_each_key_field_alone_changes_the_key() {
     }));
     changed.push(("seeds", {
         let mut k = key.clone();
-        k.seeds.push(Seed { sha256: other.clone(), path: vec!["s".into()], algorithm: "a".into() });
+        k.seeds.push(Seed {
+            sha256: other.clone(),
+            path: vec!["s".into()],
+            algorithm: "sha256-counter-draft-1".into(),
+        });
         k
     }));
     changed.push(("budgets.limits", {
