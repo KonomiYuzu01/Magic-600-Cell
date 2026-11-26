@@ -67,8 +67,9 @@ fn check_occupants(fixture: &Fixture, session: &Session, oracle: &State) {
     assert_eq!(through, direct, "{}: the current-occupant relation", fixture.name);
 }
 
-/// The records each journal's default run presses: past the layer's bound of 64 chained pose moves twice, so the run
-/// crosses two flat replays. The whole journals take about twelve minutes in a dev build, so they run on request.
+/// The records each journal's default run presses: twice past the 64 chained pose moves after which the layer once
+/// replayed the jumbling journal from solved, where it now keeps each move's flat claim flat. The whole journals take
+/// about twelve minutes in a dev build, so they run on request.
 const BOUNDED: usize = 130;
 
 /// At the end of a run: J02's posed row and the current-occupant relation of the layer's head equal M5's.

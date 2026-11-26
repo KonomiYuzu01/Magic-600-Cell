@@ -122,18 +122,23 @@ fn journal(n: usize) -> Vec<Twist> {
     records[..n].iter().map(|record| Twist::from_record(&ctx(), record).expect("a journal twist")).collect()
 }
 
-/// The pose digest of the jumbling engine's replay of `word` from solved under the pinned menu, flat and with no
-/// protected piece: what a chain of pose moves must reach.
-fn poses(word: &[Twist]) -> String {
+/// The jumbling engine's replay of `word` from solved under the pinned menu, flat and with no protected piece: the
+/// value a chain of pose moves must reach, and the path the layer once took after every 64 chained moves.
+fn replayed(word: &[Twist]) -> levels::Derived {
     let ctx = ctx();
     let menu = Arc::new(pinned());
     let identity = ctx.identity(Some(&menu));
     let solved = levels::Snapshot::solved(&ctx, Some(menu));
     let derivation = levels::derive(&ctx, Base::Snapshot(&solved), &identity, word, ProtectionMode::Net, &[]);
     match derivation.expect("no engine error") {
-        Ok(levels::Derivation::Derived(derived)) => derived.digest(&ctx),
+        Ok(levels::Derivation::Derived(derived)) => derived,
         _ => panic!("the word does not replay from solved"),
     }
+}
+
+/// The pose digest of [`replayed`].
+fn poses(word: &[Twist]) -> String {
+    replayed(word).digest(&ctx())
 }
 
 /// `jumble.twist.menu`'s arguments for `binding`, naming `revision`: the binding's cap, and the rest of it as
@@ -818,10 +823,10 @@ fn undo_and_redo_step_pose_moves_by_their_exact_inverse() {
     assert_eq!(kinds, [&expected[..], &[Undo, JumbleMove]].concat());
 }
 
-/// The chain bound (draft: the jumbling engine nests each derivation's evidence in the next, so after 64 chained moves
-/// the layer replays the jumbling journal flat from solved, which must reach the chained poses). Each of seventy pose
-/// moves reaches the flat replay of its word's prefix; a reopen under the menu restores them, and seventy undos step
-/// back through every prefix to the entry's poses and seventy redos forward to the last move's.
+/// A long chain (draft: each pose move keeps the head's flat claim flat, where the layer once replayed the jumbling
+/// journal flat from solved after 64 chained moves). Each of seventy pose moves reaches the flat replay of its word's
+/// prefix; a reopen under the menu restores them, and seventy undos step back through every prefix to the entry's
+/// poses and seventy redos forward to the last move's.
 #[test]
 fn a_long_pose_chain_replays_flat_and_undoes() {
     let mut f = entered(&[]);
@@ -855,10 +860,9 @@ fn a_long_pose_chain_replays_flat_and_undoes() {
     assert_eq!(g.layer.jumbled().expect("Jumble is on").digest(&ctx()), last.digest);
 }
 
-/// The chain bound keeps a long session within a test thread's stack (draft): the jumbling engine nests each
-/// derivation's evidence in the next, and some hundreds of chained derivations overflow a debug test thread's stack,
-/// so a thousand pose moves commit only because the layer replays the jumbling journal flat after 64 chained moves.
-/// They reach the flat replay of their word.
+/// A long session stays within a test thread's stack (draft): a plain derivation nests its base's claim in its own,
+/// and some hundreds of nested claims overflow a debug test thread's stack, so a thousand pose moves commit only
+/// because each keeps the head's flat claim flat. They reach the flat replay of their word.
 #[test]
 fn a_thousand_pose_moves_stay_within_the_stack() {
     let mut f = entered(&[]);
@@ -875,6 +879,108 @@ fn a_thousand_pose_moves_stay_within_the_stack() {
     let target = poses(&word);
     assert_eq!(f.layer.revision().digest, target);
     assert_eq!(f.layer.jumbled().expect("Jumble is on").digest(&ctx()), target);
+}
+
+/// Checks that `layer`'s head has the pose digest and the reachability claim of the jumbling engine's flat replay of
+/// `steps` from solved, the head's path: the moves, then the inverse of each move undone and each move redone again.
+/// With no undo, `steps` is the jumbling journal to the head, and its replay is the old path.
+fn at_the_replay(layer: &CommandLayer, steps: &[Twist], what: &str) {
+    let replay = replayed(steps);
+    let head = layer.jumbled().expect("Jumble is on");
+    assert_eq!(layer.revision().digest, replay.digest(&ctx()), "{what}: the revision's digest");
+    assert_eq!(head.digest(&ctx()), layer.revision().digest, "{what}: the head's poses");
+    assert_eq!(head.reachability(), replay.reachability(), "{what}: the head's claim");
+}
+
+/// Linear sessions (draft; finding B5 and KN5's commit boundary). Each pose move derives one step from the head's
+/// value and keeps its flat claim flat, where the layer once replayed the jumbling journal from solved after every 64
+/// chained moves. For the first 65 moves of the I_a fixture's jumbling journal and for its first 320, pressed as
+/// items of the pinned menu at their grips, the chained head has the pose digest and the claim of that old flat replay
+/// after moves 1, 63, 64 and 65, midway and at the end. Midway, with orbit 0 protected, an unblocked item at the grip
+/// of one of the next moves that would carry one of its pieces is refused with `KN2:protection.piece_would_move` and
+/// changes nothing, the claim included; released with confirmation, the chain goes on. A reopen under the menu
+/// replays the chain to the same head, digest and claim. Up to seventy undos there step back past the old bound,
+/// each to the chained digest of its target, and the redos forward again; at the end the head has the digest and the
+/// flat claim of the replay of its whole path from solved. Every undo here takes the move's exact inverse, since a
+/// pinned menu is inverse-closed; the undo that replays the journal from solved instead is the layer's own test
+/// `an_undo_without_an_exact_inverse_reaches_the_chained_poses`. (A replay of a jumbled word costs some milliseconds
+/// a letter even in the optimized engine, so the test replays at those points only.)
+#[test]
+fn a_pose_chain_reaches_the_flat_replay_chained_and_reopened() {
+    let (ctx, menu) = (ctx(), pinned());
+    let orbit_0: Vec<u32> =
+        ctx.model.orbit_id.iter().enumerate().filter(|(_, &id)| id == 0).map(|(piece, _)| piece as u32).collect();
+    for n in [65, 320] {
+        // The refusal is midway, and the undos reach back at most seventy moves, to `low`.
+        let (half, low) = (n / 2, n - (n - n / 2).min(70));
+        let word = journal(n);
+        let position = |twist: &Twist| {
+            let items = menu.for_cap(&ctx, twist.grip).expect("the menu at the grip");
+            items.iter().position(|item| item.matrix == twist.matrix).expect("an item of the pinned menu") as u64
+        };
+        let bindings: Vec<Binding> =
+            word.iter().map(|twist| Binding { cap: twist.grip as u32, ..item(position(twist)) }).collect();
+        let mut f = entered(&[]);
+        at_the_replay(&f.layer, &[], &format!("{n}: the entry"));
+        let mut digests = vec![f.layer.revision().digest.clone()];
+        for index in 0..n {
+            if index == half {
+                let before = f.layer.jumbled().expect("Jumble is on").reachability().clone();
+                assert!(completed(&f.protect(&[0])), "{n}: protect orbit 0");
+                // At the grips of the next moves in turn, the first item that is not blocked, if it would carry a
+                // piece of orbit 0 under the layer's policy.
+                let (at, policy) = (replayed(&word[..half]), f.layer.policy());
+                let derive = |twist: &Twist, protect: &[u32]| {
+                    let twist = std::slice::from_ref(twist);
+                    let derivation = levels::derive(&ctx, Base::Derived(&at), at.identity(), twist, policy, protect);
+                    derivation.expect("no engine error")
+                };
+                let mut grips: Vec<usize> = word[half..].iter().map(|twist| twist.grip).collect();
+                grips.dedup();
+                let blocked = grips.iter().find_map(|&grip| {
+                    let items = menu.for_cap(&ctx, grip).expect("the menu at the grip");
+                    let mut items = items.into_iter().skip(1);
+                    let free = items.find(|item| matches!(derive(item, &[]), Ok(levels::Derivation::Derived(_))))?;
+                    let refused = matches!(derive(&free, &orbit_0), Ok(levels::Derivation::Refused(_)));
+                    refused.then(|| Binding { cap: grip as u32, ..item(position(&free)) })
+                });
+                let blocked = blocked.expect("an item at one of the next grips that would move a piece of orbit 0");
+                let press = f.press(&blocked);
+                f.refused(press, PIECE_WOULD_MOVE, &format!("{n}: a move of orbit 0's pieces"));
+                let release = json::object([("confirm", Value::Bool(true)), ("orbits", Value::Array(Vec::new()))]);
+                let released = f.shell.invoke(&mut f.layer, "protection.orbit.set", release).unwrap();
+                assert!(completed(&released), "{n}: the confirmed release: {:?}", released.status);
+                assert_eq!(f.layer.revision().digest, digests[half], "{n}: the poses after the refusal");
+                let after = f.layer.jumbled().expect("Jumble is on").reachability();
+                assert_eq!(after, &before, "{n}: the claim after the refusal");
+            }
+            let receipt = f.menu_twist(&bindings[index]);
+            assert!(committed(&receipt), "{n}: move {index}: {:?}", receipt.status);
+            digests.push(f.layer.revision().digest.clone());
+            if [1, 63, 64, 65, half, n].contains(&(index + 1)) {
+                at_the_replay(&f.layer, &word[..=index], &format!("{n}: the chain to {}", index + 1));
+            }
+        }
+
+        let mut g = reopen_with(&f.layer, Some(pinned()));
+        assert!(g.layer.recovery().is_none(), "{n}: {:?}", g.layer.recovery());
+        assert_eq!(restored(&g.layer), restored(&f.layer), "{n}");
+        let (chained, reopened) = (f.layer.jumbled().expect("Jumble is on"), g.layer.jumbled().expect("Jumble is on"));
+        assert_eq!(reopened.digest(&ctx), chained.digest(&ctx), "{n}: the reopen's poses");
+        assert_eq!(reopened.reachability(), chained.reachability(), "{n}: the reopen's claim");
+        let mut steps = word.clone();
+        for k in (low..n).rev() {
+            assert!(committed(&g.step(Direction::Undo)), "{n}: the undo to {k}");
+            assert_eq!(g.layer.revision().digest, digests[k], "{n}: the undo to {k}");
+            steps.push(Twist::new(&ctx, word[k].grip, transpose(&word[k].matrix)).expect("the exact inverse"));
+        }
+        for k in low + 1..=n {
+            assert!(committed(&g.step(Direction::Redo)), "{n}: the redo to {k}");
+            assert_eq!(g.layer.revision().digest, digests[k], "{n}: the redo to {k}");
+            steps.push(word[k - 1].clone());
+        }
+        at_the_replay(&g.layer, &steps, &format!("{n}: the redos' end"));
+    }
 }
 
 /// KN5.23, ONE.58 and JI.27's recovery row (draft): a retained commit through the row replays without a menu, as a
