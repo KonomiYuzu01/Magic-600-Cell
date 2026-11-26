@@ -34,6 +34,9 @@ CPU_CHECKS = {
     # (route B is accepted for now by the owner on 18 Nov 2026, pending three
     # owner-machine checks).
     "route b arguments", "present matching", "recovery bookkeeping",
+    # C9 (26 Nov 2026): a product frame's frame-latency wait takes one statistics sample when it lasts longer than
+    # 5 ms, so that the single sample after each frame no longer races the vblank's statistics.
+    "latency wait",
     # C9 U5: user stages' compiler profile, source composition and compile record, and RPI.72's raster bound.
     "stage arguments", "raster bound",
 }

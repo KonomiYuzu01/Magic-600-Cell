@@ -155,13 +155,15 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(values["SHADERS"], built)
         self.assertEqual(len(built), 8)
         self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
-        self.assertEqual(len(values["CPU_CHECKS"]), 35)
+        self.assertEqual(len(values["CPU_CHECKS"]), 36)
         self.assertTrue({"wj arguments", "wj scene state", "wj reader refusals", "wj protocol controls",
                          "wj native writer"} <= values["CPU_CHECKS"])
         self.assertTrue({"product arguments", "product adopt", "product tickets", "product frames", "product reports",
                          "product picks", "product device lost", "product describe"} <= values["CPU_CHECKS"])
         self.assertTrue({"route b arguments", "present matching", "recovery bookkeeping"} <= values["CPU_CHECKS"])
         self.assertTrue({"stage arguments", "raster bound"} <= values["CPU_CHECKS"])
+        # C9 (26 Nov 2026): the in-wait statistics sample of a product frame on the surface.
+        self.assertIn("latency wait", values["CPU_CHECKS"])
 
     def test_stage_sources_are_embedded_from_the_core(self):
         # C9 U5: the core's own HLSL is embedded at build time from renderer/core/shaders.

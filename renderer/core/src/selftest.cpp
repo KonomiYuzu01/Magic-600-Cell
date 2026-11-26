@@ -1149,6 +1149,69 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(trace.text() == "{\"display_qpc\":200,\"frame\":0,\"present_count\":20}\n{\"display_qpc\":300,\"frame\":2,\"present_count\":22}\n",
             "presented.jsonl rows differ");
     });
+    suite.check("latency wait", [] {
+        // C9 (26 Nov 2026): sa2::latency_wait over a scripted wait that records each part's milliseconds.
+        static constexpr uint32_t timed_out = 0x102, failed = 0xFFFFFFFFu, signalled = 0;
+        struct Script { std::vector<uint32_t> asked; int samples = 0; };
+        const auto run = [](uint32_t timeout_ms, uint32_t after, std::vector<uint32_t> answers, Script& s) {
+            size_t next = 0;
+            return sa2::latency_wait(timeout_ms, after, timed_out,
+                [&](uint32_t ms) { s.asked.push_back(ms); return answers.at(next++); }, [&] { ++s.samples; });
+        };
+        using Parts = std::vector<uint32_t>;
+        Script a, b, c, d, e, f, g;
+        expect(run(1000, 5, {signalled}, a) == signalled && a.asked == Parts{5} && a.samples == 0,
+            "a wait that ended in its first part took a sample");
+        expect(run(1000, 5, {timed_out, signalled}, b) == signalled && b.asked == Parts{5, 995} && b.samples == 1,
+            "a long wait did not take one sample and wait for the rest");
+        expect(run(1000, 5, {timed_out, timed_out}, c) == timed_out && c.asked == Parts{5, 995} && c.samples == 1,
+            "a timed-out wait did not keep its whole timeout");
+        expect(run(1000, 5, {failed}, d) == failed && d.asked == Parts{5} && d.samples == 0,
+            "a failed wait took a sample or waited again");
+        expect(run(5, 5, {timed_out}, e) == timed_out && e.asked == Parts{5} && e.samples == 0,
+            "a timeout not above the sample point was split");
+        expect(run(UINT32_MAX, 5, {timed_out, signalled}, f) == signalled && f.asked == Parts{5, UINT32_MAX} && f.samples == 1,
+            "an infinite timeout became finite");
+        expect(run(1000, 0, {signalled}, g) == signalled && g.asked == Parts{1000} && g.samples == 0,
+            "a zero sample point split the wait");
+        // The race the sample answers (owner-machine sitting of 25 Nov 2026): a 60 Hz loop presents frame k (count
+        // k) 0.3 ms after vblank k, which shows it from vblank k + 2, and samples 0.5 ms after the vblank, when DXGI
+        // has posted that vblank's statistics for one vblank in three (at 0.2 ms) and not yet for the others (at
+        // 0.9 ms). Alone, that sample passes every third count and the exact rule drops a frame that was shown; with
+        // the sample inside the next frame's wait, 6.5 ms after the vblank, every shown frame is confirmed.
+        const auto confirmed = [](bool in_wait) {
+            constexpr int64_t period = 16667, presents_at = 300, sampled_at = 500, waited_at = 6500; // microseconds
+            constexpr uint32_t frames = 600;
+            const auto posted = [](uint32_t vblank) -> int64_t { return vblank % 3 == 0 ? 200 : 900; };
+            const auto sample_at = [&](int64_t t) {
+                uint32_t shown = 0, last = 0;
+                for (uint32_t count = 1; count <= frames; ++count) {
+                    if (int64_t(count + 2) * period + posted(count + 2) <= t) shown = count;
+                    if (int64_t(count) * period + presents_at <= t) last = count;
+                }
+                return sa2::PresentSample{0, 1, shown, last, int64_t(shown + 2) * period};
+            };
+            sa2::PresentLedger ledger;
+            const auto input = frame_input(1, 1);
+            sa2_presented_row rows[8]{};
+            uint32_t total = 0, previous = 0;
+            bool ordered = true;
+            for (uint32_t k = 1; k <= frames; ++k) {
+                if (in_wait && k > 1) ledger.sample(sample_at(int64_t(k - 1) * period + waited_at));
+                ledger.presented(input, k, 1, k);
+                ledger.sample(sample_at(int64_t(k) * period + sampled_at));
+                for (uint32_t n; (n = ledger.rows(rows, 8)) != 0; total += n)
+                    for (uint32_t i = 0; i < n; ++i) {
+                        ordered = ordered && rows[i].frame_id > previous
+                            && rows[i].display_qpc == uint64_t(rows[i].frame_id + 2) * period;
+                        previous = uint32_t(rows[i].frame_id);
+                    }
+            }
+            return ordered ? total : 0;
+        };
+        expect(confirmed(false) == 399, "the simulated race did not drop every third shown frame");
+        expect(confirmed(true) == 598, "with the sample inside the wait, a shown frame was not confirmed at its vblank");
+    });
     suite.check("recovery bookkeeping", [] {
         sa2::Product product;
         EngineArrays engine(1, 0);
