@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] update | LX-4's L slowdown found headless and fixed
+The 50 ms rise of L completion and L diagnostics in [owner-sitting-2026-11-25-results](evidence/owner-sitting-2026-11-25-results.md) is the editor services reading each L buffer again, with a name index that scanned every binding per name; the index now looks names up by owner and by name and a document shares one parse, with no answer changed, and headless timing shows most of the rise gone. The on-screen effect waits for the next U8 run.
+
 ## [2026-11-26] decision | ADR-D02: open research and the A4 picks
 The owner made open research ADR-D02's core (25 November 2026) and answered A4 with every recommended option except item 9, Q3.b, taken as the owner's reading of the frozen J-7 and N-1, and item 12c, the base targets: at most 3,000 hours of real time for a true expert's full solve without jumbling, and substantive progress on restoration theory for the jumbled puzzle ([decision](decisions/owner-decisions-2026-11-26-adr-d02-a4.md)).
 

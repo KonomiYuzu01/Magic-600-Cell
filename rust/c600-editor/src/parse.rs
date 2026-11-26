@@ -75,7 +75,9 @@ pub fn parse(document: &Document, edition: &str) -> Parse {
                 .saying("the request names an edition this parser does not read");
         return Parse { subject, file: ParsedFile::default(), outline: Vec::new(), diagnostics: vec![envelope] };
     }
-    let file = c600_syntax::parse(document.bytes());
+    // A copy of the shared parse when another service has made it, else a parse of its own: sharing this one would
+    // take a copy of it here, on the path of the parse's own answer, which a host asks for first.
+    let file = document.parsed_if_made().map_or_else(|| c600_syntax::parse(document.bytes()), ParsedFile::clone);
     let diagnostics = file.diagnostics.iter().map(|d| syntax(d, digest, Service::Parse)).collect();
     let outline = outline(&file, digest);
     Parse { subject, file, outline, diagnostics }
