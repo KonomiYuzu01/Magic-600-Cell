@@ -356,6 +356,8 @@ public sealed class ShellChrome
             var jumbleClock = new Godot.Timer { Name = "JumbleClock", WaitTime = 0.15, Autostart = true };
             jumbleClock.Timeout += host.Tick;
             frame.AddChild(jumbleClock);
+            // Step C-.40: on the base puzzle Local draws cell 0 without a Jumble cap, so the Jumble empty sentence stays hidden.
+            host.SetDrawnWithoutCap(live && !ShellLocal.Plan.Jumble);
             ShellJumble.Host = host;
             // B15: the tint channel and the focus layers, drawn by the core.
             ShellTint.Attach(host, frame);
@@ -412,6 +414,20 @@ public sealed class ShellChrome
         Jumble?.Marks(Frame.Local);
         Sample?.Marks(Frame.Global);
         Sample?.Marks(Frame.Local);
+    }
+
+    private string? _localWords;
+
+    /// <summary>Step C-.40: Local's readout from its plan (the base puzzle's), shown only while Local is drawn.</summary>
+    internal void LocalLine(string? words)
+    {
+        words = Frame.LocalDrawn ? words : null;
+        if (words == _localWords)
+        {
+            return;
+        }
+        _localWords = words;
+        ViewLine.Set(Frame.Local, "LocalPlanLine", words, LocalPlan.Hint, Frame.Tokens.C("text.dim"));
     }
 
     /// <summary>The window pixels of the Global view's opening; empty while the view is not on screen.</summary>

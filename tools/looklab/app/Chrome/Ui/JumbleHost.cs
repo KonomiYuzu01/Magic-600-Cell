@@ -25,6 +25,9 @@ public sealed partial class JumbleHost
     public LocalCap LocalCap { get; } = new();
     // Whether a state is bound, so that Local can draw; the shell gives it, and a host without one binds none.
     private Func<bool> stateBound = () => false;
+    // Whether Local draws without a Jumble cap (the base puzzle's LocalPlan draws cell 0 there): its empty sentence then
+    // never shows, since Local is drawn.
+    private bool drawnWithoutCap;
     // Local's empty sentence, which is also the hint on its readout while it draws a cap that is not named.
     private readonly string hint;
     public CapThreshold Threshold { get; private set; } = CapThreshold.None;
@@ -357,11 +360,18 @@ public sealed partial class JumbleHost
     // Local's readout while it draws a cap that is not named, or none.
     public string? LocalWords => LocalCap.Words(hint);
 
-    // The cap Local draws follows the naming and the binding; the empty sentence shows only while it draws none.
+    // The shell says whether Local draws without a Jumble cap (the base puzzle, ADR-D01.40).
+    public void SetDrawnWithoutCap(bool value)
+    {
+        drawnWithoutCap = value;
+        FollowLocal();
+    }
+
+    // The cap Local draws follows the naming and the binding; the empty sentence shows only while Local draws nothing.
     private void FollowLocal()
     {
         LocalCap.Follow(Naming.Named, stateBound());
-        Surface.SetDrawn(LocalCap.Shown != null);
+        Surface.SetDrawn(LocalCap.Shown != null || drawnWithoutCap);
     }
 
     // The threshold, the named cap and its meeting caps over the cap map, and the threshold row on Global's border.
@@ -494,24 +504,7 @@ public sealed partial class JumbleHost
     }
 
     // Local's readout while it draws a cap that is not named: it says so, with the hint, which its tooltip repeats.
-    private void DefaultLine(ViewFrame view)
-    {
-        if (!GodotObject.IsInstanceValid(view)) return;
-        Label? line = view.Readouts.GetNodeOrNull<Label>("JumbleLocalDefault");
-        if (LocalWords is not { } words)
-        {
-            if (line != null) { view.Readouts.RemoveChild(line); line.QueueFree(); }
-            return;
-        }
-        if (line == null)
-        {
-            line = ChromeWidgets.Text("", "MicroLabel"); line.Name = "JumbleLocalDefault";
-            line.AutowrapMode = TextServer.AutowrapMode.WordSmart; line.MouseFilter = Control.MouseFilterEnum.Pass;
-            line.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill; view.Readouts.AddChild(line);
-        }
-        line.Text = words; line.TooltipText = hint;
-        line.AddThemeColorOverride("font_color", frame.Tokens.C("text.dim"));
-    }
+    private void DefaultLine(ViewFrame view) => ViewLine.Set(view, "JumbleLocalDefault", LocalWords, hint, frame.Tokens.C("text.dim"));
 
     // ADR-D02.15: while the cap map's dock is closed, the threshold field and its count stay on Global's border.
     private void Border(ViewFrame view, bool on)

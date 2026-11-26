@@ -278,6 +278,8 @@ internal static partial class Program
             ("D02CapPromptEnterNamesTheChosenCap", D02CapPromptEnterNamesTheChosenCap),
             ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy),
             ("D02LocalCapDrawsTheLowestCapUntilOneIsNamed", D02LocalCapDrawsTheLowestCapUntilOneIsNamed),
+            ("D02LocalPlanDrawsCellZeroOnTheBasePuzzle", D02LocalPlanDrawsCellZeroOnTheBasePuzzle),
+            ("D02LocalPlanKeepsTheJumbleRule", D02LocalPlanKeepsTheJumbleRule),
             ("D02TintModesExclusive", D02TintModesExclusive),
             ("D02ContactColouringIsProper", D02ContactColouringIsProper),
             ("D02FourClassesAtWj300AndDeepExports", D02FourClassesAtWj300AndDeepExports),
