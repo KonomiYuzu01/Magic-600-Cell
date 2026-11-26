@@ -546,6 +546,13 @@ internal sealed partial class D02Driver : Node
             json.WriteBoolean("owner_acted", D02Window.OwnerActed);
             json.WriteEndObject();
             json.WriteNumber("camera_turns", ShellJumble.Camera.Turns);
+            // The camera the shell sends to m6h_set_camera (column-major), so a run can check the drag's sense.
+            json.WriteStartArray("camera");
+            foreach (var value in ShellJumble.Camera.ColumnMajor())
+            {
+                json.WriteNumberValue(value);
+            }
+            json.WriteEndArray();
             json.WriteNumber("cancels", _cancels);
             json.WriteNumber("screen_changes_on_cancel", _screenChanges);
             json.WriteStartArray("kept");

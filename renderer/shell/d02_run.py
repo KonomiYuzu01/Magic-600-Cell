@@ -185,9 +185,23 @@ def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]
     return problems
 
 
+# The drag's sense (owner, 26 November 2026): the near side follows the pointer, as in Look Lab. A point at the 4D
+# near side (w toward d4, which the core's projection magnifies) must move right on screen after a rightward drag and
+# down after a downward one. The core applies x' = Q x with Q column-major and draws clip y up.
+NEAR_POINT = (0.0, 0.0, 0.0, 0.9)
+
+
+def near_side(camera: list[float]) -> tuple[float, float]:
+    """The screen x and y (y up) of the near point under a column-major camera, before the perspective factor, which
+    is positive and changes neither sign."""
+    q = [[camera[column * 4 + row] for column in range(4)] for row in range(4)]
+    world = [sum(q[row][k] * NEAR_POINT[k] for k in range(4)) for row in range(4)]
+    return world[0], world[1]
+
+
 def expect_rotate(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """The rotate script: each drag in the Global opening turns the camera (its drag steps counted), and a wait turns
-    nothing."""
+    """The rotate script: each drag in the Global opening turns the camera (its drag steps counted), a wait turns
+    nothing, and the near side follows the pointer: right after the rightward drag, down after the downward one."""
     steps = ["start", "wait 2000 ms", "drag 200 0", "wait 1000 ms", "drag 0 120", "wait 1000 ms"]
     if [dump["do"] for dump in dumps] != steps:
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
@@ -201,6 +215,19 @@ def expect_rotate(dumps: list[dict], source: dict, state: str | None) -> list[st
         problems.append("the second drag did not turn the camera")
     if turns[3] != turns[2] or turns[5] != turns[4]:
         problems.append("the camera turned during a wait")
+    cameras = [dump.get("camera") for dump in dumps]
+    if any(camera is None or len(camera) != 16 for camera in cameras):
+        return problems + ["a step's dump has no camera"]
+    x1, y1 = near_side(cameras[1])
+    x2, y2 = near_side(cameras[2])
+    x4, y4 = near_side(cameras[4])
+    if not x2 > x1 + 1e-3:
+        problems.append(f"the rightward drag moved the near side left (x {x1:.3f} to {x2:.3f}); Look Lab moves it right")
+    if abs(y2 - y1) > 1e-3:
+        problems.append("the rightward drag moved the near side vertically")
+    if not y4 < y2 - 1e-3:
+        problems.append(f"the downward drag moved the near side up (y {y2:.3f} to {y4:.3f}); it must follow the pointer down")
+    print(f"near side: right drag x {x1:+.3f} to {x2:+.3f}; down drag y {y2:+.3f} to {y4:+.3f}")
     return problems
 
 

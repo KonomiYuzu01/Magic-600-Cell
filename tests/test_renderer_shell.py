@@ -11,6 +11,7 @@ import hashlib
 import importlib
 import importlib.util
 import json
+import math
 import re
 import shutil
 import subprocess
@@ -1753,7 +1754,10 @@ class D02Rotation(unittest.TestCase):
         camera = text(PROJECT / "D02" / "ShellCamera.cs")
         # Look Lab's drag: x-w and y-w for the 4D camera, x-z and y-z for the layout spin, 0.004 rad per pixel.
         self.assertIn("public const double RadiansPerPixel = .004;", camera)
-        self.assertIn("Rotate(Q, 0, 3, ax);", camera)
+        # The owner's report of 26 November 2026: left-right was reversed. The core applies Q as it is, where Look
+        # Lab's shader applies its transpose, so the x–w turn takes the opposite angle; the y–w turn keeps its own.
+        self.assertIn("Rotate(Q, 0, 3, -ax);", camera)
+        self.assertNotIn("Rotate(Q, 0, 3, ax);", camera)
         self.assertIn("Rotate(Q, 1, 3, ay);", camera)
         self.assertIn("public const float DragThreshold = 3;", camera)
         # The core reads a column-major float4x4 (sa2_interop.h's camera_matrix).
@@ -1764,9 +1768,30 @@ class D02Rotation(unittest.TestCase):
         run = shell_module("d02_run")
         steps = ["start", "wait 2000 ms", "drag 200 0", "wait 1000 ms", "drag 0 120", "wait 1000 ms"]
 
-        def dumps(turns):
-            return [{"do": do, "camera_turns": t, "lines": []} for do, t in zip(steps, turns)]
+        # Each step's camera as ShellCamera.Turn builds it: the x–w turn by -ax, then the y–w turn by ay, column-major.
+        # The drags are 200 and 120 pixels at 0.004 rad per pixel; `sign` 1 is the fix, -1 the reversed build.
+        angles = [(0, 0), (0, 0), (.8, 0), (.8, 0), (.8, .48), (.8, .48)]
+
+        def camera(ax, ay, sign):
+            q = [[float(i == j) for j in range(4)] for i in range(4)]
+            for a, angle in ((0, -sign * ax), (1, ay)):
+                c, s = math.cos(angle), math.sin(angle)
+                for j in range(4):
+                    x, y = q[a][j], q[3][j]
+                    q[a][j], q[3][j] = c * x - s * y, s * x + c * y
+            return [q[row][column] for column in range(4) for row in range(4)]
+
+        def dumps(turns, sign=1):
+            return [{"do": do, "camera_turns": t, "lines": [], "camera": camera(ax, ay, sign)}
+                    for do, t, (ax, ay) in zip(steps, turns, angles)]
         self.assertEqual(run.expect_rotate(dumps([0, 0, 1, 1, 2, 2]), {}, None), [])
+        # The reversed build of 26 November 2026 fails on the rightward drag only.
+        reversed_drag = run.expect_rotate(dumps([0, 0, 1, 1, 2, 2], sign=-1), {}, None)
+        self.assertEqual(len(reversed_drag), 1)
+        self.assertIn("rightward drag moved the near side left", reversed_drag[0])
+        no_camera = dumps([0, 0, 1, 1, 2, 2])
+        del no_camera[3]["camera"]
+        self.assertEqual(run.expect_rotate(no_camera, {}, None), ["a step's dump has no camera"])
         self.assertEqual(len(run.expect_rotate(dumps([0, 0, 0, 0, 1, 1]), {}, None)), 1)
         self.assertEqual(len(run.expect_rotate(dumps([0, 0, 1, 2, 3, 3]), {}, None)), 1)
         self.assertTrue(run.expect_rotate(dumps([0, 0, 1, 1, 2, 2])[:5], {}, None))

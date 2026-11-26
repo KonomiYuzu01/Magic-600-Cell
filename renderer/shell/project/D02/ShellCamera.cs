@@ -72,14 +72,21 @@ public sealed class ShellCamera
         }
     }
 
-    /// <summary>Turns the camera by the two drag angles, as Look Lab's <c>GlobalLayout.Drag</c> does.</summary>
+    /// <summary>
+    /// Turns the camera by the two drag angles in Look Lab's sense: the near side (large w, which the projection
+    /// magnifies) follows the pointer. The core applies Q as it is (x' = Q x), where Look Lab's shader applies the
+    /// transpose of its q, so the x–w turn takes the opposite angle to Look Lab's <c>GlobalLayout.Drag</c>: a rightward
+    /// drag moves the near side right, as in Look Lab (owner, 26 November 2026: "转动时左右的方向反了"). A downward
+    /// drag already moves the near side down (screen y runs down, the core's y up), so the y–w turn keeps its angle.
+    /// The layout spin keeps Look Lab's own convention; the core does not draw a layout yet.
+    /// </summary>
     public void Turn(double ax, double ay)
     {
         if (!double.IsFinite(ax) || !double.IsFinite(ay))
         {
             throw new ArgumentException("finite drag angles required");
         }
-        Rotate(Q, 0, 3, ax);
+        Rotate(Q, 0, 3, -ax);
         Rotate(Q, 1, 3, ay);
         Rotate(Spin, 0, 2, ax);
         double c = Math.Cos(ay), s = Math.Sin(ay);
