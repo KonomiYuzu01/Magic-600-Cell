@@ -43,7 +43,7 @@ public sealed partial class AppearancePanel : ScrollContainer
         Issues.Text = issues.Count == 0 ? (Look.Tuned ? "Tuned. Every contrast pair passes." : "Shipped values. Every contrast pair passes.") : "Low contrast: " + string.Join("; ", issues);
     }
 
-    private static string Title(string id) => char.ToUpperInvariant(id[0]) + string.Concat(id.Skip(1).Select(c => char.IsUpper(c) ? " " + char.ToLowerInvariant(c) : c.ToString()));
+    internal static string Title(string id) => char.ToUpperInvariant(id[0]) + string.Concat(id.Skip(1).Select(c => char.IsUpper(c) ? " " + char.ToLowerInvariant(c) : c.ToString()));
 
     private Control Row(string label, Control control)
     {
@@ -97,16 +97,29 @@ public sealed partial class AppearancePanel : ScrollContainer
         foreach (string id in ThemeFamily.KnobIds)
         {
             Knob knob = Look.Family.Knobs[id];
-            string format = knob.Max - knob.Min > 10 ? "0" : "0.000";
-            var slider = new HSlider { Name = id + "Knob", MinValue = knob.Min, MaxValue = knob.Max, Step = (knob.Max - knob.Min) / 240, Value = Look.Knob(id),
-                TooltipText = $"{Title(id)}: {knob.Min.ToString(CultureInfo.InvariantCulture)} to {knob.Max.ToString(CultureInfo.InvariantCulture)}, shipped {knob.Default.ToString(CultureInfo.InvariantCulture)}" };
-            Label value = ChromeWidgets.Text(Look.Knob(id).ToString(format, CultureInfo.InvariantCulture), "DimLabel"); value.CustomMinimumSize = new Vector2(44, 0);
-            value.HorizontalAlignment = HorizontalAlignment.Right;
+            HSlider slider = KnobSlider(id, knob, Look.Knob(id)); slider.Name = id + "Knob";
+            Label value = KnobValue(knob, Look.Knob(id));
             // A knob moves colours only, so the frame is recoloured in place while it is dragged.
-            slider.ValueChanged += v => { if (Edit(a => a.SetKnob(id, Math.Clamp(v, knob.Min, knob.Max)), false, false)) value.Text = Look.Knob(id).ToString(format, CultureInfo.InvariantCulture); };
+            slider.ValueChanged += v => { if (Edit(a => a.SetKnob(id, Math.Clamp(v, knob.Min, knob.Max)), false, false)) value.Text = KnobText(knob, Look.Knob(id)); };
             Row(Title(id), slider); slider.GetParent().AddChild(value);
         }
         column.AddChild(Issues);
         Report();
+    }
+
+    // One seed knob's slider and its value, shared with the tuning panel (ADR-D01.50, ADR-D02.47).
+    internal static string KnobText(Knob knob, double value) => value.ToString(knob.Max - knob.Min > 10 ? "0" : "0.000", CultureInfo.InvariantCulture);
+
+    internal static HSlider KnobSlider(string id, Knob knob, double value) => new()
+    {
+        MinValue = knob.Min, MaxValue = knob.Max, Step = (knob.Max - knob.Min) / 240, Value = value,
+        TooltipText = $"{Title(id)}: {knob.Min.ToString(CultureInfo.InvariantCulture)} to {knob.Max.ToString(CultureInfo.InvariantCulture)}, shipped {knob.Default.ToString(CultureInfo.InvariantCulture)}",
+    };
+
+    internal static Label KnobValue(Knob knob, double value)
+    {
+        Label label = ChromeWidgets.Text(KnobText(knob, value), "DimLabel"); label.CustomMinimumSize = new Vector2(44, 0);
+        label.HorizontalAlignment = HorizontalAlignment.Right;
+        return label;
     }
 }

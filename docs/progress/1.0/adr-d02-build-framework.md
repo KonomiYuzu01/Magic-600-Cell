@@ -1103,6 +1103,26 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B15. CR-16.
+- **As built (B30 agent, 26 November 2026):**
+  - `Model/Tuning.cs`:
+    - `TuningValue`: a family, its scene look and the five seed knobs (ADR-D01.50), written into an `Appearance` and nothing else.
+    - `Tuning`: `Open(frame)` shows the panel as a tab of the current layout's right dock. `SetFamily`, `SetLook`, `SetKnob` (clamped to the knob's range) and `Tune`, which reads `theme.tune`'s `knob=value[,...]`.
+    - `Strip(knob)`: the knob's live ramp strip of twelve steps. Tone, contrast and black level show the neutral ramp, and accent hue the accent ramp. Grid intensity shows the grid line's mix across its range, with its current step marked.
+    - The compare: slots A and B, and the shown slot is the live tuning. `Swap` shows the other slot and keeps the live tuning in the slot it leaves, so two swaps are no change. `Hold` draws the other slot. `Release` restores the appearance exactly, through `Appearance.Store` and `Restore`. Every edit is refused while a compare is held.
+    - The model holds only the appearance and its slots: no session, no puzzle state.
+  - `Ui/TuningPanel.cs`:
+    - Family and Look choices.
+    - Each knob is a slider with its value and its ramp strip, drawn as the token specimen draws its swatches.
+    - Set A, Set B, Swap, and Hold. Hold is held with the pointer, or with Space or Enter while it has the focus. The compare line and a status line for refusals.
+    - Every edit goes through `AppearancePanel.Edit`, so the frame recolours in place. It is rebuilt only when a swap or a hold crosses families.
+    - The knob slider, its value and the titles are shared with the Appearance panel through `AppearancePanel.KnobSlider`, `KnobValue`, `KnobText` and `Title`.
+  - The shell:
+    - `ShellChrome` registers the panel in the right dock while Jumble is on, with the glyph `panel.tuning` (`sliders-vertical`). Its rows are `tuning.open`, `tuning.slot.set`, `tuning.slot.swap`, `tuning.compare.hold` and the command table's `theme.tune`.
+    - `ShellTint` redraws on the frame's `Recoloured`, so a knob change sends the core the new tint palette through `m6h_set_view_style`. The tint dump gains `palette_sha256`.
+    - The `ShellJumble` dump gains `tuning`: the right dock, shown and folded, the slots, the hold, the frame's window colour, and the head's state digest.
+  - Draft row `tuning.open` (CR-16) in `command-rows-d02.json`.
+  - The panel reads no sample data; the runs use `wj-ia-300`'s session fixture.
+  - Below 1600 px the right dock's panel folds to its rail (owner, 26 November 2026). So at 1280x720 the row opens the panel in the model and on the rail, and the knobs are one `theme.tune` row away. `d02_run.py --script tuning` passes there, with the click on the knob finding none. `tuning-wide` runs the same steps at 1920x1080 with the panel shown, including the click on the tone knob. Both runs keep the state digest and the tint bytes after every step.
 
 ### B31. The tuning panel: presets, Advanced, simulation, Save checks
 - **Goal:** complete ADR-D02.47.

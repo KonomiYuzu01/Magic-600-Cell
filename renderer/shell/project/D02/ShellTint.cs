@@ -32,6 +32,8 @@ public static class ShellTint
             layers.Changed += Draw;
         }
         frame.Rebuilt += Draw;
+        // B30: a knob recolours the frame in place; the core gets the new palette, so the tinted pieces follow.
+        frame.Recoloured += Draw;
         Bind();
     }
 
@@ -114,6 +116,7 @@ public static class ShellTint
         json.WriteNumber("remembered", host.ClassMemory.Memory.Count);
         json.WriteString("outline_sha256", Sha(ShellStyle.SentOutline));
         json.WriteString("fill_sha256", Sha(ShellStyle.SentFill));
+        json.WriteString("palette_sha256", ShellStyle.SentPalette is { } sent ? Sha(System.Runtime.InteropServices.MemoryMarshal.AsBytes(sent.AsSpan()).ToArray()) : "");
         Piece(json, "hover", ShellStyle.SentHover);
         Piece(json, "selection", ShellStyle.SentSelection);
         json.WriteString("focus", ShellStyle.FocusMode);

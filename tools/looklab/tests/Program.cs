@@ -287,7 +287,11 @@ internal static partial class Program
             ("D02ClassStickyAcrossCommitUndoRedoBranchReopen", D02ClassStickyAcrossCommitUndoRedoBranchReopen),
             ("D02OverflowNeverReusesAcrossContact", D02OverflowNeverReusesAcrossContact),
             ("D02OffLatticeFromFlagNotHeights", D02OffLatticeFromFlagNotHeights),
-            ("D02StraddlerLayerOnlyAtBlockedCap", D02StraddlerLayerOnlyAtBlockedCap)
+            ("D02StraddlerLayerOnlyAtBlockedCap", D02StraddlerLayerOnlyAtBlockedCap),
+            ("D02TuningOpensInRightDockOfCurrentLayout", D02TuningOpensInRightDockOfCurrentLayout),
+            ("D02KnobChangeTouchesNoState", D02KnobChangeTouchesNoState),
+            ("D02SwapIsAnInvolution", D02SwapIsAnInvolution),
+            ("D02HeldCompareRestoresOnRelease", D02HeldCompareRestoresOnRelease)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

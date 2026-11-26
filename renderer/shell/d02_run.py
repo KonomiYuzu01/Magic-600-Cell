@@ -83,7 +83,7 @@ def overlay(dump: dict) -> list[str]:
 
 
 def expect_smoke(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """B4's smoke script: D02 is on; the palette lists the CR-16 draft rows, each marked; Escape closes it."""
+    """B4's smoke script: D02 is on; the palette lists the CR-16 draft rows (B30 added tuning.open), each marked; Escape closes it."""
     problems = []
     if [dump["do"] for dump in dumps] != ["start", "chord F1", "text tuning.", "chord Escape", "wait 6000 ms"]:
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
@@ -96,8 +96,8 @@ def expect_smoke(dumps: list[dict], source: dict, state: str | None) -> list[str
         problems.append("step 1: F1 did not open the palette")
     drafts = {row["label"] for row in source["rows"]}
     wanted = palette_matches("tuning.", source["rows"], source["table"])[:12]
-    if len(wanted) != 8 or not set(wanted) <= drafts:
-        problems.append(f"the data: tuning. matches {wanted}, not the eight CR-16 draft rows")
+    if len(wanted) != 9 or not set(wanted) <= drafts:
+        problems.append(f"the data: tuning. matches {wanted}, not the nine CR-16 draft rows")
     shown = overlay(dumps[2])
     labels = [text for text in shown if text in drafts]
     if labels != wanted:
@@ -1343,6 +1343,93 @@ def expect_tint(dumps: list[dict], source: dict, state: str | None, tables: dict
 
 EXPECT["tint"] = expect_tint
 ON_FIXTURE.add("tint")
+
+
+TUNING_KNOBS = [("wait 702 ms", "tone", 0.05, True), ("wait 703 ms", "contrast", 1.15, True),
+                ("wait 704 ms", "blackLevel", 0.08, True), ("wait 705 ms", "accentHue", 40.0, False),
+                ("wait 706 ms", "gridIntensity", 0.9, False)]
+
+
+def tuning_knob(live: str, knob: str) -> float | None:
+    """A knob's value in the dump's live tuning ("graphite · solving · accentHue=195 blackLevel=0 ...")."""
+    for word in live.split():
+        if word.startswith(knob + "="):
+            return float(word.split("=", 1)[1])
+    return None
+
+
+def expect_tuning(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B30's tuning script: the palette's row opens the panel in the right dock; each knob step shows its value, the
+    knobs that move the tint's ramps send the core a new palette and the frame's window colour moves with tone; a
+    click on the panel's tone knob moves it; two swaps come back; the held compare draws slot B and the release
+    puts slot A back. After every step the head's state digest and the tint bytes are the open's."""
+    marks = ["wait 701 ms"] + [m for m, _, _, _ in TUNING_KNOBS] + [f"wait {n} ms" for n in range(707, 712)]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(mark not in by_step for mark in marks):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    tuning = {mark: by_step[mark].get("tuning") for mark in marks}
+    tint = {mark: by_step[mark].get("tint") or {} for mark in marks}
+    if any(not isinstance(t, dict) for t in tuning.values()):
+        return ["a step's dump has no tuning (is D02 on and the panel built?)"]
+    first = tuning["wait 701 ms"]
+    # Below 1600 px the right dock's panel folds to its rail (owner, 26 November 2026): the row opens it in the
+    # model and the rail, and the panel shows once the window is wide enough.
+    folded = first.get("folded") is True
+    if first.get("right_dock") != "tuning" or first.get("shown") is not (not folded):
+        problems.append(f"after tuning.open the right dock shows {first.get('right_dock')!r}, shown {first.get('shown')}, "
+                        f"folded {first.get('folded')} at {first.get('window_width')} px")
+    if not first.get("state_digest"):
+        problems.append("the head's state digest is not read")
+    if not tint["wait 701 ms"].get("palette_sha256"):
+        problems.append("no tint palette was sent to the core at the open")
+    for mark in marks:
+        t = tuning[mark]
+        if t.get("state_digest") != first.get("state_digest"):
+            problems.append(f"after '{mark}' the state digest is {t.get('state_digest')!r}, not the open's")
+        if t.get("status"):
+            problems.append(f"after '{mark}' the panel refused: {t.get('status')!r}")
+        same_pointer = (tint[mark].get("hover"), tint[mark].get("selection")) == \
+            (tint["wait 701 ms"].get("hover"), tint["wait 701 ms"].get("selection"))
+        for key in ("outline_sha256", "fill_sha256"):
+            if same_pointer and tint[mark].get(key) != tint["wait 701 ms"].get(key):
+                problems.append(f"after '{mark}' the tint's {key} moved")
+    before = "wait 701 ms"
+    for mark, knob, value, moves in TUNING_KNOBS:
+        shown = tuning_knob(tuning[mark].get("live", ""), knob)
+        if shown is None or abs(shown - value) > 1e-6:
+            problems.append(f"after '{mark}' {knob} is {shown}, not {value}")
+        if moves and tint[mark].get("palette_sha256") == tint[before].get("palette_sha256"):
+            problems.append(f"after '{mark}' {knob} sent the core no new palette")
+        before = mark
+    if tuning["wait 702 ms"].get("window") == first.get("window"):
+        problems.append("tone did not move the frame's window colour")
+    tone = tuning_knob(tuning["wait 707 ms"].get("live", ""), "tone")
+    if folded:
+        # The folded panel has no knob to click: the click finds nothing and changes nothing.
+        if tone is None or abs(tone - 0.05) > 1e-6:
+            problems.append(f"with the panel folded the click moved tone to {tone}")
+    elif tone is None or abs(tone) > 0.01 or tint["wait 707 ms"].get("palette_sha256") == tint["wait 706 ms"].get("palette_sha256"):
+        problems.append(f"the click on the panel's tone knob left tone at {tone} or sent no new palette")
+    tuned, opening = tuning["wait 707 ms"].get("live"), first.get("live")
+    for mark, slot, live, holding in (("wait 708 ms", "B", opening, False), ("wait 709 ms", "A", tuned, False),
+                                      ("wait 710 ms", "A", opening, True), ("wait 711 ms", "A", tuned, False)):
+        t = tuning[mark]
+        if (t.get("slot"), t.get("live"), t.get("holding")) != (slot, live, holding):
+            problems.append(f"after '{mark}' slot {t.get('slot')}, holding {t.get('holding')}, live {t.get('live')!r}; "
+                            f"expected slot {slot}, holding {holding}, live {live!r}")
+    if not problems:
+        print(f"tuning: {len(marks)} steps; the panel opened in the right dock "
+              f"({'folded to its rail' if folded else 'shown'} at {first.get('window_width')} px); the state digest "
+              f"{str(first.get('state_digest'))[:16]} held; tone, contrast and black level sent new palettes; "
+              "two swaps and the held compare came back")
+    return problems
+
+
+EXPECT["tuning"] = expect_tuning
+EXPECT["tuning-wide"] = expect_tuning
+ON_FIXTURE.add("tuning")
+ON_FIXTURE.add("tuning-wide")
 
 
 def window_problems(dumps: list[dict]) -> list[str]:

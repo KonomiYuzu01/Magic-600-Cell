@@ -1219,7 +1219,7 @@ class D02Launch(unittest.TestCase):
         script = json.loads((SHELL / "d02_scripts" / "smoke.json").read_text(encoding="utf-8"))
         self.assertEqual((script["format"], script["name"], len(script["steps"])), ("magic600-d02-script/1", "smoke", 4))
         dumps = self.smoke_dumps(source, d02_run)
-        self.assertEqual(len(d02_run.palette_matches("tuning.", source["rows"], source["table"])), 8)
+        self.assertEqual(len(d02_run.palette_matches("tuning.", source["rows"], source["table"])), 9)
         self.assertEqual(d02_run.expect_smoke(dumps, source, None), [])
         self.assertEqual(d02_run.window_problems(dumps), [])
         dumps[2]["lines"] = [line for line in dumps[2]["lines"] if line[1] != "Tuning: swap compare slots"]

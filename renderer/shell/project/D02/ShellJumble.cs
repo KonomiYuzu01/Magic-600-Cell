@@ -32,6 +32,13 @@ public static class ShellJumble
     public static string? Asked => System.Environment.GetEnvironmentVariable("M600_D02_STATE") is { Length: > 0 } named ? named : null;
     /// <summary>The sample state bound to the session, or null (B5).</summary>
     public static string? Bound { get; private set; }
+
+    /// <summary>B30: the tuning panel, for the dump; set by the shell's chrome with D02 on.</summary>
+    internal static TuningPanel? TuningHost { get; set; }
+
+    /// <summary>B30: the head's state digest and revision as m6h_state_digest last gave them (the tuning run's check).</summary>
+    public static string StateDigest { get; private set; } = "";
+    public static long StateRevision { get; private set; } = -1;
     /// <summary>The binding changed.</summary>
     public static event Action? BindingChanged;
     /// <summary>The view rotation a drag in the Global opening turns (owner, 26 November 2026).</summary>
@@ -288,6 +295,8 @@ public static class ShellJumble
         {
             using var document = JsonDocument.Parse(digests);
             var root = document.RootElement;
+            StateDigest = root.TryGetProperty("digest", out var stateDigest) ? stateDigest.GetString() ?? "" : "";
+            StateRevision = revision;
             if (root.GetProperty("pose_ids_sha256").ValueKind == JsonValueKind.String
                 && Samples.TryGetValue(Key(root.GetProperty("digest").GetString(), root.GetProperty("pose_ids_sha256").GetString(),
                     root.GetProperty("pose_lattice_sha256").GetString()), out var ids))
@@ -933,6 +942,28 @@ internal sealed partial class D02Driver : Node
             }
             // B15: the tint channel as the core was sent it.
             ShellTint.Dump(json, _frame);
+            // B30: the tuning panel: whether the right dock shows it, the compare, the live tuning, the frame's window
+            // colour, and the head's state digest (a knob must leave it as it was).
+            if (ShellJumble.TuningHost is { } tuning && _frame != null && GodotObject.IsInstanceValid(_frame))
+            {
+                json.WriteStartObject("tuning");
+                json.WriteString("right_dock", _frame.Model.Docks[DockSide.Right].Open ?? "");
+                json.WriteBoolean("shown", GodotObject.IsInstanceValid(tuning) && tuning.IsVisibleInTree());
+                // Below ChromeFrame.RightDockBelow the right dock's panel folds to its rail (owner, 26 November 2026).
+                float width = _frame.IsInsideTree() ? _frame.GetViewportRect().Size.X : 0;
+                json.WriteNumber("window_width", width);
+                json.WriteBoolean("folded", width > 0 && width < ChromeFrame.RightDockBelow);
+                json.WriteString("slot", tuning.Model.Shown);
+                json.WriteBoolean("holding", tuning.Model.Holding);
+                json.WriteString("live", tuning.Model.Live.Text);
+                json.WriteString("other", tuning.Model.Other.Text);
+                json.WriteString("line", tuning.Compare.Text);
+                json.WriteString("status", tuning.Status.Text);
+                json.WriteString("window", _frame.Tokens.Colours["surface.window"].Value.Hex);
+                json.WriteString("state_digest", ShellJumble.StateDigest);
+                json.WriteNumber("revision", ShellJumble.StateRevision);
+                json.WriteEndObject();
+            }
             if (_frame != null && GodotObject.IsInstanceValid(_frame))
             {
                 // The Library in the left dock (the command step's sample-mode run): the dock's panel, whether the
