@@ -36,11 +36,13 @@ public sealed class ShellChrome
     };
     private static readonly (string Id, string Title)[] Panes =
     {
-        ("editor", "Editor"), ("preview", "Preview"), ("canvas", "Canvas"), ("reference", "Reference"), ("scriptview", "Script view"), ("greybox", "Greybox"),
+        ("editor", "Editor"), ("preview", "Preview"), ("canvas", "Canvas"), ("reference", "Learn"),("scriptview", "Script view"), ("greybox", "Greybox"),
     };
     public const string NotHere = "not in this build yet";
 
     public ChromeFrame Frame { get; }
+    /// <summary>Runs a row as the palette does (unavailable reason, echo, then the row): the D02 script player's command step.</summary>
+    public static Action<string, string?>? Run { get; private set; }
     public MoveHistory Moves { get; } = new();
     /// <summary>
     /// Sample mode (B4a): ADR-D01's whole frame on sample data, behind launch.py --sample, or null when it is off. The
@@ -145,6 +147,18 @@ public sealed class ShellChrome
         {
             ShellJumble.AddRows(registry, folder);
         }
+        // Sample mode registers the draft rows Look Lab registers (Library branches, replay, preview sides, History and the
+        // layout roll), so the sample's controls reach a row; the palette marks each one "draft row" (owner's bug list,
+        // 26 November 2026: the Library branches would not open).
+        string[] sampleDrafts = [];
+        if (SampleOn)
+        {
+            var draftRows = File.ReadAllText(Path.Combine(folder, "command-rows-draft.json"));
+            var drafts = new CommandRegistry();
+            drafts.AddRows(draftRows);
+            registry.AddRows(draftRows);
+            sampleDrafts = drafts.Order.ToArray();
+        }
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
@@ -165,6 +179,7 @@ public sealed class ShellChrome
         _unavailable = Unavailable;
         var commands = new PaletteModel(registry, keymap, Unavailable);
         var palette = new CommandPalette(commands, () => frame.Tokens);
+        palette.DraftRows.UnionWith(sampleDrafts);
         frame.Overlays.AddChild(palette);
         var sheet = new ShortcutSheet(registry, keymap, () => frame.Tokens);
         frame.Overlays.AddChild(sheet);
@@ -234,6 +249,7 @@ public sealed class ShellChrome
                 case var handled when sample != null && sample.Handles(handled): sample.Execute(command, argument); break;
             }
         }
+        Run = Execute;
         palette.Run += row => Execute(row.Command, row.Argument);
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
