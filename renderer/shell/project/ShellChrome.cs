@@ -175,6 +175,9 @@ public sealed class ShellChrome
                 id => motions.Seconds(id, design, look.ReducedMotion), Execute,
                 k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet);
         }
+        // Failures show in Problems with the error lamp, in every mode, and go to the run's errors.log.
+        ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
+            System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } events ? Path.Combine(events, "errors.log") : null);
 
         void ApplyLook(bool rebuild, bool scene) => frame.ApplyTokens(look.Resolve(), rebuild);
         appearance.Changed += ApplyLook;
