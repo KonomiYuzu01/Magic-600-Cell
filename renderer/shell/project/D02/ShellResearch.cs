@@ -14,7 +14,10 @@ namespace Magic600.Shell.D02;
 /// Analyse layout never shows a missing pane. In sample mode it reads the synthetic sample
 /// (tools/looklab/data/samples/research/panel.json, staged as res://samples/research) and registers the sample's draft
 /// rows; without the sample it says that its rows wait for K2. The first failing claim group opens, so the owner sees
-/// the Fail row expanded one workspace tab away.
+/// the Fail row expanded one workspace tab away. B29 (ADR-D02.4, .45, .50, .52) fills Runs and Obligations: a run's
+/// seed, depth and budget are declared before it starts, the sample's run stops at its budget as cut off and reproduces
+/// with bytes equal, and the two CR-17 controls are unavailable with their reason. A research row run from another
+/// layout brings the pane into view (ShellChrome), so the Runs tab is one palette row (research.runs) away.
 /// </summary>
 public static class ShellResearch
 {
@@ -24,6 +27,8 @@ public static class ShellResearch
     public static ResearchModel? Model { get; private set; }
     /// <summary>The draft rows the sample's pane registers (research.record.read).</summary>
     public static HashSet<string> DraftIds { get; } = new(StringComparer.Ordinal);
+    private static ChromeFrame? _frame;
+    private static Func<int> _history = () => 0;
 
     /// <summary>The research sample's folder: under M600_D02_DATA when set, else the build's staged samples.</summary>
     public static string ResearchFolder()
@@ -34,8 +39,10 @@ public static class ShellResearch
     }
 
     /// <summary>Mounts the pane; with the sample on, loads the sample, registers its draft rows and shows the model.</summary>
-    public static void Load(ChromeFrame frame, CommandRegistry registry, bool sampleOn)
+    public static void Load(ChromeFrame frame, CommandRegistry registry, bool sampleOn, Func<int> historyEntries)
     {
+        _frame = frame;
+        _history = historyEntries;
         var pane = Pane = new ResearchPane(() => frame.Tokens);
         frame.AddPane(ResearchPane.PaneId, ResearchPane.Title, pane);
         Model = null;
@@ -103,6 +110,36 @@ public static class ShellResearch
                 json.WriteString(reference, name);
             }
             json.WriteEndObject();
+            // B29: the declaration, the runs this session started, their reproductions, History's entries (a research
+            // run never adds one), the open run's CR-17 reasons and the frame's last notice.
+            json.WriteString("declared", model.DeclaredLine());
+            json.WriteString("start", model.Unavailable(ResearchRows.Start, null) ?? "ready");
+            json.WriteNumber("history_entries", _history());
+            json.WriteString("notice", _frame != null && GodotObject.IsInstanceValid(_frame.Notice) ? _frame.Notice.Text : "");
+            json.WriteStartArray("started");
+            foreach (var run in model.Started)
+            {
+                json.WriteStartObject();
+                json.WriteString("run", run.Run);
+                json.WriteString("state", run.State.ToString());
+                json.WriteString("line", model.RunLine(run));
+                json.WriteNumber("seed", run.Seed ?? 0);
+                json.WriteNumber("depth", run.Depth ?? 0);
+                json.WriteNumber("budget", run.Budget?.Steps ?? 0);
+                json.WriteString("covered", run.Covered ?? "");
+                json.WriteString("reproduction", model.Reproductions.TryGetValue(run.Run, out var again) ? ResearchModel.ReproductionLine(again) : "");
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+            if (model.Open is { } open && open.StartsWith(ResearchModel.RunRef, StringComparison.Ordinal))
+            {
+                json.WriteStartObject("cr17");
+                foreach (var row in ResearchRows.Cr17)
+                {
+                    json.WriteString(row, model.Unavailable(row, open) ?? "");
+                }
+                json.WriteEndObject();
+            }
             json.WriteStartArray("lines");
             foreach (var line in Pane?.Shown ?? model.Lines())
             {

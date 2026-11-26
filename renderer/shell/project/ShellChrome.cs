@@ -172,7 +172,7 @@ public sealed class ShellChrome
         }
         // B28: the research pane, a centre peer of the pair in Analyse; in sample mode it reads the synthetic sample and
         // registers its draft row.
-        ShellResearch.Load(frame, registry, SampleOn);
+        ShellResearch.Load(frame, registry, SampleOn, () => Moves.Entries.Count);
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
@@ -180,8 +180,9 @@ public sealed class ShellChrome
         frame.AddPane("gallery", "Gallery", gallery);
         string? Unavailable(string command, string? argument) => command switch
         {
-            // B28: a research row naming a research object (or a tab row) is the research pane's.
-            _ when ShellResearch.Model != null && ResearchModel.Handles(command, argument) => null,
+            // B28: a research row naming a research object (or a tab row) is the research pane's. B29: the pane says
+            // why one is unavailable (a start before its budget, the two CR-17 rows).
+            _ when ShellResearch.Model is { } research && ResearchModel.Handles(command, argument) => research.Unavailable(command, argument),
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
@@ -240,6 +241,11 @@ public sealed class ShellChrome
                 // B28: the research rows (a rename is workspace.set research.names:<ref>=<name>), before workspace.set.
                 case var research when ShellResearch.Model != null && ResearchModel.Handles(research, argument):
                     ShellResearch.Execute(frame, command, argument);
+                    // B29: a research row run from another layout (the palette, a script) brings its pane into view.
+                    if (ShellResearch.Pane is { } shown && GodotObject.IsInstanceValid(shown) && !shown.IsVisibleInTree())
+                    {
+                        Execute("workspace.set", "layout:analyse");
+                    }
                     break;
                 case "command.find": palette.Open(); break;
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;

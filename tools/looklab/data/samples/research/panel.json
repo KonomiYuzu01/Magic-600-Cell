@@ -2,7 +2,7 @@
  "format": "magic600-d02-research-sample/1",
  "version": 1,
  "evidence": "synthetic",
- "note": "Synthetic answers of the research rows for the research pane (build step B28). Field names follow rust/c600-research/src/panel/answers.rs and wire.rs; every name, digest and finding here is made up. research.record.read is a draft row (a row request); its answer is this sample's own.",
+ "note": "Synthetic answers of the research rows for the research pane (build steps B28 and B29). Field names follow rust/c600-research/src/panel/answers.rs and wire.rs; every name, digest and finding here is made up. research.record.read is a draft row (a row request); its answer is this sample's own. research.run.start is a draft row too: its answer is research.runs' run form with the seed, depth and budget the run recorded. The sample has one run, which never finishes: whatever budget is declared, it reaches it and stops as cut off; the source writes the declared seed, depth and budget into it, covered equal to the budget, and names it by the digest of its declaration (SampleResearchSource.RunId). research.run.reproduce answers DET.7's `same` for that run only.",
  "answers": {
   "research.archive.inventory": {
    "row": "research.archive.inventory",
@@ -1011,12 +1011,76 @@
      }
     ]
    }
+  },
+  "research.run.start": {
+   "row": "research.run.start",
+   "revision": {
+    "session": "2eb8c484286db2f5c9d1a0c5603c78c0",
+    "epoch": 1,
+    "identity": "08423e5a1ba70a030388b9aea8e2b937185c98a7cd78205dfe95be038a51ec13",
+    "mode": "jumble_off",
+    "head": "940a2b68df9328351bcfb4dea2c08028665a72fc2343ba6fd713a2f6f4867911",
+    "state": 12,
+    "workspace": 3,
+    "protection": 0,
+    "digest": "3612047394b73de1e056754c884d5d7b0009964dc91a9f9da4f30519e23f5277"
+   },
+   "research": "40f05901720eb3b36493ebc9aadaa0a91193302ab2c1175a201945dd5b118eb0",
+   "answer": {
+    "rows": [
+     {
+      "run": "0000000000000000000000000000000000000000000000000000000000000000",
+      "record": "research.run/0000000000000000000000000000000000000000000000000000000000000000",
+      "group": null,
+      "branch": {
+       "level": "labels",
+       "digest": "08fb17c68f52d7cfc195cf00f3d4c4310222395777017e320fe5352343dcfa0b",
+       "identity": "346434af8cdad55e04a881ffb167a9d8d474c6b7961c081230a3c8d515f48c71"
+      },
+      "key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "outcome": "cut_off",
+      "code": "KN7:budget.steps",
+      "reading": {
+       "kind": "cut_off",
+       "covered": "0"
+      },
+      "checks": [],
+      "outputs": [],
+      "reproduction": null,
+      "seed": 0,
+      "depth": 0,
+      "budget": 0
+     }
+    ]
+   }
+  },
+  "research.run.reproduce": {
+   "row": "research.run.reproduce",
+   "revision": {
+    "session": "2eb8c484286db2f5c9d1a0c5603c78c0",
+    "epoch": 1,
+    "identity": "08423e5a1ba70a030388b9aea8e2b937185c98a7cd78205dfe95be038a51ec13",
+    "mode": "jumble_off",
+    "head": "940a2b68df9328351bcfb4dea2c08028665a72fc2343ba6fd713a2f6f4867911",
+    "state": 12,
+    "workspace": 3,
+    "protection": 0,
+    "digest": "3612047394b73de1e056754c884d5d7b0009964dc91a9f9da4f30519e23f5277"
+   },
+   "research": "40f05901720eb3b36493ebc9aadaa0a91193302ab2c1175a201945dd5b118eb0",
+   "answer": {
+    "run": "0000000000000000000000000000000000000000000000000000000000000000",
+    "answer": {
+     "kind": "same",
+     "payload": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+   }
   }
  },
  "draft_rows": {
   "format": "magic600-design-command-rows",
   "version": 1,
-  "note": "The research pane's draft row: the command table has no row that reads a record's finding and named parts. A row request of build step B28.",
+  "note": "The research pane's draft rows: the command table has no row that reads a record's finding and named parts (B28), and none that declares or starts a research run on the seed pool within a budget (B29). Row requests of build steps B28 and B29.",
   "commands": [
    {
     "id": "research.record.read",
@@ -1026,6 +1090,24 @@
      "global"
     ],
     "note": "Reads a research record's one-paragraph finding and its tree of named parts with their lengths (ADR-D02.44, ADR-D02.49), and opens it in place in the research pane. Argument: the record."
+   },
+   {
+    "id": "research.run.declare",
+    "label": "Declare research run",
+    "kind": "workspace",
+    "contexts": [
+     "global"
+    ],
+    "note": "Declares one field of the next research run before it starts (ADR-D02.4, ADR-D02.52): seed=<7401 to 7499> (its words name the scored block), depth=<twists> or budget=<steps>. A seed outside the pool is refused."
+   },
+   {
+    "id": "research.run.start",
+    "label": "Start research run",
+    "kind": "workspace",
+    "contexts": [
+     "global"
+    ],
+    "note": "Starts the declared research run (ADR-D02.4, ADR-D02.50): refused until its budget, seed and depth are declared. The run records its budget; a run that reaches it stops as cut off, never a verdict. It commits nothing, so History shows no research run."
    }
   ]
  }

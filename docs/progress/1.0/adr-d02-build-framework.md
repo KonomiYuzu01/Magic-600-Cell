@@ -1140,6 +1140,24 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** yes, C5.
 - **Depends:** B28. CR-17.
+- **As built (26 November 2026):**
+  - `Model/Research.cs`: `RunBudget` (steps); `SeedPool` (ADR-D02.52: a seed's words name its scored block, J2 7401 to 7406 or J3 7407 to 7421 with the block's depth, or free exploration from 7422 to 7499); `RunDeclaration`; `ResearchRun` gains the code, the covered steps, the checks' verdict kinds, and the seed, depth and budget a started run recorded, and its `State` is ADR-D01.61's `SlotState.BudgetStopped` (ported from `ToolSlots.cs`) when the reading is `cut_off` or the covered steps reach the budget; `ResearchObligation`. The model declares a field (`research.run.declare seed=|depth=|budget=`), starts the declared run (`research.run.start`, unavailable with "declare a budget before the run starts (ADR-D02.4)" until the budget, then the seed and the depth, are declared; the answer must record what was declared), reproduces a run (`research.run.reproduce`, DET.7's answer in ADR-D02.46's words) and says why a research row is unavailable (the two CR-17 rows with "row not in the command table yet (CR-17)"; the free view also "refused past the four-view envelope: four views are open" at `ViewPanes.MaxPanes`). Runs lists the declaration, this session's runs, then `research.runs`' runs by stage and family; an open run shows its seed's words, its budget "declared before the start and recorded", the cut-off line and code, its checks, the pinned input, its reproduction and the CR-17 line with the caption "derived; reachability open". Obligations lists the record-only anchors by stage and family, each with what it misses word for word, its label, statement and exports.
+  - `Ui/ResearchPane.cs`: the declaration line (seed, depth and budget fields, each sending `research.run.declare`, and Start); a control with a reason is drawn disabled with the reason as its tooltip, and the reason is also a line of the open run; actions wrap in a flow container.
+  - The sample adds answers of `research.run.start` (a draft row: `research.runs`' run form plus the recorded `seed`, `depth` and `budget`) and `research.run.reproduce` (DET.7's `same`), and the draft rows `research.run.declare` and `research.run.start`. Its one run never finishes: the source writes the declared seed, depth and budget into it, covered equal to the budget, and names it by the SHA-256 of its declaration (`SampleResearchSource.RunId`), so a script names it before it starts. It reproduces only a run it started.
+  - Shell: `ShellChrome.cs` asks the research model why a research row is unavailable, and a research row run from another layout switches to Analyse, so Runs is one palette row (`research.runs`) from the opening Solve layout. `ShellResearch.Dump` adds the declaration, the start's state, the started runs, their reproductions, History's entry count, the open run's CR-17 reasons and the frame's notice.
+  - Departures:
+    - The files list grows by `ShellChrome.cs`, `ShellResearch.cs`, `renderer/shell/d02_run.py` (`expect_research`), the `research` script, `tests/test_d02_research_sample.py`, `tests/test_renderer_shell.py` and `tools/looklab/tests/Program.cs`.
+    - The budget is in steps, the unit of the cut-off's code `KN7:budget.steps`; ADR-D02.53's runner hours are not a field.
+    - "differs at byte k": LP5's mismatch `LG4:evidence.reproducibility_mismatch` names no byte, so the pane words one only when the answer carries a `byte` (a row request; tested in the console).
+    - The shell's open-view count stays at its default of one; the envelope refusal is tested in the console, and the shell's count comes with the free-view row (CR-17).
+    - The sample run's branch (its pinned input) is the listed cut-off run's.
+  - Row requests: `research.run.declare` and `research.run.start` (a research run on the seed pool within a declared budget; the answer is `research.runs`' run form with the recorded seed, depth and budget); `research.run.reproduce`'s mismatch naming its first differing byte; CR-17's two rows (`research.run.view`, `research.check.trace`, already draft rows); command-icons entries or label-only marks for the two new draft rows.
+  - Checks:
+    - the five console tests and the other 262 (267 PASS), and `tools/looklab/check.py` PASS with the checkout unchanged;
+    - `python tests/test_d02_research_sample.py` OK (8 tests; new: the sample run is cut off at its budget with KN7's code and reproduces as `same`);
+    - `build_product.py` PASS; `test_renderer_shell.py`, `test_shared_chrome.py`, `test_d02_drawing.py` OK; `tools/wiki/lint.py` ok;
+    - `d02_run.py --script research --state wj-ia-300` PASS at 1280x720 (18 steps: `research.runs` from Solve brings Analyse on Runs; a start before any declaration is refused with ADR-D02.4's reason; budget 4096, seed 7430 (free exploration) and depth 40 declared; the run starts, is `BudgetStopped`, reads "not found within budget" with "the run stopped at its budget: no verdict (covered 4096)"; Reproduce reads "reproduced: bytes equal"; both CR-17 rows are refused with their reason; Obligations shows four anchors; `object.inspect` opens the run again; History's entry count never changes and the error lamp counts no failure); `--script research-pane` still PASS.
+  - Owner sees: in the palette, `research.runs` (Research: Runs) opens Analyse on the Runs tab; type a budget, a seed and a depth, Start, and the run reads "not found within budget"; Reproduce reads "reproduced: bytes equal"; the two CR-17 buttons are greyed with their reason.
 
 ### B30. The tuning panel: knobs, ramps, compare
 - **Goal:** `panel.tuning` in the right dock, with live ramps and two slots.
@@ -1324,13 +1342,28 @@ Each checkpoint is one read of the named diff range against the questions below,
   preset (the 20 rings, the ring sheet, the Hopf rings), Local, the cut slice, the raw view, the tints and the overlays. For each
   view it asks whether a researcher can see the structure the research needs (contact classes, caps, the cut, what moves, what
   never hides, the ν band), and whether anything is drawn wrong, unreadable or misleading.
+- With the core functions (owner, 26 November 2026, about 22:10 UTC: on the research side, one main purpose of Script is to
+  solve visual problems): Fable judges each view together with piece filtering and Script, not the default drawing alone.
+  - Piece filtering: focus layers with `=` expressions (`PieceFilter.cs`, ADR-D01.46, G21), Query and Piece sets.
+  - Script: `.6cs` read programs through the shell's editor and runtime; every research row is callable from a script
+    (ADR-D02.1).
+  - Fable writes the filters and short read-only scripts a researcher would write and runs them in the product window: for
+    example the straddlers of a named cap, the off-lattice pieces of height at least k, a repair row's moving set, one domain
+    against another. It checks that both views show each result readably: focus, dimming, tint, overlay and counts.
+  - A problem a filter or a script solves well counts as solved when the path works and a researcher can find it. A broken or
+    missing path is functional: a script result that cannot reach the focus layers, tints or overlays, an `=` field the research
+    needs that is missing, a result that is not drawn, or one that cannot be read. A route the ADRs do not name goes on the freeze
+    card as a proposal and is not built silently.
+  - Fable's working filters and scripts are kept as examples for B32 and B33's researcher run.
+  - The boundaries hold: a program reads state or prepares previews (LQ21's capability separation), and the human-solve boundary
+    holds in solving sessions.
 - Output: every visual problem found, each marked `functional` or `taste`.
   - Functional: the structure cannot be seen or operated (rotate, pick, focus), is drawn wrong, or misses the frame-rate rows. All
     are fixed in the one build round before the two Astra rounds. The base puzzle's sticker pick (ADR-D01.40, host
     `resolve_sticker`) counts here.
   - Taste: colour values, materials, motion and polish. They are recorded for K2's art line (UI/UX freeze rounds 3 and 4) and are
     not fixed in D02.
-- The freeze card shows the owner the list once, with what was fixed, to confirm. The owner is not asked to look for problems.
+- The freeze card shows the owner the list once, with what was fixed and the proposed routes, to confirm. The owner is not asked to look for problems.
 - The freeze card also lists, for the owner's acceptance with ADR-D02: the draft command rows (`camera.link`, Local's auto-framing
   switch, `jumble.seat.hold`, XM1 and G6, `research.record.read`, the researcher-name write, `tuning.open` and the rest of
   `command-rows-d02.json`), the design slots `tint.jumble.off_lattice` and `line.jumble.overlay` (each adds a name to ADR-D01's
