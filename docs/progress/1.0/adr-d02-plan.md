@@ -31,9 +31,12 @@ by a fresh Claude subagent, is
 build framework and the shell build follow.
 
 Build framework, 26 November 2026: on the owner's go after reading the ADR text, Fable wrote
-[the build framework](adr-d02-build-framework.md) as a subscription subagent: 23 steps (B1 to B23) in Look Lab's chrome
-library and the product shell, five Fable checkpoints, the reduced Track J run at the end, about 106 Opus agent hours.
-The integrator checked it and fixed the ADR text for its findings F5 to F16. Opus builds it one step per commit.
+[the build framework](adr-d02-build-framework.md) as a subscription subagent. Revision 1 had 23 steps in Look Lab's
+chrome library with a live Look Lab window; the integrator fixed the ADR text for its findings F5 to F16. The owner then
+answered three questions ([decision](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-build.md)): build, watch
+and accept in the product shell, with Look Lab dropped and Jumble drawing built now; add one lean researcher subagent
+to J0 and J1; and wait before B1. Revision 2 has 33 steps (B1 to B33), six Fable checkpoints and two gate sittings on
+the owner's machine, about 183 Opus agent hours. Opus builds it one step per commit, after the owner's go.
 
 Inputs:
 - The owner decisions on ADR-D02:
@@ -95,11 +98,11 @@ Out of scope:
 
 | Work | State | Waits for |
 | --- | --- | --- |
-| A1 to A3 | Held | The owner's word in the receiving session |
-| A4, the owner's pick page | After A3 | A3's options |
-| The ADR text and its read | After A4 | The owner's picks |
-| The ADR-D02 shell build | After the ADR text | The owner's answer on who builds the ADR-D02 and ADR-D03 shells, and on what budget (open since the A7 freeze) |
-| Jumble drawing in Look Lab | Waits | L1, the per-piece pose path (LH-14), and the owner's answer on when jumbling enters Look Lab |
+| A1 to A3 | Done | |
+| A4, the owner's pick page | Done (26 November 2026) | |
+| The ADR text and its read | Done (pull request 444) | |
+| The ADR-D02 shell build | Framework revision 2 written; held | The owner's go for B1, and the owner's answers on one or two drawn views and on measuring the drawing before R5 |
+| Jumble drawing | In the build, in the product shell (B14 to B24) | R5's admission before a drawn view ships; Look Lab's L1 is retired (owner, 26 November 2026) |
 
 Rules for A1 to A3:
 - **No paid API.** The design and art line uses no API until the owner says so (22 November 2026). A1 to A3 run on

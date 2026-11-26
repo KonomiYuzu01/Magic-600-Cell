@@ -30,7 +30,7 @@ How to read the tags. Every item ends with one tag, as in ADR-D01:
   round 2.
 - **(default)** The shipped default, held as data in the default profile (ADR-D01.1). The researcher or solver may
   change it, and a `.6cs` program may change it through ADR-D01.2's routes.
-- **(tuned)** A value set in Look Lab with the owner watching, stored as token data. This record fixes the slot, not
+- **(tuned)** A value set with the owner watching (for ADR-D02, in the product shell), stored as token data. This record fixes the slot, not
   the value. Values come in freeze round 3.
 - **(open)** Left to a later step (section 16).
 
@@ -119,8 +119,8 @@ frame the researcher's freedom is as high as possible.
   - **Hopf rings**, `view.preset.global.hopf_rings`: 20 circles of 30 cells around a dodecahedron's vertices, in three
     dimensions, turning with the camera.
   The ring sheet is the default chart: the palette's chart row applies it unless the researcher has picked the Hopf
-  rings. Each preset needs R5's admission, Look Lab's L1 and its own gate row before it ships. [data: R5, L1, a gate
-  row per preset] (framework for the two presets and their names; default for which is first)
+  rings. Each preset needs R5's admission and its own gate row before it ships. [data: R5, a gate row per
+  preset] (framework for the two presets and their names; default for which is first)
 - **ADR-D02.10** Under a chart preset Global draws no sweep. At a new revision, moved pieces appear at their
   nearest-cell charts with the moved set outlined for one fixed time (the half-turn rule of ADR-D02.37); Local and the
   preview view carry the motion. With a chart in Global and the slice in Local, a live twist of a cap other than the
@@ -136,8 +136,8 @@ frame the researcher's freedom is as high as possible.
   (ADR-D02.26). It sets no
   threshold and no filter, and never changes a projection, a layout or a shrink. Local shows its empty state: "Name a
   cap: click its cell, or type its number." Readouts show true zeros. (framework for "chrome only"; default for the
-  value) [data: L1 for whatever the contact-class mode and the never-hidden set draw on pieces; until then the legend
-  shows them armed]
+  value) [data: the product core's per-piece style and line paths for whatever the contact-class mode and the
+  never-hidden set draw on pieces; until then the legend shows them armed]
 
 ### 4. The cap map
 
@@ -160,7 +160,8 @@ frame the researcher's freedom is as high as possible.
   smaller shrink; a held key splits the layers into two linked copies with the same rotation, scale and shell; a
   radius-shell control about the cap's pole. The turn preview is a ghost of the inside layer carrying
   `pattern.preview`, and the twist is named on release only. At a blocked cap there is no ghost and no cut-cell
-  state, only the straddler sections with their point pairs. [data: L1, R5] (framework)
+  state, only the straddler sections with their point pairs. [data: R5; a second drawn view for the held split]
+  (framework)
 - **ADR-D02.18** The raw view is one cap-centred stereographic mode of Local, `view.mode.raw`:
   - Its clip is a half-space x·p̂ ≥ h parallel to the cut's hyperplane, set by the researcher. The default
     h = (121/125)·inradius is exactly the named cap's cut; h = 0 is 90°. The clip goes no further than 90°.
@@ -471,7 +472,8 @@ integrator for these rows and file changes. Existing rows are used as they are: 
 ## Data still owed
 
 Items marked [data] wait for these; each is a lead for the engineering line, not a claim:
-- L1 in Look Lab and R5's admission of the chart, slice and stereographic stages, with a gate row per chart preset.
+- R5's admission of the chart, slice and stereographic stages, with a gate row per chart preset. The drawing itself
+  is built in the product shell (owner, 26 November 2026); Look Lab's L1 is retired.
 - The exposed-face geometry.
 - X1, X3, X4, X5 and X6 (the aid jobs' timings, the long-word bound and the dim path).
 - A gate row for certificate-point glyphs: at least 1,654 points for one blocked grip at S1.

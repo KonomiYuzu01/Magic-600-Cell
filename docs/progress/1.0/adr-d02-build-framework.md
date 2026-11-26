@@ -1,848 +1,917 @@
-# ADR-D02 shell: build-direction framework
+# ADR-D02 shell: build-direction framework (revision 2)
 
-Status: written by Fable as a subscription subagent on 26 November 2026, at the owner's go of the same day, from the
-packet of the ADR-D02 session (seven parts, effort high, read-only, about 10,000 words by the owner's limit). Owner
-decision behind it: [25 November 2026](../../wiki/decisions/owner-decisions-2026-11-25.md), item 5 (Fable frames, Opus
-builds one step per commit, Fable reviews at checkpoints; subscription, no API). The record it builds is
-[ADR-D02](../../architecture/1.0/design/adr/ADR-D02-jumble-research.md); its `path:line` citations of the ADR text
-refer to main `4202cbd9`, before this branch's fixes. The integrator's check and dispositions are in section 10. Apart
-from section 10, the text is Fable's, with one source corrected in section 6 (marked) and a local path removed.
+Status: revision 2, written by Fable as a subscription subagent on 26 November 2026 after the owner's three answers of
+the same day ([decision](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-build.md)). The build, the owner's
+view and every acceptance check are in the product shell, with Look Lab dropped and Jumble drawing built in this build.
+J0 and J1 gain one lean researcher subagent. B1 waits for the owner's go. Revision 2 replaces revision 1
+(commit `8f39b4d5`: 23 steps in Look Lab's chrome library with a live Look Lab window).
 
-This is the framework only: Fable changed no file and ran no build, test, Look Lab or cargo command. Everything below
-comes from reading tracked source, so each finding is a lead until a test confirms it. Every relative path is from the
-repository root.
+Owner decision behind the framework: [25 November 2026](../../wiki/decisions/owner-decisions-2026-11-25.md), item 5.
+Fable frames, Opus builds one step per commit, and Fable reviews at checkpoints, on the subscription with no API.
+The record it builds is [ADR-D02](../../architecture/1.0/design/adr/ADR-D02-jumble-research.md), as corrected on this
+branch. The integrator's check and dispositions are in section 10. Apart from section 10, the text is Fable's, with one
+source filled in section 6 (marked) and a local path removed.
+
+This is the framework only: nothing has started. Fable changed no file and ran no build, test, shell or cargo command.
+Everything below comes from reading tracked source, so each finding is a lead until a test confirms it. Every
+relative path is from the repository root.
 
 ## 1. Overview
 
-**Shape (23 steps, 5 checkpoints).**
-1. B1 to B5, foundations: sample data from the Rust adapter, design data, host primitives, the Jumble host, staging into the product shell.
-2. B6 to B12, the Solve side: totals, cap map, threshold and naming, kept twist checks, Cap covers and focus layers, repair list, staging and the boundary.
-3. B13 to B17: words and signatures, the ν band and ν-corrections, encodings, the unavailable view states, keys and terms.
-4. B18 and B19: the research pane.
-5. B20 and B21: the tuning panel, last of the shell.
-6. B22 and B23: the reduced Track J run (J1, then J0).
+**Shape (33 steps, 6 checkpoints, 2 gate sittings).**
+1. B1 to B6, foundations: adapter samples, design data, host primitives, the shell's D02 switch and scripted runner, session fixtures at the sample states, the Jumble host.
+2. B7 to B13, the Solve side: totals, cap map, threshold and naming, twist checks, covers, repair list, staging and the boundary.
+3. B14 to B19, drawing part 1 in the core: the style path, tints on pieces, line overlays, picks, the sweep, gate sitting 1.
+4. B20 to B24, drawing part 2: the cut slice, the raw view, the two chart presets, gate sitting 2.
+5. B25 to B31: words, the ν band, keys and terms, the research pane, the tuning panel.
+6. B32 and B33: the reduced Track J run, with one lean researcher subagent.
 
 **Where each surface lives.**
-- **Chrome library** (`tools/looklab/app/Chrome/`, namespace `Magic600.Chrome`): every ADR-D02 surface.
-  - `Model/` is pure C#; the test project compiles it, so every rule gets a console test.
-  - `Ui/` holds Godot controls and writes no colour (the token lint).
-  - One new assembly point, `Ui/JumbleSurface.cs`, attaches all surfaces to a `ChromeFrame`. The lab and the shell both call it, so there is one copy.
-- **Look Lab** (`tools/looklab/app/Live/`): `LabJumble.cs`, `LabResearch.cs` and `LabTuning.cs` wire the surfaces to sample data, live reload, the kept view, the tour and the sweep.
-- **Product shell** (`renderer/shell/`): `build_shell.py` stages the chrome library, the design data and, new in B5, the sample data. `project/ShellChrome.cs` calls the same `JumbleSurface.Attach`.
-- **Host library** (`renderer/bridge/host`): not touched. The seam is the interface `IJumbleSource`, with a matching `IResearchSource`. This build binds them to sample files; K2 binds them to `m6h_invoke`.
+- **Chrome library:** it stays at `tools/looklab/app/Chrome/` (namespace `Magic600.Chrome`). The shell already stages it, so this is the least moving that keeps one copy.
+  - `Model/` is pure C#. Its console tests stay in `tools/looklab/tests/` and run with `python tools/looklab/check.py`: no Godot, no Look Lab window.
+  - `Ui/` holds the Godot controls. Look Lab still compiles them, but it attaches no D02 surface and is no part of acceptance.
+  - `Ui/JumbleSurface.cs` is the one assembly point the shell calls.
+- **Product shell** (`renderer/shell/`): the build surface, the owner's view and every acceptance check. D02 wiring goes in a new folder `renderer/shell/project/D02/`.
+- **Host library** (`renderer/bridge/host`): the state digest, session fixtures at arbitrary words, and the style, overlay, pick and stage calls.
+- **Core** (`renderer/core`): the drawing itself, on the product pose path that already draws posed pieces (row J02).
+- **Facts:** the chrome reads sample files through `IJumbleSource`. K2 later binds the same interface to `m6h_invoke`. The session is real: after a twist the state has no sample, so slots go stale until an undo returns to it.
 
-**The live window.**
-- Opus gives the owner the command `python tools/looklab/check.py --run`. The owner starts it in a terminal of their own, because a window started from a background process does not get the foreground.
-- JSON under `tools/looklab/data/` reloads in the same window within half a second. A refused file keeps the last good lab and shows a notice.
-- C# changes need the owner to close and rerun `--run`, because it stages a source copy. Opus says so at each commit that changes C#. The run has a two-hour limit.
-- Every step adds one tour stop named `D02 Bn: <title>`. The owner presses F9 to walk the stops.
-- The file `tools/looklab/data/samples/jumble/lab.json` selects the state, named cap, session kind and result variant. Editing it changes the window without a restart.
+**How the owner watches.**
+- Opus ends every step with a product build: `python renderer/shell/build_product.py`.
+- The owner runs one command from a PowerShell on the desktop: `python renderer/shell/watch_d02.py [--state <id>]`. It picks the newest build and a fresh run folder and calls `launch.py --frame --puzzle jumble-on` with the D02 options.
+- There is no live reload. The owner closes and reruns the command after a step lands.
+- Each step's "Owner sees" line says what to look at. Each checkpoint has a short sitting.
 
-**Conventions for every step.**
-- Run `python tools/looklab/check.py` at every commit.
-- Run `python tools/looklab/check.py --godot` when `Ui/` or `Live/` changed.
-- Run `python tools/wiki/lint.py` when a design data file changed (an evidence claim may cite it).
-- From B5 on, run `python tests/test_renderer_shell.py`.
-- New console tests go in `tools/looklab/tests/D02*Tests.cs` and are registered by name in `tools/looklab/tests/Program.cs`.
-- Freeze round 3 values are placeholders. Each new role's `meaning` starts with `placeholder (round 3):`. Icons are tier 1 glyphs.
+**Machine marks.**
+- **H:** headless; no window, no GPU.
+- **W:** a shell window on the owner's machine, with the GPU, for seconds to minutes. Scripted runs may start from Opus's process, because they inject their keys inside the shell.
+- **G:** a gate measurement: the GPU, a quiet machine, an attended start by the owner.
+
+**Every step.**
+- Run `python tools/looklab/check.py` (console tests) and `python tests/test_renderer_shell.py`.
+- Run `python tools/wiki/lint.py` when design data changed.
+- New console tests are `tools/looklab/tests/D02*Tests.cs`, registered in `tools/looklab/tests/Program.cs`.
+- Round 3 values are labelled placeholders; icons are tier 1 glyphs.
+- Everything D02 in the shell sits behind `M600_D02=1`, so measured C9 runs are unchanged.
 
 ## 2. Steps
 
-### B1. Jumble sample data from the Rust adapter
-- **Goal:** tracked sample files for every state the surfaces show, rebuilt only through the adapter, each with its digest.
-- **Items:** none directly; it supports B4 to B23.
-- **Files (new):**
-  - `tools/looklab/fixtures/make_d02_samples.py`
-  - `tools/looklab/data/samples/jumble/` (`states.json`, `lab.json`, `corrections.json`, one folder per state)
-  - `tests/test_d02_samples.py`
-- **Add, in the builder:**
-  - `build_state(spec)` drives `RustJumbleEngine`: `start(menu)`, `identity()`, `word(ident, letters)` per segment, `record()`. It asserts `status == 'admissible'` and `applied == len(word)` on each segment.
-  - `facts(engine, caps)` writes these files per state:
-    - `totals.json` from `heights()`, `seam_facts('all', …)` and `nu()`;
-    - `rim.json` from `rim_summary()`, 600 rows;
-    - `contact.json`: domain IDs, piece counts and contact edges, off-grip contacts included;
-    - `cap-<id>.json` per named cap, with `covers`, `repair_list` in three variants (completed, `max_pairs` cut-off, `cancel_after` cancelled), `release_check` for the twelve twists of one seat, `straddlers` and the certificate-point count.
-  - Modes: `--write` and `--verify` (rebuild and compare byte for byte).
-  - File format `magic600-d02-sample/1`. Every file carries `state`, `digest`, `menu_identity`, `pin` and `evidence: "source"`.
-  - No per-piece arrays: nothing here draws pieces.
-- **Decide first (finding F12):** assert that `start(I_a)` then `record()['digest']` equals the W-J fixture's `stages.start.digest`. If it differs, the adapter's digest is a different function from the runner's, and the seed 7001 chain must compare through `j1_from_record`. Record which case holds in `states.json`.
-- **Check:**
-  - `python tests/test_d02_samples.py` passes with no adapter. It checks the format, the pinned digests of section 6, that the rim classes sum to 600, the end-of-journal counts (27 admissible, 573 blocked) and the height counts of both deep exports.
-  - `python tools/looklab/fixtures/make_d02_samples.py --verify` prints `D02_SAMPLES_PASS states=<n>` after the adapter build named in the packet.
-- **Window:** nothing new yet.
+### B1. Sample data from the Rust adapter
+- **Goal:** tracked sample files for every state, rebuilt only through the adapter, each with its digests.
+- **Items:** none directly.
+- **Files (new):** `tools/looklab/fixtures/make_d02_samples.py`; `tools/looklab/data/samples/jumble/`; `tests/test_d02_samples.py`.
+- **Add:**
+  - `build_state(spec)` over `RustJumbleEngine`: `start`, `identity`, `word` per segment (asserting `status == 'admissible'` and `applied == len(word)`), `record`.
+  - Per state: `totals.json`, `rim.json` (600 rows), `contact.json` (domains, contact edges with off-grip contacts), and `style.json` (per-pose domain, height and lattice flag, in the canonical pose table's order).
+  - Per named cap, `cap-<id>.json`: covers, the repair list in three variants (completed, cut off, cancelled), twelve release checks of one seat, straddlers, the certificate-point count.
+  - Per named cap, piece masks of 177,120 bits: inside set, straddlers, hidden pieces, and the moving sets of repair rows 1 to 9.
+  - Three digests in every state's header: the adapter's `record()['digest']`, the SHA-256 of the `pose_index` array, and that of `pose_lattice`. The last two bind a sample to a shell session (B5).
+  - Modes `--write` and `--verify` (byte equality). Format `magic600-d02-sample/1`.
+- **Decide first:** assert that `start(I_a)` then `record()['digest']` equals the W-J fixture's `stages.start.digest`. If it does not, the seed 7001 chain compares through `j1_from_record`. Record the case in `states.json`.
+- **Check:** `python tests/test_d02_samples.py` (no adapter) checks the format, section 6's digests and counts, and that the rim classes sum to 600. `make_d02_samples.py --verify` prints `D02_SAMPLES_PASS states=<n>`.
+- **Owner sees:** nothing yet.
+- **Machine:** H. About two minutes per deep state.
 - **Checkpoint:** no.
-- **Depends:** the adapter build; about two minutes per deep state. If `seam_facts(all)` passes its budget at a deep export, store the cut-off result (it is the "incomplete" sample) and record the seconds as a lead.
+- **Depends:** the adapter build named in the packet.
 
 ### B2. Design data: slots, patterns, motion version 2, rows, words
-- **Goal:** every slot name, pattern, motion row, draft command row and display word of ADR-D02 exists as data before any control uses it.
+- **Goal:** every slot, pattern, motion row, draft row and sentence exists as data first.
 - **Items:** .1, .27, .37, .41.
-- **Files:**
-  - `tools/looklab/data/design/system.json` (roles) and `themes/graphite.json`, `themes/paper.json`
-  - `tools/looklab/data/design/motion.json`
-  - new `tools/looklab/data/design/command-rows-d02.json` and `jumble-words.json`
-  - `command-labels.json`, `command-icons.json`
-  - `tools/looklab/app/Live/LabFrame.cs` (one `registry.AddRows` call after line 121)
-  - new `tools/looklab/tests/D02DataTests.cs`
+- **Files:** in `tools/looklab/data/design/`: `system.json`, both themes, `motion.json`, new `command-rows-d02.json` and `jumble-words.json`, `command-labels.json`, `command-icons.json`; new `tools/looklab/tests/D02DataTests.cs`.
 - **Add:**
-  - Roles, each mapped in both themes:
-    - `numeral.undefined`, `commit.bar.whole_only`, `mark.practice`, `mark.jumble`;
-    - `slot.tool.state.{empty, pending, ready, stale, refused, budget_stopped, error}`;
-    - `pattern.cap.{blocked, closed, at_floor, above_floor}`, `pattern.cut.{inside_only, outside_only}`, `pattern.preview`;
-    - `tint.jumble.contact_class.{1..6}`, `tint.jumble.contact_class.overflow`, `tint.jumble.height.{2, 4, 6, above}`;
-    - `material.exposed_face`, `material.exposed_face.tinted`, `state.exposed_face.unavailable`.
-  - `motion.json` at version 2 with `slice.turn`, `jumble.sweep`, `jumble.half_turn`, `jumble.enter`, `jumble.leave`, `repair.step`, `cap.name` and `slot.fill` (off, cue `cue.check` reserved; see F5). Each has `static: true` behaviour under reduced motion.
-  - `command-rows-d02.json` with the draft rows of section 5. Each row has a `request` field (`CR-14` to `CR-17`, `CR-19` or `unlisted`).
-  - `jumble-words.json` with every sentence the ADR quotes, keyed by id, and the display names of .41 with "Release check" as a synonym.
-- **Check:** `python tools/looklab/check.py` with these new tests:
-  - `D02RolesExistInBothThemes`;
-  - `D02MotionRowsStaticUnderReducedMotion`;
-  - `D02DraftRowsAbsentFromTable`: every draft id is missing from `command-table.json`, so the test fails on the day a row lands and the draft row must then be deleted;
-  - `D02EveryDraftRowNamesItsRequest`;
-  - `D02WordsMatchRecord`: byte equality with the quoted sentences.
-- **Window:** the new rows appear in the palette (F4) with their labels. The token specimen in Gallery shows the new roles with placeholder values.
+  - Roles mapped in both themes: `numeral.undefined`, `commit.bar.whole_only`, `mark.practice`, `mark.jumble`, `slot.tool.state.*` (seven), `pattern.cap.*`, `pattern.cut.*`, `pattern.preview`, `tint.jumble.contact_class.{1..6, overflow}`, `tint.jumble.height.{2, 4, 6, above}`, `material.exposed_face`, `material.exposed_face.tinted`, `state.exposed_face.unavailable`.
+  - Motion version 2: `slice.turn`, `jumble.sweep`, `jumble.half_turn`, `jumble.enter`, `jumble.leave`, `repair.step`, `cap.name`, and `slot.fill` (off, cue `cue.check` reserved).
+  - Draft rows, each with its `request` (CR-14 to CR-17, CR-19).
+  - Every sentence the record quotes, and the display names.
+- **Check:** `D02RolesExistInBothThemes`; `D02MotionRowsStaticUnderReducedMotion`; `D02DraftRowsAbsentFromTable` (fails the day a row lands, so the draft row is deleted); `D02WordsMatchRecord` (byte equality).
+- **Owner sees:** nothing yet.
+- **Machine:** H.
 - **Checkpoint:** no.
-- **Depends:** nothing.
+- **Depends:** none.
 
-### B3. Host primitives: tool slots, releases, numerals, the whole-only bar
-- **Goal:** the revision 6 host rules ADR-D02 rests on exist in the chrome model. They are absent today (F1).
+### B3. Host primitives in the chrome model
+- **Goal:** the revision 6 rules ADR-D02 rests on; they are absent today (F1).
 - **Items:** .7, .40.
-- **Files (new):**
-  - `tools/looklab/app/Chrome/Model/ToolSlots.cs`
-  - `tools/looklab/app/Chrome/Ui/ToolSlotBox.cs`
-  - `tools/looklab/tests/D02SlotTests.cs`
+- **Files (new):** `Model/ToolSlots.cs`, `Ui/ToolSlotBox.cs`, `tests/D02SlotTests.cs`.
 - **Add:**
-  - `enum SlotState { Empty, Pending, Ready, Stale, Refused, BudgetStopped, Error }` and `enum JobEnd { Completed, Cancelled, CutOff, Error }`.
-  - `record Coverage(int Cap, int Revision, string Pin, string Menu, string TieRule, int Tried, int Of)`.
-  - `record ToolResult(JobEnd End, string InputDigest, string Parameters, Coverage? Coverage, string? Reason)`.
-  - `class ToolSlot` with `Request(int release, string digest, string parameters)`, `Finish(int release, ToolResult)`, `Cancel(int release)`, `Invalidate(string digest)` and `Word(words)`. Its rules:
-    - a result is taken only from the latest release, with matching digest and parameters;
-    - a completed result with no coverage becomes `Error`;
-    - cancelling the latest release restores the previous state;
-    - any call for an older release changes nothing (N-1).
-  - `class ReleaseRecord` with `Next()`, `TryNumber(cap, revision)` (restarting at each commit) and `Superseded(release)`.
-  - `enum NumeralKind { Value, Undefined, Pending, Incomplete }` and `readonly record struct Numeral`.
-  - `static class JumbleSlots` with the eight ids `slot.tool.jumble.{survey, straddlers, covers, release_check, repair, nu, corrections_check, checkpoint}`.
-  - `ToolSlotBox`: one control that draws a slot state with its word and one non-colour mark, reusing `PanelStateBox` where it fits.
-- **Check:** these tests pass under `check.py`:
-  - `D02SlotLateResultIgnored`, `D02SlotCancelLatestRestores`, `D02SlotCancelOlderChangesNothing`;
-  - `D02SlotCompletedWithoutCoverageIsError`;
-  - `D02SlotWordsCoverSevenStates`, `D02SlotIdsAreTheEightNames`;
-  - `D02NumeralKeepsUndefinedPendingIncompleteApart`.
-- **Window:** a tour stop that cycles one demo slot through the seven states and their words.
+  - `enum SlotState` (seven states), `enum JobEnd { Completed, Cancelled, CutOff, Error }`, `record Coverage`, `record ToolResult`.
+  - `class ToolSlot` with `Request(release, digest, parameters)`, `Finish`, `Cancel`, `Invalidate(digest)`, `Word(words)`. Rules:
+    - only the latest release with matching digest and parameters is taken;
+    - a completed result without coverage is `Error`;
+    - cancelling the latest restores the previous state;
+    - an older release changes nothing.
+  - `class ReleaseRecord` with `Next()`, `TryNumber(cap, revision)`, `Superseded(release)`.
+  - `Numeral` with `NumeralKind { Value, Undefined, Pending, Incomplete }`.
+  - `JumbleSlots`: the eight slot ids.
+- **Check:** `D02SlotLateResultIgnored`; `D02SlotCancelLatestRestores`; `D02SlotCancelOlderChangesNothing`; `D02SlotCompletedWithoutCoverageIsError`; `D02SlotWordsCoverSevenStates`; `D02NumeralKindsStayApart`.
+- **Owner sees:** nothing yet.
+- **Machine:** H.
 - **Checkpoint:** no.
 - **Depends:** B2.
 
-### B4. The Jumble host in Solve
-- **Goal:** Jumble on and off in the Solve layout on sample states, with no new layout or dock.
-- **Items:** .2, .6, .11, .12.
-- **Files:**
-  - new `tools/looklab/app/Chrome/Model/Jumble.cs`
-  - new `tools/looklab/app/Chrome/Ui/JumbleHost.cs` and `Ui/JumbleSurface.cs`
-  - new `tools/looklab/app/Live/LabJumble.cs`
-  - edits to `Ui/ChromeFrame.cs`, `Ui/SolvingSurface.cs`, `Ui/OrbitRail.cs`, `Live/LabFrame.cs`, `tools/looklab/lane_a5.py`
-  - new `tools/looklab/tests/D02HostTests.cs`
-- **Add:**
-  - `interface IJumbleSource`, with one method per sample file, and `SampleJumbleSource.Load(folder, stateId)`.
-  - `class JumbleState` with `Mode`, `LatticeFlag` (exact), `NamedCap`, `Revision` and `SessionKind { Solving, Research }`.
-  - `class EntrySlot` for `view.preset.jumble_entry`. `Apply()` records what it set. `Revert()` undoes only what is unchanged since. It follows the adopted revision's mode.
-  - `ChromeFrame.SetModeCell(Control)` and an enumeration of all view frames, so that `ViewFrame.AddMark` puts `mark.jumble` on every border.
-  - The strip and the rail show `numeral.undefined` as a whole when `LatticeFlag` is false. A pending N never switches them.
-  - Local's empty state, with its sentence from `jumble-words.json`.
-  - A Local accordion with four headers (named-cap cell, kept twist checks, Cap covers, repair), one open at a time. Their bodies are `ToolSlotBox` for now.
-  - `LabJumble.Handles(command)` for `jumble.on`, `jumble.off`, `view.preset.jumble_entry` and the lab-only row `lab.d02.sample`.
-  - A kept-view part `frame.jumble`. Update `parts=15` in `tools/looklab/lane_a5.py` line 10 in the same commit.
-- **Check:**
-  - `D02EntryRevertsOnlyUnchanged`;
-  - `D02EntryFollowsUndoRedoBranchReopen`;
-  - `D02EntryIsChromeOnly`: it touches no projection, layout or shrink field;
-  - `D02UndefinedSwitchesOnLatticeFlagNotPendingN`;
-  - `D02MarkOnEveryViewBorder`;
-  - `D02PanelsMoveFreely`: each D02 panel passes `FrameModel.Drop` to another dock and `Store`/`Apply` round-trips it;
-  - `check.py --godot` passes with the new `parts` count.
-- **Window:**
-  - with the `on-zero` state: the Jumble cell, a mark on every border, true zeros, the empty Local sentence;
-  - switching `lab.json` to `wj-ia-300` turns the strip and the rail to the undefined numeral.
-- **Checkpoint:** no.
-- **Depends:** B1 to B3. `view.preset.jumble_entry` is a draft row (CR-14).
-
-### B5. Staging into the product shell
-- **Goal:** the shell shows the same surfaces from the same code. From here every step is checked in both places.
+### B4. The shell's D02 switch, staging, scripted runner and watch command
+- **Goal:** the shell stages D02's data, opens with D02 on, can be driven by a script, and has one command for the owner.
 - **Items:** none new.
 - **Files:**
-  - `renderer/shell/build_shell.py`
-  - `renderer/shell/project/ShellChrome.cs`
-  - `tests/test_renderer_shell.py`
-  - `renderer/shell/README.md` (one section; also correct the ABI list, F4)
+  - `renderer/shell/build_shell.py`, `renderer/shell/launch.py`, `renderer/shell/project/ShellChrome.cs`;
+  - new `renderer/shell/project/D02/ShellJumble.cs`, `renderer/shell/watch_d02.py`, `renderer/shell/d02_run.py`;
+  - new `tools/looklab/app/Chrome/Ui/ScreenText.cs`;
+  - `tests/test_renderer_shell.py`.
 - **Add:**
-  - In `build_shell.py`, a constant `SAMPLES = ROOT/tools/looklab/data/samples` and one `copytree` of its `jumble` and `research` folders to `project/samples`.
-  - In `ShellChrome.cs`, after the registry at line 124: `registry.AddRows` for `command-rows-d02.json` and `registry.Relabel`, then `JumbleSurface.Attach(frame, registry, SampleJumbleSource.Load(…), words)`.
-  - A row from the draft file shows a "draft row" mark in the palette.
-  - The `Unavailable` switch keeps "not in this build yet" for everything else.
-- **Check:**
-  - `python tests/test_renderer_shell.py` with a new case `test_the_frame_stages_the_d02_surfaces_and_samples`: the build stages `samples/`, `ShellChrome.cs` calls `JumbleSurface.Attach`, and no second copy of a chrome file exists.
-  - On the owner's machine at the checkpoint: `python renderer/shell/build_shell.py`, then `python renderer/shell/launch.py --out <new folder> --frame --puzzle <the Jumble-on value of PUZZLES>` shows the Jumble cell. This one is an observable result, not a headless check.
-- **Window:** unchanged. The shell window is the second thing the owner sees at C1.
-- **Checkpoint:** yes, C1.
-- **Depends:** B4.
-
-### B6. Totals and the named-cap readouts
-- **Goal:** the numerals on Global's and Local's borders, with pending, incomplete and undefined kept apart.
-- **Items:** .22.
-- **Files:**
-  - new `Model/JumbleReadouts.cs` and `Ui/JumbleReadouts.cs`
-  - `Ui/JumbleSurface.cs`
-  - new `tests/D02ReadoutTests.cs`
-- **Add:**
-  - `class GlobalTotals` with these fields as `Numeral`: N, its on-grip and off-grip parts, the domains, the off-lattice pieces, n2, n4, n6, and "above 6" with its largest height (`Undefined` at a count of 0).
-  - `class CapReadout` with In, Out, A, N_c, floor and u, all `Undefined` at a blocked cap.
-  - Fixed slots with tabular numerals, one neutral change mark, the unit word "seams". No gauge, and no colour by value.
-- **Check:**
-  - `D02TotalNPendingUntilSeamFactsAll`;
-  - `D02TotalNIncompleteAfterCutOff`;
-  - `D02TotalNIsNotSumOfCaps`: a planted sum fails;
-  - `D02BlockedCapReadoutUndefined`;
-  - `D02Above6MaxUndefinedAtZero`;
-  - `D02TotalsMatchSample`: equality with `totals.json` for all states, including the deep-export counts of section 6.
-- **Window:** the totals on Global's border for the deep export. Setting `"variant": "pending"` in `lab.json` shows the pending form.
+  - `build_shell.py` stages `tools/looklab/data/samples` to `project/samples`.
+  - `launch.py` gains `--d02` (sets `M600_D02=1`; needs `--frame`), `--d02-fixture DIR` (records only its SHA-256, as `--lx4-fixtures` does) and `--d02-script FILE`.
+  - After the registry at `ShellChrome.cs:124`, when D02 is on: add the draft rows, relabel, and call `ShellJumble.Attach`. A draft row shows a "draft row" mark in the palette.
+  - `ScreenText.Of(Control)`: the visible text of the frame, pane by pane.
+  - A script player in `ShellJumble`. It feeds each step's chord to the frame's own key entry (`ShellChrome.Takes`, then the session router), writes `d02-screen.jsonl` after each step, and quits.
+  - `d02_run.py --script <name> --out <new folder>` launches, compares each dump with the expectation Python computes from the sample files, and prints `M600_D02_RUN_PASS script=<name> steps=<n> mismatches=0`.
+- **Check:** new cases in `tests/test_renderer_shell.py`: D02 staging; the three launch options over the fake build; no D02 variable without `--d02`; no private path in `launch.json`. Then `python renderer/shell/d02_run.py --script smoke`.
+- **Owner sees:** the frame opens with D02 on; the palette lists the draft rows.
+- **Machine:** H, then W for the smoke run.
 - **Checkpoint:** no.
-- **Depends:** B4.
+- **Depends:** B2.
 
-### B7. The cap map
+### B5. Session fixtures at the sample states, and the state digest
+- **Goal:** the shell opens a real Jumble session at a sample state, and the chrome knows which sample matches it.
+- **Items:** none new.
+- **Files:**
+  - `renderer/bridge/host/src/fixture.rs`, `src/bin/c600-shell-session-fixture.rs`, `src/lib.rs`, `tests/turns.rs`;
+  - `renderer/shell/project/HostLibrary.cs`;
+  - new `renderer/shell/build_d02_fixtures.py`;
+  - `tests/test_renderer_shell.py`.
+- **Add:**
+  - `fixture::write_word(dir, kernel, letters)`: a Jumble-on session whose letters are committed as `jumble.twist.menu` through the command layer, with the correctness control at the close. Today's writer only presses fixed router keys on one cap (F5).
+  - The binary's `--word <file>` option.
+  - Export `m6h_state_digest(handle, out)`, giving the head's digest and the two pose-array digests. Host ABI 8; move the pin in `HostLibrary.cs`.
+  - `build_d02_fixtures.py` writes one fixture per sample state under `work/build/d02-fixtures/<state>/` and checks the pose-array digests against the sample's.
+  - `ShellJumble.Bind()`: at every adopted revision, load the sample whose pose-array digests equal the session's; with none, every slot is `Stale` and the readouts are pending.
+- **Check:** `python tests/test_render_ffi.py` with new host tests `a_word_fixture_reopens_at_its_digest` and `the_state_digest_follows_undo_and_redo`. Then `d02_run.py --script bind` on `wj-ia-300`: bound at open, unbound after one twist, bound again after undo.
+- **Owner sees:** `watch_d02.py --state wj-ia-300` shows the jumbled pieces, posed, under the frame.
+- **Machine:** H for tests; W for the run. Record each fixture's open time: a deep fixture replays about 3,300 commits (risk R2).
+- **Checkpoint:** no.
+- **Depends:** B1, B4.
+
+### B6. The Jumble host in Solve
+- **Goal:** Jumble's hosting in the Solve layout, with no new layout or dock.
+- **Items:** .2, .6, .11, .12.
+- **Files:** new `Model/Jumble.cs`, `Ui/JumbleHost.cs`, `Ui/JumbleSurface.cs`; edits to `Ui/ChromeFrame.cs`, `Ui/SolvingSurface.cs`, `Ui/OrbitRail.cs`; `renderer/shell/project/D02/ShellJumble.cs`; new `tests/D02HostTests.cs`.
+- **Add:**
+  - `interface IJumbleSource`, `SampleJumbleSource`, and `JumbleState` (`Mode`, exact `LatticeFlag`, `NamedCap`, `Revision`, `SessionKind`).
+  - `EntrySlot` for `view.preset.jumble_entry`: `Apply()`, and `Revert()` of only what is unchanged since. It follows the adopted revision's mode.
+  - `ChromeFrame.SetModeCell`, and `mark.jumble` on every view border.
+  - The strip and the rail show the undefined numeral as a whole when the lattice flag is false, never on a pending N.
+  - Local's empty sentence, and a four-header accordion in Local, one open at a time, each closed header with a one-line count.
+- **Check:** `D02EntryRevertsOnlyUnchanged`; `D02EntryFollowsUndoRedoBranchReopen`; `D02EntryIsChromeOnly`; `D02UndefinedSwitchesOnLatticeFlagNotPendingN`; `D02MarkOnEveryViewBorder`; `D02PanelsMoveFreely`. Then `d02_run.py --script host`.
+- **Owner sees:** the Jumble cell, a mark on each border, the strip and the rail undefined over the posed W-J state; true zeros on the zero-twist state.
+- **Machine:** H, W.
+- **Checkpoint:** yes, C1.
+- **Depends:** B3, B5.
+
+### B7. Totals and the named-cap readouts
+- **Goal:** the border numerals, with pending, incomplete and undefined apart.
+- **Items:** .22.
+- **Files:** new `Model/JumbleReadouts.cs`, `Ui/JumbleReadouts.cs`, `tests/D02ReadoutTests.cs`.
+- **Add:**
+  - `GlobalTotals`: N with its two parts, domains, off-lattice pieces, n2, n4, n6, and "above 6" with its largest height.
+  - `CapReadout`: In, Out, A, N_c, floor, u.
+  - Fixed tabular slots, one neutral change mark, the unit word "seams", no colour by value.
+- **Check:** `D02TotalNPendingUntilSeamFactsAll`; `D02TotalNIncompleteAfterCutOff`; `D02TotalNIsNotSumOfCaps`; `D02BlockedCapReadoutUndefined`; `D02Above6MaxUndefinedAtZero`; `D02TotalsMatchSample`.
+- **Owner sees:** the totals on Global's border at a deep export.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B6.
+
+### B8. The cap map
 - **Goal:** one canvas control of 600 caps in the ring-sheet arrangement, in Solve's bottom dock.
 - **Items:** .13, .14.
-- **Files:**
-  - new `Model/CapMap.cs` and `Ui/CapMapControl.cs`
-  - new `tools/looklab/data/samples/jumble/cap-layout.json` (written by the B1 builder; add `layout()` to it)
-  - `Live/LabJumble.cs`
-  - new `tests/D02CapMapTests.cs`
-- **Precondition (F6):** redo M-RING in the repository. The builder writes `cap-layout.json`: for each cap id, its row (ring) and column from `tools/looklab/fixtures/hopf-rings.json`, by matching the adapter's `model()` pole of each cap to the Look Lab cell it is the pole of. `test_d02_samples.py` checks three things: the map is a bijection onto 20 rows of 30; every row neighbour is a face neighbour; no other neighbour claim is made.
+- **Files:** new `Model/CapMap.cs`, `Ui/CapMapControl.cs`, `tests/D02CapMapTests.cs`; `make_d02_samples.py` (`layout()`, writing `cap-layout.json`).
+- **Precondition:** M-RING redone. The builder maps each cap id to a row and column by matching the adapter's `model()` poles to the cells of `tools/looklab/fixtures/hopf-rings.json`. `test_d02_samples.py` checks that the map is a bijection onto 20 rows of 30, and that row neighbours are face neighbours.
 - **Add:**
-  - `enum CapClass { Pending, Blocked, Closed, AtFloor, AboveFloor }`.
-  - `CapMapModel.Cells`. The class comes only from certified, completed rim rows; anything else is `Pending`. N_c is a numeral at admissible caps only.
-  - `CapMapControl`: one `Control._Draw`, with patterns from `pattern.cap.*`. Blocked is a dark ground with a non-slash glyph, closed is plain, at floor is a corner bracket, above floor is the numeral only.
-  - A wrap mark on the cyclic columns, and the legend "at floor (N_c = F_c > 0)".
-  - `frame.AddDockPanel(DockSide.Bottom, "capmap", …)`, collapsed by default. It can also be dropped as a free pane.
-- **Check:**
-  - `D02CapClassesExclusiveAndExhaustive`;
-  - `D02NoNumeralAtBlockedCap`;
-  - `D02UncertainRimRowIsPending`;
-  - `D02CapMapMatchesRim`: 27 admissible and 573 blocked at `wj-ia-end`;
-  - `D02CapLayoutIsRingSheet`;
-  - `check.py --godot` (the sweep opens and closes the dock).
-- **Window:** the bottom dock opens to 20 rows of 30 cells. `wj-ia-end` shows mostly blocked ground with 27 numerals.
+  - `enum CapClass { Pending, Blocked, Closed, AtFloor, AboveFloor }`, from certified and completed rim rows only.
+  - One `_Draw` with the `pattern.cap.*` patterns, a wrap mark on the cyclic columns, and the legend "at floor (N_c = F_c > 0)".
+  - The dock panel `capmap`, collapsed by default and droppable as a free pane.
+- **Check:** `D02CapClassesExclusiveAndExhaustive`; `D02NoNumeralAtBlockedCap`; `D02UncertainRimRowIsPending`; `D02CapMapMatchesRim` (27 admissible, 573 blocked at the journal's end); `D02CapLayoutIsRingSheet`.
+- **Owner sees:** 20 rows of 30 cells in the bottom dock; mostly blocked ground at the W-J end state.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B1, B4.
+- **Depends:** B6.
 
-### B8. Threshold, naming a cap, targets
-- **Goal:** the threshold predicates, naming by cell or by number, the 80 meeting caps, and the inspector tiers.
+### B9. Threshold, naming a cap, targets
+- **Goal:** the predicates, naming, the 80 meeting caps and the inspector tiers.
 - **Items:** .15, .16, .19.
-- **Files:** `Model/CapMap.cs`, `Ui/CapMapControl.cs`, `Ui/JumbleHost.cs`, `Live/LabJumble.cs`, `Live/LabInspect.cs`, new `tests/D02ThresholdTests.cs`.
+- **Files:** `Model/CapMap.cs`, `Ui/CapMapControl.cs`, `Ui/JumbleHost.cs`, `Ui/InspectorPanels.cs`, new `tests/D02ThresholdTests.cs`.
 - **Add:**
   - `record CapPredicate(Kind { AtLeast, AtMost, AtFloor }, int K)`.
-  - `CapMapModel.Threshold`: a set with no default. `Counts()` returns members, non-members and blocked caps, counted apart; pending caps are counted as pending. Members are drawn as the Query set outline. There is no sort API at all.
-  - The threshold field and its count sit on Global's border while the dock is closed.
-  - `JumbleState.Name(cap)` by cell click, or by typing a number through `jumble.cap.name` (an unlisted draft row, F7).
-  - The 80 meeting caps, from `cap-<id>.json`, shown as a static mark that is neither an outline nor a dim.
-  - No slot leaves `Empty` before a cap is named. Hovering only inspects.
-  - Tier 1 and Tier 2 facts for cap, piece and domain, in a fixed order, through `InspectorPanels`.
-- **Check:**
-  - `D02NoDefaultThreshold`;
-  - `D02ThresholdCountsBlockedApart`;
-  - `D02ThresholdNeverReorders`: the cell order equals the layout order under every predicate;
-  - `D02NoJobBeforeNaming`;
-  - `D02HoverNamesNothing`;
-  - `D02MeetingCapsAre80`;
-  - the keyboard-reach check passes with `pointer_only` still empty.
-- **Window:** type a cap number. Its cell, the 80 marks and Local's readouts appear. Set `N_c ≥ 3` and read the three counts.
+  - A threshold set with no default. `Counts()` gives members, non-members, blocked and pending, each apart. The Query set outline. No sort member.
+  - The threshold field and its count on Global's border while the dock is closed.
+  - Naming by cell or by typed number; the 80 meeting caps as a static mark.
+  - No slot leaves `Empty` before a cap is named; hovering only inspects.
+  - Tier 1 and Tier 2 facts in a fixed order.
+- **Check:** `D02NoDefaultThreshold`; `D02ThresholdCountsBlockedApart`; `D02ThresholdNeverReorders`; `D02NoJobBeforeNaming`; `D02HoverNamesNothing`; `D02MeetingCapsAre80`. Then `d02_run.py --script name-cap`, by keys only.
+- **Owner sees:** type a cap number and read the three threshold counts.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B7. CR-14 for `jumble.capmap.threshold.{set, clear}`; the draft rows work in the lab and the shell until the table has them.
+- **Depends:** B8. CR-14 for the threshold and naming rows (draft rows meanwhile). Picking a sticker comes in B17.
 
-### B9. Kept twist checks and the Q3.b test
-- **Goal:** the release-ordered list with folded "not checked:" rows, under J-7 and N-1 as the owner reads them.
+### B10. Kept twist checks and the Q3.b test
+- **Goal:** the release-ordered list with folded rows, under J-7 and N-1 as the owner reads them.
 - **Items:** .35, .36.
-- **Files:** new `Model/TwistChecks.cs`, `Ui/JumbleLists.cs`, `Live/LabJumble.cs`, new `tests/D02TwistCheckTests.cs`, new `tools/looklab/lane_d02.py` with one call from `tools/looklab/check.py --godot`.
+- **Files:** new `Model/TwistChecks.cs`, `Ui/JumbleLists.cs`, `tests/D02TwistCheckTests.cs`.
 - **Add:**
-  - `class KeptChecks` with `Release(letter)`, `Complete(release, row)` and `Cancel(release)`.
-  - `record CheckRow(int Try, string Twist, Numeral Nc, Numeral Floor, long DeltaN, …)` and `record FoldedRow(string[] Twists)`.
-  - A folded row is written inside `Release`, from the release record alone. `Cancel` of a non-latest release is a no-op.
-  - The session release number shows on hover.
-  - A collapsed word-check row with its "lifted" field.
-  - `class SampleJobs`: a deterministic clock that completes sample results after n ticks. The lab's release key feeds it from `cap-<id>.json`.
-- **Check:**
-  - `D02Q3bTwelveTwists` releases a seat's twelve twists faster than completion on the W-J sample and asserts the four points of ADR-D02.36:
-    - completed rows are in increasing release order;
-    - each folded row is born in the superseding release's frame;
-    - a folded row carries only the words and the glyphs;
-    - `Describe()` is equal before and after every cancel of a non-latest job.
-  - The lane mode `d02-q3b` repeats the test on the real controls and prints `LOOKLAB_D02_Q3B_PASS releases=12 cancels=<n> screen_changes_on_cancel=0`.
-- **Window:** hold the lab's seat key. Rows and folded rows build up, and nothing flickers when jobs cancel.
+  - `KeptChecks` with `Release`, `Complete`, `Cancel`; `CheckRow` and `FoldedRow`.
+  - A folded row is written inside `Release` from the release record alone. A cancel of a non-latest release is a no-op.
+  - `SampleJobs`: a tick clock that completes sample results.
+- **Check:** `D02Q3bTwelveTwists` asserts the four points of ADR-D02.36. `d02_run.py --script q3b` repeats it in the shell and prints `screen_changes_on_cancel=0`.
+- **Owner sees:** hold a seat key; rows and folded rows build with no flicker.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B3, B8.
+- **Depends:** B3, B9.
 
-### B10. Cap covers, straddlers and the predicate focus layers
-- **Goal:** the Cap covers slot and the focus layers with counts.
-- **Items:** .30, .38.
-- **Files:** new `Model/CapCovers.cs`, `Model/Gallery.cs` (extend `FocusLayers`, F2), `Ui/JumbleLists.cs`, `Live/LabJumble.cs`, new `tests/D02CoversTests.cs`.
+### B11. Cap covers and the predicate focus layers
+- **Goal:** the Cap covers slot, and focus layers with counts.
+- **Items:** .38.
+- **Files:** new `Model/CapCovers.cs`, `Model/Gallery.cs` (extend `FocusLayers`, F2), `Ui/JumbleLists.cs`, `tests/D02CoversTests.cs`.
 - **Add:**
-  - `CapCoversModel`: the alignment-domain line, then "covered by", "covers" and "undefined", in cap-id order. The expanded table has 80 rows, both directions, each yes, no or undefined. Blocked meeting caps are listed as undefined.
-  - `FocusLayers.AddPredicate(id, label, Func<int> count)`, joining the existing cycle on F10. Three predicate layers are added: straddlers of the named blocked cap, one domain, and height at least k.
-  - The straddlers layer stays on across named caps and is active only at a blocked cap. `CapMapControl` ignores it.
-- **Check:**
-  - `D02CoversUndefinedIsListed`;
-  - `D02CoversTableHas80RowsBothDirections`;
-  - `D02HoverInCoversMarksNoCapMapCell`;
-  - `D02StraddlerLayerNeverDefault`;
-  - `D02StraddlerLayerOnlyAtBlockedCap`;
-  - `D02FocusLayerCountsMatchSample`.
-- **Window:** name a blocked cap and press F10 until "Straddlers (u = …)" shows with its count. The view itself carries the line "not drawn in this build: needs L1".
+  - The four lines in cap-id order and the 80-row table, with blocked meeting caps listed as undefined.
+  - `FocusLayers.AddPredicate(id, label, count)` on the existing cycle key, with three layers: straddlers, one domain, height at least k. Their drawing comes in B15.
+- **Check:** `D02CoversUndefinedIsListed`; `D02CoversTableHas80RowsBothDirections`; `D02HoverInCoversMarksNoCapMapCell`; `D02FocusLayerCountsMatchSample`.
+- **Owner sees:** Cap covers under the named-cap cell; the focus key shows each layer's count.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B8. CR-14 for the highlight-and-dim layer row. The dimming of pieces in a view waits for L1.
+- **Depends:** B9.
 
-### B11. The repair list
+### B12. The repair list
 - **Goal:** the list exactly as the 17 October exception allows.
 - **Items:** .32, .34.
-- **Files:** new `Model/RepairList.cs`, `Ui/JumbleLists.cs`, `Live/LabJumble.cs`, new `tests/D02RepairTests.cs`.
+- **Files:** new `Model/RepairList.cs`, `Ui/JumbleLists.cs`, `tests/D02RepairTests.cs`.
 - **Add:**
-  - `record RepairRow(int Index, string X, int D, string Y, string Z, long DeltaN, int Steps)`.
-  - `RepairListModel.From(sample)` keeps the adapter's order verbatim. The model has no comparer and no sort or filter member.
-  - No row is focused on open; arrow keys focus one.
-  - Digits 1 to 9 are bound only in the context `repair.list.focused`; later rows go by focus and Enter.
-  - ΔN is a tabular numeral in one weight.
-  - Words: "Repair k of m", with m = 2 for a two-twist row and 3 otherwise; "Whole repair only"; the empty line with its second, coverage line; the cut-off line.
-  - Focusing a row shows the step label and the moving set's count, per step. Stepping uses `view.preview.scrub` or the preview step key.
-- **Check:**
-  - `D02RepairOrderEqualsSample`, for every cap sample and all three variants;
-  - `D02RepairModelHasNoSortMember`, by reflection over the type;
-  - `D02RepairNoFocusOnOpen`;
-  - `D02RepairDigitsOnlyInContext`;
-  - `D02RepairEmptyNamesCapRevisionAndCoverage`;
-  - `D02RepairCutOffIsNotEmpty`;
-  - `D02RepairTwoTwistRowHasTwoSteps`.
-- **Window:** the repair slot opens under the named-cap cell. Arrows move the focus, and the step label changes with the scrub key.
+  - `RepairRow`, and `RepairListModel.From(sample)` in the adapter's order, with no comparer and no sort or filter member.
+  - No focus on open. Digits 1 to 9 only in the context `repair.list.focused`.
+  - ΔN as one tabular numeral.
+  - The words "Repair k of m" (m = 2 or 3) and "Whole repair only"; the empty line with its coverage line; the cut-off line.
+  - Step focus through `view.preview.scrub`, with the step's moving-set count. Its outline is drawn in B16.
+- **Check:** `D02RepairOrderEqualsSample`; `D02RepairModelHasNoSortMember` (reflection); `D02RepairNoFocusOnOpen`; `D02RepairDigitsOnlyInContext`; `D02RepairEmptyNamesCapRevisionAndCoverage`; `D02RepairCutOffIsNotEmpty`; `D02RepairTwoTwistRowHasTwoSteps`.
+- **Owner sees:** the repair slot; arrows focus a row; the step label follows the scrub key.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B3, B8. CR-14 for a row's step focus. Drawing a moving set's outline in a view waits for L1.
+- **Depends:** B9.
 
-### B12. Staging a picked row, and the boundary
-- **Goal:** copying a row makes a sealed, whole-only preview; the program never picks; research output is refused at preview.
+### B13. Staging a picked row, and the boundary
+- **Goal:** a picked row becomes a sealed, whole-only preview; nothing is picked for the solver; research output is refused at preview.
 - **Items:** .5, .33.
-- **Files:** `Model/RepairList.cs`, `Model/Session.cs` (extend `PreviewModel`), new `Model/Boundary.cs`, `Ui/DraftLine.cs`, `Ui/SessionPanels.cs`, `Live/LabJumble.cs`, new `tests/D02BoundaryTests.cs`.
+- **Files:** `Model/RepairList.cs`, `Model/Session.cs`, new `Model/Boundary.cs`, `Ui/DraftLine.cs`, `tests/D02BoundaryTests.cs`.
 - **Add:**
-  - `record SealedSpan(RepairRow Row)`. In the draft it can be removed whole and never edited. Typing the same twists yields an ordinary word.
-  - `Stage(row)` is callable only from the pick handlers (digit, or Enter on the focused row). It writes a repair-pair record `{cap, revision, x, d, y, z}` to the preview and sets `commit.bar.whole_only`.
-  - `enum Origin { Solver, Library, Research }` on a draft span. In a solving session, `PreviewModel.Admit` refuses `Origin.Research` with the sentence of ADR-D02.40.
-  - `class BoundaryLedger`. It counts an event when a built-in path stages, focuses, orders or applies without a solver action. Every call site passes the user event that caused it.
-- **Check:**
-  - `D02StageOnlyFromPick`: staging without a user event throws and counts;
-  - `D02SealedSpanRemovedWhole`;
-  - `D02TypedTwistsAreOrdinaryWord`;
-  - `D02WholeOnlyBar`;
-  - `D02ResearchOriginRefusedInSolvingSession`;
-  - `D02ResearchOriginRunsInResearchSession`;
-  - `D02BoundaryCountZeroOverScriptedSession`.
-- **Window:** press 2 in the focused list. The draft line shows one sealed span, and the bar reads "Whole repair only". Pasting a research word shows the refusal.
+  - `SealedSpan`, removed whole and never edited.
+  - `Stage(row, userEvent)`, callable only from the pick handlers. It writes the repair-pair record to the sample preview and sets the whole-only bar.
+  - `enum Origin { Solver, Library, Research }`. `PreviewModel.Admit` refuses `Research` in a solving session, with its sentence.
+  - `BoundaryLedger`: it counts any staging, focusing, ordering or applying that carries no user event.
+- **Check:** `D02StageOnlyFromPick`; `D02SealedSpanRemovedWhole`; `D02TypedTwistsAreOrdinaryWord`; `D02ResearchOriginRefusedInSolvingSession`; `D02BoundaryCountZeroOverScriptedSession`. Then `d02_run.py --script repair`.
+- **Owner sees:** press 2 in the list; one sealed span appears and the bar reads "Whole repair only".
+- **Machine:** H, W.
 - **Checkpoint:** yes, C2.
-- **Depends:** B11. CR-15 for `jumble.repair.stage`; the draft row drives the sample flow, and the engine write waits for the row and for K2.
+- **Depends:** B12. CR-15: the engine's preview and record write wait for the row and K2.
 
-### B13. Word flows and signatures
-- **Goal:** the commit bar's word line, the part and twist counters, the folded tree, signatures.
-- **Items:** .29, .31.
-- **Files:** new `Model/JumbleWords.cs`, `Ui/DraftLine.cs`, `Ui/LibraryPanel.cs`, `Model/Library.cs` (`EffectSignature`), new `tests/D02WordTests.cs`.
+### B14. The style path: core, bridge, host
+- **Goal:** the core can draw per-piece style from masks. No look yet.
+- **Items:** none; rows J07 and J09 of the feature matrix, as candidates (F7).
+- **Files:**
+  - core: `renderer/core/include/sa2_interop.h`, `src/product.cpp`, `src/product.h`, `src/scene.cpp`, `shaders/product.hlsl`, `src/selftest.cpp`, `check_core.py`, `PROVENANCE.md`;
+  - bridge: `rust/c600-render` and `renderer/bridge/src/lib.rs` (the function table);
+  - host: `renderer/bridge/host/src/lib.rs`;
+  - shell: `renderer/shell/project/CoreLibrary.cs`, `HostLibrary.cs`;
+  - tests: `tests/test_renderer_core.py`, `tests/test_renderer_shell.py`.
 - **Add:**
-  - `record WordTree(string Name, int ExpandedLength, WordTree[] Parts)`, and `ExpandedLength` with its alphabet on the bar.
-  - A preview counter "part j of p, twist k of n". Playback steps by part, and twist by twist inside an opened part.
-  - `LongWordBound`: a labelled placeholder constant read from design data. Above it, numerals only.
-  - The crossing sentence "On the lattice, ν = 0: labels pass to 600-cell-Full", shown only when reachability is shown.
-  - Signatures: a lattice-to-lattice word shows its 35 slots and its ν row from `corrections.json` and the sample. A word leaving the lattice shows `numeral.undefined` with its length and alphabet.
-  - The log tab's residual ticks at N = 0, else the undefined band with N.
-- **Check:**
-  - `D02WordLengthIsExpanded`;
-  - `D02PlaybackStepsByPartThenTwist`;
-  - `D02OffLatticeWordSignatureUndefined`;
-  - `D02CrossingSentenceNeedsReachability`;
-  - `D02Seed7001WordsPlayNineParts`, with the digests of section 6 shown per step.
-- **Window:** play the seed 7001 restoration part by part. The digest and N change with each part until N = 0.
+  - Core ABI 6, additive:
+    - `sa2_style_set(ctx, revision, const uint8_t* piece_style, uint32_t channel)`: one byte per piece, two channels (fill tint index, outline index), bound to a revision as the pose arrays are;
+    - `sa2_view_style(ctx, view, const sa2_view_style*)`: tint mode, dim mode, a 16-entry palette, a 3×3 output colour matrix.
+  - One precompiled product pipeline variant. The existing pipeline is unchanged when no style is set.
+  - Host exports `m6h_set_piece_style` and `m6h_set_view_style` (ABI 9). The host expands per-pose sample arrays to pieces with the session's own `pose_index`.
+  - Self-test mode `--style`, modelled on `--poses`, on WARP.
+- **Check:** `python renderer/core/check_core.py --style`:
+  - styled pieces differ from unstyled only on the masked pieces;
+  - an empty mask draws byte-identically to no style;
+  - a style for another revision is refused.
+
+  Plus `python tests/test_renderer_core.py` and `python tests/test_render_ffi.py`.
+- **Owner sees:** nothing new.
+- **Machine:** H (WARP).
 - **Checkpoint:** no.
-- **Depends:** B4. X3 for the real bound.
+- **Depends:** B5.
 
-### B14. The ν band and ν-corrections
-- **Goal:** the band beside the rail at N = 0, and the Built-in library branch.
-- **Items:** .28, .39.
-- **Files:** new `Model/NuBand.cs` and `Ui/NuBand.cs`, `Ui/OrbitRail.cs`, `Model/Library.cs`, `Ui/LibraryPanel.cs`, new `tests/D02NuTests.cs`.
+### B15. Tints on pieces: contact classes, height, off-lattice, focus dim
+- **Goal:** the one tint channel, drawn on the posed pieces.
+- **Items:** .20, .21, .23, .24, .30.
+- **Files:** new `Model/JumbleTint.cs`, `Ui/JumbleLegend.cs`, `renderer/shell/project/D02/ShellJumble.cs`, `tests/D02TintTests.cs`.
 - **Add:**
-  - `NuBandModel`:
-    - 35 cells aligned with `OrbitRailModel`'s cells, one 0/1 mark each;
-    - the 8 frame-group marks on their orbits' cells;
-    - O17 and O28 as five-position dials;
-    - nine fixed dots for the always-zero coordinates.
-  - The mark shape is outside the ring family. Off the lattice the band shows the undefined numeral.
-  - Library › Built-in › ν-corrections: 36 rows in id order with id, exact length and ν row. Shift+Enter previews one. Space marks a row into a set with a signed multiplicity. One chord calls `jumble.corrections.check` and shows "ν after this set" and "labels not predicted".
-- **Check:**
-  - `D02NuBandAlignsWith35Cells`;
-  - `D02C5ValuesAreDialsNotBars`;
-  - `D02NuBandUndefinedOffLattice`;
-  - `D02CorrectionsAre36InIdOrder`;
-  - `D02CorrectionSetCheckMatchesSample`: the sample holds one `correction_set_check` answer per `nu-c<id>` state.
-- **Window:** with a `nu-c<id>` state the band stands beside the rail with marks and dials. In the library, mark two rows and check the set.
+  - `enum TintMode { None, ContactClass, Height, OffLattice }`: one field, so no stacking.
+  - `ContactClasses.Assign(contact, previous)`: proper, deterministic, sticky by domain id; a seventh need is the overflow state with its count; the lattice domain is neutral. Saved with the view state.
+  - Drawing: contact class on the outline channel, so the fill keeps the label; the height ramp on the fill tint; off-lattice as a dark outline taken from the bundle's `pose_lattice`.
+  - Focus dim through the dim mode. The straddler layer is never a default and is active only at a blocked cap.
+  - Legends with counts.
+- **Check:** `D02TintModesExclusive`; `D02ContactColouringIsProper`; `D02FourClassesAtWj300AndDeepExports`; `D02OneClassAtIa40`; `D02ClassStickyAcrossCommitUndoRedoBranchReopen`; `D02OverflowNeverReusesAcrossContact`; `D02OffLatticeFromFlagNotHeights`; `D02StraddlerLayerOnlyAtBlockedCap`. Then `d02_run.py --script tint`: the style bytes sent to the host equal the sample's classes, piece by piece.
+- **Owner sees:** switch the tint mode from the palette on a deep export: four outline classes, the height ramp, the dim of one domain.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B1, B4.
+- **Depends:** B11, B14. CR-14 for the mode and layer rows.
 
-### B15. Encodings: the tint channel, contact classes, height, off-lattice
-- **Goal:** the mode switch, the legends and the sticky class rule, proved on the samples.
-- **Items:** .20, .21, .23, .24.
-- **Files:** new `Model/JumbleTint.cs` and `Ui/JumbleLegend.cs`, `Live/LabJumble.cs` (kept-view part), new `tests/D02TintTests.cs`.
+### B16. Overlays as lines
+- **Goal:** the cut trace, the never-hidden set, hidden-piece outlines, repair moving sets and certificate glyphs.
+- **Items:** .26.
+- **Files:** core (`sa2_interop.h`, `src/product.cpp`, `src/scene.cpp`, new `shaders/lines.hlsl`, `src/selftest.cpp`); the bridge table; host `src/lib.rs`; `ShellJumble.cs`; `tests/test_renderer_core.py`.
 - **Add:**
-  - `enum TintMode { None, ContactClass, Height, OffLattice }`. It is one field, so modes cannot stack.
-  - `ContactClasses.Assign(contact, previous)`. It is deterministic and sticky: a domain keeps the class stored for its domain ID, a new domain takes the lowest class free among its neighbours, and a seventh need raises an overflow state that reuses no class across a contact and states its count. The lattice domain is neutral. The assignment is saved in the kept-view part `frame.jumble`.
-  - Legends: class swatches with domain and piece counts; the height ramp 2, 4, 6 and above, with the largest height's numeral; the off-lattice count, taken from the exact lattice flag.
-  - The domain focus layer and "height at least k", from B10.
-  - Because pieces are not drawn, each view border carries "tint: <mode> (legend only in this build: needs L1)".
-- **Check:**
-  - `D02TintModesExclusive`;
-  - `D02ContactColouringIsProper` on every sample;
-  - `D02FourClassesAtWj300AndDeepExports`;
-  - `D02OneClassAtIa40`;
-  - `D02ClassStickyAcrossCommitUndoRedoBranchReopen`, over the seed 7001 chain and W-J records 299 to 301;
-  - `D02OverflowNeverReusesAcrossContact`, on a synthetic K7 graph;
-  - `D02HeightRampOffByDefault`;
-  - `D02OffLatticeFromFlagNotHeights`.
-- **Window:** switch the tint mode from the palette. The legend changes; at the deep export it shows four classes and the height counts.
+  - `sa2_lines_set(ctx, view, layer, const float* points4, count, style)`: line lists in four dimensions through the frame's chain, at most four layers. Host export `m6h_set_lines`.
+  - Layers:
+    - the named cap's cut trace, constant per cap, from the engine's cut (J04);
+    - certificate glyph pairs, off until its gate row and the owner's acceptance; the count shows in their place;
+    - piece outlines from masks: hidden pieces with their exact count, and the focused repair step's moving set.
+  - The never-hidden set of `jumbling-observation.md` rule 5 is forced visible in the preparation's visibility bytes.
+- **Check:** `check_core.py --lines` on WARP: a line layer covers pixels only within two pixels of its projected segments; an empty layer changes nothing. Then `d02_run.py --script overlays`: hidden count equals the sample; the never-hidden set stays visible under every focus layer.
+- **Owner sees:** name a cap and its cut trace appears; step a repair row and the moving set outlines.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B1, B10. The mode row is an unlisted draft row (F7). Drawing waits for L1.
+- **Depends:** B12, B14.
 
-### B16. The view items that wait: unavailable states and captions
-- **Goal:** every item that waits for L1, R5 or geometry shows a named unavailable state instead of nothing.
-- **Items:** .8 is built here. It also builds the interim states of .9, .10, .17, .18, .25 and .26, which are mapped "waits" in section 4.
-- **Files:** new `Model/JumbleViews.cs`, `Ui/JumbleHost.cs`, `Live/LabJumble.cs`, new `tests/D02UnavailableTests.cs`.
-- **Add:**
-  - `record ViewOffer(string RowId, string Name, string[] Missing)` for:
-    - `view.preset.global.ring_sheet` and `view.preset.global.hopf_rings`;
-    - the cut slice and its held split and radius shell;
-    - `view.mode.raw`, with its clip and its antipode key;
-    - the exposed faces;
-    - the overlays.
-  - Each palette row is present and disabled, with a reason that names the missing facts, such as "needs R5, L1 and a gate row".
-  - Global's border reads "projection chain (600-cell-Full)".
-  - Local's border and Tier 1 read "exposed faces unavailable", with the code `input.exposed_geometry_unavailable`.
-  - The named-cap cell shows the certificate points as a count.
-  - The two captions are stored now, for the day the views exist: "only row neighbours are face neighbours" and "No raw view certifies no holes; N = 0 does."
-- **Check:**
-  - `D02EveryWaitingRowHasANamedReason`;
-  - `D02GlobalKeepsProjectionChain`;
-  - `D02ExposedFacesUnavailableOnBorderAndTier1`;
-  - `D02CertificatePointsShowAsCount`: at least 1,654 at the blocked-grip sample if S1 is among the samples; else the sample's own count;
-  - `D02NoWaitingItemDrawsAPlaceholderPicture`.
-- **Window:** the palette lists the chart presets, the slice and the raw view as unavailable with reasons. The borders carry the two state lines.
+### B17. Picks in Jumble
+- **Goal:** a sticker selects its piece; a cap's cell already names its cap.
+- **Items:** none new (completes .19's pointer route).
+- **Files:** host `src/lib.rs`, `src/turns.rs`; `renderer/shell/project/Shell.cs`; `ShellJumble.cs`; host tests.
+- **Add:** with Jumble on the host marks slots pickable and resolves a hit through `c600_display::jumble::PoseProjection` to a piece id. An off-lattice piece has no slot and resolves to the piece only. A stale hit is dropped. Tier 1 shows kind, id and numerals.
+- **Check:** new host tests `a_jumble_pick_resolves_to_its_piece` and `a_stale_jumble_pick_is_dropped` in `python tests/test_render_ffi.py`. Then `d02_run.py --script pick`, where an injected click at a known pixel selects the expected piece.
+- **Owner sees:** click a sticker; the inspector shows its piece, domain and height.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B4. CR-14 for these rows; L1, R5, the stereographic stage, the exposed-face geometry and the gate rows for the pictures.
+- **Depends:** B9, B14.
 
-### B17. Keys and terms
-- **Goal:** the held seat keys in the key map, and the glossary check over every D02 word.
-- **Items:** .42, .43.
-- **Files:** `Model/KeyMap.cs`, `Ui/KeyMapPanel.cs`, `tools/looklab/data/design/keymap.json`, new `tests/D02KeyTests.cs`, new `tests/test_d02_words.py`.
+### B18. The sweep and the half-turn
+- **Goal:** a committed jumble twist is swept; a half-turn cuts and outlines.
+- **Items:** none new (applies .37; row J03).
+- **Files:** host `src/lib.rs`, `src/turns.rs`; the core, only if product frames lack the transform; `Model/Gallery.cs` (`MotionTable`); `ShellJumble.cs`.
+- **Start by reading** whether a product frame can carry `c600_display::jumble::transform`'s row. If not, add `sa2_transform_set(ctx, revision, plane_u, plane_v, angle, const uint8_t* moving_mask, phase)` as B14 added style.
 - **Add:**
-  - Four seat entries in `keymap.json` with `"held": true`, placeholder keys labelled as waiting for XM1, and fixed seat glyphs (tier 1 placeholders).
-  - `KeyMapModel.HeldSeat(seat)` returns its 12 twist keys with their rotation orders as numerals. The panel shows them while the seat is held; the state `KeyCapState.Held` exists already.
-  - The repair digits are listed only under the repair context. The aids sit on chords.
-  - `test_d02_words.py` loads `jumble-words.json` and `command-labels.json`. Every term of art must be a row of `docs/progress/1.0/glossary/terms.json` or be in the test's `PENDING_TERMS` list, which holds the eleven requested additions and must be empty once LP4 lands them. Use the term check of `docs/progress/1.0/glossary/build.py` where it applies to a word list.
-- **Check:**
-  - `D02HeldSeatShowsTwelveTwistsWithOrders`;
-  - `D02RepairDigitsOnlyInRepairContext`;
-  - `D02NoDuplicateChordAmongD02Bindings`;
-  - `python tests/test_d02_words.py`;
-  - `python docs/progress/1.0/glossary/build.py --check` still passes; the glossary file is not edited.
-- **Window:** open the key map (F12 sheet or the panel), hold a seat key, and its twelve twist keys light with numerals.
+  - The sweep of the certified inside set, with its duration from the row `jumble.sweep`.
+  - A half-turn cuts to its end pose and outlines the moved set for the row's fixed time.
+  - A refused twist gets no sweep. Reduced motion makes both static.
+- **Check:** host test `a_committed_jumble_twist_carries_its_certified_transform`. `check_core.py --sweep` on WARP: phase 0 equals the old pose and phase 1 the new. `d02_run.py --script sweep`: no sweep under reduced motion or on a refusal.
+- **Owner sees:** twist with the keys and the inside set turns; a half-turn flashes its outline.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B14, B16.
+
+### B19. Gate sitting 1
+- **Goal:** gate rows for drawing part 1, on the owner's machine, with the full chrome.
+- **Items:** none; it gives R5 its numbers.
+- **Files (new):** `tools/perf/d02/gate_row.py`, `renderer/shell/gate_d02.py`, and a results page under `docs/progress/1.0/`.
+- **Add:**
+  - `gate_d02.py --row <id>` launches with a script and the event log.
+  - `gate_row.py` reads `events.jsonl`'s `presented` rows and prints the average rate and the 99th-percentile interval.
+  - Rows:
+
+    | Row | State | Script |
+    |---|---|---|
+    | G1 | `deep-2` | posed pieces with the contact-class tint, twist sweeps repeating for 60 s |
+    | G2 | `wj-ia-end` | a blocked cap named, with all line layers |
+    | G3 | the one-blocked-grip state the record names | certificate glyphs, at least 1,654 points |
+- **Check:** each row prints `D02_GATE row=<id> fps_avg=<x> p99_ms=<y> vram_gb=<z> pass=<bool>` against 30 fps, 33.3 ms and about 7 GB. A failing row is recorded and goes to the owner; it is never tuned away.
+- **Owner sees:** the three runs, and the certificate glyphs for the owner's acceptance.
+- **Machine:** G. About 30 minutes with the owner at the start.
 - **Checkpoint:** yes, C3.
-- **Depends:** B2. CR-19 for routing a held seat with a twist key as one chord (the display is built now, the route is not). XM1 for the bindings. The glossary request for `PENDING_TERMS`.
+- **Depends:** B15 to B18.
 
-### B18. The research pane: Records and Claims
-- **Goal:** `pane.research` as a centre peer pane in Analyse, with its verdict words.
+### B20. The drawn-view switch and the cut slice
+- **Goal:** Local can be the drawn view, and shows the slice.
+- **Items:** .17.
+- **Files:** `Ui/ChromeFrame.cs` (the opening), `renderer/shell/project/Shell.cs`, `ShellJumble.cs`, core `shaders/product.hlsl` and `src/product.cpp`, new `Model/JumbleViews.cs`, `tests/D02ViewTests.cs`.
+- **Add:**
+  - The core draws one view (F4). A key moves the opening between Global and Local; the other view's border reads "not drawn: one core view in this build".
+  - Slice mode in `sa2_view_style`: the outside layer filled; the inside layer, from the named cap's inside mask, as outlines at a smaller shrink; a radius-shell clip about the pole.
+  - The turn preview is a ghost of the inside layer with `pattern.preview`; the twist is named on release.
+  - At a blocked cap: no ghost, only the straddler sections with their point pairs.
+  - The held split needs two views. The held key instead alternates the two layers, and says so.
+- **Check:** `D02SliceNamesTwistOnReleaseOnly`; `D02BlockedCapHasNoGhost`. `check_core.py --slice` on WARP: outside pieces filled, inside pieces outline only. `d02_run.py --script slice`.
+- **Owner sees:** name a cap, switch to Local: the slice, the shell control, the ghost while a twist key is held.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B16, B18. CR-14.
+
+### B21. The raw view
+- **Goal:** `view.mode.raw`, the cap-centred stereographic mode of Local.
+- **Items:** .18.
+- **Files:** core (`shaders/product.hlsl` variant, `src/product.cpp`, `src/selftest.cpp`), host `src/lib.rs`, `Model/JumbleViews.cs`, `ShellJumble.cs`.
+- **Add:**
+  - A precompiled stereographic vertex variant from the named pole, declared through `c600_display::chart::Stereographic`.
+  - The half-space clip x·p̂ ≥ h, default h = (121/125)·inradius, never past 90°.
+  - A static tick for the meeting poles inside the clip.
+  - The antipode chart after −I, with a determinant sign checked at build. Side by side needs two views, so one key alternates the charts, labelled "antipode".
+  - The caption "No raw view certifies no holes; N = 0 does."
+- **Check:** `check_core.py --raw` on WARP: a twist of the named cap is a rigid rotation about the chart centre; nothing draws past the clip; at h = 0 each sticker draws in exactly one chart. `D02RawCaptionAlwaysShown`; `D02AntipodeNeverSaysMirrored`.
+- **Owner sees:** the named cap's region flat and round; twist it and it turns rigidly.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B20. CR-14. Holes drawn as faces wait for the exposed-face geometry.
+
+### B22. Global chart preset: the ring sheet
+- **Goal:** `view.preset.global.ring_sheet`, with no sweep under a chart.
+- **Items:** .9, .10.
+- **Files:** host `src/lib.rs` (chart assignment), core (per-piece chart index and 600 chart transforms), `Model/JumbleViews.cs`, `ShellJumble.cs`.
+- **Add:**
+  - Per revision, on the CPU in the host: each posed sticker's nearest cell, ties to the lowest cell id.
+  - 20 rows of 30 rigid cell charts from B8's layout, cyclic columns with a wrap mark, the caption "only row neighbours are face neighbours".
+  - Under a chart Global draws no sweep. At a new revision the moved set is outlined for the half-turn row's time.
+  - The palette's chart row applies the ring sheet first; the projection chain stays the default until R5 admits a chart (.8).
+- **Check:** host test `the_chart_assignment_is_nearest_cell_lowest_id`. `check_core.py --chart` on WARP: every piece draws inside its assigned chart's rectangle. `d02_run.py --script ring-sheet`: no sweep rows fire under the preset.
+- **Owner sees:** the deep export as 20 rows of 30 cell charts with tints.
+- **Machine:** H, W. Record the assignment's time per revision.
+- **Checkpoint:** no.
+- **Depends:** B8, B15. CR-14.
+
+### B23. Global chart preset: the Hopf rings
+- **Goal:** `view.preset.global.hopf_rings`.
+- **Items:** none new (.9's second preset).
+- **Files:** as B22.
+- **Add:** 20 circles of 30 cells around a dodecahedron's vertices, turning with the camera, with the same assignment and the same no-sweep rule. The palette switches between the two presets at any time.
+- **Check:** `check_core.py --chart hopf` on WARP: the 20 ring centres project to the dodecahedron's vertices. `d02_run.py --script hopf`: switching presets changes no state digest.
+- **Owner sees:** the same state as rings; switch back and forth.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B22.
+
+### B24. Gate sitting 2
+- **Goal:** gate rows for the slice, the raw view and both presets, plus the occlusion measure.
+- **Items:** none.
+- **Files:** `renderer/shell/gate_d02.py`, the results page.
+- **Add:**
+  - Rows:
+
+    | Row | State | View |
+    |---|---|---|
+    | G4 | `deep-2` | the slice |
+    | G5 | `deep-2` | the raw view |
+    | G6 | `deep-2` | the ring sheet |
+    | G7 | `deep-2` | the Hopf rings |
+  - The occlusion of both presets at the default camera, from a pick-pass count.
+- **Check:** the `D02_GATE` lines, as in B19.
+- **Owner sees:** the four runs.
+- **Machine:** G. About 30 minutes with the owner at the start.
+- **Checkpoint:** yes, C4. After it the integrator can put R5 to the owner with both sittings' numbers.
+- **Depends:** B20 to B23.
+
+### B25. Word flows and signatures
+- **Goal:** the word line, counters, the folded tree, signatures.
+- **Items:** .29, .31.
+- **Files:** new `Model/JumbleWords.cs`, `Ui/DraftLine.cs`, `Ui/LibraryPanel.cs`, `Model/Library.cs`, `tests/D02WordTests.cs`.
+- **Add:**
+  - `WordTree(Name, ExpandedLength, Parts)`.
+  - The counter "part j of p, twist k of n", with playback by part, then by twist.
+  - `LongWordBound`, a labelled placeholder until X3.
+  - The crossing sentence, shown only with reachability.
+  - Signatures: 35 slots and the ν row, or the undefined numeral with the length and alphabet.
+  - The log tab's ticks at N = 0.
+- **Check:** `D02WordLengthIsExpanded`; `D02PlaybackStepsByPartThenTwist`; `D02OffLatticeWordSignatureUndefined`; `D02CrossingSentenceNeedsReachability`. Then `d02_run.py --script seed7001`: the nine words played on the seed 7001 fixture show each word file's digests.
+- **Owner sees:** the seed 7001 restoration played part by part, to solved.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B6.
+
+### B26. The ν band and ν-corrections
+- **Goal:** the band beside the rail at N = 0, and the Built-in branch.
+- **Items:** .28, .39.
+- **Files:** new `Model/NuBand.cs`, `Ui/NuBand.cs`, `Ui/OrbitRail.cs`, `Model/Library.cs`, `Ui/LibraryPanel.cs`, `tests/D02NuTests.cs`.
+- **Add:**
+  - 35 cells aligned with the rail's cells; the 8 frame-group marks; O17 and O28 as five-position dials; nine fixed dots; a mark shape outside the ring family; the undefined numeral off the lattice.
+  - 36 correction rows in id order. Shift+Enter previews one; Space marks a signed multiplicity; one chord checks the set and shows "ν after this set" and "labels not predicted".
+- **Check:** `D02NuBandAlignsWith35Cells`; `D02C5ValuesAreDialsNotBars`; `D02NuBandUndefinedOffLattice`; `D02CorrectionsAre36InIdOrder`; `D02CorrectionSetCheckMatchesSample`.
+- **Owner sees:** on a ν-correction state, the band with marks and dials; mark two rows and check the set.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B6.
+
+### B27. Keys, terms and the remaining unavailable states
+- **Goal:** the held seat keys, the glossary check, and a named state for what still waits.
+- **Items:** .8, .42, .43.
+- **Files:** `Model/KeyMap.cs`, `Ui/KeyMapPanel.cs`, `tools/looklab/data/design/keymap.json`, `Model/JumbleViews.cs`, new `tests/D02KeyTests.cs`, new `tests/test_d02_words.py`.
+- **Add:**
+  - Four held seat entries with placeholder keys and glyphs. `KeyMapModel.HeldSeat(seat)` shows its 12 twist keys with their rotation orders.
+  - Global's border names its chain: "projection chain (600-cell-Full)" by default.
+  - "exposed faces unavailable" on the border and in Tier 1, with `input.exposed_geometry_unavailable`.
+  - `test_d02_words.py`: every term of art in D02's words is a glossary row or one of the eleven requested additions in `PENDING_TERMS`.
+- **Check:** `D02HeldSeatShowsTwelveTwistsWithOrders`; `D02NoDuplicateChordAmongD02Bindings`; `D02GlobalNamesItsChain`; `D02ExposedFacesUnavailableOnBorderAndTier1`; `python tests/test_d02_words.py`; `python docs/progress/1.0/glossary/build.py --check` unchanged.
+- **Owner sees:** hold a seat key in the key map; its twelve twist keys light.
+- **Machine:** H, W.
+- **Checkpoint:** no.
+- **Depends:** B2. CR-19 for the route; XM1 for the bindings; the glossary request.
+
+### B28. The research pane: Records and Claims
+- **Goal:** `pane.research` in Analyse, with its verdict words.
 - **Items:** .3, .44, .45, .46, .49.
-- **Files:** new `Model/Research.cs`, `Ui/ResearchPane.cs`, `Live/LabResearch.cs`, new `tools/looklab/data/samples/research/panel.json`, `tools/looklab/data/design/workspaces.json`, new `tests/D02ResearchTests.cs`, new `tests/test_d02_research_sample.py`.
+- **Files:** new `Model/Research.cs`, `Ui/ResearchPane.cs`, `renderer/shell/project/D02/ShellResearch.cs`, new `tools/looklab/data/samples/research/panel.json`, `tools/looklab/data/design/workspaces.json`, new `tests/D02ResearchTests.cs`, new `tests/test_d02_research_sample.py`.
 - **Add:**
-  - `interface IResearchSource`, with one method per existing research row: `research.archive.inventory`, `research.claims`, `research.check.report`, `evidence.word`, `research.runs`, `research.obligations`.
-  - `frame.AddPane("pane.research", …)` with four tabs. Lists use `VirtualRows`, grouped by stage, then family.
-  - A record opens in place with its finding paragraph and a folded `WordTree` of named parts.
-  - A researcher's name is a separate field. Changing it changes no digest and no row id.
-  - `enum Verdict` and `VerdictLine(verdict, scope)`, producing exactly the sentences of ADR-D02.46 on one wrapping line, in one weight, with no colour role.
-  - "pinned: input <digest>" never turns stale on a commit. The branch is read-only.
-  - Copy and save carry the note "Solving previews refuse it" and set `Origin.Research` (B12).
-  - Every control calls `registry` by row id.
-  - The sample is synthetic. Its field names follow `rust/c600-research/src/panel/answers.rs` and `wire.rs`, with one row per verdict word and `historical_check_incomplete` included. It is labelled `evidence: "synthetic"`.
-- **Check:**
-  - `D02VerdictWordsExact`;
-  - `D02NotApplicableCountsAsNoCheck`;
-  - `D02CutOffIsNeverAVerdict`;
-  - `D02PinnedInputNeverStaleOnCommit`;
-  - `D02RenameChangesNoDigest`;
-  - `D02EveryResearchControlInvokesARow`;
-  - `python tests/test_d02_research_sample.py`: every field name in the sample occurs in the two Rust files, read as text;
-  - the words-per-screen limit for `analyse` is raised deliberately in `screen-words.json`, in the same commit.
-- **Window:** the Analyse layout shows the Research pane. Open a record, then expand a Fail row to its first failing claim.
+  - `IResearchSource`, with one method per existing research row.
+  - Four tabs; virtual lists grouped by stage, then family.
+  - A record opens in place with its finding and a folded tree of named parts.
+  - A researcher's name is its own field and changes no digest.
+  - `VerdictLine(verdict, scope)`: the exact sentences of ADR-D02.46, one weight, no colour role.
+  - "pinned: input <digest>" never goes stale on a commit. The branch is read-only.
+  - Copy and save set `Origin.Research` and carry their note.
+  - The sample is synthetic, with field names from `rust/c600-research/src/panel/answers.rs` and `wire.rs`, labelled `evidence: "synthetic"`.
+- **Check:** `D02VerdictWordsExact`; `D02NotApplicableCountsAsNoCheck`; `D02CutOffIsNeverAVerdict`; `D02PinnedInputNeverStaleOnCommit`; `D02RenameChangesNoDigest`; `D02EveryResearchControlInvokesARow`; `python tests/test_d02_research_sample.py`.
+- **Owner sees:** the Research pane in Analyse; a Fail row expanded to its first failing claim.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B12. LP5's rows are already in the table.
+- **Depends:** B13.
 
-### B19. The research pane: Runs and Obligations
-- **Goal:** runs with declared budgets, reproduction, obligations, and the two CR-17 controls.
+### B29. The research pane: Runs and Obligations
+- **Goal:** declared budgets, reproduction, obligations, the two CR-17 controls.
 - **Items:** .4, .50.
-- **Files:** `Model/Research.cs`, `Ui/ResearchPane.cs`, `Live/LabResearch.cs`, `samples/research/panel.json`, `tests/D02ResearchTests.cs`.
+- **Files:** `Model/Research.cs`, `Ui/ResearchPane.cs`, the sample, `tests/D02ResearchTests.cs`.
 - **Add:**
-  - `record RunBudget(seconds, twists)`, declared before start and stored in the run row. A run at its budget ends `BudgetStopped`, with the cut-off words.
-  - A seed field that accepts 7401 to 7499 and names the scored blocks. A depth field. The source line "reads the frozen research data and archive".
-  - A reproduce control that calls `research.run.reproduce` and shows "reproduced: bytes equal" or "differs at byte k".
-  - The Obligations tab, with `research.obligations` and `research.obligation.export`.
-  - The control "open derived state in a free view", captioned "derived; reachability open". It is refused past the four-view envelope and is unavailable until its row exists.
-  - The control "step the checker", which opens LP4's debugger pane on the per-claim trace. It is unavailable until its row exists.
+  - `RunBudget`, declared before start. A run at its budget is `BudgetStopped`.
+  - A seed field accepting 7401 to 7499 and naming the scored blocks; a depth field.
+  - Reproduce, with its two sentences.
+  - The Obligations tab.
+  - "Open derived state in a free view" and "step the checker": both unavailable with the reason "row not in the command table yet (CR-17)". The first is also refused past the four-view envelope.
   - History shows no research runs.
-- **Check:**
-  - `D02RunNeedsDeclaredBudget`;
-  - `D02RunAtBudgetIsCutOffNotVerdict`;
-  - `D02SeedOutsidePoolRefused`;
-  - `D02HistoryShowsNoResearchRuns`;
-  - `D02DerivedViewRefusedPastFourViews`;
-  - `D02Cr17ControlsUnavailableWithReason`.
-- **Window:** the Runs tab. Declare a budget, start the sample run, see it stop as cut off, then reproduce it.
-- **Checkpoint:** yes, C4.
-- **Depends:** B18. CR-17 for both controls.
+- **Check:** `D02RunNeedsDeclaredBudget`; `D02RunAtBudgetIsCutOffNotVerdict`; `D02SeedOutsidePoolRefused`; `D02HistoryShowsNoResearchRuns`; `D02Cr17ControlsUnavailableWithReason`. Then `d02_run.py --script research`.
+- **Owner sees:** declare a budget, start the sample run, see it cut off, reproduce it.
+- **Machine:** H, W.
+- **Checkpoint:** yes, C5.
+- **Depends:** B28. CR-17.
 
-### B20. The tuning panel: knobs, ramps, compare
+### B30. The tuning panel: knobs, ramps, compare
 - **Goal:** `panel.tuning` in the right dock, with live ramps and two slots.
-- **Items:** .47 (first half; the item is mapped to B21, where it completes).
-- **Files:** new `Model/Tuning.cs`, `Ui/TuningPanel.cs`, `Live/LabTuning.cs`, `Live/LabFrame.cs`, new `tests/D02TuningTests.cs`.
+- **Items:** none (first half of .47).
+- **Files:** new `Model/Tuning.cs`, `Ui/TuningPanel.cs`, `ShellJumble.cs`, `tests/D02TuningTests.cs`.
 - **Add:**
-  - `TuningModel` over the existing `DesignSystem`, `ThemeFamily`, `Knob` and `TokenOverrides`.
-  - Parts: Family; Look; the five seed knobs (`tone`, `contrast`, `blackLevel`, `accentHue`, `gridIntensity`), each above a live ramp strip; Compare, with slots A and B, Swap and a held key that shows the other slot while held.
-  - It opens from the palette as a tab in the current layout's right dock, beside History in Solve.
-  - The existing Appearance panel stays (F11's default).
-- **Check:**
-  - `D02TuningOpensInRightDockOfCurrentLayout`;
-  - `D02KnobChangeRebuildsRampsOnly`: no model or view state is touched;
-  - `D02SwapIsAnInvolution`;
-  - `D02HeldCompareRestoresOnRelease`;
-  - the sweep passes.
-- **Window:** move a knob and the ramps and the whole frame follow. Hold the compare key to see the other slot.
+  - Family; Look; the five seed knobs over live ramp strips; Compare, with two slots, Swap and a held key.
+  - The palette opens it as a tab in the current layout's right dock.
+  - A knob change also sends the new palette to the core through `m6h_set_view_style`, so the pieces follow.
+- **Check:** `D02TuningOpensInRightDockOfCurrentLayout`; `D02KnobChangeTouchesNoState`; `D02SwapIsAnInvolution`; `D02HeldCompareRestoresOnRelease`. Then `d02_run.py --script tuning`: the state digest is unchanged after every knob.
+- **Owner sees:** move a knob; the frame and the tinted pieces follow.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B2, B15. CR-16 for the slot and compare rows (draft).
+- **Depends:** B15. CR-16.
 
-### B21. The tuning panel: presets, Advanced, simulation, Save checks
+### B31. The tuning panel: presets, Advanced, simulation, Save checks
 - **Goal:** complete ADR-D02.47.
 - **Items:** .47.
-- **Files:** `Model/Tuning.cs`, `Ui/TuningPanel.cs`, `Model/Gallery.cs` (`ColourMetric`), new `tools/looklab/data/design/tuning-presets.json`, `tests/D02TuningTests.cs`.
+- **Files:** `Model/Tuning.cs`, `Ui/TuningPanel.cs`, `Model/Gallery.cs` (`ColourMetric`), new `tools/looklab/data/design/tuning-presets.json`.
 - **Add:**
-  - Presets: shipped ones are read-only, and an edit forks a copy.
-  - Advanced, behind a switch, with search over all roles.
-  - A held colour-vision and high-contrast simulation. It is a full-window filter in the lab and covers the chrome only in the shell (F10); the panel says which.
-  - `Save()` runs three checks and fails in place, naming the failing pair:
-    - the contrast rules of `system.json`;
-    - a monotone lightness for `tint.jumble.height.{2, 4, 6, above}`;
-    - pairwise distinct `tint.jumble.contact_class.*` under each G4 simulation, by `ColourMetric`.
-  - The live-selector revert and the difference-file export, as draft rows.
-- **Check:**
-  - `D02SaveFailsOnNonMonotoneHeightRamp`;
-  - `D02SaveFailsOnCollidingClassesUnderSimulation`;
-  - `D02SaveFailsOnContrastRule`;
-  - `D02ShippedPresetForksOnEdit`;
-  - `D02AdvancedSearchFindsEveryD02Role`;
-  - both themes pass `Save()` as shipped; if the placeholders do not, fix the placeholder values, not the check.
-- **Window:** try to save a ramp with two equal steps, and the panel names the failing pair. Hold the simulation key.
+  - Shipped presets are read-only and fork on edit. Advanced sits behind a switch, with search.
+  - The held colour-vision and high-contrast simulation runs over the real frame: the same 3×3 matrix goes to the core's view style (B14) and to a chrome filter.
+  - `Save()` fails in place, naming the failing pair, on the contrast rules, a non-monotone height ramp, or contact-class colours not pairwise distinct under each G4 simulation.
+- **Check:** `D02SaveFailsOnNonMonotoneHeightRamp`; `D02SaveFailsOnCollidingClassesUnderSimulation`; `D02SaveFailsOnContrastRule`; `D02ShippedPresetForksOnEdit`; both themes pass `Save()` as shipped.
+- **Owner sees:** hold the simulation key and both the pieces and the chrome change; a bad ramp is refused with its pair.
+- **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B20. CR-16.
+- **Depends:** B30. CR-16.
 
-### B22. The reduced Track J driver: J1
-- **Goal:** a scripted, model-free run that checks operability through command rows and keys only.
-- **Items:** none new. It is the harness for .56.
-- **Files:** new `tools/looklab/track_j.py`, `tools/looklab/lane_d02.py` (mode `d02-j1`), `Live/LabJumble.cs` (a script player that feeds key events), new `tools/looklab/data/samples/jumble/j1-session.json`.
-- **Add:** the session file lists steps as `{keys or palette text, expect}`. The player sends real key events. After each step `Describe()` is compared with the expectation, which Python computes from the sample files independently of the C# loader. The four parts of J1 are in section 7.
-- **Check:** `python tools/looklab/track_j.py --reduced --only j1 --out <new folder>` prints `LOOKLAB_D02_J1_PASS operations=<k> reached=<k> boundary=0 observation=<run>/<run> not_run=<list>`.
-- **Window:** the owner can watch the script drive the lab in the live window with `--watch`. It is the same session at human speed.
+### B32. The reduced Track J driver: J1
+- **Goal:** a model-free run in the product shell, through keys and the palette only.
+- **Items:** none (the harness for .56).
+- **Files:** new `renderer/shell/track_j.py`, `tools/looklab/data/samples/jumble/j1-session.json`.
+- **Add:** the session runs through `d02_run.py`'s player on the `wj-ia-300` and `wj-ia-end` fixtures. Section 7 gives its four parts.
+- **Check:** `python renderer/shell/track_j.py --reduced --only j1 --out <new folder>` prints `M600_D02_J1_PASS operations=<k> reached=<k> boundary=0 observation=<n>/<n> not_run=<list>`.
+- **Owner sees:** `watch_d02.py --script j1`: the same session at human speed.
+- **Machine:** W.
 - **Checkpoint:** no.
-- **Depends:** B1 to B21.
+- **Depends:** B1 to B31.
 
-### B23. J0 and the reduced run's report
-- **Goal:** planted defects and the seed 7001 replay; one report.
+### B33. J0, the researcher subagent, and the report
+- **Goal:** planted defects, the seed 7001 replay, the lean subagent pass, one report.
 - **Items:** .56.
-- **Files:** `tools/looklab/track_j.py`, `Model/Jumble.cs` (a fault switch in `SampleJumbleSource`, read from `LOOKLAB_D02_FAULT`, compiled in lab builds only), new `tools/looklab/data/samples/jumble/defects.json`, `tools/looklab/README.md` (a D02 section), and a results page under `docs/progress/1.0/` beside the plan.
-- **Add:** at least 20 defects, each `{id, what it changes, the rule it breaks}`. Section 7 lists the classes. For each one the driver reruns the J1 session and records "caught" when a comparison fails or the module refuses. The seed 7001 replay is B13's playback run by the driver.
-- **Check:** `python tools/looklab/track_j.py --reduced --out <new folder>` prints `LOOKLAB_D02_J0_PASS planted=<n> caught=<m> replay=9/9` with m/n ≥ 0.8, plus the J1 line. The report lists every missed defect.
-- **Window:** the final sitting. The owner watches the J1 session, then reads the two result lines.
-- **Checkpoint:** yes, C5.
-- **Depends:** B22. The ten sealed defects from C4 (section 3).
+- **Files:** `renderer/shell/track_j.py`, `Model/Jumble.cs` (a fault switch in `SampleJumbleSource`, read from `M600_D02_FAULT`, refused without `--d02`), new `tools/looklab/data/samples/jumble/defects.json`, a results page under `docs/progress/1.0/`.
+- **Add:** at least 20 defects, each `{id, change, rule broken}`; the driver's loop over them; the subagent pass of section 7.
+- **Check:** `python renderer/shell/track_j.py --reduced --out <new folder>` prints `M600_D02_J0_PASS planted=<n> caught_driver=<a> caught_subagent=<b> caught_any=<m> replay=9/9`, with m/n ≥ 0.8.
+- **Owner sees:** the J1 session, then the two result lines.
+- **Machine:** W.
+- **Checkpoint:** yes, C6.
+- **Depends:** B32. The ten sealed defects from C5.
 
 ## 3. Checkpoints
 
-Each checkpoint is one read of the named diff range with the questions below, about an hour. Findings follow the review schema. Only blockers and majors stop the next block.
+Each checkpoint is one read of the named diff range against the questions below, about an hour, plus what the owner is shown. Only blockers and majors stop the next block.
 
-**C1, after B5 (foundations).**
-- Do the sample digests equal section 6, and does `--verify` rebuild them through the adapter only?
-- Does `ToolSlot` satisfy J-7 and N-1 as written (late result, cancel of the latest, cancel of an older, coverage required)?
-- Does the undefined numeral switch on the exact lattice flag only?
-- Is the entry slot chrome only?
-- Do the lab and the shell share one `JumbleSurface` with no copied file, and does the shell's fixed-point test see it?
-- Did any step touch ADR-D01's files, the command table, a frozen chapter or an LP4 or LP5 crate (`git diff --stat` against the base)?
+**C1, after B6.**
+- Fable checks:
+  - the sample digests equal section 6;
+  - a sample binds to a session only by its pose-array digests;
+  - `ToolSlot` satisfies J-7 and N-1;
+  - the undefined numeral switches on the lattice flag only;
+  - the entry slot is chrome only;
+  - nothing D02 runs without `--d02`;
+  - no protected file is in the diff.
+- Owner is shown: the W-J state posed under the frame, with the Jumble cell and marks.
 
-**C2, after B12 (the boundary block).**
-- Does the Q3.b test assert all four points, and is the screen compared whole, not field by field?
-- Does anything in the repair list order, weight, colour, pre-focus or pre-stage a row? Is there any code path to `Stage` without a user event?
-- Are blocked caps undefined everywhere (map, readouts, covers, threshold counts)?
-- Is the total N ever derived from cap values?
-- Is research origin refused at preview admission, not later?
+**C2, after B13.**
+- Fable checks:
+  - the Q3.b test compares the whole screen;
+  - no path orders, weights, pre-focuses or pre-stages a repair row;
+  - no call to `Stage` lacks a user event;
+  - blocked caps are undefined everywhere;
+  - total N is never derived from caps;
+  - research origin is refused at admission.
+- Owner is shown: the cap map, the lists, a staged repair.
 
-**C3, after B17.**
-- Is the class rule proper, deterministic and sticky on the real samples? Does overflow never reuse across a contact?
-- Does every waiting item show a named reason and no invented picture?
-- Do the words equal the record byte for byte? Is `PENDING_TERMS` exactly the eleven requests?
-- Are the held seat keys display only, with no route faked ahead of CR-19?
+**C3, after B19.**
+- Fable checks:
+  - an empty style or line layer draws byte-identically to none;
+  - style and transform are bound to their revision;
+  - the class rule is proper and sticky on the real samples;
+  - the never-hidden set survives every focus layer;
+  - a sweep draws only the certified inside set;
+  - the gate lines come from the event log and not from an estimate.
+- Owner is shown: gate sitting 1, and the certificate glyphs to accept or refuse.
 
-**C4, after B19.**
-- Are the verdict words exact? Are NotApplicable, not-checked and cut-off never counted as a pass or a fail?
-- Does every research control invoke a row?
-- Is the synthetic sample labelled, and are its fields those of the Rust source?
-- At this checkpoint Fable also writes ten planted defects for B23 and hands them to the integrator sealed. They are added to `defects.json` only after B22's driver is committed, so the catcher is not written to the list.
+**C4, after B24.**
+- Fable checks:
+  - the chart assignment is nearest cell with the lowest-id tie;
+  - no sweep fires under a chart;
+  - the raw view's clip never passes 90° and its caption always shows;
+  - the single-view stand-ins say what they are;
+  - no view mode changes a state digest.
+- Owner is shown: gate sitting 2, both presets, the slice and the raw view.
 
-**C5, after B23.**
-- Does the report count caught defects honestly? A crash does not count as a catch unless the defect is "a result without coverage" or similar.
-- Are the observation rules that need L1 reported as not run?
-- Does the item map of section 4 still hold against the built code?
-- Do the tuning panel's Save checks fail in place on real collisions?
+**C5, after B29.**
+- Fable checks:
+  - the verdict words are exact, and cut-off, not-checked and NotApplicable are never a pass or a fail;
+  - every research control invokes a row;
+  - the synthetic sample is labelled.
+- Fable also writes ten planted defects, sealed, added to `defects.json` only after B32's driver is committed.
+- Owner is shown: the research pane.
+
+**C6, after B33.**
+- Fable checks:
+  - caught defects are counted honestly;
+  - rules not run are reported as not run;
+  - the subagent stayed inside its cap;
+  - section 4 still matches the code.
+- Owner is shown: the J1 session and the report.
 
 ## 4. Item map
 
-| Item | Mapping | Interim state or note |
+| Item | Mapping | Note |
 |---|---|---|
-| .1 | B2 | Reach is tested again in B22 |
-| .2 | B4 | Free placement test for every D02 panel |
-| .3 | B18 | |
-| .4 | B19 | |
-| .5 | B12 | |
-| .6 | B4 | The lists inside the accordion come in B9 to B11 |
+| .1 | B2 | Reach is tested again in B32 |
+| .2 | B6 | |
+| .3 | B28 | |
+| .4 | B29 | |
+| .5 | B13 | |
+| .6 | B6 | |
 | .7 | B3 | |
-| .8 | B16 | |
-| .9 | waits for R5, L1, a gate row per preset | Palette rows present and disabled with the reason; Global keeps the projection chain (B16) |
-| .10 | waits for R5, L1 | No chart, so no rule to apply; `jumble.half_turn` row exists (B2) |
-| .11 | B4 | |
-| .12 | B4 | Contact-class mode and never-hidden set show as armed in the legend only (F9) |
-| .13 | B7 | After M-RING is redone in B7's precondition |
-| .14 | B7 | |
-| .15 | B8 | |
-| .16 | B8 | |
-| .17 | waits for L1, R5 | Row disabled with reason; the named-cap cell shows straddler and point counts (B16) |
-| .18 | waits for R5, the stereographic stage, J10, RPI.36 | Row disabled with reason; caption stored (B16) |
-| .19 | B8 | Picking certificate glyphs waits with .26 |
+| .8 | B27 | Stays the default until R5 admits a chart |
+| .9 | B22 | Hopf rings in B23; ships only after R5 and each preset's gate row |
+| .10 | B22 | |
+| .11 | B6 | |
+| .12 | B6 | The armed mode and the never-hidden set draw from B15 and B16 |
+| .13 | B8 | After M-RING is redone in the step |
+| .14 | B8 | |
+| .15 | B9 | |
+| .16 | B9 | |
+| .17 | B20 | The held split waits for a second core view; the key alternates layers meanwhile |
+| .18 | B21 | Side by side waits for a second core view; holes as faces wait for .25 |
+| .19 | B9 | Sticker picks in B17; glyph picks after the glyph gate row |
 | .20 | B15 | |
-| .21 | B15 | Legend and rule now; drawing on pieces waits for L1 |
-| .22 | B6 | |
-| .23 | B15 | Legend and focus-layer count now; drawing waits for L1 |
-| .24 | B15 | Count now; outline drawing waits for L1 |
-| .25 | waits for the exposed-face geometry, R5 for the tint | "exposed faces unavailable" on the border and Tier 1; slots exist (B2, B16) |
-| .26 | waits for L1 and the certificate-glyph gate row | Certificate points as a count; never-hidden set and cut trace named as not drawn (B16) |
-| .27 | B2 | Drawn in B7 and B8 |
-| .28 | B14 | |
-| .29 | B13 | |
-| .30 | B10 | Layer, key and count now; dimming in a view waits for L1 |
-| .31 | B13 | X3's bound is a labelled placeholder |
-| .32 | B11 | |
-| .33 | B12 | Engine write waits for CR-15 and K2 |
-| .34 | B11 | Step label and count now; outline in a view waits for L1 |
-| .35 | B9 | |
-| .36 | B9 | |
-| .37 | B2 | |
-| .38 | B10 | |
-| .39 | B14 | |
+| .21 | B15 | |
+| .22 | B7 | |
+| .23 | B15 | |
+| .24 | B15 | |
+| .25 | waits for the exposed-face geometry | Nothing in the hole; "exposed faces unavailable" on the border and Tier 1 (B27); slots exist (B2) |
+| .26 | B16 | Glyphs stay a count until gate row G3 and the owner's acceptance |
+| .27 | B2 | Drawn in B8 and B9 |
+| .28 | B26 | |
+| .29 | B25 | |
+| .30 | B15 | Layer model in B11 |
+| .31 | B25 | X3's bound is a labelled placeholder |
+| .32 | B12 | |
+| .33 | B13 | Engine write waits for CR-15 and K2 |
+| .34 | B12 | The outline is drawn in B16 |
+| .35 | B10 | |
+| .36 | B10 | |
+| .37 | B2 | Applied in B18 and B22 |
+| .38 | B11 | |
+| .39 | B26 | |
 | .40 | B3 | |
 | .41 | B2 | |
-| .42 | B17 | Routing waits for CR-19; bindings wait for XM1 |
-| .43 | B17 | |
-| .44 | B18 | |
-| .45 | B18 | Its two CR-17 controls are B19 |
-| .46 | B18 | |
-| .47 | B21 | First half in B20 |
-| .48 | record only | Round 4; no row and no code |
-| .49 | B18 | |
-| .50 | B19 | |
-| .51 | record only | |
-| .52 | record only | The seed field of B19 enforces the pool |
+| .42 | B27 | Routing waits for CR-19; bindings for XM1 |
+| .43 | B27 | |
+| .44 | B28 | |
+| .45 | B28 | Its two CR-17 controls are B29 |
+| .46 | B28 | |
+| .47 | B31 | First half in B30 |
+| .48 | record only | Round 4 |
+| .49 | B28 | |
+| .50 | B29 | |
+| .51 | record only | The reduced run's subagent is not this agent |
+| .52 | record only | B29's seed field enforces the pool |
 | .53 | record only | |
-| .54 | record only | J0 and J1 are run by B22 and B23 |
+| .54 | record only | Run by B32 and B33 |
 | .55 | record only | |
-| .56 | B23 | The reduced run; the full run is after K2 |
+| .56 | B33 | |
 
 ## 5. Rows and data
 
-**Rule for every missing row.** The row is a draft row in `tools/looklab/data/design/command-rows-d02.json` with its `request`. The lab and the shell register it, and the palette marks it "draft row". The test `D02DraftRowsAbsentFromTable` fails when the table gains the id, and the draft row is then deleted in a one-line commit. Draft ids are proposals to the top integrator, not names this build fixes.
+**Missing command rows.** Each is a draft row in `tools/looklab/data/design/command-rows-d02.json`, registered by the shell only with `--d02`, and deleted when `D02DraftRowsAbsentFromTable` fails because the table gained the id.
 
 | Request | Steps | Built before the row exists | Waits |
 |---|---|---|---|
-| CR-14 | B4, B8, B10, B11, B16 | Threshold set and clear, entry slot, straddler layer and repair step focus work on sample data through draft rows; slice, raw view and chart preset rows are present and disabled | The view rows' behaviour (L1, R5) |
-| CR-15 | B12 | Sealed span, whole-only bar and repair-pair record in the sample preview | The engine preview and record write (K2) |
-| CR-16 | B20, B21 | The whole panel on draft rows | Nothing in the shell; the product rows |
-| CR-17 | B19 | Both controls shown, unavailable, with the reason "row not in the command table yet (CR-17)" | Opening the debugger trace and the derived view |
-| CR-19 | B17 | Held-seat display with 12 twist keys and orders | Routing a held seat with a twist key as one chord; duplicate, prefix and layout checks |
-| Glossary | B17 | `PENDING_TERMS` holds the eleven additions | The list empties when LP4's file has them |
-| Unlisted (F7) | B8, B14, B15 | `jumble.cap.name`, `jumble.cap.unname`, the tint mode row, the two focus-layer rows and the correction-set mark as draft rows tagged `unlisted` | The integrator decides: add them to CR-14, or map them to existing rows |
+| CR-14 | B6, B9, B11, B12, B15, B20 to B23, B26 | Every view-kind operation works through its draft row | The product rows |
+| CR-15 | B13 | Sealed span, whole-only bar, the record in the sample preview | The engine's preview and record write (K2) |
+| CR-16 | B30, B31 | The whole panel | The product rows |
+| CR-17 | B29 | Both controls shown as unavailable with the reason | The debugger trace and the derived view |
+| CR-19 | B27 | The held-seat display | Routing a held seat with a twist key as one chord |
+| Glossary | B27 | `PENDING_TERMS` | Emptied when LP4's file has the additions |
+
+**Renderer and host work, by feature-matrix row.** Each is built as a candidate behind `--d02` and measured. Admission is R5, a revision of the frozen render chapters that the top integrator writes and the owner signs; no step edits those chapters.
+
+| Work | Matrix row | Steps | Gate row |
+|---|---|---|---|
+| Posed pieces at sample states | J02 (exists) | B5 | G1 |
+| Per-piece style: tint, outline, dim | J07, J09 (proposed additions) | B14, B15 | G1 |
+| Lines: cut trace, outlines, certificate glyphs | J04 | B16 | G2, G3 |
+| Picks | J13 | B17 | none |
+| Sweep and half-turn | J03 | B18 | G1 |
+| Slice layers and shell clip | J04, J09 | B20 | G4 |
+| Stereographic stage and clip | J05 | B21 | G5 |
+| Chart presets | J05 and the chart admission clauses | B22, B23 | G6, G7 |
+| Exposed faces | J10 | none | waits: geometry production is owed by the engineering line |
+
+**Other data.**
 
 | Data | Steps | Built before it exists |
 |---|---|---|
-| L1 (per-piece poses in Look Lab) | B10, B11, B15, B16 | Counts, legends, labels and named "needs L1" lines; no posed piece is drawn |
-| R5 (chart, slice, stereographic stages; gate rows) | B16 | Disabled rows with reasons; projection chain kept |
-| Exposed-face geometry | B16 | The unavailable state and its three slots |
-| X1, X4, X5 (aid job timings) | B3, B9 | `SampleJobs` uses a tick clock; `slot.fill` stays off |
-| X3 (long-word bound) | B13 | A labelled placeholder constant in design data |
-| X6 (dim path) | B10 | The straddler layer is never a default |
-| XM1 (bindings) | B17 | Placeholder keys labelled as such |
-| Certificate-glyph gate row | B16 | The count in the slice's place |
-| M-RING | B7 | Redone as a tracked test before the cap map rests on it |
-| M-FOLD | none | Only the raw view rests on it, and that waits |
+| A second core view (the four-view envelope) | B20, B21 | One drawn view with a switch key; alternating stand-ins for the split and side by side |
+| X1, X4, X5 | B3, B10 | A tick clock; `slot.fill` stays off |
+| X3 | B25 | A labelled placeholder bound |
+| X6 | B15 | The straddler layer is never a default |
+| XM1 | B27 | Placeholder bindings |
+| M-RING | B8 | Redone as a tracked test |
+| M-FOLD | B21 | Redone as B21's WARP check of the chart's folding at the clip |
+| A sweep while engine jobs run in the runtime child | none | Waits for K2 |
+
+L1 is retired by the owner's answer: the product core's pose path replaces it.
 
 ## 6. Sample data
 
-All samples are written by `tools/looklab/fixtures/make_d02_samples.py` through `RustJumbleEngine` and checked by `tests/test_d02_samples.py`. Menu identity `fddc8532…958c` (I_a) is in every file.
+All states are written by `make_d02_samples.py` through `RustJumbleEngine`. Each also gets a session fixture (B5), bound to its sample by the two pose-array digests. Menu identity `fddc8532…958c` (I_a).
 
 | State id | Source | Must match | Used by |
 |---|---|---|---|
-| `on-zero` | `start(I_a)`, no twist | `record()['digest']`, pinned at B1; expected to equal the W-J fixture's `stages.start.digest` `e3b0c442…b855` (F12 decides) | B4, B6 |
-| `wj-ia-300` | `research/jumbling/fixtures/wj-I_a.json`, journal records 0 to 299 | Digest pinned at B1 from two equal runs; contact classes exactly 4 | B4 to B12, B15 |
-| `wj-ia-420` | Same journal to record 420 | Off-lattice pieces 114,930; digest against `stages.mid.digest` `940367a8b97ca199…` if F12 holds | Anchor only |
-| `wj-ia-end` | Same journal, all 841 records | Off-lattice 121,184; 27 admissible and 573 blocked caps; `stages.end.digest` `6904a731ad8caa88…` if F12 holds | B7, B8, B10 |
-| `ia-40` | Corrected by the integrator (F13): the I_a@40 stop of `stop40_reference()` in `research/jumbling/differential/references/obs_refs.py:125`, the W-J I_a fixture at 40 records then its 62 recorded restorer twists, replayed through the adapter | The reference's digest and off-lattice count if F12 holds; contact classes exactly 1 | B15 |
-| `deep-1` | `research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json`, the 3,000-twist `history` | `1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace`; N 145,574; off 118,821; heights 116,665 / 1,971 / 185 | B6, B15 |
-| `deep-2` | `deep-1`, then the record's 313 `moves`, then the 12 letters at `research/jumbling/differential/leads/results/summary.md:497` | `bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299`; off 103,896; 102,960 at height 2; 936 at height 4 | B6, B15 |
-| `s7001-0` to `s7001-9` | `…/11-scramble-census/runs/round1/ia-k10-s7001.json` `history` (10 twists), then `…/13-tutorial-runner/runs/depth10-seed7001/words/00000.json` to `00008.json` | Each word file's `input_digest` and `output_digest`, the first being `1438ebed…d6b1` to `ab254e2a…c7f9`; N 13,270 and off 26,519 at the start; solved at the end | B13, B15, B23 |
-| `nu-c<id>` (two ids) | `on-zero` plus one ν-correction from `correction_lookup(id, twists=True)` | Digest pinned at B1; N = 0; ν equal to the correction's row | B14 |
-| `corrections.json` | `corrections()` and `nu_constants()` | 36 rows in id order | B13, B14 |
-| `cap-layout.json` | `model()` poles against `tools/looklab/fixtures/hopf-rings.json` | A bijection onto 20 rows of 30 | B7 |
-| `research/panel.json` | Synthetic, shapes from `rust/c600-research/src/panel/` | Field names present in the Rust source | B18, B19 |
+| `on-zero` | `start(I_a)`, no twist | The adapter digest, pinned at B1 and expected to equal the W-J fixture's `stages.start.digest` `e3b0c442…b855` | B6, B7 |
+| `wj-ia-300` | `research/jumbling/fixtures/wj-I_a.json`, journal records 0 to 299 | Digest pinned at B1 from two equal runs; contact classes exactly 4 | B5 to B18, B32 |
+| `wj-ia-420` | The journal to record 420 | Off-lattice 114,930; `stages.mid.digest` `940367a8b97ca199…` if B1's case holds | Anchor |
+| `wj-ia-end` | All 841 records | Off-lattice 121,184; 27 admissible and 573 blocked; `stages.end.digest` `6904a731ad8caa88…` if B1's case holds | B8, B9, B11, B16, B19 |
+| `ia-40` | `stop40_reference()` in `research/jumbling/differential/references/obs_refs.py:125` (the W-J I_a fixture at 40 records) | Contact classes exactly 1 | B15 |
+| `deep-1` | `research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json`, the 3,000-twist `history` | `1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace`; N 145,574; off 118,821; heights 116,665 / 1,971 / 185 | B7, B15 |
+| `deep-2` | `deep-1`, the record's 313 `moves`, then the 12 letters at `research/jumbling/differential/leads/results/summary.md:497` | `bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299`; off 103,896; 102,960 at height 2; 936 at height 4 | B7, B15, B19, B24 |
+| `s7001-0` to `s7001-9` | `…/11-scramble-census/runs/round1/ia-k10-s7001.json` `history`, then `…/13-tutorial-runner/runs/depth10-seed7001/words/00000.json` to `00008.json` | Each word file's `input_digest` and `output_digest`; N 13,270 and off 26,519 at the start; solved at the end | B25, B33 |
+| `nu-c<id>` (two ids) | `on-zero` plus one correction from `correction_lookup(id, twists=True)` | Digest pinned at B1; N = 0; ν equals the correction's row | B26 |
+| `corrections.json` | `corrections()`, `nu_constants()` | 36 rows in id order | B25, B26 |
+| `cap-layout.json` | `model()` poles against `tools/looklab/fixtures/hopf-rings.json` | A bijection onto 20 rows of 30 | B8, B22 |
+| The G3 state | *Integrator:* S1, the witness state of `research/jumbling/witness.py`: one jumble twist (c, g) of 9.99987° from solved, with 54 blocked grips (`research/jumbling/viewer/README.md:271`; its certificate figures at `:420` to `:423`). B1 checks whether the adapter reaches it; if not, G3 uses the sample state whose blocked grip has the most certificate points, and the results page records that count beside 1,654 | At least 1,654 certificate points | B19 |
+| `research/panel.json` | Synthetic, shapes from `rust/c600-research/src/panel/` | Field names present in the Rust source | B28, B29 |
 
 Notes:
-- Each state has two or three named caps: at least one blocked cap and one admissible cap with a non-empty repair list.
-- The W-J journal was written under the A1 to A4 contract revision. Replay its records through the same conversion `tests/test_jumbling_rust_candidate.py` uses for its W-J cases, not a new one.
-- `deep-2`'s twelve letters are `[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[124,2],[274,13],[46,1],[46,3],[104,14]]`.
+- The W-J journal was written under the A1 to A4 contract revision. Replay it through the conversion `tests/test_jumbling_rust_candidate.py` uses for its W-J cases.
+- Masks are stored for two or three named caps per state, and for repair rows 1 to 9 only.
 
 ## 7. The reduced Track J run
 
-**Form.** A scripted run with no model and no API. ADR-D02.51's researcher agent belongs to the full run. The driver is `tools/looklab/track_j.py`. It works only through key events and palette text sent to the lab, and reads only the lab's `Describe()` dump.
+**Base: the scripted driver.** It uses no model. `renderer/shell/track_j.py` runs the product shell through `d02_run.py`'s player: chords and palette text in, screen text out.
 
-**Commands.**
-- `python tools/looklab/track_j.py --reduced --out <new folder>`: both bars, headless, on the CPU lane.
-- `python tools/looklab/track_j.py --reduced --only j1 --watch`: the same session at human speed in a window the owner starts.
-- Output: `report.json`, plus the lines `LOOKLAB_D02_J1_PASS …` and `LOOKLAB_D02_J0_PASS …`.
+- `python renderer/shell/track_j.py --reduced --out <new folder>` runs both bars.
+- `python renderer/shell/watch_d02.py --script j1` lets the owner watch it.
 
-**J1 on sample data.**
-- *Keyboard reach.* For every row id starting `research.`, `jumble.` or `evidence.` and every D02 draft row, the driver reaches it from a fresh lab by keys alone (a chord, or the palette). It records that the row was invoked. `pointer_only` stays empty.
-- *Observation.* One scripted check per rule of `jumbling-observation.md` that chrome can show: naming before any job, complete facts or explicit incomplete coverage, no method-selected object, kept checks in release order. Rules that need drawn pieces (rule 5's never-hidden set, the cut trace) are listed under `not_run` with "needs L1". They are never counted as passed.
-- *The repair list's boundary.* For each cap sample the dumped rows equal the adapter's rows in order. No focus exists on open. Nothing is staged until a digit or Enter is sent. The empty and cut-off lines carry their coverage.
-- *The boundary count.* `BoundaryLedger` reads zero at the end of the session.
+**J1.**
+- *Keyboard reach:* every row id starting `jumble.`, `research.` or `evidence.` and every D02 draft row is invoked from a fresh shell by keys alone.
+- *Observation:* one scripted check per rule of `jumbling-observation.md` that this build can show, now including the never-hidden set and the cut trace. A rule this build cannot show, such as exposed faces, is listed under `not_run`.
+- *The repair list's boundary:* the rows equal the adapter's in order; no focus on open; nothing staged before a digit or Enter.
+- *The boundary count:* `BoundaryLedger` reads zero.
 
-**J0 on sample data.**
-- *Planted defects.* At least 20, switched one at a time by `LOOKLAB_D02_FAULT`. Ten are written by Opus and ten by Fable, sealed at C4. Classes:
-  - repair rows reordered, or one row pre-focused;
-  - N_c shown at a blocked cap;
-  - total N shown as the sum of the caps;
+**J0.**
+- *Planted defects:* at least 20, switched by `M600_D02_FAULT`; ten written by Opus, ten by Fable sealed at C5. Classes:
+  - repair rows reordered or pre-focused;
+  - N_c at a blocked cap;
+  - total N as a sum of caps;
   - pending shown as undefined;
   - a late result overwriting a newer one;
-  - a completed result without coverage shown as ready;
-  - a folded row carrying a numeral;
+  - a result without coverage shown as ready;
+  - a folded row with a numeral;
   - a class reused across a contact;
-  - a blocked cap counted as a threshold non-member;
+  - a blocked cap counted as a non-member;
   - a cut-off worded as "none";
   - NotApplicable counted as a pass;
   - research output admitted to a solving preview;
   - a digest changed by one character;
-  - a ΔN sign flipped.
-- A defect is caught when a driver comparison fails or the module refuses. The bar is at least 80%.
-- *Seed 7001.* The driver plays the nine recorded words through B13's playback. At each step the digest the module shows equals the word file's `input_digest` before and `output_digest` after, and the last state is solved.
+  - a ΔN sign flipped;
+  - a style byte for the wrong piece.
+- *Seed 7001:* the nine words play on the seed 7001 fixture. Here the host's own engine executes them, and the state after each word binds to the sample whose digests the word file names.
+
+**The researcher subagent (owner's answer 2).** One subscription subagent on a smaller model; no API, no source access, one session.
+- *It reads:* the palette's row list with display names, the key map sheet, `jumbling-observation.md`, and the screen dumps of runs.
+- *It never sees:* the samples, the defect list, the code.
+- *It does:*
+  - reach: writes one key script that reaches every operation in a list of at most 30 display names, with one revision allowed after its first dump comes back;
+  - defects: reads the dumps of 10 runs of a fixed session (8 faulted, 2 clean, unlabelled) and says for each whether a rule is broken and which.
+- *Cap:* at most 2 scripts written, 12 dumps read, 90 minutes, one context with no continuation, about 2,000 words of output. Opus runs the scripts and hands back the dumps; the subagent runs nothing.
+- *Scoring:* reach passes if its script reaches every listed operation. A defect is caught if the driver or the subagent names it; both counts are reported apart, and so are false alarms on the two clean runs.
 
 **What it proves.**
-- The surfaces show the adapter's facts faithfully.
-- The host rules hold: the slot states, N-1, J-8, whole-only repair.
-- Every operation has a keyboard route.
-- The boundary holds in the chrome.
-- The chain of samples is intact.
+- The surfaces show the adapter's facts faithfully over a real session at the same state.
+- The host rules and the boundary hold in the chrome.
+- Every operation has a keyboard route that someone other than its author can find from the product's own aids.
+- The seed 7001 restoration replays through the product's engine to solved.
 
 **What it does not prove.**
-- That the module executes a twist or computes a digest: the adapter did, at sample build. The true replay through the module is after K2.
-- Anything about the engine wiring, timing, the four-view envelope or the renderer gate.
-- Windows input: key events are injected.
-- The researcher agent's ability, J2 to J4, or the target of ADR-D02.55.
-- Any human evidence.
-- That a model-free script is the independent "run" the bar means: that is a reading the owner should confirm (question 2 in section 8).
+- That the aids' facts come from the product's engine: they come from samples until K2.
+- J2 to J4, or the target of ADR-D02.55.
+- The researcher agent of ADR-D02.51.
+- Real key input: keys are injected inside the shell; real keys are seen only in the owner's sittings.
+- Anything about the four-view envelope.
+- Human evidence.
 
 ## 8. Risks and findings
 
-**In the code this builds on.**
-- **F1 (major).** The chrome library has none of the revision 4 and 6 host primitives ADR-D02 rests on: no tool-slot states, no undefined numeral, no whole-only bar, no practice mark, no pattern roles. A search of `tools/looklab/app`, `tools/looklab/core` and `tools/looklab/data/design` finds none of those names. `tools/looklab/app/Chrome/Model/Session.cs:11` has only four preview states. B2 and B3 build them as code and data; that is not an edit of ADR-D01's text.
-- **F2.** `FocusLayers` at `tools/looklab/app/Chrome/Model/Gallery.cs:157` is a fixed list of pick layers, not a predicate layer with a count. B10 extends it.
-- **F3.** The shell registers only the command table (`renderer/shell/project/ShellChrome.cs:124`), while the lab also adds draft rows and labels (`tools/looklab/app/Live/LabFrame.cs:119` to `:123`). `renderer/shell/build_shell.py:62` to `:64` stages no sample data. B5 fixes both.
-- **F4 (minor).** `renderer/shell/README.md:57` says the host wrapper refuses a version other than 2, and its list ends at ABI 6 (`:144`). `renderer/bridge/host/src/lib.rs:106` says 7.
-- **F14.** `tools/looklab/lane_a5.py:10` matches `parts=15` exactly, and `:6` sets the sweep limit to 400 s against about 230 s today. Every new kept-view part changes the first. D02's controls will lengthen the second. Give D02 its own sweep mode in `lane_d02.py` rather than raising the limit.
-- **F15.** The research sample must be synthetic, because the only driver of the panel's real answers is `rust/c600-research/tests/panel.rs`, in an LP5 crate no step may edit.
+The integrator's fixes to the ADR text for the first return's findings are on disk, and I have not re-listed them. What follows is the code this build stands on and what the new direction adds.
 
-**In the ADR-D02 text.**
-- **F5.** ADR-D02.37 lists "`slot.fill` and `cue.check`, reserved rows" (`ADR-D02-jumble-research.md:299`). In the lines above it, `cue.*` names are cues, not rows. Section 16 repeats the pair (`:451`). B2 builds one off row, `slot.fill`, with the cue `cue.check` reserved.
-- **F6 (major).** ADR-D02.13 rests the cap map on the ring-sheet arrangement with no data tag (`:142`), while `:73` to `:74` say M-RING is redone in the repository before an item rests on it. No tracked file I read maps cap ids to Look Lab's cells: `rust/c600-command/src/repair.rs:19` says only "as the jumbling engine numbers them". B7 carries the redo and the map as a precondition.
-- **F7 (major).** CR-14 (`:429` to `:431`) asks for no row to name or un-name a cap (.16, .19), to switch the tint mode (.20), for the domain and "height at least k" focus layers (.21, .23), or to mark a ν-correction into a set (.39, `:308`). The table has no such rows. ADR-D02.1 requires every operation to be a row.
-- **F8 (minor).** Section 15 goes from CR-17 to CR-19 (`:436` to `:438`). Say where CR-18 lives, so nobody looks for it here.
-- **F9 (minor).** ADR-D02.12 arms the contact-class mode and the never-hidden set at entry (`:134` to `:135`) with no data tag, but both draw on pieces and so wait for L1.
-- **F10.** ADR-D02.47's simulation "runs over the real frame" (`:369`). In the product shell the core's frame is a layer beneath the Godot window (`tests/test_renderer_shell.py:86`), so a chrome filter cannot cover it. It needs a core stage, hence a look-cost row.
-- **F11 (minor).** `panel.tuning` overlaps the existing Appearance panel (id `appearance` in `LabFrame.cs`). The text does not say whether it replaces it. Default taken here: both stay.
-- **F12 (major, decided by one assertion in B1).** Two digest functions may be in play. The W-J fixture's start digest and the seed 7001 runner's end digest (`research/jumbling/restoration/13-tutorial-runner/runs/depth10-seed7001/check.jsonl:10`) are both the hash of empty input. `tests/test_jumbling_rust_candidate.py:263` says J1 computes its own digest from a candidate record.
-- **F13.** The "I_a@40 stop" (`:69`; `docs/progress/1.0/adr-d02-plan.md:18`) names no tracked file. The integrator names it. Until then, try W-J records 0 to 39 and accept it only if the class count is 1.
-- **F16 (minor).** ADR-D02.6 says the Local lists expand "one at a time" (`:101` to `:102`), so the kept twist checks are closed while the repair list is open. B4 keeps a one-line header with counts on each closed list.
+**Findings.**
+- **F1 (major).** The chrome library has none of the revision 4 and 6 host primitives: a search of `tools/looklab/app` and `tools/looklab/data/design` finds no tool-slot state, undefined numeral, whole-only bar or pattern role, and `tools/looklab/app/Chrome/Model/Session.cs:11` has four preview states. B2 and B3 build them.
+- **F2.** `FocusLayers` at `tools/looklab/app/Chrome/Model/Gallery.cs:157` is a fixed pick-layer list. B11 extends it.
+- **F3.** The shell registers only the command table (`renderer/shell/project/ShellChrome.cs:124`) and stages no samples (`renderer/shell/build_shell.py:62` to `:64`). B4 fixes both.
+- **F4 (major).** The shell draws one core view. `renderer/shell/README.md:207` says Local is "not drawn yet", and `:119` that the host opens one view. The slice and the raw view are Local modes, and the held split and the side-by-side antipode need two views at once.
+- **F5.** The session fixture is made only by pressing the router's fixed keys on one cap (`renderer/bridge/host/src/fixture.rs:14` to `:15`, `:33`), so no sample state can be opened. B5 adds a word fixture.
+- **F6 (major).** The product pipeline has no style, line or stage input. `renderer/core/include/sa2_interop.h:533` to `:546` gives a preparation only visibility, interaction and instance ids, and `:565` to `:589` gives a frame only the camera matrix. `renderer/core/shaders/draw.hlsl:19` and `:31` colour a sticker by its label's cell.
+- **F7 (major, process).** The rows this drawing needs are not admitted. `docs/architecture/1.0/language/renderer-feature-matrix.md:349` to `:354` mark J07 to J12 "Proposed addition under RM.27", `:347` leaves chart admission to its own clauses, and `:352` says J10's geometry production is still owed. That file is in the frozen language folder.
+- **F8.** With Jumble on nothing is pickable (`renderer/shell/README.md:142` to `:143`). B17 binds J13.
+- **F9.** Measured runs never pass `--frame` (`renderer/shell/README.md:196` to `:197`), yet the packet requires the gate to hold with the full chrome. D02's gate rows are a new run kind, and their numbers are not comparable with C9's bare-window runs.
+- **F10.** A shell started from a background process receives no keys (`renderer/shell/README.md:216` to `:218`). Scripted runs therefore inject keys inside the shell and prove nothing about Windows input.
+- **F11 (minor).** `renderer/shell/README.md:57` says the host wrapper refuses a version other than 2, while `renderer/bridge/host/src/lib.rs:106` is 7. B5 moves it to 8 and should correct the line.
+- **F12.** Three digest functions may be in play: the adapter's record digest, the runner's (the W-J start and seed 7001 end digests are both the hash of empty input: `research/jumbling/restoration/13-tutorial-runner/runs/depth10-seed7001/check.jsonl:10`), and the host's head digest. B1 decides the first pair by one assertion. B5 binds by pose-array digests, which the render contract makes equal for equal states.
+- **F13.** ADR-D02's data tags still name L1 for .9, .10 and .17, and `docs/progress/1.0/adr-d02-plan.md:102` lists "Jumble drawing in Look Lab" as waiting. The owner's answer retires both; the integrator should reword them.
+- **F14.** The research sample must be synthetic: the only driver of the panel's real answers is `rust/c600-research/tests/panel.rs`, in an LP5 crate.
 
 **Risks.**
-- The words-per-screen limits (`tools/looklab/data/design/screen-words.json:6`, solve 155) will be passed by B6 to B11. Raise them deliberately per step.
-- `seam_facts(all)` at the deep exports has no timing yet. B1 may need a budget and a stored cut-off.
-- Both themes must pass B21's Save checks with placeholder values.
+- **R1.** The renderer block is the long pole: C++, HLSL, three ABI moves (core 6, host 8 and 9) and the pins that follow them in the shell and the tests. A failed gate row stops a view from shipping, not the chrome.
+- **R2.** A deep fixture may take minutes to open if a reopen replays every commit. B5 measures it. If it is slow, deep states are used only at gate sittings and checkpoints.
+- **R3.** The chart assignment runs per revision over 177,120 pieces and 600 cells. B22 records its time.
+- **R4.** New `Ui/` files must compile in Look Lab's project as well as the shell's. Run Look Lab's Godot lane once per checkpoint as a regression guard, never as acceptance.
+- **R5.** Gate sittings need a quiet machine and the owner's start. Batching them into two keeps that to about an hour.
 
 **Questions only the owner can answer.**
-1. Does Jumble drawing enter Look Lab (L1) during this build or after it? The plan lists this as the owner's open answer. If during, items .17, .21, .23, .24, .26, .30 and .34 gain a drawing step after B16; if after, they stay as mapped.
-2. Is a scripted, model-free run enough for the reduced J0 and J1 (recommended, no spend), or should a subscription subagent also act as the researcher for the reach and defect parts?
+1. One drawn view or two? This framework draws one core view at a time and leaves the Global and Local pair, with the four-view envelope, to ADR-D03 and K2. Adding a second core view here would be about three more steps and one more gate sitting.
+2. May the drawing candidates be built and measured before R5 is admitted? Recommended: yes, behind `--d02`, with R5 put to the owner once after gate sitting 2.
 
 ## 9. Estimate
 
-| Step | Agent hours | Step | Agent hours |
-|---|---|---|---|
-| B1 | 6 | B13 | 4 |
-| B2 | 4 | B14 | 5 |
-| B3 | 5 | B15 | 5 |
-| B4 | 5 | B16 | 3 |
-| B5 | 4 | B17 | 4 |
-| B6 | 3 | B18 | 6 |
-| B7 | 5 | B19 | 4 |
-| B8 | 5 | B20 | 5 |
-| B9 | 5 | B21 | 5 |
-| B10 | 4 | B22 | 5 |
-| B11 | 5 | B23 | 5 |
-| B12 | 4 | | |
+| Step | Hours | Step | Hours | Step | Hours |
+|---|---|---|---|---|---|
+| B1 | 7 | B12 | 5 | B23 | 5 |
+| B2 | 4 | B13 | 4 | B24 | 3 |
+| B3 | 5 | B14 | 10 | B25 | 4 |
+| B4 | 6 | B15 | 6 | B26 | 5 |
+| B5 | 8 | B16 | 8 | B27 | 4 |
+| B6 | 5 | B17 | 5 | B28 | 6 |
+| B7 | 3 | B18 | 7 | B29 | 4 |
+| B8 | 5 | B19 | 4 | B30 | 5 |
+| B9 | 5 | B20 | 8 | B31 | 5 |
+| B10 | 5 | B21 | 8 | B32 | 5 |
+| B11 | 4 | B22 | 9 | B33 | 6 |
 
-- **Opus:** about 106 agent hours over 23 commits. Each step is one session of three to six hours.
-- **Fable:** five checkpoints of about an hour each, plus half an hour at C4 for the ten sealed defects. About six hours.
+- **Opus:** about 183 agent hours over 33 commits, of which about 73 are the drawing block (B14 to B24). Each step is one session; B14 and B22 are the largest and may split at the core and host boundary.
+- **Fable:** six checkpoints of about an hour, plus half an hour at C5 for the sealed defects.
+- **The researcher subagent:** one session, at most 90 minutes.
 - **The owner:**
-  - five live-window sittings of 10 to 15 minutes, at C1 to C5, about one hour in all; C1 includes one launch of the product shell;
-  - two answers (section 8), about ten minutes;
-  - watching between sittings is optional: start `--run` and press F9.
-- If the owner brings L1 into this build (question 1), add one drawing step of about six hours for each of the slice, the tint modes and the overlays, each with its own gate row.
+  - six checkpoint sittings of 10 to 15 minutes, about 1.25 hours;
+  - two gate sittings of about 30 minutes each at the start, then a quiet machine while the rows run;
+  - two answers (section 8) and one acceptance of the certificate glyphs;
+  - watching between sittings is optional: `python renderer/shell/watch_d02.py`.
+- If the owner chooses a second core view (question 1), add about 20 agent hours and one gate sitting.
 
 ## 10. Integrator's check and dispositions (26 November 2026)
 
-**Check against the packet's acceptance.** Every item ADR-D02.1 to .56 is mapped once (section 4). Every step names
-its items, files, check, window, checkpoint and dependencies. Steps are three to six agent hours. The row-dependent
-steps are marked (section 5). No step edits ADR-D01, the command table, a frozen chapter or an LP4 or LP5 crate. Each
-checkpoint has scoped questions. The 46 existing files and folders the steps cite exist on main `4202cbd9`, and the
-adapter (`research/jumbling/differential/candidate/rust_jumble.py`) has all 16 methods the builder calls.
+**Check against the packet and the owner's answers.**
+- Every item ADR-D02.1 to .56 is mapped once (section 4). Every step names its items, files, check, owner view,
+  machine, checkpoint and dependencies. The row-dependent steps are marked (section 5).
+- The product shell is the build, watch and acceptance surface. Look Lab only compiles the chrome library's `Ui/`
+  files, as a regression guard once per checkpoint (R4), never as acceptance.
+- Jumble drawing is in this build: B14 to B24, by feature-matrix row and gate row (section 5). Each step carries its
+  machine mark, and the two gate sittings need the owner's machine, a quiet machine and the owner's start.
+- The researcher subagent has a cap (section 7): two scripts, twelve dumps, 90 minutes, one context, no source.
+- The existing files and folders the steps cite exist on this branch, and the cited lines say what section 8 says
+  they do. The deep-state counts match `research/jumbling/differential/leads/results/summary.md:102` and `:103`.
+- No step edits ADR-D01, the command table, a frozen chapter, an LP4 or LP5 crate or `assets/manifest.json`. The
+  renderer features are built as candidates behind `--d02` and admitted only through R5 (question 2).
 
 **Dispositions of the findings.**
-- **F1 to F4, F14, F15, F12** (the code): adopt as written; each is carried by the step that names it.
-- **F5:** adopt. ADR-D02.37 and section 16 now name one off row, `slot.fill`, with the cue `cue.check` reserved.
-- **F6:** adopt. ADR-D02.13 now carries the data tag; B7's precondition does the redo.
-- **F7:** adopt. CR-14 in ADR-D02 section 15 now also asks for rows to name and un-name a cap, switch the tint mode,
-  turn on the domain and "height at least k" focus layers, and mark a ν-correction into a set. The top integrator
-  decides the ids; the draft rows of B2 stay until then.
-- **F8:** adopt. Section 15 now says CR-18 is ADR-D01's, decided by revision 6.
-- **F9:** adopt. ADR-D02.12 now carries the L1 tag for anything drawn on pieces.
-- **F10:** adopt. ADR-D02.47 now says the simulation covers the chrome only in the product shell until a core stage and
-  its look-cost row exist.
-- **F11:** adopt the default. ADR-D02.47 now says the Appearance panel stays.
-- **F13:** resolved here: the stop is `stop40_reference()` / `stop40_state()` in
-  `research/jumbling/differential/references/obs_refs.py:125`; section 6's `ia-40` row is corrected, and the ADR's
-  facts section names it.
-- **F16:** adopt. ADR-D02.6 now keeps a one-line header with its count on each closed list.
-- **The two owner questions** of section 8 are put to the owner with the recommended option first.
+- **F1 to F6, F8, F10, F12, F14:** adopt; each is carried by the step that names it.
+- **F7:** adopt. R5 is written by the top integrator and signed by the owner; question 2 asks whether the candidates
+  may be built and measured first.
+- **F9:** adopt. D02's gate rows are a new run kind with the full chrome; their results page says they are not
+  comparable with C9's bare-window runs.
+- **F11:** adopt; B5 corrects the README line with the version move.
+- **F13:** adopt, done on this branch: ADR-D02.9, .12 and .17, the (tuned) tag and the "Data still owed" list no
+  longer name Look Lab's L1, and the plan's row is reworded. The learning-level names L1, L2 and L6 in ADR-D02's
+  glossary request are a different thing and stay.
+- **ADR-D02.47's look-cost row:** B31 sends the simulation's matrix to the core, but ADR-D02.47 lets the simulation
+  cover the pieces only once a core stage and its look-cost row exist. B31 therefore builds the core half switched
+  off. It turns on after a row G8 (`deep-2` with the simulation held) passes at the next owner-machine sitting.
+- **The G3 state:** filled in section 6 (S1 of the witness, with a fallback).
+- **The two owner questions** of section 8 go to the owner on one card with the recommended option first. B1 waits
+  for the owner's go.
