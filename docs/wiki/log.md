@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | The log flow joins stage 2's acceptance; LP6 waits for ADR-D03 and K2
+The owner added the log and document flow as the sixth flow of stage 2's usable acceptance and set LP6's start for when the ADR-D03 and K2 lines start ([decision](decisions/owner-decisions-2026-11-26-log-flow.md)). The backend parts the flow still needs are indexed with K2's greybox stage.
+
+## [2026-11-26] decision | LQ2's joint setting: BS2 and policy table version 1
+The owner took every recommended option at LQ2's joint setting ([decision](decisions/owner-decisions-2026-11-26-lq2.md)): BS2, the flow rule on with `own` and `forked_built_in` admitted, and the eight open questions of BND.74 answered. Overlay OV-5 in [the overlay register](../progress/1.0/language-overlays.md) records policy table version 1; LP6 implements it, and LP6's start conditions are met.
+
 ## [2026-11-26] decision | ADR-D02's build framework: product shell, two views, researcher subagent, wait
 The owner answered five questions on ADR-D02's build framework, on two cards: build, watch and accept in the product shell with Look Lab dropped and Jumble drawing built now; add one lean researcher subagent to J0 and J1; draw two views, Global and Local, at once; build and measure the drawing before R5; and wait before B1. The owner also asked that the live-build window never sit on top or take focus ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md)). Fable's revision 2 of the framework, with the two-view steps, has 36 steps, six checkpoints and two gate sittings.
 

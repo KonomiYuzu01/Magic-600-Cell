@@ -191,3 +191,62 @@ The command layer's readings of 23 November 2026 are recorded with their rows in
 - **Tests.**
   - CT-EV4-14 and CT-PS1-25 on the journal (`rust/c600-durable/tests/ct_ev4_14_playback_crash.rs`).
   - The carrier (`rust/c600-durable/tests/ps1_44_carrier.rs`, `rust/c600-session/tests/recorder.rs`).
+
+## OV-5. Policy table version 1 (chapter 07; LQ2's joint setting)
+
+- **Authority.**
+  - Owner, [26 November 2026](../../wiki/decisions/owner-decisions-2026-11-26-lq2.md): LQ2's joint setting, every
+    recommended option. Its BND.84 change is a PHS.52 revision that the owner accepted with it.
+  - BND.71: the joint setting's result is a versioned policy table and an owner decision record.
+  - The integrator's ruling of the same day: chapter 07 is an input of the frozen migration format packet, so its bytes
+    stay as they are, and the table goes here.
+- **Clauses.**
+  - Chapter 07's open items: BND.15, BND.19, BND.26, BND.33, BND.36, BND.55, BND.59, BND.66 and BND.74.
+  - The interim reading: BND.54, BND.56, BND.63 and BND.69.
+  - BND.84, for `own` and `forked_built_in`.
+  - Section 8's own-tool column.
+- **Reading.** Policy table version 1 (BND.27's `PolicyTable`). Its identity is the digest of the shipped table.
+  - `form`: capability separation (LQ21). `stop_rule`: capability separation, BND.51's third fix.
+  - `flow_rule`: on. `admitted`: `own`, `forked_built_in`.
+  - `declassifiers`: all four of BND.53 are enabled. These are setup search for a named target, the repair pair, the
+    solver's own pick under BND.55, and the admitted author class.
+  - `transparent`: the base tier, an enumerated list of shipped functions. Each entry carries the mathematician's
+    ruling (BS2, BND.67), and no entry searches, minimises, ranks or selects over twists, words or caps (BND.64). The
+    list is written in LP6, and version 1 does not ship before it exists.
+  - Capabilities in the solving profile:
+
+    | Class | Reads | Prepare a preview | `display` |
+    | --- | --- | --- | --- |
+    | `built_in` | Unchanged: the rows its reviewed class lists (BND.57, BND.63) | Unchanged: a word the solver named, and the two exceptions | Rule 6 and DT-J1's filter, unchanged |
+    | `own`, `forked_built_in` | The base tier. State-dependent facts and `derive` only in a run that prepares no preview (BND.39) | Yes. The word passes through the admitted-class declassifier, also when an admitted run derived it from the state and it arrived by a draft | Not checked |
+    | `imported`, `unknown` | The base tier | No (BND.84, BND.21) | A run that read the state publishes nothing |
+
+    Research output never becomes a preview in a solving session (BND.61). The tool-authoring and research profiles
+    are unchanged (section 8; BND.60).
+  - Sinks: `preview_word` and `preview_target` follow the table above. `draft`, `workspace`, `file` and `record` store
+    the block and refuse nothing on labels alone (BND.26).
+  - Classes:
+    - An edit never changes a class (BND.19).
+    - A `forked_built_in` module has three limits. It is never a fork of a research-tier entry in the solving profile.
+      It inherits no declassifier. A fork of the repair list or of setup search is a program, and `PickRecord.fixed` is
+      set only for an entry whose digest is in the shipped manifest.
+    - A picked word takes the class of the list's producer, and BND.85's traversal enforces it.
+  - Static facts:
+    - State-independent facts can be read by any run. These are the 36 corrections read per item by name, the certified
+      setup tables and the shipped seeds. A shipped entry that returns the correction combination stays out (BND.11).
+    - State-dependent facts are N_c with its floor and a piece's domain and height. Only a run that prepares no preview
+      reads them.
+    - Facts are classed by their information content. A seed with a `derive` or replay row is state-equivalent.
+  - Labels: a shown preview names its program and author class, and a refused word shows its reason (ADR-D01.8). The
+    `AssistanceSummary` (BND.35) is in the solve record, and no standing badge sits on the solving view.
+  - The practice copy is a solving session (BND.15).
+  - A preview whose outcome is the solved state is not excluded (BND.8).
+  - A 0.4 macro imported through path B (`producer: import`) is not an `imported` tool.
+- **What it changes.**
+  - No frozen text and no format.
+  - BND.84's refusal no longer applies to `own` and `forked_built_in`.
+  - The interim reading (BND.56, BND.69) stays in force in code until version 1 ships with LP6's boundary policy
+    product (PHS.34).
+- **Tests.** These follow the implementation:
+  - CT-BND-26 to CT-BND-28, which assert refusal for every program-produced word today;
+  - CT-LG3-06 and CT-LG3-07, which also wait for BND.37's class review.
