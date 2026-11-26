@@ -1,0 +1,30 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "overlays",
+  "note": "B16's run on a state's session fixture (wj-ia-300): no overlay while no cap is named; naming cap 150 outlines its cut's trace (the inside set) on the outline channel; jumble.focus.domain 5 dims the other domains and F10 hides them, while every overlay piece stays shown, outlined and counted; a focused repair row's step 2 outlines its moving set in place of the trace, never hidden; naming the blocked cap 0 outlines its straddlers, never hidden, with its certificate points counted in place of their glyphs. Each step's dump names the bytes sent to the core, which the run recomputes from the sample piece by piece.",
+  "steps": [
+    {"wait_ms": 5001},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 1501},
+    {"chord": "F1"},
+    {"text": "> jumble.focus.domain 5"},
+    {"chord": "Enter"},
+    {"wait_ms": 1502},
+    {"chord": "F10"},
+    {"wait_ms": 1503},
+    {"open": "repair_list"},
+    {"wait_ms": 1000},
+    {"focus": "LocalBody_repair_list"},
+    {"wait_ms": 500},
+    {"chord": "Down"},
+    {"wait_ms": 500},
+    {"chord": "Right"},
+    {"wait_ms": 1504},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 0"},
+    {"chord": "Enter"},
+    {"wait_ms": 1505}
+  ]
+}
