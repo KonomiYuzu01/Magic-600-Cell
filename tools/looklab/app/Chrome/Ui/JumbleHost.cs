@@ -144,6 +144,7 @@ public sealed partial class JumbleHost
         frame.Rebuilt += Place;
         frame.Rebuilt += () => { if (GodotObject.IsInstanceValid(CapMap)) CapMap.Refresh(); };
         WireTint();
+        WireOverlay();
         Follow(source.State);
     }
 
