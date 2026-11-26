@@ -981,6 +981,46 @@ pub fn validate_engine_bundle(bundle: &EngineBundle) -> Result<(), Error> {
     Ok(())
 }
 
+/// An engine bundle that [`validate_engine_bundle`] accepted. Nothing can change it after the check (it gives no
+/// mutable access, and its arrays' bytes are shared read-only), so a host may adopt it without checking it again
+/// (`Host::adopt_checked`). A host that builds bundles off its frame thread checks them there (C9, 26 Nov 2026).
+#[derive(Clone, Debug)]
+pub struct CheckedBundle(EngineBundle);
+
+impl CheckedBundle {
+    /// The bundle, once [`validate_engine_bundle`] accepts it; its refusal otherwise.
+    pub fn check(bundle: EngineBundle) -> Result<CheckedBundle, Error> {
+        validate_engine_bundle(&bundle)?;
+        Ok(CheckedBundle(bundle))
+    }
+
+    pub fn bundle(&self) -> &EngineBundle {
+        &self.0
+    }
+}
+
+/// A publication that [`validate`] accepted against a context, with the context and the result. Nothing can change
+/// either after the check, so `Host::publish_checked` takes the result in place of validating again while the host's
+/// context equals this one.
+#[derive(Clone, Debug)]
+pub struct CheckedPublication {
+    pub(crate) publication: Publication,
+    pub(crate) ctx: Context,
+    pub(crate) validated: Validated,
+}
+
+impl CheckedPublication {
+    /// The publication, once [`validate`] accepts it against `ctx`; its refusal otherwise.
+    pub fn check(publication: Publication, ctx: &Context) -> Result<CheckedPublication, Error> {
+        let validated = validate(&publication, ctx)?;
+        Ok(CheckedPublication { publication, ctx: ctx.clone(), validated })
+    }
+
+    pub fn publication(&self) -> &Publication {
+        &self.publication
+    }
+}
+
 /// The engine path of a preview display (RM.9): the host takes it from the engine's preview object.
 pub fn validate_preview(preview: &PreviewDisplay, ctx: &Context) -> Result<(), Error> {
     if preview.base.identity != ctx.identity || preview.literal.is_empty() || preview.effect.is_empty() {

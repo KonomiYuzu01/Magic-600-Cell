@@ -27,7 +27,10 @@ use crate::plan::{
 use crate::receipt::{receipt_status, CancelReason, Completion, Covered, JobOutcome, Receipt, ResultRef, Status};
 use crate::source::{self, Followed, HostRange};
 use crate::stage::{Fallback, FrameReport};
-use crate::validate::{self, validate, Context, EngineBundle, LimitProfile, SubjectKind, SupportReport, Validated};
+use crate::validate::{
+    self, validate, CheckedBundle, CheckedPublication, Context, EngineBundle, LimitProfile, SubjectKind, SupportReport,
+    Validated,
+};
 
 /// A backend ticket for one preparation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -95,6 +98,11 @@ pub trait Backend {
     /// work or a GPU fence. Missing or mismatched engine inputs are refused (`refresh_required`) with
     /// `EV3:input.display_bundle_mismatch`, and nothing is adopted.
     fn adopt_engine(&mut self, bundle: &EngineBundle) -> Result<RevisionRef, Error>;
+    /// [`Backend::adopt_engine`] of a bundle that [`CheckedBundle::check`] validated; a backend that checks each bundle
+    /// it adopts may skip that check here. By default the bundle is adopted as any other.
+    fn adopt_checked(&mut self, bundle: &CheckedBundle) -> Result<RevisionRef, Error> {
+        self.adopt_engine(bundle.bundle())
+    }
     fn prepare(&mut self, request: Preparation<'_>) -> Result<Ticket, Error>;
     fn poll(&mut self, ticket: Ticket) -> Poll;
     fn activate(&mut self, resources: ResourceSet, stamp: &PublicationStamp) -> Result<(), Error>;
@@ -603,9 +611,21 @@ impl<B: Backend> Host<B> {
     pub fn adopt(&mut self, bundle: &EngineBundle) -> Result<RevisionRef, Error> {
         validate::validate_engine_bundle(bundle)?;
         let adopted = self.backend.adopt_engine(bundle)?;
+        Ok(self.adopted_as(adopted))
+    }
+
+    /// [`Host::adopt`] for a bundle that [`CheckedBundle::check`] validated, possibly on another thread: the host does
+    /// not validate it again, and the backend may skip its own check ([`Backend::adopt_checked`]). The bundle cannot
+    /// change after its check, so what is adopted is what was validated.
+    pub fn adopt_checked(&mut self, bundle: &CheckedBundle) -> Result<RevisionRef, Error> {
+        let adopted = self.backend.adopt_checked(bundle)?;
+        Ok(self.adopted_as(adopted))
+    }
+
+    fn adopted_as(&mut self, adopted: RevisionRef) -> RevisionRef {
         self.set_dependency("state", &adopted.state.to_string());
         self.adopted = adopted;
-        Ok(self.adopted.clone())
+        self.adopted.clone()
     }
 
     pub fn adopted(&self) -> &RevisionRef {
@@ -799,12 +819,26 @@ impl<B: Backend> Host<B> {
 
     /// A standalone `publish_view`: validated at admission; a bad request is refused and supersedes nothing.
     pub fn publish(&mut self, command: CommandId, publication: Publication) -> Receipt {
+        self.publish_with(command, publication, None)
+    }
+
+    /// [`Host::publish`] of a publication that [`CheckedPublication::check`] validated, possibly on another thread.
+    /// When the host's context still equals the one it was checked against, the host takes that check's result in
+    /// place of validating it again; every other admission check runs as for [`Host::publish`]. Otherwise it is
+    /// published as any publication.
+    pub fn publish_checked(&mut self, command: CommandId, checked: CheckedPublication) -> Receipt {
+        let CheckedPublication { publication, ctx, validated } = checked;
+        let validated = (ctx == self.ctx).then_some(validated);
+        self.publish_with(command, publication, validated)
+    }
+
+    fn publish_with(&mut self, command: CommandId, publication: Publication, checked: Option<Validated>) -> Receipt {
         let request = canonical::request_digest(&publication);
         if let Some(receipt) = self.duplicate(command, &request) {
             return receipt;
         }
         let view = publication.target;
-        let admitted = self.admit(&publication);
+        let admitted = self.admit(&publication, checked);
         let validated = match admitted {
             Ok(validated) => validated,
             Err(error) => {
@@ -817,12 +851,16 @@ impl<B: Backend> Host<B> {
         self.receipt(command).expect("recorded")
     }
 
-    fn admit(&self, publication: &Publication) -> Result<Validated, Error> {
+    /// Admission: `checked` is the result of validating `publication` against a context equal to the host's.
+    fn admit(&self, publication: &Publication, checked: Option<Validated>) -> Result<Validated, Error> {
         self.open_target(publication.target)?;
         if self.lost || self.backend.describe_backend().is_err() {
             return Err(Error::unavailable("the renderer is unavailable"));
         }
-        let validated = validate(publication, &self.ctx)?;
+        let validated = match checked {
+            Some(validated) => validated,
+            None => validate(publication, &self.ctx)?,
+        };
         if let Some(key) = self.moved(&validated.dependencies) {
             return Err(Error::new(codes::STALE_PLAN, format!("the publication read an old {key}")));
         }

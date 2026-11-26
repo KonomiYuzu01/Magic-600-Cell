@@ -55,7 +55,9 @@ use c600_display::pick::{FrameStamp, PickBinding, PickReply, Presented, Presente
 use c600_display::plan::{CommandId, InstanceId, ObjectId, Primitive, Publication, RevisionRef, ViewId};
 use c600_display::receipt::CancelReason;
 use c600_display::stage;
-use c600_display::validate::{validate_engine_bundle, EngineBundle, LimitProfile, PlanSubject, Support, SupportReport};
+use c600_display::validate::{
+    validate_engine_bundle, CheckedBundle, EngineBundle, LimitProfile, PlanSubject, Support, SupportReport,
+};
 use c600_kernel::json::{self, Value};
 use c600_kernel::Puzzle;
 
@@ -192,6 +194,11 @@ impl<C: CoreAbi> RenderBackend<C> {
     /// P from 1 to `MAX_POSES` is refused before the core sees it, and the core checks the values.
     pub fn adopt_engine(&mut self, bundle: &EngineBundle) -> Result<u64, Error> {
         validate_engine_bundle(bundle)?;
+        self.adopt_valid(bundle)
+    }
+
+    /// [`RenderBackend::adopt_engine`] of a bundle that [`validate_engine_bundle`] accepted already.
+    fn adopt_valid(&mut self, bundle: &EngineBundle) -> Result<u64, Error> {
         let array = |name: &str| &bundle.arrays.iter().find(|a| a.name == name).expect("validated").array;
         let digest = hex32(&bundle.revision.digest)
             .ok_or_else(|| Error::invalid("the revision digest is not a SHA-256 in hexadecimal"))?;
@@ -357,6 +364,15 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
         } else {
             // The inherent method: a path names it before this trait method of the same name, so this is no recursion.
             RenderBackend::adopt_engine(self, bundle)?;
+        }
+        Ok(bundle.revision.clone())
+    }
+
+    /// [`Backend::adopt_engine`] without the bundle's second check: [`CheckedBundle::check`] made it.
+    fn adopt_checked(&mut self, bundle: &CheckedBundle) -> Result<RevisionRef, Error> {
+        let bundle = bundle.bundle();
+        if self.held.as_ref() != Some(&bundle.revision) {
+            self.adopt_valid(bundle)?;
         }
         Ok(bundle.revision.clone())
     }

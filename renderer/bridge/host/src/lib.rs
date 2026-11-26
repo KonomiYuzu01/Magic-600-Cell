@@ -7,7 +7,9 @@
 //! surface (`SA2_TARGET_SURFACE`). This library loads no library and calls no Windows function (CT-RPI-20). It starts
 //! one process, the language runtime ([`m6h_load_runtime`]), through c600-runtime's parent side, which uses std's
 //! portable process API, and one thread, which runs the view jobs in that process ([`view`]). With a preload
-//! ([`m6h_preload`]) it also starts one thread for each model load, which ends with its load ([`preload`]).
+//! ([`m6h_preload`]) it also starts one thread for each model load, which ends with its load ([`preload`]). From the
+//! first twist key on it keeps one thread that builds and checks twist adoptions, which starts a second thread for each
+//! build's publication check (the `deferred` module); neither calls the core.
 //!
 //! Drafts that the sources leave open, each to be replaced by LP3's parts:
 //! - One view, which shows the adopted state as one retained publication of every slot, visible and interactive.
@@ -15,9 +17,13 @@
 //! - The adopted state starts as the shipped model's solved state at engine revision [`ENGINE_REVISION`]. With a
 //!   session open ([`m6h_open_session`], charter E2), each twist key the shell routes ([`m6h_key_down`]) that commits
 //!   the puzzle's twist row (the [`turns`] module) adopts the layer's new head at the next engine revision and
-//!   publishes the view again for it, so the view's output is never stale (RPI.13) for longer than its preparation
-//!   takes. A frame shows a press once its engine revision and its publication's revision have both reached the
-//!   press's revision.
+//!   publishes the view again for it, so the view's output is never stale (RPI.13) for longer than its build and
+//!   preparation take. A frame shows a press once its engine revision and its publication's revision have both
+//!   reached the press's revision.
+//! - The commit stays on the caller's thread and is durable when the key call returns; the head's engine bundle and
+//!   publication are built and checked on a worker thread (the `deferred` module, 26 Nov 2026), and the first
+//!   [`m6h_frame`] after the build ends adopts and publishes them, so a twist no longer holds the frame thread for its
+//!   view work. [`m6h_pump`] waits for a pending build first.
 //! - The jumbled puzzle (LX-4's jumble-on half; a draft): a session opened with [`M6H_PUZZLE_JUMBLE_ON`] commits
 //!   `jumble.on` at its start, and the host adopts the poses at the next engine revision as c600-display's posed row
 //!   (J02: `jumble::posed` and `jumble::bundle`), with one posed primitive in the view's plan ([`adoption`]). The host
@@ -81,7 +87,8 @@ use c600_display::jumble;
 use c600_display::pick::{Presented, PresentedFrame};
 use c600_display::plan::*;
 use c600_display::produce::{self, full_set, GeometryInput};
-use c600_display::validate::{BoundArray, EngineBundle, LimitProfile};
+use c600_display::receipt::Receipt as HostReceipt;
+use c600_display::validate::{BoundArray, CheckedPublication, EngineBundle, LimitProfile};
 use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
@@ -90,6 +97,7 @@ use c600_render::{DisplayTime, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
 
+mod deferred;
 pub mod fixture;
 pub mod preload;
 pub mod turns;
@@ -195,7 +203,9 @@ pub struct M6hKey {
     /// [`M6H_PRESS_NONE`], [`M6H_PRESS_COMMITTED`], [`M6H_PRESS_REFUSED`] or [`M6H_PRESS_OTHER`].
     pub press: u32,
     pub reserved: u32,
-    /// The adopted engine revision after the key: for a committed press, the revision that shows it.
+    /// The engine revision of the session's head after the key: for a committed press, the revision that shows it.
+    /// Its adoption may still be pending when the call returns ([`m6h_key_down`]); when a later key replaces the head
+    /// first, that revision is never adopted, and the frames go on to the later one, which shows this press as well.
     pub engine_revision: u64,
 }
 
@@ -271,6 +281,14 @@ pub struct ShellHost {
     /// The adopted engine revision, and each adopted revision's state digest.
     revision: u64,
     digests: BTreeMap<u64, String>,
+    /// The newest engine revision handed to a head: the adopted one, or one whose adoption is pending.
+    assigned: u64,
+    /// The newest revision handed to the adoption worker whose build the host has not taken yet.
+    awaited: Option<u64>,
+    /// The thread that builds twist adoptions off the frame thread ([`deferred`]), from the first twist on.
+    adoptions: Option<deferred::Worker>,
+    /// An adoption that failed after a frame was submitted, which the next call that adopts answers.
+    failed: Option<Failure>,
     turns: Option<Turns>,
     /// The correctness control's record, once [`m6h_close_session`] made it.
     check: String,
@@ -317,9 +335,18 @@ fn model_error(error: LoadError) -> Failure {
 /// RM.16's engine bundle of `state`: its labels, every slot visible and interactive.
 pub fn engine_bundle(state: &Snapshot, revision: &RevisionRef) -> EngineBundle {
     let set = full_set();
-    let input = produce::retained(state, &set, &set, Vec::new());
-    let arrays = [("labels", input.labels), ("visibility", input.visibility), ("interaction", input.interaction)];
-    let bound = |(name, array): (&str, Array)| BoundArray { name: name.to_owned(), revision: revision.state, array };
+    retained_bundle(&produce::retained(state, &set, &set, Vec::new()), revision)
+}
+
+/// The engine bundle of a retained input of every slot: its labels, visibility and interaction arrays (shared, not
+/// copied), bound to `revision`.
+fn retained_bundle(input: &RetainedInput, revision: &RevisionRef) -> EngineBundle {
+    let arrays = [("labels", &input.labels), ("visibility", &input.visibility), ("interaction", &input.interaction)];
+    let bound = |(name, array): (&str, &Array)| BoundArray {
+        name: name.to_owned(),
+        revision: revision.state,
+        array: array.clone(),
+    };
     EngineBundle { revision: revision.clone(), arrays: arrays.into_iter().map(bound).collect() }
 }
 
@@ -335,9 +362,11 @@ pub fn adoption(
     match head {
         Head::Retained(state) => {
             let base = produce::revision(&geometry.identity, revision, state);
-            let bundle = engine_bundle(state, &base);
             let set = full_set();
-            Ok((base, bundle, Primitive::Retained(produce::retained(state, &set, &set, Vec::new()))))
+            // One retained input serves the bundle and the primitive: the same arrays, built once.
+            let input = produce::retained(state, &set, &set, Vec::new());
+            let bundle = retained_bundle(&input, &base);
+            Ok((base, bundle, Primitive::Retained(input)))
         }
         Head::Jumbled(exact, state) => {
             let base = jumble::revision(exact, state, revision);
@@ -406,6 +435,10 @@ impl ShellHost {
             next_command: 1,
             revision: ENGINE_REVISION,
             digests: BTreeMap::from([(ENGINE_REVISION, head.digest())]),
+            assigned: ENGINE_REVISION,
+            awaited: None,
+            adoptions: None,
+            failed: None,
             turns: None,
             check: String::new(),
             runtime: None,
@@ -421,45 +454,116 @@ impl ShellHost {
         Ok(shell)
     }
 
-    /// Adopts `head` at the next engine revision; see [`ShellHost::adopt`].
-    fn advance(&mut self, head: &Head) -> Result<u64, Failure> {
-        self.adopt(head, self.revision + 1)
+    /// Adopts `head` at engine revision `revision`, which must follow the adopted one, on the calling thread: builds
+    /// and checks it as the adoption worker does ([`deferred::build`]), then installs it ([`ShellHost::install`]).
+    fn adopt(&mut self, head: &Head, revision: u64) -> Result<u64, Failure> {
+        let job = deferred::Job { revision, head: head.clone(), ctx: self.host.ctx.clone() };
+        let built = deferred::build(&self.geometry, job)?;
+        self.install(built)
     }
 
-    /// Adopts `head` at engine revision `revision`, which must follow the adopted one, through the host, which hands it
-    /// to the core and records it once the core holds it, and publishes the view for it ([`adoption`]). A head under
-    /// another identity block than the host context's (the jumbled puzzle's poses after the solved labels) then gives
-    /// the host that block's declared context, with the core's own support report, read before the adoption. A view
-    /// job that read the old revision ends `KN7:cancelled.revision_replaced` ([`ShellHost::replace_runs`]). While the
-    /// device is lost the publication waits for [`m6h_recover`], which publishes it. A host or core that refuses the
-    /// bundle changes nothing.
-    fn adopt(&mut self, head: &Head, revision: u64) -> Result<u64, Failure> {
+    /// Installs a built head at its engine revision, which must follow the adopted one: the display host adopts its
+    /// checked bundle and hands it to the core, which holds it from here on, and the view is published for it with
+    /// its checked publication ([`adoption`]). A head under another identity block than the host context's (the
+    /// jumbled puzzle's poses after the solved labels) then gives the host that block's declared context, with the
+    /// core's own support report, read before the adoption. A view job that read the old revision ends
+    /// `KN7:cancelled.revision_replaced` ([`ShellHost::replace_runs`]). While the device is lost the publication waits
+    /// for [`m6h_recover`], which publishes it. A host or core that refuses the bundle changes nothing.
+    fn install(&mut self, built: deferred::Built) -> Result<u64, Failure> {
+        let deferred::Built { revision, digest, ctx, bundle, publication, checked } = built;
         if revision <= self.revision {
             return Err((M6H_E_HOST, format!("engine revision {revision} does not follow {}", self.revision)));
         }
-        let (base, bundle, primitive) = adoption(&self.geometry, head, revision)?;
-        let ctx = if base.identity != self.host.ctx.identity {
-            let limits = self.host.ctx.limits.clone();
-            let mut ctx = match head {
-                Head::Retained(_) => produce::fixture_context(&self.geometry, limits),
-                Head::Jumbled(..) => jumble::fixture_context(&self.geometry, base.identity.clone(), limits),
-            };
-            ctx.support = self.host.backend.describe_backend().map_err(host_error)?;
-            Some(ctx)
-        } else {
-            None
+        let ctx = match ctx {
+            Some(mut ctx) => {
+                ctx.support = self.host.backend.describe_backend().map_err(host_error)?;
+                Some(ctx)
+            }
+            None => None,
         };
-        self.host.adopt(&bundle).map_err(host_error)?;
+        self.host.adopt_checked(&bundle).map_err(host_error)?;
         if let Some(ctx) = ctx {
             self.host.ctx = ctx;
         }
         self.revision = revision;
-        self.digests.insert(revision, head.digest());
-        self.publication = publication(&self.geometry, primitive, &base);
+        self.assigned = self.assigned.max(revision);
+        self.digests.insert(revision, digest);
+        self.publication = publication;
         self.replace_runs();
-        match self.publish() {
+        let published = match checked {
+            Some(checked) => self.publish_checked(checked),
+            None => self.publish(),
+        };
+        match published {
             Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => Ok(revision),
             Err(failure) => Err(failure),
+        }
+    }
+
+    /// A twist key changed the session's head: hands `head` to the adoption worker at the engine revision after the
+    /// newest one handed out, which the answer names, and returns at once; [`ShellHost::settle`] installs it later on
+    /// this thread. Without a worker (its thread did not start or has ended) the head is built and installed here.
+    fn defer(&mut self, head: Head) -> Result<u64, Failure> {
+        let revision = self.assigned + 1;
+        let job = deferred::Job { revision, head, ctx: self.host.ctx.clone() };
+        if self.adoptions.is_none() {
+            self.adoptions = deferred::Worker::start(&self.geometry);
+        }
+        let refused = match &self.adoptions {
+            Some(worker) => worker.submit(job).err(),
+            None => Some(job),
+        };
+        self.assigned = revision;
+        match refused {
+            None => {
+                self.awaited = Some(revision);
+                Ok(revision)
+            }
+            Some(job) => {
+                self.adoptions = None;
+                self.awaited = None;
+                let built = deferred::build(&self.geometry, job)?;
+                self.install(built)
+            }
+        }
+    }
+
+    /// Installs the newest head the adoption worker has built, if one is ready. With `wait`, it first waits until the
+    /// worker has built the newest head handed out, so that afterwards nothing is pending. A build that failed
+    /// answers its failure when it is the newest; an older one, which a newer head replaced, is dropped.
+    fn settle(&mut self, wait: bool) -> Result<(), Failure> {
+        if let Some(failure) = self.failed.take() {
+            return Err(failure);
+        }
+        let mut newest = None;
+        while let Some(awaited) = self.awaited {
+            let Some(worker) = &self.adoptions else {
+                self.awaited = None;
+                break;
+            };
+            match worker.take(wait) {
+                Some(outcome) => {
+                    let current = outcome.0 >= awaited;
+                    if current {
+                        self.awaited = None;
+                    }
+                    // A failed build that a newer head already replaced is dropped: the newer build decides.
+                    if current || outcome.1.is_ok() {
+                        newest = Some(outcome);
+                    }
+                }
+                None if wait => {
+                    self.awaited = None;
+                    self.adoptions = None;
+                    return Err((M6H_E_HOST, "the adoption worker has stopped".to_owned()));
+                }
+                None => break,
+            }
+        }
+        match newest {
+            None => Ok(()),
+            Some((_, Ok(built))) => self.install(built).map(|_| ()),
+            Some((_, Err(failure))) => Err(failure),
         }
     }
 
@@ -469,10 +573,23 @@ impl ShellHost {
 
     /// Publishes the view's publication under a new command and starts its preparation.
     fn publish(&mut self) -> Result<(), Failure> {
+        let publication = self.publication.clone();
+        self.publish_by(|host, command| host.publish(command, publication))
+    }
+
+    /// [`ShellHost::publish`] of the view's publication checked off the frame thread ([`deferred::build`]).
+    fn publish_checked(&mut self, checked: CheckedPublication) -> Result<(), Failure> {
+        self.publish_by(|host, command| host.publish_checked(command, checked))
+    }
+
+    fn publish_by(
+        &mut self,
+        publish: impl FnOnce(&mut Host<RenderBackend<DllCore>>, CommandId) -> HostReceipt,
+    ) -> Result<(), Failure> {
         let command = CommandId(self.next_command);
         self.next_command += 1;
         self.reference = Some(command);
-        let receipt = self.host.publish(command, self.publication.clone());
+        let receipt = publish(&mut self.host, command);
         match receipt.status {
             CommandStatus::Refused(error) | CommandStatus::Failed(error) => Err(host_error(error)),
             _ => {
@@ -502,6 +619,9 @@ impl ShellHost {
             }
             None => None,
         };
+        // A preview is built on the layer's head; while the view still shows an older head (its adoption is pending,
+        // or its build failed), the preview waits for that head's adoption.
+        let want = want.filter(|_| self.assigned == self.revision);
         if want.as_ref() == self.shown.as_ref().map(|shown| &shown.pending) {
             return Ok(());
         }
@@ -838,9 +958,10 @@ pub unsafe extern "C" fn m6h_set_viewport(handle: *mut ShellHost, width: u32, he
     }
 }
 
-/// Polls the host: delivers the view jobs that ended ([`m6h_run_view`]), notices a lost device, and installs ready
-/// preparations. With a session open it also builds the word previews the layer queued and shows the fresh pending
-/// one in the view (LP4-3).
+/// Polls the host: first adopts the newest head a twist key left pending, waiting for its build ([`m6h_key_down`]);
+/// then delivers the view jobs that ended ([`m6h_run_view`]), notices a lost device, and installs ready preparations.
+/// With a session open it also builds the word previews the layer queued and shows the fresh pending one in the view
+/// (LP4-3); a preview waits while the head's adoption is pending.
 ///
 /// # Safety
 ///
@@ -850,14 +971,17 @@ pub unsafe extern "C" fn m6h_pump(handle: *mut ShellHost) -> i32 {
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
+            shell.settle(true)?;
             shell.poll();
             shell.sync_preview()
         })
     }
 }
 
-/// Polls the host as [`m6h_pump`] does, then submits a frame of the view to the surface and writes its sequence,
-/// device epoch, surface and revisions to `*out`. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are
+/// Polls the host as [`m6h_pump`] does, except that it adopts a pending head only when its build has ended and never
+/// waits for one, then submits a frame of the view to the surface and writes its sequence, device epoch, surface and
+/// revisions to `*out`. A build that ended while the frame was submitted is adopted after the submission; if that
+/// adoption fails, the next call that adopts answers the failure. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are
 /// read and dropped here. The frame names the preview the view shows, if any.
 ///
 /// # Safety
@@ -868,6 +992,7 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
+            shell.settle(false)?;
             shell.poll();
             shell.sync_preview()?;
             let stamp = shell.host.frame(VIEW).map_err(host_error)?;
@@ -891,6 +1016,11 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
                     engine_revision: stamp.engine_revision,
                     publication_revision,
                 });
+            }
+            // A build that ended while the frame was submitted (the core's frame call waits for the display) is adopted
+            // now, so its publication is prepared before the next frame; a failure is answered by the next call.
+            if let Err(failure) = shell.settle(false) {
+                shell.failed = Some(failure);
             }
             Ok(())
         })
@@ -1105,8 +1235,9 @@ pub unsafe extern "C" fn m6h_load_runtime(handle: *mut ShellHost, program: *cons
 /// module) from its exported function `entry` (UTF-8, `entry_len` bytes; no arguments) in the runtime that
 /// [`m6h_load_runtime`] started, and writes the job's ticket, its display-host command id, to `*out_ticket`.
 ///
-/// The call returns at once. It schedules the job on the view with `Host::schedule`, which supersedes a run still
-/// pending, and records the adopted engine revision. The job runs on the handle's worker thread, under the limits
+/// The call returns at once, after adopting a head a twist key left pending (it waits for that head's build). It
+/// schedules the job on the view with `Host::schedule`, which supersedes a run still pending, and records the adopted
+/// engine revision. The job runs on the handle's worker thread, under the limits
 /// [`VIEW_LIMITS`] and the deadline [`VIEW_DEADLINE`], with no capability granted and no host row served. When it
 /// ends, [`m6h_pump`] or [`m6h_frame`] on the caller's thread delivers, for a completed run, the reference
 /// publication of the recorded revision with the plan dependency `program` set to the hex SHA-256 of `source`, under
@@ -1137,6 +1268,7 @@ pub unsafe extern "C" fn m6h_run_view(
         with_host(handle, |shell| {
             let source = utf8(source, source_len, "program text")?;
             let entry = utf8(entry, entry_len, "entry name")?;
+            shell.settle(true)?;
             let ticket = shell.run_view(source, entry)?;
             out_ticket.write(ticket);
             Ok(())
@@ -1195,6 +1327,7 @@ pub unsafe extern "C" fn m6h_view_draft(handle: *mut ShellHost, digest: *const u
     unsafe {
         with_host(handle, |shell| {
             let digest = digest.cast::<[u8; 32]>().read_unaligned();
+            shell.settle(true)?;
             let ticket = shell.view_draft(digest);
             out_ticket.write(ticket);
             Ok(())
@@ -1203,10 +1336,17 @@ pub unsafe extern "C" fn m6h_view_draft(handle: *mut ShellHost, digest: *const u
 }
 
 /// Routes one key-down through the session's input router: `chord` (UTF-8, `chord_len` bytes) is c600-input's chord
-/// form, a W3C `code` with its modifiers (`Shift+KeyJ`), and `repeat` is nonzero for the platform's auto-repeat. A
-/// twist key that commits adopts the new head at the next engine revision and publishes the view for it; `*out`
-/// says which press it was and the adopted revision after it. A chord the router does not know answers
-/// [`M6H_E_INVALID_ARGUMENT`], and no open session [`M6H_E_SESSION`].
+/// form, a W3C `code` with its modifiers (`Shift+KeyJ`), and `repeat` is nonzero for the platform's auto-repeat.
+///
+/// A twist key commits on this thread through the session's command layer, and its commit is durable when the call
+/// returns, as before. The new head gets the next engine revision, and the view's work for it (the engine bundle and
+/// the publication, built and checked) runs on the host's adoption worker. The first [`m6h_frame`] after that build
+/// ends adopts the bundle into the core and publishes the view for it; [`m6h_pump`], [`m6h_run_view`] and
+/// [`m6h_view_draft`] wait for the build. A key that changes the head again before then replaces the pending head: only
+/// the newest is built and adopted. `*out` says which press it was and the engine revision of the session's head after
+/// it, for a committed press the revision that shows it. A chord the router does not know answers
+/// [`M6H_E_INVALID_ARGUMENT`], and no open session [`M6H_E_SESSION`]. A build that fails is answered by the call that
+/// would have adopted it.
 ///
 /// # Safety
 ///
@@ -1230,7 +1370,7 @@ pub unsafe extern "C" fn m6h_key_down(
                 Press::Refused => M6H_PRESS_REFUSED,
                 Press::Committed | Press::Other => {
                     let head = shell.turns()?.head().map_err(|e| (M6H_E_SESSION, e))?;
-                    shell.advance(&head)?;
+                    shell.defer(head)?;
                     if press == Press::Committed {
                         M6H_PRESS_COMMITTED
                     } else {
@@ -1240,7 +1380,7 @@ pub unsafe extern "C" fn m6h_key_down(
             };
             shell.sync_preview()?;
             if !out.is_null() {
-                out.write(M6hKey { press: code, reserved: 0, engine_revision: shell.revision });
+                out.write(M6hKey { press: code, reserved: 0, engine_revision: shell.assigned });
             }
             Ok(())
         })
@@ -1541,6 +1681,8 @@ pub unsafe extern "C" fn m6h_close_session(handle: *mut ShellHost, shown_revisio
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
+            // A head whose adoption is still pending is not waited for: the control reads only revisions that frames
+            // showed, and those were adopted.
             let mut turns = shell.turns.take().ok_or_else(|| (M6H_E_SESSION, "no session is open".to_owned()))?;
             let shown = (shown_revision != 0)
                 .then(|| (shown_revision, shell.digests.get(&shown_revision).cloned().unwrap_or_default()));

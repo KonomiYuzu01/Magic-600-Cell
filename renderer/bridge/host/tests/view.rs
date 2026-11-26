@@ -257,6 +257,8 @@ impl Run {
         frame
     }
 
+    /// A committed twist key, its key-up, and the adoption of its head: the key leaves that to a later call, and the
+    /// host adopts the head before a pump delivers anything ([`m6h_pump`]).
     fn press(&self, chord: &str) -> u64 {
         let mut key = M6hKey::default();
         // SAFETY: a live handle, readable bytes and a writable row.
@@ -264,6 +266,8 @@ impl Run {
         assert_eq!((code, key.press), (M6H_OK, M6H_PRESS_COMMITTED), "{chord}: {}", last_error(self.host));
         // SAFETY: a live handle and readable bytes.
         assert_eq!(unsafe { m6h_key_up(self.host, chord.as_ptr(), chord.len()) }, M6H_OK);
+        // SAFETY: a live handle.
+        assert_eq!(unsafe { m6h_pump(self.host) }, M6H_OK, "{}", last_error(self.host));
         key.engine_revision
     }
 
