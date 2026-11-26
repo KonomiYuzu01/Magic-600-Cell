@@ -56,6 +56,10 @@
       "glyph": "sliders-horizontal",
       "fallback": "~"
     },
+    "panel.tuning": {
+      "glyph": "sliders-vertical",
+      "fallback": "T"
+    },
     "panel.appearance": {
       "glyph": "palette",
       "fallback": "A"

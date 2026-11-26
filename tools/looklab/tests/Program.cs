@@ -297,7 +297,11 @@ internal static partial class Program
             ("D02OverlayTraceAtANamedCapOnly", D02OverlayTraceAtANamedCapOnly),
             ("D02OverlayStepMovingSetReplacesTheTrace", D02OverlayStepMovingSetReplacesTheTrace),
             ("D02OverlayBlockedCapKeepsStraddlersAndCountsPoints", D02OverlayBlockedCapKeepsStraddlersAndCountsPoints),
-            ("D02OverlayHiddenCountIsExactAndNothingHides", D02OverlayHiddenCountIsExactAndNothingHides)
+            ("D02OverlayHiddenCountIsExactAndNothingHides", D02OverlayHiddenCountIsExactAndNothingHides),
+            ("D02TuningOpensInRightDockOfCurrentLayout", D02TuningOpensInRightDockOfCurrentLayout),
+            ("D02KnobChangeTouchesNoState", D02KnobChangeTouchesNoState),
+            ("D02SwapIsAnInvolution", D02SwapIsAnInvolution),
+            ("D02HeldCompareRestoresOnRelease", D02HeldCompareRestoresOnRelease)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

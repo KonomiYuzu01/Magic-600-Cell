@@ -224,6 +224,7 @@
     "token.override.set",
     "tuning.compare.hold",
     "tuning.diff.export",
+    "tuning.open",
     "tuning.preset.apply",
     "tuning.preset.save",
     "tuning.selector.revert",
