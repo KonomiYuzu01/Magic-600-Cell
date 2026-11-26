@@ -160,12 +160,33 @@ class HopfRings(unittest.TestCase):
 
     def test_the_shell_opens_on_the_rings_only_with_d02(self):
         shell = text(PROJECT / "Shell.cs")
-        self.assertIn("if (D02.ShellJumble.On && D02.ShellHopf.Named(D02.ShellShape.OpeningPath()))", shell)
+        self.assertIn("var layout = D02.ShellJumble.On ? D02.ShellHopf.Kind(D02.ShellShape.OpeningPath()) : D02.ShellHopf.Chain;",
+                      shell)
+        self.assertIn("_hopf = layout == D02.ShellHopf.Rings;", shell)
+        # B22: the ring sheet is held back in the shell while it hangs the hardware GPU.
+        self.assertIn("if (layout != D02.ShellHopf.Chain && !D02.ShellHopf.Opens(layout))", shell)
+        self.assertIn("public static bool Opens(uint kind) => kind == Rings;", text(PROJECT / "D02" / "ShellHopf.cs"))
         self.assertEqual(shell.count("SetViewLayout("), 1)
         self.assertIn("library.SetCamera(_host, _hopf ? LocalCamera() : _camera.ColumnMajor())", shell)
         self.assertEqual(json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))["params"]["projection"],
                          "hopfRings")
-        self.assertIn('public const string Projection = "hopfRings";', text(PROJECT / "D02" / "ShellHopf.cs"))
+        hopf = text(PROJECT / "D02" / "ShellHopf.cs")
+        self.assertIn('public const string Projection = "hopfRings";', hopf)
+        # B22, bare: Look Lab's name for the ring sheet (Parameters.cs) is the opening file's other layout.
+        self.assertIn('public const string SheetProjection = "ringSheet";', hopf)
+        self.assertIn('"hopfRings" => ProjectionKind.HopfRings, "ringSheet" => ProjectionKind.RingSheet,',
+                      text(ROOT / "tools" / "looklab" / "core" / "Parameters.cs"))
+        self.assertIn("public const uint Chain = 0, Rings = 1, Sheet = 2;", hopf)
+        self.assertIn("pub const LAYOUT_RING_SHEET: u32 = 2;", text(ROOT / "rust" / "c600-render" / "src" / "abi.rs"))
+
+    def test_the_core_lays_the_sheet_out_as_look_lab(self):
+        product = text(CORE / "src" / "product.cpp")
+        self.assertIn("constexpr double SheetDx = 0.68, SheetDy = 0.57, SheetScale = 0.6;", product)
+        self.assertIn("public const double SheetDx = 0.68, SheetDy = 0.57, SheetScale = 0.6;",
+                      text(ROOT / "tools" / "looklab" / "core" / "GlobalLayout.cs"))
+        self.assertIn("if (view.layout == SA2_LAYOUT_RING_SHEET) { c.viewFlags = 8u | 16u; return c; }",
+                      text(CORE / "src" / "scene.cpp"))
+        self.assertIn("float3 q = sheet ? placed : mul(Q, float4(placed, 0)).xyz;", text(CORE / "shaders" / "geometry.hlsl"))
 
     def test_the_build_stages_the_ring_file(self):
         build_shell = shell_module("build_shell")
@@ -367,6 +388,26 @@ class HopfRun(unittest.TestCase):
         self.assertEqual(run.expect_hopf(self.dumps(base, base * 1.21), {}, None), [])
         chain = run.expect_hopf(self.dumps(1.15, 1.15 * 1.21), {}, None)
         self.assertTrue(any("not the Hopf rings'" in p for p in chain), chain)
+
+    def test_the_ring_sheet_run_reads_its_own_opening(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["ring-sheet"], run.expect_ring_sheet)
+        self.assertIn("ring-sheet", run.ON_FIXTURE)
+        self.assertIs(run.DATA_FOR["ring-sheet"], run.ring_sheet_data)
+        temp = Path(tempfile.mkdtemp(prefix="d02-ring-sheet-"))
+        self.addCleanup(shutil.rmtree, temp, True)
+        folder = run.ring_sheet_data(temp / "run")
+        self.assertEqual(folder, temp / "run-data")
+        opening = json.loads(text(folder / "opening.json"))
+        self.assertEqual(opening["params"]["projection"], "ringSheet")
+        self.assertEqual(opening["params"]["fieldOfView"],
+                         json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))["params"]["fieldOfView"])
+        self.assertTrue((folder / "samples" / "jumble" / "states.json").is_file())
+        with self.assertRaises(ValueError):
+            run.ring_sheet_data(temp / "run")
+        fov = opening["params"]["fieldOfView"]
+        base = 1 / math.tan(fov / 2)
+        self.assertEqual(run.expect_ring_sheet(self.dumps(base, base * 1.21), {}, None), [])
 
     def test_the_frames_are_one_view_frames(self):
         run = shell_module("d02_run")

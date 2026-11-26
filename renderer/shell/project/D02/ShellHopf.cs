@@ -18,6 +18,20 @@ public static class ShellHopf
     /// <summary>The opening file's projection that asks for the Hopf rings.</summary>
     public const string Projection = "hopfRings";
 
+    /// <summary>The opening file's projection that asks for the ring sheet (B22, bare): the same rings laid flat.</summary>
+    public const string SheetProjection = "ringSheet";
+
+    /// <summary>The layout kinds of sa2_view_layout: the projection chain, the Hopf rings and the ring sheet.</summary>
+    public const uint Chain = 0, Rings = 1, Sheet = 2;
+
+    /// <summary>The layout a projection name asks for; any other name keeps the chain.</summary>
+    public static uint KindOf(string? projection) => projection switch
+    {
+        Projection => Rings,
+        SheetProjection => Sheet,
+        _ => Chain,
+    };
+
     /// <summary>The ring file: under M600_D02_DATA when it holds one, else the build's staged copy.</summary>
     public static string RingsPath()
     {
@@ -33,20 +47,31 @@ public static class ShellHopf
         return ProjectSettings.GlobalizePath("res://look/hopf-rings.json");
     }
 
-    /// <summary>Whether an opening file names the Hopf rings.</summary>
-    public static bool Named(string openingPath)
+    /// <summary>
+    /// Whether the shell opens Global on a layout. The ring sheet is held back: on the owner's GPU its first frames
+    /// removed the device (DXGI_ERROR_DEVICE_HUNG, 26 November 2026), though WARP draws it, so an opening file that
+    /// names it keeps the chain until that is found.
+    /// </summary>
+    public static bool Opens(uint kind) => kind == Rings;
+
+    /// <summary>The layout an opening file names: the Hopf rings, the ring sheet, or the chain.</summary>
+    public static uint Kind(string openingPath)
     {
         using var document = JsonDocument.Parse(File.ReadAllText(openingPath));
         return document.RootElement.GetProperty("params").TryGetProperty("projection", out var projection)
-            && projection.GetString() == Projection;
+            ? KindOf(projection.GetString()) : Chain;
     }
 
     /// <summary>
     /// The sa2_view_layout row (<see cref="HostLibrary.LayoutBytes"/> bytes, little-endian) for a ring file: struct size,
-    /// kind 1 (the Hopf rings), J, K, the 20 origins, then each cell's ring and half-step.
+    /// the kind (the Hopf rings or the ring sheet), J, K, the 20 origins, then each cell's ring and half-step.
     /// </summary>
-    public static byte[] Layout(string path)
+    public static byte[] Layout(string path, uint kind)
     {
+        if (kind != Rings && kind != Sheet)
+        {
+            throw new ArgumentOutOfRangeException(nameof(kind));
+        }
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         var root = document.RootElement;
         if (root.GetProperty("format").GetString() is not { } format || !format.Contains("hopf", StringComparison.OrdinalIgnoreCase))
@@ -55,7 +80,7 @@ public static class ShellHopf
         }
         var row = new byte[HostLibrary.LayoutBytes];
         BinaryPrimitives.WriteUInt32LittleEndian(row.AsSpan(0), (uint)HostLibrary.LayoutBytes);
-        BinaryPrimitives.WriteUInt32LittleEndian(row.AsSpan(4), 1);
+        BinaryPrimitives.WriteUInt32LittleEndian(row.AsSpan(4), kind);
         void Floats(JsonElement values, int at, int count)
         {
             if (values.GetArrayLength() != count)

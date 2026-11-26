@@ -88,7 +88,7 @@ public partial class Shell : Control
     // ADR-D02 B18c: Local is open (with --d02), the cap it is focused on (-1 before the first step), and the two openings
     // the pane table was last set for (both empty while one-view frames are drawn).
     private bool _localOpen;
-    // ADR-D02 B23: Global is drawn as the Hopf rings, so its camera is the linked 3D spin.
+    // ADR-D02 B23: Global is drawn as the Hopf rings, so its camera is the linked 3D spin (the ring sheet ignores it).
     private bool _hopf;
     private int? _localCap = -1;
     private (Rect2I Global, Rect2I Local) _paned;
@@ -195,13 +195,19 @@ public partial class Shell : Control
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         // ADR-D02 (owner, 26 November 2026: smaller stickers): with --d02 the view takes the owner's opening shape.
         Require(hostLibrary, "m6h_set_view_shape", D02.ShellShape.Apply(hostLibrary, _host));
-        // ADR-D02 B23 (bare): with --d02 and an opening file that names the Hopf rings, Global opens on them, turned
-        // by the linked 3D spin.
-        if (D02.ShellJumble.On && D02.ShellHopf.Named(D02.ShellShape.OpeningPath()))
+        // ADR-D02 B23 and B22 (bare): with --d02 and an opening file that names the Hopf rings or the ring sheet, Global
+        // opens on it; the rings turn with the linked 3D spin, the sheet lies flat.
+        var layout = D02.ShellJumble.On ? D02.ShellHopf.Kind(D02.ShellShape.OpeningPath()) : D02.ShellHopf.Chain;
+        if (layout != D02.ShellHopf.Chain && !D02.ShellHopf.Opens(layout))
+        {
+            GD.PushWarning("ADR-D02 B22: the ring sheet is held back (it hangs the GPU); Global opens on the chain");
+            layout = D02.ShellHopf.Chain;
+        }
+        if (layout != D02.ShellHopf.Chain)
         {
             Require(hostLibrary, "m6h_set_view_layout", hostLibrary.SetViewLayout(_host, HostLibrary.View,
-                D02.ShellHopf.Layout(D02.ShellHopf.RingsPath())));
-            _hopf = true;
+                D02.ShellHopf.Layout(D02.ShellHopf.RingsPath(), layout)));
+            _hopf = layout == D02.ShellHopf.Rings;
             _camera.Dirty = true; // the first step sends the spin as Global's camera
         }
         // ADR-D02 B18c: with --d02 Local opens beside Global with its own shape, hidden until a cap is named.

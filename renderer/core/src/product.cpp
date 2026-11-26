@@ -118,8 +118,8 @@ void view_focus(const sa2_view_focus* focus, ViewShape& shape) {
 uint32_t view_layout_kind(const sa2_view_layout* layout) {
     if (!layout) return SA2_LAYOUT_CHAIN;
     argument(layout->struct_size == sizeof(*layout), "invalid view_layout struct_size");
-    argument(layout->kind == SA2_LAYOUT_CHAIN || layout->kind == SA2_LAYOUT_HOPF_RINGS,
-             "kind must be SA2_LAYOUT_CHAIN or SA2_LAYOUT_HOPF_RINGS");
+    argument(layout->kind == SA2_LAYOUT_CHAIN || layout->kind == SA2_LAYOUT_HOPF_RINGS || layout->kind == SA2_LAYOUT_RING_SHEET,
+             "kind must be SA2_LAYOUT_CHAIN, SA2_LAYOUT_HOPF_RINGS or SA2_LAYOUT_RING_SHEET");
     return layout->kind;
 }
 
@@ -140,6 +140,7 @@ Q4 load(const float* v) { return {v[0], v[1], v[2], v[3]}; }
 
 HopfTable hopf_table(const sa2_view_layout& layout, const std::function<std::array<float, 4>(uint32_t)>& centre) {
     constexpr double RingRadius = 2.62, BaseRadius = 8.063, RingScale = 0.28, Pi = 3.14159265358979323846;
+    constexpr double SheetDx = 0.68, SheetDy = 0.57, SheetScale = 0.6; // GlobalLayout's ring sheet (B22)
     const auto finite = [](const float* v, size_t n) { for (size_t i = 0; i < n; ++i) if (!std::isfinite(v[i])) return false; return true; };
     argument(finite(layout.j, 4) && finite(layout.k, 4) && finite(layout.origins, 80), "a Hopf ring value is not finite");
     const Q4 j = load(layout.j), k = load(layout.k);
@@ -207,7 +208,10 @@ HopfTable hopf_table(const sa2_view_layout& layout, const std::function<std::arr
                 table[cell * 4 + row][col] = float(value);
             }
             table[cell * 4 + 3][row] = float(RingScale * dot3(orientation[row], position));
+            // B22: the ring sheet lays the chart flat at its row and column.
+            for (int col = 0; col < 4; ++col) table[HopfSheetRow + cell * 4 + row][col] = float(SheetScale * frame[row][col]);
         }
+        table[HopfSheetRow + cell * 4 + 3] = {float(SheetScale * SheetDx * (h / 2.0 - 14.75)), float(-SheetScale * SheetDy * (double(r) - 9.5)), 0, 0};
     }
     for (size_t r = 0; r < 20; ++r) {
         const Q4 oj = qmul(origin[r], j);

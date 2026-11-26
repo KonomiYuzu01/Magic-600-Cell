@@ -176,12 +176,14 @@ SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_v
 ```
 
 - The row carries Look Lab's `tools/looklab/fixtures/hopf-rings.json`: J, K, the 20 rings' origins and each cell's ring and half-step. The core checks them against its own cells: each centre must project onto its ring's plane at the phase of its half-step. It then builds Look Lab's `GlobalLayout` ring charts (RingRadius 2.62, BaseRadius 8.063, RingScale 0.28) into one table that the product passes read at t18. Every view that names the rings shares the table; a different set is refused.
+- `SA2_LAYOUT_RING_SHEET` (2u, ADR-D02 B22, added before any release) lays the same charts flat as Look Lab's ring sheet: 20 rows of 30 cell charts, each cell's centre at (0.408 (h/2 - 14.75), -0.342 (r - 9.5)). The camera does not turn the sheet. WARP draws it; on the owner's GPU its first product frames removed the device (DXGI_ERROR_DEVICE_HUNG), so the shell holds it back until that is found.
 - A sticker is placed by the chart of the cell nearest the posed centre of its own cell, in Hopf coordinates: the ring of the nearest base point, then the place of the nearest phase along it. So a sticker whose piece is not posed uses its own cell's chart. The placed point turns by the camera's upper 3 x 3 (the shell sends the linked 3D spin) and is drawn at the view's zoom; d4 and the focus are unused.
 - `python renderer/core/check_core.py --hopf` runs `sa2_selftest.exe --warp --hopf <hopf-rings.json> --debug` on WARP only. It checks that:
   - on the CPU, the table built from the rings' own centres puts the 20 ring centres at a dodecahedron's vertices;
   - the chain layout and NULL draw byte-identically to no call;
   - malformed or unfitting rings are refused and change nothing;
   - the rings change the picture around its centre, and the camera turns them;
+  - each cell's centre lies at its own place on the ring sheet, and the sheet draws another picture around the centre, which the camera does not turn;
   - another view keeps the chain, and the same rings on a third view draw the same picture.
 
 ## Build and CPU check

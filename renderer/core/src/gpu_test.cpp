@@ -1721,6 +1721,20 @@ void hopf_dodecahedron(const sa2_view_layout& layout) {
         }
         expect(angles == expected, "the ring centres are not a dodecahedron's vertices");
     }
+    // B22: the ring sheet puts each cell's own centre at its row and column, 20 rows of 30 distinct places.
+    std::set<std::pair<long, long>> places;
+    for (uint32_t cell = 0; cell < 600; ++cell) {
+        const auto c = centre(cell);
+        const size_t at = sa2::HopfSheetRow + cell * 4;
+        double placed[3];
+        for (int row = 0; row < 3; ++row)
+            placed[row] = table[at + row][0] * c[0] + table[at + row][1] * c[1] + table[at + row][2] * c[2] + table[at + row][3] * c[3] + table[at + 3][row];
+        const double column = layout.half_step[cell] / 2.0 - 14.75, row = double(layout.ring_of[cell]) - 9.5;
+        expect(std::abs(placed[0] - 0.6 * 0.68 * column) < 1e-4 && std::abs(placed[1] + 0.6 * 0.57 * row) < 1e-4 && std::abs(placed[2]) < 1e-4,
+               "a cell's centre is not at its place on the ring sheet");
+        places.insert({std::lround(placed[0] * 1000), std::lround(placed[1] * 1000)});
+    }
+    expect(places.size() == 600, "two cells share a place on the ring sheet");
 }
 
 void product_hopf(const Options& options) {
@@ -1752,7 +1766,7 @@ void product_hopf(const Options& options) {
         auto bad = layout;
         switch (field) {
         case 0: bad.struct_size = 1500; break;
-        case 1: bad.kind = 2; break;
+        case 1: bad.kind = 3; break;
         case 2: bad.ring_of[0] = 20; break;
         case 3: bad.half_step[0] = uint8_t((bad.half_step[0] + 1) % 60); break;
         case 4: for (int i = 0; i < 4; ++i) std::swap(bad.origins[i], bad.origins[4 + i]); break;
@@ -1782,6 +1796,35 @@ void product_hopf(const Options& options) {
     expect(frames.draw(1, 2, 0, I) == unset, "another view drew with view 1's layout");
     api(ctx, sa2_view_layout_set(ctx, 3, &layout));
     expect(frames.draw(1, 3, 0, I) == rings, "the same rings on another view drew another picture");
+    // B22: the ring sheet draws another picture, around the centre, which the camera does not turn.
+    auto sheet = layout;
+    sheet.kind = SA2_LAYOUT_RING_SHEET;
+    api(ctx, sa2_view_layout_set(ctx, 1, &sheet));
+    const auto flat = frames.draw(1, 1, 0, I);
+    uint64_t sheet_covered = 0;
+    int sheet_left = int(harness.width), sheet_right = -1, sheet_top = int(harness.height), sheet_bottom = -1;
+    for (uint32_t y = 0; y < harness.height; ++y)
+        for (uint32_t x = 0; x < harness.width; ++x)
+            if (flat[size_t(y) * harness.width + x] != background) {
+                ++sheet_covered;
+                sheet_left = std::min(sheet_left, int(x)); sheet_right = std::max(sheet_right, int(x));
+                sheet_top = std::min(sheet_top, int(y)); sheet_bottom = std::max(sheet_bottom, int(y));
+            }
+    std::cout << "ring sheet: covered " << sheet_covered << "; x " << sheet_left << ".." << sheet_right << ", y " << sheet_top << ".."
+              << sheet_bottom << std::endl;
+    expect(flat != rings && flat != unset && sheet_covered > 0, "the ring sheet drew the rings or nothing");
+    expect(sheet_left < int(harness.width) / 2 && sheet_right > int(harness.width) / 2 && sheet_top < int(harness.height) / 2
+               && sheet_bottom > int(harness.height) / 2, "the ring sheet is not around the picture's centre");
+    expect(frames.draw(1, 1, 0, turned) == flat, "the camera turned the ring sheet");
+    expect(frames.draw(1, 3, 0, I) == rings, "the ring sheet on view 1 changed view 3's rings");
+    if (!options.out.empty()) {
+        std::ofstream file(options.out.parent_path() / "warp-sheet.ppm", std::ios::binary);
+        file << "P6\n" << harness.width << " " << harness.height << "\n255\n";
+        for (uint32_t pixel : flat) {
+            const char rgb[3] = {char(pixel & 0xff), char((pixel >> 8) & 0xff), char((pixel >> 16) & 0xff)};
+            file.write(rgb, 3);
+        }
+    }
     api(ctx, sa2_view_layout_set(ctx, 1, nullptr));
     expect(frames.draw(1, 1, 0, I) == unset, "a NULL layout did not restore the chain");
     if (!options.out.empty()) {
