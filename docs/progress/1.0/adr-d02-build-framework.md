@@ -455,6 +455,21 @@ relative path is from the repository root.
   - The words "Repair k of m" (m = 2 or 3) and "Whole repair only"; the empty line with its coverage line; the cut-off line.
   - Step focus through `view.preview.scrub`, with the step's moving-set count. Its outline is drawn in B16.
 - **Check:** `D02RepairOrderEqualsSample`; `D02RepairModelHasNoSortMember` (reflection); `D02RepairNoFocusOnOpen`; `D02RepairDigitsOnlyInContext`; `D02RepairEmptyNamesCapRevisionAndCoverage`; `D02RepairCutOffIsNotEmpty`; `D02RepairTwoTwistRowHasTwoSteps`.
+- **As built (integrator, 26 November 2026):**
+  - `Model/RepairList.cs`:
+    - `RepairRow(Number, X, D, Y, Z, ΔN)`; a row whose z is the identity is a two-twist repair with two steps, and its z is data.
+    - `RepairListModel.From(record, revision, variant)` reads one of the sample's three results (completed, cut_off, cancelled) and keeps the record's order. It has no comparer and no sort, order, filter or rank member. ΔN is one signed numeral in its own column.
+    - No row is focused on open. `Down` and `Up` focus rows inside the list. `Digit(n, contexts)` picks rows 1 to 9 only in the context `repair.list.focused`, and `Enter(contexts)` picks the focused row in the same context.
+    - The words are the word record's: the columns `# | x d | y z | ΔN`, "Whole repair only", the empty line "Cap c, rev r: no repair lowers N (k of k pairs tried)" and the cut-off line "Not found within budget (j of k tried)". The total is 59 menu items times the misaligned meeting caps in the result's coverage.
+    - The coverage line names the pin (the order digest), the menu identity, the tie rule and the contract revision. It always shows under an empty list, and behind a fold otherwise. A completed result without coverage, or one that tried less than everything, is an error.
+    - `RepairSteps` gives each step's letters and moving-set count from the record's `repair_steps` (rows 1 to 9 in the samples; pending beyond). `RepairScrub` holds the focused row's step, "Repair k of m", moved by the preview's step keys.
+  - `Ui/JumbleLists.cs`: `RepairListControl` takes its own keys while it has focus. Up and Down focus rows; Left and Right are `view.preview.scrub`'s keys and walk the focused row's steps; digits and Enter pick; Escape un-focuses. The step line under the rows reads "Repair k of m · moving n".
+  - Departure: the shell routes every key the chrome does not claim to the session, so digits typed into the cap map (B9) or the repair list would also have twisted. `ChromeFrame.Claims` now claims keys while the focus owner implements `IOwnKeys`, and both controls do.
+  - The host rebuilds the list for the named cap at each revision from the cap record. A pick reaches `JumbleHost.Pick` only from the list's digit or Enter, and B13 stages it.
+  - Checks:
+    - Console lane: `D02RepairOrderEqualsSample`, `D02RepairModelHasNoSortMember` (reflection), `D02RepairNoFocusOnOpen`, `D02RepairDigitsOnlyInContext`, `D02RepairEmptyNamesCapRevisionAndCoverage`, `D02RepairCutOffIsNotEmpty` and `D02RepairTwoTwistRowHasTwoSteps` pass; the lane passed 194 of 194.
+    - `test_renderer_shell.py` passed 75 of 75, with `D02Repair`.
+    - `d02_run.py --script repair` passed on wj-ia-300 (`c9-product-b724d282887e16dc`). The list counted 129 rows with none focused on open. Two arrows focused row 2, the forward step key showed "Repair 2 of 3 · moving 2,862", and typing 2 in the list picked row 2.
 - **Owner sees:** the repair slot; arrows focus a row; the step label follows the scrub key.
 - **Machine:** H, W.
 - **Checkpoint:** no.

@@ -5,6 +5,10 @@ using Godot;
 
 namespace Magic600.Chrome;
 
+// A control that takes its own keys while it has focus (ADR-D02's cap map digits and the repair list's focused-list
+// context): the chrome claims them, so no key both acts there and reaches the session.
+public interface IOwnKeys { }
+
 public static class ChromeWidgets
 {
     public static Label Text(string text, string variation = "", bool clip = false)
@@ -297,7 +301,7 @@ public sealed partial class ChromeFrame : Control
     public bool Claims(string key, Func<Binding, bool>? can = null)
     {
         if (KeyCapture != null || OpenOverlay != null || HostKeys.ContainsKey(key)) return true;
-        if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return true;
+        if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit or IOwnKeys) return true;
         return Keys?.Resolve(key, KeyContexts()) is { } binding && (can == null || can(binding));
     }
 

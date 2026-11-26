@@ -1795,6 +1795,52 @@ class D02Covers(unittest.TestCase):
         self.assertNotIn("HostKeys", keys)
 
 
+class D02Repair(unittest.TestCase):
+    """B12: the repair script's expectation follows the record, the list takes its own keys in the shell (no digit
+    reaches the session while it has focus), and the words are the word record's."""
+
+    def test_the_repair_expectation_follows_the_record(self):
+        run = shell_module("d02_run")
+        self.assertIn("repair", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "repair.json"))
+        self.assertEqual(len(script["steps"]) + 1, len(run.REPAIR_STEPS))
+        record = json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / "wj-ia-300" / "cap-150.json"))
+        rows = record["repair_list"]["completed"]["rows"]
+        moving = {s["row"]: s for s in record["repair_steps"]}[2]["moving_sets"][1]["count"]
+        first = rows[0]
+        local = [["view:Local", f"▾ Repair list · {len(rows)}"]] + [["view:Local", c] for c in
+                 ("#", "x d", "y z", "ΔN", f"{first[0]} {first[1]}", f"{first[2]} {first[3]}", str(first[4]))]
+
+        def dumps(picks=(2,), opened_focus=0):
+            out = [{"do": do, "lines": []} for do in run.REPAIR_STEPS]
+            out[7].update(lines=local, repair={"rows": len(rows), "focused": opened_focus, "step": "", "picks": []})
+            out[12]["repair"] = {"rows": len(rows), "focused": 2, "step": "Repair 1 of 3", "picks": []}
+            out[14].update(repair={"rows": len(rows), "focused": 2, "step": "Repair 2 of 3", "picks": []},
+                           lines=[["view:Local", f"Repair 2 of 3 · moving {moving:,}"]])
+            out[16]["repair"] = {"rows": len(rows), "focused": 2, "step": "Repair 2 of 3", "picks": list(picks)}
+            return out
+        self.assertEqual(run.expect_repair(dumps(), {}, "wj-ia-300"), [])
+        self.assertEqual(len(run.expect_repair(dumps(opened_focus=1), {}, "wj-ia-300")), 1)
+        self.assertEqual(len(run.expect_repair(dumps(picks=()), {}, "wj-ia-300")), 1)
+
+    def test_the_list_takes_its_own_keys_and_the_words_are_the_record(self):
+        frame = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "ChromeFrame.cs")
+        self.assertIn("is LineEdit or TextEdit or IOwnKeys", frame)
+        lists = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleLists.cs")
+        self.assertIn("public sealed partial class RepairListControl : VBoxContainer, IOwnKeys", lists)
+        self.assertIn("public sealed partial class CapMapControl : Control, IOwnKeys", text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "CapMapControl.cs"))
+        model = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "RepairList.cs")
+        words = {s["id"]: s for s in json.loads(text(ROOT / "tools" / "looklab" / "data" / "design" / "jumble-words.json"))["sentences"]}
+        self.assertIn('"' + words["repair.whole"]["text"] + '"', model)
+        self.assertIn('public const string Context = "repair.list.focused";', model)
+        # The preview's step keys walk a row's steps: view.preview.scrub is Left and Right in the keymap.
+        keymap = json.loads(text(ROOT / "tools" / "looklab" / "data" / "design" / "keymap.json"))
+        scrub = sorted(b["key"] for b in keymap["bindings"] if b.get("command") == "view.preview.scrub")
+        self.assertEqual(scrub, ["Left", "Right"])
+        self.assertIn('case Key.Left: scrub.Scrub("back"); break;', lists)
+        self.assertIn('case Key.Right: scrub.Scrub("forward"); break;', lists)
+
+
 class D02Rotation(unittest.TestCase):
     """The view rotation the owner asked for on 26 November 2026: with --d02 a left-button drag in the Global opening
     turns the core's 4D camera as Look Lab's drag does, a click stays a click, and without --d02 nothing changes."""

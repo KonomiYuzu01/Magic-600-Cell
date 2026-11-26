@@ -142,3 +142,121 @@ public sealed partial class CapCoversList : VBoxContainer
         return cell;
     }
 }
+
+// The repair list under the named-cap cell (ADR-D02.32, .34; build step B12): the columns `# | x d | y z | ΔN` in the
+// result's order, no row focused on open, arrow keys to focus, digits 1 to 9 to pick in this list's focused context,
+// Enter for the focused row, and the preview's scrub keys for the focused row's steps. The solver picks; the list never
+// picks, orders or stages a row itself.
+public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
+{
+    private static readonly int[] Widths = { 34, 72, 72, 64 };
+    private readonly RepairListModel list;
+    private readonly RepairSteps steps;
+    private readonly RepairScrub scrub;
+    private readonly Func<TokenSet> tokens;
+    private readonly VBoxContainer rows = new() { Name = "RepairRows" };
+    private readonly ScrollContainer scroll = new() { Name = "RepairScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+    private readonly Label step = new() { Name = "RepairStep" };
+    // The solver picked a row: by a digit or Enter, in the list's context.
+    public event Action<RepairRow>? Picked;
+
+    public RepairListControl(RepairListModel list, RepairSteps steps, RepairScrub scrub, bool expanded, Action<bool> expand, Func<TokenSet> tokens)
+    {
+        Name = "RepairList"; this.list = list; this.steps = steps; this.scrub = scrub; this.tokens = tokens;
+        FocusMode = FocusModeEnum.All; MouseFilter = MouseFilterEnum.Stop;
+        TooltipText = "Click, then arrow keys focus a row; 1 to 9 or Enter picks it; the preview's step keys walk its steps";
+        TokenSet t = tokens();
+        AddThemeConstantOverride("separation", t.Px("space.1"));
+        if (list.Error is string error)
+        {
+            AddChild(Line(error, "state.invalid", "RepairError"));
+            return;
+        }
+        if (list.CutOffLine() is string cut) AddChild(Line(cut, "text.dim", "RepairCutOff"));
+        if (list.EmptyLine() is string empty)
+        {
+            AddChild(Line(empty, "text", "RepairEmpty"));
+            AddChild(Line(list.CoverageLine() ?? "", "text.dim", "RepairCoverage"));
+        }
+        if (list.Rows.Count > 0)
+        {
+            AddChild(Row(RepairListModel.Columns, "MicroLabel", t.C("text.dim"), "RepairColumns"));
+            foreach (RepairRow row in list.Rows) rows.AddChild(Row(RepairListModel.Cells(row), "ReadoutLabel", t.C("text"), "RepairRow" + row.Number));
+            scroll.AddChild(rows);
+            scroll.CustomMinimumSize = new Vector2(0, (float)(Math.Min(list.Rows.Count, 10) * (t.TypeSize("ui", "micro") + 6)));
+            AddChild(scroll);
+            step.AddThemeColorOverride("font_color", t.C("text.dim"));
+            AddChild(step);
+            Button more = ChromeWidgets.Tool((expanded ? "▾ " : "▸ ") + "Coverage", expanded ? "Fold the coverage line" : "Show what the result ran under", true);
+            more.Name = "RepairCoverageToggle"; more.Alignment = HorizontalAlignment.Left; more.SetPressedNoSignal(expanded);
+            more.Pressed += () => expand(!expanded);
+            AddChild(more);
+            if (expanded) AddChild(Line(list.CoverageLine() ?? "", "text.dim", "RepairCoverage"));
+        }
+        list.Changed += Show; scrub.Changed += Show;
+        TreeExiting += () => { list.Changed -= Show; scrub.Changed -= Show; };
+        Show();
+    }
+
+    private Label Line(string text, string role, string name)
+    {
+        Label line = ChromeWidgets.Text(text, "MicroLabel"); line.Name = name;
+        line.AddThemeColorOverride("font_color", tokens().C(role)); line.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        return line;
+    }
+
+    private static HBoxContainer Row(IReadOnlyList<string> cells, string variation, Color colour, string name)
+    {
+        var line = new HBoxContainer { Name = name, MouseFilter = MouseFilterEnum.Pass };
+        for (int k = 0; k < cells.Count; k++)
+        {
+            Label cell = ChromeWidgets.Text(cells[k], variation);
+            cell.AddThemeColorOverride("font_color", colour);
+            cell.CustomMinimumSize = new Vector2(Widths[Math.Min(k, Widths.Length - 1)], 0);
+            cell.HorizontalAlignment = k is 0 or 3 ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+            cell.MouseFilter = MouseFilterEnum.Pass;
+            line.AddChild(cell);
+        }
+        return line;
+    }
+
+    // The focused row's outline follows the state roles; its steps' label shows under the rows.
+    private void Show()
+    {
+        if (!IsInstanceValid(this)) return;
+        TokenSet t = tokens();
+        foreach (Node child in rows.GetChildren())
+            if (child is HBoxContainer line)
+            {
+                bool focused = line.Name == "RepairRow" + list.Focused;
+                foreach (Node cell in line.GetChildren())
+                    if (cell is Label label) label.AddThemeColorOverride("font_color", t.C(focused ? "state.selected" : "text"));
+                if (focused) scroll.EnsureControlVisible(line);
+            }
+        scrub.Show(list.Focused is int f ? list.Rows[f - 1] : null);
+        step.Text = scrub.Row is RepairRow row
+            ? scrub.Label + " · moving " + (steps.Moving(row, scrub.Step) is { Kind: NumeralKind.Value } n ? n.Value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) : "pending")
+            : "";
+    }
+
+    public override void _GuiInput(InputEvent e)
+    {
+        if (e is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }) { GrabFocus(); return; }
+        if (e is not InputEventKey { Pressed: true } key) return;
+        string[] contexts = HasFocus() ? new[] { RepairListModel.Context } : Array.Empty<string>();
+        int digit = key.Keycode is >= Key.Key0 and <= Key.Key9 ? (int)(key.Keycode - Key.Key0) : key.Keycode is >= Key.Kp0 and <= Key.Kp9 ? (int)(key.Keycode - Key.Kp0) : -1;
+        switch (key.Keycode)
+        {
+            case Key.Down: list.Down(); break;
+            case Key.Up: list.Up(); break;
+            // The preview's step keys (view.preview.scrub: Left back, Right forward).
+            case Key.Left: scrub.Scrub("back"); break;
+            case Key.Right: scrub.Scrub("forward"); break;
+            case Key.Escape: list.Unfocus(); break;
+            case Key.Enter or Key.KpEnter when list.Enter(contexts) is RepairRow focused: Picked?.Invoke(focused); break;
+            case var _ when digit >= 0 && list.Digit(digit, contexts) is RepairRow row: Picked?.Invoke(row); break;
+            default: return;
+        }
+        AcceptEvent();
+    }
+}

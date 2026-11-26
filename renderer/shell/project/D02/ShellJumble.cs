@@ -511,6 +511,19 @@ internal sealed partial class D02Driver : Node
             _doing = "hover cover " + hover.GetInt32().ToString(CultureInfo.InvariantCulture);
             ShellJumble.Host?.Inspect.Hover(hover.GetInt32());
         }
+        else if (step.TryGetProperty("focus", out var focus))
+        {
+            // B12: gives keyboard focus to a control of Local's sections by name, as a click on it does.
+            _doing = "focus " + focus.GetString();
+            if (ShellJumble.Host?.Surface.FindChild(focus.GetString()!, true, false) is Control target)
+            {
+                target.GrabFocus();
+            }
+            else
+            {
+                _doing += " (not found)";
+            }
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -518,7 +531,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a cancel_older, an open, a hover_cover or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a cancel_older, an open, a hover_cover, a focus or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -612,6 +625,18 @@ internal sealed partial class D02Driver : Node
                     json.WriteStringValue(string.Join(" / ", layers.Predicates.Select(FocusLayers.KeyText)) + " | focused " + (layers.Focused ?? "none") + " | " + layers.Inactive);
                 }
                 json.WriteEndArray();
+                // B12: the repair list's focused row, its step label and the solver's picks.
+                json.WriteStartObject("repair");
+                json.WriteNumber("rows", shown.Repair?.Rows.Count ?? -1);
+                json.WriteNumber("focused", shown.Repair?.Focused ?? 0);
+                json.WriteString("step", shown.Scrub.Label);
+                json.WriteStartArray("picks");
+                foreach (var pick in shown.Picks)
+                {
+                    json.WriteNumberValue(pick.Number);
+                }
+                json.WriteEndArray();
+                json.WriteEndObject();
             }
             json.WriteNumber("cancels", _cancels);
             json.WriteNumber("screen_changes_on_cancel", _screenChanges);

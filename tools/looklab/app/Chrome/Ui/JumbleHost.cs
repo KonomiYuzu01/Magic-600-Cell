@@ -40,6 +40,16 @@ public sealed class JumbleHost
     public PoseStyle? Style { get; private set; }
     public IReadOnlyList<FocusLayers> Layers { get; set; } = Array.Empty<FocusLayers>();
     private int? domainShown, heightShown;
+    // B12: the named cap's repair list at the shown revision, its steps and the step focus; the variant names which of
+    // the sample's results stands in for the job (completed, cut_off or cancelled).
+    public RepairListModel? Repair { get; private set; }
+    public RepairSteps RepairSteps { get; private set; } = new();
+    public RepairScrub Scrub { get; } = new();
+    public string RepairVariant { get; set; } = "completed";
+    // The solver's picks, in order; B13 stages them.
+    public IReadOnlyList<RepairRow> Picks => picks;
+    private readonly List<RepairRow> picks = new();
+    public event Action<RepairRow>? RepairPicked;
     // B10: the kept twist checks at the named cap and revision, the session's release record, and the sample jobs'
     // tick clock with the cap record's results.
     public KeptChecks? Checks { get; private set; }
@@ -70,6 +80,7 @@ public sealed class JumbleHost
         totals = GlobalTotals.Pending.Slots(unit, above);
         Entry = new EntrySlot(Settings);
         Surface = new JumbleSurface(Local, () => frame.Tokens, names, emptySentence, emptyBody);
+        Surface.RepairPicked += Pick;
         string title = names.TryGetValue("cap_map", out string? name) ? name : "Cap map";
         CapMap = new CapMapPanel(Settings, () => frame.Tokens, title);
         Jobs = new CapJobs(Naming);
@@ -137,6 +148,13 @@ public sealed class JumbleHost
                 };
                 layers.AddPredicate(next);
             }
+    }
+
+    // The solver picked a repair row (a digit or Enter in the list's context). Only a pick reaches here; B13 stages it.
+    public void Pick(RepairRow row)
+    {
+        picks.Add(row);
+        Safe.Raise(RepairPicked, row);
     }
 
     // Where no sample gives the views their focus layers, the host keeps one set per view and dresses each view with
@@ -214,6 +232,13 @@ public sealed class JumbleHost
         Surface.SetCovers(Covers, Inspect, () => map);
         // The straddlers layer stays focused across named caps and counts at the new one (ADR-D02.30).
         Recount();
+        // The repair list: the record's result for the named cap at this revision; no row is focused when it opens.
+        string? record = cap is int c4 && RecordSource != null ? RecordSource(c4) : null;
+        Repair = record != null ? RepairListModel.From(record, revision, RepairVariant) : null;
+        RepairSteps = record != null ? RepairSteps.From(record) : new RepairSteps();
+        Scrub.Show(null);
+        Local.SetCount("repair_list", Repair?.Rows.Count ?? 0);
+        Surface.SetRepair(Repair, RepairSteps, Scrub);
         CapReadout? readout = cap is int c ? (CapRecord != null ? CapRecord(c) : null) ?? map.Readout(c) : null;
         SetCap(readout);
         Surface.SetFacts(readout != null && layout != null ? CapFacts.Tier2(map, layout, readout) : null);

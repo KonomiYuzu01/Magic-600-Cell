@@ -26,6 +26,13 @@ public sealed partial class JumbleSurface : VBoxContainer
     private CoversInspect? inspect;
     private Func<CapMapModel> map = CapMapModel.Pending;
     private bool coversTable;
+    // The named cap's repair list (B12), its steps and the step focus, and the coverage line's fold.
+    private RepairListModel? repair;
+    private RepairSteps? repairSteps;
+    private RepairScrub? scrub;
+    private bool repairCoverage;
+    // The solver picked a repair row in the list.
+    public event Action<RepairRow>? RepairPicked;
 
     public JumbleSurface(LocalAccordion accordion, Func<TokenSet> tokens, IReadOnlyDictionary<string, string> names, string emptySentence, string emptyBody)
     {
@@ -47,6 +54,12 @@ public sealed partial class JumbleSurface : VBoxContainer
     public void SetCovers(CapCovers? value, CoversInspect inspect, Func<CapMapModel> map)
     {
         covers = value; this.inspect = inspect; this.map = map;
+        if (IsInstanceValid(this)) Refresh();
+    }
+
+    public void SetRepair(RepairListModel? value, RepairSteps steps, RepairScrub scrub)
+    {
+        repair = value; repairSteps = steps; this.scrub = scrub;
         if (IsInstanceValid(this)) Refresh();
     }
 
@@ -81,6 +94,12 @@ public sealed partial class JumbleSurface : VBoxContainer
             }
             else if (open && section == "twist_check" && checks != null && checks.Entries.Count > 0)
                 sections.AddChild(new TwistCheckList(checks, tokens) { Name = "LocalBody_" + section });
+            else if (open && section == "repair_list" && repair != null && repairSteps != null && scrub != null && repair.End != JobEnd.Cancelled)
+            {
+                var control = new RepairListControl(repair, repairSteps, scrub, repairCoverage, wide => { repairCoverage = wide; Refresh(); }, tokens) { Name = "LocalBody_" + section };
+                control.Picked += row => RepairPicked?.Invoke(row);
+                sections.AddChild(control);
+            }
             else if (open && section == "cap_covers" && covers != null && inspect != null)
                 sections.AddChild(new CapCoversList(covers, inspect, map, coversTable, wide => { coversTable = wide; Refresh(); }, tokens) { Name = "LocalBody_" + section });
             else if (open)

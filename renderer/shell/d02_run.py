@@ -435,11 +435,52 @@ def expect_covers(dumps: list[dict], source: dict, state: str | None) -> list[st
     return problems
 
 
+# B12: the repair script's steps.
+REPAIR_STEPS = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 1500 ms",
+                "open repair_list", "wait 1000 ms", "focus LocalBody_repair_list", "wait 500 ms", "chord Down", "chord Down",
+                "wait 500 ms", "chord Right", "wait 800 ms", "text 2", "wait 2000 ms"]
+
+
+def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B12's repair script: Local's Repair list counts the record's rows and shows them in the record's order with no
+    row focused on open; two arrows down focus row 2; the preview's forward step key shows "Repair 2 of 3" with the
+    step's moving-set count; typing 2 in the list's context picks row 2, and only that pick is recorded."""
+    if [dump["do"] for dump in dumps] != REPAIR_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None or not (SAMPLES / state / "cap-150.json").is_file():
+        return ["the repair script needs a sample state with a record of cap 150"]
+    record = load(SAMPLES / state / "cap-150.json")
+    rows = record["repair_list"]["completed"]["rows"]
+    problems = []
+    opened, focused, stepped, picked = dumps[7], dumps[12], dumps[14], dumps[16]
+    local = texts(opened, "view:Local")
+    if f"▾ Repair list · {len(rows)}" not in local:
+        problems.append(f"step 7: Local's open Repair list does not count {len(rows)} rows")
+    first = rows[0]
+    for cell in ("#", "x d", "y z", "ΔN", f"{first[0]} {first[1]}", f"{first[2]} {first[3]}", str(first[4])):
+        if cell not in local:
+            problems.append(f"step 7: Local does not show {cell!r}")
+    repair = opened.get("repair") or {}
+    if repair.get("rows") != len(rows) or repair.get("focused") != 0:
+        problems.append(f"step 7: the list opened with {repair}")
+    if (focused.get("repair") or {}).get("focused") != 2:
+        problems.append(f"step 12: two arrows down focused {(focused.get('repair') or {}).get('focused')}")
+    steps = {s["row"]: s for s in record["repair_steps"]}
+    moving = steps[2]["moving_sets"][1]["count"]
+    label = f"Repair 2 of 3 · moving {moving:,}"
+    if (stepped.get("repair") or {}).get("step") != "Repair 2 of 3" or label not in texts(stepped, "view:Local"):
+        problems.append(f"step 14: the step label is {(stepped.get('repair') or {}).get('step')!r}, not {label!r} on screen")
+    if (picked.get("repair") or {}).get("picks") != [2]:
+        problems.append(f"step 16: the picks are {(picked.get('repair') or {}).get('picks')}, not [2]")
+    print(f"repair: {len(rows)} rows; {label}; picks {(picked.get('repair') or {}).get('picks')}")
+    return problems
+
+
 EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
-          "q3b": expect_q3b, "covers": expect_covers}
+          "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
-ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers"}
+ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair"}
 IN_SAMPLE_MODE = {"host"}
 
 

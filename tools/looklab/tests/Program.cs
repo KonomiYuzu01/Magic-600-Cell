@@ -226,7 +226,14 @@ internal static partial class Program
             ("D02CoversUndefinedIsListed", D02CoversUndefinedIsListed),
             ("D02CoversTableHas80RowsBothDirections", D02CoversTableHas80RowsBothDirections),
             ("D02HoverInCoversMarksNoCapMapCell", D02HoverInCoversMarksNoCapMapCell),
-            ("D02FocusLayerCountsMatchSample", D02FocusLayerCountsMatchSample)
+            ("D02FocusLayerCountsMatchSample", D02FocusLayerCountsMatchSample),
+            ("D02RepairOrderEqualsSample", D02RepairOrderEqualsSample),
+            ("D02RepairModelHasNoSortMember", D02RepairModelHasNoSortMember),
+            ("D02RepairNoFocusOnOpen", D02RepairNoFocusOnOpen),
+            ("D02RepairDigitsOnlyInContext", D02RepairDigitsOnlyInContext),
+            ("D02RepairEmptyNamesCapRevisionAndCoverage", D02RepairEmptyNamesCapRevisionAndCoverage),
+            ("D02RepairCutOffIsNotEmpty", D02RepairCutOffIsNotEmpty),
+            ("D02RepairTwoTwistRowHasTwoSteps", D02RepairTwoTwistRowHasTwoSteps)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

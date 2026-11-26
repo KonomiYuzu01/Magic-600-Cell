@@ -1,0 +1,23 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "repair",
+  "note": "B12's run on wj-ia-300's session fixture: name cap 150, open Local's Repair list, give the list focus, press Down twice (row 2), Right once (its step 2 by the preview's step key), then type 2 in the list's context to pick row 2. No row is focused when the list opens; the step label reads Repair 2 of 3 with the step's moving-set count; the pick is the solver's and is recorded.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 1500},
+    {"open": "repair_list"},
+    {"wait_ms": 1000},
+    {"focus": "LocalBody_repair_list"},
+    {"wait_ms": 500},
+    {"chord": "Down"},
+    {"chord": "Down"},
+    {"wait_ms": 500},
+    {"chord": "Right"},
+    {"wait_ms": 800},
+    {"text": "2"},
+    {"wait_ms": 2000}
+  ]
+}

@@ -16,7 +16,7 @@ namespace Magic600.Chrome;
 // carry the Query set outline, the named cap ADR-D01's selection brackets, and its 80 meeting caps a small square in
 // the cell's corner, which is neither an outline nor a dim. A click on a cell, or a typed number and Enter while the
 // map has focus, names a cap; hovering a cell only inspects it (its tooltip).
-public sealed partial class CapMapControl : Control
+public sealed partial class CapMapControl : Control, IOwnKeys
 {
     // The widest numeral a cell keeps room for: N_c stays below 10,000 (it counts seams at one cap).
     public const string WidestNumeral = "0000";
