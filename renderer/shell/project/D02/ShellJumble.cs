@@ -34,6 +34,8 @@ public static class ShellJumble
     public static string? Bound { get; private set; }
     /// <summary>The binding changed.</summary>
     public static event Action? BindingChanged;
+    /// <summary>The view rotation a drag in the Global opening turns (owner, 26 November 2026).</summary>
+    public static ShellCamera Camera { get; } = new();
     /// <summary>The Jumble facts of each newly shown revision (B6), from the host's state digests.</summary>
     public static JumbleFeed Feed { get; } = new();
 
@@ -337,6 +339,13 @@ internal sealed partial class D02Driver : Node
                 Type(character);
             }
         }
+        else if (step.TryGetProperty("drag", out var drag))
+        {
+            var dx = drag[0].GetSingle();
+            var dy = drag[1].GetSingle();
+            _doing = "drag " + dx.ToString(CultureInfo.InvariantCulture) + " " + dy.ToString(CultureInfo.InvariantCulture);
+            Drag(_frame.Opening, new Vector2(dx, dy));
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -344,7 +353,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -369,6 +378,19 @@ internal sealed partial class D02Driver : Node
             : character is >= '0' and <= '9' ? (Key)((long)Key.Key0 + (character - '0'))
             : character switch { '.' => Key.Period, ' ' => Key.Space, '-' => Key.Minus, '_' => Key.Minus, _ => Key.None };
         Send(key, character, false, false, char.IsUpper(character) || character == '_');
+    }
+
+    /// <summary>A left-button drag from the opening's centre, in ten motion steps, through the shell's input.</summary>
+    private static void Drag(Rect2 opening, Vector2 by)
+    {
+        var at = opening.Position + opening.Size / 2;
+        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at, ButtonMask = MouseButtonMask.Left });
+        for (var i = 0; i < 10; i++)
+        {
+            at += by / 10;
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at, Relative = by / 10, ButtonMask = MouseButtonMask.Left });
+        }
+        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
     }
 
     private static void Send(Key key, long unicode, bool ctrl, bool alt, bool shift)
@@ -399,6 +421,7 @@ internal sealed partial class D02Driver : Node
             json.WriteNumber("gave_back", D02Window.GaveBack);
             json.WriteBoolean("owner_acted", D02Window.OwnerActed);
             json.WriteEndObject();
+            json.WriteNumber("camera_turns", ShellJumble.Camera.Turns);
             json.WriteStartArray("lines");
             foreach (var (group, text) in ScreenText.Of(_frame))
             {

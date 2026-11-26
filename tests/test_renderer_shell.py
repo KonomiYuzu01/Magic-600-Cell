@@ -1562,5 +1562,37 @@ class D02Host(unittest.TestCase):
         self.assertTrue(run.expect_host(dumps("Jumble · on the lattice", 0), {}, None))
 
 
+class D02Rotation(unittest.TestCase):
+    """The view rotation the owner asked for on 26 November 2026: with --d02 a left-button drag in the Global opening
+    turns the core's 4D camera as Look Lab's drag does, a click stays a click, and without --d02 nothing changes."""
+
+    def test_the_drag_turns_the_camera_only_with_d02(self):
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn("if (D02.ShellJumble.On && _camera.Follow(@event, InOpening))", shell)
+        self.assertIn("if (D02.ShellJumble.On && _camera.Dirty)", shell)
+        self.assertEqual(shell.count("SetCamera("), 1)
+        camera = text(PROJECT / "D02" / "ShellCamera.cs")
+        # Look Lab's drag: x-w and y-w for the 4D camera, x-z and y-z for the layout spin, 0.004 rad per pixel.
+        self.assertIn("public const double RadiansPerPixel = .004;", camera)
+        self.assertIn("Rotate(Q, 0, 3, ax);", camera)
+        self.assertIn("Rotate(Q, 1, 3, ay);", camera)
+        self.assertIn("public const float DragThreshold = 3;", camera)
+        # The core reads a column-major float4x4 (sa2_interop.h's camera_matrix).
+        self.assertIn("m[column * 4 + row] = (float)Q[row * 4 + column];", camera)
+        self.assertIn("column-major float4x4", text(ROOT / "renderer" / "core" / "include" / "sa2_interop.h"))
+
+    def test_the_rotate_expectation_needs_a_turn_per_drag_and_none_per_wait(self):
+        run = shell_module("d02_run")
+        steps = ["start", "wait 2000 ms", "drag 200 0", "wait 1000 ms", "drag 0 120", "wait 1000 ms"]
+
+        def dumps(turns):
+            return [{"do": do, "camera_turns": t, "lines": []} for do, t in zip(steps, turns)]
+        self.assertEqual(run.expect_rotate(dumps([0, 0, 1, 1, 2, 2]), {}, None), [])
+        self.assertEqual(len(run.expect_rotate(dumps([0, 0, 0, 0, 1, 1]), {}, None)), 1)
+        self.assertEqual(len(run.expect_rotate(dumps([0, 0, 1, 2, 3, 3]), {}, None)), 1)
+        self.assertTrue(run.expect_rotate(dumps([0, 0, 1, 1, 2, 2])[:5], {}, None))
+        self.assertTrue((SHELL / "d02_scripts" / "rotate.json").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()

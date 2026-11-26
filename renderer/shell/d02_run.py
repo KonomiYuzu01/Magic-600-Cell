@@ -174,7 +174,26 @@ def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]
     return problems
 
 
-EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host}
+def expect_rotate(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The rotate script: each drag in the Global opening turns the camera (its drag steps counted), and a wait turns
+    nothing."""
+    steps = ["start", "wait 2000 ms", "drag 200 0", "wait 1000 ms", "drag 0 120", "wait 1000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    turns = [dump.get("camera_turns", 0) for dump in dumps]
+    problems = []
+    if turns[1] != 0:
+        problems.append(f"the camera turned before any drag ({turns[1]} steps)")
+    if not turns[2] > turns[1]:
+        problems.append("the first drag did not turn the camera")
+    if not turns[4] > turns[3]:
+        problems.append("the second drag did not turn the camera")
+    if turns[3] != turns[2] or turns[5] != turns[4]:
+        problems.append("the camera turned during a wait")
+    return problems
+
+
+EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
 ON_FIXTURE = {"bind", "host"}

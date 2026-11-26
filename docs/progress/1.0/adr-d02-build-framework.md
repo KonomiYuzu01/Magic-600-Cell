@@ -261,6 +261,32 @@ relative path is from the repository root.
 - **Checkpoint:** yes, C1.
 - **Depends:** B3, B5.
 
+### B6a. The owner's view: rotation, the opening view and Local's shape
+- **Goal:** the product window turns as Look Lab's does, opens on the owner's view of 22 November 2026, and draws Local as the owner set it (owner, 26 November 2026: [decision](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-build.md), section 8).
+- **Items:** none new; ADR-D01.40's linked rotation once Local is drawn.
+- **Parts and where they land:**
+  - Rotation: shell only, here. The core already takes a 4D camera through `m6h_set_camera`; the shell had never sent one.
+  - Gap 0.3 and sticker shrink 0.55, read from `tools/looklab/data/opening.json`: a per-view shape input brought forward from B14, on the drawing track.
+  - The Hopf-ring opening at field of view 0.85: B23's chart path, pulled ahead of B22 on the drawing track. Behind `--d02` the window opens on it once it lands; as the product's default it waits for R5 (.8, .9).
+  - Local from `tools/looklab/data/local-view.json` (orthographic, only the turning cells, pulled apart, centred at a fixed size, turning with the linked rotation): B18a to B18c on the drawing track, with picks wired in at B17.
+- **Check:** `d02_run.py --script rotate`: two drags in the Global opening each turn the camera, a wait turns nothing, the foreground stays the owner's.
+- **As built (integrator, 26 November 2026):**
+  - `renderer/shell/project/D02/ShellCamera.cs` carries Look Lab's drag (`GlobalLayout.Drag` through `LookViewport.Drag`):
+    - a left-button drag turns the 4D camera in the x–w and y–w planes, 0.004 rad per pixel, and the layout spin in the x–z and y–z planes;
+    - a press turns nothing until it has moved three pixels, so a click stays a click;
+    - the camera goes to the core as a column-major float4x4.
+  - With `--d02` only:
+    - `Shell._Input` routes a drag that starts in the Global opening, or anywhere in the window without the frame;
+    - `_Process` sends a turned camera once per frame through `m6h_set_camera`.
+  - The script player gains a `drag` step, and the screen dump gains `camera_turns`.
+  - The focus hand-back cannot take a drag from the owner. It runs only in the window's first seconds, and it stops for good at the first mouse button the owner holds (`D02Window.Settle`).
+  - `M600_D02_RUN_PASS script=rotate steps=6 mismatches=0` on `on-zero` (`c9-product-ae279d455a142133`), with the foreground kept and no topmost window.
+  - `tests/test_renderer_shell.py` class `D02Rotation`.
+- **Owner sees:** drag in the watching window and the puzzle turns.
+- **Machine:** W.
+- **Checkpoint:** no.
+- **Depends:** B4a.
+
 ### B7. Totals and the named-cap readouts
 - **Goal:** the border numerals, with pending, incomplete and undefined apart.
 - **Items:** .22.

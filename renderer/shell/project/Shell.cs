@@ -79,6 +79,8 @@ public partial class Shell : Control
     /// <summary>The window rectangle the core's surface has, the one the frame's opening asks for, and for how many
     /// process steps it has asked for it.</summary>
     private Rect2I _area;
+    // ADR-D02 (owner, 26 November 2026): with --d02 a drag in the Global opening turns the camera as Look Lab's does.
+    private static D02.ShellCamera _camera => D02.ShellJumble.Camera;
     private Rect2I _wanted;
     private int _steady;
 
@@ -297,6 +299,10 @@ public partial class Shell : Control
     public override void _Input(InputEvent @event)
     {
         var qpc = EventLog.Now();
+        if (D02.ShellJumble.On && _camera.Follow(@event, InOpening))
+        {
+            GetViewport().SetInputAsHandled();
+        }
         if (@event is InputEventKey turn)
         {
             // One router decides (A5): a key the chrome takes never reaches the session, and a key that goes to the
@@ -344,6 +350,11 @@ public partial class Shell : Control
         }
         echo.Text = EchoText();
     }
+
+    /// <summary>The Global opening, or the whole window without the frame, in the window's pixels.</summary>
+    private bool InOpening(Vector2 point) =>
+        (_chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize()))
+            .HasPoint(new Vector2I((int)point.X, (int)point.Y));
 
     /// <summary>
     /// Follows the foreground: the logs count it lost once the window had it and lost it, or if it never had it.
@@ -403,6 +414,11 @@ public partial class Shell : Control
                 _size = size;
             }
             _area = area;
+        }
+        if (D02.ShellJumble.On && _camera.Dirty)
+        {
+            Require(library, "m6h_set_camera", library.SetCamera(_host, _camera.ColumnMajor()));
+            _camera.Dirty = false;
         }
         _submittedThisFrame = null;
         var submitted = EventLog.Now();
