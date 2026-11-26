@@ -18,6 +18,9 @@ struct Options {
     std::filesystem::path measure;
     uint32_t width = 2560, height = 1600, frames = 0, traced = 0;
     double turn_ms = 190;
+    // C9 (26 Nov 2026): --hardware or --warp --measure-prepare N --out FILE times N product preparations on one view,
+    // each activated and its predecessor retired, as the shell does per twist (run_measure_prepare).
+    uint32_t prepares = 0;
 };
 void expect(bool condition, const char* reason);
 struct Suite {
@@ -30,5 +33,6 @@ void run_gpu(Suite& suite, const Options& options);
 void run_stages(Suite& suite, const Options& options);
 void run_poses(Suite& suite, const Options& options);
 void run_measure(const Options& options);
+void run_measure_prepare(const Options& options);
 int run_child(const Options& options);
 }

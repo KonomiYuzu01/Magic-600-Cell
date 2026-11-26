@@ -1,0 +1,120 @@
+TIMER resources=1.316 memcpy=0.087 reused=0
+TIMER conv=8.437 checks=12.726 gpu=2.853 tail=0.009
+TIMER resources=0.927 memcpy=0.085 reused=1
+TIMER conv=8.623 checks=0.002 gpu=1.115 tail=0.001
+TIMER resources=0.018 memcpy=0.082 reused=1
+TIMER conv=8.614 checks=0.003 gpu=0.199 tail=0.001
+TIMER resources=0.014 memcpy=0.080 reused=1
+TIMER conv=9.114 checks=0.003 gpu=0.181 tail=0.001
+TIMER resources=0.019 memcpy=0.088 reused=1
+TIMER conv=9.143 checks=0.003 gpu=0.215 tail=0.001
+TIMER resources=0.015 memcpy=0.113 reused=1
+TIMER conv=9.576 checks=0.003 gpu=0.225 tail=0.001
+TIMER resources=0.016 memcpy=0.089 reused=1
+TIMER conv=9.587 checks=0.003 gpu=0.655 tail=0.001
+TIMER resources=0.012 memcpy=0.080 reused=1
+TIMER conv=8.930 checks=0.002 gpu=0.155 tail=0.001
+TIMER resources=0.019 memcpy=0.082 reused=1
+TIMER conv=8.811 checks=0.008 gpu=0.178 tail=0.001
+TIMER resources=0.015 memcpy=0.087 reused=1
+TIMER conv=8.919 checks=0.002 gpu=0.189 tail=0.001
+TIMER resources=0.013 memcpy=0.080 reused=1
+TIMER conv=8.829 checks=0.001 gpu=0.159 tail=0.000
+TIMER resources=0.012 memcpy=0.078 reused=1
+TIMER conv=9.157 checks=0.003 gpu=0.154 tail=0.001
+TIMER resources=0.012 memcpy=0.078 reused=1
+TIMER conv=8.995 checks=0.002 gpu=0.157 tail=0.001
+TIMER resources=0.024 memcpy=0.084 reused=1
+TIMER conv=8.629 checks=0.003 gpu=0.213 tail=0.001
+TIMER resources=0.015 memcpy=0.080 reused=1
+TIMER conv=8.915 checks=0.002 gpu=0.176 tail=0.000
+TIMER resources=0.016 memcpy=0.087 reused=1
+TIMER conv=8.950 checks=0.002 gpu=0.175 tail=0.001
+TIMER resources=0.022 memcpy=0.082 reused=1
+TIMER conv=9.072 checks=0.003 gpu=0.195 tail=0.001
+TIMER resources=0.014 memcpy=0.083 reused=1
+TIMER conv=8.396 checks=0.002 gpu=0.168 tail=0.001
+TIMER resources=0.013 memcpy=0.084 reused=1
+TIMER conv=10.784 checks=0.004 gpu=0.171 tail=0.001
+TIMER resources=0.012 memcpy=0.113 reused=1
+TIMER conv=8.831 checks=0.003 gpu=0.192 tail=0.001
+TIMER resources=0.011 memcpy=0.122 reused=1
+TIMER conv=8.796 checks=0.003 gpu=0.209 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=9.318 checks=0.002 gpu=0.195 tail=0.001
+TIMER resources=0.009 memcpy=0.116 reused=1
+TIMER conv=8.743 checks=0.001 gpu=0.188 tail=0.000
+TIMER resources=0.009 memcpy=0.110 reused=1
+TIMER conv=11.184 checks=0.003 gpu=0.184 tail=0.001
+TIMER resources=0.009 memcpy=0.110 reused=1
+TIMER conv=11.302 checks=0.004 gpu=0.182 tail=0.001
+TIMER resources=0.025 memcpy=0.119 reused=1
+TIMER conv=8.782 checks=0.003 gpu=0.257 tail=0.001
+TIMER resources=0.014 memcpy=0.118 reused=1
+TIMER conv=9.397 checks=0.002 gpu=0.213 tail=0.001
+TIMER resources=0.011 memcpy=0.118 reused=1
+TIMER conv=9.143 checks=0.003 gpu=0.202 tail=0.001
+TIMER resources=0.008 memcpy=0.115 reused=1
+TIMER conv=8.454 checks=0.003 gpu=0.186 tail=0.001
+TIMER resources=0.008 memcpy=0.116 reused=1
+TIMER conv=8.666 checks=0.002 gpu=0.182 tail=0.001
+TIMER resources=0.009 memcpy=0.116 reused=1
+TIMER conv=8.568 checks=0.002 gpu=0.186 tail=0.000
+TIMER resources=0.010 memcpy=0.109 reused=1
+TIMER conv=10.919 checks=0.004 gpu=0.182 tail=0.001
+TIMER resources=0.021 memcpy=0.101 reused=1
+TIMER conv=11.079 checks=0.004 gpu=0.217 tail=0.001
+TIMER resources=0.018 memcpy=0.116 reused=1
+TIMER conv=9.269 checks=0.003 gpu=0.251 tail=0.001
+TIMER resources=0.010 memcpy=0.115 reused=1
+TIMER conv=8.735 checks=0.002 gpu=0.191 tail=0.001
+TIMER resources=0.008 memcpy=0.115 reused=1
+TIMER conv=9.142 checks=0.003 gpu=0.191 tail=0.001
+TIMER resources=0.008 memcpy=0.116 reused=1
+TIMER conv=9.497 checks=0.003 gpu=0.187 tail=0.001
+TIMER resources=0.009 memcpy=0.110 reused=1
+TIMER conv=11.811 checks=0.004 gpu=0.186 tail=0.001
+TIMER resources=0.025 memcpy=0.117 reused=1
+TIMER conv=9.389 checks=0.005 gpu=0.246 tail=0.001
+TIMER resources=0.014 memcpy=0.116 reused=1
+TIMER conv=9.020 checks=0.003 gpu=0.233 tail=0.001
+TIMER resources=0.014 memcpy=0.116 reused=1
+TIMER conv=8.986 checks=0.002 gpu=0.210 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=8.671 checks=0.003 gpu=0.186 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=9.481 checks=0.003 gpu=0.235 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=8.874 checks=0.001 gpu=0.183 tail=0.000
+TIMER resources=0.008 memcpy=0.111 reused=1
+TIMER conv=11.385 checks=0.004 gpu=0.182 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=9.013 checks=0.001 gpu=0.185 tail=0.001
+TIMER resources=0.008 memcpy=0.114 reused=1
+TIMER conv=8.561 checks=0.001 gpu=0.182 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=11.188 checks=0.004 gpu=0.186 tail=0.001
+TIMER resources=0.016 memcpy=0.136 reused=1
+TIMER conv=10.147 checks=0.007 gpu=0.235 tail=0.001
+TIMER resources=0.008 memcpy=0.120 reused=1
+TIMER conv=9.003 checks=0.002 gpu=0.193 tail=0.000
+TIMER resources=0.008 memcpy=0.107 reused=1
+TIMER conv=11.145 checks=0.003 gpu=0.184 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=9.292 checks=0.003 gpu=0.189 tail=0.001
+TIMER resources=0.009 memcpy=0.118 reused=1
+TIMER conv=8.742 checks=0.003 gpu=0.189 tail=0.001
+TIMER resources=0.008 memcpy=0.113 reused=1
+TIMER conv=8.608 checks=0.001 gpu=0.176 tail=0.001
+TIMER resources=0.008 memcpy=0.115 reused=1
+TIMER conv=9.120 checks=0.002 gpu=0.182 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=9.190 checks=0.003 gpu=0.185 tail=0.001
+TIMER resources=0.008 memcpy=0.115 reused=1
+TIMER conv=8.670 checks=0.001 gpu=0.181 tail=0.001
+TIMER resources=0.011 memcpy=0.124 reused=1
+TIMER conv=8.992 checks=0.003 gpu=0.207 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=8.764 checks=0.003 gpu=0.190 tail=0.001
+TIMER resources=0.009 memcpy=0.115 reused=1
+TIMER conv=8.764 checks=0.001 gpu=0.182 tail=0.001

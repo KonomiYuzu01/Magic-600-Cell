@@ -6,8 +6,10 @@
 
 namespace sa2 {
 namespace {
-void argument(bool condition, const char* text) { scene_require(condition, text, SA2_E_INVALID_ARGUMENT); }
-void state(bool condition, const char* text) { scene_require(condition, text, SA2_E_WRONG_STATE); }
+// C9 (26 Nov 2026): the text becomes a std::string only for a failure. A preparation checks every one of its 259,800
+// slots, and building the message on every pass cost about 9 ms per twist.
+void argument(bool condition, const char* text) { if (!condition) scene_require(false, text, SA2_E_INVALID_ARGUMENT); }
+void state(bool condition, const char* text) { if (!condition) scene_require(false, text, SA2_E_WRONG_STATE); }
 Digest digest(const uint8_t* bytes) {
     Digest out{};
     std::memcpy(out.data(), bytes, out.size());
