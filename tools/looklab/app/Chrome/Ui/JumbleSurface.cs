@@ -15,6 +15,8 @@ public sealed partial class JumbleSurface : VBoxContainer
     private readonly IReadOnlyDictionary<string, string> names;
     private readonly string emptyBody;
     private readonly Label sentence;
+    // Room above the empty sentence for the view's marks, which the frame draws over the top edge of Local.
+    private readonly Control gap = new() { Name = "LocalTopGap", MouseFilter = MouseFilterEnum.Ignore };
     private readonly VBoxContainer sections = new() { Name = "LocalSections" };
     // The named cap's Tier 2 facts in their fixed order (ADR-D02.19), shown in the Named cap section; none while no
     // cap is named.
@@ -40,10 +42,13 @@ public sealed partial class JumbleSurface : VBoxContainer
         Name = "JumbleLocal"; SizeFlagsHorizontal = SizeFlags.ExpandFill; SizeFlagsVertical = SizeFlags.ExpandFill;
         sentence = ChromeWidgets.Text(emptySentence, "DimLabel"); sentence.Name = "LocalEmpty";
         sentence.AutowrapMode = TextServer.AutowrapMode.WordSmart; sentence.HorizontalAlignment = HorizontalAlignment.Center;
-        AddChild(sentence); AddChild(sections);
+        AddChild(gap); AddChild(sentence); AddChild(sections);
         accordion.Changed += () => { if (IsInstanceValid(this)) Refresh(); };
         Refresh();
     }
+
+    // The height the view's marks take at the top of Local: their offset and one control's height.
+    public static int MarksRoom(TokenSet t) => t.Px("space.3") + t.Px("control.height");
 
     public void SetChecks(KeptChecks? value)
     {
@@ -73,6 +78,9 @@ public sealed partial class JumbleSurface : VBoxContainer
     {
         TokenSet t = tokens();
         sentence.Visible = facts == null;
+        // The marks row sits space.3 below the top edge and is at most a control high (owner, 26 November 2026: the
+        // marks covered the sentence at 2000x1200).
+        gap.Visible = sentence.Visible; gap.CustomMinimumSize = new Vector2(0, MarksRoom(t));
         AddThemeConstantOverride("separation", t.Px("space.2"));
         foreach (Node child in sections.GetChildren()) { sections.RemoveChild(child); child.QueueFree(); }
         foreach (string section in Accordion.Sections)

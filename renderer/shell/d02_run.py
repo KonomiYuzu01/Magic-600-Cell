@@ -46,6 +46,8 @@ SCREEN = "d02-screen.jsonl"
 # The D02 session fixtures, one folder per sample state (build_d02_fixtures.py), and the binding chip's words.
 FIXTURES = ROOT / "work" / "build" / "d02-fixtures"
 BOUND, UNBOUND = "bound · ", "unbound · stale"
+# Local's empty sentence (ADR-D02.12; jumble-words.json local.empty), as the owner asked for it on 26 November 2026.
+LOCAL_EMPTY = "Name a cap: click a numbered cap on the cap map, or F1 › jumble.cap.name <id>"
 RECORD = "d02-run.json"
 FORMAT = "magic600-d02-run-v1"
 FOREGROUND_AFTER_S = 5.0
@@ -158,7 +160,7 @@ def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]
         # With labels on the mark's word is on screen; with labels off it is in the mark's tooltip.
         if "jumble" not in texts(shown, "view:" + view) and not any(tip.startswith("jumble") for tip in marks.get(view, [])):
             problems.append(f"step 1: view:{view} carries no Jumble mark")
-    if "Name a cap: click its cell, or type its number." not in every:
+    if LOCAL_EMPTY not in every:
         problems.append("step 1: Local does not show its empty sentence")
     for header in ("▸ Named cap · 0", "▸ Twist check · 0", "▸ Cap covers · 0", "▸ Repair list · 0"):
         if header not in every:
@@ -452,7 +454,7 @@ def expect_name_cap(dumps: list[dict], source: dict, state: str | None) -> list[
     before, named, done = dumps[1], dumps[5], dumps[9]
     if "no cap named" not in texts(before) or "▸ Named cap · 0" not in texts(before):
         problems.append("step 1: a cap is named before any key")
-    if "Name a cap: click its cell, or type its number." not in texts(before):
+    if LOCAL_EMPTY not in texts(before):
         problems.append("step 1: Local does not show its empty sentence")
     if row["status"] == "admissible":
         tier1 = f"cap 30 · N_c {row['N_c']} · floor {row['F_c']} · u 0 · 80 meeting caps"
@@ -462,7 +464,7 @@ def expect_name_cap(dumps: list[dict], source: dict, state: str | None) -> list[
         problems.append(f"step 5: the cap map's panel does not read {tier1!r}")
     if "▸ Named cap · 1" not in texts(named):
         problems.append("step 5: Local's Named cap section does not count the named cap")
-    if "Name a cap: click its cell, or type its number." in texts(named):
+    if LOCAL_EMPTY in texts(named):
         problems.append("step 5: Local still shows its empty sentence with a cap named")
     local = texts(named, "view:Local")
     if row["status"] == "admissible" and not all(str(row[key]) in local for key in ("In_c", "Out_c", "A_c", "N_c")):

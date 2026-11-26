@@ -12,7 +12,7 @@
     {
       "id": "local.empty",
       "item": "ADR-D02.12",
-      "text": "Name a cap: click its cell, or type its number."
+      "text": "Name a cap: click a numbered cap on the cap map, or F1 › jumble.cap.name <id>"
     },
     {
       "id": "legend.at_floor",

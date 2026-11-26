@@ -1667,7 +1667,7 @@ class D02Host(unittest.TestCase):
                 classes = {"blocked": 0, "closed": 0, "at_floor": 0, "above_floor": 0, "pending": 600}
             words = {"blocked": "blocked", "closed": "closed", "at_floor": "at floor (N_c = F_c > 0)",
                      "above_floor": "above floor", "pending": "pending"}
-            lines = [["frame", cell], ["view:Local", "Name a cap: click its cell, or type its number."],
+            lines = [["frame", cell], ["view:Local", "Name a cap: click a numbered cap on the cap map, or F1 › jumble.cap.name <id>"],
                      ["panel:jumble.cap_map", "Cap map · 20 rings of 30 caps"],
                      ["panel:jumble.cap_map", "contact classes · armed   never hidden · armed"]]
             lines += [["panel:jumble.cap_map", f"{words[key]} · {classes[key]}"] for key in words if key != drop]
@@ -1717,7 +1717,7 @@ class D02NameCap(unittest.TestCase):
         panel = "panel:jumble.cap_map"
         steps = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 30", "chord Enter", "wait 1500 ms", "chord F1",
                  "text > jumble.capmap.threshold.set N_c >= 50", "chord Enter", "wait 3000 ms"]
-        unnamed = [[panel, "no cap named"], ["view:Local", "▸ Named cap · 0"], ["view:Local", "Name a cap: click its cell, or type its number."]]
+        unnamed = [[panel, "no cap named"], ["view:Local", "▸ Named cap · 0"], ["view:Local", "Name a cap: click a numbered cap on the cap map, or F1 › jumble.cap.name <id>"]]
         tier1 = [[panel, f"cap 30 · N_c {row['N_c']} · floor {row['F_c']} · u 0 · 80 meeting caps"], ["view:Local", "▸ Named cap · 1"]]
         tier1 += [["view:Local", str(row[key])] for key in ("In_c", "Out_c", "A_c", "N_c")]
 
