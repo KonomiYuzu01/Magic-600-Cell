@@ -22,12 +22,13 @@ namespace Magic600.Shell;
 /// <see cref="SetViewCamera"/>, <see cref="SetViewVisible"/>, <see cref="SetPane"/>, <see cref="ClearPane"/>, and
 /// <see cref="Submitted"/>'s pane count and held flag. Version 12 (ADR-D02 B18c, over the core's ABI 9) adds
 /// <see cref="SetViewFocus"/>, Local's own projection, focus cap and spread. Version 13 (ADR-D02 B23, over the core's
-/// ABI 10) adds <see cref="SetViewLayout"/>, the Hopf-ring opening.
+/// ABI 10) adds <see cref="SetViewLayout"/>, the Hopf-ring opening. Version 14 (ADR-D02 B17) adds
+/// <see cref="PickRequest"/> and <see cref="PickPoll"/>, picks in Jumble.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 13;
+    public const uint AbiVersion = 14;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -93,6 +94,8 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_viewport",
         "m6h_set_view_shape",
         "m6h_set_view_focus",
+        "m6h_pick_request",
+        "m6h_pick_poll",
         "m6h_set_view_layout",
         "m6h_set_piece_style",
         "m6h_set_view_style",
@@ -390,6 +393,50 @@ public sealed unsafe class HostLibrary : IDisposable
     public int SetViewFocus(IntPtr host, ulong view, uint projection, uint focusCell, float focusCos, float spread) =>
         ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, uint, float, float, int>)_exports["m6h_set_view_focus"])(
             host, view, projection, focusCell, focusCos, spread);
+
+    /// <summary>A pick's states (the Rust M6H_PICK_*) and the host's "none" (M6H_NONE).</summary>
+    public const uint PickPending = 0, PickReady = 1, PickStale = 2, None = uint.MaxValue;
+
+    /// <summary>What m6h_pick_poll answers (the Rust M6hPick, version 14).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Pick
+    {
+        public uint State;
+        /// <summary>1 when a sticker of the view was under the point.</summary>
+        public uint Hit;
+        /// <summary>The view whose pane holds the point.</summary>
+        public ulong View;
+        /// <summary>The engine revision the picked frame drew.</summary>
+        public ulong EngineRevision;
+        /// <summary>The sticker hit, as its home slot; <see cref="None"/> without a hit.</summary>
+        public uint Sticker;
+        public uint Piece;
+        /// <summary>The slot the sticker occupies; <see cref="None"/> for a piece off the lattice.</summary>
+        public uint Slot;
+        /// <summary>1 when the piece's pose is on the lattice.</summary>
+        public uint Lattice;
+    }
+
+    /// <summary>
+    /// Asks the core's ID pass at surface pixel (x, y) of the newest frame (version 14, ADR-D02 B17); writes the ticket
+    /// <see cref="PickPoll"/> answers.
+    /// </summary>
+    public int PickRequest(IntPtr host, uint x, uint y, out ulong ticket)
+    {
+        ulong t = 0;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, ulong*, int>)_exports["m6h_pick_request"])(host, x, y, &t);
+        ticket = t;
+        return code;
+    }
+
+    /// <summary>Answers a pick without waiting (version 14): pending, ready (with or without a hit) or stale.</summary>
+    public int PickPoll(IntPtr host, ulong ticket, out Pick pick)
+    {
+        Pick p = default;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, ulong, Pick*, int>)_exports["m6h_pick_poll"])(host, ticket, &p);
+        pick = p;
+        return code;
+    }
 
     /// <summary>The size of a view layout row (sa2_view_layout).</summary>
     public const int LayoutBytes = 1560;

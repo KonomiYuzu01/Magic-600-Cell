@@ -759,6 +759,52 @@ EVENT_CHECKS["ring-sheet"] = check_hopf_events
 DATA_FOR = {"ring-sheet": ring_sheet_data}
 
 
+# B17: picks. Each click's answer is in the dump after its wait: a hit selects the piece of the sticker under the point,
+# which must be the model's slot_piece of the sticker's home slot; a miss clears the selection.
+def slot_pieces() -> list[int]:
+    """The model's slot_piece (assets/model.npz), the piece of each home slot."""
+    import struct
+    import zipfile
+    with zipfile.ZipFile(ROOT / "assets" / "model.npz") as archive:
+        data = archive.read("slot_piece.npy")
+    header = struct.unpack("<H", data[8:10])[0]
+    kind = data[10:10 + header].decode()
+    width = 8 if "'<i8'" in kind else 4
+    count = (len(data) - 10 - header) // width
+    return list(struct.unpack(f"<{count}{'q' if width == 8 else 'i'}", data[10 + header:]))
+
+
+def expect_pick(dumps: list[dict], source: dict, state: str | None, pieces: list[int] | None = None) -> list[str]:
+    """The pick script: every click asked once and answered, none stale; each hit names its sticker's piece; at least
+    one click hits; the corner click clears the selection."""
+    clicks = [i for i, dump in enumerate(dumps) if dump["do"].startswith("click ")]
+    if not clicks or any("pick" not in dump for dump in dumps):
+        return ["the run's dumps carry no click step or no pick context"]
+    pieces = pieces if pieces is not None else slot_pieces()
+    problems = []
+    final = dumps[-1]["pick"]
+    if final["asked"] != len(clicks) or final["hits"] + final["misses"] != len(clicks) or final["stale"] != 0:
+        problems.append(f"asked {final['asked']}, hits {final['hits']}, misses {final['misses']}, stale {final['stale']} "
+                        f"for {len(clicks)} clicks")
+    for i in clicks:
+        if i + 1 >= len(dumps):
+            break
+        selection = dumps[i + 1]["pick"]["selection"]
+        if selection is not None and pieces[selection["sticker"]] != selection["piece"]:
+            problems.append(f"after '{dumps[i]['do']}' sticker {selection['sticker']} names piece {selection['piece']}, "
+                            f"not the model's {pieces[selection['sticker']]}")
+    if final["hits"] == 0:
+        problems.append("no click hit a sticker")
+    if final["selection"] is not None:
+        problems.append("the click in the opening's corner did not clear the selection")
+    print(f"pick: {len(clicks)} clicks, {final['hits']} hits, {final['misses']} misses, {final['stale']} stale")
+    return problems
+
+
+EXPECT["pick"] = expect_pick
+ON_FIXTURE.add("pick")
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

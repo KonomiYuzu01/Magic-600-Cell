@@ -87,12 +87,12 @@ class CoreFocus(unittest.TestCase):
 class HostFocus(unittest.TestCase):
     """The host library's version 12: m6h_set_view_focus, the same on the Rust and C# sides."""
 
-    def test_the_host_and_the_shell_speak_version_13(self):
+    def test_the_host_and_the_shell_speak_version_14(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
         host = text(PROJECT / "HostLibrary.cs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 13;", lib)
-        self.assertIn("public const uint AbiVersion = 13;", host)
-        self.assertIn("assert_eq!(m6h_abi_version(), 13);", text(ROOT / "renderer" / "bridge" / "host" / "tests" / "turns.rs"))
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 14;", lib)
+        self.assertIn("public const uint AbiVersion = 14;", host)
+        self.assertIn("assert_eq!(m6h_abi_version(), 14);", text(ROOT / "renderer" / "bridge" / "host" / "tests" / "turns.rs"))
         self.assertRegex(lib, r'pub unsafe extern "C" fn m6h_set_view_focus\(\s*handle: \*mut ShellHost,\s*view: u64,\s*'
                               r'projection: u32,\s*focus_cell: u32,\s*focus_cos: f32,\s*spread: f32,\s*\) -> i32')
         self.assertIn("public int SetViewFocus(IntPtr host, ulong view, uint projection, uint focusCell, float focusCos, float spread)",
@@ -362,6 +362,99 @@ class TwoViewsRun(unittest.TestCase):
         self.assertTrue(any("no revision changed" in p for p in still), still)
         one = self.check([{"frame_id": 1, "engine_revision": 302}, {"frame_id": 2, "engine_revision": 303}])
         self.assertTrue(any("no composite frame of two drawn panes" in p for p in one), one)
+
+
+class Picks(unittest.TestCase):
+    """B17: the posed row's slots are pickable as their home slot + 1; the host resolves a hit to its piece through the
+    pose projection and drops a hit whose frame drew a revision the head left; the shell keeps one selection and one
+    hover for both views and outlines them through B14's style path."""
+
+    def test_the_posed_row_stamps_each_home_slot(self):
+        backend = text(ROOT / "rust" / "c600-render" / "src" / "backend.rs")
+        self.assertIn("rows.instances.iter_mut().zip(1u32..).for_each(|(instance, id)| *instance = id);", backend)
+        self.assertIn('assert!(instances.iter().all(|(&slot, &id)| id as usize == slot + 1), "each as its home slot + 1");',
+                      text(ROOT / "rust" / "c600-render" / "tests" / "bridge.rs"))
+
+    def test_the_host_resolves_through_the_pose_projection(self):
+        lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        self.assertIn("let projection = jumble::PoseProjection::new(&exact, &state)", lib)
+        self.assertIn("if row.state == c600_render::abi::PICK_STALE || revision != shell.assigned {", lib)
+        self.assertIn("const _: () = assert!(std::mem::size_of::<M6hPick>() == 40);", lib)
+        turns = text(ROOT / "renderer" / "bridge" / "host" / "tests" / "turns.rs")
+        for name in ("fn a_jumble_pick_resolves_to_its_piece()", "fn a_stale_jumble_pick_is_dropped()"):
+            self.assertIn(name, turns)
+
+    def test_the_pick_row_is_the_same_on_both_sides(self):
+        lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        rust = re.search(r"pub struct M6hPick \{(.*?)\n\}", lib, re.S).group(1)
+        fields = re.findall(r"pub (\w+): (u32|u64),", rust)
+        host = text(PROJECT / "HostLibrary.cs")
+        cs = re.search(r"public struct Pick\n    \{(.*?)\n    \}", host, re.S).group(1)
+        cs_fields = re.findall(r"public (uint|ulong) (\w+);", cs)
+        self.assertEqual([(n.replace("_", ""), t) for n, t in fields],
+                         [(n.lower(), {"uint": "u32", "ulong": "u64"}[t]) for t, n in cs_fields])
+
+    def test_the_shell_picks_on_a_click_that_did_not_turn(self):
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn("case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } up when !turned:", shell)
+        self.assertIn("D02.ShellPick.Point(SurfacePoint(move.Position));", shell)
+        self.assertIn("if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))", shell)
+        self.assertIn("D02.ShellStyle.Apply(library, _host, _adoptedRevision);", shell)
+        # Global's pane draws with style slot 1 and Local's with slot 2, so both views show the outlines.
+        self.assertIn("(uint)r.Width, (uint)r.Height, (uint)i + 1));", shell)
+        pick = text(PROJECT / "D02" / "ShellPick.cs")
+        self.assertIn("public static Picked? Selection { get; private set; }", pick)
+        self.assertIn("public static Picked? Hover { get; private set; }", pick)
+        style = text(PROJECT / "D02" / "ShellStyle.cs")
+        self.assertIn("static ShellStyle() => ShellPick.Changed += Invalidate;", style)
+        self.assertIn("public const int PieceCount = 177_120;", style)
+        self.assertIn("#define SA2_PIECES 177120u", text(CORE / "include" / "sa2_interop.h"))
+
+
+class PickRun(unittest.TestCase):
+    """The pick run's check reads each click's answer from the dump after its wait."""
+
+    def dumps(self, answers, asked=None, stale=0):
+        dumps = [{"step": 0, "do": "start", "pick": {"selection": None, "hover": None, "asked": 0, "hits": 0,
+                                                       "misses": 0, "stale": 0}}]
+        hits = misses = 0
+        for answer in answers:
+            hits += answer is not None
+            misses += answer is None
+            selection = None if answer is None else {"piece": answer[1], "sticker": answer[0], "slot": answer[0],
+                                                     "lattice": True, "view": 1, "revision": 302}
+            pick = {"selection": selection, "hover": None, "asked": hits + misses if asked is None else asked,
+                    "hits": hits, "misses": misses, "stale": stale}
+            dumps += [{"step": len(dumps), "do": "click 0.5 0.5", "pick": dumps[-1]["pick"]},
+                      {"step": len(dumps) + 1, "do": "wait 600 ms", "pick": pick}]
+        return dumps
+
+    def test_the_script_and_the_check_exist(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["pick"], run.expect_pick)
+        self.assertIn("pick", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "pick.json"))
+        self.assertEqual(script["steps"][-2], {"click": [0.02, 0.02]})
+        self.assertIn("public static string ScriptClick(Rect2 opening, JsonElement click)",
+                      text(PROJECT / "D02" / "ShellPick.cs"))
+
+    def test_the_model_pieces_are_read(self):
+        pieces = shell_module("d02_run").slot_pieces()
+        self.assertEqual(len(pieces), 259800)
+        self.assertEqual(max(pieces), 177119)
+
+    def test_a_good_run_passes_and_the_failures_are_named(self):
+        run = shell_module("d02_run")
+        pieces = [s // 2 for s in range(10)]
+        self.assertEqual(run.expect_pick(self.dumps([(4, 2), None]), {}, None, pieces), [])
+        wrong = run.expect_pick(self.dumps([(4, 3), None]), {}, None, pieces)
+        self.assertTrue(any("not the model's 2" in p for p in wrong), wrong)
+        kept = run.expect_pick(self.dumps([None, (4, 2)]), {}, None, pieces)
+        self.assertTrue(any("did not clear" in p for p in kept), kept)
+        none = run.expect_pick(self.dumps([None, None]), {}, None, pieces)
+        self.assertTrue(any("no click hit" in p for p in none), none)
+        stale = run.expect_pick(self.dumps([(4, 2), None], stale=1), {}, None, pieces)
+        self.assertTrue(any("stale 1" in p for p in stale), stale)
 
 
 class HopfRun(unittest.TestCase):

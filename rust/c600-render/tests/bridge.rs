@@ -130,7 +130,9 @@ fn a_posed_bundle_is_adopted_over_the_home_labels_and_its_plan_draws_every_slot(
     });
     prepare_on(&mut backend, &publication(&base, vec![posed], &[])).expect("a posed plan prepares");
     let (view, instances, visibility) = backend.core.prepared[0].clone();
-    assert_eq!((view, instances.len()), (1, 0), "no slot is pickable");
+    // ADR-D02 B17: every slot is pickable, stamped in the ID pass as its home slot + 1.
+    assert_eq!((view, instances.len()), (1, SLOTS), "every slot is pickable");
+    assert!(instances.iter().all(|(&slot, &id)| id as usize == slot + 1), "each as its home slot + 1");
     assert!(visibility.iter().all(|&v| v == 1), "every slot is drawn where its piece's pose puts it");
 
     // Shapes the bridge refuses before the core sees them, then values the core refuses.

@@ -584,6 +584,26 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B9, B14.
+- **As built, part 1 (drawing track, 26 November 2026):** picks, with ADR-D01.41's shared selection and hover.
+  - c600-render's bridge stamps every slot of the posed row in the ID pass as its home slot + 1. The plan still carries no instance of a posed primitive (J13).
+  - The host's version 14 adds `m6h_pick_request` (surface pixel, newest frame; in a composite frame the pane under the point answers) and `m6h_pick_poll`.
+    - A hit resolves through `jumble::PoseProjection` to the sticker's piece, the slot it occupies (none off the lattice) and the lattice flag.
+    - A hit whose frame drew a revision the head has left is dropped as stale, as is one the core finds stale.
+  - The shell (`D02/ShellPick.cs`) keeps one selection and one hover for both views.
+    - A click that did not turn the camera selects. A click on no sticker clears the selection.
+    - The pointer hovers, with at most one hover pick in flight, one every 80 ms.
+  - `D02/ShellStyle.cs` outlines the selection (the core's marked colour) and the hover through B14's style path. It sends them again for each drawn revision. Global's pane uses style slot 1 and Local's slot 2.
+  - Reused: c600-display's `PoseProjection` (J13) and the core's ID pass; nothing new in the core.
+  - Waiting on the integrator (`ShellJumble.cs`):
+    - the script's `click` step, through `ShellPick.ScriptClick`;
+    - the dump's pick context, `ShellPick.Dump`;
+    - the inspector's tier 1 line and the pick-and-key naming of a cap (`ShellPick.Selection.Cell`).
+  - Checks:
+    - Host tests `a_jumble_pick_resolves_to_its_piece` and `a_stale_jumble_pick_is_dropped` passed; the first compares the slot with the projection's. All 23 turns tests passed.
+    - `cargo test -p c600-render`, the bridge workspace and `test_render_ffi.py` passed.
+    - `tests/test_d02_drawing.py` passed 37 of 37 and `test_renderer_shell.py` 84 of 84.
+    - With the outlines on, `d02_run.py --script hopf` and `--script two-views` (632 two-pane frames) passed on `wj-ia-300`.
+    - `--script pick` waits for the `click` step.
 
 ### B18. The sweep and the half-turn
 - **Goal:** a committed jumble twist is swept; a half-turn cuts and outlines.

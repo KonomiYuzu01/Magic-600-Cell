@@ -105,6 +105,7 @@ use c600_render::abi::{
     piece_style_valid, Sa2Pane, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES, STYLE_CHANNEL_FILL,
     STYLE_CHANNEL_OUTLINE, STYLE_SLOTS, TARGET_SURFACE,
 };
+use c600_render::backend::PickTicket;
 use c600_render::{DisplayTime, PaneSpec, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
@@ -129,8 +130,8 @@ use turns::{Head, Pending, Press, Puzzle, Turns};
 /// [`m6h_set_view_camera`], [`m6h_set_view_visible`], [`m6h_set_pane`], [`m6h_clear_pane`] and [`M6hFrame`]'s pane
 /// count and held flag, ADR-D02 B18b, over the core's ABI 8); version 12 a view's focus ([`m6h_set_view_focus`],
 /// ADR-D02 B18c, over the core's ABI 9); version 13 a view's layout ([`m6h_set_view_layout`], ADR-D02 B23, over the
-/// core's ABI 10).
-pub const M6H_ABI_VERSION: u32 = 13;
+/// core's ABI 10); version 14 picks in Jumble ([`m6h_pick_request`] and [`m6h_pick_poll`], ADR-D02 B17).
+pub const M6H_ABI_VERSION: u32 = 14;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -229,6 +230,57 @@ pub struct M6hFrame {
 }
 
 const _: () = assert!(std::mem::size_of::<M6hFrame>() == 48);
+
+/// [`M6hPick::state`]: the ID pass has not answered yet.
+pub const M6H_PICK_PENDING: u32 = 0;
+/// [`M6hPick::state`]: the pick is answered; [`M6hPick::hit`] says whether a sticker was under the point.
+pub const M6H_PICK_READY: u32 = 1;
+/// [`M6hPick::state`]: the pick is dropped: the core found its frame's bindings moved, or the head moved past the
+/// revision the frame drew, so the sticker under the point may no longer be the one it showed.
+pub const M6H_PICK_STALE: u32 = 2;
+/// [`M6hPick::slot`] when there is none: no hit, or a piece off the lattice.
+pub const M6H_NONE: u32 = u32::MAX;
+
+/// What [`m6h_pick_poll`] answers (version 14, ADR-D02 B17): in Jumble the sticker under the point, its piece and the
+/// slot it occupies at the revision the frame drew, through c600-display's `jumble::PoseProjection` (J13).
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct M6hPick {
+    /// [`M6H_PICK_PENDING`], [`M6H_PICK_READY`] or [`M6H_PICK_STALE`].
+    pub state: u32,
+    /// 1 when the ID pass found a sticker of the view at the point (ready picks only).
+    pub hit: u32,
+    /// The view whose pane holds the point (of a composite frame), or the view of a one-view frame.
+    pub view: u64,
+    /// The engine revision the picked frame drew.
+    pub engine_revision: u64,
+    /// The sticker hit, as its home slot; [`M6H_NONE`] without a hit.
+    pub sticker: u32,
+    /// The sticker's piece; [`M6H_NONE`] without a hit.
+    pub piece: u32,
+    /// The slot the sticker occupies at that revision; [`M6H_NONE`] without a hit or for a piece off the lattice,
+    /// which has no slot (none is invented).
+    pub slot: u32,
+    /// 1 when the piece's pose is on the lattice.
+    pub lattice: u32,
+}
+
+impl Default for M6hPick {
+    fn default() -> M6hPick {
+        M6hPick {
+            state: M6H_PICK_PENDING,
+            hit: 0,
+            view: 0,
+            engine_revision: 0,
+            sticker: M6H_NONE,
+            piece: M6H_NONE,
+            slot: M6H_NONE,
+            lattice: 0,
+        }
+    }
+}
+
+const _: () = assert!(std::mem::size_of::<M6hPick>() == 40);
 const _: () = assert!(M6H_PANES_MAX == PANES_MAX);
 
 /// What [`m6h_key_down`] did with one key-down.
@@ -341,6 +393,8 @@ pub struct ShellHost {
     panes: [Option<Pane>; M6H_PANES_MAX as usize],
     /// The last frame submitted, which a held frame names.
     last_frame: M6hFrame,
+    /// ADR-D02 B17: each live pick's ticket and the engine revision its frame drew.
+    picks: BTreeMap<u64, u64>,
     views: view::Views,
     presented: VecDeque<M6hPresented>,
     /// The engine's pending preview the view shows ([`ShellHost::sync_preview`]).
@@ -515,6 +569,7 @@ impl ShellHost {
             local_reference: None,
             panes: [None; M6H_PANES_MAX as usize],
             last_frame: M6hFrame::default(),
+            picks: BTreeMap::new(),
             views: view::Views::default(),
             presented: VecDeque::new(),
             shown: None,
@@ -825,6 +880,30 @@ impl ShellHost {
         };
         self.last_frame = frame;
         Ok(frame)
+    }
+
+    /// ADR-D02 B17: resolves a hit on home slot `sticker` with the head the frame drew: its piece, the slot it
+    /// occupies (none for a piece off the lattice) and whether the piece is on the lattice.
+    fn resolve_sticker(&mut self, sticker: u32) -> Result<(u32, u32, bool), Failure> {
+        let head = self.turns()?.head().map_err(|e| (M6H_E_SESSION, e))?;
+        let Head::Jumbled(exact, state) = head else {
+            return Err((M6H_E_HOST, "a hit on a sticker without Jumble: the retained view stamps no sticker".to_owned()));
+        };
+        let piece = *exact
+            .model
+            .slot_piece
+            .get(sticker as usize)
+            .ok_or_else(|| (M6H_E_HOST, format!("the ID pass named sticker {sticker}, which does not exist")))?;
+        let projection = jumble::PoseProjection::new(&exact, &state)
+            .map_err(|missing| (M6H_E_HOST, format!("the pose projection lacks data: {missing:?}")))?;
+        let subject = StateRef::Snapshot(jumble::revision(&exact, &state, self.assigned));
+        use c600_display::pick::{Partial, Projection};
+        let slot = match projection.slot(&subject, &ObjectId::Sticker(sticker)) {
+            Partial::Total(slot) => slot,
+            _ => M6H_NONE,
+        };
+        let lattice = state.pose_of(piece as usize).kidx().is_some();
+        Ok((piece, slot, lattice))
     }
 
     /// Whether `view` is a view of this host that a call may name: the view, or Local once it is open.
@@ -1222,6 +1301,81 @@ pub unsafe extern "C" fn m6h_set_view_focus(
             }
             let focus = (focus != Sa2ViewFocus::defaults()).then_some(focus);
             shell.host.backend.set_view_focus(id, focus).map_err(host_error)
+        })
+    }
+}
+
+/// Asks the core's ID pass at target pixel `(x, y)` of the newest frame (version 14, ADR-D02 B17): in a composite frame
+/// the pane that holds the point answers. Writes the ticket that [`m6h_pick_poll`] answers. With no frame yet, or a
+/// point outside the frame, the call is refused and nothing is asked.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using, and `out_ticket` is null or writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_pick_request(handle: *mut ShellHost, x: u32, y: u32, out_ticket: *mut u64) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if out_ticket.is_null() {
+                return Err((M6H_E_INVALID_ARGUMENT, "out_ticket is null".to_owned()));
+            }
+            let frame = shell
+                .host
+                .backend
+                .newest_frame()
+                .ok_or_else(|| (M6H_E_UNAVAILABLE, "no frame was submitted yet".to_owned()))?;
+            let ticket = shell.host.backend.request_pick(frame, x, y).map_err(host_error)?;
+            shell.picks.insert(ticket.0, shell.last_frame.engine_revision);
+            out_ticket.write(ticket.0);
+            Ok(())
+        })
+    }
+}
+
+/// Answers a pick of [`m6h_pick_request`] without waiting (version 14, ADR-D02 B17): pending until the ID pass
+/// completes, then the sticker, piece and slot under the point, or stale when the core found the frame's bindings
+/// moved or the head moved past the revision the frame drew (a stale hit is dropped, never resolved against a newer
+/// state). An answered or stale pick is forgotten; polling it again is refused.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using, and `out` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_pick_poll(handle: *mut ShellHost, ticket: u64, out: *mut M6hPick) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if out.is_null() {
+                return Err((M6H_E_INVALID_ARGUMENT, "out is null".to_owned()));
+            }
+            let revision =
+                *shell.picks.get(&ticket).ok_or_else(|| (M6H_E_INVALID_ARGUMENT, format!("no live pick {ticket}")))?;
+            let row = match shell.host.backend.poll_pick_row(PickTicket(ticket)) {
+                Ok(row) => row,
+                Err(error) => {
+                    shell.picks.remove(&ticket);
+                    return Err(host_error(error));
+                }
+            };
+            let mut pick = M6hPick { view: row.view, engine_revision: revision, ..M6hPick::default() };
+            if row.state == c600_render::abi::PICK_PENDING {
+                out.write(pick);
+                return Ok(());
+            }
+            shell.picks.remove(&ticket);
+            if row.state == c600_render::abi::PICK_STALE || revision != shell.assigned {
+                pick.state = M6H_PICK_STALE;
+            } else {
+                pick.state = M6H_PICK_READY;
+                if row.instance != 0 {
+                    let sticker = row.instance - 1;
+                    let (piece, slot, lattice) = shell.resolve_sticker(sticker)?;
+                    pick = M6hPick { hit: 1, sticker, piece, slot, lattice: u32::from(lattice), ..pick };
+                }
+            }
+            out.write(pick);
+            Ok(())
         })
     }
 }
