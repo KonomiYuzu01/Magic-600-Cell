@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] update | The twist key's stall moves off the frame thread
+Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) where the twist key's time on the frame thread went (the commit, with its journal sync a small share, and the view's build and checks) and the change that builds and checks the view's work on a worker thread and adopts it at the next frame call, leaving the commit boundary as it was.
+
 ## [2026-11-26] update | The confirmation gap's cause and the core's in-wait sample
 Recorded in [presented-gap-2026-11-26](evidence/presented-gap-2026-11-26.md) why far fewer frames were confirmed as presented at the sitting of 25 November (a sampling race that the window and desktop decide, not the build), the core's fix (one more statistics sample inside a product frame's wait) and its interleaved runs, and that the stutter in LX-2's runtime-losing faults comes from the turn key's synchronous commit.
 

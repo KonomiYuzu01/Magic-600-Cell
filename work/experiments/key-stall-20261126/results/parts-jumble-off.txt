@@ -1,0 +1,33 @@
+# Per-part time of m6h_key_down before the change, Jumble off: p50/p90/max ms over 55 keys after 5 warm-up keys
+keys measured: 55
+turns.digest_before                calls/key= 1.0  p50=   0.000  p90=   0.000  max=   0.001
+layer.twist_entry_to_resolve       calls/key= 1.0  p50=   4.803  p90=   5.580  max=   7.480
+layer.word_and_recipe              calls/key= 1.0  p50=   4.831  p90=   5.613  max=   7.516
+layer.kernel_derive                calls/key= 1.0  p50=   3.739  p90=   3.948  max=   5.385
+store.objects                      calls/key= 1.0  p50=   0.000  p90=   0.000  max=   0.000
+store.journal_write                calls/key= 1.0  p50=   0.227  p90=   0.271  max=   0.382
+store.journal_sync                 calls/key= 1.0  p50=   1.763  p90=   1.913  max=   2.206
+store.append_total                 calls/key= 1.0  p50=   2.084  p90=   2.301  max=   2.573
+layer.store_transact               calls/key= 1.0  p50=   2.151  p90=   2.362  max=   2.639
+layer.adopt                        calls/key= 1.0  p50=   0.024  p90=   0.030  max=   0.234
+turns.router_key                   calls/key= 1.0  p50=  10.990  p90=  11.937  max=  15.252
+turns.digest_after                 calls/key= 1.0  p50=   0.000  p90=   0.000  max=   0.001
+host.key_down                      calls/key= 1.0  p50=  11.062  p90=  12.015  max=  15.297
+host.head                          calls/key= 1.0  p50=   0.000  p90=   0.001  max=   0.001
+adopt.adoption_build               calls/key= 1.0  p50=   9.510  p90=   9.836  max=  10.432
+display.validate_bundle            calls/key= 1.0  p50=   4.342  p90=   4.640  max=   6.181
+display.backend_adopt_engine       calls/key= 1.0  p50=   4.436  p90=   4.805  max=   6.596
+adopt.host_adopt                   calls/key= 1.0  p50=   8.841  p90=   9.465  max=  12.837
+adopt.head_digest                  calls/key= 1.0  p50=   0.001  p90=   0.002  max=   0.002
+adopt.publication_build            calls/key= 1.0  p50=   0.007  p90=   0.009  max=   0.020
+adopt.replace_runs                 calls/key= 1.0  p50=   0.000  p90=   0.000  max=   0.000
+publish.clone                      calls/key= 1.0  p50=   0.005  p90=   0.006  max=   0.007
+display.publish_request_digest     calls/key= 1.0  p50=   0.051  p90=   0.065  max=   0.103
+display.publish_admit_validate     calls/key= 1.0  p50=   4.705  p90=   5.193  max=   7.244
+display.publish_prepare            calls/key= 1.0  p50=   0.722  p90=   0.971  max=   1.179
+publish.host_publish               calls/key= 1.0  p50=   5.536  p90=   6.127  max=   8.450
+publish.pump                       calls/key= 1.0  p50=   0.015  p90=   0.020  max=   0.028
+adopt.publish                      calls/key= 1.0  p50=   5.596  p90=   6.183  max=   8.542
+host.advance                       calls/key= 1.0  p50=  24.198  p90=  25.561  max=  31.990
+host.sync_preview                  calls/key= 1.0  p50=   0.002  p90=   0.002  max=   0.004
+host.m6h_key_down_total            calls/key= 1.0  p50=  35.228  p90=  37.863  max=  43.877
