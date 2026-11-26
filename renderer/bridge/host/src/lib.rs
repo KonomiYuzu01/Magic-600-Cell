@@ -1657,7 +1657,7 @@ pub unsafe extern "C" fn m6h_set_draft_word(handle: *mut ShellHost, letters: *co
 }
 
 /// The head's state digests (ADR-D02 B5; [`turns::Turns::state_digests`]): [`m6h_answer`] gives
-/// `{"digest", "pose_ids_sha256", "pose_lattice_sha256"}`, the last two `null` with Jumble off. The shell reads them
+/// `{"digest", "pose_ids_sha256", "pose_lattice_sha256", "off_lattice"}`, the last three `null` with Jumble off. The shell reads them
 /// at each newly shown revision and binds the D02 sample whose digests equal them. The read changes nothing.
 ///
 /// # Safety

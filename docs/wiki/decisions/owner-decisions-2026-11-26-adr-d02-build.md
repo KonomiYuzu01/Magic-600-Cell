@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-26-adr-d02-build
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; the build waits for the owner's go before B1; and, later that day, ADR-D01's whole frame enters the product shell on sample data in this build (part of ADR-D03's scope), after which B5 and B6 run without a stop for the owner's check.
+summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; the build waits for the owner's go before B1; and, later that day, ADR-D01's whole frame enters the product shell on sample data in this build (part of ADR-D03's scope), after which B5 and B6 run without a stop for the owner's check; the product window turns, opens on the owner's view with smaller stickers, and Local shows only the turning cells; checkpoints do not stop the build; the drawing runs as a second track; and the finished build gets one Fable refinement round, then two Astra rounds, then the owner's freeze.
 related: [owner-decisions-2026-11-26-adr-d02-a4, owner-decisions-2026-11-25, owner-decisions-2026-11-22-adr-line-evening, owner-decisions-2026-11-22-design-art-path]
 supersedes: []
 claims:
@@ -15,6 +15,11 @@ claims:
   - {id: watching-window-never-on-top, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: d01-frame-on-sample-data, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: b5-b6-without-stop, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: rotation-opening-view-stickers, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: local-turning-cells-only, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: no-checkpoint-stops, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: fast-drawing-track-astra-freeze, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: fable-refinement-before-astra, evidence_kind: decision, checked_at: 2026-11-26}
 ---
 
 # Owner decisions on ADR-D02's build framework
@@ -118,3 +123,75 @@ The integrator's reading:
   stop for the owner. The integrator reports what landed when B6 is done.
 - The watching window stays open from the session's process through this work, and every new build goes into it, under
   section 6's rule.
+
+## 8. Rotation, the opening view, smaller stickers and Local's shape
+
+Said in the design-system ADR line on 26 November 2026 while the owner watched the product window, and relayed to the
+ADR-D02 session. The owner's words, translated: "Also, rotating the puzzle does nothing, the default view is not the one
+I set, and the stickers must be smaller." Then: "The Local view must also show only the turning cells, as I set it."
+Then, on bringing Local forward: "Bring it forward if you can; finish it before B5."
+
+The integrator's reading:
+- The product window turns with the mouse as Look Lab's does, from Look Lab's kept camera (`q` and `spin`), with
+  ADR-D01.40's linked rotation once Local is drawn. A drag never goes to the window's focus hand-back.
+- The product opens on the owner's opening view of 22 November 2026 (`tools/looklab/data/opening.json`): the Hopf-ring
+  layout, field of view 0.85, cell gap 0.3 and sticker shrink 0.55. Gap and shrink are tunable values, never constants.
+- Local takes `tools/looklab/data/local-view.json` as it stands: orthographic, only the turning cells with no
+  neighbours, pulled apart so the inner ones show, centred at a fixed size, and turning with the linked rotation.
+- B5 had already landed when the owner asked, so "before B5" no longer applies. Local comes as early as the drawing
+  track allows (section 10).
+- The Hopf-ring layout and Local's shape are renderer features. Under section 5 they are built as candidates behind
+  `--d02` and measured, and the watching window opens on them there. They become the product's default only through
+  R5, after gate sitting 2, with the owner's signature.
+
+## 9. No stops at the checkpoints
+
+The owner's words, translated: "Do not stop at the checkpoints either; do everything in one go."
+
+The integrator's reading:
+- C1 to C6 still get Fable's read, and blocking and major findings are fixed before the next block. Nothing waits for
+  the owner.
+- Each checkpoint's "owner is shown" line becomes one line in the session's report, saying what to look at in the
+  watching window.
+- Only what truly needs the owner is batched: the two gate sittings, B19 and B24, which need an attended start and a
+  quiet machine, are prepared and handed to the top integrator for an owner-machine sitting it arranges; the
+  certificate glyphs' acceptance goes on one card with whatever else is open at the end. The build continues past B19
+  and B24 wherever a step does not need their numbers.
+
+## 10. As fast as possible, with the drawing as a second track
+
+The owner's words, translated: "Do it as soon as possible. D02 and D03 will each get two rounds of Astra review then,
+and once they pass they freeze." Asked whether the drawing could start now: "Can the drawing be done now?"
+
+The integrator's reading:
+- The build runs straight through. Independent steps that touch different files may run in parallel subagents, each
+  in its own worktree; the ADR-D02 session stays the one integrator and reviews each diff before it merges it. Two
+  writers never touch the same file at once, and the build stays one pull request.
+- The drawing runs as a second track beside the solve side: the rotation, a per-view shape input (gap and shrink)
+  brought forward from B14, the rest of B14, B18a to B18c with Local's shape, the Hopf-ring preset (B23) before the
+  ring sheet (B22), then B15 to B17 as their solve steps land, B18, B20 and B21.
+- The two Astra rounds are Codex calls the owner asked for, which the Codex minimum allows. They run through the review
+  wrapper with the model, effort and speed passed explicitly, on a seven-part packet prepared at the end of the build.
+  The integrator's reading of "two rounds" is one full review of the finished candidate and one scoped re-check of the
+  fixes; the owner may correct it. The model is chosen when the reviews run.
+
+## 11. One Fable refinement round before the Astra rounds
+
+Asked in the design-system ADR line whether, as with ADR-D01, Fable should scan the finished work for concrete
+refinements and one more round be built before the reviews. The integrator recommended one capped round. The owner's
+answer, translated: "In this order."
+
+The order, once B1 to B33 are built:
+1. One Fable refinement scan on the subscription, from the owner's point of view: the product window as it is
+   (watching-window frames and the scripted runs' screen dumps), against ADR-D02's 56 items, ADR-D01 revision 6 and
+   the owner's own requirements (open research freedom as high as the framework allows, the opening view of section 8,
+   Local's shape, the window rule and the human-solve boundary). It gives one ranked list; each point carries its item,
+   its evidence, the change and its cost.
+2. One card to the owner, recommended option first, with an "all as recommended" choice.
+3. One refinement build round from the card.
+4. Astra round 1, a full review of the finished candidate.
+5. Astra round 2, a scoped re-check of the fixes.
+6. The owner's freeze, on a decision page.
+
+One scan and one build round, with no iteration. Points outside ADR-D02's scope go to a follow-up list, and costly
+points that are not severe are deferred to after the freeze.

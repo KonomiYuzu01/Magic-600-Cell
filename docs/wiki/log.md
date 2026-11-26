@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | ADR-D02's build: the owner's view in the product, no checkpoint stops, Fable then Astra
+Watching the product window, the owner asked that it turn with the mouse, open on the owner's view of 22 November with smaller stickers, and show only the turning cells in Local; that the build not stop at checkpoints and run as fast as possible, with the drawing as a second track; and that the finished build get one Fable refinement round, then two Astra rounds, then the freeze ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), sections 8 to 11).
+
 ## [2026-11-26] decision | ADR-D01's frame in the product on sample data; B5 and B6 without a stop
 The owner asked for ADR-D01's whole frame in the product shell while ADR-D02 is built, and for B5 and B6 to follow without a stop for the owner's check ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), section 7). This pulls the frame on sample data, part of ADR-D03's scope, into ADR-D02's pull request; [the framework](../progress/1.0/adr-d02-build-framework.md) records it as step B4a.
 

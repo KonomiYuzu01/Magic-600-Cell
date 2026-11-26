@@ -11,7 +11,8 @@ mismatches, and writes d02-run.json beside the shell's logs.
 
 The `bind` script (B5) runs on the named state's session fixture, which `build_d02_fixtures.py` writes under
 work/build/d02-fixtures/: the sample binds by its pose digests after the open, a twist unbinds it, an undo binds it
-again. A state with a written fixture also opens it in the other scripts.
+again. The `host` script (B6) runs in sample mode on the state's fixture and checks the Jumble host in Solve. A state
+with a written fixture also opens it in the other scripts.
 
 The owner's window rule (26 November 2026) is checked on the way: the window that has the foreground before the
 launch must still have it five seconds after it, the shell's window never carries WS_EX_TOPMOST, and no screen dump
@@ -133,9 +134,51 @@ def expect_bind(dumps: list[dict], source: dict, state: str | None) -> list[str]
     return problems
 
 
-EXPECT = {"smoke": expect_smoke, "bind": expect_bind}
-# Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes.
-ON_FIXTURE = {"bind"}
+def texts(dump: dict, prefix: str = "") -> list[str]:
+    return [text for group, text in map(tuple, dump["lines"]) if group.startswith(prefix)]
+
+
+def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B6's host script, in sample mode on the state's session fixture: the Jumble cell, the mark on both view borders,
+    Local's empty sentence and four closed sections, the cap map open with its legend armed, and the strip and the rail
+    undefined exactly when the sample is off the lattice (its totals' exact off-lattice count)."""
+    if [dump["do"] for dump in dumps] != ["start", "wait 3000 ms", "wait 3000 ms"]:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None:
+        return ["the host script needs a sample state"]
+    off = load(SAMPLES / state / "totals.json")["off_lattice"] > 0
+    shown, problems = dumps[1], []
+    every = texts(shown)
+    cell = "Jumble · " + ("off the lattice" if off else "on the lattice")
+    if cell not in texts(shown, "frame"):
+        problems.append(f"step 1: the top bar does not show {cell!r}")
+    marks = shown.get("marks", {})
+    for view in ("Global", "Local"):
+        # With labels on the mark's word is on screen; with labels off it is in the mark's tooltip.
+        if "jumble" not in texts(shown, "view:" + view) and not any(tip.startswith("jumble") for tip in marks.get(view, [])):
+            problems.append(f"step 1: view:{view} carries no Jumble mark")
+    if "Name a cap: click its cell, or type its number." not in every:
+        problems.append("step 1: Local does not show its empty sentence")
+    for header in ("▸ Named cap · 0", "▸ Twist check · 0", "▸ Cap covers · 0", "▸ Repair list · 0"):
+        if header not in every:
+            problems.append(f"step 1: Local lacks the closed header {header!r}")
+    if "Cap map: not drawn in this build yet" not in every:
+        problems.append("step 1: the cap map is not open in the bottom dock")
+    if not any("contact classes · armed" in text and "never hidden · armed" in text for text in every):
+        problems.append("step 1: the cap map's legend does not show the entry's armed modes")
+    undefined = every.count("undefined")
+    if off and undefined < 2:
+        problems.append(f"step 1: the strip and the rail are not undefined off the lattice ({undefined} undefined numerals)")
+    if not off and undefined:
+        problems.append(f"step 1: {undefined} undefined numerals on the lattice")
+    return problems
+
+
+EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host}
+# Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
+# sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
+ON_FIXTURE = {"bind", "host"}
+IN_SAMPLE_MODE = {"host"}
 
 
 def window_problems(dumps: list[dict]) -> list[str]:
@@ -220,6 +263,7 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         return process
 
     arguments = ["--out", str(out), "--frame", "--puzzle", "jumble-on", "--d02", "--d02-script", str(path)]
+    arguments += ["--sample"] if script in IN_SAMPLE_MODE else []
     arguments += ["--build", str(build)] if build else []
     arguments += ["--d02-state", state] if state else []
     arguments += ["--d02-fixture", str(fixture)] if fixture is not None and (fixture / "fixture.json").is_file() else []

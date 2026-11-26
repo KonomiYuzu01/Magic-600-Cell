@@ -172,6 +172,14 @@ public sealed partial class ChromeFrame : Control
     // The error lamp of the top bar: how many failures the host has counted, and what the first one was.
     public void SetAlert(int count, string tooltip) { if (count == alerts && tooltip == alertTip) return; alerts = count; alertTip = tooltip; dirty = true; }
     public void SetTopStrip(Control control) { topStrip = control; dirty = true; }
+    // A host-drawn cell in the top bar naming the session's mode with its glyph (ADR-D02.6), or none.
+    public void SetModeCell(string? text, string tooltip, string glyph = "mark.jumble")
+    {
+        if (text == modeCell && tooltip == modeTip && glyph == modeGlyph) return;
+        modeCell = text; modeTip = tooltip; modeGlyph = glyph; dirty = true;
+    }
+    public string? ModeCell => modeCell;
+    private string? modeCell; private string modeTip = "", modeGlyph = "mark.jumble";
     // One slim strip under the views and above the bottom dock: the commit bar (ADR-D01.11).
     public void SetStrip(Control control) { strip = control; dirty = true; }
     // One control on the shared edge of the locked pair: the relationship strip (ADR-D01.62). It adds no dock.
@@ -388,6 +396,15 @@ public sealed partial class ChromeFrame : Control
         }
         Button words = ChromeWidgets.Tool("", Labels ? "Labels are on: click for icons alone" : "Labels are off: click to show them", true); words.Name = "LabelsToggle";
         ChromeIcons.Apply(words, "labels", Tokens.Px("icon.small")); words.SetPressedNoSignal(Labels); words.Pressed += () => Labels = !Labels; row.AddChild(words);
+        if (modeCell != null)
+        {
+            var cell = new PanelContainer { Name = "ModeCell", ThemeTypeVariation = "Chip", TooltipText = modeTip };
+            var line = new HBoxContainer(); cell.AddChild(line);
+            Label glyph = ChromeWidgets.Text(modeGlyph, "MicroLabel"); ChromeIcons.Apply(glyph, modeGlyph, Tokens.Px("icon.small"));
+            glyph.AddThemeColorOverride("font_color", Tokens.C("accent.strong")); line.AddChild(glyph);
+            Label mode = ChromeWidgets.Text(modeCell, "MicroLabel"); mode.AddThemeColorOverride("font_color", Tokens.C("accent.strong")); line.AddChild(mode);
+            row.AddChild(cell);
+        }
         row.AddChild(BarTools); if (Health.Text.Length > 0) { row.AddChild(new VSeparator()); row.AddChild(Health); }
         row.AddChild(new Control { CustomMinimumSize = new Vector2(Tokens.Px("space.3"), 0) });
         return bar;

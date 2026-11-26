@@ -160,6 +160,8 @@
       "glyph": "git-branch",
       "fallback": "Y"
     },
+    "mark.jumble": {"glyph": "square-dashed-bottom", "fallback": "J"},
+    "panel.capmap": {"glyph": "map", "fallback": "Cm"},
     "mark.pending": {
       "glyph": "hourglass",
       "fallback": "~"

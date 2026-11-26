@@ -467,7 +467,7 @@ public partial class Shell : Control
             _boundRevision = _shownRevision;
             if (library.StateDigest(_host) == HostLibrary.Ok)
             {
-                D02.ShellJumble.Bind(library.Answer(_host));
+                D02.ShellJumble.Bind(library.Answer(_host), (long)_shownRevision);
             }
         }
     }

@@ -215,7 +215,7 @@ relative path is from the repository root.
   - `Turns::twist_letter(cap, item)` invokes `jumble.twist.menu` through the shell's route with the arguments a twist key gives (the router's `menu_item` letter for the pinned menu's two digests, the cap and the layer's revision), at any cap. `fixture::write_word` commits a word that way and closes with the control, as `write_for` does; its record adds `word` and `state_digests`. `Turns::state_digests` gives the head's digest and the SHA-256 of the pose ids (u32 little-endian per piece) and of the lattice flags (one byte per piece). The binary's `--word FILE` writes such a fixture, then reopens a copy once and prints `reopen_ms`.
   - Host ABI 8: `m6h_state_digest(handle)`, read through `m6h_answer`. `HostLibrary.cs` pins 8 and lists the export; `renderer/shell/README.md` no longer says version 2 (F11).
   - `build_d02_fixtures.py` rebuilds each state's word from the records its sample was made from. A W-J journal record is a menu letter: its grip and the base index of its label (`I_a[17]` is item 17). A replay of all 841 records as letters through the adapter reached `wj-ia-300`, `wj-ia-420` and `wj-ia-end` with the samples' digests before any fixture was written. Letters of the menu's identity item (item 0) are left out: they move no piece, and the command layer refuses them (`KN2:input.recipe_shape`); the stop-40 restorer has four, so `ia-40`'s word has 98 letters. The fixture's three digests must equal the sample's `state.json`, or it is removed. The two `nu-c` states wait for B26, whose correction words come from the adapter.
-  - Written and matching on the integrator's machine (release build, write time and reopen time): `on-zero` (0 letters; 1.1 s, 0.4 s), `s7001-0` to `s7001-9` (10 to 19 letters; about 1.3 s, 0.3 s each), `ia-40` (98; 19.5 s, 5.3 s), `wj-ia-300` (300; 70.5 s, 17.5 s), `wj-ia-420` (420; 182 s, 37.8 s). The reopen time grows faster than the commit count (risk R2), so `deep-1` and `deep-2`, at about 3,300 commits, are not written at B5; they are written for the gate sittings, or once a faster reopen exists.
+  - Written and matching on the integrator's machine (release build, write time and reopen time): `on-zero` (0 letters; 1.1 s, 0.4 s), `s7001-0` to `s7001-9` (10 to 19 letters; about 1.3 s, 0.3 s each), `ia-40` (98; 19.5 s, 5.3 s), `wj-ia-300` (300; 70.5 s, 17.5 s), `wj-ia-420` (420; 182 s, 37.8 s), `wj-ia-end` (841; 447 s, 139 s). The reopen time grows faster than the commit count (risk R2), so `deep-1` and `deep-2`, at about 3,300 commits, are not written at B5; they are written for the gate sittings, or once a faster reopen exists.
   - `ShellJumble.Bind`: at each newly shown revision `Shell.cs` reads `m6h_state_digest` and binds the sample state whose two pose-array digests equal the head's, never by name; several states with equal poses (`on-zero` and `s7001-9`) bind the asked one. A chip says `bound · <state>` or `unbound · stale`. `watch_d02.py --state ID` and `d02_run.py` open the state's fixture when it is written.
   - The bind run: the router turns cap 0 only (`grip.select` is not built), and cap 0 is blocked at `wj-ia-300`, so a twist key there is refused; on `wj-ia-300` the run shows the sample bound from the open. The whole cycle runs on `on-zero`: `M600_D02_RUN_PASS script=bind steps=6 mismatches=0` on `c9-product-6ef62b1b3f8d4577`, bound at the open, unbound after one twist, bound again after the undo, with the foreground kept and no topmost window. Script chords use Godot's key names (`J`, `Ctrl+Z`); a name Godot does not know is now written into the dump instead of being skipped.
 - **Owner sees:** `watch_d02.py --state wj-ia-300` shows the jumbled pieces, posed, under the frame.
@@ -234,6 +234,28 @@ relative path is from the repository root.
   - The strip and the rail show the undefined numeral as a whole when the lattice flag is false, never on a pending N.
   - Local's empty sentence, and a four-header accordion in Local, one open at a time, each closed header with a one-line count.
 - **Check:** `D02EntryRevertsOnlyUnchanged`; `D02EntryFollowsUndoRedoBranchReopen`; `D02EntryIsChromeOnly`; `D02UndefinedSwitchesOnLatticeFlagNotPendingN`; `D02MarkOnEveryViewBorder`; `D02PanelsMoveFreely`. Then `d02_run.py --script host`.
+- **As built (integrator, 26 November 2026):**
+  - `Model/Jumble.cs`: `JumbleState`; `IJumbleSource`; `JumbleFeed`, the shell's source, which adopts the host's state-digest answer at each newly shown revision, with the lattice flag exact (`off_lattice == 0`); `SampleJumbleSource`, from a sample's totals, for the console tests; `JumbleNumerals`; `ChromeSettings`; `EntrySlot`; `JumbleChrome` (the mark and the mode cell's words); `LocalAccordion`. `EntrySlot` opens the cap map in the bottom dock and arms the contact classes and the never-hidden set. Its `Revert` gives back only the keys that still hold what it set, and it follows the adopted revision's mode.
+  - The host's state-digest answer gains `off_lattice`, the count of pieces whose pose is off the lattice; with Jumble off it is null, as the two pose digests are. Host ABI stays 8, since only an answer field was added.
+  - UI:
+    - `ChromeFrame.SetModeCell` draws a glyph-and-words chip before the bar tools.
+    - `JumbleSurface` is Local's content: the empty sentence, then the four closed headers with their counts, one open at a time.
+    - `CapMapPanel` is the one new panel, in the existing bottom dock. It says "not drawn in this build yet" until B8, with a legend of the armed modes.
+    - `JumbleHost` ties the entry slot to the frame's bottom dock in both directions, keeps the mode cell, switches the strip's and the rail's undefined numeral, and draws `mark.jumble` on each view border.
+    - `RelationStrip` and `OrbitRail` gain `SetUndefined`, which shows `numeral.undefined` as a whole.
+    - Two new icons: `mark.jumble` and `panel.capmap`.
+  - Shell:
+    - With `--d02` only, `ShellChrome` builds the host after `ShellJumble.Attach`. It puts the host's surface in Local, hands it the sample's strip and rail, and draws its marks.
+    - `Describe` now clears Local's marks before drawing them; they used to pile up.
+    - `Shell.cs` passes the shown revision to `Bind`.
+    - The screen dump adds each view's mark tooltips, because with labels off a mark shows only its glyph.
+  - Checks:
+    - Look Lab's console lane: 165 of 165 pass, including the six named tests.
+    - `tests/test_renderer_shell.py` (class `D02Host`): 61 tests OK.
+    - `tests/test_render_ffi.py` passes.
+    - `d02_run.py --script host`, in sample mode on each state's fixture on `c9-product-ba9fa71af300cc9f`, gives `M600_D02_RUN_PASS` with the foreground kept and no topmost window. On `ia-40`, off the lattice, it shows "Jumble · off the lattice" with the strip and the rail undefined. On `on-zero` it shows "Jumble · on the lattice" with true numerals.
+    - `wj-ia-300`'s fixture reopens in about 17.5 s, after the script's first dump, so the off-lattice run uses `ia-40`. The watching window shows `wj-ia-300` bound.
+    - One run failed its foreground check when the owner switched windows during it, as the check should. The rerun passed.
 - **Owner sees:** the Jumble cell, a mark on each border, the strip and the rail undefined over the posed W-J state; true zeros on the zero-twist state.
 - **Machine:** H, W.
 - **Checkpoint:** yes, C1.

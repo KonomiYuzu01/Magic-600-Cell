@@ -34,6 +34,21 @@ public static class ShellJumble
     public static string? Bound { get; private set; }
     /// <summary>The binding changed.</summary>
     public static event Action? BindingChanged;
+    /// <summary>The Jumble facts of each newly shown revision (B6), from the host's state digests.</summary>
+    public static JumbleFeed Feed { get; } = new();
+
+    /// <summary>
+    /// The words the Jumble host shows, from the design folder's jumble-words.json: the record's display names by id,
+    /// Local's empty sentence and the words of a section with nothing in it.
+    /// </summary>
+    public static (Dictionary<string, string> Names, string Empty, string Nothing) Words(string folder)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(folder, "jumble-words.json")));
+        var root = document.RootElement;
+        var names = root.GetProperty("names").EnumerateArray().ToDictionary(n => n.GetProperty("id").GetString()!, n => n.GetProperty("text").GetString()!, StringComparer.Ordinal);
+        string Sentence(string id) => root.GetProperty("sentences").EnumerateArray().First(s => s.GetProperty("id").GetString() == id).GetProperty("text").GetString()!;
+        return (names, Sentence("local.empty"), Sentence("result.not_run"));
+    }
 
     /// <summary>The binding chip's words for a bound sample state.</summary>
     public static string BoundWords(string state) => "bound · " + state;
@@ -73,11 +88,12 @@ public static class ShellJumble
 
     /// <summary>
     /// Binds the sample state whose two pose-array digests equal the session head's (B5). <paramref name="digests"/> is
-    /// m6h_state_digest's answer, read at each newly shown revision. Several states with the same poses bind the asked
+    /// m6h_state_digest's answer, read at each newly shown revision, which also feeds the Jumble facts (B6). Several states with the same poses bind the asked
     /// one when it is among them, else the first in the index's order. With none, or with Jumble off, nothing is bound.
     /// </summary>
-    public static void Bind(string digests)
+    public static void Bind(string digests, long revision)
     {
+        Feed.Adopt(JumbleFeed.Read(digests, revision));
         string? bound = null;
         try
         {
@@ -392,6 +408,25 @@ internal sealed partial class D02Driver : Node
                 json.WriteEndArray();
             }
             json.WriteEndArray();
+            // Each view's marks by their tooltips: with labels off a mark shows its glyph alone and keeps its word there.
+            json.WriteStartObject("marks");
+            foreach (ViewFrame? view in new[] { _frame.Global, _frame.Local })
+            {
+                if (view is null || !GodotObject.IsInstanceValid(view))
+                {
+                    continue;
+                }
+                json.WriteStartArray(view.ViewName);
+                foreach (Node chip in view.Marks.GetChildren())
+                {
+                    if (chip is Control mark && !mark.IsQueuedForDeletion())
+                    {
+                        json.WriteStringValue(mark.TooltipText);
+                    }
+                }
+                json.WriteEndArray();
+            }
+            json.WriteEndObject();
             json.WriteEndObject();
         }
         using var stream = new FileStream(path, FileMode.Append, System.IO.FileAccess.Write);

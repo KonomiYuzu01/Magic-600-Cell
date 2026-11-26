@@ -198,7 +198,13 @@ internal static partial class Program
             ("D02SlotCancelOlderChangesNothing", D02SlotCancelOlderChangesNothing),
             ("D02SlotCompletedWithoutCoverageIsError", D02SlotCompletedWithoutCoverageIsError),
             ("D02SlotWordsCoverSevenStates", D02SlotWordsCoverSevenStates),
-            ("D02NumeralKindsStayApart", D02NumeralKindsStayApart)
+            ("D02NumeralKindsStayApart", D02NumeralKindsStayApart),
+            ("D02EntryRevertsOnlyUnchanged", D02EntryRevertsOnlyUnchanged),
+            ("D02EntryFollowsUndoRedoBranchReopen", D02EntryFollowsUndoRedoBranchReopen),
+            ("D02EntryIsChromeOnly", D02EntryIsChromeOnly),
+            ("D02UndefinedSwitchesOnLatticeFlagNotPendingN", D02UndefinedSwitchesOnLatticeFlagNotPendingN),
+            ("D02MarkOnEveryViewBorder", D02MarkOnEveryViewBorder),
+            ("D02PanelsMoveFreely", D02PanelsMoveFreely)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

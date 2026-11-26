@@ -969,10 +969,12 @@ fn the_state_digest_follows_undo_and_redo() {
     assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_OK, "{}", last_error(run.host));
     let entered = state_digest(&run);
     assert!(entered.get("pose_ids_sha256").and_then(Value::as_str).is_some(), "{}", entered.canonical());
+    assert_eq!(int(&entered, "off_lattice"), Some(0), "the solved poses are all on the lattice");
     assert_eq!(run.press("KeyJ").0, M6H_PRESS_COMMITTED);
     let twisted = state_digest(&run);
     assert_ne!(twisted.get("digest"), entered.get("digest"));
     assert_ne!(twisted.get("pose_ids_sha256"), entered.get("pose_ids_sha256"));
+    assert!(int(&twisted, "off_lattice").is_some(), "{}", twisted.canonical());
     assert_eq!(run.press("Ctrl+KeyZ").0, M6H_PRESS_OTHER);
     assert_eq!(state_digest(&run), entered, "the undo");
     assert_eq!(run.press("Ctrl+KeyY").0, M6H_PRESS_OTHER);
@@ -985,7 +987,9 @@ fn the_state_digest_follows_undo_and_redo() {
     assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
     let off = state_digest(&run);
     assert!(off.get("digest").and_then(Value::as_str).is_some());
-    assert_eq!((off.get("pose_ids_sha256"), off.get("pose_lattice_sha256")), (Some(&Value::Null), Some(&Value::Null)));
+    for key in ["pose_ids_sha256", "pose_lattice_sha256", "off_lattice"] {
+        assert_eq!(off.get(key), Some(&Value::Null), "{key}");
+    }
     drop(run);
     let _ = std::fs::remove_dir_all(&folder);
 }

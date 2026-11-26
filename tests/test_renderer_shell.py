@@ -1496,5 +1496,71 @@ class D02Fixtures(unittest.TestCase):
         self.assertIn("if (D02.ShellJumble.On && _session && _shownRevision != _boundRevision)", shell)
         self.assertEqual(shell.count("StateDigest("), 1)
 
+
+class D02Host(unittest.TestCase):
+    """ADR-D02 build step B6: the Jumble host in Solve exists only with D02 on, is fed only from the host's state
+    digests at a shown revision, switches the numerals on the exact lattice flag, clears each view's marks before it
+    draws them, and the host script's expectation sees each part it checks. Nothing is built or launched."""
+
+    def test_the_jumble_host_is_built_only_with_d02_on(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        start = chrome.index("        if (ShellJumble.On)\n        {\n            ShellJumble.Attach(parent, frame, palette);")
+        block = chrome[start:chrome.index("\n        }\n", start)]
+        self.assertEqual(chrome.count("new JumbleHost("), 1)
+        self.assertIn("Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing);", block)
+        self.assertIn("frame.SetMainViews(global, Jumble.Surface);", block)
+        # The feed adopts only what m6h_state_digest answered at a newly shown revision.
+        jumble = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertIn("Feed.Adopt(JumbleFeed.Read(digests, revision));", jumble)
+        self.assertEqual(jumble.count("Feed.Adopt("), 1)
+        self.assertIn("D02.ShellJumble.Bind(library.Answer(_host), (long)_shownRevision);", text(PROJECT / "Shell.cs"))
+
+    def test_the_numerals_switch_on_the_lattice_flag_and_the_entry_is_chrome_only(self):
+        model = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "Jumble.cs")
+        self.assertIn("public static bool Undefined(JumbleState state) => state.Mode && !state.LatticeFlag;", model)
+        self.assertIn('root.GetProperty("off_lattice").GetInt64() == 0', model)
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn("bool undefined = JumbleNumerals.Undefined(state);", host)
+        self.assertEqual(host.count("SetUndefined("), 2)
+        # The host adds one panel to the existing bottom dock and no layout, no dock and no command.
+        self.assertEqual(host.count("AddDockPanel("), 1)
+        for word in ("AddLayout", "Commands.", "Invoke("):
+            self.assertNotIn(word, host)
+        icons = json.loads(text(ROOT / "tools" / "looklab" / "data" / "design" / "icons.json"))
+        self.assertIn("mark.jumble", json.dumps(icons))
+        self.assertIn("panel.capmap", json.dumps(icons))
+
+    def test_each_view_is_cleared_before_its_marks(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        describe = chrome[chrome.index("    private void Describe()"):]
+        for view in ("Global", "Local"):
+            clear = describe.index(f"Frame.{view}.ClearMarks();")
+            self.assertLess(clear, describe.index(f"Jumble?.Marks(Frame.{view});"))
+            self.assertLess(clear, describe.index(f"Sample?.Marks(Frame.{view});"))
+
+    def test_the_host_expectation_sees_each_part(self):
+        run = shell_module("d02_run")
+        self.assertEqual(run.IN_SAMPLE_MODE, {"host"})
+        self.assertIn("host", run.ON_FIXTURE)
+        self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
+        steps = ["start", "wait 3000 ms", "wait 3000 ms"]
+
+        def dumps(cell, undefined, marks=True):
+            lines = [["frame", cell], ["view:Local", "Name a cap: click its cell, or type its number."],
+                     ["panel:jumble.cap_map", "Cap map: not drawn in this build yet"],
+                     ["panel:jumble.cap_map", "contact classes · armed   never hidden · armed"]]
+            lines += [["view:Local", f"▸ {name} · 0"] for name in ("Named cap", "Twist check", "Cap covers", "Repair list")]
+            lines += [["frame", "undefined"]] * undefined
+            tips = {"Global": ["jumble: Jumble is on"], "Local": ["jumble: Jumble is on"]} if marks else {}
+            return [{"do": do, "lines": lines, "marks": tips} for do in steps]
+        self.assertEqual(run.expect_host(dumps("Jumble · off the lattice", 2), {}, "ia-40"), [])
+        self.assertEqual(run.expect_host(dumps("Jumble · on the lattice", 0), {}, "on-zero"), [])
+        self.assertEqual(len(run.expect_host(dumps("Jumble · off the lattice", 2, marks=False), {}, "ia-40")), 2)
+        self.assertEqual(len(run.expect_host(dumps("Jumble · on the lattice", 2), {}, "ia-40")), 1)
+        self.assertEqual(len(run.expect_host(dumps("Jumble · on the lattice", 1), {}, "on-zero")), 1)
+        self.assertTrue(run.expect_host(dumps("Jumble · on the lattice", 0)[:2], {}, "on-zero"))
+        self.assertTrue(run.expect_host(dumps("Jumble · on the lattice", 0), {}, None))
+
+
 if __name__ == "__main__":
     unittest.main()

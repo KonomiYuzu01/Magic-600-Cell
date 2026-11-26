@@ -81,15 +81,17 @@ internal sealed partial class StripCellView : PanelContainer
 
     private Color Colour() => tokens().C(Cell.State == "invalid" ? "state.invalid" : StripGlyphs.Token(Cell.Slot), Cell.State == "unset" ? .45f : 1);
 
-    public void Set(StripCell cell)
+    // With `undefined` (ADR-D02.6) the cell's numeral is numeral.undefined, said in its word, whatever the value.
+    public void Set(StripCell cell, bool undefined = false)
     {
         Cell = cell; TokenSet t = tokens();
         // The state is said in words too, never by colour alone.
         string mark = cell.State switch { "derived" => "derived", "match" => "is Wanted", "mismatch" => "not Wanted", "invalid" => "invalid", "other_orbit" => "other orbit", _ => "" };
         word.Text = cell.Word + (mark.Length > 0 ? " · " + mark : "");
         word.AddThemeColorOverride("font_color", t.C(cell.State == "invalid" ? "state.invalid" : "text.dim"));
-        value.Text = cell.Value; value.AddThemeColorOverride("font_color", t.C(cell.State == "unset" ? "text.dim" : "text.primary"));
-        detail.Text = cell.Detail;
+        value.Text = undefined ? Numeral.Undefined.Word : cell.Value;
+        value.AddThemeColorOverride("font_color", t.C(undefined ? Numeral.Undefined.Role : cell.State == "unset" ? "text.dim" : "text.primary"));
+        detail.Text = undefined ? "" : cell.Detail;
         glyph.QueueRedraw(); QueueRedraw();
     }
 
@@ -132,6 +134,10 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
     public IReadOnlyList<string> Slots => cells.Keys.ToArray();
     public string Said(string slot) => cells[slot].Cell.Word + " " + cells[slot].Cell.Value + " " + cells[slot].Cell.Detail + " " + cells[slot].Cell.State;
     public bool Expanded => expanded;
+    // ADR-D02.6: with Jumble on and pieces off the lattice the strip shows numeral.undefined as a whole; the host
+    // switches it on the exact lattice flag (JumbleNumerals), never on N.
+    public bool Undefined { get; private set; }
+    public void SetUndefined(bool on) { if (Undefined == on) return; Undefined = on; Refresh(false); }
 
     public RelationStrip(SolvingDemo demo, Func<TokenSet> tokens, Func<string, double> seconds)
     {
@@ -151,7 +157,7 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
         built = key;
         foreach (StripCell cell in now)
         {
-            cells[cell.Slot].Set(cell);
+            cells[cell.Slot].Set(cell, Undefined);
             if (changed && Demo.LastChanged.Contains(cell.Slot)) cells[cell.Slot].Flash(seconds("strip.change"));
         }
         demoChip!.Text = vertical ? state.Name : SolvingDemo.Mark + " · " + state.Name;
@@ -163,7 +169,8 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
             foreach ((string name, string numeral) in state.Classes(state.Orbit))
             {
                 var row = new HBoxContainer(); Label words = ChromeWidgets.Text(name, "MicroLabel"); words.SizeFlagsHorizontal = SizeFlags.ExpandFill; row.AddChild(words);
-                Label number = ChromeWidgets.Text(numeral, "ReadoutLabel"); number.AddThemeColorOverride("font_color", t.C(numeral == "unknown" ? "text.dim" : "text.primary")); row.AddChild(number);
+                Label number = ChromeWidgets.Text(Undefined ? Numeral.Undefined.Word : numeral, "ReadoutLabel");
+                number.AddThemeColorOverride("font_color", t.C(Undefined ? Numeral.Undefined.Role : numeral == "unknown" ? "text.dim" : "text.primary")); row.AddChild(number);
                 classes.AddChild(row);
             }
         }

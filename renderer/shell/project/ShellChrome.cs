@@ -47,6 +47,8 @@ public sealed class ShellChrome
     /// views, the History dock, the readouts and the session's undo and redo stay the real session's.
     /// </summary>
     internal SampleMount? Sample { get; }
+    /// <summary>ADR-D02's Jumble host in Solve (B6), with D02 on.</summary>
+    internal JumbleHost? Jumble { get; }
     /// <summary>Whether sample mode is on: launch.py --sample sets M600_SAMPLE=1.</summary>
     public static bool SampleOn => System.Environment.GetEnvironmentVariable("M600_SAMPLE") == "1";
     public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts and History (sample) hold sample data. The views, History, the revision and the history position are this session's.";
@@ -269,6 +271,12 @@ public sealed class ShellChrome
         if (ShellJumble.On)
         {
             ShellJumble.Attach(parent, frame, palette);
+            // B6: the Jumble host in Solve, fed at each shown revision; Local shows its sections.
+            var (names, empty, nothing) = ShellJumble.Words(folder);
+            Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing);
+            frame.SetMainViews(global, Jumble.Surface);
+            Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
+            Jumble.Changed += Describe;
         }
 
         void Dress()
@@ -312,7 +320,10 @@ public sealed class ShellChrome
         {
             Frame.Global.SetStatus("not drawn", Array.Empty<string>(), null);
         }
+        Frame.Local.ClearMarks();
         Frame.Local.SetStatus("not drawn yet", Array.Empty<string>(), null);
+        Jumble?.Marks(Frame.Global);
+        Jumble?.Marks(Frame.Local);
         Sample?.Marks(Frame.Global);
         Sample?.Marks(Frame.Local);
     }

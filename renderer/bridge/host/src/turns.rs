@@ -537,26 +537,29 @@ impl Turns {
 
     /// The head's digests as ADR-D02's sample states name them (B5), by which a sample binds to the session: KN0.2's
     /// digest, and with Jumble on the SHA-256 of the pose ids (u32 little-endian per piece, the jumbling engine's
-    /// record) and of the lattice flags (one byte per piece, 1 when its pose is in K⁺). With Jumble off the two are
-    /// `null`. The answer is `{"digest", "pose_ids_sha256", "pose_lattice_sha256"}`.
+    /// record) and of the lattice flags (one byte per piece, 1 when its pose is in K⁺), and the count of pieces whose
+    /// pose is not in K⁺, from which the shell reads the exact lattice flag (B6). With Jumble off the three are `null`.
+    /// The answer is `{"digest", "pose_ids_sha256", "pose_lattice_sha256", "off_lattice"}`.
     pub fn state_digests(&mut self) -> Result<Value, String> {
         let layer = self.layer()?;
         let digest = head_digest(layer);
-        let (ids, lattice) = match layer.jumbled() {
+        let (ids, lattice, off) = match layer.jumbled() {
             Some(jumbled) => {
                 let state = jumbled.state();
                 let raw: Vec<u8> = state.pose_ids().iter().flat_map(|id| id.to_le_bytes()).collect();
                 let poses = state.poses();
                 let flags: Vec<u8> =
                     state.pose_ids().iter().map(|&id| u8::from(poses[id as usize].kidx().is_some())).collect();
-                (Value::String(sha256_hex(&raw)), Value::String(sha256_hex(&flags)))
+                let off = flags.iter().filter(|&&flag| flag == 0).count() as i64;
+                (Value::String(sha256_hex(&raw)), Value::String(sha256_hex(&flags)), Value::Int(off))
             }
-            None => (Value::Null, Value::Null),
+            None => (Value::Null, Value::Null, Value::Null),
         };
         Ok(json::object([
             ("digest", Value::String(digest)),
             ("pose_ids_sha256", ids),
             ("pose_lattice_sha256", lattice),
+            ("off_lattice", off),
         ]))
     }
 

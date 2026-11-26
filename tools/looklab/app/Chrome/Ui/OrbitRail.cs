@@ -14,6 +14,9 @@ public sealed partial class OrbitRail : PanelContainer
     public bool ByOrbitId { get; private set; }
     public int? Expanded { get; private set; }
     public int? Hovered => cells.Hover;
+    // ADR-D02.6: with Jumble on and pieces off the lattice the rail shows numeral.undefined as a whole.
+    public bool Undefined { get; private set; }
+    public void SetUndefined(bool on) { if (Undefined == on) return; Undefined = on; Refresh(); }
     private readonly Func<TokenSet> tokens; private readonly RailCells cells; private readonly Label head, typed; private readonly Button order; private readonly VBoxContainer column; private Control? expansion;
     public event Action<string, string?>? Command;
 
@@ -52,7 +55,8 @@ public sealed partial class OrbitRail : PanelContainer
         head.Text = $" Orbits · {(ByOrbitId ? "orbit-id order" : "seed stage order")}: {OrbitRailModel.OrderLabel} · {SolvingDemo.Mark}";
         head.AddThemeColorOverride("font_color", t.C("text.dim"));
         order.Text = ByOrbitId ? "by id" : "by stage";
-        typed.Text = Jump.Held ? "O" + Jump.Typed.PadRight(2, '_') : ""; typed.AddThemeColorOverride("font_color", t.C("rail.cell.working"));
+        typed.Text = Jump.Held ? "O" + Jump.Typed.PadRight(2, '_') : Undefined ? Numeral.Undefined.Word : "";
+        typed.AddThemeColorOverride("font_color", t.C(Jump.Held || !Undefined ? "rail.cell.working" : Numeral.Undefined.Role));
         cells.CustomMinimumSize = new Vector2(0, t.Px("rail.height")); cells.QueueRedraw();
         if (expansion != null) { column.RemoveChild(expansion); expansion.QueueFree(); expansion = null; }
         if (Expanded is { } open) { expansion = Expansion(open, t); column.AddChild(expansion); }
@@ -72,7 +76,8 @@ public sealed partial class OrbitRail : PanelContainer
         foreach ((string name, string numeral) in s.Classes(orbit))
         {
             var line = new HBoxContainer(); Label words = ChromeWidgets.Text(name, "MicroLabel"); words.SizeFlagsHorizontal = SizeFlags.ExpandFill; line.AddChild(words);
-            Label number = ChromeWidgets.Text(numeral, "ReadoutLabel"); number.AddThemeColorOverride("font_color", t.C(numeral == "unknown" ? "text.dim" : "text.primary")); line.AddChild(number);
+            Label number = ChromeWidgets.Text(Undefined ? Numeral.Undefined.Word : numeral, "ReadoutLabel");
+            number.AddThemeColorOverride("font_color", t.C(Undefined ? Numeral.Undefined.Role : numeral == "unknown" ? "text.dim" : "text.primary")); line.AddChild(number);
             left.AddChild(line);
         }
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; right.AddThemeConstantOverride("separation", 0); row.AddChild(right);
@@ -159,8 +164,8 @@ internal sealed partial class RailCells : Control
             // The residual level: length carries quantity. Unknown is hatched, apart from an empty track.
             var track = new Rect2(x + 3, line + 15, step - 6, 4);
             DrawRect(track, t.C("panel.border"), false, 1);
-            if (cell.Level is { } level) { if (level > 0) DrawRect(new Rect2(track.Position, new Vector2(Math.Max(2, track.Size.X * (float)level), track.Size.Y)), t.C("rail.status." + (cell.Status == "permitted_residual" ? "permitted_residual" : "open"))); }
-            else for (float hx = track.Position.X; hx < track.End.X - 1; hx += 4) DrawLine(new Vector2(hx, track.End.Y), new Vector2(Math.Min(hx + 4, track.End.X), track.Position.Y), t.C("rail.status.unknown_frame"), 1);
+            if (cell.Level is { } level && !rail.Undefined) { if (level > 0) DrawRect(new Rect2(track.Position, new Vector2(Math.Max(2, track.Size.X * (float)level), track.Size.Y)), t.C("rail.status." + (cell.Status == "permitted_residual" ? "permitted_residual" : "open"))); }
+            else for (float hx = track.Position.X; hx < track.End.X - 1; hx += 4) DrawLine(new Vector2(hx, track.End.Y), new Vector2(Math.Min(hx + 4, track.End.X), track.Position.Y), t.C(rail.Undefined ? Numeral.Undefined.Role : "rail.status.unknown_frame"), 1);
             // Three separate marks in three fixed places: solved, lock, Next.
             float my = line + 27, third = (step - 4) / 3;
             if (cell.Solved) { Vector2 c = new(x + 2 + third * .5f, my); DrawPolyline(new[] { c + new Vector2(-3, 0), c + new Vector2(-1, 2.5f), c + new Vector2(3.5f, -3) }, t.C("rail.cell.solved"), 1.6f, true); }
