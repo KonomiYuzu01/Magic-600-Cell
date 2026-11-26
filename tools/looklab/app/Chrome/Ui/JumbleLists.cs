@@ -244,6 +244,8 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
     {
         if (e is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }) { GrabFocus(); return; }
         if (e is not InputEventKey { Pressed: true } key) return;
+        // C2-2: a pick is one plain press: a held key's repeats and a chord with a modifier pick nothing.
+        bool plain = !key.Echo && !key.CtrlPressed && !key.AltPressed && !key.MetaPressed && !key.ShiftPressed;
         string[] contexts = HasFocus() ? new[] { RepairListModel.Context } : Array.Empty<string>();
         int digit = key.Keycode is >= Key.Key0 and <= Key.Key9 ? (int)(key.Keycode - Key.Key0) : key.Keycode is >= Key.Kp0 and <= Key.Kp9 ? (int)(key.Keycode - Key.Kp0) : -1;
         switch (key.Keycode)
@@ -254,8 +256,8 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
             case Key.Left: scrub.Scrub("back"); break;
             case Key.Right: scrub.Scrub("forward"); break;
             case Key.Escape: list.Unfocus(); break;
-            case Key.Enter or Key.KpEnter when list.Enter(contexts) is RepairRow focused: Picked?.Invoke(focused, UserEvent.Key("Enter")); break;
-            case var _ when digit >= 0 && list.Digit(digit, contexts) is RepairRow row: Picked?.Invoke(row, UserEvent.Key(digit.ToString(System.Globalization.CultureInfo.InvariantCulture))); break;
+            case Key.Enter or Key.KpEnter when plain && list.Enter(contexts) is RepairRow focused: Picked?.Invoke(focused, UserEvent.Key("Enter")); break;
+            case var _ when plain && digit >= 0 && list.Digit(digit, contexts) is RepairRow row: Picked?.Invoke(row, UserEvent.Key(digit.ToString(System.Globalization.CultureInfo.InvariantCulture))); break;
             default: return;
         }
         AcceptEvent();

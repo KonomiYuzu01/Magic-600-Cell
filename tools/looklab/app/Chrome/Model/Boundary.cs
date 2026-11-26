@@ -64,8 +64,9 @@ public sealed class StagedWord
     public IReadOnlyList<SealedSpan> Spans => spans;
     public event Action? Changed;
 
-    // A typed twist: an ordinary letter at the end.
-    public void Type(Letter letter) { letters.Add(letter); Safe.Raise(Changed); }
+    // A typed twist: an ordinary letter at the end. Only RepairStage.Type calls it, after the word's origin is
+    // admitted (C2-6).
+    internal void Type(Letter letter) { letters.Add(letter); Safe.Raise(Changed); }
 
     internal SealedSpan Seal(RepairRow row, IReadOnlyList<Letter> word)
     {
@@ -128,21 +129,49 @@ public sealed class RepairStage
     public IReadOnlyList<RepairPairRecord> Records => records;
     private readonly List<RepairPairRecord> records = new();
     private readonly BoundaryLedger ledger;
+    // Whether the session is a solving session, read from the session each time (ADR-D02.40, C2-6).
+    private readonly Func<bool> solvingSession;
     public event Action? Changed;
 
-    public RepairStage(BoundaryLedger ledger) { this.ledger = ledger; Word.Changed += () => Safe.Raise(Changed); }
+    public RepairStage(BoundaryLedger ledger, Func<bool> solvingSession)
+    {
+        this.ledger = ledger; this.solvingSession = solvingSession; Word.Changed += () => Safe.Raise(Changed);
+    }
+
+    // The last refusal at admission, or null: a research run's output in a solving session.
+    public string? Refusal { get; private set; }
+
+    // Every staging entry admits its word's origin first (ADR-D02.40): a refused word stages nothing.
+    private bool Admitted(Origin origin)
+    {
+        string? refusal = PreviewAdmission.Admit(origin, solvingSession());
+        if (refusal != Refusal) { Refusal = refusal; Safe.Raise(Changed); }
+        return refusal == null;
+    }
+
+    // A typed twist of the given origin, admitted first.
+    public bool Type(Letter letter, Origin origin)
+    {
+        if (!Admitted(origin)) return false;
+        Word.Type(letter);
+        return true;
+    }
 
     // The whole-only bar: on while the word holds a sealed span.
     public bool WholeOnly => Word.Spans.Count > 0;
-    public string Bar => WholeOnly ? RepairListModel.WholeOnly : "";
+    public string Bar => Refusal ?? (WholeOnly ? RepairListModel.WholeOnly : "");
 
     // A prefix of the word would commit part of a sealed span: refused while one is staged.
     public string? PrefixRefusal(int scrub) => WholeOnly && scrub < Word.Letters.Count ? RepairListModel.WholeOnly : null;
 
-    // Stages a picked row: with no user event nothing is staged and the ledger counts it.
-    public SealedSpan? Stage(RepairListModel list, RepairRow row, RepairSteps steps, UserEvent? asked)
+    // Stages a picked row: with no user event nothing is staged and the ledger counts it; a refused origin stages
+    // nothing either.
+    public SealedSpan? Stage(RepairListModel list, RepairRow row, RepairSteps steps, UserEvent? asked, Origin origin)
     {
         if (!ledger.Record("stage", "repair row " + row.Number + " at cap " + list.Cap, asked)) return null;
+        // C2-3: only a completed list without an error stages a row.
+        if (list.End != JobEnd.Completed || list.Error != null) return null;
+        if (!Admitted(origin)) return null;
         if (!list.Rows.Contains(row)) throw new ArgumentException("the row is not in the list");
         var word = steps.Letters(row, list.Cap).Select(l => new Letter(l.Cap, l.Item)).ToArray();
         SealedSpan span = Word.Seal(row, word);

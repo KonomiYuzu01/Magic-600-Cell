@@ -319,8 +319,10 @@ internal sealed partial class D02Driver : Node
     private int _next = -1, _wait = -1;
     private double _sleep;
     private string _doing = "start";
-    // B10: the older releases the script cancelled, and how many of those cancels changed the screen.
-    private int _cancels, _screenChanges;
+    // B10: the older releases the script cancelled. C2-1: the whole screen as it read before a cancel (or the negative
+    // control's change), with the jobs' clock held until the dump reads it again after frames have passed.
+    private int _cancels;
+    private IReadOnlyList<(string Group, string Text)>? _screenBefore;
 
     public D02Driver(ChromeFrame frame)
     {
@@ -437,6 +439,15 @@ internal sealed partial class D02Driver : Node
         {
             Dump();
             _wait = -1;
+            if (_screenBefore != null)
+            {
+                // The second read is written: the jobs' clock runs again.
+                _screenBefore = null;
+                if (ShellJumble.Host is { } host)
+                {
+                    host.Paused = false;
+                }
+            }
         }
         if (_next == 0 && _doing == "start")
         {
@@ -493,20 +504,30 @@ internal sealed partial class D02Driver : Node
         }
         else if (step.TryGetProperty("cancel_older", out _))
         {
-            // B10's Q3.b check in the shell: cancel every release at the named cap that is no longer the latest
-            // request, and count each cancel that changed the kept list on screen (N-1 says none may).
+            // B10's Q3.b check in the shell (C2-1): the jobs' clock is held, the whole screen is read, and the host
+            // cancels every release at the named cap that is no longer the latest request, as the job layer will;
+            // frames pass, and the dump reads the whole screen again. The run compares the two reads (N-1: no cancel
+            // of an older release may change the screen).
             _doing = "cancel older";
-            if (ShellJumble.Host?.Checks is { } kept)
+            if (ShellJumble.Host is { } host)
             {
-                foreach (var release in kept.Released.Where(r => r != kept.Pending).ToArray())
+                host.Paused = true;
+                _screenBefore = ScreenText.Of(_frame);
+                _cancels += host.CancelOlder();
+            }
+        }
+        else if (step.TryGetProperty("screen_control", out _))
+        {
+            // C2-1's negative control: the same two reads around a deliberate change (Local's open section closes),
+            // which the run must count as a change.
+            _doing = "screen control";
+            if (ShellJumble.Host is { } host)
+            {
+                host.Paused = true;
+                _screenBefore = ScreenText.Of(_frame);
+                if (host.Local.Open is { } open)
                 {
-                    var before = kept.Screen();
-                    kept.Cancel(release);
-                    _cancels++;
-                    if (!before.SequenceEqual(kept.Screen()))
-                    {
-                        _screenChanges++;
-                    }
+                    host.Local.Toggle(open);
                 }
             }
         }
@@ -546,7 +567,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, an open, a hover_cover, a focus or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -671,8 +692,38 @@ internal sealed partial class D02Driver : Node
                 json.WriteNumber("unasked", shown.Ledger.Count);
                 json.WriteEndObject();
             }
+            // The Focus layer (owner, 26 November 2026): its entry on Global's border, the right dock, the editor's line
+            // and Global's focus-layer keys.
+            if (ShellJumble.Host is { } filtered)
+            {
+                json.WriteStartObject("focus_layer");
+                var entry = _frame.Global is { } g && GodotObject.IsInstanceValid(g) ? g.Tools.GetNodeOrNull<Button>("FocusLayerEntry") : null;
+                json.WriteString("entry", entry?.Text ?? "");
+                json.WriteString("dock", _frame.Model.Docks[DockSide.Right].Open ?? "");
+                json.WriteString("line", filtered.Filter?.PreviewLine() ?? "");
+                json.WriteString("expression", filtered.FilterEditor.Expression.Text);
+                json.WriteStartArray("keys");
+                foreach (var layer in filtered.Layers.Count > 0 ? filtered.Layers[0].Predicates : Array.Empty<PredicateLayer>())
+                {
+                    json.WriteStringValue(FocusLayers.KeyText(layer));
+                }
+                json.WriteEndArray();
+                json.WriteEndObject();
+            }
             json.WriteNumber("cancels", _cancels);
-            json.WriteNumber("screen_changes_on_cancel", _screenChanges);
+            if (_screenBefore is { } before)
+            {
+                // The whole screen as it read before this step's cancel or control, beside "lines" read after it.
+                json.WriteStartArray("lines_before");
+                foreach (var (group, text) in before)
+                {
+                    json.WriteStartArray();
+                    json.WriteStringValue(group);
+                    json.WriteStringValue(text);
+                    json.WriteEndArray();
+                }
+                json.WriteEndArray();
+            }
             json.WriteStartArray("kept");
             foreach (var line in ShellJumble.Host?.Checks?.Screen() ?? Array.Empty<string>())
             {

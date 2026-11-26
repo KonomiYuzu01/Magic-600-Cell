@@ -79,6 +79,11 @@ public sealed class RepairListModel
         if (result.TryGetProperty("rows", out JsonElement r) && r.ValueKind == JsonValueKind.Array)
             foreach (JsonElement row in r.EnumerateArray())
                 rows.Add(new RepairRow(rows.Count + 1, row[0].GetInt32(), row[1].GetInt32(), row[2].GetInt32(), row[3].GetInt32(), row[4].GetInt64()));
+        // C2-4: the 17 October exception's order is the adapter's, menu order of x and then d; a record in any other
+        // order (by ΔN, say) is refused, never shown.
+        for (int i = 1; i < rows.Count; i++)
+            if ((rows[i].X, rows[i].D).CompareTo((rows[i - 1].X, rows[i - 1].D)) <= 0)
+                throw new FormatException("repair list: row " + rows[i].Number + " is not after row " + rows[i - 1].Number + " in (x, d) order");
         string? reason = result.TryGetProperty("by", out JsonElement by) && by.ValueKind == JsonValueKind.String ? by.GetString()
             : result.TryGetProperty("message", out JsonElement m) && m.ValueKind == JsonValueKind.String ? m.GetString() : null;
         string pin = parameters.TryGetProperty("order_digest", out JsonElement o) ? o.GetString() ?? "" : "";
@@ -137,11 +142,12 @@ public sealed class RepairListModel
     public void Unfocus() { if (Focused == null) return; Focused = null; Safe.Raise(Changed); }
 
     // Digits 1 to 9 pick rows 1 to 9, and only in the list's focused context; elsewhere a digit is not the list's.
+    // C2-3: a list that shows its error instead of its rows picks nothing.
     public RepairRow? Digit(int digit, IEnumerable<string> contexts) =>
-        contexts.Contains(Context) && digit is >= 1 and <= 9 && digit <= Rows.Count ? Rows[digit - 1] : null;
+        Error == null && contexts.Contains(Context) && digit is >= 1 and <= 9 && digit <= Rows.Count ? Rows[digit - 1] : null;
 
     // Enter picks the focused row, in the same context.
-    public RepairRow? Enter(IEnumerable<string> contexts) => contexts.Contains(Context) && Focused is int f ? Rows[f - 1] : null;
+    public RepairRow? Enter(IEnumerable<string> contexts) => Error == null && contexts.Contains(Context) && Focused is int f ? Rows[f - 1] : null;
 }
 
 // A repair row's steps (ADR-D02.34): step k's moving set is the inside set at its prefix state, after steps 1 to k−1.

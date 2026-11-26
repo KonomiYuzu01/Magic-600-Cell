@@ -172,6 +172,9 @@ class SampleTests(unittest.TestCase):
                 self.assertEqual(len(doc['release_checks']['rows']), 12, label)
                 self.assertGreater(doc['masks']['inside']['count'], 0, label)
                 rows = lists['completed']['rows']
+                # C2-4: the adapter's order, menu order of x and then d, strictly; never by delta N.
+                keys = [(row[0], row[1]) for row in rows]
+                self.assertTrue(all(a < b for a, b in zip(keys, keys[1:])), f'{label}: repair rows not in (x, d) order')
                 self.assertEqual(len(doc['repair_steps']), min(9, len(rows)), label)
                 for step, row in zip(doc['repair_steps'], rows):
                     self.assertEqual(step['delta_N'], row[4], label)

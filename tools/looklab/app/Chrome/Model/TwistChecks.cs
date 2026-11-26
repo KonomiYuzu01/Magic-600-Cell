@@ -146,6 +146,9 @@ public sealed class SampleJobs
 
     public void Request(long release, int item) => queue.Add((release, item, Now + Ticks));
 
+    // A newer request supersedes this one: the job is withdrawn and never completes. Answers whether it was queued.
+    public bool Cancel(long release) => queue.RemoveAll(q => q.Release == release) > 0;
+
     // One tick: the requests now due, oldest first.
     public IReadOnlyList<(long Release, int Item)> Tick()
     {

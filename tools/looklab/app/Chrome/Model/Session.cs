@@ -62,6 +62,10 @@ public sealed class PreviewModel
     // refused in a solving session, with its sentence.
     public static string? Admit(Origin origin, bool solvingSession) => PreviewAdmission.Admit(origin, solvingSession);
 
+    // Whether the session is a solving session, read from the session at each Show (C2-6). Without one the preview
+    // takes the stricter reading: a solving session.
+    public Func<bool>? SolvingSession { get; set; }
+
     public void SetSide(PreviewSide side) { if (side == Side) return; Side = side; Safe.Raise(Changed); }
     public void CycleSide() => SetSide((PreviewSide)(((int)Side + 1) % 3));
     public AffectedRange? Range() => Pending is not { Evaluated: true } p ? null
@@ -72,9 +76,15 @@ public sealed class PreviewModel
         : Math.Clamp((int)Math.Round((double)cells * effect.Moved / effect.Total), 1, cells - 1);
     private double shownAt = double.NegativeInfinity;
 
-    public Preview Show(string statement, string source, IReadOnlyList<string> moves, PreviewStatus status, string? reason,
+    public Preview Show(Origin origin, string statement, string source, IReadOnlyList<string> moves, PreviewStatus status, string? reason,
         IReadOnlyList<OrbitEffect> effects, string protection, double now, Func<IReadOnlyList<string>, PreviewCheck>? prefixCheck = null)
     {
+        // ADR-D02.40 (C2-6): the word's origin is admitted first; a refused word shows as a refused preview with its
+        // sentence, and nothing of it can commit.
+        if (Admit(origin, SolvingSession?.Invoke() ?? true) is string refused)
+        {
+            status = PreviewStatus.Refused; reason = refused; effects = Array.Empty<OrbitEffect>(); prefixCheck = null;
+        }
         if (status != PreviewStatus.Ready && string.IsNullOrWhiteSpace(reason)) throw J.Error("preview", "a preview that cannot commit states its reason");
         if (status == PreviewStatus.Ready && (effects.Count == 0 || moves.Count == 0)) throw J.Error("preview", "a preview that can commit has moves and evaluated effects");
         Replaced = Pending != null; if (Replaced) shownAt = now;

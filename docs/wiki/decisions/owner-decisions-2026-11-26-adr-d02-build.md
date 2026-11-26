@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-26-adr-d02-build
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; the build waits for the owner's go before B1; and, later that day, ADR-D01's whole frame enters the product shell on sample data in this build (part of ADR-D03's scope), after which B5 and B6 run without a stop for the owner's check; the product window turns, opens on the owner's view with smaller stickers, and Local shows only the turning cells; checkpoints do not stop the build; the drawing runs as a second track; and the finished build gets one Fable refinement round, then two Astra rounds, then the owner's freeze.
+summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; the build waits for the owner's go before B1; and, later that day, ADR-D01's whole frame enters the product shell on sample data in this build (part of ADR-D03's scope), after which B5 and B6 run without a stop for the owner's check; the product window turns, opens on the owner's view with smaller stickers, and Local shows only the turning cells; checkpoints do not stop the build; the drawing runs as a second track; and the finished build gets one Fable refinement round, then two Astra rounds, then the owner's freeze; the product window zooms with the wheel; and the 0.4 Piece Filter enters the default view as a Focus layer, with "piece filter" as a palette alias.
 related: [owner-decisions-2026-11-26-adr-d02-a4, owner-decisions-2026-11-25, owner-decisions-2026-11-22-adr-line-evening, owner-decisions-2026-11-22-design-art-path]
 supersedes: []
 claims:
@@ -20,6 +20,8 @@ claims:
   - {id: no-checkpoint-stops, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: fast-drawing-track-astra-freeze, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: fable-refinement-before-astra, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: wheel-zoom, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: focus-layer-piece-filter, evidence_kind: decision, checked_at: 2026-11-26}
 ---
 
 # Owner decisions on ADR-D02's build framework
@@ -195,3 +197,44 @@ The order, once B1 to B33 are built:
 
 One scan and one build round, with no iteration. Points outside ADR-D02's scope go to a follow-up list, and costly
 points that are not severe are deferred to after the freeze.
+
+## 12. Wheel zoom
+
+Said while the owner watched the product window, relayed by the design-system ADR line. The owner's words, translated:
+"That is fine, carry on. I cannot zoom in now; change this."
+
+The integrator's reading:
+- Look Lab's own viewport has no wheel zoom: it takes only a left drag, and its zoom is the preset's. So the product
+  adds one in Look Lab's terms. The wheel scales the zoom of the view under the pointer. Wheel up zooms in, by 1.1 per
+  notch, from 0.5 to 4 times the view's opening zoom.
+- The wheel takes no keyboard focus and never reaches the window's focus hand-back (section 6).
+- Local's own shape zooms the same way once it is drawn.
+
+## 13. The Piece Filter in the default view, as a Focus layer
+
+The owner's words, translated: "When can the Local view go in? Also, the Piece Filter should appear somewhere in
+the default view; add it too." On the name, asked whether to keep the 0.4 word against ADR-D01's frozen vocabulary:
+"Just give Focus layer an alias."
+
+The integrator's reading:
+- This pulls base-puzzle scope into ADR-D02's build on the owner's word. The refinement round's scope cap (section 11)
+  does not apply to it.
+- ADR-D01 revision 4 (.46, G21) makes the 0.4 Boolean filters focus layers, and its vocabulary turns "filter" into
+  "Focus layer". The word on screen stays "Focus layer", so nothing frozen is overruled. "piece filter" (in any case)
+  and "filter" are palette aliases of the eight rows (`filter.open`, `filter.preview`, `filter.apply`, `filter.edit`,
+  `filter.preset`, `filter.save`, `filter.load`, `structure.filter.compose`), whose palette labels read "Focus layer".
+- Placement: a "Focus layer =" entry on Global's border, in the default Solve view, after the focus-layer keys. It
+  opens the editor in the right dock.
+- The editor follows dispositions U6-022, U5-048, U5-050, U5-051 and U2-009:
+  - the whole Boolean expression is validated before anything applies, and rejected text stays as typed;
+  - replace, intersect, union and subtract;
+  - live query, fixed pieces and watched positions are kept apart and never composed silently;
+  - the exact count shows before apply, and a preview from another revision or text is refused at apply;
+  - presets, and save and load (save keeps exactly the applied layer; load stages for review);
+  - every control is reachable by keyboard.
+- The applied layer is a focus layer with its count, on the cycling key. A dimmed non-member is a reference and is
+  never picked; a hidden one is neither drawn nor picked.
+- The filter never relabels a piece, rebinds a key, or narrows the analysis, the protection or the collateral of the
+  259,800-label model.
+- Sample mode: counts are exact on the bound sample state's pose rows (domain, height, lattice). The engine's filter
+  (`c600-command`'s `filter.preview` and `filter.apply`) is not reached through the host yet; the editor says so.

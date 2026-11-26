@@ -36,12 +36,12 @@ internal static partial class Program
         Check(draft.CanStage && !draft.CanCommit && failed.Status == PreviewStatus.Impossible && failed.Reason!.Contains("Strict", StringComparison.Ordinal) && failed.Effects.Count == 5,
             "a failed Strict check did not stop at the preview");
         var history = new MoveHistory(); var preview = new PreviewModel { Head = () => history.Revision };
-        preview.Show(draft.Statement, "draft", draft.Word, failed.Status, failed.Reason, failed.Effects, failed.Protection, 0);
+        preview.Show(Origin.Solver, draft.Statement, "draft", draft.Word, failed.Status, failed.Reason, failed.Effects, failed.Protection, 0);
         Check(preview.CommitRefusal(10) == failed.Reason && preview.Take(10) == null && history.Entries.Count == 0, "a draft that failed Strict was committed");
         // A passing check with the Goal still unmet leaves the commit open.
         draft.SetMode(CheckMode.Net); PreviewCheck passed = draft.StagedCheck();
         Check(draft.CanCommit && draft.GoalResult == GoalResult.Unmet && passed.Status == PreviewStatus.Ready && passed.Protection.StartsWith("Net", StringComparison.Ordinal), "a passing check with the Goal unmet");
-        preview.Show(draft.Statement, "draft", draft.Word, passed.Status, passed.Reason, passed.Effects, passed.Protection, 20);
+        preview.Show(Origin.Solver, draft.Statement, "draft", draft.Word, passed.Status, passed.Reason, passed.Effects, passed.Protection, 20);
         Check(preview.Take(21) is { Moves.Count: 2 }, "a passing draft did not commit");
         string solve = Read("app/Live/LabSolve.cs");
         Check(solve.Contains("if (Draft.CanStage)", StringComparison.Ordinal) && solve.Contains("Draft.StagedCheck()", StringComparison.Ordinal), "the lab stages the draft without its check");
@@ -54,7 +54,7 @@ internal static partial class Program
             var core = new OperationDraft(); core.Edit("core: " + locking); core.SetMode(mode); PreviewCheck c = core.StagedCheck();
             Check(c.Status == alone.Status && c.Reason == alone.Reason && c.Effects.SequenceEqual(alone.Effects) && core.Checked == CheckResult.Failed && !core.CanCommit,
                 $"{mode} passed a draft whose effects move the locked orbit");
-            preview.Show(core.Statement, "draft", core.Word, c.Status, c.Reason, c.Effects, c.Protection, 40, core.PrefixCheck());
+            preview.Show(Origin.Solver, core.Statement, "draft", core.Word, c.Status, c.Reason, c.Effects, c.Protection, 40, core.PrefixCheck());
             Check(preview.Take(41) == null && history.Entries.Count == 0, $"{mode} committed a draft that moves the locked orbit");
         }
     }
@@ -83,14 +83,14 @@ internal static partial class Program
         PreviewCheck whole = SampleCheck.Check(word), first = SampleCheck.Check(word.Take(1).ToArray());
         Check(whole.Status == PreviewStatus.Ready && whole.Effects.All(e => e.Moved == 0) && first.Status == PreviewStatus.Impossible && first.Effects[SampleCheck.Locked].Moved > 0, "the fixture");
         var history = new MoveHistory(); var preview = new PreviewModel { Head = () => history.Revision, Recheck = (_, m) => SampleCheck.Check(m) };
-        preview.Show("preview disturb and restore", "own macro", word, whole.Status, whole.Reason, whole.Effects, whole.Protection, 0);
+        preview.Show(Origin.Solver, "preview disturb and restore", "own macro", word, whole.Status, whole.Reason, whole.Effects, whole.Protection, 0);
         preview.SetScrub(1);
         Check(preview.CommitRefusal(1) == null && preview.Take(1) == null && preview.Pending is { Id: 2, Status: PreviewStatus.Impossible } p && p.Reason == SampleCheck.LockedReason &&
             p.Moves.Count == 1 && p.Effects[SampleCheck.Locked].Moved > 0 && history.Entries.Count == 0, "a prefix took the whole word's check");
         Check(preview.Take(2) == null && preview.Replaced, "the failed prefix can be committed");
         // A prefix that passes its own recheck commits in the same action, with its own effects.
         string[] other = { Twist(5, 1, 1), Twist(7, 2, 1) }; PreviewCheck both = SampleCheck.Check(other);
-        preview.Show("preview two twists", "own macro", other, both.Status, both.Reason, both.Effects, both.Protection, 10);
+        preview.Show(Origin.Solver, "preview two twists", "own macro", other, both.Status, both.Reason, both.Effects, both.Protection, 10);
         preview.SetScrub(1); Preview? taken = preview.Take(11);
         Check(taken is { Id: 4, Status: PreviewStatus.Ready } && taken.Moves.Count == 1 && taken.Effects.Sum(e => e.Moved) < both.Effects.Sum(e => e.Moved) && preview.Pending == null, "a passing prefix did not commit with its own effects");
         Check(Read("app/Live/LabDemo.cs").Contains("Preview.Recheck = (_, moves) => SampleCheck.Check(moves);", StringComparison.Ordinal), "the lab gives the prefix no recheck");
@@ -102,7 +102,7 @@ internal static partial class Program
         PreviewCheck whole2 = strict.StagedCheck(), alone = single.StagedCheck();
         Check(whole2.Status == PreviewStatus.Ready && alone.Status == PreviewStatus.Impossible && SampleCheck.Check(new[] { Twist(5, 1, 1) }).Status == PreviewStatus.Ready, "the Strict fixture");
         int head = history.Revision, kept = history.Entries.Count;
-        preview.Show(strict.Statement, "draft", strict.Word, whole2.Status, whole2.Reason, whole2.Effects, whole2.Protection, 20, strict.PrefixCheck());
+        preview.Show(Origin.Solver, strict.Statement, "draft", strict.Word, whole2.Status, whole2.Reason, whole2.Effects, whole2.Protection, 20, strict.PrefixCheck());
         // A later change of the draft never changes the check the staged preview took.
         strict.SetMode(CheckMode.Net); preview.SetScrub(1);
         Check(preview.CommitRefusal(21) == null && preview.Take(21) == null && preview.Pending is { Status: PreviewStatus.Impossible } q && q.Reason == alone.Reason && q.Moves.Count == 1 &&
@@ -118,7 +118,7 @@ internal static partial class Program
         var history = new MoveHistory(); var preview = new PreviewModel { Head = () => history.Revision }; history.Changed += preview.Follow;
         history.Commit("hand", "a", "10:00", "commit a", new[] { Twist(5, 1, 1) });
         string[] staged = { Twist(402, 1, 1) }; PreviewCheck c = SampleCheck.Check(staged);
-        preview.Show("preview " + staged[0], "typed twist", staged, c.Status, c.Reason, c.Effects, c.Protection, 0);
+        preview.Show(Origin.Solver, "preview " + staged[0], "typed twist", staged, c.Status, c.Reason, c.Effects, c.Protection, 0);
         Check(preview.CommitRefusal(1) == null, "a fresh preview");
         // A Direct twist is a transaction of its own.
         string direct = Twist(7, 1, 1); history.Commit("hand", direct, "10:01", "commit " + direct, new[] { direct });
@@ -127,7 +127,7 @@ internal static partial class Program
             "an older preview stayed ready after a Direct twist");
         // The commit gate compares heads even where nothing follows the history.
         var bare = new PreviewModel { Head = () => history.Revision };
-        bare.Show("preview " + staged[0], "typed twist", staged, c.Status, c.Reason, c.Effects, c.Protection, 0); history.Undo();
+        bare.Show(Origin.Solver, "preview " + staged[0], "typed twist", staged, c.Status, c.Reason, c.Effects, c.Protection, 0); history.Undo();
         Check(bare.Pending!.Status == PreviewStatus.Ready && bare.CommitRefusal(5) == PreviewModel.HeadMoved && bare.Take(5) == null, "the commit gate does not compare heads");
         Check(Read("app/Live/LabDemo.cs").Contains("Preview.Head = () => Moves.Revision; Moves.Changed += Preview.Follow;", StringComparison.Ordinal), "the lab's preview does not follow the head");
     }
@@ -183,8 +183,8 @@ internal static partial class Program
     private static void A6OnlyEvaluatedEffectsSayUntouched()
     {
         var p = new PreviewModel();
-        Refuse(() => p.Show("preview r", "kept branch", new[] { "m" }, PreviewStatus.Ready, null, Array.Empty<OrbitEffect>(), "not checked", 0), "preview");
-        p.Show("preview pack", "package", Array.Empty<string>(), PreviewStatus.Refused, "not yours", Array.Empty<OrbitEffect>(), "Nothing was prepared.", 0);
+        Refuse(() => p.Show(Origin.Solver, "preview r", "kept branch", new[] { "m" }, PreviewStatus.Ready, null, Array.Empty<OrbitEffect>(), "not checked", 0), "preview");
+        p.Show(Origin.Solver, "preview pack", "package", Array.Empty<string>(), PreviewStatus.Refused, "not yours", Array.Empty<OrbitEffect>(), "Nothing was prepared.", 0);
         Check(!p.Pending!.Evaluated && p.Range() == null, "an unprepared package reads as evaluated");
         string[] kept = { Twist(5, 0, 1), Twist(117, 2, 1), Twist(341, 0, 1) };
         PreviewCheck replay = SampleCheck.Check(kept), identity = SampleCheck.Check(new[] { Twist(9, 1, 1), Twist(9, 1, -1) });
@@ -265,7 +265,7 @@ internal static partial class Program
         Preview Replayed((int Branch, string? Why) target)
         {
             string[] moves = h.Branches[target.Branch].Entries.SelectMany(x => x.Moves).ToArray(); PreviewCheck c = SampleCheck.Check(moves);
-            return preview.Show("preview replay", "kept branch", moves, c.Status, c.Reason, c.Effects, c.Protection, 0);
+            return preview.Show(Origin.Solver, "preview replay", "kept branch", moves, c.Status, c.Reason, c.Effects, c.Protection, 0);
         }
         Preview pointer = Replayed(h.ReplayTarget("1"));
         string palettePath = Read("app/Live/LabFrame.cs"); Check(palettePath.Contains("palette.Bind += row => scripts.Capture(row.Command);", StringComparison.Ordinal), "the palette binding path changed");

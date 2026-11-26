@@ -209,6 +209,14 @@ public sealed class FocusLayers
 
     public void AddPredicate(PredicateLayer layer) => AddPredicate(layer.Id, layer.Label, layer.Count, layer.Applies);
 
+    // Takes a predicate away, and its focus with it.
+    public bool RemovePredicate(string id)
+    {
+        if (predicates.RemoveAll(p => p.Id == id) == 0) return false;
+        if (Focused == id) Focused = null;
+        Safe.Raise(Changed); return true;
+    }
+
     // Focuses a predicate, or none; the focused predicate again un-focuses it.
     public bool Focus(string? id)
     {
