@@ -167,15 +167,30 @@ public sealed partial class ChromeFrame : Control
     // A count on a dock panel's button, shown while the panel is collapsed too (ADR-D01.27).
     public void SetBadge(string panel, string? text, string colourToken = "text.dim", string tooltip = "")
     {
-        if (text == null ? !badges.Remove(panel) : badges.TryGetValue(panel, out var old) && old == (text, colourToken, tooltip)) return;
+        bool had = badges.ContainsKey(panel);
+        if (text == null ? !badges.Remove(panel) : had && badges[panel] == (text, colourToken, tooltip)) return;
         if (text != null) badges[panel] = (text, colourToken, tooltip);
+        // A badge that only changes its words is written in place: a count that changes often (the error lamp's
+        // Problems count) must not lay the frame out again, or each failure that the new layout causes feeds the next.
+        if (text != null && had && !dirty)
+        {
+            var live = badgeLabels.Where(label => IsInstanceValid(label) && label.IsInsideTree() && label.GetMeta("badge").AsString() == panel).ToList();
+            if (live.Count > 0)
+            {
+                foreach (Label label in live) { label.Text = text; label.AddThemeColorOverride("font_color", Tokens.C(colourToken)); label.TooltipText = tooltip; }
+                return;
+            }
+        }
         dirty = true;
     }
     public string? Badge(string panel) => badges.TryGetValue(panel, out var badge) ? badge.Text : null;
+    // The badge labels of the current build, so a badge's words change in place.
+    private readonly List<Label> badgeLabels = new();
     private Label BadgeLabel(string panel)
     {
         (string text, string colour, string tip) = badges[panel];
         Label label = ChromeWidgets.Text(text, "MicroLabel"); label.AddThemeColorOverride("font_color", Tokens.C(colour)); label.TooltipText = tip; label.SetMeta("badge", panel);
+        badgeLabels.Add(label);
         return label;
     }
     // One thin strip at the top edge of the views: the inspector's first tier (ADR-D01.22).
@@ -366,9 +381,13 @@ public sealed partial class ChromeFrame : Control
 
     private Container Tight(Container container) { container.AddThemeConstantOverride("separation", 0); return container; }
 
+    // The window's size, or zero before the frame is in the tree (a build from the constructor): then no dock folds and
+    // the docks take their token sizes, and _Process builds again once the real size is known.
+    private Vector2 Window => IsInsideTree() ? GetViewportRect().Size : Vector2.Zero;
+
     private void Build()
     {
-        dirty = false; HoveredView = null; builtFor = GetViewportRect().Size;
+        dirty = false; HoveredView = null; builtFor = Window; badgeLabels.Clear();
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip); ChromeWidgets.Detach(seam); ChromeWidgets.Detach(pairHead);
@@ -476,11 +495,12 @@ public sealed partial class ChromeFrame : Control
         Control? content = null;
         // A narrow window keeps the pair whole: the right dock's panel folds to its rail first, then the left's. The
         // open panel stays open in the model and returns when the window is wide enough.
-        bool squeezed = GetViewportRect().Size.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
+        Vector2 window = Window;
+        bool squeezed = window.X > 0 && window.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
         if (!squeezed && dockPanels.FirstOrDefault(p => p.Side == side && p.Id == state.Open) is { } open)
         {
             // A side dock is at most DockShare of the window, so the pair keeps its room in a narrow window.
-            var holder = new PanelContainer { ThemeTypeVariation = side == DockSide.Left ? "DockLeft" : "DockRight", CustomMinimumSize = new Vector2(Math.Min(Tokens.Px("dock.width"), GetViewportRect().Size.X * DockShare), 0) };
+            var holder = new PanelContainer { ThemeTypeVariation = side == DockSide.Left ? "DockLeft" : "DockRight", CustomMinimumSize = new Vector2(window.X > 0 ? Math.Min(Tokens.Px("dock.width"), window.X * DockShare) : Tokens.Px("dock.width"), 0) };
             // A panel wider or taller than the dock scrolls in it; it never pushes the frame past the window.
             var scroll = new ScrollContainer { Name = "DockScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
             Control panelBody = PanelBody(open); panelBody.SizeFlagsHorizontal = SizeFlags.ExpandFill; scroll.AddChild(panelBody);
@@ -509,7 +529,7 @@ public sealed partial class ChromeFrame : Control
         if (dockPanels.FirstOrDefault(p => p.Side == DockSide.Bottom && p.Id == state.Open) is { } open)
         {
             // At most a quarter of the window's height, so the pair keeps its room in a low window.
-            var body = new MarginContainer { CustomMinimumSize = new Vector2(0, Math.Min(Tokens.Px("dock.height"), GetViewportRect().Size.Y * .25f)) };
+            var body = new MarginContainer { CustomMinimumSize = new Vector2(0, Window.Y > 0 ? Math.Min(Tokens.Px("dock.height"), Window.Y * .25f) : Tokens.Px("dock.height")) };
             var scroll = new ScrollContainer { Name = "DockScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
             open.Content.SizeFlagsHorizontal = SizeFlags.ExpandFill; open.Content.SizeFlagsVertical = SizeFlags.ExpandFill; scroll.AddChild(open.Content);
             body.AddChild(scroll); column.AddChild(new HSeparator()); column.AddChild(body);

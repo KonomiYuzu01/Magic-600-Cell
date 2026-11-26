@@ -23,6 +23,19 @@ public sealed partial class KeyMapPanel : PanelContainer
     // Contexts pinned for a picture or a test; null follows the pointer.
     public IReadOnlyList<string>? ContextsOverride { get; set; }
     public (bool Ctrl, bool Alt, bool Shift)? ModifiersOverride { get; set; }
+    // ADR-D02.42's held seat entries, while D02 is on: holding a seat key lights its seat's twelve twist keys.
+    private SeatKeys? seats;
+    public SeatKeys? Seats
+    {
+        get => seats;
+        set
+        {
+            seats = value; seen = "";
+            legend.Text = LegendWords + (value == null ? "" : " · a held seat key lights its twelve twist keys with their rotation orders");
+            if (Visible) Refresh();
+        }
+    }
+    private const string LegendWords = "whole outline: bound here · double outline: a twist key · broken outline: bound in another place · faint: unbound · filled: held";
 
     public KeyMapPanel(ChromeFrame frame, CommandRegistry registry)
     {
@@ -36,7 +49,7 @@ public sealed partial class KeyMapPanel : PanelContainer
         PinButton = new Button { Text = "Pin", ToggleMode = true, ThemeTypeVariation = "ToolButton", TooltipText = "Keep the key map open. A short press of its key does the same.", FocusMode = FocusModeEnum.None, Name = "KeyMapPin" };
         PinButton.Pressed += () => Shown.Pin(PinButton.ButtonPressed); top.AddChild(PinButton);
         board = new Board(this); column.AddChild(board);
-        legend = ChromeWidgets.Text("whole outline: bound here · double outline: a twist key · broken outline: bound in another place · faint: unbound · filled: held", "MicroLabel", true);
+        legend = ChromeWidgets.Text(LegendWords, "MicroLabel", true);
         column.AddChild(legend);
         Shown.Changed += () => { if (!IsInstanceValid(this)) return; Visible = Shown.Visible; PinButton.SetPressedNoSignal(Shown.Pinned); if (Visible) { MoveToFront(); Refresh(); } };
     }
@@ -70,7 +83,7 @@ public sealed partial class KeyMapPanel : PanelContainer
         Vector2 room = GetParent() is Control parent ? parent.Size : new Vector2(1600, 900);
         if (now != seen || Caps.Count == 0)
         {
-            seen = now; Caps = KeyMapModel.Caps(keys, registry, contexts, ctrl, alt, shift, down, (IReadOnlyDictionary<string, string>)new Dictionary<string, string>(Host));
+            seen = now; Caps = KeyMapModel.Caps(keys, registry, contexts, ctrl, alt, shift, down, (IReadOnlyDictionary<string, string>)new Dictionary<string, string>(Host), seats);
             head.Text = "  " + KeyMapModel.Header(keySet, contexts, ctrl, alt, shift);
             board.Unit = Math.Clamp(room.X * .86f / 13.2f, 46, 96); board.CustomMinimumSize = new Vector2(board.Unit * 13.2f, board.Unit * .82f * KeyMapModel.Rows.Count); board.QueueRedraw();
         }

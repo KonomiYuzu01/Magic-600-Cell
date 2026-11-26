@@ -1,7 +1,7 @@
 {
   "format": "magic600-design-jumble-words",
   "version": 1,
-  "note": "Every sentence ADR-D02 quotes for its surfaces, with the item that quotes it, and its display names. Each text is the record's words byte for byte, line wraps joined (D02WordsMatchRecord); a template with its example rebuilds the text. Rows give the display name of a command-table row; the row's own table label stays a palette synonym.",
+  "note": "Every sentence ADR-D02 quotes for its surfaces, with the item that quotes it, and its display names. Each text is the record's words byte for byte, line wraps joined (D02WordsMatchRecord); a template with its example rebuilds the text. Rows give the display name of a command-table row; the row's own table label stays a palette synonym. Built words are the build's own words for what an item states without quoting them (B27); test_d02_words.py checks them with the rest.",
   "record": "docs/architecture/1.0/design/adr/ADR-D02-jumble-research.md",
   "sentences": [
     {
@@ -12,7 +12,7 @@
     {
       "id": "local.empty",
       "item": "ADR-D02.12",
-      "text": "Name a cap: click its cell, or type its number."
+      "text": "Name a cap: click a numbered cap on the cap map, or F1 › jumble.cap.name <id>"
     },
     {
       "id": "legend.at_floor",
@@ -353,6 +353,14 @@
     {
       "item": "ADR-D02.18",
       "text": "mirrored"
+    }
+  ],
+  "built": [
+    {
+      "id": "global.chain",
+      "item": "ADR-D02.8",
+      "text": "projection chain (600-cell-Full)",
+      "note": "Global's border names its chain. The record says Global keeps 600-cell-Full's projection chain until R5 admits a chart; the border's words are built from it, not quoted."
     }
   ]
 }

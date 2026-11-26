@@ -17,8 +17,16 @@ public sealed class JumbleHost
     public LocalAccordion Local { get; } = new();
     public JumbleSurface Surface { get; }
     public CapMapPanel CapMap { get; }
+    // jumble.cap.name without a number (owner's bug report, 26 November 2026): the prompt of the caps in cap-id order.
+    public CapPromptOverlay Prompt { get; }
     // B9: the named cap, the threshold, the meeting caps and the job gate (ADR-D02.15, .16, .19).
     public CapNaming Naming { get; } = new();
+    // Local is never empty (owner, 26 November 2026): the cap Local draws, the named one or the default.
+    public LocalCap LocalCap { get; } = new();
+    // Whether a state is bound, so that Local can draw; the shell gives it, and a host without one binds none.
+    private Func<bool> stateBound = () => false;
+    // Local's empty sentence, which is also the hint on its readout while it draws a cap that is not named.
+    private readonly string hint;
     public CapThreshold Threshold { get; private set; } = CapThreshold.None;
     public CapJobs Jobs { get; }
     // A named cap's own record (u at a blocked cap needs its straddlers), where the source has one.
@@ -96,7 +104,7 @@ public sealed class JumbleHost
     public JumbleHost(ChromeFrame frame, IJumbleSource source, IReadOnlyDictionary<string, string> names, string emptySentence, string emptyBody,
         string unit = "seams", string above = "above 6")
     {
-        this.frame = frame; Source = source; this.unit = unit; this.above = above;
+        this.frame = frame; Source = source; this.unit = unit; this.above = above; hint = emptySentence;
         totals = GlobalTotals.Pending.Slots(unit, above);
         Entry = new EntrySlot(Settings);
         Surface = new JumbleSurface(Local, () => frame.Tokens, names, emptySentence, emptyBody);
@@ -107,7 +115,11 @@ public sealed class JumbleHost
         CapMap = new CapMapPanel(Settings, () => frame.Tokens, title);
         Jobs = new CapJobs(Naming);
         CapMap.Map.Naming = Naming;
-        CapMap.Map.Picked += cap => Name(cap);
+        CapMap.Map.Refusal = Refusal;
+        CapMap.Map.Picked += cap => Click(cap);
+        Prompt = new CapPromptOverlay(new CapPrompt(() => map, Refusal), () => frame.Tokens, () => Naming.Named);
+        Prompt.Picked += cap => Click(cap);
+        frame.Overlays.AddChild(Prompt);
         CapMap.ThresholdTyped += text => SetThreshold(text);
         Naming.Changed += _ => Named();
         frame.AddDockPanel(DockSide.Bottom, EntrySlot.CapMapPanel, title, "panel.capmap", CapMap);
@@ -268,6 +280,17 @@ public sealed class JumbleHost
 
     public bool Name(int cap) => Naming.Name(cap);
 
+    // Why a click on a cap names nothing now, or null.
+    public string? Refusal(int cap) => CapNaming.Refusal(cap, Source.State.Mode, Naming.Named);
+
+    // A click on a cap map cell, a typed number and Enter there, or the prompt's choice: it names the cap, or says why
+    // it names nothing in the status line (owner's bug report, 26 November 2026: a click did nothing visible).
+    public bool Click(int cap)
+    {
+        if (Refusal(cap) is { } why) { frame.Say(why, true); return false; }
+        return Name(cap);
+    }
+
     // Formulas from the field or the palette; an empty text clears the threshold. A formula that does not read
     // leaves the threshold as it was and says why.
     public bool SetThreshold(string text)
@@ -315,7 +338,26 @@ public sealed class JumbleHost
         CapReadout? readout = cap is int c ? (CapRecord != null ? CapRecord(c) : null) ?? map.Readout(c) : null;
         SetCap(readout);
         Surface.SetFacts(readout != null && layout != null ? CapFacts.Tier2(map, layout, readout) : null);
+        FollowLocal();
         Remark();
+    }
+
+    // The shell says whether a state is bound; Local draws the default cap while one is.
+    public void SetStateBound(Func<bool> bound)
+    {
+        stateBound = bound;
+        FollowLocal();
+        Place();
+    }
+
+    // Local's readout while it draws a cap that is not named, or none.
+    public string? LocalWords => LocalCap.Words(hint);
+
+    // The cap Local draws follows the naming and the binding; the empty sentence shows only while it draws none.
+    private void FollowLocal()
+    {
+        LocalCap.Follow(Naming.Named, stateBound());
+        Surface.SetDrawn(LocalCap.Shown != null);
     }
 
     // The threshold, the named cap and its meeting caps over the cap map, and the threshold row on Global's border.
@@ -338,8 +380,8 @@ public sealed class JumbleHost
         "structure.filter.compose" when !Enum.TryParse<FilterComposition>(argument, true, out _) => "it needs replace, intersect, union or subtract",
         _ when FilterRows.Contains(command) => null,
         _ when !Source.State.Mode => "Jumble is off",
-        "jumble.cap.name" when argument == null => "it needs a cap number, as in > jumble.cap.name 150",
-        "jumble.cap.name" when CapNaming.Typed(argument) == null => "no cap is numbered " + argument + "; caps are 0 to 599",
+        // Without a number the row opens the cap prompt.
+        "jumble.cap.name" when argument != null && CapNaming.Typed(argument) == null => "no cap is numbered " + argument + "; caps are 0 to 599",
         "jumble.cap.unname" when Naming.Named == null => "no cap is named",
         "jumble.capmap.threshold.set" when argument == null => "it needs formulas: N_c ≥ k, N_c ≤ k or N_c = F_c",
         "jumble.capmap.threshold.clear" when !Threshold.IsSet => "no threshold is set",
@@ -370,6 +412,7 @@ public sealed class JumbleHost
             case "filter.save": Filter?.Save(argument!); OpenFilter(); break;
             case "filter.load": Filter?.Load(argument!); OpenFilter(); break;
             case "structure.filter.compose": if (Enum.TryParse(argument, true, out FilterComposition c)) Filter?.Compose(c); OpenFilter(); break;
+            case "jumble.cap.name" when argument == null: Prompt.Open(); break;
             case "jumble.cap.name": if (CapNaming.Typed(argument) is int cap) Name(cap); break;
             case "jumble.cap.unname": Naming.Unname(); break;
             case "jumble.capmap.threshold.set": SetThreshold(argument ?? ""); break;
@@ -439,7 +482,28 @@ public sealed class JumbleHost
         if (!GodotObject.IsInstanceValid(frame) || frame.Global == null || frame.Local == null) return;
         Row(frame.Global, "JumbleTotals", totals, totalsMarked, Source.State.Mode);
         Row(frame.Local, "JumbleCap", cap ?? Array.Empty<ReadoutSlot>(), capMarked, Source.State.Mode && cap != null);
+        DefaultLine(frame.Local);
         Border(frame.Global, Source.State.Mode && Threshold.IsSet && CapThreshold.OnGlobalBorder(frame.Model.Docks[DockSide.Bottom].Open));
+    }
+
+    // Local's readout while it draws a cap that is not named: it says so, with the hint, which its tooltip repeats.
+    private void DefaultLine(ViewFrame view)
+    {
+        if (!GodotObject.IsInstanceValid(view)) return;
+        Label? line = view.Readouts.GetNodeOrNull<Label>("JumbleLocalDefault");
+        if (LocalWords is not { } words)
+        {
+            if (line != null) { view.Readouts.RemoveChild(line); line.QueueFree(); }
+            return;
+        }
+        if (line == null)
+        {
+            line = ChromeWidgets.Text("", "MicroLabel"); line.Name = "JumbleLocalDefault";
+            line.AutowrapMode = TextServer.AutowrapMode.WordSmart; line.MouseFilter = Control.MouseFilterEnum.Pass;
+            line.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill; view.Readouts.AddChild(line);
+        }
+        line.Text = words; line.TooltipText = hint;
+        line.AddThemeColorOverride("font_color", frame.Tokens.C("text.dim"));
     }
 
     // ADR-D02.15: while the cap map's dock is closed, the threshold field and its count stay on Global's border.
@@ -535,6 +599,14 @@ public sealed class JumbleHost
         frame.SetModeCell(JumbleChrome.ModeCell(state), state.LatticeFlag
             ? "Jumble is on, and every piece's pose is on the lattice"
             : "Jumble is on, and some pieces are off the lattice: N and the solving numerals are undefined");
+        // Tier 1 says what is unavailable while Jumble is on (ADR-D02.25): the named cap's line and the inspected cap's.
+        Inspect.State = state;
+        if (GodotObject.IsInstanceValid(CapMap))
+        {
+            bool flipped = CapMap.State.Mode != state.Mode;
+            CapMap.State = state;
+            if (flipped) CapMap.Refresh();
+        }
         bool undefined = JumbleNumerals.Undefined(state);
         if (strip != null && GodotObject.IsInstanceValid(strip)) strip.SetUndefined(undefined);
         if (rail != null && GodotObject.IsInstanceValid(rail)) rail.SetUndefined(undefined);
@@ -543,9 +615,11 @@ public sealed class JumbleHost
     }
 
     // The Jumble mark on a view's border while Jumble is on: a notched-corner glyph with its word, never colour alone.
+    // B27: then Global's projection chain (ADR-D02.8) and the exposed faces' unavailable state (ADR-D02.25).
     public void Marks(ViewFrame view)
     {
         if (JumbleChrome.Marked(Source.State, new[] { view.ViewName }).Count == 0) return;
         view.AddMark(JumbleChrome.Mark, JumbleChrome.MarkWords, "accent.strong", "Jumble is on: this view shows the jumbled puzzle");
+        foreach (ViewMark mark in JumbleViews.BorderMarks(Source.State, view.ViewName)) view.AddMark(mark.Glyph, mark.Words, mark.Colour, mark.Tooltip);
     }
 }

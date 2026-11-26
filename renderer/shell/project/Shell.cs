@@ -146,7 +146,11 @@ public partial class Shell : Control
         }
         try
         {
-            _chrome = new ShellChrome(this, folder, _host != IntPtr.Zero);
+            _chrome = new ShellChrome(this, folder, _host != IntPtr.Zero, () => RotationLinked);
+            if (_chrome.Sample is { } sample && D02.ShellJumble.On)
+            {
+                WireSample(sample);
+            }
             if (_echo is { } echo)
             {
                 MoveChild(echo, -1);
@@ -156,6 +160,117 @@ public partial class Shell : Control
         {
             GD.PushError($"the frame did not open: {error.Message}");
         }
+    }
+
+    /// <summary>ADR-D01.41: the rotation link the frames mark: none without Local, else whether Local is linked.</summary>
+    internal bool? RotationLinked => _localOpen ? D02.ShellLocal.Linked : null;
+
+    // ADR-D01.22 under --d02: Global's shape as last sent (cell shrink, sticker shrink, d4 and the opening's zoom, which
+    // the wheel scales) and its projection, or null while the core is not open; and each view's frame field as last seen.
+    private float[]? _globalShape;
+    private uint _globalProjection = HostLibrary.ProjectionPerspective;
+    private readonly Dictionary<string, double> _frameSeen = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Sample mode under --d02: the hooks of the shared library that the host sets. ADR-D01.62: the strip's anchors sit
+    /// where the core draws each view (its own projection, ported to Chrome/Model/CorePlaces.cs). ADR-D01.22: a View
+    /// edit in the inspector is drawn on the view it is written for, and Global's section starts from what is drawn.
+    /// </summary>
+    private void WireSample(LookLab.App.Live.SampleMount sample)
+    {
+        var opening = D02.ShellShape.Read(D02.ShellShape.OpeningPath());
+        if (sample.Places is { } places)
+        {
+            sample.GlobalView = () => _hopf || _chrome?.Opening() is not { Size.X: > 0, Size.Y: > 0 } g ? null
+                : new Magic600.Chrome.CoreView(_camera.Q, (_globalShape ?? opening)[0], (_globalShape ?? opening)[1], opening[2],
+                    D02.ShellShape.SentZoom(HostLibrary.View) ?? opening[3], (double)g.Size.X / g.Size.Y,
+                    _globalProjection == HostLibrary.ProjectionOrthographic);
+            // Local draws from its own rotation while unlinked (ADR-D01.41). Its spin is sent column-major as it lies
+            // (SpinOf), so the row-major rotation the core draws Local with is the spin transposed.
+            sample.LocalView = () => _localShape is not { } shape || _localCap is not int cap || cap < 0 || cap >= 600
+                || _chrome?.LocalOpening() is not { Size.X: > 0, Size.Y: > 0 } l ? null
+                : new Magic600.Chrome.CoreView(Transposed(D02.ShellLocal.Camera(_camera).Spin), 1 - shape.Gap, shape.StickerShrink, shape.D4,
+                    D02.ShellShape.SentZoom(HostLibrary.Local) ?? 1, (double)l.Size.X / l.Size.Y, shape.Projection == HostLibrary.ProjectionOrthographic,
+                    places.CellCentre(cap), D02.ShellLocal.FocusCos, shape.Spread);
+        }
+        if (_host == IntPtr.Zero || _hostLibrary is null)
+        {
+            return;
+        }
+        // Global's shape was set from opening.json when the core opened (Open): the section shows what is drawn.
+        _globalShape = opening;
+        sample.Views.Sync("Global", Magic600.Chrome.ViewFields.CellShrink, opening[0]);
+        sample.Views.Sync("Global", Magic600.Chrome.ViewFields.StickerShrink, opening[1]);
+        foreach (var view in Magic600.Chrome.ViewFields.Views)
+        {
+            _frameSeen[view] = sample.Views.Value(view, Magic600.Chrome.ViewFields.Frame);
+        }
+        sample.ApplyView = ApplyView;
+    }
+
+    /// <summary>
+    /// ADR-D01.22: draws a view's View fields on the core (cell shrink, sticker shrink and projection; 1 is
+    /// orthographic) and answers why it did not, or null. Global's shape keeps the wheel's zoom; Local's new shape and
+    /// focus are sent again by the follow code at the next step. The core draws no frame marks, so the frame field is
+    /// answered with a reason.
+    /// </summary>
+    private string? ApplyView(string view, Magic600.Chrome.ViewFields fields)
+    {
+        if (_host == IntPtr.Zero || _hostLibrary is not { } library)
+        {
+            return "the core is not open";
+        }
+        var cell = (float)fields.Value(view, Magic600.Chrome.ViewFields.CellShrink);
+        var sticker = (float)fields.Value(view, Magic600.Chrome.ViewFields.StickerShrink);
+        var projection = fields.Value(view, Magic600.Chrome.ViewFields.Projection) == 1
+            ? HostLibrary.ProjectionOrthographic : HostLibrary.ProjectionPerspective;
+        if (view == "Global" && _globalShape is { } global)
+        {
+            var shape = new[] { cell, sticker, global[2], global[3] };
+            var code = D02.ShellShape.Set(library, _host, HostLibrary.View, shape);
+            if (code == HostLibrary.Ok)
+            {
+                code = D02.ShellShape.ApplyZoom(library, _host, HostLibrary.View, D02.ShellJumble.Zoom.Factor(HostLibrary.View));
+            }
+            if (code == HostLibrary.Ok)
+            {
+                code = library.SetViewFocus(_host, HostLibrary.View, projection, HostLibrary.FocusNone, -1, 1);
+            }
+            if (code != HostLibrary.Ok)
+            {
+                return $"the core refused it ({code}: {library.LastError(_host)})";
+            }
+            _globalShape = shape;
+            _globalProjection = projection;
+        }
+        else if (view == "Local" && _localOpen && _localShape is { } local)
+        {
+            _localShape = local with { Projection = projection, Gap = 1 - cell, StickerShrink = sticker };
+            _localCap = -1;
+            _paned = default;
+        }
+        else
+        {
+            return $"{view} is not open";
+        }
+        var frame = fields.Value(view, Magic600.Chrome.ViewFields.Frame);
+        if (_frameSeen.TryGetValue(view, out var seen) && seen != frame)
+        {
+            _frameSeen[view] = frame;
+            return "the core draws no frame marks yet; the value is kept here";
+        }
+        return null;
+    }
+
+    /// <summary>A row-major 4×4 rotation from one sent column-major as it lies (see <see cref="SpinOf"/>).</summary>
+    private static double[] Transposed(double[] m)
+    {
+        var t = new double[16];
+        for (var i = 0; i < 16; i++)
+        {
+            t[i] = m[i % 4 * 4 + i / 4];
+        }
+        return t;
     }
 
     private void Open(string core, string host, string assets)
@@ -428,6 +543,9 @@ public partial class Shell : Control
     }
 
     /// <summary>A window point in Local's drawn opening (through the pane layout's hit), outside Global's.</summary>
+    // SA2_MIN_TEXTURE_PX of renderer/core/include/sa2_interop.h.
+    private const int CoreMinTexture = 128;
+
     private bool InLocal(Vector2 point) => _localOpen && ViewAt(point) == HostLibrary.Local;
 
     /// <summary>ADR-D02 B17: a window point in a drawn view as a pixel of the core's surface, or none.</summary>
@@ -479,7 +597,8 @@ public partial class Shell : Control
 
     /// <summary>
     /// ADR-D02 B18c: follows the named cap. Local is focused on it (its pole centred, only its turning region drawn) and
-    /// shown, and the chrome opens Local's slot; with no cap Local is hidden and its empty sentence takes the place.
+    /// shown, and the chrome opens Local's slot. Until a cap is named Local draws the default cap 0 (owner, 26 November
+    /// 2026: Local is never empty); only with no state bound is Local hidden behind its empty sentence.
     /// B17 (ADR-D01.41): a later selection re-frames Local on its sticker's cell while auto-framing is on.
     /// </summary>
     private void FollowLocalCap(HostLibrary library)
@@ -629,7 +748,9 @@ public partial class Shell : Control
         var (area, layout) = Openings(global);
         _steady = area == _wanted ? _steady + 1 : 0;
         _wanted = area;
-        if (area != _area && area.Size.X > 0 && area.Size.Y > 0 && (_chrome is null || _steady >= 6))
+        // The core refuses a surface under SA2_MIN_TEXTURE_PX (sa2_interop.h) on a side: a smaller opening (a frame
+        // still laying out) keeps the last surface instead of failing every frame.
+        if (area != _area && area.Size.X >= CoreMinTexture && area.Size.Y >= CoreMinTexture && (_chrome is null || _steady >= 6))
         {
             if (area.Position != _area.Position)
             {
