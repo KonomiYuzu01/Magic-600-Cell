@@ -98,15 +98,36 @@ fn limit_3_a_function_value_keeps_its_control_bit() {
     assert_eq!((d.path.as_str(), fields(&d)), ("0", (V, Some("Approx"), true, false)));
 }
 
-/// CT-LG2-05 (part: the limit that stays: a callable known only by its declared type). The refusal holds; its code
-/// is the direct approximate scalar's, because a declared function type has no place for the control bit until the
-/// IR freezes (PHS.49).
+/// CT-LG2-05 (part: the limit closed by the IR draft's control bit (T1 draft): a callable known only by its declared
+/// type). A declared function type carries the approximate-control bit, so an exact use of its result is the value
+/// selected under approximate control that it is, and a callable that selects its result so enters only a slot whose
+/// type keeps the bit.
 #[test]
-fn limit_3_a_declared_callable_type_cannot_carry_the_control_bit() {
-    let f = fn_ty(vec![exact(Ty::Nat), exact(Ty::Nat)], exact(approx()), bound(&[], &[]));
-    let mut params = xy();
-    params.push(param("f", exact(f)));
-    let called = Expr::Prim { op: Prim::ExactAdd, args: vec![call_value(var("f"), vec![var("x"), var("y")]), nat(1)] };
-    let d = only(&tool(vec![helper("add", params, exact(Ty::Nat), called)]));
+fn limit_3_a_declared_callable_type_carries_the_control_bit() {
+    let declared = |control: bool| {
+        let (params, result, effects) = (vec![exact(Ty::Nat), exact(Ty::Nat)], exact(approx()), bound(&[], &[]));
+        if control {
+            fn_ty_control(params, result, effects)
+        } else {
+            fn_ty(params, result, effects)
+        }
+    };
+    let add = |control: bool| {
+        let mut params = xy();
+        params.push(param("f", exact(declared(control))));
+        let called =
+            Expr::Prim { op: Prim::ExactAdd, args: vec![call_value(var("f"), vec![var("x"), var("y")]), nat(1)] };
+        helper("add", params, exact(Ty::Nat), called)
+    };
+    let d = only(&tool(vec![add(true)]));
+    assert_eq!((d.path.as_str(), fields(&d)), ("0", (V, Some("Approx"), true, false)));
+    // Without the bit, the declared result is a direct approximate scalar.
+    let d = only(&tool(vec![add(false)]));
     assert_eq!((d.path.as_str(), d.code), ("0", EXACT_REQUIRED));
+    // `pick` selects its result under approximate control: a slot without the bit would erase it.
+    let take = |control: bool| helper("take", vec![param("f", exact(declared(control)))], exact(Ty::Unit), unit());
+    let passes = || helper("pass", vec![], exact(Ty::Unit), call("take", vec![fn_ref("pick")]));
+    let d = only(&tool(vec![pick(), take(false), passes()]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), d.code), ("pass", "0", V));
+    assert!(report(&tool(vec![pick(), take(true), passes()])).is_admitted());
 }

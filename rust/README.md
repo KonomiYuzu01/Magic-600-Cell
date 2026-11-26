@@ -166,8 +166,14 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   results, workspace writes and reads, previews, receipt reads, budgets and calls of a value that is no function. A
   result is reported at the expression it returns, the rest of the innermost `let`. A literal pattern has no path of
   its own, so a pattern that does not fit the scrutinee is reported at the match; it compares as an exact equality
-  does, so an `Int` scrutinee takes a `Nat` pattern. The IR draft has no identity-tower levels, so the types carry
-  none and `LG2:type.level_mismatch` (LG2.3) does not arise yet.
+  does, so an `Int` scrutinee takes a `Nat` pattern.
+- The identity tower (T1 draft until the IR freeze, PHS.49; `c600-check/tests/tower.rs`). The IR draft's types carry
+  puzzle, level, goal and cost-unit indices, with the built-in sum types `Verdict`, `Partial`, `Reachability` and
+  `Derivation`, declared sum types (`Module::types`), `case` and `construct`, the kernel rows (`snapshot`, `project`,
+  `digest`, `compare`, `derive`, `import`, `reachability`, `check`) and `imply` along LG2.11's edges. A misfit of the
+  tower has its own code: `LG2:type.identity_mismatch`, `level_mismatch`, `cost_unit_mix`, `reachability_missing`,
+  `mode_mismatch` or `verdict_required`, at any depth and through generics. Source syntax waits for T1b and the
+  interpreter's values and host rows for T1c: until then the interpreter refuses these nodes at load.
 - One fault, one finding. Where a value's base type does not fit and an exactness rule would also apply to it, the base
   type comes first: the finding is `LG2:type.mismatch`, and the value's exactness is not checked, because the exactness
   rules assume a value of the right base type. LG2.22's precedence orders the exactness codes only, so this is a draft
@@ -204,11 +210,11 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   site instantiates with a workspace or preview effect is `LG3:effect.undeclared` at the call (LG3.5, LG3.6), also
   through a function value or a record field; recursion through a callable passed to a parameter whose bound has no
   effect variable is traced (LG2.20); and a function value or closure keeps its approximate-control bit, so an exact
-  use of its result is `LG2:type.exactness_violation` (LG2.22). Open: a callable known only by its declared type
-  carries no control bit, since the IR draft's function type has no place for one, so an exact use of its
-  approximate result is `LG2:type.exact_required`; the refusal holds and only the code differs until the IR freeze
-  (PHS.49). A further lead, not yet fixed: recursion steered inside the callee, where a helper calls its callable
-  parameter in a `display_if` branch and is passed a function that reaches the helper again, is admitted.
+  use of its result is `LG2:type.exactness_violation` (LG2.22). The IR draft's function type carries that bit (T1
+  draft), so a callable known only by its declared type keeps it too, and a callable that selects its result under
+  approximate control enters only a slot whose type keeps the bit. A further lead, not yet fixed: recursion steered
+  inside the callee, where a helper calls its callable parameter in a `display_if` branch and is passed a function
+  that reaches the helper again, is admitted.
 - Not in M1, because they need the runtime (M2, M3): the fixed acknowledgement of BND.43, the saved-word half of
   CT-LG3-07, the undo half of CT-LG3-03 and research output that never becomes a solving preview (BND.61). M3 builds
   the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 runs in
@@ -3663,12 +3669,14 @@ with no handle kept between calls and no callback. Like the IR, it is a draft un
 - Tests. CT-EV1-01, CT-EV1-02, CT-EV1-03, CT-EV1-05 and CT-EV1-07 run whole (`c600-editor/tests/ct_ev1_0N.rs`, each
   test named by its ID); `tests/completion.rs` covers completion contexts and `tests/dependencies.rs` EV1.9's
   dependency part.
-- DRAFT: the evidence obligation. The IR draft has no claim types, so a declaration the context requires to supply
-  evidence meets the obligation when it, or a function it calls, has an exact evidence sink (`use_evidence`).
+- DRAFT: the evidence obligation. It does not read the IR draft's claim types yet (T1 draft), so a declaration the
+  context requires to supply evidence meets the obligation when it, or a function it calls, has an exact evidence sink
+  (`use_evidence`).
 - Not built, which is no pass (PHS.63):
   - a layout that keeps comments: `format` still drops them;
   - inferred types of locals: the checker reports none, so hover gives a local's declared type or says why not;
-  - model and level on hover, and evidence references: the IR draft has no identity tower, levels or claims;
+  - model and level on hover, and evidence references: the identity tower, levels and claims exist in the IR draft
+    only (T1 draft) and have no source form yet;
   - field completion beyond the declared record types of parameters;
   - renaming a binding inside a recovery hole: such occurrences stay unchanged and are listed in `skipped`;
   - a missing dependency of a dependency is reported at the draft's import; identities are compared for the draft's
