@@ -113,7 +113,8 @@ and BND.84 treats it as before.
   program-prepared preview, which LP4's reading 1 held until this setting, opens with that implementation.
 - **Tests.** CT-BND-26 to CT-BND-28 assert refusal for every program-produced word today, and change with the
   implementation. CT-LG3-06 and CT-LG3-07 also wait for BND.37's class review.
-- **LP6.** Its start conditions are now met (PHS.36). It starts on the owner's word.
+- **LP6.** Its start conditions are now met (PHS.36). The owner set its start the same day: when the ADR-D03 and K2
+  lines start ([decision](owner-decisions-2026-11-26-log-flow.md)).
 - **Briefing.** The briefing records this decision (`f7ea074d`). The briefing is an input of the frozen migration
   format packet, so its pin is refreshed under FP.1 in a separate commit: its SHA-256 goes from `f930b089...cee5` to
   `e15e6622...4405`, and `input_commit` from `1f941e6f` to `f7ea074d`. The packet cites none of the edited lines; the
