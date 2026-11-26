@@ -205,8 +205,9 @@ fn lane_full(receipts: &[Receipt]) -> usize {
 }
 
 /// CT-DET-12 (part: one-job admission is atomic: eight concurrent submissions to a one-job lane admit one and refuse
-/// seven, a held key starts nothing more, and the program lane never passes its capacity; not run: other jobs'
-/// scheduling varied around a fixed run's payload and coverage, and child completion order).
+/// seven, a held key starts nothing more, and the program lane never passes its capacity; not run: the other jobs'
+/// scheduling varied around a fixed run, which `a_fixed_run_keeps_*` runs, child completion order, which DET.60 fixes
+/// to invocation order (a reading for the freeze card), and the runtime process's scheduling).
 /// CT-KN7-05 (whole), R-16: concurrent invocations and a held key cannot pass a one-job limit, and the program lane
 /// admits no more than its declared capacity. A held key's repeats either carry the first command ID and get its
 /// receipt, or carry new ones and find the lane full.
@@ -253,6 +254,107 @@ fn concurrent_submissions_cannot_pass_a_lane_limit() {
 
     let unknown = stop(&session, "stop.unknown", c600_session::JobId { epoch: session.epoch(), n: 999 });
     assert_eq!(code(&unknown), code::RESULT_GONE);
+}
+
+/// Stops each admitted job and waits until it ends as cancelled by the user.
+fn stop_all(session: &c600_session::Session, tag: &str, receipts: &[Receipt]) {
+    for (i, receipt) in receipts.iter().enumerate() {
+        stop(session, &format!("{tag}.stop{i}"), receipt.job.unwrap());
+        assert_eq!(finished(session, receipt).status, Status::Cancelled(CancelReason::ByUser), "{tag} {i}");
+    }
+}
+
+/// Submits `count` endless queries as `lane`, one after another.
+fn endless(session: &c600_session::Session, tag: &str, lane: Lane, count: usize) -> Vec<Receipt> {
+    (0..count)
+        .map(|i| {
+            let spec = job("long_query", Vec::new(), vec![Input::Current], lane, JobKind::Query);
+            let receipt = try_submit(session, &format!("{tag}{i}"), spec);
+            assert!(matches!(receipt.status, Status::Running(_)), "{tag}{i}: {receipt:?}");
+            receipt
+        })
+        .collect()
+}
+
+/// CT-DET-12 (part: the session's half: a count job cut off by its steps, a diff that completes and a compare cut
+/// off by its kernel cost each keep their exact outcome, stop step, charges, covered inputs and value in five
+/// schedules of other jobs around them: endless jobs running beside them, jobs cut off by a budget before and after
+/// them, jobs cancelled while they run, a race of concurrent submissions, and the same jobs after a reopen; one-job
+/// admission stays atomic in `concurrent_submissions_cannot_pass_a_lane_limit`; not run: child completion order,
+/// which DET.60 fixes to invocation order (a reading for the freeze card), and the runtime process's scheduling).
+#[test]
+fn a_fixed_run_keeps_its_payload_and_coverage_whatever_runs_around_it() {
+    let (session, disk) = session_with(Options { program_capacity: 12 });
+    commit(&session, "A", &[1, 2, 3]);
+    let fixed = |which: usize| match which {
+        0 => budgeted("count", vec![Value::int(20)], Amounts { steps: 10_000, ..WIDE }),
+        1 => budgeted("diff", Vec::new(), WIDE),
+        _ => budgeted("compare", Vec::new(), Amounts { kernel_cost: 1, ..WIDE }),
+    };
+    let baseline: Vec<_> = (0..3).map(|i| fingerprint(&run(&session, &format!("base{i}"), fixed(i)).1)).collect();
+    assert_eq!(baseline[0].0, JobOutcome::CutOff(stop_code::STEPS));
+    assert_eq!(baseline[2].0, JobOutcome::CutOff(stop_code::KERNEL_COST));
+    assert!(baseline[0].3.as_ref().is_some_and(|s| s.stop.is_some()), "a cut-off names its step");
+    assert_eq!(
+        (&baseline[1].0, baseline[1].4.is_some()),
+        (&JobOutcome::Completed, true),
+        "a completed run has a value"
+    );
+    let tiny = || budgeted("count", vec![Value::int(20)], Amounts { steps: 50, ..WIDE });
+    let check = |session: &c600_session::Session, schedule: &str, which: usize, result: &JobResult| {
+        assert_eq!(fingerprint(result), baseline[which], "{schedule}, run {which}");
+    };
+
+    for which in 0..3 {
+        // 1. Endless jobs of both lanes run beside it.
+        let others = [
+            endless(&session, &format!("e1x{which}."), Lane::Exclusive, 1),
+            endless(&session, &format!("e1p{which}."), Lane::Program, 3),
+        ]
+        .concat();
+        let (_, result) = run(&session, &format!("s1.{which}"), fixed(which));
+        check(&session, "beside endless jobs", which, &result);
+        stop_all(&session, &format!("s1.{which}"), &others);
+
+        // 2. Jobs cut off by a budget are submitted before and after it, and not waited for in between.
+        let before: Vec<_> = (0..3).map(|i| try_submit(&session, &format!("s2b{which}{i}"), tiny())).collect();
+        let admitted = try_submit(&session, &format!("s2.{which}"), fixed(which));
+        let after: Vec<_> = (0..3).map(|i| try_submit(&session, &format!("s2a{which}{i}"), tiny())).collect();
+        let result = session.wait_job(admitted.job.expect("admitted")).unwrap();
+        check(&session, "among cut-off jobs", which, &result);
+        for receipt in before.iter().chain(&after) {
+            let result = session.wait_job(receipt.job.expect("admitted")).unwrap();
+            assert_eq!(result.outcome, JobOutcome::CutOff(stop_code::STEPS), "the neighbours are cut off as declared");
+        }
+
+        // 3. Jobs are cancelled while it runs: it is submitted first, the others stop under it.
+        let admitted = try_submit(&session, &format!("s3.{which}"), fixed(which));
+        let others = endless(&session, &format!("e3.{which}."), Lane::Program, 4);
+        stop_all(&session, &format!("s3.{which}"), &others);
+        let result = session.wait_job(admitted.job.expect("admitted")).unwrap();
+        check(&session, "among cancelled jobs", which, &result);
+
+        // 4. A race of concurrent submissions fills the program lane while it is submitted.
+        let racers = admitted_of(race(&session, &format!("r{which}."), Lane::Program, 6));
+        let admitted = try_submit(&session, &format!("s4.{which}"), fixed(which));
+        let result = session.wait_job(admitted.job.expect("admitted")).unwrap();
+        check(&session, "beside a race", which, &result);
+        stop_all(&session, &format!("s4.{which}"), &racers);
+    }
+
+    // 5. The same jobs after a reopen, with an endless job running beside them.
+    let reopened = reopen(&disk);
+    let others = endless(&reopened, "e5", Lane::Exclusive, 1);
+    for which in 0..3 {
+        let (_, result) = run(&reopened, &format!("s5.{which}"), fixed(which));
+        check(&reopened, "after a reopen", which, &result);
+    }
+    stop_all(&reopened, "s5", &others);
+}
+
+/// The receipts of the admitted jobs of a race.
+fn admitted_of(receipts: Vec<Receipt>) -> Vec<Receipt> {
+    admitted(&receipts)
 }
 
 /// CT-KN7-07 (whole), KN7.5, KN7.3: after a commit, a digest-pinned job finishes on its original input. Its result

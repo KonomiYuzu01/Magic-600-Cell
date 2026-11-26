@@ -773,8 +773,9 @@ fn ct_det_11_children_and_recursion_cannot_mint_allowance() {
 }
 
 /// CT-DET-12 (part: concurrent RT1 runs in one process sharing one loaded program; the atomic admission of a one-job
-/// lane is in `c600-session/tests/jobs.rs`; not run: other jobs of the session's scheduler or the runtime process
-/// varied around a fixed run, and child completion order, since no crate builds child jobs): runs with fixed inputs
+/// lane and the session's other jobs varied around a fixed run are in `c600-session/tests/jobs.rs`; not run: the
+/// runtime process's scheduling around a fixed run, and child completion order, which DET.60 fixes to invocation
+/// order (a reading for the freeze card)): runs with fixed inputs
 /// keep their exact payloads, charges and cut-offs whatever other runs are scheduled beside them, cancelled ones
 /// included.
 #[test]
