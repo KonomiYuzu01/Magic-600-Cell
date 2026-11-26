@@ -80,10 +80,18 @@ public static class ShellLocal
         new[] { 1 - shape.Gap, shape.StickerShrink, shape.D4, (float)Zoom(shape, aspect) };
 
     /// <summary>
-    /// ADR-D01.41: Local re-frames on a selection change by default. Auto-framing can be turned off for Local (a
-    /// script turns it off through the same switch); then Local follows only the named cap.
+    /// ADR-D01.40/.41 for both puzzles (step C-.40): what Local frames and its readout, the shared library's
+    /// <see cref="Magic600.Chrome.LocalPlan"/>. The base puzzle (M600_PUZZLE jumble-off) draws cell 0's turning region
+    /// with no D02 state; the jumbled puzzle follows the named cap or the Jumble host's.
     /// </summary>
-    public static bool AutoFrame { get; set; } = true;
+    public static Magic600.Chrome.LocalPlan Plan { get; } =
+        new(System.Environment.GetEnvironmentVariable("M600_PUZZLE") == EventLog.Puzzles[1]);
+
+    /// <summary>
+    /// ADR-D01.41: Local re-frames on a selection change by default. Auto-framing can be turned off for Local (a
+    /// script turns it off through the same switch); then Local follows only the cap.
+    /// </summary>
+    public static bool AutoFrame { get => Plan.AutoFrame; set => Plan.AutoFrame = value; }
 
     /// <summary>
     /// ADR-D01.41: the 4D rotation of Global and Local is linked by default and can be unlinked. While linked both
@@ -151,6 +159,14 @@ public static class ShellLocal
         Write(json, "sent_global", _sentGlobal);
         Write(json, "sent_local", _sentLocal);
         json.WriteEndObject();
+        // Step C-.40: the plan's puzzle, the cap Local follows, the cell it frames (-1: none) and its readout.
+        json.WriteStartObject("local_plan");
+        json.WriteBoolean("jumble", Plan.Jumble);
+        json.WriteNumber("cap", Plan.Cap ?? -1);
+        json.WriteNumber("framed", Plan.Framed ?? -1);
+        json.WriteBoolean("by_selection", Plan.BySelection);
+        json.WriteString("words", Plan.Words ?? "");
+        json.WriteEndObject();
     }
 
     private static void Write(Utf8JsonWriter json, string name, ShellCamera camera)
@@ -187,33 +203,16 @@ public static class ShellLocal
         json.WriteEndArray();
     }
 
-    private static int? _cap, _named, _selected;
-    private static bool _selectionNewer;
-
-    /// <summary>The cap Local follows: the named cap, else the Jumble host's default (the D02 script player's dump).</summary>
-    public static int? Cap => _cap;
+    /// <summary>The cap Local follows: the named cap, else the Jumble host's default, or cell 0 on the base puzzle.</summary>
+    public static int? Cap => Plan.Cap;
 
     /// <summary>
-    /// ADR-D02 B17 (ADR-D01.41): the cell Local frames, the newer of two sources. Naming a cap frames that cap; a later
-    /// selection, while auto-framing is on, frames the cell its sticker occupies (none off the lattice). Clearing the
-    /// selection, or naming another cap, returns Local to the named cap. Local is never empty (owner, 26 November
-    /// 2026): with no cap named it follows the host's LocalCap while a state is bound, the cap named last in the
-    /// session or, before any naming, the lowest-numbered cap; the default is drawn, never named.
+    /// ADR-D02 B17 (ADR-D01.41): the cell Local frames, the newer of two sources (<see cref="Plan"/>). Naming a cap
+    /// frames that cap; a later selection, while auto-framing is on, frames the cell its sticker occupies (none off the
+    /// lattice). Clearing the selection, or naming another cap, returns Local to the cap. Local is never empty (owner,
+    /// 26 November 2026): with no cap named it follows the host's LocalCap while a state is bound, the cap named last
+    /// in the session or, before any naming, the lowest-numbered cap; the default is drawn, never named. On the base
+    /// puzzle the cap is cell 0 (step C-.40).
     /// </summary>
-    public static int? Frame(int? namedCap)
-    {
-        if (namedCap != _named)
-        {
-            _named = namedCap;
-            _selectionNewer = false;
-        }
-        _cap = namedCap ?? ShellJumble.Host?.LocalCap.Shown;
-        var picked = ShellPick.Selection?.Cell;
-        if (picked != _selected)
-        {
-            _selected = picked;
-            _selectionNewer = picked is not null;
-        }
-        return AutoFrame && _selectionNewer && _selected is int cell ? cell : _cap;
-    }
+    public static int? Frame(int? namedCap) => Plan.Follow(namedCap, ShellJumble.Host?.LocalCap.Shown, ShellPick.Selection?.Cell);
 }

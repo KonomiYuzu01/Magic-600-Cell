@@ -873,6 +873,70 @@ EXPECT["two-views"] = expect_two_views
 ON_FIXTURE.add("two-views")
 EVENT_CHECKS = {"two-views": check_two_views_events}
 
+
+# Step C-.40 (ADR-D01.40/.41): Local on the base puzzle (600-cell-Full, Jumble off), with no D02 state. The script
+# names its puzzle; the run uses the build's own base-puzzle session fixture.
+BASE_LOCAL_STEPS = ["start", "wait 2500 ms", "click 0.5 0.5", "wait 800 ms", "click 0.42 0.38", "wait 800 ms",
+                    "click 0.58 0.62", "wait 800 ms", "click 0.02 0.02", "wait 800 ms", "chord J", "wait 700 ms",
+                    "chord Ctrl+Z", "wait 3000 ms"]
+BASE_LOCAL_DEFAULT = "Local shows cell 0's turning region by default. Select a sticker to frame its cell."
+STICKERS_PER_CELL = 433  # 259,800 sticker slots over 600 cells (ShellPick.Picked.Cell)
+
+
+def base_local_words(cell: int, by_selection: bool) -> str:
+    return (f"Local frames cell {cell}, the selected sticker's cell. Clear the selection to return to cell 0."
+            if by_selection else BASE_LOCAL_DEFAULT)
+
+
+def base_local_problems(dumps: list[dict]) -> list[str]:
+    """Local is drawn on the base puzzle from the opening state on: its plan is Jumble off, its opening is shown and
+    it frames a cell at every step. With nothing selected it frames cell 0 and its readout says that this is the
+    default; at the wait after each click it frames the selected sticker's cell (ADR-D01.41), or cell 0 after a miss;
+    the corner click clears the selection; the twist and the undo keep Local on cell 0. A hit is not required: the
+    host picks only in Jumble (its retained view of the base puzzle stamps no sticker), so on the base puzzle every
+    click is a miss until the host picks there; the count is printed."""
+    steps = [dump["do"] for dump in dumps]
+    if steps[:len(BASE_LOCAL_STEPS)] != BASE_LOCAL_STEPS:
+        return [f"the steps written were {steps}"]
+    problems, hits = [], 0
+    for index in range(1, len(BASE_LOCAL_STEPS)):
+        dump = dumps[index]
+        plan, local = dump.get("local_plan") or {}, dump.get("local") or {}
+        if plan.get("jumble") is not False:
+            problems.append(f"step {index}: Local's plan is not the base puzzle's (Jumble on or missing)")
+        if local.get("opening") is not True:
+            problems.append(f"step {index}: Local's opening is hidden")
+        if plan.get("framed", -1) < 0:
+            problems.append(f"step {index}: Local frames no cell")
+        if not steps[index].startswith("wait "):
+            continue
+        selection = (dump.get("pick") or {}).get("selection")
+        slot = selection.get("slot") if selection else None
+        cell = slot // STICKERS_PER_CELL if slot is not None else 0
+        hits += slot is not None and steps[index - 1].startswith("click ")
+        if plan.get("framed") != cell or plan.get("by_selection") is not (slot is not None):
+            problems.append(f"step {index}: Local frames cell {plan.get('framed')} (by selection: "
+                            f"{plan.get('by_selection')}), not the selected sticker's cell {cell}" if slot is not None
+                            else f"step {index}: Local frames cell {plan.get('framed')} with nothing selected, not cell 0")
+        words = base_local_words(cell, slot is not None)
+        if plan.get("words") != words or words not in texts(dump, "view:Local"):
+            problems.append(f"step {index}: Local's readout reads {plan.get('words')!r}, expected {words!r} on its frame")
+    if (dumps[9].get("pick") or {}).get("selection") is not None:
+        problems.append("the click in the opening's corner did not clear the selection")
+    print(f"base-local: {hits} of 3 clicks hit (the host picks only in Jumble); Local framed cells "
+          f"{sorted({(dump.get('local_plan') or {}).get('framed', -1) for dump in dumps[1:len(BASE_LOCAL_STEPS)]})}")
+    return problems
+
+
+def expect_base_local(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Step C-.40: Local on the base puzzle (base_local_problems), then the linked rotation of ADR-D01.41 by the same
+    drags as two-views (check_local_drag). The frame rows decide that both views show every revision."""
+    return base_local_problems(dumps) + (check_local_drag(dumps) if len(dumps) > len(BASE_LOCAL_STEPS) else [])
+
+
+EXPECT["base-local"] = expect_base_local
+EVENT_CHECKS["base-local"] = check_two_views_events
+
 # B23, bare: the Hopf-ring opening. The shell sets the layout only when the opening file names the rings, and the same
 # file's field of view gives the zoom, so the zoom sent is the run's sign that Global opened on the rings (a refused
 # layout stops the shell before its first frame).
@@ -1232,10 +1296,12 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         started["process"], started["at"] = process, clock()
         return process
 
-    arguments = ["--out", str(out), "--frame", "--puzzle", "jumble-on", "--d02", "--d02-script", str(path)]
+    written = json.loads(path.read_text(encoding="utf-8"))
+    # A script may name its puzzle (step C-.40: base-local runs the base puzzle, Jumble off); the default is Jumble on.
+    arguments = ["--out", str(out), "--frame", "--puzzle", written.get("puzzle", "jumble-on"), "--d02", "--d02-script", str(path)]
     arguments += ["--sample"] if script in IN_SAMPLE_MODE else []
     # A script may name the window's size (the fit scripts: the owner's 2000x1200 and a smaller 1280x720).
-    resolution = json.loads(path.read_text(encoding="utf-8")).get("resolution")
+    resolution = written.get("resolution")
     arguments += ["--resolution", resolution] if resolution else []
     arguments += ["--build", str(build)] if build else []
     arguments += ["--d02-state", state] if state else []
