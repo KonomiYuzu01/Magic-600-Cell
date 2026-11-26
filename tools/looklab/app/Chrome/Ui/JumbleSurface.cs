@@ -5,8 +5,9 @@ using Godot;
 
 namespace Magic600.Chrome;
 
-// Local's Jumble content (ADR-D02.6, .12): the empty sentence while no cap is named, then the four sections, one open
-// at a time, each closed one a one-line header with its count. The cut slice (B20) and the raw view (B21) draw later;
+// Local's Jumble content (ADR-D02.6, .12): the empty sentence while Local draws no cap (no state bound; Local is never
+// empty otherwise, owner, 26 November 2026), then the four sections, one open at a time, each closed one a one-line
+// header with its count. The cut slice (B20) and the raw view (B21) draw later;
 // until then Local shows this. Every section is empty until its build step fills it.
 public sealed partial class JumbleSurface : VBoxContainer
 {
@@ -21,6 +22,8 @@ public sealed partial class JumbleSurface : VBoxContainer
     // The named cap's Tier 2 facts in their fixed order (ADR-D02.19), shown in the Named cap section; none while no
     // cap is named.
     private IReadOnlyList<(string Label, string Fact)>? facts;
+    // Whether Local draws a cap, named or the default (LocalCap).
+    private bool drawn;
     // The named cap's kept twist checks (B10), shown in the Twist check section.
     private KeptChecks? checks;
     // The named cap's covers (B11), shown in the Cap covers section, with its hover's inspect line and the table's fold.
@@ -68,6 +71,13 @@ public sealed partial class JumbleSurface : VBoxContainer
         if (IsInstanceValid(this)) Refresh();
     }
 
+    public void SetDrawn(bool value)
+    {
+        if (drawn == value) return;
+        drawn = value;
+        if (IsInstanceValid(this)) Refresh();
+    }
+
     public void SetFacts(IReadOnlyList<(string Label, string Fact)>? value)
     {
         facts = value;
@@ -77,7 +87,7 @@ public sealed partial class JumbleSurface : VBoxContainer
     public void Refresh()
     {
         TokenSet t = tokens();
-        sentence.Visible = facts == null;
+        sentence.Visible = facts == null && !drawn;
         // The marks row sits space.3 below the top edge and is at most a control high (owner, 26 November 2026: the
         // marks covered the sentence at 2000x1200).
         gap.Visible = sentence.Visible; gap.CustomMinimumSize = new Vector2(0, MarksRoom(t));

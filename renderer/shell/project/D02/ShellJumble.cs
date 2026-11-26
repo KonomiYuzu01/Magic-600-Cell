@@ -112,6 +112,8 @@ public static class ShellJumble
         set
         {
             _host = value;
+            // Local is never empty: the host draws the default cap while a state is bound (owner, 26 November 2026).
+            value?.SetStateBound(() => Bound != null);
             if (value != null && SeedWord() is { } word)
             {
                 value.Words.Bind(word, done => StateAfter("s7001-" + done.ToString(CultureInfo.InvariantCulture)));
@@ -812,6 +814,14 @@ internal sealed partial class D02Driver : Node
                 var marks = shown.CapMap.Map;
                 json.WriteString("map_marks", marks.Threshold.Formula + "|" + marks.Named + "|" + string.Join(",", marks.Meeting) + "|" + shown.Naming.Hovered);
                 json.WriteNumber("named", shown.Naming.Named ?? -1);
+                // Local is never empty: the cap the host gives Local and the cap the shell frames there (-1: none),
+                // whether Local's opening is shown, and Local's readout while the cap is not named.
+                json.WriteStartObject("local");
+                json.WriteNumber("cap", shown.LocalCap.Shown ?? -1);
+                json.WriteNumber("framed", ShellLocal.Cap ?? -1);
+                json.WriteBoolean("opening", _frame.LocalOpeningShown);
+                json.WriteString("words", shown.LocalWords ?? "");
+                json.WriteEndObject();
                 // The cap map's hovered cell, the pointer's shape over it and its tooltip.
                 json.WriteStartObject("cap_map");
                 json.WriteNumber("hovered", marks.Hovered ?? -1);

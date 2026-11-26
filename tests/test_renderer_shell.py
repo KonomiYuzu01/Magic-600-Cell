@@ -1660,22 +1660,26 @@ class D02Host(unittest.TestCase):
 
         samples = ROOT / "tools" / "looklab" / "data" / "samples" / "jumble"
 
-        def dumps(cell, undefined, marks=True, state="ia-40", drop=None):
+        def dumps(cell, undefined, marks=True, state="ia-40", drop=None, empty=False):
             # B8: the cap map's head and its class counts; a sample without rim rows leaves every cap pending.
             classes = json.loads(text(samples / state / "totals.json"))["cap_classes"]
             if not (samples / state / "rim.json").is_file():
                 classes = {"blocked": 0, "closed": 0, "at_floor": 0, "above_floor": 0, "pending": 600}
             words = {"blocked": "blocked", "closed": "closed", "at_floor": "at floor (N_c = F_c > 0)",
                      "above_floor": "above floor", "pending": "pending"}
-            lines = [["frame", cell], ["view:Local", "Name a cap: click a numbered cap on the cap map, or F1 › jumble.cap.name <id>"],
-                     ["panel:jumble.cap_map", "Cap map · 20 rings of 30 caps"],
+            # Local is never empty (owner, 26 November 2026): the default cap 0, its readout saying so; with
+            # empty=True, the old empty Local.
+            lines = [["frame", cell], ["view:Local", run.LOCAL_EMPTY if empty else run.LOCAL_DEFAULT],
+                     ["panel:jumble.cap_map", "no cap named"], ["panel:jumble.cap_map", "Cap map · 20 rings of 30 caps"],
                      ["panel:jumble.cap_map", "contact classes · armed   never hidden · armed"]]
             lines += [["panel:jumble.cap_map", f"{words[key]} · {classes[key]}"] for key in words if key != drop]
             lines += [["view:Local", f"▸ {name} · 0"] for name in ("Named cap", "Twist check", "Cap covers", "Repair list")]
             lines += [["frame", "undefined"]] * undefined
             tips = {"Global": ["jumble: Jumble is on"], "Local": ["jumble: Jumble is on"]} if marks else {}
-            return [{"do": do, "lines": lines, "marks": tips} for do in steps]
+            local = {"cap": -1 if empty else 0, "framed": -1, "opening": False, "words": "" if empty else run.LOCAL_DEFAULT}
+            return [{"do": do, "lines": lines, "marks": tips, "named": -1, "local": local} for do in steps]
         self.assertEqual(run.expect_host(dumps("Jumble · off the lattice", 2), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_host(dumps("Jumble · off the lattice", 2, empty=True), {}, "ia-40")), 3)
         self.assertEqual(run.expect_host(dumps("Jumble · on the lattice", 0, state="on-zero"), {}, "on-zero"), [])
         self.assertEqual(len(run.expect_host(dumps("Jumble · off the lattice", 2, drop="blocked"), {}, "ia-40")), 1)
         self.assertEqual(len(run.expect_host(dumps("Jumble · on the lattice", 0, state="ia-40"), {}, "on-zero")), 5)
@@ -1717,14 +1721,23 @@ class D02NameCap(unittest.TestCase):
         panel = "panel:jumble.cap_map"
         steps = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 30", "chord Enter", "wait 1500 ms", "chord F1",
                  "text > jumble.capmap.threshold.set N_c >= 50", "chord Enter", "wait 3000 ms"]
-        unnamed = [[panel, "no cap named"], ["view:Local", "▸ Named cap · 0"], ["view:Local", "Name a cap: click a numbered cap on the cap map, or F1 › jumble.cap.name <id>"]]
+        # Local is never empty (owner, 26 November 2026): before the naming it draws the default cap 0 and says so.
+        unnamed = [[panel, "no cap named"], ["view:Local", "▸ Named cap · 0"], ["view:Local", run.LOCAL_DEFAULT]]
         tier1 = [[panel, f"cap 30 · N_c {row['N_c']} · floor {row['F_c']} · u 0 · 80 meeting caps"], ["view:Local", "▸ Named cap · 1"]]
         tier1 += [["view:Local", str(row[key])] for key in ("In_c", "Out_c", "A_c", "N_c")]
 
-        def dumps(count=counts):
-            out = [{"do": do, "lines": unnamed} for do in steps[:5]] + [{"do": do, "lines": tier1} for do in steps[5:9]]
-            return out + [{"do": steps[9], "lines": tier1 + [[panel, count], [panel, "N_c ≥ 50"]]}]
+        def dumps(count=counts, empty=False, kept=30):
+            default = {"named": -1, "local": {"cap": 0, "framed": 0, "opening": True, "words": run.LOCAL_DEFAULT}}
+            if empty:
+                default = {"named": -1, "local": {"cap": -1, "framed": -1, "opening": False, "words": ""}}
+            before = [["view:Local", run.LOCAL_EMPTY] if empty and line[1] == run.LOCAL_DEFAULT else line for line in unnamed]
+            after = {"named": 30, "local": {"cap": 30, "framed": kept, "opening": True, "words": ""}}
+            out = [{"do": do, "lines": before, **default} for do in steps[:5]]
+            out += [{"do": do, "lines": tier1, **after} for do in steps[5:9]]
+            return out + [{"do": steps[9], "lines": tier1 + [[panel, count], [panel, "N_c ≥ 50"]], **after}]
         self.assertEqual(run.expect_name_cap(dumps(), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_name_cap(dumps(empty=True), {}, "ia-40")), 4)
+        self.assertEqual(len(run.expect_name_cap(dumps(kept=0), {}, "ia-40")), 2)
         self.assertEqual(len(run.expect_name_cap(dumps(counts.replace("blocked", "blocked 0 ·", 1)), {}, "ia-40")), 1)
         self.assertTrue(run.expect_name_cap(dumps()[:5], {}, "ia-40"))
         self.assertTrue(run.expect_name_cap(dumps(), {}, "on-zero"))

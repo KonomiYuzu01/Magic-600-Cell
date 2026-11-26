@@ -332,8 +332,9 @@ class ChromeOpening(unittest.TestCase):
 
 
 class TwoViewsRun(unittest.TestCase):
-    """The two-views run's event check reads the frame rows: one-view frames before a cap is named, then composite
-    frames of two drawn panes at every revision the run reached."""
+    """The two-views run: Local is never empty (owner, 26 November 2026), so the dumps show the default cap 0 framed
+    before the naming and cap 150 after it, and the event check reads composite frames of two drawn panes at every
+    revision the run reached, with no one-view frame after the first composite one."""
 
     def check(self, rows):
         run = shell_module("d02_run")
@@ -351,6 +352,29 @@ class TwoViewsRun(unittest.TestCase):
         script = json.loads(text(SHELL / "d02_scripts" / "two-views.json"))
         self.assertIn({"text": "> jumble.cap.name 150"}, script["steps"])
         self.assertIn({"chord": "Ctrl+Z"}, script["steps"])
+        written = [f"wait {step['wait_ms']} ms" if "wait_ms" in step else f"chord {step['chord']}" if "chord" in step
+                   else f"text {step['text']}" for step in script["steps"]]
+        self.assertEqual(["start"] + written, run.TWO_VIEWS_STEPS)
+
+    def test_the_dumps_show_the_default_then_the_named_cap(self):
+        run = shell_module("d02_run")
+
+        def dumps(default=True, kept=150):
+            out = []
+            for index, do in enumerate(run.TWO_VIEWS_STEPS):
+                named = index >= 4
+                cap = 150 if named else 0 if default else -1
+                words = "" if named or not default else run.LOCAL_DEFAULT
+                lines = [["view:Local", words or run.LOCAL_EMPTY]] if not named else []
+                local = {"cap": cap, "framed": kept if named else cap, "opening": cap >= 0, "words": words}
+                out.append({"step": index, "do": do, "lines": lines, "named": 150 if named else -1, "local": local})
+            return out
+        self.assertEqual(run.expect_two_views(dumps(), {}, "wj-ia-300"), [])
+        empty = run.expect_two_views(dumps(default=False), {}, "wj-ia-300")
+        self.assertEqual(len(empty), 4, empty)
+        self.assertTrue(empty[0].startswith("step 1: Local draws cap -1"), empty)
+        self.assertEqual(len(run.expect_two_views(dumps(kept=0), {}, "wj-ia-300")), 7)
+        self.assertTrue(run.expect_two_views(dumps()[:6], {}, "wj-ia-300"))
 
     def test_a_good_run_passes(self):
         rows = [{"frame_id": 1, "engine_revision": 302}, {"frame_id": 2, "engine_revision": 302, "panes": 2, "held": 0},
@@ -359,9 +383,12 @@ class TwoViewsRun(unittest.TestCase):
         self.assertEqual(self.check(rows), [])
 
     def test_the_failures_are_named(self):
-        early = self.check([{"frame_id": 1, "engine_revision": 302, "panes": 2, "held": 0},
-                            {"frame_id": 2, "engine_revision": 303, "panes": 2, "held": 0}])
-        self.assertTrue(any("before any cap was named" in p for p in early), early)
+        self.assertEqual(self.check([{"frame_id": 1, "engine_revision": 302, "panes": 2, "held": 0},
+                                     {"frame_id": 2, "engine_revision": 303, "panes": 2, "held": 0}]), [])
+        emptied = self.check([{"frame_id": 1, "engine_revision": 302, "panes": 2, "held": 0},
+                              {"frame_id": 2, "engine_revision": 303},
+                              {"frame_id": 3, "engine_revision": 303, "panes": 2, "held": 0}])
+        self.assertEqual(emptied, ["1 one-view frames after Local was drawn (the first: frame 2)"])
         undrawn = self.check([{"frame_id": 1, "engine_revision": 302}, {"frame_id": 2, "engine_revision": 302, "panes": 2, "held": 0},
                               {"frame_id": 3, "engine_revision": 303, "panes": 2, "held": 1}])
         self.assertTrue(any("[303] were never drawn" in p for p in undrawn), undrawn)
@@ -510,7 +537,8 @@ class PickRun(unittest.TestCase):
 
 
 class HopfRun(unittest.TestCase):
-    """The hopf run: the zoom sent is the opening file's Hopf zoom, and the frames are one-view frames."""
+    """The hopf run: the zoom sent is the opening file's Hopf zoom, and Local draws the default cap: composite frames,
+    and no one-view frame after the first of them (owner, 26 November 2026: Local is never empty)."""
 
     def dumps(self, base, after):
         steps = ["start", "wait 2500 ms", "wheel 2", "wait 1000 ms"]
@@ -554,18 +582,25 @@ class HopfRun(unittest.TestCase):
         base = 1 / math.tan(fov / 2)
         self.assertEqual(run.expect_ring_sheet(self.dumps(base, base * 1.21), {}, None), [])
 
-    def test_the_frames_are_one_view_frames(self):
+    def test_local_draws_the_default_cap(self):
         run = shell_module("d02_run")
         temp = Path(tempfile.mkdtemp(prefix="d02-hopf-run-"))
         self.addCleanup(shutil.rmtree, temp, True)
         events = temp / "events.jsonl"
+
+        def check(rows):
+            events.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            return run.check_hopf_events(events)
         rows = [{"t": "frame", "frame_id": i, "engine_revision": 302} for i in range(1, 31)]
-        events.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
-        self.assertEqual(run.check_hopf_events(events), [])
-        rows[5]["panes"], rows[5]["held"] = 2, 0
-        events.write_text("".join(json.dumps(row) + "\n" for row in rows[:20]), encoding="utf-8")
-        problems = run.check_hopf_events(events)
-        self.assertTrue(any("fewer than 30" in p for p in problems) and any("composite" in p for p in problems), problems)
+        for row in rows[2:]:
+            row["panes"], row["held"] = 2, 0
+        self.assertEqual(check(rows), [])
+        never = check([{"t": "frame", "frame_id": i, "engine_revision": 302} for i in range(1, 31)])
+        self.assertEqual(never, ["no composite frame: Local never drew the default cap"])
+        rows[10] = {"t": "frame", "frame_id": 11, "engine_revision": 302}
+        problems = check(rows[:20])
+        self.assertTrue(any("fewer than 30" in p for p in problems) and any("one-view frames after" in p for p in problems),
+                        problems)
 
 
 if __name__ == "__main__":

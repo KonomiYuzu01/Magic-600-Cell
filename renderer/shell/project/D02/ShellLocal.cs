@@ -85,21 +85,27 @@ public static class ShellLocal
     /// </summary>
     public static bool AutoFrame { get; set; } = true;
 
-    private static int? _cap, _selected;
+    private static int? _cap, _named, _selected;
     private static bool _selectionNewer;
+
+    /// <summary>The cap Local follows: the named cap, else the Jumble host's default (the D02 script player's dump).</summary>
+    public static int? Cap => _cap;
 
     /// <summary>
     /// ADR-D02 B17 (ADR-D01.41): the cell Local frames, the newer of two sources. Naming a cap frames that cap; a later
     /// selection, while auto-framing is on, frames the cell its sticker occupies (none off the lattice). Clearing the
-    /// selection, or naming another cap, returns Local to the named cap.
+    /// selection, or naming another cap, returns Local to the named cap. Local is never empty (owner, 26 November
+    /// 2026): with no cap named it follows the host's LocalCap while a state is bound, the cap named last in the
+    /// session or, before any naming, the lowest-numbered cap; the default is drawn, never named.
     /// </summary>
     public static int? Frame(int? namedCap)
     {
-        if (namedCap != _cap)
+        if (namedCap != _named)
         {
-            _cap = namedCap;
+            _named = namedCap;
             _selectionNewer = false;
         }
+        _cap = namedCap ?? ShellJumble.Host?.LocalCap.Shown;
         var picked = ShellPick.Selection?.Cell;
         if (picked != _selected)
         {

@@ -272,7 +272,8 @@ internal static partial class Program
             ("D02PortViewLinkMarksEachState", D02PortViewLinkMarksEachState),
             ("D02CapPromptListsCapsInIdOrder", D02CapPromptListsCapsInIdOrder),
             ("D02CapPromptEnterNamesTheChosenCap", D02CapPromptEnterNamesTheChosenCap),
-            ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy)
+            ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy),
+            ("D02LocalCapDrawsTheLowestCapUntilOneIsNamed", D02LocalCapDrawsTheLowestCapUntilOneIsNamed)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

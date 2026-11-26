@@ -21,6 +21,12 @@ public sealed class JumbleHost
     public CapPromptOverlay Prompt { get; }
     // B9: the named cap, the threshold, the meeting caps and the job gate (ADR-D02.15, .16, .19).
     public CapNaming Naming { get; } = new();
+    // Local is never empty (owner, 26 November 2026): the cap Local draws, the named one or the default.
+    public LocalCap LocalCap { get; } = new();
+    // Whether a state is bound, so that Local can draw; the shell gives it, and a host without one binds none.
+    private Func<bool> stateBound = () => false;
+    // Local's empty sentence, which is also the hint on its readout while it draws a cap that is not named.
+    private readonly string hint;
     public CapThreshold Threshold { get; private set; } = CapThreshold.None;
     public CapJobs Jobs { get; }
     // A named cap's own record (u at a blocked cap needs its straddlers), where the source has one.
@@ -98,7 +104,7 @@ public sealed class JumbleHost
     public JumbleHost(ChromeFrame frame, IJumbleSource source, IReadOnlyDictionary<string, string> names, string emptySentence, string emptyBody,
         string unit = "seams", string above = "above 6")
     {
-        this.frame = frame; Source = source; this.unit = unit; this.above = above;
+        this.frame = frame; Source = source; this.unit = unit; this.above = above; hint = emptySentence;
         totals = GlobalTotals.Pending.Slots(unit, above);
         Entry = new EntrySlot(Settings);
         Surface = new JumbleSurface(Local, () => frame.Tokens, names, emptySentence, emptyBody);
@@ -332,7 +338,26 @@ public sealed class JumbleHost
         CapReadout? readout = cap is int c ? (CapRecord != null ? CapRecord(c) : null) ?? map.Readout(c) : null;
         SetCap(readout);
         Surface.SetFacts(readout != null && layout != null ? CapFacts.Tier2(map, layout, readout) : null);
+        FollowLocal();
         Remark();
+    }
+
+    // The shell says whether a state is bound; Local draws the default cap while one is.
+    public void SetStateBound(Func<bool> bound)
+    {
+        stateBound = bound;
+        FollowLocal();
+        Place();
+    }
+
+    // Local's readout while it draws a cap that is not named, or none.
+    public string? LocalWords => LocalCap.Words(hint);
+
+    // The cap Local draws follows the naming and the binding; the empty sentence shows only while it draws none.
+    private void FollowLocal()
+    {
+        LocalCap.Follow(Naming.Named, stateBound());
+        Surface.SetDrawn(LocalCap.Shown != null);
     }
 
     // The threshold, the named cap and its meeting caps over the cap map, and the threshold row on Global's border.
@@ -457,7 +482,28 @@ public sealed class JumbleHost
         if (!GodotObject.IsInstanceValid(frame) || frame.Global == null || frame.Local == null) return;
         Row(frame.Global, "JumbleTotals", totals, totalsMarked, Source.State.Mode);
         Row(frame.Local, "JumbleCap", cap ?? Array.Empty<ReadoutSlot>(), capMarked, Source.State.Mode && cap != null);
+        DefaultLine(frame.Local);
         Border(frame.Global, Source.State.Mode && Threshold.IsSet && CapThreshold.OnGlobalBorder(frame.Model.Docks[DockSide.Bottom].Open));
+    }
+
+    // Local's readout while it draws a cap that is not named: it says so, with the hint, which its tooltip repeats.
+    private void DefaultLine(ViewFrame view)
+    {
+        if (!GodotObject.IsInstanceValid(view)) return;
+        Label? line = view.Readouts.GetNodeOrNull<Label>("JumbleLocalDefault");
+        if (LocalWords is not { } words)
+        {
+            if (line != null) { view.Readouts.RemoveChild(line); line.QueueFree(); }
+            return;
+        }
+        if (line == null)
+        {
+            line = ChromeWidgets.Text("", "MicroLabel"); line.Name = "JumbleLocalDefault";
+            line.AutowrapMode = TextServer.AutowrapMode.WordSmart; line.MouseFilter = Control.MouseFilterEnum.Pass;
+            line.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill; view.Readouts.AddChild(line);
+        }
+        line.Text = words; line.TooltipText = hint;
+        line.AddThemeColorOverride("font_color", frame.Tokens.C("text.dim"));
     }
 
     // ADR-D02.15: while the cap map's dock is closed, the threshold field and its count stay on Global's border.

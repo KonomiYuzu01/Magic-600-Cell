@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "host",
-  "note": "B6's host run, in sample mode on a sample state's session fixture: the Jumble cell in the top bar, the Jumble mark on both view borders, Local's empty sentence and its four closed sections with their counts, the cap map opened in the bottom dock with the contact classes and the never-hidden set armed, and the strip and the rail undefined exactly when the state is off the lattice. Two waits keep the window open for the foreground check.",
+  "note": "B6's host run, in sample mode on a sample state's session fixture: the Jumble cell in the top bar, the Jumble mark on both view borders, Local on the default cap 0 with its readout saying that no cap is named (owner, 26 November 2026: Local is never empty) and its four closed sections with their counts, the cap map opened in the bottom dock with the contact classes and the never-hidden set armed, and the strip and the rail undefined exactly when the state is off the lattice. Two waits keep the window open for the foreground check.",
   "steps": [
     {
       "wait_ms": 3000

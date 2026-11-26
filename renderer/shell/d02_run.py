@@ -48,6 +48,9 @@ FIXTURES = ROOT / "work" / "build" / "d02-fixtures"
 BOUND, UNBOUND = "bound · ", "unbound · stale"
 # Local's empty sentence (ADR-D02.12; jumble-words.json local.empty), as the owner asked for it on 26 November 2026.
 LOCAL_EMPTY = "Name a cap: click a numbered cap on the cap map, or F1 › jumble.cap.name <id>"
+# Local is never empty (owner, 26 November 2026): with a state bound and no cap named it draws the lowest cap, cap 0,
+# and its readout says so with the empty sentence as the hint (LocalCap.Words); the default is never named.
+LOCAL_DEFAULT = "Local shows cap 0 by default; no cap is named. " + LOCAL_EMPTY
 RECORD = "d02-run.json"
 FORMAT = "magic600-d02-run-v1"
 FOREGROUND_AFTER_S = 5.0
@@ -140,9 +143,32 @@ def texts(dump: dict, prefix: str = "") -> list[str]:
     return [text for group, text in map(tuple, dump["lines"]) if group.startswith(prefix)]
 
 
+def local_problems(dump: dict, step: int, cap: int, named: bool, framed: bool = True) -> list[str]:
+    """Local is never empty (owner, 26 November 2026): Local draws `cap`; its empty sentence never shows while it
+    does; the default's readout (LOCAL_DEFAULT) shows while no cap is named, and the dump names no cap then; a named
+    cap is named in the dump and its readout says nothing of a default. With `framed`, the shell frames the same cap in
+    Local and shows Local's opening."""
+    local, lines, problems = dump.get("local") or {}, texts(dump, "view:Local"), []
+    if local.get("cap") != cap:
+        problems.append(f"step {step}: Local draws cap {local.get('cap')}, not cap {cap}")
+    if framed and (local.get("framed") != cap or local.get("opening") is not True):
+        problems.append(f"step {step}: the shell frames cap {local.get('framed')} in Local with its opening "
+                        f"{'shown' if local.get('opening') else 'hidden'}, not cap {cap} with it shown")
+    if LOCAL_EMPTY in lines:
+        problems.append(f"step {step}: Local shows its empty sentence while it draws a cap")
+    if named and (dump.get("named") != cap or local.get("words") or any(line.startswith("Local shows cap") for line in lines)):
+        problems.append(f"step {step}: cap {dump.get('named')} is named and Local's readout reads {local.get('words')!r}, "
+                        f"expected cap {cap} named and no default")
+    if not named and (dump.get("named") != -1 or LOCAL_DEFAULT not in lines):
+        problems.append(f"step {step}: cap {dump.get('named')} is named or Local's readout does not say that it shows the "
+                        "default cap")
+    return problems
+
+
 def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """B6's host script, in sample mode on the state's session fixture: the Jumble cell, the mark on both view borders,
-    Local's empty sentence and four closed sections, the cap map drawn (B8) with its class counts and its legend armed,
+    Local on the default cap 0 with its readout saying so (no cap is named: the cap map's panel says so) and four closed
+    sections, the cap map drawn (B8) with its class counts and its legend armed,
     and the strip and the rail undefined exactly when the sample is off the lattice (its totals' exact off-lattice
     count)."""
     if [dump["do"] for dump in dumps] != ["start", "wait 3000 ms", "wait 3000 ms"]:
@@ -160,8 +186,11 @@ def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]
         # With labels on the mark's word is on screen; with labels off it is in the mark's tooltip.
         if "jumble" not in texts(shown, "view:" + view) and not any(tip.startswith("jumble") for tip in marks.get(view, [])):
             problems.append(f"step 1: view:{view} carries no Jumble mark")
-    if LOCAL_EMPTY not in every:
-        problems.append("step 1: Local does not show its empty sentence")
+    # Local is never empty: the bound state's Local draws the default cap, which counts as no named cap. The shell's
+    # framing is asked by the runs on a fixture outside sample mode (name-cap, two-views).
+    problems += local_problems(shown, 1, 0, named=False, framed=False)
+    if "no cap named" not in texts(shown, "panel:jumble.cap_map"):
+        problems.append("step 1: the cap map's panel does not say that no cap is named")
     for header in ("▸ Named cap · 0", "▸ Twist check · 0", "▸ Cap covers · 0", "▸ Repair list · 0"):
         if header not in every:
             problems.append(f"step 1: Local lacks the closed header {header!r}")
@@ -440,7 +469,8 @@ def expect_zoom(dumps: list[dict], source: dict, state: str | None) -> list[str]
 
 
 def expect_name_cap(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """B9's name-cap script, by keys only: before naming, no cap is named and Local shows its empty sentence; after
+    """B9's name-cap script, by keys only: before naming, no cap is named and Local draws the default cap 0, saying so
+    (owner, 26 November 2026: Local is never empty); after
     `> jumble.cap.name 30`, the panel's Tier 1 line, the Named cap count and Local's readout follow cap 30's rim row;
     after `> jumble.capmap.threshold.set N_c >= 50`, the field reads the formula and the four counts are the rim's."""
     steps = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 30", "chord Enter", "wait 1500 ms", "chord F1",
@@ -454,8 +484,7 @@ def expect_name_cap(dumps: list[dict], source: dict, state: str | None) -> list[
     before, named, done = dumps[1], dumps[5], dumps[9]
     if "no cap named" not in texts(before) or "▸ Named cap · 0" not in texts(before):
         problems.append("step 1: a cap is named before any key")
-    if LOCAL_EMPTY not in texts(before):
-        problems.append("step 1: Local does not show its empty sentence")
+    problems += local_problems(before, 1, 0, named=False)
     if row["status"] == "admissible":
         tier1 = f"cap 30 · N_c {row['N_c']} · floor {row['F_c']} · u 0 · 80 meeting caps"
     else:
@@ -464,8 +493,7 @@ def expect_name_cap(dumps: list[dict], source: dict, state: str | None) -> list[
         problems.append(f"step 5: the cap map's panel does not read {tier1!r}")
     if "▸ Named cap · 1" not in texts(named):
         problems.append("step 5: Local's Named cap section does not count the named cap")
-    if LOCAL_EMPTY in texts(named):
-        problems.append("step 5: Local still shows its empty sentence with a cap named")
+    problems += local_problems(named, 5, 30, named=True) + local_problems(done, 9, 30, named=True)
     local = texts(named, "view:Local")
     if row["status"] == "admissible" and not all(str(row[key]) in local for key in ("In_c", "Out_c", "A_c", "N_c")):
         problems.append("step 5: Local's readout does not show cap 30's rim row")
@@ -724,9 +752,20 @@ IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280"}
 
 
 # The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.
+TWO_VIEWS_STEPS = ["start", "wait 2500 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 4000 ms",
+                   "chord J", "wait 700 ms", "chord J", "wait 700 ms", "chord Ctrl+Z", "wait 4000 ms"]
+
+
 def expect_two_views(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """B18c: the script ran to its end; the frame rows decide (check_two_views_events)."""
-    return [] if dumps else ["the two-views run wrote no screen"]
+    """B18c: the script ran to its end, and Local is never empty (owner, 26 November 2026): before the naming the shell
+    frames the default cap 0 in Local with its opening shown, and from the naming on cap 150, through the twists and
+    the undo; the frame rows decide the rest (check_two_views_events)."""
+    if [dump["do"] for dump in dumps] != TWO_VIEWS_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = local_problems(dumps[1], 1, 0, named=False)
+    for index in range(5, len(dumps)):
+        problems += local_problems(dumps[index], index, 150, named=True)
+    return problems
 
 
 def frame_rows(events: Path) -> list[dict]:
@@ -736,16 +775,23 @@ def frame_rows(events: Path) -> list[dict]:
     return [row for row in rows if row.get("t") == "frame"]
 
 
+def one_view_after_local(frames: list[dict]) -> list[int]:
+    """Local is never empty (owner, 26 November 2026): the ids of the one-view frames after the first composite one."""
+    first = next((row["frame_id"] for row in frames if row.get("panes")), None)
+    return [] if first is None else [row["frame_id"] for row in frames if row["frame_id"] > first and not row.get("panes")]
+
+
 def check_two_views_events(events: Path) -> list[str]:
-    """B18c: one-view frames until a cap is named, then composite frames of two panes that are drawn, not held, at
-    every engine revision the run reached after that (twists by the router's KeyJ and an undo), so both views show one
-    revision; at least one revision change happens while Local is drawn."""
+    """B18c: composite frames of two panes that are drawn, not held, at every engine revision the run reached once
+    Local was drawn (twists by the router's KeyJ and an undo), so both views show one revision; at least one revision
+    change happens while Local is drawn. Local is never empty (owner, 26 November 2026): it draws the default cap before
+    the naming, so no one-view frame follows the first composite one."""
     frames = frame_rows(events)
     if not frames:
         return ["the run wrote no frame rows"]
     problems = []
-    if "panes" in frames[0]:
-        problems.append("the first frame is a composite frame before any cap was named")
+    if gaps := one_view_after_local(frames):
+        problems.append(f"{len(gaps)} one-view frames after Local was drawn (the first: frame {gaps[0]})")
     paned = [row for row in frames if row.get("panes")]
     drawn = [row for row in paned if row.get("held") == 0]
     if not drawn or any(row.get("panes") != 2 for row in drawn):
@@ -797,15 +843,19 @@ def expect_hopf(dumps: list[dict], source: dict, state: str | None, projection: 
 
 
 def check_hopf_events(events: Path) -> list[str]:
-    """B23: the shell drew at least HOPF_FRAMES frames, all one-view frames (no cap is named)."""
+    """B23: the shell drew at least HOPF_FRAMES frames. No cap is named, and Local is never empty (owner, 26 November
+    2026): it draws the default cap, so there are composite frames and no one-view frame follows the first of them."""
     frames = frame_rows(events)
     problems = []
     if len(frames) < HOPF_FRAMES:
         problems.append(f"the run wrote {len(frames)} frame rows, fewer than {HOPF_FRAMES}")
-    paned = [row for row in frames if "panes" in row]
-    if paned:
-        problems.append(f"{len(paned)} composite frames although no cap was named")
-    print(f"hopf: {len(frames)} frames, revisions {sorted({row.get('engine_revision') for row in frames})}")
+    paned = [row for row in frames if row.get("panes")]
+    if not paned:
+        problems.append("no composite frame: Local never drew the default cap")
+    if gaps := one_view_after_local(frames):
+        problems.append(f"{len(gaps)} one-view frames after Local was drawn (the first: frame {gaps[0]})")
+    print(f"hopf: {len(frames)} frames, {len(paned)} composite, revisions "
+          f"{sorted({row.get('engine_revision') for row in frames})}")
     return problems
 
 
