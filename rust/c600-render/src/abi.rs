@@ -1,11 +1,11 @@
-//! ABI 5's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
+//! ABI 6's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
 //! `renderer/core/include/sa2_interop.h`, x64 layout. `tests/abi_layout.rs` checks every name, offset, size and
 //! constant against the header.
 
 use std::mem::size_of;
 
-/// `SA2_ABI_VERSION`.
-pub const ABI_VERSION: u32 = 5;
+/// `SA2_ABI_VERSION`. ABI 6 adds a view's shape ([`Sa2ViewShape`]).
+pub const ABI_VERSION: u32 = 6;
 /// `SA2_SLOTS`: the labelled sticker slots of 600-cell-Full.
 pub const SLOTS: usize = 259_800;
 /// `SA2_PIECES`: the length of a pose index.
@@ -93,6 +93,20 @@ pub const SURFACE_BUFFERS: u32 = 3;
 pub const SURFACE_MAX_PX: u32 = 16384;
 /// `SA2_RING_SLOTS`: the ring-slot frame targets of the Godot-texture route are 0 to 2.
 pub const RING_SLOTS: u32 = 3;
+
+// ABI 6: a view's shape (`sa2_view_shape`); the defaults are ABI 5's constants.
+/// `SA2_SHAPE_DEFAULT_CELL_SHRINK`.
+pub const SHAPE_DEFAULT_CELL_SHRINK: f32 = 0.76;
+/// `SA2_SHAPE_DEFAULT_STICKER_SHRINK`.
+pub const SHAPE_DEFAULT_STICKER_SHRINK: f32 = 0.82;
+/// `SA2_SHAPE_DEFAULT_D4`.
+pub const SHAPE_DEFAULT_D4: f32 = 1.18;
+/// `SA2_SHAPE_DEFAULT_ZOOM`.
+pub const SHAPE_DEFAULT_ZOOM: f32 = 1.15;
+/// `SA2_SHAPE_D4_MAX`.
+pub const SHAPE_D4_MAX: f32 = 64.0;
+/// `SA2_SHAPE_ZOOM_MAX`.
+pub const SHAPE_ZOOM_MAX: f32 = 64.0;
 
 /// `sa2_engine_image`. Built only by `c600-render-ffi` (`renderer/bridge`) from checked slices.
 #[repr(C)]
@@ -235,6 +249,16 @@ rows! {
         y: u32,
     }
 
+    /// `sa2_view_shape` (ABI 6).
+    Sa2ViewShape {
+        struct_size: u32,
+        cell_shrink: f32,
+        sticker_shrink: f32,
+        d4: f32,
+        zoom: f32,
+        reserved: u32,
+    }
+
     /// `sa2_counter_values`.
     Sa2CounterValues {
         struct_size: u32,
@@ -246,5 +270,28 @@ rows! {
         frames_reported: u64,
         id_passes: u64,
         reports_dropped: u64,
+    }
+}
+
+impl Sa2ViewShape {
+    /// The shape ABI 5 draws every view with, as `sa2_view_shape` takes it.
+    pub fn defaults() -> Sa2ViewShape {
+        Sa2ViewShape {
+            cell_shrink: SHAPE_DEFAULT_CELL_SHRINK,
+            sticker_shrink: SHAPE_DEFAULT_STICKER_SHRINK,
+            d4: SHAPE_DEFAULT_D4,
+            zoom: SHAPE_DEFAULT_ZOOM,
+            ..Sa2ViewShape::new()
+        }
+    }
+
+    /// The header's ranges: each value finite, cell and sticker shrink in (0, 1], d4 in (1, `SHAPE_D4_MAX`] and zoom
+    /// in (0, `SHAPE_ZOOM_MAX`].
+    pub fn in_range(&self) -> bool {
+        let within = |v: f32, low: f32, high: f32| v.is_finite() && v > low && v <= high;
+        within(self.cell_shrink, 0.0, 1.0)
+            && within(self.sticker_shrink, 0.0, 1.0)
+            && within(self.d4, 1.0, SHAPE_D4_MAX)
+            && within(self.zoom, 0.0, SHAPE_ZOOM_MAX)
     }
 }

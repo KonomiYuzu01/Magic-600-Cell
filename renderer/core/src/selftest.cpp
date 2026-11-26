@@ -146,7 +146,7 @@ std::pair<uint64_t, uint64_t> ready_set(sa2::Product& product, const sa2::Prepar
     return {ticket, row.resource_set};
 }
 void run_cpu(Suite& suite, const Options& options) {
-    suite.check("abi", [] { expect(sa2_abi_version() == 5, "ABI version mismatch"); });
+    suite.check("abi", [] { expect(sa2_abi_version() == 6, "ABI version mismatch"); });
     suite.check("exports", [] {
         const auto dll = executable_path().parent_path() / "sa2_interop.dll";
         HMODULE module = LoadLibraryW(dll.c_str());
@@ -159,7 +159,7 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_describe", "sa2_engine_adopt", "sa2_prepare", "sa2_poll", "sa2_activate", "sa2_cancel", "sa2_retire",
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
-            "sa2_surface_detach", "sa2_surface_swap_chain"};
+            "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1021,7 +1021,7 @@ void run_cpu(Suite& suite, const Options& options) {
     });
     suite.check("product describe", [] {
         const auto json = Json::parse(sa2::describe("abc", 0).dump());
-        expect(json.at("interface_version").integer() == 5 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
+        expect(json.at("interface_version").integer() == 6 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
             && json.at("device_removed").null() && json.at("evidence").array().empty(), "the SupportReport header is wrong");
         const auto& features = json.at("features");
         expect(features.object().size() == 8, "the SupportReport does not list eight rows");
@@ -1035,11 +1035,72 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(sa2::removed_text(int32_t(0x887A0005)) == "0x887a0005", "the removal text is not 0x%08x");
         // ABI 5, route B: F22 and F23 on a sa2_create context with a surface.
         const auto route_b = Json::parse(sa2::describe("abc", 0, 3, true).dump());
-        expect(route_b.at("interface_version").integer() == 5 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
+        expect(route_b.at("interface_version").integer() == 6 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
         for (const char* row : {"F22", "F23"})
             expect(route_b.at("features").at(row).at("status").string() == "supported"
                 && route_b.at("features").at(row).at("layout_version").integer() == 1, "route B does not support F22 and F23");
         expect(route_b.at("features").at("J13").at("status").string() == "unsupported", "route B changed J13");
+    });
+    // ABI 6: a view's shape. Its checks, its defaults (ABI 5's constants), per view, recorded with each frame for its
+    // picks, and kept across a recovery.
+    suite.check("view shape", [] {
+        const auto defaults = sa2::view_shape(nullptr);
+        expect(defaults.cell_shrink == 0.76f && defaults.sticker_shrink == 0.82f && defaults.d4 == 1.18f && defaults.zoom == 1.15f,
+            "the default shape is not ABI 5's constants");
+        sa2_view_shape shape{sizeof(sa2_view_shape), 0.7f, 0.55f, 1.18f, 1.15f, 0};
+        expect(sa2::view_shape(&shape) == sa2::ViewShape{0.7f, 0.55f, 1.18f, 1.15f}, "a valid shape was not copied");
+        const float nan = std::numeric_limits<float>::quiet_NaN(), inf = std::numeric_limits<float>::infinity();
+        const auto refused = [&](auto change) { auto bad = shape; change(bad); return rejects([&] { sa2::view_shape(&bad); }); };
+        expect(refused([](sa2_view_shape& s) { s.struct_size = 20; }) && refused([](sa2_view_shape& s) { s.reserved = 1; }),
+            "a wrong struct_size or a nonzero reserved was accepted");
+        expect(refused([&](sa2_view_shape& s) { s.cell_shrink = nan; }) && refused([&](sa2_view_shape& s) { s.sticker_shrink = inf; })
+            && refused([&](sa2_view_shape& s) { s.d4 = nan; }) && refused([&](sa2_view_shape& s) { s.zoom = -inf; }),
+            "a nonfinite value was accepted");
+        expect(refused([](sa2_view_shape& s) { s.cell_shrink = 0; }) && refused([](sa2_view_shape& s) { s.cell_shrink = 1.01f; })
+            && refused([](sa2_view_shape& s) { s.sticker_shrink = -0.5f; }) && refused([](sa2_view_shape& s) { s.sticker_shrink = 1.5f; })
+            && refused([](sa2_view_shape& s) { s.d4 = 1.0f; }) && refused([](sa2_view_shape& s) { s.d4 = SA2_SHAPE_D4_MAX * 2; })
+            && refused([](sa2_view_shape& s) { s.zoom = 0; }) && refused([](sa2_view_shape& s) { s.zoom = SA2_SHAPE_ZOOM_MAX * 2; }),
+            "a value out of its range was accepted");
+        shape.cell_shrink = 1; shape.sticker_shrink = 1; shape.d4 = SA2_SHAPE_D4_MAX; shape.zoom = SA2_SHAPE_ZOOM_MAX;
+        sa2::view_shape(&shape); // every upper bound is inside its range
+        sa2::Product product;
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        const sa2::ViewShape reduced{0.7f, 0.55f, 1.18f, 1.15f};
+        product.set_shape(2, reduced);
+        expect(product.shape(1) == sa2::ViewShape{} && product.shape(2) == reduced, "a shape is not per view");
+        auto input = frame_input(1, 1);
+        input.view = 2;
+        auto plan = product.plan(input, 256, 256);
+        expect(plan.shape == reduced, "a frame does not draw with its view's shape");
+        product.commit(input, plan, 1, 0);
+        product.produced(1, 100, 1);
+        product.set_shape(2, sa2::ViewShape{});
+        expect(product.shape(2) == sa2::ViewShape{}, "the defaults were not restored");
+        const auto pick = product.pick_plan(1, 10, 20);
+        expect(pick.state == SA2_PICK_READY && !pick.pass, "a frame without a set needs no ID pass");
+        input.sequence = 2;
+        expect(product.plan(input, 256, 256).shape == sa2::ViewShape{}, "a restored shape was not drawn");
+        // A pick draws with the shape of its frame, not the view's current one.
+        PreparationArrays arrays(2, 1, 1);
+        arrays.value.view = 2;
+        const auto readied = ready_set(product, sa2::preparation(&arrays.value), 0);
+        const uint8_t stamp[32]{};
+        product.activate(readied.second, stamp);
+        product.set_shape(2, reduced);
+        input.resource_set = readied.second;
+        plan = product.plan(input, 256, 256);
+        product.commit(input, plan, 2, 1);
+        product.produced(2, 100, 1);
+        product.set_shape(2, sa2::ViewShape{});
+        const auto pass = product.pick_plan(2, 10, 20);
+        expect(pass.pass && pass.input.shape == reduced, "an ID pass does not use its frame's shape");
+        // Device loss and recovery keep it.
+        product.set_shape(3, reduced);
+        product.observe_removal(int32_t(0x887A0005));
+        product.set_shape(4, reduced);
+        product.recovered(sa2::DeviceEpoch + 1);
+        expect(product.shape(3) == reduced && product.shape(4) == reduced, "a shape was lost across device loss and recovery");
     });
     // ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending
     // three owner-machine checks): the argument checks, the present ledger's
@@ -1428,6 +1489,7 @@ Options parse(int argc, char** argv) {
         } else if (arg == "--debug") options.debug = true;
         else if (arg == "--stages") options.stages = true;
         else if (arg == "--poses") options.poses = true;
+        else if (arg == "--shape") options.shape = true;
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
             const auto text = value();
@@ -1468,12 +1530,15 @@ Options parse(int argc, char** argv) {
     // C9 jumble-on: the product pose check runs on WARP only, alone.
     expect(!options.poses || (options.mode == "warp" && options.child.empty() && !options.stages && options.measure.empty()),
         "--poses requires --warp, without --stages or --measure-stages");
+    // ABI 6: the view shape check runs on WARP only, alone.
+    expect(!options.shape || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses
+        && options.measure.empty()), "--shape requires --warp, without --stages, --poses or --measure-stages");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
     // C9 (26 Nov 2026): the preparation timing needs a device and runs alone.
     expect(!options.prepares || (options.mode != "cpu" && options.child.empty() && !options.stages && !options.poses
-        && options.measure.empty() && !options.out.empty()), "--measure-prepare requires --warp or --hardware and --out, alone");
+        && !options.shape && options.measure.empty() && !options.out.empty()), "--measure-prepare requires --warp or --hardware and --out, alone");
     return options;
 }
 }
@@ -1497,6 +1562,7 @@ int main(int argc, char** argv) {
         if (options.mode == "cpu") sa2test::run_cpu(suite, options);
         else if (options.stages) sa2test::run_stages(suite, options);
         else if (options.poses) sa2test::run_poses(suite, options);
+        else if (options.shape) sa2test::run_shape(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

@@ -188,6 +188,16 @@ impl<C: CoreAbi> RenderBackend<C> {
         }
     }
 
+    /// ABI 6: the shape `view`'s frames and their ID passes draw with, or `None` for the defaults (ABI 5's constants).
+    /// The core keeps it across a recovery. A value out of the header's range is refused before the core is asked.
+    pub fn set_view_shape(&mut self, view: ViewId, shape: Option<Sa2ViewShape>) -> Result<(), Error> {
+        let shape = shape.map(|s| Sa2ViewShape { struct_size: Sa2ViewShape::new().struct_size, reserved: 0, ..s });
+        if shape.is_some_and(|s| !s.in_range()) {
+            return Err(Error::invalid("a view shape value is not finite or lies outside its range"));
+        }
+        self.core.view_shape_set(view.0, shape.as_ref()).map_err(|status| self.error(status))
+    }
+
     /// RM.16's adoption into the core: a validated bundle at its revision. A Full bundle gives its labels. A jumbling
     /// bundle gives its pose index, pose rows and lattice entries over the home labels (each slot shows its own
     /// sticker, which its piece's pose moves); a pose table that is not i32 [PIECES], f32 [P, 4, 4] and i32 [P] with

@@ -1,4 +1,4 @@
-//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 5 row's field names, offsets and
+//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 6 row's field names, offsets and
 //! size under the C rules of x64 (each against the header's static_assert too) and every constant. The header is
 //! read, not copied, so a header change fails here. The function table's signatures are checked in `renderer/bridge`.
 
@@ -215,6 +215,10 @@ fn every_row_has_the_header_layout() {
     for (name, rust) in rows {
         assert_eq!(c_struct(&h, name), rust, "{name}");
     }
+    // ABI 6: a view's shape.
+    let shape = rust_struct!(Sa2ViewShape { struct_size, cell_shrink, sticker_shrink, d4, zoom, reserved });
+    assert_eq!(c_struct(&h, "sa2_view_shape"), shape, "sa2_view_shape");
+    assert_eq!(Sa2ViewShape::new().struct_size, 24, "new() sets struct_size");
     let sizes = [
         Sa2PollRow::new().struct_size,
         Sa2FrameInput::new().struct_size,
@@ -278,4 +282,21 @@ fn every_constant_has_the_header_value() {
         assert_eq!(defines.get(&name), Some(&value), "SA2_{name}");
     }
     assert_eq!(Status(11).name(), "unknown");
+    // ABI 6's shape constants are floats, written as the header writes them.
+    let h = header();
+    for (name, value) in [
+        ("SHAPE_DEFAULT_CELL_SHRINK", SHAPE_DEFAULT_CELL_SHRINK),
+        ("SHAPE_DEFAULT_STICKER_SHRINK", SHAPE_DEFAULT_STICKER_SHRINK),
+        ("SHAPE_DEFAULT_D4", SHAPE_DEFAULT_D4),
+        ("SHAPE_DEFAULT_ZOOM", SHAPE_DEFAULT_ZOOM),
+        ("SHAPE_D4_MAX", SHAPE_D4_MAX),
+        ("SHAPE_ZOOM_MAX", SHAPE_ZOOM_MAX),
+    ] {
+        let line = h
+            .lines()
+            .find_map(|line| line.trim().strip_prefix(&format!("#define SA2_{name} ")))
+            .unwrap_or_else(|| panic!("SA2_{name} is in the header"));
+        let text = line.split_whitespace().next().unwrap().trim_end_matches('f');
+        assert_eq!(text.parse::<f32>().expect("a float"), value, "SA2_{name}");
+    }
 }

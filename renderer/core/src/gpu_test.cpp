@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <utility>
 
@@ -1051,6 +1052,75 @@ void product_poses(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ABI 6's WARP check (--warp --shape): a view's shape. The default shape draws byte-identically to no call, a
+// smaller sticker shrink covers fewer pixels, the owner's opening values draw, and a refused shape changes nothing.
+void product_shape(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    expect(sa2_view_shape_set(nullptr, 1, nullptr) == SA2_E_INVALID_ARGUMENT, "a shape was set without a context");
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const auto unset = frames.draw(1, 1, 0, Q);
+    const sa2_view_shape defaults{sizeof(sa2_view_shape), SA2_SHAPE_DEFAULT_CELL_SHRINK, SA2_SHAPE_DEFAULT_STICKER_SHRINK,
+                                  SA2_SHAPE_DEFAULT_D4, SA2_SHAPE_DEFAULT_ZOOM, 0};
+    api(ctx, sa2_view_shape_set(ctx, 1, &defaults));
+    expect(frames.draw(1, 1, 0, Q) == unset, "the default shape does not draw byte-identically to no call");
+    const auto background = unset[0];
+    const auto covered = [&](const std::vector<uint32_t>& image) {
+        return uint64_t(std::count_if(image.begin(), image.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    auto smaller = defaults;
+    smaller.sticker_shrink = 0.55f;
+    api(ctx, sa2_view_shape_set(ctx, 1, &smaller));
+    const auto reduced = frames.draw(1, 1, 0, Q);
+    expect(frames.draw(1, 2, 0, Q) == unset, "another view drew with view 1's shape");
+    auto opening = defaults; // the owner's opening values: gap 0.3, sticker shrink 0.55
+    opening.cell_shrink = 1.0f - 0.3f;
+    opening.sticker_shrink = 0.55f;
+    api(ctx, sa2_view_shape_set(ctx, 2, &opening));
+    const auto open = frames.draw(1, 2, 0, Q);
+    const auto cover_unset = covered(unset), cover_small = covered(reduced), cover_open = covered(open);
+    std::cout << "view shape: " << uint64_t(harness.width) * harness.height << " pixels; covered by default " << cover_unset
+              << ", sticker shrink 0.55 " << cover_small << ", opening values " << cover_open << std::endl;
+    expect(cover_unset >= uint64_t(harness.width) * harness.height / 20, "the default frame covers less than 5% of the target");
+    expect(cover_small > 0 && cover_small < cover_unset, "a smaller sticker shrink does not cover fewer pixels");
+    expect(cover_open > 0 && cover_open < cover_unset, "the opening values do not cover fewer pixels than the defaults");
+    // Refusals change nothing.
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    for (int field = 0; field < 8; ++field) {
+        auto bad = smaller;
+        switch (field) {
+        case 0: bad.cell_shrink = nan; break;
+        case 1: bad.sticker_shrink = std::numeric_limits<float>::infinity(); break;
+        case 2: bad.d4 = nan; break;
+        case 3: bad.zoom = nan; break;
+        case 4: bad.sticker_shrink = 0; break;
+        case 5: bad.d4 = 1.0f; break;
+        case 6: bad.zoom = SA2_SHAPE_ZOOM_MAX * 2; break;
+        default: bad.struct_size = 20; break;
+        }
+        expect(sa2_view_shape_set(ctx, 1, &bad) == SA2_E_INVALID_ARGUMENT, "a non-finite or out-of-range shape was accepted");
+    }
+    expect(frames.draw(1, 1, 0, Q) == reduced, "a refused shape changed the view's frames");
+    api(ctx, sa2_view_shape_set(ctx, 1, nullptr));
+    expect(frames.draw(1, 1, 0, Q) == unset, "a NULL shape did not restore the defaults");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_view_shape_set(ctx, 1, &smaller) == SA2_E_WRONG_STATE, "a shape was set without a loaded scene");
+    harness.finish(options.debug);
+}
+
 struct ChildResult { DWORD code = 0; std::string output, error; };
 std::string read_pipe(HANDLE pipe) {
     std::string text;
@@ -1159,6 +1229,12 @@ void run_stages(Suite& suite, const Options& options) {
 void run_poses(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the pose check runs on WARP only");
     suite.check("product poses warp", [&] { product_poses(options); });
+}
+
+// ABI 6: --warp --shape. Only WARP; parse refuses any other mode.
+void run_shape(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the shape check runs on WARP only");
+    suite.check("view shape warp", [&] { product_shape(options); });
 }
 
 // C9 U5c: --warp --measure-stages DIR. Only WARP; parse refuses any other mode.

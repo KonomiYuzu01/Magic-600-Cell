@@ -771,11 +771,14 @@ struct Scene::Impl {
         put(copy.pose[1], image.poses.data(), uint64_t(image.poses.size()) * 4);
         put(copy.pose[2], image.lattice.data(), uint64_t(image.lattice.size()) * 4);
     }
-    // W-J's constants with the frame's camera; the pose path follows the engine image.
-    Constants product_constants(const std::array<float, 16>& matrix, uint32_t width, uint32_t height, uint32_t pose_count) {
+    // W-J's constants with the frame's camera; the pose path follows the engine image. ABI 6: the view's shape
+    // replaces the four constants; its defaults are constants()'s own values, so an unset shape changes no byte.
+    Constants product_constants(const std::array<float, 16>& matrix, uint32_t width, uint32_t height, uint32_t pose_count,
+                                const ViewShape& view) {
         sb::Matrix rotation; std::copy(matrix.begin(), matrix.end(), rotation.begin());
         auto c = constants(shape, rotation, float(width) / float(height), 0);
         c.poseEnabled = pose_count ? 1u : 0u; c.poseCount = std::max(pose_count, 1u);
+        c.cs = view.cell_shrink; c.ss = view.sticker_shrink; c.d4 = view.d4; c.zoom = view.zoom;
         return c;
     }
     std::pair<Buffer*, Buffer*> product_set(uint64_t set_ticket) {
@@ -1276,7 +1279,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     auto& copy = p.copies[plan.copy];
     if (plan.upload) g.upload_engine(list, copy, *plan.image);
     std::array<float, 16> camera; std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), camera.begin());
-    const auto c = g.product_constants(camera, input.viewport_width, input.viewport_height, plan.pose_count);
+    const auto c = g.product_constants(camera, input.viewport_width, input.viewport_height, plan.pose_count, plan.shape);
     std::memcpy(p.cb_data[ring], &c, sizeof(c));
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
     list->BeginQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
@@ -1315,7 +1318,7 @@ uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12Comm
     std::tie(pick.allocator, pick.list) = g.product_list(L"SA2 ID pass command list");
     pick.constants = g.buffer(256, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
     pick.read = g.buffer(256, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
-    const auto c = g.product_constants(input.camera, input.width, input.height, input.pose_count);
+    const auto c = g.product_constants(input.camera, input.width, input.height, input.pose_count, input.shape);
     std::memcpy(g.map(pick.constants), &c, sizeof(c)); pick.constants.resource->Unmap(0, nullptr);
     auto& stored = p.picks[ticket] = std::move(pick);
     bool submitted = false;

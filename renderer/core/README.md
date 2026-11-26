@@ -1,4 +1,4 @@
-# Renderer core (S-A2, ABI 5)
+# Renderer core (S-A2, ABI 6)
 
 `renderer/core/` is the product copy of the selected S-A2 renderer core. It is a native Direct3D 12 producer DLL, `sa2_interop.dll`, that a Godot 4.7.2 .NET host loads. It draws into textures that Godot shares with it, on Godot's device and queue. W-J's per-piece pose path is added as ABI 3, so W-J item 5 (S4, I_a, I_b) and the W3 re-acceptance can run on the S-A2 host with unchanged bars. ABI 4 adds the product API that the Rust display host calls, one C call per RM.14 operation. ABI 5 adds route B: the core's own device presenting in a DirectComposition layer. Route B is accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks. `PROVENANCE.md` lists every file's source under `work/experiments/` and how it changed. The build compiles nothing from there.
 
@@ -86,7 +86,7 @@ SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
 
 ## C9 U5: user shader stages (additive in ABI 5)
 
-The U5 design names ABI 6; these calls are added to ABI 5 instead, `SA2_ABI_VERSION` stays 5 and no earlier call changes. The header comment before the declarations gives the contract.
+The U5 design names ABI 6; these calls are added to ABI 5 instead, `SA2_ABI_VERSION` stayed 5 and no earlier call changes. (ABI 6 is ADR-D02's view shape, below.) The header comment before the declarations gives the contract.
 
 ```c
 #define SA2_STAGE_VERTEX 1u
@@ -106,6 +106,22 @@ SA2_API int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle);
 - `sa2_stage_report` returns the oldest completed chain frame not yet returned (U, the allowance, the stop decision and the pixel-shader invocations of both draws), so a caller that reports after each frame and again while the frame number rises sees every chain frame once, in order; with none waiting it returns the last row again. At most 4096 rows wait (C9 U5c; U5b returned only the newest).
 - A stage compile that cannot load DXC, compose a pass or build a pipeline returns its status with the compile record; no exception crosses the ABI (C9 U5c).
 
+## ABI 6: a view's shape (ADR-D02, a candidate behind --d02)
+
+On 26 November 2026 the owner asked for smaller stickers at Look Lab's opening values. ABI 6 adds one call; every ABI 5 call, struct and behaviour is unchanged, and a view whose shape was never set draws byte-identically to ABI 5. The header comment before the declaration gives the contract.
+
+```c
+#define SA2_SHAPE_DEFAULT_CELL_SHRINK 0.76f /* ABI 5's constants */
+#define SA2_SHAPE_DEFAULT_STICKER_SHRINK 0.82f
+#define SA2_SHAPE_DEFAULT_D4 1.18f
+#define SA2_SHAPE_DEFAULT_ZOOM 1.15f
+SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape* shape); /* sa2_view_shape: 24 bytes on x64 */
+```
+
+- The shape is the cell shrink (Look Lab's 1 - gap), the sticker shrink, d4 and the zoom (Look Lab's 1 / tan(fov / 2)), per view. A NULL shape restores the defaults; a value that is not finite or lies outside its range is refused and changes nothing.
+- The shape is device-free product state: it is set outside a trace with a scene loaded, kept by `sa2_recover`, forgotten by `sa2_scene_unload`. A frame keeps its shape, so a pick on it draws its ID pass with that shape. The shaders do not change: the values go into the constants that `geometry.hlsl` already reads.
+- `python renderer/core/check_core.py --shape` runs `sa2_selftest.exe --warp --shape --debug` on WARP only: the default shape draws byte-identically to no call, a smaller sticker shrink and the opening values cover fewer pixels, another view keeps its shape, every non-finite or out-of-range value is refused without changing a frame, NULL restores the defaults and an unloaded scene refuses the call.
+
 ## Build and CPU check
 
 These need Windows, MSVC x64, the Windows SDK's `dxc` and the pinned `renderer-spike` CMake and Ninja. A worktree without `tools/.venv/renderer-spike` can set `M600_RENDERER_SPIKE_SCRIPTS` to another checkout's `Scripts` folder.
@@ -120,7 +136,7 @@ The default build directory is `work\build\renderer-core`. Build only under the 
 python renderer/core/check_core.py
 ```
 
-This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose 35 checks must all pass (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
+This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose checks must all pass (38 with ABI 6's view shape) (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
 
 `tests/test_renderer_core.py` checks the provenance digests, the file list, the CMake sources and the ABI pins. It needs only the Python standard library and runs on Linux.
 
@@ -150,4 +166,4 @@ None of these has been run for this copy. Each starts a D3D12 device:
 - The ABI 4 GPU paths: the engine and preparation uploads, a product frame with its timestamp and pipeline-statistics queries, the ID pass and its readback, `sa2_resize`, and device loss during product work. They compile, but no self-test mode exercises them yet.
 - The ABI 5 route B paths: `sa2_create`, the surface calls in a real window, surface frames and their presentation, `sa2_presented` and a traced run's `presented.jsonl` against real frame statistics, `sa2_resize` of the swap chain, and `sa2_recover` after `sa2_remove_device`. They compile, but no self-test mode exercises them; route B's three owner-machine checks are still open.
 
-The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 5 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 5 and uses only ABI 1 to 3 calls.
+The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 6 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 6 and uses only ABI 1 to 3 calls.

@@ -22,6 +22,7 @@ static_assert(sizeof(sa2_frame_report) == 104);
 static_assert(sizeof(sa2_presented_row) == 56);
 static_assert(sizeof(sa2_pick_row) == 112);
 static_assert(sizeof(sa2_counter_values) == 64);
+static_assert(sizeof(sa2_view_shape) == 24);
 
 namespace sa2 {
 using Digest = std::array<uint8_t, 32>;
@@ -87,6 +88,14 @@ struct PreparedData {
     uint64_t bytes() const { return uint64_t(visible.size() + instances.size()) * 4; }
 };
 PreparedData preparation(const sa2_preparation* preparation); // validates and copies
+// ABI 6: the shape a view's frames draw with (sa2_view_shape_set). The defaults are ABI 5's constants, so a view whose
+// shape was never set draws exactly as before.
+struct ViewShape {
+    float cell_shrink = SA2_SHAPE_DEFAULT_CELL_SHRINK, sticker_shrink = SA2_SHAPE_DEFAULT_STICKER_SHRINK;
+    float d4 = SA2_SHAPE_DEFAULT_D4, zoom = SA2_SHAPE_DEFAULT_ZOOM;
+    bool operator==(const ViewShape&) const = default;
+};
+ViewShape view_shape(const sa2_view_shape* shape); // validates (SA2_E_INVALID_ARGUMENT); NULL gives the defaults
 void validate_frame_input(const sa2_frame_input* input);
 void validate_cancel(int32_t reason, uint64_t superseded_by);
 template<class Row> void validate_rows(const Row* rows, uint32_t capacity) {
@@ -106,12 +115,14 @@ struct FramePlan {
     const EngineImage* image = nullptr;
     uint32_t pose_count = 0;
     uint64_t set_ticket = 0;
+    ViewShape shape; // ABI 6: the frame's view's shape
 };
-// An ID pass: the frame's camera, viewport, engine copy and resource set.
+// An ID pass: the frame's camera, viewport, engine copy, resource set and (ABI 6) shape.
 struct PassInput {
     std::array<float, 16> camera{};
     uint32_t width = 0, height = 0, x = 0, y = 0, copy = 0, pose_count = 0;
     uint64_t set_ticket = 0;
+    ViewShape shape;
 };
 struct PickPlan {
     uint64_t frame = 0;
@@ -220,6 +231,10 @@ public:
     uint64_t adopt(EngineImage image); // revisions increase strictly; no GPU work; works after device loss (RM.16)
     const EngineImage* image() const { return image_ ? &*image_ : nullptr; }
 
+    // ABI 6: a view's shape; the defaults until it is set. Kept across a recovery.
+    void set_shape(uint64_t view, const ViewShape& shape);
+    ViewShape shape(uint64_t view) const;
+
     void check_prepare(const PreparedData& data) const; // removal, epoch, GPU capacity
     uint64_t reserve_ticket() { return next_ticket_++; }
     void prepared(uint64_t ticket, const PreparedData& data, uint64_t fence); // the upload signals fence
@@ -268,6 +283,7 @@ private:
         sa2_frame_input input{};
         uint64_t id = 0, target_generation = 0, set_ticket = 0;
         uint32_t ring = 0, copy = 0;
+        ViewShape shape; // ABI 6: the shape the frame drew with, for its picks
         bool produced = false, reported = false;
         int32_t error = SA2_OK;
         uint64_t gpu_ns = 0, evals = 0;
@@ -299,6 +315,7 @@ private:
     std::array<uint64_t, SA2_RING_SLOTS> unharvested_{};
     std::map<uint64_t, std::pair<uint64_t, uint64_t>> surfaces_; // surface -> (last sequence, newest surface_generation)
     std::map<uint64_t, uint64_t> views_; // view -> newest view_generation
+    std::map<uint64_t, ViewShape> shapes_; // ABI 6: view -> shape, for views whose shape is not the default
     std::map<uint64_t, Pick> picks_;
     Counters counters_;
 };

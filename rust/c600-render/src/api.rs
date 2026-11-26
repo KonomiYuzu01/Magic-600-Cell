@@ -1,8 +1,10 @@
-//! The core's product calls as a safe Rust interface: one method per ABI 5 product call, with slices where the C
+//! The core's product calls as a safe Rust interface: one method per ABI 6 product call, with slices where the C
 //! structs carry pointers. `DllCore` in `renderer/bridge` (`c600-render-ffi`) implements it over the C functions;
 //! [`crate::fake::FakeCore`] implements it in Rust for headless tests.
 
-use crate::abi::{Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2PickRow, Sa2PollRow, Sa2PresentedRow, Status};
+use crate::abi::{
+    Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2PickRow, Sa2PollRow, Sa2PresentedRow, Sa2ViewShape, Status,
+};
 
 /// The pose path arrays of a posed engine state.
 #[derive(Clone, Copy, Debug)]
@@ -77,4 +79,6 @@ pub trait CoreAbi {
     fn device_status(&self) -> (Status, i32);
     /// `sa2_last_error` of the context.
     fn last_error(&self) -> String;
+    /// ABI 6's `sa2_view_shape_set`: the shape of `view`'s frames, or `None` for the defaults (ABI 5's constants).
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status>;
 }

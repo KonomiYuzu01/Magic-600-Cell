@@ -2,13 +2,14 @@
  * sa2_interop.h: the C ABI between the Godot C# host and the native Direct3D
  * 12 producer DLL sa2_interop.dll (renderer/core/, the product copy of the
  * selected S-A2 core).
- * ABI version 5; the ABI 1 to ABI 4 declarations, layouts and behaviour are
+ * ABI version 6; the ABI 1 to ABI 5 declarations, layouts and behaviour are
  * retained, except that ABI 5 extends sa2_presented_row with display_qpc (no
  * ABI 4 core wrote that row: without a surface sa2_presented answers
  * SA2_E_UNAVAILABLE). ABI 3 adds W-J's per-piece pose path (sa2_scene_load_wj and
  * sa2_scene_lattice_check). ABI 4 adds the product API, one call per RM.14
  * operation. ABI 5 adds route B: the core's own device, a DirectComposition
- * layer and a composition swap chain (both at the end of this file).
+ * layer and a composition swap chain (both at the end of this file). ABI 6
+ * adds a view's shape (sa2_view_shape_set, at the end of this file).
  *
  * The integrator owns this file. An implementation must not change it; if a
  * change is unavoidable, stop and report the reason instead.
@@ -43,7 +44,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 5u
+#define SA2_ABI_VERSION 6u
 
 /* Code layout; must match code_layout.json and the host's CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -670,7 +671,7 @@ static_assert(sizeof(sa2_counter_values) == 64, "sa2_counter_values requires the
 #endif
 
 /* describe_backend. Writes the SupportReport as NUL-terminated JSON:
- * {interface_version: 5, backend_build: SHA-256 of the sa2_identity JSON,
+ * {interface_version: SA2_ABI_VERSION, backend_build: SHA-256 of the sa2_identity JSON,
  * device_epoch, device_removed: null or the removal HRESULT as "0x%08x",
  * features: {row: {status: "supported", layout_version} or {status:
  * "unsupported", reason}}, evidence: []}. Supported rows: F01 full-detail
@@ -1052,6 +1053,39 @@ SA2_API int32_t sa2_stage_compile(sa2_context* ctx, uint32_t kind, const char* h
 SA2_API int32_t sa2_scene_stages(sa2_context* ctx, uint64_t vertex_stage, uint64_t fragment_stage, uint32_t overdraw, const uint32_t* vertex_arrays, uint32_t vertex_count, const uint32_t* fragment_arrays, uint32_t fragment_count);
 SA2_API int32_t sa2_stage_report(sa2_context* ctx, sa2_stage_frame* out);
 SA2_API int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle);
+
+/* ABI 6: a view's shape (ADR-D02's build, a candidate behind the shell's --d02; on 26 November 2026 the owner asked
+ * for smaller stickers at Look Lab's opening values). Additive: every ABI 5 call, struct and behaviour is unchanged,
+ * and a view whose shape was never set draws byte-identically to ABI 5.
+ *
+ * sa2_view_shape_set sets the shape that the product frames of `view` (sa2_frame_input.view) and their ID passes draw
+ * with: the cell shrink (Look Lab's 1 - gap), the sticker shrink, the 4D eye distance d4 and the zoom (Look Lab's
+ * 1 / tan(field of view / 2)). ABI 5 hard-codes them as the SA2_SHAPE_DEFAULT_* values; a NULL shape restores those.
+ * Each value must be finite and inside its range below, struct_size must be sizeof(sa2_view_shape) and reserved 0,
+ * else SA2_E_INVALID_ARGUMENT and nothing changes. The shape is device-free product state: it needs a loaded scene
+ * outside a trace (SA2_E_WRONG_STATE), works during device loss, is kept by sa2_recover and is forgotten by
+ * sa2_scene_unload. A frame keeps the shape it was drawn with, so a pick on it draws its ID pass with that shape.
+ */
+#define SA2_SHAPE_DEFAULT_CELL_SHRINK 0.76f /* ABI 5's constants: every view's shape until one is set */
+#define SA2_SHAPE_DEFAULT_STICKER_SHRINK 0.82f
+#define SA2_SHAPE_DEFAULT_D4 1.18f
+#define SA2_SHAPE_DEFAULT_ZOOM 1.15f
+#define SA2_SHAPE_D4_MAX 64.0f
+#define SA2_SHAPE_ZOOM_MAX 64.0f
+
+typedef struct sa2_view_shape {
+    uint32_t struct_size; /* sizeof(sa2_view_shape); 24 on x64 */
+    float cell_shrink; /* 0 < cell_shrink <= 1 */
+    float sticker_shrink; /* 0 < sticker_shrink <= 1 */
+    float d4; /* 1 < d4 <= SA2_SHAPE_D4_MAX: every drawn point lies in the unit ball, so w < d4 */
+    float zoom; /* 0 < zoom <= SA2_SHAPE_ZOOM_MAX */
+    uint32_t reserved; /* must be 0 */
+} sa2_view_shape;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_view_shape) == 24, "sa2_view_shape requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape* shape);
 
 #ifdef __cplusplus
 }

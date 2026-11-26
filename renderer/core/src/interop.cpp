@@ -1952,4 +1952,15 @@ int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle) {
         return SA2_OK;
     });
 }
+
+// ABI 6: a view's shape (sa2_interop.h). Device-free product state, so it works during device loss.
+int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape* shape) {
+    return invoke(ctx, "sa2_view_shape_set", [&] {
+        context(ctx);
+        const auto value = sa2::view_shape(shape);
+        auto& scene = product_scene(ctx);
+        scene.product.set_shape(view, value);
+        return SA2_OK;
+    });
+}
 }

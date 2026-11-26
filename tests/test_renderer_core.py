@@ -1,4 +1,4 @@
-"""Headless checks of the renderer core's product copy (renderer/core/, S-A2 with ABI 5).
+"""Headless checks of the renderer core's product copy (renderer/core/, S-A2 with ABI 6).
 
 The core builds only on Windows with MSVC (renderer/core/check_core.py). These checks need only the
 Python standard library and run anywhere. They check that:
@@ -6,11 +6,12 @@ Python standard library and run anywhere. They check that:
   work/experiments/, and every "verbatim" product file equals its source;
 - the provenance table lists exactly the files under renderer/core/;
 - the CMake build names no source outside renderer/core/;
-- the ABI header pins version 5, keeps every ABI 2 declaration, layout and constant and the ABI 3
+- the ABI header pins version 6, keeps every ABI 2 declaration, layout and constant and the ABI 3
   additions, pins the ABI 4 product declarations, struct sizes and constants, and pins ABI 5's
   route B declarations and constants (route B is accepted for now by the owner on 18 Nov 2026,
   pending three owner-machine checks), and pins C9 U5's user-stage declarations, constants and
-  report layout, added to ABI 5 without changing it.
+  report layout, added to ABI 5 without changing it, and pins ABI 6's view shape (ADR-D02), whose
+  defaults are the scene's ABI 5 constants.
 """
 from __future__ import annotations
 
@@ -155,7 +156,8 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(values["SHADERS"], built)
         self.assertEqual(len(built), 8)
         self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
-        self.assertEqual(len(values["CPU_CHECKS"]), 37)
+        self.assertEqual(len(values["CPU_CHECKS"]), 38)
+        self.assertIn("view shape", values["CPU_CHECKS"])  # ADR-D02, ABI 6
         self.assertIn("preparation reuse", values["CPU_CHECKS"])  # C9, 26 Nov 2026
         self.assertTrue({"wj arguments", "wj scene state", "wj reader refusals", "wj protocol controls",
                          "wj native writer"} <= values["CPU_CHECKS"])
@@ -235,6 +237,15 @@ ABI5_U5_DEFINES = {
     "SA2_STAGE_VERTEX": "1u", "SA2_STAGE_FRAGMENT": "2u", "SA2_STAGE_RECORD_BYTES": "65536u",
     "SA2_STAGE_HLSL_MAX_BYTES": "1048576u", "SA2_STAGE_ARRAY_MAX": "1048576u",
 }
+# ABI 6: a view's shape (ADR-D02's build, a candidate behind --d02). Its defaults are ABI 5's scene constants.
+ABI6 = {
+    "SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape* shape);",
+}
+ABI6_DEFINES = {
+    "SA2_SHAPE_DEFAULT_CELL_SHRINK": "0.76f", "SA2_SHAPE_DEFAULT_STICKER_SHRINK": "0.82f",
+    "SA2_SHAPE_DEFAULT_D4": "1.18f", "SA2_SHAPE_DEFAULT_ZOOM": "1.15f", "SA2_SHAPE_D4_MAX": "64.0f",
+    "SA2_SHAPE_ZOOM_MAX": "64.0f",
+}
 
 
 class AbiTests(unittest.TestCase):
@@ -242,8 +253,8 @@ class AbiTests(unittest.TestCase):
         self.header = text(CORE / "include" / "sa2_interop.h")
         self.abi2 = text(SA2_HEADER)
 
-    def test_version_is_5(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["5u"])
+    def test_version_is_6(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["6u"])
         self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.abi2, re.M), ["2u"])
 
     def test_abi2_scene_config_layout_is_pinned(self):
@@ -270,7 +281,7 @@ class AbiTests(unittest.TestCase):
 
     def test_abi4_and_abi5_additions(self):
         added = declarations(self.header) - declarations(self.abi2)
-        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5)
+        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5 | ABI6)
 
     def test_abi4_struct_sizes_are_pinned(self):
         layouts = structs(self.header)
@@ -304,6 +315,20 @@ class AbiTests(unittest.TestCase):
         layout = structs(self.header).get("sa2_stage_frame", "")
         self.assertTrue(layout.startswith("typedef struct sa2_stage_frame {\n    uint32_t struct_size;"))
         self.assertIn('static_assert(sizeof(sa2_stage_frame) == 64, "sa2_stage_frame requires the x64 ABI");', self.header)
+
+    def test_abi6_view_shape_is_pinned_to_the_abi5_constants(self):
+        values = defines(self.header)
+        for name, value in ABI6_DEFINES.items():
+            with self.subTest(define=name):
+                self.assertEqual(values.get(name), value)
+        layout = structs(self.header).get("sa2_view_shape", "")
+        self.assertTrue(layout.startswith("typedef struct sa2_view_shape {\n    uint32_t struct_size;"))
+        self.assertIn('static_assert(sizeof(sa2_view_shape) == 24, "sa2_view_shape requires the x64 ABI");', self.header)
+        self.assertIn("static_assert(sizeof(sa2_view_shape) == 24);", text(CORE / "src" / "product.h"))
+        # A view without a shape draws with exactly the constants ABI 5 hard-coded in the scene's constants().
+        scene = text(CORE / "src" / "scene.cpp")
+        self.assertIn("s.radius, 0.76f, 0.82f, 1.18f, 1.15f, aspect", scene)
+        self.assertIn("c.cs = view.cell_shrink; c.ss = view.sticker_shrink; c.d4 = view.d4; c.zoom = view.zoom;", scene)
 
 
 if __name__ == "__main__":

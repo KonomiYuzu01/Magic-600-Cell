@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 17] = [
+pub const SYMBOLS: [&str; 18] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -32,9 +32,10 @@ pub const SYMBOLS: [&str; 17] = [
     "sa2_recover",
     "sa2_counters",
     "sa2_device_status",
+    "sa2_view_shape_set",
 ];
 
-/// The ABI 5 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
+/// The ABI 6 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
 /// language can fill it.
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -56,6 +57,8 @@ pub struct CoreFunctions {
     pub recover: unsafe extern "C" fn(*mut c_void, *mut c_char, u32, *mut u32) -> i32,
     pub counters: unsafe extern "C" fn(*mut c_void, *mut Sa2CounterValues) -> i32,
     pub device_status: unsafe extern "C" fn(*mut c_void, *mut i32) -> i32,
+    /// ABI 6: a view's shape.
+    pub view_shape_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewShape) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -72,7 +75,7 @@ pub const JSON_LIMIT: usize = 16 << 20;
 
 impl DllCore {
     /// Binds an attached context. Fails with `SA2_E_INVALID_ARGUMENT` for a null context and `SA2_E_UNSUPPORTED`
-    /// when the library is not ABI 5.
+    /// when the library is not ABI 6.
     ///
     /// # Safety
     ///
@@ -262,6 +265,13 @@ impl CoreAbi for DllCore {
         // SAFETY: `reason` is a live i32.
         let status = Status(unsafe { (self.functions.device_status)(self.context, &mut reason) });
         (status, reason)
+    }
+
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
+        let row = shape.map(|s| Sa2ViewShape { struct_size: size_of::<Sa2ViewShape>() as u32, ..*s });
+        let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewShape);
+        // SAFETY: `pointer` is null or a live, sized row.
+        Status(unsafe { (self.functions.view_shape_set)(self.context, view, pointer) }).check()
     }
 
     fn last_error(&self) -> String {

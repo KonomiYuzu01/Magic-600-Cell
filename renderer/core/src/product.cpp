@@ -81,6 +81,18 @@ PreparedData preparation(const sa2_preparation* value) {
     return out;
 }
 
+ViewShape view_shape(const sa2_view_shape* shape) {
+    if (!shape) return ViewShape{};
+    argument(shape->struct_size == sizeof(*shape), "invalid view_shape struct_size");
+    argument(shape->reserved == 0, "view_shape reserved must be 0");
+    const auto within = [](float value, float low, float high) { return std::isfinite(value) && value > low && value <= high; };
+    argument(within(shape->cell_shrink, 0.0f, 1.0f), "cell_shrink must be finite, above 0 and at most 1");
+    argument(within(shape->sticker_shrink, 0.0f, 1.0f), "sticker_shrink must be finite, above 0 and at most 1");
+    argument(within(shape->d4, 1.0f, SA2_SHAPE_D4_MAX), "d4 must be finite, above 1 and at most SA2_SHAPE_D4_MAX");
+    argument(within(shape->zoom, 0.0f, SA2_SHAPE_ZOOM_MAX), "zoom must be finite, above 0 and at most SA2_SHAPE_ZOOM_MAX");
+    return ViewShape{shape->cell_shrink, shape->sticker_shrink, shape->d4, shape->zoom};
+}
+
 void validate_frame_input(const sa2_frame_input* input) {
     argument(input && input->struct_size == sizeof(*input), "invalid frame_input struct_size");
     argument(input->reserved == 0, "frame_input reserved must be 0");
@@ -117,6 +129,16 @@ uint64_t Product::adopt(EngineImage image) {
     state(!image_ || image.revision > image_->revision, "engine revision must increase");
     image_ = std::move(image);
     return image_->revision;
+}
+
+// ABI 6: device-free, so it works during device loss; only views off the defaults are kept.
+void Product::set_shape(uint64_t view, const ViewShape& shape) {
+    if (shape == ViewShape{}) shapes_.erase(view);
+    else shapes_[view] = shape;
+}
+ViewShape Product::shape(uint64_t view) const {
+    const auto it = shapes_.find(view);
+    return it == shapes_.end() ? ViewShape{} : it->second;
 }
 
 void Product::check_prepare(const PreparedData& data) const {
@@ -257,6 +279,7 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
     FramePlan out;
     out.image = &*image_;
     out.pose_count = image_->pose_count;
+    out.shape = shape(input.view);
     if (input.resource_set) {
         const Entry* entry = set_entry(input.resource_set);
         state(entry && entry->active, "resource_set is not an active set");
@@ -302,6 +325,7 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     record.set_ticket = plan.set_ticket;
     record.ring = ring;
     record.copy = plan.copy;
+    record.shape = plan.shape;
     frames_.push_back(record);
     if (ring < unharvested_.size()) unharvested_[ring] = frame;
     ++counters_.frames_submitted;
@@ -426,6 +450,7 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
     out.input.copy = record->copy;
     out.input.pose_count = copy.pose_count;
     out.input.set_ticket = record->set_ticket;
+    out.input.shape = record->shape;
     return out;
 }
 

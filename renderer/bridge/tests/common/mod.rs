@@ -226,6 +226,14 @@ unsafe extern "C" fn device_status(ctx: *mut c_void, out: *mut i32) -> i32 {
     status.0
 }
 
+unsafe extern "C" fn view_shape_set(ctx: *mut c_void, view: u64, shape: *const Sa2ViewShape) -> i32 {
+    let shape = unsafe { shape.as_ref() };
+    if shape.is_some_and(|s| !sized::<Sa2ViewShape>(s.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_shape_set(view, shape), |()| ())
+}
+
 /// The shim's function table.
 pub fn functions() -> CoreFunctions {
     CoreFunctions {
@@ -246,6 +254,7 @@ pub fn functions() -> CoreFunctions {
         recover,
         counters,
         device_status,
+        view_shape_set,
     }
 }
 
@@ -259,7 +268,7 @@ impl Shimmed {
     pub fn new(fake: FakeCore, pad: usize) -> Shimmed {
         let shim = Box::into_raw(Box::new(Shim { fake, pad }));
         // SAFETY: the table is the shim's and the context a live shim, which this value owns and frees last.
-        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 5");
+        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 6");
         Shimmed { dll, shim }
     }
 }
@@ -319,6 +328,9 @@ impl CoreAbi for Shimmed {
     }
     fn last_error(&self) -> String {
         self.dll.last_error()
+    }
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
+        self.dll.view_shape_set(view, shape)
     }
 }
 

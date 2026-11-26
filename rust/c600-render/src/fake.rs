@@ -112,6 +112,8 @@ pub struct FakeCore {
     pub submitted: Vec<Sa2FrameInput>,
     /// Every adopted engine revision with its first label.
     pub adoptions: Vec<(u64, u32)>,
+    /// ABI 6: every view's shape that `sa2_view_shape_set` set and did not restore to the defaults.
+    pub shapes: BTreeMap<u64, Sa2ViewShape>,
     /// Every posed adoption: its revision, its pose count and the SHA-256 (hexadecimal) of the little-endian bytes
     /// of its pose index, pose rows and lattice entries, as the bundle's array descriptors name them.
     pub posed: Vec<(u64, u32, [String; 3])>,
@@ -138,6 +140,7 @@ impl FakeCore {
             next_pick: 1,
             picks: BTreeMap::new(),
             placed: BTreeMap::new(),
+            shapes: BTreeMap::new(),
             counters: Sa2CounterValues::new(),
             error: String::new(),
             prepared: Vec::new(),
@@ -626,5 +629,27 @@ impl CoreAbi for FakeCore {
 
     fn last_error(&self) -> String {
         self.error.clone()
+    }
+
+    /// The header's checks; device-free, so it works during device loss.
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
+        let shape = match shape {
+            None => Sa2ViewShape::defaults(),
+            Some(shape) => {
+                if shape.struct_size as usize != std::mem::size_of::<Sa2ViewShape>() || shape.reserved != 0 {
+                    return self.fail(Status::INVALID_ARGUMENT, "invalid view_shape struct_size or reserved");
+                }
+                if !shape.in_range() {
+                    return self.fail(Status::INVALID_ARGUMENT, "a view shape value is not finite or out of its range");
+                }
+                *shape
+            }
+        };
+        if shape == Sa2ViewShape::defaults() {
+            self.shapes.remove(&view);
+        } else {
+            self.shapes.insert(view, shape);
+        }
+        Ok(())
     }
 }

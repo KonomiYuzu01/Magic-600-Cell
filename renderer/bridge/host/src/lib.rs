@@ -93,7 +93,7 @@ use c600_display::validate::{BoundArray, CheckedPublication, EngineBundle, Limit
 use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
-use c600_render::abi::TARGET_SURFACE;
+use c600_render::abi::{Sa2ViewShape, TARGET_SURFACE};
 use c600_render::{DisplayTime, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
@@ -112,8 +112,9 @@ use turns::{Head, Pending, Press, Puzzle, Turns};
 /// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
 /// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs; version 5
 /// the session's puzzle; version 6 the preload; version 7 LP4-3's write-check-run flow; version 8 the head's state
-/// digests ([`m6h_state_digest`], ADR-D02 B5).
-pub const M6H_ABI_VERSION: u32 = 8;
+/// digests ([`m6h_state_digest`], ADR-D02 B5); version 9 a view's shape ([`m6h_set_view_shape`], ADR-D02, over the
+/// core's ABI 6).
+pub const M6H_ABI_VERSION: u32 = 9;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -961,6 +962,39 @@ pub unsafe extern "C" fn m6h_set_viewport(handle: *mut ShellHost, width: u32, he
         with_host(handle, |shell| {
             shell.host.set_viewport(VIEW, (width, height));
             Ok(())
+        })
+    }
+}
+
+/// Sets the shape that `view`'s frames draw with (version 9, ADR-D02; the core's ABI 6 `sa2_view_shape_set`):
+/// `shape` points to four floats, the cell shrink, the sticker shrink, d4 and the zoom, or is null for the defaults,
+/// the core's ABI 5 constants, which a view keeps until this call. A view that is not open, or a value that is not
+/// finite or lies outside the core's range, answers [`M6H_E_INVALID_ARGUMENT`] and changes nothing. The core keeps
+/// the shape across a recovery.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `shape` is null or points to 4 readable floats.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_view_shape(handle: *mut ShellHost, view: u64, shape: *const f32) -> i32 {
+    let shape = (!shape.is_null()).then(|| {
+        // SAFETY: 4 readable floats (the contract); no alignment is assumed.
+        let [cell_shrink, sticker_shrink, d4, zoom] = unsafe { ptr::read_unaligned(shape.cast::<[f32; 4]>()) };
+        Sa2ViewShape { cell_shrink, sticker_shrink, d4, zoom, ..Sa2ViewShape::new() }
+    });
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if ViewId(view) != VIEW {
+                return Err((M6H_E_INVALID_ARGUMENT, format!("view {view} is not an open view of this host")));
+            }
+            if shape.is_some_and(|s| !s.in_range()) {
+                return Err((
+                    M6H_E_INVALID_ARGUMENT,
+                    "a view shape value is not finite or out of its range".to_owned(),
+                ));
+            }
+            shell.host.backend.set_view_shape(VIEW, shape).map_err(host_error)
         })
     }
 }

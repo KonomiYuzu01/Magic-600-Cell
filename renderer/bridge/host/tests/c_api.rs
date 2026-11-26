@@ -226,3 +226,35 @@ fn the_c_interface_refuses_what_it_cannot_use() {
         drop(Box::from_raw(shim));
     }
 }
+
+#[test]
+fn the_host_sets_its_view_shape() {
+    let shim = Box::into_raw(Box::new(Shim { fake: FakeCore::on_surface(SIZE), pad: 0 }));
+    // SAFETY: the host uses the shim only inside its calls, never at the same time as the test.
+    let fake = || unsafe { &mut (*shim).fake };
+    let (code, host) = create(&functions(), shim, &assets_path());
+    assert_eq!(code, M6H_OK, "{}", last_error(ptr::null_mut()));
+    let opening = [0.7f32, 0.55, 1.18, 1.15];
+    let view = 1u64;
+    // SAFETY: a live handle and 4 readable floats, or null.
+    unsafe {
+        assert_eq!(m6h_set_view_shape(host, view, opening.as_ptr()), M6H_OK, "{}", last_error(host));
+        let shape = fake().shapes[&view];
+        assert_eq!([shape.cell_shrink, shape.sticker_shrink, shape.d4, shape.zoom], opening);
+        // A view that is not open, and values out of range or not finite, change nothing.
+        assert_eq!(m6h_set_view_shape(host, 2, opening.as_ptr()), M6H_E_INVALID_ARGUMENT);
+        for bad in
+            [[f32::NAN, 0.55, 1.18, 1.15], [0.7, 0.0, 1.18, 1.15], [0.7, 0.55, 1.0, 1.15], [0.7, 0.55, 1.18, 65.0]]
+        {
+            assert_eq!(m6h_set_view_shape(host, view, bad.as_ptr()), M6H_E_INVALID_ARGUMENT);
+        }
+        assert_eq!(fake().shapes.len(), 1);
+        assert_eq!(fake().shapes[&view].sticker_shrink, 0.55);
+        // Null restores the defaults, the core's ABI 5 constants.
+        assert_eq!(m6h_set_view_shape(host, view, ptr::null()), M6H_OK);
+        assert!(fake().shapes.is_empty());
+        assert_eq!(m6h_set_view_shape(ptr::null_mut(), view, ptr::null()), M6H_E_INVALID_ARGUMENT);
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}
