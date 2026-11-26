@@ -4,6 +4,7 @@
 
 #![allow(dead_code)]
 
+use std::cell::Cell;
 use std::ffi::{c_char, c_void};
 use std::mem::size_of;
 use std::slice;
@@ -24,6 +25,18 @@ pub struct Shim {
     pub fake: FakeCore,
     /// Leading spaces before the JSON `sa2_describe` writes, to make a report longer than the first buffer.
     pub pad: usize,
+}
+
+thread_local! {
+    /// The `sa2_poll` calls left on this thread until the fake core's GPU reaches every fence ([`complete_after_polls`]).
+    static POLLS_LEFT: Cell<Option<u32>> = const { Cell::new(None) };
+}
+
+/// From now on, on this thread, the `polls`-th `sa2_poll` first has the fake core's GPU reach every fence
+/// ([`FakeCore::complete`]): a preparation pending now answers pending to the `polls - 1` polls before it, as an upload
+/// behind the GPU's current work does. Once, and per thread, so that tests running in parallel do not share it.
+pub fn complete_after_polls(polls: u32) {
+    POLLS_LEFT.with(|left| left.set(Some(polls.max(1))));
 }
 
 unsafe fn shim<'a>(ctx: *mut c_void) -> &'a mut Shim {
@@ -139,7 +152,16 @@ unsafe extern "C" fn poll(ctx: *mut c_void, ticket: u64, out: *mut Sa2PollRow) -
     if !sized::<Sa2PollRow>(unsafe { (*out).struct_size }) {
         return Status::INVALID_ARGUMENT.0;
     }
-    code(unsafe { shim(ctx) }.fake.poll(ticket), |row| unsafe { *out = row })
+    let shim = unsafe { shim(ctx) };
+    POLLS_LEFT.with(|left| match left.get() {
+        Some(n) if n <= 1 => {
+            left.set(None);
+            shim.fake.complete();
+        }
+        Some(n) => left.set(Some(n - 1)),
+        None => {}
+    });
+    code(shim.fake.poll(ticket), |row| unsafe { *out = row })
 }
 
 unsafe extern "C" fn activate(ctx: *mut c_void, set: u64, digest: *const u8) -> i32 {
