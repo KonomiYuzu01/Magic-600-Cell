@@ -1,0 +1,38 @@
+diff --git a/rust/c600-display/src/host.rs b/rust/c600-display/src/host.rs
+index 18919e76..63f0c2f6 100644
+--- a/rust/c600-display/src/host.rs
++++ b/rust/c600-display/src/host.rs
+@@ -833,12 +833,16 @@ impl<B: Backend> Host<B> {
+     }
+ 
+     fn publish_with(&mut self, command: CommandId, publication: Publication, checked: Option<Validated>) -> Receipt {
++        let t0 = std::time::Instant::now();
+         let request = canonical::request_digest(&publication);
++        let t1 = std::time::Instant::now();
+         if let Some(receipt) = self.duplicate(command, &request) {
+             return receipt;
+         }
+         let view = publication.target;
++        let t2 = std::time::Instant::now();
+         let admitted = self.admit(&publication, checked);
++        let t3 = std::time::Instant::now();
+         let validated = match admitted {
+             Ok(validated) => validated,
+             Err(error) => {
+@@ -847,7 +851,16 @@ impl<B: Backend> Host<B> {
+             }
+         };
+         self.accept(command, request, view, None);
++        let t4 = std::time::Instant::now();
+         self.prepare(command, publication, validated);
++        let t5 = std::time::Instant::now();
++        if let Some(path) = std::env::var_os("M600_KEYSTALL_TIMERS") {
++            use std::io::Write;
++            if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
++                let ms = |a: std::time::Instant, b: std::time::Instant| (b - a).as_secs_f64() * 1e3;
++                let _ = writeln!(file, "host request_ms={:.3} duplicate_ms={:.3} admit_ms={:.3} accept_ms={:.3} prepare_ms={:.3}", ms(t0, t1), ms(t1, t2), ms(t2, t3), ms(t3, t4), ms(t4, t5));
++            }
++        }
+         self.receipt(command).expect("recorded")
+     }
+ 

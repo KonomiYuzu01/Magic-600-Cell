@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] update | The twist key's stall moves off the frame thread
+Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) where the twist key's time on the frame thread went (the commit, with its journal sync a small share, and the view's build and checks) and the change that builds and checks the view's work on a worker thread and adopts it at the next frame call, leaving the commit boundary as it was. On screen on the real core the key call fell from 57 to 18 ms and the refreshes without a frame from 3.35 to 2.0 per key; a short wait after a frame's submission keeps the press at the frame it had before, and the core's per-twist GPU buffers are what is left besides the commit.
+
 ## [2026-11-26] update | LX-4's L slowdown found headless and fixed
 The 50 ms rise of L completion and L diagnostics in [owner-sitting-2026-11-25-results](evidence/owner-sitting-2026-11-25-results.md) is the editor services reading each L buffer again, with a name index that scanned every binding per name; the index now looks names up by owner and by name and a document shares one parse, with no answer changed, and headless timing shows most of the rise gone. The on-screen effect waits for the next U8 run.
 

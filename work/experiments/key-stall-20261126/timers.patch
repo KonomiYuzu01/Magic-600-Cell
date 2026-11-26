@@ -1,0 +1,208 @@
+diff --git a/renderer/bridge/host/src/lib.rs b/renderer/bridge/host/src/lib.rs
+index f1cff4db..698b43cd 100644
+--- a/renderer/bridge/host/src/lib.rs
++++ b/renderer/bridge/host/src/lib.rs
+@@ -437,7 +437,7 @@ impl ShellHost {
+         if revision <= self.revision {
+             return Err((M6H_E_HOST, format!("engine revision {revision} does not follow {}", self.revision)));
+         }
+-        let (base, bundle, primitive) = adoption(&self.geometry, head, revision)?;
++        let (base, bundle, primitive) = { let __t = std::time::Instant::now(); let __r = adoption(&self.geometry, head, revision); eprintln!("TIMING adopt.adoption_build {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }?;
+         let ctx = if base.identity != self.host.ctx.identity {
+             let limits = self.host.ctx.limits.clone();
+             let mut ctx = match head {
+@@ -449,15 +449,15 @@ impl ShellHost {
+         } else {
+             None
+         };
+-        self.host.adopt(&bundle).map_err(host_error)?;
++        { let __t = std::time::Instant::now(); let __r = self.host.adopt(&bundle); eprintln!("TIMING adopt.host_adopt {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }.map_err(host_error)?;
+         if let Some(ctx) = ctx {
+             self.host.ctx = ctx;
+         }
+         self.revision = revision;
+-        self.digests.insert(revision, head.digest());
+-        self.publication = publication(&self.geometry, primitive, &base);
+-        self.replace_runs();
+-        match self.publish() {
++        { let __t = std::time::Instant::now(); let __r = self.digests.insert(revision, head.digest()); eprintln!("TIMING adopt.head_digest {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
++        self.publication = { let __t = std::time::Instant::now(); let __r = publication(&self.geometry, primitive, &base); eprintln!("TIMING adopt.publication_build {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
++        { let __t = std::time::Instant::now(); let __r = self.replace_runs(); eprintln!("TIMING adopt.replace_runs {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
++        match { let __t = std::time::Instant::now(); let __r = self.publish(); eprintln!("TIMING adopt.publish {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r } {
+             Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => Ok(revision),
+             Err(failure) => Err(failure),
+         }
+@@ -472,11 +472,12 @@ impl ShellHost {
+         let command = CommandId(self.next_command);
+         self.next_command += 1;
+         self.reference = Some(command);
+-        let receipt = self.host.publish(command, self.publication.clone());
++        let __p = { let __t = std::time::Instant::now(); let __r = self.publication.clone(); eprintln!("TIMING publish.clone {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
++        let receipt = { let __t = std::time::Instant::now(); let __r = self.host.publish(command, __p); eprintln!("TIMING publish.host_publish {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
+         match receipt.status {
+             CommandStatus::Refused(error) | CommandStatus::Failed(error) => Err(host_error(error)),
+             _ => {
+-                self.host.pump();
++                { let __t = std::time::Instant::now(); let __r = self.host.pump(); eprintln!("TIMING publish.pump {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
+                 Ok(())
+             }
+         }
+@@ -1224,13 +1225,14 @@ pub unsafe extern "C" fn m6h_key_down(
+     unsafe {
+         with_host(handle, |shell| {
+             let chord = utf8(chord, chord_len, "chord")?;
+-            let press = shell.turns()?.key_down(chord, repeat != 0).map_err(|e| (M6H_E_INVALID_ARGUMENT, e))?;
++            let __k = std::time::Instant::now();
++            let press = { let __t = std::time::Instant::now(); let __r = shell.turns()?.key_down(chord, repeat != 0); eprintln!("TIMING host.key_down {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }.map_err(|e| (M6H_E_INVALID_ARGUMENT, e))?;
+             let code = match press {
+                 Press::None => M6H_PRESS_NONE,
+                 Press::Refused => M6H_PRESS_REFUSED,
+                 Press::Committed | Press::Other => {
+-                    let head = shell.turns()?.head().map_err(|e| (M6H_E_SESSION, e))?;
+-                    shell.advance(&head)?;
++                    let head = { let __t = std::time::Instant::now(); let __r = shell.turns()?.head(); eprintln!("TIMING host.head {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }.map_err(|e| (M6H_E_SESSION, e))?;
++                    { let __t = std::time::Instant::now(); let __r = shell.advance(&head); eprintln!("TIMING host.advance {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }?;
+                     if press == Press::Committed {
+                         M6H_PRESS_COMMITTED
+                     } else {
+@@ -1238,7 +1240,8 @@ pub unsafe extern "C" fn m6h_key_down(
+                     }
+                 }
+             };
+-            shell.sync_preview()?;
++            { let __t = std::time::Instant::now(); let __r = shell.sync_preview(); eprintln!("TIMING host.sync_preview {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }?;
++            eprintln!("TIMING host.m6h_key_down_total {:.4}", __k.elapsed().as_secs_f64() * 1e3);
+             if !out.is_null() {
+                 out.write(M6hKey { press: code, reserved: 0, engine_revision: shell.revision });
+             }
+diff --git a/renderer/bridge/host/src/turns.rs b/renderer/bridge/host/src/turns.rs
+index 85eb3f71..becf8de8 100644
+--- a/renderer/bridge/host/src/turns.rs
++++ b/renderer/bridge/host/src/turns.rs
+@@ -429,9 +429,9 @@ impl Turns {
+         let chord = Chord::parse(chord).ok_or_else(|| format!("`{chord}` is not a chord"))?;
+         let twist_row = self.puzzle.twist_row();
+         let layer = self.layer.as_mut().ok_or("the session is closed")?;
+-        let before = head_digest(layer);
+-        let routed = self.router.key(&mut self.shell, layer, KeyEvent::Down { chord, repeat, text: None });
+-        let changed = head_digest(layer) != before;
++        let before = { let __t = std::time::Instant::now(); let __r = head_digest(layer); eprintln!("TIMING turns.digest_before {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
++        let routed = { let __t = std::time::Instant::now(); let __r = self.router.key(&mut self.shell, layer, KeyEvent::Down { chord, repeat, text: None }); eprintln!("TIMING turns.router_key {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
++        let changed = { let __t = std::time::Instant::now(); let __r = head_digest(layer); eprintln!("TIMING turns.digest_after {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r } != before;
+         let press = match &routed {
+             Routed::Dispatched(dispatch) if dispatch.invocation.row == twist_row => {
+                 if matches!(dispatch.receipt.status, Status::Committed(_)) {
+diff --git a/rust/c600-command/src/layer.rs b/rust/c600-command/src/layer.rs
+index af8ff5c7..34a47313 100644
+--- a/rust/c600-command/src/layer.rs
++++ b/rust/c600-command/src/layer.rs
+@@ -3496,10 +3496,10 @@ impl<S: Store> CommandLayer<S> {
+         let unfinished = Error::new(code::COMMIT_FATE, "an action's write or adoption did not finish");
+         let before = self.recovery.replace(unfinished);
+         let pending = self.limbo.insert(adoption);
+-        match self.store.transact(&pending.transaction) {
++        match { let __t = std::time::Instant::now(); let __r = self.store.transact(&pending.transaction); eprintln!("TIMING layer.store_transact {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r } {
+             Fate::Durable => {
+                 let adoption = self.limbo.take().expect("the action being written");
+-                let receipt = self.adopt(adoption);
++                let receipt = { let __t = std::time::Instant::now(); let __r = self.adopt(adoption); eprintln!("TIMING layer.adopt {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
+                 self.recovery = before;
+                 Ok((receipt.job, receipt.status))
+             }
+@@ -3750,7 +3750,9 @@ impl<S: Store> CommandLayer<S> {
+             return refused(code::ROW_NOT_BUILT, format!("`{TWIST_ROW}` needs the host's pinned twist menu"));
+         };
+         let binding = twist::binding(&invocation.args)?;
++        let __t0 = std::time::Instant::now();
+         let resolution = rotation::resolve(&twists.context, Some(&*twists.menu), &binding)?;
++        eprintln!("TIMING layer.twist_entry_to_resolve {:.4}", __t0.elapsed().as_secs_f64() * 1e3);
+         // With Jumble on, the mode check after the token refuses the row (LG2.8), so the item's level is judged only
+         // with Jumble off.
+         let word = match self.jumbled {
+@@ -3761,6 +3763,7 @@ impl<S: Store> CommandLayer<S> {
+             return refused(c600_kernel::codes::RECIPE_SHAPE, "the menu's identity item moves no piece");
+         }
+         let recipe = word.map(|word| self.kernel.word(&word)).transpose()?;
++        eprintln!("TIMING layer.word_and_recipe {:.4}", __t0.elapsed().as_secs_f64() * 1e3);
+         let token = self.authenticate(invocation)?;
+         self.commit_lane()?;
+         self.bound(&token, invocation)?;
+@@ -3772,10 +3775,12 @@ impl<S: Store> CommandLayer<S> {
+         if self.current.digest() != self.nodes[&self.head].digest {
+             return refused(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state");
+         }
++        let __t = std::time::Instant::now();
+         let derived = match self.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
+             Derivation::Derived(derived) => derived,
+             Derivation::Refused(refusal) => return Err(refusal.refusal.into()),
+         };
++        eprintln!("TIMING layer.kernel_derive {:.4}", __t.elapsed().as_secs_f64() * 1e3);
+         let meta = Meta::of(caller, invocation, request);
+         let mut adoption = self.commit_adoption(meta, recipe, derived.state, derived.word, None);
+         adoption.transaction.rotation = Some(resolution.to_json());
+diff --git a/rust/c600-display/src/host.rs b/rust/c600-display/src/host.rs
+index 465a9311..cedd8c2a 100644
+--- a/rust/c600-display/src/host.rs
++++ b/rust/c600-display/src/host.rs
+@@ -601,8 +601,8 @@ impl<B: Backend> Host<B> {
+     /// host validates the bundle and hands it to the backend, which installs its CPU-side image; the host's revision
+     /// moves to the revision the backend adopted. A bundle the host or the backend refuses changes nothing.
+     pub fn adopt(&mut self, bundle: &EngineBundle) -> Result<RevisionRef, Error> {
+-        validate::validate_engine_bundle(bundle)?;
+-        let adopted = self.backend.adopt_engine(bundle)?;
++        { let __t = std::time::Instant::now(); let __r = validate::validate_engine_bundle(bundle); eprintln!("TIMING display.validate_bundle {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }?;
++        let adopted = { let __t = std::time::Instant::now(); let __r = self.backend.adopt_engine(bundle); eprintln!("TIMING display.backend_adopt_engine {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }?;
+         self.set_dependency("state", &adopted.state.to_string());
+         self.adopted = adopted;
+         Ok(self.adopted.clone())
+@@ -799,12 +799,12 @@ impl<B: Backend> Host<B> {
+ 
+     /// A standalone `publish_view`: validated at admission; a bad request is refused and supersedes nothing.
+     pub fn publish(&mut self, command: CommandId, publication: Publication) -> Receipt {
+-        let request = canonical::request_digest(&publication);
++        let request = { let __t = std::time::Instant::now(); let __r = canonical::request_digest(&publication); eprintln!("TIMING display.publish_request_digest {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
+         if let Some(receipt) = self.duplicate(command, &request) {
+             return receipt;
+         }
+         let view = publication.target;
+-        let admitted = self.admit(&publication);
++        let admitted = { let __t = std::time::Instant::now(); let __r = self.admit(&publication); eprintln!("TIMING display.publish_admit_validate {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
+         let validated = match admitted {
+             Ok(validated) => validated,
+             Err(error) => {
+@@ -813,7 +813,7 @@ impl<B: Backend> Host<B> {
+             }
+         };
+         self.accept(command, request, view, None);
+-        self.prepare(command, publication, validated);
++        { let __t = std::time::Instant::now(); let __r = self.prepare(command, publication, validated); eprintln!("TIMING display.publish_prepare {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
+         self.receipt(command).expect("recorded")
+     }
+ 
+diff --git a/rust/c600-session/src/command_store.rs b/rust/c600-session/src/command_store.rs
+index 17ea9d35..c022edcb 100644
+--- a/rust/c600-session/src/command_store.rs
++++ b/rust/c600-session/src/command_store.rs
+@@ -512,7 +512,8 @@ impl Store for JournalStore {
+             Ok(written) => written,
+             Err(error) => return Fate::RolledBack(error),
+         };
+-        let fate = inner.append(&record, &objects);
++        eprintln!("TIMING store.objects {}", objects.len());
++        let fate = { let __t = std::time::Instant::now(); let __r = inner.append(&record, &objects); eprintln!("TIMING store.append_total {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r };
+         if fate == Fate::Durable {
+             inner.held.transactions.push(transaction.clone());
+         }
+diff --git a/rust/c600-session/src/store.rs b/rust/c600-session/src/store.rs
+index 56314926..f100399e 100644
+--- a/rust/c600-session/src/store.rs
++++ b/rust/c600-session/src/store.rs
+@@ -110,7 +110,7 @@ impl Store {
+     /// Appends one record as a frame and syncs it.
+     pub(crate) fn append(&mut self, payload: &[u8]) -> Result<(), Fate> {
+         let bytes = journal::frame(payload);
+-        let written = self.disk.append(JOURNAL, &bytes).and_then(|()| self.disk.sync(JOURNAL));
++        let written = { let __t = std::time::Instant::now(); let __r = self.disk.append(JOURNAL, &bytes); eprintln!("TIMING store.journal_write {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r }.and_then(|()| { let __t = std::time::Instant::now(); let __r = self.disk.sync(JOURNAL); eprintln!("TIMING store.journal_sync {:.4}", __t.elapsed().as_secs_f64() * 1e3); __r });
+         match written {
+             Ok(()) => {
+                 self.len += bytes.len() as u64;

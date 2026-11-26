@@ -1,0 +1,184 @@
+prepare slot_rows_ms=0.444 input_ms=0.000 core_ms=22.985
+build 25 ms=11.228
+prepare slot_rows_ms=0.522 input_ms=0.000 core_ms=11.281
+install 25 since_key_ms=-1.000 adopt_ms=0.191 publish_ms=15.826
+build 26 ms=10.571
+prepare slot_rows_ms=0.333 input_ms=0.000 core_ms=11.038
+install 26 since_key_ms=17.218 adopt_ms=0.267 publish_ms=15.441
+build 27 ms=11.479
+prepare slot_rows_ms=0.214 input_ms=0.000 core_ms=9.983
+install 27 since_key_ms=13.823 adopt_ms=0.165 publish_ms=13.869
+build 28 ms=10.434
+prepare slot_rows_ms=0.224 input_ms=0.000 core_ms=10.395
+install 28 since_key_ms=14.815 adopt_ms=0.241 publish_ms=14.866
+build 29 ms=10.597
+prepare slot_rows_ms=0.224 input_ms=0.000 core_ms=11.282
+install 29 since_key_ms=21.986 adopt_ms=0.261 publish_ms=14.463
+build 30 ms=11.401
+prepare slot_rows_ms=0.223 input_ms=0.000 core_ms=10.555
+install 30 since_key_ms=22.054 adopt_ms=0.249 publish_ms=15.075
+build 31 ms=11.717
+prepare slot_rows_ms=0.352 input_ms=0.000 core_ms=10.809
+install 31 since_key_ms=21.406 adopt_ms=0.298 publish_ms=15.554
+build 32 ms=11.191
+prepare slot_rows_ms=0.223 input_ms=0.000 core_ms=10.213
+install 32 since_key_ms=14.658 adopt_ms=0.243 publish_ms=14.331
+build 33 ms=10.720
+prepare slot_rows_ms=0.247 input_ms=0.000 core_ms=10.324
+install 33 since_key_ms=14.411 adopt_ms=0.246 publish_ms=14.407
+build 34 ms=10.790
+prepare slot_rows_ms=0.243 input_ms=0.000 core_ms=10.336
+install 34 since_key_ms=14.553 adopt_ms=0.229 publish_ms=14.307
+build 35 ms=10.492
+prepare slot_rows_ms=0.233 input_ms=0.000 core_ms=11.487
+install 35 since_key_ms=13.496 adopt_ms=0.163 publish_ms=15.329
+build 36 ms=10.959
+prepare slot_rows_ms=0.241 input_ms=0.000 core_ms=10.378
+install 36 since_key_ms=20.744 adopt_ms=0.248 publish_ms=14.534
+build 37 ms=11.005
+prepare slot_rows_ms=0.227 input_ms=0.000 core_ms=11.171
+install 37 since_key_ms=22.731 adopt_ms=0.243 publish_ms=15.244
+build 38 ms=10.874
+prepare slot_rows_ms=0.217 input_ms=0.000 core_ms=10.985
+install 38 since_key_ms=13.773 adopt_ms=0.222 publish_ms=15.164
+build 39 ms=11.293
+prepare slot_rows_ms=0.214 input_ms=0.000 core_ms=10.560
+install 39 since_key_ms=14.661 adopt_ms=0.240 publish_ms=14.534
+build 40 ms=10.545
+prepare slot_rows_ms=0.220 input_ms=0.000 core_ms=10.035
+install 40 since_key_ms=23.035 adopt_ms=0.239 publish_ms=13.889
+build 41 ms=11.553
+prepare slot_rows_ms=0.230 input_ms=0.000 core_ms=10.539
+install 41 since_key_ms=14.479 adopt_ms=0.168 publish_ms=14.600
+build 42 ms=10.501
+prepare slot_rows_ms=0.278 input_ms=0.000 core_ms=10.442
+install 42 since_key_ms=14.261 adopt_ms=0.188 publish_ms=14.315
+build 43 ms=11.096
+prepare slot_rows_ms=0.273 input_ms=0.000 core_ms=10.729
+install 43 since_key_ms=13.843 adopt_ms=0.176 publish_ms=14.764
+build 44 ms=10.503
+prepare slot_rows_ms=0.225 input_ms=0.000 core_ms=11.099
+install 44 since_key_ms=14.517 adopt_ms=0.240 publish_ms=15.258
+build 45 ms=10.727
+prepare slot_rows_ms=0.244 input_ms=0.000 core_ms=9.975
+install 45 since_key_ms=15.014 adopt_ms=0.180 publish_ms=13.841
+build 46 ms=10.892
+prepare slot_rows_ms=0.221 input_ms=0.000 core_ms=9.890
+install 46 since_key_ms=15.232 adopt_ms=0.158 publish_ms=13.900
+build 47 ms=10.759
+prepare slot_rows_ms=0.219 input_ms=0.000 core_ms=10.728
+install 47 since_key_ms=14.905 adopt_ms=0.189 publish_ms=15.034
+build 48 ms=11.351
+prepare slot_rows_ms=0.230 input_ms=0.000 core_ms=11.222
+install 48 since_key_ms=22.659 adopt_ms=0.172 publish_ms=14.857
+build 49 ms=11.405
+prepare slot_rows_ms=0.405 input_ms=0.000 core_ms=10.445
+install 49 since_key_ms=13.953 adopt_ms=0.176 publish_ms=14.635
+build 50 ms=11.059
+prepare slot_rows_ms=0.224 input_ms=0.000 core_ms=10.777
+install 50 since_key_ms=15.988 adopt_ms=0.187 publish_ms=15.062
+build 51 ms=11.228
+prepare slot_rows_ms=0.222 input_ms=0.000 core_ms=11.365
+install 51 since_key_ms=21.953 adopt_ms=0.187 publish_ms=15.739
+build 52 ms=10.895
+prepare slot_rows_ms=0.221 input_ms=0.000 core_ms=10.679
+install 52 since_key_ms=23.043 adopt_ms=0.254 publish_ms=14.814
+build 53 ms=10.940
+prepare slot_rows_ms=0.293 input_ms=0.000 core_ms=10.546
+install 53 since_key_ms=23.018 adopt_ms=0.398 publish_ms=15.504
+build 54 ms=10.891
+prepare slot_rows_ms=0.233 input_ms=0.000 core_ms=10.632
+install 54 since_key_ms=15.258 adopt_ms=0.220 publish_ms=14.601
+build 55 ms=11.424
+prepare slot_rows_ms=0.277 input_ms=0.000 core_ms=12.911
+install 55 since_key_ms=13.290 adopt_ms=0.195 publish_ms=17.974
+build 56 ms=11.192
+prepare slot_rows_ms=0.214 input_ms=0.000 core_ms=11.169
+install 56 since_key_ms=14.365 adopt_ms=0.231 publish_ms=15.295
+build 57 ms=11.263
+prepare slot_rows_ms=0.253 input_ms=0.000 core_ms=10.147
+install 57 since_key_ms=14.386 adopt_ms=0.261 publish_ms=14.031
+build 58 ms=11.206
+prepare slot_rows_ms=0.201 input_ms=0.000 core_ms=10.992
+install 58 since_key_ms=13.217 adopt_ms=0.145 publish_ms=14.638
+build 59 ms=11.191
+prepare slot_rows_ms=0.275 input_ms=0.000 core_ms=10.443
+install 59 since_key_ms=22.226 adopt_ms=0.150 publish_ms=14.377
+build 60 ms=10.770
+prepare slot_rows_ms=0.254 input_ms=0.000 core_ms=11.380
+install 60 since_key_ms=14.114 adopt_ms=0.173 publish_ms=15.469
+build 61 ms=10.867
+prepare slot_rows_ms=0.227 input_ms=0.000 core_ms=10.278
+install 61 since_key_ms=14.929 adopt_ms=0.245 publish_ms=14.237
+build 62 ms=10.828
+prepare slot_rows_ms=0.222 input_ms=0.000 core_ms=10.826
+install 62 since_key_ms=14.614 adopt_ms=0.239 publish_ms=14.668
+build 63 ms=10.788
+prepare slot_rows_ms=0.324 input_ms=0.000 core_ms=10.237
+install 63 since_key_ms=15.243 adopt_ms=0.238 publish_ms=14.420
+build 64 ms=11.039
+prepare slot_rows_ms=0.283 input_ms=0.000 core_ms=10.425
+install 64 since_key_ms=13.848 adopt_ms=0.234 publish_ms=14.545
+build 65 ms=11.589
+prepare slot_rows_ms=0.243 input_ms=0.000 core_ms=11.559
+install 65 since_key_ms=14.374 adopt_ms=0.179 publish_ms=15.965
+build 66 ms=10.922
+prepare slot_rows_ms=0.231 input_ms=0.000 core_ms=11.064
+install 66 since_key_ms=13.882 adopt_ms=0.149 publish_ms=15.056
+build 67 ms=10.802
+prepare slot_rows_ms=0.251 input_ms=0.000 core_ms=10.440
+install 67 since_key_ms=21.951 adopt_ms=0.160 publish_ms=14.463
+build 68 ms=10.436
+prepare slot_rows_ms=0.214 input_ms=0.000 core_ms=10.470
+install 68 since_key_ms=14.724 adopt_ms=0.162 publish_ms=14.153
+build 69 ms=10.978
+prepare slot_rows_ms=0.248 input_ms=0.000 core_ms=11.194
+install 69 since_key_ms=14.658 adopt_ms=0.181 publish_ms=15.524
+build 70 ms=11.320
+prepare slot_rows_ms=0.200 input_ms=0.000 core_ms=10.126
+install 70 since_key_ms=22.505 adopt_ms=0.149 publish_ms=13.964
+build 71 ms=11.402
+prepare slot_rows_ms=0.233 input_ms=0.000 core_ms=10.445
+install 71 since_key_ms=15.024 adopt_ms=0.185 publish_ms=14.428
+build 72 ms=10.760
+prepare slot_rows_ms=0.298 input_ms=0.000 core_ms=10.784
+install 72 since_key_ms=22.763 adopt_ms=0.169 publish_ms=15.046
+build 73 ms=10.716
+prepare slot_rows_ms=0.244 input_ms=0.000 core_ms=10.530
+install 73 since_key_ms=21.437 adopt_ms=0.194 publish_ms=14.939
+build 74 ms=11.329
+prepare slot_rows_ms=0.218 input_ms=0.000 core_ms=10.438
+install 74 since_key_ms=22.324 adopt_ms=0.218 publish_ms=14.270
+build 75 ms=11.061
+prepare slot_rows_ms=0.226 input_ms=0.000 core_ms=10.723
+install 75 since_key_ms=15.029 adopt_ms=0.198 publish_ms=14.780
+build 76 ms=10.465
+prepare slot_rows_ms=0.215 input_ms=0.000 core_ms=10.738
+install 76 since_key_ms=15.109 adopt_ms=0.190 publish_ms=14.505
+build 77 ms=12.086
+prepare slot_rows_ms=0.236 input_ms=0.000 core_ms=10.681
+install 77 since_key_ms=22.407 adopt_ms=0.188 publish_ms=14.884
+build 78 ms=11.384
+prepare slot_rows_ms=0.314 input_ms=0.000 core_ms=10.598
+install 78 since_key_ms=21.929 adopt_ms=0.151 publish_ms=14.594
+build 79 ms=11.132
+prepare slot_rows_ms=0.387 input_ms=0.000 core_ms=10.387
+install 79 since_key_ms=15.179 adopt_ms=0.148 publish_ms=14.647
+build 80 ms=10.464
+prepare slot_rows_ms=0.222 input_ms=0.000 core_ms=10.241
+install 80 since_key_ms=15.190 adopt_ms=0.161 publish_ms=14.047
+build 81 ms=10.696
+prepare slot_rows_ms=0.243 input_ms=0.000 core_ms=10.040
+install 81 since_key_ms=15.373 adopt_ms=0.204 publish_ms=14.135
+build 82 ms=10.491
+prepare slot_rows_ms=0.220 input_ms=0.000 core_ms=10.567
+install 82 since_key_ms=14.016 adopt_ms=0.155 publish_ms=14.728
+build 83 ms=10.501
+prepare slot_rows_ms=0.213 input_ms=0.000 core_ms=10.195
+install 83 since_key_ms=15.116 adopt_ms=0.163 publish_ms=14.083
+build 84 ms=10.952
+prepare slot_rows_ms=0.209 input_ms=0.000 core_ms=10.833
+install 84 since_key_ms=14.250 adopt_ms=0.237 publish_ms=15.340
+build 85 ms=10.753
+prepare slot_rows_ms=0.223 input_ms=0.000 core_ms=10.432
+install 85 since_key_ms=14.856 adopt_ms=0.233 publish_ms=14.964

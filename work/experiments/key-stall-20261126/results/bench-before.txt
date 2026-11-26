@@ -1,0 +1,14 @@
+puzzle=0 keys=60 frames=930
+m6h_key_down ms: n=60 p50=38.97 p90=43.36 p99=48.76 max=51.70
+m6h_frame ms: n=930 p50=0.04 p90=0.08 p99=0.51 max=0.62
+refreshes that showed no new frame: 121 (over 1051 refreshes)
+key-down to the frame that draws it, submitted, ms: n=60 p50=50.28 p90=50.80 p99=51.06 max=67.18
+key-down to the frame that draws it, frames: n=60 p50=1.00 p90=1.00 p99=1.00 max=1.00
+key-down to the refresh that shows that frame, ms: n=60 p50=66.42 p90=66.61 p99=66.65 max=83.04
+puzzle=1 keys=60 frames=930
+m6h_key_down ms: n=60 p50=24.80 p90=28.89 p99=32.63 max=33.10
+m6h_frame ms: n=930 p50=0.04 p90=0.08 p99=0.19 max=0.37
+refreshes that showed no new frame: 61 (over 991 refreshes)
+key-down to the frame that draws it, submitted, ms: n=60 p50=33.52 p90=33.80 p99=34.05 max=50.14
+key-down to the frame that draws it, frames: n=60 p50=1.00 p90=1.00 p99=1.00 max=1.00
+key-down to the refresh that shows that frame, ms: n=60 p50=49.76 p90=49.89 p99=49.97 max=66.40

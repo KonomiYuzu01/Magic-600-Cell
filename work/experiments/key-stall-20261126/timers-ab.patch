@@ -1,0 +1,68 @@
+diff --git a/renderer/bridge/host/src/deferred.rs b/renderer/bridge/host/src/deferred.rs
+index ecdaa6ba..c04e8c5e 100644
+--- a/renderer/bridge/host/src/deferred.rs
++++ b/renderer/bridge/host/src/deferred.rs
+@@ -61,6 +61,13 @@ pub(crate) fn context_for(geometry: &GeometryInput, head: &Head, base: &Revision
+ /// that builds none, answer [`M6H_E_HOST`] as the display host's refusal did.
+ pub(crate) fn build(geometry: &GeometryInput, job: Job) -> Result<Built, Failure> {
+     let Job { revision, head, ctx } = job;
++    let started = std::time::Instant::now();
++    let result = build_inner(geometry, revision, head, ctx);
++    crate::timer_line(format!("build {revision} ms={:.3}", started.elapsed().as_secs_f64() * 1e3));
++    result
++}
++
++fn build_inner(geometry: &GeometryInput, revision: u64, head: Head, ctx: Context) -> Result<Built, Failure> {
+     let (base, bundle, primitive) = adoption(geometry, &head, revision)?;
+     let new_ctx = (base.identity != ctx.identity).then(|| context_for(geometry, &head, &base, &ctx));
+     let publication = publication(geometry, primitive, &base);
+diff --git a/renderer/bridge/host/src/lib.rs b/renderer/bridge/host/src/lib.rs
+index bfc14f64..7fc82db0 100644
+--- a/renderer/bridge/host/src/lib.rs
++++ b/renderer/bridge/host/src/lib.rs
+@@ -98,6 +98,17 @@ pub use c600_render_ffi::CoreFunctions;
+ use c600_render_ffi::DllCore;
+ 
+ mod deferred;
++
++// TEMPORARY TIMERS (key-stall A/B on the real core; never committed).
++pub(crate) static KEY_AT: Mutex<Option<std::time::Instant>> = Mutex::new(None);
++pub(crate) fn timer_line(line: String) {
++    use std::io::Write;
++    if let Some(path) = std::env::var_os("M600_KEYSTALL_TIMERS") {
++        if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
++            let _ = writeln!(file, "{line}");
++        }
++    }
++}
+ pub mod fixture;
+ pub mod preload;
+ pub mod turns;
+@@ -481,7 +492,10 @@ impl ShellHost {
+             }
+             None => None,
+         };
++        let t0 = std::time::Instant::now();
++        let since = KEY_AT.lock().unwrap().map(|at| at.elapsed().as_secs_f64() * 1e3).unwrap_or(-1.0);
+         self.host.adopt_checked(&bundle).map_err(host_error)?;
++        let t1 = std::time::Instant::now();
+         if let Some(ctx) = ctx {
+             self.host.ctx = ctx;
+         }
+@@ -494,6 +508,8 @@ impl ShellHost {
+             Some(checked) => self.publish_checked(checked),
+             None => self.publish(),
+         };
++        let t2 = std::time::Instant::now();
++        timer_line(format!("install {revision} since_key_ms={since:.3} adopt_ms={:.3} publish_ms={:.3}", (t1 - t0).as_secs_f64() * 1e3, (t2 - t1).as_secs_f64() * 1e3));
+         match published {
+             Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => Ok(revision),
+             Err(failure) => Err(failure),
+@@ -504,6 +520,7 @@ impl ShellHost {
+     /// newest one handed out, which the answer names, and returns at once; [`ShellHost::settle`] installs it later on
+     /// this thread. Without a worker (its thread did not start or has ended) the head is built and installed here.
+     fn defer(&mut self, head: Head) -> Result<u64, Failure> {
++        *KEY_AT.lock().unwrap() = Some(std::time::Instant::now());
+         let revision = self.assigned + 1;
+         let job = deferred::Job { revision, head, ctx: self.host.ctx.clone() };
+         if self.adoptions.is_none() {
