@@ -9,6 +9,7 @@ import base64
 import hashlib
 import json
 from pathlib import Path
+import struct
 import unittest
 import zlib
 
@@ -66,7 +67,7 @@ class SampleTests(unittest.TestCase):
         case = self.index['start_digest_case']
         self.assertTrue(case['equal'])
         self.assertEqual(case['adapter_start_digest'], case['wj_stages_start_digest'])
-        self.assertEqual(set(self.index['not_built']), {'contact.json', 'hidden-piece masks'})
+        self.assertEqual(set(self.index['not_built']), {'hidden-piece masks'})
 
     def test_every_file_listed_exists_and_nothing_else(self):
         listed = {'states.json', 'corrections.json', 'cap-layout.json', 'meeting-caps.json', 'seed7001-words.json'}
@@ -149,6 +150,64 @@ class SampleTests(unittest.TestCase):
                 self.assertIn(row['domain'], range(len(style['domains'])), sid)
                 if row['k'] is not None:
                     self.assertEqual(row['domain'], style['lattice_domain'], sid)
+
+    def test_poses_are_the_pose_ids(self):
+        """B15: each full state's poses.json is its pose ids (u32le per piece), the digest its state.json names, and
+        each style row's count is the number of pieces in that row."""
+        for sid in FULL:
+            poses = read(f'{sid}/poses.json')
+            state = read(f'{sid}/state.json')
+            style = read(f'{sid}/style.json')
+            self.assertEqual((poses['format'], poses['state'], poses['count']), (FORMAT, sid, PIECES), sid)
+            self.assertEqual(poses['digest'], state['digests']['adapter'], sid)
+            raw = zlib.decompress(base64.b64decode(poses['data'], validate=True))
+            self.assertEqual(len(raw), 4 * PIECES, sid)
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), poses['sha256'], sid)
+            self.assertEqual(poses['sha256'], state['digests']['pose_ids_sha256'], sid)
+            counts = [0] * len(style['rows'])
+            for (pose,) in struct.iter_unpack('<I', raw):
+                counts[pose] += 1
+            self.assertEqual(counts, [row['count'] for row in style['rows']], sid)
+
+    def test_contact_graphs(self):
+        """B15 (ADR-D02.21): each full state's domain contact graph and its first class assignment: edges between
+        the style's domains, contacts with the lattice domain and on off-grip cuts included; a proper colouring of
+        the off-lattice domains with classes 1 to 6, the lattice domain neutral (0), no overflow in the samples. The
+        A4 counts at wj-ia-300 (54 contacts, 20 with the lattice domain, 707 planes, N seam faces) hold."""
+        for sid in FULL:
+            contact = read(f'{sid}/contact.json')
+            style = read(f'{sid}/style.json')
+            totals = read(f'{sid}/totals.json')
+            self.assertEqual((contact['format'], contact['state'], contact['digest']), (FORMAT, sid, style['digest']), sid)
+            n, lattice = contact['domains'], contact['lattice_domain']
+            self.assertEqual(n, len(style['domains']), sid)
+            self.assertEqual(lattice, style['lattice_domain'], sid)
+            self.assertEqual(contact['seam_faces'], totals['N'], sid)
+            edges = contact['edges']
+            self.assertEqual(edges, sorted(edges), sid)
+            self.assertEqual(len({(a, b) for a, b, *_ in edges}), len(edges), sid)
+            for a, b, on, off in edges:
+                self.assertTrue(0 <= a < b < n, sid)
+                self.assertTrue(on or off, sid)
+            self.assertEqual(contact['edges_with_lattice'], sum(1 for a, b, *_ in edges if lattice in (a, b)), sid)
+            self.assertEqual(contact['edges_off_grip'], sum(1 for *_, off in edges if off), sid)
+            classes = contact['classes']
+            self.assertEqual(len(classes), n, sid)
+            for d, c in enumerate(classes):
+                self.assertEqual(c == 0, d == lattice, f'{sid} domain {d}')
+                self.assertIn(c, range(8), sid)
+            for a, b, *_ in edges:
+                if lattice not in (a, b):
+                    self.assertNotEqual(classes[a], classes[b], f'{sid} contact {a}-{b}')
+            used = {c for c in classes if 1 <= c <= 6}
+            self.assertEqual(contact['class_count'], len(used), sid)
+            self.assertEqual(contact['overflow'], classes.count(7), sid)
+            self.assertEqual(contact['overflow'], 0, sid)
+        wj = read('wj-ia-300/contact.json')
+        self.assertEqual((len(wj['edges']), wj['edges_with_lattice'], wj['planes'], wj['seam_faces']), (54, 20, 707, 98048))
+        self.assertEqual(wj['class_count'], 4)
+        self.assertEqual(len(read('ia-40/contact.json')['edges']), 3)
+        self.assertEqual(read('ia-40/contact.json')['class_count'], 1)
 
     def check_mask(self, entry, label):
         self.assertEqual(entry['encoding'], 'bits-le-zlib-base64', label)

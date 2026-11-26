@@ -872,6 +872,69 @@ fn on_grip(ctx: &Context, dom: &Domains, d: u32, e: u16, cache: &mut HashMap<(u3
         .or_insert_with(|| ctx.model.pole_of(&matvec(&dom.reps[d as usize], &ctx.model.poles[e as usize])).is_some())
 }
 
+// ----------------------------------------------------------------------------------------------- seam cells
+
+/// One mismatched cut cell of one alignment domain: its chambers in the domain's frame (`upper` is never the core),
+/// its home pole, the side the domain holds, and the world hyperplane the domain's pose carries the cell to, as an
+/// index into [`SeamCells::normals`] (equal indices are one hyperplane).
+pub struct SeamCell {
+    pub domain: u32,
+    pub lower: u32,
+    pub upper: u32,
+    pub pole: u16,
+    pub upper_held: bool,
+    pub plane: u32,
+}
+
+/// The exact input of the domain contact graph (ADR-D02.21): the domains (0 is the lattice domain, the others in
+/// key order), each domain's representative pose, the world normal of every hyperplane a seam lies on with whether
+/// it is a model pole (an on-grip cut), and every mismatched cut cell.
+pub struct SeamCells {
+    pub keys: Vec<String>,
+    pub reps: Vec<Mat4>,
+    pub normals: Vec<Vec4>,
+    pub on_grip: Vec<bool>,
+    pub cells: Vec<SeamCell>,
+}
+
+/// The mismatched cut cells of a state's domains, exactly (no geometry beyond the hyperplane each lies on).
+pub fn seam_cells(ctx: &Context, state: &State) -> Result<SeamCells, String> {
+    let t = tables(ctx)?;
+    let facts = pose_facts(ctx, t, state)?;
+    let dom = domains(ctx, t, state, &facts)?;
+    let mut raw = Vec::new();
+    seam_scan(t, &dom, |d, ti, occ| {
+        if occ != 0 {
+            raw.push((d, ti, occ));
+        }
+    });
+    let (mut normals, mut on_grip) = (Vec::new(), Vec::new());
+    let mut index: HashMap<Vec4, u32> = HashMap::new();
+    let mut plane_of: HashMap<(u32, u16), u32> = HashMap::new();
+    let mut cells = Vec::with_capacity(raw.len());
+    for (d, ti, occ) in raw {
+        let e = t.pole[ti as usize];
+        let plane = *plane_of.entry((d, e)).or_insert_with(|| {
+            let w = matvec(&dom.reps[d as usize], &ctx.model.poles[e as usize]);
+            let next = normals.len() as u32;
+            *index.entry(w.clone()).or_insert_with(|| {
+                on_grip.push(ctx.model.pole_of(&w).is_some());
+                normals.push(w);
+                next
+            })
+        });
+        cells.push(SeamCell {
+            domain: d,
+            lower: t.lo[ti as usize],
+            upper: t.up[ti as usize],
+            pole: e,
+            upper_held: occ == 2,
+            plane,
+        });
+    }
+    Ok(SeamCells { keys: dom.keys, reps: dom.reps, normals, on_grip, cells })
+}
+
 // --------------------------------------------------------------------------------------------------- batches
 
 /// A batch request (selection 5): at most `chunk` units per chunk, at most `budget` units in all, and a
