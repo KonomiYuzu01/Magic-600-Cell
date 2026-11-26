@@ -78,6 +78,11 @@ relative path is from the repository root.
   - Three digests in every state's header: the adapter's `record()['digest']`, the SHA-256 of the `pose_index` array, and that of `pose_lattice`. The last two bind a sample to a shell session (B5).
   - Modes `--write` and `--verify` (byte equality). Format `magic600-d02-sample/1`.
 - **Decide first:** assert that `start(I_a)` then `record()['digest']` equals the W-J fixture's `stages.start.digest`. If it does not, the seed 7001 chain compares through `j1_from_record`. Record the case in `states.json`.
+- **As built (integrator, 26 November 2026):** the start digests are equal, so the W-J stage digests check `wj-ia-420` and `wj-ia-end`. Three parts move to the step that consumes them:
+  - `contact.json` moves to B15, since the domains' contact graph needs the seam-face geometry;
+  - the hidden-piece masks move to B16, under `jumbling-observation.md` rule 5;
+  - `cap-layout.json` stays with B8.
+  The twelve release checks are the first twelve non-identity menu items at the named cap; B10 maps a seat to its items. The inside set and the repair rows' moving sets are read from the adapter's state, loaded into the simulator by `j1_from_record`'s reading; no state is replayed there.
 - **Check:** `python tests/test_d02_samples.py` (no adapter) checks the format, section 6's digests and counts, and that the rim classes sum to 600. `make_d02_samples.py --verify` prints `D02_SAMPLES_PASS states=<n>`.
 - **Owner sees:** nothing yet.
 - **Machine:** H. About two minutes per deep state. The adapter build is a cargo build in the worktree's own target dir: never in a quiet window, and `cargo clean` for that target dir when the build line ends.
@@ -320,6 +325,7 @@ relative path is from the repository root.
 - **Files:** new `Model/JumbleTint.cs`, `Ui/JumbleLegend.cs`, `renderer/shell/project/D02/ShellJumble.cs`, `tests/D02TintTests.cs`.
 - **Add:**
   - `enum TintMode { None, ContactClass, Height, OffLattice }`: one field, so no stacking.
+  - Each state's `contact.json` (domains, contact edges with off-grip contacts), added to `make_d02_samples.py` here from B1.
   - `ContactClasses.Assign(contact, previous)`: proper, deterministic, sticky by domain id; a seventh need is the overflow state with its count; the lattice domain is neutral. Saved with the view state.
   - Drawing: contact class on the outline channel, so the fill keeps the label; the height ramp on the fill tint; off-lattice as a dark outline taken from the bundle's `pose_lattice`.
   - Focus dim through the dim mode. The straddler layer is never a default and is active only at a blocked cap.
@@ -341,6 +347,7 @@ relative path is from the repository root.
     - certificate glyph pairs, off until its gate row and the owner's acceptance; the count shows in their place;
     - piece outlines from masks: hidden pieces with their exact count, and the focused repair step's moving set.
   - The never-hidden set of `jumbling-observation.md` rule 5 is forced visible in the preparation's visibility bytes.
+  - The hidden-piece masks per named cap, added to `make_d02_samples.py` here from B1.
 - **Check:** `check_core.py --lines` on WARP: a line layer covers pixels only within two pixels of its projected segments; an empty layer changes nothing. Then `d02_run.py --script overlays`: hidden count equals the sample; the never-hidden set stays visible under every focus layer.
 - **Owner sees:** name a cap and its cut trace appears; step a repair row and the moving set outlines.
 - **Machine:** H, W.
