@@ -264,10 +264,11 @@ pub mod workspace;
 
 /// The sources of the built-in tools, the bridge and the kernel rows it serves, the provenance reader, the trace
 /// relation's supports, the debugger's host side and the source route's runner, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 15] = [
+pub const SOURCES: [(&str, &[u8]); 16] = [
     ("c600-tools/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-tools/src/bin/c600-lp3-source.rs", include_bytes!("bin/c600-lp3-source.rs")),
     ("c600-tools/src/bridge.rs", include_bytes!("bridge.rs")),
+    ("c600-tools/src/bridge/tower.rs", include_bytes!("bridge/tower.rs")),
     ("c600-tools/src/case.rs", include_bytes!("case.rs")),
     ("c600-tools/src/debug.rs", include_bytes!("debug.rs")),
     ("c600-tools/src/expand.rs", include_bytes!("expand.rs")),

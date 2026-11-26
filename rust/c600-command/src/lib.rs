@@ -624,6 +624,7 @@ pub mod store;
 pub mod table;
 pub mod token;
 pub mod twist;
+pub mod values;
 pub mod view;
 pub mod worksheet;
 pub mod workspace;
@@ -644,8 +645,8 @@ pub use jumble::{JUMBLE_OFF_ROW, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW};
 pub use keys::{BindingSpec, KeyMap};
 pub use layer::{
     rollback_step, Caller, Clock, CommandLayer, Invocation, JobOutput, MonotonicClock, Preview, PreviewState,
-    ProgramJob, Rollback, EXPLORE_ROW, LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW, POLICY_ROW,
-    ROLLBACK_ROW, SETTLE_DRAFT,
+    ProgramJob, Rollback, TowerAtHead, EXPLORE_ROW, LAYOUT_REDO_ROW, LAYOUT_UNDO_ROW, ONE_KEY_ROW, PARTIAL_UNDO_ROW,
+    POLICY_ROW, ROLLBACK_ROW, SETTLE_DRAFT,
 };
 pub use macros::{Alphabet, Macro, MACRO_SAVE_ROW};
 pub use palette::{Palette, PaletteEntry, FIND_ROW};
@@ -673,6 +674,7 @@ pub use table::{
 };
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 pub use twist::TWIST_ROW;
+pub use values::ValueStore;
 pub use view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 pub use worksheet::{
     compare_inputs, MacroVersion, Occupancy, Placement, Resolution, Role, Worksheet, WorksheetRef,
@@ -715,6 +717,7 @@ pub const SOURCES: &[(&str, &[u8])] = &[
     ("c600-command/src/table.rs", include_bytes!("table.rs")),
     ("c600-command/src/token.rs", include_bytes!("token.rs")),
     ("c600-command/src/twist.rs", include_bytes!("twist.rs")),
+    ("c600-command/src/values.rs", include_bytes!("values.rs")),
     ("c600-command/src/view.rs", include_bytes!("view.rs")),
     ("c600-command/src/worksheet.rs", include_bytes!("worksheet.rs")),
     ("c600-command/src/workspace.rs", include_bytes!("workspace.rs")),

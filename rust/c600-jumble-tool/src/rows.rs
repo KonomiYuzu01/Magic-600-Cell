@@ -141,6 +141,10 @@ use c600_run::value::{parse_integer, Quad, Value as RunValue};
 
 use crate::word::{self, menu_identity, Letter, INCOMPATIBLE_ALPHABET};
 
+mod tower;
+
+pub use tower::{level_size, state_size, VALUE_UNAVAILABLE};
+
 /// The rows the bridge serves, each with whether it takes an argument.
 pub const ROWS: [(&str, bool); 19] = [
     ("heights", false),
@@ -228,6 +232,8 @@ pub struct Rows<'a> {
     at: At<'a>,
     asked: Vec<String>,
     drafts: Vec<Vec<(u32, i64)>>,
+    /// The identity tower's kernel rows (T2 draft; [`tower`]): their value store, root key, protection and raw tables.
+    tower: tower::Tower<'a>,
 }
 
 impl<'a> Rows<'a> {
@@ -254,7 +260,7 @@ impl<'a> Rows<'a> {
     }
 
     fn new(ctx: &'a Context, at: At<'a>) -> Rows<'a> {
-        Rows { ctx, at, asked: Vec::new(), drafts: Vec::new() }
+        Rows { ctx, at, asked: Vec::new(), drafts: Vec::new(), tower: tower::Tower::default() }
     }
 
     /// The names of the rows the run read, in order, one for each read the bridge answered or refused after its charge.
@@ -513,6 +519,9 @@ pub fn repair_passes(items: usize) -> usize {
 
 impl Host for Rows<'_> {
     fn tariff(&mut self, request: &Request) -> Result<RowTariff, &'static str> {
+        if let Some(tariff) = tower::tariff(self, request) {
+            return tariff;
+        }
         let (query, arg) = match *request {
             Request::Snapshot { query, .. } => (query, None),
             Request::SnapshotWith { query, arg, .. } => {
@@ -535,6 +544,9 @@ impl Host for Rows<'_> {
     }
 
     fn perform(&mut self, request: &Request) -> Result<RunValue, &'static str> {
+        if let Some(answer) = tower::perform(self, request) {
+            return answer;
+        }
         let (query, arg, ty) = match *request {
             Request::Snapshot { query, ty } => (query, None, ty),
             Request::SnapshotWith { query, arg, ty } => {

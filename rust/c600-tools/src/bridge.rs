@@ -35,8 +35,16 @@
 //! goes in the one invocation as the solver's recipe, unchanged, whatever its steps: word steps, star steps, and word
 //! steps with other fields ([`proposal_args`]). The bridge never cuts, splits or rewrites a word or a recipe: every
 //! other word goes in one word step, and the layer refuses it whole when it is longer than one chunk.
+//!
+//! The bridge also serves the identity tower's kernel rows on 600-cell-Full ([`Request::Kernel`]; T2 draft), over the
+//! kernel and the command layer's value store: [`tower`] says which rows, at what tariff, with what handles.
+
+pub mod tower;
 
 use std::sync::Arc;
+
+use c600_command::values::Recipe;
+use c600_command::ValueStore;
 
 use c600_command::{
     draft_args, Budget, Caller, CommandLayer, Invocation, MemoryStore, Receipt, Revision, Status, Store, Token,
@@ -167,6 +175,18 @@ impl<'l, S: Store> Bridge<'l, S> {
         self
     }
 
+    /// The layer's value store (T2 draft; [`tower`]): what the run's kernel rows made in this epoch.
+    pub fn values(&mut self) -> &mut ValueStore {
+        self.layer.values_mut()
+    }
+
+    /// The digest of the value that a stored derivation `recipe` makes, recomputed in this epoch ([`tower::recompute`];
+    /// T2 draft): its base resolves while it is the layer's head, whatever epoch the derivation was stored in (ONE.17,
+    /// ONE.21).
+    pub fn recompute(&mut self, recipe: &Recipe) -> Result<String, &'static str> {
+        tower::recompute(self, recipe).map(|(_, digest)| digest)
+    }
+
     /// One invocation of `row` with absolute arguments on this run's channel, stamped [`Caller::Runtime`] for the run,
     /// with a fresh command ID and the layer's current epoch. A proposal never carries a token; `token` is there so a
     /// test can show that the layer refuses a runtime invocation carrying one. An invocation of a row an entry serves
@@ -245,11 +265,15 @@ impl<S: Store> Host for Bridge<'_, S> {
             Request::SnapshotWith { query, arg, ty } if *query == kernel_rows::JOURNAL => {
                 kernel_rows::journal_read_tariff(arg, ty)
             }
+            Request::Kernel { op, args, .. } => tower::tariff(self, *op, args),
             _ => Err(NOT_GRANTED),
         }
     }
 
     fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
+        if let Request::Kernel { op, args, .. } = request {
+            return tower::perform(self, *op, args);
+        }
         if let Request::SnapshotWith { query, arg, ty } = request {
             if *query == kernel_rows::POSITIONS {
                 return kernel_rows::positions(self.layer, arg, ty);

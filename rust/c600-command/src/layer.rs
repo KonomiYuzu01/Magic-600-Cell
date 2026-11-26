@@ -141,6 +141,7 @@ use crate::store::{
 use crate::table::{Binding, Kind, Lane, Metadata, Overlay, Registration, Row, Table, UndoClass};
 use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 use crate::twist::{self, Twists, TWIST_ROW};
+use crate::values::ValueStore;
 use crate::view::{ViewSourceRef, Views, VIEW_CLOSE_ROW, VIEW_OPEN_ROW};
 use crate::worksheet::{
     compare_inputs, MacroVersion, Occupancy, Placement, Resolution, Worksheet, WorksheetRef, WORKSHEET_COMPARE_ROW,
@@ -860,6 +861,17 @@ fn cut_stack(changes: &BTreeMap<u64, Change>, stack: &[u64], cut: &BTreeSet<Stri
     dropped
 }
 
+/// What the jumbling kernel rows read at a layer's head (T2 draft; [`CommandLayer::tower_at_head`]).
+pub struct TowerAtHead<'a> {
+    /// The head's jumbling value with Jumble on; `None` with Jumble off.
+    pub head: Option<&'a Derived>,
+    pub revision: &'a Revision,
+    pub policy: ProtectionMode,
+    /// The pieces that carry the protected orbits under the pinned menu, in increasing order.
+    pub protect: Vec<u32>,
+    pub values: &'a mut ValueStore,
+}
+
 /// The command layer for one session.
 pub struct CommandLayer<S: Store = MemoryStore> {
     kernel: Arc<Kernel>,
@@ -974,6 +986,9 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     rec: playback::Rec,
     /// The document and log rows (LP4-14; [`crate::documents`]): the host's document service and its answers.
     docs: documents::Docs,
+    /// The value store of the epoch (T2 draft; [`crate::values`]): the derived and imported values of the runs' kernel
+    /// rows and the handles that name them. It is not durable: a restart replaces it (ONE.70).
+    values: ValueStore,
 }
 
 impl<S: Store> CommandLayer<S> {
@@ -1055,6 +1070,7 @@ impl<S: Store> CommandLayer<S> {
             generation: 0,
             rec: playback::Rec::default(),
             docs: documents::Docs::default(),
+            values: ValueStore::default(),
         }
     }
 
@@ -1506,6 +1522,35 @@ impl<S: Store> CommandLayer<S> {
     /// The jumbling engine's value at the head with Jumble on, under the pinned menu; `None` with Jumble off (draft).
     pub fn jumbled(&self) -> Option<&Derived> {
         self.jumbled.as_ref().map(|jumbled| &jumbled.derived)
+    }
+
+    /// The epoch's value store (T2 draft; [`crate::values`]): the derived and imported values that the runs' kernel
+    /// rows made in this epoch, and their handles. A restart replaces it ([`CommandLayer::restart`]).
+    pub fn values(&self) -> &ValueStore {
+        &self.values
+    }
+
+    /// The epoch's value store, for a host bridge that serves the kernel rows (T2 draft).
+    pub fn values_mut(&mut self) -> &mut ValueStore {
+        &mut self.values
+    }
+
+    /// What the jumbling kernel rows read at the head (T2 draft): the head's jumbling value with Jumble on, the
+    /// revision, the protection policy, the pieces that carry the protected orbits under the pinned menu (as a pose
+    /// move judges them, [`jumble::protected_pieces`]; none without a pin), and the epoch's value store, borrowed
+    /// together.
+    pub fn tower_at_head(&mut self) -> TowerAtHead<'_> {
+        let protect = match &self.twists {
+            Some(twists) => jumble::protected_pieces(twists, self.protected.orbits()),
+            None => Vec::new(),
+        };
+        TowerAtHead {
+            head: self.jumbled.as_ref().map(|jumbled| &jumbled.derived),
+            revision: &self.revision,
+            policy: self.policy,
+            protect,
+            values: &mut self.values,
+        }
     }
 
     /// KN2.4's `positions` row at the head (draft; CT-LB2-04): where each named piece's stickers are, as
@@ -2327,8 +2372,8 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// Ends the epoch and starts a fresh random one with a new per-launch secret (CT-ONE-21, L10). Previews, jobs,
-    /// handles and the frame reports end; durable receipts stay; other receipts become `unknown_outcome`, and the
-    /// refusals retained for the epoch are dropped; no token of the old epoch is valid. A transaction whose fate was unknown is adopted if the
+    /// handles, the value store's values ([`CommandLayer::values`]) and the frame reports end; durable receipts stay;
+    /// other receipts become `unknown_outcome`, and the refusals retained for the epoch are dropped; no token of the old epoch is valid. A transaction whose fate was unknown is adopted if the
     /// store answers that it holds it durably and dropped if the store answers that it does not; either answer ends its
     /// recovery. While the store cannot tell, the transaction stays unknown and the layer stays in read-only recovery,
     /// so no later action takes its place in the order; a later restart settles it. An action whose write a panic
@@ -2369,6 +2414,8 @@ impl<S: Store> CommandLayer<S> {
             }
         }
         self.next_epoch();
+        // The value store is not durable: its values and handles end with the epoch (ONE.70; T2 draft).
+        self.values = self.values.next();
         self.end_plays();
         self.generation += 1;
     }

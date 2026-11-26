@@ -710,6 +710,10 @@ fn the_layer_has_no_public_mutator_beside_its_entry_points() {
         ("serve_row", false),
         ("declare_overlay", false),
         ("store_mut", true),
+        // The epoch's value store (T2 draft; `src/values.rs`): the host bridge keeps the kernel rows' derived values
+        // there. It holds no session state, nothing durable and nothing a commit reads, and a restart replaces it.
+        ("values_mut", false),
+        ("tower_at_head", false),
         ("set_program_capacity", false),
         ("set_budget_ceiling", false),
         ("present", false),
