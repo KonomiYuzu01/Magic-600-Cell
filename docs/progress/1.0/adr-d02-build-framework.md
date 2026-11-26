@@ -1296,6 +1296,25 @@ Each checkpoint is one read of the named diff range against the questions below,
   - section 4 still matches the code.
 - Owner is shown: the J1 session and the report.
 
+**Refinement, after C6, then the freeze (owner, 26 November 2026).**
+- Fable's refinement scan reads the built product once more and gives the one build round its list. Before it, the build runs no
+  stop; after the build round come the two Astra rounds, then D02's freeze card.
+- Visual check (owner, 26 November 2026, 21:59 UTC): the scan goes through every D02 view one at a time: Global with each chart
+  preset (the 20 rings, the ring sheet, the Hopf rings), Local, the cut slice, the raw view, the tints and the overlays. For each
+  view it asks whether a researcher can see the structure the research needs (contact classes, caps, the cut, what moves, what
+  never hides, the ν band), and whether anything is drawn wrong, unreadable or misleading.
+- Output: every visual problem found, each marked `functional` or `taste`.
+  - Functional: the structure cannot be seen or operated (rotate, pick, focus), is drawn wrong, or misses the frame-rate rows. All
+    are fixed in the one build round before the two Astra rounds. The base puzzle's sticker pick (ADR-D01.40, host
+    `resolve_sticker`) counts here.
+  - Taste: colour values, materials, motion and polish. They are recorded for K2's art line (UI/UX freeze rounds 3 and 4) and are
+    not fixed in D02.
+- The freeze card shows the owner the list once, with what was fixed, to confirm. The owner is not asked to look for problems.
+- The freeze card also lists, for the owner's acceptance with ADR-D02: the draft command rows (`camera.link`, Local's auto-framing
+  switch, `jumble.seat.hold`, XM1 and G6, `research.record.read`, the researcher-name write, `tuning.open` and the rest of
+  `command-rows-d02.json`), the design slots `tint.jumble.off_lattice` and `line.jumble.overlay` (each adds a name to ADR-D01's
+  frozen round-1 slot list), and the eleven glossary additions of ADR-D02 section 15. Until then the draft rows and fallbacks stay.
+
 ## 4. Item map
 
 | Item | Mapping | Note |
