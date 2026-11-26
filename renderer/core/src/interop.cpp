@@ -100,6 +100,12 @@ struct Debug {
 constexpr DXGI_FORMAT SurfaceFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
 constexpr UINT SurfaceFlags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 constexpr UINT SurfaceLatency = 2;
+// C9 (26 Nov 2026): a product frame whose frame-latency wait has not ended
+// after this many milliseconds takes one statistics sample for the present
+// ledger, then waits on (sa2::latency_wait). Five milliseconds after the wait
+// starts, which is a millisecond or two after a vblank, the last vblank's
+// statistics are posted and the next vblank is still ahead at 60 to 144 Hz.
+constexpr uint32_t SurfaceSampleMs = 5;
 constexpr GUID ClsidDeviceFactory = {0x114863bf, 0xc386, 0x4aee, {0xb3, 0x9d, 0x8f, 0x0b, 0xbb, 0x06, 0x29, 0x55}};
 static_assert(SA2_SURFACE_BUFFERS == SA2_RING_SLOTS, "a surface buffer uses its ring slot's RTV and query results");
 // A composition swap chain and its back buffers; each buffer records with an
@@ -445,11 +451,17 @@ public:
     void wait(uint64_t frame) override {
         if (frame) wait_fence(ctx_, ctx_->ready.Get(), frame, deadline(ctx_->config.wait_timeout_ms));
     }
+    // C9 (26 Nov 2026): a product frame's statistics sample, taken once when
+    // the frame-latency wait lasts longer than SurfaceSampleMs. A scene
+    // frame's target has none: its wait and its trace samples are unchanged.
+    void sample_while_waiting(std::function<void()> sample) { sample_ = std::move(sample); }
     ID3D12GraphicsCommandList* open() override {
         // The buffer's previous frame first: a timeout there leaves the
         // frame-latency waitable untouched.
         wait_previous(ctx_, buffer_);
-        const auto status = WaitForSingleObjectEx(chain_.waitable, ctx_->config.wait_timeout_ms, FALSE);
+        const auto wait = [this](uint32_t ms) { return WaitForSingleObjectEx(chain_.waitable, ms, FALSE); };
+        const DWORD status = sample_ ? sa2::latency_wait(ctx_->config.wait_timeout_ms, SurfaceSampleMs, WAIT_TIMEOUT, wait, sample_)
+                                     : wait(ctx_->config.wait_timeout_ms);
         if (status == WAIT_TIMEOUT) {
             live(ctx_);
             throw Failure(SA2_E_TIMEOUT, "the surface's frame-latency wait timed out");
@@ -483,6 +495,7 @@ private:
     uint32_t index_;
     Slot& buffer_;
     std::optional<uint32_t> count_;
+    std::function<void()> sample_;
 };
 
 // The loaded scene for a stateful product call, outside a trace; latches a device removal.
@@ -885,6 +898,21 @@ void surface_statistics(sa2_context* ctx, sa2::Scene& scene) {
     const HRESULT last_hr = surface.chain->swapchain->GetLastPresentCount(&last);
     if (FAILED(hr) || FAILED(last_hr)) return;
     scene.surface_trace.sample({static_cast<int32_t>(hr), surface.generation, statistics.PresentCount, last, statistics.SyncQPCTime.QuadPart});
+}
+// C9 (26 Nov 2026, no ABI change): one sample of the surface's frame
+// statistics for the product's present ledger, read as sa2_presented reads
+// them, from inside a product frame's frame-latency wait (sa2::latency_wait).
+// A failed or disjoint call adds no row and never fails the frame; a device
+// removal is left to the calls that latch it.
+void product_statistics(sa2_context* ctx, sa2::Scene& scene) {
+    if (!ctx->surface || !ctx->surface->chain) return;
+    const auto& surface = *ctx->surface;
+    DXGI_FRAME_STATISTICS statistics{};
+    const HRESULT hr = surface.chain->swapchain->GetFrameStatistics(&statistics);
+    UINT last = 0;
+    const HRESULT last_hr = surface.chain->swapchain->GetLastPresentCount(&last);
+    if (FAILED(hr) || FAILED(last_hr)) return;
+    scene.product.presents().sample({static_cast<int32_t>(hr), surface.generation, statistics.PresentCount, last, statistics.SyncQPCTime.QuadPart});
 }
 // C9 U4 (no ABI change): sa2_scene_produce with SA2_TARGET_SURFACE on a
 // sa2_create context draws the loaded W1..W4 or W-J scene into the attached
@@ -1670,8 +1698,10 @@ int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_
         auto& scene = product_scene(ctx);
         std::optional<SlotTarget> slot;
         std::optional<SurfaceTarget> surface;
-        if (input->target == SA2_TARGET_SURFACE) surface.emplace(ctx);
-        else {
+        if (input->target == SA2_TARGET_SURFACE) {
+            surface.emplace(ctx);
+            surface->sample_while_waiting([ctx, &scene] { product_statistics(ctx, scene); });
+        } else {
             slot_route(ctx);
             slot.emplace(ctx, input->target);
         }

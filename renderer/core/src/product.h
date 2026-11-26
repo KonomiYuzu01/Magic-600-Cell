@@ -133,6 +133,28 @@ private:
     struct Entry { sa2_frame_input input{}; uint64_t frame = 0, generation = 0, display_qpc = 0; uint32_t count = 0; };
     std::deque<Entry> awaiting_, confirmed_;
 };
+// C9 (26 Nov 2026, no ABI change): a product frame's wait for the surface's
+// frame-latency waitable, in two parts. The shell's frame loop blocks in this
+// wait for most of a refresh and calls sa2_presented right after it, within a
+// millisecond of the vblank, when DXGI may or may not have posted that
+// vblank's statistics yet. Where that race goes one way for one frame and the
+// other way for the next, the one sample per frame passes a present without
+// meeting its count, and the exact rule drops a frame that was on screen for
+// a whole refresh. So when the wait has not ended after `sample_after_ms`,
+// `sample` runs once (one more statistics sample for the ledger), and the
+// wait goes on for the rest of `timeout_ms`; an infinite timeout (UINT32_MAX)
+// stays infinite. `wait(ms)` waits up to ms and returns its status, and
+// `timed_out` is the status of a wait that timed out. A wait that ends in its
+// first part, or a timeout not above `sample_after_ms`, is one plain wait.
+template <class Wait, class Sample>
+auto latency_wait(uint32_t timeout_ms, uint32_t sample_after_ms, uint32_t timed_out, Wait&& wait, Sample&& sample)
+    -> decltype(wait(timeout_ms)) {
+    if (sample_after_ms == 0 || timeout_ms <= sample_after_ms) return wait(timeout_ms);
+    const auto first = wait(sample_after_ms);
+    if (first != timed_out) return first;
+    sample();
+    return wait(timeout_ms == UINT32_MAX ? timeout_ms : timeout_ms - sample_after_ms);
+}
 // C9, owner item 9 (20 Nov 2026: docs/wiki/decisions/owner-decisions-2026-11-20-lp3-exit.md): route B's blind
 // seconds come from the core's own frame statistics, cross-checked against PresentMon, which marks every present
 // of the core's composition chain Dropped. The traced frames of a scene drawn on the surface

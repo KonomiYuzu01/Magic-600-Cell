@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] update | The confirmation gap's cause and the core's in-wait sample
+Recorded in [presented-gap-2026-11-26](evidence/presented-gap-2026-11-26.md) why far fewer frames were confirmed as presented at the sitting of 25 November (a sampling race that the window and desktop decide, not the build), the core's fix (one more statistics sample inside a product frame's wait) and its interleaved runs, and that the stutter in LX-2's runtime-losing faults comes from the turn key's synchronous commit.
+
 ## [2026-11-25] update | The owner-machine sitting of 25 November
 Recorded the sitting of 25 November 2026 on bb416a2c in [owner-sitting-2026-11-25-results](evidence/owner-sitting-2026-11-25-results.md): the greybox flow and CT-EV4-05's text legs ran on screen, the stutter under runtime loss is unchanged, and LX-2 and LX-4 read not-met on a much larger confirmation gap than on 21 November, whose cause is not established; reading (a)'s halves and LP5's lattice replay did not run.
 
