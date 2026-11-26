@@ -117,7 +117,9 @@ public sealed class ShellChrome
         }
         frame.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
-        var history = new HistoryPanel(Moves, new LayoutHistory(), () => frame.Tokens);
+        // ADR-D01.14: the layout history, shared by History's dock and the layout rows.
+        var layouts = new LayoutHistory();
+        var history = new HistoryPanel(Moves, layouts, () => frame.Tokens);
         frame.AddDockPanel(DockSide.Right, "history", "History", "panel.history", history);
         foreach (var panel in Panels)
         {
@@ -145,11 +147,13 @@ public sealed class ShellChrome
         }
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         SampleMount? sample = null;
+        LayoutTracker? layoutTracker = null;
         var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
         frame.AddPane("gallery", "Gallery", gallery);
         string? Unavailable(string command, string? argument) => command switch
         {
-            "command.find" or "transient.close" or "help.open" or "motion.reduced.set" => null,
+            "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
+            _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
             // B9: the naming and threshold draft rows work; the other draft rows wait for their steps.
@@ -173,7 +177,8 @@ public sealed class ShellChrome
         {
             sample = Sample = new SampleMount(frame, registry, keymap, ProjectSettings.GlobalizePath("res://sample-root"),
                 id => motions.Seconds(id, design, look.ReducedMotion), Execute,
-                k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet);
+                k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet, layouts);
+            sample.Look = appearance;
         }
         // Failures show in Problems with the error lamp, in every mode, and go to the run's errors.log.
         ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
@@ -213,6 +218,11 @@ public sealed class ShellChrome
                     break;
                 case "workspace.set" when argument == "layout:focus": frame.Model.SetFocusMode(!frame.Model.FocusMode); break;
                 case "workspace.set" when argument == "layout:maximise": frame.Model.SetPairMaximised(!frame.Model.PairMaximised); break;
+                // The layout reset button and the row are one path (owner's bug list, 26 November 2026).
+                case "workspace.reset": frame.SelectWorkspace(frame.Workspace); break;
+                case var layout when layoutTracker != null && LayoutTracker.Handles(layout):
+                    if (layoutTracker.Execute(command, argument) is { } still) frame.Say(still, true);
+                    break;
                 case "workspace.set":
                     if (!frame.SelectWorkspace(argument!.Substring(argument.IndexOf(':') + 1))) frame.Say("No workspace is named " + argument, true);
                     break;
@@ -228,6 +238,16 @@ public sealed class ShellChrome
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
         frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
+        frame.RowCommand += Execute;
+        // Without the sample mount the shell tracks the layout itself (with it, SampleMount does).
+        if (sample == null)
+        {
+            var tracker = layoutTracker = FrameLayout.Tracker(frame, layouts);
+            tracker.Restored += history.Refresh;
+            history.Command += Execute;
+            Callable.From(() => tracker.Track(FrameLayout.State(frame, () => look.Store(), () => ""),
+                FrameLayout.Apply(frame, v => { if (v.Length > 0) appearance.Edit(a => a.Restore(v), true, true); }, _ => { }))).CallDeferred();
+        }
         gallery.Asked += what =>
         {
             if (what == "preset") NextPreset();

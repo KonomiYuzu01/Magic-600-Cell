@@ -153,6 +153,9 @@ public sealed partial class ChromeFrame : Control
     private string Hint(string tooltip, string command, string? argument) =>
         keys?.KeysFor(command, argument) is { Length: > 0 } bound ? $"{tooltip} ({bound})" : tooltip;
     public event Action<Binding>? KeyCommand;
+    // A row the frame's own controls carry out through the host's registry (the layout reset: workspace.reset), so the
+    // row's unavailable reason and echo apply; with no listener the frame carries it out itself.
+    public event Action<string, string?>? RowCommand;
     // Contexts the host adds in front of the view contexts, such as "preview" while a preview waits.
     public Func<IEnumerable<string>>? Contexts { get; set; }
     private Control? strip, topStrip;
@@ -419,7 +422,8 @@ public sealed partial class ChromeFrame : Control
         if (WorkspaceModified)
         {
             Button reset = ChromeWidgets.Tool("", "Reset " + Workspaces.Names[Workspace] + " to its preset"); reset.Name = "WorkspaceReset"; ChromeIcons.Apply(reset, "workspace.reset", Tokens.Px("icon.small"));
-            reset.Pressed += () => SelectWorkspace(Workspace); row.AddChild(reset);
+            reset.Pressed += () => { if (RowCommand != null) RowCommand("workspace.reset", null); else SelectWorkspace(Workspace); };
+            row.AddChild(reset);
         }
         row.AddChild(Notice);
         if (alerts > 0)
