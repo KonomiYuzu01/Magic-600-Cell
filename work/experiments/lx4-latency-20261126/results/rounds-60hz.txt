@@ -1,0 +1,10 @@
+4 rounds x 7 samples, frame 16.667 ms; median over rounds of each round's p50 / p95
+   edit                 endpoint                 old             mid             new
+L  completion-trigger   completion      50.0 /  50.0   141.7 / 158.4    91.7 / 100.0
+L  completion-trigger   syntax          50.0 /  50.0    50.0 /  50.0    50.0 /  58.4
+L  exported-signature   completion                 -   133.3 / 150.0    83.5 / 100.0
+L  exported-signature   diagnostics     83.3 /  83.3   200.0 / 225.0   116.7 / 142.1
+L  exported-signature   syntax          50.0 /  50.0    50.0 /  58.4    50.0 /  50.0
+L  inside-body          diagnostics     83.3 /  83.3   133.3 / 141.7   116.7 / 116.7
+L  inside-body          syntax          50.0 /  50.0    50.0 /  50.0    50.0 /  50.0
+L  syntax-break         syntax          50.0 /  50.0    50.0 /  50.0    50.0 /  58.4

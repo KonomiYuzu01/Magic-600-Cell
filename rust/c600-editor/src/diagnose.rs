@@ -81,7 +81,7 @@ pub fn diagnose(document: &Document, digest: &str, context: &ModuleContext) -> R
         .saying("the module context names an edition this parser does not read");
         return Ok(Diagnosis { subject, diagnostics: vec![envelope], verdict: Verdict::NotChecked(Stage::Syntax) });
     }
-    let closure = Closure::read(Source::read(document.bytes(), digest), context);
+    let closure = Closure::read(Source::of(document, digest), context);
     Ok(run(&closure, context, subject).0)
 }
 

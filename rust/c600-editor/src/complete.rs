@@ -8,8 +8,8 @@ use std::collections::BTreeSet;
 
 use c600_syntax::ast::{Decl, TriviaKind, TypeExpr};
 use c600_syntax::{
-    base_types, builtins, capability_names, effect_names, lexemes, orders, precisions, type_constructors, type_text,
-    Lexeme, LexemeKind,
+    base_types, builtins, capability_names, effect_names, orders, precisions, type_constructors, type_text, Lexeme,
+    LexemeKind,
 };
 
 use crate::analysis::{identity_difference, Closure, Source};
@@ -128,14 +128,14 @@ pub fn complete(
     let at = document.byte_offset(digest, position, Service::Complete)?;
     let text = document.expect(digest, Service::Complete)?;
     let subject = document.subject(&context.edition, Some(context.digest()));
-    let closure = Closure::read(Source::read(text.as_bytes(), digest), context);
+    let closure = Closure::read(Source::of(document, digest), context);
     if let (Some(session), Some(supports)) = (&context.session, &context.supports) {
         if let Some((field, expected, held)) = identity_difference(session, supports) {
             return Err(identity_refusal(IdentitySubject::Module, field, expected, held));
         }
     }
-    let index = Index::build(&closure.root.file, &closure.root.lexemes);
-    let (tokens, trivia) = lexemes(text);
+    let index = Index::build(&closure.root.file, closure.root.lexemes());
+    let (tokens, trivia) = (closure.root.lexemes(), closure.root.trivia());
     let range = |s: usize, e: usize| SourceRange::new(digest, s, e);
 
     let ident = tokens.iter().find(|l| l.kind == LexemeKind::Name && l.span.start <= at && at <= l.span.end);
@@ -155,7 +155,7 @@ pub fn complete(
         completion.context = CompletionContext::Comment;
         return Ok(completion);
     }
-    if in_text(text, &tokens, at) {
+    if in_text(text, tokens, at) {
         completion.context = CompletionContext::Text;
         return Ok(completion);
     }

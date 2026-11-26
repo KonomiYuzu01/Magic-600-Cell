@@ -1,0 +1,26 @@
+6 rounds x 7 samples, frame 1 ms; median over rounds of each round's p50 / p95
+   edit                 endpoint                 old             mid             new
+L  completion-trigger   completion      20.9 /  28.4   121.0 / 136.7    65.4 /  78.8
+L  completion-trigger   syntax          20.4 /  27.9    29.4 /  34.1    27.9 /  33.6
+L  exported-signature   completion                 -   114.8 / 126.8    60.7 /  72.0
+L  exported-signature   diagnostics     43.6 /  60.1   181.0 / 211.5    95.4 / 111.2
+L  exported-signature   syntax          21.1 /  28.1    28.1 /  32.5    28.3 /  32.9
+L  inside-body          diagnostics     40.7 /  61.8    97.2 / 112.5    78.6 /  95.5
+L  inside-body          syntax          19.2 /  28.0    28.1 /  33.9    28.0 /  33.8
+L  syntax-break         syntax          19.6 /  28.6    28.4 /  36.5    26.2 /  33.9
+M  completion-trigger   completion       5.5 /   8.0    19.5 /  21.5    14.5 /  19.0
+M  completion-trigger   syntax           5.5 /   8.0     7.0 /   9.0     7.0 /   9.5
+M  exported-signature   completion                 -    20.0 /  20.5    14.0 /  17.0
+M  exported-signature   diagnostics     11.0 /  13.5    34.0 /  36.0    20.0 /  24.0
+M  exported-signature   syntax           5.5 /   7.5     8.0 /   8.5     7.5 /   9.0
+M  inside-body          diagnostics     12.5 /  14.5    20.5 /  24.5    19.0 /  21.5
+M  inside-body          syntax           6.0 /   8.0     7.5 /  10.0     7.0 /   9.0
+M  syntax-break         syntax           5.5 /   7.5     7.5 /   9.0     8.0 /   9.0
+S  completion-trigger   completion       2.5 /   3.0     5.0 /   6.0     5.0 /   5.5
+S  completion-trigger   syntax           2.5 /   3.0     3.0 /   3.0     3.0 /   3.0
+S  exported-signature   completion                 -     5.0 /   6.0     4.0 /   5.1
+S  exported-signature   diagnostics      4.0 /   4.0     8.0 /   9.0     6.0 /   7.0
+S  exported-signature   syntax           3.0 /   3.0     3.0 /   3.0     3.0 /   3.0
+S  inside-body          diagnostics      4.0 /   4.5     6.0 /   7.0     6.0 /   7.0
+S  inside-body          syntax           3.0 /   3.0     3.0 /   3.5     3.0 /   4.5
+S  syntax-break         syntax           2.5 /   3.0     3.0 /   3.0     3.0 /   3.0

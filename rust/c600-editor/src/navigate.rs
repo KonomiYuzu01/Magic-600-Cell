@@ -234,7 +234,7 @@ pub fn hover(
 ) -> Result<Option<Hover>, Envelope> {
     let (read, at) = read(document, digest, position, context, Service::Hover)?;
     let closure = &read.closure;
-    let index = Index::build(&closure.root.file, &closure.root.lexemes);
+    let index = Index::build(&closure.root.file, closure.root.lexemes());
     let Some(occurrence) = index.occurrence(at) else { return Ok(None) };
     let subject = document.subject(&context.edition, Some(context.digest()));
     let (diagnosis, checked) = run(closure, read.context, subject.clone());
@@ -414,7 +414,7 @@ pub fn definition(
 ) -> Result<Vec<SourceRange>, Envelope> {
     let (read, at) = read(document, digest, position, context, Service::Definition)?;
     let closure = &read.closure;
-    let index = Index::build(&closure.root.file, &closure.root.lexemes);
+    let index = Index::build(&closure.root.file, closure.root.lexemes());
     let Some(occurrence) = index.occurrence(at) else { return Ok(Vec::new()) };
     let (target, _, _) = found(&index, occurrence);
     Ok(match target {
