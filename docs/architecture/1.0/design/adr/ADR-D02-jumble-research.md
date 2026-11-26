@@ -66,8 +66,9 @@ frame the researcher's freedom is as high as possible.
   a precompiled variant.
 - Measured at A4 on the research model (not renderer or performance evidence):
   - The contact graph of the off-lattice alignment domains needs 4 colour classes at W-J record 300 and at both deep
-    exports, and 4 is exact (each has 4 pairwise touching domains); 1 class suffices at the I_a@40 stop. Contacts on
-    off-grip cuts count.
+    exports, and 4 is exact (each has 4 pairwise touching domains); 1 class suffices at the I_a@40 stop
+    (`stop40_reference()` in `research/jumbling/differential/references/obs_refs.py`: the W-J I_a fixture at 40
+    records, then its 62 recorded restorer twists). Contacts on off-grip cuts count.
   - Drawn whole, the seam faces of a deep export are 0.59 to 0.66 million triangles (28 to 32 MB as float32
     triangles). Between 32% and 39% of the seam-face volume is exposed; no face is covered whole.
 - Two read-only measurements of A3 (M-RING, the ring sheet's neighbours; M-FOLD, the chart's folding) are redone in
@@ -99,7 +100,7 @@ frame the researcher's freedom is as high as possible.
   - a Jumble mark on every view border, differing in shape from `mark.practice`;
   - the totals on Global's border (ADR-D02.22);
   - on Local's border, the named-cap cell, then the kept twist checks, Cap covers and the repair slot, expanding one
-    at a time;
+    at a time; a closed list keeps a one-line header with its count;
   - with N > 0 the strip and the rail show `numeral.undefined` as a whole, switched on the exact lattice flag and never
     on a pending N; at N = 0 the ν band stands beside the rail (ADR-D02.28).
   (framework for the switch on the exact lattice flag; default for the arrangement)
@@ -135,12 +136,14 @@ frame the researcher's freedom is as high as possible.
   (ADR-D02.26). It sets no
   threshold and no filter, and never changes a projection, a layout or a shrink. Local shows its empty state: "Name a
   cap: click its cell, or type its number." Readouts show true zeros. (framework for "chrome only"; default for the
-  value)
+  value) [data: L1 for whatever the contact-class mode and the never-hidden set draw on pieces; until then the legend
+  shows them armed]
 
 ### 4. The cap map
 
 - **ADR-D02.13** One canvas-drawn shell control of all 600 caps in the ring-sheet arrangement, in Solve's bottom dock,
-  collapsed by default. A researcher may also place it as a free pane beside the pair. (default)
+  collapsed by default. A researcher may also place it as a free pane beside the pair. [data: M-RING redone in the
+  repository, mapping each cap id to its cell of the ring sheet] (default)
 - **ADR-D02.14** Each cap shows its class by pattern (ADR-D02.27): blocked, closed, at floor or above floor, for
   certified and completed rim rows only; otherwise ADR-D01's pending state. N_c shows as a tabular numeral at
   admissible caps only, never at a blocked cap. The legend reads "at floor (N_c = F_c > 0)". (framework)
@@ -296,7 +299,7 @@ frame the researcher's freedom is as high as possible.
   - `jumble.enter` and `jumble.leave`, cue `cue.jumble`, chrome only, no sticker moves;
   - `repair.step`, cue `cue.step`;
   - `cap.name`, cue `cue.cap`;
-  - `slot.fill` and `cue.check`, reserved rows that are off.
+  - `slot.fill`, a reserved row that is off, with its cue `cue.check` reserved.
   A result appears in place with no motion and no cue. The slice settles without waiting for a result. A half-turn
   cuts to its end pose and outlines its moving set for one fixed time. A refused twist gets no sweep. Every motion has
   its row and turns off with reduced motion (revision 6, J-9). (framework)
@@ -367,7 +370,9 @@ frame the researcher's freedom is as high as possible.
   the current layout's right dock (in Solve, beside History), so the views being judged stay visible. Its parts: Family; Look; the five seed
   knobs over live ramp strips; Compare (two tuning slots, Swap, a held key); Presets (shipped read-only, forked on
   edit); Advanced behind a switch, with search. A held colour-vision and high-contrast simulation runs over the real
-  frame. Save checks contrast, a monotone height ramp and pairwise distinct contact-class colours under G4's
+  frame. In the product shell the core's frame lies beneath the Godot window, so until a core simulation stage and its
+  look-cost row exist the simulation covers the chrome only and says so [data: a core simulation stage]. The existing
+  Appearance panel stays beside it. Save checks contrast, a monotone height ramp and pairwise distinct contact-class colours under G4's
   simulations, and fails in place. (framework for the Save checks; default for the layout)
 
 ### 12. A round-4 moment on record
@@ -428,7 +433,9 @@ integrator for these rows and file changes. Existing rows are used as they are: 
 
 - **CR-14, view-kind rows:** the cap-map threshold `jumble.capmap.threshold.{set, clear}` with the formulas of
   ADR-D02.15; the slice's held split and its radius-shell control; the raw view mode and its clip; the entry slot and
-  the two Global chart presets; the highlight-and-dim focus layer; a repair row's step focus.
+  the two Global chart presets; the highlight-and-dim focus layer; a repair row's step focus; naming and un-naming a
+  cap (ADR-D02.16, .19); switching the tint mode (.20); the domain and "height at least k" focus layers (.21, .23);
+  marking a ν-correction into a set with a signed multiplicity (.39).
 - **CR-15:** `jumble.repair.stage`: stage a picked repair row as a sealed, whole-only fresh preview that writes the
   repair-pair record.
 - **CR-16, tuning:** save and apply a preset; set and swap the two tuning slots; the held compare; the held
@@ -443,12 +450,14 @@ integrator for these rows and file changes. Existing rows are used as they are: 
   grip becomes "the grip of an admissible cap"; Cap cover says "meeting cap", and the N_c, In/Out/A and Floor rows say
   they are undefined at a blocked cap.
 - **The motion table** is not a command row: its version 2 (ADR-D02.37) is an item of this record.
+- CR-18 is not a request of this record: A1 found its rows (`session.branch.replay`, `preview.side.*`) decided by
+  ADR-D01 revision 6.
 
 ### 16. What this record does not decide
 
 - The colours, hues, lightness steps and timings: freeze round 3. Signature moments, ADR-D02.48 included: round 4.
 - A research layout (R1.C): it depends on LQ2's research profile, which the joint setting decides.
-- An arrival motion for results (`slot.fill`, `cue.check`): only if X1, X4 and X5, timed by outcome, show no
+- An arrival motion for results (the row `slot.fill` with its cue `cue.check`): only if X1, X4 and X5, timed by outcome, show no
   difference, and then only for long jobs that enumerate their coverage.
 - Dimming by default at a named blocked cap: never, unless the owner reopens it after X6.
 - Each aid's principle record (LP4-12): every aid shown needs its own record before its help card ships.
