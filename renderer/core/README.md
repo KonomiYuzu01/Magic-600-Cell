@@ -176,7 +176,7 @@ SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_v
 ```
 
 - The row carries Look Lab's `tools/looklab/fixtures/hopf-rings.json`: J, K, the 20 rings' origins and each cell's ring and half-step. The core checks them against its own cells: each centre must project onto its ring's plane at the phase of its half-step. It then builds Look Lab's `GlobalLayout` ring charts (RingRadius 2.62, BaseRadius 8.063, RingScale 0.28) into one table that the product passes read at t18. Every view that names the rings shares the table; a different set is refused.
-- `SA2_LAYOUT_RING_SHEET` (2u, ADR-D02 B22, added before any release) lays the same charts flat as Look Lab's ring sheet: 20 rows of 30 cell charts, each cell's centre at (0.408 (h/2 - 14.75), -0.342 (r - 9.5)). The camera does not turn the sheet. WARP draws it; on the owner's GPU its first product frames removed the device (DXGI_ERROR_DEVICE_HUNG), so the shell holds it back until that is found.
+- `SA2_LAYOUT_RING_SHEET` (2u, ADR-D02 B22, added before any release) lays the same charts flat as Look Lab's ring sheet: 20 rows of 30 cell charts, each cell's centre at (0.408 (h/2 - 14.75), -0.342 (r - 9.5)). The camera does not turn the sheet. A view takes either Hopf layout only once the Hopf table exists, and both kinds build it. (The table was first built for the rings alone, so a sheet named first drew from an empty root SRV and hung the owner's GPU, DXGI_ERROR_DEVICE_HUNG. The shader now also clamps the chart index it reads.)
 - A sticker is placed by the chart of the cell nearest the posed centre of its own cell, in Hopf coordinates: the ring of the nearest base point, then the place of the nearest phase along it. So a sticker whose piece is not posed uses its own cell's chart. The placed point turns by the camera's upper 3 x 3 (the shell sends the linked 3D spin) and is drawn at the view's zoom; d4 and the focus are unused.
 - `python renderer/core/check_core.py --hopf` runs `sa2_selftest.exe --warp --hopf <hopf-rings.json> --debug` on WARP only. It checks that:
   - on the CPU, the table built from the rings' own centres puts the 20 ring centres at a dodecahedron's vertices;
@@ -184,7 +184,19 @@ SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_v
   - malformed or unfitting rings are refused and change nothing;
   - the rings change the picture around its centre, and the camera turns them;
   - each cell's centre lies at its own place on the ring sheet, and the sheet draws another picture around the centre, which the camera does not turn;
+  - the ring sheet named on a fresh context, before any rings, draws the same picture;
   - another view keeps the chain, and the same rings on a third view draw the same picture.
+
+### Focus layers in the core (ADR-D02 B17, ADR-D01.46; added to ABI 10 before any release)
+
+```c
+#define SA2_STYLE_HIDE_MARKED 3u
+#define SA2_STYLE_HIDE_UNMARKED 4u
+```
+
+- A style slot's `dim_mode` may hide the pieces that the dim modes would dim: their stickers are not drawn, so what lies behind them shows. ADR-D01.46's focus layer marks the pieces its focused predicate leaves out (`SA2_STYLE_DIM` in the fill byte) and chooses dimmed or hidden per slot.
+- Picking follows visibility: the ID pass of a frame, or of the pane under the point, draws with the style that frame or pane drew with (the embedded `styledVs` and `styledIdPs`), and a piece the slot hides or dims answers no instance. A tint, an outline or the matrix leaves the answer unchanged; a frame drawn without a style picks as before. A pick on a styled frame whose engine copy has since taken another piece style is `SA2_PICK_STALE_ENGINE`.
+- `python renderer/core/check_core.py --style` also runs the WARP focus-layer check: hiding the marked pieces draws what a set without them draws (at most 1% of covered pixels differ by more than 2 in a channel); at sample points the hiding frame's picks never name a hidden piece and name the piece behind where there is one, the dimming frame's never name a dimmed one, and an outline alone changes no pick; one styled pane covering the target picks as the one-view frame; the stale rule holds.
 
 ## Build and CPU check
 

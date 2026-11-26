@@ -1102,6 +1102,12 @@ void run_cpu(Suite& suite, const Options& options) {
         product.set_shape(4, reduced);
         product.recovered(sa2::DeviceEpoch + 1);
         expect(product.shape(3) == reduced && product.shape(4) == reduced, "a shape was lost across device loss and recovery");
+        // ADR-D02 B22: a Hopf layout draws from the Hopf table, so a view takes none before the table exists.
+        for (uint32_t kind : {uint32_t(SA2_LAYOUT_HOPF_RINGS), uint32_t(SA2_LAYOUT_RING_SHEET)}) {
+            auto laid = reduced; laid.layout = kind;
+            expect(rejects([&] { product.set_shape(5, laid); }) && product.shape(5) == sa2::ViewShape{},
+                "a Hopf layout was taken without the Hopf table");
+        }
     });
     // ABI 7 (ADR-D02 B14): the piece style and the style slots, without a device.
     suite.check("piece style", [] {
@@ -1120,11 +1126,16 @@ void run_cpu(Suite& suite, const Options& options) {
         const float nan = std::numeric_limits<float>::quiet_NaN();
         const auto refused = [&](auto change) { auto bad = style; change(bad); return rejects([&] { sa2::view_style(&bad); }); };
         expect(refused([](sa2_view_style& s) { s.struct_size = 312; }) && refused([](sa2_view_style& s) { s.reserved = 1; })
-            && refused([](sa2_view_style& s) { s.tint_mode = 4; }) && refused([](sa2_view_style& s) { s.dim_mode = 3; })
+            && refused([](sa2_view_style& s) { s.tint_mode = 4; }) && refused([](sa2_view_style& s) { s.dim_mode = 5; })
             && refused([](sa2_view_style& s) { s.dim_amount = 1.5f; }) && refused([&](sa2_view_style& s) { s.dim_amount = nan; })
             && refused([](sa2_view_style& s) { s.outline_width = 0.6f; }) && refused([](sa2_view_style& s) { s.palette[7] = 1.5f; })
             && refused([&](sa2_view_style& s) { s.palette[0] = nan; }) && refused([](sa2_view_style& s) { s.matrix[4] = 9.0f; })
             && rejects([] { sa2::view_style(nullptr); }), "an invalid style was accepted");
+        // ADR-D02 B17 (ABI 10): the two hide modes are valid dim modes.
+        for (uint32_t mode : {SA2_STYLE_HIDE_MARKED, SA2_STYLE_HIDE_UNMARKED}) {
+            auto hide = style; hide.dim_mode = mode;
+            expect(sa2::view_style(&hide).dim_mode == mode, "a hide mode was not copied");
+        }
         std::vector<uint8_t> bytes(SA2_PIECES, 0);
         expect(rejects([&] { sa2::validate_piece_style(bytes.data(), 2); }), "a third channel was accepted");
         bytes[5] = 0x10;

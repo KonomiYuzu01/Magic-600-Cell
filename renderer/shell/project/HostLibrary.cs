@@ -502,6 +502,12 @@ public sealed unsafe class HostLibrary : IDisposable
     /// <summary>The piece style's channels and the tint and dim modes (the core's SA2_STYLE_* values).</summary>
     public const uint StyleFill = 0, StyleOutline = 1, TintFill = 1, TintOutline = 2, DimMarked = 1, DimUnmarked = 2;
 
+    /// <summary>ADR-D02 B17 (the core's ABI 10): the dim modes that hide instead; a hidden piece is neither drawn nor picked.</summary>
+    public const uint HideMarked = 3, HideUnmarked = 4;
+
+    /// <summary>A fill byte's dim-set bit (the core's SA2_STYLE_DIM): the pieces a dim or hide mode acts on.</summary>
+    public const byte DimSet = 0x80;
+
     /// <summary>
     /// Sets one channel of the adopted revision's piece style (version 10): one byte per piece, or with
     /// <paramref name="byPose"/> one byte per pose of the session's head, which the host expands with the head's own pose

@@ -163,9 +163,15 @@ class HopfRings(unittest.TestCase):
         self.assertIn("var layout = D02.ShellJumble.On ? D02.ShellHopf.Kind(D02.ShellShape.OpeningPath()) : D02.ShellHopf.Chain;",
                       shell)
         self.assertIn("_hopf = layout == D02.ShellHopf.Rings;", shell)
-        # B22: the ring sheet is held back in the shell while it hangs the hardware GPU.
+        # B22: the shell opens Global on either layout; the core builds the Hopf table for the sheet too.
         self.assertIn("if (layout != D02.ShellHopf.Chain && !D02.ShellHopf.Opens(layout))", shell)
-        self.assertIn("public static bool Opens(uint kind) => kind == Rings;", text(PROJECT / "D02" / "ShellHopf.cs"))
+        self.assertIn("public static bool Opens(uint kind) => kind == Rings || kind == Sheet;", text(PROJECT / "D02" / "ShellHopf.cs"))
+        core = text(ROOT / "renderer" / "core" / "src" / "interop.cpp")
+        self.assertIn("if (kind == SA2_LAYOUT_HOPF_RINGS || kind == SA2_LAYOUT_RING_SHEET)", core)
+        self.assertIn('argument(shape.layout == SA2_LAYOUT_CHAIN || !hopf_.empty(), "a Hopf layout needs the Hopf table");',
+                      text(ROOT / "renderer" / "core" / "src" / "product.cpp"))
+        self.assertIn("uint chart = min(asuint(hopfRows[2461 + e / 4][e % 4]), 599u);",
+                      text(ROOT / "renderer" / "core" / "shaders" / "geometry.hlsl"))
         self.assertEqual(shell.count("SetViewLayout("), 1)
         self.assertIn("library.SetCamera(_host, _hopf ? LocalCamera() : _camera.ColumnMajor())", shell)
         self.assertEqual(json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))["params"]["projection"],
@@ -268,7 +274,8 @@ class ShellPanes(unittest.TestCase):
     def test_local_follows_the_named_cap(self):
         body = self.shell[self.shell.index("private void FollowLocalCap(HostLibrary library)"):]
         body = body[:body.index("\n    }\n")]
-        self.assertIn("int? cap = _chrome?.Jumble?.Naming.Named;", body)
+        # B17 (ADR-D01.41): the named cap, or a newer selection while auto-framing is on.
+        self.assertIn("int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);", body)
         self.assertIn("cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos", body)
         self.assertIn("library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone)", body)
         self.assertIn("chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;", body)
@@ -409,6 +416,51 @@ class Picks(unittest.TestCase):
         self.assertIn("static ShellStyle() => ShellPick.Changed += Invalidate;", style)
         self.assertIn("public const int PieceCount = 177_120;", style)
         self.assertIn("#define SA2_PIECES 177120u", text(CORE / "include" / "sa2_interop.h"))
+
+
+class FocusLayersInTheCore(unittest.TestCase):
+    """B17, ADR-D01.46 (added to the core's ABI 10 before any release): the pieces a focus layer leaves out are dimmed
+    or hidden by the style slots, and the ID pass follows the style the frame drew with, so neither is picked."""
+
+    def test_the_core_hides_and_picks_follow_visibility(self):
+        header = text(CORE / "include" / "sa2_interop.h")
+        self.assertIn("#define SA2_STYLE_HIDE_MARKED 3u", header)
+        self.assertIn("#define SA2_STYLE_HIDE_UNMARKED 4u", header)
+        self.assertIn("Picking follows visibility", header)
+        styled = text(CORE / "shaders" / "styled.hlsl")
+        self.assertIn("if ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet)) result.position = float4(0, 0, -1, 1);", styled)
+        self.assertIn("uint styledIdPs(StyledOut input) : SV_Target {", styled)
+        scene = text(CORE / "src" / "scene.cpp")
+        self.assertIn("auto* pipeline = input.styled ? g.styled_id_pipeline() : p.id_pso.Get();", scene)
+        self.assertIn("compile_embedded_shader(styled_id_ps.dxil styled.hlsl styledIdPs ps_6_0)", text(CORE / "CMakeLists.txt"))
+        self.assertIn("foreach(name styled_vs styled_ps styled_id_ps)", text(CORE / "embed_dxil.cmake"))
+        product = text(CORE / "src" / "product.cpp")
+        self.assertIn("(record->styled && copy.style != record->style_version)", product)
+        self.assertIn('suite.check("focus layers warp", [&] { product_focus_layers(options); });', text(CORE / "src" / "gpu_test.cpp"))
+        abi = text(ROOT / "rust" / "c600-render" / "src" / "abi.rs")
+        self.assertIn("pub const STYLE_HIDE_MARKED: u32 = 3;", abi)
+        self.assertIn("&& self.dim_mode <= STYLE_HIDE_UNMARKED", abi)
+
+    def test_the_shell_composes_the_focus_through_the_chrome_model(self):
+        style = text(PROJECT / "D02" / "ShellStyle.cs")
+        self.assertIn("public static void SetFocus(FocusLayers? layers, Func<int, bool>? member, Func<int, bool>? breaksThrough = null)", style)
+        self.assertIn("if (layers.ShownPiece(member(piece), breaksThrough?.Invoke(piece) ?? false) < 1)", style)
+        self.assertIn("style.DimMode = _hide ? HostLibrary.HideMarked : HostLibrary.DimMarked;", style)
+        self.assertIn("public const uint HideMarked = 3, HideUnmarked = 4;", text(PROJECT / "HostLibrary.cs"))
+        # ShownPiece's quarter is the core's dim amount.
+        self.assertIn("public const float DimAmount = 0.75f;", style)
+        self.assertIn("Inactive == InactiveMode.Dimmed ? .25 : 0", text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "Gallery.cs"))
+
+
+class LocalReframes(unittest.TestCase):
+    """B17, ADR-D01.41: Local re-frames on a selection change while auto-framing is on, else follows the named cap."""
+
+    def test_local_frames_the_newer_source(self):
+        local = text(PROJECT / "D02" / "ShellLocal.cs")
+        self.assertIn("public static bool AutoFrame { get; set; } = true;", local)
+        self.assertIn("return AutoFrame && _selectionNewer && _selected is int cell ? cell : _cap;", local)
+        self.assertIn("int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);", text(PROJECT / "Shell.cs"))
+        self.assertIn("public int? Cell => Slot is uint slot ? (int)(slot / 433) : null;", text(PROJECT / "D02" / "ShellPick.cs"))
 
 
 class PickRun(unittest.TestCase):

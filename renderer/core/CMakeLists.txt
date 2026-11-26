@@ -81,12 +81,13 @@ function(compile_embedded_shader output source entry profile)
 endfunction()
 compile_embedded_shader(styled_vs.dxil styled.hlsl styledVs vs_6_0)
 compile_embedded_shader(styled_ps.dxil styled.hlsl styledPs ps_6_0)
+compile_embedded_shader(styled_id_ps.dxil styled.hlsl styledIdPs ps_6_0) # ADR-D02 B17 (ABI 10): the styled ID pass
 set(STYLED_DXIL "${CMAKE_CURRENT_BINARY_DIR}/generated/styled_dxil.h")
 add_custom_command(OUTPUT "${STYLED_DXIL}"
     COMMAND "${CMAKE_COMMAND}" -D "INPUT=${CMAKE_CURRENT_BINARY_DIR}" -D "OUTPUT=${STYLED_DXIL}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/embed_dxil.cmake"
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/embed_dxil.cmake" "${CMAKE_CURRENT_BINARY_DIR}/styled_vs.dxil"
-        "${CMAKE_CURRENT_BINARY_DIR}/styled_ps.dxil" VERBATIM)
+        "${CMAKE_CURRENT_BINARY_DIR}/styled_ps.dxil" "${CMAKE_CURRENT_BINARY_DIR}/styled_id_ps.dxil" VERBATIM)
 add_custom_target(sa2_styled_dxil ALL DEPENDS "${STYLED_DXIL}")
 add_dependencies(sa2_interop sa2_styled_dxil)
 set(STAGE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/generated/stage_sources.h")

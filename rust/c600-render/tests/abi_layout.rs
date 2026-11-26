@@ -313,6 +313,8 @@ fn every_constant_has_the_header_value() {
         ("STYLE_DIM_NONE".into(), i64::from(STYLE_DIM_NONE)),
         ("STYLE_DIM_MARKED".into(), i64::from(STYLE_DIM_MARKED)),
         ("STYLE_DIM_UNMARKED".into(), i64::from(STYLE_DIM_UNMARKED)),
+        ("STYLE_HIDE_MARKED".into(), i64::from(STYLE_HIDE_MARKED)),
+        ("STYLE_HIDE_UNMARKED".into(), i64::from(STYLE_HIDE_UNMARKED)),
         ("PANES_MAX".into(), i64::from(PANES_MAX)),
         ("PROJECTION_PERSPECTIVE".into(), i64::from(PROJECTION_PERSPECTIVE)),
         ("PROJECTION_ORTHOGRAPHIC".into(), i64::from(PROJECTION_ORTHOGRAPHIC)),

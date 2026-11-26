@@ -88,7 +88,7 @@ struct ProductGpu {
     // One ID pass: its constants and the one-texel readback.
     struct Pick {
         ComPtr<ID3D12CommandAllocator> allocator; ComPtr<ID3D12GraphicsCommandList> list;
-        Buffer constants, read; uint64_t fence = 0;
+        Buffer constants, read, style; uint64_t fence = 0; // style: ADR-D02 B17 (ABI 10), the styled ID pass's slot
     };
     ComPtr<ID3D12RootSignature> root;
     ComPtr<ID3D12PipelineState> draw_pso, id_pso;
@@ -99,7 +99,7 @@ struct ProductGpu {
     // ABI 7 (ADR-D02 B14): the styled pass, its root signature (the product's, then t17 and b1) and its per-ring
     // style constants, built on the first styled frame; the product pipelines above are unchanged.
     ComPtr<ID3D12RootSignature> styled_root;
-    ComPtr<ID3D12PipelineState> styled_pso, styled_surface_pso;
+    ComPtr<ID3D12PipelineState> styled_pso, styled_surface_pso, styled_id_pso; // styled_id_pso: ADR-D02 B17 (ABI 10)
     std::array<Buffer, SA2_RING_SLOTS> style_cb;
     std::array<uint8_t*, SA2_RING_SLOTS> style_cb_data{};
     // ABI 8 (ADR-D02 B18a): a composite frame's per-pane constants and style constants (ring r, pane i at r * 4 + i),
@@ -888,16 +888,31 @@ struct Scene::Impl {
         name(out.Get(), L"SA2 styled root signature");
         return out;
     }
+    // ABI 7: the styled root signature and the ring's style constants, built once.
+    void styled_root_create() {
+        auto& p = product_gpu();
+        if (p.styled_root) return;
+        auto made = styled_signature();
+        std::array<Buffer, SA2_RING_SLOTS> cbs; std::array<uint8_t*, SA2_RING_SLOTS> data{};
+        for (size_t i = 0; i < cbs.size(); ++i) cbs[i] = buffer(512, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        for (size_t i = 0; i < cbs.size(); ++i) data[i] = map(cbs[i]);
+        p.styled_root = std::move(made); p.style_cb = std::move(cbs); p.style_cb_data = data;
+    }
+    // ADR-D02 B17 (ABI 10): the styled ID pass (styledVs, styledIdPs), from the embedded DXIL; built once.
+    ID3D12PipelineState* styled_id_pipeline() {
+        auto& p = product_gpu();
+        styled_root_create();
+        if (!p.styled_id_pso) {
+            const std::vector<uint8_t> vs(styled::styled_vs, styled::styled_vs + styled::styled_vs_size);
+            const std::vector<uint8_t> ps(styled::styled_id_ps, styled::styled_id_ps + styled::styled_id_ps_size);
+            p.styled_id_pso = graphics(vs, ps, p.styled_root.Get(), DXGI_FORMAT_R32_UINT, L"SA2 styled ID pass pipeline");
+        }
+        return p.styled_id_pso.Get();
+    }
     // ABI 7: the styled pass for a target format, from the DXIL embedded in the DLL; built once per format.
     ID3D12PipelineState* styled_pipeline(DXGI_FORMAT format) {
         auto& p = product_gpu();
-        if (!p.styled_root) {
-            auto made = styled_signature();
-            std::array<Buffer, SA2_RING_SLOTS> cbs; std::array<uint8_t*, SA2_RING_SLOTS> data{};
-            for (size_t i = 0; i < cbs.size(); ++i) cbs[i] = buffer(512, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
-            for (size_t i = 0; i < cbs.size(); ++i) data[i] = map(cbs[i]);
-            p.styled_root = std::move(made); p.style_cb = std::move(cbs); p.style_cb_data = data;
-        }
+        styled_root_create();
         auto& slot = format == DXGI_FORMAT_B8G8R8A8_UNORM ? p.styled_surface_pso : p.styled_pso;
         if (!slot) {
             const std::vector<uint8_t> vs(styled::styled_vs, styled::styled_vs + styled::styled_vs_size);
@@ -1548,10 +1563,16 @@ uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12Comm
     // Resources first: a failure here leaves the scene usable.
     g.hopf_sync(product.hopf());
     g.make_id_target(record.width, record.height);
+    // ADR-D02 B17 (ABI 10): a styled frame's pick follows its style, so a hidden or dimmed piece answers no instance.
+    auto* pipeline = input.styled ? g.styled_id_pipeline() : p.id_pso.Get();
     ProductGpu::Pick pick;
     std::tie(pick.allocator, pick.list) = g.product_list(L"SA2 ID pass command list");
     pick.constants = g.buffer(256, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
     pick.read = g.buffer(256, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
+    if (input.styled) {
+        pick.style = g.buffer(512, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        std::memcpy(g.map(pick.style), &input.view_style, sizeof(input.view_style)); pick.style.resource->Unmap(0, nullptr);
+    }
     const bool pane = input.view_width != 0; // ABI 8: a composite frame's pane draws at its own size and origin
     const auto c = g.product_constants(input.camera, pane ? input.view_width : input.width, pane ? input.view_height : input.height,
                                        input.pose_count, input.shape);
@@ -1565,9 +1586,11 @@ uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12Comm
         const D3D12_RECT pixel{LONG(input.x), LONG(input.y), LONG(input.x + 1), LONG(input.y + 1)};
         const D3D12_RECT area{LONG(input.origin_x), LONG(input.origin_y), LONG(input.origin_x + int64_t(input.view_width)),
                               LONG(input.origin_y + int64_t(input.view_height))};
-        g.product_draw(list, p.id_pso.Get(), stored.constants, p.copies[input.copy], input.set_ticket,
-                       p.id_heap->GetCPUDescriptorHandleForHeapStart(), input.width, input.height, zero, &pixel, nullptr, nullptr,
-                       pane ? &area : nullptr);
+        auto& copy = p.copies[input.copy];
+        const Buffer* style = input.styled ? (input.piece_style ? &copy.style : &p.no_instances) : nullptr;
+        g.product_draw(list, pipeline, stored.constants, copy, input.set_ticket,
+                       p.id_heap->GetCPUDescriptorHandleForHeapStart(), input.width, input.height, zero, &pixel, style,
+                       style ? &stored.style : nullptr, pane ? &area : nullptr);
         g.texture_barrier(list, p.id_target.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
         D3D12_TEXTURE_COPY_LOCATION destination{}; destination.pResource = stored.read.resource.Get();
         destination.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
