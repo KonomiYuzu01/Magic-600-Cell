@@ -191,7 +191,7 @@
      },
      {
       "path": "docs/progress/1.0/principle-records/full_600_cell.json",
-      "sha256": "f065414a05cfc025c9a4ef9cd900d278ac86bb9b64f30f1b090357b59cb0a2d9",
+      "sha256": "0109449c7b387d7d78192f2ed6cb211fe34ab1327ddc758f8c6ee42fceb9a416",
       "expect": [
        {
         "pointer": "/justification/1/evidence/path",
@@ -547,7 +547,7 @@
     "reads": [
      {
       "path": "docs/progress/1.0/principle-records/guarded_setups.json",
-      "sha256": "47970ef95fdbd97695c0f5805bdd5a22924abb676e7371a4d432adf15070cca1",
+      "sha256": "36ed4656aea4d76a7b8a40302b0e48d4581bb80984ed18a337e5bbbfb472e469",
       "expect": [
        {
         "pointer": "/justification/0/evidence/sha256",

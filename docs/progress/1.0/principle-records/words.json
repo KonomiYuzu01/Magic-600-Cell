@@ -7,7 +7,7 @@
     "power"
   ],
   "level": "L1",
-  "review": "Waits for the mathematician's review (LP4-11): the derivation's steps, the reason, the failure example and what an answer does not mean. Not yet reviewed.",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean; no finding. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "703cc0d0d1ae66e3b64ac8cd62e4500c0ff8851258e28303452d85ebb53297dc",
     "closure_sha256": "baeb60422a9619a301256d8e1e0d9bc83ecc1d81bf5977544f6f6d0b954f6dbd",

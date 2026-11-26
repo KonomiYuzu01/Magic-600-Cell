@@ -1,7 +1,7 @@
 {
   "format": "p3-candidate-inventory-1",
   "candidate_id": "en4-data-core-draft-1",
-  "input_commit": "eecf14c93daa7ea602dc3522531e656c46f30a04",
+  "input_commit": "1f941e6f602d12a60960fd5e4f248869279b17ce",
   "candidate": [
     {
       "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
@@ -108,7 +108,7 @@
     },
     {
       "path": "docs/development-guide/AGENT_BRIEFING.md",
-      "sha256": "ad5716deba06f77cfecc7c9f38ee60950d8be49d39aecb78f83e9fccf677399d"
+      "sha256": "f930b0896f1e578ea25a4ee24896cbda9bfd344fd023f6f1ea78ada4e6d5cee5"
     },
     {
       "path": "docs/progress/1.0/command-aliases.json",

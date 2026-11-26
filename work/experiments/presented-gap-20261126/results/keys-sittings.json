@@ -1,0 +1,96 @@
+{
+  "evidence": "actual_windows_directx: what the shell's own logs show",
+  "format": "magic600-presented-gap-20261126-keys-v1",
+  "runs": [
+    {
+      "build_identity": "c9-product-2efda50d54592f20",
+      "frame_intervals_above_40_ms": 1747,
+      "frames": 66866,
+      "handled_ms": null,
+      "inputs": {
+        "events.jsonl": "1c5955b9d587d282e68b411454c6ccac33b9a0877b019f6221132a24c615225d"
+      },
+      "interval_around_key_ms": {
+        "max": 270.82,
+        "n": 1741,
+        "p10": 63.859,
+        "p50": 65.82,
+        "p90": 72.513,
+        "p99": 75.962
+      },
+      "keys": 1741,
+      "run_id": "20261121T131440Z"
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "frame_intervals_above_40_ms": 1661,
+      "frames": 61812,
+      "handled_ms": {
+        "max": 68.982,
+        "n": 1661,
+        "p10": 48.62,
+        "p50": 50.897,
+        "p90": 58.565,
+        "p99": 60.884
+      },
+      "inputs": {
+        "events.jsonl": "2659f377a96ad2589bf1c5975ef8389c27c52f3c0f302d87c8043b22cfc902ad"
+      },
+      "interval_around_key_ms": {
+        "max": 86.087,
+        "n": 1661,
+        "p10": 65.56,
+        "p50": 67.919,
+        "p90": 75.596,
+        "p99": 77.93
+      },
+      "keys": 1661,
+      "run_id": "20261125T183900Z"
+    },
+    {
+      "build_identity": "c9-product-2efda50d54592f20",
+      "frame_intervals_above_40_ms": 305,
+      "frames": 363302,
+      "handled_ms": null,
+      "inputs": {
+        "events.jsonl": "6b612b337060fb092f06d87552db4ebf8c270469248134cb07b1571ebefce25b"
+      },
+      "interval_around_key_ms": {
+        "max": 85.008,
+        "n": 301,
+        "p10": 64.345,
+        "p50": 67.832,
+        "p90": 73.965,
+        "p99": 75.693
+      },
+      "keys": 301,
+      "run_id": "20261121T133423Z"
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "frame_intervals_above_40_ms": 302,
+      "frames": 363177,
+      "handled_ms": {
+        "max": 63.224,
+        "n": 301,
+        "p10": 48.38,
+        "p50": 55.922,
+        "p90": 58.116,
+        "p99": 60.224
+      },
+      "inputs": {
+        "events.jsonl": "fd40b4199d4d2feabeb5a80004ba76e3cfc03a9812609eca3fad0c31a26e21ef"
+      },
+      "interval_around_key_ms": {
+        "max": 80.304,
+        "n": 301,
+        "p10": 65.38,
+        "p50": 72.804,
+        "p90": 75.151,
+        "p99": 77.309
+      },
+      "keys": 301,
+      "run_id": "20261125T185719Z"
+    }
+  ]
+}

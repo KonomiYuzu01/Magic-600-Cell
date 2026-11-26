@@ -12,7 +12,7 @@
     "layer_predicate"
   ],
   "level": "L1",
-  "review": "The mathematician's pass of 23 November 2026 found M15 (distance 0 is a definition, not a certificate); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M15 (minor: distance 0 from a cell to itself holds by definition, not by a certificate), fixed in c152350f. The mathematician's scoped check of 25 November 2026 confirmed the fix: the argument's kind is by definition, with no evidence. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "7332a75475c8971fa0688462d62736d1ec1b63c5d437d5bd07f890817479cc06",
     "closure_sha256": "e000501570570e7229aa882592e372357eba967a58df2feea0d98cd860c922f9",

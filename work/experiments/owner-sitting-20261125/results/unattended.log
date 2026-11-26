@@ -1,0 +1,26 @@
+2026-11-25T17:47:53Z start exit=0 run=- | head bb416a2c8336; steps U4,U7,U8; suffix 's1125'; builds scene 'work\build\c9-acceptance\20261125T165720Z' stage '' product 'work\build\c9-product\20261125T165329Z'
+2026-11-25T17:56:48Z U4/S4.1 exit=0 run=work\loop-memory\c9-acceptance\20261125T175304659Z
+2026-11-25T18:00:35Z U4/S4.2 exit=0 run=work\loop-memory\c9-acceptance\20261125T175652422Z
+2026-11-25T18:04:22Z U4/S4.3 exit=0 run=work\loop-memory\c9-acceptance\20261125T180039407Z
+2026-11-25T18:04:23Z U4/S4/gate exit=0 run=work\loop-memory\c9-acceptance\S4-summary-s1125.json
+2026-11-25T18:08:10Z U4/I_a.1 exit=0 run=work\loop-memory\c9-acceptance\20261125T180427010Z
+2026-11-25T18:11:57Z U4/I_a.2 exit=0 run=work\loop-memory\c9-acceptance\20261125T180814143Z
+2026-11-25T18:15:46Z U4/I_a.3 exit=0 run=work\loop-memory\c9-acceptance\20261125T181201275Z
+2026-11-25T18:15:46Z U4/I_a/gate exit=0 run=work\loop-memory\c9-acceptance\I_a-summary-s1125.json
+2026-11-25T18:19:33Z U4/I_b.1 exit=0 run=work\loop-memory\c9-acceptance\20261125T181550468Z
+2026-11-25T18:23:20Z U4/I_b.2 exit=0 run=work\loop-memory\c9-acceptance\20261125T181937412Z
+2026-11-25T18:27:08Z U4/I_b.3 exit=0 run=work\loop-memory\c9-acceptance\20261125T182324506Z
+2026-11-25T18:27:08Z U4/I_b/gate exit=0 run=work\loop-memory\c9-acceptance\I_b-summary-s1125.json
+2026-11-25T18:30:54Z U4/w3.1 exit=0 run=work\loop-memory\c9-acceptance\20261125T182711983Z
+2026-11-25T18:34:39Z U4/w3.2 exit=error run=work\loop-memory\c9-acceptance\20261125T183057626Z | The finalizer refused this run.
+2026-11-25T18:38:25Z U4/w3.3 exit=0 run=work\loop-memory\c9-acceptance\20261125T183443117Z
+2026-11-25T18:38:25Z U4/w3/gate exit=0 run=work\loop-memory\c9-acceptance\w3-summary-s1125.json
+2026-11-25T18:38:25Z U7/error-mode exit=0 run=- | this process 32769 -> 32771 for U7 (SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX)
+2026-11-25T18:38:53Z U7/faults exit=0 run=work\c9-runs\u7-s1125-faults.json
+2026-11-25T18:57:06Z U7 exit=0 run=work\c9-runs\u7-s1125 | shell time 1085 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-25T18:57:12Z U7/analyze exit=3 run=work\c9-runs\u7-s1125-lx2.json
+2026-11-25T20:38:26Z U8/jumble-off exit=0 run=work\c9-runs\u8-off-s1125 | closed after the poster exited 0; shell time 6065 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-25T22:19:39Z U8/jumble-on exit=0 run=work\c9-runs\u8-on-s1125 | closed after the poster exited 0; shell time 6065 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-25T22:19:56Z U8/key_to_frame exit=3 run=work\c9-runs\u8-s1125-e2.json
+2026-11-25T22:20:07Z U8/analyze exit=3 run=work\c9-runs\u8-s1125-lx4.json
+2026-11-25T22:20:07Z end exit=0 run=- | steps U4,U7,U8

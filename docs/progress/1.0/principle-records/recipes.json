@@ -13,7 +13,7 @@
     "orbit_report"
   ],
   "level": "L4",
-  "review": "The mathematician's pass of 23 November 2026 found M3 (the reason said only the cycle remains) and M13 (the seed role); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M3 (blocker: what remains of a star is the seed's whole effect, its cycle and any collateral, not the cycle alone) and M13 (minor: generator 3 stands in the seed role; the conjugate claim was unsupported), both fixed in c152350f. The mathematician's scoped re-check of 23 November 2026 confirmed the M3 fix (a star of [3] moves the same 4,600 slots as [3]); the scoped check of 25 November 2026 confirmed the M13 fix (the atlas's shortest seed has 46 letters) and raised two nits, fixed the same day: the setup and relocation givens are named by their roles, and the failure example says the word leaves setup⁻¹ and relocation⁻¹ uncompensated (6,493 slots against the star's 4,600). The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "0d40695d5ac113896a28347ffc77a86b91ffcd2459d213060e7f177eee448582",
     "closure_sha256": "929c8ff62cdee9977f381bc6531cf6d1d4dd9f48226df11e3fcb76f1b3de30f8",
@@ -346,20 +346,20 @@
     "failure": [
       {
         "hypothesis": "the relocation and the setup are applied again after the seed",
-        "outcome": "counterexample: without them the word [-1, -2, 3] leaves the setup's and the relocation's effect in place"
+        "outcome": "counterexample: without them the word [-1, -2, 3] leaves setup⁻¹ and relocation⁻¹ uncompensated: it moves 6,493 slots, the star 4,600 (counted with core.py on the model)"
       }
     ],
     "not_meant": "A star word built from the solver's setup, relocation and seed is a literal word; recipes never chooses a setup or a target, and an effect report shows what a recipe does, not whether it helps.",
     "givens": [
       {
-        "name": "setup",
+        "name": "the setup role",
         "value": [
           1
         ],
         "leaf": "input named by the caller"
       },
       {
-        "name": "relocation",
+        "name": "the relocation role",
         "value": [
           2
         ],
@@ -383,7 +383,7 @@
     ],
     "steps": [
       {
-        "check": "setup⁻¹ = [-1], relocation⁻¹ = [-2], then [3] in the seed role, the relocation [2] and the setup [1]: [-1, -2, 3, 2, 1].",
+        "check": "With [1] in the setup role and [2] in the relocation role: setup⁻¹ = [-1], relocation⁻¹ = [-2], then [3] in the seed role, the relocation [2] and the setup [1]: [-1, -2, 3, 2, 1].",
         "result": [
           -1,
           -2,

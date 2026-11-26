@@ -901,7 +901,12 @@ SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
  * failed submission does.
  *
  * sa2_presented on a surface context reads GetFrameStatistics and
- * GetLastPresentCount once per call. A frame is confirmed only by the C9
+ * GetLastPresentCount once per call. A surface frame whose wait for the
+ * frame-latency waitable lasts longer than 5 ms also reads them once during
+ * that wait (C9, 26 November 2026), for the same ledger, so that a frame shown
+ * for a whole refresh meets a statistics row of its own even when the call
+ * after each frame runs before the vblank's statistics are posted; a failed
+ * read there adds no row and never fails the frame. A frame is confirmed only by the C9
  * present probe's exact rule: a statistics row whose PresentCount equals the
  * frame's own present count, in the frame's swap-chain generation, with
  * PresentCount not above GetLastPresentCount. DXGI_ERROR_FRAME_STATISTICS_

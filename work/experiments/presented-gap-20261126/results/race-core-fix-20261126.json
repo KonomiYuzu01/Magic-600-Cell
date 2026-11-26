@@ -1,0 +1,387 @@
+{
+  "evidence": "actual_windows_directx: what the shell's own logs show; nothing about what the screen showed",
+  "format": "magic600-presented-gap-20261126-race-v1",
+  "runs": [
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "frame_call_ms": {
+        "median": 16.059,
+        "p95": 16.573
+      },
+      "frames": 3506,
+      "inputs": {
+        "events.jsonl": "10a6158b7a54db6c920a7d319135be6dff2537418d88f08d01e477c80dd64133"
+      },
+      "missed_between_confirmed": {
+        "2": 603,
+        "not between confirmed": 1047
+      },
+      "missed_in_steps_2_to_4": 1628,
+      "missed_in_steps_5_up": 20,
+      "run_id": "20261126T074255Z",
+      "sample_offset_us": {
+        "100": {
+          "not_posted": 4,
+          "posted": 15
+        },
+        "1000": {
+          "not_posted": 29,
+          "posted": 33
+        },
+        "1100": {
+          "not_posted": 13,
+          "posted": 24
+        },
+        "1200": {
+          "not_posted": 5,
+          "posted": 11
+        },
+        "1300": {
+          "not_posted": 5,
+          "posted": 6
+        },
+        "1400": {
+          "not_posted": 2,
+          "posted": 0
+        },
+        "1500": {
+          "not_posted": 1,
+          "posted": 1
+        },
+        "1600": {
+          "not_posted": 1,
+          "posted": 0
+        },
+        "1700": {
+          "not_posted": 0,
+          "posted": 2
+        },
+        "200": {
+          "not_posted": 3,
+          "posted": 27
+        },
+        "2000+": {
+          "not_posted": 1,
+          "posted": 4
+        },
+        "300": {
+          "not_posted": 22,
+          "posted": 105
+        },
+        "400": {
+          "not_posted": 101,
+          "posted": 83
+        },
+        "500": {
+          "not_posted": 147,
+          "posted": 96
+        },
+        "600": {
+          "not_posted": 122,
+          "posted": 140
+        },
+        "700": {
+          "not_posted": 168,
+          "posted": 148
+        },
+        "800": {
+          "not_posted": 251,
+          "posted": 111
+        },
+        "900": {
+          "not_posted": 115,
+          "posted": 59
+        }
+      },
+      "sample_time": "returned_qpc",
+      "steps": {
+        "1": 902,
+        "2": 603,
+        "3": 7,
+        "4": 337,
+        "5": 5
+      },
+      "without_presented_row": 1651
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306+core-fix",
+      "frame_call_ms": {
+        "median": 16.269,
+        "p95": 16.564
+      },
+      "frames": 3502,
+      "inputs": {
+        "events.jsonl": "d3955c9306e6628a85959506f79023295ca5e037d1fe522fc42518572b9e28cf"
+      },
+      "missed_between_confirmed": {
+        "not between confirmed": 3
+      },
+      "missed_in_steps_2_to_4": 0,
+      "missed_in_steps_5_up": 0,
+      "run_id": "20261126T074406Z",
+      "sample_offset_us": {
+        "100": {
+          "not_posted": 29,
+          "posted": 0
+        },
+        "1000": {
+          "not_posted": 1,
+          "posted": 0
+        },
+        "200": {
+          "not_posted": 508,
+          "posted": 2
+        },
+        "300": {
+          "not_posted": 939,
+          "posted": 182
+        },
+        "400": {
+          "not_posted": 1132,
+          "posted": 110
+        },
+        "500": {
+          "not_posted": 414,
+          "posted": 8
+        },
+        "600": {
+          "not_posted": 110,
+          "posted": 8
+        },
+        "700": {
+          "not_posted": 37,
+          "posted": 2
+        },
+        "800": {
+          "not_posted": 13,
+          "posted": 0
+        },
+        "900": {
+          "not_posted": 3,
+          "posted": 0
+        }
+      },
+      "sample_time": "returned_qpc",
+      "steps": {
+        "1": 3497
+      },
+      "without_presented_row": 4
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "frame_call_ms": {
+        "median": 16.263,
+        "p95": 16.654
+      },
+      "frames": 3502,
+      "inputs": {
+        "events.jsonl": "bb0ae6f432703db360147b233081d2285b25e54758611d3c2b77656c7299ea40"
+      },
+      "missed_between_confirmed": {
+        "2": 76,
+        "not between confirmed": 2741
+      },
+      "missed_in_steps_2_to_4": 175,
+      "missed_in_steps_5_up": 2523,
+      "run_id": "20261126T074517Z",
+      "sample_offset_us": {
+        "0": {
+          "not_posted": 1,
+          "posted": 0
+        },
+        "100": {
+          "not_posted": 4,
+          "posted": 3
+        },
+        "200": {
+          "not_posted": 29,
+          "posted": 17
+        },
+        "300": {
+          "not_posted": 74,
+          "posted": 47
+        },
+        "400": {
+          "not_posted": 117,
+          "posted": 52
+        },
+        "500": {
+          "not_posted": 139,
+          "posted": 37
+        },
+        "600": {
+          "not_posted": 77,
+          "posted": 17
+        },
+        "700": {
+          "not_posted": 38,
+          "posted": 12
+        },
+        "800": {
+          "not_posted": 9,
+          "posted": 2
+        },
+        "900": {
+          "not_posted": 7,
+          "posted": 2
+        }
+      },
+      "sample_time": "returned_qpc",
+      "steps": {
+        "1": 442,
+        "10": 2,
+        "106": 1,
+        "11": 3,
+        "112": 1,
+        "12": 1,
+        "13": 5,
+        "14": 3,
+        "143": 1,
+        "15": 3,
+        "16": 3,
+        "17": 4,
+        "18": 2,
+        "19": 2,
+        "2": 76,
+        "20": 2,
+        "21": 3,
+        "22": 2,
+        "23": 2,
+        "24": 1,
+        "26": 1,
+        "28": 5,
+        "3": 21,
+        "30": 1,
+        "31": 3,
+        "32": 9,
+        "33": 3,
+        "34": 1,
+        "4": 19,
+        "41": 1,
+        "46": 1,
+        "5": 13,
+        "50": 1,
+        "55": 1,
+        "6": 15,
+        "62": 1,
+        "64": 1,
+        "66": 1,
+        "69": 1,
+        "7": 10,
+        "76": 1,
+        "8": 7,
+        "89": 1,
+        "9": 6
+      },
+      "without_presented_row": 2818
+    },
+    {
+      "build_identity": "c9-product-a9d908ad262ee306+core-fix",
+      "frame_call_ms": {
+        "median": 16.21,
+        "p95": 16.589
+      },
+      "frames": 3512,
+      "inputs": {
+        "events.jsonl": "669b049c4e724ec30d7dc158bb2c29123abcbdfe274b7e9387247f97be18a9d1"
+      },
+      "missed_between_confirmed": {
+        "2": 22,
+        "not between confirmed": 1630
+      },
+      "missed_in_steps_2_to_4": 89,
+      "missed_in_steps_5_up": 1560,
+      "run_id": "20261126T074628Z",
+      "sample_offset_us": {
+        "100": {
+          "not_posted": 2,
+          "posted": 0
+        },
+        "1000": {
+          "not_posted": 3,
+          "posted": 1
+        },
+        "1100": {
+          "not_posted": 4,
+          "posted": 0
+        },
+        "1200": {
+          "not_posted": 0,
+          "posted": 1
+        },
+        "200": {
+          "not_posted": 62,
+          "posted": 3
+        },
+        "300": {
+          "not_posted": 266,
+          "posted": 14
+        },
+        "400": {
+          "not_posted": 561,
+          "posted": 47
+        },
+        "500": {
+          "not_posted": 571,
+          "posted": 29
+        },
+        "600": {
+          "not_posted": 162,
+          "posted": 12
+        },
+        "700": {
+          "not_posted": 69,
+          "posted": 7
+        },
+        "800": {
+          "not_posted": 29,
+          "posted": 2
+        },
+        "900": {
+          "not_posted": 10,
+          "posted": 4
+        }
+      },
+      "sample_time": "returned_qpc",
+      "steps": {
+        "1": 1751,
+        "10": 4,
+        "11": 1,
+        "12": 1,
+        "128": 1,
+        "13": 2,
+        "15": 4,
+        "16": 2,
+        "17": 1,
+        "18": 3,
+        "2": 22,
+        "21": 1,
+        "22": 1,
+        "24": 1,
+        "25": 2,
+        "27": 1,
+        "28": 1,
+        "298": 1,
+        "3": 20,
+        "31": 1,
+        "33": 1,
+        "37": 2,
+        "4": 9,
+        "46": 1,
+        "47": 1,
+        "48": 1,
+        "5": 7,
+        "51": 1,
+        "55": 1,
+        "6": 2,
+        "61": 1,
+        "62": 1,
+        "63": 1,
+        "7": 5,
+        "9": 2,
+        "95": 1
+      },
+      "without_presented_row": 1653
+    }
+  ]
+}

@@ -12,7 +12,7 @@
     "strict_check_within"
   ],
   "level": "L4",
-  "review": "The mathematician's pass of 23 November 2026 found M12 (the failure example kept its hypothesis); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M12 (minor: the failure example's hypothesis still held, since its net effect was the identity), fixed in c152350f: the failure example is now [1], whose net effect moves slot 1. The mathematician's scoped check of 25 November 2026 confirmed the fix: at solved, [1] leaves label 5 at slot 1, so a lock of [0, 1] reports a conflict, while [5, -5] is the identity. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "d1f0c9262131d4da022c08f59a791745f364144ffd0a2624cf76ee17ad4b4582",
     "closure_sha256": "efa6e4fa72f9ba9a531e34c699461f6778b2e8fb5b9fd5c87c18614fefa669d2",

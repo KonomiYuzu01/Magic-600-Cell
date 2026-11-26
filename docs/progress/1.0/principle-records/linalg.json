@@ -10,7 +10,7 @@
     "solve_f5"
   ],
   "level": "L6",
-  "review": "The mathematician's pass of 23 November 2026 found M1 (the instance came from the correction library); the fix waits for the mathematician's review. The other parts wait for the mathematician's review (LP4-11).",
+  "review": "Reviewed by the mathematician on 23 November 2026 (EV5.1, LP4-11) at 1775302f: the derivation's steps, the reason, the failure example and what an answer does not mean. It found M1 (blocker: the instance came from the correction library and solved for a correction combination, against the owner's O6 (b)), fixed in c152350f with a plain example matrix over F5 whose entries are all givens. The mathematician's scoped re-check of 23 November 2026 confirmed the fix: the elimination holds mod 5 and no correction rows are left. The leaf specifications and test paths are engineering bindings and were not part of the review.",
   "binding": {
     "source_sha256": "294b83d22dda79fef11774023dcbe5dae19866f4f56505b39d20531a9af2e074",
     "closure_sha256": "1139d716560b3c3de6c36a074809f4aa3046835b16ee7db3fc72157ac71db7de",

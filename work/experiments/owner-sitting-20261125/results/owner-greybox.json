@@ -1,0 +1,81 @@
+{
+  "evidence": "actual_windows_directx: what the shell's own logs show; nothing about what the screen showed",
+  "format": "magic600-owner-sitting-20261125-run-v1",
+  "inputs": {
+    "events.jsonl": "1970c9a9e5fde0ef8a73b36ea18902705527a1811c5307f8f669c8704fcda7a8",
+    "launch.json": "48ec02909fc0aca0d147966a45173d5c456b54ebb20f40a27e1fa3e9e7c14f69",
+    "session/journal": "38f2160680a3942d5329070c2a1787034a047c24caa3fbb7ee819772cd9f030b"
+  },
+  "journal_rows": {
+    "session.undo": 1,
+    "twist.apply": 24
+  },
+  "keys": [],
+  "label": "owner-greybox",
+  "launch": {
+    "build_identity": "c9-product-a9d908ad262ee306",
+    "cold_start": false,
+    "command": [
+      "Godot_v4.7.2-stable_mono_win64.exe",
+      "--path",
+      "<build>/shell/project",
+      "--rendering-driver",
+      "d3d12",
+      "--render-thread",
+      "safe",
+      "--windowed",
+      "--log-file",
+      "<out>/godot.log"
+    ],
+    "echo": false,
+    "editor": true,
+    "exit_code": 0,
+    "format": "magic600-c9-launch-v1",
+    "lx2_injection": null,
+    "lx4": false,
+    "lx4_fixtures": null,
+    "puzzle": "jumble-off",
+    "run_id": "20261125T171831Z",
+    "seconds": 123.573,
+    "started_utc": "2026-11-25T17:18:31Z"
+  },
+  "revisions_drawn": [
+    [
+      25,
+      25
+    ],
+    [
+      26,
+      26
+    ]
+  ],
+  "row_counts": {
+    "frame": 7253,
+    "presented": 4345,
+    "run": 1,
+    "ui_frame": 7253
+  },
+  "run": {
+    "build_identity": "c9-product-a9d908ad262ee306",
+    "correctness": "fail",
+    "correctness_control": "journal-reopen-and-kernel-replay",
+    "correctness_detail": {
+      "committed": 24,
+      "control": "journal-reopen-and-kernel-replay",
+      "expected_shown": null,
+      "live": "0a9b03fa0a1f8783137c633581dcb1f5f5e2771b8312df890a6de94aa81f089d",
+      "other_changes": 1,
+      "pass": false,
+      "refused": 0,
+      "reopen_error": null,
+      "reopened": "0a9b03fa0a1f8783137c633581dcb1f5f5e2771b8312df890a6de94aa81f089d",
+      "replay_error": null,
+      "replayed": "edc58ff03e448906e41709cec4d07543bb7fcf7e7d1ce7f9ed3cd948a8776b91",
+      "shown": "0a9b03fa0a1f8783137c633581dcb1f5f5e2771b8312df890a6de94aa81f089d",
+      "shown_revision": 26
+    },
+    "foreground_throughout": false,
+    "run_id": "20261125T171831Z",
+    "synthetic": false
+  }
+}

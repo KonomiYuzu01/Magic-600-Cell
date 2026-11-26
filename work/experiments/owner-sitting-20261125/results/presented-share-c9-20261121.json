@@ -1,0 +1,134 @@
+{
+  "bucket_seconds": 300,
+  "evidence": "actual_windows_directx: what the shell's own logs show; nothing about what the screen showed",
+  "format": "magic600-owner-sitting-20261125-presented-share-v1",
+  "runs": [
+    {
+      "build_identity": "c9-product-2efda50d54592f20",
+      "editor": null,
+      "frames": 66866,
+      "frames_without_presented_row": 4017,
+      "inputs": {
+        "events.jsonl": "1c5955b9d587d282e68b411454c6ccac33b9a0877b019f6221132a24c615225d",
+        "launch.json": "ccba82ff187da80e62d33c0ded6798747d458f2eb8e01a2b7c0eaf7aaafc0e09"
+      },
+      "lx2_injection": true,
+      "lx4": true,
+      "per_five_minutes": [
+        0.028,
+        0.039,
+        0.092,
+        0.088
+      ],
+      "presented_rows": 62849,
+      "presented_sequence_steps": {
+        "1": 60673,
+        "2": 449,
+        "3": 1614,
+        "4": 112
+      },
+      "run_id": "20261121T131440Z",
+      "share_without_presented_row": 0.0601,
+      "started_utc": "2026-11-21T13:14:40Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-2efda50d54592f20",
+      "editor": null,
+      "frames": 363302,
+      "frames_without_presented_row": 8525,
+      "inputs": {
+        "events.jsonl": "6b612b337060fb092f06d87552db4ebf8c270469248134cb07b1571ebefce25b",
+        "launch.json": "46c0cdd8c7ddb8e8f5af23590115361722e37643734492cefc8ab4c3e829c131"
+      },
+      "lx2_injection": false,
+      "lx4": true,
+      "per_five_minutes": [
+        0.007,
+        0.013,
+        0.018,
+        0.018,
+        0.037,
+        0.041,
+        0.027,
+        0.008,
+        0.017,
+        0.016,
+        0.024,
+        0.037,
+        0.045,
+        0.014,
+        0.007,
+        0.019,
+        0.014,
+        0.03,
+        0.039,
+        0.04,
+        0.014
+      ],
+      "presented_rows": 354777,
+      "presented_sequence_steps": {
+        "1": 346582,
+        "2": 7889,
+        "3": 283,
+        "4": 22
+      },
+      "run_id": "20261121T133423Z",
+      "share_without_presented_row": 0.0235,
+      "started_utc": "2026-11-21T13:34:24Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-2efda50d54592f20",
+      "editor": null,
+      "frames": 363517,
+      "frames_without_presented_row": 7548,
+      "inputs": {
+        "events.jsonl": "28749300b0699860017493d3ff920690d5a43ca4dc4bf858189ad65d54ccf8f7",
+        "launch.json": "b2ea9a4a701ff1314446c1a5de466a13591e62fb23f66c4046b95edb54836584"
+      },
+      "lx2_injection": false,
+      "lx4": true,
+      "per_five_minutes": [
+        0.008,
+        0.009,
+        0.013,
+        0.014,
+        0.035,
+        0.041,
+        0.022,
+        0.007,
+        0.014,
+        0.014,
+        0.021,
+        0.036,
+        0.042,
+        0.013,
+        0.007,
+        0.013,
+        0.012,
+        0.022,
+        0.038,
+        0.036,
+        0.011
+      ],
+      "presented_rows": 355969,
+      "presented_sequence_steps": {
+        "1": 348724,
+        "2": 6945,
+        "3": 298,
+        "4": 1
+      },
+      "run_id": "20261121T151540Z",
+      "share_without_presented_row": 0.0208,
+      "started_utc": "2026-11-21T15:15:40Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    }
+  ]
+}
