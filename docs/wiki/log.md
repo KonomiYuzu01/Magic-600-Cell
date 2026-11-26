@@ -5,6 +5,21 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-11-26] decision | ADR-D02's build framework: product shell, two views, researcher subagent, wait
 The owner answered five questions on ADR-D02's build framework, on two cards: build, watch and accept in the product shell with Look Lab dropped and Jumble drawing built now; add one lean researcher subagent to J0 and J1; draw two views, Global and Local, at once; build and measure the drawing before R5; and wait before B1. The owner also asked that the live-build window never sit on top or take focus ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md)). Fable's revision 2 of the framework, with the two-view steps, has 36 steps, six checkpoints and two gate sittings.
 
+## [2026-11-26] decision | LP4 human tests: M24 counts, no rerun, the line ends
+The owner let the mathematician's post-run ruling M24 count, set no rerun after the fixes, and closed the human-test line with its results pull request ([decision](decisions/owner-decisions-2026-11-26-human-tests.md)). `jumble_checker` and `representations` take the record fixes M25 and M30.
+
+## [2026-11-26] update | LP4 human tests: the owner's run
+The owner withdrew the first self-run sheet unanswered because its material was too thin and not in plain language. The owner then ran version 2, which adds a plain-language guide. Graded under form version 2 in [LP4 human tests](../progress/1.0/lp4-human-tests.md): CT-LB6-04 is not met (two reasons in part (a), the person's), and CT-EV5-05's human half passes on post-run ruling M24, which the owner let count. The mathematician's post-run findings M21 to M30 are dispositioned there.
+
+## [2026-11-26] update | The twist's core preparation and menu resolve
+Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) that the core's preparation spent 9 of its 10 ms building a check message for each of the 259,800 slots, which it now builds only for a failure (with its GPU resources reused, 1.2 ms), and that the twist menu now keeps its exact twists for the 32 caps used most recently, which halves the commit's key call headless with every answer unchanged.
+
+## [2026-11-26] update | The twist key's stall moves off the frame thread
+Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) where the twist key's time on the frame thread went (the commit, with its journal sync a small share, and the view's build and checks) and the change that builds and checks the view's work on a worker thread and adopts it at the next frame call, leaving the commit boundary as it was. On screen on the real core the key call fell from 57 to 18 ms and the refreshes without a frame from 3.35 to 2.0 per key; a short wait after a frame's submission keeps the press at the frame it had before, and the core's per-twist GPU buffers are what is left besides the commit.
+
+## [2026-11-26] update | LX-4's L slowdown found headless and fixed
+The 50 ms rise of L completion and L diagnostics in [owner-sitting-2026-11-25-results](evidence/owner-sitting-2026-11-25-results.md) is the editor services reading each L buffer again, with a name index that scanned every binding per name; the index now looks names up by owner and by name and a document shares one parse, with no answer changed, and headless timing shows most of the rise gone. The on-screen effect waits for the next U8 run.
+
 ## [2026-11-26] decision | ADR-D02: open research and the A4 picks
 The owner made open research ADR-D02's core (25 November 2026) and answered A4 with every recommended option except item 9, Q3.b, taken as the owner's reading of the frozen J-7 and N-1, and item 12c, the base targets: at most 3,000 hours of real time for a true expert's full solve without jumbling, and substantive progress on restoration theory for the jumbled puzzle ([decision](decisions/owner-decisions-2026-11-26-adr-d02-a4.md)).
 

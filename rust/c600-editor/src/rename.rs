@@ -62,7 +62,7 @@ pub fn rename(
     let text = document.expect(digest, Service::Rename)?;
     let subject = document.subject(&context.edition, Some(context.digest()));
     let closure = Closure::read(Source::read(text.as_bytes(), digest), context);
-    let index = Index::build(&closure.root.file, &closure.root.lexemes);
+    let index = Index::build(&closure.root.file, closure.root.lexemes());
 
     let mut plan = Plan::default();
     let target = index.occurrence(at).map(|o| (o, index.binding_of(o)));
@@ -76,7 +76,7 @@ pub fn rename(
             if let Target::Member { alias, name } = &index.refs[r].target {
                 let pinned = index.bindings[*alias].digest.clone().unwrap_or_default();
                 if let Some(dep) = closure.deps.get(&pinned) {
-                    let dep_index = Index::build(&dep.file, &dep.lexemes);
+                    let dep_index = Index::build(&dep.file, dep.lexemes());
                     let decl = dep_index
                         .module_binding(name)
                         .filter(|&i| dep_index.bindings[i].kind == NameKind::Declaration)
@@ -149,7 +149,7 @@ impl Plan {
             if source.digest == pinned {
                 continue;
             }
-            let index = Index::build(&source.file, &source.lexemes);
+            let index = Index::build(&source.file, source.lexemes());
             for r in &index.refs {
                 let Target::Member { alias, name: member } = &r.target else { continue };
                 if member != name || index.bindings[*alias].digest.as_deref() != Some(pinned) {
@@ -176,7 +176,7 @@ impl Plan {
             for item in &source.file.items {
                 let c600_syntax::ast::Item::Import(import) = item else { continue };
                 let Some(new) = changed.get(&import.digest) else { continue };
-                let literal = source.lexemes.iter().find(|l| {
+                let literal = source.lexemes().iter().find(|l| {
                     l.kind == LexemeKind::Text && l.span.start >= import.loc.0.start && l.span.end <= import.loc.0.end
                 });
                 if let Some(l) = literal {

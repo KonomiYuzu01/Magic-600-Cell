@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <sstream>
 
 namespace sa2test {
@@ -1149,6 +1150,24 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(trace.text() == "{\"display_qpc\":200,\"frame\":0,\"present_count\":20}\n{\"display_qpc\":300,\"frame\":2,\"present_count\":22}\n",
             "presented.jsonl rows differ");
     });
+    suite.check("preparation reuse", [] {
+        // C9 (26 Nov 2026): sa2::Spares, the released preparation resources a twist's preparation takes before it
+        // creates any. Which tickets are released, and when, is Product::releasable's ("product tickets").
+        sa2::Spares<std::unique_ptr<int>> spares;
+        expect(!spares.take() && spares.size() == 0, "an empty pool gave a set");
+        expect(spares.keep(std::make_unique<int>(1), false) && spares.keep(std::make_unique<int>(2), false)
+            && spares.size() == sa2::MaxSpareSets, "a released set of a live device was not kept");
+        auto third = std::make_unique<int>(3);
+        expect(!spares.keep(std::move(third), false) && third && *third == 3 && spares.size() == sa2::MaxSpareSets,
+            "more than MaxSpareSets were kept, or a refused set was taken from its owner");
+        auto taken = spares.take();
+        expect(taken && *taken && **taken == 2 && spares.size() == 1, "the newest kept set was not taken first");
+        auto lost = std::make_unique<int>(4);
+        expect(!spares.keep(std::move(lost), true) && lost && spares.size() == 1, "a set of a removed device was kept");
+        expect(spares.keep(std::move(*taken), false) && spares.size() == 2, "a set taken and released again was not kept");
+        spares.clear();
+        expect(spares.size() == 0 && !spares.take(), "a removal left a kept set");
+    });
     suite.check("latency wait", [] {
         // C9 (26 Nov 2026): sa2::latency_wait over a scripted wait that records each part's milliseconds.
         static constexpr uint32_t timed_out = 0x102, failed = 0xFFFFFFFFu, signalled = 0;
@@ -1410,6 +1429,12 @@ Options parse(int argc, char** argv) {
         else if (arg == "--stages") options.stages = true;
         else if (arg == "--poses") options.poses = true;
         else if (arg == "--measure-stages") options.measure = value();
+        else if (arg == "--measure-prepare") {
+            const auto text = value();
+            expect(!text.empty() && text.size() <= 5 && text.find_first_not_of("0123456789") == std::string::npos
+                && std::stoul(text) > 0, "--measure-prepare takes 1..99999");
+            options.prepares = uint32_t(std::stoul(text));
+        }
         else if (arg == "--size") {
             const auto text = value();
             const auto x = text.find('x');
@@ -1446,6 +1471,9 @@ Options parse(int argc, char** argv) {
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
+    // C9 (26 Nov 2026): the preparation timing needs a device and runs alone.
+    expect(!options.prepares || (options.mode != "cpu" && options.child.empty() && !options.stages && !options.poses
+        && options.measure.empty() && !options.out.empty()), "--measure-prepare requires --warp or --hardware and --out, alone");
     return options;
 }
 }
@@ -1457,6 +1485,11 @@ int main(int argc, char** argv) {
         if (!options.child.empty()) return sa2test::run_child(options);
         if (!options.measure.empty()) {
             sa2test::run_measure(options);
+            std::cout << "measure: ok\n";
+            return 0;
+        }
+        if (options.prepares) {
+            sa2test::run_measure_prepare(options);
             std::cout << "measure: ok\n";
             return 0;
         }

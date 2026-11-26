@@ -1,0 +1,22 @@
+round 1 (interleaved: without-1, with-1, without-2, with-2; each both puzzles)
+running 1 test
+puzzle=0 keys=60 frames=930
+m6h_key_down ms: n=60 p50=12.76 p90=15.22 p99=19.07 max=19.70
+m6h_frame ms: n=930 p50=0.04 p90=0.11 p99=14.72 max=15.16
+refreshes that showed no new frame: 60 (over 990 refreshes)
+key-down to the frame that draws it, submitted, ms: n=60 p50=33.50 p90=50.09 p99=50.45 max=50.70
+key-down to the frame that draws it, frames: n=60 p50=1.00 p90=2.00 p99=2.00 max=2.00
+key-down to the refresh that shows that frame, ms: n=60 p50=49.89 p90=66.58 p99=66.62 max=66.64
+test frame_thread_time_per_twist_key ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.99s
+round 2 (interleaved: without-1, with-1, without-2, with-2; each both puzzles)
+running 1 test
+puzzle=0 keys=60 frames=930
+m6h_key_down ms: n=60 p50=12.79 p90=16.27 p99=20.07 max=20.59
+m6h_frame ms: n=930 p50=0.04 p90=0.29 p99=14.59 max=15.27
+refreshes that showed no new frame: 63 (over 993 refreshes)
+key-down to the frame that draws it, submitted, ms: n=60 p50=33.85 p90=50.32 p99=50.59 max=50.93
+key-down to the frame that draws it, frames: n=60 p50=1.00 p90=2.00 p99=2.00 max=2.00
+key-down to the refresh that shows that frame, ms: n=60 p50=49.96 p90=66.62 p99=66.63 max=66.63
+test frame_thread_time_per_twist_key ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.05s

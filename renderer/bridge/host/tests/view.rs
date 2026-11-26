@@ -19,7 +19,7 @@ use c600_run::interp::NoHost;
 use c600_run::meter::code::{CANCELLED_REVISION_REPLACED, NOT_GRANTED};
 use c600_runtime::parent::{Config, Runtime};
 use c600_runtime::{run_in_process, Ended, Job, JobOptions};
-use c600_shell_host::view::SUPERSEDED;
+use c600_shell_host::view::{self, SUPERSEDED};
 use c600_shell_host::*;
 use common::support::SIZE;
 use common::{functions, Shim};
@@ -257,6 +257,8 @@ impl Run {
         frame
     }
 
+    /// A committed twist key, its key-up, and the adoption of its head: the key leaves that to a later call, and the
+    /// host adopts the head before a pump delivers anything ([`m6h_pump`]).
     fn press(&self, chord: &str) -> u64 {
         let mut key = M6hKey::default();
         // SAFETY: a live handle, readable bytes and a writable row.
@@ -264,6 +266,8 @@ impl Run {
         assert_eq!((code, key.press), (M6H_OK, M6H_PRESS_COMMITTED), "{chord}: {}", last_error(self.host));
         // SAFETY: a live handle and readable bytes.
         assert_eq!(unsafe { m6h_key_up(self.host, chord.as_ptr(), chord.len()) }, M6H_OK);
+        // SAFETY: a live handle.
+        assert_eq!(unsafe { m6h_pump(self.host) }, M6H_OK, "{}", last_error(self.host));
         key.engine_revision
     }
 
@@ -417,6 +421,86 @@ fn a_twist_before_delivery_or_installation_ends_the_run_and_a_later_run_publishe
     assert_eq!((frame.engine_revision, frame.publication_revision), (3, 3));
     assert_eq!(run.result(ticket).frame, frame.sequence);
     assert_eq!(run.refusal(early).0, CANCELLED_REVISION_REPLACED, "the early run stays refused");
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+/// C9 U7 (26 November 2026), LX-2's metered turn windows: the twist cancels the fault's job in the runtime, and the
+/// module's control probe, a new run, comes right after it. The twist's reference publication, whose upload completed
+/// before any pump, installs before the probe's schedule could supersede it: the next frame draws the twist's
+/// revision while the probe still waits, and the probe publishes later on the same revision.
+#[test]
+fn a_run_scheduled_after_a_twist_lets_the_twist_s_publication_install_first() {
+    let run = Run::with_runtime();
+    let folder = fresh("twist-first");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let fault = run.start(&spinning(), "forever");
+    run.wait_running(fault);
+    let revision = run.press("KeyJ");
+    assert_eq!(run.refusal(fault).0, CANCELLED_REVISION_REPLACED);
+    assert_eq!(run.frame().publication_revision, 1, "the twist's publication is still in its upload");
+
+    run.fake().complete();
+    let source = returning(5);
+    let probe = run.start(&source, "one");
+    let frame = run.frame();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (revision, revision), "the twist is drawn");
+    assert_eq!(run.result(probe).status, M6H_VIEW_STATUS_PENDING, "the probe has not published");
+
+    let record = run.wait(probe);
+    assert_eq!(record.status, M6H_VIEW_STATUS_PUBLISHED, "{}", last_error(run.host));
+    assert_eq!(record.revision, revision);
+    let frame = run.shown();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (revision, revision));
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+/// The twist's preparation stays pending for several polls, as its GPU work waits behind the core's ready fence: the
+/// probe's schedule pumps the host until it is ready and installed, and only then schedules, so the next frame draws the
+/// twist's revision. Three polls keep well inside `REFERENCE_WAIT` (two sleeps of 200 µs between them).
+#[test]
+fn a_run_scheduled_while_the_twist_s_upload_runs_waits_for_its_installation() {
+    let run = Run::with_runtime();
+    let folder = fresh("twist-pending");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let fault = run.start(&spinning(), "forever");
+    run.wait_running(fault);
+    let revision = run.press("KeyJ");
+    assert_eq!(run.refusal(fault).0, CANCELLED_REVISION_REPLACED);
+
+    common::complete_after_polls(3);
+    let probe = run.start(&returning(7), "one");
+    let frame = run.frame();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (revision, revision), "the twist is drawn");
+    assert_eq!(run.result(probe).status, M6H_VIEW_STATUS_PENDING, "the probe has not published");
+    let record = run.wait(probe);
+    assert_eq!(record.status, M6H_VIEW_STATUS_PUBLISHED, "{}", last_error(run.host));
+    assert_eq!(record.revision, revision);
+    assert_eq!(run.shown().publication_revision, revision);
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+/// Without the upload's completion the run's schedule waits at most `REFERENCE_WAIT` and then supersedes the twist's
+/// publication as before; the run publishes the twist's revision.
+#[test]
+fn a_run_scheduled_while_the_twist_s_upload_runs_waits_briefly_then_supersedes_it() {
+    let run = Run::with_runtime();
+    let folder = fresh("twist-upload");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let revision = run.press("KeyJ");
+    let started = Instant::now();
+    let probe = run.start(&returning(6), "one");
+    let waited = started.elapsed();
+    assert!(waited >= view::REFERENCE_WAIT, "the schedule waited {waited:?}");
+    // The upper bound also covers the run's parse and the worker's start on a loaded machine.
+    assert!(waited < view::REFERENCE_WAIT + Duration::from_secs(10), "the schedule waited {waited:?}");
+    assert_eq!(run.frame().publication_revision, 1, "the twist's publication was superseded");
+    let record = run.wait(probe);
+    assert_eq!(record.status, M6H_VIEW_STATUS_PUBLISHED, "{}", last_error(run.host));
+    assert_eq!(record.revision, revision);
+    assert_eq!(run.shown().publication_revision, revision);
     drop(run);
     let _ = std::fs::remove_dir_all(&folder);
 }

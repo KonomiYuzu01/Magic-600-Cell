@@ -8,6 +8,10 @@
 //! source (invalid UTF-8, a carriage return, a byte-order mark) have no source range at all, not even `[0, 0)`: their
 //! diagnostic carries ERR.10's raw context instead.
 
+use std::fmt;
+use std::sync::{Arc, OnceLock};
+
+use c600_syntax::ast::ParsedFile;
 use c600_syntax::{pinned, sha256_hex, Diagnostic, RawContext};
 
 use crate::envelope::{code, Envelope, Form, NextAction, Reason, Service};
@@ -101,11 +105,32 @@ enum Content {
 }
 
 /// Immutable source bytes, named by their digest, with the units the host declared when it opened them.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Document {
     content: Content,
     digest: String,
     units: Units,
+    reading: Reading,
+}
+
+impl fmt::Debug for Document {
+    /// The document's data; the shared reading is a cache of it and is left out.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Document")
+            .field("content", &self.content)
+            .field("digest", &self.digest)
+            .field("units", &self.units)
+            .finish()
+    }
+}
+
+/// The parse of a document's bytes, made once, when a service that reads the structure past the parse first needs it,
+/// and shared by every later service on the same document. It is a function of the bytes alone, so sharing it changes
+/// no answer; it spares a host that asks complete and diagnose about one buffer a parse of it for each (on LX-4's L
+/// fixture, about 10 ms each).
+#[derive(Clone, Default)]
+struct Reading {
+    parsed: OnceLock<Arc<ParsedFile>>,
 }
 
 /// Why a position does not convert.
@@ -124,7 +149,7 @@ impl Document {
             Ok(_) => Content::Pinned(String::from_utf8(bytes).unwrap_or_default()),
             Err(diagnostic) => Content::Refused { bytes, diagnostic },
         };
-        Document { content, digest, units }
+        Document { content, digest, units, reading: Reading::default() }
     }
 
     /// Opens bytes with units named as the protocol names them; another name is refused as undeclared units.
@@ -164,6 +189,16 @@ impl Document {
             Content::Pinned(text) => Some(text),
             Content::Refused { .. } => None,
         }
+    }
+
+    /// `c600_syntax::parse` of the bytes, made once per document.
+    pub(crate) fn parsed(&self) -> Arc<ParsedFile> {
+        Arc::clone(self.reading.parsed.get_or_init(|| Arc::new(c600_syntax::parse(self.bytes()))))
+    }
+
+    /// The shared parse, if a service has made it.
+    pub(crate) fn parsed_if_made(&self) -> Option<&ParsedFile> {
+        self.reading.parsed.get().map(|file| &**file)
     }
 
     /// ERR.10's encoding diagnostic, if the bytes are not pinned source.

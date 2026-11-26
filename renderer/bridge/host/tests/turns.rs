@@ -192,6 +192,12 @@ impl Run {
         (key.press, key.engine_revision)
     }
 
+    /// Adopts the head a key left pending, waiting for its build: [`m6h_pump`].
+    fn settle(&self) {
+        // SAFETY: a live handle.
+        assert_eq!(unsafe { m6h_pump(self.host) }, M6H_OK, "{}", last_error(self.host));
+    }
+
     fn frame(&self) -> M6hFrame {
         let mut submitted = M6hFrame::default();
         // SAFETY: a live handle and a writable row.
@@ -247,10 +253,15 @@ fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
     assert_eq!(run.open(&fresh("again"), &menu()), M6H_E_SESSION, "a handle opens one session");
     assert!(Path::new(&folder).join("objects").is_dir(), "the journal's folder");
 
-    // KeyJ commits item 1 of the I_a menu at cap 0: the core adopts revision 2, and the view is published for it.
+    // KeyJ commits item 1 of the I_a menu at cap 0: the key names revision 2 and returns before the view's work, so
+    // the core has not adopted it yet. A pump waits for the head's build; then the core adopts revision 2, and the
+    // view is published for it.
     assert_eq!(run.fake().adoptions.len(), 1);
     let prepared = run.fake().prepared.len();
     assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    assert_eq!(run.fake().adoptions.len(), 1, "the key call leaves the adoption to the worker and a later call");
+    assert_eq!(run.fake().prepared.len(), prepared, "nor does it publish");
+    run.settle();
     assert_eq!(run.fake().adoptions.len(), 2);
     assert_eq!(run.fake().adoptions[1].0, 2, "the core adopts the next revision");
     assert_eq!(run.fake().prepared.len(), prepared + 1, "the view is published again");
@@ -273,6 +284,7 @@ fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
     assert_eq!(unsafe { m6h_focus_lost(run.host) }, M6H_OK);
     assert_eq!(run.down("KeyNope", false).0, M6H_E_INVALID_ARGUMENT);
     assert_eq!(run.down("Hyper+KeyJ", false).0, M6H_E_INVALID_ARGUMENT);
+    run.settle();
     assert_eq!(run.fake().adoptions.len(), 3, "only the two commits were adopted");
 
     // The newest presented frame names revision 3; the control at the close passes.
@@ -301,6 +313,78 @@ fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
     let _ = std::fs::remove_dir_all(&folder);
 }
 
+/// The frame thread's share of a twist (26 Nov 2026): the key call commits, with the journal written before it returns,
+/// and does none of the view's work, which a stalled frame thread showed as one long frame per key. Frames wait for
+/// the head's build only briefly, after their submission: each draws the adopted revision, and the first frame call
+/// that finds the build ended adopts the press's revision and publishes it, so a later frame shows the press.
+#[test]
+fn a_twist_key_leaves_the_view_work_to_later_frames() {
+    let run = Run::new();
+    let folder = fresh("deferred");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let journal = Path::new(&folder).join("journal");
+    let written = std::fs::metadata(&journal).map_or(0, |m| m.len());
+    let (adopted, prepared) = (run.fake().adoptions.len(), run.fake().prepared.len());
+
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    assert!(std::fs::metadata(&journal).expect("the journal").len() > written, "the commit is written by the key call");
+    assert_eq!(run.fake().adoptions.len(), adopted, "no adoption in the key call");
+    assert_eq!(run.fake().prepared.len(), prepared, "no publication in the key call");
+
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    let shown = loop {
+        run.fake().complete();
+        let frame = run.frame();
+        assert!(frame.engine_revision == 1 || frame.engine_revision == 2, "{frame:?}");
+        assert!(frame.publication_revision <= frame.engine_revision, "{frame:?}");
+        if (frame.engine_revision, frame.publication_revision) == (2, 2) {
+            break frame;
+        }
+        assert!(std::time::Instant::now() < deadline, "no frame showed the press");
+    };
+    assert_eq!(run.fake().adoptions.len(), adopted + 1, "the press's head was adopted once");
+    let rows = run.present();
+    assert_eq!(rows.last().map(|row| (row.sequence, row.engine_revision)), Some((shown.sequence, 2)));
+    assert_eq!(run.close(2), (M6H_OK, 1), "{}", last_error(run.host));
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+/// A burst of keys faster than the builds: each commit is durable and names its own revision, in order; the frames
+/// between them never go back to an older revision; the core adopts revisions in increasing order,
+/// skipping only ones a newer head replaced, and ends on the newest; the control at the close passes on the frame
+/// that shows it.
+#[test]
+fn a_burst_of_twists_adopts_in_revision_order_ends_on_the_newest_and_the_control_passes() {
+    let run = Run::new();
+    let folder = fresh("burst");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let adopted = run.fake().adoptions.len();
+    let chords = ["KeyJ", "KeyK", "KeyL", "Shift+KeyJ", "Shift+KeyK", "Shift+KeyL"];
+    let mut drawn = Vec::new();
+    for i in 0..12u64 {
+        assert_eq!(run.press(chords[i as usize % chords.len()]), (M6H_PRESS_COMMITTED, i + 2));
+        if i % 2 == 1 {
+            run.fake().complete();
+            drawn.push(run.frame().engine_revision);
+        }
+    }
+    run.settle();
+    run.fake().complete();
+    run.settle();
+    let last = run.frame();
+    drawn.push(last.engine_revision);
+    assert!(drawn.windows(2).all(|pair| pair[0] <= pair[1]), "frames never go back: {drawn:?}");
+    let revisions: Vec<u64> = run.fake().adoptions[adopted..].iter().map(|adoption| adoption.0).collect();
+    assert!(revisions.windows(2).all(|pair| pair[0] < pair[1]), "adopted in increasing order: {revisions:?}");
+    assert_eq!(revisions.last(), Some(&13), "the newest head is adopted: {revisions:?}");
+    assert_eq!((last.engine_revision, last.publication_revision), (13, 13));
+    let shown = run.present();
+    assert_eq!(shown.last().map(|row| row.engine_revision), Some(13));
+    assert_eq!(run.close(13), (M6H_OK, 1), "{}", last_error(run.host));
+    assert_eq!(int(&record_of(run.host), "committed"), Some(12));
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
 #[test]
 fn an_undo_is_shown_and_fails_the_control() {
     let run = Run::new();
@@ -310,7 +394,9 @@ fn an_undo_is_shown_and_fails_the_control() {
     // Ctrl+KeyZ is the checked key map's `session.undo` under US QWERTY, which the layer builds: the host adopts the
     // solved state again.
     assert_eq!(run.press("Ctrl+KeyZ"), (M6H_PRESS_OTHER, 3));
-    assert_eq!(run.fake().adoptions.len(), 3);
+    run.settle();
+    // Two heads were handed out before the pump; the worker builds the newer and the older may never be adopted.
+    assert_eq!(run.fake().adoptions.last().map(|adoption| adoption.0), Some(3));
     assert_eq!(run.close(3), (M6H_OK, 0));
     let control = record_of(run.host);
     assert_eq!(control.get("pass"), Some(&Value::Bool(false)));
@@ -353,6 +439,8 @@ fn a_twist_while_the_device_is_lost_is_published_at_the_recovery() {
 
     // The host adopts the twist while the device is lost (the core keeps its image); its publication waits.
     assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    // SAFETY: a live handle; the pump adopts the pending head and then notices the lost device.
+    assert_eq!(unsafe { m6h_pump(run.host) }, M6H_OK, "{}", last_error(run.host));
     assert_eq!(run.fake().adoptions.last().map(|adoption| adoption.0), Some(2));
     assert_eq!(run.fake().prepared.len(), prepared, "nothing is prepared on a lost device");
 
@@ -740,6 +828,7 @@ fn a_jumble_on_session_commits_jumble_on_and_the_core_adopts_its_posed_row() {
 
     let prepared = run.fake().prepared.len();
     assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 3));
+    run.settle();
     assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
     let (_, moved, _) = adoption(&geometry, &turns.head().expect("the head"), 3).expect("the posed row");
     assert_eq!(run.fake().posed.last(), Some(&posed_record(&moved)), "the press's poses");
