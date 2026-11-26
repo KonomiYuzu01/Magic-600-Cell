@@ -93,7 +93,10 @@ use c600_display::validate::{BoundArray, CheckedPublication, EngineBundle, Limit
 use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
-use c600_render::abi::{Sa2ViewShape, TARGET_SURFACE};
+use c600_render::abi::{
+    piece_style_valid, Sa2ViewShape, Sa2ViewStyle, PIECES, STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_SLOTS,
+    TARGET_SURFACE,
+};
 use c600_render::{DisplayTime, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
@@ -113,8 +116,9 @@ use turns::{Head, Pending, Press, Puzzle, Turns};
 /// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs; version 5
 /// the session's puzzle; version 6 the preload; version 7 LP4-3's write-check-run flow; version 8 the head's state
 /// digests ([`m6h_state_digest`], ADR-D02 B5); version 9 a view's shape ([`m6h_set_view_shape`], ADR-D02, over the
-/// core's ABI 6).
-pub const M6H_ABI_VERSION: u32 = 9;
+/// core's ABI 6); version 10 the piece style and the style slots ([`m6h_set_piece_style`], [`m6h_set_view_style`],
+/// ADR-D02 B14, over the core's ABI 7).
+pub const M6H_ABI_VERSION: u32 = 10;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -995,6 +999,99 @@ pub unsafe extern "C" fn m6h_set_view_shape(handle: *mut ShellHost, view: u64, s
                 ));
             }
             shell.host.backend.set_view_shape(VIEW, shape).map_err(host_error)
+        })
+    }
+}
+
+/// Sets one channel of the adopted revision's piece style (version 10, ADR-D02 B14; the core's ABI 7 `sa2_style_set`):
+/// `channel` 0 is the fill (a palette entry in the low four bits, bit 7 the dim set) and 1 the outline (a palette
+/// entry). With `by_pose` 0, `styles` holds one byte per piece (`count` = 177,120). With `by_pose` 1 it holds one byte
+/// per pose of the session's head, which must be the adopted revision, and the host expands it to pieces with the
+/// head's own pose index; a head that is not adopted yet answers [`M6H_E_UNAVAILABLE`] (set it again once the
+/// revision is shown), and a session without Jumble [`M6H_E_SESSION`]. A null `styles` with `count` 0 clears the
+/// channel. The core drops the style at the next adoption, so the shell sets it again for each revision. A wrong
+/// count or a byte with bits outside the channel's answers [`M6H_E_INVALID_ARGUMENT`] and changes nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `styles` is null or points to `count` readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_piece_style(
+    handle: *mut ShellHost,
+    channel: u32,
+    styles: *const u8,
+    count: u32,
+    by_pose: u32,
+) -> i32 {
+    // SAFETY: `count` readable bytes (the contract).
+    let bytes = (!styles.is_null()).then(|| unsafe { std::slice::from_raw_parts(styles, count as usize) });
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let revision = shell.revision;
+            let pieces = match (bytes, by_pose) {
+                (None, 0 | 1) if count == 0 => None,
+                (Some(bytes), 0) if bytes.len() == PIECES => Some(bytes.to_vec()),
+                (Some(bytes), 1) => {
+                    let adopted = shell.digests.get(&revision).cloned().unwrap_or_default();
+                    let (digest, index) = shell.turns()?.pose_index().map_err(|e| (M6H_E_SESSION, e))?;
+                    let (ids, poses) = index
+                        .ok_or_else(|| (M6H_E_SESSION, "a per-pose style needs a session with Jumble on".to_owned()))?;
+                    if digest != adopted {
+                        return Err((
+                            M6H_E_UNAVAILABLE,
+                            "the session's head is not the adopted revision yet".to_owned(),
+                        ));
+                    }
+                    if bytes.len() != poses {
+                        return Err((M6H_E_INVALID_ARGUMENT, format!("{} bytes for {poses} poses", bytes.len())));
+                    }
+                    Some(ids.iter().map(|&id| bytes[id as usize]).collect())
+                }
+                _ => {
+                    return Err((
+                        M6H_E_INVALID_ARGUMENT,
+                        "a piece style is null with count 0, or one byte per piece or pose".to_owned(),
+                    ))
+                }
+            };
+            if pieces.as_deref().is_some_and(|bytes| !piece_style_valid(bytes, channel))
+                || (channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE)
+            {
+                return Err((
+                    M6H_E_INVALID_ARGUMENT,
+                    "a channel is 0 or 1, and its bytes use only its bits".to_owned(),
+                ));
+            }
+            shell.host.backend.set_piece_style(revision, pieces.as_deref(), channel).map_err(host_error)
+        })
+    }
+}
+
+/// Sets style slot `slot` (1 to 4; a one-view frame uses slot 1), or clears it with a null `style` (version 10,
+/// ADR-D02 B14; the core's ABI 7 `sa2_view_style_set`): the tint and dim modes, the dim amount, the outline width, a
+/// 16-entry RGBA palette and a row-major 3x3 output colour matrix, laid out as `sa2_view_style` (316 bytes). Unknown
+/// bits or values out of range answer [`M6H_E_INVALID_ARGUMENT`] and change nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `style` is null or points to a readable `sa2_view_style`.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_view_style(handle: *mut ShellHost, slot: u32, style: *const Sa2ViewStyle) -> i32 {
+    // SAFETY: a readable row (the contract); no alignment is assumed.
+    let style = (!style.is_null()).then(|| unsafe { ptr::read_unaligned(style) });
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if !(1..=STYLE_SLOTS).contains(&slot)
+                || style.is_some_and(|s| s.struct_size as usize != std::mem::size_of::<Sa2ViewStyle>() || !s.in_range())
+            {
+                return Err((
+                    M6H_E_INVALID_ARGUMENT,
+                    "a style slot is 1..4 with values inside their ranges".to_owned(),
+                ));
+            }
+            shell.host.backend.set_view_style(slot, style).map_err(host_error)
         })
     }
 }

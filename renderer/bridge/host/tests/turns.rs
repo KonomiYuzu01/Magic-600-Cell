@@ -242,7 +242,7 @@ fn int(record: &Value, key: &str) -> Option<i64> {
 
 #[test]
 fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
-    assert_eq!(m6h_abi_version(), 9);
+    assert_eq!(m6h_abi_version(), 10);
     let run = Run::new();
     let folder = fresh("pass");
 

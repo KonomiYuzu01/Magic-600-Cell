@@ -2,14 +2,15 @@
  * sa2_interop.h: the C ABI between the Godot C# host and the native Direct3D
  * 12 producer DLL sa2_interop.dll (renderer/core/, the product copy of the
  * selected S-A2 core).
- * ABI version 6; the ABI 1 to ABI 5 declarations, layouts and behaviour are
+ * ABI version 7; the ABI 1 to ABI 6 declarations, layouts and behaviour are
  * retained, except that ABI 5 extends sa2_presented_row with display_qpc (no
  * ABI 4 core wrote that row: without a surface sa2_presented answers
  * SA2_E_UNAVAILABLE). ABI 3 adds W-J's per-piece pose path (sa2_scene_load_wj and
  * sa2_scene_lattice_check). ABI 4 adds the product API, one call per RM.14
  * operation. ABI 5 adds route B: the core's own device, a DirectComposition
  * layer and a composition swap chain (both at the end of this file). ABI 6
- * adds a view's shape (sa2_view_shape_set, at the end of this file).
+ * adds a view's shape (sa2_view_shape_set) and ABI 7 per-piece style
+ * (sa2_style_set, sa2_view_style_set), both at the end of this file.
  *
  * The integrator owns this file. An implementation must not change it; if a
  * change is unavoidable, stop and report the reason instead.
@@ -44,7 +45,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 6u
+#define SA2_ABI_VERSION 7u
 
 /* Code layout; must match code_layout.json and the host's CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -1086,6 +1087,61 @@ static_assert(sizeof(sa2_view_shape) == 24, "sa2_view_shape requires the x64 ABI
 #endif
 
 SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape* shape);
+
+/* ABI 7: per-piece style (ADR-D02 build step B14, a candidate behind the shell's --d02; rows J07 and J09 of the
+ * feature matrix). Additive: every ABI 6 call, struct and behaviour is unchanged, and a frame with no style draws
+ * through the unchanged product pipeline, byte-identically to ABI 6.
+ *
+ * sa2_style_set sets one channel of the adopted engine revision's piece style: SA2_PIECES bytes, one per piece, bound
+ * to that revision as its pose arrays are. A revision other than the adopted one is refused (SA2_E_INVALID_ARGUMENT),
+ * and adopting a newer revision drops both channels. A NULL piece_style clears the channel. A fill byte holds a
+ * palette entry in SA2_STYLE_INDEX (0: the piece keeps its label colour) and may set SA2_STYLE_DIM; an outline byte
+ * holds a palette entry only (0: no outline). Any other bit is refused and changes nothing.
+ *
+ * sa2_view_style_set sets a style slot (1 to SA2_STYLE_SLOTS). A product frame drawn by sa2_frame_submit uses slot 1;
+ * a composite frame's pane names its slot. A NULL style clears the slot. tint_mode says which channels draw;
+ * dim_mode which pieces dim (SA2_STYLE_DIM_MARKED: those whose fill byte has SA2_STYLE_DIM; SA2_STYLE_DIM_UNMARKED:
+ * every other piece, a focus); a dimmed colour is multiplied by 1 - dim_amount. A tint mixes the palette entry
+ * (shaded as the label colour is) over the label colour by its alpha; an outline mixes the entry over the band of each
+ * sticker triangle within outline_width of an edge (barycentric units). The row-major 3x3 matrix then maps every drawn
+ * colour (a colour-vision or contrast simulation); with the identity it is skipped. Out-of-range values, non-finite
+ * values or unknown mode bits are refused and change nothing.
+ *
+ * A frame draws styled only when its slot is set and the style changes something: a non-zero piece byte in a drawn
+ * channel, a dim that applies, or a matrix other than the identity. Otherwise it draws exactly as ABI 6. Both calls are
+ * device-free product state: they need a loaded scene outside a trace (SA2_E_WRONG_STATE), work during device loss,
+ * are kept by sa2_recover and are forgotten by sa2_scene_unload. The ID pass (sa2_pick_request) ignores the style.
+ */
+#define SA2_STYLE_CHANNEL_FILL 0u
+#define SA2_STYLE_CHANNEL_OUTLINE 1u
+#define SA2_STYLE_INDEX 0x0Fu /* a byte's palette entry */
+#define SA2_STYLE_DIM 0x80u /* fill bytes only: the piece belongs to the dim set */
+#define SA2_STYLE_SLOTS 4u
+#define SA2_STYLE_PALETTE 16u
+#define SA2_STYLE_TINT_FILL 1u
+#define SA2_STYLE_TINT_OUTLINE 2u
+#define SA2_STYLE_DIM_NONE 0u
+#define SA2_STYLE_DIM_MARKED 1u
+#define SA2_STYLE_DIM_UNMARKED 2u
+#define SA2_STYLE_OUTLINE_MAX 0.5f
+#define SA2_STYLE_MATRIX_MAX 8.0f
+
+typedef struct sa2_view_style {
+    uint32_t struct_size; /* sizeof(sa2_view_style); 316 on x64 */
+    uint32_t tint_mode; /* SA2_STYLE_TINT_* flags */
+    uint32_t dim_mode; /* SA2_STYLE_DIM_* */
+    float dim_amount; /* 0 <= dim_amount <= 1 */
+    float outline_width; /* 0 <= outline_width <= SA2_STYLE_OUTLINE_MAX */
+    float palette[64]; /* SA2_STYLE_PALETTE RGBA entries, each channel 0..1; entry 0 is never drawn */
+    float matrix[9]; /* row-major 3x3 output colour matrix; |entry| <= SA2_STYLE_MATRIX_MAX */
+    uint32_t reserved; /* must be 0 */
+} sa2_view_style;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_view_style) == 316, "sa2_view_style requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_style, uint32_t channel);
+SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style* style);
 
 #ifdef __cplusplus
 }

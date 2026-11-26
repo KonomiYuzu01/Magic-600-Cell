@@ -1,4 +1,4 @@
-//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 6 row's field names, offsets and
+//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 7 row's field names, offsets and
 //! size under the C rules of x64 (each against the header's static_assert too) and every constant. The header is
 //! read, not copied, so a header change fails here. The function table's signatures are checked in `renderer/bridge`.
 
@@ -219,6 +219,19 @@ fn every_row_has_the_header_layout() {
     let shape = rust_struct!(Sa2ViewShape { struct_size, cell_shrink, sticker_shrink, d4, zoom, reserved });
     assert_eq!(c_struct(&h, "sa2_view_shape"), shape, "sa2_view_shape");
     assert_eq!(Sa2ViewShape::new().struct_size, 24, "new() sets struct_size");
+    // ABI 7: a style slot.
+    let style = rust_struct!(Sa2ViewStyle {
+        struct_size,
+        tint_mode,
+        dim_mode,
+        dim_amount,
+        outline_width,
+        palette,
+        matrix,
+        reserved
+    });
+    assert_eq!(c_struct(&h, "sa2_view_style"), style, "sa2_view_style");
+    assert_eq!(Sa2ViewStyle::new().struct_size, 316, "new() sets struct_size");
     let sizes = [
         Sa2PollRow::new().struct_size,
         Sa2FrameInput::new().struct_size,
@@ -274,6 +287,17 @@ fn every_constant_has_the_header_value() {
         ("SURFACE_BUFFERS".into(), i64::from(SURFACE_BUFFERS)),
         ("SURFACE_MAX_PX".into(), i64::from(SURFACE_MAX_PX)),
         ("RING_SLOTS".into(), i64::from(RING_SLOTS)),
+        ("STYLE_CHANNEL_FILL".into(), i64::from(STYLE_CHANNEL_FILL)),
+        ("STYLE_CHANNEL_OUTLINE".into(), i64::from(STYLE_CHANNEL_OUTLINE)),
+        ("STYLE_INDEX".into(), i64::from(STYLE_INDEX)),
+        ("STYLE_DIM".into(), i64::from(STYLE_DIM)),
+        ("STYLE_SLOTS".into(), i64::from(STYLE_SLOTS)),
+        ("STYLE_PALETTE".into(), i64::from(STYLE_PALETTE)),
+        ("STYLE_TINT_FILL".into(), i64::from(STYLE_TINT_FILL)),
+        ("STYLE_TINT_OUTLINE".into(), i64::from(STYLE_TINT_OUTLINE)),
+        ("STYLE_DIM_NONE".into(), i64::from(STYLE_DIM_NONE)),
+        ("STYLE_DIM_MARKED".into(), i64::from(STYLE_DIM_MARKED)),
+        ("STYLE_DIM_UNMARKED".into(), i64::from(STYLE_DIM_UNMARKED)),
     ];
     for code in 0..=10 {
         rust.push((Status(code).name().to_owned(), i64::from(code)));
@@ -291,6 +315,8 @@ fn every_constant_has_the_header_value() {
         ("SHAPE_DEFAULT_ZOOM", SHAPE_DEFAULT_ZOOM),
         ("SHAPE_D4_MAX", SHAPE_D4_MAX),
         ("SHAPE_ZOOM_MAX", SHAPE_ZOOM_MAX),
+        ("STYLE_OUTLINE_MAX", STYLE_OUTLINE_MAX),
+        ("STYLE_MATRIX_MAX", STYLE_MATRIX_MAX),
     ] {
         let line = h
             .lines()

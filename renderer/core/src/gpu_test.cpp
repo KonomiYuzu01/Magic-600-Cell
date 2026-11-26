@@ -1121,6 +1121,102 @@ void product_shape(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ABI 7 (ADR-D02 B14): --warp --style. Over the unposed home labels at the scene's size: a fill tint and an outline on
+// a quarter of the pieces change only pixels those pieces cover (a frame of only those pieces bounds them); an empty
+// mask, and a slot whose style changes nothing, draw byte-identically to no style; a style for another revision is
+// refused; a focus dim and a colour matrix change frames without a piece style; clearing restores the unstyled frame.
+void product_style(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    const auto pieces = sa2::scene_slot_pieces();
+    std::vector<uint8_t> masked(SA2_SLOTS, 0), all(SA2_SLOTS, 1);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) masked[slot] = uint8_t(pieces[slot] % 4 == 1);
+    const auto set_all = pose_set(harness, 1, all), set_masked = pose_set(harness, 2, masked);
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const auto unstyled = frames.draw(1, 1, set_all, Q);
+    const auto only = frames.draw(1, 2, set_masked, Q);
+    const auto background = unstyled[0];
+    const uint64_t total = uint64_t(harness.width) * harness.height;
+    uint64_t cover_only = 0;
+    for (const auto pixel : only) cover_only += pixel != background;
+    expect(cover_only >= total / 100, "the masked pieces cover less than 1% of the target");
+    // A slot whose style changes nothing, and an empty mask, keep the unstyled frame byte for byte.
+    sa2_view_style style{};
+    style.struct_size = sizeof(style);
+    style.tint_mode = SA2_STYLE_TINT_FILL | SA2_STYLE_TINT_OUTLINE;
+    style.outline_width = 0.12f;
+    const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    std::copy(std::begin(identity), std::end(identity), std::begin(style.matrix));
+    const float red[4] = {0.95f, 0.1f, 0.1f, 1}, black[4] = {0, 0, 0, 1};
+    std::copy(std::begin(red), std::end(red), style.palette + 4 * 3);
+    std::copy(std::begin(black), std::end(black), style.palette + 4 * 5);
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    expect(frames.draw(1, 1, set_all, Q) == unstyled, "a slot that changes nothing does not draw byte-identically");
+    std::vector<uint8_t> fill(SA2_PIECES, 0), outline(SA2_PIECES, 0);
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    expect(frames.draw(1, 1, set_all, Q) == unstyled, "an empty mask does not draw byte-identically to no style");
+    expect(sa2_style_set(ctx, 2, fill.data(), SA2_STYLE_CHANNEL_FILL) == SA2_E_INVALID_ARGUMENT, "a style for another revision was accepted");
+    // The fill tint and the outline on every piece = 1 (mod 4).
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        if (piece % 4 != 1) continue;
+        fill[piece] = 3;
+        outline[piece] = 5;
+    }
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    const auto tinted = frames.draw(1, 1, set_all, Q);
+    api(ctx, sa2_style_set(ctx, 1, outline.data(), SA2_STYLE_CHANNEL_OUTLINE));
+    const auto outlined = frames.draw(1, 1, set_all, Q);
+    uint64_t changed = 0, stray = 0, lined = 0;
+    for (size_t i = 0; i < unstyled.size(); ++i) {
+        const bool differs = tinted[i] != unstyled[i];
+        changed += differs;
+        stray += (differs || outlined[i] != unstyled[i]) && only[i] == background;
+        lined += outlined[i] != tinted[i];
+    }
+    std::cout << "piece style: " << total << " pixels; masked pieces cover " << cover_only << ", the tint changed " << changed
+              << ", the outline changed " << lined << ", outside the masked pieces " << stray << std::endl;
+    expect(changed * 8 >= cover_only, "the fill tint changed under an eighth of the masked pieces' pixels");
+    expect(lined > 0, "the outline changed no pixel");
+    expect(stray == 0, "a styled frame changed a pixel no masked piece covers");
+    // Another revision's style is gone after an adoption: the frame draws unstyled again.
+    image.revision = 2; // the same labels, a new revision
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    expect(frames.draw(2, 1, set_all, Q) == unstyled, "an adoption kept the previous revision's style");
+    expect(sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL) == SA2_E_INVALID_ARGUMENT, "a style for a replaced revision was accepted");
+    // Without a piece style, a focus dim and a colour matrix still change the frame; clearing the slot restores it.
+    style.dim_mode = SA2_STYLE_DIM_UNMARKED;
+    style.dim_amount = 0.5f;
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    expect(frames.draw(2, 1, set_all, Q) != unstyled, "a focus dim did not change the frame");
+    style.dim_mode = SA2_STYLE_DIM_NONE;
+    style.dim_amount = 0;
+    const float swap[9] = {0, 1, 0, 1, 0, 0, 0, 0, 1};
+    std::copy(std::begin(swap), std::end(swap), std::begin(style.matrix));
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    expect(frames.draw(2, 1, set_all, Q) != unstyled, "a colour matrix did not change the frame");
+    style.matrix[0] = 9.0f;
+    expect(sa2_view_style_set(ctx, 1, &style) == SA2_E_INVALID_ARGUMENT, "a matrix entry out of range was accepted");
+    expect(sa2_view_style_set(ctx, 5, nullptr) == SA2_E_INVALID_ARGUMENT, "a fifth style slot was accepted");
+    api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+    expect(frames.draw(2, 1, set_all, Q) == unstyled, "a cleared slot did not restore the unstyled frame");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_view_style_set(ctx, 1, nullptr) == SA2_E_WRONG_STATE, "a style was set without a loaded scene");
+    harness.finish(options.debug);
+}
+
 struct ChildResult { DWORD code = 0; std::string output, error; };
 std::string read_pipe(HANDLE pipe) {
     std::string text;
@@ -1235,6 +1331,12 @@ void run_poses(Suite& suite, const Options& options) {
 void run_shape(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the shape check runs on WARP only");
     suite.check("view shape warp", [&] { product_shape(options); });
+}
+
+// ABI 7: --warp --style. Only WARP; parse refuses any other mode.
+void run_style(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the style check runs on WARP only");
+    suite.check("piece style warp", [&] { product_style(options); });
 }
 
 // C9 U5c: --warp --measure-stages DIR. Only WARP; parse refuses any other mode.

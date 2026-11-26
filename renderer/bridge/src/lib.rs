@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 18] = [
+pub const SYMBOLS: [&str; 20] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -33,9 +33,11 @@ pub const SYMBOLS: [&str; 18] = [
     "sa2_counters",
     "sa2_device_status",
     "sa2_view_shape_set",
+    "sa2_style_set",
+    "sa2_view_style_set",
 ];
 
-/// The ABI 6 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
+/// The ABI 7 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
 /// language can fill it.
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -59,6 +61,10 @@ pub struct CoreFunctions {
     pub device_status: unsafe extern "C" fn(*mut c_void, *mut i32) -> i32,
     /// ABI 6: a view's shape.
     pub view_shape_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewShape) -> i32,
+    /// ABI 7: one channel of the adopted revision's piece style.
+    pub style_set: unsafe extern "C" fn(*mut c_void, u64, *const u8, u32) -> i32,
+    /// ABI 7: a style slot.
+    pub view_style_set: unsafe extern "C" fn(*mut c_void, u32, *const Sa2ViewStyle) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -75,7 +81,7 @@ pub const JSON_LIMIT: usize = 16 << 20;
 
 impl DllCore {
     /// Binds an attached context. Fails with `SA2_E_INVALID_ARGUMENT` for a null context and `SA2_E_UNSUPPORTED`
-    /// when the library is not ABI 6.
+    /// when the library is not ABI 7.
     ///
     /// # Safety
     ///
@@ -272,6 +278,22 @@ impl CoreAbi for DllCore {
         let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewShape);
         // SAFETY: `pointer` is null or a live, sized row.
         Status(unsafe { (self.functions.view_shape_set)(self.context, view, pointer) }).check()
+    }
+
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {
+        if piece_style.is_some_and(|bytes| bytes.len() != PIECES) {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        let pointer = piece_style.map_or(std::ptr::null(), <[u8]>::as_ptr);
+        // SAFETY: `pointer` is null or PIECES readable bytes.
+        Status(unsafe { (self.functions.style_set)(self.context, revision, pointer, channel) }).check()
+    }
+
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status> {
+        let row = style.map(|s| Sa2ViewStyle { struct_size: size_of::<Sa2ViewStyle>() as u32, ..*s });
+        let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewStyle);
+        // SAFETY: `pointer` is null or a live, sized row.
+        Status(unsafe { (self.functions.view_style_set)(self.context, slot, pointer) }).check()
     }
 
     fn last_error(&self) -> String {

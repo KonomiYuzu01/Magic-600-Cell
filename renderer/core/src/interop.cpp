@@ -1720,7 +1720,7 @@ int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_
         scene.require_healthy();
         live(ctx);
         scene.wait_geometry(ctx->config.wait_timeout_ms);
-        scene.product_ready(ctx->producer(), target.format());
+        scene.product_ready(ctx->producer(), target.format(), plan.styled);
         if (plan.upload) target.wait(plan.upload_wait); // the copy's staging was last read by that frame
         auto* list = target.open();
         try {
@@ -1960,6 +1960,27 @@ int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape
         const auto value = sa2::view_shape(shape);
         auto& scene = product_scene(ctx);
         scene.product.set_shape(view, value);
+        return SA2_OK;
+    });
+}
+
+// ABI 7: per-piece style (sa2_interop.h). Device-free product state, so both work during device loss.
+int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_style, uint32_t channel) {
+    return invoke(ctx, "sa2_style_set", [&] {
+        context(ctx);
+        sa2::validate_piece_style(piece_style, channel);
+        auto& scene = product_scene(ctx);
+        scene.product.set_style(revision, piece_style, channel);
+        return SA2_OK;
+    });
+}
+int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style* style) {
+    return invoke(ctx, "sa2_view_style_set", [&] {
+        context(ctx);
+        require(slot >= 1 && slot <= SA2_STYLE_SLOTS, "a style slot is 1..SA2_STYLE_SLOTS");
+        if (style) sa2::view_style(style);
+        auto& scene = product_scene(ctx);
+        scene.product.set_view_style(slot, style);
         return SA2_OK;
     });
 }

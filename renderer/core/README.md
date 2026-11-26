@@ -1,4 +1,4 @@
-# Renderer core (S-A2, ABI 6)
+# Renderer core (S-A2, ABI 7)
 
 `renderer/core/` is the product copy of the selected S-A2 renderer core. It is a native Direct3D 12 producer DLL, `sa2_interop.dll`, that a Godot 4.7.2 .NET host loads. It draws into textures that Godot shares with it, on Godot's device and queue. W-J's per-piece pose path is added as ABI 3, so W-J item 5 (S4, I_a, I_b) and the W3 re-acceptance can run on the S-A2 host with unchanged bars. ABI 4 adds the product API that the Rust display host calls, one C call per RM.14 operation. ABI 5 adds route B: the core's own device presenting in a DirectComposition layer. Route B is accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks. `PROVENANCE.md` lists every file's source under `work/experiments/` and how it changed. The build compiles nothing from there.
 
@@ -122,6 +122,19 @@ SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_vi
 - The shape is device-free product state: it is set outside a trace with a scene loaded, kept by `sa2_recover`, forgotten by `sa2_scene_unload`. A frame keeps its shape, so a pick on it draws its ID pass with that shape. The shaders do not change: the values go into the constants that `geometry.hlsl` already reads.
 - `python renderer/core/check_core.py --shape` runs `sa2_selftest.exe --warp --shape --debug` on WARP only: the default shape draws byte-identically to no call, a smaller sticker shrink and the opening values cover fewer pixels, another view keeps its shape, every non-finite or out-of-range value is refused without changing a frame, NULL restores the defaults and an unloaded scene refuses the call.
 
+## ABI 7: per-piece style (ADR-D02 B14, a candidate behind --d02)
+
+ABI 7 adds the piece style and four style slots; every ABI 6 call, struct and behaviour is unchanged. The header comment before the declarations gives the contract.
+
+```c
+SA2_API int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_style, uint32_t channel);
+SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style* style); /* sa2_view_style: 316 bytes on x64 */
+```
+
+- A piece style is one byte per piece and channel (fill: a palette entry and the dim-set bit; outline: a palette entry), bound to the adopted revision; an adoption drops it. A style slot holds the tint and dim modes, the dim amount, the outline width, 16 RGBA palette entries and a 3x3 output colour matrix. A one-view frame uses slot 1; a composite frame's pane names its slot.
+- A frame draws styled only when its slot changes something (a drawn non-zero piece byte, a dim that applies, a matrix other than the identity); otherwise it draws through the unchanged product pipeline. The styled pass (`shaders/styled.hlsl`) reuses `product.hlsl`'s vertex stage and `draw.hlsl`'s colour, and runs under its own root signature (the product's twenty parameters, then t17 and b1). Its DXIL is embedded in the DLL (`embed_dxil.cmake`), so the build identity's eight shader files and the acceptance harness's copied set are unchanged. The piece style is uploaded with the engine ring copy, whose key includes the style's version.
+- `python renderer/core/check_core.py --style` runs `sa2_selftest.exe --warp --style --debug` on WARP only: a slot that changes nothing and an empty mask draw byte-identically to no style; a fill tint and an outline on a quarter of the pieces change only pixels those pieces cover; a style for another or a replaced revision is refused; a focus dim and a colour matrix change the frame without a piece style; clearing the slot restores the unstyled frame.
+
 ## Build and CPU check
 
 These need Windows, MSVC x64, the Windows SDK's `dxc` and the pinned `renderer-spike` CMake and Ninja. A worktree without `tools/.venv/renderer-spike` can set `M600_RENDERER_SPIKE_SCRIPTS` to another checkout's `Scripts` folder.
@@ -136,7 +149,7 @@ The default build directory is `work\build\renderer-core`. Build only under the 
 python renderer/core/check_core.py
 ```
 
-This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose checks must all pass (38 with ABI 6's view shape) (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
+This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose checks must all pass (39 with ABI 6's view shape and ABI 7's piece style) (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
 
 `tests/test_renderer_core.py` checks the provenance digests, the file list, the CMake sources and the ABI pins. It needs only the Python standard library and runs on Linux.
 
@@ -166,4 +179,4 @@ None of these has been run for this copy. Each starts a D3D12 device:
 - The ABI 4 GPU paths: the engine and preparation uploads, a product frame with its timestamp and pipeline-statistics queries, the ID pass and its readback, `sa2_resize`, and device loss during product work. They compile, but no self-test mode exercises them yet.
 - The ABI 5 route B paths: `sa2_create`, the surface calls in a real window, surface frames and their presentation, `sa2_presented` and a traced run's `presented.jsonl` against real frame statistics, `sa2_resize` of the swap chain, and `sa2_recover` after `sa2_remove_device`. They compile, but no self-test mode exercises them; route B's three owner-machine checks are still open.
 
-The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 6 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 6 and uses only ABI 1 to 3 calls.
+The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 7 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 7 and uses only ABI 1 to 3 calls.

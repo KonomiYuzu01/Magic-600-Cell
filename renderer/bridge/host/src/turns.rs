@@ -540,6 +540,18 @@ impl Turns {
     /// record) and of the lattice flags (one byte per piece, 1 when its pose is in K⁺), and the count of pieces whose
     /// pose is not in K⁺, from which the shell reads the exact lattice flag (B6). With Jumble off the three are `null`.
     /// The answer is `{"digest", "pose_ids_sha256", "pose_lattice_sha256", "off_lattice"}`.
+    /// ADR-D02 B14: the head's KN0.2 digest and, with Jumble on, its pose id per piece (the session's own pose index)
+    /// and its pose count, by which the host expands a per-pose style to pieces. `None` with Jumble off.
+    pub fn pose_index(&mut self) -> Result<(String, Option<(Vec<u32>, usize)>), String> {
+        let layer = self.layer()?;
+        let digest = head_digest(layer);
+        let index = layer.jumbled().map(|jumbled| {
+            let state = jumbled.state();
+            (state.pose_ids().to_vec(), state.poses().len())
+        });
+        Ok((digest, index))
+    }
+
     pub fn state_digests(&mut self) -> Result<Value, String> {
         let layer = self.layer()?;
         let digest = head_digest(layer);

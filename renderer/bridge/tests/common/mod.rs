@@ -234,6 +234,19 @@ unsafe extern "C" fn view_shape_set(ctx: *mut c_void, view: u64, shape: *const S
     code(unsafe { shim(ctx) }.fake.view_shape_set(view, shape), |()| ())
 }
 
+unsafe extern "C" fn style_set(ctx: *mut c_void, revision: u64, bytes: *const u8, channel: u32) -> i32 {
+    let bytes = (!bytes.is_null()).then(|| unsafe { std::slice::from_raw_parts(bytes, PIECES) });
+    code(unsafe { shim(ctx) }.fake.style_set(revision, bytes, channel), |()| ())
+}
+
+unsafe extern "C" fn view_style_set(ctx: *mut c_void, slot: u32, style: *const Sa2ViewStyle) -> i32 {
+    let style = unsafe { style.as_ref() };
+    if style.is_some_and(|s| !sized::<Sa2ViewStyle>(s.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_style_set(slot, style), |()| ())
+}
+
 /// The shim's function table.
 pub fn functions() -> CoreFunctions {
     CoreFunctions {
@@ -255,6 +268,8 @@ pub fn functions() -> CoreFunctions {
         counters,
         device_status,
         view_shape_set,
+        style_set,
+        view_style_set,
     }
 }
 
@@ -268,7 +283,7 @@ impl Shimmed {
     pub fn new(fake: FakeCore, pad: usize) -> Shimmed {
         let shim = Box::into_raw(Box::new(Shim { fake, pad }));
         // SAFETY: the table is the shim's and the context a live shim, which this value owns and frees last.
-        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 6");
+        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 7");
         Shimmed { dll, shim }
     }
 }
@@ -331,6 +346,12 @@ impl CoreAbi for Shimmed {
     }
     fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
         self.dll.view_shape_set(view, shape)
+    }
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {
+        self.dll.style_set(revision, piece_style, channel)
+    }
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status> {
+        self.dll.view_style_set(slot, style)
     }
 }
 

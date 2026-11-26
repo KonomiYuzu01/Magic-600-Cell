@@ -1,9 +1,10 @@
-//! The core's product calls as a safe Rust interface: one method per ABI 6 product call, with slices where the C
+//! The core's product calls as a safe Rust interface: one method per ABI 7 product call, with slices where the C
 //! structs carry pointers. `DllCore` in `renderer/bridge` (`c600-render-ffi`) implements it over the C functions;
 //! [`crate::fake::FakeCore`] implements it in Rust for headless tests.
 
 use crate::abi::{
-    Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2PickRow, Sa2PollRow, Sa2PresentedRow, Sa2ViewShape, Status,
+    Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2PickRow, Sa2PollRow, Sa2PresentedRow, Sa2ViewShape,
+    Sa2ViewStyle, Status,
 };
 
 /// The pose path arrays of a posed engine state.
@@ -81,4 +82,9 @@ pub trait CoreAbi {
     fn last_error(&self) -> String;
     /// ABI 6's `sa2_view_shape_set`: the shape of `view`'s frames, or `None` for the defaults (ABI 5's constants).
     fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status>;
+    /// ABI 7's `sa2_style_set`: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear
+    /// it.
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status>;
+    /// ABI 7's `sa2_view_style_set`: style slot 1 to 4, or `None` to clear it.
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status>;
 }

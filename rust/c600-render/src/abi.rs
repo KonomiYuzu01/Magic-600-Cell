@@ -1,11 +1,12 @@
-//! ABI 6's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
+//! ABI 7's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
 //! `renderer/core/include/sa2_interop.h`, x64 layout. `tests/abi_layout.rs` checks every name, offset, size and
 //! constant against the header.
 
 use std::mem::size_of;
 
-/// `SA2_ABI_VERSION`. ABI 6 adds a view's shape ([`Sa2ViewShape`]).
-pub const ABI_VERSION: u32 = 6;
+/// `SA2_ABI_VERSION`. ABI 6 adds a view's shape ([`Sa2ViewShape`]); ABI 7 the piece style and the style slots
+/// ([`Sa2ViewStyle`]).
+pub const ABI_VERSION: u32 = 7;
 /// `SA2_SLOTS`: the labelled sticker slots of 600-cell-Full.
 pub const SLOTS: usize = 259_800;
 /// `SA2_PIECES`: the length of a pose index.
@@ -107,6 +108,34 @@ pub const SHAPE_DEFAULT_ZOOM: f32 = 1.15;
 pub const SHAPE_D4_MAX: f32 = 64.0;
 /// `SA2_SHAPE_ZOOM_MAX`.
 pub const SHAPE_ZOOM_MAX: f32 = 64.0;
+
+// ABI 7: the piece style (`sa2_style_set`) and the style slots (`sa2_view_style`).
+/// `SA2_STYLE_CHANNEL_FILL`.
+pub const STYLE_CHANNEL_FILL: u32 = 0;
+/// `SA2_STYLE_CHANNEL_OUTLINE`.
+pub const STYLE_CHANNEL_OUTLINE: u32 = 1;
+/// `SA2_STYLE_INDEX`: a style byte's palette entry.
+pub const STYLE_INDEX: u8 = 0x0F;
+/// `SA2_STYLE_DIM`: a fill byte's dim-set bit.
+pub const STYLE_DIM: u8 = 0x80;
+/// `SA2_STYLE_SLOTS`: style slots 1 to 4.
+pub const STYLE_SLOTS: u32 = 4;
+/// `SA2_STYLE_PALETTE`.
+pub const STYLE_PALETTE: u32 = 16;
+/// `SA2_STYLE_TINT_FILL`.
+pub const STYLE_TINT_FILL: u32 = 1;
+/// `SA2_STYLE_TINT_OUTLINE`.
+pub const STYLE_TINT_OUTLINE: u32 = 2;
+/// `SA2_STYLE_DIM_NONE`.
+pub const STYLE_DIM_NONE: u32 = 0;
+/// `SA2_STYLE_DIM_MARKED`.
+pub const STYLE_DIM_MARKED: u32 = 1;
+/// `SA2_STYLE_DIM_UNMARKED`.
+pub const STYLE_DIM_UNMARKED: u32 = 2;
+/// `SA2_STYLE_OUTLINE_MAX`.
+pub const STYLE_OUTLINE_MAX: f32 = 0.5;
+/// `SA2_STYLE_MATRIX_MAX`.
+pub const STYLE_MATRIX_MAX: f32 = 8.0;
 
 /// `sa2_engine_image`. Built only by `c600-render-ffi` (`renderer/bridge`) from checked slices.
 #[repr(C)]
@@ -271,6 +300,63 @@ rows! {
         id_passes: u64,
         reports_dropped: u64,
     }
+}
+
+/// `sa2_view_style` (ABI 7): a style slot. Not in `rows!`, whose `Default` derive stops at 32-element arrays.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Sa2ViewStyle {
+    pub struct_size: u32,
+    pub tint_mode: u32,
+    pub dim_mode: u32,
+    pub dim_amount: f32,
+    pub outline_width: f32,
+    pub palette: [f32; 64],
+    pub matrix: [f32; 9],
+    pub reserved: u32,
+}
+
+impl Default for Sa2ViewStyle {
+    fn default() -> Sa2ViewStyle {
+        Sa2ViewStyle::new()
+    }
+}
+
+impl Sa2ViewStyle {
+    /// `struct_size` set, no tint, no dim, an empty palette and the identity matrix: a slot that changes nothing.
+    pub fn new() -> Sa2ViewStyle {
+        Sa2ViewStyle {
+            struct_size: size_of::<Sa2ViewStyle>() as u32,
+            tint_mode: 0,
+            dim_mode: STYLE_DIM_NONE,
+            dim_amount: 0.0,
+            outline_width: 0.0,
+            palette: [0.0; 64],
+            matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+            reserved: 0,
+        }
+    }
+
+    /// The header's checks: known mode bits, every value finite and inside its range.
+    pub fn in_range(&self) -> bool {
+        let within = |v: f32, low: f32, high: f32| v.is_finite() && v >= low && v <= high;
+        self.tint_mode & !(STYLE_TINT_FILL | STYLE_TINT_OUTLINE) == 0
+            && self.dim_mode <= STYLE_DIM_UNMARKED
+            && within(self.dim_amount, 0.0, 1.0)
+            && within(self.outline_width, 0.0, STYLE_OUTLINE_MAX)
+            && self.palette.iter().all(|&v| within(v, 0.0, 1.0))
+            && self.matrix.iter().all(|&v| within(v, -STYLE_MATRIX_MAX, STYLE_MATRIX_MAX))
+    }
+}
+
+/// Whether every byte of a piece style channel uses only that channel's bits (ABI 7).
+pub fn piece_style_valid(bytes: &[u8], channel: u32) -> bool {
+    let allowed = match channel {
+        STYLE_CHANNEL_FILL => STYLE_INDEX | STYLE_DIM,
+        STYLE_CHANNEL_OUTLINE => STYLE_INDEX,
+        _ => return false,
+    };
+    bytes.len() == PIECES && bytes.iter().all(|&b| b & !allowed == 0)
 }
 
 impl Sa2ViewShape {

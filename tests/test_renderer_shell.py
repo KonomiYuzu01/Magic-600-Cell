@@ -1482,10 +1482,11 @@ class D02Fixtures(unittest.TestCase):
 
     def test_the_host_gives_the_state_digest_and_the_shell_binds_only_by_it(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 9;", lib)
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 10;", lib)
         self.assertIn('pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32', lib)
-        self.assertIn("public const uint AbiVersion = 9;", text(PROJECT / "HostLibrary.cs"))
-        self.assertIn("refuses another version than its `AbiVersion` (9 since ADR-D02's view shape; 8 at B5)",
+        self.assertIn("public const uint AbiVersion = 10;", text(PROJECT / "HostLibrary.cs"))
+        self.assertIn("refuses another version than its `AbiVersion` (10 since ADR-D02 B14's style; 9 at the view shape, "
+                      "8 at B5)",
                       text(SHELL / "README.md"))
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
         # A sample binds by its two pose-array digests; the asked state only breaks a tie between equal poses.

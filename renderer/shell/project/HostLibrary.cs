@@ -16,12 +16,13 @@ namespace Magic600.Shell;
 /// <see cref="Palette"/>, <see cref="Invoke"/>, <see cref="TakeJob"/>, <see cref="FinishJob"/>,
 /// <see cref="SetDraftWord"/> and <see cref="Answer"/>. Version 8 (ADR-D02 B5) adds <see cref="StateDigest"/>, the
 /// head's state digests, by which a D02 sample binds to the session. Version 9 (ADR-D02, over the core's ABI 6) adds
-/// <see cref="SetViewShape"/>, a view's cell gap, sticker shrink, d4 and zoom.
+/// <see cref="SetViewShape"/>, a view's cell gap, sticker shrink, d4 and zoom. Version 10 (ADR-D02 B14, over the core's
+/// ABI 7) adds <see cref="SetPieceStyle"/> and <see cref="SetViewStyle"/>, the per-piece style and the style slots.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 9;
+    public const uint AbiVersion = 10;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -86,6 +87,8 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_camera",
         "m6h_set_viewport",
         "m6h_set_view_shape",
+        "m6h_set_piece_style",
+        "m6h_set_view_style",
         "m6h_pump",
         "m6h_frame",
         "m6h_read_presented",
@@ -330,6 +333,53 @@ public sealed unsafe class HostLibrary : IDisposable
         {
             return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, int>)_exports["m6h_set_view_shape"])(host, view, s);
         }
+    }
+
+    /// <summary>A style slot as the core's sa2_view_style lays it out (316 bytes; version 10).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ViewStyle
+    {
+        public uint StructSize, TintMode, DimMode;
+        public float DimAmount, OutlineWidth;
+        public fixed float Palette[64];
+        public fixed float Matrix[9];
+        public uint Reserved;
+
+        /// <summary>A slot that changes nothing: no tint, no dim, an empty palette, the identity matrix.</summary>
+        public static ViewStyle Plain()
+        {
+            var style = new ViewStyle { StructSize = (uint)sizeof(ViewStyle) };
+            style.Matrix[0] = style.Matrix[4] = style.Matrix[8] = 1;
+            return style;
+        }
+    }
+
+    /// <summary>The piece style's channels and the tint and dim modes (the core's SA2_STYLE_* values).</summary>
+    public const uint StyleFill = 0, StyleOutline = 1, TintFill = 1, TintOutline = 2, DimMarked = 1, DimUnmarked = 2;
+
+    /// <summary>
+    /// Sets one channel of the adopted revision's piece style (version 10): one byte per piece, or with
+    /// <paramref name="byPose"/> one byte per pose of the session's head, which the host expands with the head's own pose
+    /// index; null clears the channel. The core drops it at the next adoption, so it is set again for each shown revision.
+    /// </summary>
+    public int SetPieceStyle(IntPtr host, uint channel, byte[]? styles, bool byPose)
+    {
+        fixed (byte* s = styles)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, uint, byte*, uint, uint, int>)_exports["m6h_set_piece_style"])(
+                host, channel, s, (uint)(styles?.Length ?? 0), byPose ? 1u : 0u);
+        }
+    }
+
+    /// <summary>Sets style slot 1 to 4 (a one-view frame uses slot 1), or clears it with null (version 10).</summary>
+    public int SetViewStyle(IntPtr host, uint slot, ViewStyle? style)
+    {
+        var call = (delegate* unmanaged[Cdecl]<IntPtr, uint, ViewStyle*, int>)_exports["m6h_set_view_style"];
+        if (style is not { } value)
+        {
+            return call(host, slot, null);
+        }
+        return call(host, slot, &value);
     }
 
     public int Pump(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_pump"])(host);

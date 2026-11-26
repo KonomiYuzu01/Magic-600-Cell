@@ -198,6 +198,28 @@ impl<C: CoreAbi> RenderBackend<C> {
         self.core.view_shape_set(view.0, shape.as_ref()).map_err(|status| self.error(status))
     }
 
+    /// ABI 7: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear it. A new
+    /// adoption drops it in the core, so the caller sets it again for each revision. Bytes with bits outside the
+    /// channel's are refused before the core is asked.
+    pub fn set_piece_style(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Error> {
+        if piece_style.is_some_and(|bytes| !piece_style_valid(bytes, channel))
+            || (channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE)
+        {
+            return Err(Error::invalid("a piece style is PIECES bytes with only its channel's bits"));
+        }
+        self.core.style_set(revision, piece_style, channel).map_err(|status| self.error(status))
+    }
+
+    /// ABI 7: style slot 1 to 4 (a one-view frame uses slot 1), or `None` to clear it. Out-of-range values are
+    /// refused before the core is asked.
+    pub fn set_view_style(&mut self, slot: u32, style: Option<Sa2ViewStyle>) -> Result<(), Error> {
+        let style = style.map(|s| Sa2ViewStyle { struct_size: Sa2ViewStyle::new().struct_size, reserved: 0, ..s });
+        if !(1..=STYLE_SLOTS).contains(&slot) || style.is_some_and(|s| !s.in_range()) {
+            return Err(Error::invalid("a style slot is 1..4 and its values lie inside their ranges"));
+        }
+        self.core.view_style_set(slot, style.as_ref()).map_err(|status| self.error(status))
+    }
+
     /// RM.16's adoption into the core: a validated bundle at its revision. A Full bundle gives its labels. A jumbling
     /// bundle gives its pose index, pose rows and lattice entries over the home labels (each slot shows its own
     /// sticker, which its piece's pose moves); a pose table that is not i32 [PIECES], f32 [P, 4, 4] and i32 [P] with

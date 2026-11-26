@@ -54,13 +54,13 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     D3D12 physical device), not DXGI's first hardware adapter. Draft choices: the acceptance harness's default
     config, and scene 1.
   - `HostLibrary.cs` loads the native host library (`c600_shell_host.dll`, step S3), resolves its `m6h_*` exports,
-    refuses another version than its `AbiVersion` (9 since ADR-D02's view shape; 8 at B5), and wraps each call. `Create` hands the library the core's table and a context.
+    refuses another version than its `AbiVersion` (10 since ADR-D02 B14's style; 9 at the view shape, 8 at B5), and wraps each call. `Create` hands the library the core's table and a context.
   - `D02/ShellShape.cs` sets the view's shape behind `M600_D02=1` (host version 9, core ABI 6): the owner's opening
     values from `tools/looklab/data/opening.json`, staged as `look/opening.json` (cell shrink = 1 - gap, the sticker
     shrink as given), with the core's d4 and the chain projection's zoom 1.15. The file's field of view belongs to the
     Hopf-ring layout, which the core does not draw yet. Without `M600_D02=1` nothing is called.
   - `CoreLibrary.cs` loads the core from an absolute path, resolves the exports that `renderer/bridge`'s function
-    table names, in its order, and refuses another ABI version than 6. It also resolves `ShellCalls`, the route-B
+    table names, in its order, and refuses another ABI version than 7. It also resolves `ShellCalls`, the route-B
     calls the shell makes itself and the table does not hold: `sa2_create`, `sa2_scene_load`, the three surface
     calls, `sa2_resize`, `sa2_drain`, `sa2_scene_unload` and `sa2_detach`. The bridge crates load no library
     (CT-RPI-20), so the shell is the only place that loads the core.

@@ -114,6 +114,10 @@ pub struct FakeCore {
     pub adoptions: Vec<(u64, u32)>,
     /// ABI 6: every view's shape that `sa2_view_shape_set` set and did not restore to the defaults.
     pub shapes: BTreeMap<u64, Sa2ViewShape>,
+    /// ABI 7: the adopted revision's piece style by channel (fill, outline), dropped by an adoption.
+    pub piece_styles: [Option<Vec<u8>>; 2],
+    /// ABI 7: the style slots 1 to 4 (index 0 is slot 1).
+    pub view_styles: [Option<Sa2ViewStyle>; 4],
     /// Every posed adoption: its revision, its pose count and the SHA-256 (hexadecimal) of the little-endian bytes
     /// of its pose index, pose rows and lattice entries, as the bundle's array descriptors name them.
     pub posed: Vec<(u64, u32, [String; 3])>,
@@ -141,6 +145,8 @@ impl FakeCore {
             picks: BTreeMap::new(),
             placed: BTreeMap::new(),
             shapes: BTreeMap::new(),
+            piece_styles: [None, None],
+            view_styles: [None; 4],
             counters: Sa2CounterValues::new(),
             error: String::new(),
             prepared: Vec::new(),
@@ -337,6 +343,7 @@ impl CoreAbi for FakeCore {
         }
         self.adopted = Some(image.revision);
         self.adoptions.push((image.revision, image.labels[0]));
+        self.piece_styles = [None, None]; // ABI 7: a piece style is bound to its revision
         self.counters.bytes_uploaded += (SLOTS * 4) as u64;
         if let Some(pose) = &image.pose {
             let count = pose.pose_lattice.len();
@@ -650,6 +657,37 @@ impl CoreAbi for FakeCore {
         } else {
             self.shapes.insert(view, shape);
         }
+        Ok(())
+    }
+
+    /// The header's checks: the adopted revision only, the channel's bits only.
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {
+        if channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE {
+            return self.fail(Status::INVALID_ARGUMENT, "channel must be fill or outline");
+        }
+        if piece_style.is_some_and(|bytes| !piece_style_valid(bytes, channel)) {
+            return self.fail(Status::INVALID_ARGUMENT, "a piece style byte sets a bit its channel does not have");
+        }
+        if self.adopted != Some(revision) {
+            return self.fail(Status::INVALID_ARGUMENT, "a piece style names a revision other than the adopted one");
+        }
+        self.piece_styles[channel as usize] = piece_style.map(<[u8]>::to_vec);
+        Ok(())
+    }
+
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status> {
+        if !(1..=STYLE_SLOTS).contains(&slot) {
+            return self.fail(Status::INVALID_ARGUMENT, "a style slot is 1..SA2_STYLE_SLOTS");
+        }
+        if let Some(style) = style {
+            if style.struct_size as usize != std::mem::size_of::<Sa2ViewStyle>()
+                || style.reserved != 0
+                || !style.in_range()
+            {
+                return self.fail(Status::INVALID_ARGUMENT, "an invalid view style");
+            }
+        }
+        self.view_styles[slot as usize - 1] = style.copied();
         Ok(())
     }
 }

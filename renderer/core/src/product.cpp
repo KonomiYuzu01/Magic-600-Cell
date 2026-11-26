@@ -93,6 +93,38 @@ ViewShape view_shape(const sa2_view_shape* shape) {
     return ViewShape{shape->cell_shrink, shape->sticker_shrink, shape->d4, shape->zoom};
 }
 
+// ABI 7.
+ViewStyle view_style(const sa2_view_style* style) {
+    argument(style != nullptr, "view_style is NULL");
+    argument(style->struct_size == sizeof(*style), "invalid view_style struct_size");
+    argument(style->reserved == 0, "view_style reserved must be 0");
+    argument(!(style->tint_mode & ~(SA2_STYLE_TINT_FILL | SA2_STYLE_TINT_OUTLINE)), "unknown view_style tint_mode bits");
+    argument(style->dim_mode <= SA2_STYLE_DIM_UNMARKED, "view_style dim_mode must be a SA2_STYLE_DIM_* value");
+    const auto within = [](float value, float low, float high) { return std::isfinite(value) && value >= low && value <= high; };
+    argument(within(style->dim_amount, 0.0f, 1.0f), "dim_amount must be finite and within 0..1");
+    argument(within(style->outline_width, 0.0f, SA2_STYLE_OUTLINE_MAX), "outline_width must be finite and within 0..SA2_STYLE_OUTLINE_MAX");
+    argument(std::all_of(std::begin(style->palette), std::end(style->palette), [&](float v) { return within(v, 0.0f, 1.0f); }),
+        "every palette channel must be finite and within 0..1");
+    argument(std::all_of(std::begin(style->matrix), std::end(style->matrix),
+        [&](float v) { return within(v, -SA2_STYLE_MATRIX_MAX, SA2_STYLE_MATRIX_MAX); }), "every matrix entry must be finite and within the bound");
+    ViewStyle out;
+    std::copy(std::begin(style->palette), std::end(style->palette), out.palette.begin());
+    for (int r = 0; r < 3; ++r) for (int c = 0; c < 3; ++c) out.rows[size_t(r) * 4 + c] = style->matrix[r * 3 + c];
+    out.tint_mode = style->tint_mode; out.dim_mode = style->dim_mode;
+    out.dim_amount = style->dim_amount; out.outline_width = style->outline_width;
+    const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    out.matrix_on = std::equal(std::begin(style->matrix), std::end(style->matrix), std::begin(identity)) ? 0u : 1u;
+    return out;
+}
+
+void validate_piece_style(const uint8_t* bytes, uint32_t channel) {
+    argument(channel == SA2_STYLE_CHANNEL_FILL || channel == SA2_STYLE_CHANNEL_OUTLINE, "channel must be SA2_STYLE_CHANNEL_FILL or _OUTLINE");
+    if (!bytes) return;
+    const uint8_t allowed = uint8_t(channel == SA2_STYLE_CHANNEL_FILL ? (SA2_STYLE_INDEX | SA2_STYLE_DIM) : SA2_STYLE_INDEX);
+    argument(std::all_of(bytes, bytes + SA2_PIECES, [&](uint8_t b) { return (b & ~allowed) == 0; }),
+        "a piece style byte sets a bit its channel does not have");
+}
+
 void validate_frame_input(const sa2_frame_input* input) {
     argument(input && input->struct_size == sizeof(*input), "invalid frame_input struct_size");
     argument(input->reserved == 0, "frame_input reserved must be 0");
@@ -128,6 +160,7 @@ void Product::require_live() const {
 uint64_t Product::adopt(EngineImage image) {
     state(!image_ || image.revision > image_->revision, "engine revision must increase");
     image_ = std::move(image);
+    style_.reset(); // ABI 7: a piece style is bound to its revision
     return image_->revision;
 }
 
@@ -139,6 +172,44 @@ void Product::set_shape(uint64_t view, const ViewShape& shape) {
 ViewShape Product::shape(uint64_t view) const {
     const auto it = shapes_.find(view);
     return it == shapes_.end() ? ViewShape{} : it->second;
+}
+
+// ABI 7: device-free, so both work during device loss.
+void Product::set_style(uint64_t revision, const uint8_t* bytes, uint32_t channel) {
+    validate_piece_style(bytes, channel);
+    state(image_.has_value(), "no engine image adopted");
+    argument(revision == image_->revision, "a piece style names a revision other than the adopted one");
+    if (!bytes && !style_) return;
+    if (!style_) style_ = PieceStyle{revision, 0, std::vector<uint32_t>(SA2_PIECES, 0u), {}, false};
+    const uint32_t shift = channel == SA2_STYLE_CHANNEL_FILL ? 0 : 8;
+    bool any = false, dim = false;
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        const uint32_t value = bytes ? bytes[piece] : 0u;
+        auto& packed = style_->packed[piece];
+        packed = (packed & ~(0xFFu << shift)) | (value << shift);
+        any = any || (value & SA2_STYLE_INDEX) != 0;
+        dim = dim || (value & SA2_STYLE_DIM) != 0;
+    }
+    style_->any[channel] = any;
+    if (channel == SA2_STYLE_CHANNEL_FILL) style_->dim = dim;
+    if (!style_->any[0] && !style_->any[1] && !style_->dim) { style_.reset(); return; }
+    style_->version = ++style_version_;
+}
+void Product::set_view_style(uint32_t slot, const sa2_view_style* style) {
+    argument(slot >= 1 && slot <= SA2_STYLE_SLOTS, "a style slot is 1..SA2_STYLE_SLOTS");
+    if (!style) { view_styles_[slot - 1].reset(); return; }
+    view_styles_[slot - 1] = view_style(style);
+}
+bool Product::styled(uint32_t slot, ViewStyle& out) const {
+    if (slot < 1 || slot > SA2_STYLE_SLOTS || !view_styles_[slot - 1]) return false;
+    const auto& view = *view_styles_[slot - 1];
+    const bool fill = (view.tint_mode & SA2_STYLE_TINT_FILL) && style_ && style_->any[0];
+    const bool outline = (view.tint_mode & SA2_STYLE_TINT_OUTLINE) && style_ && style_->any[1] && view.outline_width > 0;
+    const bool dim = view.dim_amount > 0
+        && ((view.dim_mode == SA2_STYLE_DIM_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_DIM_UNMARKED);
+    if (!fill && !outline && !dim && !view.matrix_on) return false;
+    out = view;
+    return true;
 }
 
 void Product::check_prepare(const PreparedData& data) const {
@@ -280,6 +351,8 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
     out.image = &*image_;
     out.pose_count = image_->pose_count;
     out.shape = shape(input.view);
+    if (style_) { out.style = &style_->packed; out.style_version = style_->version; }
+    out.styled = styled(1, out.view_style); // ABI 7: a one-view frame uses style slot 1
     if (input.resource_set) {
         const Entry* entry = set_entry(input.resource_set);
         state(entry && entry->active, "resource_set is not an active set");
@@ -289,7 +362,7 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
         out.set_ticket = sets_.at(input.resource_set);
     }
     for (uint32_t copy = 0; copy < EngineCopies; ++copy) {
-        if (copies_[copy].valid && copies_[copy].revision == image_->revision) {
+        if (copies_[copy].valid && copies_[copy].revision == image_->revision && copies_[copy].style == out.style_version) {
             out.copy = copy;
             return out;
         }
@@ -310,8 +383,8 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     auto& view = views_[input.view];
     view = std::max(view, input.view_generation);
     if (plan.upload) {
-        copies_[plan.copy] = {plan.image->revision, frame, ++copy_sequence_, plan.image->pose_count, true};
-        counters_.bytes_uploaded += plan.image->bytes();
+        copies_[plan.copy] = {plan.image->revision, frame, ++copy_sequence_, plan.image->pose_count, true, plan.style_version};
+        counters_.bytes_uploaded += plan.image->bytes() + (plan.style ? uint64_t(SA2_PIECES) * 4 : 0);
     }
     if (plan.set_ticket) entries_.at(plan.set_ticket).last_frame = frame;
     // The target's previous frame completed before this one was recorded, so

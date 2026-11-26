@@ -258,3 +258,52 @@ fn the_host_sets_its_view_shape() {
         drop(Box::from_raw(shim));
     }
 }
+
+#[test]
+fn the_host_sets_the_piece_style_and_the_style_slots() {
+    use c600_render::abi::{Sa2ViewStyle, PIECES, STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_TINT_FILL};
+    let shim = Box::into_raw(Box::new(Shim { fake: FakeCore::on_surface(SIZE), pad: 0 }));
+    // SAFETY: the host uses the shim only inside its calls, never at the same time as the test.
+    let fake = || unsafe { &mut (*shim).fake };
+    let (code, host) = create(&functions(), shim, &assets_path());
+    assert_eq!(code, M6H_OK, "{}", last_error(ptr::null_mut()));
+    let mut fill = vec![0u8; PIECES];
+    fill[3] = 0x83;
+    let mut style = Sa2ViewStyle::new();
+    style.tint_mode = STYLE_TINT_FILL;
+    style.palette[12..16].copy_from_slice(&[1.0, 0.0, 0.0, 1.0]);
+    // SAFETY: a live handle and readable rows, or null.
+    unsafe {
+        assert_eq!(
+            m6h_set_piece_style(host, STYLE_CHANNEL_FILL, fill.as_ptr(), PIECES as u32, 0),
+            M6H_OK,
+            "{}",
+            last_error(host)
+        );
+        assert_eq!(fake().piece_styles[0].as_deref(), Some(&fill[..]));
+        // A short array, an outline byte with the dim bit, a third channel and a per-pose array without a session
+        // change nothing.
+        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_FILL, fill.as_ptr(), 10, 0), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(
+            m6h_set_piece_style(host, STYLE_CHANNEL_OUTLINE, fill.as_ptr(), PIECES as u32, 0),
+            M6H_E_INVALID_ARGUMENT
+        );
+        assert_eq!(m6h_set_piece_style(host, 2, fill.as_ptr(), PIECES as u32, 0), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_FILL, fill.as_ptr(), 4, 1), M6H_E_SESSION);
+        assert!(fake().piece_styles[1].is_none());
+        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_FILL, ptr::null(), 0, 0), M6H_OK);
+        assert!(fake().piece_styles[0].is_none());
+        // Style slots 1 to 4; null clears; a value out of range or slot 5 changes nothing.
+        assert_eq!(m6h_set_view_style(host, 1, &style), M6H_OK, "{}", last_error(host));
+        assert_eq!(fake().view_styles[0], Some(style));
+        let mut bad = style;
+        bad.dim_amount = 2.0;
+        assert_eq!(m6h_set_view_style(host, 2, &bad), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_view_style(host, 5, &style), M6H_E_INVALID_ARGUMENT);
+        assert!(fake().view_styles[1..].iter().all(Option::is_none));
+        assert_eq!(m6h_set_view_style(host, 1, ptr::null()), M6H_OK);
+        assert!(fake().view_styles[0].is_none());
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}

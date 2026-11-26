@@ -40,7 +40,7 @@ public:
     // producer queue. A failure while creating resources leaves the scene
     // usable; a failure while recording or submitting poisons it.
     // ABI 5: a B8G8R8A8_UNORM format also builds the route-B surface pipeline.
-    void product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
+    void product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM, bool styled = false); // ABI 7: styled
     // Records the preparation's upload with its own list and signals the
     // product fence; returns the fence value.
     uint64_t product_prepare(uint64_t ticket, const PreparedData& data, ID3D12CommandQueue* queue, const std::function<void()>& submitting);
