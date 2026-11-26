@@ -38,6 +38,8 @@ public sealed class JumbleHost
     // The Focus layer: its model for the bound state (null while none is bound), and its editor in the right dock.
     public PieceFilterModel? Filter { get; private set; }
     public FocusLayerEditor FilterEditor { get; }
+    // B25: a stored word played by part, in the left dock beside the Library.
+    public WordPanel Words { get; } = new();
     // B11: the named cap's covers with the hover's inspect line, its raw record (the straddlers' count), the bound
     // state's pose rows (the domain and height counts), and the views' focus layers the three predicates join.
     public CapCovers? Covers { get; private set; }
@@ -104,6 +106,7 @@ public sealed class JumbleHost
         FilterEditor = new FocusLayerEditor(() => frame.Tokens);
         frame.AddDockPanel(DockSide.Right, FocusLayerEditor.PanelId, "Focus layer", "layer.cycle", FilterEditor);
         frame.Rebuilt += DressFilter;
+        frame.AddDockPanel(DockSide.Left, WordPanel.PanelId, "Word", "panel.history", Words);
         DressFilter();
         // The bottom dock is a chrome setting both ways: the entry opens the cap map there, and a panel the researcher
         // opens there is theirs, so Jumble off leaves it.

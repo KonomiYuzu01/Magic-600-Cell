@@ -38,6 +38,8 @@ public static class ShellJumble
     public static ShellCamera Camera { get; } = new();
     /// <summary>The wheel zoom of the view under the pointer (owner, 26 November 2026).</summary>
     public static ShellZoom Zoom { get; } = new();
+    private static JumbleHost? _host;
+
     /// <summary>The Jumble facts of each newly shown revision (B6), from the host's state digests.</summary>
     public static JumbleFeed Feed { get; } = new();
 
@@ -103,8 +105,41 @@ public static class ShellJumble
         return File.Exists(path) ? CapMapModel.Read(File.ReadAllText(path)) : CapMapModel.Pending();
     }
 
-    /// <summary>The Jumble host, for the script driver's checks (B10's cancels).</summary>
-    public static JumbleHost? Host { get; set; }
+    /// <summary>The Jumble host; set by the chrome. B25: setting it binds the seed 7001 restoration to its Word panel.</summary>
+    public static JumbleHost? Host
+    {
+        get => _host;
+        set
+        {
+            _host = value;
+            if (value != null && SeedWord() is { } word)
+            {
+                value.Words.Bind(word, done => StateAfter("s7001-" + done.ToString(CultureInfo.InvariantCulture)));
+            }
+        }
+    }
+
+    /// <summary>B25: the seed 7001 restoration's nine words (seed7001-words.json), or null where the samples lack it.</summary>
+    public static WordTree? SeedWord()
+    {
+        var path = Path.Combine(JumbleFolder(), "seed7001-words.json");
+        return File.Exists(path) ? WordTree.Read(File.ReadAllText(path)) : null;
+    }
+
+    /// <summary>B25: a sample state's N, lattice and ν row from its totals, or null without them.</summary>
+    public static WordState? StateAfter(string state)
+    {
+        var path = Path.Combine(JumbleFolder(), state, "totals.json");
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var nu = document.RootElement.GetProperty("nu");
+        var on = nu.GetProperty("result").GetString() != "undefined";
+        return new WordState(document.RootElement.GetProperty("N").GetInt64(), on,
+            on ? nu.GetProperty("nu").EnumerateArray().Select(v => v.GetInt32()).ToArray() : null);
+    }
 
     /// <summary>A named cap's twelve release checks (B10) from the bound sample's record of the cap; none without one.</summary>
     public static IReadOnlyDictionary<int, TwistCheck> TwistChecks(int cap)
@@ -551,7 +586,21 @@ internal sealed partial class D02Driver : Node
         {
             // B12: gives keyboard focus to a control of Local's sections by name, as a click on it does.
             _doing = "focus " + focus.GetString();
-            if (ShellJumble.Host?.Surface.FindChild(focus.GetString()!, true, false) is Control target)
+            // B25: a control of a dock panel (the Word panel) is found in the frame, opening its dock first.
+            if (focus.GetString() == WordPanel.PanelId && ShellJumble.Host is { } wordHost)
+            {
+                // The first focus opens the left dock; once the panel is on screen, a focus takes it.
+                if (wordHost.Words.IsVisibleInTree())
+                {
+                    wordHost.Words.GrabFocus();
+                }
+                else
+                {
+                    _frame.Model.ShowDock(DockSide.Left, WordPanel.PanelId);
+                    _doing += " (dock opened)";
+                }
+            }
+            else if (ShellJumble.Host?.Surface.FindChild(focus.GetString()!, true, false) is Control target)
             {
                 target.GrabFocus();
             }
@@ -708,6 +757,17 @@ internal sealed partial class D02Driver : Node
                     json.WriteStringValue(FocusLayers.KeyText(layer));
                 }
                 json.WriteEndArray();
+                json.WriteEndObject();
+            }
+            // B25: the Word panel's lines: the commit bar's length, the counter, the state, the signature, the log tab
+            // and the crossing sentence.
+            if (ShellJumble.Host is { } worded)
+            {
+                json.WriteStartObject("word");
+                foreach (var (key, value) in worded.Words.Lines())
+                {
+                    json.WriteString(key, value);
+                }
                 json.WriteEndObject();
             }
             json.WriteNumber("cancels", _cancels);

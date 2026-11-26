@@ -69,11 +69,26 @@ class SampleTests(unittest.TestCase):
         self.assertEqual(set(self.index['not_built']), {'contact.json', 'hidden-piece masks'})
 
     def test_every_file_listed_exists_and_nothing_else(self):
-        listed = {'states.json', 'corrections.json', 'cap-layout.json', 'meeting-caps.json'}
+        listed = {'states.json', 'corrections.json', 'cap-layout.json', 'meeting-caps.json', 'seed7001-words.json'}
         for row in self.index['states']:
             listed |= {f"{row['state']}/{name}" for name in row['files']}
         present = {str(p.relative_to(SAMPLES)).replace('\\', '/') for p in SAMPLES.rglob('*') if p.is_file()}
         self.assertEqual(present, listed)
+
+    def test_seed7001_words_are_the_word_files(self):
+        """B25: the stored word's nine parts are the tutorial runner's word files, chained, ending solved."""
+        words = read('seed7001-words.json')
+        runner = ROOT / 'research' / 'jumbling' / 'restoration' / '13-tutorial-runner' / 'runs' / 'depth10-seed7001' / 'words'
+        self.assertEqual(words['format'], FORMAT)
+        self.assertEqual(len(words['parts']), 9)
+        for k, part in enumerate(words['parts']):
+            source = json.loads((runner / f'{k:05d}.json').read_text(encoding='utf-8'))
+            self.assertEqual((part['letters'], part['input_digest'], part['output_digest']),
+                             (source['word'], source['input_digest'], source['output_digest']))
+            self.assertEqual(part['after'], f's7001-{k + 1}')
+            if k:
+                self.assertEqual(part['input_digest'], words['parts'][k - 1]['output_digest'])
+        self.assertEqual(words['parts'][-1]['output_digest'], words['solved_digest'])
 
     def test_digests(self):
         wj = json.loads(WJ.read_text(encoding='utf-8'))['stages']

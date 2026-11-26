@@ -1,0 +1,85 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "seed7001",
+  "note": "B25: the seed 7001 restoration's nine words played in the Word panel by keys: two parts forward, the third opened and stepped twist by twist, then the rest to solved. Each step's state digest is the word file's own, and at solved the crossing sentence shows with its reachability.",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "focus": "jumble.word"
+    },
+    {
+      "wait_ms": 500
+    },
+    {
+      "focus": "jumble.word"
+    },
+    {
+      "wait_ms": 500
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Right"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "wait_ms": 1000
+    }
+  ]
+}

@@ -280,6 +280,44 @@ def expect_focus_layer(dumps: list[dict], source: dict, state: str | None) -> li
     return problems
 
 
+def expect_seed7001(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B25's seed7001 script: the Word panel plays the nine words by part and, in an opened part, by twist; after each
+    played part the state digest is that word file's output digest and N is the sample's; the commit bar's line gives
+    the exact length and alphabet; the signature is undefined (the word starts off the lattice); at solved the log tab
+    shows N = 0 and the crossing sentence shows with its reachability."""
+    words = load(SAMPLES / "seed7001-words.json")
+    parts = words["parts"]
+    played = [dump for dump in dumps if dump["do"] == "wait 300 ms" and isinstance(dump.get("word"), dict)]
+    if len(played) != 10:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    first = played[0]["word"]
+    if first["length"] != f"{len(parts)} twists · alphabet {words['alphabet']}":
+        problems.append(f"the commit bar's line reads {first['length']!r}")
+    if not first["signature"].startswith("35 slots undefined"):
+        problems.append(f"the off-lattice word's signature reads {first['signature']!r}")
+    counters = [dump["word"]["counter"] for dump in played]
+    wanted = ["part 1 of 9", "part 2 of 9", "part 3 of 9, twist 0 of 1", "part 3 of 9"] + [f"part {k} of 9" for k in range(4, 10)]
+    if counters != wanted[:len(counters)]:
+        problems.append(f"the counters read {counters}")
+    done = [1, 2, 2, 3, 4, 5, 6, 7, 8, 9]
+    for dump, k in zip(played, done):
+        if dump["word"]["digest"] != parts[k - 1]["output_digest"]:
+            problems.append(f"after {dump['word']['counter']} the digest is not {parts[k - 1]['file']}'s output")
+        n = load(SAMPLES / parts[k - 1]["after"] / "totals.json")["N"]
+        if not dump["word"]["state"].startswith(f"N {n:,} "):
+            problems.append(f"after {dump['word']['counter']} the state reads {dump['word']['state']!r}, not N {n:,}")
+    last = played[-1]["word"]
+    if last["log"] != "Log tab: N = 0 · no residual ticks":
+        problems.append(f"the solved log tab reads {last['log']!r}")
+    if not last["crossing"].startswith("On the lattice, ν = 0: labels pass to 600-cell-Full"):
+        problems.append(f"the crossing sentence at solved reads {last['crossing']!r}")
+    if any(dump["word"]["crossing"] for dump in played[:-1]):
+        problems.append("the crossing sentence showed before solved")
+    print(f"seed7001: {' -> '.join(c for c in counters)}; end {last['state']}")
+    return problems
+
+
 # The wheel zoom (owner, 26 November 2026: "我现在没法zoom in"): wheel up zooms in, one notch multiplies the zoom by
 # 1.1, and the zoom stays within 0.5 to 4 times the opening's. The core multiplies the projected picture by the zoom
 # (geometry.hlsl), so a larger zoom sent is a larger picture.
@@ -596,7 +634,7 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
 
 EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
           "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
-          "focus-layer": expect_focus_layer}
+          "focus-layer": expect_focus_layer, "seed7001": expect_seed7001}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
 ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer"}

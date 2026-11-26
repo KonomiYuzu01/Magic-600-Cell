@@ -99,11 +99,11 @@ public sealed partial class CapCoversList : VBoxContainer
             AddChild(grid);
         }
         // Subscribed while in the tree: a frame rebuild takes the view out and puts it back.
-        TreeEntered += () => { inspect.Changed += Show; Show(); };
-        TreeExiting += () => inspect.Changed -= Show;
+        TreeEntered += () => { inspect.Changed += Refill; Refill(); };
+        TreeExiting += () => inspect.Changed -= Refill;
     }
 
-    private void Show()
+    private void Refill()
     {
         if (!IsInstanceValid(this)) return;
         inspected.Text = inspect.Line(map());
@@ -195,8 +195,8 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
             AddChild(more);
             if (expanded) AddChild(Line(list.CoverageLine() ?? "", "text.dim", "RepairCoverage"));
         }
-        TreeEntered += () => { list.Changed += Show; scrub.Changed += Show; Show(); };
-        TreeExiting += () => { list.Changed -= Show; scrub.Changed -= Show; };
+        TreeEntered += () => { list.Changed += Refill; scrub.Changed += Refill; Refill(); };
+        TreeExiting += () => { list.Changed -= Refill; scrub.Changed -= Refill; };
     }
 
     private Label Line(string text, string role, string name)
@@ -222,7 +222,7 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
     }
 
     // The focused row's outline follows the state roles; its steps' label shows under the rows.
-    private void Show()
+    private void Refill()
     {
         if (!IsInstanceValid(this)) return;
         TokenSet t = tokens();
@@ -286,12 +286,12 @@ public sealed partial class RepairStageBar : HBoxContainer
         remove.Name = "StageRemove";
         remove.Pressed += () => { if (stage.Word.Spans.LastOrDefault() is { } span) stage.Remove(span.Start); };
         AddChild(word); AddChild(bar); AddChild(remove);
-        TreeEntered += () => { stage.Changed += Show; Show(); };
-        TreeExiting += () => stage.Changed -= Show;
-        Show();
+        TreeEntered += () => { stage.Changed += Refill; Refill(); };
+        TreeExiting += () => stage.Changed -= Refill;
+        Refill();
     }
 
-    private void Show()
+    private void Refill()
     {
         if (!IsInstanceValid(this)) return;
         TokenSet t = tokens();

@@ -396,6 +396,7 @@ class Builder:
                 self.state(e, f's7001-{k + 1}', f'{S7001_WORDS}/{k:05d}.json applied to s7001-{k}',
                            word['output_digest'], full=False)
             assert words[-1]['output_digest'] == SOLVED
+            self.put('seed7001-words.json', seed7001_words(s7001, words))
 
             for cid in CORRECTIONS:
                 e.start(menu)
@@ -446,6 +447,16 @@ def apply_correction(engine, identity, word):
 
 
 ID_LISTS = ('collateral_ids', 'others_changed_ids', 'pose_changed_ids')
+
+
+def seed7001_words(s7001, words):
+    """B25: the seed 7001 restoration as a stored word of nine named parts, each with its letters and the digests of
+    the states before and after it, read from the tutorial runner's word files."""
+    return {'format': FORMAT, 'name': 'seed 7001 restoration', 'alphabet': s7001['menu'], 'source': S7001_WORDS,
+            'start': 's7001-0', 'solved_digest': SOLVED,
+            'parts': [{'name': f'word {k + 1}', 'file': f'{k:05d}.json', 'letters': word['word'],
+                       'input_digest': word['input_digest'], 'output_digest': word['output_digest'],
+                       'after': f's7001-{k + 1}'} for k, word in enumerate(words)]}
 
 
 def slim_check(row):

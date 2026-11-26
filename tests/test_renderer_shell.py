@@ -1630,7 +1630,9 @@ class D02Host(unittest.TestCase):
         self.assertEqual(host.count("SetUndefined("), 2)
         # The host adds one panel to the existing bottom dock, and the Focus layer editor to the right dock (owner,
         # 26 November 2026: the 0.4 Piece Filter in the default view), and no layout and no command.
-        self.assertEqual(host.count("AddDockPanel("), 2)
+        # B25 adds the Word panel to the left dock beside the Library.
+        self.assertEqual(host.count("AddDockPanel("), 3)
+        self.assertIn('frame.AddDockPanel(DockSide.Left, WordPanel.PanelId, "Word", "panel.history", Words);', host)
         self.assertIn('frame.AddDockPanel(DockSide.Right, FocusLayerEditor.PanelId, "Focus layer", "layer.cycle", FilterEditor);', host)
         for word in ("AddLayout", "Commands.", "Invoke("):
             self.assertNotIn(word, host)
@@ -2080,6 +2082,36 @@ class D02FocusLayer(unittest.TestCase):
         self.assertEqual(len(run.expect_focus_layer(dumps(first_line="120,000 of 177,120 pieces"), {}, "wj-ia-300")), 1)
         self.assertEqual(len(run.expect_focus_layer(dumps(final="= height >= 4 · 3,128"), {}, "wj-ia-300")), 1)
         self.assertTrue((SHELL / "d02_scripts" / "focus-layer.json").is_file())
+
+
+class D02Words(unittest.TestCase):
+    """B25: the seed7001 script's expectation follows the word files and the sample totals, part by part."""
+
+    def test_the_seed7001_expectation_follows_the_word_files(self):
+        run = shell_module("d02_run")
+        words = json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / "seed7001-words.json"))
+        parts = words["parts"]
+        self.assertEqual(len(parts), 9)
+        self.assertEqual(parts[-1]["output_digest"], words["solved_digest"])
+        done = [1, 2, 2, 3, 4, 5, 6, 7, 8, 9]
+        counters = ["part 1 of 9", "part 2 of 9", "part 3 of 9, twist 0 of 1", "part 3 of 9"] + [f"part {k} of 9" for k in range(4, 10)]
+
+        def dumps(crossing_early=False, digest_shift=0):
+            out = [{"do": "start", "lines": []}]
+            for i, (k, c) in enumerate(zip(done, counters)):
+                n = json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / parts[k - 1]["after"] / "totals.json"))["N"]
+                solved = i == len(done) - 1
+                out.append({"do": "wait 300 ms", "lines": [], "word": {
+                    "length": "9 twists · alphabet I_a", "counter": c, "state": f"N {n:,} · state x",
+                    "signature": "35 slots undefined (the word leaves the lattice) · 9 twists · alphabet I_a",
+                    "log": "Log tab: N = 0 · no residual ticks" if solved else f"Log tab: undefined band · N {n:,}",
+                    "crossing": "On the lattice, ν = 0: labels pass to 600-cell-Full (reachable)" if solved or (crossing_early and i == 3) else "",
+                    "digest": parts[min(8, k - 1 + digest_shift)]["output_digest"]}})
+            return out
+        self.assertEqual(run.expect_seed7001(dumps(), {}, None), [])
+        self.assertTrue(any("before solved" in p for p in run.expect_seed7001(dumps(crossing_early=True), {}, None)))
+        self.assertTrue(any("digest" in p for p in run.expect_seed7001(dumps(digest_shift=1), {}, None)))
+        self.assertTrue((SHELL / "d02_scripts" / "seed7001.json").is_file())
 
 if __name__ == "__main__":
     unittest.main()

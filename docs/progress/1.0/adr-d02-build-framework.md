@@ -878,8 +878,12 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B6.
-
-### B26. The ν band and ν-corrections
+- **As built (26 November 2026):**
+  - The seed 7001 word is the sample `seed7001-words.json`, which `make_d02_samples.py` puts from the tutorial runner's word files. Its nine words are one twist each, so the restoration is nine twists long.
+  - `Model/JumbleWords.cs`: `WordTree` (folded in word order, parts checked to chain), `WordPlayback` (by part, twist by twist in an opened part, numerals only above the bound), `LongWordBound` (10,000, labelled as X3's placeholder), the crossing sentence, `WordSignature` and `LogTabMark`.
+  - A lattice-to-lattice word's 35 slots are pending until the build ships their data; its ν row shows. A word that leaves the lattice shows the undefined numeral in all 35.
+  - Departure: the word plays in a Word panel in the left dock (`Ui/WordPanel.cs`), not in `DraftLine.cs` and `LibraryPanel.cs`. The product shell has no Library panel of its own yet, and K2 wires the real commit bar. The panel shows the commit bar's line (length and alphabet), the folded tree, the counter, the state after each part (N and digest from the samples), the signature, the log tab's mark and the crossing sentence with its reachability.
+  - Checks: the four console tests; `d02_run.py --script seed7001` PASS (each part's digest is its word file's output, N from the sample totals, solved at the end). The ν band and ν-corrections
 - **Goal:** the band beside the rail at N = 0, and the Built-in branch.
 - **Items:** .28, .39.
 - **Files:** new `Model/NuBand.cs`, `Ui/NuBand.cs`, `Ui/OrbitRail.cs`, `Model/Library.cs`, `Ui/LibraryPanel.cs`, `tests/D02NuTests.cs`.
