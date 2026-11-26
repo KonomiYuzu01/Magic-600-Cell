@@ -1303,13 +1303,28 @@ Each checkpoint is one read of the named diff range against the questions below,
   preset (the 20 rings, the ring sheet, the Hopf rings), Local, the cut slice, the raw view, the tints and the overlays. For each
   view it asks whether a researcher can see the structure the research needs (contact classes, caps, the cut, what moves, what
   never hides, the ν band), and whether anything is drawn wrong, unreadable or misleading.
+- With the core functions (owner, 26 November 2026, about 22:10 UTC: on the research side, one main purpose of Script is to
+  solve visual problems): Fable judges each view together with piece filtering and Script, not the default drawing alone.
+  - Piece filtering: focus layers with `=` expressions (`PieceFilter.cs`, ADR-D01.46, G21), Query and Piece sets.
+  - Script: `.6cs` read programs through the shell's editor and runtime; every research row is callable from a script
+    (ADR-D02.1).
+  - Fable writes the filters and short read-only scripts a researcher would write and runs them in the product window: for
+    example the straddlers of a named cap, the off-lattice pieces of height at least k, a repair row's moving set, one domain
+    against another. It checks that both views show each result readably: focus, dimming, tint, overlay and counts.
+  - A problem a filter or a script solves well counts as solved when the path works and a researcher can find it. A broken or
+    missing path is functional: a script result that cannot reach the focus layers, tints or overlays, an `=` field the research
+    needs that is missing, a result that is not drawn, or one that cannot be read. A route the ADRs do not name goes on the freeze
+    card as a proposal and is not built silently.
+  - Fable's working filters and scripts are kept as examples for B32 and B33's researcher run.
+  - The boundaries hold: a program reads state or prepares previews (LQ21's capability separation), and the human-solve boundary
+    holds in solving sessions.
 - Output: every visual problem found, each marked `functional` or `taste`.
   - Functional: the structure cannot be seen or operated (rotate, pick, focus), is drawn wrong, or misses the frame-rate rows. All
     are fixed in the one build round before the two Astra rounds. The base puzzle's sticker pick (ADR-D01.40, host
     `resolve_sticker`) counts here.
   - Taste: colour values, materials, motion and polish. They are recorded for K2's art line (UI/UX freeze rounds 3 and 4) and are
     not fixed in D02.
-- The freeze card shows the owner the list once, with what was fixed, to confirm. The owner is not asked to look for problems.
+- The freeze card shows the owner the list once, with what was fixed and the proposed routes, to confirm. The owner is not asked to look for problems.
 - The freeze card also lists, for the owner's acceptance with ADR-D02: the draft command rows (`camera.link`, Local's auto-framing
   switch, `jumble.seat.hold`, XM1 and G6, `research.record.read`, the researcher-name write, `tuning.open` and the rest of
   `command-rows-d02.json`), the design slots `tint.jumble.off_lattice` and `line.jumble.overlay` (each adds a name to ADR-D01's
