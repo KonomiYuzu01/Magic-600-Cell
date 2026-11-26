@@ -884,6 +884,11 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B16, B18, B18c. CR-14.
+- **As built (partial, 26 November 2026):**
+  - Landed: the chrome model `CutSlice` in `Model/JumbleViews.cs`: the held split through `ViewPanes.Split`, the shell control, the preview that names the twist on release only, and the blocked cap's refusal. Its three console tests are in `tests/D02ViewTests.cs`.
+  - Held key placeholders, both row requests: `Backslash` for the split and `Down` for the preview. `S` is seat 4 in the keymap and `G` is `view.global`.
+  - Not landed: the core slice (ABI 10's `sa2_view_style` growing to 348 bytes, `SA2_STYLE_CHANNEL_SLICE`, `styled.hlsl`'s `sliceVs`) and the shell wiring (`D02/ShellSlice.cs`, the `slice` script). They stay uncommitted in the drawing worktree.
+  - Why not landed: `check_core.py --slice` passes on WARP, but the first product run that drew the slice on hardware raised a GPU timeout on the RTX 4070 (nvlddmkm 14 and 153, 23:15:55 UTC). The defect is not yet found. Lead: the shell test draws stickers that the cap test used to cull, and Local's projection `d4 * xyz / (d4 - w)` can make them very large.
 
 ### B21. The raw view
 - **Goal:** `view.mode.raw` in Local, with the antipode chart side by side.

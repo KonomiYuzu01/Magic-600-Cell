@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Magic600.Chrome;
@@ -40,4 +41,99 @@ public static class JumbleViews
 
     // A Tier 1 line with the unavailable state at its end, while Jumble is on; an empty line stays empty.
     public static string Tier1(string line, JumbleState state) => line.Length > 0 && Exposed(state) is { } words ? line + " · " + words : line;
+}
+
+// ADR-D02.17 (build step B20): the cut slice, Local's overlay. Local draws the outside layer filled and the inside
+// layer (the cap's inside set) as outlines at a smaller shrink, clipped to a radius shell about the cap's pole; Global
+// keeps its chain or chart. A held key splits Local into two linked copies of one view: the left draws the outside
+// layer, the right the inside layer, with the same camera, scale and shell; release returns to one pane. A second
+// held key previews the cap's twist as a ghost of the inside layer (pattern.preview) and names the twist on release
+// only. A blocked cap has no ghost and no cut-cell state, only its straddlers (B16's trace) with their point pairs.
+public sealed record SliceShell(double Min, double Max);
+
+// One drawn pane of Local under the slice: its opening and what the core draws there.
+public sealed record SlicePane(PaneSpec Pane, SliceLayer Layer, SliceShell Shell, double Shrink);
+
+public enum SliceLayer { Both = 1, Outside = 2, Inside = 3 }
+
+// The twist a released preview names: the cap, the menu item and the certified angle.
+public sealed record NamedTwist(int Cap, int Item, double Angle);
+
+public sealed class CutSlice
+{
+    // The inside layer's shrink factor (times the view's sticker shrink) and the shell's default and step, in radians
+    // about the pole. The cut of a cap lies at about 0.25 rad (121/125); the default shell shows one layer beyond it.
+    public const double Shrink = 0.6, ShellStep = 0.05, ShellLimit = Math.PI;
+    public static readonly SliceShell DefaultShell = new(0, 0.6);
+
+    // The held keys, placeholders free in the keymap (row requests: CR-14's held split and the turn preview; S is
+    // seat 4 and G view.global there).
+    public const string SplitKey = "Backslash", PreviewKey = "Down";
+
+    public bool Split { get; private set; }
+    public SliceShell Shell { get; private set; } = DefaultShell;
+    public NamedTwist? Previewing { get; private set; }
+    public NamedTwist? Named { get; private set; }
+    public string? Refusal { get; private set; }
+
+    public void HoldSplit() => Split = true;
+    public void ReleaseSplit() => Split = false;
+
+    // The shell control: widen or narrow its outer radius, never below its inner one nor past pi.
+    public SliceShell Widen(int steps)
+    {
+        var max = Math.Clamp(Shell.Max + steps * ShellStep, Shell.Min + ShellStep, ShellLimit);
+        Shell = Shell with { Max = Math.Round(max, 6) };
+        return Shell;
+    }
+
+    // Pressing the preview key at the cap Local draws: a twist row (an admissible cap) starts the ghost; a blocked cap
+    // (no row) has none and says why. Nothing is named while the key is held.
+    public bool Press(int cap, double? angle)
+    {
+        Refusal = null;
+        if (angle is not double a)
+        {
+            Previewing = null;
+            Refusal = $"Cap {cap} is blocked: no turn preview, only its straddlers.";
+            return false;
+        }
+        Previewing = new NamedTwist(cap, 1, a);
+        return true;
+    }
+
+    // Releasing the preview key names the previewed twist, once; a release with no preview names nothing.
+    public NamedTwist? Release()
+    {
+        var named = Previewing;
+        Previewing = null;
+        if (named is not null) Named = named;
+        return named;
+    }
+
+    // The ghost is drawn only while a preview is held at an admissible cap.
+    public bool Ghost => Previewing is not null;
+
+    // Local's panes: one slice pane, or the held split's two linked copies of the same view.
+    public IReadOnlyList<SlicePane> Panes(PaneSpec local)
+    {
+        if (!Split) return new[] { new SlicePane(local, SliceLayer.Both, Shell, Shrink) };
+        var halves = ViewPanes.Split(local);
+        return new[]
+        {
+            new SlicePane(halves[0], SliceLayer.Outside, Shell, Shrink),
+            new SlicePane(halves[1], SliceLayer.Inside, Shell, Shrink),
+        };
+    }
+
+    // Local's line: the layers, the shell and what the keys do now.
+    public string Line(int? cap, bool blocked)
+    {
+        var shell = $"shell {Shell.Min:0.00}–{Shell.Max:0.00} rad";
+        if (cap is not int c) return "";
+        if (blocked) return $"Cut slice at cap {c} (blocked): straddlers only, no ghost · {shell}";
+        var keys = Split ? "outside | inside (release " + SplitKey + " to join)" : "hold " + SplitKey + " to split, " + PreviewKey + " to preview the twist";
+        var named = Named is { } n ? $" · named: cap {n.Cap} twist {n.Item}" : "";
+        return $"Cut slice at cap {c}: outside filled, inside outlined · {shell} · {keys}{named}";
+    }
 }
