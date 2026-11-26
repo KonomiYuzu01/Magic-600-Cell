@@ -2,8 +2,8 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
-## [2026-11-26] decision | ADR-D02's build framework: product shell, researcher subagent, wait
-The owner answered three questions on ADR-D02's build framework: build, watch and accept in the product shell with Look Lab dropped and Jumble drawing built now, add one lean researcher subagent to J0 and J1, and wait before B1 ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md)). Fable's revision 2 of the framework has 33 steps, six checkpoints and two gate sittings.
+## [2026-11-26] decision | ADR-D02's build framework: product shell, two views, researcher subagent, wait
+The owner answered five questions on ADR-D02's build framework, on two cards: build, watch and accept in the product shell with Look Lab dropped and Jumble drawing built now; add one lean researcher subagent to J0 and J1; draw two views, Global and Local, at once; build and measure the drawing before R5; and wait before B1 ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md)). Fable's revision 2 of the framework, with the two-view steps, has 36 steps, six checkpoints and two gate sittings.
 
 ## [2026-11-26] decision | ADR-D02: open research and the A4 picks
 The owner made open research ADR-D02's core (25 November 2026) and answered A4 with every recommended option except item 9, Q3.b, taken as the owner's reading of the frozen J-7 and N-1, and item 12c, the base targets: at most 3,000 hours of real time for a true expert's full solve without jumbling, and substantive progress on restoration theory for the jumbled puzzle ([decision](decisions/owner-decisions-2026-11-26-adr-d02-a4.md)).

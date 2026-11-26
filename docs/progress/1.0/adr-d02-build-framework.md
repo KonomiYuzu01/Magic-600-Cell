@@ -3,7 +3,9 @@
 Status: revision 2, written by Fable as a subscription subagent on 26 November 2026 after the owner's three answers of
 the same day ([decision](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-build.md)). The build, the owner's
 view and every acceptance check are in the product shell, with Look Lab dropped and Jumble drawing built in this build.
-J0 and J1 gain one lean researcher subagent. B1 waits for the owner's go. Revision 2 replaces revision 1
+J0 and J1 gain one lean researcher subagent. On a second card the owner chose two drawn views, Global and Local at
+once, and let the drawing be built and measured before R5. Fable's addition for the second view is spliced in: steps
+B18a to B18c, gate rows G9 to G11, and findings F15 to F18. B1 waits for the owner's go. Revision 2 replaces revision 1
 (commit `8f39b4d5`: 23 steps in Look Lab's chrome library with a live Look Lab window).
 
 Owner decision behind the framework: [25 November 2026](../../wiki/decisions/owner-decisions-2026-11-25.md), item 5.
@@ -18,10 +20,10 @@ relative path is from the repository root.
 
 ## 1. Overview
 
-**Shape (33 steps, 6 checkpoints, 2 gate sittings).**
+**Shape (36 steps, 6 checkpoints, 2 gate sittings).**
 1. B1 to B6, foundations: adapter samples, design data, host primitives, the shell's D02 switch and scripted runner, session fixtures at the sample states, the Jumble host.
 2. B7 to B13, the Solve side: totals, cap map, threshold and naming, twist checks, covers, repair list, staging and the boundary.
-3. B14 to B19, drawing part 1 in the core: the style path, tints on pieces, line overlays, picks, the sweep, gate sitting 1.
+3. B14 to B19, drawing part 1 in the core: the style path, tints on pieces, line overlays, picks, the sweep, two drawn views (B18a to B18c), gate sitting 1.
 4. B20 to B24, drawing part 2: the cut slice, the raw view, the two chart presets, gate sitting 2.
 5. B25 to B31: words, the ν band, keys and terms, the research pane, the tuning panel.
 6. B32 and B33: the reduced Track J run, with one lean researcher subagent.
@@ -33,7 +35,7 @@ relative path is from the repository root.
   - `Ui/JumbleSurface.cs` is the one assembly point the shell calls.
 - **Product shell** (`renderer/shell/`): the build surface, the owner's view and every acceptance check. D02 wiring goes in a new folder `renderer/shell/project/D02/`.
 - **Host library** (`renderer/bridge/host`): the state digest, session fixtures at arbitrary words, and the style, overlay, pick and stage calls.
-- **Core** (`renderer/core`): the drawing itself, on the product pose path that already draws posed pieces (row J02).
+- **Core** (`renderer/core`): the drawing itself, on the product pose path that already draws posed pieces (row J02). From B18a, one composite frame draws up to four panes on one surface with one present, so Global and Local are drawn at once.
 - **Facts:** the chrome reads sample files through `IJumbleSource`. K2 later binds the same interface to `m6h_invoke`. The session is real: after a twist the state has no sample, so slots go stale until an undo returns to it.
 
 **How the owner watches.**
@@ -282,7 +284,7 @@ relative path is from the repository root.
 - **Add:**
   - Core ABI 6, additive:
     - `sa2_style_set(ctx, revision, const uint8_t* piece_style, uint32_t channel)`: one byte per piece, two channels (fill tint index, outline index), bound to a revision as the pose arrays are;
-    - `sa2_view_style(ctx, view, const sa2_view_style*)`: tint mode, dim mode, a 16-entry palette, a 3×3 output colour matrix.
+    - `sa2_view_style(ctx, view, const sa2_view_style*)`: tint mode, dim mode, a 16-entry palette, a 3×3 output colour matrix. Its `view` argument is a style slot (1 to 4) that a pane names (B18a), since the held split needs two styles on one view.
   - One precompiled product pipeline variant. The existing pipeline is unchanged when no style is set.
   - Host exports `m6h_set_piece_style` and `m6h_set_view_style` (ABI 9). The host expands per-pose sample arrays to pieces with the session's own `pose_index`.
   - Self-test mode `--style`, modelled on `--poses`, on WARP.
@@ -318,7 +320,7 @@ relative path is from the repository root.
 - **Items:** .26.
 - **Files:** core (`sa2_interop.h`, `src/product.cpp`, `src/scene.cpp`, new `shaders/lines.hlsl`, `src/selftest.cpp`); the bridge table; host `src/lib.rs`; `ShellJumble.cs`; `tests/test_renderer_core.py`.
 - **Add:**
-  - `sa2_lines_set(ctx, view, layer, const float* points4, count, style)`: line lists in four dimensions through the frame's chain, at most four layers. Host export `m6h_set_lines`.
+  - `sa2_lines_set(ctx, view, layer, const float* points4, count, style)`: line lists in four dimensions through the frame's chain, at most four layers. Host export `m6h_set_lines`. As in B14, `view` is a style slot that a pane names.
   - Layers:
     - the named cap's cut trace, constant per cap, from the engine's cut (J04);
     - certificate glyph pairs, off until its gate row and the owner's acceptance; the count shows in their place;
@@ -356,6 +358,124 @@ relative path is from the repository root.
 - **Checkpoint:** no.
 - **Depends:** B14, B16.
 
+**Two drawn views (B18a to B18c), added for the owner's answer of 26 November 2026.** Design: one surface, one present, several panes.
+- The core's surface covers the bounding rectangle of the drawn openings.
+- A composite frame clears once, draws each pane in its own rectangle and presents once.
+- The gate is still read from one `presented` row per frame.
+- Two surfaces are not used: that would mean two presents per refresh and two ledgers (F15).
+- ABI numbers: core 7 and host 10, or the next free numbers if B16 to B18 moved them.
+
+### B18a. The composite frame in the core
+- **Goal:** one frame draws up to four panes at one revision; a pick resolves its pane.
+- **Items:** none; feature-matrix row F27 (further views), as a candidate.
+- **Files:**
+  - `renderer/core/include/sa2_interop.h`, `src/product.cpp`, `src/product.h`, `src/scene.cpp`, `src/frame_target.h`, `src/selftest.cpp`, `check_core.py`, `PROVENANCE.md`;
+  - `renderer/shell/project/CoreLibrary.cs` (the version pin);
+  - `tests/test_renderer_core.py`.
+- **Add:**
+  - `SA2_PANES_MAX 4`.
+  - `struct sa2_pane { uint64_t view, view_generation, resource_set; int32_t x, y; uint32_t width, height; float camera_matrix[16]; uint32_t style; uint32_t flags; }`.
+  - `sa2_frame_submit_panes(ctx, const sa2_frame_input* frame, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id)`. Rules:
+    - one clear of the whole target, one draw per pane with viewport and scissor at its rectangle, one present, one frame id;
+    - rectangles lie inside the target and do not overlap;
+    - a count of 0 or above 4 is refused;
+    - every pane's resource set must belong to the frame's engine revision, else the whole frame is refused.
+  - `sa2_frame_panes(ctx, frame_id, rows, capacity, out_count)`: per pane, its view, generation and vertex evaluations. The frame report's `view_vertex_evals` is the sum.
+  - `sa2_pick_request` on a composite frame takes target coordinates and draws the ID pass with the camera, set and viewport of the pane that contains the point.
+    - A point in no pane is refused.
+    - The reply names that pane's view.
+    - Only a newer generation of that view makes the reply stale.
+  - A CPU self-test `pane arguments`, and a WARP mode `--panes` modelled on `--poses`.
+- **Check:** `python renderer/core/check_core.py --panes`:
+  - one pane covering the target is byte-identical to `sa2_frame_submit` of the same input;
+  - each of two panes matches a one-view frame drawn at the pane's size (at most 1% of covered pixels differ by more than 2);
+  - pixels outside every pane hold the clear colour;
+  - overlap, a fifth pane and a mixed revision are refused;
+  - a pick in each pane returns that pane's view and the instance a one-view pick returns;
+  - the two-pane frame's vertex evaluations equal the sum of the two one-view frames'.
+
+  Plus `python tests/test_renderer_core.py`.
+- **Owner sees:** nothing new.
+- **Machine:** H (WARP).
+- **Checkpoint:** no.
+- **Depends:** B14, B17.
+
+### B18b. Two views in the bridge and the host
+- **Goal:** the host opens Local, publishes both views from one adoption, and never frames two revisions.
+- **Items:** none new.
+- **Files:**
+  - `rust/c600-render/src/abi.rs`, `backend.rs`, `fake.rs`, `tests/abi_layout.rs`;
+  - `renderer/bridge/src/lib.rs`, `tests/ffi.rs`, `tests/abi_functions.rs`;
+  - `renderer/bridge/host/src/lib.rs`, `src/turns.rs`, `tests/c_api.rs`, `tests/view.rs`;
+  - `renderer/shell/project/HostLibrary.cs`;
+  - `tests/test_renderer_shell.py`.
+- **Start by reading** whether `c600_display`'s host already keeps a second view id with its own publication.
+- **Add:**
+  - `LOCAL: ViewId = ViewId(2)` beside `VIEW` (`renderer/bridge/host/src/lib.rs:161`).
+  - Exports:
+    - `m6h_open_local(handle)`;
+    - `m6h_set_view_camera(handle, view, matrix)`;
+    - `m6h_set_view_visible(handle, view, visible)`: Local can be hidden, never closed;
+    - `m6h_set_pane(handle, pane, view, x, y, width, height, style)`;
+    - `m6h_clear_pane(handle, pane)`.
+  - One revision: at each adoption the host publishes every open view from the same bundle, with a preparation per view (visibility, interaction and instance bytes are per view already). `m6h_frame` submits a composite only when every paned view's active set is at the adopted revision; until then it re-submits the last complete pane list. `M6hFrame` gains the pane count and a `held` flag.
+  - With no pane set, `m6h_frame` takes today's one-view path, so runs without `--d02` are unchanged.
+  - A hidden view gets no pane and no draw.
+  - B17's pick call takes surface coordinates and answers the view with the piece.
+- **Check:** `python tests/test_render_ffi.py` with new host tests:
+  - `two_views_publish_one_revision`;
+  - `a_frame_never_mixes_revisions` (the fake backend delays one view's activation);
+  - `a_hidden_local_adds_no_vertex_evaluations`;
+  - `one_view_frames_are_unchanged` (the fake's call log equals today's);
+  - `a_fifth_pane_is_refused`;
+  - `a_pick_names_the_view_it_hit`.
+- **Owner sees:** nothing new.
+- **Machine:** H.
+- **Checkpoint:** no.
+- **Depends:** B18a.
+
+### B18c. Two openings in the shell, and picks per view
+- **Goal:** Global and Local are both drawn; a click goes to the view it lands in.
+- **Items:** none new (it removes Local's "not drawn yet").
+- **Files:**
+  - new `tools/looklab/app/Chrome/Model/ViewPanes.cs`;
+  - `tools/looklab/app/Chrome/Ui/ChromeFrame.cs`;
+  - `renderer/shell/project/Shell.cs`, `CoreSurface.cs`, `D02/ShellJumble.cs`;
+  - `renderer/shell/README.md`;
+  - new `tools/looklab/tests/D02PaneTests.cs`;
+  - `tests/test_renderer_shell.py`.
+- **Add:**
+  - `ViewPanes`, pure:
+    - `Layout(openings)` gives the surface rectangle (the openings' bounding box) and each pane's rectangle within it;
+    - `MaxPanes = 4`;
+    - `Split(view)` gives two side-by-side panes of one view (used by B20 and B21);
+    - `Hit(point)` gives the view and the point in the surface, or nothing.
+  - With `--d02`, Local's frame is an opening as Global's is.
+  - The surface moves and resizes to the bounding box under today's six-step rule, through the existing `sa2_surface_move` and `sa2_resize` calls only.
+  - The chrome between the openings is opaque.
+  - Camera keys go to the focused view.
+  - Link: Local's rotation centres the named cap's pole; with no cap it copies Global's.
+  - A click resolves through `ViewPanes.Hit`. A reply naming another view is dropped.
+  - The event log's `frame` row gains `panes`.
+- **Check:**
+  - Console tests: `D02PaneLayoutIsBoundingBox`; `D02PanesNeverOverlap`; `D02FifthPaneRefused`; `D02HitResolvesItsView`.
+  - `python renderer/shell/d02_run.py --script two-views` on `wj-ia-300`:
+    - both views name the same revision after each of ten twists and after an undo;
+    - a click in each view selects the expected piece;
+    - `M600_FRAME_PICTURE` is transparent inside both openings and opaque between them.
+  - A `tests/test_renderer_shell.py` case: without `--d02` the launch environment and the shell's core calls are unchanged.
+- **Owner sees:** `watch_d02.py --state wj-ia-300`: Global and Local drawn at once; a twist moves both.
+- **Machine:** H, W.
+- **Checkpoint:** no; C3 follows B19.
+- **Depends:** B18b.
+
+**Frame budget with two views.**
+- *Observation:* a hidden slot is collapsed after its vertex is evaluated (`renderer/core/shaders/product.hlsl:20`), so each pane costs a full vertex pass. Two panes double `view_vertex_evals`; three triple it.
+- *Observation:* the pose arrays are adopted once and shared. Each further view adds only its three per-slot buffers, and the depth and ID targets are the bounding box's size.
+- *Inference:* fragment work does not grow with the pane count, because the panes share one target.
+- *Inference:* one bare view measured about 610 to 670 fps at a p99 of about 1.9 ms with 217 MB of VRAM (`docs/wiki/decisions/renderer-freeze.md:58` to `:61`). Three passes fit 33.3 ms on paper.
+- That is not evidence for this route under the full chrome with styles and lines. G9 to G11 decide.
+
 ### B19. Gate sitting 1
 - **Goal:** gate rows for drawing part 1, on the owner's machine, with the full chrome.
 - **Items:** none; it gives R5 its numbers.
@@ -363,47 +483,63 @@ relative path is from the repository root.
 - **Add:**
   - `gate_d02.py --row <id>` launches with a script and the event log.
   - `gate_row.py` reads `events.jsonl`'s `presented` rows and prints the average rate and the 99th-percentile interval.
-  - Rows:
+  - Rows. With `--d02` the default is two drawn views, so every row runs with both unless it says otherwise:
 
-    | Row | State | Script |
+    | Row | State | Views and script |
     |---|---|---|
-    | G1 | `deep-2` | posed pieces with the contact-class tint, twist sweeps repeating for 60 s |
-    | G2 | `wj-ia-end` | a blocked cap named, with all line layers |
-    | G3 | the one-blocked-grip state the record names | certificate glyphs, at least 1,654 points |
-- **Check:** each row prints `D02_GATE row=<id> fps_avg=<x> p99_ms=<y> vram_gb=<z> pass=<bool>` against 30 fps, 33.3 ms and about 7 GB. A failing row is recorded and goes to the owner; it is never tuned away.
-- **Owner sees:** the three runs, and the certificate glyphs for the owner's acceptance.
-- **Machine:** G. About 30 minutes with the owner at the start.
+    | G1 | `deep-2` | Local hidden, Global with the contact-class tint, twist sweeps repeating for 60 s: the one-view baseline |
+    | G9 | `deep-2` | G1's script with Local shown: the second view's cost |
+    | G2 | `wj-ia-end` | two views, a blocked cap named, with all line layers |
+    | G3 | the one-blocked-grip state the record names (section 6) | two views, certificate glyphs, at least 1,654 points |
+- **Check:** each row prints `D02_GATE row=<id> panes=<n> view_vertex_evals=<v> fps_avg=<x> p99_ms=<y> vram_gb=<z> pass=<bool>` against 30 fps, 33.3 ms and about 7 GB. A failing row is recorded and goes to the owner; it is never tuned away. A failing G9 goes to the owner.
+- **Owner sees:** the four runs, and the certificate glyphs for the owner's acceptance.
+- **Machine:** G. About 35 minutes with the owner at the start.
 - **Checkpoint:** yes, C3.
-- **Depends:** B15 to B18.
+- **Depends:** B15 to B18c.
 
-### B20. The drawn-view switch and the cut slice
-- **Goal:** Local can be the drawn view, and shows the slice.
+### B20. The cut slice in Local
+- **Goal:** the slice as Local's overlay, with the held split as two linked copies.
 - **Items:** .17.
-- **Files:** `Ui/ChromeFrame.cs` (the opening), `renderer/shell/project/Shell.cs`, `ShellJumble.cs`, core `shaders/product.hlsl` and `src/product.cpp`, new `Model/JumbleViews.cs`, `tests/D02ViewTests.cs`.
+- **Files:** core `shaders/product.hlsl` and `src/product.cpp`; new `Model/JumbleViews.cs`; `ShellJumble.cs`; new `tests/D02ViewTests.cs`.
 - **Add:**
-  - The core draws one view (F4). A key moves the opening between Global and Local; the other view's border reads "not drawn: one core view in this build".
-  - Slice mode in `sa2_view_style`: the outside layer filled; the inside layer, from the named cap's inside mask, as outlines at a smaller shrink; a radius-shell clip about the pole.
+  - Slice mode in Local's style slot:
+    - the outside layer filled;
+    - the inside layer, from the named cap's inside mask, as outlines at a smaller shrink;
+    - a radius-shell clip about the pole.
+  - Global keeps its chain or chart.
+  - The held key calls `ViewPanes.Split(Local)`: two panes with the same camera matrix, scale and shell. The left has the outside layer filled; the right has the inside layer in outlines. Release returns to one pane.
   - The turn preview is a ghost of the inside layer with `pattern.preview`; the twist is named on release.
   - At a blocked cap: no ghost, only the straddler sections with their point pairs.
-  - The held split needs two views. The held key instead alternates the two layers, and says so.
-- **Check:** `D02SliceNamesTwistOnReleaseOnly`; `D02BlockedCapHasNoGhost`. `check_core.py --slice` on WARP: outside pieces filled, inside pieces outline only. `d02_run.py --script slice`.
-- **Owner sees:** name a cap, switch to Local: the slice, the shell control, the ghost while a twist key is held.
+- **Check:**
+  - `D02SliceNamesTwistOnReleaseOnly`; `D02BlockedCapHasNoGhost`; `D02SplitCopiesShareRotationScaleShell`.
+  - `check_core.py --slice` on WARP: outside pieces filled and inside pieces outline only; the split panes' pieces together equal the unsplit frame's.
+  - `d02_run.py --script slice`: three panes while the key is held, two after.
+- **Owner sees:** Global whole and Local sliced, side by side; hold the key and Local parts into two linked copies.
 - **Machine:** H, W.
 - **Checkpoint:** no.
-- **Depends:** B16, B18. CR-14.
+- **Depends:** B16, B18, B18c. CR-14.
 
 ### B21. The raw view
-- **Goal:** `view.mode.raw`, the cap-centred stereographic mode of Local.
+- **Goal:** `view.mode.raw` in Local, with the antipode chart side by side.
 - **Items:** .18.
-- **Files:** core (`shaders/product.hlsl` variant, `src/product.cpp`, `src/selftest.cpp`), host `src/lib.rs`, `Model/JumbleViews.cs`, `ShellJumble.cs`.
+- **Files:** core (`shaders/product.hlsl` variant, `src/product.cpp`, `src/selftest.cpp`); host `src/lib.rs`; `Model/JumbleViews.cs`; `ShellJumble.cs`.
 - **Add:**
-  - A precompiled stereographic vertex variant from the named pole, declared through `c600_display::chart::Stereographic`.
+  - A precompiled stereographic variant from the named pole, declared through `c600_display::chart::Stereographic`.
   - The half-space clip x·p̂ ≥ h, default h = (121/125)·inradius, never past 90°.
-  - A static tick for the meeting poles inside the clip.
-  - The antipode chart after −I, with a determinant sign checked at build. Side by side needs two views, so one key alternates the charts, labelled "antipode".
+  - The static tick for the meeting poles.
+  - One key adds the antipode: `ViewPanes.Split(Local)`, with the right pane the pole chart after −I.
+    - It shares the clip and the handedness, with a determinant sign checked at build.
+    - It is labelled "antipode".
+    - At h = 0 each sticker goes to one pane by its anchor, half-open.
   - The caption "No raw view certifies no holes; N = 0 does."
-- **Check:** `check_core.py --raw` on WARP: a twist of the named cap is a rigid rotation about the chart centre; nothing draws past the clip; at h = 0 each sticker draws in exactly one chart. `D02RawCaptionAlwaysShown`; `D02AntipodeNeverSaysMirrored`.
-- **Owner sees:** the named cap's region flat and round; twist it and it turns rigidly.
+- **Check:**
+  - `check_core.py --raw` on WARP:
+    - a twist of the named cap is a rigid rotation about the chart centre in both panes;
+    - nothing draws past the clip;
+    - at h = 0 each sticker draws in exactly one pane.
+  - `D02RawCaptionAlwaysShown`; `D02AntipodeNeverSaysMirrored`; `D02AntipodeSharesClipAndHandedness`.
+  - `d02_run.py --script raw`: three panes with the antipode on.
+- **Owner sees:** the named cap's region flat beside Global; one key adds the antipode chart next to it.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B20. CR-14. Holes drawn as faces wait for the exposed-face geometry.
@@ -413,44 +549,50 @@ relative path is from the repository root.
 - **Items:** .9, .10.
 - **Files:** host `src/lib.rs` (chart assignment), core (per-piece chart index and 600 chart transforms), `Model/JumbleViews.cs`, `ShellJumble.cs`.
 - **Add:**
-  - Per revision, on the CPU in the host: each posed sticker's nearest cell, ties to the lowest cell id.
-  - 20 rows of 30 rigid cell charts from B8's layout, cyclic columns with a wrap mark, the caption "only row neighbours are face neighbours".
-  - Under a chart Global draws no sweep. At a new revision the moved set is outlined for the half-turn row's time.
+  - Per revision, on the CPU in the host, for Global only: each posed sticker's nearest cell, ties to the lowest cell id.
+  - 20 rows of 30 rigid cell charts from B8's layout, cyclic columns with a wrap mark, the caption "only row neighbours are face neighbours". The per-piece chart index and the 600 chart transforms belong to Global's style slot; Local is untouched and keeps its chain, slice or raw mode.
+  - ADR-D02.10 is built whole: under a chart Global draws no sweep, and at a new revision the moved set is outlined for the half-turn row's time; Local sweeps a twist of the named cap; with the slice in Local, a twist of another cap is swept by no view.
   - The palette's chart row applies the ring sheet first; the projection chain stays the default until R5 admits a chart (.8).
-- **Check:** host test `the_chart_assignment_is_nearest_cell_lowest_id`. `check_core.py --chart` on WARP: every piece draws inside its assigned chart's rectangle. `d02_run.py --script ring-sheet`: no sweep rows fire under the preset.
-- **Owner sees:** the deep export as 20 rows of 30 cell charts with tints.
+- **Check:** host test `the_chart_assignment_is_nearest_cell_lowest_id`. `check_core.py --chart` on WARP: every piece draws inside its assigned chart's rectangle. `d02_run.py --script ring-sheet`:
+  - a named-cap twist fires the sweep row in Local only;
+  - a twist of another cap with the slice in Local fires none;
+  - a click in a chart selects the piece its chart shows.
+- **Owner sees:** the deep export as 20 rows of 30 cell charts with tints in Global, while Local turns the named cap.
 - **Machine:** H, W. Record the assignment's time per revision.
 - **Checkpoint:** no.
-- **Depends:** B8, B15. CR-14.
+- **Depends:** B8, B15, B18c. CR-14.
 
 ### B23. Global chart preset: the Hopf rings
 - **Goal:** `view.preset.global.hopf_rings`.
 - **Items:** none new (.9's second preset).
 - **Files:** as B22.
 - **Add:** 20 circles of 30 cells around a dodecahedron's vertices, turning with the camera, with the same assignment and the same no-sweep rule. The palette switches between the two presets at any time.
-- **Check:** `check_core.py --chart hopf` on WARP: the 20 ring centres project to the dodecahedron's vertices. `d02_run.py --script hopf`: switching presets changes no state digest.
+- **Check:** `check_core.py --chart hopf` on WARP: the 20 ring centres project to the dodecahedron's vertices. `d02_run.py --script hopf`: switching presets changes neither a state digest nor Local's panes.
 - **Owner sees:** the same state as rings; switch back and forth.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B22.
 
 ### B24. Gate sitting 2
-- **Goal:** gate rows for the slice, the raw view and both presets, plus the occlusion measure.
+- **Goal:** gate rows for the slice, the raw view, both presets and the three-pane cases, plus the occlusion measure.
 - **Items:** none.
 - **Files:** `renderer/shell/gate_d02.py`, the results page.
 - **Add:**
   - Rows:
 
-    | Row | State | View |
+    | Row | State | Views and script |
     |---|---|---|
-    | G4 | `deep-2` | the slice |
-    | G5 | `deep-2` | the raw view |
-    | G6 | `deep-2` | the ring sheet |
-    | G7 | `deep-2` | the Hopf rings |
+    | G4 | `deep-2` | Global chain, Local slice, twists of the named cap |
+    | G5 | `deep-2` | Global chain, Local raw |
+    | G6 | `deep-2` | Global ring sheet, Local chain carrying the sweeps |
+    | G7 | `deep-2` | Global Hopf rings, Local chain |
+    | G10 | `deep-2` | Global chain, Local slice with the split held for 60 s: three panes |
+    | G11 | `deep-2` | Global ring sheet, Local raw with the antipode: three panes, the heaviest case |
+    | G8 | `deep-2` | the simulation matrix held (B14's view style), on G9's two views |
   - The occlusion of both presets at the default camera, from a pick-pass count.
-- **Check:** the `D02_GATE` lines, as in B19.
-- **Owner sees:** the four runs.
-- **Machine:** G. About 30 minutes with the owner at the start.
+- **Check:** the `D02_GATE` lines, as in B19. A failing three-pane row withholds only the split or the antipode.
+- **Owner sees:** the seven runs.
+- **Machine:** G. About 45 minutes with the owner at the start.
 - **Checkpoint:** yes, C4. After it the integrator can put R5 to the owner with both sittings' numbers.
 - **Depends:** B20 to B23.
 
@@ -617,17 +759,24 @@ Each checkpoint is one read of the named diff range against the questions below,
   - the class rule is proper and sticky on the real samples;
   - the never-hidden set survives every focus layer;
   - a sweep draws only the certified inside set;
-  - the gate lines come from the event log and not from an estimate.
-- Owner is shown: gate sitting 1, and the certificate glyphs to accept or refuse.
+  - the gate lines come from the event log and not from an estimate;
+  - a one-pane frame is byte-identical to today's frame, and runs without `--d02` take the one-view path;
+  - no frame mixes revisions, and a hidden Local adds no vertex evaluations;
+  - a pick reply comes from the view clicked;
+  - G9's line comes from the event log.
+- Owner is shown: gate sitting 1, Global and Local drawn at once, and the certificate glyphs to accept or refuse. About 90 minutes of Fable's reading.
 
 **C4, after B24.**
 - Fable checks:
+  - the split copies share rotation, scale and shell;
+  - the antipode shares the clip and the handedness and never says "mirrored";
   - the chart assignment is nearest cell with the lowest-id tie;
-  - no sweep fires under a chart;
+  - under a chart only Local sweeps, and with the slice in Local no view sweeps another cap;
   - the raw view's clip never passes 90° and its caption always shows;
-  - the single-view stand-ins say what they are;
-  - no view mode changes a state digest.
-- Owner is shown: gate sitting 2, both presets, the slice and the raw view.
+  - the pane count never exceeds four;
+  - no view mode changes a state digest;
+  - the three-pane gate lines come from the event log.
+- Owner is shown: gate sitting 2, both presets beside a drawn Local, the split and the antipode.
 
 **C5, after B29.**
 - Fable checks:
@@ -658,15 +807,15 @@ Each checkpoint is one read of the named diff range against the questions below,
 | .7 | B3 | |
 | .8 | B27 | Stays the default until R5 admits a chart |
 | .9 | B22 | Hopf rings in B23; ships only after R5 and each preset's gate row |
-| .10 | B22 | |
+| .10 | B22 | Local carries the motion (B18, B18b) |
 | .11 | B6 | |
 | .12 | B6 | The armed mode and the never-hidden set draw from B15 and B16 |
 | .13 | B8 | After M-RING is redone in the step |
 | .14 | B8 | |
 | .15 | B9 | |
 | .16 | B9 | |
-| .17 | B20 | The held split waits for a second core view; the key alternates layers meanwhile |
-| .18 | B21 | Side by side waits for a second core view; holes as faces wait for .25 |
+| .17 | B20 | The held split is two linked copies (three panes) |
+| .18 | B21 | The antipode sits side by side; holes as faces wait for .25 |
 | .19 | B9 | Sticker picks in B17; glyph picks after the glyph gate row |
 | .20 | B15 | |
 | .21 | B15 | |
@@ -693,7 +842,7 @@ Each checkpoint is one read of the named diff range against the questions below,
 | .42 | B27 | Routing waits for CR-19; bindings for XM1 |
 | .43 | B27 | |
 | .44 | B28 | |
-| .45 | B28 | Its two CR-17 controls are B29 |
+| .45 | B28 | Its two CR-17 controls are B29; the four-view refusal reads `ViewPanes.MaxPanes` |
 | .46 | B28 | |
 | .47 | B31 | First half in B30 |
 | .48 | record only | Round 4 |
@@ -728,6 +877,7 @@ Each checkpoint is one read of the named diff range against the questions below,
 | Lines: cut trace, outlines, certificate glyphs | J04 | B16 | G2, G3 |
 | Picks | J13 | B17 | none |
 | Sweep and half-turn | J03 | B18 | G1 |
+| Two views, composite frame, picks per view | F27 | B18a to B18c | G9, G10, G11 |
 | Slice layers and shell clip | J04, J09 | B20 | G4 |
 | Stereographic stage and clip | J05 | B21 | G5 |
 | Chart presets | J05 and the chart admission clauses | B22, B23 | G6, G7 |
@@ -737,7 +887,7 @@ Each checkpoint is one read of the named diff range against the questions below,
 
 | Data | Steps | Built before it exists |
 |---|---|---|
-| A second core view (the four-view envelope) | B20, B21 | One drawn view with a switch key; alternating stand-ins for the split and side by side |
+| The four-view envelope's measured values (the look-cost revision) | B18a to B18c, B20, B21 | Global and Local drawn at once, plus a third pane for the split or the antipode, as candidates behind `--d02`; a fourth pane (a preview view, or the derived free view of CR-17) is not built; a fifth is refused |
 | X1, X4, X5 | B3, B10 | A tick clock; `slot.fill` stays off |
 | X3 | B25 | A labelled placeholder bound |
 | X6 | B15 | The straddler layer is never a default |
@@ -835,7 +985,7 @@ The integrator's fixes to the ADR text for the first return's findings are on di
 - **F1 (major).** The chrome library has none of the revision 4 and 6 host primitives: a search of `tools/looklab/app` and `tools/looklab/data/design` finds no tool-slot state, undefined numeral, whole-only bar or pattern role, and `tools/looklab/app/Chrome/Model/Session.cs:11` has four preview states. B2 and B3 build them.
 - **F2.** `FocusLayers` at `tools/looklab/app/Chrome/Model/Gallery.cs:157` is a fixed pick-layer list. B11 extends it.
 - **F3.** The shell registers only the command table (`renderer/shell/project/ShellChrome.cs:124`) and stages no samples (`renderer/shell/build_shell.py:62` to `:64`). B4 fixes both.
-- **F4 (major).** The shell draws one core view. `renderer/shell/README.md:207` says Local is "not drawn yet", and `:119` that the host opens one view. The slice and the raw view are Local modes, and the held split and the side-by-side antipode need two views at once.
+- **F4 (major).** The shell draws one core view. `renderer/shell/README.md:207` says Local is "not drawn yet", and `:119` that the host opens one view. The slice and the raw view are Local modes, and the held split and the side-by-side antipode need two views at once. B18a to B18c draw both.
 - **F5.** The session fixture is made only by pressing the router's fixed keys on one cap (`renderer/bridge/host/src/fixture.rs:14` to `:15`, `:33`), so no sample state can be opened. B5 adds a word fixture.
 - **F6 (major).** The product pipeline has no style, line or stage input. `renderer/core/include/sa2_interop.h:533` to `:546` gives a preparation only visibility, interaction and instance ids, and `:565` to `:589` gives a frame only the camera matrix. `renderer/core/shaders/draw.hlsl:19` and `:31` colour a sticker by its label's cell.
 - **F7 (major, process).** The rows this drawing needs are not admitted. `docs/architecture/1.0/language/renderer-feature-matrix.md:349` to `:354` mark J07 to J12 "Proposed addition under RM.27", `:347` leaves chart admission to its own clauses, and `:352` says J10's geometry production is still owed. That file is in the frozen language folder.
@@ -847,42 +997,56 @@ The integrator's fixes to the ADR text for the first return's findings are on di
 - **F13.** ADR-D02's data tags still name L1 for .9, .10 and .17, and `docs/progress/1.0/adr-d02-plan.md:102` lists "Jumble drawing in Look Lab" as waiting. The owner's answer retires both; the integrator should reword them.
 - **F14.** The research sample must be synthetic: the only driver of the panel's real answers is `rust/c600-research/tests/panel.rs`, in an LP5 crate.
 
+Findings of the two-view addition:
+- **F15 (major).** Nothing below the chrome can draw two views today.
+  - The host has one view id and opens only it (`renderer/bridge/host/src/lib.rs:161`, `:398`).
+  - Its viewport must equal the surface's size (`renderer/bridge/host/src/lib.rs:825`; `renderer/core/include/sa2_interop.h:579`).
+  - Every frame clears the whole target (`renderer/core/include/sa2_interop.h:742`), and every surface frame presents (`renderer/core/README.md:80`), on one visual (`renderer/core/README.md:79`).
+  - Two `sa2_frame_submit` calls would therefore erase each other and take two presents. B18a's composite frame is the narrowest change.
+- **F16 (major, process).** The four-view envelope has no measured value.
+  - Its only sources are a request to the look-cost revision, "an envelope that counts up to four full-detail views" (`docs/architecture/1.0/design/adr/ADR-D01-rev4-solving-surface.md:164`), and ADR-D02's mention (`docs/architecture/1.0/design/adr/ADR-D02-jumble-research.md:350`).
+  - The frozen rule makes a ceiling "the largest stated workload with a passing run of the unrelaxed gate" (`docs/architecture/1.0/language/renderer-feature-matrix.md:151` to `:157`).
+  - Further views are "Required" with "No evidence yet" (`docs/architecture/1.0/language/renderer-feature-matrix.md:329`).
+  - G9 to G11 would be the first such runs. A failing row lowers the pane ceiling and never moves the gate.
+- **F17.** The gate's text names no view count, and its bars apply to the whole frame. The composite design keeps the reading unchanged (one present per frame), but the comparison with C9's bare runs stays invalid (F9).
+- **F18.** Each pane costs a full vertex pass, so the split's two half-filled copies cost two (`renderer/core/shaders/product.hlsl:20`). This framework counts every pane as a view against the envelope. Compacting a pane's instance list would save the pass, but is not in this build.
+
 **Risks.**
 - **R1.** The renderer block is the long pole: C++, HLSL, three ABI moves (core 6, host 8 and 9) and the pins that follow them in the shell and the tests. A failed gate row stops a view from shipping, not the chrome.
 - **R2.** A deep fixture may take minutes to open if a reopen replays every commit. B5 measures it. If it is slow, deep states are used only at gate sittings and checkpoints.
 - **R3.** The chart assignment runs per revision over 177,120 pieces and 600 cells. B22 records its time.
 - **R4.** New `Ui/` files must compile in Look Lab's project as well as the shell's. Run Look Lab's Godot lane once per checkpoint as a regression guard, never as acceptance.
-- **R5.** Gate sittings need a quiet machine and the owner's start. Batching them into two keeps that to about an hour.
+- **R5.** Gate sittings need a quiet machine and the owner's start. Batching them into two keeps that to under an hour and a half.
+- **R6.** The surface now lies under the chrome between the two openings. Any translucent chrome there shows the clear colour. B18c's picture check covers it, and the owner's eye confirms it at C3.
 
-**Questions only the owner can answer.**
-1. One drawn view or two? This framework draws one core view at a time and leaves the Global and Local pair, with the four-view envelope, to ADR-D03 and K2. Adding a second core view here would be about three more steps and one more gate sitting.
-2. May the drawing candidates be built and measured before R5 is admitted? Recommended: yes, behind `--d02`, with R5 put to the owner once after gate sitting 2.
+**Questions only the owner can answer.** Both were answered on 26 November 2026: two drawn views, Global and Local at once; and the drawing candidates are built and measured behind `--d02` before R5, with R5 put to the owner once after gate sitting 2.
 
 ## 9. Estimate
 
 | Step | Hours | Step | Hours | Step | Hours |
 |---|---|---|---|---|---|
-| B1 | 7 | B12 | 5 | B23 | 5 |
-| B2 | 4 | B13 | 4 | B24 | 3 |
-| B3 | 5 | B14 | 10 | B25 | 4 |
-| B4 | 6 | B15 | 6 | B26 | 5 |
-| B5 | 8 | B16 | 8 | B27 | 4 |
-| B6 | 5 | B17 | 5 | B28 | 6 |
-| B7 | 3 | B18 | 7 | B29 | 4 |
-| B8 | 5 | B19 | 4 | B30 | 5 |
-| B9 | 5 | B20 | 8 | B31 | 5 |
-| B10 | 5 | B21 | 8 | B32 | 5 |
-| B11 | 4 | B22 | 9 | B33 | 6 |
+| B1 | 7 | B13 | 4 | B23 | 5 |
+| B2 | 4 | B14 | 10 | B24 | 4 |
+| B3 | 5 | B15 | 6 | B25 | 4 |
+| B4 | 6 | B16 | 8 | B26 | 5 |
+| B5 | 8 | B17 | 5 | B27 | 4 |
+| B6 | 5 | B18 | 7 | B28 | 6 |
+| B7 | 3 | B18a | 9 | B29 | 4 |
+| B8 | 5 | B18b | 8 | B30 | 5 |
+| B9 | 5 | B18c | 7 | B31 | 5 |
+| B10 | 5 | B19 | 5 | B32 | 5 |
+| B11 | 4 | B20 | 8 | B33 | 6 |
+| B12 | 5 | B21 | 9 | | |
+| | | B22 | 9 | | |
 
-- **Opus:** about 183 agent hours over 33 commits, of which about 73 are the drawing block (B14 to B24). Each step is one session; B14 and B22 are the largest and may split at the core and host boundary.
-- **Fable:** six checkpoints of about an hour, plus half an hour at C5 for the sealed defects.
+- **Opus:** about 210 agent hours over 36 commits, of which about 100 are the drawing block (B14 to B24). Each step is one session; B14, B18a and B22 are the largest and may split at the core and host boundary.
+- **Fable:** six checkpoints of about an hour (C3 about 90 minutes), plus half an hour at C5 for the sealed defects.
 - **The researcher subagent:** one session, at most 90 minutes.
 - **The owner:**
   - six checkpoint sittings of 10 to 15 minutes, about 1.25 hours;
-  - two gate sittings of about 30 minutes each at the start, then a quiet machine while the rows run;
-  - two answers (section 8) and one acceptance of the certificate glyphs;
+  - two gate sittings of about 35 and 45 minutes at the start, then a quiet machine while the rows run;
+  - one acceptance of the certificate glyphs;
   - watching between sittings is optional: `python renderer/shell/watch_d02.py`.
-- If the owner chooses a second core view (question 1), add about 20 agent hours and one gate sitting.
 
 ## 10. Integrator's check and dispositions (26 November 2026)
 
@@ -910,8 +1074,13 @@ The integrator's fixes to the ADR text for the first return's findings are on di
   longer name Look Lab's L1, and the plan's row is reworded. The learning-level names L1, L2 and L6 in ADR-D02's
   glossary request are a different thing and stay.
 - **ADR-D02.47's look-cost row:** B31 sends the simulation's matrix to the core, but ADR-D02.47 lets the simulation
-  cover the pieces only once a core stage and its look-cost row exist. B31 therefore builds the core half switched
-  off. It turns on after a row G8 (`deep-2` with the simulation held) passes at the next owner-machine sitting.
+  cover the pieces only once a core stage and its look-cost row exist. Row G8 measures the matrix that B14's view
+  style already carries, at gate sitting 2. B31 builds the core half switched off and turns it on only if G8 passed.
 - **The G3 state:** filled in section 6 (S1 of the witness, with a fallback).
-- **The two owner questions** of section 8 go to the owner on one card with the recommended option first. B1 waits
-  for the owner's go.
+- **The two owner questions** of section 8 went to the owner on one card with the recommended option first. The owner
+  chose two drawn views and took building and measuring before R5. Fable then wrote the two-view addition, spliced in
+  above: B18a to B18c, B20 and B21 rewritten without stand-ins, changes to B14, B16, B19, B22 to B24, C3 and C4,
+  sections 4, 5, 8 and 9. Its cited files and lines exist on this branch.
+- **F15 to F18:** adopt. F16 means G9 to G11 are the first measured values for the four-view envelope; a failing row
+  lowers the pane ceiling and never moves the gate. **R6:** adopt; B18c's picture check and the owner's eye at C3.
+- B1 waits for the owner's go.

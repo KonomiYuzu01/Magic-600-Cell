@@ -35,8 +35,10 @@ Build framework, 26 November 2026: on the owner's go after reading the ADR text,
 chrome library with a live Look Lab window; the integrator fixed the ADR text for its findings F5 to F16. The owner then
 answered three questions ([decision](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-build.md)): build, watch
 and accept in the product shell, with Look Lab dropped and Jumble drawing built now; add one lean researcher subagent
-to J0 and J1; and wait before B1. Revision 2 has 33 steps (B1 to B33), six Fable checkpoints and two gate sittings on
-the owner's machine, about 183 Opus agent hours. Opus builds it one step per commit, after the owner's go.
+to J0 and J1; and wait before B1. On a second card the owner chose two drawn views (Global and Local at once) and let
+the drawing be built and measured before R5. Revision 2, with Fable's two-view steps spliced in, has 36 steps (B1 to
+B33 with B18a to B18c), six Fable checkpoints and two gate sittings on the owner's machine, about 210 Opus agent hours.
+Opus builds it one step per commit, after the owner's go.
 
 Inputs:
 - The owner decisions on ADR-D02:
@@ -101,7 +103,7 @@ Out of scope:
 | A1 to A3 | Done | |
 | A4, the owner's pick page | Done (26 November 2026) | |
 | The ADR text and its read | Done (pull request 444) | |
-| The ADR-D02 shell build | Framework revision 2 written; held | The owner's go for B1, and the owner's answers on one or two drawn views and on measuring the drawing before R5 |
+| The ADR-D02 shell build | Framework revision 2 written, with the second drawn view added; held | The owner's go for B1 |
 | Jumble drawing | In the build, in the product shell (B14 to B24) | R5's admission before a drawn view ships; Look Lab's L1 is retired (owner, 26 November 2026) |
 
 Rules for A1 to A3:
