@@ -6,6 +6,30 @@ the session that receives it.** The owner's hold on ADR-D02 of 23 November 2026 
 ADR line's selections, and the owner may overrule any of them. It is no ADR, accepts nothing and freezes nothing. A4,
 the ADR text, the shell build and the acceptance runs come after A3 and are only outlined here (section 8).
 
+A1 to A3 status, 24 November 2026: done on the owner's go of 23 November 2026, with A3 allowed up to three rounds
+instead of section 5's one (owner, 23 Nov 2026: up to 3 rounds; three ran); the 152 open rows sit in 28 question groups,
+each with two or three options, the recommended one first, one question left split for A4; supplemented the same day
+after LP4 and LP5 landed (owner: "fill it in once they merge"), which aligns A3's words with the landed glossary and
+verdict types and adds two open rows; the outputs stay private in the main checkout's `work/adr-d02/`.
+
+A4 status, 25 November 2026: the pick page went to the owner as one card on the owner's go of the same day ("resume
+work; tell the ADR line that D02's A4 may be prepared", then "once A4 is prepared, start right away"). It carries the
+data its three waiting picks needed: the colouring number of the domain contact graph (4, exact, at W-J record 300 and
+both deep exports; 1 at the I_a@40 stop), the seam-face mesh size (0.59 to 0.66 million triangles at the deep exports,
+drawn whole) and offline drawings of the deep exports in both Global layouts, stand-ins for L1 and not Look Lab output.
+Following the owner's direction that open research is ADR-D02's core ("open research is D02's core"), it recommends the
+freer option inside the frozen frame at items 1, 3 and 12. Item 13, who builds the ADR-D02 and ADR-D03 shells, was
+settled by the owner the same day: Fable writes the build framework, Opus builds, on the subscription. The page, data
+and scripts stay private in the main checkout's `work/adr-d02/a4/`.
+
+A4 answered, 26 November 2026: every recommended option except item 9 (Q3.b, the owner's reading of the frozen J-7
+and N-1) and item 12c (the base targets: at most 3,000 hours of real time for an expert full solve without jumbling;
+substantive progress on restoration theory for the jumbled puzzle); recorded in
+[the decision page](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-a4.md). The proposed ADR text, read once
+by a fresh Claude subagent, is
+[ADR-D02-jumble-research.md](../../architecture/1.0/design/adr/ADR-D02-jumble-research.md) (26 November 2026); Fable's
+build framework and the shell build follow.
+
 Inputs:
 - The owner decisions on ADR-D02:
   - [design and art path](../../wiki/decisions/owner-decisions-2026-11-22-design-art-path.md), items 3 and 4;
