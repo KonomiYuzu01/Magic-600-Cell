@@ -235,7 +235,7 @@ ViewStyle view_style(const sa2_view_style* style) {
     argument(style->struct_size == sizeof(*style), "invalid view_style struct_size");
     argument(style->reserved == 0, "view_style reserved must be 0");
     argument(!(style->tint_mode & ~(SA2_STYLE_TINT_FILL | SA2_STYLE_TINT_OUTLINE)), "unknown view_style tint_mode bits");
-    argument(style->dim_mode <= SA2_STYLE_DIM_UNMARKED, "view_style dim_mode must be a SA2_STYLE_DIM_* value");
+    argument(style->dim_mode <= SA2_STYLE_HIDE_UNMARKED, "view_style dim_mode must be a SA2_STYLE_DIM_* or SA2_STYLE_HIDE_* value");
     const auto within = [](float value, float low, float high) { return std::isfinite(value) && value >= low && value <= high; };
     argument(within(style->dim_amount, 0.0f, 1.0f), "dim_amount must be finite and within 0..1");
     argument(within(style->outline_width, 0.0f, SA2_STYLE_OUTLINE_MAX), "outline_width must be finite and within 0..SA2_STYLE_OUTLINE_MAX");
@@ -302,6 +302,8 @@ uint64_t Product::adopt(EngineImage image) {
 
 // ABI 6: device-free, so it works during device loss; only views off the defaults are kept.
 void Product::set_shape(uint64_t view, const ViewShape& shape) {
+    // B22: a Hopf layout draws from the Hopf table, so no view takes one before the table exists.
+    argument(shape.layout == SA2_LAYOUT_CHAIN || !hopf_.empty(), "a Hopf layout needs the Hopf table");
     if (shape == ViewShape{}) shapes_.erase(view);
     else shapes_[view] = shape;
 }
@@ -343,7 +345,9 @@ bool Product::styled(uint32_t slot, ViewStyle& out) const {
     const bool outline = (view.tint_mode & SA2_STYLE_TINT_OUTLINE) && style_ && style_->any[1] && view.outline_width > 0;
     const bool dim = view.dim_amount > 0
         && ((view.dim_mode == SA2_STYLE_DIM_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_DIM_UNMARKED);
-    if (!fill && !outline && !dim && !view.matrix_on) return false;
+    // ADR-D02 B17 (ABI 10): a hide that applies.
+    const bool hide = (view.dim_mode == SA2_STYLE_HIDE_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_HIDE_UNMARKED;
+    if (!fill && !outline && !dim && !hide && !view.matrix_on) return false;
     out = view;
     return true;
 }
@@ -609,7 +613,11 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     record.ring = ring;
     record.copy = plan.copy;
     record.shape = plan.shape;
-    for (const auto& pane : plan.panes) record.panes.push_back(PaneRecord{pane.pane, pane.set_ticket, 0, pane.publication_generation, pane.shape});
+    record.styled = plan.styled; // ADR-D02 B17 (ABI 10): its picks follow the style it drew with
+    record.view_style = plan.view_style;
+    record.style_version = plan.style_version;
+    for (const auto& pane : plan.panes)
+        record.panes.push_back(PaneRecord{pane.pane, pane.set_ticket, 0, pane.publication_generation, pane.shape, pane.styled, pane.view_style});
     frames_.push_back(record);
     if (ring < unharvested_.size()) unharvested_[ring] = frame;
     ++counters_.frames_submitted;
@@ -723,12 +731,16 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
         return out;
     }
     const Copy& copy = copies_[record->copy];
-    if (!copy.valid || copy.revision != record->input.engine_revision) {
+    // ADR-D02 B17 (ABI 10): a styled frame's copy must still hold the piece style it drew with.
+    if (!copy.valid || copy.revision != record->input.engine_revision || (record->styled && copy.style != record->style_version)) {
         out.state = SA2_PICK_STALE;
         out.stale = SA2_PICK_STALE_ENGINE;
         return out;
     }
     out.pass = true;
+    out.input.styled = record->styled;
+    out.input.view_style = record->view_style;
+    out.input.piece_style = record->style_version != 0;
     std::copy(std::begin(record->input.camera_matrix), std::end(record->input.camera_matrix), out.input.camera.begin());
     out.input.width = record->input.viewport_width;
     out.input.height = record->input.viewport_height;
@@ -774,12 +786,16 @@ PickPlan Product::pick_pane(const Frame& record, PickPlan out) const {
             return out;
         }
         const Copy& copy = copies_[record.copy];
-        if (!copy.valid || copy.revision != record.input.engine_revision) {
+        const bool styled = record.panes[i].styled; // ADR-D02 B17 (ABI 10)
+        if (!copy.valid || copy.revision != record.input.engine_revision || (styled && copy.style != record.style_version)) {
             out.state = SA2_PICK_STALE;
             out.stale = SA2_PICK_STALE_ENGINE;
             return out;
         }
         out.pass = true;
+        out.input.styled = styled;
+        out.input.view_style = record.panes[i].view_style;
+        out.input.piece_style = record.style_version != 0;
         std::copy(std::begin(pane.camera_matrix), std::end(pane.camera_matrix), out.input.camera.begin());
         out.input.width = record.input.viewport_width;
         out.input.height = record.input.viewport_height;

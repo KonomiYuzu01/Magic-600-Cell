@@ -112,7 +112,10 @@ public sealed class Keymap
     public static Keymap Parse(string text, CommandRegistry registry, Keymap? defaults = null)
     {
         using JsonDocument d = J.Parse(text);
-        JsonElement root = J.Root(d, "magic600-design-keymap", "radials", "bindings");
+        // The default file may also carry ADR-D02's held seat entries, which SeatKeys reads; an override file has none.
+        JsonElement root = defaults == null && d.RootElement.ValueKind == JsonValueKind.Object && d.RootElement.TryGetProperty(SeatKeys.Section, out _)
+            ? J.Root(d, "magic600-design-keymap", "radials", "bindings", SeatKeys.Section)
+            : J.Root(d, "magic600-design-keymap", "radials", "bindings");
         var radials = new SortedDictionary<string, RadialMenu>(StringComparer.Ordinal);
         if (defaults != null) foreach (var radial in defaults.Radials) radials.Add(radial.Key, radial.Value);
         foreach (JsonProperty p in J.Map(root.GetProperty("radials"), "radials"))

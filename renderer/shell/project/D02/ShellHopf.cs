@@ -48,11 +48,11 @@ public static class ShellHopf
     }
 
     /// <summary>
-    /// Whether the shell opens Global on a layout. The ring sheet is held back: on the owner's GPU its first frames
-    /// removed the device (DXGI_ERROR_DEVICE_HUNG, 26 November 2026), though WARP draws it, so an opening file that
-    /// names it keeps the chain until that is found.
+    /// Whether the shell opens Global on a layout: the Hopf rings and the ring sheet. The sheet was held back while its
+    /// first frames removed the device on the owner's GPU (DXGI_ERROR_DEVICE_HUNG, 26 November 2026). The cause: the
+    /// core built the Hopf table only for the rings, so a sheet named first drew from no table (fixed in the core).
     /// </summary>
-    public static bool Opens(uint kind) => kind == Rings;
+    public static bool Opens(uint kind) => kind == Rings || kind == Sheet;
 
     /// <summary>The layout an opening file names: the Hopf rings, the ring sheet, or the chain.</summary>
     public static uint Kind(string openingPath)

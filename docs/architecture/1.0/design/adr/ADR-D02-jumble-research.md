@@ -134,9 +134,14 @@ frame the researcher's freedom is as high as possible.
 - **ADR-D02.12** The entry slot's value is chrome only. It opens the cap map in Solve's bottom dock and arms the
   contact-class mode (ADR-D02.21; it draws nothing until the first jumble twist) and the never-hidden set
   (ADR-D02.26). It sets no
-  threshold and no filter, and never changes a projection, a layout or a shrink. Local shows its empty state: "Name a
-  cap: click its cell, or type its number." Readouts show true zeros. (framework for "chrome only"; default for the
-  value) [data: the product core's per-piece style and line paths for whatever the contact-class mode and the
+  threshold and no filter, and never changes a projection, a layout or a shrink. Local is never empty (owner, 26
+  November 2026): until a cap is named it draws the lowest-numbered cap, cap 0 (neutral by number), and then the cap
+  named last; its readout says it shows the default cap, with the hint "Name a cap: click a numbered cap on the cap
+  map, or F1 › jumble.cap.name <id>" (the owner's bug report of 26 November 2026: the earlier words did not say
+  where to click). The default counts as no named cap: the named-cap count, the cap map's "no cap named" line, the
+  threshold panel and the jobs read only a named cap. Local shows its empty state only while no state is bound.
+  Readouts show true zeros. (framework for "chrome only"; default
+  for the value) [data: the product core's per-piece style and line paths for whatever the contact-class mode and the
   never-hidden set draw on pieces; until then the legend shows them armed]
 
 ### 4. The cap map

@@ -112,6 +112,8 @@ public static class ShellJumble
         set
         {
             _host = value;
+            // Local is never empty: the host draws the default cap while a state is bound (owner, 26 November 2026).
+            value?.SetStateBound(() => Bound != null);
             if (value != null && SeedWord() is { } word)
             {
                 value.Words.Bind(word, done => StateAfter("s7001-" + done.ToString(CultureInfo.InvariantCulture)));
@@ -365,10 +367,13 @@ internal sealed partial class D02Driver : Node
     // control's change), with the jobs' clock held until the dump reads it again after frames have passed.
     private int _cancels;
     private IReadOnlyList<(string Group, string Text)>? _screenBefore;
+    // The frame's rebuilds since the driver started: a frame that rebuilds every frame never lays its views out.
+    private int _rebuilds;
 
     public D02Driver(ChromeFrame frame)
     {
         _frame = frame;
+        frame.Rebuilt += () => _rebuilds++;
         Name = "D02Driver";
         _folder = System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } folder && Directory.Exists(folder) ? folder : null;
         if (System.Environment.GetEnvironmentVariable("M600_D02_SCRIPT") is { Length: > 0 } script)
@@ -528,8 +533,17 @@ internal sealed partial class D02Driver : Node
         {
             var dx = drag[0].GetSingle();
             var dy = drag[1].GetSingle();
-            _doing = "drag " + dx.ToString(CultureInfo.InvariantCulture) + " " + dy.ToString(CultureInfo.InvariantCulture);
-            Drag(_frame.Opening, new Vector2(dx, dy));
+            // ADR-D01.41: "in": "local" starts the drag in Local's drawn opening instead of Global's.
+            var inLocal = step.TryGetProperty("in", out var view) && view.GetString() == "local";
+            _doing = "drag " + dx.ToString(CultureInfo.InvariantCulture) + " " + dy.ToString(CultureInfo.InvariantCulture)
+                + (inLocal ? " in local" : "");
+            Drag(inLocal ? _frame.LocalOpening : _frame.Opening, new Vector2(dx, dy));
+        }
+        else if (step.TryGetProperty("link", out var link))
+        {
+            // ADR-D01.41: links or unlinks Local's rotation (no command row yet: row request camera.link).
+            _doing = "link " + (link.GetBoolean() ? "on" : "off");
+            ShellLocal.Linked = link.GetBoolean();
         }
         else if (step.TryGetProperty("wheel", out var wheel))
         {
@@ -634,6 +648,47 @@ internal sealed partial class D02Driver : Node
                 _doing += " (not found)";
             }
         }
+        else if (step.TryGetProperty("cap_hover", out var capHover))
+        {
+            // The owner's bug report of 26 November 2026: the pointer over a cap map cell, through the shell's input.
+            _doing = "cap hover " + capHover.GetInt32().ToString(CultureInfo.InvariantCulture) + CapPointer(capHover.GetInt32(), false);
+        }
+        else if (step.TryGetProperty("cap_click", out var capClick))
+        {
+            // A left click on a cap map cell, through the shell's input.
+            _doing = "cap click " + capClick.GetInt32().ToString(CultureInfo.InvariantCulture) + CapPointer(capClick.GetInt32(), true);
+        }
+        else if (step.TryGetProperty("click_control", out var clicked))
+        {
+            // A left click at the centre of a control of the frame, found by its name (the cap prompt's rows), through
+            // the shell's input as the pointer gives it.
+            _doing = "click " + clicked.GetString();
+            if (_frame.FindChild(clicked.GetString()!, true, false) is Control control && control.IsVisibleInTree())
+            {
+                Click(control.GetGlobalRect().GetCenter());
+            }
+            else
+            {
+                _doing += " (not found)";
+            }
+        }
+        else if (step.TryGetProperty("command", out var command))
+        {
+            // A row run as the palette runs it (ShellChrome.Run: the unavailable reason, the echo, then the row), with
+            // the step's argument if it gives one; a row that throws reaches the error lamp through Safe, as a palette
+            // row's does.
+            var row = command.GetString()!;
+            var argument = step.TryGetProperty("argument", out var given) ? given.GetString() : null;
+            _doing = "command " + row + (argument != null ? " " + argument : "");
+            if (ShellChrome.Run is { } run)
+            {
+                Safe.Raise(run, row, argument);
+            }
+            else
+            {
+                _doing += " (no Run)";
+            }
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -641,7 +696,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a click_control, a command or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -666,6 +721,34 @@ internal sealed partial class D02Driver : Node
             : character is >= '0' and <= '9' ? (Key)((long)Key.Key0 + (character - '0'))
             : character switch { '.' => Key.Period, ' ' => Key.Space, '-' => Key.Minus, '_' => Key.Minus, _ => Key.None };
         Send(key, character, false, false, char.IsUpper(character) || character == '_');
+    }
+
+    /// <summary>A left click at a point of the window: the pointer moves there, then presses and releases.</summary>
+    private static void Click(Vector2 at)
+    {
+        Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at, ButtonMask = MouseButtonMask.Left });
+        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
+    }
+
+    /// <summary>The pointer to a cap map cell's centre, and for a click a press and a release there; "" when the cell
+    /// is on screen, else why nothing was sent.</summary>
+    private static string CapPointer(int cap, bool click)
+    {
+        if (ShellJumble.Host?.CapMap.Map is not { } map || !GodotObject.IsInstanceValid(map) || !map.IsVisibleInTree() || map.CellRect(cap) is not Rect2 cell)
+        {
+            return " (no cap map cell)";
+        }
+        var at = map.GetGlobalRect().Position + cell.GetCenter();
+        if (click)
+        {
+            Click(at);
+        }
+        else
+        {
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+        }
+        return "";
     }
 
     /// <summary>A left-button drag from the opening's centre, in ten motion steps, through the shell's input.</summary>
@@ -727,6 +810,7 @@ internal sealed partial class D02Driver : Node
             }
             json.WriteEndObject();
             ShellPick.Dump(json);
+            ShellLocal.Dump(json);
             // B11: the covers lines, the inspect line, the cap map's marks and the focus layers' keys.
             if (ShellJumble.Host is { } shown)
             {
@@ -739,6 +823,37 @@ internal sealed partial class D02Driver : Node
                 json.WriteString("inspect", shown.Inspect.Line(shown.CapMap.Map.Map));
                 var marks = shown.CapMap.Map;
                 json.WriteString("map_marks", marks.Threshold.Formula + "|" + marks.Named + "|" + string.Join(",", marks.Meeting) + "|" + shown.Naming.Hovered);
+                json.WriteNumber("named", shown.Naming.Named ?? -1);
+                // Local is never empty: the cap the host gives Local and the cap the shell frames there (-1: none),
+                // whether Local's opening is shown, and Local's readout while the cap is not named.
+                json.WriteStartObject("local");
+                json.WriteNumber("cap", shown.LocalCap.Shown ?? -1);
+                json.WriteNumber("framed", ShellLocal.Cap ?? -1);
+                json.WriteBoolean("opening", _frame.LocalOpeningShown);
+                json.WriteString("words", shown.LocalWords ?? "");
+                json.WriteEndObject();
+                // The cap map's hovered cell, the pointer's shape over it and its tooltip.
+                json.WriteStartObject("cap_map");
+                json.WriteNumber("hovered", marks.Hovered ?? -1);
+                json.WriteString("cursor", marks.MouseDefaultCursorShape.ToString());
+                json.WriteString("tooltip", marks.Hovered is int hovered ? marks.TipAt(hovered) : "");
+                json.WriteEndObject();
+                // The cap prompt (jumble.cap.name without a number): open or not, its field, its rows' count, the
+                // highlighted cap (-1: none), the caps shown and what its last Enter said.
+                json.WriteStartObject("cap_prompt");
+                var prompt = shown.Prompt.Model;
+                json.WriteBoolean("open", shown.Prompt.IsOpen);
+                json.WriteString("query", prompt.Query);
+                json.WriteNumber("rows", prompt.Rows.Count);
+                json.WriteNumber("highlighted", prompt.Highlighted is int row ? prompt.Rows[row].Cap : -1);
+                json.WriteStartArray("window");
+                foreach (var shownRow in prompt.Window)
+                {
+                    json.WriteNumberValue(shownRow.Cap);
+                }
+                json.WriteEndArray();
+                json.WriteString("said", prompt.Said ?? "");
+                json.WriteEndObject();
                 json.WriteStartArray("focus");
                 foreach (var layers in shown.Layers)
                 {
@@ -783,6 +898,43 @@ internal sealed partial class D02Driver : Node
                     json.WriteStringValue(FocusLayers.KeyText(layer));
                 }
                 json.WriteEndArray();
+                json.WriteEndObject();
+            }
+            if (_frame != null && GodotObject.IsInstanceValid(_frame))
+            {
+                // The Library in the left dock (the command step's sample-mode run): the dock's panel, whether the
+                // Library panel is shown, its open branches and the records it lists.
+                json.WriteStartObject("library");
+                json.WriteString("left_dock", _frame.Model.Docks[DockSide.Left].Open ?? "");
+                var library = _frame.FindChild("LibraryPanel", true, false) as LibraryPanel;
+                json.WriteBoolean("panel", library != null && library.IsVisibleInTree());
+                json.WriteStartArray("open");
+                foreach (var (title, _) in LibraryModel.Branches)
+                {
+                    if (library != null && library.Library.IsOpen(title))
+                    {
+                        json.WriteStringValue(title);
+                    }
+                }
+                json.WriteEndArray();
+                json.WriteStartArray("rows");
+                foreach (var node in library?.FindChildren("*", "", true, false) ?? new Godot.Collections.Array<Node>())
+                {
+                    if (node.HasMeta("library_record"))
+                    {
+                        json.WriteStringValue(node.GetMeta("library_record").AsString());
+                    }
+                }
+                json.WriteEndArray();
+                json.WriteEndObject();
+                // The error lamp: whether the frame carries it, the failures it counts and the first line of the last.
+                json.WriteNumber("rebuilds", _rebuilds);
+                json.WriteStartObject("errors");
+                json.WriteBoolean("lamp", _frame.GetNodeOrNull<ErrorLamp>(ErrorLamp.NodeName) != null);
+                json.WriteNumber("count", ChromeErrors.Count);
+                json.WriteNumber("failures", Safe.Failures);
+                var errors = ChromeErrors.All;
+                json.WriteString("last", errors.Count > 0 ? errors[errors.Count - 1].Split('\n')[0] : "");
                 json.WriteEndObject();
             }
             // The frame's geometry (owner, 26 November 2026: "看不到"): the window, the frame's minimum size and

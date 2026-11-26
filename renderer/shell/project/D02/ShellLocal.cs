@@ -78,4 +78,142 @@ public static class ShellLocal
     /// <summary>The four floats of Local's view shape: cell shrink (1 − gap), sticker shrink, d4 and zoom.</summary>
     public static float[] ViewShape(Shape shape, double aspect) =>
         new[] { 1 - shape.Gap, shape.StickerShrink, shape.D4, (float)Zoom(shape, aspect) };
+
+    /// <summary>
+    /// ADR-D01.41: Local re-frames on a selection change by default. Auto-framing can be turned off for Local (a
+    /// script turns it off through the same switch); then Local follows only the named cap.
+    /// </summary>
+    public static bool AutoFrame { get; set; } = true;
+
+    /// <summary>
+    /// ADR-D01.41: the 4D rotation of Global and Local is linked by default and can be unlinked. While linked both
+    /// views draw from the one camera (<see cref="ShellJumble.Camera"/>), which a drag starting in either view turns,
+    /// so both turn together. Unlinked, Local draws from <see cref="Own"/>, which starts where the shared rotation was
+    /// and only a drag in Local turns; linking again returns Local to the shared rotation. No command row switches the
+    /// link yet (row request <c>camera.link</c>); a D02 run's <c>link</c> step sets it.
+    /// </summary>
+    public static bool Linked
+    {
+        get => _linked;
+        set
+        {
+            if (value == _linked)
+            {
+                return;
+            }
+            _linked = value;
+            if (!value)
+            {
+                Array.Copy(ShellJumble.Camera.Q, Own.Q, 16);
+                Array.Copy(ShellJumble.Camera.Spin, Own.Spin, 16);
+            }
+            // Both views are sent again: Local takes its new rotation, Global keeps its own.
+            ShellJumble.Camera.Dirty = true;
+            Own.Dirty = true;
+        }
+    }
+
+    private static bool _linked = true;
+
+    /// <summary>Local's own rotation while unlinked.</summary>
+    public static ShellCamera Own { get; } = new();
+
+    /// <summary>The rotation Local draws from: the shared one while linked, else its own.</summary>
+    public static ShellCamera Camera(ShellCamera shared) => _linked ? shared : Own;
+
+    private static float[]? _sentGlobal, _sentLocal;
+
+    /// <summary>Records the camera the shell last sent for a view (for a D02 run's dump).</summary>
+    public static void Sent(ulong view, float[] camera)
+    {
+        if (view == HostLibrary.Local)
+        {
+            _sentLocal = camera;
+        }
+        else
+        {
+            _sentGlobal = camera;
+        }
+    }
+
+    /// <summary>
+    /// Writes the rotation context into a D02 run's screen dump: the link, both views' rotations (Q and the layout
+    /// spin, row-major) and the cameras the core was last sent for each view.
+    /// </summary>
+    public static void Dump(Utf8JsonWriter json)
+    {
+        var shared = ShellJumble.Camera;
+        json.WriteStartObject("rotation");
+        json.WriteBoolean("linked", _linked);
+        json.WriteBoolean("auto_frame", AutoFrame);
+        Write(json, "global", shared);
+        Write(json, "local", Camera(shared));
+        Write(json, "sent_global", _sentGlobal);
+        Write(json, "sent_local", _sentLocal);
+        json.WriteEndObject();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, ShellCamera camera)
+    {
+        json.WriteStartObject(name);
+        json.WriteNumber("turns", camera.Turns);
+        Write(json, "q", camera.Q);
+        Write(json, "spin", camera.Spin);
+        json.WriteEndObject();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, double[] values)
+    {
+        json.WriteStartArray(name);
+        foreach (var value in values)
+        {
+            json.WriteNumberValue(value);
+        }
+        json.WriteEndArray();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, float[]? values)
+    {
+        if (values is null)
+        {
+            json.WriteNull(name);
+            return;
+        }
+        json.WriteStartArray(name);
+        foreach (var value in values)
+        {
+            json.WriteNumberValue((double)value);
+        }
+        json.WriteEndArray();
+    }
+
+    private static int? _cap, _named, _selected;
+    private static bool _selectionNewer;
+
+    /// <summary>The cap Local follows: the named cap, else the Jumble host's default (the D02 script player's dump).</summary>
+    public static int? Cap => _cap;
+
+    /// <summary>
+    /// ADR-D02 B17 (ADR-D01.41): the cell Local frames, the newer of two sources. Naming a cap frames that cap; a later
+    /// selection, while auto-framing is on, frames the cell its sticker occupies (none off the lattice). Clearing the
+    /// selection, or naming another cap, returns Local to the named cap. Local is never empty (owner, 26 November
+    /// 2026): with no cap named it follows the host's LocalCap while a state is bound, the cap named last in the
+    /// session or, before any naming, the lowest-numbered cap; the default is drawn, never named.
+    /// </summary>
+    public static int? Frame(int? namedCap)
+    {
+        if (namedCap != _named)
+        {
+            _named = namedCap;
+            _selectionNewer = false;
+        }
+        _cap = namedCap ?? ShellJumble.Host?.LocalCap.Shown;
+        var picked = ShellPick.Selection?.Cell;
+        if (picked != _selected)
+        {
+            _selected = picked;
+            _selectionNewer = picked is not null;
+        }
+        return AutoFrame && _selectionNewer && _selected is int cell ? cell : _cap;
+    }
 }

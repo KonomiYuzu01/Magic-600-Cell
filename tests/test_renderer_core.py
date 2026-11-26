@@ -275,7 +275,8 @@ ABI9_DEFINES = {"SA2_PROJECTION_PERSPECTIVE": "0u", "SA2_PROJECTION_ORTHOGRAPHIC
 ABI10 = {
     "SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layout* layout);",
 }
-ABI10_DEFINES = {"SA2_LAYOUT_CHAIN": "0u", "SA2_LAYOUT_HOPF_RINGS": "1u", "SA2_LAYOUT_RING_SHEET": "2u", "SA2_HOPF_RINGS": "20u"}
+ABI10_DEFINES = {"SA2_LAYOUT_CHAIN": "0u", "SA2_LAYOUT_HOPF_RINGS": "1u", "SA2_LAYOUT_RING_SHEET": "2u", "SA2_HOPF_RINGS": "20u",
+                 "SA2_STYLE_HIDE_MARKED": "3u", "SA2_STYLE_HIDE_UNMARKED": "4u"}
 
 
 class AbiTests(unittest.TestCase):

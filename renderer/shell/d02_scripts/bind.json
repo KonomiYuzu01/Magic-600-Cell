@@ -1,7 +1,8 @@
 {
   "format": "magic600-d02-script/1",
   "name": "bind",
-  "note": "B5's bind run, on a sample state's session fixture (build_d02_fixtures.py): after the open the sample binds by its pose digests; one twist (J, the router's KeyJ) unbinds it, so every D02 slot is stale; an undo (Ctrl+Z) binds it again. The waits let the shown revision catch up with the head.",
+  "resolution": "2000x1200",
+  "note": "B5's bind run, on a sample state's session fixture (build_d02_fixtures.py), in sample mode at the owner's 2000x1200: after the open the sample binds by its pose digests; one twist (J, the router's KeyJ, which sample mode's twist row must not take) unbinds it, so every D02 slot is stale; an undo (Ctrl+Z) binds it again. The waits let the shown revision catch up with the head.",
   "steps": [
     {"wait_ms": 3000},
     {"chord": "J"},

@@ -604,6 +604,24 @@ relative path is from the repository root.
     - `tests/test_d02_drawing.py` passed 37 of 37 and `test_renderer_shell.py` 84 of 84.
     - With the outlines on, `d02_run.py --script hopf` and `--script two-views` (632 two-pane frames) passed on `wj-ia-300`.
     - `--script pick` waits for the `click` step.
+- **As built, part 2 (drawing track, 26 November 2026):** ADR-D01.46's focus layers drawn in the core, and Local re-framed on the named cap (the drawing half of .43). Added to ABI 10 and host 14 before any release.
+  - The core:
+    - A style slot's `dim_mode` may now hide what it would dim: `SA2_STYLE_HIDE_MARKED` (3) and `SA2_STYLE_HIDE_UNMARKED` (4). `styledVs` places a hidden piece's stickers outside the clip volume, so what lies behind them shows.
+    - Picking follows visibility. The ID pass of a styled frame, or of the styled pane under the point, draws with that frame's or pane's style through the new `styledIdPs`. A dimmed piece answers no instance, and a hidden one is not drawn at all.
+    - A pick on a styled frame whose engine copy has since taken another piece style is `SA2_PICK_STALE_ENGINE`. A frame drawn without a style picks as before.
+  - The shell:
+    - `D02/ShellStyle.cs`: `SetFocus(layers, member, breaksThrough)` marks the pieces the focused predicate leaves out (the fill byte's dim bit). The focus layer's inactive mode chooses dimmed (0.75) or hidden for both views.
+    - `D02/ShellLocal.cs`: `Frame(namedCap)` re-frames Local on the cap the solver named. The shared selection and hover (.41) stay as in part 1.
+  - Reused: B14's style path and the core's ID pass. The pick rule follows the style the frame drew with, as the product records already did for shapes.
+  - Not built on this track:
+    - .43's other half, the .6cs caret as the preview's focus source, belongs to the editor.
+    - .67 (the Target by a pick and a key) needs the integrator's key binding of `ShellPick.Selection.Cell`.
+    - `FocusLayers.Changed` reaching `ShellStyle.SetFocus` is one line in `ShellJumble.cs`, sent to the integrator.
+  - Checks:
+    - `check_core.py --style --hopf --panes` passed. The CPU checks passed 40 of 40, and a CPU check refuses `dim_mode` 5.
+    - On WARP, hiding the marked pieces covered 26,162 pixels with 0 apart from a set without them. 7 of 8 hidden sample points picked the piece behind. The dimming frame's picks never named a dimmed piece, and an outline alone changed no pick.
+    - `tests/test_d02_drawing.py` passed 40 of 40, `test_renderer_core.py` 26 of 26 and `test_renderer_shell.py` 84 of 84.
+    - `d02_run.py --script hopf` (316 frames) and `--script two-views` (633 two-pane frames) passed on `wj-ia-300`.
 
 ### B18. The sweep and the half-turn
 - **Goal:** a committed jumble twist is swept; a half-turn cuts and outlines.
@@ -760,6 +778,12 @@ relative path is from the repository root.
   - Script `two-views` on `wj-ia-300`: it names cap 150, twists twice with the router's KeyJ, and undoes. Its event check needs one-view frames before the cap, then composite frames of two drawn panes at every revision reached. The jumbled fixture refuses the two KeyJ twists (the run's correctness detail counts 2 refused), so only the undo changes the revision; the check asks for at least one change.
   - Not built yet: picks per view (B17; `Takes` is ready), camera keys to the focused view, and the `M600_FRAME_PICTURE` transparency check. Local looks for its cap with no `watch_d02.py` sitting yet.
   - Checks: `check_core.py --poses --shape --style --panes --focus` (CPU and WARP) passed. The WARP focus check covered 88,732 pixels for the whole view, 8,129 for the cap, centred on the target, and 9,965 with the spread. `d02_run.py --script two-views --state wj-ia-300` passed: 896 frames, 633 drawn with two panes, 0 held. `tests/test_d02_drawing.py` passed 20 of 20, `test_renderer_shell.py` 79 of 79, `test_renderer_core.py` 25 of 25 and `test_renderer_acceptance.py` 54 of 54. `cargo test -p c600-render` and `test_render_ffi.py` passed, including the host test `the_host_sets_a_view_focus`. The Look Lab console lane passed 204 of 204, including `D02GroundCutsBothOpenings`. Its Godot lane does not build: CS0108 in `Chrome/Ui/JumbleLists.cs` (the `Show()` methods of `CapCoversList`, `RepairListControl` and `RepairStageBar`), which B18c did not touch.
+- **As built, the default cap (bug track, 26 November 2026):** the owner decided that Local is never empty.
+  - The rule is the pure model `Model/LocalCap.cs`. While a state is bound and no cap has been named in the session, Local draws cap 0, the lowest cap id; the choice is neutral by number, as every cap list is in cap-id order. Once a cap is named, Local keeps it until another is named, also across undo, twists and an un-naming. With no state bound Local draws nothing, and its empty sentence stays. Console test `D02LocalCapDrawsTheLowestCapUntilOneIsNamed`.
+  - The default is drawn, never named. This follows ADR-D02.12 ("Readouts show true zeros"), .16 ("No job starts before a cap is named") and .19 ("A cap's cell names the cap"). The Named cap count, the cap map's "no cap named" line, the threshold panel and the jobs read `Naming.Named` only. Local's readout says "Local shows cap 0 by default; no cap is named." followed by the empty sentence as the hint, which its tooltip repeats. ADR-D02.12's "Local shows its empty state" still needs the integrator's wording.
+  - Shell: `ShellLocal.Frame` falls back to the host's `LocalCap.Shown` while no cap is named, and the script player tells the host whether a state is bound. `Shell.cs` is unchanged; its comment "with no cap Local is hidden" now holds only while no state is bound.
+  - Scripts: `host` and `name-cap` expect the default's readout before the naming. `two-views` expects Local framed on cap 0 with its opening shown before the naming, and on cap 150 after it. Its event check, and those of `hopf` and `ring-sheet`, ask that no one-view frame follows the first composite frame.
+- Checks: the Look Lab lane passed 234 of 234, including `D02LocalCapDrawsTheLowestCapUntilOneIsNamed`, with the checkout unchanged. `tests/test_shared_chrome.py` passed 12, `tests/test_renderer_shell.py` 94 and `tests/test_d02_drawing.py` 41. `build_product.py` passed. These `d02_run.py` runs passed: `name-cap` on `ia-40` (Local on cap 0 before the naming, then on cap 30), `two-views` on `wj-ia-300` (cap 0, then cap 150 through the twists and the undo; 883 frames, 875 drawn with two panes, 0 held), `host` on `ia-40`, and `hopf` and `ring-sheet` on `wj-ia-300` (307 frames each, 299 composite).
 - **Owner sees:** `watch_d02.py --state wj-ia-300`: Global and Local drawn at once; a twist moves both.
 - **Machine:** H, W.
 - **Checkpoint:** no; C3 follows B19.
@@ -860,11 +884,18 @@ relative path is from the repository root.
 - **As built, bare (drawing track, 26 November 2026):** the ring sheet as a second kind of B23's layout. It was added to ABI 10 before any release, so the host stays at version 13.
   - `SA2_LAYOUT_RING_SHEET` (2u) builds Look Lab's `GlobalLayout` sheet charts into the same Hopf table, from row 2611 on: SheetDx 0.68, SheetDy 0.57, SheetScale 0.6. Each cell's centre sits at (0.408 (h/2 - 14.75), -0.342 (r - 9.5)).
   - The chart is chosen as for the rings. The camera does not turn the sheet.
-  - The shell holds the sheet back (`ShellHopf.Opens`). An opening file that names `ringSheet` keeps Global on the chain and logs a warning.
-    - Reason: on the owner's GPU the sheet's first product frames removed the core's device (`DXGI_ERROR_DEVICE_HUNG`, 0x887a0006). Each recovery hung again.
-    - It happened with and without the jumbled fixture. The same data folder naming `hopfRings` passed (316 frames), and the product's own core draws the sheet correctly on WARP.
-    - Not found yet. The shader differs from the rings only in the table offset (row 2611 on) and in skipping the camera turn.
-    - `d02_run.py --script ring-sheet` reads its own data folder through `--d02-data`. It stays red until the sheet is let through.
+  - First held back, then fixed:
+    - On the owner's GPU the sheet's first product frames removed the core's device (`DXGI_ERROR_DEVICE_HUNG`, 0x887a0006), and each recovery hung again. The shell held the sheet back (`ShellHopf.Opens`).
+    - Cause, found after B17: `sa2_view_layout_set` built the Hopf table only for `SA2_LAYOUT_HOPF_RINGS`. A sheet named first therefore drew from an empty table at t18, a root SRV that nothing bounds. The chart index read from outside the table sent the next reads anywhere.
+    - WARP tolerated the out-of-bounds reads, and the core's own checks always named the rings before the sheet.
+    - Fixed in three places:
+      - both Hopf kinds build the table;
+      - `set_shape` refuses a Hopf layout before the table exists;
+      - `hopfVertex` clamps the chart index to 599.
+    - New checks:
+      - `product_sheet_first` draws the sheet on a fresh context before any rings, and it matches the sheet drawn after them;
+      - a CPU check refuses a Hopf layout without the table.
+    - `ShellHopf.Opens` now lets the sheet through.
   - Not built yet:
     - the host's per-revision nearest-cell assignment (the shader's Hopf-coordinate choice stands in for it);
     - the wrap mark and the caption;
@@ -876,7 +907,8 @@ relative path is from the repository root.
     - `tests/test_d02_drawing.py` passed 30 of 30, `test_renderer_core.py` 26 of 26 and `test_renderer_shell.py` 84 of 84.
     - `cargo test -p c600-render`, the bridge workspace and `test_render_ffi.py` passed.
     - With the sheet held back, `d02_run.py --script hopf --state wj-ia-300` passed again: 317 frames. Its first try failed only on the foreground rule, with a browser window in front; the retry passed.
-    - `--script ring-sheet` drew 316 chain frames with no device removal, and stays red as intended.
+    - With the sheet held back, `--script ring-sheet` drew 316 chain frames with no device removal and stayed red as intended.
+    - After the fix, `check_core.py --style --hopf --panes` passed, the sheet-first picture included. `d02_run.py --script ring-sheet --state wj-ia-300` passed on the owner's GPU: 316 frames, all on device epoch 1, with no recovery and no warning.
 
 ### B23. Global chart preset: the Hopf rings
 - **Goal:** `view.preset.global.hopf_rings`.
@@ -985,6 +1017,27 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B2. CR-19 for the route; XM1 for the bindings; the glossary request.
+- **As built (26 November 2026):**
+  - `keymap.json` gains a `seats` section, which only the default file may carry: the pinned menu (I_a and its identity), the fifth-turn g = I_a[12], the 11 retained twist keys (items 1 to 11) and the four held seats. Seat k's key alone types g^k; held with retained key r it types r·g^k, g^k performed first (matrices act on column vectors). Each seat carries 3 twists of order 2, 3 of order 3 and 6 of order 5, and the four seats carry the 48 jumble twists. The placeholder keys avoid every bound key, the sample's host keys, the live session's J K L and the digits: seats Z, X, C and S (glyphs S1 to S4); retained I ; ' , . / [ ] - = `.
+  - `Model/KeyMap.cs`: `SeatKeys` reads and checks the section, and `KeyMapModel.HeldSeat(seats, seat)` gives the 12 twist keys with their chords and orders. `Caps` takes the seats: with one seat key held and no modifier, the seat key shows held and its 11 retained keys show as twist keys, each labelled with its order. At rest each seat key shows its seat and glyph. `KeyMapPanel.Seats` is set by the product shell under `--d02` with `--sample`. That is the only place the key map is mounted.
+  - `Model/JumbleViews.cs` is new. While Jumble is on, Global's border gains a link mark, "projection chain (600-cell-Full)". Both borders gain a not-drawn mark, "exposed faces unavailable", in the role `state.exposed_face.unavailable`, with `input.exposed_geometry_unavailable` in its tooltip. The same words end the named cap's Tier 1 in the cap map's panel and the inspected cap's Tier 1 in Cap covers. `jumble-words.json` gains a `built` list for words the build composes from an item rather than quotes; it holds the chain's words.
+  - `tests/test_d02_words.py` reads, longest phrase first, the sentences, names, synonyms and row names, the built words, the draft rows' labels and the seat labels. The rows' notes are help prose that K2 replaces, so they are not read. A word must be one of the following:
+    - a glossary row, found through `build.py`'s own index;
+    - a `PENDING_TERMS` entry, which must match section 15;
+    - a reading of one row, such as F_c → Floor or rev → Revision;
+    - a homonym's sense in D02 (twist, projection, covers), a name or a variable;
+    - a plain word: ordinary English or general geometry such as face, ring and antipode, which is never a glossary name.
+
+    An unlisted word fails. A pending term that gains a glossary row must leave the list.
+  - Departures:
+    - The files list grows by `Model/Commands.cs` (the optional section), `Model/CapCovers.cs` and `Ui/JumbleSurface.cs` (Tier 1), `Ui/JumbleHost.cs` (the marks), `renderer/shell/project/ShellChrome.cs` (the seats) and `jumble-words.json`.
+    - No chord routes yet. The draft row `jumble.seat.hold` waits for CR-19, and the keys and glyphs wait for XM1 and G6.
+  - Checks:
+    - the four console tests and the other 223 (227 PASS), and `tools/looklab/check.py` PASS with the checkout unchanged;
+    - `python tests/test_d02_words.py` OK;
+    - `glossary/build.py --check` unchanged (298 terms);
+    - `build_product.py` PASS;
+    - `test_renderer_shell.py`, `test_shared_chrome.py`, `test_d02_drawing.py`, `test_renderer_core.py` and `test_d02_samples.py` OK.
 
 ### B28. The research pane: Records and Claims
 - **Goal:** `pane.research` in Analyse, with its verdict words.
