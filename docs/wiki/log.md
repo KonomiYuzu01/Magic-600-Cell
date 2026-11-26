@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | Context and test tiers
+The owner set how agents use context and how tests are tiered ([decision](decisions/owner-decisions-2026-11-26-context-and-test-tiers.md)): the always-loaded rule files keep only the hard rules, the current state and a map, and the suspended Codex protocol, Claude's hooks and machine cleanup, and the briefing's dated history move unchanged into guides loaded on demand; a commit runs only its area's fast checks, a step its own end-to-end script once, a pull request CI's fast tier, and the full regression runs in CI's full tier and together in stage 3.
+
 ## [2026-11-26] decision | The order of work to the 1.0 release
 The owner set the release target, before 2027 and preferably by 20 December 2026, and the order from ADR-D02 to the release, with K2 after ADR-D03 and LP6 ([decision](decisions/owner-decisions-2026-11-26-release-order.md)): the fine work of freeze rounds 3 and 4 moves into stage 2's K2 art line, stage 3 runs only the full-volume acceptance and bug fixes, and stage 4 makes the promotional film before packaging and release. The research line's G0 stays an open question ([decision](decisions/owner-decisions-2026-11-26-research-goal.md)).
 

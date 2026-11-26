@@ -6,17 +6,33 @@ fails or times out. A pass shows only that these headless checks pass on
 the runner: it is not Windows/DirectX, input, long-session or performance
 evidence (AGENTS.md "Evidence and publishing").
 
-With --base (or RUN_HEADLESS_BASE, which the workflow sets for pull requests),
-a pull request whose changes are only Markdown in the documentation trees
-below runs the light checks (owner, 3 November 2026). Any other pull request
-runs every check except the heavy ones whose area it does not change (owner,
-19 November 2026); a change to the CI itself, an unreadable diff, every push
-to main and the nightly run run all checks.
+CI has two tiers (owner, 26 November 2026).
 
-The workflow runs a full set as parallel shards: --plan-github gives the
-shard numbers, and --shard K/N runs the K-th of N time-balanced shards.
+The fast tier runs on every pull request and should finish in about 10 to 15
+minutes. With --base (or RUN_HEADLESS_BASE, which the workflows set for pull
+requests), a pull request whose changes are only Markdown in the documentation
+trees below runs the light checks (owner, 3 November 2026). Any other pull
+request runs the checks of its changed area: every check except the heavy ones
+whose area it does not change (owner, 19 November 2026), and of those, not the
+ones whose recorded time on the Windows runner is over FAST_BUDGET_SECONDS;
+those wait for the full tier. The mechanics, persistence, process-ownership and
+agent-rules checks always run when the change selects them, however long they
+take. The Linux workflow runs `cargo test` only for the Rust workspace members
+that hold a changed file, or the whole workspace when a file of the workspace
+itself changes (rust_packages).
 
-Usage: python tools/ci/run_headless.py [--list] [--base COMMIT] [--plan | --plan-github] [--shard K/N]
+The full tier runs every check. It runs on every push to main, every night,
+for a pull request that changes the CI itself or whose diff cannot be read, and
+on a manual run with the tier input `full` (the default; --tier or
+RUN_HEADLESS_TIER). Nobody waits for it. A manual run with the tier `fast`
+selects the checks from the diff against main.
+
+The workflows run the checks as parallel shards: --plan-github gives the mode,
+the shard numbers and the Linux jobs, and --shard K/N runs the K-th of N
+time-balanced shards.
+
+Usage: python tools/ci/run_headless.py [--list] [--base COMMIT] [--tier fast|full] [--plan | --plan-github]
+       [--shard K/N]
 """
 from __future__ import annotations
 
@@ -27,6 +43,7 @@ import re
 import subprocess
 import sys
 import time
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -284,12 +301,29 @@ def select_checks(changed: list[str] | None, literals: set[str]) -> tuple[str, s
         if reason:
             checks = [c for c in CHECKS if c[0] not in HEAVY_AREAS or heavy_check_runs(c[0], changed)]
             left = len(CHECKS) - len(checks)
-            return "pr", f"{reason}; {left} heavy check(s) outside the changed area run on main", checks
+            return "pr", f"{reason}; {left} heavy check(s) outside the changed area run in the full tier", checks
     return "docs-only", f"{len(changed)} changed Markdown file(s) in the documentation trees", LIGHT_CHECKS
 
 
-# Seconds per check on the Windows runner (the full run on main of 3 November 2026), used only
-# to balance the parallel shards; a check not listed counts as DEFAULT_SECONDS.
+# The tier of a run: "full" runs every check, "fast" (or no tier) selects the checks from the diff against the base.
+TIERS = ("fast", "full")
+# A manual fast run has no pull-request base, so it compares the branch with main.
+DISPATCH_BASE = "origin/main"
+
+
+def plan_base(tier: str, base: str) -> str:
+    """The commit the selection diffs against: none for the full tier (every check), main for a manual fast run
+    without a base, otherwise the pull request's base (empty on a push or the nightly run: every check)."""
+    if tier == "full":
+        return ""
+    if tier == "fast" and not base:
+        return DISPATCH_BASE
+    return base
+
+
+# Seconds per check on the Windows runner (the full run on main of 3 November 2026), used to balance
+# the parallel shards, where a check not listed counts as DEFAULT_SECONDS, and to choose the checks
+# that the fast tier defers (FAST_BUDGET_SECONDS).
 SECONDS = {
     "tests/test_jumbling_store_j1.py": 831, "tests/test_jumbling_j1_replay.py": 784,
     "tests/test_jumbling_x1_witness.py": 559, "tests/test_jumbling_observations.py": 249,
@@ -327,6 +361,103 @@ DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.
 FULL_SHARDS = 5
 
+# The fast tier's budget per check (owner, 26 November 2026): in pr mode a selected check whose recorded time above
+# exceeds it waits for the full tier. 180 s lies in the widest gap of the recorded times, between the jumbling
+# straddlers (172 s) and the next check up (240 s), so no fast check holds a shard for more than three minutes and the
+# fast shards end in about ten. A check with no recorded time stays in the fast tier.
+FAST_BUDGET_SECONDS = 180
+# Checks that run on every change that selects them, however long they take: the mechanics and persistence checks,
+# the process-ownership check and the agent-rules checks (AGENTS.md "Verification").
+PER_CHANGE_CHECKS = frozenset({
+    "tests/test_core.py", "tests/test_reference_maps.py", "tests/test_crash.py", "tests/test_engine_lifecycle.py",
+    "tests/test_agent_rules_sync.py", "tests/test_codex_review.py", "tests/test_stop_gate.py",
+    "tests/test_bootstrap.py", "tests/test_wiki_lint.py", "tests/test_workbench.py",
+})
+
+
+def defer_slow(checks: list[list[str]]) -> tuple[list[list[str]], list[list[str]]]:
+    """Split checks into (fast, deferred), each in list order: a check recorded over FAST_BUDGET_SECONDS is
+    deferred to the full tier unless it is a per-change check."""
+    fast: list[list[str]] = []
+    deferred: list[list[str]] = []
+    for check in checks:
+        slow = SECONDS.get(check[0], 0) > FAST_BUDGET_SECONDS and check[0] not in PER_CHANGE_CHECKS
+        (deferred if slow else fast).append(check)
+    return fast, deferred
+
+
+def plan(changed: list[str] | None, literals: set[str]) -> tuple[str, str, list[list[str]], list[list[str]]]:
+    """Return (mode, reason, checks, deferred): the path selection, then in pr mode the fast tier's deferral."""
+    mode, reason, checks = select_checks(changed, literals)
+    if mode != "pr":
+        return mode, reason, checks, []
+    checks, deferred = defer_slow(checks)
+    if deferred:
+        reason += f"; {len(deferred)} check(s) over {FAST_BUDGET_SECONDS} s deferred to the full tier"
+    return mode, reason, checks, deferred
+
+
+# Package names that may go on a cargo command line.
+_PACKAGE_NAME = re.compile(r"[A-Za-z0-9_-]+")
+# The Linux workflow's J1 comparisons: one job per selected check of this form.
+_J1_COMPARISON = re.compile(r"tests/test_jumbling_rust_(.+)\.py")
+
+
+def rust_members(root: Path = ROOT) -> dict[str, str] | None:
+    """{member directory: package name} of the Rust workspace, read from rust/Cargo.toml and each member's
+    manifest, or None if a manifest is unreadable or names an unusual package."""
+    try:
+        workspace = tomllib.loads((root / "rust" / "Cargo.toml").read_text(encoding="utf-8"))
+        members: dict[str, str] = {}
+        for entry in workspace["workspace"]["members"]:
+            directory = f"rust/{entry.strip('/')}/"
+            manifest = tomllib.loads((root / directory / "Cargo.toml").read_text(encoding="utf-8"))
+            name = manifest["package"]["name"]
+            if not isinstance(name, str) or not _PACKAGE_NAME.fullmatch(name):
+                return None
+            members[directory] = name
+    except (OSError, KeyError, TypeError, AttributeError, tomllib.TOMLDecodeError):
+        return None
+    return members
+
+
+def rust_packages(changed: list[str], root: Path = ROOT) -> list[str] | None:
+    """The workspace packages a fast-tier `cargo test` runs: those whose member directory holds a changed file,
+    sorted. None means the whole workspace: a file of the workspace itself changed (rust/Cargo.toml,
+    rust/Cargo.lock, rust/.cargo/, rust/vendor/ or any other non-Markdown file outside the members), or a manifest
+    is unreadable. An empty list means no cargo test."""
+    paths = [path for path in changed if path.startswith("rust/")]
+    if not paths:
+        return []
+    members = rust_members(root)
+    if members is None:
+        return None
+    packages: set[str] = set()
+    for path in paths:
+        owner = next((name for directory, name in members.items() if path.startswith(directory)), None)
+        if owner is not None:
+            packages.add(owner)
+        elif not path.endswith(".md"):
+            return None
+    return sorted(packages)
+
+
+def linux_jobs(mode: str, changed: list[str] | None, checks: list[list[str]], root: Path = ROOT) -> dict[str, str]:
+    """The Linux workflow's step outputs: whether `cargo test` runs, its package arguments, and the J1
+    comparisons among the selected checks (so a deferred comparison waits for the full tier too)."""
+    if mode == "full":
+        packages: list[str] | None = None
+    elif mode == "pr":
+        packages = rust_packages(changed or [], root)
+    else:
+        packages = []
+    j1 = [match.group(1) for check in checks if (match := _J1_COMPARISON.fullmatch(check[0]))]
+    return {
+        "rust": "true" if packages is None or packages else "false",
+        "packages": "--workspace" if packages is None else " ".join(f"-p {name}" for name in packages),
+        "j1": json.dumps(j1),
+    }
+
 
 def shard_count(mode: str) -> int:
     return 1 if mode == "docs-only" else FULL_SHARDS
@@ -358,20 +489,29 @@ def main() -> int:
     parser.add_argument("--list", action="store_true", help="print the checks and exit")
     parser.add_argument("--base", default=os.environ.get("RUN_HEADLESS_BASE", ""),
                         help="pull-request base commit (default: $RUN_HEADLESS_BASE); empty runs all checks")
+    parser.add_argument("--tier", default=os.environ.get("RUN_HEADLESS_TIER", ""),
+                        help="full runs every check; fast selects from the diff against the base, or main without "
+                             "one (default: $RUN_HEADLESS_TIER, set on manual runs; empty follows the base)")
     parser.add_argument("--plan", action="store_true", help="print the mode and the checks it runs, and exit")
     parser.add_argument("--plan-github", action="store_true",
-                        help="print the mode and the shard numbers as GitHub step outputs, and exit")
+                        help="print the mode, the shard numbers and the Linux jobs as GitHub step outputs, and exit")
     parser.add_argument("--shard", type=parse_shard, metavar="K/N", help="run shard K of N of the selected checks")
     parser.add_argument("--expect-mode", choices=("full", "pr", "docs-only"),
                         help="fail unless the selected mode is this one (the plan job's mode)")
     args = parser.parse_args()
+    if args.tier not in ("", *TIERS):
+        parser.error(f"--tier must be one of {', '.join(TIERS)}, got {args.tier!r}")
     if args.list:
         for check in CHECKS:
             print(" ".join(check))
         return 0
-    mode, reason, checks = select_checks(changed_files(args.base), full_check_literals())
-    print(f"Mode: {mode} ({reason}); {len(checks)} of {len(CHECKS)} checks",
-          file=sys.stderr if args.plan_github else sys.stdout, flush=True)
+    changed = changed_files(plan_base(args.tier, args.base))
+    mode, reason, checks, deferred = plan(changed, full_check_literals())
+    log = sys.stderr if args.plan_github else sys.stdout
+    print(f"Mode: {mode} ({reason}); {len(checks)} of {len(CHECKS)} checks", file=log, flush=True)
+    if deferred:
+        print("Deferred to the full tier: " + ", ".join(f"{' '.join(c)} ({SECONDS[c[0]]} s)" for c in deferred),
+              file=log, flush=True)
     if args.expect_mode and args.expect_mode != mode:
         print(f"error: the plan chose {args.expect_mode} mode, this run chose {mode}", file=sys.stderr)
         return 2
@@ -380,6 +520,8 @@ def main() -> int:
         print(f"mode={mode}")
         print(f"count={count}")
         print(f"shards={json.dumps(list(range(1, count + 1)))}")
+        for name, value in linux_jobs(mode, changed, checks).items():
+            print(f"{name}={value}")
         return 0
     if args.shard:
         index, count = args.shard
@@ -411,7 +553,8 @@ def main() -> int:
     failed = [name for name, outcome, _ in results if outcome != "pass"]
     print(f"\n{len(results) - len(failed)} of {len(results)} checks passed ({mode} mode)")
     if mode != "full":
-        print("The other checks did not run; all of them run on main after the merge and every night.")
+        print("The other checks did not run; the full tier runs all of them on every push to main, every night and "
+              "on a manual run with the tier full.")
     return 1 if failed else 0
 
 

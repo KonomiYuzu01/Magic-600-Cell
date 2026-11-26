@@ -3,13 +3,23 @@
 # input, long-session or performance evidence; those checks still run on the owner's
 # machine. The runners have no personal data and get no secrets.
 #
-# The plan job chooses the mode (tools/ci/run_headless.py): a pull request that changes
-# only Markdown in the documentation trees runs the light checks in one shard; any other
-# pull request runs every check except the heavy ones outside its changed area (owner,
-# 19 November 2026); every push to main and the nightly run run all checks. Checks run in
-# time-balanced parallel shards. The headless job passes only when the plan and every
-# shard passed. Checkouts are blob-less partial clones with the full history: a test that
-# reads an old file version fetches that blob on demand from the public repository.
+# CI has two tiers (owner, 26 November 2026); the plan job chooses the checks with
+# tools/ci/run_headless.py.
+# - The fast tier runs on every pull request and should finish in about 10 to 15 minutes.
+#   A pull request that changes only Markdown in the documentation trees runs the light
+#   checks in one shard. Any other pull request runs the checks of its changed area
+#   (owner, 19 November 2026), without the ones recorded at over 180 seconds on this
+#   runner (FAST_BUDGET_SECONDS), which wait for the full tier. The mechanics,
+#   persistence, process-ownership and agent-rules checks run whenever the change selects
+#   them, however long they take.
+# - The full tier runs every check. It runs on every push to main, every night, for a pull
+#   request that changes the CI itself, and on a manual run with the tier input `full`
+#   (the default), so an author can run it on a branch. Nobody waits for it. A manual run
+#   with the tier `fast` selects the checks from the branch's diff against main.
+# Checks run in time-balanced parallel shards. The headless job passes only when the plan
+# and every shard passed. Checkouts are blob-less partial clones with the full history: a
+# test that reads an old file version fetches that blob on demand from the public
+# repository.
 name: Windows headless checks
 
 on:
@@ -19,6 +29,12 @@ on:
   schedule:
     - cron: "17 18 * * *" # nightly full run on main
   workflow_dispatch:
+    inputs:
+      tier:
+        description: "full runs every check; fast runs the checks of the branch's changes against main"
+        type: choice
+        options: [full, fast]
+        default: full
 
 permissions:
   contents: read
@@ -47,6 +63,7 @@ jobs:
         id: plan
         env:
           RUN_HEADLESS_BASE: ${{ github.event.pull_request.base.sha }}
+          RUN_HEADLESS_TIER: ${{ inputs.tier }} # empty except on a manual run
         run: python3 tools/ci/run_headless.py --plan-github >> "$GITHUB_OUTPUT"
 
   shard:
@@ -82,10 +99,11 @@ jobs:
 
       - name: Run the headless checks of this shard
         # The default temp path keeps its 8.3 short name (RUNNER~1) on purpose: the tests
-        # must pass under it. The shard recomputes the mode from the same diff and fails if it
-        # differs from the plan's.
+        # must pass under it. The shard recomputes the mode from the same diff and tier and
+        # fails if it differs from the plan's.
         env:
           RUN_HEADLESS_BASE: ${{ github.event.pull_request.base.sha }}
+          RUN_HEADLESS_TIER: ${{ inputs.tier }}
         run: python tools/ci/run_headless.py --shard ${{ matrix.shard }}/${{ needs.plan.outputs.count }} --expect-mode ${{ needs.plan.outputs.mode }}
 
   headless:
