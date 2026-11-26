@@ -39,6 +39,8 @@ public static class ShellStyle
 
     /// <summary>The fill channel's bytes last sent, or null when none are.</summary>
     public static byte[]? SentFill { get; private set; }
+    /// <summary>B30: the tint palette last sent with the view styles (64 floats), or null.</summary>
+    public static float[]? SentPalette { get; private set; }
 
     /// <summary>The hovered and the selected piece the last sent outline marks.</summary>
     public static int? SentHover { get; private set; }
@@ -183,6 +185,7 @@ public static class ShellStyle
                 return code;
             }
         }
+        SentPalette = _tintPalette;
         _revision = revision;
         _dirty = false;
         return HostLibrary.Ok;

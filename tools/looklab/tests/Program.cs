@@ -278,6 +278,12 @@ internal static partial class Program
             ("D02CapPromptEnterNamesTheChosenCap", D02CapPromptEnterNamesTheChosenCap),
             ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy),
             ("D02LocalCapDrawsTheLowestCapUntilOneIsNamed", D02LocalCapDrawsTheLowestCapUntilOneIsNamed),
+            ("D02VerdictWordsExact", D02VerdictWordsExact),
+            ("D02NotApplicableCountsAsNoCheck", D02NotApplicableCountsAsNoCheck),
+            ("D02CutOffIsNeverAVerdict", D02CutOffIsNeverAVerdict),
+            ("D02PinnedInputNeverStaleOnCommit", D02PinnedInputNeverStaleOnCommit),
+            ("D02RenameChangesNoDigest", D02RenameChangesNoDigest),
+            ("D02EveryResearchControlInvokesARow", D02EveryResearchControlInvokesARow),
             ("D02LocalPlanDrawsCellZeroOnTheBasePuzzle", D02LocalPlanDrawsCellZeroOnTheBasePuzzle),
             ("D02LocalPlanKeepsTheJumbleRule", D02LocalPlanKeepsTheJumbleRule),
             ("D02TintModesExclusive", D02TintModesExclusive),
@@ -291,7 +297,11 @@ internal static partial class Program
             ("D02OverlayTraceAtANamedCapOnly", D02OverlayTraceAtANamedCapOnly),
             ("D02OverlayStepMovingSetReplacesTheTrace", D02OverlayStepMovingSetReplacesTheTrace),
             ("D02OverlayBlockedCapKeepsStraddlersAndCountsPoints", D02OverlayBlockedCapKeepsStraddlersAndCountsPoints),
-            ("D02OverlayHiddenCountIsExactAndNothingHides", D02OverlayHiddenCountIsExactAndNothingHides)
+            ("D02OverlayHiddenCountIsExactAndNothingHides", D02OverlayHiddenCountIsExactAndNothingHides),
+            ("D02TuningOpensInRightDockOfCurrentLayout", D02TuningOpensInRightDockOfCurrentLayout),
+            ("D02KnobChangeTouchesNoState", D02KnobChangeTouchesNoState),
+            ("D02SwapIsAnInvolution", D02SwapIsAnInvolution),
+            ("D02HeldCompareRestoresOnRelease", D02HeldCompareRestoresOnRelease)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

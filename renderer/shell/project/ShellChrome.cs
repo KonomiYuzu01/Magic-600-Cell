@@ -51,6 +51,8 @@ public sealed class ShellChrome
     internal SampleMount? Sample { get; }
     /// <summary>ADR-D02's Jumble host in Solve (B6), with D02 on.</summary>
     internal JumbleHost? Jumble { get; }
+    /// <summary>ADR-D02.47's tuning panel (B30), with D02 on: a tab of the right dock that the palette opens.</summary>
+    internal TuningPanel? Tuning { get; }
     /// <summary>Whether sample mode is on: launch.py --sample sets M600_SAMPLE=1.</summary>
     public static bool SampleOn => System.Environment.GetEnvironmentVariable("M600_SAMPLE") == "1";
     public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts and History (sample) hold sample data. The views, History, the revision and the history position are this session's.";
@@ -132,6 +134,12 @@ public sealed class ShellChrome
         }
         var appearance = new AppearancePanel(look);
         frame.AddDockPanel(DockSide.Right, "appearance", "Appearance", "panel.appearance", appearance);
+        // B30: the tuning panel beside History and Appearance; its knobs edit the appearance through the Appearance panel.
+        if (ShellJumble.On)
+        {
+            Tuning = ShellJumble.TuningHost = new TuningPanel(appearance, frame);
+            frame.AddDockPanel(DockSide.Right, Magic600.Chrome.Tuning.PanelId, Magic600.Chrome.Tuning.Title, Magic600.Chrome.Tuning.Glyph, Tuning);
+        }
         var specimen = new TokenSpecimen();
         frame.AddDockPanel(DockSide.Left, "tokens", "Tokens", "panel.tokens", specimen);
         foreach (var pane in Panes)
@@ -162,6 +170,9 @@ public sealed class ShellChrome
             registry.AddRows(draftRows);
             sampleDrafts = drafts.Order.ToArray();
         }
+        // B28: the research pane, a centre peer of the pair in Analyse; in sample mode it reads the synthetic sample and
+        // registers its draft row.
+        ShellResearch.Load(frame, registry, SampleOn);
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
@@ -169,11 +180,14 @@ public sealed class ShellChrome
         frame.AddPane("gallery", "Gallery", gallery);
         string? Unavailable(string command, string? argument) => command switch
         {
+            // B28: a research row naming a research object (or a tab row) is the research pane's.
+            _ when ShellResearch.Model != null && ResearchModel.Handles(command, argument) => null,
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
             // B9: the naming and threshold draft rows work; the other draft rows wait for their steps.
+            _ when Tuning != null && Tuning.Handles(command) => Tuning.Unavailable(command, argument),
             _ when Jumble != null && Jumble.Handles(command) => Jumble.Unavailable(command, argument),
             _ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,
             _ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),
@@ -183,6 +197,7 @@ public sealed class ShellChrome
         var commands = new PaletteModel(registry, keymap, Unavailable);
         var palette = new CommandPalette(commands, () => frame.Tokens);
         palette.DraftRows.UnionWith(sampleDrafts);
+        palette.DraftRows.UnionWith(ShellResearch.DraftIds);
         frame.Overlays.AddChild(palette);
         var sheet = new ShortcutSheet(registry, keymap, () => frame.Tokens);
         frame.Overlays.AddChild(sheet);
@@ -222,6 +237,10 @@ public sealed class ShellChrome
             sample?.Echo(command, argument);
             switch (command)
             {
+                // B28: the research rows (a rename is workspace.set research.names:<ref>=<name>), before workspace.set.
+                case var research when ShellResearch.Model != null && ResearchModel.Handles(research, argument):
+                    ShellResearch.Execute(frame, command, argument);
+                    break;
                 case "command.find": palette.Open(); break;
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
                 case var menu when keymap.Radials.ContainsKey(menu):
@@ -248,11 +267,16 @@ public sealed class ShellChrome
                 case "theme.select" when argument == "preset.next": NextPreset(); break;
                 case "theme.select": appearance.Edit(a => a.SetTheme(themes[(Array.FindIndex(themes, t => t.Id == a.Theme) + 1) % themes.Length].Id), true, true); break;
                 case "density.preset.set": NextDensity(); break;
+                case var tuned when Tuning != null && Tuning.Handles(tuned): Tuning.Execute(command, argument); break;
                 case var jumble when Jumble != null && Jumble.Handles(jumble): Jumble.Execute(command, argument); break;
                 case var handled when sample != null && sample.Handles(handled): sample.Execute(command, argument); break;
             }
         }
         Run = Execute;
+        if (ShellResearch.Pane is { } researchPane)
+        {
+            researchPane.Command += Execute;
+        }
         palette.Run += row => Execute(row.Command, row.Argument);
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
@@ -382,7 +406,7 @@ public sealed class ShellChrome
         }
         frame.Rebuilt += () => { Icons(); Dress(); };
         frame.Recoloured += Dress;
-        Moves.Changed += () => { if (GodotObject.IsInstanceValid(history)) history.Refresh(); Describe(); };
+        Moves.Changed += () => { if (GodotObject.IsInstanceValid(history)) history.Refresh(); Describe(); ShellResearch.Model?.Committed(); };
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         frame.MarkBaseline();
         frame.Flush();

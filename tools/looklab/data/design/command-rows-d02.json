@@ -195,6 +195,16 @@
       "request": "CR-15"
     },
     {
+      "id": "tuning.open",
+      "label": "Tuning: open the panel",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Opens the tuning panel as a tab in the current layout's right dock, beside History in Solve, so the views being judged stay visible (ADR-D02.47).",
+      "request": "CR-16"
+    },
+    {
       "id": "tuning.preset.save",
       "label": "Tuning: save preset",
       "kind": "workspace",

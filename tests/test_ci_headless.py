@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools" / "ci"))
@@ -162,17 +163,22 @@ class ShardTests(unittest.TestCase):
                 rh.parse_shard(text)
 
     def run_script(self, *args, base=""):
-        env = dict(os.environ, RUN_HEADLESS_BASE=base)
+        env = dict(os.environ, RUN_HEADLESS_BASE=base, RUN_HEADLESS_TIER="")
         return subprocess.run([sys.executable, str(ROOT / "tools/ci/run_headless.py"), *args], cwd=ROOT, env=env,
                               capture_output=True, text=True)
 
     def test_plan_github_without_a_base_is_a_full_plan(self):
         result = self.run_script("--plan-github")
         self.assertEqual(result.returncode, 0, result.stderr)
+        comparisons = [c[0][len("tests/test_jumbling_rust_"):-3] for c in rh.CHECKS
+                       if c[0].startswith("tests/test_jumbling_rust_")]
+        self.assertEqual(len(comparisons), 6)
         self.assertEqual(result.stdout.splitlines(),
                          ["mode=full", f"count={rh.FULL_SHARDS}",
-                          "shards=" + json.dumps(list(range(1, rh.FULL_SHARDS + 1)))])
+                          "shards=" + json.dumps(list(range(1, rh.FULL_SHARDS + 1))),
+                          "rust=true", "packages=--workspace", "j1=" + json.dumps(comparisons)])
         self.assertIn("Mode: full", result.stderr)
+        self.assertNotIn("Deferred", result.stderr)
 
     def test_a_shard_plan_and_a_mode_mismatch(self):
         result = self.run_script("--plan", "--shard", f"1/{rh.FULL_SHARDS}", "--expect-mode", "full")
@@ -204,6 +210,190 @@ class ChangedFilesTests(unittest.TestCase):
             self.assertIsNone(rh.changed_files("no-such-commit", root))
             self.assertIsNone(rh.changed_files("", root))
 
+
+class FastTierTests(unittest.TestCase):
+    """The fast tier (owner, 26 November 2026): pr mode defers the checks recorded over the budget."""
+
+    def plan(self, changed):
+        return rh.plan(changed, set())
+
+    def test_pr_mode_defers_the_selected_checks_over_the_budget(self):
+        changed = ["rust/c600-kernel/src/lib.rs", "core.py"]
+        _, _, selected = rh.select_checks(changed, set())
+        mode, reason, checks, deferred = self.plan(changed)
+        self.assertEqual(mode, "pr")
+        self.assertTrue(deferred)
+        self.assertIn(f"{len(deferred)} check(s) over {rh.FAST_BUDGET_SECONDS} s deferred to the full tier", reason)
+        # The two parts split the path selection and keep its order.
+        self.assertEqual(sorted(checks + deferred), sorted(selected))
+        self.assertEqual(checks, [c for c in selected if c not in deferred])
+        for check in deferred:
+            self.assertGreater(rh.SECONDS[check[0]], rh.FAST_BUDGET_SECONDS)
+        for check in checks:
+            self.assertLessEqual(rh.SECONDS.get(check[0], 0), rh.FAST_BUDGET_SECONDS)
+        # The whole-workspace cargo checks and the slowest J1 checks wait for the full tier.
+        for path in ("tests/test_language_rust.py", "tests/test_language_rust_checkers.py",
+                     "tests/test_jumbling_store_j1.py", "tests/test_jumbling_rust_candidate.py"):
+            self.assertIn([path], deferred)
+
+    def test_deferral_follows_the_recorded_time(self):
+        budget = rh.FAST_BUDGET_SECONDS
+        with mock.patch.dict(rh.SECONDS, {"tests/test_oracle.py": budget + 1, "tests/test_v02.py": budget}):
+            _, _, checks, deferred = self.plan(["renderer/shell/x.cs"])
+        self.assertEqual(deferred, [["tests/test_oracle.py"]])
+        self.assertIn(["tests/test_v02.py"], checks)
+        # A check with no recorded time stays in the fast tier.
+        unrecorded = [c for c in rh.select_checks(["renderer/shell/x.cs"], set())[2] if c[0] not in rh.SECONDS]
+        self.assertTrue(unrecorded)
+        self.assertTrue(all(check in checks for check in unrecorded))
+
+    def test_per_change_checks_stay_however_long_they_take(self):
+        listed = {check[0] for check in rh.CHECKS}
+        self.assertLessEqual(rh.PER_CHANGE_CHECKS, listed)
+        slow = {path: 10 * rh.FAST_BUDGET_SECONDS for path in rh.PER_CHANGE_CHECKS}
+        with mock.patch.dict(rh.SECONDS, slow):
+            _, _, checks, deferred = self.plan(["session.py"])
+        self.assertEqual(deferred, [])
+        for path in rh.PER_CHANGE_CHECKS:
+            self.assertIn([path], checks)
+        for path in ("tests/test_core.py", "tests/test_reference_maps.py", "tests/test_crash.py",
+                     "tests/test_engine_lifecycle.py", "tests/test_agent_rules_sync.py", "tests/test_codex_review.py",
+                     "tests/test_stop_gate.py", "tests/test_bootstrap.py", "tests/test_wiki_lint.py",
+                     "tests/test_workbench.py"):
+            self.assertIn(path, rh.PER_CHANGE_CHECKS)
+
+    def test_the_full_and_light_runs_defer_nothing(self):
+        for changed in (None, ["tools/ci/run_headless.py", "rust/Cargo.lock"]):
+            mode, _, checks, deferred = self.plan(changed)
+            self.assertEqual((mode, deferred), ("full", []))
+            self.assertIs(checks, rh.CHECKS)
+        mode, _, checks, deferred = self.plan(["docs/wiki/log.md"])
+        self.assertEqual((mode, deferred), ("docs-only", []))
+        self.assertIs(checks, rh.LIGHT_CHECKS)
+
+    def test_a_python_change_defers_nothing_outside_the_heavy_areas(self):
+        mode, _, checks, deferred = self.plan(["session.py"])
+        self.assertEqual((mode, deferred), ("pr", []))
+        self.assertEqual(checks, [c for c in rh.CHECKS if c[0] not in rh.HEAVY_AREAS])
+
+
+class RustPackagesTests(unittest.TestCase):
+    """The fast tier's cargo test runs the workspace members that hold a changed file."""
+
+    def test_one_crate_changed(self):
+        self.assertEqual(rh.rust_packages(["rust/c600-kernel/src/lib.rs"]), ["c600-kernel"])
+        # A member whose name starts like another's is told apart, and each package is named once.
+        self.assertEqual(rh.rust_packages(["rust/c600-jumble-tool/src/a.rs", "rust/c600-jumble/src/b.rs",
+                                           "rust/c600-jumble/tests/c.rs", "core.py"]),
+                         ["c600-jumble", "c600-jumble-tool"])
+        self.assertEqual(rh.rust_packages(["rust/c600-ir/README.md"]), ["c600-ir"])
+
+    def test_a_workspace_file_runs_the_whole_workspace(self):
+        for path in ("rust/Cargo.toml", "rust/Cargo.lock", "rust/.cargo/config.toml",
+                     "rust/vendor/num-bigint/src/lib.rs", "rust/rustfmt.toml", "rust/new-file.rs"):
+            with self.subTest(path=path):
+                self.assertIsNone(rh.rust_packages(["rust/c600-kernel/src/lib.rs", path]))
+
+    def test_a_change_outside_the_rust_code_runs_no_cargo_test(self):
+        for changed in (["core.py"], ["rusty/a.rs", "docs/wiki/log.md"], ["tests/test_language_rust.py"],
+                        ["rust/README.md"]):
+            with self.subTest(changed=changed):
+                self.assertEqual(rh.rust_packages(changed), [])
+
+    def test_members_are_read_from_the_manifests(self):
+        members = rh.rust_members()
+        self.assertIsNotNone(members)
+        self.assertIn("rust/c600-kernel/", members)
+        for directory, name in members.items():
+            self.assertTrue((ROOT / directory / "Cargo.toml").is_file(), directory)
+            self.assertIn(f'name = "{name}"', (ROOT / directory / "Cargo.toml").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "rust" / "crates" / "alpha").mkdir(parents=True)
+            (root / "rust" / "beta").mkdir()
+            (root / "rust" / "Cargo.toml").write_text('[workspace]\nmembers = ["crates/alpha", "beta"]\n',
+                                                      encoding="utf-8")
+            (root / "rust" / "crates" / "alpha" / "Cargo.toml").write_text('[package]\nname = "alpha-pkg"\n',
+                                                                            encoding="utf-8")
+            (root / "rust" / "beta" / "Cargo.toml").write_text('[package]\nname = "beta"\n', encoding="utf-8")
+            self.assertEqual(rh.rust_packages(["rust/crates/alpha/src/lib.rs"], root), ["alpha-pkg"])
+            # An unusual package name or an unreadable manifest runs the whole workspace.
+            (root / "rust" / "beta" / "Cargo.toml").write_text('[package]\nname = "beta; true"\n', encoding="utf-8")
+            self.assertIsNone(rh.rust_packages(["rust/crates/alpha/src/lib.rs"], root))
+            (root / "rust" / "beta" / "Cargo.toml").unlink()
+            self.assertIsNone(rh.rust_packages(["rust/crates/alpha/src/lib.rs"], root))
+
+    def test_linux_jobs(self):
+        budget = rh.FAST_BUDGET_SECONDS
+        everything = [c[0][len("tests/test_jumbling_rust_"):-3] for c in rh.CHECKS
+                      if c[0].startswith("tests/test_jumbling_rust_")]
+        fast = [name for name in everything if rh.SECONDS.get(f"tests/test_jumbling_rust_{name}.py", 0) <= budget]
+        self.assertTrue(fast)
+        self.assertLess(len(fast), len(everything))
+        self.assertEqual(rh.linux_jobs("full", None, rh.CHECKS),
+                         {"rust": "true", "packages": "--workspace", "j1": json.dumps(everything)})
+        for changed, rust, packages, j1 in (
+                (["rust/c600-kernel/src/lib.rs"], "true", "-p c600-kernel", fast),
+                (["rust/c600-ir/src/a.rs", "rust/c600-kernel/src/b.rs"], "true", "-p c600-ir -p c600-kernel", fast),
+                (["rust/Cargo.lock"], "true", "--workspace", fast),
+                (["core.py"], "false", "", fast),
+                (["session.py"], "false", "", []),
+                (["docs/wiki/log.md"], "false", "", [])):
+            with self.subTest(changed=changed):
+                mode, _, checks, _ = rh.plan(changed, set())
+                self.assertEqual(rh.linux_jobs(mode, changed, checks),
+                                 {"rust": rust, "packages": packages, "j1": json.dumps(j1)})
+
+
+class DispatchTierTests(unittest.TestCase):
+    """A manual run's tier input: full (the default) runs every check, fast diffs the branch against main."""
+
+    def test_the_base_for_each_tier(self):
+        self.assertEqual(rh.plan_base("full", "abc"), "")
+        self.assertEqual(rh.plan_base("full", ""), "")
+        self.assertEqual(rh.plan_base("fast", ""), rh.DISPATCH_BASE)
+        self.assertEqual(rh.plan_base("fast", "abc"), "abc")
+        self.assertEqual(rh.plan_base("", "abc"), "abc")  # a pull request
+        self.assertEqual(rh.plan_base("", ""), "")  # a push to main or the nightly run
+
+    def main(self, *argv, changed=("session.py",), tier=""):
+        bases = []
+
+        def changed_files(base):
+            bases.append(base)
+            return list(changed) if base else None
+
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(rh, "changed_files", changed_files), \
+                mock.patch.dict(os.environ, {"RUN_HEADLESS_BASE": "", "RUN_HEADLESS_TIER": tier}), \
+                mock.patch.object(sys, "argv", ["run_headless.py", *argv]), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = rh.main()
+        outputs = dict(line.split("=", 1) for line in out.getvalue().splitlines() if "=" in line)
+        return code, bases, outputs, err.getvalue()
+
+    def test_the_tier_chooses_the_mode(self):
+        self.assertEqual(self.main("--plan-github", "--base", "abc")[2]["mode"], "pr")
+        code, bases, outputs, _ = self.main("--plan-github", "--base", "abc", "--tier", "full")
+        self.assertEqual((code, bases, outputs["mode"], outputs["packages"]), (0, [""], "full", "--workspace"))
+        code, bases, outputs, _ = self.main("--plan-github", "--tier", "fast")
+        self.assertEqual((code, bases, outputs["mode"]), (0, [rh.DISPATCH_BASE], "pr"))
+        self.assertEqual(self.main("--plan-github")[2]["mode"], "full")
+
+    def test_the_tier_comes_from_the_environment_and_is_checked(self):
+        # The workflows pass the manual run's input as RUN_HEADLESS_TIER.
+        self.assertEqual(self.main("--plan-github", "--base", "abc", tier="full")[2]["mode"], "full")
+        self.assertEqual(self.main("--plan-github", tier="fast")[1], [rh.DISPATCH_BASE])
+        for argv, tier in ((["--tier", "slow"], ""), ([], "Full")):
+            with self.subTest(argv=argv, tier=tier), self.assertRaises(SystemExit) as raised:
+                self.main("--plan-github", *argv, tier=tier)
+            self.assertEqual(raised.exception.code, 2)
+
+    def test_the_plan_prints_the_deferred_checks(self):
+        code, _, _, err = self.main("--plan-github", "--base", "abc", changed=["rust/c600-kernel/src/lib.rs"])
+        self.assertEqual(code, 0)
+        self.assertIn("Deferred to the full tier: ", err)
+        self.assertIn(f"tests/test_language_rust.py ({rh.SECONDS['tests/test_language_rust.py']} s)", err)
 
 
 class TranscriptTests(unittest.TestCase):
