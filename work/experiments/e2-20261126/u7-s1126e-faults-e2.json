@@ -1,0 +1,331 @@
+{
+ "format": "magic600-e2-faults-20261126-v1",
+ "evidence": "actual_windows_directx for the measured fields (the shell's own log); the model fields are a model, not a measurement",
+ "inputs": {
+  "events.jsonl": "cbfffd11271033fa3dd51837a0e606be4ed60287b3a0262e2f40a5e22b924535"
+ },
+ "refresh_ms": 16.667,
+ "keys": 1508,
+ "faults": {
+  "alloc_metered": {
+   "keys": 110,
+   "submit_ms": {
+    "n": 110,
+    "p50": 32.84,
+    "p95": 66.06,
+    "max": 66.42,
+    "over_100": 0
+   },
+   "e2_ms": {
+    "n": 110,
+    "p50": 82.35,
+    "p95": 115.69,
+    "max": 115.92,
+    "over_100": 9
+   },
+   "lag_frames": {
+    "0": 100,
+    "1": 1,
+    "2": 9
+   },
+   "over_100_drawn_at_the_probe": "9 of 9",
+   "model": {
+    "b_twist_publication_first": {
+     "n": 110,
+     "p50": 82.32,
+     "p95": 82.59,
+     "max": 82.63,
+     "over_100": 0
+    },
+    "a_latency_1": {
+     "n": 110,
+     "p50": 65.68,
+     "p95": 99.02,
+     "max": 99.25,
+     "over_100": 0
+    },
+    "a_and_b": {
+     "n": 110,
+     "p50": 65.66,
+     "p95": 65.92,
+     "max": 65.96,
+     "over_100": 0
+    }
+   }
+  },
+  "recursion_metered": {
+   "keys": 110,
+   "submit_ms": {
+    "n": 110,
+    "p50": 32.77,
+    "p95": 199.19,
+    "max": 216.34,
+    "over_100": 8
+   },
+   "e2_ms": {
+    "n": 110,
+    "p50": 82.26,
+    "p95": 248.78,
+    "max": 265.81,
+    "over_100": 8
+   },
+   "lag_frames": {
+    "0": 102,
+    "10": 4,
+    "11": 3,
+    "9": 1
+   },
+   "over_100_drawn_at_the_probe": "8 of 8",
+   "model": {
+    "b_twist_publication_first": {
+     "n": 110,
+     "p50": 82.26,
+     "p95": 82.48,
+     "max": 82.52,
+     "over_100": 0
+    },
+    "a_latency_1": {
+     "n": 110,
+     "p50": 65.6,
+     "p95": 232.12,
+     "max": 249.15,
+     "over_100": 8
+    },
+    "a_and_b": {
+     "n": 110,
+     "p50": 65.59,
+     "p95": 65.82,
+     "max": 65.85,
+     "over_100": 0
+    }
+   }
+  },
+  "loop_metered": {
+   "keys": 111,
+   "submit_ms": {
+    "n": 111,
+    "p50": 34.03,
+    "p95": 42.9,
+    "max": 47.76,
+    "over_100": 0
+   },
+   "e2_ms": {
+    "n": 111,
+    "p50": 82.29,
+    "p95": 82.51,
+    "max": 97.49,
+    "over_100": 0
+   },
+   "lag_frames": {
+    "0": 110,
+    "1": 1
+   },
+   "over_100_drawn_at_the_probe": "0 of 0",
+   "model": {
+    "b_twist_publication_first": {
+     "n": 111,
+     "p50": 82.28,
+     "p95": 82.5,
+     "max": 82.63,
+     "over_100": 0
+    },
+    "a_latency_1": {
+     "n": 111,
+     "p50": 65.62,
+     "p95": 65.84,
+     "max": 80.82,
+     "over_100": 0
+    },
+    "a_and_b": {
+     "n": 111,
+     "p50": 65.61,
+     "p95": 65.83,
+     "max": 65.97,
+     "over_100": 0
+    }
+   }
+  },
+  "forced_kill": {
+   "keys": 145,
+   "submit_ms": {
+    "n": 145,
+    "p50": 32.86,
+    "p95": 66.29,
+    "max": 82.94,
+    "over_100": 0
+   },
+   "e2_ms": {
+    "n": 145,
+    "p50": 82.42,
+    "p95": 115.8,
+    "max": 132.3,
+    "over_100": 32
+   },
+   "lag_frames": {
+    "0": 113,
+    "2": 30,
+    "3": 2
+   },
+   "over_100_drawn_at_the_probe": "32 of 32",
+   "model": {
+    "b_twist_publication_first": {
+     "n": 145,
+     "p50": 82.3,
+     "p95": 82.57,
+     "max": 82.63,
+     "over_100": 0
+    },
+    "a_latency_1": {
+     "n": 145,
+     "p50": 65.75,
+     "p95": 99.13,
+     "max": 115.64,
+     "over_100": 2
+    },
+    "a_and_b": {
+     "n": 145,
+     "p50": 65.64,
+     "p95": 65.91,
+     "max": 65.97,
+     "over_100": 0
+    }
+   }
+  },
+  "alloc_ceiling": {
+   "keys": 328,
+   "submit_ms": {
+    "n": 328,
+    "p50": 32.75,
+    "p95": 37.96,
+    "max": 49.89,
+    "over_100": 0
+   },
+   "e2_ms": {
+    "n": 328,
+    "p50": 82.22,
+    "p95": 82.55,
+    "max": 99.14,
+    "over_100": 0
+   },
+   "lag_frames": {
+    "0": 318,
+    "1": 10
+   },
+   "over_100_drawn_at_the_probe": "0 of 0",
+   "model": {
+    "b_twist_publication_first": {
+     "n": 328,
+     "p50": 82.22,
+     "p95": 82.52,
+     "max": 82.6,
+     "over_100": 0
+    },
+    "a_latency_1": {
+     "n": 328,
+     "p50": 65.56,
+     "p95": 65.88,
+     "max": 82.48,
+     "over_100": 0
+    },
+    "a_and_b": {
+     "n": 328,
+     "p50": 65.55,
+     "p95": 65.85,
+     "max": 65.93,
+     "over_100": 0
+    }
+   }
+  },
+  "recursion_native": {
+   "keys": 586,
+   "submit_ms": {
+    "n": 586,
+    "p50": 32.76,
+    "p95": 35.49,
+    "max": 66.05,
+    "over_100": 0
+   },
+   "e2_ms": {
+    "n": 586,
+    "p50": 82.22,
+    "p95": 82.55,
+    "max": 115.42,
+    "over_100": 1
+   },
+   "lag_frames": {
+    "0": 565,
+    "1": 20,
+    "2": 1
+   },
+   "over_100_drawn_at_the_probe": "1 of 1",
+   "model": {
+    "b_twist_publication_first": {
+     "n": 586,
+     "p50": 82.21,
+     "p95": 82.51,
+     "max": 82.59,
+     "over_100": 0
+    },
+    "a_latency_1": {
+     "n": 586,
+     "p50": 65.56,
+     "p95": 65.88,
+     "max": 98.75,
+     "over_100": 0
+    },
+    "a_and_b": {
+     "n": 586,
+     "p50": 65.54,
+     "p95": 65.84,
+     "max": 65.92,
+     "over_100": 0
+    }
+   }
+  },
+  "loop_native": {
+   "keys": 118,
+   "submit_ms": {
+    "n": 118,
+    "p50": 32.76,
+    "p95": 33.11,
+    "max": 49.81,
+    "over_100": 0
+   },
+   "e2_ms": {
+    "n": 118,
+    "p50": 82.27,
+    "p95": 82.51,
+    "max": 99.1,
+    "over_100": 0
+   },
+   "lag_frames": {
+    "0": 116,
+    "1": 2
+   },
+   "over_100_drawn_at_the_probe": "0 of 0",
+   "model": {
+    "b_twist_publication_first": {
+     "n": 118,
+     "p50": 82.27,
+     "p95": 82.49,
+     "max": 82.61,
+     "over_100": 0
+    },
+    "a_latency_1": {
+     "n": 118,
+     "p50": 65.6,
+     "p95": 65.84,
+     "max": 82.43,
+     "over_100": 0
+    },
+    "a_and_b": {
+     "n": 118,
+     "p50": 65.6,
+     "p95": 65.82,
+     "max": 65.95,
+     "over_100": 0
+    }
+   }
+  }
+ }
+}

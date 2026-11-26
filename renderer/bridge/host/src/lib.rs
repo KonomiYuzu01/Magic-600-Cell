@@ -1244,9 +1244,10 @@ pub unsafe extern "C" fn m6h_load_runtime(handle: *mut ShellHost, program: *cons
 /// module) from its exported function `entry` (UTF-8, `entry_len` bytes; no arguments) in the runtime that
 /// [`m6h_load_runtime`] started, and writes the job's ticket, its display-host command id, to `*out_ticket`.
 ///
-/// The call returns at once, after adopting a head a twist key left pending (it waits for that head's build). It
-/// schedules the job on the view with `Host::schedule`, which supersedes a run still pending, and records the adopted
-/// engine revision. The job runs on the handle's worker thread, under the limits
+/// The call returns at once, after adopting a head a twist key left pending (it waits for that head's build) and
+/// letting the reference publication still being prepared install (at most [`view::REFERENCE_WAIT`]). It schedules the
+/// job on the view with `Host::schedule`, which supersedes a run still pending, and records the adopted engine
+/// revision. The job runs on the handle's worker thread, under the limits
 /// [`VIEW_LIMITS`] and the deadline [`VIEW_DEADLINE`], with no capability granted and no host row served. When it
 /// ends, [`m6h_pump`] or [`m6h_frame`] on the caller's thread delivers, for a completed run, the reference
 /// publication of the recorded revision with the plan dependency `program` set to the hex SHA-256 of `source`, under

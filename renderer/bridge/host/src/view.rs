@@ -16,12 +16,16 @@
 //!   keeps the view stale until a run of its own text publishes.
 //! - A twist replaces the revision a run read: a run not yet delivered ends `KN7:cancelled.revision_replaced` before
 //!   the twist's publication supersedes it, and a delivered one ends so in `Host::adopt`.
+//! - A run's schedule supersedes the view's pending command. A twist's reference publication still in its upload
+//!   installs first, for at most [`REFERENCE_WAIT`], so that the twist is drawn without waiting for the run (C9 U7, 26
+//!   November 2026).
 
 use std::collections::{BTreeMap, VecDeque};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
 use c600_digest::{hex, sha256};
 use c600_display::plan::CommandId;
@@ -47,6 +51,10 @@ pub const RECORDS: usize = 1024;
 pub const FRAME_NOTES: usize = 1024;
 /// A draft code, outside chapter 13's register: a newer run superseded this one.
 pub const SUPERSEDED: &str = "m6h:cancelled.superseded";
+/// How long a run's schedule waits for a reference publication still being prepared to install
+/// (`ShellHost::install_reference`); a draft value. A preparation's GPU work waits behind the core's ready fence, the
+/// frame the GPU is drawing, and then takes well under a millisecond on the owner's machine.
+pub const REFERENCE_WAIT: Duration = Duration::from_millis(20);
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
@@ -401,6 +409,10 @@ impl ShellHost {
         let digest = sha256(source.as_bytes());
         let text = hex(&digest);
         let module = c600_syntax::parse(source.as_bytes()).module.map(|m| m.name.text).unwrap_or_default();
+        // The schedule supersedes the view's pending command. When that is a twist's reference publication still in its
+        // upload, the twist would be drawn only once this run publishes, behind whatever the runtime must end first (a
+        // cancelled job, a restart; up to 200 ms in U7 on 26 November 2026), so that publication installs first.
+        self.install_reference(REFERENCE_WAIT);
         let ticket = self.next_command;
         self.next_command += 1;
         let receipt = self.host.schedule(CommandId(ticket), VIEW, VIEW_ALLOWANCE);
@@ -442,6 +454,28 @@ impl ShellHost {
             self.end_run(RUNTIME_LOST, "the view jobs' worker has stopped".to_owned(), Interruption::ByUser);
         }
         Ok(ticket)
+    }
+
+    /// Whether the reference publication is still being prepared: scheduled and neither installed nor ended.
+    fn reference_preparing(&self) -> bool {
+        self.reference.is_some_and(|c| self.host.receipt(c).is_some_and(|r| !r.status.is_terminal()))
+    }
+
+    /// Pumps the display host until the reference publication is no longer being prepared, for at most `limit`: a
+    /// preparation that becomes ready installs as `Host::pump` installs it, and past `limit` it stays pending. With no
+    /// reference publication being prepared it returns at once, without pumping.
+    fn install_reference(&mut self, limit: Duration) {
+        if !self.reference_preparing() {
+            return;
+        }
+        let deadline = Instant::now() + limit;
+        loop {
+            self.host.pump();
+            if !self.reference_preparing() || Instant::now() >= deadline {
+                return;
+            }
+            std::thread::sleep(Duration::from_micros(200));
+        }
     }
 
     /// [`crate::m6h_view_draft`]: the editor names `digest`.
@@ -627,9 +661,7 @@ impl ShellHost {
         }
         if std::mem::take(&mut self.views.republish) {
             let shown = self.host.installed(VIEW).is_some_and(|i| i.publication.base.state == self.revision);
-            let preparing =
-                self.reference.is_some_and(|c| self.host.receipt(c).is_some_and(|r| !r.status.is_terminal()));
-            if !shown && !preparing {
+            if !shown && !self.reference_preparing() {
                 // A lost device answers here; m6h_recover publishes again.
                 let _ = self.publish();
             }
