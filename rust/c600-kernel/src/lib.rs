@@ -199,16 +199,26 @@ impl fmt::Display for CertificateError {
 
 impl std::error::Error for CertificateError {}
 
-/// A refusal with its chapter 13 code and the 0.4 text where 0.4 has one.
+/// A refusal with its chapter 13 code and the 0.4 text where 0.4 has one. A rotation request's refusal also carries
+/// the typed failed fact of ERR.8 ([`request::Fact`]; draft): tests and callers read the code and the fact, never the
+/// message (ERR.6).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Refusal {
     pub code: &'static str,
     pub message: String,
+    /// The typed context of ERR.8, for the refusals that have one (the three rotation-request rows); `None` otherwise.
+    pub fact: Option<request::Fact>,
 }
 
 impl Refusal {
     fn new(code: &'static str, message: impl Into<String>) -> Refusal {
-        Refusal { code, message: message.into() }
+        Refusal { code, message: message.into(), fact: None }
+    }
+
+    /// The refusal with its typed failed fact (ERR.8; draft).
+    pub fn with_fact(mut self, fact: request::Fact) -> Refusal {
+        self.fact = Some(fact);
+        self
     }
 }
 

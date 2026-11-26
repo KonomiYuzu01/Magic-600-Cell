@@ -114,21 +114,36 @@ pub mod code {
 pub struct Error {
     pub code: &'static str,
     pub detail: String,
+    /// The typed failed fact of ERR.8 for the refusals that have one, the three rotation-request rows so far
+    /// (CT-ERR-16; draft). Tests and callers read the code and the fact, never the detail (ERR.6).
+    pub fact: Option<c600_kernel::request::Fact>,
 }
 
 impl Error {
     pub fn new(code: &'static str, detail: impl Into<String>) -> Error {
-        Error { code, detail: detail.into() }
+        Error { code, detail: detail.into(), fact: None }
     }
 
+    /// The error with its typed failed fact (ERR.8; draft).
+    pub fn with_fact(mut self, fact: c600_kernel::request::Fact) -> Error {
+        self.fact = Some(fact);
+        self
+    }
+
+    /// `{code, detail}` and, when the error has one, `fact` (the typed failed fact's JSON).
     pub fn to_json(&self) -> Value {
-        json::object([("code", Value::String(self.code.into())), ("detail", Value::String(self.detail.clone()))])
+        let mut error =
+            json::object([("code", Value::String(self.code.into())), ("detail", Value::String(self.detail.clone()))]);
+        if let (Some(fact), Value::Object(fields)) = (&self.fact, &mut error) {
+            fields.insert("fact".to_owned(), fact.to_json());
+        }
+        error
     }
 }
 
 impl From<c600_kernel::Refusal> for Error {
     fn from(refusal: c600_kernel::Refusal) -> Error {
-        Error { code: refusal.code, detail: refusal.message }
+        Error { code: refusal.code, detail: refusal.message, fact: refusal.fact }
     }
 }
 

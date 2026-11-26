@@ -1019,6 +1019,7 @@ pub fn project(ctx: &Context, state: &State, to: Level) -> Result<Projection, En
             return Ok(Projection::Refused(Refusal {
                 code: LEVEL_NOT_HELD,
                 message: "The sticker class has no key in this edition (KN1.8)".into(),
+                fact: None,
             }))
         }
         Level::Labels => match labels(ctx, state)? {
@@ -2064,6 +2065,7 @@ pub fn derive(
         return Ok(Err(Refusal {
             code: crate::codes::NAMED_OBJECT_INVALID,
             message: format!("Protected piece {p} is outside 0..{}", NP - 1),
+            fact: None,
         }));
     }
     let mut protected = protect.to_vec();
@@ -2115,6 +2117,7 @@ pub fn derive(
                 let refusal = Refusal {
                     code: crate::codes::PIECE_WOULD_MOVE,
                     message: format!("Prefix {prefix} of the word would change the pose of protected piece {first}"),
+                    fact: None,
                 };
                 let protection = WordProtection {
                     mode,
@@ -2134,7 +2137,7 @@ pub fn derive(
                     None => format!("The word is refused at prefix {prefix}: its last letter is {status}"),
                 };
                 let certificates = outcome.straddle.iter().map(|c| c.to_json()).collect();
-                let refusal = Refusal { code: crate::codes::WORD_BLOCKED_PREFIX, message };
+                let refusal = Refusal { code: crate::codes::WORD_BLOCKED_PREFIX, message, fact: None };
                 return refused(
                     Some(prefix),
                     outcome.status,
@@ -2159,6 +2162,7 @@ pub fn derive(
         let refusal = Refusal {
             code: crate::codes::PIECE_WOULD_MOVE,
             message: format!("The word would change the pose of protected piece {first}"),
+            fact: None,
         };
         let protection = WordProtection {
             mode,

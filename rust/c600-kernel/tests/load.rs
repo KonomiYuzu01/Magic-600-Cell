@@ -358,7 +358,8 @@ fn ct_kn1_01_values_of_another_model_are_refused() {
 
     let (state, recipe) = (shipped.solved(), shipped.word(&[1]).unwrap());
     let (own_state, own_recipe, none) = (other.solved(), other.word(&[1]).unwrap(), ProtectedSet::none());
-    let refusal = Refusal { code: codes::IDENTITY_MISMATCH, message: "The value belongs to another model_id".into() };
+    let refusal =
+        Refusal { code: codes::IDENTITY_MISMATCH, message: "The value belongs to another model_id".into(), fact: None };
     let mismatch = Error::Refusal(refusal.clone());
     assert_eq!(other.derive(&state, &own_recipe, &none).unwrap_err(), mismatch);
     assert_eq!(other.derive(&own_state, &recipe, &none).unwrap_err(), mismatch);

@@ -51,11 +51,94 @@ pub mod codes {
 }
 
 pub(crate) fn refuse(code: &'static str, message: impl Into<String>) -> Refusal {
-    Refusal { code, message: message.into() }
+    Refusal { code, message: message.into(), fact: None }
 }
 
-fn malformed(message: impl Into<String>) -> Refusal {
-    refuse(codes::ROTATION_REQUEST_MALFORMED, message)
+/// Which digest of a menu binding disagrees, in KN3.7's order: the menu set, then the menu order, or that the request
+/// and the state do not agree on whether a menu is pinned at all.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MenuMismatch {
+    /// The set digest differs.
+    Set,
+    /// The order digest differs (the set agrees).
+    Order,
+    /// Free mode pins no menu, so a menu operation or an M request has none to name.
+    FreeModePinsNoMenu,
+    /// The state pins a menu, and a free binding names none.
+    PinnedMenuNotNamed,
+}
+
+impl MenuMismatch {
+    pub fn name(self) -> &'static str {
+        match self {
+            MenuMismatch::Set => "set",
+            MenuMismatch::Order => "order",
+            MenuMismatch::FreeModePinsNoMenu => "free_mode_pins_no_menu",
+            MenuMismatch::PinnedMenuNotNamed => "pinned_menu_not_named",
+        }
+    }
+}
+
+/// The typed failed fact of ERR.8 for the three rotation-request refusals (CT-ERR-16; draft until the freeze).
+///
+/// - [`Fact::MalformedField`]: the part of the request or its binding that failed, by a dotted name: `request.length`,
+///   `request.line_end`, `request.charset`, `request.field_count`, `request.prefix`, `request.form`,
+///   `request.token.<0..2>`, `request.axis`, `request.set`, `request.order`, `request.index`, `request.canonical`;
+///   `binding`, `binding.fields`, `binding.request`, `binding.cap`, `binding.operation`, `binding.operation.kind`,
+///   `binding.operation.n`, `binding.operation.d`, `binding.menu`, `binding.shape`; a twist row's argument by its
+///   own name (`rotation`, `letter`); `cap`, `operation`, `menu`, `value`.
+/// - [`Fact::MenuBinding`]: which digest differs (or that free mode pins no menu), with the pinned menu's digest as
+///   `expected` and the digest the binding or the request named as `held`, each `None` when there is none. `source`
+///   says whether the binding or the M request named it.
+/// - [`Fact::SearchBound`]: the free-mode bounds N and D in decimal against the limit of (2N+1)^3*D (draft limit
+///   [`SEARCH_LIMIT`]); `None` for a bound not yet read when a Nat above `u128` stopped the read first.
+/// - [`Fact::SearchBoundNat`]: a bound `n` or `d` that is a Nat above `u128`, with its digit count.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Fact {
+    MalformedField { field: String },
+    MenuBinding { source: &'static str, differs: MenuMismatch, expected: Option<String>, held: Option<String> },
+    SearchBound { n: String, d: String, limit: u128 },
+    SearchBoundNat { field: &'static str, digits: usize },
+}
+
+impl Fact {
+    /// The fact as a JSON object, `kind` first among its keys by name (the receipt's `fact`).
+    pub fn to_json(&self) -> Value {
+        let text = |s: &str| Value::String(s.to_owned());
+        let opt = |s: &Option<String>| s.as_deref().map_or(Value::Null, |s| Value::String(s.to_owned()));
+        match self {
+            Fact::MalformedField { field } => {
+                crate::json::object([("kind", text("malformed_field")), ("field", text(field))])
+            }
+            Fact::MenuBinding { source, differs, expected, held } => crate::json::object([
+                ("kind", text("menu_binding")),
+                ("source", text(source)),
+                ("differs", text(differs.name())),
+                ("expected", opt(expected)),
+                ("held", opt(held)),
+            ]),
+            Fact::SearchBound { n, d, limit } => crate::json::object([
+                ("kind", text("search_bound")),
+                ("n", text(n)),
+                ("d", text(d)),
+                ("limit", nat(*limit)),
+            ]),
+            Fact::SearchBoundNat { field, digits } => crate::json::object([
+                ("kind", text("search_bound_nat")),
+                ("field", text(field)),
+                ("digits", Value::Int(*digits as i64)),
+            ]),
+        }
+    }
+}
+
+/// A rotation-request refusal for the part named `field` (CT-ERR-16, ERR.8; see [`Fact::MalformedField`]).
+pub fn malformed_at(field: impl Into<String>, message: impl Into<String>) -> Refusal {
+    refuse(codes::ROTATION_REQUEST_MALFORMED, message).with_fact(Fact::MalformedField { field: field.into() })
+}
+
+fn malformed(field: &str, message: impl Into<String>) -> Refusal {
+    malformed_at(field, message)
 }
 
 /// The request digest of KN3.8: the SHA-256 of the raw request bytes, in lowercase hexadecimal.
@@ -90,7 +173,7 @@ pub fn token_of_binary64(bits: u64) -> Result<String, Refusal> {
     let exponent = ((bits >> 52) & 0x7ff) as i32;
     let fraction = bits & ((1 << 52) - 1);
     if exponent == 0x7ff {
-        return Err(malformed("a non-finite binary64 value has no exact request token"));
+        return Err(malformed("value", "a non-finite binary64 value has no exact request token"));
     }
     if exponent == 0 && fraction == 0 {
         return Ok("0:0".to_owned());
@@ -169,19 +252,21 @@ fn nat(value: u128) -> Value {
     }
 }
 
-fn read_nat(value: Option<&Value>, name: &str) -> Result<u128, Refusal> {
+fn read_nat(value: Option<&Value>, name: &'static str) -> Result<u128, Refusal> {
+    let field = format!("binding.operation.{name}");
     match value {
         Some(Value::Int(v)) if *v >= 0 => Ok(*v as u128),
         Some(Value::Number(lexeme)) if !lexeme.is_empty() && lexeme.bytes().all(|c| c.is_ascii_digit()) => {
             if lexeme.len() > 1 && lexeme.starts_with('0') {
-                return Err(malformed(format!("{name} is not a canonical Nat")));
+                return Err(malformed(&field, format!("{name} is not a canonical Nat")));
             }
             // A Nat above u128 is outside every search limit.
             lexeme.parse::<u128>().map_err(|_| {
                 refuse(codes::ROTATION_SEARCH_BOUND, format!("{name} is outside the search limit; no search ran"))
+                    .with_fact(Fact::SearchBoundNat { field: name, digits: lexeme.len() })
             })
         }
-        _ => Err(malformed(format!("the binding needs {name} as a Nat"))),
+        _ => Err(malformed(&field, format!("the binding needs {name} as a Nat"))),
     }
 }
 
@@ -217,21 +302,25 @@ impl Binding {
 
     /// Reads a binding object. The request text is kept as bytes; the decoder checks them.
     pub fn from_json(value: &Value) -> Result<Binding, Refusal> {
-        let fields = value.as_object().ok_or_else(|| malformed("a binding must be an object"))?;
+        let fields = value.as_object().ok_or_else(|| malformed("binding", "a binding must be an object"))?;
         const KEYS: [&str; 4] = ["cap", "menu", "operation", "request"];
         if fields.len() != KEYS.len() || !KEYS.iter().all(|k| fields.contains_key(*k)) {
-            return Err(malformed("a binding has exactly the fields request, cap, operation and menu"));
+            return Err(malformed(
+                "binding.fields",
+                "a binding has exactly the fields request, cap, operation and menu",
+            ));
         }
-        let request = fields["request"].as_str().ok_or_else(|| malformed("the request must be text"))?;
+        let request =
+            fields["request"].as_str().ok_or_else(|| malformed("binding.request", "the request must be text"))?;
         let cap = match fields["cap"] {
             Value::Int(c) if (0..=u32::MAX as i64).contains(&c) => c as u32,
-            _ => return Err(malformed("the cap must be a nonnegative integer")),
+            _ => return Err(malformed("binding.cap", "the cap must be a nonnegative integer")),
         };
         let operation = read_operation(&fields["operation"])?;
         let menu = match &fields["menu"] {
             Value::Null => None,
             Value::Object(pin) => Some(read_pin(pin)?),
-            _ => return Err(malformed("the menu must be null or {set, order}")),
+            _ => return Err(malformed("binding.menu", "the menu must be null or {set, order}")),
         };
         let binding = Binding { request: request.as_bytes().to_vec(), cap, operation, menu };
         binding.check_shape()?;
@@ -243,8 +332,8 @@ impl Binding {
         match (&self.operation, &self.menu) {
             (Operation::Free { .. }, None) => Ok(()),
             (Operation::MenuDirect | Operation::MenuDrag, Some(_)) => Ok(()),
-            (Operation::Free { .. }, Some(_)) => Err(malformed("a free binding pins no menu")),
-            _ => Err(malformed("a menu operation needs both menu digests")),
+            (Operation::Free { .. }, Some(_)) => Err(malformed("binding.shape", "a free binding pins no menu")),
+            _ => Err(malformed("binding.shape", "a menu operation needs both menu digests")),
         }
     }
 
@@ -264,19 +353,23 @@ impl Binding {
                 format!(
                     "bounds N = {n}, D = {d} are outside the search limit (2N+1)^3*D <= 2^40, D >= 1; no search ran"
                 ),
-            )),
+            )
+            .with_fact(Fact::SearchBound { n: n.to_string(), d: d.to_string(), limit: SEARCH_LIMIT })),
         }
     }
 }
 
 fn read_operation(value: &Value) -> Result<Operation, Refusal> {
-    let fields = value.as_object().ok_or_else(|| malformed("the operation must be an object"))?;
-    let kind = fields.get("kind").and_then(Value::as_str).ok_or_else(|| malformed("the operation needs a kind"))?;
+    let fields = value.as_object().ok_or_else(|| malformed("binding.operation", "the operation must be an object"))?;
+    let kind = fields
+        .get("kind")
+        .and_then(Value::as_str)
+        .ok_or_else(|| malformed("binding.operation.kind", "the operation needs a kind"))?;
     let expect = |keys: &[&str]| -> Result<(), Refusal> {
         if fields.len() == keys.len() && keys.iter().all(|k| fields.contains_key(*k)) {
             Ok(())
         } else {
-            Err(malformed(format!("operation {kind} has the fields {}", keys.join(", "))))
+            Err(malformed("binding.operation", format!("operation {kind} has the fields {}", keys.join(", "))))
         }
     };
     match kind {
@@ -286,14 +379,14 @@ fn read_operation(value: &Value) -> Result<Operation, Refusal> {
         }
         "menu_direct" => expect(&["kind"]).map(|_| Operation::MenuDirect),
         "menu_drag" => expect(&["kind"]).map(|_| Operation::MenuDrag),
-        _ => Err(malformed(format!("unknown operation kind {kind:?}"))),
+        _ => Err(malformed("binding.operation.kind", format!("unknown operation kind {kind:?}"))),
     }
 }
 
 fn read_pin(pin: &BTreeMap<String, Value>) -> Result<MenuPin, Refusal> {
     match (pin.len(), pin.get("set").and_then(Value::as_str), pin.get("order").and_then(Value::as_str)) {
         (2, Some(set), Some(order)) => Ok(MenuPin { set: set.to_owned(), order: order.to_owned() }),
-        _ => Err(malformed("the menu must be {set, order} with two digests")),
+        _ => Err(malformed("binding.menu", "the menu must be {set, order} with two digests")),
     }
 }
 

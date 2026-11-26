@@ -870,9 +870,9 @@ class RegistryTests(unittest.TestCase):
         self.assertTrue(runtime_loss_problems(planted))
 
     def test_ct_err_16_rotation_requests_are_kn2_codes(self):
-        """CT-ERR-16 (part: the registry half; not run: the three refusals at run time, since no crate parses exact
-        rotation requests yet (state-contract amendment A6; the jumbling engine half, M5); that no crate emits a KN3
-        code is checked in tests/test_language_scans.py): the exact-request format, menu-binding and free-search-cap
+        """CT-ERR-16 (part: the registry half; the three refusals at run time with their typed failed fact (ERR.8) are
+        run in rust/c600-jumble/tests/kn3.rs and rust/c600-command/tests/twist_apply.rs (a draft form of the fact:
+        `request::Fact`); that no crate emits a KN3 code is checked in tests/test_language_scans.py): the exact-request format, menu-binding and free-search-cap
         failures keep their three KN2 codes with refusal form, after_user_change retry and the KN3.7/KN3.8 rule
         sources, and KN3 has no registry section, row, reconciled code or errors-line code (ERR.23). Controls: a
         planted KN3 row and a retry change fail."""

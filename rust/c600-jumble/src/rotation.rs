@@ -37,7 +37,8 @@
 use std::cell::Cell;
 
 use c600_kernel::json::{self, Value};
-use c600_kernel::request::{Binding, Operation, HALF_TURN_THRESHOLD, MAX_EXPONENT, MAX_MAGNITUDE_BITS};
+use c600_kernel::request::{malformed_at, Binding, Fact, MenuMismatch, Operation, HALF_TURN_THRESHOLD};
+use c600_kernel::request::{MAX_EXPONENT, MAX_MAGNITUDE_BITS};
 use c600_kernel::request::{MAX_REQUEST_BYTES, PREFIX};
 use c600_kernel::Refusal;
 use num_bigint::BigInt;
@@ -51,11 +52,36 @@ use crate::twist::{cap_frame, cayley_matrix, Menu, RecordError, Twist};
 use crate::Context;
 
 fn refuse(code: &'static str, message: impl Into<String>) -> Refusal {
-    Refusal { code, message: message.into() }
+    Refusal { code, message: message.into(), fact: None }
 }
 
-fn malformed(message: impl Into<String>) -> Refusal {
-    refuse(codes::ROTATION_REQUEST_MALFORMED, message)
+/// A malformed-request refusal for the part named `field` of the request or its binding (CT-ERR-16, ERR.8; the names
+/// are [`Fact::MalformedField`]'s).
+fn malformed(field: &str, message: impl Into<String>) -> Refusal {
+    malformed_at(field, message)
+}
+
+/// A binding refusal with its typed fact (CT-ERR-16, ERR.8): which digest differs, the pinned menu's and the named one.
+fn binding_mismatch(
+    source: &'static str,
+    differs: MenuMismatch,
+    expected: Option<&str>,
+    held: Option<&str>,
+    message: &str,
+) -> Refusal {
+    let (expected, held) = (expected.map(str::to_owned), held.map(str::to_owned));
+    refuse(codes::MENU_BINDING_MISMATCH, message).with_fact(Fact::MenuBinding { source, differs, expected, held })
+}
+
+/// The first of the menu's two digests that a named pair disagrees with: the set, then the order (KN3.7).
+fn first_digest_difference(menu: &Menu, set: &str, order: &str) -> Option<(MenuMismatch, String, String)> {
+    if set != menu.identity {
+        Some((MenuMismatch::Set, menu.identity.clone(), set.to_owned()))
+    } else if order != menu.order {
+        Some((MenuMismatch::Order, menu.order.clone(), order.to_owned()))
+    } else {
+        None
+    }
 }
 
 thread_local! {
@@ -105,48 +131,50 @@ pub enum FormKind {
     Menu,
 }
 
-fn canonical_decimal(text: &str, what: &str) -> Result<(), Refusal> {
+fn canonical_decimal(text: &str, what: &str, field: &str) -> Result<(), Refusal> {
     if text.is_empty() || !text.bytes().all(|c| c.is_ascii_digit()) {
-        return Err(malformed(format!("{what} is not a decimal integer")));
+        return Err(malformed(field, format!("{what} is not a decimal integer")));
     }
     if text.len() > 1 && text.starts_with('0') {
-        return Err(malformed(format!("{what} has a leading zero")));
+        return Err(malformed(field, format!("{what} has a leading zero")));
     }
     Ok(())
 }
 
-fn token(text: &str) -> Result<Dyadic, Refusal> {
-    let (m, k) = text.split_once(':').ok_or_else(|| malformed("a token is m:k"))?;
+fn token(text: &str, at: usize) -> Result<Dyadic, Refusal> {
+    let field = format!("request.token.{at}");
+    let field = field.as_str();
+    let (m, k) = text.split_once(':').ok_or_else(|| malformed(field, "a token is m:k"))?;
     let (negative, digits) = match m.strip_prefix('-') {
         Some(rest) => (true, rest),
         None => (false, m),
     };
-    canonical_decimal(digits, "m")?;
+    canonical_decimal(digits, "m", field)?;
     if negative && digits == "0" {
-        return Err(malformed("negative zero is spelled 0:0"));
+        return Err(malformed(field, "negative zero is spelled 0:0"));
     }
-    canonical_decimal(k, "k")?;
+    canonical_decimal(k, "k", field)?;
     let k: u32 = if k.len() <= 4 { k.parse().expect("four digits") } else { u32::MAX };
     if k > MAX_EXPONENT {
-        return Err(malformed(format!("k exceeds {MAX_EXPONENT}")));
+        return Err(malformed(field, format!("k exceeds {MAX_EXPONENT}")));
     }
     // 2^1024 has 309 decimal digits, so a longer m is out of bounds before parsing.
     if digits.len() > 309 {
-        return Err(malformed(format!("m exceeds {MAX_MAGNITUDE_BITS} magnitude bits")));
+        return Err(malformed(field, format!("m exceeds {MAX_MAGNITUDE_BITS} magnitude bits")));
     }
     let magnitude = BigInt::parse_bytes(digits.as_bytes(), 10).expect("decimal digits");
     if magnitude.bits() > MAX_MAGNITUDE_BITS {
-        return Err(malformed(format!("m exceeds {MAX_MAGNITUDE_BITS} magnitude bits")));
+        return Err(malformed(field, format!("m exceeds {MAX_MAGNITUDE_BITS} magnitude bits")));
     }
     if k > 0 && magnitude.is_even() {
-        return Err(malformed("m must be odd when k > 0"));
+        return Err(malformed(field, "m must be odd when k > 0"));
     }
     Ok(Dyadic { m: if negative { -magnitude } else { magnitude }, k })
 }
 
-fn digest(text: &str) -> Result<String, Refusal> {
+fn digest(text: &str, field: &str) -> Result<String, Refusal> {
     if text.len() != 64 || !text.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c)) {
-        return Err(malformed("a digest is 64 lowercase hexadecimal digits"));
+        return Err(malformed(field, "a digest is 64 lowercase hexadecimal digits"));
     }
     Ok(text.to_owned())
 }
@@ -156,53 +184,60 @@ impl Request {
     /// rounded. The decoder encodes what it read and compares bytes.
     pub fn decode(bytes: &[u8]) -> Result<Request, Refusal> {
         if bytes.len() > MAX_REQUEST_BYTES {
-            return Err(malformed(format!("a request has at most {MAX_REQUEST_BYTES} bytes")));
+            return Err(malformed("request.length", format!("a request has at most {MAX_REQUEST_BYTES} bytes")));
         }
         let Some((&b'\n', body)) = bytes.split_last() else {
-            return Err(malformed("a request ends with exactly one LF"));
+            return Err(malformed("request.line_end", "a request ends with exactly one LF"));
         };
         if body.iter().any(|&c| !(b'!'..=b'~').contains(&c)) {
-            return Err(malformed("a request is printable ASCII with no whitespace before its final LF"));
+            return Err(malformed(
+                "request.charset",
+                "a request is printable ASCII with no whitespace before its final LF",
+            ));
         }
         let text = std::str::from_utf8(body).expect("ASCII");
         let fields: Vec<&str> = text.split('|').collect();
         if fields.len() != 5 {
-            return Err(malformed("a request has five |-separated fields"));
+            return Err(malformed("request.field_count", "a request has five |-separated fields"));
         }
         if fields[0] != PREFIX {
-            return Err(malformed(format!("unknown grammar prefix {:?}", fields[0])));
+            return Err(malformed("request.prefix", format!("unknown grammar prefix {:?}", fields[0])));
         }
         let form = match fields[1] {
-            "C" => Form::Cayley([token(fields[2])?, token(fields[3])?, token(fields[4])?]),
+            "C" => Form::Cayley([token(fields[2], 0)?, token(fields[3], 1)?, token(fields[4], 2)?]),
             "H" => {
                 let mut axis = Vec::with_capacity(3);
-                for field in &fields[2..] {
-                    let t = token(field)?;
+                for (at, field) in fields[2..].iter().enumerate() {
+                    let t = token(field, at)?;
                     if t.k != 0 {
-                        return Err(malformed("H tokens have k = 0"));
+                        return Err(malformed(&format!("request.token.{at}"), "H tokens have k = 0"));
                     }
                     axis.push(t.m);
                 }
                 let axis: [BigInt; 3] = axis.try_into().expect("three tokens");
-                let first = axis.iter().find(|x| !x.is_zero()).ok_or_else(|| malformed("an H axis is nonzero"))?;
+                let first = axis
+                    .iter()
+                    .find(|x| !x.is_zero())
+                    .ok_or_else(|| malformed("request.axis", "an H axis is nonzero"))?;
                 if first.is_negative() {
-                    return Err(malformed("an H axis has its first nonzero component positive"));
+                    return Err(malformed("request.axis", "an H axis has its first nonzero component positive"));
                 }
                 if !axis[0].gcd(&axis[1]).gcd(&axis[2]).is_one() {
-                    return Err(malformed("an H axis is primitive"));
+                    return Err(malformed("request.axis", "an H axis is primitive"));
                 }
                 Form::HalfTurn(axis)
             }
             "M" => {
-                canonical_decimal(fields[4], "the index")?;
-                let index = fields[4].parse::<u64>().map_err(|_| malformed("the index exceeds every menu"))?;
-                Form::Menu { set: digest(fields[2])?, order: digest(fields[3])?, index }
+                canonical_decimal(fields[4], "the index", "request.index")?;
+                let index =
+                    fields[4].parse::<u64>().map_err(|_| malformed("request.index", "the index exceeds every menu"))?;
+                Form::Menu { set: digest(fields[2], "request.set")?, order: digest(fields[3], "request.order")?, index }
             }
-            other => return Err(malformed(format!("unknown request form {other:?}"))),
+            other => return Err(malformed("request.form", format!("unknown request form {other:?}"))),
         };
         let request = Request { form };
         if request.encode() != bytes {
-            return Err(malformed("the request is not in canonical form"));
+            return Err(malformed("request.canonical", "the request is not in canonical form"));
         }
         Ok(request)
     }
@@ -440,7 +475,7 @@ impl Resolution {
 }
 
 fn twist_at(ctx: &Context, cap: usize, matrix: Mat4) -> Result<Twist, Refusal> {
-    Twist::new(ctx, cap, matrix).map_err(|e| malformed(format!("the exact rotation failed its check: {e}")))
+    Twist::new(ctx, cap, matrix).map_err(|e| malformed("request", format!("the exact rotation failed its check: {e}")))
 }
 
 /// Resolves a request under its binding against the state's pinned menu (`None` in free mode). Every refusal leaves
@@ -450,7 +485,7 @@ pub fn resolve(ctx: &Context, menu: Option<&Menu>, binding: &Binding) -> Result<
     binding.check_shape()?;
     let cap = binding.cap as usize;
     if cap >= POLES {
-        return Err(malformed("the cap is a pole index 0..599"));
+        return Err(malformed("cap", "the cap is a pole index 0..599"));
     }
     let request_digest = c600_kernel::request::request_digest(&binding.request);
     let done = |choice: Choice, twist: Twist| Resolution {
@@ -462,14 +497,18 @@ pub fn resolve(ctx: &Context, menu: Option<&Menu>, binding: &Binding) -> Result<
     };
     match &binding.operation {
         Operation::Free { n, d } => {
-            if menu.is_some() {
-                return Err(refuse(
-                    codes::MENU_BINDING_MISMATCH,
-                    "the state pins a menu, and a free request names none",
-                ));
+            if let Some(menu) = menu {
+                let message = "the state pins a menu, and a free request names none";
+                let expected = Some(menu.identity.as_str());
+                return Err(binding_mismatch("binding", MenuMismatch::PinnedMenuNotNamed, expected, None, message));
             }
             let q = request.quaternion().ok_or_else(|| {
-                refuse(codes::MENU_BINDING_MISMATCH, "free mode pins no menu, so an M request refuses")
+                let held = match &request.form {
+                    Form::Menu { set, .. } => Some(set.as_str()),
+                    _ => None,
+                };
+                let message = "free mode pins no menu, so an M request refuses";
+                binding_mismatch("request", MenuMismatch::FreeModePinsNoMenu, None, held, message)
             })?;
             binding.check_search_bound()?;
             let half_turns = match &request.form {
@@ -485,21 +524,27 @@ pub fn resolve(ctx: &Context, menu: Option<&Menu>, binding: &Binding) -> Result<
         Operation::MenuDirect | Operation::MenuDrag => {
             let drag = binding.operation == Operation::MenuDrag;
             if drag && request.kind() == FormKind::Menu {
-                return Err(malformed("a drag takes a C or H request, not M"));
+                return Err(malformed("operation", "a drag takes a C or H request, not M"));
             }
-            let menu = menu.ok_or_else(|| refuse(codes::MENU_BINDING_MISMATCH, "free mode pins no menu"))?;
             let pin = binding.menu.as_ref().expect("checked shape");
-            if pin.set != menu.identity || pin.order != menu.order {
-                return Err(refuse(codes::MENU_BINDING_MISMATCH, "the binding names another menu set or order"));
+            let menu = menu.ok_or_else(|| {
+                let message = "free mode pins no menu";
+                binding_mismatch("binding", MenuMismatch::FreeModePinsNoMenu, None, Some(&pin.set), message)
+            })?;
+            if let Some((differs, expected, held)) = first_digest_difference(menu, &pin.set, &pin.order) {
+                let message = "the binding names another menu set or order";
+                return Err(binding_mismatch("binding", differs, Some(&expected), Some(&held), message));
             }
-            let twists = menu.for_cap(ctx, cap).map_err(|e| malformed(format!("the pinned menu at the cap: {e}")))?;
+            let twists =
+                menu.for_cap(ctx, cap).map_err(|e| malformed("menu", format!("the pinned menu at the cap: {e}")))?;
             count_chooser_run();
             if let Form::Menu { set, order, index } = &request.form {
-                if *set != menu.identity || *order != menu.order {
-                    return Err(refuse(codes::MENU_BINDING_MISMATCH, "the M request names another menu set or order"));
+                if let Some((differs, expected, held)) = first_digest_difference(menu, set, order) {
+                    let message = "the M request names another menu set or order";
+                    return Err(binding_mismatch("request", differs, Some(&expected), Some(&held), message));
                 }
                 let index = usize::try_from(*index).ok().filter(|&i| i < twists.len());
-                let index = index.ok_or_else(|| malformed("the M index is outside the menu"))?;
+                let index = index.ok_or_else(|| malformed("request.index", "the M index is outside the menu"))?;
                 return Ok(done(Choice::MenuDirect { index }, twists[index].clone()));
             }
             let matrix = request.matrix(ctx, cap).expect("a C or H request");

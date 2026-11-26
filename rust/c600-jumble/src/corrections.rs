@@ -176,12 +176,14 @@ fn unknown(id: u32) -> Refusal {
     Refusal {
         code: codes::NAMED_OBJECT_INVALID,
         message: format!("No shipped correction has id {id}; the ids run 0 to {}", COUNT - 1),
+        fact: None,
     }
 }
 
 /// I_a by its order-free identity, and with `order` also by its order digest; free mode is refused.
 fn menu_binding(menu: Option<&Menu>, order: bool) -> Result<(), Refusal> {
-    let refused = |message: &str| Err(Refusal { code: codes::MENU_BINDING_MISMATCH, message: message.into() });
+    let refused =
+        |message: &str| Err(Refusal { code: codes::MENU_BINDING_MISMATCH, message: message.into(), fact: None });
     match menu {
         None => refused("The corrections are words of the I_a menu; a state in free mode has no menu"),
         Some(menu) if menu.identity != I_A_MENU_IDENTITY => {
@@ -221,6 +223,7 @@ impl Catalogue {
         Err(Refusal {
             code: codes::IDENTITY_MISMATCH,
             message: "The correction catalogue is bound to another model_id".into(),
+            fact: None,
         })
     }
 

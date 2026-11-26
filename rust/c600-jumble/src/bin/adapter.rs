@@ -1142,7 +1142,11 @@ impl Adapter {
                 let np = c600_jumble::model::NP;
                 if let Some(p) = protect.iter().find(|&&p| !(0..np as i64).contains(&p)) {
                     let message = format!("Protected piece {p} is outside 0..{}", np - 1);
-                    return Ok(derived_refusal(&c600_kernel::Refusal { code: codes::NAMED_OBJECT_INVALID, message }));
+                    return Ok(derived_refusal(&c600_kernel::Refusal {
+                        code: codes::NAMED_OBJECT_INVALID,
+                        message,
+                        fact: None,
+                    }));
                 }
                 let protect: Vec<u32> = protect.into_iter().map(|p| p as u32).collect();
                 let base = match &snapshot {
@@ -1433,6 +1437,7 @@ impl Adapter {
                 None => Err(c600_kernel::Refusal {
                     code: codes::MENU_BINDING_MISMATCH,
                     message: "The corrections are words of the I_a menu; a state in free mode has no menu".into(),
+                    fact: None,
                 }),
             };
             let word = match twists {

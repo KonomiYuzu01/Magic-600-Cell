@@ -141,6 +141,7 @@ impl Context {
         Err(Refusal {
             code: codes::IDENTITY_MISMATCH,
             message: format!("The identity block differs from the loaded model in {field}"),
+            fact: None,
         })
     }
 }

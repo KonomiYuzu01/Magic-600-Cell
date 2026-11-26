@@ -27,7 +27,7 @@ pub(crate) const CEILING: &str = "Preview expansion exceeds 3,000,000 primitives
 pub(crate) type Net = (Vec<i32>, Vec<i32>);
 
 fn shape(message: &str) -> Refusal {
-    Refusal { code: codes::RECIPE_SHAPE, message: message.to_owned() }
+    Refusal { code: codes::RECIPE_SHAPE, message: message.to_owned(), fact: None }
 }
 
 fn certificate(message: &str) -> CertificateError {
@@ -88,7 +88,7 @@ pub(crate) fn normalize(model: &Model, recipe: &Value) -> Result<(Vec<Step>, usi
         }
     }
     if length > MAX_PRIMITIVES {
-        return Err(Refusal { code: codes::PRIMITIVE_CEILING, message: CEILING.to_owned() });
+        return Err(Refusal { code: codes::PRIMITIVE_CEILING, message: CEILING.to_owned(), fact: None });
     }
     Ok((out, length))
 }

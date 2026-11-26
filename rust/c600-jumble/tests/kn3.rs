@@ -13,7 +13,7 @@ use c600_jumble::state::{State, Status};
 use c600_jumble::twist::Menu;
 use c600_jumble::Context;
 use c600_kernel::json::{self, Value};
-use c600_kernel::request::{self as wire, Binding, MenuPin, Operation};
+use c600_kernel::request::{self as wire, Binding, Fact, MenuMismatch, MenuPin, Operation, SEARCH_LIMIT};
 use c600_kernel::{Derivation, Kernel, ProtectedSet};
 
 const SET: &str = "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c";
@@ -444,5 +444,77 @@ fn a_menu_s_kept_twists_equal_a_fresh_build_at_every_cap() {
         let again = menu.for_cap(ctx(), cap).expect("the menu at the cap, kept");
         assert!(same(&expected, &first), "cap {cap}: the menu's twists differ from a fresh build");
         assert!(same(&expected, &again), "cap {cap}: the kept twists differ from a fresh build");
+    }
+}
+
+/// The typed failed fact of a refusal: its code and fact, never its message (ERR.6).
+fn failed(menu: Option<&Menu>, binding: &Binding) -> (&'static str, Option<Fact>) {
+    let refusal = rotation::resolve(ctx(), menu, binding).expect_err("refused");
+    (refusal.code, refusal.fact)
+}
+
+fn malformed_field(field: &str) -> (&'static str, Option<Fact>) {
+    (codes::ROTATION_REQUEST_MALFORMED, Some(Fact::MalformedField { field: field.to_owned() }))
+}
+
+/// CT-ERR-16 (part: the typed failed fact of the three KN2 refusals (ERR.8): a malformed request or binding names the
+/// part that failed, a binding mismatch names which digest differs with the pinned menu's value and the named one, or
+/// that free mode pins no menu, and the search bound names N and D against the limit; every refusal carries its code
+/// and fact, which the test reads instead of the message (ERR.6); not run: the receipt's JSON and the corrected
+/// request after the change, which `c600-command/tests/twist_apply.rs` runs)
+#[test]
+fn rotation_refusals_carry_a_typed_failed_fact() {
+    let menu = pinned();
+    let rev = reversed();
+    let quarter = wire::cayley_request(["1:0", "0:0", "0:0"]);
+
+    // A malformed request names the failing part of the request line.
+    let long = {
+        let mut bytes = vec![b'a'; 2048];
+        bytes.push(b'\n');
+        bytes
+    };
+    let zeros = "0".repeat(64);
+    let cases: [(Vec<u8>, &str); 11] = [
+        (long, "request.length"),
+        (b"LX9B1|C|1:0|0:0|0:0".to_vec(), "request.line_end"),
+        (b"LX9B1|C|1:0|0:0|0:0 \n".to_vec(), "request.charset"),
+        (b"LX9B1|C|1:0|0:0\n".to_vec(), "request.field_count"),
+        (b"LX9B2|C|1:0|0:0|0:0\n".to_vec(), "request.prefix"),
+        (b"LX9B1|X|1:0|0:0|0:0\n".to_vec(), "request.form"),
+        (b"LX9B1|C|1:0|2:1|0:0\n".to_vec(), "request.token.1"),
+        (b"LX9B1|H|1:0|0:0|0:1\n".to_vec(), "request.token.2"),
+        (b"LX9B1|H|0:0|0:0|0:0\n".to_vec(), "request.axis"),
+        (format!("LX9B1|M|{}|{ORDER}|0\n", &SET[1..]).into_bytes(), "request.set"),
+        (format!("LX9B1|M|{SET}|{ORDER}|01\n").into_bytes(), "request.index"),
+    ];
+    for (bytes, field) in cases {
+        let refusal = Request::decode(&bytes).map(|_| ()).expect_err("refused");
+        assert_eq!((refusal.code, refusal.fact), malformed_field(field), "{field}");
+    }
+    let mut far = free(quarter.clone(), 1, 1);
+    far.cap = 600;
+    assert_eq!(failed(None, &far), malformed_field("cap"));
+
+    // A malformed binding names its field.
+    let bad = |value: Value| Binding::from_json(&value).expect_err("refused");
+    assert_eq!(bad(Value::Null).fact, Some(Fact::MalformedField { field: "binding".into() }));
+
+    // A binding mismatch names the digest that differs, the pinned menu's value and the named one.
+    let mismatch = |source, differs, expected: Option<&str>, held: Option<&str>| {
+        let (expected, held) = (expected.map(str::to_owned), held.map(str::to_owned));
+        (codes::MENU_BINDING_MISMATCH, Some(Fact::MenuBinding { source, differs, expected, held }))
+    };
+    let free_binding = free(quarter.clone(), 1, 1);
+    assert_eq!(
+        failed(Some(&menu), &free_binding),
+        mismatch("binding", MenuMismatch::PinnedMenuNotNamed, Some(SET), None)
+    );
+    let _ = (&rev, &zeros);
+
+    // The search bound names N and D against the limit.
+    for (n, d) in [(5000u128, 10u128), (6000, 1), (0, (1 << 40) + 1), (1, 0), (u128::MAX, 1)] {
+        let fact = Fact::SearchBound { n: n.to_string(), d: d.to_string(), limit: SEARCH_LIMIT };
+        assert_eq!(failed(None, &free(quarter.clone(), n, d)), (codes::ROTATION_SEARCH_BOUND, Some(fact)));
     }
 }

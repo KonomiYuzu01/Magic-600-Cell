@@ -16,7 +16,7 @@ use c600_jumble::twist::Menu;
 use c600_jumble::Context;
 use c600_kernel::json::Value;
 use c600_kernel::request::codes::ROTATION_REQUEST_MALFORMED;
-use c600_kernel::request::{request_digest, Binding, Operation};
+use c600_kernel::request::{request_digest, Binding, Fact, Operation};
 
 use crate::receipt::Error;
 
@@ -50,10 +50,10 @@ pub(crate) fn binding_at(args: &Value, key: &str) -> Result<Binding, Error> {
         fields.len() == ROTATION_FIELDS.len() && ROTATION_FIELDS.iter().all(|field| fields.contains_key(*field))
     };
     let Some(rotation) = rotation.filter(fits) else {
-        return Err(Error::new(
-            ROTATION_REQUEST_MALFORMED,
-            format!("`{key}` is KN3.7's binding without its cap: exactly `request`, `operation` and `menu`"),
-        ));
+        let detail = format!("`{key}` is KN3.7's binding without its cap: exactly `request`, `operation` and `menu`");
+        return Err(
+            Error::new(ROTATION_REQUEST_MALFORMED, detail).with_fact(Fact::MalformedField { field: key.to_owned() })
+        );
     };
     let mut fields = rotation.clone();
     fields.insert("cap".to_owned(), args.get("cap").cloned().unwrap_or(Value::Null));

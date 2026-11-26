@@ -592,6 +592,7 @@ fn consistency(value: &NuVector) -> Result<(), Refusal> {
             "ν is nonzero in {} on a lattice configuration witnessed under I_a; stage 04 fixes these coordinates at 0",
             fixed.join(", ")
         ),
+        fact: None,
     })
 }
 

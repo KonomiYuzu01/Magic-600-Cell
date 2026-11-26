@@ -20,7 +20,7 @@ use c600_jumble::Context;
 use c600_kernel::codes::RECIPE_SHAPE;
 use c600_kernel::json::{self, Value};
 use c600_kernel::request::codes::{MENU_BINDING_MISMATCH, ROTATION_REQUEST_MALFORMED, TWIST_OFF_MENU};
-use c600_kernel::request::{self as wire, Binding, MenuPin, Operation};
+use c600_kernel::request::{self as wire, Binding, Fact, MenuMismatch, MenuPin, Operation};
 use c600_kernel::{Derivation, Kernel, ProtectedSet, ProtectionMode, Snapshot, ORBITS};
 
 const SECRET: [u8; 32] = [7; 32];
@@ -410,6 +410,62 @@ fn input_refusals_change_nothing() {
         let mut forged = f.press(&binding);
         forged.token.as_mut().expect("a token").binding.nonce += 1_000;
         f.refused(forged, expected, "a forged token");
+    }
+    assert!(committed(&f.twist(&item(1))));
+}
+
+/// CT-ERR-16 (part: the receipt half: a twist's rotation refusal carries its typed failed fact (ERR.8) in the receipt's
+/// error, read by code and fact and never by message (ERR.6): a malformed binding names its field, a binding to another
+/// order names the digest that differs, and a search bound beyond the limit names N and D; each changes nothing, and the
+/// corrected request then commits (`after_user_change`); not run: the jumbling-side refusals, which
+/// `c600-jumble/tests/kn3.rs` runs)
+#[test]
+fn a_rotation_refusal_carries_its_fact_and_a_corrected_request_commits() {
+    let mut f = fixture(&[]);
+    let elsewhere = Binding { menu: Some(pin(REVERSED_ORDER)), ..item(1) };
+    let free = Binding {
+        request: wire::cayley_request(["0:0", "0:0", "0:0"]),
+        cap: 0,
+        operation: Operation::Free { n: 1, d: 1 },
+        menu: None,
+    };
+    let cases = [
+        (
+            "a cap past the last pole",
+            with(&item(1), "cap", Value::Int(600)),
+            ROTATION_REQUEST_MALFORMED,
+            Fact::MalformedField { field: "cap".into() },
+        ),
+        (
+            "another menu's order",
+            args(&elsewhere),
+            MENU_BINDING_MISMATCH,
+            Fact::MenuBinding {
+                source: "binding",
+                differs: MenuMismatch::Order,
+                expected: Some(pinned().order),
+                held: Some(REVERSED_ORDER.to_owned()),
+            },
+        ),
+        (
+            "a free binding under a pinned menu",
+            args(&free),
+            MENU_BINDING_MISMATCH,
+            Fact::MenuBinding {
+                source: "binding",
+                differs: MenuMismatch::PinnedMenuNotNamed,
+                expected: Some(pinned().identity),
+                held: None,
+            },
+        ),
+    ];
+    for (what, arguments, expected, fact) in cases {
+        let asked = f.shell.prepare(&f.layer, TWIST_ROW, arguments).unwrap();
+        let receipt = f.refused(asked, expected, what);
+        let Status::Refused(error) = &receipt.status else { panic!("{what}: refused") };
+        assert_eq!(error.fact.as_ref(), Some(&fact), "{what}");
+        let json = error.to_json();
+        assert_eq!(json.get("fact"), Some(&fact.to_json()), "{what}");
     }
     assert!(committed(&f.twist(&item(1))));
 }
