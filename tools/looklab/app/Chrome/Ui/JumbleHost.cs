@@ -17,6 +17,8 @@ public sealed class JumbleHost
     public LocalAccordion Local { get; } = new();
     public JumbleSurface Surface { get; }
     public CapMapPanel CapMap { get; }
+    // jumble.cap.name without a number (owner's bug report, 26 November 2026): the prompt of the caps in cap-id order.
+    public CapPromptOverlay Prompt { get; }
     // B9: the named cap, the threshold, the meeting caps and the job gate (ADR-D02.15, .16, .19).
     public CapNaming Naming { get; } = new();
     public CapThreshold Threshold { get; private set; } = CapThreshold.None;
@@ -108,6 +110,9 @@ public sealed class JumbleHost
         Jobs = new CapJobs(Naming);
         CapMap.Map.Naming = Naming;
         CapMap.Map.Picked += cap => Name(cap);
+        Prompt = new CapPromptOverlay(new CapPrompt(() => map, Refusal), () => frame.Tokens, () => Naming.Named);
+        Prompt.Picked += cap => Click(cap);
+        frame.Overlays.AddChild(Prompt);
         CapMap.ThresholdTyped += text => SetThreshold(text);
         Naming.Changed += _ => Named();
         frame.AddDockPanel(DockSide.Bottom, EntrySlot.CapMapPanel, title, "panel.capmap", CapMap);
@@ -268,6 +273,17 @@ public sealed class JumbleHost
 
     public bool Name(int cap) => Naming.Name(cap);
 
+    // Why a click on a cap names nothing now, or null.
+    public string? Refusal(int cap) => CapNaming.Refusal(cap, Source.State.Mode, Naming.Named);
+
+    // A click on a cap map cell, a typed number and Enter there, or the prompt's choice: it names the cap, or says why
+    // it names nothing in the status line (owner's bug report, 26 November 2026: a click did nothing visible).
+    public bool Click(int cap)
+    {
+        if (Refusal(cap) is { } why) { frame.Say(why, true); return false; }
+        return Name(cap);
+    }
+
     // Formulas from the field or the palette; an empty text clears the threshold. A formula that does not read
     // leaves the threshold as it was and says why.
     public bool SetThreshold(string text)
@@ -338,8 +354,8 @@ public sealed class JumbleHost
         "structure.filter.compose" when !Enum.TryParse<FilterComposition>(argument, true, out _) => "it needs replace, intersect, union or subtract",
         _ when FilterRows.Contains(command) => null,
         _ when !Source.State.Mode => "Jumble is off",
-        "jumble.cap.name" when argument == null => "it needs a cap number, as in > jumble.cap.name 150",
-        "jumble.cap.name" when CapNaming.Typed(argument) == null => "no cap is numbered " + argument + "; caps are 0 to 599",
+        // Without a number the row opens the cap prompt.
+        "jumble.cap.name" when argument != null && CapNaming.Typed(argument) == null => "no cap is numbered " + argument + "; caps are 0 to 599",
         "jumble.cap.unname" when Naming.Named == null => "no cap is named",
         "jumble.capmap.threshold.set" when argument == null => "it needs formulas: N_c ≥ k, N_c ≤ k or N_c = F_c",
         "jumble.capmap.threshold.clear" when !Threshold.IsSet => "no threshold is set",
@@ -370,6 +386,7 @@ public sealed class JumbleHost
             case "filter.save": Filter?.Save(argument!); OpenFilter(); break;
             case "filter.load": Filter?.Load(argument!); OpenFilter(); break;
             case "structure.filter.compose": if (Enum.TryParse(argument, true, out FilterComposition c)) Filter?.Compose(c); OpenFilter(); break;
+            case "jumble.cap.name" when argument == null: Prompt.Open(); break;
             case "jumble.cap.name": if (CapNaming.Typed(argument) is int cap) Name(cap); break;
             case "jumble.cap.unname": Naming.Unname(); break;
             case "jumble.capmap.threshold.set": SetThreshold(argument ?? ""); break;

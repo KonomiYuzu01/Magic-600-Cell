@@ -1730,6 +1730,64 @@ class D02NameCap(unittest.TestCase):
         self.assertTrue(run.expect_name_cap(dumps(), {}, "on-zero"))
 
 
+class D02CapPrompt(unittest.TestCase):
+    """The owner's bug report of 26 November 2026: jumble.cap.name without a number opens the cap prompt, its caps in
+    cap-id order with nothing highlighted, and the run's expectation sees each part it checks."""
+
+    def test_the_row_without_a_number_opens_the_prompt(self):
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn('case "jumble.cap.name" when argument == null: Prompt.Open(); break;', host)
+        self.assertNotIn("it needs a cap number", host)
+        self.assertIn("frame.Overlays.AddChild(Prompt);", host)
+        prompt = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "CapPrompt.cs")
+        for word in ("OrderBy", "Sort(", "Highlighted = 0"):
+            self.assertNotIn(word, prompt)
+        self.assertIn("Enumerable.Range(0, CapLayout.Caps)", prompt)
+
+    def test_the_cap_prompt_expectation_sees_each_part(self):
+        run = shell_module("d02_run")
+        self.assertIn("cap-prompt", run.ON_FIXTURE)
+        self.assertNotIn("cap-prompt", run.IN_SAMPLE_MODE)
+        script = json.loads(text(SHELL / "d02_scripts" / "cap-prompt.json"))
+        written = []
+        for step in script["steps"]:
+            (kind, value), = step.items()
+            written.append({"wait_ms": f"wait {value} ms", "chord": f"chord {value}", "text": f"text {value}",
+                            "click_control": f"click {value}"}[kind])
+        self.assertEqual(["start"] + written, run.CAP_PROMPT_STEPS)
+        rows = {row["cap"]: row for row in json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / "ia-40" / "rim.json"))["rows"]}
+        self.assertEqual(run.prompt_label(rows[0]), "cap 0 · blocked · N_c undefined")
+        self.assertEqual(run.prompt_label(rows[1]), "cap 1 · closed · N_c 0")
+        panel = "panel:jumble.cap_map"
+
+        def dumps(first=None, window=None):
+            out = []
+            for index, do in enumerate(run.CAP_PROMPT_STEPS):
+                prompt = {"open": index in (4, 5, 6, 7, 12, 17), "rows": 600, "highlighted": -1, "window": list(range(12))}
+                named, lines = -1, []
+                if index in (4, 12, 17):
+                    lines = [["overlay:CapPrompt", run.prompt_label(rows[cap])] for cap in range(12)]
+                    lines.append(["overlay:CapPrompt", "Name a cap · cap 150 is named now" if index == 12 else "Name a cap"])
+                if index == 4 and first is not None:
+                    prompt["highlighted"] = first
+                if index == 5:
+                    prompt.update(rows=11, window=window or [15] + list(range(150, 160)))
+                if index in (6, 7):
+                    prompt.update(rows=11, window=[15] + list(range(150, 160)), highlighted=15 if index == 6 else 150)
+                if 8 <= index < 13:
+                    named = 150
+                    lines.append([panel, "cap 150 · N_c 0 · floor 0 · u 0 · 80 meeting caps"])
+                if index >= 13:
+                    named = 7
+                out.append({"do": do, "lines": lines, "cap_prompt": prompt, "named": named})
+            return out
+        self.assertEqual(run.expect_cap_prompt(dumps(), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_cap_prompt(dumps(first=0), {}, "ia-40")), 1)
+        self.assertEqual(len(run.expect_cap_prompt(dumps(window=list(range(150, 160)) + [15]), {}, "ia-40")), 1)
+        self.assertTrue(run.expect_cap_prompt(dumps()[:8], {}, "ia-40"))
+        self.assertTrue(run.expect_cap_prompt(dumps(), {}, "on-zero"))
+
+
 class D02Q3b(unittest.TestCase):
     """B10: the q3b script's expectation is the Q3.b rhythm's own result, and it fails on a cancel that changed the
     screen or on a list that differs."""

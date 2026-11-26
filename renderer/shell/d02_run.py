@@ -887,6 +887,74 @@ EXPECT["pick"] = expect_pick
 ON_FIXTURE.add("pick")
 
 
+# The owner's bug report of 26 November 2026: jumble.cap.name without a number opens the cap prompt, every cap in
+# cap-id order with nothing highlighted (the human-solve boundary: the program never ranks or pre-selects a cap).
+CAP_PROMPT_STEPS = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name", "chord Enter", "text 15", "chord Down",
+                    "chord Down", "chord Enter", "wait 1500 ms", "chord F1", "text > jumble.cap.name", "chord Enter",
+                    "click CapPromptRow_7", "wait 1000 ms", "chord F1", "text > jumble.cap.name", "chord Enter",
+                    "chord Escape", "wait 2000 ms"]
+
+
+def prompt_label(row: dict) -> str:
+    """A cap prompt row's words for a rim row, as CapPrompt.Label writes them from the cap map's classes."""
+    if row["status"] == "blocked":
+        return f"cap {row['cap']} · blocked · N_c undefined"
+    word = "closed" if row["N_c"] == 0 else "at floor" if row.get("at_floor") else "above floor"
+    return f"cap {row['cap']} · {word} · N_c {row['N_c']}"
+
+
+def expect_cap_prompt(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The cap prompt: opened by the row without a number, caps 0 to 11 shown first in id order with their words and
+    nothing highlighted; 15 narrows to 15 and 150 to 159; two Downs highlight 150 and Enter names it; a click on cap 7's
+    row names cap 7; Escape closes it with cap 7 still named. No step refuses the row."""
+    if [dump["do"] for dump in dumps] != CAP_PROMPT_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None or not (SAMPLES / state / "rim.json").is_file():
+        return ["the cap-prompt script needs a sample state with rim rows"]
+    rows = {row["cap"]: row for row in load(SAMPLES / state / "rim.json")["rows"]}
+    problems = []
+
+    def prompt(index: int) -> dict:
+        return dumps[index].get("cap_prompt", {})
+    opened = prompt(4)
+    if not opened.get("open"):
+        problems.append("step 4: the row without a number did not open the cap prompt")
+    if opened.get("rows") != 600 or opened.get("window") != list(range(12)):
+        problems.append(f"step 4: the prompt shows {opened.get('rows')} caps, first {opened.get('window')}, not 600 from cap 0 in id order")
+    if opened.get("highlighted") != -1:
+        problems.append(f"step 4: cap {opened.get('highlighted')} is highlighted when the prompt opens")
+    shown = [text for text in overlay(dumps[4]) if text.startswith("cap ")]
+    wanted = [prompt_label(rows[cap]) for cap in range(12)]
+    if shown != wanted:
+        problems.append(f"step 4: the prompt's rows read {shown}, expected {wanted}")
+    if any("it needs a cap number" in text for text in texts(dumps[4])):
+        problems.append("step 4: the row is still refused without a number")
+    narrowed = prompt(5)
+    if narrowed.get("window") != [15] + list(range(150, 160)) or narrowed.get("highlighted") != -1:
+        problems.append(f"step 5: 15 shows {narrowed.get('window')} with {narrowed.get('highlighted')} highlighted")
+    for index, cap in ((6, 15), (7, 150)):
+        if prompt(index).get("highlighted") != cap:
+            problems.append(f"step {index}: Down highlights {prompt(index).get('highlighted')}, expected cap {cap}")
+    for index, cap in ((8, 150), (13, 7), (18, 7)):
+        if prompt(index).get("open") or dumps[index].get("named") != cap:
+            problems.append(f"step {index}: the prompt is {'open' if prompt(index).get('open') else 'closed'} with cap "
+                            f"{dumps[index].get('named')} named, expected it closed with cap {cap} named")
+    if not any(text.startswith("cap 150 ·") for text in texts(dumps[8], "panel:jumble.cap_map")):
+        problems.append("step 8: the cap map's panel does not read cap 150's Tier 1 line")
+    again = prompt(12)
+    if not again.get("open") or again.get("highlighted") != -1 or "Name a cap · cap 150 is named now" not in overlay(dumps[12]):
+        problems.append("step 12: the prompt did not open again with nothing highlighted and cap 150 named")
+    if not prompt(17).get("open"):
+        problems.append("step 17: the prompt did not open the third time")
+    if overlay(dumps[19]):
+        problems.append("step 19: an overlay is still open")
+    return problems
+
+
+EXPECT["cap-prompt"] = expect_cap_prompt
+ON_FIXTURE.add("cap-prompt")
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

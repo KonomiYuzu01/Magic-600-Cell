@@ -634,6 +634,20 @@ internal sealed partial class D02Driver : Node
                 _doing += " (not found)";
             }
         }
+        else if (step.TryGetProperty("click_control", out var clicked))
+        {
+            // A left click at the centre of a control of the frame, found by its name (the cap prompt's rows), through
+            // the shell's input as the pointer gives it.
+            _doing = "click " + clicked.GetString();
+            if (_frame.FindChild(clicked.GetString()!, true, false) is Control control && control.IsVisibleInTree())
+            {
+                Click(control.GetGlobalRect().GetCenter());
+            }
+            else
+            {
+                _doing += " (not found)";
+            }
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -641,7 +655,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a click_control or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -666,6 +680,14 @@ internal sealed partial class D02Driver : Node
             : character is >= '0' and <= '9' ? (Key)((long)Key.Key0 + (character - '0'))
             : character switch { '.' => Key.Period, ' ' => Key.Space, '-' => Key.Minus, '_' => Key.Minus, _ => Key.None };
         Send(key, character, false, false, char.IsUpper(character) || character == '_');
+    }
+
+    /// <summary>A left click at a point of the window: the pointer moves there, then presses and releases.</summary>
+    private static void Click(Vector2 at)
+    {
+        Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at, ButtonMask = MouseButtonMask.Left });
+        Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
     }
 
     /// <summary>A left-button drag from the opening's centre, in ten motion steps, through the shell's input.</summary>
@@ -739,6 +761,23 @@ internal sealed partial class D02Driver : Node
                 json.WriteString("inspect", shown.Inspect.Line(shown.CapMap.Map.Map));
                 var marks = shown.CapMap.Map;
                 json.WriteString("map_marks", marks.Threshold.Formula + "|" + marks.Named + "|" + string.Join(",", marks.Meeting) + "|" + shown.Naming.Hovered);
+                json.WriteNumber("named", shown.Naming.Named ?? -1);
+                // The cap prompt (jumble.cap.name without a number): open or not, its field, its rows' count, the
+                // highlighted cap (-1: none), the caps shown and what its last Enter said.
+                json.WriteStartObject("cap_prompt");
+                var prompt = shown.Prompt.Model;
+                json.WriteBoolean("open", shown.Prompt.IsOpen);
+                json.WriteString("query", prompt.Query);
+                json.WriteNumber("rows", prompt.Rows.Count);
+                json.WriteNumber("highlighted", prompt.Highlighted is int row ? prompt.Rows[row].Cap : -1);
+                json.WriteStartArray("window");
+                foreach (var shownRow in prompt.Window)
+                {
+                    json.WriteNumberValue(shownRow.Cap);
+                }
+                json.WriteEndArray();
+                json.WriteString("said", prompt.Said ?? "");
+                json.WriteEndObject();
                 json.WriteStartArray("focus");
                 foreach (var layers in shown.Layers)
                 {

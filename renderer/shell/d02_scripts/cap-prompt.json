@@ -1,0 +1,26 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "cap-prompt",
+  "note": "The owner's bug report of 26 November 2026, on ia-40's session fixture: jumble.cap.name without a number opens the cap prompt, every cap in cap-id order with its class and N_c and nothing highlighted. Typing 15 narrows it to 15 and 150 to 159, two Downs highlight cap 150 and Enter names it; the prompt opens again and a click on cap 7's row names cap 7; Escape closes it the third time with cap 7 still named. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name"},
+    {"chord": "Enter"},
+    {"text": "15"},
+    {"chord": "Down"},
+    {"chord": "Down"},
+    {"chord": "Enter"},
+    {"wait_ms": 1500},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name"},
+    {"chord": "Enter"},
+    {"click_control": "CapPromptRow_7"},
+    {"wait_ms": 1000},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name"},
+    {"chord": "Enter"},
+    {"chord": "Escape"},
+    {"wait_ms": 2000}
+  ]
+}
