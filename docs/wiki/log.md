@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | The order of work to the 1.0 release
+The owner set the order from ADR-D02 to the release ([decision](decisions/owner-decisions-2026-11-26-release-order.md)): the fine work of freeze rounds 3 and 4 moves into stage 2's K2 art line, stage 3 runs only the full-volume acceptance and bug fixes, and stage 4 makes the promotional film before packaging and release. The research line's G0 stays an open question ([decision](decisions/owner-decisions-2026-11-26-research-goal.md)).
+
 ## [2026-11-26] decision | The research line's goal is a proof of coverage; Lean starts with LP6
 The owner set the jumbling research line's final goal as a proof that every configuration that can arise is covered, with no scramble test, said that ADR-D02's 12c is a product target unrelated to the research line, and placed a narrow Lean line for the product's correctness proofs with LP6 ([decision](decisions/owner-decisions-2026-11-26-research-goal.md)). The research stays stopped.
 
