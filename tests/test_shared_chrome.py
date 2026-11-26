@@ -51,7 +51,7 @@ class Staged(unittest.TestCase):
         return (self.project / "Chrome" / relative).read_bytes()
 
     def test_the_ported_files_are_staged_as_they_are(self):
-        for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs"):
+        for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs", "Model/CorePlaces.cs"):
             self.assertEqual(self.staged(relative), (CHROME / relative).read_bytes(), relative)
 
 
@@ -96,6 +96,39 @@ class ErrorLamp(unittest.TestCase):
         # The lamp alone opens Problems; no host adds a second handler.
         for name in ("SampleMount.cs", "LabFrame.cs"):
             self.assertNotIn("AlertPressed", text(LIVE / name), name)
+
+
+class StripAnchors(unittest.TestCase):
+    """Item 2 (ADR-D01.62): the strip's anchors in Local and its markers in Global, where the product's core draws the
+    positions; Look Lab keeps its own views' projection, the product gets the core's."""
+
+    def test_the_core_projection_is_shared_and_engine_free(self):
+        places = text(CHROME / "Model" / "CorePlaces.cs")
+        self.assertIn("public sealed class CorePlaces", places)
+        self.assertIn("public sealed record CoreView(", places)
+        # The core's own formulas (renderer/core/shaders/geometry.hlsl) and defaults (sa2_interop.h).
+        shader = text(ROOT / "renderer" / "core" / "shaders" / "geometry.hlsl")
+        self.assertIn("float3 p = d4 * world.xyz / (d4 - world.w);", shader)
+        self.assertIn("double scale = view.Orthographic ? 1 : view.D4 / (view.D4 - w[3]);", places)
+        self.assertIn("result.clip = float4(p.x*zoom/aspect, p.y*zoom, 100.0/(100.0-0.05)*(z-0.05), z);", shader)
+        self.assertIn("double x = px * view.Zoom / view.Aspect / z, y = py * view.Zoom / z;", places)
+        header = text(ROOT / "renderer" / "core" / "include" / "sa2_interop.h")
+        for name, value in (("CELL_SHRINK", "0.76"), ("STICKER_SHRINK", "0.82"), ("D4", "1.18"), ("ZOOM", "1.15")):
+            self.assertIn(f"#define SA2_SHAPE_DEFAULT_{name} {value}f", header)
+        self.assertIn("DefaultCellShrink = .76, DefaultStickerShrink = .82, DefaultD4 = 1.18, DefaultZoom = 1.15;", places)
+        # The shared library needs nothing of Look Lab's engine.
+        self.assertNotIn("LookLab", places)
+
+    def test_sample_mode_gives_the_strip_both_projections(self):
+        mount = text(LIVE / "SampleMount.cs")
+        self.assertIn("Solve = new LabSolve(frame, root, seconds, run, Demo, Places?.Projector(Global), Places is { } local ? LocalPlace(local) : null);", mount)
+        self.assertIn('System.Environment.GetEnvironmentVariable("M600_ASSETS")', mount)
+        self.assertIn("public Func<CoreView?>? GlobalView { get; set; }", mount)
+        self.assertIn("public Func<CoreView?>? LocalView { get; set; }", mount)
+        # Under --d02 Global draws no anchor until the host describes it (the Hopf rings are not ported).
+        self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_D02") == "1") return null;', mount)
+        # Look Lab still gives its own views' projection.
+        self.assertIn("(orbit, position) => Place(app.View, orbit, position), (orbit, position) => Place(app.Linked.Local, orbit, position)", text(LIVE / "LabFrame.cs"))
 
 
 if __name__ == "__main__":
