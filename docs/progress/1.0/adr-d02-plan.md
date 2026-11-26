@@ -30,6 +30,11 @@ by a fresh Claude subagent, is
 [ADR-D02-jumble-research.md](../../architecture/1.0/design/adr/ADR-D02-jumble-research.md) (26 November 2026); Fable's
 build framework and the shell build follow.
 
+Build framework, 26 November 2026: on the owner's go after reading the ADR text, Fable wrote
+[the build framework](adr-d02-build-framework.md) as a subscription subagent: 23 steps (B1 to B23) in Look Lab's chrome
+library and the product shell, five Fable checkpoints, the reduced Track J run at the end, about 106 Opus agent hours.
+The integrator checked it and fixed the ADR text for its findings F5 to F16. Opus builds it one step per commit.
+
 Inputs:
 - The owner decisions on ADR-D02:
   - [design and art path](../../wiki/decisions/owner-decisions-2026-11-22-design-art-path.md), items 3 and 4;
