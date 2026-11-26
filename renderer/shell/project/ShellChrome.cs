@@ -22,8 +22,11 @@ namespace Magic600.Shell;
 /// </remarks>
 public sealed class ShellChrome
 {
+    // The docks follow the layouts of workspaces.json: Solve opens Library on the left and History on the right, so
+    // each panel sits on the side its layouts name (a dock whose side lacks the named panel stays shut).
     private static readonly (DockSide Side, string Id, string Title, string Glyph)[] Panels =
     {
+        (DockSide.Left, "library", "Library", "panel.library"),
         (DockSide.Left, "scripts", "Scripts", "panel.scripts"), (DockSide.Right, "inspector", "Inspector", "panel.inspector"),
         (DockSide.Right, "slot.1", "Script panel 1", "panel.slot1"), (DockSide.Right, "slot.2", "Script panel 2", "panel.slot2"),
         (DockSide.Right, "tune", "Tune", "panel.tune"),
@@ -103,7 +106,7 @@ public sealed class ShellChrome
         frame.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
         var history = new HistoryPanel(Moves, new LayoutHistory(), () => frame.Tokens);
-        frame.AddDockPanel(DockSide.Left, "history", "History", "panel.history", history);
+        frame.AddDockPanel(DockSide.Right, "history", "History", "panel.history", history);
         foreach (var panel in Panels)
         {
             frame.AddDockPanel(panel.Side, panel.Id, panel.Title, panel.Glyph, ChromeBody.PaneState("notdrawn", panel.Title + ": " + NotHere));

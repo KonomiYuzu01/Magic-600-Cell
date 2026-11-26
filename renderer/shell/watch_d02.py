@@ -1,6 +1,6 @@
 """The owner's one command to watch ADR-D02's build in the product shell.
 
-  python renderer/shell/watch_d02.py [--state ID] [--build DIR] [--follow]
+  python renderer/shell/watch_d02.py [--state ID] [--build DIR] [--follow] [--runs DIR]
 
 Run it from a PowerShell on the desktop. It starts the newest product build (or --build) with the frame, Jumble on and
 D02 on, in a fresh run folder under work/d02-watch/. The window never sits on top and never takes the foreground (the
@@ -13,6 +13,9 @@ it as any window; the command ends with it.
 - a newer product build: it starts without activation at the old window's place and size, and the old window closes
   once the new one is up.
 Ctrl+C ends --follow and closes the window. Closing the window ends it too.
+
+--runs puts the run folders in another folder than work/d02-watch/, for example outside the checkout while
+tools/looklab/check.py runs, which fails on any change in the checkout, ignored files included.
 """
 from __future__ import annotations
 
@@ -139,7 +142,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--state", help="the sample state the D02 surfaces read (tools/looklab/data/samples/jumble)")
     parser.add_argument("--build", type=Path, help="the product build (default: the newest)")
     parser.add_argument("--follow", action="store_true", help="keep one window across build steps")
+    parser.add_argument("--runs", type=Path, help="the folder for the run folders (default: work/d02-watch)")
     args = parser.parse_args(argv)
+    if args.runs is not None:
+        global WATCH_ROOT
+        WATCH_ROOT = args.runs.resolve()
     if args.state is not None:
         states = [state["state"] for state in json.loads(STATES.read_text(encoding="utf-8"))["states"]]
         if args.state not in states:

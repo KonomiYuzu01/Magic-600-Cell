@@ -1271,5 +1271,25 @@ class D02Launch(unittest.TestCase):
         self.assertNotEqual(watch.data_digest(data), before)
         self.assertTrue(str(watch.WATCH_ROOT).replace("\\", "/").endswith("work/d02-watch"))
 
+class ShellDocks(unittest.TestCase):
+    """The shell's dock panels sit on the sides the layouts name (workspaces.json): a dock whose side lacks the
+    named panel stays shut (Frame.cs), which left both Solve docks shut until B4a."""
+
+    def test_every_dock_panel_a_layout_names_is_on_that_side(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        placed = {}
+        for side, panel in re.findall(r"\(DockSide\.(\w+), \"([\w.]+)\"", chrome):
+            placed.setdefault(panel, set()).add(side.lower())
+        for side, panel in re.findall(r"AddDockPanel\(DockSide\.(\w+), \"([\w.]+)\"", chrome):
+            placed.setdefault(panel, set()).add(side.lower())
+        self.assertEqual(placed["history"], {"right"})
+        layouts = json.loads((ROOT / "tools" / "looklab" / "data" / "design" / "workspaces.json").read_text(
+            encoding="utf-8"))["workspaces"]
+        for layout in layouts:
+            for side, panel in layout["arrangement"]["docks"].items():
+                if panel is not None:
+                    self.assertIn(side, placed.get(panel, set()), f"{layout['name']}: {panel} is not in the {side} dock")
+        self.assertEqual([layout["name"] for layout in layouts], ["Solve", "Script", "Analyse", "Learn", "Gallery"])
+
 if __name__ == "__main__":
     unittest.main()
