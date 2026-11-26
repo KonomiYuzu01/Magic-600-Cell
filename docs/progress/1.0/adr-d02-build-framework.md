@@ -1011,6 +1011,27 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B2. CR-19 for the route; XM1 for the bindings; the glossary request.
+- **As built (26 November 2026):**
+  - `keymap.json` gains a `seats` section, which only the default file may carry: the pinned menu (I_a and its identity), the fifth-turn g = I_a[12], the 11 retained twist keys (items 1 to 11) and the four held seats. Seat k's key alone types g^k; held with retained key r it types r·g^k, g^k performed first (matrices act on column vectors). Each seat carries 3 twists of order 2, 3 of order 3 and 6 of order 5, and the four seats carry the 48 jumble twists. The placeholder keys avoid every bound key, the sample's host keys, the live session's J K L and the digits: seats Z, X, C and S (glyphs S1 to S4); retained I ; ' , . / [ ] - = `.
+  - `Model/KeyMap.cs`: `SeatKeys` reads and checks the section, and `KeyMapModel.HeldSeat(seats, seat)` gives the 12 twist keys with their chords and orders. `Caps` takes the seats: with one seat key held and no modifier, the seat key shows held and its 11 retained keys show as twist keys, each labelled with its order. At rest each seat key shows its seat and glyph. `KeyMapPanel.Seats` is set by the product shell under `--d02` with `--sample`. That is the only place the key map is mounted.
+  - `Model/JumbleViews.cs` is new. While Jumble is on, Global's border gains a link mark, "projection chain (600-cell-Full)". Both borders gain a not-drawn mark, "exposed faces unavailable", in the role `state.exposed_face.unavailable`, with `input.exposed_geometry_unavailable` in its tooltip. The same words end the named cap's Tier 1 in the cap map's panel and the inspected cap's Tier 1 in Cap covers. `jumble-words.json` gains a `built` list for words the build composes from an item rather than quotes; it holds the chain's words.
+  - `tests/test_d02_words.py` reads, longest phrase first, the sentences, names, synonyms and row names, the built words, the draft rows' labels and the seat labels. The rows' notes are help prose that K2 replaces, so they are not read. A word must be one of the following:
+    - a glossary row, found through `build.py`'s own index;
+    - a `PENDING_TERMS` entry, which must match section 15;
+    - a reading of one row, such as F_c → Floor or rev → Revision;
+    - a homonym's sense in D02 (twist, projection, covers), a name or a variable;
+    - a plain word: ordinary English or general geometry such as face, ring and antipode, which is never a glossary name.
+
+    An unlisted word fails. A pending term that gains a glossary row must leave the list.
+  - Departures:
+    - The files list grows by `Model/Commands.cs` (the optional section), `Model/CapCovers.cs` and `Ui/JumbleSurface.cs` (Tier 1), `Ui/JumbleHost.cs` (the marks), `renderer/shell/project/ShellChrome.cs` (the seats) and `jumble-words.json`.
+    - No chord routes yet. The draft row `jumble.seat.hold` waits for CR-19, and the keys and glyphs wait for XM1 and G6.
+  - Checks:
+    - the four console tests and the other 223 (227 PASS), and `tools/looklab/check.py` PASS with the checkout unchanged;
+    - `python tests/test_d02_words.py` OK;
+    - `glossary/build.py --check` unchanged (298 terms);
+    - `build_product.py` PASS;
+    - `test_renderer_shell.py`, `test_shared_chrome.py`, `test_d02_drawing.py`, `test_renderer_core.py` and `test_d02_samples.py` OK.
 
 ### B28. The research pane: Records and Claims
 - **Goal:** `pane.research` in Analyse, with its verdict words.

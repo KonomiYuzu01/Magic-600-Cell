@@ -327,6 +327,8 @@ public sealed class ShellChrome
             if (sample != null)
             {
                 host.Layers = sample.Layers.Values.ToArray();
+                // B27: the key map's four held seat entries (ADR-D02.42), from this build's keymap.
+                sample.Keys.Seats = SeatKeys.Read(File.ReadAllText(Path.Combine(folder, "keymap.json")));
             }
             else
             {
@@ -425,7 +427,9 @@ public sealed class ShellChrome
     /// <summary>
     /// The one router's question (no key does both): whether the chrome takes this key event. A key-down the chrome
     /// takes keeps its key-up as well. A bound command the shell's chrome cannot carry out is not taken, so an undo
-    /// or a redo still reaches the session.
+    /// or a redo still reaches the session. With a live session a twist key is the session's too: sample mode's
+    /// draft phase carries out the twist row, and taking J for it would keep the router from twisting. The frame's
+    /// own keys (a key capture, an open overlay, the host keys and text focus) are still taken first.
     /// </summary>
     public bool Takes(InputEventKey key)
     {
@@ -438,7 +442,8 @@ public sealed class ShellChrome
             return false;
         }
         var name = Keymap.KeyName(key.CtrlPressed, key.AltPressed, key.ShiftPressed, OS.GetKeycodeString(key.Keycode));
-        var takes = Frame.Claims(name, binding => _unavailable(binding.Command, binding.Argument) == null);
+        var takes = Frame.Claims(name, binding => _unavailable(binding.Command, binding.Argument) == null &&
+            !(_live && KeyMapModel.IsTwist(binding.Command)));
         if (takes)
         {
             _taken.Add(key.PhysicalKeycode);

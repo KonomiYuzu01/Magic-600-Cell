@@ -535,6 +535,14 @@ public sealed class JumbleHost
         frame.SetModeCell(JumbleChrome.ModeCell(state), state.LatticeFlag
             ? "Jumble is on, and every piece's pose is on the lattice"
             : "Jumble is on, and some pieces are off the lattice: N and the solving numerals are undefined");
+        // Tier 1 says what is unavailable while Jumble is on (ADR-D02.25): the named cap's line and the inspected cap's.
+        Inspect.State = state;
+        if (GodotObject.IsInstanceValid(CapMap))
+        {
+            bool flipped = CapMap.State.Mode != state.Mode;
+            CapMap.State = state;
+            if (flipped) CapMap.Refresh();
+        }
         bool undefined = JumbleNumerals.Undefined(state);
         if (strip != null && GodotObject.IsInstanceValid(strip)) strip.SetUndefined(undefined);
         if (rail != null && GodotObject.IsInstanceValid(rail)) rail.SetUndefined(undefined);
@@ -543,9 +551,11 @@ public sealed class JumbleHost
     }
 
     // The Jumble mark on a view's border while Jumble is on: a notched-corner glyph with its word, never colour alone.
+    // B27: then Global's projection chain (ADR-D02.8) and the exposed faces' unavailable state (ADR-D02.25).
     public void Marks(ViewFrame view)
     {
         if (JumbleChrome.Marked(Source.State, new[] { view.ViewName }).Count == 0) return;
         view.AddMark(JumbleChrome.Mark, JumbleChrome.MarkWords, "accent.strong", "Jumble is on: this view shows the jumbled puzzle");
+        foreach (ViewMark mark in JumbleViews.BorderMarks(Source.State, view.ViewName)) view.AddMark(mark.Glyph, mark.Words, mark.Colour, mark.Tooltip);
     }
 }

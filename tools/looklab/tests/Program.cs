@@ -269,7 +269,11 @@ internal static partial class Program
             ("D02PortLayoutTrackerNamesAndRestoresSteps", D02PortLayoutTrackerNamesAndRestoresSteps),
             ("D02PortAppearanceRestoresInPlace", D02PortAppearanceRestoresInPlace),
             ("D02PortViewFieldsKeepEachViewAndWriteTheScope", D02PortViewFieldsKeepEachViewAndWriteTheScope),
-            ("D02PortViewLinkMarksEachState", D02PortViewLinkMarksEachState)
+            ("D02PortViewLinkMarksEachState", D02PortViewLinkMarksEachState),
+            ("D02HeldSeatShowsTwelveTwistsWithOrders", D02HeldSeatShowsTwelveTwistsWithOrders),
+            ("D02NoDuplicateChordAmongD02Bindings", D02NoDuplicateChordAmongD02Bindings),
+            ("D02GlobalNamesItsChain", D02GlobalNamesItsChain),
+            ("D02ExposedFacesUnavailableOnBorderAndTier1", D02ExposedFacesUnavailableOnBorderAndTier1)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)
