@@ -1,5 +1,7 @@
 #include "product.h"
 #include <algorithm>
+#include <bit>
+#include <string>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -110,6 +112,117 @@ void view_focus(const sa2_view_focus* focus, ViewShape& shape) {
     argument(std::isfinite(focus->spread) && focus->spread >= 1.0f && focus->spread <= 3.0f, "spread must be finite and within 1..3");
     shape.projection = focus->projection; shape.focus_cell = focus->focus_cell;
     shape.focus_cos = focus->focus_cell == SA2_FOCUS_NONE ? defaults.focus_cos : focus->focus_cos; shape.spread = focus->spread;
+}
+
+// ABI 10.
+uint32_t view_layout_kind(const sa2_view_layout* layout) {
+    if (!layout) return SA2_LAYOUT_CHAIN;
+    argument(layout->struct_size == sizeof(*layout), "invalid view_layout struct_size");
+    argument(layout->kind == SA2_LAYOUT_CHAIN || layout->kind == SA2_LAYOUT_HOPF_RINGS,
+             "kind must be SA2_LAYOUT_CHAIN or SA2_LAYOUT_HOPF_RINGS");
+    return layout->kind;
+}
+
+namespace {
+using Q4 = std::array<double, 4>;
+Q4 qmul(const Q4& a, const Q4& b) {
+    return {a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3], a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
+            a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1], a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]};
+}
+Q4 conj(const Q4& a) { return {a[0], -a[1], -a[2], -a[3]}; }
+double dot4(const Q4& a, const Q4& b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3]; }
+double dot3(const std::array<double, 3>& a, const std::array<double, 3>& b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+std::array<double, 3> im(const Q4& a) { return {a[1], a[2], a[3]}; }
+// Im(o x o*), the image of the pure quaternion x under conjugation by o.
+std::array<double, 3> turn(const Q4& o, const Q4& x) { return im(qmul(qmul(o, x), conj(o))); }
+Q4 load(const float* v) { return {v[0], v[1], v[2], v[3]}; }
+}
+
+HopfTable hopf_table(const sa2_view_layout& layout, const std::function<std::array<float, 4>(uint32_t)>& centre) {
+    constexpr double RingRadius = 2.62, BaseRadius = 8.063, RingScale = 0.28, Pi = 3.14159265358979323846;
+    const auto finite = [](const float* v, size_t n) { for (size_t i = 0; i < n; ++i) if (!std::isfinite(v[i])) return false; return true; };
+    argument(finite(layout.j, 4) && finite(layout.k, 4) && finite(layout.origins, 80), "a Hopf ring value is not finite");
+    const Q4 j = load(layout.j), k = load(layout.k);
+    argument(std::abs(j[0]) < 1e-4 && std::abs(dot4(j, j) - 1) < 1e-4, "J must be a unit pure quaternion");
+    argument(std::abs(k[0]) < 1e-4 && std::abs(dot4(k, k) - 1) < 1e-4 && std::abs(dot4(j, k)) < 1e-4, "K must be a unit pure quaternion orthogonal to J");
+    const Q4 jk = qmul(j, k);
+    std::array<Q4, 20> origin{};
+    std::array<std::array<double, 3>, 20> base{}, e1{}, e2{};
+    for (size_t r = 0; r < 20; ++r) {
+        origin[r] = load(layout.origins + 4 * r);
+        argument(std::abs(dot4(origin[r], origin[r]) - 1) < 1e-4, "a ring origin is not a unit point");
+        base[r] = turn(origin[r], j); e1[r] = turn(origin[r], k); e2[r] = turn(origin[r], jk);
+    }
+    // Each ring holds 30 cells with distinct half-steps of one parity; its cells in half-step order.
+    std::array<std::array<int, 60>, 20> at{};
+    for (auto& ring : at) ring.fill(-1);
+    for (uint32_t cell = 0; cell < 600; ++cell) {
+        argument(layout.ring_of[cell] < 20 && layout.half_step[cell] < 60, "a cell's ring or half-step is out of range");
+        auto& slot = at[layout.ring_of[cell]][layout.half_step[cell]];
+        argument(slot < 0, "two cells share a ring and a half-step");
+        slot = int(cell);
+    }
+    std::array<uint32_t, 20> parity{};
+    std::array<uint32_t, 600> cells{};
+    for (size_t r = 0; r < 20; ++r) {
+        int count[2] = {0, 0};
+        for (int h = 0; h < 60; ++h) if (at[r][h] >= 0) ++count[h % 2];
+        argument((count[0] == 30 && count[1] == 0) || (count[0] == 0 && count[1] == 30), "a ring does not hold 30 cells of one parity");
+        parity[r] = count[1] ? 1u : 0u;
+        for (int i = 0; i < 30; ++i) cells[r * 30 + i] = uint32_t(at[r][2 * i + parity[r]]);
+    }
+    HopfTable table(HopfTableRows, std::array<float, 4>{});
+    const std::array<std::array<double, 3>, 3> orientation = {e1[0], e2[0], base[0]};
+    for (uint32_t cell = 0; cell < 600; ++cell) {
+        const auto raw = centre(cell);
+        const Q4 c = {raw[0], raw[1], raw[2], raw[3]};
+        const size_t r = layout.ring_of[cell];
+        const int h = layout.half_step[cell];
+        // The core's centre projects onto its ring's plane (origin, origin J) at the phase of its half-step, 6h degrees,
+        // and lies near that plane (a ring's cells wind around its great circle at one distance): the rings fit the
+        // core's cells.
+        const Q4 oj = qmul(origin[r], j);
+        const double along = dot4(c, origin[r]), across = dot4(c, oj);
+        const double off = std::fmod(std::fmod(std::atan2(across, along) * 30 / Pi - h, 60.0) + 90.0, 60.0) - 30.0;
+        argument(std::abs(off) < 0.01 && std::hypot(along, across) > 0.99,
+                 ("the Hopf rings do not fit the core's cell centres (cell " + std::to_string(cell) + ")").c_str());
+        // Look Lab's HopfRings.Chart: the frame (c, cJ, eK, eJK) with e = c (cos a + sin a J), a = 18 - 72h degrees.
+        const double a = (18.0 - 72.0 * h) * Pi / 180;
+        const Q4 e = qmul(c, Q4{std::cos(a), std::sin(a) * j[1], std::sin(a) * j[2], std::sin(a) * j[3]});
+        const std::array<Q4, 3> frame = {qmul(c, j), qmul(e, k), qmul(e, jk)};
+        // GlobalLayout: the cell's place on its ring and the chart turned into the ring's frame, all scaled.
+        const double t = h * Pi / 30;
+        std::array<double, 3> n{}, tangent{}, position{}, back{};
+        for (int i = 0; i < 3; ++i) {
+            n[i] = std::cos(t) * e1[r][i] + std::sin(t) * e2[r][i];
+            tangent[i] = -std::sin(t) * e1[r][i] + std::cos(t) * e2[r][i];
+            position[i] = BaseRadius * base[r][i] + RingRadius * n[i];
+            back[i] = -base[r][i];
+        }
+        const std::array<std::array<double, 3>, 3> columns = {tangent, n, back};
+        for (int row = 0; row < 3; ++row) {
+            for (int col = 0; col < 4; ++col) {
+                double value = 0;
+                for (int m = 0; m < 3; ++m) value += RingScale * dot3(orientation[row], columns[m]) * frame[m][col];
+                table[cell * 4 + row][col] = float(value);
+            }
+            table[cell * 4 + 3][row] = float(RingScale * dot3(orientation[row], position));
+        }
+    }
+    for (size_t r = 0; r < 20; ++r) {
+        const Q4 oj = qmul(origin[r], j);
+        for (int i = 0; i < 4; ++i) { table[2400 + r][i] = float(origin[r][i]); table[2420 + r][i] = float(oj[i]); }
+        table[2440 + r] = {float(base[r][0]), float(base[r][1]), float(base[r][2]), std::bit_cast<float>(parity[r])};
+    }
+    table[2460] = {float(j[0]), float(j[1]), float(j[2]), float(j[3])};
+    for (size_t e = 0; e < 600; ++e) table[2461 + e / 4][e % 4] = std::bit_cast<float>(cells[e]);
+    return table;
+}
+
+void Product::set_hopf(HopfTable table) {
+    argument(table.size() == HopfTableRows, "a Hopf table has the wrong size");
+    argument(hopf_.empty() || hopf_ == table, "the core keeps one set of Hopf rings; a different set is refused");
+    hopf_ = std::move(table);
 }
 
 // ABI 7.

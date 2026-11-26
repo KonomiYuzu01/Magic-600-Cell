@@ -42,12 +42,12 @@ def shell_module(name: str):
 class CoreFocus(unittest.TestCase):
     """The core's ABI 9 on its three sides: the C header, c600-render's Rust ABI and the bridge's function table."""
 
-    def test_the_version_is_9_everywhere(self):
+    def test_the_version_is_10_everywhere(self):
         header = text(CORE / "include" / "sa2_interop.h")
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", header, re.M), ["9u"])
-        self.assertIn("pub const ABI_VERSION: u32 = 9;", text(ROOT / "rust" / "c600-render" / "src" / "abi.rs"))
-        self.assertIn("public const uint AbiVersion = 9;", text(PROJECT / "CoreLibrary.cs"))
-        self.assertIn("public const uint SA2_ABI_VERSION = 9;", text(ROOT / "renderer" / "acceptance" / "project" / "Native.cs"))
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", header, re.M), ["10u"])
+        self.assertIn("pub const ABI_VERSION: u32 = 10;", text(ROOT / "rust" / "c600-render" / "src" / "abi.rs"))
+        self.assertIn("public const uint AbiVersion = 10;", text(PROJECT / "CoreLibrary.cs"))
+        self.assertIn("public const uint SA2_ABI_VERSION = 10;", text(ROOT / "renderer" / "acceptance" / "project" / "Native.cs"))
 
     def test_the_focus_struct_and_constants_agree(self):
         header = text(CORE / "include" / "sa2_interop.h")
@@ -76,23 +76,23 @@ class CoreFocus(unittest.TestCase):
         block = re.search(r"pub const SYMBOLS: \[&str; (\d+)\] = \[(.*?)\];", bridge, re.S)
         self.assertTrue(block)
         names = re.findall(r'"(sa2_[a-z_]+)"', block.group(2))
-        self.assertEqual(names[-1], "sa2_view_focus_set")
+        self.assertEqual(names[-2:], ["sa2_view_focus_set", "sa2_view_layout_set"])
         self.assertEqual(len(names), int(block.group(1)))
         core = text(PROJECT / "CoreLibrary.cs")
         exports = re.findall(r'"(sa2_[a-z_]+)"', re.search(r"\bSymbols = new\[\]\s*\{(.*?)\};", core, re.S).group(1))
-        self.assertEqual(exports[-1], "sa2_view_focus_set")
-        self.assertIn("view_focus_set,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
+        self.assertEqual(exports[-2:], ["sa2_view_focus_set", "sa2_view_layout_set"])
+        self.assertIn("view_focus_set,\n        view_layout_set,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
 
 
 class HostFocus(unittest.TestCase):
     """The host library's version 12: m6h_set_view_focus, the same on the Rust and C# sides."""
 
-    def test_the_host_and_the_shell_speak_version_12(self):
+    def test_the_host_and_the_shell_speak_version_13(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
         host = text(PROJECT / "HostLibrary.cs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 12;", lib)
-        self.assertIn("public const uint AbiVersion = 12;", host)
-        self.assertIn("assert_eq!(m6h_abi_version(), 12);", text(ROOT / "renderer" / "bridge" / "host" / "tests" / "turns.rs"))
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 13;", lib)
+        self.assertIn("public const uint AbiVersion = 13;", host)
+        self.assertIn("assert_eq!(m6h_abi_version(), 13);", text(ROOT / "renderer" / "bridge" / "host" / "tests" / "turns.rs"))
         self.assertRegex(lib, r'pub unsafe extern "C" fn m6h_set_view_focus\(\s*handle: \*mut ShellHost,\s*view: u64,\s*'
                               r'projection: u32,\s*focus_cell: u32,\s*focus_cos: f32,\s*spread: f32,\s*\) -> i32')
         self.assertIn("public int SetViewFocus(IntPtr host, ulong view, uint projection, uint focusCell, float focusCos, float spread)",
@@ -101,6 +101,81 @@ class HostFocus(unittest.TestCase):
         self.assertIn("if !shell.names_open_view(id) {", lib[lib.index("fn m6h_set_view_focus("):])
         self.assertIn("let focus = (focus != Sa2ViewFocus::defaults()).then_some(focus);", lib)
         self.assertIn("fn the_host_sets_a_view_focus()", text(ROOT / "renderer" / "bridge" / "host" / "tests" / "c_api.rs"))
+
+
+class HopfRings(unittest.TestCase):
+    """B23, bare: the core's ABI 10 view layout and the host's version 13 m6h_set_view_layout; with --d02 Global opens
+    on Look Lab's Hopf rings when the opening file names them, at the file's field of view, turned by the linked spin."""
+
+    def test_the_layout_row_is_the_same_on_every_side(self):
+        header = text(CORE / "include" / "sa2_interop.h")
+        block = re.search(r"typedef struct sa2_view_layout \{(.*?)\} sa2_view_layout;", header, re.S)
+        self.assertTrue(block)
+        self.assertEqual(re.findall(r"(uint32_t|float|uint8_t) (\w+(?:\[\d+\])?);", block.group(1)),
+                         [("uint32_t", "struct_size"), ("uint32_t", "kind"), ("float", "j[4]"), ("float", "k[4]"),
+                          ("float", "origins[80]"), ("uint8_t", "ring_of[600]"), ("uint8_t", "half_step[600]")])
+        abi = text(ROOT / "rust" / "c600-render" / "src" / "abi.rs")
+        self.assertIn("pub origins: [f32; 80],\n    pub ring_of: [u8; 600],\n    pub half_step: [u8; 600],", abi)
+        self.assertIn("public const int LayoutBytes = 1560;", text(PROJECT / "HostLibrary.cs"))
+        hopf = text(PROJECT / "D02" / "ShellHopf.cs")
+        # The C# row's offsets: J at 8, K at 24, the origins at 40, the rings at 360, the half-steps at 960.
+        for offset in ('Floats(root.GetProperty("J"), 8, 4);', 'Floats(root.GetProperty("K"), 24, 4);',
+                       'Floats(ring.GetProperty("origin"), 40 + 16 * r++, 4);', 'Bytes(root.GetProperty("ringOf"), 360);',
+                       'Bytes(root.GetProperty("halfStep"), 960);'):
+            self.assertIn(offset, hopf)
+        self.assertIn("fn the_host_sets_a_view_layout()", text(ROOT / "renderer" / "bridge" / "host" / "tests" / "c_api.rs"))
+
+    def test_the_core_checks_the_rings_against_its_cells(self):
+        product = text(CORE / "src" / "product.cpp")
+        self.assertIn("constexpr double RingRadius = 2.62, BaseRadius = 8.063, RingScale = 0.28", product)
+        self.assertIn("the Hopf rings do not fit the core's cell centres", product)
+        self.assertIn("the core keeps one set of Hopf rings; a different set is refused", product)
+        look = text(ROOT / "tools" / "looklab" / "core" / "GlobalLayout.cs")
+        self.assertIn("public const double RingRadius = 2.62, BaseRadius = 8.063, RingScale = 0.28;", look)
+
+    def test_the_rings_fit_the_model_cells(self):
+        # Each model cell's centre projects onto its ring's plane at the phase of its half-step, as the core checks.
+        import struct
+        import zipfile
+        with zipfile.ZipFile(ROOT / "assets" / "model.npz") as archive:
+            data = archive.read("normals.npy")
+        header_length = struct.unpack("<H", data[8:10])[0]
+        self.assertIn("'<f8'", data[10:10 + header_length].decode())
+        values = struct.unpack("<2400d", data[10 + header_length:10 + header_length + 19200])
+        rings = json.loads(text(ROOT / "tools" / "looklab" / "fixtures" / "hopf-rings.json"))
+        j = rings["J"]
+
+        def qmul(a, b):
+            return [a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3], a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
+                    a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1], a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]]
+        for cell in range(600):
+            n = values[4 * cell:4 * cell + 4]
+            length = math.sqrt(sum(x * x for x in n))
+            origin = rings["rings"][rings["ringOf"][cell]]["origin"]
+            along = sum(n[i] * origin[i] for i in range(4)) / length
+            across = sum(n[i] * q for i, q in enumerate(qmul(origin, j))) / length
+            off = ((math.degrees(math.atan2(across, along)) / 6 - rings["halfStep"][cell]) % 60 + 30) % 60 - 30
+            self.assertLess(abs(off), 0.01, cell)
+            self.assertGreater(math.hypot(along, across), 0.99, cell)
+
+    def test_the_shell_opens_on_the_rings_only_with_d02(self):
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn("if (D02.ShellJumble.On && D02.ShellHopf.Named(D02.ShellShape.OpeningPath()))", shell)
+        self.assertEqual(shell.count("SetViewLayout("), 1)
+        self.assertIn("library.SetCamera(_host, _hopf ? LocalCamera() : _camera.ColumnMajor())", shell)
+        self.assertEqual(json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))["params"]["projection"],
+                         "hopfRings")
+        self.assertIn('public const string Projection = "hopfRings";', text(PROJECT / "D02" / "ShellHopf.cs"))
+
+    def test_the_build_stages_the_ring_file(self):
+        build_shell = shell_module("build_shell")
+        temp = Path(tempfile.mkdtemp(prefix="d02-hopf-"))
+        self.addCleanup(shutil.rmtree, temp, True)
+        project = temp / "staged"
+        build_shell.stage(project)
+        self.assertEqual((project / "look" / "hopf-rings.json").read_bytes(),
+                         (ROOT / "tools" / "looklab" / "fixtures" / "hopf-rings.json").read_bytes())
+        self.assertTrue((project / "D02" / "ShellHopf.cs").is_file())
 
 
 class LocalShape(unittest.TestCase):
@@ -266,6 +341,45 @@ class TwoViewsRun(unittest.TestCase):
         self.assertTrue(any("no revision changed" in p for p in still), still)
         one = self.check([{"frame_id": 1, "engine_revision": 302}, {"frame_id": 2, "engine_revision": 303}])
         self.assertTrue(any("no composite frame of two drawn panes" in p for p in one), one)
+
+
+class HopfRun(unittest.TestCase):
+    """The hopf run: the zoom sent is the opening file's Hopf zoom, and the frames are one-view frames."""
+
+    def dumps(self, base, after):
+        steps = ["start", "wait 2500 ms", "wheel 2", "wait 1000 ms"]
+        zooms = [{"notches": 0, "factor": 1}, {"notches": 0, "factor": 1, "sent": base},
+                 {"notches": 2, "factor": 1.21, "sent": after}, {"notches": 2, "factor": 1.21, "sent": after}]
+        return [{"step": i, "do": do, "zoom": zoom} for i, (do, zoom) in enumerate(zip(steps, zooms))]
+
+    def test_the_script_and_the_checks_exist(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["hopf"], run.expect_hopf)
+        self.assertIn("hopf", run.ON_FIXTURE)
+        self.assertIs(run.EVENT_CHECKS["hopf"], run.check_hopf_events)
+        script = json.loads(text(SHELL / "d02_scripts" / "hopf.json"))
+        self.assertEqual(script["steps"], [{"wait_ms": 2500}, {"wheel": 2}, {"wait_ms": 1000}])
+
+    def test_the_zoom_is_the_opening_files(self):
+        run = shell_module("d02_run")
+        fov = json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))["params"]["fieldOfView"]
+        base = 1 / math.tan(fov / 2)
+        self.assertEqual(run.expect_hopf(self.dumps(base, base * 1.21), {}, None), [])
+        chain = run.expect_hopf(self.dumps(1.15, 1.15 * 1.21), {}, None)
+        self.assertTrue(any("not the Hopf rings'" in p for p in chain), chain)
+
+    def test_the_frames_are_one_view_frames(self):
+        run = shell_module("d02_run")
+        temp = Path(tempfile.mkdtemp(prefix="d02-hopf-run-"))
+        self.addCleanup(shutil.rmtree, temp, True)
+        events = temp / "events.jsonl"
+        rows = [{"t": "frame", "frame_id": i, "engine_revision": 302} for i in range(1, 31)]
+        events.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+        self.assertEqual(run.check_hopf_events(events), [])
+        rows[5]["panes"], rows[5]["held"] = 2, 0
+        events.write_text("".join(json.dumps(row) + "\n" for row in rows[:20]), encoding="utf-8")
+        problems = run.check_hopf_events(events)
+        self.assertTrue(any("fewer than 30" in p for p in problems) and any("composite" in p for p in problems), problems)
 
 
 if __name__ == "__main__":

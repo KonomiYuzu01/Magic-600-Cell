@@ -1,5 +1,6 @@
 #include "test.h"
 #include "scene_record.h"
+#include "product.h"
 #include "stage_rules.h"
 #include "stage_sources.h"
 #include <d3d12sdklayers.h>
@@ -14,6 +15,7 @@
 #include <fstream>
 #include <limits>
 #include <map>
+#include <set>
 #include <sstream>
 #include <thread>
 #include <utility>
@@ -1658,6 +1660,148 @@ void run_poses(Suite& suite, const Options& options) {
 void run_shape(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the shape check runs on WARP only");
     suite.check("view shape warp", [&] { product_shape(options); });
+}
+
+// ABI 10's WARP check (--warp --hopf FILE): a view's layout, the Hopf-ring opening (ADR-D02 B23, bare). FILE is Look
+// Lab's tools/looklab/fixtures/hopf-rings.json. The chain layout and NULL draw byte-identically to no call; malformed
+// rings and rings that do not fit the core's cells are refused and change nothing; the Hopf rings change the picture
+// and cover pixels around its centre; another view keeps the chain; the same rings on a third view draw the same
+// picture; NULL restores the chain. On the CPU, the table built from the rings' own centres puts the 20 rings' centres
+// at a dodecahedron's vertices (Look Lab's base angle multiset). The picture goes beside the report.
+sa2_view_layout hopf_layout(const std::filesystem::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    expect(bool(in), "the Hopf ring file cannot be read");
+    std::stringstream text; text << in.rdbuf();
+    const auto json = Json::parse(text.str());
+    sa2_view_layout layout{};
+    layout.struct_size = sizeof(layout);
+    layout.kind = SA2_LAYOUT_HOPF_RINGS;
+    for (size_t i = 0; i < 4; ++i) {
+        layout.j[i] = float(json.at("J").array()[i].number());
+        layout.k[i] = float(json.at("K").array()[i].number());
+    }
+    const auto& rings = json.at("rings").array();
+    expect(rings.size() == SA2_HOPF_RINGS, "the Hopf ring file does not hold 20 rings");
+    for (size_t r = 0; r < rings.size(); ++r)
+        for (size_t i = 0; i < 4; ++i) layout.origins[4 * r + i] = float(rings[r].at("origin").array()[i].number());
+    const auto& ring_of = json.at("ringOf").array();
+    const auto& half_step = json.at("halfStep").array();
+    expect(ring_of.size() == 600 && half_step.size() == 600, "the Hopf ring file does not cover 600 cells");
+    for (size_t c = 0; c < 600; ++c) {
+        layout.ring_of[c] = uint8_t(ring_of[c].integer());
+        layout.half_step[c] = uint8_t(half_step[c].integer());
+    }
+    return layout;
+}
+
+void hopf_dodecahedron(const sa2_view_layout& layout) {
+    // The rings' own centres: cos(6h) O + sin(6h) O J, so the table is Look Lab's for the fixture's cells.
+    const auto centre = [&](uint32_t cell) {
+        const float* o = layout.origins + 4 * layout.ring_of[cell];
+        const double t = layout.half_step[cell] * 3.14159265358979323846 / 30, c = std::cos(t), s = std::sin(t);
+        const double oj[4] = {o[0] * 0 - o[1] * layout.j[1] - o[2] * layout.j[2] - o[3] * layout.j[3],
+                              o[0] * layout.j[1] + o[2] * layout.j[3] - o[3] * layout.j[2],
+                              o[0] * layout.j[2] - o[1] * layout.j[3] + o[3] * layout.j[1],
+                              o[0] * layout.j[3] + o[1] * layout.j[2] - o[2] * layout.j[1]};
+        return std::array<float, 4>{float(c * o[0] + s * oj[0]), float(c * o[1] + s * oj[1]), float(c * o[2] + s * oj[2]), float(c * o[3] + s * oj[3])};
+    };
+    const auto table = sa2::hopf_table(layout, centre);
+    std::array<std::array<double, 3>, SA2_HOPF_RINGS> mean{};
+    for (uint32_t cell = 0; cell < 600; ++cell)
+        for (int i = 0; i < 3; ++i) mean[layout.ring_of[cell]][i] += table[cell * 4 + 3][i] / 30.0;
+    const auto length = [](const std::array<double, 3>& a) { return std::sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); };
+    const std::multiset<double> expected = {0, 41.81, 41.81, 41.81, 70.53, 70.53, 70.53, 70.53, 70.53, 70.53, 109.47, 109.47, 109.47,
+                                            109.47, 109.47, 109.47, 138.19, 138.19, 138.19, 180};
+    for (size_t a = 0; a < SA2_HOPF_RINGS; ++a) {
+        expect(std::abs(length(mean[a]) - 0.28 * 8.063) < 1e-3, "a ring's centre is not at the base radius");
+        std::multiset<double> angles;
+        for (size_t b = 0; b < SA2_HOPF_RINGS; ++b) {
+            const double cosine = (mean[a][0] * mean[b][0] + mean[a][1] * mean[b][1] + mean[a][2] * mean[b][2]) / (length(mean[a]) * length(mean[b]));
+            angles.insert(std::round(std::acos(std::clamp(cosine, -1.0, 1.0)) * 180 / 3.14159265358979323846 * 100) / 100);
+        }
+        expect(angles == expected, "the ring centres are not a dodecahedron's vertices");
+    }
+}
+
+void product_hopf(const Options& options) {
+    const auto layout = hopf_layout(options.hopf);
+    hopf_dodecahedron(layout);
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    expect(sa2_view_layout_set(nullptr, 1, nullptr) == SA2_E_INVALID_ARGUMENT, "a layout was set without a context");
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    const Rows I = double_rotation(0, 3, 0, 1, 2, 0), turned = double_rotation(0, 2, 0.6, 1, 3, 0);
+    const auto unset = frames.draw(1, 1, 0, I);
+    sa2_view_layout chain{};
+    chain.struct_size = sizeof(chain);
+    chain.kind = SA2_LAYOUT_CHAIN;
+    api(ctx, sa2_view_layout_set(ctx, 1, &chain));
+    expect(frames.draw(1, 1, 0, I) == unset, "the chain layout does not draw byte-identically to no call");
+    for (int field = 0; field < 7; ++field) {
+        auto bad = layout;
+        switch (field) {
+        case 0: bad.struct_size = 1500; break;
+        case 1: bad.kind = 2; break;
+        case 2: bad.ring_of[0] = 20; break;
+        case 3: bad.half_step[0] = uint8_t((bad.half_step[0] + 1) % 60); break;
+        case 4: for (int i = 0; i < 4; ++i) std::swap(bad.origins[i], bad.origins[4 + i]); break;
+        case 5: bad.j[1] += 0.5f; break;
+        default: bad.k[0] = std::numeric_limits<float>::quiet_NaN(); break;
+        }
+        expect(sa2_view_layout_set(ctx, 1, &bad) == SA2_E_INVALID_ARGUMENT, "malformed or unfitting Hopf rings were accepted");
+    }
+    expect(frames.draw(1, 1, 0, I) == unset, "a refused layout changed the frames");
+    api(ctx, sa2_view_layout_set(ctx, 1, &layout));
+    const auto rings = frames.draw(1, 1, 0, I);
+    const auto background = unset[0];
+    uint64_t covered = 0;
+    int left = int(harness.width), right = -1, top = int(harness.height), bottom = -1;
+    for (uint32_t y = 0; y < harness.height; ++y)
+        for (uint32_t x = 0; x < harness.width; ++x)
+            if (rings[size_t(y) * harness.width + x] != background) {
+                ++covered;
+                left = std::min(left, int(x)); right = std::max(right, int(x)); top = std::min(top, int(y)); bottom = std::max(bottom, int(y));
+            }
+    std::cout << "hopf rings: " << uint64_t(harness.width) * harness.height << " pixels; covered " << covered << "; x " << left << ".."
+              << right << ", y " << top << ".." << bottom << std::endl;
+    expect(rings != unset && covered > 0, "the Hopf rings changed nothing");
+    expect(left < int(harness.width) / 2 && right > int(harness.width) / 2 && top < int(harness.height) / 2 && bottom > int(harness.height) / 2,
+           "the Hopf rings are not around the picture's centre");
+    expect(frames.draw(1, 1, 0, turned) != rings, "the camera did not turn the Hopf rings");
+    expect(frames.draw(1, 2, 0, I) == unset, "another view drew with view 1's layout");
+    api(ctx, sa2_view_layout_set(ctx, 3, &layout));
+    expect(frames.draw(1, 3, 0, I) == rings, "the same rings on another view drew another picture");
+    api(ctx, sa2_view_layout_set(ctx, 1, nullptr));
+    expect(frames.draw(1, 1, 0, I) == unset, "a NULL layout did not restore the chain");
+    if (!options.out.empty()) {
+        std::ofstream file(options.out.parent_path() / "warp-hopf.ppm", std::ios::binary);
+        file << "P6\n" << harness.width << " " << harness.height << "\n255\n";
+        for (uint32_t pixel : rings) {
+            const char rgb[3] = {char(pixel & 0xff), char((pixel >> 8) & 0xff), char((pixel >> 16) & 0xff)};
+            file.write(rgb, 3);
+        }
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_view_layout_set(ctx, 1, &layout) == SA2_E_WRONG_STATE, "a layout was set without a loaded scene");
+    harness.finish(options.debug);
+}
+
+// ABI 10: --warp --hopf FILE. Only WARP; parse refuses any other mode.
+void run_hopf(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the Hopf layout check runs on WARP only");
+    suite.check("view layout warp", [&] { product_hopf(options); });
 }
 
 // ABI 9: --warp --focus. Only WARP; parse refuses any other mode.

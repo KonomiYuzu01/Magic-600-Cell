@@ -2039,6 +2039,21 @@ int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus
     });
 }
 
+// ABI 10: a view's layout (sa2_interop.h). Device-free product state, so it works during device loss.
+int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layout* layout) {
+    return invoke(ctx, "sa2_view_layout_set", [&] {
+        context(ctx);
+        const auto kind = sa2::view_layout_kind(layout);
+        auto& scene = product_scene(ctx);
+        auto merged = scene.product.shape(view);
+        if (kind == SA2_LAYOUT_HOPF_RINGS)
+            scene.product.set_hopf(sa2::hopf_table(*layout, [&](uint32_t cell) { return scene.cell_centre(cell); }));
+        merged.layout = kind;
+        scene.product.set_shape(view, merged);
+        return SA2_OK;
+    });
+}
+
 // ABI 7: per-piece style (sa2_interop.h). Device-free product state, so both work during device loss.
 int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_style, uint32_t channel) {
     return invoke(ctx, "sa2_style_set", [&] {

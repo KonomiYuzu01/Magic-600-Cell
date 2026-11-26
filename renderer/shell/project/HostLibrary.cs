@@ -21,12 +21,13 @@ namespace Magic600.Shell;
 /// Version 11 (ADR-D02 B18b, over the core's ABI 8) adds Local and the composite frame: <see cref="OpenLocal"/>,
 /// <see cref="SetViewCamera"/>, <see cref="SetViewVisible"/>, <see cref="SetPane"/>, <see cref="ClearPane"/>, and
 /// <see cref="Submitted"/>'s pane count and held flag. Version 12 (ADR-D02 B18c, over the core's ABI 9) adds
-/// <see cref="SetViewFocus"/>, Local's own projection, focus cap and spread.
+/// <see cref="SetViewFocus"/>, Local's own projection, focus cap and spread. Version 13 (ADR-D02 B23, over the core's
+/// ABI 10) adds <see cref="SetViewLayout"/>, the Hopf-ring opening.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 12;
+    public const uint AbiVersion = 13;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -92,6 +93,7 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_viewport",
         "m6h_set_view_shape",
         "m6h_set_view_focus",
+        "m6h_set_view_layout",
         "m6h_set_piece_style",
         "m6h_set_view_style",
         "m6h_open_local",
@@ -388,6 +390,31 @@ public sealed unsafe class HostLibrary : IDisposable
     public int SetViewFocus(IntPtr host, ulong view, uint projection, uint focusCell, float focusCos, float spread) =>
         ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, uint, float, float, int>)_exports["m6h_set_view_focus"])(
             host, view, projection, focusCell, focusCos, spread);
+
+    /// <summary>The size of a view layout row (sa2_view_layout).</summary>
+    public const int LayoutBytes = 1560;
+
+    /// <summary>
+    /// Sets the layout a view's frames draw with (version 13): null for the projection chain, or a sa2_view_layout row of
+    /// <see cref="LayoutBytes"/> bytes (D02.ShellHopf builds it from Look Lab's hopf-rings.json). A view that is not
+    /// open, a row of another size or rings that do not fit the core's cells answer a refusal.
+    /// </summary>
+    public int SetViewLayout(IntPtr host, ulong view, byte[]? layout)
+    {
+        var call = (delegate* unmanaged[Cdecl]<IntPtr, ulong, byte*, int>)_exports["m6h_set_view_layout"];
+        if (layout is null)
+        {
+            return call(host, view, null);
+        }
+        if (layout.Length != LayoutBytes)
+        {
+            return InvalidArgument;
+        }
+        fixed (byte* row = layout)
+        {
+            return call(host, view, row);
+        }
+    }
 
     /// <summary>
     /// Sets the shape that a view's frames draw with (version 9): the cell shrink, the sticker shrink, d4 and the zoom,

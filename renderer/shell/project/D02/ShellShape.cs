@@ -18,9 +18,8 @@ public static class ShellShape
     public const float D4 = 1.18f;
 
     /// <summary>
-    /// The core's zoom for the chain projection (ABI 5's constant). The opening file's field of view (0.85) belongs to
-    /// the Hopf-ring layout, which the core does not draw yet; Look Lab's zoom = 1/tan(fov/2) applies once it does.
-    /// Until then the view keeps the chain projection's zoom.
+    /// The core's zoom for the chain projection (ABI 5's constant). With the Hopf-ring layout (B23) the opening file's
+    /// field of view gives the zoom as Look Lab's does, zoom = 1/tan(fov/2); the chain keeps this one.
     /// </summary>
     public const float Zoom = 1.15f;
 
@@ -51,7 +50,13 @@ public static class ShellShape
         var values = root.GetProperty("params");
         var gap = values.GetProperty("gap").GetSingle();
         var sticker = values.GetProperty("stickerShrink").GetSingle();
-        return new[] { 1.0f - gap, sticker, D4, Zoom };
+        var zoom = Zoom;
+        if (values.TryGetProperty("projection", out var projection) && projection.GetString() == ShellHopf.Projection
+            && values.TryGetProperty("fieldOfView", out var fov))
+        {
+            zoom = (float)(1 / Math.Tan(fov.GetDouble() / 2));
+        }
+        return new[] { 1.0f - gap, sticker, D4, zoom };
     }
 
     /// <summary>

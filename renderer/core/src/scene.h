@@ -65,6 +65,7 @@ public:
     // C9 (26 Nov 2026): with `reuse` (a live device) the set's resources are kept for the next preparation.
     void product_release_set(uint64_t ticket, bool reuse);
     void product_release_spares(); // the device was removed: no kept set may be reused
+    std::array<float, 4> cell_centre(uint32_t cell) const; // ABI 10: a cell's unit centre in the world
     void product_collect(); // frees the staging of completed preparation uploads
     uint64_t product_completed() const; // the product fence's completed value; 0 before any product GPU work
     // Recreates the size-bound resources (depth and the ID target) at the new

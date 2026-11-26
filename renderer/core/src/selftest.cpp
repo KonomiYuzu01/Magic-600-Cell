@@ -146,7 +146,7 @@ std::pair<uint64_t, uint64_t> ready_set(sa2::Product& product, const sa2::Prepar
     return {ticket, row.resource_set};
 }
 void run_cpu(Suite& suite, const Options& options) {
-    suite.check("abi", [] { expect(sa2_abi_version() == 9, "ABI version mismatch"); });
+    suite.check("abi", [] { expect(sa2_abi_version() == 10, "ABI version mismatch"); });
     suite.check("exports", [] {
         const auto dll = executable_path().parent_path() / "sa2_interop.dll";
         HMODULE module = LoadLibraryW(dll.c_str());
@@ -159,7 +159,8 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_describe", "sa2_engine_adopt", "sa2_prepare", "sa2_poll", "sa2_activate", "sa2_cancel", "sa2_retire",
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
-            "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes"};
+            "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes",
+            "sa2_view_focus_set", "sa2_view_layout_set"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1021,7 +1022,7 @@ void run_cpu(Suite& suite, const Options& options) {
     });
     suite.check("product describe", [] {
         const auto json = Json::parse(sa2::describe("abc", 0).dump());
-        expect(json.at("interface_version").integer() == 9 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
+        expect(json.at("interface_version").integer() == 10 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
             && json.at("device_removed").null() && json.at("evidence").array().empty(), "the SupportReport header is wrong");
         const auto& features = json.at("features");
         expect(features.object().size() == 8, "the SupportReport does not list eight rows");
@@ -1035,7 +1036,7 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(sa2::removed_text(int32_t(0x887A0005)) == "0x887a0005", "the removal text is not 0x%08x");
         // ABI 5, route B: F22 and F23 on a sa2_create context with a surface.
         const auto route_b = Json::parse(sa2::describe("abc", 0, 3, true).dump());
-        expect(route_b.at("interface_version").integer() == 9 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
+        expect(route_b.at("interface_version").integer() == 10 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
         for (const char* row : {"F22", "F23"})
             expect(route_b.at("features").at(row).at("status").string() == "supported"
                 && route_b.at("features").at(row).at("layout_version").integer() == 1, "route B does not support F22 and F23");
@@ -1658,6 +1659,7 @@ Options parse(int argc, char** argv) {
         else if (arg == "--style") options.style = true;
         else if (arg == "--panes") options.panes = true;
         else if (arg == "--focus") options.focus = true;
+        else if (arg == "--hopf") options.hopf = value();
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
             const auto text = value();
@@ -1710,6 +1712,9 @@ Options parse(int argc, char** argv) {
     // ABI 9: the view focus check runs on WARP only, alone.
     expect(!options.focus || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
         && !options.style && !options.panes && options.measure.empty()), "--focus requires --warp, alone");
+    // ABI 10: the view layout check runs on WARP only, alone.
+    expect(options.hopf.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.measure.empty()), "--hopf requires --warp, alone");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
@@ -1743,6 +1748,7 @@ int main(int argc, char** argv) {
         else if (options.style) sa2test::run_style(suite, options);
         else if (options.panes) sa2test::run_panes(suite, options);
         else if (options.focus) sa2test::run_focus(suite, options);
+        else if (!options.hopf.empty()) sa2test::run_hopf(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

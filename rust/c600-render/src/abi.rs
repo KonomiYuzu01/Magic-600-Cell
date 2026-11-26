@@ -6,8 +6,8 @@ use std::mem::size_of;
 
 /// `SA2_ABI_VERSION`. ABI 6 adds a view's shape ([`Sa2ViewShape`]); ABI 7 the piece style and the style slots
 /// ([`Sa2ViewStyle`]); ABI 8 the composite frame ([`Sa2Pane`], [`Sa2PaneRow`]); ABI 9 a view's focus
-/// ([`Sa2ViewFocus`]).
-pub const ABI_VERSION: u32 = 9;
+/// ([`Sa2ViewFocus`]); ABI 10 a view's layout ([`Sa2ViewLayout`]).
+pub const ABI_VERSION: u32 = 10;
 /// `SA2_SLOTS`: the labelled sticker slots of 600-cell-Full.
 pub const SLOTS: usize = 259_800;
 /// `SA2_PIECES`: the length of a pose index.
@@ -117,6 +117,14 @@ pub const PROJECTION_PERSPECTIVE: u32 = 0;
 pub const PROJECTION_ORTHOGRAPHIC: u32 = 1;
 /// `SA2_FOCUS_NONE`.
 pub const FOCUS_NONE: u32 = 0xFFFF_FFFF;
+
+// ABI 10: a view's layout (`sa2_view_layout`).
+/// `SA2_LAYOUT_CHAIN`.
+pub const LAYOUT_CHAIN: u32 = 0;
+/// `SA2_LAYOUT_HOPF_RINGS`.
+pub const LAYOUT_HOPF_RINGS: u32 = 1;
+/// `SA2_HOPF_RINGS`.
+pub const HOPF_RINGS: u32 = 20;
 
 // ABI 7: the piece style (`sa2_style_set`) and the style slots (`sa2_view_style`).
 /// `SA2_STYLE_CHANNEL_FILL`.
@@ -373,6 +381,55 @@ impl Sa2Pane {
             && self.y >= 0
             && i64::from(self.x) + i64::from(self.width) <= i64::from(size.0)
             && i64::from(self.y) + i64::from(self.height) <= i64::from(size.1)
+    }
+}
+
+/// `sa2_view_layout` (ABI 10): a view's layout, the projection chain or the Hopf rings with Look Lab's ring data. Not
+/// in `rows!`, whose `Default` derive stops at 32-element arrays.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Sa2ViewLayout {
+    pub struct_size: u32,
+    pub kind: u32,
+    pub j: [f32; 4],
+    pub k: [f32; 4],
+    pub origins: [f32; 80],
+    pub ring_of: [u8; 600],
+    pub half_step: [u8; 600],
+}
+
+impl Default for Sa2ViewLayout {
+    fn default() -> Sa2ViewLayout {
+        Sa2ViewLayout::new()
+    }
+}
+
+impl Sa2ViewLayout {
+    /// `struct_size` set and the chain: a layout that changes nothing.
+    pub fn new() -> Sa2ViewLayout {
+        Sa2ViewLayout {
+            struct_size: size_of::<Sa2ViewLayout>() as u32,
+            kind: LAYOUT_CHAIN,
+            j: [0.0; 4],
+            k: [0.0; 4],
+            origins: [0.0; 80],
+            ring_of: [0; 600],
+            half_step: [0; 600],
+        }
+    }
+
+    /// The checks a caller can make without the core's cells: a known kind and, for the Hopf rings, finite values,
+    /// rings below 20 and half-steps below 60. Whether the rings fit the cells only the core can tell.
+    pub fn in_range(&self) -> bool {
+        match self.kind {
+            LAYOUT_CHAIN => true,
+            LAYOUT_HOPF_RINGS => {
+                self.j.iter().chain(&self.k).chain(&self.origins).all(|v| v.is_finite())
+                    && self.ring_of.iter().all(|&r| u32::from(r) < HOPF_RINGS)
+                    && self.half_step.iter().all(|&h| h < 60)
+            }
+            _ => false,
+        }
     }
 }
 

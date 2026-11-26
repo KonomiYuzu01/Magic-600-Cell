@@ -24,11 +24,15 @@ cbuffer Constants : register(b0) {
     float4 turnU, turnV;
     uint poseEnabled, overlayMode, overlayCount, poseCount;
     float previewAngle, maxAngle;
-    uint viewFlags; // ABI 9: bit 0 orthographic, bit 1 the focus test, bit 2 the spread; 0 draws as ABI 8
+    uint viewFlags; // ABI 9: bit 0 orthographic, bit 1 the focus test, bit 2 the spread; 0 draws as ABI 8; ABI 10: bit 3 the Hopf rings
     float focusSpread;
     float4 focusPole; // the focus pole in the world, before Q
     float focusCos, pad2, pad3, pad4;
 };
+#ifdef SA2_LAYOUT
+// ABI 10: the Hopf table (product passes only; product.hlsl defines SA2_LAYOUT). See product.h's HopfTable.
+StructuredBuffer<float4> hopfRows : register(t18);
+#endif
 struct Projection {
     float4 clip;
     float3 projected;
@@ -81,6 +85,41 @@ Projection focusVertex(Projection result, uint cell, uint slot, uint local) {
     }
     return result;
 }
+#ifdef SA2_LAYOUT
+float4 qmul(float4 a, float4 b) {
+    return float4(a.x*b.x - a.y*b.y - a.z*b.z - a.w*b.w, a.x*b.y + a.y*b.x + a.z*b.w - a.w*b.z,
+                  a.x*b.z - a.y*b.w + a.z*b.x + a.w*b.y, a.x*b.w + a.y*b.z - a.z*b.y + a.w*b.x);
+}
+// ABI 10 (viewFlags bit 3): the Hopf rings. The chart is the cell nearest the posed centre p of the sticker's own cell
+// in Hopf coordinates: the ring whose base point is nearest Im(p J p*), then the place whose phase along that ring is
+// nearest. The chart places the posed point; the camera's upper 3 x 3 turns it (the linked spin).
+Projection hopfVertex(float4 world, uint cell, uint slot) {
+    float4 p = normalize(posedPoint(slot, framePoint(cell, N0 / radius)));
+    float4 j = hopfRows[2460];
+    float3 b = qmul(qmul(p, j), float4(p.x, -p.y, -p.z, -p.w)).yzw;
+    uint ring = 0;
+    float best = -2;
+    for (uint r = 0; r < 20; ++r) {
+        float d = dot(b, hopfRows[2440 + r].xyz);
+        if (d > best) { best = d; ring = r; }
+    }
+    float phase = atan2(dot(p, hopfRows[2420 + ring]), dot(p, hopfRows[2400 + ring])) * (30.0 / 3.14159265);
+    uint parity = asuint(hopfRows[2440 + ring].w);
+    int place = int(round((phase - float(parity)) * 0.5));
+    place = ((place % 30) + 30) % 30;
+    uint e = ring * 30 + uint(place);
+    uint chart = asuint(hopfRows[2461 + e / 4][e % 4]);
+    float3 placed = float3(dot(hopfRows[chart*4], world), dot(hopfRows[chart*4+1], world), dot(hopfRows[chart*4+2], world))
+                  + hopfRows[chart*4+3].xyz;
+    float3 q = mul(Q, float4(placed, 0)).xyz;
+    float z = 5 - q.z;
+    Projection result;
+    result.clip = float4(q.x*zoom/aspect, q.y*zoom, 100.0/(100.0-0.05)*(z-0.05), z);
+    result.projected = q;
+    result.slot = slot;
+    return result;
+}
+#endif
 Projection projectVertex(uint cell, uint vi) {
     uint local = stickerIds[vi];
     uint slot = cell * 433 + local;
@@ -90,6 +129,9 @@ Projection projectVertex(uint cell, uint vi) {
         float c = cos(theta), s = sin(theta);
         world += ((c-1)*x-s*y)*turnU + (s*x+(c-1)*y)*turnV;
     }
+#ifdef SA2_LAYOUT
+    if ((viewFlags & 8u) != 0) return hopfVertex(world, cell, slot);
+#endif
     Projection result = projectWorld(world);
     if (viewFlags > 1u) result = focusVertex(result, cell, slot, local);
     result.slot = slot;

@@ -54,7 +54,7 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     D3D12 physical device), not DXGI's first hardware adapter. Draft choices: the acceptance harness's default
     config, and scene 1.
   - `HostLibrary.cs` loads the native host library (`c600_shell_host.dll`, step S3), resolves its `m6h_*` exports,
-    refuses another version than its `AbiVersion` (12 since ADR-D02 B18c's view focus; 11 at B18b's two views; 10 at B14's style, 9 at the view shape, 8 at B5), and wraps each call. `Create` hands the library the core's table and a context.
+    refuses another version than its `AbiVersion` (13 since ADR-D02 B23's Hopf rings; 12 at B18c's view focus; 11 at B18b's two views; 10 at B14's style, 9 at the view shape, 8 at B5), and wraps each call. `Create` hands the library the core's table and a context.
   - `D02/ShellShape.cs` sets the view's shape behind `M600_D02=1` (host version 9, core ABI 6): the owner's opening
     values from `tools/looklab/data/opening.json`, staged as `look/opening.json` (cell shrink = 1 - gap, the sticker
     shrink as given), with the core's d4 and the chain projection's zoom 1.15. The file's field of view belongs to the

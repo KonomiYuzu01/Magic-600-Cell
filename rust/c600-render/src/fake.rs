@@ -128,6 +128,8 @@ pub struct FakeCore {
     pub shapes: BTreeMap<u64, Sa2ViewShape>,
     /// ABI 9: every view's focus that `sa2_view_focus_set` set and did not restore to the defaults.
     pub focuses: BTreeMap<u64, Sa2ViewFocus>,
+    /// ABI 10: every view's layout kind that `sa2_view_layout_set` set and did not restore to the chain.
+    pub layouts: BTreeMap<u64, u32>,
     /// ABI 7: the adopted revision's piece style by channel (fill, outline), dropped by an adoption.
     pub piece_styles: [Option<Vec<u8>>; 2],
     /// ABI 7: the style slots 1 to 4 (index 0 is slot 1).
@@ -160,6 +162,7 @@ impl FakeCore {
             placed: BTreeMap::new(),
             shapes: BTreeMap::new(),
             focuses: BTreeMap::new(),
+            layouts: BTreeMap::new(),
             piece_styles: [None, None],
             view_styles: [None; 4],
             counters: Sa2CounterValues::new(),
@@ -742,6 +745,25 @@ impl CoreAbi for FakeCore {
     }
 
     /// The header's checks; device-free, so it works during device loss.
+    /// The header's struct checks; the fake has no cells, so it takes any Hopf rings in range.
+    fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
+        let kind = match layout {
+            None => LAYOUT_CHAIN,
+            Some(layout) => {
+                if layout.struct_size as usize != std::mem::size_of::<Sa2ViewLayout>() || !layout.in_range() {
+                    return self.fail(Status::INVALID_ARGUMENT, "invalid view_layout struct_size, kind or value");
+                }
+                layout.kind
+            }
+        };
+        if kind == LAYOUT_CHAIN {
+            self.layouts.remove(&view);
+        } else {
+            self.layouts.insert(view, kind);
+        }
+        Ok(())
+    }
+
     fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
         let focus = match focus {
             None => Sa2ViewFocus::defaults(),

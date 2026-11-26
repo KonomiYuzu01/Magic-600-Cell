@@ -46,7 +46,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 9u
+#define SA2_ABI_VERSION 10u
 
 /* Code layout; must match code_layout.json and the host's CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -1240,6 +1240,45 @@ static_assert(sizeof(sa2_view_focus) == 24, "sa2_view_focus requires the x64 ABI
 #endif
 
 SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus);
+
+/* ABI 10: a view's layout (ADR-D02 build step B23, bare; a candidate behind the shell's --d02): Global opens on the
+ * Hopf rings, Look Lab's GlobalLayout ring charts. Additive: every ABI 9 call, struct and behaviour is unchanged, and
+ * a view whose layout was never set draws byte-identically to ABI 9.
+ *
+ * sa2_view_layout_set sets the layout that the product frames of `view`, their panes and their ID passes draw with.
+ * SA2_LAYOUT_CHAIN (or a NULL layout) is the projection chain of ABI 6 and 9. SA2_LAYOUT_HOPF_RINGS places each
+ * sticker by a rigid chart of one cell (Look Lab's tools/looklab/core/GlobalLayout.cs, RingRadius 2.62, BaseRadius
+ * 8.063, RingScale 0.28): 20 rings of 30 cells around a dodecahedron's vertices. The chart is the cell nearest the
+ * posed centre of the sticker's own cell in Hopf coordinates (its ring by the nearest base point, its place by the
+ * phase along that ring), so a sticker whose piece is not posed uses its own cell's chart. The placed point turns
+ * by the upper 3 x 3 of the frame's camera (the shell sends the linked 3D spin) and is drawn at the view's zoom, as
+ * the chain's projected point is; d4 and the focus are unused.
+ * The rings come from Look Lab's tools/looklab/fixtures/hopf-rings.json: J and K (unit pure quaternions, the real
+ * part first, as the world's x), each ring's origin and each cell's ring and half-step. The core checks them against
+ * its own cell centres (each centre must project onto its ring's plane, spanned by origin and origin * J, at the
+ * phase 6h degrees of its half-step h, and lie near that plane) and builds the charts; every view that names the Hopf rings shares them, and a second, different set
+ * is refused. struct_size must be sizeof(sa2_view_layout); a value outside its range or rings that do not fit the
+ * cells are SA2_E_INVALID_ARGUMENT and change nothing. Like the shape (ABI 6) the layout is device-free product state
+ * kept by sa2_recover and forgotten by sa2_scene_unload; a frame keeps the layout it was drawn with.
+ */
+#define SA2_LAYOUT_CHAIN 0u
+#define SA2_LAYOUT_HOPF_RINGS 1u
+#define SA2_HOPF_RINGS 20u
+
+typedef struct sa2_view_layout {
+    uint32_t struct_size; /* sizeof(sa2_view_layout); 1560 on x64 */
+    uint32_t kind; /* SA2_LAYOUT_CHAIN or SA2_LAYOUT_HOPF_RINGS; with the chain the rest is unused */
+    float j[4]; /* J, a unit pure quaternion (j[0] = 0) */
+    float k[4]; /* K, a unit pure quaternion orthogonal to J */
+    float origins[80]; /* ring r's origin at 4r: a unit point of its fibre at half-step 0 */
+    uint8_t ring_of[600]; /* each cell's ring, 0..19 */
+    uint8_t half_step[600]; /* each cell's half-step along its ring, 0..59; a ring's 30 cells are distinct, of one parity */
+} sa2_view_layout;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_view_layout) == 1560, "sa2_view_layout requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layout* layout);
 
 #ifdef __cplusplus
 }

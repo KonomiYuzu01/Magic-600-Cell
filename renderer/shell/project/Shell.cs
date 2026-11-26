@@ -88,6 +88,8 @@ public partial class Shell : Control
     // ADR-D02 B18c: Local is open (with --d02), the cap it is focused on (-1 before the first step), and the two openings
     // the pane table was last set for (both empty while one-view frames are drawn).
     private bool _localOpen;
+    // ADR-D02 B23: Global is drawn as the Hopf rings, so its camera is the linked 3D spin.
+    private bool _hopf;
     private int? _localCap = -1;
     private (Rect2I Global, Rect2I Local) _paned;
     private Magic600.Chrome.PaneLayout? _layout;
@@ -193,6 +195,15 @@ public partial class Shell : Control
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         // ADR-D02 (owner, 26 November 2026: smaller stickers): with --d02 the view takes the owner's opening shape.
         Require(hostLibrary, "m6h_set_view_shape", D02.ShellShape.Apply(hostLibrary, _host));
+        // ADR-D02 B23 (bare): with --d02 and an opening file that names the Hopf rings, Global opens on them, turned
+        // by the linked 3D spin.
+        if (D02.ShellJumble.On && D02.ShellHopf.Named(D02.ShellShape.OpeningPath()))
+        {
+            Require(hostLibrary, "m6h_set_view_layout", hostLibrary.SetViewLayout(_host, HostLibrary.View,
+                D02.ShellHopf.Layout(D02.ShellHopf.RingsPath())));
+            _hopf = true;
+            _camera.Dirty = true; // the first step sends the spin as Global's camera
+        }
         // ADR-D02 B18c: with --d02 Local opens beside Global with its own shape, hidden until a cap is named.
         if (D02.ShellJumble.On)
         {
@@ -580,7 +591,7 @@ public partial class Shell : Control
         }
         if (D02.ShellJumble.On && _camera.Dirty)
         {
-            Require(library, "m6h_set_camera", library.SetCamera(_host, _camera.ColumnMajor()));
+            Require(library, "m6h_set_camera", library.SetCamera(_host, _hopf ? LocalCamera() : _camera.ColumnMajor()));
             // B18c: Local turns with the linked 3D spin, as Look Lab's Local does; the core turns the cap's pole to +w.
             if (_localOpen)
             {

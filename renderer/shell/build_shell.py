@@ -35,6 +35,8 @@ SAMPLES = ROOT / "tools" / "looklab" / "data" / "samples"
 OPENING = ROOT / "tools" / "looklab" / "data" / "opening.json"
 # Local's own shape (B18c), which the D02 Local view reads behind M600_D02=1; staged as look/local-view.json.
 LOCAL_VIEW = ROOT / "tools" / "looklab" / "data" / "local-view.json"
+# Look Lab's Hopf rings (B23), which the D02 Global view opens on behind M600_D02=1; staged as look/hopf-rings.json.
+HOPF_RINGS = ROOT / "tools" / "looklab" / "fixtures" / "hopf-rings.json"
 # Sample mode (B4a, launch.py --sample): ADR-D01's frame on sample data. Look Lab's sample wiring is staged as Live/,
 # one copy shared with Look Lab, and the files it reads as sample-root/ at their repository paths.
 LIVE = ROOT / "tools" / "looklab" / "app" / "Live"
@@ -71,6 +73,7 @@ def stage(project: Path) -> None:
     (project / "look").mkdir()
     shutil.copy2(OPENING, project / "look" / "opening.json")
     shutil.copy2(LOCAL_VIEW, project / "look" / "local-view.json")
+    shutil.copy2(HOPF_RINGS, project / "look" / "hopf-rings.json")
     (project / "Live").mkdir()
     for name in LIVE_FILES:
         shutil.copy2(LIVE / name, project / "Live" / name)

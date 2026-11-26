@@ -271,6 +271,11 @@ ABI9 = {
     "SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus);",
 }
 ABI9_DEFINES = {"SA2_PROJECTION_PERSPECTIVE": "0u", "SA2_PROJECTION_ORTHOGRAPHIC": "1u", "SA2_FOCUS_NONE": "0xFFFFFFFFu"}
+# ABI 10: a view's layout, the Hopf-ring opening (ADR-D02 B23, bare; a candidate behind --d02).
+ABI10 = {
+    "SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layout* layout);",
+}
+ABI10_DEFINES = {"SA2_LAYOUT_CHAIN": "0u", "SA2_LAYOUT_HOPF_RINGS": "1u", "SA2_HOPF_RINGS": "20u"}
 
 
 class AbiTests(unittest.TestCase):
@@ -278,8 +283,8 @@ class AbiTests(unittest.TestCase):
         self.header = text(CORE / "include" / "sa2_interop.h")
         self.abi2 = text(SA2_HEADER)
 
-    def test_version_is_9(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["9u"])
+    def test_version_is_10(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["10u"])
         self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.abi2, re.M), ["2u"])
 
     def test_abi2_scene_config_layout_is_pinned(self):
@@ -306,7 +311,19 @@ class AbiTests(unittest.TestCase):
 
     def test_abi4_and_abi5_additions(self):
         added = declarations(self.header) - declarations(self.abi2)
-        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5 | ABI6 | ABI7 | ABI8 | ABI9)
+        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5 | ABI6 | ABI7 | ABI8 | ABI9 | ABI10)
+
+    def test_abi10_view_layout_is_pinned(self):
+        values = defines(self.header)
+        for name, value in ABI10_DEFINES.items():
+            with self.subTest(define=name):
+                self.assertEqual(values.get(name), value)
+        self.assertTrue(structs(self.header).get("sa2_view_layout", "").startswith(
+            "typedef struct sa2_view_layout {\n    uint32_t struct_size;"))
+        self.assertIn('static_assert(sizeof(sa2_view_layout) == 1560, "sa2_view_layout requires the x64 ABI");', self.header)
+        # The Hopf table is read only by the product passes, at t18 of both product root signatures.
+        self.assertIn("#define SA2_LAYOUT 1", text(CORE / "shaders" / "product.hlsl"))
+        self.assertIn("StructuredBuffer<float4> hopfRows : register(t18);", text(CORE / "shaders" / "geometry.hlsl"))
 
     def test_abi9_view_focus_is_pinned(self):
         values = defines(self.header)

@@ -102,7 +102,7 @@ use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::{
-    piece_style_valid, Sa2Pane, Sa2ViewFocus, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES, STYLE_CHANNEL_FILL,
+    piece_style_valid, Sa2Pane, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES, STYLE_CHANNEL_FILL,
     STYLE_CHANNEL_OUTLINE, STYLE_SLOTS, TARGET_SURFACE,
 };
 use c600_render::{DisplayTime, PaneSpec, RenderBackend};
@@ -128,8 +128,9 @@ use turns::{Head, Pending, Press, Puzzle, Turns};
 /// ADR-D02 B14, over the core's ABI 7); version 11 Local and the composite frame ([`m6h_open_local`],
 /// [`m6h_set_view_camera`], [`m6h_set_view_visible`], [`m6h_set_pane`], [`m6h_clear_pane`] and [`M6hFrame`]'s pane
 /// count and held flag, ADR-D02 B18b, over the core's ABI 8); version 12 a view's focus ([`m6h_set_view_focus`],
-/// ADR-D02 B18c, over the core's ABI 9).
-pub const M6H_ABI_VERSION: u32 = 12;
+/// ADR-D02 B18c, over the core's ABI 9); version 13 a view's layout ([`m6h_set_view_layout`], ADR-D02 B23, over the
+/// core's ABI 10).
+pub const M6H_ABI_VERSION: u32 = 13;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -1221,6 +1222,35 @@ pub unsafe extern "C" fn m6h_set_view_focus(
             }
             let focus = (focus != Sa2ViewFocus::defaults()).then_some(focus);
             shell.host.backend.set_view_focus(id, focus).map_err(host_error)
+        })
+    }
+}
+
+/// Sets the layout that `view`'s frames draw with (version 13, ADR-D02 B23; the core's ABI 10 `sa2_view_layout_set`):
+/// `layout` null for the projection chain, or a `sa2_view_layout` row (1560 bytes: the struct size, the kind, J, K, the
+/// 20 rings' origins, each cell's ring and half-step), which the shell fills from Look Lab's hopf-rings.json. The core
+/// checks the rings against its own cells. A view that is not open, a row of another size or a value out of range
+/// answers [`M6H_E_INVALID_ARGUMENT`] and changes nothing; rings that do not fit the core's cells answer the core's
+/// refusal. The core keeps the layout across a recovery.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using, and `layout` is null or points to a readable row.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_view_layout(handle: *mut ShellHost, view: u64, layout: *const Sa2ViewLayout) -> i32 {
+    // SAFETY: the contract.
+    let row = unsafe { layout.as_ref() }.copied();
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let id = ViewId(view);
+            if !shell.names_open_view(id) {
+                return Err((M6H_E_INVALID_ARGUMENT, format!("view {view} is not an open view of this host")));
+            }
+            if row.is_some_and(|l| l.struct_size as usize != std::mem::size_of::<Sa2ViewLayout>() || !l.in_range()) {
+                return Err((M6H_E_INVALID_ARGUMENT, "a view layout row has another size or a value out of range".to_owned()));
+            }
+            shell.host.backend.set_view_layout(id, row.as_ref()).map_err(host_error)
         })
     }
 }

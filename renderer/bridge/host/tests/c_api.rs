@@ -264,6 +264,47 @@ fn the_host_sets_a_view_focus() {
 }
 
 #[test]
+fn the_host_sets_a_view_layout() {
+    let shim = Box::into_raw(Box::new(Shim { fake: FakeCore::on_surface(SIZE), pad: 0 }));
+    // SAFETY: the host uses the shim only inside its calls, never at the same time as the test.
+    let fake = || unsafe { &mut (*shim).fake };
+    let (code, host) = create(&functions(), shim, &assets_path());
+    assert_eq!(code, M6H_OK, "{}", last_error(ptr::null_mut()));
+    let mut rings = c600_render::abi::Sa2ViewLayout::new();
+    rings.kind = c600_render::abi::LAYOUT_HOPF_RINGS;
+    rings.j = [0.0, 1.0, 0.0, 0.0];
+    rings.k = [0.0, 0.0, 1.0, 0.0];
+    // SAFETY: a live handle and a readable row, or null.
+    unsafe {
+        // Local is not open: its layout is refused.
+        assert_eq!(m6h_set_view_layout(host, LOCAL.0, &rings), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_view_layout(host, VIEW.0, &rings), M6H_OK, "{}", last_error(host));
+        assert_eq!(fake().layouts[&VIEW.0], c600_render::abi::LAYOUT_HOPF_RINGS);
+        // A row of another size, an unknown kind, a ring or half-step out of range or a value not finite changes nothing.
+        let mut bad = rings;
+        bad.struct_size = 1500;
+        assert_eq!(m6h_set_view_layout(host, VIEW.0, &bad), M6H_E_INVALID_ARGUMENT);
+        for change in 0..4 {
+            let mut bad = rings;
+            match change {
+                0 => bad.kind = 2,
+                1 => bad.ring_of[0] = 20,
+                2 => bad.half_step[0] = 60,
+                _ => bad.origins[0] = f32::NAN,
+            }
+            assert_eq!(m6h_set_view_layout(host, VIEW.0, &bad), M6H_E_INVALID_ARGUMENT);
+        }
+        assert_eq!(fake().layouts.len(), 1);
+        // Null restores the chain.
+        assert_eq!(m6h_set_view_layout(host, VIEW.0, ptr::null()), M6H_OK);
+        assert!(fake().layouts.is_empty());
+        assert_eq!(m6h_set_view_layout(ptr::null_mut(), VIEW.0, ptr::null()), M6H_E_INVALID_ARGUMENT);
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}
+
+#[test]
 fn the_host_sets_its_view_shape() {
     let shim = Box::into_raw(Box::new(Shim { fake: FakeCore::on_surface(SIZE), pad: 0 }));
     // SAFETY: the host uses the shim only inside its calls, never at the same time as the test.
