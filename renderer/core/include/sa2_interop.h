@@ -1295,6 +1295,26 @@ static_assert(sizeof(sa2_view_layout) == 1560, "sa2_view_layout requires the x64
 
 SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layout* layout);
 
+/* ADR-D02 build step B18 (added to ABI 10 before any release; a candidate behind the shell's --d02; row J03 of the
+ * feature matrix): the transform of a jumble twist, for its sweep and for a turn preview. Additive: every other ABI 10
+ * call, struct and behaviour is unchanged, and a frame with no transform draws exactly as before.
+ *
+ * sa2_transform_set binds a transform to the adopted engine revision, as sa2_style_set binds a piece style: the
+ * engine-named plane (plane_u and plane_v, unit and orthogonal within SA2_TRANSFORM_PLANE_TOLERANCE), the twist's angle
+ * (finite, |angle| <= pi; R(angle) turns plane_u toward plane_v and is the twist, c600_display::jumble::swept_plane),
+ * the moving set as SA2_PIECES bytes (1: the piece turns, 0: it stays; any other value is refused) and a phase 0..1.
+ * Every product frame, pane and ID pass of that revision draws each moving piece turned by R((phase - 1) * angle) after
+ * its pose: phase 1 draws the revision's own poses, byte-identically to no transform, and phase 0 the poses before the
+ * twist that entered the revision. A turn preview of a twist not yet committed passes the negated angle at phase 0. A
+ * NULL moving_mask clears the transform (the other arguments are then unused). A revision other than the adopted one
+ * or a value out of range is SA2_E_INVALID_ARGUMENT and changes nothing; adopting a newer revision drops the transform.
+ * The moving set shares the piece style's upload, so a new moving set uploads once and a changed phase, plane or angle
+ * uploads nothing. Like the piece style it is device-free product state: it needs a loaded scene outside a trace
+ * (SA2_E_WRONG_STATE), works during device loss, is kept by sa2_recover and is forgotten by sa2_scene_unload.
+ */
+#define SA2_TRANSFORM_PLANE_TOLERANCE 1e-3f
+SA2_API int32_t sa2_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle, const uint8_t* moving_mask, float phase);
+
 #ifdef __cplusplus
 }
 #endif

@@ -250,6 +250,21 @@ unsafe extern "C" fn view_layout_set(ctx: *mut c_void, view: u64, layout: *const
     code(unsafe { shim(ctx) }.fake.view_layout_set(view, layout), |()| ())
 }
 
+unsafe extern "C" fn transform_set(
+    ctx: *mut c_void,
+    revision: u64,
+    u: *const f32,
+    v: *const f32,
+    angle: f32,
+    moving: *const u8,
+    phase: f32,
+) -> i32 {
+    let moving = (!moving.is_null()).then(|| unsafe { std::slice::from_raw_parts(moving, PIECES) });
+    let row = |p: *const f32| if p.is_null() { [0.0; 4] } else { unsafe { *p.cast::<[f32; 4]>() } };
+    let plane = [row(u), row(v)];
+    code(unsafe { shim(ctx) }.fake.transform_set(revision, &plane, angle, moving, phase), |()| ())
+}
+
 unsafe extern "C" fn style_set(ctx: *mut c_void, revision: u64, bytes: *const u8, channel: u32) -> i32 {
     let bytes = (!bytes.is_null()).then(|| unsafe { std::slice::from_raw_parts(bytes, PIECES) });
     code(unsafe { shim(ctx) }.fake.style_set(revision, bytes, channel), |()| ())
@@ -318,6 +333,7 @@ pub fn functions() -> CoreFunctions {
         frame_panes,
         view_focus_set,
         view_layout_set,
+        transform_set,
     }
 }
 

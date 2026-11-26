@@ -293,6 +293,23 @@ impl<C: CoreAbi> RenderBackend<C> {
         self.core.view_focus_set(view.0, focus.as_ref()).map_err(|status| self.error(status))
     }
 
+    /// ADR-D02 B18: the adopted revision's transform (the core's `sa2_transform_set`): its moving pieces draw turned
+    /// by R((phase - 1) * angle) in the plane (u, v) after their poses, or `None` clears it. A new adoption drops it
+    /// in the core. A moving set that is not `PIECES` bytes of 0 or 1 is refused before the core is asked.
+    pub fn set_transform(
+        &mut self,
+        revision: u64,
+        plane: &[[f32; 4]; 2],
+        angle: f32,
+        moving: Option<&[u8]>,
+        phase: f32,
+    ) -> Result<(), Error> {
+        if moving.is_some_and(|bytes| bytes.len() != crate::abi::PIECES || bytes.iter().any(|&b| b > 1)) {
+            return Err(Error::invalid("a moving set is PIECES bytes of 0 or 1"));
+        }
+        self.core.transform_set(revision, plane, angle, moving, phase).map_err(|status| self.error(status))
+    }
+
     /// ABI 7: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear it. A new
     /// adoption drops it in the core, so the caller sets it again for each revision. Bytes with bits outside the
     /// channel's are refused before the core is asked.

@@ -2067,6 +2067,16 @@ int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_
         return SA2_OK;
     });
 }
+// ADR-D02 B18 (added to ABI 10 before any release): the adopted revision's transform.
+int32_t sa2_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle,
+                          const uint8_t* moving_mask, float phase) {
+    return invoke(ctx, "sa2_transform_set", [&] {
+        context(ctx);
+        auto& scene = product_scene(ctx);
+        scene.product.set_transform(revision, plane_u, plane_v, angle, moving_mask, phase);
+        return SA2_OK;
+    });
+}
 int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style* style) {
     return invoke(ctx, "sa2_view_style_set", [&] {
         context(ctx);

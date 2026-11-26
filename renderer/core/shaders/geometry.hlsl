@@ -129,7 +129,13 @@ Projection projectVertex(uint cell, uint vi) {
     uint local = stickerIds[vi];
     uint slot = cell * 433 + local;
     float4 world = posedPoint(slot, homePoint(cell, centers[local], vertices[vi]));
-    if (theta != 0 && animated[slot] != 0) {
+#ifdef SA2_LAYOUT
+    // ADR-D02 B18: in the product passes a turning frame binds the piece style at t4, whose bit 16 marks a moving piece.
+    const bool turns = theta != 0 && (animated[slotPieces[slot]] & 0x10000u) != 0;
+#else
+    const bool turns = theta != 0 && animated[slot] != 0;
+#endif
+    if (turns) {
         float x = dot(world, turnU), y = dot(world, turnV);
         float c = cos(theta), s = sin(theta);
         world += ((c-1)*x-s*y)*turnU + (s*x+(c-1)*y)*turnV;

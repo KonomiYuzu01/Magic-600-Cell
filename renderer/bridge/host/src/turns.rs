@@ -60,6 +60,8 @@ use c600_command::{
     Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, TWIST_ROW,
 };
 use c600_digest::sha256_hex;
+use c600_display::jumble::transform as certified_transform;
+use c600_display::plan::TransformInput;
 use c600_input::{
     default_specs, Arg, BindingSpec, Chord, ChordIntent, Context as Keys, Focus, KeyEvent, KeyMap, Layout, Routed,
     Router, RoutingClass, Slot,
@@ -533,6 +535,38 @@ impl Turns {
             }
             status => Err(format!("the letter [{cap}, {item}] did not commit: the layer answered {}", status.name())),
         }
+    }
+
+    /// ADR-D02 B18 (row J03): the certified transform row of item `item` of the pinned menu at cap `cap` at the head,
+    /// without committing it: `c600_display::jumble::transform` of the outcome the jumbling engine gives that twist on
+    /// a copy of the head's poses, the letter resolved as [`Turns::twist_letter`] sends it and as the control's replay
+    /// resolves a press. `None` when the outcome is not admissible (blocked, uncertain, refused or protected): no moving
+    /// set is guessed. The row's endpoints are left 0. Jumble on only.
+    pub fn twist_transform(&mut self, cap: u32, item: u64) -> Result<Option<TransformInput>, String> {
+        if self.puzzle != Puzzle::JumbleOn {
+            return Err("a twist's transform needs the jumbled puzzle".to_owned());
+        }
+        let text = |s: &str| Value::String(s.to_owned());
+        let request = String::from_utf8_lossy(&menu_request(&self.pin.set, &self.pin.order, item)).into_owned();
+        let letter = json::object([
+            ("request", Value::String(request)),
+            ("operation", json::object([("kind", text("menu_direct"))])),
+            ("menu", json::object([("set", text(&self.pin.set)), ("order", text(&self.pin.order))])),
+        ]);
+        let revision = self.layer()?.revision().to_json();
+        let args = json::object([("cap", Value::Int(i64::from(cap))), ("letter", letter), ("revision", revision)]);
+        let pinned = menu(&self.exact, &self.record)?;
+        let resolution = rotation::resolve(&self.exact, Some(&pinned), &binding(&args, self.puzzle.binding_field())?)
+            .map_err(|refusal| format!("the letter [{cap}, {item}] does not resolve: {refusal:?}"))?;
+        let mut state = {
+            let layer = self.layer()?;
+            let jumbled = layer.jumbled().ok_or_else(|| "the head has no poses".to_owned())?;
+            jumbled.state().clone()
+        };
+        let outcome = state
+            .apply(&self.exact, &resolution.twist, None, &[])
+            .map_err(|error| format!("the jumbling engine failed: {error:?}"))?;
+        certified_transform(&outcome, &resolution.twist, (0, 0)).map_err(|missing| format!("{missing:?}"))
     }
 
     /// The head's digests as ADR-D02's sample states name them (B5), by which a sample binds to the session: KN0.2's

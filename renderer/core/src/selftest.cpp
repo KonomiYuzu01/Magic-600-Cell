@@ -160,7 +160,7 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
             "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes",
-            "sa2_view_focus_set", "sa2_view_layout_set"};
+            "sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1670,6 +1670,7 @@ Options parse(int argc, char** argv) {
         else if (arg == "--style") options.style = true;
         else if (arg == "--panes") options.panes = true;
         else if (arg == "--focus") options.focus = true;
+        else if (arg == "--sweep") options.sweep = true;
         else if (arg == "--hopf") options.hopf = value();
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
@@ -1726,6 +1727,9 @@ Options parse(int argc, char** argv) {
     // ABI 10: the view layout check runs on WARP only, alone.
     expect(options.hopf.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
         && !options.style && !options.panes && !options.focus && options.measure.empty()), "--hopf requires --warp, alone");
+    // ADR-D02 B18: the transform check runs on WARP only, alone.
+    expect(!options.sweep || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.hopf.empty() && options.measure.empty()), "--sweep requires --warp, alone");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
@@ -1760,6 +1764,7 @@ int main(int argc, char** argv) {
         else if (options.panes) sa2test::run_panes(suite, options);
         else if (options.focus) sa2test::run_focus(suite, options);
         else if (!options.hopf.empty()) sa2test::run_hopf(suite, options);
+        else if (options.sweep) sa2test::run_sweep(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {
