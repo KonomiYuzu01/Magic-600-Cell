@@ -1375,6 +1375,24 @@ class SampleMode(unittest.TestCase):
         # Look Lab builds its inspector on the shared one, with its own View fields.
         self.assertIn("inspect = LabInspect.Create(app, frame, demo);", text(ROOT / "tools" / "looklab" / "app" / "Live" / "LabFrame.cs"))
 
+    def test_a_twist_key_reaches_a_live_session_in_sample_mode(self):
+        # The owner's list: J did not twist in sample mode. The keymap binds J to the twist row, which sample mode's
+        # draft phase carries out, so the chrome took J. With a live session a twist key is not taken; the frame's own
+        # keys are still asked first (Claims), and the twist scripts run in sample mode.
+        keymap = json.loads(text(ROOT / "tools" / "looklab" / "data" / "design" / "keymap.json"))
+        twists = [b for b in keymap["bindings"] if b["command"] == "operation.phase.append_twist"]
+        self.assertEqual([(b["key"], b["context"]) for b in twists], [("J", "global")])
+        chrome = text(PROJECT / "ShellChrome.cs")
+        takes = chrome[chrome.index("    public bool Takes(InputEventKey key)"):chrome.index("    public void Committed(")]
+        self.assertIn("var takes = Frame.Claims(name, binding => _unavailable(binding.Command, binding.Argument) == null &&\n"
+                      "            !(_live && KeyMapModel.IsTwist(binding.Command)));", takes)
+        frame = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "ChromeFrame.cs")
+        claims = frame[frame.index("    public bool Claims(string key"):frame.index("    public bool Press(string key)")]
+        self.assertLess(claims.index("HostKeys.ContainsKey(key)) return true;"), claims.index("can(binding)"))
+        self.assertLess(claims.index("is LineEdit or TextEdit or IOwnKeys) return true;"), claims.index("can(binding)"))
+        run = shell_module("d02_run")
+        self.assertTrue({"bind", "two-views"} <= run.IN_SAMPLE_MODE)
+
     def test_the_watch_command_starts_sample_mode(self):
         watch = shell_module("watch_d02")
         arguments = watch.launch_arguments(self.build, self.temp / "watched", None)
@@ -1653,7 +1671,7 @@ class D02Host(unittest.TestCase):
 
     def test_the_host_expectation_sees_each_part(self):
         run = shell_module("d02_run")
-        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280"})
+        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"})
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]

@@ -716,9 +716,10 @@ EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rota
           "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band,
           "fit-2000": expect_fit, "fit-1280": lambda dumps, source, state: expect_fit(dumps, source, state, vertical=False)}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
-# sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
+# sample mode (ADR-D01's frame on sample data), where the strip and the rail are. The twist scripts (bind and
+# two-views) run in sample mode as well, so they show that J reaches the session's router there too.
 ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
-IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280"}
+IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"}
 
 
 # The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.
