@@ -83,11 +83,13 @@ public static class ShellStyle
     /// ADR-D01.46 per view: the dim set from the view whose layers dim (Global's first), and each style slot dims only
     /// while its own view's layers dim with the same focused predicate. With both views dimming, Global's mode (dimmed or
     /// hidden) serves both. <paramref name="member"/> gives a view's focused predicate's members, piece by piece.
+    /// B16: no focus layer dims or hides a piece <paramref name="breaksThrough"/> names (jumbling-observation.md rule 5).
     /// </summary>
-    public static void SetFocusViews(FocusLayers? global, FocusLayers? local, Func<FocusLayers, Func<int, bool>?> member)
+    public static void SetFocusViews(FocusLayers? global, FocusLayers? local, Func<FocusLayers, Func<int, bool>?> member,
+                                     Func<int, bool>? breaksThrough = null)
     {
         var source = global is { Dimming: true } ? global : local;
-        SetFocus(source, source is null ? null : member(source));
+        SetFocus(source, source is null ? null : member(source), breaksThrough);
         _slotDims[1] = _focus is not null && global is { Dimming: true } && global.Focused == source!.Focused;
         _slotDims[2] = _focus is not null && local is { Dimming: true } && local.Focused == source!.Focused;
     }

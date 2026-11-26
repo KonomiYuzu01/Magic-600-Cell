@@ -1,0 +1,1032 @@
+{
+ "format": "magic600-d02-research-sample/1",
+ "version": 1,
+ "evidence": "synthetic",
+ "note": "Synthetic answers of the research rows for the research pane (build step B28). Field names follow rust/c600-research/src/panel/answers.rs and wire.rs; every name, digest and finding here is made up. research.record.read is a draft row (a row request); its answer is this sample's own.",
+ "answers": {
+  "research.archive.inventory": {
+   "row": "research.archive.inventory",
+   "revision": {
+    "session": "2eb8c484286db2f5c9d1a0c5603c78c0",
+    "epoch": 1,
+    "identity": "08423e5a1ba70a030388b9aea8e2b937185c98a7cd78205dfe95be038a51ec13",
+    "mode": "jumble_off",
+    "head": "940a2b68df9328351bcfb4dea2c08028665a72fc2343ba6fd713a2f6f4867911",
+    "state": 12,
+    "workspace": 3,
+    "protection": 0,
+    "digest": "3612047394b73de1e056754c884d5d7b0009964dc91a9f9da4f30519e23f5277"
+   },
+   "research": "40f05901720eb3b36493ebc9aadaa0a91193302ab2c1175a201945dd5b118eb0",
+   "answer": {
+    "manifest": {
+     "name": "sample-manifest.json",
+     "sha256": "99d35512273e0bf7ceb7a67b0ec97805a5c6cfb2b30a8852e5c452c6cf6a108f"
+    },
+    "table": {
+     "edition": "sample",
+     "sha256": "b456d9f43ebf0a17571dbc93b587b556f42c97c79ad6bc6869342da744233f11"
+    },
+    "discriminator": "sample",
+    "rows": [
+     {
+      "name": "sample/stage-15/macro-r01.json",
+      "role": "record",
+      "stage": 15,
+      "git_blob": "5c29105cc50f1fce8b7cb77153c918826952860d",
+      "sha256": "c83683b78dceb80cf2299a8d0632354c9e4a287f2f4a66d223ee557a7390a860",
+      "bytes": 483,
+      "present": true,
+      "recognition": "declared",
+      "format": "d02-sample-record/1",
+      "integrity": "pass",
+      "failed": [],
+      "interpretation": null,
+      "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
+     },
+     {
+      "name": "sample/stage-15/finite-search-229.json",
+      "role": "record",
+      "stage": 15,
+      "git_blob": "2e4b824cb31e601186dc88b959b26a43c8812910",
+      "sha256": "94938f864a1541a3630c6fcffa69317b307124e89817c6d084e284c2a2968193",
+      "bytes": 272,
+      "present": true,
+      "recognition": "declared",
+      "format": "d02-sample-record/1",
+      "integrity": "pass",
+      "failed": [],
+      "interpretation": null,
+      "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
+     },
+     {
+      "name": "sample/stage-15/relations-7304.json",
+      "role": "record",
+      "stage": 15,
+      "git_blob": "7173d1077d6f934f78372e0ae63dd576cde451dd",
+      "sha256": "520fb876534ac7027efe6527e726708fa8ee56dd0f2cd348c54ded6a80a26a95",
+      "bytes": 192,
+      "present": true,
+      "recognition": "declared",
+      "format": "d02-sample-record/1",
+      "integrity": "pass",
+      "failed": [],
+      "interpretation": null,
+      "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
+     },
+     {
+      "name": "sample/stage-16/macro-i7303.json",
+      "role": "record",
+      "stage": 16,
+      "git_blob": "80d93d7c4f778099b84cc6fa65c8a150821e99c2",
+      "sha256": "24576d82231c6f288a2f08303fdb58f89f24a8949feb37cb80d232adc1d81264",
+      "bytes": 284,
+      "present": true,
+      "recognition": "declared",
+      "format": "d02-sample-record/1",
+      "integrity": "pass",
+      "failed": [],
+      "interpretation": null,
+      "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
+     },
+     {
+      "name": "sample/stage-16/twocarrier-7304.json",
+      "role": "record",
+      "stage": 16,
+      "git_blob": "4b8e265fb578e2075de76fe330112a87b25a6eb7",
+      "sha256": "7fa3505669b17f81b8f61c821c5aeb1618e75c731bd2d04113151c9b52f2c932",
+      "bytes": 159,
+      "present": true,
+      "recognition": "declared",
+      "format": "d02-sample-record/1",
+      "integrity": "pass",
+      "failed": [],
+      "interpretation": null,
+      "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
+     },
+     {
+      "name": "sample/stage-16/trace-i7304.json",
+      "role": "record",
+      "stage": 16,
+      "git_blob": "13602818dce79034c42cb5905f44ccf13d338bcc",
+      "sha256": "d9508610f2a6498c0291f1763f176446e01ed769b372dd02702cb4d9c2120944",
+      "bytes": 197,
+      "present": true,
+      "recognition": "declared",
+      "format": "d02-sample-record/1",
+      "integrity": "pass",
+      "failed": [],
+      "interpretation": null,
+      "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
+     },
+     {
+      "name": "sample/stage-18/unit-353-22.json",
+      "role": "record",
+      "stage": 18,
+      "git_blob": "516482107cf3ec25f9c568aa09e0195dcf6746bf",
+      "sha256": "702a9aebf6cfae8e2e551e0672b01259a92516ac6fa4be56769ad70f12164be1",
+      "bytes": 100,
+      "present": true,
+      "recognition": "declared",
+      "format": "d02-sample-record/1",
+      "integrity": "pass",
+      "failed": [],
+      "interpretation": null,
+      "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
+     },
+     {
+      "name": "sample/stage-18/steps.json",
+      "role": "record",
+      "stage": 18,
+      "git_blob": "c4f2267160dd560e7c89bbc856939eda3a747a7d",
+      "sha256": "6c7678b1de5c15e0c833d37bc4a1d61749fed6e1396b6e88fe72915bd6fb80ec",
+      "bytes": 282,
+      "present": true,
+      "recognition": "declared",
+      "format": "d02-sample-record/1",
+      "integrity": "pass",
+      "failed": [],
+      "interpretation": null,
+      "recheck": "not run: import runs no mathematical recheck and executes no producer (PS3.10, PS3.17)"
+     }
+    ]
+   }
+  },
+  "research.claims": {
+   "row": "research.claims",
+   "revision": {
+    "session": "2eb8c484286db2f5c9d1a0c5603c78c0",
+    "epoch": 1,
+    "identity": "08423e5a1ba70a030388b9aea8e2b937185c98a7cd78205dfe95be038a51ec13",
+    "mode": "jumble_off",
+    "head": "940a2b68df9328351bcfb4dea2c08028665a72fc2343ba6fd713a2f6f4867911",
+    "state": 12,
+    "workspace": 3,
+    "protection": 0,
+    "digest": "3612047394b73de1e056754c884d5d7b0009964dc91a9f9da4f30519e23f5277"
+   },
+   "research": "40f05901720eb3b36493ebc9aadaa0a91193302ab2c1175a201945dd5b118eb0",
+   "answer": {
+    "bindings": "439765e7e8ce47fa608f7e379e5677d44a11b230edd6a7eafa1746e48394770b",
+    "rows": [
+     {
+      "group": "15/macro:sample/stage-15/macro-r01.json#",
+      "family": "15/macro",
+      "stage": 15,
+      "statement": {
+       "id": "70ccb625a595b6ecbd1472444f5d264a1850a8d08aab1e5c2a55df97a6b36e10",
+       "form": "finite",
+       "input": "a43c132586e5b9e776bd5da6f9165afda878992a609ecbe7a77e22b99f740952"
+      },
+      "scope_phrase": "on one instance",
+      "label": null,
+      "checked_as": "certificate",
+      "checkers": [
+       "s15.macro"
+      ],
+      "data_status": "self_contained",
+      "preflight": {
+       "kind": "ready",
+       "checkers": [
+        {
+         "id": "s16.release",
+         "source": "744b966b80a6b753314d0fb0883daa7aeb3fb115b842618aa8b2f752fb45642d"
+        }
+       ],
+       "inputs": [
+        {
+         "role": "trace",
+         "path": "sample/stage-15/macro-r01.json",
+         "sha256": "f1a34e973a812e5e06d863e86c92b5f6033deb30c34e3e3e976beb4de2dba1ed"
+        }
+       ]
+      },
+      "latest_check": {
+       "run": "e5c513ca0e4763a8d310914cd4cabb5048184d45508180f0b211b0483c22b3c8",
+       "outcome": "completed",
+       "reading": {
+        "kind": "complete"
+       },
+       "verdicts": [
+        {
+         "kind": "pass"
+        }
+       ]
+      }
+     },
+     {
+      "group": "15/finite_search:sample/stage-15/finite-search-229.json#",
+      "family": "15/finite_search",
+      "stage": 15,
+      "statement": {
+       "id": "6bc0d1fd6f5e945988a6003ee4e19c90f0b1a8f151b7b80046ae611ed2ab051d",
+       "form": "finite",
+       "input": "0af8fdf530a27f50c6aaa6b30e63424c9680f4cb4db72210da5bbd6d568e9e22"
+      },
+      "scope_phrase": "on one instance",
+      "label": null,
+      "checked_as": null,
+      "checkers": [
+       "s15.pstar"
+      ],
+      "data_status": "needs_input",
+      "preflight": {
+       "kind": "ready",
+       "checkers": [
+        {
+         "id": "s16.release",
+         "source": "744b966b80a6b753314d0fb0883daa7aeb3fb115b842618aa8b2f752fb45642d"
+        }
+       ],
+       "inputs": [
+        {
+         "role": "trace",
+         "path": "sample/stage-15/finite-search-229.json",
+         "sha256": "1b5d343a15184c9b6113d91594f98943d1fdfdb77b4f169c803f551e9f8713f6"
+        }
+       ]
+      },
+      "latest_check": {
+       "run": "57a38e345cb509b510178cbf00bf520edd9e68a4fb1949ee1010368d55790ac9",
+       "outcome": "cut_off",
+       "reading": {
+        "kind": "cut_off",
+        "covered": "4096"
+       },
+       "verdicts": [
+        {
+         "kind": "pass"
+        }
+       ]
+      }
+     },
+     {
+      "group": "15/relations:sample/stage-15/relations-7304.json#",
+      "family": "15/relations",
+      "stage": 15,
+      "statement": {
+       "id": "67036270540f2075b75905dce278ec3ef233d8bc5e6011a1c741e1b5bf1d7d68",
+       "form": "finite",
+       "input": "3a5e9bcada0ef5ede2058b25379c01f8fe171e678e6114836ff6748a522b4c87"
+      },
+      "scope_phrase": "on one instance",
+      "label": null,
+      "checked_as": "certificate",
+      "checkers": [],
+      "data_status": "needs_input",
+      "preflight": {
+       "kind": "unavailable",
+       "reasons": [
+        "claim_unmapped",
+        "dependency_missing",
+        "no_independent_checker"
+       ],
+       "dependencies": [
+        {
+         "kind": "missing_input",
+         "source": "sample/stage-15/relations-7304.json",
+         "name": "exact full start table and prefix/word binding for this source record",
+         "cites": []
+        }
+       ]
+      },
+      "latest_check": null
+     },
+     {
+      "group": "16/macro:sample/stage-16/macro-i7303.json#",
+      "family": "16/macro",
+      "stage": 16,
+      "statement": {
+       "id": "f03f973623506c9049897d7fd12f6e37cced0340d46d415b93b4aff31ddf4e73",
+       "form": "finite",
+       "input": "ed709e4101b981f472cbebf7c395adc0de889dc298157513f7f4201112f334e9"
+      },
+      "scope_phrase": "on one instance",
+      "label": "closes after 84 twists",
+      "checked_as": "certificate",
+      "checkers": [
+       "s16.macro"
+      ],
+      "data_status": "self_contained",
+      "preflight": {
+       "kind": "ready",
+       "checkers": [
+        {
+         "id": "s16.release",
+         "source": "744b966b80a6b753314d0fb0883daa7aeb3fb115b842618aa8b2f752fb45642d"
+        }
+       ],
+       "inputs": [
+        {
+         "role": "trace",
+         "path": "sample/stage-16/macro-i7303.json",
+         "sha256": "62bb0c0c90a47eddc9896928383821fdcfe7215bcf346c2db47876acd64738c7"
+        }
+       ]
+      },
+      "latest_check": {
+       "run": "28ba2590ccefa1f52ed8e983683acd93ab6884f751fc91206771856badeb6d6f",
+       "outcome": "completed",
+       "reading": {
+        "kind": "complete"
+       },
+       "verdicts": [
+        {
+         "kind": "fail",
+         "claim": "cycle.closes",
+         "code": "KN6:evidence.certificate_rejected",
+         "reason": "after 84 twists cap 17 sits where cap 18 started; the cycle does not close"
+        }
+       ]
+      }
+     },
+     {
+      "group": "16/reductions:sample/stage-16/twocarrier-7304.json#",
+      "family": "16/reductions",
+      "stage": 16,
+      "statement": {
+       "id": "d23abb454f3624ce1d2ab1c77ab4edf414d9d3ec6419ef3ddcfc6d4c5f3d9528",
+       "form": "finite",
+       "input": "3917063209f18bf6c047b39fb98ccbb3a919bc07a4c83935b7a86b2e6de5c811"
+      },
+      "scope_phrase": "on one instance",
+      "label": null,
+      "checked_as": "scope_only",
+      "checkers": [
+       "s16.reductions"
+      ],
+      "data_status": "needs_input",
+      "preflight": {
+       "kind": "ready",
+       "checkers": [
+        {
+         "id": "s16.release",
+         "source": "744b966b80a6b753314d0fb0883daa7aeb3fb115b842618aa8b2f752fb45642d"
+        }
+       ],
+       "inputs": [
+        {
+         "role": "trace",
+         "path": "sample/stage-16/twocarrier-7304.json",
+         "sha256": "b0932c6c21950ee815db6476579ac76914a7c486ea30a3479c6541929d9c48fc"
+        }
+       ]
+      },
+      "latest_check": {
+       "run": "5f43018433469f5d8e8bf125de34c7e8e07fe7c0adf004ec2612b32701462eba",
+       "outcome": "completed",
+       "reading": {
+        "kind": "complete"
+       },
+       "verdicts": [
+        {
+         "kind": "not_applicable",
+         "reason": "the record states the scope of a reduction; it makes no claim the macro checker reads"
+        }
+       ]
+      }
+     },
+     {
+      "group": "16/literal:sample/stage-16/trace-i7304.json#",
+      "family": "16/literal",
+      "stage": 16,
+      "statement": {
+       "id": "f06047c911faacfb53ca5178cdc6035c6d32082865e5b69dd85324998f8aa472",
+       "form": "finite",
+       "input": "804d358ff754f93f240d5fcc667000b2327b7bb3858b39b1c8626981dd550152"
+      },
+      "scope_phrase": "on one instance",
+      "label": null,
+      "checked_as": "certificate",
+      "checkers": [],
+      "data_status": "self_contained",
+      "preflight": {
+       "kind": "ready",
+       "checkers": [
+        {
+         "id": "s16.release",
+         "source": "744b966b80a6b753314d0fb0883daa7aeb3fb115b842618aa8b2f752fb45642d"
+        }
+       ],
+       "inputs": [
+        {
+         "role": "trace",
+         "path": "sample/stage-16/trace-i7304.json",
+         "sha256": "42ba635e32dedf6f66007f22661f138e0f6e0ef4975de17aaf77a6012ce1eea9"
+        }
+       ]
+      },
+      "latest_check": null
+     },
+     {
+      "group": "18/expansion:sample/stage-18/unit-353-22.json#",
+      "family": "18/expansion",
+      "stage": 18,
+      "statement": {
+       "id": "57c0edf530c5050bea073b103b8645d7f2ca969e1adc029a8822066a1ff7a1eb",
+       "form": "finite",
+       "input": "7d7c662374736d8efc3d60aa919bd1f8c66466f25333bba4be16c31584913750"
+      },
+      "scope_phrase": "on one instance",
+      "label": null,
+      "checked_as": "input",
+      "checkers": [
+       "s18.expansion"
+      ],
+      "data_status": "self_contained",
+      "preflight": {
+       "kind": "ready",
+       "checkers": [
+        {
+         "id": "s16.release",
+         "source": "744b966b80a6b753314d0fb0883daa7aeb3fb115b842618aa8b2f752fb45642d"
+        }
+       ],
+       "inputs": [
+        {
+         "role": "trace",
+         "path": "sample/stage-18/unit-353-22.json",
+         "sha256": "cbc6ca9981d8639e043956d09674a7a0286899dbccc1f57ab05e84f55d0ca6af"
+        }
+       ]
+      },
+      "latest_check": {
+       "run": "32a67422b4c32eb18fc5d2ad284da4b4b1c6f21d5e35a8cf375189f6d1fad1a8",
+       "outcome": "completed",
+       "reading": {
+        "kind": "complete"
+       },
+       "verdicts": [
+        {
+         "kind": "pass"
+        }
+       ]
+      }
+     },
+     {
+      "group": "18/composed:sample/stage-18/steps.json#/steps/0,/steps/1,/steps/2",
+      "family": "18/composed",
+      "stage": 18,
+      "statement": {
+       "id": "d13a580e61231d5233ff85160f2f652c81c940b1056fdf2619898a797eaad929",
+       "form": "finite",
+       "input": "d8faa38326abb005319f451393ee6009b0318d22eea99ef35fa3e8d006b89342"
+      },
+      "scope_phrase": "on one instance",
+      "label": null,
+      "checked_as": "certificate",
+      "checkers": [],
+      "data_status": "needs_input",
+      "preflight": {
+       "kind": "unavailable",
+       "reasons": [
+        "historical_check_incomplete",
+        "dependency_missing"
+       ],
+       "dependencies": [
+        {
+         "kind": "historical_gate",
+         "source": "sample/stage-18/steps.json",
+         "pointer": "/steps/1"
+        },
+        {
+         "kind": "input",
+         "path": "sample/stage-18/d1-tail.json",
+         "sha256": "6f250d5f19a71daddeaeb92477d2f2c95845ec01e16f04959fdcbee24daca6d6",
+         "state": "missing"
+        }
+       ]
+      },
+      "latest_check": null
+     }
+    ]
+   }
+  },
+  "research.runs": {
+   "row": "research.runs",
+   "revision": {
+    "session": "2eb8c484286db2f5c9d1a0c5603c78c0",
+    "epoch": 1,
+    "identity": "08423e5a1ba70a030388b9aea8e2b937185c98a7cd78205dfe95be038a51ec13",
+    "mode": "jumble_off",
+    "head": "940a2b68df9328351bcfb4dea2c08028665a72fc2343ba6fd713a2f6f4867911",
+    "state": 12,
+    "workspace": 3,
+    "protection": 0,
+    "digest": "3612047394b73de1e056754c884d5d7b0009964dc91a9f9da4f30519e23f5277"
+   },
+   "research": "40f05901720eb3b36493ebc9aadaa0a91193302ab2c1175a201945dd5b118eb0",
+   "answer": {
+    "rows": [
+     {
+      "run": "e5c513ca0e4763a8d310914cd4cabb5048184d45508180f0b211b0483c22b3c8",
+      "record": "research.run/e5c513ca0e4763a8d310914cd4cabb5048184d45508180f0b211b0483c22b3c8",
+      "group": "15/macro:sample/stage-15/macro-r01.json#",
+      "branch": {
+       "level": "labels",
+       "digest": "bd192e1217ec11061bc28a340b3a07368aecbb18f850109a1c28f294e53e3e25",
+       "identity": "17738fc8c486fbd24568becd867b90d9f79baafc95aa3a360ccad4003e4cfe36"
+      },
+      "key": "7b24bde3696202b160d79e63827069b1f9ddee6b7441c9e92b422fa58992923d",
+      "outcome": "completed",
+      "code": null,
+      "reading": {
+       "kind": "complete"
+      },
+      "checks": [
+       {
+        "at": "2026-11-26T12:00:00Z",
+        "kind": "macro",
+        "checker": {
+         "id": "s15.macro",
+         "source": "8bae2303f181a314adf3c522da521491dc64ed4cd07193deb36e80d23034cb5e"
+        },
+        "certificate": "c97aec1efd1f02570ed4c67264647b7a72894f76021d1a233eee46c8bb16158a",
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "verdict": {
+         "kind": "pass"
+        }
+       }
+      ],
+      "outputs": [],
+      "reproduction": null
+     },
+     {
+      "run": "57a38e345cb509b510178cbf00bf520edd9e68a4fb1949ee1010368d55790ac9",
+      "record": "research.run/57a38e345cb509b510178cbf00bf520edd9e68a4fb1949ee1010368d55790ac9",
+      "group": "15/finite_search:sample/stage-15/finite-search-229.json#",
+      "branch": {
+       "level": "labels",
+       "digest": "08fb17c68f52d7cfc195cf00f3d4c4310222395777017e320fe5352343dcfa0b",
+       "identity": "346434af8cdad55e04a881ffb167a9d8d474c6b7961c081230a3c8d515f48c71"
+      },
+      "key": "13016fb5f7573af2a6e34955e0a2742e9a403f5a4ea6e41786496c07d0458417",
+      "outcome": "cut_off",
+      "code": "KN7:budget.steps",
+      "reading": {
+       "kind": "cut_off",
+       "covered": "4096"
+      },
+      "checks": [
+       {
+        "at": "2026-11-26T12:00:00Z",
+        "kind": "archive",
+        "checker": {
+         "id": "s15.pstar",
+         "source": "1b772031bc502a50b8e03dd64be17d671f3e94ca579f616b90c780f509683f86"
+        },
+        "certificate": "544eac5de544be37c780e60617a8f010f35852f539fdd0322ef7ecf5072fbbc2",
+        "outcome": "cut_off",
+        "code": null,
+        "stop": null,
+        "verdict": {
+         "kind": "pass"
+        }
+       }
+      ],
+      "outputs": [],
+      "reproduction": null
+     },
+     {
+      "run": "28ba2590ccefa1f52ed8e983683acd93ab6884f751fc91206771856badeb6d6f",
+      "record": "research.run/28ba2590ccefa1f52ed8e983683acd93ab6884f751fc91206771856badeb6d6f",
+      "group": "16/macro:sample/stage-16/macro-i7303.json#",
+      "branch": {
+       "level": "poses",
+       "digest": "d9ff4bf443105177f8fedb8669b7c780caf73e2658072ff3428762443026fbcd",
+       "identity": "089408772fb54dc67e9a7db2cc1831f775a57964cece31241f752d721e2b8876"
+      },
+      "key": "970bef9791c43e21d836bedaa733064049126b905098dc773a2315020b6ad6e1",
+      "outcome": "completed",
+      "code": null,
+      "reading": {
+       "kind": "complete"
+      },
+      "checks": [
+       {
+        "at": "2026-11-26T12:00:00Z",
+        "kind": "macro",
+        "checker": {
+         "id": "s16.macro",
+         "source": "48d3f4c89233ef857f941831ac007eead62a7259e67523cc0911443d8716ad38"
+        },
+        "certificate": "c89226d720b330ea74f66dd48b4feb1a17d8747e3395a8e55990c35047bafe67",
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "verdict": {
+         "kind": "fail",
+         "claim": "cycle.closes",
+         "code": "KN6:evidence.certificate_rejected",
+         "reason": "after 84 twists cap 17 sits where cap 18 started; the cycle does not close"
+        }
+       }
+      ],
+      "outputs": [],
+      "reproduction": null
+     },
+     {
+      "run": "5f43018433469f5d8e8bf125de34c7e8e07fe7c0adf004ec2612b32701462eba",
+      "record": "research.run/5f43018433469f5d8e8bf125de34c7e8e07fe7c0adf004ec2612b32701462eba",
+      "group": "16/reductions:sample/stage-16/twocarrier-7304.json#",
+      "branch": {
+       "level": "poses",
+       "digest": "fa69ce50a616f556304c3b100991325f0f806a028bfe76b96f85964672883969",
+       "identity": "b4096b1ed1fd672e81f4ac9278c4d4cc57a536d64ce5a99a25d279cad6db0ad0"
+      },
+      "key": "c3c188f2c2da85ad419a5aeef169e94c15a92a9b9f06eeb9ca04f53cce6f8164",
+      "outcome": "completed",
+      "code": null,
+      "reading": {
+       "kind": "complete"
+      },
+      "checks": [
+       {
+        "at": "2026-11-26T12:00:00Z",
+        "kind": "archive",
+        "checker": {
+         "id": "s16.reductions",
+         "source": "05a14f2388c70e33431c780b5374d271bdfe529211574b4037b048f5d8adbfd5"
+        },
+        "certificate": "820cd293f08d54d484082834170977db63aef05d804f33b5de45ce7ffcddbf35",
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "verdict": {
+         "kind": "not_applicable",
+         "reason": "the record states the scope of a reduction; it makes no claim the macro checker reads"
+        }
+       }
+      ],
+      "outputs": [],
+      "reproduction": null
+     },
+     {
+      "run": "32a67422b4c32eb18fc5d2ad284da4b4b1c6f21d5e35a8cf375189f6d1fad1a8",
+      "record": "research.run/32a67422b4c32eb18fc5d2ad284da4b4b1c6f21d5e35a8cf375189f6d1fad1a8",
+      "group": "18/expansion:sample/stage-18/unit-353-22.json#",
+      "branch": {
+       "level": "poses",
+       "digest": "37f7105f5e3c8a6e542fe1be2d4ab833fcd8831d96fcca6dbc66dde4d11ff857",
+       "identity": "f683dd49cf6e04b29331302895e2ea89280897f402a5af8edd0ec3a9b09a8e09"
+      },
+      "key": "e2551408bbcafaed0fddcfb30b9dd701ea2e5921d2b469cc5f96dac5a6c419aa",
+      "outcome": "completed",
+      "code": null,
+      "reading": {
+       "kind": "complete"
+      },
+      "checks": [
+       {
+        "at": "2026-11-26T12:00:00Z",
+        "kind": "expansion",
+        "checker": {
+         "id": "s18.expansion",
+         "source": "e7d6df760f140e61245aecb75a9f9a67bdd6097ea5d6160008a356ac79762e3a"
+        },
+        "certificate": "f2e6ac083f90c1ec96fae785ce053474cf4e1b672f5e82c1e1819c6eb2937e20",
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "verdict": {
+         "kind": "pass"
+        }
+       }
+      ],
+      "outputs": [],
+      "reproduction": null
+     }
+    ]
+   }
+  },
+  "research.obligations": {
+   "row": "research.obligations",
+   "revision": {
+    "session": "2eb8c484286db2f5c9d1a0c5603c78c0",
+    "epoch": 1,
+    "identity": "08423e5a1ba70a030388b9aea8e2b937185c98a7cd78205dfe95be038a51ec13",
+    "mode": "jumble_off",
+    "head": "940a2b68df9328351bcfb4dea2c08028665a72fc2343ba6fd713a2f6f4867911",
+    "state": 12,
+    "workspace": 3,
+    "protection": 0,
+    "digest": "3612047394b73de1e056754c884d5d7b0009964dc91a9f9da4f30519e23f5277"
+   },
+   "research": "40f05901720eb3b36493ebc9aadaa0a91193302ab2c1175a201945dd5b118eb0",
+   "answer": {
+    "rows": [
+     {
+      "group": "15/finite_search:sample/stage-15/finite-search-229.json#",
+      "family": "15/finite_search",
+      "stage": 15,
+      "statement": "6bc0d1fd6f5e945988a6003ee4e19c90f0b1a8f151b7b80046ae611ed2ab051d",
+      "label": null,
+      "missing": [],
+      "exports": []
+     },
+     {
+      "group": "15/relations:sample/stage-15/relations-7304.json#",
+      "family": "15/relations",
+      "stage": 15,
+      "statement": "67036270540f2075b75905dce278ec3ef233d8bc5e6011a1c741e1b5bf1d7d68",
+      "label": null,
+      "missing": [
+       "exact full start table and prefix/word binding for this source record"
+      ],
+      "exports": []
+     },
+     {
+      "group": "16/reductions:sample/stage-16/twocarrier-7304.json#",
+      "family": "16/reductions",
+      "stage": 16,
+      "statement": "d23abb454f3624ce1d2ab1c77ab4edf414d9d3ec6419ef3ddcfc6d4c5f3d9528",
+      "label": null,
+      "missing": [],
+      "exports": []
+     },
+     {
+      "group": "18/composed:sample/stage-18/steps.json#/steps/0,/steps/1,/steps/2",
+      "family": "18/composed",
+      "stage": 18,
+      "statement": "d13a580e61231d5233ff85160f2f652c81c940b1056fdf2619898a797eaad929",
+      "label": null,
+      "missing": [
+       "/steps/1",
+       "sample/stage-18/d1-tail.json"
+      ],
+      "exports": []
+     }
+    ],
+    "exports": []
+   }
+  },
+  "research.record.read": {
+   "row": "research.record.read",
+   "revision": {
+    "session": "2eb8c484286db2f5c9d1a0c5603c78c0",
+    "epoch": 1,
+    "identity": "08423e5a1ba70a030388b9aea8e2b937185c98a7cd78205dfe95be038a51ec13",
+    "mode": "jumble_off",
+    "head": "940a2b68df9328351bcfb4dea2c08028665a72fc2343ba6fd713a2f6f4867911",
+    "state": 12,
+    "workspace": 3,
+    "protection": 0,
+    "digest": "3612047394b73de1e056754c884d5d7b0009964dc91a9f9da4f30519e23f5277"
+   },
+   "research": "40f05901720eb3b36493ebc9aadaa0a91193302ab2c1175a201945dd5b118eb0",
+   "answer": {
+    "rows": [
+     {
+      "name": "sample/stage-15/macro-r01.json",
+      "family": "15/macro",
+      "finding": "A commutator of two cap twists returns every cap it touches except the two it was built to exchange; the record keeps the word, its setup and the exchanged pair, and the checker replays it twist by twist.",
+      "twists": 64,
+      "parts": [
+       {
+        "name": "setup",
+        "length": 12,
+        "parts": [
+         {
+          "name": "turn to cap 12",
+          "length": 6,
+          "parts": []
+         },
+         {
+          "name": "turn to cap 40",
+          "length": 6,
+          "parts": []
+         }
+        ]
+       },
+       {
+        "name": "commutator",
+        "length": 40,
+        "parts": [
+         {
+          "name": "A",
+          "length": 10,
+          "parts": []
+         },
+         {
+          "name": "B",
+          "length": 10,
+          "parts": []
+         },
+         {
+          "name": "A⁻¹",
+          "length": 10,
+          "parts": []
+         },
+         {
+          "name": "B⁻¹",
+          "length": 10,
+          "parts": []
+         }
+        ]
+       },
+       {
+        "name": "undo setup",
+        "length": 12,
+        "parts": []
+       }
+      ]
+     },
+     {
+      "name": "sample/stage-15/finite-search-229.json",
+      "family": "15/finite_search",
+      "finding": "A bounded search for a lowering word at cap 229 within depth 9; the run stopped at its budget, so the record says nothing about words longer than the depth it covered.",
+      "twists": 4096,
+      "parts": [
+       {
+        "name": "start",
+        "length": 0,
+        "parts": []
+       },
+       {
+        "name": "search frontier",
+        "length": 4096,
+        "parts": [
+         {
+          "name": "depth 1 to 6",
+          "length": 1024,
+          "parts": []
+         },
+         {
+          "name": "depth 7 to 9",
+          "length": 3072,
+          "parts": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "sample/stage-15/relations-7304.json",
+      "family": "15/relations",
+      "finding": "Relations among the seven lowering macros of seed 7304, read from the prep census; the start table they depend on is not held, so no check can run yet.",
+      "twists": 28,
+      "parts": [
+       {
+        "name": "relations",
+        "length": 28,
+        "parts": [
+         {
+          "name": "r1",
+          "length": 14,
+          "parts": []
+         },
+         {
+          "name": "r2",
+          "length": 14,
+          "parts": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "sample/stage-16/macro-i7303.json",
+      "family": "16/macro",
+      "finding": "A three-cycle of jammed caps claimed to close after 84 twists; the replay ends one cap away from the start, so the closing claim does not hold as recorded.",
+      "twists": 84,
+      "parts": [
+       {
+        "name": "prefix",
+        "length": 24,
+        "parts": []
+       },
+       {
+        "name": "cycle",
+        "length": 60,
+        "parts": [
+         {
+          "name": "leg 1",
+          "length": 20,
+          "parts": []
+         },
+         {
+          "name": "leg 2",
+          "length": 20,
+          "parts": []
+         },
+         {
+          "name": "leg 3",
+          "length": 20,
+          "parts": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "sample/stage-16/twocarrier-7304.json",
+      "family": "16/reductions",
+      "finding": "Two carriers reduce a jam to a known case; the record states the scope of the reduction and makes no claim the checker reads.",
+      "twists": 36,
+      "parts": [
+       {
+        "name": "carrier 1",
+        "length": 18,
+        "parts": []
+       },
+       {
+        "name": "carrier 2",
+        "length": 18,
+        "parts": []
+       }
+      ]
+     },
+     {
+      "name": "sample/stage-16/trace-i7304.json",
+      "family": "16/literal",
+      "finding": "A literal release trace of jam I-7304, twist by twist; its inputs are held and its checker is ready, and it has not been checked in this session.",
+      "twists": 52,
+      "parts": [
+       {
+        "name": "release",
+        "length": 52,
+        "parts": [
+         {
+          "name": "loosen",
+          "length": 26,
+          "parts": []
+         },
+         {
+          "name": "turn out",
+          "length": 26,
+          "parts": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "sample/stage-18/unit-353-22.json",
+      "family": "18/expansion",
+      "finding": "One unit of the depth-1 tail expanded to its full word; the expansion matches the recorded unit.",
+      "twists": 22,
+      "parts": [
+       {
+        "name": "unit",
+        "length": 22,
+        "parts": []
+       }
+      ]
+     },
+     {
+      "name": "sample/stage-18/steps.json",
+      "family": "18/composed",
+      "finding": "The composed tail of steps 0 to 2; the historical check of step 1 never finished, so the composition is recorded but not checked.",
+      "twists": 104,
+      "parts": [
+       {
+        "name": "step 0",
+        "length": 30,
+        "parts": []
+       },
+       {
+        "name": "step 1",
+        "length": 44,
+        "parts": [
+         {
+          "name": "half a",
+          "length": 22,
+          "parts": []
+         },
+         {
+          "name": "half b",
+          "length": 22,
+          "parts": []
+         }
+        ]
+       },
+       {
+        "name": "step 2",
+        "length": 30,
+        "parts": []
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "draft_rows": {
+  "format": "magic600-design-command-rows",
+  "version": 1,
+  "note": "The research pane's draft row: the command table has no row that reads a record's finding and named parts. A row request of build step B28.",
+  "commands": [
+   {
+    "id": "research.record.read",
+    "label": "Read research record",
+    "kind": "query",
+    "contexts": [
+     "global"
+    ],
+    "note": "Reads a research record's one-paragraph finding and its tree of named parts with their lengths (ADR-D02.44, ADR-D02.49), and opens it in place in the research pane. Argument: the record."
+   }
+  ]
+ }
+}

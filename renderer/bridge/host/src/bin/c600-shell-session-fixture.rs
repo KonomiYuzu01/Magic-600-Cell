@@ -12,7 +12,10 @@
 //! With `--word` (ADR-D02 B5) it makes a jumble-on word fixture instead ([`c600_shell_host::fixture::write_word`]):
 //! the file is JSON whose `letters` is a list of `[cap, item]` of the pinned menu. It then reopens a copy of the
 //! fixture's session once, as the shell does at a launch, checks the head, prints `reopen_ms: N` and removes the copy.
-//! `--word` takes no `--puzzle` and no `--runtime`.
+//! `--word` takes no `--puzzle` and no `--runtime`. The timed reopen runs beside the control at the close
+//! ([`c600_shell_host::fixture::write_word_with`], ADR-D02 B26), since each replays the whole journal: the copy is
+//! taken once every letter is committed, with its `lock` file made empty in place of the live session's, which the
+//! layer may still hold. `reopen_ms` is then timed while the control runs on another thread.
 //!
 //! Exit 0 on success, 1 on a failure, 2 for a usage error. Nothing here launches a window or uses a GPU.
 
@@ -23,6 +26,7 @@ use std::time::Instant;
 
 use c600_kernel::json::{self, Value};
 use c600_kernel::Kernel;
+use c600_session::disk::LOCK;
 use c600_shell_host::fixture;
 use c600_shell_host::turns::{Puzzle, Turns};
 
@@ -91,6 +95,8 @@ fn letters(path: &Path) -> Result<Vec<[u64; 2]>, String> {
         .collect()
 }
 
+/// Copies a session folder. Its `lock` file is made empty in the copy, as the store creates it, and never read: the
+/// live session's layer may still hold it.
 fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(to)?;
     for entry in std::fs::read_dir(from)? {
@@ -98,6 +104,8 @@ fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
         let target = to.join(entry.file_name());
         if entry.file_type()?.is_dir() {
             copy_dir(&entry.path(), &target)?;
+        } else if entry.file_name() == LOCK {
+            std::fs::File::create(target)?;
         } else {
             std::fs::copy(entry.path(), target)?;
         }
@@ -124,17 +132,27 @@ fn timed_reopen(kernel: Arc<Kernel>, args: &Args, read: &fixture::Fixture) -> Re
 
 fn run(args: &Args) -> Result<(), String> {
     let kernel = Arc::new(Kernel::load(&args.assets).map_err(|error| format!("the model: {}", error.0))?);
-    match &args.word {
+    let reopened = match &args.word {
         Some(word) => {
-            fixture::write_word(kernel.clone(), &args.assets, &args.menu, &args.out, &letters(word)?)?;
+            let side = kernel.clone();
+            let timed = |shown: &fixture::Fixture| {
+                timed_reopen(side, args, shown).map(|elapsed| (elapsed, shown.digest.clone()))
+            };
+            let (_, reopened) =
+                fixture::write_word_with(kernel.clone(), &args.assets, &args.menu, &args.out, &letters(word)?, timed)?;
+            Some(reopened?)
         }
         None => {
             fixture::write_for(args.puzzle, kernel.clone(), &args.assets, &args.menu, &args.out, &fixture::KEYS)?;
+            None
         }
-    }
+    };
     let read = fixture::read(&args.out.join(fixture::RECORD))?;
     if read.puzzle != args.puzzle {
         return Err(format!("the record names {}, not {}", read.puzzle.name(), args.puzzle.name()));
+    }
+    if let Some((_, digest)) = reopened.as_ref().filter(|(_, digest)| *digest != read.digest) {
+        return Err(format!("the copy reopened at {digest}, not the record's {}", read.digest));
     }
     println!(
         "fixture: {}, {} presses, revision {}, state {}",
@@ -143,8 +161,8 @@ fn run(args: &Args) -> Result<(), String> {
         read.revision,
         read.digest
     );
-    if args.word.is_some() {
-        println!("reopen_ms: {}", timed_reopen(kernel, args, &read)?);
+    if let Some((elapsed, _)) = reopened {
+        println!("reopen_ms: {elapsed}");
     }
     if let Some(program) = &args.runtime {
         let mut runtime = c600_shell_host::start_runtime(program)?;

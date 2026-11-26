@@ -743,5 +743,45 @@ class TintRun(unittest.TestCase):
         self.assertTrue(any("domain 5 focused) fill_sha256" in p for p in run.expect_tint(dumps, {}, "wj-ia-300", tables)))
 
 
+class OverlaysRun(unittest.TestCase):
+    """B16: the overlays run's check recomputes the overlay's counts and the bytes sent to the core from the sample."""
+
+    def test_the_script_the_check_and_the_shell_side_exist(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["overlays"], run.expect_overlays)
+        self.assertIn("overlays", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "overlays.json"))
+        waits = [f"wait {step['wait_ms']} ms" for step in script["steps"] if "wait_ms" in step and step["wait_ms"] > 1000]
+        self.assertEqual(waits, [mark for mark, _, _, _ in run.OVERLAY_STEPS])
+        tint = text(PROJECT / "D02" / "ShellTint.cs")
+        self.assertIn("host.OverlayChanged += Draw;", tint)
+        self.assertIn("ShellStyle.SetFocusViews(global, local, host.FocusMember, JumbleOverlay.BreaksThrough(host.Overlay));", tint)
+
+    def test_a_good_run_passes_and_a_dimmed_never_hidden_piece_is_named(self):
+        run = shell_module("d02_run")
+        tables = run.tint_tables("wj-ia-300")
+        dumps = []
+        for mark, cap, step, focus in run.OVERLAY_STEPS:
+            want = run.overlay_expected(tables, "wj-ia-300", cap, step, focus, None, None)
+            line = run.overlay_words(want)
+            overlay = {k: v for k, v in want.items() if k not in ("outline_sha256", "fill_sha256", "focus")}
+            overlay.update(line=line, global_line=line, local_line=line)
+            dumps.append({"do": mark, "overlay": overlay, "tint": {"hover": None, "selection": None, "focus": want["focus"],
+                                                                   "outline_sha256": want["outline_sha256"],
+                                                                   "fill_sha256": want["fill_sha256"]}})
+        self.assertEqual(run.expect_overlays(dumps, {}, "wj-ia-300", tables), [])
+        self.assertEqual(dumps[0]["overlay"]["line"], "")
+        self.assertTrue(dumps[1]["overlay"]["line"].startswith("Cut of cap 150 · inside set outlined · "), dumps[1]["overlay"]["line"])
+        self.assertGreater(dumps[3]["overlay"]["hidden"], 0)
+        self.assertTrue(dumps[4]["overlay"]["line"].startswith("Repair 2 of "), dumps[4]["overlay"]["line"])
+        self.assertEqual((dumps[5]["overlay"]["pieces"], dumps[5]["overlay"]["certificate_points"]), (231, 462))
+        dumps[4]["overlay"]["kept_dimmed"] = 1
+        problems = run.expect_overlays(dumps, {}, "wj-ia-300", tables)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("after 'wait 1504 ms' kept_dimmed", problems[0])
+        dumps[2]["tint"]["fill_sha256"] = dumps[0]["tint"]["fill_sha256"]
+        self.assertTrue(any("after 'wait 1502 ms' fill_sha256" in p for p in run.expect_overlays(dumps, {}, "wj-ia-300", tables)))
+
+
 if __name__ == "__main__":
     unittest.main()

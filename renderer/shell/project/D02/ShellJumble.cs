@@ -851,6 +851,7 @@ internal sealed partial class D02Driver : Node
             json.WriteEndObject();
             ShellPick.Dump(json);
             ShellLocal.Dump(json);
+            ShellResearch.Dump(json);
             // B11: the covers lines, the inspect line, the cap map's marks and the focus layers' keys.
             if (ShellJumble.Host is { } shown)
             {

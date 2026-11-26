@@ -1215,6 +1215,53 @@ EXPECT["library-branch"] = expect_library_branch
 IN_SAMPLE_MODE.add("library-branch")
 
 
+# B28: the research pane in Analyse on the synthetic sample. The first failing claim group opens at load, so one
+# workspace tab away the owner sees the Fail row expanded to its first failing claim; object.inspect on that group folds
+# it and opens it again through the palette's path. No error reaches the error lamp.
+RESEARCH_FAIL = "research.claim/16/macro:sample/stage-16/macro-i7303.json#"
+RESEARCH_PANE_STEPS = ["start", "wait 2000 ms", "command workspace.set layout:analyse", "wait 1500 ms",
+                       f"command object.inspect {RESEARCH_FAIL}", f"command object.inspect {RESEARCH_FAIL}",
+                       "wait 3000 ms"]
+RESEARCH_FAIL_LINES = ["first claim that does not hold: cycle.closes", "code: KN6:evidence.certificate_rejected"]
+
+
+def expect_research_pane(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Solve shows no research pane; Analyse shows it with the Fail row open on its first failing claim and the code;
+    the first object.inspect folds the row and the second opens it again; the head says the evidence is synthetic."""
+    if [dump["do"] for dump in dumps] != RESEARCH_PANE_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    for index, (shown, opened) in enumerate([(None, True), (False, True), (None, True), (True, True), (True, False),
+                                             (True, True), (True, True)]):
+        research = dumps[index].get("research", {})
+        if research.get("evidence") != "synthetic" or "evidence: synthetic" not in research.get("head", ""):
+            problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}, head "
+                            f"{research.get('head')!r}")
+        if shown is not None and research.get("pane") is not shown:
+            problems.append(f"step {index}: the research pane is {'hidden' if shown else 'shown'}")
+        if (research.get("open") == RESEARCH_FAIL) != opened:
+            problems.append(f"step {index}: the open object is {research.get('open')!r}")
+        lines = [line for line in research.get("lines", []) if line.get("ref") == RESEARCH_FAIL]
+        rows = [line for line in lines if line.get("kind") == "Row"]
+        if len(rows) != 1 or rows[0].get("verdict") != "fails within on one instance":
+            problems.append(f"step {index}: the Fail row reads {[row.get('verdict') for row in rows]}")
+        details = [line["text"] for line in lines if line.get("kind") == "Detail"]
+        if (details[:2] == RESEARCH_FAIL_LINES) != opened:
+            problems.append(f"step {index}: the Fail row's lines are {details[:2]}")
+    for dump in dumps:
+        errors = dump.get("errors", {})
+        if errors.get("lamp") is not True:
+            problems.append(f"step {dump['step']}: the frame carries no error lamp")
+        if errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {dump['step']}: the error lamp counts {errors.get('count')} "
+                            f"({errors.get('failures')} caught), the last: {errors.get('last')!r}")
+    return problems
+
+
+EXPECT["research-pane"] = expect_research_pane
+IN_SAMPLE_MODE.add("research-pane")
+
+
 # B15 (ADR-D02.20, .21, .23, .24, .30): the tint channel on a state's session fixture. The entry slot's contact classes
 # are on at open; the palette row switches to the height ramp, the off-lattice outline and back to the classes; a
 # domain focus dims the other domains; the height ramp then draws under that dim, and none leaves the dim alone. After
@@ -1343,6 +1390,124 @@ def expect_tint(dumps: list[dict], source: dict, state: str | None, tables: dict
 
 EXPECT["tint"] = expect_tint
 ON_FIXTURE.add("tint")
+
+
+# B16 (ADR-D02.26, .34; jumbling-observation.md rule 5): the overlays as lines on the outline channel. No overlay while
+# no cap is named; cap 150's trace (its inside set); a domain focus dimmed, then hidden by F10, with every overlay piece
+# kept out of the dim set and counted; a focused repair row's step 2 outlines its moving set in place of the trace; the
+# blocked cap 0 outlines its straddlers with the certificate points counted. After each step the expectation recomputes
+# the outline and fill bytes sent to the core from the sample's masks, pose ids and contact classes, piece by piece.
+OVERLAY_DOMAIN = 5
+OVERLAY_STEPS = [("wait 5001 ms", None, None, None), ("wait 1501 ms", 150, None, None),
+                 ("wait 1502 ms", 150, None, "dimmed"), ("wait 1503 ms", 150, None, "hidden"),
+                 ("wait 1504 ms", 150, 2, "hidden"), ("wait 1505 ms", 0, None, "hidden")]
+
+
+def overlay_mask(mask: dict, pieces: int) -> list[bool]:
+    """A sample piece mask (bits-le-zlib-base64), checked against its digest and count."""
+    import base64
+    import hashlib
+    import zlib
+    raw = zlib.decompress(base64.b64decode(mask["data"]))
+    if hashlib.sha256(raw).hexdigest() != mask["sha256"]:
+        raise ValueError("a piece mask differs from its digest")
+    bits = [bool(raw[p >> 3] & (1 << (p & 7))) for p in range(pieces)]
+    if sum(bits) != mask["count"]:
+        raise ValueError("a piece mask differs from its count")
+    return bits
+
+
+def overlay_expected(tables: dict, state: str, cap: int | None, step: int | None, focus: str | None,
+                     hover: int | None, selection: int | None) -> dict:
+    """What a step's dump must say: the layer and its pieces, the never-hidden count, the exact hidden count under the
+    domain focus, and the sha256 of the outline bytes (the contact classes, the overlay's entry 15 on its pieces, then
+    the hover's and the selection's outlines) and of the fill bytes (the dim bit on every piece outside the focused
+    domain that is neither an overlay piece nor never-hidden)."""
+    import hashlib
+    ids, domain = tables["ids"], tables["domain"]
+    pieces = len(ids)
+    lines, never, points, label = None, None, None, ""
+    if cap is not None:
+        record = load(SAMPLES / state / f"cap-{cap}.json")
+        masks = record.get("masks", {})
+        straddlers = overlay_mask(masks["straddlers"], pieces) if "straddlers" in masks else None
+        inside = overlay_mask(masks["inside"], pieces) if "inside" in masks else None
+        moving = None
+        if step is not None:
+            row = next(r for r in record["repair_steps"] if r["row"] == 1)
+            moving = overlay_mask(row["moving_sets"][step - 1], pieces)
+            label = f"Repair {step} of {len(row['letters'])}"
+        points = record.get("straddlers", {}).get("certificate_points")
+        lines = moving or straddlers or inside
+        never = moving or straddlers
+    keep = [bool((lines and lines[p]) or (never and never[p])) for p in range(pieces)]
+    outline = bytearray(class_entry(tables["classes"][domain[ids[p]]]) for p in range(pieces))
+    for p in range(pieces):
+        if lines and lines[p]:
+            outline[p] = 15
+    if hover is not None:
+        outline[hover] = 2
+    if selection is not None:
+        outline[selection] = 1
+    fill = None
+    if focus is not None:
+        fill = bytes(0x80 if domain[ids[p]] != OVERLAY_DOMAIN and not keep[p] else 0 for p in range(pieces))
+    count = sum(lines) if lines else 0
+    hidden = sum(1 for p in range(pieces) if lines and lines[p] and domain[ids[p]] != OVERLAY_DOMAIN) if focus else 0
+    layer = "None" if not lines else "MovingSet" if step is not None else "CutTrace"
+    return {"layer": layer, "cap": cap, "step": label, "pieces": count, "never_hidden": sum(never) if never else 0,
+            "hidden": hidden, "certificate_points": points, "outline_entries": sum(1 for b in outline if b == 15),
+            "kept": sum(keep), "kept_dimmed": 0,
+            "outline_sha256": hashlib.sha256(bytes(outline)).hexdigest(),
+            "fill_sha256": hashlib.sha256(fill).hexdigest() if fill is not None else "", "focus": focus or "none"}
+
+
+def overlay_words(want: dict) -> str:
+    """JumbleOverlay.Words for an expectation."""
+    if want["cap"] is None:
+        return ""
+    glyphs = f" · {want['certificate_points']:,} certificate points (glyphs wait for their gate row)" if want["certificate_points"] is not None else ""
+    kept = f" · {want['hidden']:,} kept from the filter, outlined" if want["hidden"] else ""
+    if want["layer"] == "MovingSet":
+        head = f"{want['step']} · moving set outlined, never hidden"
+    elif want["certificate_points"] is not None:
+        head = f"Cut of cap {want['cap']:,} · straddlers outlined, never hidden"
+    else:
+        head = f"Cut of cap {want['cap']:,} · inside set outlined"
+    return f"{head} · {want['pieces']:,} pieces{kept}{glyphs}"
+
+
+def expect_overlays(dumps: list[dict], source: dict, state: str | None, tables: dict | None = None) -> list[str]:
+    """The overlays script: after each step the overlay's counts, its line on both borders and the bytes sent to the
+    core equal the sample's, piece by piece; no never-hidden or overlay piece carries the dim bit."""
+    if state is None or not (SAMPLES / state / "cap-150.json").is_file() or not (SAMPLES / state / "cap-0.json").is_file():
+        return ["the overlays script needs a sample state with records of caps 150 and 0"]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(mark not in by_step for mark, _, _, _ in OVERLAY_STEPS):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    tables = tables if tables is not None else tint_tables(state)
+    problems = []
+    for mark, cap, step, focus in OVERLAY_STEPS:
+        overlay, tint = by_step[mark].get("overlay"), by_step[mark].get("tint")
+        if not isinstance(overlay, dict) or not isinstance(tint, dict):
+            problems.append(f"after '{mark}' the dump has no overlay or tint")
+            continue
+        want = overlay_expected(tables, state, cap, step, focus, tint.get("hover"), tint.get("selection"))
+        line = overlay_words(want)
+        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", line)]:
+            said = overlay if key not in ("outline_sha256", "fill_sha256", "focus") else tint
+            if said.get(key) != value:
+                problems.append(f"after '{mark}' {key} is {str(said.get(key))[:120]!r}, not {str(value)[:120]!r}")
+    if not problems:
+        named = by_step["wait 1501 ms"]["overlay"]
+        stepped = by_step["wait 1504 ms"]["overlay"]
+        print(f"overlays: {len(OVERLAY_STEPS)} steps, the bytes sent equal {state}'s piece by piece; "
+              f"{named['line']}; under the hidden focus: {stepped['line']}")
+    return problems
+
+
+EXPECT["overlays"] = expect_overlays
+ON_FIXTURE.add("overlays")
 
 
 TUNING_KNOBS = [("wait 702 ms", "tone", 0.05, True), ("wait 703 ms", "contrast", 1.15, True),

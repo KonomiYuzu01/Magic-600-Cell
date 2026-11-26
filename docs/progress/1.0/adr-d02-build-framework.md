@@ -584,6 +584,16 @@ relative path is from the repository root.
   - The never-hidden set of `jumbling-observation.md` rule 5 is forced visible in the preparation's visibility bytes.
   - The hidden-piece masks per named cap, added to `make_d02_samples.py` here from B1.
 - **Check:** `check_core.py --lines` on WARP: a line layer covers pixels only within two pixels of its projected segments; an empty layer changes nothing. Then `d02_run.py --script overlays`: hidden count equals the sample; the never-hidden set stays visible under every focus layer.
+- **As built, drawing track (B16, 26 November 2026):**
+  - The overlays reuse the core's one line drawing, the outline channel of B14's style path, as the integrator's brief asked, so there is no `sa2_lines_set`, `lines.hlsl` or `check_core.py --lines`, and the core, the bridge and the host are unchanged. The overlay takes palette entry 15, the one the tint's plan leaves free, over the tint and under the selection's and the hover's outlines.
+  - Chrome (`Model/JumbleOverlay.cs`; `Ui/JumbleOverlays.cs`, a part of `JumbleHost`): while a cap is named (the default cap is not), its cut's trace at piece resolution: an admissible cap's inside set, whose border is the cut, or a blocked cap's straddlers, which lie across it. A focused repair row's step k outlines that step's moving set in place of the trace (ADR-D02.34). Rule 5's never-hidden set (a blocked named cap's straddlers, the focused step's moving set) and every overlay piece break through every focus layer, and the overlay pieces a focus layer would hide are counted exactly. Certificate-point glyphs stay off; a blocked cap's line counts its certificate points in their place. The overlay's line shows on Global's and Local's borders (`ViewLine`).
+  - Shell (`D02/ShellTint.cs`, `D02/ShellStyle.cs`): the overlay's bytes go on the outline channel with the tint's, `SetFocusViews` takes the breakthrough, and the dump's `overlay` object names the layer, the counts, the line on each border, the pieces sent with entry 15 and the kept pieces that still carry the dim bit.
+  - Readings, for the owner:
+    - The trace is drawn as outlined pieces, not as line segments in four dimensions. Constant line data per cap needs the core line layer planned above (`sa2_lines_set`), which stays a candidate.
+    - A hidden piece that matters shows in full with its outline, not as an outline alone: the core has no outline-only draw, and a style bit for one is requested.
+    - The overlay's colour is `state.preview`; a slot `line.jumble.overlay` is requested.
+    - No hidden-piece masks were added to `make_d02_samples.py`: the exact count comes from the cap records' masks and the focus layer at run time. Protection conflicts (rule 5, item 3) do not arise on the Jumble sample states.
+  - Checks: `check.py`'s console lane passed 252 of 252 with the four `D02Overlay*` tests; `test_shared_chrome.py` (12 OK), `build_product.py` (PASS), `test_renderer_shell.py` (95 OK), `test_d02_drawing.py` (51 OK, with `OverlaysRun`), `tools/wiki/lint.py` (ok). `d02_run.py --script overlays --state wj-ia-300` passed at 1280x720: in six steps the overlay's counts, its line on both borders and the outline and fill bytes equal the sample's piece by piece, and under the domain focus, dimmed and then hidden by F10, no overlay or never-hidden piece carries the dim bit.
 - **Owner sees:** name a cap and its cut trace appears; step a repair row and the moving set outlines.
 - **Machine:** H, W.
 - **Checkpoint:** no.
@@ -1017,6 +1027,7 @@ relative path is from the repository root.
   - Departure: the rows sit in their own dock panel, not in `LibraryPanel.cs`, as B25's Word panel does; the product shell's Library holds the lab's sample records until K2. Shift+Enter previews the row's ν effect in the panel; staging its letters as a commit-bar preview waits for K2's backend.
   - `build_d02_fixtures.py` now builds the correction states as on-zero plus their catalogue letters. nu-c0 (9 letters) is written; nu-c35 is 5,629 letters; its write ran over ten minutes without finishing and was stopped (risk R2), so it is not written yet. The `nu-band` script needs only nu-c0.
   - Checks: the five console tests; `d02_run.py --script nu-band --state nu-c0` PASS (the band under the rail, 35 cells, b8 and b25 marked, both dials at 0, 9 fixed dots; c00 and c35 marked, c35 previewed, the set checked: ν after this set is b25, nu-c35's ν). One earlier run failed only its foreground check, when another window took the foreground (`owner_acted`); the rerun passed.
+  - Long word fixtures (26 November 2026): the time is not in Python. `build_d02_fixtures.py` runs the host's Rust writer, and a pose-move session costs about the same to write, to check at the close and to reopen: the command layer derives each pose move from the head and, every 64 moves (`POSE_CHAIN` in `c600-command`), replays the whole jumbling journal flat from solved, so each pass grows with the square of the word's length (nu-c35's first 1,024 letters: commits 39.1 s, control 44.2 s, timed reopen 41.1 s). The writer now times its reopen on a thread beside the control (`fixture::write_word_with`; the copy gets an empty `lock` file, since the live layer may still hold the session's), not after it; the records are byte-identical. Measured: the first 1,024 letters, each run alone, 124.7 s before and 74.7 s after; nu-c35 with both writers running side by side, 3,565.9 s before and 2,749.2 s after; nu-c35 with the new writer alone, 2,034.6 s (commits about 767 s). nu-c35 is written and matches the sample's three digests (nu-c0 and wj-ia-300 were rebuilt through the script first and match too). Its `reopen_ms`, 1,243,834, is timed beside the control and overstates a launch: the old writer's timed reopen of the same session, run alone, took 765,022 ms, which a product launch at nu-c35 pays each time (risk R2). Making long pose-move sessions fast to write and to reopen needs the command layer to keep a flat reachability claim without replaying from solved; that is a layer change, not a fixture script change.
 
 ### B27. Keys, terms and the remaining unavailable states
 - **Goal:** the held seat keys, the glossary check, and a named state for what still waits.
@@ -1072,6 +1083,25 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B13.
+- **As built (26 November 2026):**
+  - Part 1 (b6e12f9b): `Model/Research.cs` holds `IResearchSource` (one method per research row and the draft `RecordText`), `SampleResearchSource` (synthetic; it answers the reading rows, and the rows that run, import or export refuse until K2), `ResearchWords` (ADR-D02.46's words; `ColourRole` is null for every kind), `ResearchRows` and `ResearchModel` (tabs, the in-place record with its folded tree of named parts, names, copy and save with `Origin.Research`, current and stale answers, the pinned input). `Ui/ResearchPane.cs` is the Library panel's port: tabs, a head with the counts and `evidence: synthetic`, a carried line, and a line-stepped virtual list whose every control sends its row. `data/samples/research/panel.json` holds 8 records (stages 15, 16 and 18), 8 claim groups and 5 runs, with field names from `rust/c600-research/src/panel/answers.rs` and `wire.rs`.
+  - `renderer/shell/project/D02/ShellResearch.cs` mounts the pane in every mode, so Analyse never shows a missing pane; without the sample it says "Research rows wait for K2". In sample mode it reads `res://samples/research/panel.json` (or `M600_D02_DATA`), registers the sample's draft row `research.record.read`, which the palette marks as a draft row, and opens the first failing claim group. Its `Dump` writes the tab, the open object, the counts, staleness, the carried line, the names and the lines for a run.
+  - `ShellChrome.cs` routes the pane's rows: a research row naming a research object, or a tab row, is available and runs first, before `workspace.set` (a name is `workspace.set research.names:<ref>=<name>`), and its words go to the status line. The pane's controls send their rows through the palette's path, and a commit, undo or redo marks the answers stale.
+  - `workspaces.json`: Analyse's centre splits horizontally (0.58): the pair and the Preview and Canvas tabs above, the Research tab below.
+  - Departures:
+    - The files list grows by `ShellChrome.cs`, `ShellJumble.cs` (the dump), `renderer/shell/d02_run.py`, the `research-pane` script and `tests/test_renderer_shell.py`.
+    - Look Lab Live shows "Pane not available" for the Research tab in Analyse, because Live is not edited; the pane is mounted in the product only.
+    - The sample opens the first failing claim group at load, so the owner sees it one workspace tab away; the script folds it and opens it again with `object.inspect`.
+    - `Ui/ResearchPane.cs` changed after the first product run hung when Analyse first showed the pane: the list sat in a container, so each rebuild of fresh, zero-width wrapped labels resized it and its resize rebuilt it again. The list now hangs in a plain clipping window whose resize lays the lines.
+    - The Runs and Obligations tabs show their counts only; their rows come in B29.
+    - The revision's nine keys are checked against the command layer's `Revision` (`c600-command/src/receipt.rs`), which `wire.rs` writes.
+  - Row requests: `research.record.read` (a query that reads a record's finding and named parts); the researcher's name as a `workspace.set` write of the record `research.names` (payload form open); a command-icons entry or a label-only mark for `research.record.read`.
+  - Checks:
+    - the six console tests and the other 248 (254 PASS), and `tools/looklab/check.py` PASS with the checkout unchanged;
+    - `python tests/test_d02_research_sample.py` OK (7 tests: format and synthetic evidence, the envelope and one research digest, the panel's field names, the draft row outside the command table, every verdict kind, part sums, claim groups' records in the inventory);
+    - `build_product.py` PASS;
+    - `test_renderer_shell.py`, `test_shared_chrome.py` and `test_d02_drawing.py` OK;
+    - `d02_run.py --script research-pane --state wj-ia-300` PASS at 1280x720 (7 steps: Solve shows no research pane; `workspace.set layout:analyse` shows it with the Fail row open on "fails within on one instance", "first claim that does not hold: cycle.closes" and "code: KN6:evidence.certificate_rejected"; `object.inspect` folds the row and opens it again; the head says `evidence: synthetic`; the error lamp counts no failure).
 
 ### B29. The research pane: Runs and Obligations
 - **Goal:** declared budgets, reproduction, obligations, the two CR-17 controls.
@@ -1265,6 +1295,25 @@ Each checkpoint is one read of the named diff range against the questions below,
   - the subagent stayed inside its cap;
   - section 4 still matches the code.
 - Owner is shown: the J1 session and the report.
+
+**Refinement, after C6, then the freeze (owner, 26 November 2026).**
+- Fable's refinement scan reads the built product once more and gives the one build round its list. Before it, the build runs no
+  stop; after the build round come the two Astra rounds, then D02's freeze card.
+- Visual check (owner, 26 November 2026, 21:59 UTC): the scan goes through every D02 view one at a time: Global with each chart
+  preset (the 20 rings, the ring sheet, the Hopf rings), Local, the cut slice, the raw view, the tints and the overlays. For each
+  view it asks whether a researcher can see the structure the research needs (contact classes, caps, the cut, what moves, what
+  never hides, the ν band), and whether anything is drawn wrong, unreadable or misleading.
+- Output: every visual problem found, each marked `functional` or `taste`.
+  - Functional: the structure cannot be seen or operated (rotate, pick, focus), is drawn wrong, or misses the frame-rate rows. All
+    are fixed in the one build round before the two Astra rounds. The base puzzle's sticker pick (ADR-D01.40, host
+    `resolve_sticker`) counts here.
+  - Taste: colour values, materials, motion and polish. They are recorded for K2's art line (UI/UX freeze rounds 3 and 4) and are
+    not fixed in D02.
+- The freeze card shows the owner the list once, with what was fixed, to confirm. The owner is not asked to look for problems.
+- The freeze card also lists, for the owner's acceptance with ADR-D02: the draft command rows (`camera.link`, Local's auto-framing
+  switch, `jumble.seat.hold`, XM1 and G6, `research.record.read`, the researcher-name write, `tuning.open` and the rest of
+  `command-rows-d02.json`), the design slots `tint.jumble.off_lattice` and `line.jumble.overlay` (each adds a name to ADR-D01's
+  frozen round-1 slot list), and the eleven glossary additions of ADR-D02 section 15. Until then the draft rows and fallbacks stay.
 
 ## 4. Item map
 

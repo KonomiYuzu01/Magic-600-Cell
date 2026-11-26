@@ -11,6 +11,12 @@ Watching the product window, the owner asked that it turn with the mouse, open o
 ## [2026-11-26] decision | ADR-D01's frame in the product on sample data; B5 and B6 without a stop
 The owner asked for ADR-D01's whole frame in the product shell while ADR-D02 is built, and for B5 and B6 to follow without a stop for the owner's check ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), section 7). This pulls the frame on sample data, part of ADR-D03's scope, into ADR-D02's pull request; [the framework](../progress/1.0/adr-d02-build-framework.md) records it as step B4a.
 
+## [2026-11-26] decision | Context and test tiers
+The owner set how agents use context and how tests are tiered ([decision](decisions/owner-decisions-2026-11-26-context-and-test-tiers.md)): the always-loaded rule files keep only the hard rules, the current state and a map, and the suspended Codex protocol, Claude's hooks and machine cleanup, and the briefing's dated history move unchanged into guides loaded on demand; a commit runs only its area's fast checks, a step its own end-to-end script once, a pull request CI's fast tier, and the full regression runs in CI's full tier and together in stage 3.
+
+## [2026-11-26] decision | The order of work to the 1.0 release
+The owner set the release target, before 2027 and preferably by 20 December 2026, and the order from ADR-D02 to the release, with K2 after ADR-D03 and LP6 ([decision](decisions/owner-decisions-2026-11-26-release-order.md)): the fine work of freeze rounds 3 and 4 moves into stage 2's K2 art line, stage 3 runs only the full-volume acceptance and bug fixes, and stage 4 makes the promotional film before packaging and release. The research line's G0 stays an open question ([decision](decisions/owner-decisions-2026-11-26-research-goal.md)).
+
 ## [2026-11-26] decision | The research line's goal is a proof of coverage; Lean starts with LP6
 The owner set the jumbling research line's final goal as a proof that every configuration that can arise is covered, with no scramble test, said that ADR-D02's 12c is a product target unrelated to the research line, and placed a narrow Lean line for the product's correctness proofs with LP6 ([decision](decisions/owner-decisions-2026-11-26-research-goal.md)). The research stays stopped.
 

@@ -80,6 +80,18 @@ claims:
   - coverage at height 2, which includes 112 single-piece cases, MultiCover and MixedCoreBound;
   - stage 19's four remaining obligations.
 
+## Later the same day: G0 stays open
+
+- The owner asked the integrator to evaluate the research line, and the mathematician read the records again.
+- The evaluation's first gate, G0, asks what counts as a method:
+  - one whose step lengths are bounded by a computable function of the state;
+  - or one that may also search without bound.
+- Theorem M\* already restores every configuration that can arise, by an unbounded search. So the goal has new content
+  only under the bounded reading. Heights are unbounded (X1), so no constant bound exists, and a computable bound exists
+  only if reachability is decidable.
+- The owner answered, translated: "Not for now. Treat this as an open question; the research line takes it up."
+- G0 stays open as the research line's starting problem. Nothing restarts.
+
 ## What this does not do
 
 - It restarts no research and starts no Lean work.

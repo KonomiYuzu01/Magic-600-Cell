@@ -170,6 +170,9 @@ public sealed class ShellChrome
             registry.AddRows(draftRows);
             sampleDrafts = drafts.Order.ToArray();
         }
+        // B28: the research pane, a centre peer of the pair in Analyse; in sample mode it reads the synthetic sample and
+        // registers its draft row.
+        ShellResearch.Load(frame, registry, SampleOn);
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
@@ -177,6 +180,8 @@ public sealed class ShellChrome
         frame.AddPane("gallery", "Gallery", gallery);
         string? Unavailable(string command, string? argument) => command switch
         {
+            // B28: a research row naming a research object (or a tab row) is the research pane's.
+            _ when ShellResearch.Model != null && ResearchModel.Handles(command, argument) => null,
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
@@ -192,6 +197,7 @@ public sealed class ShellChrome
         var commands = new PaletteModel(registry, keymap, Unavailable);
         var palette = new CommandPalette(commands, () => frame.Tokens);
         palette.DraftRows.UnionWith(sampleDrafts);
+        palette.DraftRows.UnionWith(ShellResearch.DraftIds);
         frame.Overlays.AddChild(palette);
         var sheet = new ShortcutSheet(registry, keymap, () => frame.Tokens);
         frame.Overlays.AddChild(sheet);
@@ -231,6 +237,10 @@ public sealed class ShellChrome
             sample?.Echo(command, argument);
             switch (command)
             {
+                // B28: the research rows (a rename is workspace.set research.names:<ref>=<name>), before workspace.set.
+                case var research when ShellResearch.Model != null && ResearchModel.Handles(research, argument):
+                    ShellResearch.Execute(frame, command, argument);
+                    break;
                 case "command.find": palette.Open(); break;
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
                 case var menu when keymap.Radials.ContainsKey(menu):
@@ -263,6 +273,10 @@ public sealed class ShellChrome
             }
         }
         Run = Execute;
+        if (ShellResearch.Pane is { } researchPane)
+        {
+            researchPane.Command += Execute;
+        }
         palette.Run += row => Execute(row.Command, row.Argument);
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
@@ -392,7 +406,7 @@ public sealed class ShellChrome
         }
         frame.Rebuilt += () => { Icons(); Dress(); };
         frame.Recoloured += Dress;
-        Moves.Changed += () => { if (GodotObject.IsInstanceValid(history)) history.Refresh(); Describe(); };
+        Moves.Changed += () => { if (GodotObject.IsInstanceValid(history)) history.Refresh(); Describe(); ShellResearch.Model?.Committed(); };
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         frame.MarkBaseline();
         frame.Flush();

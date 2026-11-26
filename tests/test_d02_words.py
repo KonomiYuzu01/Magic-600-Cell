@@ -59,6 +59,7 @@ NAMES = {
     "600-cell-full": "the puzzle's model profile",
     "hopf": "Heinz Hopf: the Hopf rings are the Hopf fibration's great circles",
     "global": "the name of the first view",
+    "f1": "the key that opens the command palette (Local's default-cap hint names it)",
 }
 
 # Placeholder letters in the words' templates (k of n, x d, y z); case matters, so N stays the glossary's N.
@@ -68,12 +69,12 @@ PLAIN_WORDS = {
     "a", "above", "after", "and", "antipode", "applicable", "apply", "are", "at", "beside", "by", "byte", "bytes",
     "certifies", "chain", "checked", "checker", "clear", "click", "clip", "compare", "covered", "cut", "differs",
     "does", "entry", "equal", "export", "exposed", "face", "faces", "fails", "file", "focus", "free", "from", "hold",
-    "holds", "holes", "in", "input", "into", "it", "its", "least", "live", "lowers", "map", "mark",
-    "marks", "mode", "model", "name", "need", "needs", "neighbours", "no", "none", "not", "number", "of", "on", "one",
+    "holds", "holes", "in", "input", "into", "it", "least", "live", "lowers", "map", "mark",
+    "marks", "mode", "model", "name", "need", "needs", "neighbours", "no", "none", "not", "numbered", "of", "on", "one",
     "only", "or", "output", "pairs", "part", "pass", "pinned", "predicted", "preset", "radius", "raw",
     "re-executed", "record", "refuse", "refused", "release", "replayed", "reproduced", "research", "revert", "reviewed",
     "ring", "rings", "row", "run", "save", "set", "sheet", "shell", "simulation", "slice", "slot", "slots", "solving",
-    "split", "stage", "step", "swap", "the", "this", "tint", "to", "tried", "try", "tuning", "type",
+    "split", "stage", "step", "swap", "the", "this", "tint", "to", "tried", "try", "tuning",
     "un-name", "unavailable", "uses", "whole", "within", "selector",
 }
 
