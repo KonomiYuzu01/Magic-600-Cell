@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] decision | ADR-D02: open research and the A4 picks
+The owner made open research ADR-D02's core (25 November 2026) and answered A4 with every recommended option except item 9, Q3.b, taken as the owner's reading of the frozen J-7 and N-1, and item 12c, the base targets: at most 3,000 hours of real time for a true expert's full solve without jumbling, and substantive progress on restoration theory for the jumbled puzzle ([decision](decisions/owner-decisions-2026-11-26-adr-d02-a4.md)).
+
 ## [2026-11-25] decision | The two icon tiers
 The owner took the recommendation for tier 2 content glyphs: coloured from the scene's encoding tokens, high quality, and animated only on a state or view change. Tier 1 command icons stay monochrome, the icon values come in a separate icon ADR in freeze round 3, and three.js may serve only as an authoring and preview tool. It matches the frozen ADR-D01.53 to ADR-D01.55 ([decision](decisions/owner-decisions-2026-11-25-icon-tiers.md)).
 
