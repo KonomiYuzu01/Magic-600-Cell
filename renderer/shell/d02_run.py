@@ -1658,12 +1658,12 @@ def expect_tuning(dumps: list[dict], source: dict, state: str | None) -> list[st
     if any(not isinstance(t, dict) for t in tuning.values()):
         return ["a step's dump has no tuning (is D02 on and the panel built?)"]
     first = tuning["wait 701 ms"]
-    # Below 1600 px the right dock's panel folds to its rail (owner, 26 November 2026): the row opens it in the
-    # model and the rail, and the panel shows once the window is wide enough.
+    # Below 1600 px the right dock's panel folds to its rail (owner, 26 November 2026); an explicit open shows what
+    # it opens, so the row reveals the panel over the fold (B31).
     folded = first.get("folded") is True
-    if first.get("right_dock") != "tuning" or first.get("shown") is not (not folded):
+    if first.get("right_dock") != "tuning" or first.get("shown") is not True or first.get("revealed") is not folded:
         problems.append(f"after tuning.open the right dock shows {first.get('right_dock')!r}, shown {first.get('shown')}, "
-                        f"folded {first.get('folded')} at {first.get('window_width')} px")
+                        f"folded {first.get('folded')}, revealed {first.get('revealed')} at {first.get('window_width')} px")
     if not first.get("state_digest"):
         problems.append("the head's state digest is not read")
     if not tint["wait 701 ms"].get("palette_sha256"):
@@ -1690,11 +1690,7 @@ def expect_tuning(dumps: list[dict], source: dict, state: str | None) -> list[st
     if tuning["wait 702 ms"].get("window") == first.get("window"):
         problems.append("tone did not move the frame's window colour")
     tone = tuning_knob(tuning["wait 707 ms"].get("live", ""), "tone")
-    if folded:
-        # The folded panel has no knob to click: the click finds nothing and changes nothing.
-        if tone is None or abs(tone - 0.05) > 1e-6:
-            problems.append(f"with the panel folded the click moved tone to {tone}")
-    elif tone is None or abs(tone) > 0.01 or tint["wait 707 ms"].get("palette_sha256") == tint["wait 706 ms"].get("palette_sha256"):
+    if tone is None or abs(tone) > 0.01 or tint["wait 707 ms"].get("palette_sha256") == tint["wait 706 ms"].get("palette_sha256"):
         problems.append(f"the click on the panel's tone knob left tone at {tone} or sent no new palette")
     tuned, opening = tuning["wait 707 ms"].get("live"), first.get("live")
     for mark, slot, live, holding in (("wait 708 ms", "B", opening, False), ("wait 709 ms", "A", tuned, False),
@@ -1705,7 +1701,7 @@ def expect_tuning(dumps: list[dict], source: dict, state: str | None) -> list[st
                             f"expected slot {slot}, holding {holding}, live {live!r}")
     if not problems:
         print(f"tuning: {len(marks)} steps; the panel opened in the right dock "
-              f"({'folded to its rail' if folded else 'shown'} at {first.get('window_width')} px); the state digest "
+              f"({'revealed over the fold' if folded else 'shown'} at {first.get('window_width')} px); the state digest "
               f"{str(first.get('state_digest'))[:16]} held; tone, contrast and black level sent new palettes; "
               "two swaps and the held compare came back")
     return problems
@@ -1715,6 +1711,81 @@ EXPECT["tuning"] = expect_tuning
 EXPECT["tuning-wide"] = expect_tuning
 ON_FIXTURE.add("tuning")
 ON_FIXTURE.add("tuning-wide")
+
+
+def expect_tuning_save(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B31's tuning-save script: the open reveals the panel over the fold; the shipped Graphite preset is applied; a
+    knob forks it and Save fills the fork; the held simulation draws over the chrome (the core gets the identity with
+    the G8 switch off) and goes on release; an Advanced override that breaks the height ramp recolours the pieces and
+    Save refuses it in place naming the pair; after the reset Save passes; the shipped preset comes back as shipped.
+    The state digest and the tint bytes never move."""
+    marks = [f"wait {n} ms" for n in range(701, 712)]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(mark not in by_step for mark in marks):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    t = {mark: by_step[mark].get("tuning") for mark in marks}
+    tint = {mark: by_step[mark].get("tint") or {} for mark in marks}
+    if any(not isinstance(v, dict) for v in t.values()):
+        return ["a step's dump has no tuning (is D02 on and the panel built?)"]
+    problems = []
+    first, identity = t["wait 701 ms"], [1, 0, 0, 0, 1, 0, 0, 0, 1]
+
+    def want(mark, ok, text):
+        if not ok:
+            problems.append(f"after '{mark}': {text}")
+
+    for mark in marks:
+        want(mark, t[mark].get("state_digest") == first.get("state_digest"), "the state digest moved")
+        want(mark, t[mark].get("shown") is True, "the panel is not shown")
+        for key in ("outline_sha256", "fill_sha256"):
+            want(mark, tint[mark].get(key) == tint["wait 701 ms"].get(key), f"the tint's {key} moved")
+        if mark != "wait 708 ms":
+            want(mark, not t[mark].get("status"), f"the panel refused: {t[mark].get('status')!r}")
+    want("wait 701 ms", first.get("revealed") is (first.get("folded") is True) and first.get("preset_shipped") is True,
+         f"open: revealed {first.get('revealed')}, preset {first.get('preset')!r}")
+    shipped = t["wait 702 ms"]
+    want("wait 702 ms", shipped.get("preset") == "graphite" and shipped.get("preset_shipped") is True,
+         f"the shipped preset: {shipped.get('preset')!r}")
+    fork = t["wait 703 ms"]
+    want("wait 703 ms", fork.get("preset") not in ("", "graphite") and fork.get("preset_shipped") is False
+         and fork.get("presets") == shipped.get("presets", 0) + 1 and "edited" in fork.get("preset_line", ""),
+         f"the knob did not fork the shipped preset: {fork.get('preset')!r}, {fork.get('preset_line')!r}")
+    saved = t["wait 704 ms"]
+    want("wait 704 ms", saved.get("preset") == fork.get("preset") and not saved.get("issues")
+         and "edited" not in saved.get("preset_line", ""),
+         f"Save did not fill the fork: {saved.get('preset_line')!r} {saved.get('issues')}")
+    held, gone = t["wait 705 ms"], t["wait 706 ms"]
+    want("wait 705 ms", held.get("simulating") == "deutan" and held.get("filter") is True
+         and held.get("class1_simulated") not in ("", held.get("class1")) and "chrome only" in held.get("simulation_line", "")
+         and held.get("core_matrix") == identity and held.get("core_simulation") is False,
+         f"the held simulation: {held.get('simulating')!r}, filter {held.get('filter')}, class 1 {held.get('class1')} -> "
+         f"{held.get('class1_simulated')}, core {held.get('core_matrix')}, {held.get('simulation_line')!r}")
+    want("wait 706 ms", gone.get("simulating") == "" and gone.get("filter") is False and gone.get("live") == held.get("live"),
+         "the release left the simulation or changed the tuning")
+    bad, refused = t["wait 707 ms"], t["wait 708 ms"]
+    want("wait 707 ms", "tint.jumble.height.6" in bad.get("overrides", "")
+         and tint["wait 707 ms"].get("palette_sha256") != tint["wait 706 ms"].get("palette_sha256"),
+         "the override did not reach the pieces' tint palette")
+    status = refused.get("status", "")
+    want("wait 708 ms", status.startswith("not saved: height ramp tint.jumble.height.") and "tint.jumble.height.6" in status
+         and "not monotone" in status and bool(refused.get("issues_shown")) and refused.get("preset") == bad.get("preset")
+         and refused.get("presets") == bad.get("presets"), f"Save was not refused in place with its pair: {status!r}")
+    after = t["wait 710 ms"]
+    want("wait 710 ms", not after.get("issues") and "edited" not in after.get("preset_line", ""),
+         f"Save after the reset: {after.get('issues')}")
+    back = t["wait 711 ms"]
+    want("wait 711 ms", back.get("preset") == "graphite" and back.get("live") == shipped.get("live"),
+         f"the shipped preset did not come back as shipped: {back.get('live')!r}")
+    if not problems:
+        print(f"tuning-save: {len(marks)} steps at {first.get('window_width')} px; the panel "
+              f"{'revealed over the fold' if first.get('revealed') else 'shown'}; Graphite forked to {fork.get('preset')} "
+              f"and saved; deutan held over the chrome (class 1 {held.get('class1')} -> {held.get('class1_simulated')}), "
+              f"core identity (G8 off); refused: {status}; the state digest {str(first.get('state_digest'))[:16]} held")
+    return problems
+
+
+EXPECT["tuning-save"] = expect_tuning_save
+ON_FIXTURE.add("tuning-save")
 
 
 def window_problems(dumps: list[dict]) -> list[str]:

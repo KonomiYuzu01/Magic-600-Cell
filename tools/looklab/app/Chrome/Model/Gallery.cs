@@ -93,10 +93,24 @@ public static class ColourMetric
     private static double Decode(double v) => v <= .04045 ? v / 12.92 : Math.Pow((v + .055) / 1.055, 2.4);
     private static double Encode(double v) => v <= .0031308 ? v * 12.92 : 1.055 * Math.Pow(v, 1 / 2.4) - .055;
 
-    public static Rgb Simulate(Rgb c, string vision)
+    public static Rgb Simulate(Rgb c, string vision) => vision == "normal" ? c : Apply(c, Matrices[vision]);
+
+    // ADR-D02.47's held simulations: G4's three colour visions and a contrast view that keeps lightness only (the
+    // contrast rules judge luminance, so a pair they pass stays apart here). Each is one row-major 3x3 matrix on linear
+    // RGB, the same matrix the core's view style takes (B14) and the chrome's filter draws.
+    public static readonly IReadOnlyList<string> Simulations = Array.AsReadOnly(new[] { "protan", "deutan", "tritan", "contrast" });
+    private static readonly double[] Lightness = { .2126, .7152, .0722, .2126, .7152, .0722, .2126, .7152, .0722 };
+    public static double[] SimulationMatrix(string? simulation) => simulation switch
     {
-        if (vision == "normal") return c;
-        double[] m = Matrices[vision]; double r = Decode(c.R), g = Decode(c.G), b = Decode(c.B);
+        null or "normal" => new double[] { 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+        "contrast" => (double[])Lightness.Clone(),
+        _ when Matrices.TryGetValue(simulation, out double[]? m) => (double[])m.Clone(),
+        _ => throw new FormatException(simulation + ": the simulations are " + string.Join(", ", Simulations)),
+    };
+
+    public static Rgb Apply(Rgb c, IReadOnlyList<double> m)
+    {
+        double r = Decode(c.R), g = Decode(c.G), b = Decode(c.B);
         double F(int row) => Encode(Math.Clamp(m[row * 3] * r + m[row * 3 + 1] * g + m[row * 3 + 2] * b, 0, 1));
         return new Rgb(F(0), F(1), F(2));
     }

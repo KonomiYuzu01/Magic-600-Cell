@@ -1206,6 +1206,21 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B30. CR-16.
+- **As built (B31 agent, 26 November 2026):**
+  - B30's gap: below 1600 px the right dock folds to its rail, so `tuning.open` opened a panel nobody saw. `FrameModel.RevealDock` and `PressRail` now open a folded dock the way a click on its rail does: the panel is drawn over the fold until the rail is pressed again, and the fold rule (`ChromeFrame.Folds`) is unchanged. `d02_run.py --script tuning` passes at 1280x720 with the tone knob found and clicked.
+  - `Model/Tuning.cs`:
+    - `TuningValue` gains the Advanced role overrides (OkLCH, per family), stored in `Appearance` beside the knobs and passed to `TokenSet` as overrides.
+    - `TuningPreset` reads the new `tools/looklab/data/design/tuning-presets.json` (Graphite and Paper, each with an Inspecting variant), checking each preset against a scratch appearance. Shipped presets are read-only: the first edit forks one into `<id>.copy` ("<Name> copy"), and Save fills the fork. Presets live in memory; nothing is written to disk.
+    - `Save()` runs `SaveIssues(TokenSet)` first and refuses in place with the first failing pair: the token set's contrast rules; the height ramp (`tint.jumble.height.2/.4/.6/.above`) not strictly monotone in OKLab L; or two contact classes (1 to 6 and the overflow) closer than G4's bars (`StickerPalette.Needed`, `NeededSimulated`) under normal vision, protan, deutan or tritan.
+    - Advanced: `AdvancedRoles(query)` searches the family's roles; `Override("role=L C h")` and `"role=reset"` set and clear an override.
+    - The held simulation: `HoldSimulation`, `ReleaseSimulation` and `Matrix`, one row-major 3×3 matrix in linear RGB from `ColourMetric.SimulationMatrix` (Machado protan, deutan and tritan; `contrast` is the luminance matrix).
+  - `Ui/TuningPanel.cs`: a Presets section (choice, Save, the preset line and the refusal list), a Simulation section (choice and a hold button), and Advanced behind a switch with a search field and up to twelve role rows (swatch, L C h field, Reset). A held simulation draws `SimulationFilter`, a screen-texture shader over the frame that applies the matrix and keeps alpha, and raises `Simulated`.
+  - The core half: `ShellStyle.SetSimulation` puts the same matrix into the view style's matrix field, but only with `M600_D02_CORE_SIMULATION=1`. It is off by default, following the look-cost note (the core half waits for G8), so a held simulation changes the chrome and the panel says the pieces wait for G8.
+  - Rows: the command table's `token.override.set` and `token.override.reset` (ADR-D01.50, .51), and CR-16's drafts `tuning.preset.apply`, `tuning.preset.save` and `tuning.simulate.hold`. No new row.
+  - Both themes failed G4's simulated bar as shipped (graphite deutan classes 2 and 5 at 0.017). `tint.jumble.contact_class.1` moves from blue.8 to blue.7 and `.2` from teal.8 to teal.9 in `graphite.json` and `paper.json`; both now pass `Save()` (lowest ratio to the bar 1.23 and 1.15).
+  - Tests: `D02BothThemesPassSaveAsShipped`, `D02ShippedPresetForksOnEdit`, `D02SaveFailsOnNonMonotoneHeightRamp`, `D02SaveFailsOnCollidingClassesUnderSimulation`, `D02SaveFailsOnContrastRule` and `D02SimulationAndRevealedDock`.
+  - Run: `d02_run.py --script tuning-save --state wj-ia-300` at 1280x720. It reveals the panel over the fold, applies Graphite, forks it with a knob and saves, holds deutan over the chrome (the core gets the identity), darkens `tint.jumble.height.6` through Advanced, and sees Save refused with the pair `tint.jumble.height.4` and `.6`. It then resets, saves and gets the shipped preset back. The state digest and the tint's outline and fill bytes never move.
+  - Owner sees, in `watch_d02.py --state wj-ia-300`: the palette row `tuning.open`, then the hold button under Simulation; the chrome changes, and the pieces do not until G8 turns the core half on. Advanced, `tint.jumble.height.6` set to `0.2 0 0`, then Save, is refused with its pair.
 
 ### B32. The reduced Track J driver: J1
 - **Goal:** a model-free run in the product shell, through keys and the palette only.
