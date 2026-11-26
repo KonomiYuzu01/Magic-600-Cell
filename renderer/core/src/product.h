@@ -184,6 +184,10 @@ struct PassInput {
     // ABI 8: a composite frame's pane: the viewport's origin and size in the scene-size ID target (0: the whole target).
     int32_t origin_x = 0, origin_y = 0;
     uint32_t view_width = 0, view_height = 0;
+    // ADR-D02 B17 (ABI 10): the style slot the frame or pane drew with, so the ID pass follows visibility; piece_style
+    // says whether its engine copy holds a piece style (else the zero buffer stands in).
+    bool styled = false, piece_style = false;
+    ViewStyle view_style;
 };
 struct PickPlan {
     uint64_t frame = 0;
@@ -356,13 +360,19 @@ private:
         bool ended() const { return state == SA2_TICKET_CANCELLED || state == SA2_TICKET_FAILED; }
     };
     struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; uint64_t style = 0; };
-    struct PaneRecord { sa2_pane pane{}; uint64_t set_ticket = 0, evals = 0, publication_generation = 0; ViewShape shape; };
+    struct PaneRecord {
+        sa2_pane pane{}; uint64_t set_ticket = 0, evals = 0, publication_generation = 0; ViewShape shape;
+        bool styled = false; ViewStyle view_style; // ADR-D02 B17 (ABI 10): the style the pane drew with, for its picks
+    };
     struct Frame {
         sa2_frame_input input{};
         std::vector<PaneRecord> panes; // ABI 8: a composite frame's panes
         uint64_t id = 0, target_generation = 0, set_ticket = 0;
         uint32_t ring = 0, copy = 0;
         ViewShape shape; // ABI 6: the shape the frame drew with, for its picks
+        // ADR-D02 B17 (ABI 10): the style slot a one-view frame drew with, and the piece style version of its engine copy
+        // (0: none), for its picks.
+        bool styled = false; ViewStyle view_style; uint64_t style_version = 0;
         bool produced = false, reported = false;
         int32_t error = SA2_OK;
         uint64_t gpu_ns = 0, evals = 0;
