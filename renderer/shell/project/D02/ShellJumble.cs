@@ -365,10 +365,13 @@ internal sealed partial class D02Driver : Node
     // control's change), with the jobs' clock held until the dump reads it again after frames have passed.
     private int _cancels;
     private IReadOnlyList<(string Group, string Text)>? _screenBefore;
+    // The frame's rebuilds since the driver started: a frame that rebuilds every frame never lays its views out.
+    private int _rebuilds;
 
     public D02Driver(ChromeFrame frame)
     {
         _frame = frame;
+        frame.Rebuilt += () => _rebuilds++;
         Name = "D02Driver";
         _folder = System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } folder && Directory.Exists(folder) ? folder : null;
         if (System.Environment.GetEnvironmentVariable("M600_D02_SCRIPT") is { Length: > 0 } script)
@@ -658,6 +661,23 @@ internal sealed partial class D02Driver : Node
                 _doing += " (not found)";
             }
         }
+        else if (step.TryGetProperty("command", out var command))
+        {
+            // A row run as the palette runs it (ShellChrome.Run: the unavailable reason, the echo, then the row), with
+            // the step's argument if it gives one; a row that throws reaches the error lamp through Safe, as a palette
+            // row's does.
+            var row = command.GetString()!;
+            var argument = step.TryGetProperty("argument", out var given) ? given.GetString() : null;
+            _doing = "command " + row + (argument != null ? " " + argument : "");
+            if (ShellChrome.Run is { } run)
+            {
+                Safe.Raise(run, row, argument);
+            }
+            else
+            {
+                _doing += " (no Run)";
+            }
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -665,7 +685,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a click_control or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a click_control, a command or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -858,6 +878,43 @@ internal sealed partial class D02Driver : Node
                     json.WriteStringValue(FocusLayers.KeyText(layer));
                 }
                 json.WriteEndArray();
+                json.WriteEndObject();
+            }
+            if (_frame != null && GodotObject.IsInstanceValid(_frame))
+            {
+                // The Library in the left dock (the command step's sample-mode run): the dock's panel, whether the
+                // Library panel is shown, its open branches and the records it lists.
+                json.WriteStartObject("library");
+                json.WriteString("left_dock", _frame.Model.Docks[DockSide.Left].Open ?? "");
+                var library = _frame.FindChild("LibraryPanel", true, false) as LibraryPanel;
+                json.WriteBoolean("panel", library != null && library.IsVisibleInTree());
+                json.WriteStartArray("open");
+                foreach (var (title, _) in LibraryModel.Branches)
+                {
+                    if (library != null && library.Library.IsOpen(title))
+                    {
+                        json.WriteStringValue(title);
+                    }
+                }
+                json.WriteEndArray();
+                json.WriteStartArray("rows");
+                foreach (var node in library?.FindChildren("*", "", true, false) ?? new Godot.Collections.Array<Node>())
+                {
+                    if (node.HasMeta("library_record"))
+                    {
+                        json.WriteStringValue(node.GetMeta("library_record").AsString());
+                    }
+                }
+                json.WriteEndArray();
+                json.WriteEndObject();
+                // The error lamp: whether the frame carries it, the failures it counts and the first line of the last.
+                json.WriteNumber("rebuilds", _rebuilds);
+                json.WriteStartObject("errors");
+                json.WriteBoolean("lamp", _frame.GetNodeOrNull<ErrorLamp>(ErrorLamp.NodeName) != null);
+                json.WriteNumber("count", ChromeErrors.Count);
+                json.WriteNumber("failures", Safe.Failures);
+                var errors = ChromeErrors.All;
+                json.WriteString("last", errors.Count > 0 ? errors[errors.Count - 1].Split('\n')[0] : "");
                 json.WriteEndObject();
             }
             // The frame's geometry (owner, 26 November 2026: "看不到"): the window, the frame's minimum size and

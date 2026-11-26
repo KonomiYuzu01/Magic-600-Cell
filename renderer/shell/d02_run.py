@@ -998,6 +998,48 @@ def expect_cap_hover(dumps: list[dict], source: dict, state: str | None) -> list
 EXPECT["cap-hover"] = expect_cap_hover
 ON_FIXTURE.add("cap-hover")
 
+# The script player's command step runs a row as the palette does (ShellChrome.Run). In sample mode,
+# library.branch.toggle with the argument "Built-in" opens that branch of the Library: before the fix it threw inside
+# SampleMount and nothing opened. No error reaches the error lamp.
+LIBRARY_BRANCH_STEPS = ["start", "wait 2000 ms", "command macro.base.open", "command library.branch.toggle Built-in",
+                        "wait 3000 ms"]
+# The Library's shipped tools, the records of its Built-in branch (Chrome/Model/Library.cs).
+BUILT_IN = ["Residuals", "Protection check", "Setup search", "Macro facts", "Compare macros", "Cycles", "Structure"]
+
+
+def expect_library_branch(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """macro.base.open shows the Library in the left dock with Built-in folded; library.branch.toggle Built-in opens
+    that branch and the Library lists the shipped tools; the frame carries the error lamp, which counts no failure at
+    any step, and it rebuilds at most once a command (a frame that rebuilds on every error never lays its views out)."""
+    if [dump["do"] for dump in dumps] != LIBRARY_BRANCH_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    for index, opened in ((2, False), (3, True), (4, True)):
+        library = dumps[index].get("library", {})
+        if library.get("left_dock") != "library" or library.get("panel") is not True:
+            problems.append(f"step {index}: the left dock shows {library.get('left_dock')!r}, not the Library panel")
+        if ("Built-in" in library.get("open", [])) != opened:
+            problems.append(f"step {index}: Built-in is {'folded' if opened else 'open'}, expected it "
+                            f"{'open' if opened else 'folded'}")
+        listed = [name for name in BUILT_IN if name in library.get("rows", [])]
+        if listed != (BUILT_IN if opened else []):
+            problems.append(f"step {index}: the Library lists the shipped tools {listed}")
+    for dump in dumps:
+        errors = dump.get("errors", {})
+        if errors.get("lamp") is not True:
+            problems.append(f"step {dump['step']}: the frame carries no error lamp")
+        if errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {dump['step']}: the error lamp counts {errors.get('count')} "
+                            f"({errors.get('failures')} caught), the last: {errors.get('last')!r}")
+    rebuilds = [dump.get("rebuilds") for dump in dumps]
+    if None in rebuilds or rebuilds[-1] - rebuilds[1] > 2:
+        problems.append(f"the frame rebuilt {rebuilds} times by step")
+    return problems
+
+
+EXPECT["library-branch"] = expect_library_branch
+IN_SAMPLE_MODE.add("library-branch")
+
 
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""

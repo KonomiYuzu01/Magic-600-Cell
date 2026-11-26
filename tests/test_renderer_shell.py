@@ -1653,7 +1653,7 @@ class D02Host(unittest.TestCase):
 
     def test_the_host_expectation_sees_each_part(self):
         run = shell_module("d02_run")
-        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280"})
+        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "library-branch"})
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]
@@ -1832,6 +1832,48 @@ class D02CapHover(unittest.TestCase):
         self.assertEqual(len(run.expect_cap_hover(dumps(said=False), {}, "ia-40")), 1)
         self.assertEqual(len(run.expect_cap_hover(dumps(tip="cap"), {}, "ia-40")), 2)
         self.assertTrue(run.expect_cap_hover(dumps()[:5], {}, "ia-40"))
+
+
+class D02LibraryBranch(unittest.TestCase):
+    """The script player's command step runs a row as the palette does; in sample mode library.branch.toggle Built-in
+    opens that Library branch and no error reaches the error lamp; the run's expectation sees each part it checks."""
+
+    def test_the_player_runs_a_row_as_the_palette_does(self):
+        player = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertIn('step.TryGetProperty("command", out var command)', player)
+        self.assertIn("if (ShellChrome.Run is { } run)", player)
+        self.assertIn("Safe.Raise(run, row, argument);", player)
+        self.assertIn("Run = Execute;", text(PROJECT / "ShellChrome.cs"))
+
+    def test_the_library_branch_expectation_sees_each_part(self):
+        run = shell_module("d02_run")
+        self.assertIn("library-branch", run.IN_SAMPLE_MODE)
+        self.assertNotIn("library-branch", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "library-branch.json"))
+        written = []
+        for step in script["steps"]:
+            if "command" in step:
+                written.append(" ".join(["command", step["command"]] + ([step["argument"]] if "argument" in step else [])))
+            else:
+                written.append(f"wait {step['wait_ms']} ms")
+        self.assertEqual(["start"] + written, run.LIBRARY_BRANCH_STEPS)
+
+        def dumps(opens=True, count=0, lamp=True, loop=False):
+            out = []
+            for index, do in enumerate(run.LIBRARY_BRANCH_STEPS):
+                opened = opens and index >= 3
+                library = {"left_dock": "library" if index >= 2 else "", "panel": index >= 2,
+                           "open": ["Built-in"] if opened else [], "rows": list(run.BUILT_IN) if opened else []}
+                errors = {"lamp": lamp, "count": count if index >= 3 else 0, "failures": 0, "last": ""}
+                out.append({"step": index, "do": do, "library": library, "errors": errors,
+                            "rebuilds": 3 + (20 * index if loop else min(index, 3) - 1 if index > 1 else 0)})
+            return out
+        self.assertEqual(run.expect_library_branch(dumps(), {}, None), [])
+        self.assertEqual(len(run.expect_library_branch(dumps(loop=True), {}, None)), 1)
+        self.assertEqual(len(run.expect_library_branch(dumps(opens=False), {}, None)), 4)
+        self.assertEqual(len(run.expect_library_branch(dumps(count=1), {}, None)), 2)
+        self.assertEqual(len(run.expect_library_branch(dumps(lamp=False), {}, None)), 5)
+        self.assertTrue(run.expect_library_branch(dumps()[:4], {}, None))
 
 
 class D02Q3b(unittest.TestCase):
