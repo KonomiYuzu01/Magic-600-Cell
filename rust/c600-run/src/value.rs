@@ -1236,6 +1236,11 @@ pub fn q5_of_price(a: &Value, b: &Value, d: &Value, t: &Tariffs, dt: &DraftTarif
 
 /// The exact order of two numbers; `None` if an operand is not an exact number.
 pub fn compare(a: &Value, b: &Value) -> Option<Ordering> {
+    // Text is ordered by scalar value, the canonical key order (DET.62; T4 draft): Rust's `str` order is the order of
+    // UTF-8 bytes, which is the order of scalar values.
+    if let (Value::Text(x), Value::Text(y)) = (a, b) {
+        return Some(x.as_str().cmp(y.as_str()));
+    }
     let (x, y, rank) = exact_pair(a, b)?;
     Some(match (rank, &x, &y) {
         (0, Num::Int(m), Num::Int(n)) => m.cmp(n),

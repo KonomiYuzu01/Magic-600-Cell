@@ -4734,6 +4734,18 @@ impl<'p> Checker<'p> {
             Prim::ExactAdd | Prim::ExactLess if vals.iter().any(|v| matches!(v.ty, Ty::Cost(..))) => {
                 Ok(self.cost_arith(op, vals))
             }
+            // Text is ordered by scalar value (DET.62; T4 draft): both operands exact `Text`, or the mismatch of the
+            // operand that is not. A display text has no exact order, as it has no exact use.
+            Prim::ExactLess if vals.iter().any(|v| v.ty == Ty::Text) => {
+                for (i, v) in vals.iter().enumerate() {
+                    if v.ty == Ty::Text {
+                        self.at(i, |c| c.exact_use(Site::Operand, v, &what));
+                    } else if !is_unknown(&v.ty) {
+                        self.at(i, |c| c.misfit_slot(&Ty::Text, v, &what));
+                    }
+                }
+                Ok(Val::exact(Ty::Bool))
+            }
             Prim::ExactAdd | Prim::ExactLess | Prim::ExactMul => {
                 // The result widens along Nat, Int, Rat and Q5; a budget is a cost and mixes with integers only, so an
                 // operand that mixes it with a rational or a Q(√5) value does not fit (LG2.6). A product of costs is no

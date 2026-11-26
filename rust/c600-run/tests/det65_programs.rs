@@ -152,7 +152,12 @@ const NOT_EXPRESSIBLE: [(&str, &str); 8] = [
         "its call's frame has no slot, yet the callee binds `g` and `a` and releases them with the frame; the IR binds \
          a name with `let`, which takes a frame slot and releases at its scope's exit (DET.57)",
     ),
-    ("text-comparison", "the IR has no text order"),
+    (
+        "text-comparison",
+        "its five rows charge no memory, while an `exact_less` row reserves its one-byte boolean, as every \
+         comparison row does (DET.57); the order and its steps and kernel costs are run by \
+         `ct_det_28_text_order_runs_as_a_program` (an amendment candidate for the freeze card)",
+    ),
     (
         "abstract-trace-charges",
         "its body's `flow_check` belongs to the unselected flow-label alternative (DET.55; LQ21, RTE.24): the IR \
@@ -1202,8 +1207,8 @@ const MUL_STOP_ROWS: &[(&str, Option<&str>)] = &[
     ("entry#emit", None),
 ];
 
-/// CT-DET-28 (synthetic, part: oversized arithmetic on RT1; not run: text work and flow checks, since the IR has no
-/// text order or flow check, and RT2 and RT3 (no owner yet)): the frozen traces `oversized-arithmetic`,
+/// CT-DET-28 (synthetic, part: oversized arithmetic on RT1; not run: flow checks: DET.55 ties the run-time `flow_check` to the flow-label alternative, which LQ21 did not choose (a reading for the freeze card),
+/// and RT2 and RT3 (no owner yet)): the frozen traces `oversized-arithmetic`,
 /// `oversized-admitted` and `arithmetic-reservation` run as one program, which binds `exact_mul(a, b)` and publishes
 /// it. The product's row is the frozen `mul` row, priced from its operands' sizes (DET.57): 2^80 by itself is refused
 /// on kernel cost one unit short and admitted at its limits, and a product by zero reserves for the operands' bits and
@@ -1322,8 +1327,8 @@ fn ct_det_26_alias_traces_run_as_programs() {
     );
 }
 
-/// CT-DET-28 (synthetic, part: assertions on RT1; not run: flow checks, since the IR has no flow check, and RT2 and RT3
-/// (no owner yet)): the frozen trace `pointwise-failure` runs as a program, `check(n)`, which
+/// CT-DET-28 (synthetic, part: assertions on RT1; not run: flow checks: DET.55 ties the run-time `flow_check` to the flow-label alternative, which LQ21 did not choose (a reading for the freeze card),
+/// and RT2 and RT3 (no owner yet)): the frozen trace `pointwise-failure` runs as a program, `check(n)`, which
 /// binds `exact_less(n, 5)` and asserts it. The predicate's visit is the frozen `predicate` row and the assertion the
 /// frozen `assert` row, one step after the predicate (DET.55); `check(7)` ends there with `LG4:input.pointwise_failed`
 /// in the effect phase, emits nothing, and the cleanup releases the comparison's byte.
@@ -1364,8 +1369,8 @@ fn ct_det_28_pointwise_failure_runs_as_a_program() {
 const SPIN: &str =
     "export fn spin() -> Nat effects [] {\n    return repeat(1, 0, fn(acc: Nat) -> Nat { return acc; });\n}\n";
 
-/// CT-DET-28 (synthetic, part: loop tests on RT1; not run: flow checks, since the IR has no flow check, and RT2 and
-/// RT3 (no owner yet)): the frozen trace `final-loop-test` runs as a program, `spin()`, whose loop repeats once a body
+/// CT-DET-28 (synthetic, part: loop tests on RT1; not run: flow checks: DET.55 ties the run-time `flow_check` to the flow-label alternative, which LQ21 did not choose (a reading for the freeze card),
+/// and RT2 and RT3 (no owner yet)): the frozen trace `final-loop-test` runs as a program, `spin()`, whose loop repeats once a body
 /// that visits `acc` (DET.55; LP2 draft). Each loop test is a one-step row of its own, the final false one included:
 /// at the trace's headroom that test is refused on steps with the frozen denied row, and the cleanup releases the
 /// loop's slot and its count.
@@ -1800,4 +1805,49 @@ fn every_frozen_trace_is_realised_or_listed_once() {
     accounted.sort_unstable();
     assert_eq!(ids.len(), 40);
     assert_eq!(accounted, ids, "every frozen trace is realised or listed with its reason, exactly once");
+}
+
+/// The text order's program (DET.62; T4 draft): the ten texts of the five pairs of the frozen `text-comparison` trace
+/// arrive as arguments, and the answers leave in a record, so that no `let` scope adds a row.
+const ORDER: &str = "export fn order(a1: Text, b1: Text, a2: Text, b2: Text, a3: Text, b3: Text, a4: Text, b4: Text, \
+                     a5: Text, b5: Text) -> record { r1: Bool, r2: Bool, r3: Bool, r4: Bool, r5: Bool } effects [] {\n    \
+                     return record { r1 = exact_less(a1, b1), r2 = exact_less(a2, b2), r3 = exact_less(a3, b3), \
+                     r4 = exact_less(a4, b4), r5 = exact_less(a5, b5) };\n}\n";
+
+/// CT-DET-28 (synthetic, part: the text order on RT1; not run: the frozen `text-comparison` trace as a whole, since
+/// its rows charge no memory while an `exact_less` row reserves its boolean (an amendment candidate for the freeze
+/// card), flow checks: DET.55 ties the run-time `flow_check` to the flow-label alternative, which LQ21 did not choose
+/// (a reading for the freeze card), and RT2 and RT3 (no owner yet)): `exact_less` of two `Text` values orders them by
+/// scalar value (DET.62; T4 draft) and costs one step plus the text tariff on both complete scalar lengths, whatever
+/// the first unequal scalar is. The five pairs are the trace's: the steps and kernel costs of the five comparison
+/// rows are the frozen rows', the order of the first four is the frozen value's (`-1` is `true`), and U+10000 sorts
+/// after U+E000, which a UTF-16 order would invert.
+#[test]
+fn ct_det_28_text_order_runs_as_a_program() {
+    let root = fixtures();
+    let trace = Trace::read(vector(&root, "text-comparison"));
+    let p = program("", ORDER);
+    let pairs = trace.given.get("trace").and_then(Json::arr).expect("a trace");
+    let texts: Vec<(&str, &str)> = pairs.iter().map(|op| (text(op, "a"), text(op, "b"))).collect();
+    let args: Vec<Value> = texts.iter().flat_map(|(a, b)| [Value::text(a), Value::text(b)]).collect();
+    let mut host = TraceHost::default();
+    let run = p.loaded.run("m", "order", args, &mut host, &Options::new(WIDE)).expect("the program runs");
+    assert_eq!(run.summary.outcome, Outcome::Completed, "{}", listing(&run.summary));
+    let rows: Vec<&Row> = run.summary.rows.iter().filter(|r| r.at.ends_with("#exact_less")).collect();
+    assert_eq!(rows.len(), trace.rows.len(), "one comparison row per frozen row:{}", listing(&run.summary));
+    for (row, (at, want)) in rows.iter().zip(&trace.rows) {
+        assert_eq!(charges(row)[..2], want[..2], "`{at}`: one step and the text tariff on both scalar lengths");
+        assert_eq!(charges(row)[2..], [1, 0, 0], "`{at}`: the boolean's byte, the one difference from the frozen row");
+    }
+    // The answers: `r_i` is true exactly where the frozen value is -1, and the order is Rust's scalar order.
+    let value = run.value.as_ref().expect("the record");
+    for (i, ((a, b), (at, sign))) in texts.iter().zip(&trace.values).enumerate() {
+        let sign = sign.num().expect("a sign").parse::<i32>().expect("-1, 0 or 1");
+        assert_eq!(sign, a.cmp(b) as i32, "`{at}`: the frozen sign is the order of scalar values");
+        let want = Value::Bool(sign < 0);
+        let Value::Record(record) = value else { panic!("a record, not {value:?}") };
+        let name = format!("r{}", i + 1);
+        let got = &record.fields().iter().find(|(k, _)| k.as_str() == name).expect("an answer").1;
+        assert!(equal(got, &want), "`{at}`: exact_less says {got:?}, the trace's sign is {sign}");
+    }
 }

@@ -1070,8 +1070,8 @@ fn ct_det_26_peaks_and_live_memory_follow_the_rows() {
 }
 
 /// CT-DET-28 (synthetic, part: the reference model over the library meter and its integer tariff; RT1's arithmetic,
-/// assertions and text equality are in `conformance_det.rs`, its loop tests in `loops.rs`; not run: text order and
-/// flow checks in a program, which the IR draft does not have (no owner yet)):
+/// assertions and text equality are in `conformance_det.rs`, its text order in `det65_programs.rs`, its loop tests in
+/// `loops.rs`; not run: flow checks: DET.55 ties the run-time `flow_check` to the flow-label alternative, which LQ21 did not choose (a reading for the freeze card), and RT2 and RT3 (no owner yet)):
 /// - a multiplication's kernel cost and reservation come from its operands' bit lengths, so a zero operand still pays
 ///   for the other operand's limbs; the reservation covers the result and shrinks to it, and a denied multiplication
 ///   computes nothing;

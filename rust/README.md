@@ -498,7 +498,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   32, all in part, on RT1 only. The alias traces cross a call, since `let` scopes nest. A child trace that completes
   takes its limits at its first `child` row, so that each requested cap is cut as the trace's is.
 - The other 8 are listed with the reason the IR draft cannot express them: a call frame without a slot that holds two
-  bindings (1, generator-nested-same-name), text order (1), a flow check (1, abstract-trace-charges) and display form 2
+  bindings (1, generator-nested-same-name), a text-comparison trace whose rows charge no memory (1), a flow check (1, abstract-trace-charges) and display form 2
   (5). They still replay through the meter.
 - The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
   counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
@@ -2409,7 +2409,7 @@ run or not applicable is no pass (PHS.63).
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
   input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 8 traces need
-  what the IR draft lacks: a call frame without a slot that holds bindings, text order, a flow check and an executor
+  what the IR draft lacks: a call frame without a slot that holds bindings, memory-free comparison rows, a flow check and an executor
   for `lp1-exec-region-draft-1` (LP2). At LP3's command-table freeze they leave LP3's run under PHS.52 and stay on
   record in DET.65's vectors (owner, 20 November 2026, items 3 and 4; DET.65), so CT-RTE-04 runs whole at 32.
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.

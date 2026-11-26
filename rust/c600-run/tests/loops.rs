@@ -55,8 +55,8 @@ fn add_two(count: u32) -> String {
     )
 }
 
-/// CT-DET-28 (synthetic, part: loop tests on RT1; not run: flow checks, since the IR has no flow check, and RT2 and
-/// RT3 (no owner yet)): a loop runs its body as many times as its count says, each run reading the value so far as
+/// CT-DET-28 (synthetic, part: loop tests on RT1; not run: flow checks: DET.55 ties the run-time `flow_check` to the flow-label alternative, which LQ21 did not choose (a reading for the freeze card),
+/// and RT2 and RT3 (no owner yet)): a loop runs its body as many times as its count says, each run reading the value so far as
 /// `acc`. Each loop test is a one-step row of its own, the final false one included; the rows of iteration k are
 /// located below `#body:k`, and its owned result refills the slot with a `visit` that releases the value it replaces.
 /// The loop's `scope_exit` releases the count, and its value is the last one.

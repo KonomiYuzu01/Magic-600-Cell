@@ -151,7 +151,7 @@
 //! # Not realised: 8 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
-//! has no flow check or text order; no call frame without a slot holds a binding (`generator-nested-same-name`); and
+//! has no flow check, and the text-comparison trace's rows charge no memory where a comparison row reserves its boolean; no call frame without a slot holds a binding (`generator-nested-same-name`); and
 //! the region contract `lp1-exec-region-draft-1` has no executor yet.
 
 mod support;
@@ -239,7 +239,10 @@ const UNREALISED: [(&str, &str); 8] = [
         "its call's frame has no slot, yet the callee binds `g` and `a` and releases them with the frame; the IR binds \
          a name with `let`, which takes a frame slot and releases at its scope's exit",
     ),
-    ("text-comparison", "the IR has no text order"),
+    (
+        "text-comparison",
+        "its five rows charge no memory, while an `exact_less` row reserves its one-byte boolean, as every comparison \n         row does (DET.57); the order is run by `det65_programs.rs` (an amendment candidate for the freeze card)",
+    ),
     (
         "abstract-trace-charges",
         "its body's `flow_check` belongs to the unselected flow-label alternative (DET.55; LQ21, RTE.24): the IR has \

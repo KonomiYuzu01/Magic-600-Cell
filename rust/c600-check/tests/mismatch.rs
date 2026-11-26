@@ -325,3 +325,16 @@ fn lg4_3_mismatches_and_exactness_findings_share_one_order() {
     );
     assert!(r.diagnostics[2].mismatch.is_none() && r.diagnostics[2].value_type.as_deref() == Some("Approx"));
 }
+
+/// CT-DET-28 (part: the checker's half of the text order; not run: the interpreter's, in `c600-run`): `exact_less`
+/// admits two exact `Text` operands (DET.62; T4 draft) and no mix of a text with a number, whichever side the text
+/// is on, with the mismatch of the operand that is not a text.
+#[test]
+fn a_text_orders_only_with_a_text() {
+    let admitted = f(Ty::Bool, prim(Prim::ExactLess, vec![text("a"), text("ab")]));
+    assert!(report(&admitted).is_admitted(), "{:#?}", report(&admitted).diagnostics);
+    let text_first = f(Ty::Bool, prim(Prim::ExactLess, vec![text("a"), nat(1)]));
+    assert_only(&text_first, "f", "1", "Text", "Nat");
+    let text_second = f(Ty::Bool, prim(Prim::ExactLess, vec![nat(1), text("a")]));
+    assert_only(&text_second, "f", "0", "Text", "Nat");
+}
