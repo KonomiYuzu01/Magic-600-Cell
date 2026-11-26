@@ -372,6 +372,31 @@ def expect_nu_band(dumps: list[dict], source: dict, state: str | None) -> list[s
     return problems
 
 
+def expect_fit(dumps: list[dict], source: dict, state: str | None, vertical: bool = True) -> list[str]:
+    """The frame fits the window (owner, 26 November 2026: "看不到"): at the script's resolution the top bar, the docks,
+    Global and Local lie wholly inside the window, and Local is at least 0.2 of the pair (ADR-D01's minimum). In a
+    small window (fit-1280) only the width is checked: nothing lies past the right edge; the frame may scroll down."""
+    frame = dumps[-1].get("frame") if dumps else None
+    if not isinstance(frame, dict) or "window" not in frame:
+        return ["the run wrote no frame geometry"]
+    width, height = frame["window"]
+    problems = []
+    for key in ("top_bar", "global", "local"):
+        if key not in frame:
+            problems.append(f"the {key.replace('_', ' ')} is not on screen")
+    for key, (x, y, w, h) in ((k, v) for k, v in frame.items() if k not in ("window", "min")):
+        if x < -0.5 or x + w > width + 0.5 or (vertical and (y < -0.5 or y + h > height + 0.5)):
+            problems.append(f"the {key.replace('_', ' ')} lies outside the {width:.0f}x{height:.0f} window: "
+                            f"x {x:.0f} to {x + w:.0f}, y {y:.0f} to {y + h:.0f}")
+    if "global" in frame and "local" in frame:
+        share = frame["local"][2] / (frame["global"][2] + frame["local"][2])
+        if share < 0.2:
+            problems.append(f"Local is {share:.2f} of the pair's width, under ADR-D01's 0.2")
+        print(f"fit: window {width:.0f}x{height:.0f}; Global {frame['global'][2]:.0f} px, Local {frame['local'][2]:.0f} px "
+              f"({share:.2f} of the pair)")
+    return problems
+
+
 # The wheel zoom (owner, 26 November 2026: "我现在没法zoom in"): wheel up zooms in, one notch multiplies the zoom by
 # 1.1, and the zoom stays within 0.5 to 4 times the opening's. The core multiplies the projected picture by the zoom
 # (geometry.hlsl), so a larger zoom sent is a larger picture.
@@ -688,11 +713,12 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
 
 EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
           "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
-          "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band}
+          "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band,
+          "fit-2000": expect_fit, "fit-1280": lambda dumps, source, state: expect_fit(dumps, source, state, vertical=False)}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
-ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band"}
-IN_SAMPLE_MODE = {"host", "nu-band"}
+ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
+IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280"}
 
 
 # The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.
@@ -869,6 +895,9 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
 
     arguments = ["--out", str(out), "--frame", "--puzzle", "jumble-on", "--d02", "--d02-script", str(path)]
     arguments += ["--sample"] if script in IN_SAMPLE_MODE else []
+    # A script may name the window's size (the fit scripts: the owner's 2000x1200 and a smaller 1280x720).
+    resolution = json.loads(path.read_text(encoding="utf-8")).get("resolution")
+    arguments += ["--resolution", resolution] if resolution else []
     arguments += ["--build", str(build)] if build else []
     arguments += ["--d02-state", state] if state else []
     arguments += ["--d02-fixture", str(fixture)] if fixture is not None and (fixture / "fixture.json").is_file() else []

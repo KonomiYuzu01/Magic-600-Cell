@@ -1653,7 +1653,7 @@ class D02Host(unittest.TestCase):
 
     def test_the_host_expectation_sees_each_part(self):
         run = shell_module("d02_run")
-        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band"})
+        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280"})
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]
@@ -2145,6 +2145,41 @@ class D02Nu(unittest.TestCase):
             self.assertEqual(words[state], letters[cid], state)
             self.assertEqual(totals["correction"]["letters"], letters[cid], state)
         self.assertEqual(fixtures.NOT_BUILT, {})
+
+
+class D02Fit(unittest.TestCase):
+    """The frame fits the window (owner, 26 November 2026: "看不到"): the fit scripts and their expectation."""
+
+    def frame(self, **change):
+        frame = {"window": [2000, 1200], "top_bar": [0, 0, 2000, 39], "left_dock": [0, 39, 324, 1161],
+                 "right_dock": [1676, 39, 324, 1161], "bottom_dock": [324, 984, 1352, 216],
+                 "global": [324, 231, 672, 673], "local": [1211, 231, 465, 673], "min": {}}
+        frame.update(change)
+        return [{"do": "wait 1000 ms", "frame": frame}]
+
+    def test_the_fit_expectation_finds_what_lies_outside(self):
+        run = shell_module("d02_run")
+        self.assertEqual(run.expect_fit(self.frame(), {}, "wj-ia-300"), [])
+        self.assertTrue(any("local lies outside" in p for p in run.expect_fit(self.frame(local=[1850, 231, 465, 673]), {}, None)))
+        self.assertTrue(any("under ADR-D01's 0.2" in p for p in run.expect_fit(self.frame(local=[1211, 231, 100, 673]), {}, None)))
+        self.assertTrue(any("not on screen" in p for p in run.expect_fit([{"do": "x", "frame": {"window": [2000, 1200]}}], {}, None)))
+        low = self.frame(bottom_dock=[324, 984, 1352, 400])
+        self.assertTrue(run.expect_fit(low, {}, None))
+        self.assertEqual(run.EXPECT["fit-1280"](low, {}, None), [], "the small window checks the width only")
+        for name, size in (("fit-2000", "2000x1200"), ("fit-1280", "1280x720")):
+            script = json.loads(text(SHELL / "d02_scripts" / f"{name}.json"))
+            self.assertEqual(script["resolution"], size)
+            self.assertIn(name, run.ON_FIXTURE)
+
+    def test_the_frame_folds_and_scrolls_instead_of_widening(self):
+        frame = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "ChromeFrame.cs")
+        self.assertIn("public HFlowContainer Tools", frame)
+        self.assertIn("public VBoxContainer Readouts", frame)
+        self.assertIn("TopBarClip", frame)
+        self.assertEqual(frame.count('Name = "DockScroll"'), 2)
+        self.assertIn("public const float RightDockBelow = 1600, LeftDockBelow = 1440;", frame)
+        readouts = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleReadouts.cs")
+        self.assertIn("public sealed partial class ReadoutRow : HFlowContainer", readouts)
 
 if __name__ == "__main__":
     unittest.main()

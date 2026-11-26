@@ -779,6 +779,60 @@ internal sealed partial class D02Driver : Node
                 json.WriteEndArray();
                 json.WriteEndObject();
             }
+            // The frame's geometry (owner, 26 November 2026: "看不到"): the window, the frame's minimum size and
+            // the rectangles of the top bar, the docks and the pair, so a run checks that everything is inside.
+            if (_frame != null && GodotObject.IsInstanceValid(_frame))
+            {
+                json.WriteStartObject("frame");
+                var window = _frame.GetViewportRect().Size;
+                json.WriteStartArray("window");
+                json.WriteNumberValue(window.X);
+                json.WriteNumberValue(window.Y);
+                json.WriteEndArray();
+                foreach (var (key, node) in new (string, Control?)[]
+                {
+                    ("top_bar", _frame.FindChild("TopBar", true, false) as Control), ("left_dock", _frame.FindChild("LeftDock", true, false) as Control),
+                    ("right_dock", _frame.FindChild("RightDock", true, false) as Control), ("bottom_dock", _frame.FindChild("BottomDock", true, false) as Control),
+                    ("global", _frame.Global), ("local", _frame.Local),
+                })
+                {
+                    if (node == null || !GodotObject.IsInstanceValid(node) || !node.IsVisibleInTree())
+                    {
+                        continue;
+                    }
+                    var rect = node.GetGlobalRect();
+                    json.WriteStartArray(key);
+                    json.WriteNumberValue(rect.Position.X);
+                    json.WriteNumberValue(rect.Position.Y);
+                    json.WriteNumberValue(rect.Size.X);
+                    json.WriteNumberValue(rect.Size.Y);
+                    json.WriteEndArray();
+                }
+                // The minimum sizes that decide whether the frame fits: each part's combined minimum width and height.
+                json.WriteStartObject("min");
+                foreach (var (key, node) in new (string, Control?)[]
+                {
+                    ("frame", _frame.GetChildOrNull<Control>(0)), ("top_bar", _frame.FindChild("TopBar", true, false) as Control),
+                    ("left_dock", _frame.FindChild("LeftDock", true, false) as Control), ("right_dock", _frame.FindChild("RightDock", true, false) as Control),
+                    ("bottom_dock", _frame.FindChild("BottomDock", true, false) as Control), ("global", _frame.Global), ("local", _frame.Local),
+                    ("global_slot", _frame.Global?.Slot), ("global_tools", _frame.Global?.Tools), ("local_slot", _frame.Local?.Slot),
+                    ("local_tools", _frame.Local?.Tools), ("seam", _frame.FindChild("PairSeam", true, false) as Control),
+                    ("pair", _frame.FindChild("MainPair", true, false) as Control),
+                })
+                {
+                    if (node == null || !GodotObject.IsInstanceValid(node))
+                    {
+                        continue;
+                    }
+                    var size = node.GetCombinedMinimumSize();
+                    json.WriteStartArray(key);
+                    json.WriteNumberValue(size.X);
+                    json.WriteNumberValue(size.Y);
+                    json.WriteEndArray();
+                }
+                json.WriteEndObject();
+                json.WriteEndObject();
+            }
             // B26: the ν band's line and cells, and the ν-corrections panel's lines.
             if (ShellJumble.Host is { } nuHost)
             {

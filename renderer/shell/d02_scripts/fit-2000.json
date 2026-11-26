@@ -1,0 +1,14 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "fit-2000",
+  "resolution": "2000x1200",
+  "note": "The frame fits the window at 2000x1200 (owner, 26 November 2026: \"看不到\"): the top bar, the docks, Global and Local lie inside the window, and Local is at least 0.2 of the pair (ADR-D01's minimum).",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "wait_ms": 1000
+    }
+  ]
+}

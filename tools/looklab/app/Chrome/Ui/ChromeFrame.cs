@@ -52,8 +52,11 @@ public sealed partial class ViewFrame : PanelContainer
     public string ViewName { get; }
     public Control Slot { get; } = new() { ClipContents = true, SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Pass };
     public HBoxContainer Marks { get; } = new() { MouseFilter = MouseFilterEnum.Ignore };
+    // A view's readout rows: the footer's full width, above its name line, each row wrapping by whole readouts.
+    public VBoxContainer Readouts { get; } = new() { Name = "Readouts", SizeFlagsHorizontal = SizeFlags.ExpandFill };
     public Label Status { get; } = ChromeWidgets.Text("", "DimLabel", true);
-    public HBoxContainer Tools { get; } = new();
+    // The footer's tools and readouts wrap onto a second line rather than widen the frame past the window.
+    public HFlowContainer Tools { get; } = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 4, Alignment = FlowContainer.AlignmentMode.End };
     public bool Focused { get; private set; }
     // With labels off a mark is its glyph alone; its words stay in the tooltip.
     public bool ShowLabels { get; set; } = true;
@@ -70,8 +73,11 @@ public sealed partial class ViewFrame : PanelContainer
         column.AddChild(Slot);
         var line = new PanelContainer { ThemeTypeVariation = "BarBottom", CustomMinimumSize = new Vector2(0, tokens.Px("status.height")) };
         column.AddChild(line);
-        var row = new HBoxContainer(); line.AddChild(row);
+        var lines = new VBoxContainer(); lines.AddThemeConstantOverride("separation", 0); line.AddChild(lines);
+        Readouts.AddThemeConstantOverride("separation", 0); lines.AddChild(Readouts);
+        var row = new HBoxContainer(); lines.AddChild(row);
         var pad = new Control { CustomMinimumSize = new Vector2(tokens.Px("space.2"), 0) }; row.AddChild(pad);
+        Status.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         row.AddChild(ChromeWidgets.Text(name, "AccentLabel")); row.AddChild(Status); row.AddChild(Tools);
         Marks.Position = new Vector2(tokens.Px("space.3"), tokens.Px("space.3")); Marks.AddThemeConstantOverride("separation", tokens.Px("space.2"));
     }
@@ -339,8 +345,16 @@ public sealed partial class ChromeFrame : Control
     public void Invalidate() => dirty = true;
     public void Flush() { if (dirty) Build(); }
 
+    // The most of the window's width one side dock's panel takes (owner, 26 November 2026: the pair always fits).
+    public const float DockShare = .16f;
+    // Below these widths the right dock's panel, then the left's, folds to its rail.
+    public const float RightDockBelow = 1600, LeftDockBelow = 1440;
+    private Vector2 builtFor;
+
     public override void _Process(double delta)
     {
+        // A new window size lays the frame out again, so the docks follow it.
+        if (GetViewportRect().Size != builtFor) { builtFor = GetViewportRect().Size; dirty = true; }
         Flush();
         Vector2 mouse = GetGlobalMousePosition();
         Hover(Global.GetGlobalRect().HasPoint(mouse) ? Global : Local.GetGlobalRect().HasPoint(mouse) ? Local : null);
@@ -386,7 +400,10 @@ public sealed partial class ChromeFrame : Control
     private Control TopBar()
     {
         var bar = new PanelContainer { Name = "TopBar", ThemeTypeVariation = "BarTop", CustomMinimumSize = new Vector2(0, Tokens.Px("bar.height")) };
-        var row = new HBoxContainer(); bar.AddChild(row);
+        // The bar clips at the window's edge instead of widening the frame (owner, 26 November 2026).
+        var clip = new ScrollContainer { Name = "TopBarClip", HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        bar.AddChild(clip);
+        var row = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; clip.AddChild(row);
         row.AddChild(new Control { CustomMinimumSize = new Vector2(Tokens.Px("space.3"), 0) });
         row.AddChild(ChromeWidgets.Text("600", "AccentLabel"));
         row.AddChild(new VSeparator());
@@ -453,10 +470,17 @@ public sealed partial class ChromeFrame : Control
             if (badges.ContainsKey(panel.Id)) { Label badge = BadgeLabel(panel.Id); badge.MouseFilter = MouseFilterEnum.Ignore; badge.Position = new Vector2(Tokens.Px("rail.width") * .55f, 0); button.AddChild(badge); }
         }
         Control? content = null;
-        if (dockPanels.FirstOrDefault(p => p.Side == side && p.Id == state.Open) is { } open)
+        // A narrow window keeps the pair whole: the right dock's panel folds to its rail first, then the left's. The
+        // open panel stays open in the model and returns when the window is wide enough.
+        bool squeezed = GetViewportRect().Size.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
+        if (!squeezed && dockPanels.FirstOrDefault(p => p.Side == side && p.Id == state.Open) is { } open)
         {
-            var holder = new PanelContainer { ThemeTypeVariation = side == DockSide.Left ? "DockLeft" : "DockRight", CustomMinimumSize = new Vector2(Tokens.Px("dock.width"), 0) };
-            holder.AddChild(PanelBody(open)); content = holder;
+            // A side dock is at most DockShare of the window, so the pair keeps its room in a narrow window.
+            var holder = new PanelContainer { ThemeTypeVariation = side == DockSide.Left ? "DockLeft" : "DockRight", CustomMinimumSize = new Vector2(Math.Min(Tokens.Px("dock.width"), GetViewportRect().Size.X * DockShare), 0) };
+            // A panel wider or taller than the dock scrolls in it; it never pushes the frame past the window.
+            var scroll = new ScrollContainer { Name = "DockScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
+            Control panelBody = PanelBody(open); panelBody.SizeFlagsHorizontal = SizeFlags.ExpandFill; scroll.AddChild(panelBody);
+            holder.AddChild(scroll); content = holder;
         }
         if (side == DockSide.Left) { row.AddChild(rail); if (content != null) row.AddChild(content); }
         else { if (content != null) row.AddChild(content); row.AddChild(rail); }
@@ -480,8 +504,11 @@ public sealed partial class ChromeFrame : Control
         }
         if (dockPanels.FirstOrDefault(p => p.Side == DockSide.Bottom && p.Id == state.Open) is { } open)
         {
-            var body = new MarginContainer { CustomMinimumSize = new Vector2(0, Tokens.Px("dock.height")) };
-            body.AddChild(open.Content); column.AddChild(new HSeparator()); column.AddChild(body);
+            // At most a quarter of the window's height, so the pair keeps its room in a low window.
+            var body = new MarginContainer { CustomMinimumSize = new Vector2(0, Math.Min(Tokens.Px("dock.height"), GetViewportRect().Size.Y * .25f)) };
+            var scroll = new ScrollContainer { Name = "DockScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
+            open.Content.SizeFlagsHorizontal = SizeFlags.ExpandFill; open.Content.SizeFlagsVertical = SizeFlags.ExpandFill; scroll.AddChild(open.Content);
+            body.AddChild(scroll); column.AddChild(new HSeparator()); column.AddChild(body);
         }
         return holder;
     }
@@ -523,7 +550,15 @@ public sealed partial class ChromeFrame : Control
         {
             BoxContainer edge = (BoxContainer)Tight(side ? new HBoxContainer() : new VBoxContainer()); edge.Name = "PairSeam";
             edge.SizeFlagsHorizontal = SizeFlags.ExpandFill; edge.SizeFlagsVertical = SizeFlags.ExpandFill; edge.SizeFlagsStretchRatio = (float)(1 - Model.PairRatio);
-            (seam as IPairSeam)?.Arrange(side); edge.AddChild(seam); edge.AddChild(Local); split.AddChild(edge);
+            (seam as IPairSeam)?.Arrange(side);
+            // Side by side, the seam's column scrolls when the window is lower than its readouts.
+            if (side)
+            {
+                var seamScroll = new ScrollContainer { Name = "SeamScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
+                seam.SizeFlagsVertical = SizeFlags.ExpandFill; seamScroll.AddChild(seam); edge.AddChild(seamScroll);
+            }
+            else edge.AddChild(seam);
+            edge.AddChild(Local); split.AddChild(edge);
         }
         else split.AddChild(Local);
         split.DragEnded += () => { if (!Model.SetPairArrangement(Model.PairArrangement, Math.Clamp(Ratio(split), .2, .8))) dirty = true; };

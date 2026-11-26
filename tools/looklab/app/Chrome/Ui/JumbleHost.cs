@@ -472,13 +472,14 @@ public sealed class JumbleHost
     private void Row(ViewFrame view, string name, IReadOnlyList<ReadoutSlot> slots, IReadOnlySet<int> marked, bool on)
     {
         if (!GodotObject.IsInstanceValid(view)) return;
-        ReadoutRow? row = view.Tools.GetNodeOrNull<ReadoutRow>(name);
+        // The readouts take the footer's full width and wrap there (owner, 26 November 2026: the frame fits the window).
+        ReadoutRow? row = view.Readouts.GetNodeOrNull<ReadoutRow>(name);
         if (!on)
         {
-            if (row != null) { view.Tools.RemoveChild(row); row.QueueFree(); }
+            if (row != null) { view.Readouts.RemoveChild(row); row.QueueFree(); }
             return;
         }
-        if (row == null) { row = new ReadoutRow(name, () => frame.Tokens); view.Tools.AddChild(row); view.Tools.MoveChild(row, 0); }
+        if (row == null) { row = new ReadoutRow(name, () => frame.Tokens) { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; view.Readouts.AddChild(row); }
         row.Show(slots, marked);
     }
 
