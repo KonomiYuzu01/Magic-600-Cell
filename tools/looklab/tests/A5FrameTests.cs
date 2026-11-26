@@ -170,10 +170,10 @@ internal static partial class Program
         var effects = new[] { new OrbitEffect("a", 2, 10) }; string[] three = { "m1", "m2", "m3" };
         var preview = new PreviewModel(); int changes = 0; preview.Changed += () => changes++;
         Equal(preview.CommitRefusal(0), "there is no preview"); Check(preview.Take(0) == null && !preview.Discard(), "nothing to take");
-        Preview first = preview.Show("preview a", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 10);
+        Preview first = preview.Show(Origin.Solver, "preview a", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 10);
         Check(first.Id == 1 && preview.Scrub == 3 && !preview.Replaced && preview.CommitRefusal(10) == null, "a first preview commits at once");
         // A replacement takes a new id and cannot be committed inside the settle interval.
-        Preview second = preview.Show("preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 20);
+        Preview second = preview.Show(Origin.Solver, "preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 20);
         Check(second.Id == 2 && preview.Replaced && preview.CommitRefusal(20 + PreviewModel.Settle / 2) != null && preview.Take(20.1) == null && preview.Pending == second, "settle");
         Check(preview.CommitRefusal(20 + PreviewModel.Settle * 1.01) == null, "settle ends");
         preview.SetScrub(9); Equal(preview.Scrub, 3); preview.SetScrub(0); Check(preview.CommitRefusal(30) != null, "an empty prefix commits nothing");
@@ -182,16 +182,16 @@ internal static partial class Program
         preview.SetScrub(2);
         Check(preview.AtPrefix && preview.Take(30) == null && preview.Pending is { Id: 3, Status: PreviewStatus.Refused, Evaluated: false } && preview.Pending.Reason == PreviewModel.NoPrefixCheck && preview.Pending.Moves.Count == 2,
             "a prefix was taken without a check of its own");
-        preview.Show("preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 31);
+        preview.Show(Origin.Solver, "preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 31);
         preview.Recheck = (_, m) => new PreviewCheck(PreviewStatus.Ready, null, new[] { new OrbitEffect("a", m.Count, 10) }, "prefix ok");
         preview.SetScrub(2); Preview prefix = preview.Take(32)!;
         Check(prefix.Id == 5 && prefix.Moves.Count == 2 && prefix.Statement.EndsWith("prefix(2)", StringComparison.Ordinal) && prefix.Effects.Single().Moved == 2 && prefix.Protection == "prefix ok" && preview.Pending == null,
             "the prefix is its own preview, with its own check");
         preview.Recheck = null;
-        Refuse(() => preview.Show("preview c", "x", three, PreviewStatus.Refused, " ", effects, "ok", 40), "preview");
-        preview.Show("preview c", "package", Array.Empty<string>(), PreviewStatus.Refused, "not yours", effects, "none", 40);
+        Refuse(() => preview.Show(Origin.Solver, "preview c", "x", three, PreviewStatus.Refused, " ", effects, "ok", 40), "preview");
+        preview.Show(Origin.Solver, "preview c", "package", Array.Empty<string>(), PreviewStatus.Refused, "not yours", effects, "none", 40);
         Check(preview.CommitRefusal(99) == "not yours" && preview.Take(99) == null, "a refused preview never commits");
-        preview.Show("preview d", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 50); preview.MarkStale("state moved");
+        preview.Show(Origin.Solver, "preview d", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 50); preview.MarkStale("state moved");
         Check(preview.Pending!.Status == PreviewStatus.Stale && preview.Take(99) == null && preview.Discard() && preview.Pending == null && changes > 8, "stale");
 
         var moves = new MoveHistory();

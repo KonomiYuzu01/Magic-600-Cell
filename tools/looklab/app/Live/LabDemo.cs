@@ -107,7 +107,7 @@ internal sealed class LabDemo
     // untouched.
     public void Refuse(string statement, string source, string reason)
     {
-        Preview.Show(statement, source, Array.Empty<string>(), PreviewStatus.Refused, reason, Array.Empty<OrbitEffect>(), "Nothing was prepared.", Clock());
+        Preview.Show(Origin.Solver, statement, source, Array.Empty<string>(), PreviewStatus.Refused, reason, Array.Empty<OrbitEffect>(), "Nothing was prepared.", Clock());
         OpenPane();
     }
 
@@ -115,7 +115,7 @@ internal sealed class LabDemo
     {
         Current = (sample ?? nextSample++) % Samples.Count;
         PreviewSample s = Samples[Current]; PreviewCheck check = s.Check();
-        Preview.Show(s.Statement, s.Source, s.Moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
+        Preview.Show(Origin.Solver, s.Statement, s.Source, s.Moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
         OpenPane();
     }
 
@@ -124,7 +124,7 @@ internal sealed class LabDemo
     // (or of its prefix) is named in the history.
     private Preview ShowChecked(string statement, string source, IReadOnlyList<string> moves, PreviewCheck check, string origin, string name)
     {
-        Preview shown = Preview.Show(statement, source, moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
+        Preview shown = Preview.Show(Origin.Solver, statement, source, moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
         rebuilt = (shown.Id, new PreviewSample(statement, source, origin, name, moves.ToArray()));
         OpenPane(); return shown;
     }
@@ -158,7 +158,7 @@ internal sealed class LabDemo
             frame.Say($"Preview rebuilt: {said}; its witness is the changed twist, checked again (sample rule)", shown.Status != PreviewStatus.Ready);
             return;
         }
-        Preview.Show(to, p.Source, moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
+        Preview.Show(Origin.Solver, to, p.Source, moves, check.Status, check.Reason, check.Effects, check.Protection, Clock());
         rebuilt = null; frame.Say($"Preview changed: {said}; no witness is built for it here, so it cannot be committed", true);
     }
 
@@ -178,7 +178,7 @@ internal sealed class LabDemo
     // and 2); the Goal never gates (OperationDraft.StagedCheck). A prefix of it is rechecked by the draft's own
     // prefix check, under the draft's protection policy (OperationDraft.PrefixCheck).
     public void StageDraft(string statement, IReadOnlyList<string> moves, PreviewCheck check, Func<IReadOnlyList<string>, PreviewCheck> prefixCheck) =>
-        Preview.Show(statement, "draft", moves, check.Status, check.Reason, check.Effects, check.Protection, Clock(), prefixCheck);
+        Preview.Show(Origin.Solver, statement, "draft", moves, check.Status, check.Reason, check.Effects, check.Protection, Clock(), prefixCheck);
 
     // A twist in Direct that came from a typed line: staged as the preview, never committed (ADR-D01.58).
     public void StageTwist(string twist)

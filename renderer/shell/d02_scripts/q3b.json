@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "q3b",
-  "note": "B10's Q3.b test in the shell, on wj-ia-300's session fixture (about 19 s to open): name cap 150 by keys, then jumble.seat.hold 1 releases seat 1's twelve twists at the Q3.b rhythm, faster than the sample checks complete (three ticks of 150 ms). Between the releases the driver cancels every release that is no longer the latest request and counts the cancels that changed the kept list on screen (N-1: none). The final list must equal the rhythm's own result: completed rows in release order, each run of superseded releases folded as \"not checked:\" with its twists' glyphs.",
+  "note": "B10's Q3.b test in the shell, on wj-ia-300's session fixture (about 19 s to open): name cap 150 by keys, then jumble.seat.hold 1 releases seat 1's twelve twists at the Q3.b rhythm, faster than the sample checks complete (three ticks of 150 ms). Between the releases the driver cancels every release that is no longer the latest request and counts the cancels that changed the kept list on screen (N-1: none). The final list must equal the rhythm's own result: completed rows in release order, each run of superseded releases folded as \"not checked:\" with its twists' glyphs. C2-1: each cancel holds the jobs' clock and the run compares the whole screen before and after it; a last step closes Local's open section under the same two reads, a negative control the run must count as a change.",
   "steps": [
     {
       "wait_ms": 25000
@@ -95,6 +95,9 @@
     },
     {
       "wait_ms": 1000
+    },
+    {
+      "screen_control": true
     }
   ]
 }

@@ -84,7 +84,7 @@ public sealed class JumbleHost
         Entry = new EntrySlot(Settings);
         Surface = new JumbleSurface(Local, () => frame.Tokens, names, emptySentence, emptyBody);
         Surface.RepairPicked += Pick;
-        Stage = new RepairStage(Ledger);
+        Stage = new RepairStage(Ledger, () => Source.State.SessionKind == JumbleSessionKind.Solving);
         Surface.AddChild(new RepairStageBar(Stage, () => frame.Tokens));
         string title = names.TryGetValue("cap_map", out string? name) ? name : "Cap map";
         CapMap = new CapMapPanel(Settings, () => frame.Tokens, title);
@@ -161,7 +161,8 @@ public sealed class JumbleHost
     {
         if (Repair == null) return;
         picks.Add(row);
-        Stage.Stage(Repair, row, RepairSteps, asked);
+        // The solver picked the row from the repair list: the solver's own word (the 17 October exception).
+        Stage.Stage(Repair, row, RepairSteps, asked, Origin.Solver);
         Safe.Raise(RepairPicked, row);
     }
 
@@ -314,9 +315,29 @@ public sealed class JumbleHost
         if (Local.Open != "twist_check") Local.Toggle("twist_check");
     }
 
+    // The jobs' clock stands still while Paused: the shell's Q3.b check holds it between its two reads of the screen,
+    // so that no check completes in between (C2-1).
+    public bool Paused { get; set; }
+
+    // A newer request supersedes the older ones (Q3.b): the job layer withdraws every release at the named cap that is
+    // no longer the latest request, and the kept list takes each cancel, which N-1 says leaves the screen unchanged.
+    // Answers how many releases were cancelled.
+    public int CancelOlder()
+    {
+        if (Checks is not { } kept) return 0;
+        long[] older = kept.Released.Where(r => r != kept.Pending).ToArray();
+        foreach (long release in older)
+        {
+            jobs.Cancel(release);
+            kept.Cancel(release);
+        }
+        return older.Length;
+    }
+
     // One tick of the sample jobs' clock: due checks complete (only the latest is taken), then due releases are made.
     public void Tick()
     {
+        if (Paused) return;
         foreach (var (release, item) in jobs.Tick())
             if (Checks != null && results.TryGetValue(item, out TwistCheck? check)) Checks.Complete(release, check);
         foreach (var (_, item) in seat.Where(s => s.Tick == jobs.Now).ToArray())

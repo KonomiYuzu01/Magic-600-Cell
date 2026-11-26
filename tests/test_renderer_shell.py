@@ -1735,13 +1735,37 @@ class D02Q3b(unittest.TestCase):
         self.assertEqual(kept[0], "not checked: 150·1 150·2")
         lines = [["view:Local", f"▾ Twist check · {len(kept)}"]] + [["view:Local", line] for line in kept if line.startswith("not")]
 
-        def dumps(changes=0, rows=kept):
+        closed = [["view:Local", f"▸ Twist check · {len(kept)}"]]
+
+        def dumps(changed=False, rows=kept, control_after=closed):
+            # C2-1: a cancel step carries the whole screen read before it; one that changed any region must count.
+            after = lines + [["view:Global", "N 98,048"]] if changed else lines
             return [{"do": "start", "lines": []}, {"do": "wait 2000 ms", "lines": []},
-                    {"do": "wait 1000 ms", "lines": lines, "kept": rows, "cancels": 99, "screen_changes_on_cancel": changes}]
+                    {"do": "cancel older", "lines_before": lines, "lines": lines, "cancels": 4},
+                    {"do": "cancel older", "lines_before": lines, "lines": after, "cancels": 99},
+                    {"do": "wait 1000 ms", "lines": lines, "kept": rows, "cancels": 99},
+                    {"do": "screen control", "lines_before": lines, "lines": control_after, "cancels": 99}]
         self.assertEqual(run.expect_q3b(dumps(), {}, "wj-ia-300"), [])
-        self.assertEqual(len(run.expect_q3b(dumps(changes=1), {}, "wj-ia-300")), 1)
+        # A change in a region other than the kept list counts too.
+        changed = run.expect_q3b(dumps(changed=True), {}, "wj-ia-300")
+        self.assertEqual(len(changed), 1)
+        self.assertIn("cancel step 2 changed the screen", changed[0])
+        # The negative control: a run whose two reads cannot see a change fails.
+        blind = run.expect_q3b(dumps(control_after=lines), {}, "wj-ia-300")
+        self.assertEqual(blind, ["the negative control's screen change was not counted; the two reads do not see the screen"])
+        no_before = dumps()
+        del no_before[2]["lines_before"]
+        self.assertEqual(run.expect_q3b(no_before, {}, "wj-ia-300"), ["a cancel or control step's dump has no screen read before it"])
         self.assertEqual(len(run.expect_q3b(dumps(rows=kept[1:]), {}, "wj-ia-300")), 1)
         self.assertTrue(run.expect_q3b(dumps(), {}, "ia-40"))
+        script = json.loads(text(SHELL / "d02_scripts" / "q3b.json"))
+        self.assertEqual(script["steps"][-1], {"screen_control": True})
+        # The cancel goes through the host, with the jobs' clock held; nothing compares only the kept list.
+        driver = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertIn("_cancels += host.CancelOlder();", driver)
+        self.assertIn("_screenBefore = ScreenText.Of(_frame);", driver)
+        self.assertNotIn("kept.Cancel(", driver)
+        self.assertIn("if (Paused) return;", host)
 
 
 class D02Covers(unittest.TestCase):
@@ -1837,11 +1861,32 @@ class D02Repair(unittest.TestCase):
         host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
         self.assertEqual(host.count("Stage.Stage("), 1)
         pick = host[host.index("public void Pick(RepairRow row, UserEvent asked)"):]
-        self.assertIn("Stage.Stage(Repair, row, RepairSteps, asked);", pick[:pick.index(chr(10) + "    }")])
+        self.assertIn("Stage.Stage(Repair, row, RepairSteps, asked, Origin.Solver);", pick[:pick.index(chr(10) + "    }")])
         ui = "".join(text(path) for path in (ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui").glob("*.cs"))
         self.assertEqual(ui.count(".Stage("), 1)
         lists = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleLists.cs")
         self.assertIn('Picked?.Invoke(focused, UserEvent.Key("Enter"))', lists)
+        # C2-1's nit: a UserEvent is made only by an input handler, in the list control.
+        app = ROOT / "tools" / "looklab" / "app"
+        makers = sorted(path.name for path in app.rglob("*.cs") if "UserEvent.Key(" in text(path) or "UserEvent.Click(" in text(path))
+        self.assertEqual(makers, ["JumbleLists.cs"])
+
+    def test_every_staging_entry_admits_its_origin(self):
+        """C2-6: the preview, the repair stage and typed twists take a required origin and admit it themselves, with
+        the session's own flag; no caller passes a solving flag in."""
+        model = ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model"
+        boundary, session = text(model / "Boundary.cs"), text(model / "Session.cs")
+        self.assertIn("public SealedSpan? Stage(RepairListModel list, RepairRow row, RepairSteps steps, UserEvent? asked, Origin origin)", boundary)
+        self.assertIn("public bool Type(Letter letter, Origin origin)", boundary)
+        self.assertIn("internal void Type(Letter letter)", boundary)
+        self.assertIn("string? refusal = PreviewAdmission.Admit(origin, solvingSession());", boundary)
+        self.assertIn("public Preview Show(Origin origin, string statement,", session)
+        self.assertIn("if (Admit(origin, SolvingSession?.Invoke() ?? true) is string refused)", session)
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn("new RepairStage(Ledger, () => Source.State.SessionKind == JumbleSessionKind.Solving)", host)
+        # Admission is called only by the staging entries and the tests, never with a flag a caller chose.
+        callers = sorted(path.name for path in (ROOT / "tools" / "looklab" / "app").rglob("*.cs") if "Admit(" in text(path))
+        self.assertEqual(callers, ["Boundary.cs", "Session.cs"])
 
     def test_the_list_takes_its_own_keys_and_the_words_are_the_record(self):
         frame = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "ChromeFrame.cs")

@@ -370,16 +370,30 @@ def q3b_kept(record: dict) -> list[str]:
 def expect_q3b(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """B10's q3b script: the kept list equals the rhythm's own result (completed rows in release order, each run of
     superseded releases folded as "not checked:" with its glyphs only), Local's Twist check section shows it with its
-    count, and no cancel of an older release changed the screen (printed as screen_changes_on_cancel)."""
+    count, and no cancel of an older release changed the screen (printed as screen_changes_on_cancel).
+
+    C2-1: each cancel step's dump holds the whole screen read before the host's cancel (`lines_before`, with the jobs'
+    clock held) and after frames passed (`lines`); any difference in any region counts. The last step is a negative
+    control: the same two reads around a deliberate change (Local's open section closes), which must count."""
     if state is None or not (SAMPLES / state / "cap-150.json").is_file():
         return ["the q3b script needs a sample state with a record of cap 150"]
-    if len(dumps) < 3 or dumps[-1]["do"] != "wait 1000 ms":
+    if len(dumps) < 4 or dumps[-2]["do"] != "wait 1000 ms" or dumps[-1]["do"] != "screen control":
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
-    last, problems = dumps[-1], []
-    changes, cancels = last.get("screen_changes_on_cancel"), last.get("cancels", 0)
-    print(f"screen_changes_on_cancel={changes} cancels={cancels}")
-    if changes != 0:
-        problems.append(f"{changes} cancels of an older release changed the screen")
+    last, control, problems = dumps[-2], dumps[-1], []
+    cancel_steps = [dump for dump in dumps if dump["do"] == "cancel older"]
+    if any("lines_before" not in dump for dump in cancel_steps + [control]):
+        return ["a cancel or control step's dump has no screen read before it"]
+    changed = [index for index, dump in enumerate(cancel_steps) if dump["lines_before"] != dump["lines"]]
+    cancels = last.get("cancels", 0)
+    print(f"screen_changes_on_cancel={len(changed)} cancels={cancels} cancel_steps={len(cancel_steps)}")
+    for index in changed:
+        dump = cancel_steps[index]
+        before, after = dump["lines_before"], dump["lines"]
+        gone = [line for line in before if line not in after][:2]
+        new = [line for line in after if line not in before][:2]
+        problems.append(f"cancel step {index + 1} changed the screen: {gone} became {new}")
+    if control["lines_before"] == control["lines"]:
+        problems.append("the negative control's screen change was not counted; the two reads do not see the screen")
     if cancels < 10:
         problems.append(f"only {cancels} older releases were cancelled")
     wanted = q3b_kept(load(SAMPLES / state / "cap-150.json"))

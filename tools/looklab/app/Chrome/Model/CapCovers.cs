@@ -179,7 +179,10 @@ public static class JumbleFocus
         if (named == null || record == null) return new PredicateLayer(Straddlers, "Straddlers", Numeral.Pending, false);
         using JsonDocument document = JsonDocument.Parse(record);
         JsonElement root = document.RootElement;
-        bool blocked = root.GetProperty("rim").GetProperty("blocked").GetBoolean();
+        // C2-10: an uncertain cap's blocked is null: its straddlers are pending.
+        JsonElement flag = root.GetProperty("rim").GetProperty("blocked");
+        if (flag.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return new PredicateLayer(Straddlers, "Straddlers", Numeral.Pending, false);
+        bool blocked = flag.GetBoolean();
         if (!blocked) return new PredicateLayer(Straddlers, "Straddlers", Numeral.Of(0), false);
         return root.GetProperty("masks").TryGetProperty("straddlers", out JsonElement mask)
             ? new PredicateLayer(Straddlers, "Straddlers", Numeral.Of(mask.GetProperty("count").GetInt64()), true)

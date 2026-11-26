@@ -1036,6 +1036,26 @@ Each checkpoint is one read of the named diff range against the questions below,
   - total N is never derived from caps;
   - research origin is refused at admission.
 - Owner is shown: the cap map, the lists, a staged repair.
+- **Record (integrator, 26 November 2026):** Fable read B7 to B13 at `0961f7cd`, by reading only. Four of the six questions hold; questions 1 and 6 had majors. Both majors are fixed before the next block.
+  - C2-1 (question 1, major): the Q3.b test compared only the kept list, inside one synchronous loop, so it held by construction.
+    - Adopted. The cancel goes through the host as the job layer will send it (`JumbleHost.CancelOlder` withdraws the job and cancels the release). The jobs' clock is held. The shell reads the whole screen (every region, `ScreenText`), lets frames pass, and the dump reads it again. `d02_run.py` compares the two reads.
+    - A last `screen_control` step closes Local's open section under the same two reads: a negative control the run must count.
+    - Run on wj-ia-300: 11 cancel steps and 92 cancels with 0 screen changes; the control was counted.
+  - C2-6 (question 6, major): admission by origin was never called by a staging entry.
+    - Adopted. `PreviewModel.Show`, `RepairStage.Stage` and `RepairStage.Type` take a required `Origin` and admit it themselves, with the session's own flag (`JumbleState.SessionKind`; the preview reads a session without one as solving). `StagedWord.Type` is internal.
+    - A source pin in `tests/test_renderer_shell.py` names the only callers of `Admit`.
+  - C2-2 (minor): a held digit staged a row per key repeat. Adopted: a pick is one plain press, with no repeat and no modifier.
+  - C2-3 (minor): a list showing its error still picked. Adopted: `Digit`, `Enter` and `Stage` refuse a list with an error or one that is not completed.
+  - C2-4 (minor): nothing pinned the exception's order. Adopted: `RepairListModel.Read` refuses rows out of (x, d) order, and `tests/test_d02_samples.py` checks every sample.
+  - C2-10 (nit): an uncertain cap's null `blocked` threw. Adopted: its straddlers are pending.
+  - The question-3 nit: only the list control makes a `UserEvent`. Pinned.
+  - Deferred to the refinement round:
+    - C2-5 (minor): section counts read "· 0" at a blocked cap and for a cut-off or cancelled result; the cap map's u reads pending where Local's border reads 231; a refused twist-check row would show Δn_h 0.
+    - C2-9 (needs an experiment): a section rebuild may drop the repair list's keyboard focus, so the next digit goes to the session.
+    - The question-5 nit: the shell reads `totals.json` as complete coverage without its coverage field.
+  - Left as leads for CR-15 and K2:
+    - C2-7: a staged span stays after the named cap or the revision changes.
+    - C2-8: a span after other letters keeps the ΔN of the revision's own state. Reading ADR-D02.33, a pick starts a fresh preview.
 
 **C3, after B19.**
 - Fable checks:

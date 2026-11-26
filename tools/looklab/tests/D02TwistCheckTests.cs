@@ -75,4 +75,16 @@ internal static partial class Program
         Check(cells.Count == KeptChecks.Columns.Count && cells[1] == "150·" + first.Item && cells[3] == "44", "a completed row's cells moved: " + string.Join(" | ", cells));
         Check(KeptChecks.Cells(new CheckRow(1, 1, 150, 12, checks[12]))[5] == "n0 -1410 n2 +1410", "Δn_h does not show its changed heights");
     }
+
+    // C2-1: the job layer withdraws a superseded request; a withdrawn job never completes, the others still do.
+    private static void D02CancelledJobNeverCompletes()
+    {
+        var jobs = new SampleJobs(3);
+        jobs.Request(1, 11);
+        jobs.Request(2, 12);
+        Check(jobs.Cancel(1) && !jobs.Cancel(1) && !jobs.Cancel(7), "a withdrawn or unknown job was cancelled twice");
+        var done = new System.Collections.Generic.List<(long Release, int Item)>();
+        for (int i = 0; i < 4; i++) done.AddRange(jobs.Tick());
+        Check(done.Count == 1 && done[0] == (2, 12), "the jobs that completed are " + string.Join(", ", done));
+    }
 }

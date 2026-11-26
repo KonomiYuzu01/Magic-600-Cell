@@ -223,6 +223,8 @@ internal static partial class Program
             ("D02HoverNamesNothing", D02HoverNamesNothing),
             ("D02MeetingCapsAre80", D02MeetingCapsAre80),
             ("D02Q3bTwelveTwists", D02Q3bTwelveTwists),
+            ("D02CancelledJobNeverCompletes", D02CancelledJobNeverCompletes),
+            ("D02C2SmallFixes", D02C2SmallFixes),
             ("D02CoversUndefinedIsListed", D02CoversUndefinedIsListed),
             ("D02CoversTableHas80RowsBothDirections", D02CoversTableHas80RowsBothDirections),
             ("D02HoverInCoversMarksNoCapMapCell", D02HoverInCoversMarksNoCapMapCell),

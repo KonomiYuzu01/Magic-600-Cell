@@ -340,7 +340,7 @@ internal static partial class Program
         var p = new PreviewModel();
         Check(p.Range() == null && p.Side == PreviewSide.Both, "no preview has no range; the stage starts with both sides");
         var effects = new[] { new OrbitEffect("a", 0, 120), new OrbitEffect("b", 30, 720), new OrbitEffect("c", 1, 2400), new OrbitEffect("d", 600, 600) };
-        p.Show("preview x", "own macro", new[] { "m1", "m2" }, PreviewStatus.Ready, null, effects, "Protected orbits untouched.", 0);
+        p.Show(Origin.Solver, "preview x", "own macro", new[] { "m1", "m2" }, PreviewStatus.Ready, null, effects, "Protected orbits untouched.", 0);
         Check(p.Range() == new AffectedRange(3, 4, 631, 3840), "the range counts the orbits and pieces that move");
         int changes = 0; p.Changed += () => changes++;
         p.CycleSide(); Check(p.Side == PreviewSide.Before, "the next side is before"); p.CycleSide(); p.CycleSide();
