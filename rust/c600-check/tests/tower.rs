@@ -1,7 +1,7 @@
 //! The identity tower and the domain families of the IR draft (T1 drafts until the IR freeze, PHS.49): the puzzle,
 //! level, goal and cost-unit indices, the built-in and declared sum types, the kernel rows and `imply`, checked on
-//! hand-built IR. Each conformance row's source half waits for T1b's lowering and its run-time half for T1c's values
-//! and host rows.
+//! hand-built IR. Each conformance row's source half is `c600-syntax`'s `conformance_lg2.rs` (T1b), and its run-time
+//! half waits for T1c's values and host rows.
 
 mod support;
 
@@ -97,7 +97,7 @@ fn shape_codes(params: Vec<Param>, result: Ty, body: Expr) -> Vec<&'static str> 
     codes(&typed(vec![shape_decl()], vec![f(params, result, body)]))
 }
 
-/// CT-LG2-01 (part: the IR half; not run: the source half (T1b) and the run-time half (T1c)). A case accounts for
+/// CT-LG2-01 (part: the IR half; the source half is `c600-syntax`'s `conformance_lg2.rs`; not run: the run-time half (T1c)). A case accounts for
 /// every constructor of a declared or built-in sum type, and generics keep every puzzle, level and unit index.
 #[test]
 fn ct_lg2_01_cases_cover_every_constructor_and_generics_keep_indices() {
@@ -197,7 +197,7 @@ fn declared_type_faults_are_ir_errors() {
     assert!(check(&other(shape_decl().exported())).unwrap().is_admitted());
 }
 
-/// CT-LG2-02 (part: the IR half; not run: the source half (T1b) and the run-time half (T1c)). An identity of one
+/// CT-LG2-02 (part: the IR half; the source half is `c600-syntax`'s `conformance_lg2.rs`; not run: the run-time half (T1c)). An identity of one
 /// puzzle never stands for the other's, and a pose, a sticker-class value, a label digest and a pose-table index are
 /// four types.
 #[test]
@@ -250,8 +250,8 @@ fn ct_lg2_02_identities_keep_their_puzzle_and_kind() {
     assert_eq!(as_argument(&rec(Ty::Sticker(Jumbling)), &rec(Ty::Sticker(Full))), [IDENTITY_MISMATCH]);
 }
 
-/// CT-LG2-03 (part: the IR half; not run: the source half (T1b) and the run-time half (T1c), where a read of labels
-/// off the lattice returns `partial` or `undefined`). A projection's partial result is cased, nothing lifts a coarser
+/// CT-LG2-03 (part: the IR half; the source half is `c600-syntax`'s `conformance_lg2.rs`; not run: the run-time half
+/// (T1c), where a read of labels off the lattice returns `partial` or `undefined`). A projection's partial result is cased, nothing lifts a coarser
 /// level to a finer one, and a class is no equality.
 #[test]
 fn ct_lg2_03_projection_is_partial_and_nothing_lifts() {
@@ -321,7 +321,7 @@ fn ct_lg2_03_projection_is_partial_and_nothing_lifts() {
     assert_eq!((d.code, d.path.as_str()), (LEVEL_MISMATCH, "0"));
 }
 
-/// CT-LG2-07 (part: the IR half; not run: the source half (T1b) and the run-time half (T1c)). Raw pose data enters as
+/// CT-LG2-07 (part: the IR half; the source half is `c600-syntax`'s `conformance_lg2.rs`; not run: the run-time half (T1c)). Raw pose data enters as
 /// a state only through `import` with a reachability claim, and a jumbling claim is no claim about 600-cell-Full.
 #[test]
 fn ct_lg2_07_raw_pose_data_is_no_state() {
@@ -367,7 +367,7 @@ fn sticker_verdict() -> Ty {
     Ty::Verdict(Jumbling, Level::Labels, Some(Goal::StickerTest))
 }
 
-/// CT-LG2-09 (part: the IR half; not run: the source half (T1b) and the run-time half (T1c)). Unknown never passes
+/// CT-LG2-09 (part: the IR half; the source half is `c600-syntax`'s `conformance_lg2.rs`; not run: the run-time half (T1c)). Unknown never passes
 /// as false, an off-lattice projection never passes as unknown, and a goal never weakens its level.
 #[test]
 fn ct_lg2_09_unknown_is_no_false_and_goals_keep_their_level() {
@@ -417,7 +417,8 @@ fn implied(puzzle: Puzzle, from: Goal, to: Goal) -> Vec<&'static str> {
     alone(vec![p("h", Ty::Holds(puzzle, from))], Ty::Holds(puzzle, to), imply(to, args))
 }
 
-/// CT-LG2-10 (part: the IR half; not run: the source half (T1b) and the run-time half (T1c), with the goal fixtures).
+/// CT-LG2-10 (part: the IR half; the source half is `c600-syntax`'s `conformance_lg2.rs`; not run: the run-time half
+/// (T1c), with the goal fixtures).
 /// `imply` follows LG2.11's sourced chain and checkpoint implications and nothing else; equal labels do not require
 /// equal poses, and a label checkpoint supplies no retained word.
 #[test]
@@ -491,7 +492,7 @@ fn ct_lg2_10_imply_follows_the_sourced_chain() {
     }
 }
 
-/// CT-LG2-11 (part: the IR half; not run: the source half (T1b) and the run-time half (T1c)). A derivation takes a
+/// CT-LG2-11 (part: the IR half; the source half is `c600-syntax`'s `conformance_lg2.rs`; not run: the run-time half (T1c)). A derivation takes a
 /// literal word of its puzzle's alphabet, never a word equality key, and keys of two puzzles do not compare.
 #[test]
 fn ct_lg2_11_derive_takes_literal_words_only() {
@@ -523,8 +524,8 @@ fn ct_lg2_11_derive_takes_literal_words_only() {
     assert_eq!(compared(&Ty::WordEqualityKey(Full), &Ty::WordEqualityKey(Full)), [] as [&str; 0]);
 }
 
-/// CT-LG2-06 (part: the IR half of the puzzle and unit indices; not run: the source half (T1b), the run-time half
-/// (T1c) and the budget and seconds clauses). Costs add, order and compare only with costs of their puzzle and unit.
+/// CT-LG2-06 (part: the IR half of the puzzle and unit indices; the source half is `c600-syntax`'s
+/// `conformance_lg2.rs`, with the budget and seconds clauses; not run: the run-time half (T1c)). Costs add, order and compare only with costs of their puzzle and unit.
 #[test]
 fn ct_lg2_06_costs_keep_their_puzzle_and_unit() {
     use CostUnit::*;
@@ -554,6 +555,29 @@ fn ct_lg2_06_costs_keep_their_puzzle_and_unit() {
     let r = report(&tool(vec![f(vec![param("n", display(Ty::Nat))], same.clone(), to_cost(var("n")))]));
     assert!(r.diagnostics.iter().any(|d| (d.code, d.path.as_str()) == (EXACTNESS_VIOLATION, "0")), "{r:#?}");
     assert_eq!(alone(vec![], c(Full, MenuLetter), to_cost(nat(3))), [COST_UNIT_MIX]);
+}
+
+/// A kernel row whose declared type is the checker's unknown type, as lowering writes it since it does not type the
+/// arguments (T1b draft), takes the type the row returns, which then meets its use like any other; a concrete declared
+/// type keeps its check.
+#[test]
+fn a_rows_declared_unknown_type_takes_the_type_it_returns() {
+    let unknown = || exact(Ty::Var("_".into()));
+    let v = || vec![p("v", Ty::LevelValue(Jumbling, Level::Labels))];
+    let digest = || kernel(KernelOp::Digest, vec![var("v")], unknown());
+    assert_eq!(alone(v(), Ty::Digest(Jumbling, Level::Labels), digest()), [] as [&str; 0]);
+    assert_eq!(alone(v(), Ty::Digest(Jumbling, Level::Poses), digest()), [LEVEL_MISMATCH]);
+    assert_eq!(alone(v(), Ty::Digest(Full, Level::Labels), digest()), [IDENTITY_MISMATCH]);
+    // Its arguments keep their checks, and a refused row stays unknown, so it gives one finding.
+    let s = vec![p("s", state(Full))];
+    let project = kernel(KernelOp::Project(Level::Poses), vec![var("s")], unknown());
+    assert_eq!(alone(s.clone(), Ty::Unit, project), [LEVEL_MISMATCH]);
+    // A concrete declared type is still checked against the row's.
+    let declared = kernel(KernelOp::Digest, vec![var("v")], exact(Ty::Digest(Jumbling, Level::Poses)));
+    assert_eq!(alone(v(), Ty::Digest(Jumbling, Level::Poses), declared), [TYPE_MISMATCH]);
+    // The unknown type with the display qualifier is no declaration lowering writes, and it is checked as declared.
+    let shown = kernel(KernelOp::Digest, vec![var("v")], display(Ty::Var("_".into())));
+    assert_eq!(alone(v(), Ty::Unit, shown), [TYPE_MISMATCH]);
 }
 
 /// The tower's keys and portable data (T1 draft): identities, poses, digests and costs are keys; identities, digests

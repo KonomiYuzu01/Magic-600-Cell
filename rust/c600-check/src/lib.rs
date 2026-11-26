@@ -4212,7 +4212,8 @@ impl<'p> Checker<'p> {
     }
 
     /// A kernel row of the identity tower ([`Checker::kernel`]; T1 draft): a snapshot read of its own row, whose
-    /// declared type must be the type the row returns for its arguments.
+    /// declared type must be the type the row returns for its arguments. A declared unknown type (the checker's own,
+    /// `_`, which lowering writes because it does not type the arguments) takes the type the row returns.
     #[inline(never)]
     fn kernel_expr(
         &mut self,
@@ -4230,6 +4231,9 @@ impl<'p> Checker<'p> {
         own.rows.insert(Row::Read(op.row()));
         self.operation(&mut s, own, &format!("the kernel row `{}`", op.row()));
         let v = match self.kernel(op, &vals)? {
+            // A declared unknown type, the one lowering gives since it does not type the arguments, takes the type
+            // the row returns (T1b draft); a concrete declared type keeps its check.
+            Some(t) if is_unknown(&ty.ty) && !ty.display => Val::exact(t),
             Some(t) if t == ty.ty && !ty.display => Val::exact(t),
             Some(t) => {
                 let note = format!(
