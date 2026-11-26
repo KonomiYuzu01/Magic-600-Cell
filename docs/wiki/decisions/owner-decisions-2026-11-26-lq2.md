@@ -115,9 +115,10 @@ and BND.84 treats it as before.
   implementation. CT-LG3-06 and CT-LG3-07 also wait for BND.37's class review.
 - **LP6.** Its start conditions are now met (PHS.36). The owner set its start the same day: when the ADR-D03 and K2
   lines start ([decision](owner-decisions-2026-11-26-log-flow.md)).
-- **Briefing.** The briefing records this decision (`f7ea074d`). The briefing is an input of the frozen migration
-  format packet, so its pin is refreshed under FP.1 in a separate commit: its SHA-256 goes from `f930b089...cee5` to
-  `e15e6622...4405`, and `input_commit` from `1f941e6f` to `f7ea074d`. The packet cites none of the edited lines; the
+- **Briefing.** The briefing records this decision and the [log flow decision](owner-decisions-2026-11-26-log-flow.md)
+  (`f7ea074d`, `3bdc30c0`). The briefing is an input of the frozen migration format packet, so its pin is refreshed
+  under FP.1 in a separate commit: its SHA-256 goes from `f930b089...cee5` to `46e4e61c...857c`, and `input_commit`
+  from `1f941e6f` to `3bdc30c0`. The packet cites none of the edited lines; the
   candidate files, `candidate_sha256` and every other pin are unchanged.
 
 ## What this does not do
