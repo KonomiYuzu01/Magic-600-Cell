@@ -59,5 +59,47 @@ public static class ShellShape
     /// when it is off. A value out of the core's range answers the host's refusal.
     /// </summary>
     public static int Apply(HostLibrary library, IntPtr host) =>
-        ShellJumble.On ? library.SetViewShape(host, HostLibrary.View, Read(OpeningPath())) : HostLibrary.Ok;
+        ShellJumble.On ? Set(library, host, HostLibrary.View, Read(OpeningPath())) : HostLibrary.Ok;
+
+    // Each view's opening shape, the one the wheel zoom scales, and the zoom last sent to the core.
+    private static readonly System.Collections.Generic.Dictionary<ulong, float[]> Openings = new();
+    private static readonly System.Collections.Generic.Dictionary<ulong, float> Sent = new();
+
+    /// <summary>
+    /// Sets a view's opening shape and remembers it as the shape the wheel zoom scales (Local's shape goes through
+    /// here too, so its zoom scales Local's own). Answers the host's code.
+    /// </summary>
+    public static int Set(HostLibrary library, IntPtr host, ulong view, float[] shape)
+    {
+        var code = library.SetViewShape(host, view, shape);
+        if (code == HostLibrary.Ok)
+        {
+            Openings[view] = (float[])shape.Clone();
+            Sent[view] = shape[3];
+        }
+        return code;
+    }
+
+    /// <summary>
+    /// Sends a view's opening shape with its zoom scaled by the wheel's factor (<see cref="ShellZoom"/>); a view with
+    /// no opening shape keeps the core's and answers <see cref="HostLibrary.Ok"/> without a call.
+    /// </summary>
+    public static int ApplyZoom(HostLibrary library, IntPtr host, ulong view, double factor)
+    {
+        if (!Openings.TryGetValue(view, out var opening))
+        {
+            return HostLibrary.Ok;
+        }
+        var shape = (float[])opening.Clone();
+        shape[3] = (float)(opening[3] * factor);
+        var code = library.SetViewShape(host, view, shape);
+        if (code == HostLibrary.Ok)
+        {
+            Sent[view] = shape[3];
+        }
+        return code;
+    }
+
+    /// <summary>The zoom last sent to the core for a view, or null before any.</summary>
+    public static float? SentZoom(ulong view) => Sent.TryGetValue(view, out var zoom) ? zoom : null;
 }

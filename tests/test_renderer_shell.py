@@ -1529,8 +1529,10 @@ class D02Shape(unittest.TestCase):
 
     def test_the_shell_reads_the_opening_values_only_with_d02_on(self):
         shape = text(PROJECT / "D02" / "ShellShape.cs")
-        self.assertIn("ShellJumble.On ? library.SetViewShape(host, HostLibrary.View, Read(OpeningPath())) : "
+        # Set sends the shape and keeps it as the opening the wheel zoom scales (owner, 26 November 2026).
+        self.assertIn("ShellJumble.On ? Set(library, host, HostLibrary.View, Read(OpeningPath())) : "
                       "HostLibrary.Ok", shape)
+        self.assertIn("var code = library.SetViewShape(host, view, shape);", shape)
         self.assertIn('return new[] { 1.0f - gap, sticker, D4, Zoom };', shape)
         self.assertIn('GetProperty("gap")', shape)
         self.assertIn('GetProperty("stickerShrink")', shape)
@@ -1913,6 +1915,59 @@ class D02Rotation(unittest.TestCase):
         self.assertEqual(len(run.expect_rotate(dumps([0, 0, 1, 2, 3, 3]), {}, None)), 1)
         self.assertTrue(run.expect_rotate(dumps([0, 0, 1, 1, 2, 2])[:5], {}, None))
         self.assertTrue((SHELL / "d02_scripts" / "rotate.json").is_file())
+
+
+class D02Zoom(unittest.TestCase):
+    """The wheel zoom the owner asked for on 26 November 2026 ("我现在没法zoom in"): with --d02 the wheel zooms the view
+    under the pointer, wheel up in, within 0.5 to 4 times the opening zoom, and it takes no focus."""
+
+    def test_wheel_up_zooms_in_within_the_limits(self):
+        zoom = text(PROJECT / "D02" / "ShellZoom.cs")
+        self.assertIn("public const double Step = 1.1;", zoom)
+        self.assertIn("public const double MinFactor = .5;", zoom)
+        self.assertIn("public const double MaxFactor = 4;", zoom)
+        # The direction: wheel up multiplies the zoom by Step (> 1), and the core draws a larger picture for a larger
+        # zoom (clip.xy = p.xy * zoom).
+        self.assertIn("Wheel(view, button.ButtonIndex == MouseButton.WheelUp ? notches : -notches);", zoom)
+        self.assertIn("Math.Clamp(before * Math.Pow(Step, notches), MinFactor, MaxFactor)", zoom)
+        self.assertIn("result.clip = float4(p.x*zoom/aspect, p.y*zoom,", text(ROOT / "renderer" / "core" / "shaders" / "geometry.hlsl"))
+        # The wheel never reaches the focus hand-back: no focus, no foreground, no window call.
+        for word in ("GrabFocus", "GaveBack", "Foreground", "D02Window", "DisplayServer"):
+            self.assertNotIn(word, zoom)
+
+    def test_the_shell_zooms_the_view_under_the_pointer(self):
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn("if (D02.ShellJumble.On && D02.ShellJumble.Zoom.Follow(@event, ViewAt))", shell)
+        self.assertIn("private ulong? ViewAt(Vector2 point) => InOpening(point) ? HostLibrary.View : null;", shell)
+        self.assertIn("D02.ShellShape.ApplyZoom(library, _host, view, D02.ShellJumble.Zoom.Factor(view))", shell)
+        shape = text(PROJECT / "D02" / "ShellShape.cs")
+        self.assertIn("shape[3] = (float)(opening[3] * factor);", shape)
+        # The opening shape goes through Set, so the zoom scales the view's own opening zoom.
+        self.assertIn("ShellJumble.On ? Set(library, host, HostLibrary.View, Read(OpeningPath())) : HostLibrary.Ok;", shape)
+
+    def test_the_zoom_expectation_pins_the_direction(self):
+        run = shell_module("d02_run")
+        factors = [1, 1, 1.1 ** 3, 1.1 ** 3, 1.1 ** -2, 1.1 ** -2, 4.0, 4.0]
+        notches = [0, 0, 3, 3, 8, 8, 25, 25]
+
+        def dumps(direction=1, factors=factors):
+            return [{"do": do, "camera_turns": 0, "lines": [],
+                     "zoom": {"notches": n, "factor": f ** direction, "sent": 1.15 * f ** direction}}
+                    for do, f, n in zip(run.ZOOM_STEPS, factors, notches)]
+        self.assertEqual(run.expect_zoom(dumps(), {}, None), [])
+        # A build whose wheel up zoomed out fails on the direction.
+        reversed_wheel = run.expect_zoom(dumps(direction=-1), {}, None)
+        self.assertTrue(any("wheel up zoomed out" in problem for problem in reversed_wheel), reversed_wheel)
+        # A build without the upper limit fails at the forty notches.
+        unclamped = run.expect_zoom(dumps(factors=factors[:6] + [1.1 ** 38, 1.1 ** 38]), {}, None)
+        self.assertTrue(any("not 4.0000" in problem for problem in unclamped), unclamped)
+        no_sent = dumps()
+        del no_sent[2]["zoom"]["sent"]
+        self.assertEqual(run.expect_zoom(no_sent, {}, None), ["a step's dump has no zoom sent to the core"])
+        turned = dumps()
+        turned[4]["camera_turns"] = 1
+        self.assertIn("the wheel turned the camera", run.expect_zoom(turned, {}, None))
+        self.assertTrue((SHELL / "d02_scripts" / "zoom.json").is_file())
 
 
 if __name__ == "__main__":

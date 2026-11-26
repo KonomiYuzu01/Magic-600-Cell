@@ -36,6 +36,8 @@ public static class ShellJumble
     public static event Action? BindingChanged;
     /// <summary>The view rotation a drag in the Global opening turns (owner, 26 November 2026).</summary>
     public static ShellCamera Camera { get; } = new();
+    /// <summary>The wheel zoom of the view under the pointer (owner, 26 November 2026).</summary>
+    public static ShellZoom Zoom { get; } = new();
     /// <summary>The Jumble facts of each newly shown revision (B6), from the host's state digests.</summary>
     public static JumbleFeed Feed { get; } = new();
 
@@ -476,6 +478,19 @@ internal sealed partial class D02Driver : Node
             _doing = "drag " + dx.ToString(CultureInfo.InvariantCulture) + " " + dy.ToString(CultureInfo.InvariantCulture);
             Drag(_frame.Opening, new Vector2(dx, dy));
         }
+        else if (step.TryGetProperty("wheel", out var wheel))
+        {
+            // Wheel notches at the opening's centre through the shell's input: positive up (in), negative down (out).
+            var notches = wheel.GetInt32();
+            _doing = "wheel " + notches.ToString(CultureInfo.InvariantCulture);
+            var at = _frame.Opening.Position + _frame.Opening.Size / 2;
+            var button = notches > 0 ? MouseButton.WheelUp : MouseButton.WheelDown;
+            for (var i = 0; i < Math.Abs(notches); i++)
+            {
+                Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = button, Pressed = true, Position = at, GlobalPosition = at, Factor = 1 });
+                Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = button, Pressed = false, Position = at, GlobalPosition = at, Factor = 1 });
+            }
+        }
         else if (step.TryGetProperty("cancel_older", out _))
         {
             // B10's Q3.b check in the shell: cancel every release at the named cap that is no longer the latest
@@ -531,7 +546,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a cancel_older, an open, a hover_cover, a focus or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, an open, a hover_cover, a focus or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -607,6 +622,15 @@ internal sealed partial class D02Driver : Node
                 json.WriteNumberValue(value);
             }
             json.WriteEndArray();
+            // The wheel zoom: the notches that changed a zoom, Global's factor and the zoom the core was last sent.
+            json.WriteStartObject("zoom");
+            json.WriteNumber("notches", ShellJumble.Zoom.Notches);
+            json.WriteNumber("factor", ShellJumble.Zoom.Factor(HostLibrary.View));
+            if (ShellShape.SentZoom(HostLibrary.View) is float sent)
+            {
+                json.WriteNumber("sent", sent);
+            }
+            json.WriteEndObject();
             // B11: the covers lines, the inspect line, the cap map's marks and the focus layers' keys.
             if (ShellJumble.Host is { } shown)
             {

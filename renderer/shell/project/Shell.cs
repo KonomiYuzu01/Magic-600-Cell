@@ -307,6 +307,11 @@ public partial class Shell : Control
         {
             GetViewport().SetInputAsHandled();
         }
+        // The wheel zooms the view under the pointer (owner, 26 November 2026); it takes no focus.
+        if (D02.ShellJumble.On && D02.ShellJumble.Zoom.Follow(@event, ViewAt))
+        {
+            GetViewport().SetInputAsHandled();
+        }
         if (@event is InputEventKey turn)
         {
             // One router decides (A5): a key the chrome takes never reaches the session, and a key that goes to the
@@ -359,6 +364,9 @@ public partial class Shell : Control
     private bool InOpening(Vector2 point) =>
         (_chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize()))
             .HasPoint(new Vector2I((int)point.X, (int)point.Y));
+
+    /// <summary>The drawn view under a window point: Global in its opening, else none.</summary>
+    private ulong? ViewAt(Vector2 point) => InOpening(point) ? HostLibrary.View : null;
 
     /// <summary>
     /// Follows the foreground: the logs count it lost once the window had it and lost it, or if it never had it.
@@ -423,6 +431,13 @@ public partial class Shell : Control
         {
             Require(library, "m6h_set_camera", library.SetCamera(_host, _camera.ColumnMajor()));
             _camera.Dirty = false;
+        }
+        if (D02.ShellJumble.On)
+        {
+            foreach (var view in D02.ShellJumble.Zoom.TakeDirty())
+            {
+                Require(library, "m6h_set_view_shape", D02.ShellShape.ApplyZoom(library, _host, view, D02.ShellJumble.Zoom.Factor(view)));
+            }
         }
         _submittedThisFrame = null;
         var submitted = EventLog.Now();

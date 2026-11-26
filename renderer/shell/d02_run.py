@@ -231,6 +231,46 @@ def expect_rotate(dumps: list[dict], source: dict, state: str | None) -> list[st
     return problems
 
 
+# The wheel zoom (owner, 26 November 2026: "我现在没法zoom in"): wheel up zooms in, one notch multiplies the zoom by
+# 1.1, and the zoom stays within 0.5 to 4 times the opening's. The core multiplies the projected picture by the zoom
+# (geometry.hlsl), so a larger zoom sent is a larger picture.
+ZOOM_STEP, ZOOM_MIN, ZOOM_MAX = 1.1, 0.5, 4.0
+ZOOM_STEPS = ["start", "wait 1500 ms", "wheel 3", "wait 800 ms", "wheel -5", "wait 800 ms", "wheel 40", "wait 800 ms"]
+
+
+def expect_zoom(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The zoom script: three notches up zoom in by 1.1 cubed, five down zoom out below that, forty up stop at four
+    times the opening zoom; a wait changes nothing, the zoom turns no camera, and the core is sent the zoom."""
+    if [dump["do"] for dump in dumps] != ZOOM_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    zooms = [dump.get("zoom") for dump in dumps]
+    if any(not isinstance(zoom, dict) or "sent" not in zoom for zoom in zooms[1:]):
+        return ["a step's dump has no zoom sent to the core"]
+    problems = []
+    base = zooms[1]["sent"]
+    if zooms[1]["factor"] != 1 or zooms[1]["notches"] != 0:
+        problems.append(f"the view was zoomed before any wheel ({zooms[1]})")
+    expected = {2: ZOOM_STEP ** 3, 3: ZOOM_STEP ** 3, 4: ZOOM_STEP ** -2, 5: ZOOM_STEP ** -2, 6: ZOOM_MAX, 7: ZOOM_MAX}
+    for index, factor in expected.items():
+        zoom = zooms[index]
+        if abs(zoom["factor"] - factor) > 1e-6:
+            problems.append(f"after '{ZOOM_STEPS[index]}' the zoom factor is {zoom['factor']:.4f}, not {factor:.4f}")
+        if abs(zoom["sent"] - base * factor) > 1e-4:
+            problems.append(f"after '{ZOOM_STEPS[index]}' the core was sent zoom {zoom['sent']:.4f}, not {base * factor:.4f}")
+    if not zooms[2]["sent"] > base:
+        problems.append("wheel up zoomed out; it must zoom in (a larger zoom draws a larger picture)")
+    if not zooms[4]["sent"] < zooms[3]["sent"]:
+        problems.append("wheel down zoomed in; it must zoom out")
+    if zooms[3] != zooms[2] or zooms[5] != zooms[4] or zooms[7] != zooms[6]:
+        problems.append("the zoom changed during a wait")
+    if zooms[7]["notches"] - zooms[5]["notches"] >= 40:
+        problems.append("notches past the largest zoom still changed it")
+    if any(dump.get("camera_turns", 0) != 0 for dump in dumps):
+        problems.append("the wheel turned the camera")
+    print(f"zoom: opening {base:.3f}; +3 notches {zooms[2]['sent']:.3f}; -5 {zooms[4]['sent']:.3f}; +40 {zooms[6]['sent']:.3f}")
+    return problems
+
+
 def expect_name_cap(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """B9's name-cap script, by keys only: before naming, no cap is named and Local shows its empty sentence; after
     `> jumble.cap.name 30`, the panel's Tier 1 line, the Named cap count and Local's readout follow cap 30's rim row;
@@ -492,7 +532,7 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
 
 
 EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
-          "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair}
+          "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
 ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair"}

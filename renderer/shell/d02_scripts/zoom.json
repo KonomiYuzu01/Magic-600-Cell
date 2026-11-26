@@ -1,0 +1,28 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "zoom",
+  "note": "The wheel zoom the owner asked for on 26 November 2026: three notches up zoom in, five down zoom out, forty up stop at the largest zoom; the wheel turns no camera and takes no focus.",
+  "steps": [
+    {
+      "wait_ms": 1500
+    },
+    {
+      "wheel": 3
+    },
+    {
+      "wait_ms": 800
+    },
+    {
+      "wheel": -5
+    },
+    {
+      "wait_ms": 800
+    },
+    {
+      "wheel": 40
+    },
+    {
+      "wait_ms": 800
+    }
+  ]
+}
