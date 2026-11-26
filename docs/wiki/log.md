@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] update | LP4 human tests: the owner's run
+The owner withdrew the first self-run sheet unanswered because its material was too thin and not in plain language. The owner then ran version 2, which adds a plain-language guide. Graded under form version 2 in [LP4 human tests](../progress/1.0/lp4-human-tests.md): CT-LB6-04 is not met (two reasons in part (a), the person's), and CT-EV5-05's human half passes on a ruling made after the run. The mathematician's post-run findings M21 to M30, one a blocker for any rerun of part (b), are dispositioned there.
+
 ## [2026-11-26] update | The twist key's stall moves off the frame thread
 Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) where the twist key's time on the frame thread went (the commit, with its journal sync a small share, and the view's build and checks) and the change that builds and checks the view's work on a worker thread and adopts it at the next frame call, leaving the commit boundary as it was. On screen on the real core the key call fell from 57 to 18 ms and the refreshes without a frame from 3.35 to 2.0 per key; a short wait after a frame's submission keeps the press at the frame it had before, and the core's per-twist GPU buffers are what is left besides the commit.
 
