@@ -70,7 +70,7 @@ use c600_syntax::Lowered;
 
 use crate::code::{CONTRACT_MISMATCH, IR_REJECTED, MODULE_NOT_CHECKED, NOT_GRANTED, STALE_ACTIVATION_BASE};
 use crate::{
-    approve, load, refuse, verify, Approval, Closure, Entry, Files, Halted, Identity, Outcome, Ready, Refusal,
+    approve, load, refuse, verify, Approval, Closure, Entry, Files, Halt, Identity, Outcome, Ready, Refusal,
     RunContext, RunRequest, FORM_VERSION,
 };
 
@@ -506,7 +506,7 @@ impl Binding {
         engine: &mut dyn Host,
         store: &mut Store,
         execute: impl FnOnce(&mut dyn Host) -> Result<Run, E>,
-    ) -> Result<BoundRun, Halted<E>> {
+    ) -> Result<BoundRun, Halt<E>> {
         let outcome = self.ready().run_with(context, engine, store, execute)?;
         Ok(BoundRun { closure: self.digest(), source: self.source(), outcome })
     }

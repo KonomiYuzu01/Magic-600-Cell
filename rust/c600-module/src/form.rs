@@ -4,6 +4,7 @@
 use std::collections::BTreeMap;
 
 use c600_digest::sha256;
+use c600_run::menu::MenuIdentity;
 use c600_run::provenance::{self, digest_ref, Json};
 
 use crate::code::{CONTRACT_MISMATCH, NONCANONICAL_VALUE, PERSISTENCE_FORMAT, PERSISTENCE_VERSION};
@@ -50,7 +51,30 @@ impl Identity {
     pub fn json(&self) -> &Json {
         &self.0
     }
+
+    /// The first field in which two identity blocks differ, in KN1.4's order: `puzzle`, `model_id`, `menu_id`,
+    /// `menu_order`, then `contract_rev`. `None` when they are one identity (LG5.5, KN1.4; LP2 draft).
+    pub fn differing(&self, other: &Identity) -> Option<&'static str> {
+        KN14_ORDER.into_iter().find(|k| self.field(k) != other.field(k))
+    }
+
+    /// The first field, in KN1.4's order, in which this identity differs from a menu alphabet's identity block. A
+    /// field that is null here (Full) never equals the menu's text, so a menu pinned under a Full identity differs
+    /// in `menu_id` or earlier (LG5.5, KN1.4; LP2 draft).
+    pub fn differing_menu(&self, menu: &MenuIdentity) -> Option<&'static str> {
+        menu.fields().into_iter().find(|(k, v)| self.field(k) != Some(*v)).map(|(k, _)| k)
+    }
+
+    fn field(&self, key: &str) -> Option<&str> {
+        match &self.0 {
+            Json::Object(m) => m.get(key).and_then(Json::as_text),
+            _ => None,
+        }
+    }
 }
+
+/// KN1.4's order of the identity block's fields.
+const KN14_ORDER: [&str; 5] = ["puzzle", "model_id", "menu_id", "menu_order", "contract_rev"];
 
 /// A direct import of the root module: its alias and its source digest (LG5.2).
 #[derive(Clone, Debug, PartialEq, Eq)]

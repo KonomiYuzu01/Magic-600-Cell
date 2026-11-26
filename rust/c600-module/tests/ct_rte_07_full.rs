@@ -187,7 +187,9 @@ impl Trial {
     ) -> Trial {
         let id = format!("r{}", self.results.len() + 1);
         let result = ready(&self.package, entry(function, author, profile)).and_then(|r| {
-            let request = RunRequest { run: &id, base: "rev-7", args, inputs, pins: pins(), options };
+            let session = r.approval().identity.clone();
+            let request =
+                RunRequest { session: &session, run: &id, base: "rev-7", args, inputs, pins: pins(), options };
             r.run(request, &mut self.engine, &mut self.store)
         });
         self.results.push(result);

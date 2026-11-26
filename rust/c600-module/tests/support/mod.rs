@@ -374,6 +374,35 @@ pub fn entry(function: &str, author: Author, profile: Profile) -> Entry {
     }
 }
 
+/// A jumbling identity block: its model digest byte, menu, menu order and contract revision.
+pub fn jumbling(model: u8, menu: &str, order: &str, rev: &str) -> Identity {
+    Identity::from_json(&Json::object([
+        ("contract_rev", Json::text(rev)),
+        ("menu_id", Json::text(menu)),
+        ("menu_order", Json::text(order)),
+        ("model_id", Json::Text(hex(&[model; 32]))),
+        ("puzzle", Json::text("jumbling")),
+    ]))
+    .unwrap()
+}
+
+/// [`package`]'s files with a manifest the caller changes, and the lock resolved for that manifest.
+pub fn package_with(root: &str, deps: &[&str], change: impl FnOnce(&mut Manifest)) -> Package {
+    let files = package(root, deps).files;
+    let mut manifest = manifest_for(root.as_bytes());
+    change(&mut manifest);
+    let manifest = manifest.bytes();
+    let lock = resolve(&manifest, &files).unwrap().bytes();
+    Package { manifest, lock, files }
+}
+
+/// Verifies a package for `session`, approves one entry and loads it.
+pub fn ready_under(package: &Package, session: &Identity, entry: Entry) -> Result<Ready, Refusal> {
+    let closure = verify(&package.manifest, &package.lock, &package.files, session)?;
+    let approval = approve(&closure, entry, contract(), checker())?;
+    load(&closure, &approval)
+}
+
 /// Verifies a package and approves one entry.
 pub fn approved(package: &Package, entry: Entry) -> Result<(Closure, Approval), Refusal> {
     let closure = package.verify()?;
@@ -396,7 +425,9 @@ pub fn run(
     engine: &mut Engine,
     store: &mut Store,
 ) -> Result<Outcome, Refusal> {
-    let request = RunRequest { run, base: "rev-7", args, inputs, pins: pins(), options: Options::new(WIDE) };
+    let session = ready.approval().identity.clone();
+    let request =
+        RunRequest { session: &session, run, base: "rev-7", args, inputs, pins: pins(), options: Options::new(WIDE) };
     ready.run(request, engine, store)
 }
 

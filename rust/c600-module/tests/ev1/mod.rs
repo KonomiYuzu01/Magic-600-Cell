@@ -159,7 +159,9 @@ impl Host for Suspending<'_> {
 
 /// Runs a binding in this process as run `r` on base `rev-7`.
 pub fn run(binding: &Binding, host: &mut dyn Host) -> BoundRun {
+    let session = binding.approval().identity.clone();
     let request = RunRequest {
+        session: &session,
         run: "r",
         base: "rev-7",
         args: vec![],

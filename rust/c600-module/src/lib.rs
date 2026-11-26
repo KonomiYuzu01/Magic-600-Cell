@@ -76,6 +76,13 @@
 //!   `LG4:input.ir_rejected`; a program for another IR version or execution contract is the checker's
 //!   `LG4:input.ir_version_unsupported` in every author column, before the entry is looked up; a session identity
 //!   outside `supports` is `LG5:input.model_not_supported`.
+//! - **The run's identity check** (LG5.5, KN1.4, CT-LG5-04; LP2 draft). A run names the session's identity
+//!   ([`RunRequest::session`], [`RunContext::session`]) and, through [`RunContext::menu`] or its options' menu, the
+//!   menu alphabet it pins. Before any operation [`Ready::admit_identity`] refuses with `KN1:input.identity_mismatch`
+//!   when the approval's identity differs from the session's, or from the pinned menu's, in any KN0.1 field; the
+//!   detail names the first differing field in KN1.4's order. A menu pinned under a Full approval is refused, since
+//!   Full's menu fields are null. LG5.5 offers "refused or recorded": the draft refuses and builds no recorded state
+//!   (a reading for the freeze card).
 //! - **CT-RTE-07's canonical result** (RTE.46). [`Outcome::canonical`] writes the outcome, code, stop position, used
 //!   amounts, output bytes, shell answers (refusal codes only, and whether the split refused) and captures, in FP.5's
 //!   canonical JSON. Timing, host and path fields are not in it. A key's ten-run digest hashes these bytes for each of
@@ -130,7 +137,7 @@ pub use approval::{admit_program, approve, Admitted, Approval, Entry};
 pub use c600_run::interp::Refusal;
 pub use closure::{resolve, verify, Closure, Files};
 pub use form::{Dependency, Identity, Location, Lock, LockedModule, Manifest};
-pub use run::{load, Halted, Outcome, Ready, RunContext, RunRequest};
+pub use run::{load, Halt, Halted, Outcome, Ready, RunContext, RunRequest};
 
 /// The manifest form FP.4 reserves (draft).
 pub const MANIFEST_FORMAT: &str = "c600-module-draft";
@@ -155,6 +162,9 @@ pub mod code {
     pub const CONTRACT_MISMATCH: &str = "LG5:input.module_contract_mismatch";
     /// The manifest does not list the session's model identity (LG5.2, LG5.5).
     pub const MODEL_NOT_SUPPORTED: &str = "LG5:input.model_not_supported";
+    /// The approval's model, menu, menu order or contract revision differs from the session's or the pinned menu's at
+    /// the run (LG5.5, KN1.4; the detail names the field).
+    pub const IDENTITY_MISMATCH: &str = "KN1:input.identity_mismatch";
     /// The IR fails validation at load (LG4.1, LG4.2).
     pub const IR_REJECTED: &str = c600_run::interp::code::IR_REJECTED;
     /// The program asks for an IR version or execution contract that the checker and the interpreter do not run

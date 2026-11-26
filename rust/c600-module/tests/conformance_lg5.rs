@@ -12,13 +12,16 @@ use c600_check::{Grant, AMBIENT_READ, EFFECT_UNDECLARED, IR_VERSION_UNSUPPORTED,
 use c600_digest::sha256;
 use c600_ir::{Capability, Program, EXEC_CONTRACT, IR_VERSION};
 use c600_module::code::{
-    CONTRACT_MISMATCH, DEPENDENCY_MISSING, DIGEST_MISMATCH, MODEL_NOT_SUPPORTED, NONCANONICAL_VALUE, NOT_GRANTED,
-    PERSISTENCE_FORMAT, PERSISTENCE_VERSION,
+    CONTRACT_MISMATCH, DEPENDENCY_MISSING, DIGEST_MISMATCH, IDENTITY_MISMATCH, MODEL_NOT_SUPPORTED, NONCANONICAL_VALUE,
+    NOT_GRANTED, PERSISTENCE_FORMAT, PERSISTENCE_VERSION,
 };
 use c600_module::{
-    approve, load, resolve, verify, Closure, Entry, Files, Identity, Lock, Manifest, Refusal, FULL_MODEL_ID,
+    approve, load, resolve, verify, Closure, Entry, Files, Identity, Lock, Manifest, Ready, Refusal, RunRequest,
+    FULL_MODEL_ID,
 };
 use c600_run::boundary::{admit_preview, Answer, Place, Store};
+use c600_run::interp::Options;
+use c600_run::menu::{MenuAlphabet, MenuIdentity};
 use c600_run::meter::Outcome as Ended;
 use c600_run::provenance::{self, field, hex, Author, Json, Profile};
 use c600_run::value::Value;
@@ -53,28 +56,6 @@ fn constant(n: i64) -> String {
 fn forwarder(name: &str, function: &str, alias: &str, dep: &str) -> String {
     let body = format!("export fn {function}() -> Int effects [] {{\n    return {alias}.value();\n}}\n");
     module(name, &[], &[(alias, dep)], &body)
-}
-
-/// A jumbling identity block: its model digest byte, menu, menu order and contract revision.
-fn jumbling(model: u8, menu: &str, order: &str, rev: &str) -> Identity {
-    Identity::from_json(&Json::object([
-        ("contract_rev", Json::text(rev)),
-        ("menu_id", Json::text(menu)),
-        ("menu_order", Json::text(order)),
-        ("model_id", Json::Text(hex(&[model; 32]))),
-        ("puzzle", Json::text("jumbling")),
-    ]))
-    .unwrap()
-}
-
-/// [`package`]'s files with a manifest the caller changes, and the lock resolved for that manifest.
-fn package_with(root: &str, deps: &[&str], change: impl FnOnce(&mut Manifest)) -> Package {
-    let files = package(root, deps).files;
-    let mut manifest = manifest_for(root.as_bytes());
-    change(&mut manifest);
-    let manifest = manifest.bytes();
-    let lock = resolve(&manifest, &files).unwrap().bytes();
-    Package { manifest, lock, files }
 }
 
 fn lock_with(lock: &Lock, change: impl FnOnce(&mut Lock)) -> Lock {
@@ -371,9 +352,12 @@ fn ct_lg5_03_the_approval_names_the_closure_and_a_rerun_refuses_missing_or_unsup
 /// CT-LG5-04 (part: a module runs under each identity its manifest lists, and its literal word reaches the engine as
 /// written; a session of another puzzle, or one that matches a listed identity except in the model digest, the menu,
 /// the menu order or the contract revision, is refused at verification, before any word or constant of the module
-/// runs, and an approval made under one listed identity does not load the closure verified under another; not run: a
-/// check at the run itself, since a run request names no session identity and a loaded entry runs against whatever
-/// engine the caller passes, and keeping a refused module as recorded material for inspection, which no crate builds)
+/// runs, and an approval made under one listed identity does not load the closure verified under another; at the run
+/// itself, which names the session's identity, an approval whose identity differs from the session's, or from the
+/// pinned menu's, in the puzzle, the model digest, the menu, the menu order or the contract revision is refused with
+/// `KN1:input.identity_mismatch` before any operation, a menu pinned under a Full approval included, with nothing
+/// executed and the module's words not reinterpreted, and the matching run works; not run: keeping a refused module as
+/// recorded material for inspection, which LG5.5 offers as an alternative to refusal (a reading for the freeze card)
 #[test]
 fn ct_lg5_04_a_model_or_menu_order_mismatch_refuses_the_module_before_it_runs() {
     let source = module(
@@ -416,6 +400,87 @@ fn ct_lg5_04_a_model_or_menu_order_mismatch_refuses_the_module_before_it_runs() 
     let under_full = approve(&closures[0], built_in, contract(), checker()).unwrap();
     assert_eq!(closures[1].digest, closures[0].digest);
     assert_eq!(code(load(&closures[1], &under_full)), MODEL_NOT_SUPPORTED);
+
+    // At the run itself (M1): the run names the session, and the approval's identity must be the session's in every
+    // field, and the pinned menu's. The module's words are never read against another model or menu order.
+    let menu = |model: u8, menu_id: &str, order: &str, rev: &str| {
+        let identity = MenuIdentity {
+            puzzle: "jumbling".into(),
+            model_id: hex(&[model; 32]),
+            menu_id: menu_id.into(),
+            menu_order: order.into(),
+            contract_rev: rev.into(),
+        };
+        MenuAlphabet::new(identity, 4, vec![0, 2, 1]).unwrap()
+    };
+    let attempt = |ready: &Ready, session: &Identity, pinned: Option<&MenuAlphabet>| {
+        let (mut engine, mut store) = (Engine::fixture(), Store::default());
+        let request = RunRequest {
+            session,
+            run: "run",
+            base: "rev-7",
+            args: vec![Value::target("c0")],
+            inputs: vec![manual()],
+            pins: pins(),
+            options: Options { menu: pinned, ..Options::new(WIDE) },
+        };
+        let result = ready.run(request, &mut engine, &mut store);
+        let untouched = engine.previews.is_empty()
+            && engine.menu_previews.is_empty()
+            && engine.traps == 0
+            && store_json(&store) == store_json(&Store::default());
+        (result, untouched)
+    };
+    let under_j = {
+        let approval = approve(&closures[1], entry("go", Author::BuiltIn, Profile::Solving), contract(), checker());
+        load(&closures[1], &approval.unwrap()).unwrap()
+    };
+    let same = menu(7, "menu-a", "order-a", "rev-a");
+    let (ran, _) = attempt(&under_j, &j, Some(&same));
+    assert_eq!(ran.unwrap().run.summary.outcome, Ended::Completed, "the matching session and menu run");
+    let (ran, _) = attempt(&under_j, &j, None);
+    assert_eq!(ran.unwrap().run.summary.outcome, Ended::Completed, "no pinned menu, the matching session");
+
+    let sessions = [
+        ("the model digest", jumbling(8, "menu-a", "order-a", "rev-a")),
+        ("the menu", jumbling(7, "menu-b", "order-a", "rev-a")),
+        ("the menu order", jumbling(7, "menu-a", "order-b", "rev-a")),
+        ("the contract revision", jumbling(7, "menu-a", "order-a", "rev-b")),
+        ("the puzzle", Identity::full()),
+    ];
+    for (what, session) in &sessions {
+        let (ran, untouched) = attempt(&under_j, session, None);
+        let r = refusal(ran);
+        assert_eq!(r.code, IDENTITY_MISMATCH, "a session that differs in {what}");
+        assert!(untouched, "nothing ran for {what}");
+    }
+    let menus = [
+        ("the model digest", menu(8, "menu-a", "order-a", "rev-a")),
+        ("the menu", menu(7, "menu-b", "order-a", "rev-a")),
+        ("the menu order", menu(7, "menu-a", "order-b", "rev-a")),
+        ("the contract revision", menu(7, "menu-a", "order-a", "rev-b")),
+    ];
+    for (what, pinned) in &menus {
+        let (ran, untouched) = attempt(&under_j, &j, Some(pinned));
+        let r = refusal(ran);
+        assert_eq!(r.code, IDENTITY_MISMATCH, "a menu that differs in {what}");
+        assert!(untouched, "nothing ran for the menu's {what}");
+    }
+
+    // A Full approval holds no menu: a pinned menu is refused, and so is a jumbling session.
+    let under_full_ready = {
+        let closure = verify(&p.manifest, &p.lock, &p.files, &Identity::full()).unwrap();
+        let approval = approve(&closure, entry("go", Author::BuiltIn, Profile::Solving), contract(), checker());
+        load(&closure, &approval.unwrap()).unwrap()
+    };
+    let (ran, _) = attempt(&under_full_ready, &Identity::full(), None);
+    assert_eq!(ran.unwrap().run.summary.outcome, Ended::Completed, "the matching Full run");
+    let (ran, untouched) = attempt(&under_full_ready, &Identity::full(), Some(&same));
+    assert_eq!(refusal(ran).code, IDENTITY_MISMATCH, "a menu pinned under a Full approval");
+    assert!(untouched);
+    let (ran, untouched) = attempt(&under_full_ready, &j, None);
+    assert_eq!(refusal(ran).code, IDENTITY_MISMATCH, "a jumbling session under a Full approval");
+    assert!(untouched);
 }
 
 /// CT-LG5-05 (part: beside a loaded active version, drafts are refused before they could replace it: source drafts

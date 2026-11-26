@@ -31,7 +31,7 @@ use c600_debug::journal::{Checkpoint, Entry, JournalRows, OutcomeRow, Page, Reco
 use c600_debug::session::{Executor, Finished, Target};
 use c600_debug::stepper::Line;
 use c600_debug::Pinned;
-use c600_module::{Binding, Modules, RunContext};
+use c600_module::{Binding, Halt, Modules, RunContext};
 use c600_run::boundary::Store;
 use c600_run::interp::{load, Host, Options};
 use c600_run::provenance::hex;
@@ -149,7 +149,14 @@ pub fn launch(
             Ok(loaded) => loaded,
             Err(refusal) => return Finished::Refused { code: refusal.code, detail: refusal.detail },
         };
-        let context = RunContext { run: &run.run, base: &run.base, inputs: run.inputs.clone(), pins: binding.pins() };
+        let context = RunContext {
+            session: &run.session,
+            menu: run.menu.as_ref(),
+            run: &run.run,
+            base: &run.base,
+            inputs: run.inputs.clone(),
+            pins: binding.pins(),
+        };
         let options = Options { sources: Some(binding.ranges()), ..Options::new(run.limits) };
         let (module, function, args) = (binding.module(), binding.function(), run.args.clone());
         let execute = |host: &mut dyn Host| {
@@ -159,7 +166,8 @@ pub fn launch(
         };
         match binding.run_with(context, &mut *engine, &mut store, execute) {
             Ok(bound) => Finished::Ran(bound.outcome.run),
-            Err(halted) => Finished::Refused { code: halted.cause.code, detail: halted.cause.detail },
+            Err(Halt::Refused(refusal)) => Finished::Refused { code: refusal.code, detail: refusal.detail },
+            Err(Halt::Executor(halted)) => Finished::Refused { code: halted.cause.code, detail: halted.cause.detail },
         }
     }
 }

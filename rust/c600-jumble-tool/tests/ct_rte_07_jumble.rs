@@ -314,6 +314,7 @@ impl Trial {
         let result = approve(&closure, entry, contract(), checker()).and_then(|approval| {
             let ready = load(&closure, &approval)?;
             let request = RunRequest {
+                session: &identity,
                 run: "r1",
                 base: "rev-7",
                 args: vec![Value::target("c0"), words.value(&[A])],

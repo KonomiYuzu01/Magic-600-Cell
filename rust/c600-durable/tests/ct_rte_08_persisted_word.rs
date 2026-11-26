@@ -75,8 +75,8 @@ fn approved(function: &str, author: Author, profile: Profile) -> (Closure, Appro
     (closure, approval)
 }
 
-fn request<'a>(run: &'a str, base: &'a str, args: Vec<Value>) -> RunRequest<'a> {
-    RunRequest { run, base, args, inputs: vec![manual()], pins: pins(), options: Limits::new(WIDE) }
+fn request<'a>(session: &'a Identity, run: &'a str, base: &'a str, args: Vec<Value>) -> RunRequest<'a> {
+    RunRequest { session, run, base, args, inputs: vec![manual()], pins: pins(), options: Limits::new(WIDE) }
 }
 
 /// The engine side of a run: it counts the proposals that reach it and serves nothing else.
@@ -111,7 +111,11 @@ fn saved(author: Author) -> (Approval, Vec<u8>, Store) {
     let (closure, saver) = approved("save", author, Profile::ToolAuthoring);
     let ready = load(&closure, &saver).unwrap_or_else(|r| panic!("{r:?}"));
     let mut run = Store::default();
-    let ran = ready.run(request("save", "rev", vec![Value::word(&LETTERS)]), &mut Engine::default(), &mut run);
+    let ran = ready.run(
+        request(&ready.approval().identity, "save", "rev", vec![Value::word(&LETTERS)]),
+        &mut Engine::default(),
+        &mut run,
+    );
     assert_eq!(ran.unwrap_or_else(|r| panic!("{r:?}")).run.summary.outcome, Ended::Completed);
     let block = run.records[&Place::Workspace("saved".into())].block.clone();
     (saver, block, run)
@@ -198,7 +202,11 @@ fn durable_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     let record = Stored { value: value.clone(), bytes: encoded(&value), block: restored.clone() };
     store.records.insert(Place::Workspace("saved".into()), record);
     let mut engine = Engine::default();
-    let out = go.run(request("run", &base(f.layer.revision()), vec![Value::target("c0")]), &mut engine, &mut store);
+    let out = go.run(
+        request(&go.approval().identity, "run", &base(f.layer.revision()), vec![Value::target("c0")]),
+        &mut engine,
+        &mut store,
+    );
     let out = out.unwrap_or_else(|r| panic!("{r:?}"));
     assert_eq!(out.shell.len(), 1);
     assert!(matches!(&out.shell[0].answer, Answer::Refused(r) if r.code == NOT_GRANTED), "{:?}", out.shell);
@@ -285,7 +293,11 @@ fn ct_rte_08_the_persisted_block_names_only_the_approved_module() {
     assert_ne!(other_saver.module, saver.module);
     let ready = load(&closure, &other_saver).unwrap_or_else(|r| panic!("{r:?}"));
     let mut scratch = Store::default();
-    let run = ready.run(request("save", "rev", vec![Value::word(&LETTERS)]), &mut Engine::default(), &mut scratch);
+    let run = ready.run(
+        request(&ready.approval().identity, "save", "rev", vec![Value::word(&LETTERS)]),
+        &mut Engine::default(),
+        &mut scratch,
+    );
     assert_eq!(run.unwrap_or_else(|r| panic!("{r:?}")).run.summary.outcome, Ended::Completed);
     let block = &scratch.records[&Place::Workspace("saved".into())].block;
     let read = provenance::read(block).expect("a valid block");

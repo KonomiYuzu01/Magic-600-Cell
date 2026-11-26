@@ -15,11 +15,12 @@ use std::sync::Arc;
 
 use c600_run::boundary::{Answer, Boundary, Capture, Context, Pins, Shown, Store};
 use c600_run::interp::{self, Host, Loaded, Options, Request, RowTariff, Run, Sink};
+use c600_run::menu::MenuIdentity;
 use c600_run::provenance::{self, field, hex, Json, Producer};
 use c600_run::value::{MenuWord, Value};
 
-use crate::code::{DIGEST_MISMATCH, MODEL_NOT_SUPPORTED, NOT_GRANTED};
-use crate::{refuse, Approval, Closure, Refusal};
+use crate::code::{DIGEST_MISMATCH, IDENTITY_MISMATCH, MODEL_NOT_SUPPORTED, NOT_GRANTED};
+use crate::{refuse, Approval, Closure, Identity, Refusal};
 
 /// A loaded closure and the approval it runs under.
 pub struct Ready {
@@ -46,9 +47,12 @@ pub fn load(closure: &Closure, approval: &Approval) -> Result<Ready, Refusal> {
     Ok(Ready { loaded, approval: approval.clone() })
 }
 
-/// One run's inputs: the run's name and base revision, the entry's arguments and their stored blocks, and the pins the
-/// policy in force can read.
+/// One run's inputs: the session's identity the run reads, the run's name and base revision, the entry's arguments and
+/// their stored blocks, and the pins the policy in force can read.
 pub struct RunRequest<'a> {
+    /// The identity of the session the run reads (KN0.1). The run is refused before any operation when the approval's
+    /// identity, or the pinned menu's, differs from it in any field (LG5.5, KN1.4, CT-LG5-04; LP2 draft).
+    pub session: &'a Identity,
     pub run: &'a str,
     pub base: &'a str,
     pub args: Vec<Value>,
@@ -57,9 +61,13 @@ pub struct RunRequest<'a> {
     pub options: Options<'a>,
 }
 
-/// The context of one run without its executor's options: the run's name and base revision, the stored blocks of the
-/// entry's arguments, and the pins the policy in force can read. [`Ready::run_with`] takes it.
+/// The context of one run without its executor's options: the session's identity, the identity of the menu alphabet
+/// the executor pins (none when it pins none), the run's name and base revision, the stored blocks of the entry's
+/// arguments, and the pins the policy in force can read. [`Ready::run_with`] takes it. The executor's menu is named
+/// here because `run_with` cannot see the executor's options (CT-LG5-04; LP2 draft).
 pub struct RunContext<'a> {
+    pub session: &'a Identity,
+    pub menu: Option<&'a MenuIdentity>,
     pub run: &'a str,
     pub base: &'a str,
     pub inputs: Vec<Vec<u8>>,
@@ -77,6 +85,14 @@ pub struct Outcome {
     pub separated: Vec<String>,
 }
 
+/// Why [`Ready::run_with`] gave no outcome: the run was refused before any operation because its session or menu
+/// identity differs from the approval's (LG5.5, KN1.4; LP2 draft), or the executor left no interpreter run.
+#[derive(Debug)]
+pub enum Halt<E> {
+    Refused(Refusal),
+    Executor(Halted<E>),
+}
+
 /// A run whose executor left no interpreter run, with what the boundary recorded before it stopped: what the shell
 /// shows for each proposal that reached it, the captures and the separated proposals ([`Ready::run_with`]).
 #[derive(Debug)]
@@ -92,13 +108,36 @@ impl Ready {
         &self.approval
     }
 
+    /// Refuses with `KN1:input.identity_mismatch` when the approval's identity differs from the session's, or from the
+    /// pinned menu's, in any field; the detail names the first differing field in KN1.4's order. The module's words
+    /// are never read in another order, and a refused module is not kept as a recorded state: LG5.5 offers "refused
+    /// or recorded" and this draft refuses (LG5.5, KN1.4, CT-LG5-04; LP2 draft).
+    pub fn admit_identity(&self, session: &Identity, menu: Option<&MenuIdentity>) -> Result<(), Refusal> {
+        let approved = &self.approval.identity;
+        if let Some(field) = approved.differing(session) {
+            let detail =
+                format!("the approval names another session identity: the field `{field}` differs (LG5.5, KN1.4)");
+            return Err(refuse(IDENTITY_MISMATCH, detail));
+        }
+        if let Some(field) = menu.and_then(|m| approved.differing_menu(m)) {
+            let detail =
+                format!("the run pins a menu alphabet the approval does not name: `{field}` differs (LG5.5, KN1.4)");
+            return Err(refuse(IDENTITY_MISMATCH, detail));
+        }
+        Ok(())
+    }
+
     /// Runs the approved entry with an engine and a store, in this process.
     pub fn run(&self, request: RunRequest, engine: &mut dyn Host, store: &mut Store) -> Result<Outcome, Refusal> {
-        let RunRequest { run, base, args, inputs, pins, options } = request;
+        let RunRequest { session, run, base, args, inputs, pins, options } = request;
         let (module, function) = (&self.approval.entry.module, &self.approval.entry.function);
-        let context = RunContext { run, base, inputs, pins };
+        let menu = options.menu.map(|m| m.identity());
+        let context = RunContext { session, menu, run, base, inputs, pins };
         let execute = |host: &mut dyn Host| self.loaded.run(module, function, args, host, &options);
-        self.run_with(context, engine, store, execute).map_err(|halted| halted.cause)
+        self.run_with(context, engine, store, execute).map_err(|halt| match halt {
+            Halt::Refused(refusal) => refusal,
+            Halt::Executor(halted) => halted.cause,
+        })
     }
 
     /// Runs the approved entry through `execute`, an executor of the same closure: in this process
@@ -112,7 +151,8 @@ impl Ready {
         engine: &mut dyn Host,
         store: &mut Store,
         execute: impl FnOnce(&mut dyn Host) -> Result<Run, E>,
-    ) -> Result<Outcome, Halted<E>> {
+    ) -> Result<Outcome, Halt<E>> {
+        self.admit_identity(context.session, context.menu).map_err(Halt::Refused)?;
         let a = &self.approval;
         let producer = Producer {
             contract: a.contract.clone(),
@@ -140,7 +180,7 @@ impl Ready {
         let separated = gate.separated.take();
         match ran {
             Ok(run) => Ok(Outcome { run, shell, captures, separated }),
-            Err(cause) => Err(Halted { cause, shell, captures, separated }),
+            Err(cause) => Err(Halt::Executor(Halted { cause, shell, captures, separated })),
         }
     }
 }

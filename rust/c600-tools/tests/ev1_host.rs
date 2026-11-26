@@ -214,7 +214,7 @@ fn serve(
             return Err(error);
         }
     };
-    let run = ModuleRun::of_job(&job, vec![]);
+    let run = ModuleRun::of_job(&job, vec![], binding.approval().identity.clone());
     let mut store = Store::default();
     let ran = match host {
         IN_PROCESS => run_bound_in_process(&binding, &run, engine, &mut store),
@@ -376,7 +376,16 @@ fn debug(
     let executor = if process { Executor::Unmapped("c600-runtime process".into()) } else { Executor::Evaluator };
     let target = c600_tools::debug::target(&binding, input, executor);
     let wide = c600_run::meter::Amounts { steps: 1 << 30, kernel_cost: 1 << 30, memory: 1 << 30, output: 1 << 30 };
-    let run = ModuleRun { run: "debug-1".into(), base: "e0".into(), args: vec![], inputs: vec![], limits: wide };
+    let session = binding.approval().identity.clone();
+    let run = ModuleRun {
+        session,
+        menu: None,
+        run: "debug-1".into(),
+        base: "e0".into(),
+        args: vec![],
+        inputs: vec![],
+        limits: wide,
+    };
     let launch = c600_tools::debug::launch(binding, run, Box::new(Served), Store::default());
     let mut debugger = Debugger::new();
     let mut at = debugger.open("d", target.clone(), launch).unwrap();

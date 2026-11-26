@@ -454,10 +454,11 @@ fn ct_rte_08_a_menu_word_proposal_passes_the_same_gate() {
          export fn outcome(m: MenuWord, t: Target) -> Text effects [snapshot, preview] {\n    \
          return receipt_effect(propose(m, t));\n}\n",
     );
-    let p = package(&root, &[]);
+    let session = jumbling(1, "menu-a", "order-1", "rev-1");
+    let p = package_with(&root, &[], |m| m.supports = vec![session.clone()]);
     let identity = MenuIdentity {
-        puzzle: "600-cell-jumbled".into(),
-        model_id: "model-1".into(),
+        puzzle: "jumbling".into(),
+        model_id: hex(&[1; 32]),
         menu_id: "menu-a".into(),
         menu_order: "order-1".into(),
         contract_rev: "rev-1".into(),
@@ -466,6 +467,7 @@ fn ct_rte_08_a_menu_word_proposal_passes_the_same_gate() {
     let run_on = |ready: &c600_module::Ready, letters: &[[u32; 2]], engine: &mut Engine| {
         let word = Value::menu_word(alphabet.shared_identity(), letters).expect("indices below 600");
         let request = RunRequest {
+            session: &session,
             run: "run",
             base: "rev-7",
             args: vec![word, Value::target("c0")],
@@ -476,7 +478,7 @@ fn ct_rte_08_a_menu_word_proposal_passes_the_same_gate() {
         ready.run(request, engine, &mut Store::default()).expect("a run")
     };
 
-    let ready = previewer(&p, "go");
+    let ready = ready_under(&p, &session, solving("go")).unwrap();
     let mut engine = Engine::fixture();
     let out = run_on(&ready, &[[0, 1], [3, 2]], &mut engine);
     assert_eq!(out.run.output.as_deref(), Some(&b"\"run/1\"\n"[..]), "the fixed acknowledgement");
@@ -488,7 +490,7 @@ fn ct_rte_08_a_menu_word_proposal_passes_the_same_gate() {
     assert_ne!(out.canonical(), other.canonical(), "the canonical result keeps the menu word");
     assert!(contains(&out.canonical(), b"menu-a"), "and its alphabet");
 
-    let reads = previewer(&p, "outcome");
+    let reads = ready_under(&p, &session, solving("outcome")).unwrap();
     let mut engine = Engine::fixture();
     let out = run_on(&reads, &[[0, 1]], &mut engine);
     assert_eq!((out.run.summary.outcome, out.run.summary.code), (Ended::Error, Some(NOT_GRANTED)));

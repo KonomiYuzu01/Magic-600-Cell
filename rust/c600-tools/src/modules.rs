@@ -29,9 +29,10 @@
 use std::sync::Arc;
 
 use c600_command::{Error as LayerError, ModuleVersions, Overlay, ProgramJob, ViewSourceRef};
-use c600_module::{Binding, BoundRun, Modules, Refusal, RunContext, RunRequest};
+use c600_module::{Binding, BoundRun, Halt, Identity, Modules, Refusal, RunContext, RunRequest};
 use c600_run::boundary::Store;
 use c600_run::interp::{code, Host, Options};
+use c600_run::menu::MenuIdentity;
 use c600_run::meter::Amounts;
 use c600_run::value::Value;
 use c600_runtime::codec::encode_value;
@@ -44,6 +45,11 @@ use crate::tool::limits;
 /// One run of a bound entry: its name, the revision it reads, its arguments with their stored blocks, and its limits.
 #[derive(Clone, Debug)]
 pub struct ModuleRun {
+    /// The identity of the session the run reads (KN0.1): the run is refused before any operation when the bound
+    /// approval names another (LG5.5, CT-LG5-04; LP2 draft).
+    pub session: Identity,
+    /// The identity of the menu alphabet the run pins, when it pins one.
+    pub menu: Option<MenuIdentity>,
     pub run: String,
     pub base: String,
     pub args: Vec<Value>,
@@ -54,8 +60,10 @@ pub struct ModuleRun {
 impl ModuleRun {
     /// The run of a program job: `job-<id>` at the job's revision, under the job's budget (KN7.7), with the job's
     /// argument blocks, on `args`, the job's arguments converted to the entry's values.
-    pub fn of_job(job: &ProgramJob, args: Vec<Value>) -> ModuleRun {
+    pub fn of_job(job: &ProgramJob, args: Vec<Value>, session: Identity) -> ModuleRun {
         ModuleRun {
+            session,
+            menu: None,
             run: job.run(),
             base: crate::bridge::base(&job.revision),
             args,
@@ -147,6 +155,7 @@ pub fn run_bound_in_process(
         return Err(stopped);
     }
     let request = RunRequest {
+        session: &run.session,
         run: &run.run,
         base: &run.base,
         args: run.args.clone(),
@@ -174,7 +183,14 @@ impl ProcessHost {
         let options = JobOptions { record: false, ..JobOptions::new(run.limits) };
         let job = BoundJob::new(binding, run.args.clone(), options)
             .map_err(|refused| Stopped { cause: Cause::Refused(refused), shell: vec![] })?;
-        let context = RunContext { run: &run.run, base: &run.base, inputs: run.inputs.clone(), pins: binding.pins() };
+        let context = RunContext {
+            session: &run.session,
+            menu: run.menu.as_ref(),
+            run: &run.run,
+            base: &run.base,
+            inputs: run.inputs.clone(),
+            pins: binding.pins(),
+        };
         let deadline = self.deadline;
         let runtime = &mut self.runtime;
         let execute = |host: &mut dyn Host| match runtime.run_bound(&job, host, deadline) {
@@ -182,8 +198,9 @@ impl ProcessHost {
             Ok(Ended::Refused(refused)) => Err(Cause::Refused(refused)),
             Err(fault) => Err(Cause::Lost(fault)),
         };
-        binding
-            .run_with(context, engine, store, execute)
-            .map_err(|halted| Stopped { cause: halted.cause, shell: halted.shell })
+        binding.run_with(context, engine, store, execute).map_err(|halt| match halt {
+            Halt::Refused(refusal) => start_refused(refusal.code, refusal.detail),
+            Halt::Executor(halted) => Stopped { cause: halted.cause, shell: halted.shell },
+        })
     }
 }
