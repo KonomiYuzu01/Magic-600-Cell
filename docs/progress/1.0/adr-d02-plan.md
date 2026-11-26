@@ -9,18 +9,18 @@ the ADR text, the shell build and the acceptance runs come after A3 and are only
 A1 to A3 status, 24 November 2026: done on the owner's go of 23 November 2026, with A3 allowed up to three rounds
 instead of section 5's one (owner, 23 Nov 2026: up to 3 rounds; three ran); the 152 open rows sit in 28 question groups,
 each with two or three options, the recommended one first, one question left split for A4; supplemented the same day
-after LP4 and LP5 landed (owner: "合入后就补"), which aligns A3's words with the landed glossary and verdict types and
-adds two open rows; the outputs stay private in the main checkout's `work/adr-d02/`.
+after LP4 and LP5 landed (owner: "fill it in once they merge"), which aligns A3's words with the landed glossary and
+verdict types and adds two open rows; the outputs stay private in the main checkout's `work/adr-d02/`.
 
-A4 status, 25 November 2026: the pick page went to the owner as one card on the owner's go of the same day
-("恢复工作，告诉ADR线D02轮的A4可以做准备了", then "A4准备好了直接开工"). It carries the data its three waiting picks
-needed: the colouring number of the domain contact graph (4, exact, at W-J record 300 and both deep exports; 1 at the
-I_a@40 stop), the seam-face mesh size (0.59 to 0.66 million triangles at the deep exports, drawn whole) and offline
-drawings of the deep exports in both Global layouts, stand-ins for L1 and not Look Lab output. Following the owner's
-direction that open research is ADR-D02's core ("开放式研究是D02的核心"), it recommends the freer option inside the
-frozen frame at items 1, 3 and 12. Item 13, who builds the ADR-D02 and ADR-D03 shells, was settled by the owner the
-same day: Fable writes the build framework, Opus builds, on the subscription. The page, data and scripts stay private
-in the main checkout's `work/adr-d02/a4/`.
+A4 status, 25 November 2026: the pick page went to the owner as one card on the owner's go of the same day ("resume
+work; tell the ADR line that D02's A4 may be prepared", then "once A4 is prepared, start right away"). It carries the
+data its three waiting picks needed: the colouring number of the domain contact graph (4, exact, at W-J record 300 and
+both deep exports; 1 at the I_a@40 stop), the seam-face mesh size (0.59 to 0.66 million triangles at the deep exports,
+drawn whole) and offline drawings of the deep exports in both Global layouts, stand-ins for L1 and not Look Lab output.
+Following the owner's direction that open research is ADR-D02's core ("open research is D02's core"), it recommends the
+freer option inside the frozen frame at items 1, 3 and 12. Item 13, who builds the ADR-D02 and ADR-D03 shells, was
+settled by the owner the same day: Fable writes the build framework, Opus builds, on the subscription. The page, data
+and scripts stay private in the main checkout's `work/adr-d02/a4/`.
 
 A4 answered, 26 November 2026: every recommended option except item 9 (Q3.b, the owner's reading of the frozen J-7
 and N-1) and item 12c (the base targets: at most 3,000 hours of real time for an expert full solve without jumbling;
