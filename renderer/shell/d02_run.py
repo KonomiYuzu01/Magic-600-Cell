@@ -129,6 +129,7 @@ class Desktop:
         self.user32.GetWindowLongPtrW.argtypes = (wintypes.HWND, ctypes.c_int)
         self.user32.GetWindowLongPtrW.restype = ctypes.c_ssize_t
         self.user32.IsWindowVisible.argtypes = (wintypes.HWND,)
+        self.user32.GetClassNameW.argtypes = (wintypes.HWND, wintypes.LPWSTR, ctypes.c_int)
 
     def foreground(self) -> int:
         return int(self.user32.GetForegroundWindow() or 0)
@@ -148,6 +149,16 @@ class Desktop:
 
     def topmost(self, window: int) -> bool:
         return bool(self.user32.GetWindowLongPtrW(window, -20) & 0x8)  # GWL_EXSTYLE, WS_EX_TOPMOST
+
+    def describe(self, window: int, pid: int | None) -> dict:
+        """A window's class, whether the shell's process owns it, and whether it is topmost; never its title."""
+        if not window:
+            return {}
+        name = self.ctypes.create_unicode_buffer(256)
+        self.user32.GetClassNameW(window, name, 256)
+        owner = self.wintypes.DWORD()
+        self.user32.GetWindowThreadProcessId(window, self.ctypes.byref(owner))
+        return {"class": name.value, "shell": pid is not None and owner.value == pid, "topmost": self.topmost(window)}
 
 
 def run(script: str, out: Path, build: Path | None, state: str | None, desktop=None, launcher=launch.main,
@@ -178,12 +189,17 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     thread.start()
     while "at" not in started and thread.is_alive():
         sleep(0.1)
-    after, topmost = None, None
+    after, topmost, seen = None, None, {}
+    describe = getattr(desktop, "describe", lambda window, pid: {})
     if "at" in started:
         while clock() - started["at"] < FOREGROUND_AFTER_S and thread.is_alive():
             sleep(0.1)
         after = desktop.foreground()
-        topmost = any(desktop.topmost(window) for window in desktop.windows_of(started["process"].pid))
+        pid = started["process"].pid
+        windows = desktop.windows_of(pid)
+        topmost = any(desktop.topmost(window) for window in windows)
+        seen = {"before": describe(before, pid), "after": describe(after, pid),
+                "shell_windows": [describe(window, pid) for window in windows]}
     thread.join(RUN_TIMEOUT_S)
     problems = []
     if thread.is_alive():
@@ -207,7 +223,7 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         problems += window_problems(dumps)
         problems += EXPECT[script](dumps, source, state)
     record = {"format": FORMAT, "script": script, "state": state, "steps": len(dumps), "mismatches": problems,
-              "foreground_kept": after is not None and after == before, "topmost": bool(topmost),
+              "foreground_kept": after is not None and after == before, "topmost": bool(topmost), "windows": seen,
               "gave_back": max((dump.get("window", {}).get("gave_back", 0) for dump in dumps), default=0)}
     if out.is_dir():
         (out / RECORD).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8", newline="\n")

@@ -128,7 +128,7 @@ internal sealed partial class D02Driver : Node
             var position = DisplayServer.WindowGetPosition();
             var size = DisplayServer.WindowGetSize();
             var text = string.Create(CultureInfo.InvariantCulture,
-                $"{{\"position\":[{position.X},{position.Y}],\"size\":[{size.X},{size.Y}],\"topmost\":{(D02Window.Topmost() ? "true" : "false")},\"gave_back\":{D02Window.GaveBack}}}\n");
+                $"{{\"position\":[{position.X},{position.Y}],\"size\":[{size.X},{size.Y}],\"topmost\":{(D02Window.Topmost() ? "true" : "false")},\"gave_back\":{D02Window.GaveBack},\"owner_acted\":{(D02Window.OwnerActed ? "true" : "false")}}}\n");
             if (text != _window)
             {
                 _window = text;
@@ -276,6 +276,7 @@ internal sealed partial class D02Driver : Node
             json.WriteBoolean("foreground", D02Window.Foreground());
             json.WriteBoolean("topmost", D02Window.Topmost());
             json.WriteNumber("gave_back", D02Window.GaveBack);
+            json.WriteBoolean("owner_acted", D02Window.OwnerActed);
             json.WriteEndObject();
             json.WriteStartArray("lines");
             foreach (var (group, text) in ScreenText.Of(_frame))

@@ -9,11 +9,19 @@ namespace Magic600.Shell.D02;
 /// The owner's window rule for a watched D02 start (26 November 2026): the shell's window is never on top and never
 /// takes the foreground. The launcher starts the process with SW_SHOWNOACTIVATE and names, in M600_D02_FOREGROUND, the
 /// window that had the foreground just before. Godot 4.7.2 still shows its main window with SW_SHOW and then calls
-/// SetForegroundWindow (display_server_windows.cpp, show_window), which Windows allows for example after 200 s
-/// without input. So the shell checks during its first seconds: when its own window has the foreground, it hands the
-/// foreground back to that window and places itself just behind it, without activating itself. It stops the taskbar
-/// flash a refused activation starts. It never raises its own window, never asks for the foreground for itself and
-/// never sets a topmost flag.
+/// SetForegroundWindow (display_server_windows.cpp, show_window), which Windows allows when the launch descends from
+/// the foreground process, for example while the owner is in the Claude app, or after 200 s without input.
+/// So the shell undoes it during its first seconds:
+/// - at its first check, in Shell._Ready, it always hands the foreground back when its own window has it, since only
+///   Godot's showing can have activated it then;
+/// - at every later check, when its own window has the foreground it hands it back, and otherwise it places itself
+///   just behind the window that has the foreground, so it does not cover the owner's work.
+/// Each hand-back places the shell's window just behind the window that gets the foreground back. The later checks stop
+/// for good once the owner presses a mouse button anywhere, or once the window moves or changes size (a drag, a
+/// maximise): from then on the owner's clicks and switches stand. Keys do not stop them, since keys typed elsewhere
+/// land in the shell while Godot holds the foreground. The shell never activates itself, never raises its own window,
+/// never asks for the foreground for itself and never sets a topmost flag; it stops the taskbar flash a refused
+/// activation starts.
 /// </summary>
 internal static class D02Window
 {
@@ -21,6 +29,9 @@ internal static class D02Window
     private const long WsExTopmost = 0x8;
     private const uint SwpNoSize = 0x1, SwpNoMove = 0x2, SwpNoActivate = 0x10;
     private const uint FlashwStop = 0;
+    private const int VkLButton = 0x01, VkRButton = 0x02, VkMButton = 0x04;
+    /// <summary>SetWindowPos's HWND_NOTOPMOST: behind every topmost window, and it clears the topmost style.</summary>
+    private static readonly IntPtr HwndNoTopmost = new(-2);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct FlashInfo
@@ -54,8 +65,18 @@ internal static class D02Window
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool FlashWindowEx(ref FlashInfo info);
 
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int key);
+
     /// <summary>How many times the shell handed the foreground back.</summary>
     public static int GaveBack { get; private set; }
+
+    /// <summary>True once the owner pressed a mouse button or moved or resized the window: the checks have stopped.
+    /// </summary>
+    public static bool OwnerActed { get; private set; }
+
+    private static bool _checked;
+    private static Vector2I _position, _size;
 
     private static IntPtr Own() => (IntPtr)DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
 
@@ -63,29 +84,69 @@ internal static class D02Window
         long.TryParse(System.Environment.GetEnvironmentVariable("M600_D02_FOREGROUND"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
             ? (IntPtr)value : IntPtr.Zero;
 
-    /// <summary>Hands the foreground back when the shell's own window has it, and stops a taskbar flash.</summary>
+    private static bool MouseButtonDown() =>
+        (GetAsyncKeyState(VkLButton) & 0x8000) != 0 || (GetAsyncKeyState(VkRButton) & 0x8000) != 0 ||
+        (GetAsyncKeyState(VkMButton) & 0x8000) != 0;
+
+    /// <summary>One check: undoes Godot's own activation, keeps the window behind the owner's, stops a taskbar flash.
+    /// Does nothing once the owner acted.</summary>
     public static void Settle()
     {
         var own = Own();
-        if (own == IntPtr.Zero)
+        if (own == IntPtr.Zero || OwnerActed)
         {
             return;
         }
+        var first = !_checked;
+        if (first)
+        {
+            _checked = true;
+            _position = DisplayServer.WindowGetPosition();
+            _size = DisplayServer.WindowGetSize();
+        }
+        else if (MouseButtonDown() || DisplayServer.WindowGetPosition() != _position || DisplayServer.WindowGetSize() != _size)
+        {
+            OwnerActed = true;
+            return;
+        }
         var previous = Previous();
-        if (GetForegroundWindow() == own && previous != IntPtr.Zero && previous != own && IsWindow(previous))
+        var foreground = GetForegroundWindow();
+        if (foreground == own && previous != IntPtr.Zero && previous != own && IsWindow(previous))
         {
             // The previous window gets its foreground back; the shell sits just behind it, not activated.
             SetForegroundWindow(previous);
-            SetWindowPos(own, previous, 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);
+            Behind(own, previous);
             GaveBack++;
+        }
+        else if (foreground != own && foreground != IntPtr.Zero)
+        {
+            // Shown without activation, the window may still sit above the owner's work: it goes just behind it.
+            Behind(own, foreground);
         }
         var flash = new FlashInfo { Size = (uint)Marshal.SizeOf<FlashInfo>(), Window = own, Flags = FlashwStop };
         FlashWindowEx(ref flash);
     }
 
+    /// <summary>
+    /// Places the shell's window just behind <paramref name="other"/>, without activating it. Windows makes a window
+    /// topmost when it lands among topmost windows, so behind a topmost window the shell goes behind every topmost
+    /// window instead, and a topmost style that appears anyway is cleared at once.
+    /// </summary>
+    private static void Behind(IntPtr own, IntPtr other)
+    {
+        var after = IsTopmost(other) ? HwndNoTopmost : other;
+        SetWindowPos(own, after, 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);
+        if (IsTopmost(own))
+        {
+            SetWindowPos(own, HwndNoTopmost, 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);
+        }
+    }
+
+    private static bool IsTopmost(IntPtr window) => (GetWindowLongPtrW(window, GwlExStyle).ToInt64() & WsExTopmost) != 0;
+
     /// <summary>Whether the shell's own window has the foreground.</summary>
     public static bool Foreground() => Own() is var own && own != IntPtr.Zero && GetForegroundWindow() == own;
 
     /// <summary>Whether the shell's own window carries the topmost style (it never should).</summary>
-    public static bool Topmost() => Own() is var own && own != IntPtr.Zero && (GetWindowLongPtrW(own, GwlExStyle).ToInt64() & WsExTopmost) != 0;
+    public static bool Topmost() => Own() is var own && own != IntPtr.Zero && IsTopmost(own);
 }

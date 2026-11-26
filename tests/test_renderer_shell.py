@@ -1147,8 +1147,22 @@ class D02Launch(unittest.TestCase):
                 # The one activation is the hand-back: of the window that had the foreground, never the shell's own.
                 self.assertEqual((path.name, calls), ("D02Window.cs", ["previous"]))
         window = text(PROJECT / "D02" / "D02Window.cs")
-        self.assertIn("SetWindowPos(own, previous, 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);", window)
-        self.assertEqual(len(re.findall(r"SetWindowPos\(own", window)), 1)
+        # The window only ever goes behind another one (the previous or the current foreground window), or behind
+        # every topmost window when that one is topmost; never to the top, and never activated.
+        self.assertEqual(re.findall(r"SetWindowPos\(own, (\w+), 0, 0, 0, 0, SwpNoSize \| SwpNoMove \| SwpNoActivate\);",
+                                    window), ["after", "HwndNoTopmost"])
+        self.assertEqual(len(re.findall(r"SetWindowPos\(", window)), 3)  # the import and the two calls
+        self.assertIn("var after = IsTopmost(other) ? HwndNoTopmost : other;", window)
+        self.assertIn("private static readonly IntPtr HwndNoTopmost = new(-2);", window)
+        self.assertEqual(re.findall(r"Behind\(own, (\w+)\);", window), ["previous", "foreground"])
+        # After the first check, a mouse button or a moved or resized window ends the checks for good: the owner's own
+        # clicks and switches stand. Keys do not count.
+        settle = window[window.index("public static void Settle()"):]
+        self.assertLess(settle.index("else if (MouseButtonDown() || DisplayServer.WindowGetPosition() != _position || "
+                                     "DisplayServer.WindowGetSize() != _size)"),
+                        settle.index("SetForegroundWindow(previous);"))
+        self.assertIn("if (own == IntPtr.Zero || OwnerActed)", settle)
+        self.assertNotIn("GetKeyState", window.replace("GetAsyncKeyState(Vk", ""))
         self.assertNotIn("always_on_top", text(PROJECT / "project.godot"))
         shell = text(PROJECT / "Shell.cs")
         self.assertIn("if (D02.ShellJumble.On)\n        {\n            D02.D02Window.Settle();", shell)
