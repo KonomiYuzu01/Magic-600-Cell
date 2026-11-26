@@ -349,26 +349,39 @@ fn a_twist_key_leaves_the_view_work_to_later_frames_that_never_wait_for_it() {
     let _ = std::fs::remove_dir_all(&folder);
 }
 
-/// Keys faster than the builds: each commit is durable and names its own revision, the worker builds the newest head
-/// handed out, the core adopts it, and the control at the close passes on the frame that shows it.
+/// A burst of keys faster than the builds: each commit is durable and names its own revision, in order; the frames
+/// between them never wait and never go back to an older revision; the core adopts revisions in increasing order,
+/// skipping only ones a newer head replaced, and ends on the newest; the control at the close passes on the frame
+/// that shows it.
 #[test]
-fn twists_faster_than_their_builds_adopt_the_newest_head_and_the_control_passes() {
+fn a_burst_of_twists_adopts_in_revision_order_ends_on_the_newest_and_the_control_passes() {
     let run = Run::new();
-    let folder = fresh("coalesced");
+    let folder = fresh("burst");
     assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
-    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
-    assert_eq!(run.press("KeyK"), (M6H_PRESS_COMMITTED, 3));
-    assert_eq!(run.press("Shift+KeyL"), (M6H_PRESS_COMMITTED, 4));
+    let adopted = run.fake().adoptions.len();
+    let chords = ["KeyJ", "KeyK", "KeyL", "Shift+KeyJ", "Shift+KeyK", "Shift+KeyL"];
+    let mut drawn = Vec::new();
+    for i in 0..12u64 {
+        assert_eq!(run.press(chords[i as usize % chords.len()]), (M6H_PRESS_COMMITTED, i + 2));
+        if i % 2 == 1 {
+            run.fake().complete();
+            drawn.push(run.frame().engine_revision);
+        }
+    }
     run.settle();
-    assert_eq!(run.fake().adoptions.last().map(|adoption| adoption.0), Some(4));
     run.fake().complete();
     run.settle();
     let last = run.frame();
-    assert_eq!((last.engine_revision, last.publication_revision), (4, 4));
+    drawn.push(last.engine_revision);
+    assert!(drawn.windows(2).all(|pair| pair[0] <= pair[1]), "frames never go back: {drawn:?}");
+    let revisions: Vec<u64> = run.fake().adoptions[adopted..].iter().map(|adoption| adoption.0).collect();
+    assert!(revisions.windows(2).all(|pair| pair[0] < pair[1]), "adopted in increasing order: {revisions:?}");
+    assert_eq!(revisions.last(), Some(&13), "the newest head is adopted: {revisions:?}");
+    assert_eq!((last.engine_revision, last.publication_revision), (13, 13));
     let shown = run.present();
-    assert_eq!(shown.last().map(|row| row.engine_revision), Some(4));
-    assert_eq!(run.close(4), (M6H_OK, 1), "{}", last_error(run.host));
-    assert_eq!(int(&record_of(run.host), "committed"), Some(3));
+    assert_eq!(shown.last().map(|row| row.engine_revision), Some(13));
+    assert_eq!(run.close(13), (M6H_OK, 1), "{}", last_error(run.host));
+    assert_eq!(int(&record_of(run.host), "committed"), Some(12));
     let _ = std::fs::remove_dir_all(&folder);
 }
 
