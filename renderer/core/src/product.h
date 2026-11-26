@@ -33,6 +33,33 @@ constexpr size_t MaxEnded = 1024; // released cancelled or failed tickets still 
 constexpr size_t MaxPicks = 1024; // live pick tickets
 constexpr size_t RetainedFrames = 64; // reported frames kept for picks
 constexpr size_t MaxUnreported = 1024; // unread frame reports kept
+constexpr size_t MaxSpareSets = 2; // C9 (26 Nov 2026): released preparation resources kept for the next preparation
+
+// C9 (26 Nov 2026): released preparation resources (a command allocator, a command list and the set's buffers) kept
+// for the next preparation, so that a twist's preparation reuses them instead of creating them on the shell's frame
+// thread. scene.cpp keeps a set only when Product::releasable released it on a live device, that is after its upload
+// and every frame and ID pass that read it completed; at most MaxSpareSets are kept, the newest is taken first, and a
+// device removal drops them all.
+template<class T> class Spares {
+public:
+    // Keeps `value` for a later take. False, with `value` left to the caller, when `removed` or when MaxSpareSets are
+    // kept already.
+    bool keep(T&& value, bool removed) {
+        if (removed || items_.size() >= MaxSpareSets) return false;
+        items_.push_back(std::move(value));
+        return true;
+    }
+    std::optional<T> take() {
+        if (items_.empty()) return std::nullopt;
+        std::optional<T> out(std::move(items_.back()));
+        items_.pop_back();
+        return out;
+    }
+    void clear() { items_.clear(); }
+    size_t size() const { return items_.size(); }
+private:
+    std::vector<T> items_;
+};
 
 // One adopted engine state (sa2_engine_image), copied.
 struct EngineImage {

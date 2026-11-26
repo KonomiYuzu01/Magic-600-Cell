@@ -530,11 +530,17 @@ void harvest(sa2_context* ctx, sa2::Scene& scene) {
 }
 // Releases the GPU resources of finished tickets and the staging of completed
 // uploads; after device loss, every set's and every pick's (sa2_pick_poll then
-// answers SA2_E_DEVICE_REMOVED and never reads a pick).
+// answers SA2_E_DEVICE_REMOVED and never reads a pick). C9 (26 Nov 2026): on a
+// live device a released set's resources are kept for the next preparation
+// (sa2::Spares); a removal drops them.
 void release(sa2_context* ctx, sa2::Scene& scene) {
+    const bool live = !scene.product.removed();
     for (const auto ticket : scene.product.releasable(completed(ctx->ready.Get()), scene.product_completed()))
-        scene.product_release_set(ticket);
-    if (scene.product.removed()) scene.product_release_picks();
+        scene.product_release_set(ticket, live);
+    if (scene.product.removed()) {
+        scene.product_release_picks();
+        scene.product_release_spares();
+    }
     scene.product_collect();
 }
 void write_json(const std::string& text, char* buffer, uint32_t buffer_size, uint32_t* out_size) {

@@ -101,6 +101,12 @@ struct ProductGpu {
     ComPtr<ID3D12Fence> fence;
     uint64_t value = 0, frequency = 0;
     std::map<uint64_t, Set> sets; // by preparation ticket
+    // C9 (26 Nov 2026): a set's upload resources once its upload completed (product_collect), and its two buffers once
+    // the set is released on a live device (product_release_set), kept for the next preparation.
+    struct Upload { ComPtr<ID3D12CommandAllocator> allocator; ComPtr<ID3D12GraphicsCommandList> list; Buffer staging; };
+    struct Targets { Buffer visible, instances; };
+    Spares<Upload> spare_uploads;
+    Spares<Targets> spare_targets;
     std::map<uint64_t, Pick> picks; // by pick ticket
     ComPtr<ID3D12Resource> id_target; // R32_UINT at the scene's size, created on the first pick
     ComPtr<ID3D12DescriptorHeap> id_heap;
@@ -1221,12 +1227,27 @@ uint64_t Scene::product_prepare(uint64_t ticket, const PreparedData& data, ID3D1
     auto& g = *gpu; auto& p = g.product_gpu();
     scene_require(data.visible.size() == SA2_SLOTS && data.instances.size() == SA2_SLOTS, "a preparation holds one entry per slot", SA2_E_INVALID_ARGUMENT);
     scene_require(p.sets.find(ticket) == p.sets.end(), "the ticket already has GPU resources", SA2_E_WRONG_STATE);
-    // Resources first: a failure here leaves the scene usable.
+    // Resources first: a failure here leaves the scene usable. C9 (26 Nov 2026): kept resources are reused before any
+    // is created (Spares). A kept upload's work completed, so its allocator may be reset; kept buffers were last read
+    // by work that completed, so they decayed to COMMON, as a new default-heap buffer starts. Kept resources too small
+    // for this preparation are dropped (every preparation holds SA2_SLOTS entries, so none is today).
     ProductGpu::Set set;
-    std::tie(set.allocator, set.list) = g.product_list(L"SA2 preparation command list");
-    set.visible = g.buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
-    set.instances = g.buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
-    set.staging = g.buffer(2 * sb::LabelBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+    auto upload = p.spare_uploads.take();
+    if (upload && upload->staging.size >= 2 * sb::LabelBytes) {
+        hr(g.device, upload->allocator->Reset(), "Reset(preparation command allocator)");
+        hr(g.device, upload->list->Reset(upload->allocator.Get(), nullptr), "Reset(preparation command list)");
+        set.allocator = std::move(upload->allocator); set.list = std::move(upload->list); set.staging = std::move(upload->staging);
+    } else {
+        std::tie(set.allocator, set.list) = g.product_list(L"SA2 preparation command list");
+        set.staging = g.buffer(2 * sb::LabelBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+    }
+    auto targets = p.spare_targets.take();
+    if (targets && targets->visible.size >= sb::LabelBytes && targets->instances.size >= sb::LabelBytes) {
+        set.visible = std::move(targets->visible); set.instances = std::move(targets->instances);
+    } else {
+        set.visible = g.buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
+        set.instances = g.buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
+    }
     auto* bytes = g.map(set.staging);
     std::memcpy(bytes, data.visible.data(), size_t(sb::LabelBytes)); std::memcpy(bytes + sb::LabelBytes, data.instances.data(), size_t(sb::LabelBytes));
     set.staging.resource->Unmap(0, nullptr);
@@ -1334,13 +1355,36 @@ uint32_t Scene::product_pick_value(uint64_t ticket) {
 }
 void Scene::product_release_pick(uint64_t ticket) { if (gpu->product) gpu->product->picks.erase(ticket); }
 void Scene::product_release_picks() { if (gpu->product) gpu->product->picks.clear(); }
-void Scene::product_release_set(uint64_t ticket) { if (gpu->product) gpu->product->sets.erase(ticket); }
+void Scene::product_release_set(uint64_t ticket, bool reuse) {
+    if (!gpu->product) return;
+    auto& p = *gpu->product;
+    const auto it = p.sets.find(ticket);
+    if (it == p.sets.end()) return;
+    auto set = std::move(it->second);
+    p.sets.erase(it);
+    // Releasable means its upload and every frame and ID pass that read it completed.
+    const bool lost = !reuse || !gpu->healthy;
+    if (set.staging.resource)
+        p.spare_uploads.keep(ProductGpu::Upload{std::move(set.allocator), std::move(set.list), std::move(set.staging)}, lost);
+    p.spare_targets.keep(ProductGpu::Targets{std::move(set.visible), std::move(set.instances)}, lost);
+}
+void Scene::product_release_spares() {
+    if (!gpu->product) return;
+    gpu->product->spare_uploads.clear();
+    gpu->product->spare_targets.clear();
+}
 void Scene::product_collect() {
     auto& g = *gpu;
     if (!g.product) return;
     const auto completed = product_completed();
+    // C9 (26 Nov 2026): a completed upload's allocator, list and staging are kept for the next preparation on a live
+    // device (a removal reports no completion, product_completed).
     for (auto& [ticket, set] : g.product->sets)
-        if (set.fence && completed >= set.fence) { set.staging = {}; set.list.Reset(); set.allocator.Reset(); }
+        if (set.fence && completed >= set.fence && set.staging.resource) {
+            g.product->spare_uploads.keep(ProductGpu::Upload{std::move(set.allocator), std::move(set.list), std::move(set.staging)},
+                !g.healthy);
+            set.staging = {}; set.list.Reset(); set.allocator.Reset();
+        }
     for (auto& [ticket, pick] : g.product->picks)
         if (pick.fence && completed >= pick.fence) { pick.constants = {}; pick.list.Reset(); pick.allocator.Reset(); }
 }
