@@ -428,8 +428,9 @@ internal static class LabFrame
             seen = Showing; ApplyScene(); Home(); Describe();
         }).CallDeferred();
         frame.Flush();
-        string[] kept = { "frame.appearance", "frame.workspace", "frame.zlayout", "frame.labels", "frame.keymap" };
-        demo.TrackLayout(() => kept.Select(k => app.ViewParts[k].Get()).ToArray(), parts => { for (int i = 0; i < kept.Length; i++) app.ViewParts[kept[i]].Set(parts[i]); });
+        // The layout history keeps the shared arrangement parts (FrameLayout); the lab gives its appearance and key bindings.
+        demo.TrackLayout(FrameLayout.State(frame, () => app.ViewParts["frame.appearance"].Get(), () => app.ViewParts["frame.keymap"].Get()),
+            FrameLayout.Apply(frame, v => app.ViewParts["frame.appearance"].Set(v), v => app.ViewParts["frame.keymap"].Set(v)));
         return frame;
     }
 }

@@ -265,7 +265,9 @@ internal static partial class Program
             ("D02PortCaughtListenerReachesTheLog", D02PortCaughtListenerReachesTheLog),
             ("D02PortPlacesMapPositionsAsLookLab", D02PortPlacesMapPositionsAsLookLab),
             ("D02PortPlacesFollowTheCoresProjection", D02PortPlacesFollowTheCoresProjection),
-            ("D02PortPlacesFocusAsTheCore", D02PortPlacesFocusAsTheCore)
+            ("D02PortPlacesFocusAsTheCore", D02PortPlacesFocusAsTheCore),
+            ("D02PortLayoutTrackerNamesAndRestoresSteps", D02PortLayoutTrackerNamesAndRestoresSteps),
+            ("D02PortAppearanceRestoresInPlace", D02PortAppearanceRestoresInPlace)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

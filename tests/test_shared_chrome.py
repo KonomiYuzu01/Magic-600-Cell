@@ -51,7 +51,7 @@ class Staged(unittest.TestCase):
         return (self.project / "Chrome" / relative).read_bytes()
 
     def test_the_ported_files_are_staged_as_they_are(self):
-        for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs", "Model/CorePlaces.cs"):
+        for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs", "Model/CorePlaces.cs", "Model/LayoutTracker.cs", "Ui/FrameLayout.cs"):
             self.assertEqual(self.staged(relative), (CHROME / relative).read_bytes(), relative)
 
 
@@ -129,6 +129,33 @@ class StripAnchors(unittest.TestCase):
         self.assertIn('if (System.Environment.GetEnvironmentVariable("M600_D02") == "1") return null;', mount)
         # Look Lab still gives its own views' projection.
         self.assertIn("(orbit, position) => Place(app.View, orbit, position), (orbit, position) => Place(app.Linked.Local, orbit, position)", text(LIVE / "LabFrame.cs"))
+
+
+class LayoutSteps(unittest.TestCase):
+    """Item 3 (ADR-D01.14): the layout history records in the product's sample mode as in Look Lab, from one tracker
+    in the shared library."""
+
+    def test_one_tracker_in_the_shared_library(self):
+        tracker = text(CHROME / "Model" / "LayoutTracker.cs")
+        self.assertIn("public sealed class LayoutTracker", tracker)
+        self.assertIn('public static bool Handles(string command) => command is "layout.undo" or "layout.redo" or "layout.roll";', tracker)
+        frame = text(CHROME / "Ui" / "FrameLayout.cs")
+        self.assertIn("public static LayoutTracker Tracker(ChromeFrame frame, LayoutHistory? layout = null)", frame)
+        self.assertIn("frame.Rebuilt += tracker.Record; frame.Recoloured += tracker.Record;", frame)
+        # Look Lab's demo keeps no copy of its own; it runs the shared tracker.
+        demo = text(LIVE / "LabDemo.cs")
+        self.assertIn("Tracker = FrameLayout.Tracker(frame, layout);", demo)
+        self.assertNotIn("RecordLayout", demo)
+        self.assertIn("if (Tracker.Execute(command, argument) is { } still) frame.Say(still, true);", demo)
+        # An appearance step is restored in place, so the panel that shows it stays the same object.
+        self.assertIn("public void Restore(string stored)", text(CHROME / "Model" / "Appearance.cs"))
+
+    def test_both_apps_track_the_layout(self):
+        mount = text(LIVE / "SampleMount.cs")
+        self.assertIn("Callable.From(TrackLayout).CallDeferred();", mount)
+        self.assertIn('Demo.TrackLayout(FrameLayout.State(frame, () => Look?.Look.Store() ?? "", () => Scripts.Store()),', mount)
+        self.assertIn("LayoutHistory? layout = null)", mount)
+        self.assertIn('demo.TrackLayout(FrameLayout.State(frame, () => app.ViewParts["frame.appearance"].Get(), () => app.ViewParts["frame.keymap"].Get()),', text(LIVE / "LabFrame.cs"))
 
 
 if __name__ == "__main__":

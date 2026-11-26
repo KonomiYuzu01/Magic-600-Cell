@@ -36,6 +36,9 @@ internal sealed class SampleMount
     // host describes as null draws no anchor; Local draws none until the host describes it.
     public Func<CoreView?>? GlobalView { get; set; }
     public Func<CoreView?>? LocalView { get; set; }
+    // The host's appearance panel, so the layout history keeps the appearance (ADR-D01.14); without it the history
+    // keeps the workspace, the pane layout, the labels and the key bindings.
+    public AppearancePanel? Look { get; set; }
     public IReadOnlyDictionary<string, FocusLayers> Layers => layers;
     // A pick layer, the inactive mode or the staged preview changed: the host draws its view marks again (Marks).
     public event Action? Changed;
@@ -51,11 +54,12 @@ internal sealed class SampleMount
         (PanelCondition.Error, "The file could not be read (demo state)"), (PanelCondition.Stale, "Older than the committed state (demo state)"), (PanelCondition.Busy, "A run is working here (demo state)"),
     };
 
+    // `layout`: the host's own layout history (its History dock's); the sample session's own otherwise.
     public SampleMount(ChromeFrame frame, CommandRegistry registry, Keymap keymap, string root, Func<string, double> seconds,
-        Action<string, string?> run, Action<Keymap> keysChanged, CommandPalette palette, ShortcutSheet sheet)
+        Action<string, string?> run, Action<Keymap> keysChanged, CommandPalette palette, ShortcutSheet sheet, LayoutHistory? layout = null)
     {
         this.frame = frame; this.registry = registry;
-        Demo = new LabDemo(frame, keymap, run);
+        Demo = new LabDemo(frame, keymap, run, layout);
         frame.AddDockPanel(DockSide.Right, HistoryPanel, "History (sample)", "panel.history", Demo.History);
         frame.SetContent(LabDemo.PreviewPane, Demo.PreviewView);
         Inspect = new SampleInspect(frame, Demo, SampleCells);
@@ -87,6 +91,15 @@ internal sealed class SampleMount
         foreach (FocusLayers changed in layers.Values) changed.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Safe.Raise(Changed); };
         Demo.Preview.Changed += () => { if (GodotObject.IsInstanceValid(frame)) Safe.Raise(Changed); };
         frame.Contexts = () => Demo.Preview.Pending != null ? new[] { "preview" } : Array.Empty<string>();
+        // The layout history is the product's own (ADR-D01.14): it starts once the host has opened its first workspace.
+        Callable.From(TrackLayout).CallDeferred();
+    }
+
+    private void TrackLayout()
+    {
+        if (!GodotObject.IsInstanceValid(frame) || Demo.Tracker.Tracking) return;
+        Demo.TrackLayout(FrameLayout.State(frame, () => Look?.Look.Store() ?? "", () => Scripts.Store()),
+            FrameLayout.Apply(frame, v => { if (v.Length > 0) Look?.Edit(a => a.Restore(v), true, true); }, v => Scripts.Restore(v)));
     }
 
     private static CorePlaces? LoadPlaces(string folder)
