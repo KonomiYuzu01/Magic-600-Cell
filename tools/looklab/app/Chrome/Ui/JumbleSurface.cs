@@ -98,7 +98,11 @@ public sealed partial class CapMapPanel : VBoxContainer
     {
         this.settings = settings; this.tokens = tokens; this.title = title; Name = "CapMapPanel";
         head = ChromeWidgets.Text(title, "DimLabel"); head.Name = "CapMapState"; AddChild(head);
-        var line = new HBoxContainer { Name = "CapMapThreshold" }; AddChild(line);
+        // The map on the left and its words beside it, so the dock stays one map high and Global keeps its opening.
+        var body = new HBoxContainer { Name = "CapMapBody" }; AddChild(body);
+        Map = new CapMapControl(tokens); body.AddChild(Map);
+        var side = new VBoxContainer { Name = "CapMapSide", SizeFlagsHorizontal = SizeFlags.ExpandFill }; body.AddChild(side);
+        var line = new HBoxContainer { Name = "CapMapThreshold" }; side.AddChild(line);
         ThresholdField = new LineEdit
         {
             Name = "CapMapThresholdField", PlaceholderText = "threshold: N_c ≥ k, N_c ≤ k, N_c = F_c",
@@ -107,12 +111,11 @@ public sealed partial class CapMapPanel : VBoxContainer
         };
         ThresholdField.TextSubmitted += text => ThresholdTyped?.Invoke(text);
         line.AddChild(ThresholdField);
-        counts = ChromeWidgets.Text("", "MicroLabel"); counts.Name = "CapMapThresholdCounts"; line.AddChild(counts);
-        status = ChromeWidgets.Text("", "MicroLabel"); status.Name = "CapMapNamed"; AddChild(status);
-        Map = new CapMapControl(tokens); AddChild(Map);
+        counts = ChromeWidgets.Text("", "MicroLabel"); counts.Name = "CapMapThresholdCounts"; side.AddChild(counts);
+        status = ChromeWidgets.Text("", "MicroLabel"); status.Name = "CapMapNamed"; side.AddChild(status);
         Map.TypedChanged += () => { if (IsInstanceValid(this)) Refresh(); };
-        AddChild(classes);
-        legend = ChromeWidgets.Text("", "MicroLabel"); legend.Name = "CapMapLegend"; AddChild(legend);
+        classes.SizeFlagsHorizontal = SizeFlags.ExpandFill; side.AddChild(classes);
+        legend = ChromeWidgets.Text("", "MicroLabel"); legend.Name = "CapMapLegend"; side.AddChild(legend);
         settings.Changed += _ => { if (IsInstanceValid(this)) Refresh(); };
         Refresh();
     }

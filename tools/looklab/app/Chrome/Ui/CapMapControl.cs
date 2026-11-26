@@ -92,7 +92,7 @@ public sealed partial class CapMapControl : Control
         font = ChromeTheme.Face(t, "ui");
         size = (int)t.TypeSize("ui", "micro");
         int pad = Math.Max(2, t.Px("space.1"));
-        cell = new Vector2(Mathf.Ceil(font.GetStringSize(WidestNumeral, HorizontalAlignment.Left, -1, size).X) + 2 * pad, size + pad + 2);
+        cell = new Vector2(Mathf.Ceil(font.GetStringSize(WidestNumeral, HorizontalAlignment.Left, -1, size).X) + 2 * pad, size + 2);
         gutter = Math.Max(6, t.Px("space.2"));
         CustomMinimumSize = Layout == null ? Vector2.Zero : new Vector2(2 * gutter + CapLayout.Columns * cell.X, CapLayout.Rows * cell.Y);
         QueueRedraw();

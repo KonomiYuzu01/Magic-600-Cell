@@ -286,6 +286,12 @@ relative path is from the repository root.
   - The focus hand-back cannot take a drag from the owner. It runs only in the window's first seconds, and it stops for good at the first mouse button the owner holds (`D02Window.Settle`).
   - `M600_D02_RUN_PASS script=rotate steps=6 mismatches=0` on `on-zero` (`c9-product-ae279d455a142133`), with the foreground kept and no topmost window.
   - `tests/test_renderer_shell.py` class `D02Rotation`.
+- **As built, drawing track (integrator, 26 November 2026; merged as c75dd35a):**
+  - Core ABI 6 adds `sa2_view_shape_set`: a view's cell shrink, sticker shrink, d4 and zoom, range-checked. A null pointer restores ABI 5's defaults (0.76, 0.82, 1.18, 1.15). A view whose shape was never set draws byte-identical to ABI 5, and the shaders are unchanged. Host 9 exports `m6h_set_view_shape`.
+  - The shell's `D02/ShellShape.cs` reads the owner's values from `opening.json`, under `M600_D02_DATA` when it holds one, else from the build's staged `look/opening.json`: cell shrink 1 − 0.3 = 0.7 and sticker shrink 0.55. The values stay in that file, so they stay tunable. `Shell.cs` applies the shape right after `m6h_set_viewport`, and only with `--d02`.
+  - d4 and zoom keep the core's values: the file's field of view (0.85) belongs to the Hopf-ring layout, which the core does not draw yet. The Hopf-ring opening and Local's shape still wait for B23 and B18c.
+  - Checks: `check_core.py --shape` passed on WARP on the drawing track: the default shape is byte-identical to no call, a smaller sticker shrink covers fewer pixels, and a bad value is refused. After the merge, `d02_run.py --script rotate` passed on on-zero (`c9-product-6c1a32eaad1b01e4`).
+  - B8's cap map had made the bottom dock so tall that a 1280×720 window left Global almost no opening, and rotate failed on the B8 to B10 builds. The cap map's words now sit beside the map, and its cells are two pixels shorter, so rotate passes again.
 - **Owner sees:** drag in the watching window and the puzzle turns.
 - **Machine:** W.
 - **Checkpoint:** no.
@@ -475,6 +481,12 @@ relative path is from the repository root.
   - a style for another revision is refused.
 
   Plus `python tests/test_renderer_core.py` and `python tests/test_render_ffi.py`.
+- **As built, drawing track (integrator, 26 November 2026; merged as c75dd35a):**
+  - Core ABI 7. `sa2_style_set` takes one byte per piece per channel: the fill is a palette index in the low four bits, with bit 7 for the dim set, and the outline is a palette index. The style is bound to the adopted revision, and an adoption drops it.
+  - `sa2_view_style_set` fills style slots 1 to 4 (316 bytes): tint and dim modes, the dim amount, the outline width, a 16-entry palette and a 3×3 output colour matrix. A one-view frame uses slot 1.
+  - A frame draws styled only when its slot changes something; otherwise it keeps the unchanged product pipeline. The styled pass (`shaders/styled.hlsl`) is embedded as DXIL, so the identity's eight shader files and the acceptance harness's copies are unchanged.
+  - Host 10, not the framework's 9, since 9 went to the shape: `m6h_set_piece_style` (per piece, or per pose expanded with the head's pose index) and `m6h_set_view_style`. `CoreLibrary` and `HostLibrary` bind them; nothing calls them until B15.
+  - Checks: `check_core.py --style --shape` passed with 39 CPU checks on the drawing track, with the core, shell and acceptance tests.
 - **Owner sees:** nothing new.
 - **Machine:** H (WARP).
 - **Checkpoint:** no.
@@ -578,6 +590,16 @@ relative path is from the repository root.
   - the two-pane frame's vertex evaluations equal the sum of the two one-view frames'.
 
   Plus `python tests/test_renderer_core.py`.
+- **As built, drawing track (integrator, 26 November 2026; merged as c75dd35a):**
+  - Core ABI 8. `sa2_frame_submit_panes` takes one to four 112-byte panes: view, view generation, resource set, rectangle, camera, style slot and flags.
+  - It draws one clear, one draw per pane with its own viewport and scissor, one present, one frame ID and one report. Rectangles must lie inside the target and not overlap, and a pane prepared at another revision refuses the whole frame. `sa2_frame_panes` returns each pane's vertex evaluations, and they add up to the report's.
+  - A pick on a composite frame names the pane's view. A point in no pane is refused.
+  - Departure: each view keeps its own publication generation, so only the first pane must carry the frame's generation.
+  - Checks: `check_core.py --panes --style --shape` passed with 40 CPU checks on the drawing track:
+    - one full-size pane is byte-identical to `sa2_frame_submit`;
+    - two 300×300 panes match their one-view frames (14 of 36,819 covered pixels differ by more than 2);
+    - no pixel changes outside the panes;
+    - the vertex evaluations add up: 36,576,000 = 18,288,000 + 18,288,000.
 - **Owner sees:** nothing new.
 - **Machine:** H (WARP).
 - **Checkpoint:** no.
@@ -612,6 +634,12 @@ relative path is from the repository root.
   - `one_view_frames_are_unchanged` (the fake's call log equals today's);
   - `a_fifth_pane_is_refused`;
   - `a_pick_names_the_view_it_hit`.
+- **As built, drawing track (integrator, 26 November 2026; merged as c75dd35a):**
+  - Host 11 adds `m6h_open_local`, `m6h_set_view_camera`, `m6h_set_view_visible` (Local only; Global is never hidden), `m6h_set_pane` and `m6h_clear_pane`. Each adoption publishes both views from one bundle, and recovery republishes Local.
+  - Departure: the framework says a frame "re-submits the last complete pane list", but the core holds only the adopted revision's image. So while a drawn pane's view lags the adopted revision, `m6h_frame` submits nothing, sets `held = 1`, and names the last frame, which stays on the surface. `M6hFrame` grows from 40 to 48 bytes (`panes`, `held`), and the shell's struct matches.
+  - Nothing in the shell calls the two-view exports yet: B18c opens Local, and it must also set Local's shape, since `ShellShape.Apply` sets only Global.
+  - For B17's picks: a host export next to `m6h_frame` that answers which view's pane holds a surface point, and the pane list back in `FrameRecord`.
+  - Checks: `test_render_ffi.py` passed on the drawing track, including six new tests: `two_views_publish_one_revision`, `a_frame_never_mixes_revisions`, `a_hidden_local_adds_no_vertex_evaluations`, `one_view_frames_are_unchanged`, `a_fifth_pane_is_refused`, and the composite frame crossing the table. After the merge, `test_render_ffi.py`, `test_renderer_core.py` 24 of 24, `test_renderer_acceptance.py` 54 of 54 and `test_renderer_shell.py` 71 of 71 passed.
 - **Owner sees:** nothing new.
 - **Machine:** H.
 - **Checkpoint:** no.
