@@ -1305,6 +1305,21 @@ Each checkpoint is one read of the named diff range against the questions below,
   - the synthetic sample is labelled.
 - Fable also writes ten planted defects, sealed, added to `defects.json` only after B32's driver is committed.
 - Owner is shown: the research pane.
+- C5 findings (26 November 2026), Fable's read of B28 and B29; each fix has its test:
+  - C5-1 (major): a null check verdict read as a pass; fixed in 099ee050 (`D02NullVerdictIsNeverAPass`).
+  - C5-2: Runs and Claims worded a not-applicable run differently, and a run with no group got the scope "its run";
+    fixed in 099ee050 (`D02RunLineIsTheClaimsLine`).
+  - C5-3: a run its researcher cancelled says "the run stopped at its budget"; ADR-D02.45 and .46 have no words for
+    it, so the words stay: freeze card. Never a Pass or a Fail (`D02CancelledRunIsNeverAVerdict`, 099ee050).
+  - C5-4a: a Fail recorded before a cut-off needs an owner reading: freeze card.
+  - C5-4b: dependencies dropped a missing input's source and cites and an input's sha256; fixed in 099ee050.
+  - C5-5: the research rows were registered only with D02 on; fixed in 099ee050 (`ResearchRows.AddDrafts`).
+  - C5-6: Save said "saved" without calling `research.bundle.export`; fixed in 099ee050.
+  - C5-7: three research draft rows lived only in the sample; moved to `command-rows-d02.json` in 099ee050.
+  - C5-8: keyboard reach of the pane: B32.
+  - C5-9: the sample chip omitted Research and the run expectations did not assert it; fixed in 099ee050.
+  - C5-10: sample record file names shared with real archive records; renamed in 099ee050.
+  - C5-11: a carried copy or save did not name its evidence class; fixed in 099ee050.
 
 **C6, after B33.**
 - Fable checks:
