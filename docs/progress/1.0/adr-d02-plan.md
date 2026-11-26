@@ -25,7 +25,10 @@ in the main checkout's `work/adr-d02/a4/`.
 A4 answered, 26 November 2026: every recommended option except item 9 (Q3.b, the owner's reading of the frozen J-7
 and N-1) and item 12c (the base targets: at most 3,000 hours of real time for an expert full solve without jumbling;
 substantive progress on restoration theory for the jumbled puzzle); recorded in
-[the decision page](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-a4.md). The ADR text follows.
+[the decision page](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-a4.md). The proposed ADR text, read once
+by a fresh Claude subagent, is
+[ADR-D02-jumble-research.md](../../architecture/1.0/design/adr/ADR-D02-jumble-research.md) (26 November 2026); Fable's
+build framework and the shell build follow.
 
 Inputs:
 - The owner decisions on ADR-D02:
