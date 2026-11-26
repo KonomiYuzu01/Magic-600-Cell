@@ -16,7 +16,10 @@ use c600_digest::sha256;
 use c600_ir::build::{
     exact, fn_ref, helper, module, program, propose, publish_view, target, unit, use_exact, write_workspace,
 };
-use c600_ir::{Capability, Effect, EndTest, EndTestOutcome, ExactRole, Expr, Lit, Program, QTy, ReceiptField, Ty};
+use c600_ir::{
+    Capability, Effect, EndTest, EndTestOutcome, ExactRole, Expr, Goal, KernelOp, Level, Lit, Program, Puzzle, QTy,
+    ReceiptField, Ty,
+};
 use c600_run::boundary::{admit_preview, Boundary, Context, Pins, Place, Store, Stored};
 use c600_run::interp::code::{IR_REJECTED, NONCANONICAL_VALUE};
 use c600_run::interp::{load, Host, Loaded, Options, Request, RowTariff, Sink};
@@ -24,6 +27,7 @@ use c600_run::menu::MenuIdentity;
 use c600_run::meter::code::{NOT_GRANTED, OUTPUT};
 use c600_run::meter::{Amounts, Outcome};
 use c600_run::provenance::{self, Author, Json, Pin, Producer, Profile};
+use c600_run::tower::{Handle, HandleTy};
 use c600_run::value::Value;
 use c600_syntax::{lower, parse};
 
@@ -99,8 +103,8 @@ fn row(e: &Expr) -> (&'static str, Kind, &'static [&'static str]) {
         Expr::Repeat { count: _, init: _, acc: _, result: _, body: _ } => {
             ("repeat", Kind::Pure, &["count", "init", "body"])
         }
-        // The identity tower's nodes (T1 drafts): the checker types them and the interpreter refuses them when loaded
-        // until their values and host rows exist (T1c). A kernel row is a snapshot read of its own row.
+        // The identity tower's nodes (T1 drafts): a construction and a case run inside the interpreter (T1c); a kernel
+        // row is a state read of its own row, whose host rows over c600-jumble and c600-kernel are T2's.
         Expr::Construct { ty: _, ctor: _, args: _ } => ("construct", Kind::Pure, &["args"]),
         Expr::Case { scrutinee: _, arms: _, default: _ } => ("case", Kind::Pure, &["scrutinee", "arms", "default"]),
         Expr::Kernel { op: _, args: _, ty: _ } => ("kernel", Kind::StateRead, &["args"]),
@@ -118,6 +122,10 @@ enum Carries<'a> {
     Alphabet(&'a MenuIdentity),
     Bytes(&'a [u8]),
     Role(ExactRole),
+    /// A kernel row's operation (T1 draft), with its puzzle, level or goal parameter.
+    Row(KernelOp),
+    /// A kernel row's arguments (T1 draft): values the program holds, a host's handles among them.
+    Args(&'a [Value]),
 }
 
 impl Carries<'_> {
@@ -130,6 +138,10 @@ impl Carries<'_> {
             Carries::Alphabet(menu) => format!("a name, the alphabet's identity block, {:?}", menu.fields()),
             Carries::Bytes(bytes) => format!("canonical bytes, {} of them", bytes.len()),
             Carries::Role(role) => format!("an exact role, {role:?}"),
+            Carries::Row(op) => format!("a name, the kernel row {op:?}"),
+            Carries::Args(args) => {
+                format!("arguments, each {}", args.iter().map(value_holds).collect::<Vec<_>>().join("; "))
+            }
         }
     }
 }
@@ -156,6 +168,9 @@ fn request(r: &Request) -> (Kind, Vec<String>) {
                 Carries::Bytes(request),
             ],
         ),
+        Request::Kernel { op, args, ty } => {
+            (Kind::StateRead, vec![Carries::Row(op), Carries::Args(args), Carries::Type(&ty.ty)])
+        }
     };
     (kind, fields.iter().map(Carries::describe).collect())
 }
@@ -171,9 +186,9 @@ fn sink(s: &Sink) -> (Kind, Vec<String>) {
     (kind, fields.iter().map(Carries::describe).collect())
 }
 
-/// Every IR type, by what a value of it holds. None of the types the interpreter loads holds a state, a revision, a
-/// digest, a token or a handle; the identity tower's (T1 drafts) hold host handles and certificates that no operation
-/// adopts, and the interpreter refuses them until T1c.
+/// Every IR type, by what a value of it holds. None of the types outside the identity tower holds a state, a revision,
+/// a digest, a token or a handle; the tower's (T1 drafts) hold a host's handles, digests and certificates, which only
+/// kernel rows take and no operation adopts.
 fn holds(ty: &Ty) -> &'static str {
     match ty {
         Ty::Unit | Ty::Bool | Ty::ApproxBool => "a truth value or nothing",
@@ -195,22 +210,21 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::Generator => "a cursor on a stream of the run's seed, kept only inside the interpreter",
         Ty::Bytes => "captured octets, which a program reads only by decoding them into text",
         Ty::WordStream => "a streamed word's covered length and literal digest, which stays in its run",
-        Ty::Piece(_) | Ty::Sticker(_) | Ty::Slot(_) | Ty::Pose | Ty::PoseTableIndex | Ty::Cost(..) => {
-            "an identity-tower ID, index or cost, which the interpreter does not load yet (T1c)"
-        }
-        Ty::Digest(..)
-        | Ty::LevelValue(..)
-        | Ty::State(_)
-        | Ty::PoseTable
-        | Ty::Reachability(_)
-        | Ty::Evidence
-        | Ty::Verdict(..)
-        | Ty::Partial(_)
-        | Ty::Holds(..)
-        | Ty::Derivation(_) => "an identity-tower host value or certificate, which no operation adopts (T1c)",
-        Ty::Named { .. } => "a value of a declared sum type, which the interpreter does not load yet (T1c)",
+        Ty::Piece(_) | Ty::Sticker(_) | Ty::Slot(_) | Ty::PoseTableIndex | Ty::Cost(..) => TOWER_ID,
+        Ty::Digest(..) => TOWER_DIGEST,
+        Ty::Pose | Ty::LevelValue(..) | Ty::State(_) | Ty::PoseTable | Ty::Evidence => TOWER_HANDLE,
+        Ty::Reachability(_) | Ty::Verdict(..) | Ty::Partial(_) | Ty::Derivation(_) | Ty::Named { .. } => TOWER_SUM,
+        Ty::Holds(..) => TOWER_HOLDS,
     }
 }
+
+/// What the identity tower's values hold (T1 drafts; the run-time half is T1c's).
+const TOWER_ID: &str = "an identity-tower ID, pose-table index or cost: a puzzle's name, a kind and exact integers";
+const TOWER_DIGEST: &str = "a level value's digest, hex text with its puzzle and level, which no operation adopts";
+const TOWER_HANDLE: &str = "a handle the kernel host made, which crosses only back to that host's kernel rows and is \
+                            never published, stored, keyed or compared by its id";
+const TOWER_SUM: &str = "a constructor's name with its payload values";
+const TOWER_HOLDS: &str = "a goal's certificate on a digest, which no operation adopts";
 
 /// Every run-time value, as [`holds`] lists types.
 fn value_holds(v: &Value) -> &'static str {
@@ -232,6 +246,11 @@ fn value_holds(v: &Value) -> &'static str {
         Value::Generator(_) => "a cursor on a stream of the run's seed, kept only inside the interpreter",
         Value::Bytes(_) => "captured octets, which a program reads only by decoding them into text",
         Value::WordStream(_) => "a streamed word's covered length and literal digest, which stays in its run",
+        Value::Id(..) | Value::PoseTableIndex(_) | Value::Cost(..) => TOWER_ID,
+        Value::Digest(_) => TOWER_DIGEST,
+        Value::Handle(_) => TOWER_HANDLE,
+        Value::Sum(_) => TOWER_SUM,
+        Value::Holds(_) => TOWER_HOLDS,
     }
 }
 
@@ -516,9 +535,11 @@ fn ct_kn5_02_no_operation_returns_a_token_or_commits_in_any_profile() {
 /// CT-ONE-01 (part: the runtime's half of the table; the session's rows run in
 /// `c600-session/tests/conformance_rows.rs` and the command layer's H-08 rows in `c600-command/tests/layer.rs`, whose
 /// overlay rows are never `commit` or `app`): no operation
-/// takes a state or a digest to adopt. No IR type and no run-time value holds a state, a revision, a digest or a token,
-/// so no operand can carry one. The one row that reaches the engine's preview, `propose`, takes a word and a target and
-/// nothing else: its request carries the letters, the target's name and the canonical bytes of exactly `{target,
+/// takes a state or a digest to adopt. No IR type and no run-time value outside the identity tower holds a state, a
+/// revision, a digest or a token, so no operand of a preview can carry one. The tower's values (T1 drafts; T1c's
+/// run-time half) hold a host's state handles, digests and certificates, but only its kernel rows take them, and a
+/// kernel row is a state read that gives a value back and adopts nothing. The one row that reaches the engine's
+/// preview, `propose`, takes a word and a target and nothing else: its request carries the letters, the target's name and the canonical bytes of exactly `{target,
 /// word}`; a program that passes the receipt's base in place of the word is refused by the checker, and the same IR
 /// built by hand is refused by the interpreter before the host is asked. The base a proposal reports comes from the
 /// run's context, never from the program. A menu word (LB1.8; LP2 draft) carries the identity block that names its
@@ -545,6 +566,11 @@ fn ct_one_01_no_operation_takes_a_state_or_a_digest_to_adopt() {
         [Value::Unit, Value::int(1), Value::text("rev-7"), Value::word(&[1]), Value::receipt(vec![]), menu, verdict];
     assert!(values.iter().all(|v| !["state", "digest", "token"].iter().any(|w| value_holds(v).contains(w))));
     assert_eq!(row(&propose(Expr::Lit(Lit::Word(vec![1])), target("t"))).2, ["word", "target"]);
+    let kernel = c600_ir::build::kernel(KernelOp::Snapshot(Puzzle::Full), vec![], exact(Ty::State(Puzzle::Full)));
+    assert_eq!(row(&kernel).1, Kind::StateRead);
+    let tower =
+        [Ty::State(Puzzle::Full), Ty::Digest(Puzzle::Full, Level::Labels), Ty::Holds(Puzzle::Full, Goal::ExactPose)];
+    assert!(tower.iter().all(|t| ["adopts", "crosses only back"].iter().any(|w| holds(t).contains(w))));
 
     for (author, profile) in CLASSES {
         let ran = every(author, profile);
@@ -651,8 +677,9 @@ fn handing(output: Expr) -> Program {
 /// CT-RPI-01 (part: the boundary enumeration; switching the backend under a display plan runs in
 /// `c600-render/tests/ct_rpi_01.rs`): the language has no
 /// renderer call, backend handle or callback (RPI.1). The interpreter's requests and sinks carry names, types, letters,
-/// canonical bytes and an exact role only, as their typed enumeration shows; no IR type or run-time value is a
-/// handle; a function of the program never reaches a view, workspace, file or exact sink, since the canonical encoding
+/// canonical bytes, an exact role and a kernel row's arguments only, as their typed enumeration shows; no IR type or
+/// run-time value is a renderer handle, and the identity tower's host handles (T1 drafts) cross only back to the
+/// kernel host that made them, never published, stored, keyed or compared by their id; a function of the program never reaches a view, workspace, file or exact sink, since the canonical encoding
 /// refuses it before the host is asked (the exact sink since the owner decision of 16 November 2026 under PHS.52).
 /// Every package in `Cargo.lock` is a workspace member or one of the four approved numeric crates, so no renderer,
 /// graphics or windowing crate is linked; every member forbids unsafe code and no product source holds an `unsafe`
@@ -679,6 +706,7 @@ fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
     }
 
     let qty = QTy { ty: Ty::Word, display: false };
+    let args = [Value::handle(Handle::new(HandleTy::State(Puzzle::Full), 1, 64))];
     let requests = [
         Request::Snapshot { query: "n_c0", ty: &qty },
         Request::SnapshotWith { query: "protection", arg: b"[1]\n", ty: &qty },
@@ -687,6 +715,7 @@ fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
         Request::Clock,
         Request::Propose { word: &[1], target: "t", request: b"{}" },
         Request::ProposeMenu { letters: &[[0, 1]], menu: &MenuIdentity::default(), target: "t", request: b"{}" },
+        Request::Kernel { op: KernelOp::Digest, args: &args, ty: &qty },
     ];
     let sinks = [
         Sink::View,
@@ -696,8 +725,10 @@ fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
     ];
     let carried: Vec<String> =
         requests.iter().flat_map(|r| request(r).1).chain(sinks.iter().flat_map(|s| sink(s).1)).collect();
-    let kinds = ["a name", "a type", "letters", "canonical bytes", "an exact role"];
+    let kinds = ["a name", "a type", "letters", "canonical bytes", "an exact role", "arguments"];
     assert!(carried.iter().all(|c| kinds.iter().any(|k| c.starts_with(k))), "{carried:?}");
+    let handles: Vec<_> = carried.iter().filter(|c| c.contains("handle")).collect();
+    assert!(!handles.is_empty() && handles.iter().all(|c| c.contains("crosses only back to that host's kernel rows")));
     let types = [
         Ty::Fn(Box::new(c600_ir::FnTy {
             params: vec![],

@@ -52,6 +52,7 @@ fn request_fields(request: &Request) -> (&'static str, &'static [&'static str]) 
         Request::ProposeMenu { letters: _, menu: _, target: _, request: _ } => {
             ("propose_menu", &["letters", "menu", "target", "request"])
         }
+        Request::Kernel { op: _, args: _, ty: _ } => ("kernel", &["op", "args", "ty"]),
     }
 }
 

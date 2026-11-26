@@ -36,7 +36,7 @@ pub struct MessageSchema {
     pub fields: &'static [&'static str],
 }
 
-const REQUEST_FIELDS: [&str; 23] = [
+const REQUEST_FIELDS: [&str; 27] = [
     "request.snapshot",
     "request.snapshot.query",
     "request.snapshot.type",
@@ -60,6 +60,11 @@ const REQUEST_FIELDS: [&str; 23] = [
     "request.propose_menu.menu",
     "request.propose_menu.target",
     "request.propose_menu.request",
+    // A kernel row of the identity tower (T1 draft): its row, its argument values and its declared result type.
+    "request.kernel",
+    "request.kernel.op",
+    "request.kernel.args",
+    "request.kernel.type",
 ];
 
 /// Every message and field of the protocol. Values and IR types inside a field are data, not fields: a value has no
@@ -128,6 +133,10 @@ pub const SCHEMA: [MessageSchema; 6] = [
             REQUEST_FIELDS[20],
             REQUEST_FIELDS[21],
             REQUEST_FIELDS[22],
+            REQUEST_FIELDS[23],
+            REQUEST_FIELDS[24],
+            REQUEST_FIELDS[25],
+            REQUEST_FIELDS[26],
             "sink.view",
             "sink.workspace",
             "sink.workspace.record",

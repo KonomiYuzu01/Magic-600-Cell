@@ -47,6 +47,16 @@
 //! | random draw | `rng_draw` (DET.61) |
 //! | child scope (LP2 draft) | `child`, one step in the enclosing scopes; then, in a scope of its own under the effective caps (DET.60), the body's `call`, the body and its `return`, whose result moves to the parent. A stop the child absorbs unwinds it; then, when the stop branch names a status, `status` (4 bytes), and the stop branch's `call`, body and `return` run in the parent |
 //! | `repeat` (LP2 draft) | the count, the initial value, then `visit` (moves an owned initial value into the loop's slot) or `alias` (retains a borrowed one); per iteration k from 0, `loop_test:k`, the body, and `visit` or `alias` to refill the slot, the old value released after admission; then the final false test `loop_test:n` and `scope_exit`, which releases the count and moves the slot's value out. A count that is no natural number stops with `LG4:input.ir_rejected` at `loop_test:0` |
+//! | construction of a sum value (T1 draft) | `value` (the header: the variant tag and the payloads' sequence lengths), then per payload `visit` (a move) or `alias` (a borrow), as a record is built. A derivation, evidence and a certificate come from the host only: the loader refuses their construction |
+//! | case on a sum type (T1 draft) | the scrutinee, then `branch`, which selects the arm by constructor, or the default arm when none matches, and binds the arm's payload fields in its slots: a borrowed scrutinee lends them, and an owned one retains them with charged owners and is released after admission, as a field read does. After an arm that bound a slot, `scope_exit` releases the slots, after an `alias` when the result borrows part of an owned one; a result that is a whole owned slot moves. A verdict's default arm that would take `unknown` with `yes` or `no`, a payload count other than the pattern's binders and a constructor no arm names without a default stop with `LG4:input.ir_rejected` before `branch` |
+//! | `imply` (T1 draft) | one step `imply`, no kernel units, that reserves the certificate; an edge outside LG2.11's chain or a goal the certificate's puzzle does not have stops with `LG4:input.ir_rejected`, and a negative low-height bound, or a low-height certificate taken to another bound, with `LG4:input.pointwise_failed`, both before the step |
+//! | `to_cost`, `cost_value`, and `exact_add`, `exact_less`, `exact_eq` of costs (T1 drafts) | one step each: `to_cost` and `cost_value` reserve the count and cost no kernel units; a sum, an order or an equality of two costs of one puzzle and unit is priced by the integer rows, as of their counts. Costs of two puzzles or units, and a negative count, stop with `LG4:input.ir_rejected` |
+//! | kernel row of the identity tower (T1 draft) | `kernel` with the host row's tariff and result bound, as a snapshot read is: [`Request::Kernel`] carries the row's operation, its argument values and its declared type, so a host can grant `derive` apart from the reads (BND.57); `derive`'s word is its literal letters. An argument of the wrong kind stops with `LG4:input.ir_rejected` and a negative bound with `LG4:input.pointwise_failed` before the step; a level the state's puzzle does not hold (`KN1:input.level_not_held`), and states, a claim or a word of two puzzles (`KN1:input.identity_mismatch`), stop after the step, as a refused tariff does. An answer over its bound stops with `KN7:resource_limit.host_exhausted`, and one that does not have the declared type ([`crate::tower::fits`]) with `LG4:input.ir_rejected`, after the row |
+//!
+//! A sum value, a certificate and a handle other than a pose's have no exact equality and are no key (T1 drafts): an
+//! equality of values that hold one, and a set element, map key or probe that holds one, stop the run with
+//! `LG4:input.ir_rejected` before the step, as the checker refuses them statically. A handle is never compared by its
+//! id ([`crate::tower`]).
 //!
 //! A run is entered with `rng_init` when a seed is given, one `read` per argument, and the entry `call`. Its result
 //! is the top-level output unit: one fused `emit` row (DET.59).
@@ -101,7 +111,8 @@ use std::sync::atomic::{AtomicU8, Ordering as Atomic};
 use std::sync::Arc;
 
 use c600_ir::{
-    self as ir, Accounting, Callee, EndTestOutcome, ExactRole, Expr, Field, FnKind, Order, Prim, QTy, ReceiptField, Ty,
+    self as ir, Accounting, Callee, EndTestOutcome, ExactRole, Expr, Field, FnKind, Goal, KernelOp, Order, Prim,
+    Puzzle, QTy, ReceiptField, Ty,
 };
 use num_bigint::{BigInt, Sign};
 
@@ -115,6 +126,7 @@ use crate::meter::{
 };
 use crate::rng::{self, Cursor};
 use crate::step::{Boundary, Gate, Local, Operation, Site, Slot};
+use crate::tower::{self, HandleTy, Sum, SumTy};
 use crate::trace::{self, Relation};
 use crate::value::{
     self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed,
@@ -143,6 +155,10 @@ pub mod code {
     pub use crate::menu::INCOMPATIBLE_ALPHABET;
     /// A trace key under another header than the run's pinned relation, or none pinned (LB1.10; LP2 draft).
     pub use crate::trace::KEY_CONTRACT_MISMATCH;
+    /// A kernel row at a level the state's puzzle does not hold (KN1.7, KN1.9; T1 draft).
+    pub const LEVEL_NOT_HELD: &str = "KN1:input.level_not_held";
+    /// A kernel row given states, a claim or a word of two puzzles (KN1.4, ONE.22, ONE.25; T1 draft).
+    pub const IDENTITY_MISMATCH: &str = "KN1:input.identity_mismatch";
 }
 
 /// A refusal before any operation is metered.
@@ -202,6 +218,15 @@ pub enum Request<'a> {
         menu: &'a MenuIdentity,
         target: &'a str,
         request: &'a [u8],
+    },
+    /// A host row of the identity tower (T1 draft; [`KernelOp`]): its operation, its argument values in order and its
+    /// declared result type. Each operation is a request kind of its own, so a host can grant `derive` apart from the
+    /// reads (BND.57). The arguments are the run's values as they are: a state, a level value, a pose table or evidence
+    /// crosses as its host's handle, and `derive`'s word as its literal letters (a `Word` or a `MenuWord`, never a key).
+    Kernel {
+        op: KernelOp,
+        args: &'a [Value],
+        ty: &'a QTy,
     },
 }
 
@@ -405,6 +430,22 @@ enum Kind {
     },
     /// A bounded loop (DET.55; LP2 draft): the `let` slot that holds the value so far.
     Repeat(usize),
+    /// A sum value's construction (LG2.1; T1 draft): its type and its constructor.
+    Construct {
+        ty: SumTy,
+        ctor: Arc<Text>,
+    },
+    /// A case on a sum type's constructors (LG2.1, LG2.9; T1 draft): per arm its constructor and the `let` slot of each
+    /// binder, `None` for `_`, and whether a default arm follows the arms.
+    Case {
+        arms: Vec<(Box<str>, Vec<Option<usize>>)>,
+        default: bool,
+    },
+    /// A host row of the identity tower (T1 draft) with its declared result type.
+    Kernel {
+        op: KernelOp,
+        ty: QTy,
+    },
 }
 
 #[derive(Debug)]
@@ -550,6 +591,9 @@ enum Step<'e> {
 struct Compiler {
     loaded: Loaded,
     names: HashMap<(usize, String), usize>,
+    /// The declared sum types by their defining module's and their own name, with each constructor's name and payload
+    /// count (T1 draft).
+    types: HashMap<(String, String), Vec<(String, usize)>>,
     contexts: Vec<Context>,
     next_id: usize,
 }
@@ -558,20 +602,14 @@ fn rejected(detail: impl Into<String>) -> Refusal {
     refuse(code::IR_REJECTED, detail)
 }
 
-/// The refusal's detail for a node of the identity tower (T1 draft): the checker types it, and the interpreter runs it
-/// once its values and host rows exist (T1c).
-fn tower(expr: &Expr) -> String {
-    let what = match expr {
-        Expr::Construct { ctor, .. } => format!("the construction `{ctor}`"),
-        Expr::Case { .. } => "a case on a sum type".to_string(),
-        Expr::Kernel { op, .. } => format!("the kernel row `{}`", op.row()),
-        Expr::Prim { op, .. } => format!("the operation {op:?}"),
-        _ => "this node".to_string(),
-    };
-    format!(
-        "{what} is an identity-tower node of the IR draft, which the interpreter runs once its values and host rows \
-         exist (T1c)"
-    )
+/// The argument count of a kernel row (T1 draft): `check` of the low-height goal takes its bound too.
+fn kernel_arity(op: KernelOp) -> usize {
+    match op {
+        KernelOp::Snapshot(_) => 0,
+        KernelOp::Project(_) | KernelOp::Digest | KernelOp::Reachability => 1,
+        KernelOp::Compare(_) | KernelOp::Derive | KernelOp::Import => 2,
+        KernelOp::Check(goal) => 1 + usize::from(goal.takes_bound()),
+    }
 }
 
 /// Loads a program: checks its IR identity and names and compiles every function body.
@@ -616,9 +654,20 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
         }
     }
     let exported: Vec<bool> = runnable().flat_map(|(_, m)| m.functions.iter().map(|f| f.exported)).collect();
+    // The declared sum types by their defining module, with each constructor's payload count (T1 draft).
+    let mut types = HashMap::new();
+    for m in &program.modules {
+        for t in &m.types {
+            let ctors = t.ctors.iter().map(|c| (c.name.clone(), c.payload.len())).collect();
+            if types.insert((m.name.clone(), t.name.clone()), ctors).is_some() {
+                return Err(rejected(format!("type {}.{} is declared twice", m.name, t.name)));
+            }
+        }
+    }
     let mut compiler = Compiler {
         loaded: Loaded { modules, functions, codes: Vec::new(), nodes: Vec::new(), appends: Vec::new() },
         names,
+        types,
         contexts: Vec::new(),
         next_id: 0,
     };
@@ -668,7 +717,7 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::WordStream => Some(2),
         Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul => Some(2),
         Prim::Stage(s) => Some(s.arity()),
-        // The identity tower's operations (T1 drafts) are refused when loaded until their values exist (T1c).
+        // The identity tower's operations (T1 drafts).
         Prim::Imply(goal) => Some(1 + usize::from(goal.takes_bound())),
         Prim::ToCost(..) | Prim::CostValue => Some(1),
     }
@@ -678,6 +727,26 @@ impl Compiler {
     fn id(&mut self) -> usize {
         self.next_id += 1;
         self.next_id
+    }
+
+    /// A constructor of a sum type and its payload count (LG2.1; T1 draft). A program constructs verdicts, partial
+    /// results, reachability claims and declared values; a derivation comes from the host only (KN2.11), and a type
+    /// that is no sum type, such as evidence or a certificate, has no constructor.
+    fn sum_ctor(&self, ty: &Ty, ctor: &str) -> Result<(SumTy, usize), Refusal> {
+        let sum = SumTy::of(ty).ok_or_else(|| rejected(format!("a construction of {ty:?}, which is no sum type")))?;
+        if let SumTy::Derivation(_) = sum {
+            return Err(rejected("a derivation comes from the host only (KN2.11)"));
+        }
+        let arity = match &sum {
+            SumTy::Named { module, name } => self
+                .types
+                .get(&(module.to_string(), name.to_string()))
+                .and_then(|ctors| ctors.iter().find(|(n, _)| n == ctor))
+                .map(|(_, arity)| *arity),
+            builtin => builtin.builtin().and_then(|ctors| ctors.into_iter().find(|(n, _)| *n == ctor)).map(|(_, a)| a),
+        };
+        let arity = arity.ok_or_else(|| rejected(format!("{ty:?} has no constructor {ctor}")))?;
+        Ok((sum, arity))
     }
 
     fn resolve_fn(
@@ -914,7 +983,6 @@ impl Compiler {
                             format!("the stage operation `{}` runs only in a stage's evaluator (RPI.68)", s.name());
                         return Err(rejected(note));
                     }
-                    (_, Prim::Imply(_) | Prim::ToCost(..) | Prim::CostValue) => return Err(rejected(tower(expr))),
                     (Some(n), _) if n != args.len() => return Err(rejected(format!("{op:?} takes {n} operands"))),
                     (_, Prim::ToApprox(p)) if !approx::PRECISIONS.contains(p) => {
                         return Err(rejected(format!("unsupported precision {p}")))
@@ -966,7 +1034,58 @@ impl Compiler {
                 kids(steps, expr.children());
                 Kind::Propose
             }
-            Expr::Construct { .. } | Expr::Case { .. } | Expr::Kernel { .. } => return Err(rejected(tower(expr))),
+            Expr::Construct { ty, ctor, args } => {
+                let (ty, arity) = self.sum_ctor(ty, ctor)?;
+                if arity != args.len() {
+                    return Err(rejected(format!("the constructor {ctor} takes {arity} payloads")));
+                }
+                kids(steps, expr.children());
+                Kind::Construct { ty, ctor: Text::new(ctor) }
+            }
+            Expr::Case { scrutinee, arms, default } => {
+                // Each binder other than `_` takes a `let` slot of the frame, bound over its arm only (T1 draft).
+                let ctx = self.contexts.last_mut().expect("a context");
+                let code = ctx.code;
+                let mut slotted = Vec::new();
+                for (pattern, _) in arms {
+                    let mut slots = Vec::new();
+                    for binder in &pattern.binders {
+                        if binder == "_" {
+                            slots.push(None);
+                        } else {
+                            slots.push(Some(ctx.lets));
+                            ctx.lets += 1;
+                            self.loaded.codes[code].names.lets.push(binder.clone());
+                        }
+                    }
+                    slotted.push(slots);
+                }
+                if let Some(d) = default {
+                    steps.push(Step::Visit { expr: d, parent: Some((id, 1 + arms.len() as u32)), attach: true });
+                }
+                for (i, (pattern, body)) in arms.iter().enumerate().rev() {
+                    let bound: Vec<(&str, usize)> = pattern
+                        .binders
+                        .iter()
+                        .zip(&slotted[i])
+                        .filter_map(|(b, s)| s.map(|s| (b.as_str(), s)))
+                        .collect();
+                    steps.extend(bound.iter().map(|_| Step::Unbind));
+                    steps.push(Step::Visit { expr: body, parent: Some((id, 1 + i as u32)), attach: true });
+                    steps.extend(bound.iter().rev().map(|&(name, slot)| Step::Bind { name, slot }));
+                }
+                steps.push(Step::Visit { expr: scrutinee, parent: Some((id, 0)), attach: true });
+                let arms = arms.iter().zip(slotted).map(|((p, _), slots)| (p.ctor.as_str().into(), slots)).collect();
+                Kind::Case { arms, default: default.is_some() }
+            }
+            Expr::Kernel { op, args, ty } => {
+                let n = kernel_arity(*op);
+                if n != args.len() {
+                    return Err(rejected(format!("the kernel row `{}` takes {n} arguments", op.row())));
+                }
+                kids(steps, expr.children());
+                Kind::Kernel { op: *op, ty: ty.clone() }
+            }
             Expr::ReadReceipt { field, .. } => {
                 kids(steps, expr.children());
                 Kind::ReadReceipt(*field)
@@ -1057,7 +1176,7 @@ impl Compiler {
                 // The count is held while the initial value and every iteration run; the value so far has its slot.
                 Kind::Repeat(_) => t(kids[0]).max(1 + t(kids[1])).max(1 + t(kids[2])),
                 // The condition is the operand of `branch` or `display_if`; the selected branch runs after it.
-                Kind::If | Kind::DisplayIf | Kind::Match(_) | Kind::Prim(Prim::And | Prim::Or) => {
+                Kind::If | Kind::DisplayIf | Kind::Match(_) | Kind::Case { .. } | Kind::Prim(Prim::And | Prim::Or) => {
                     kids.iter().map(|&k| t(k)).max().unwrap_or(0).max(1)
                 }
                 _ => kids.iter().enumerate().map(|(i, &k)| i as u128 + t(k)).max().unwrap_or(0).max(kids.len() as u128),
@@ -1161,6 +1280,9 @@ struct Frame {
     params: Vec<Value>,
     captures: Vec<Value>,
     lets: Vec<Option<(Value, Vec<OwnerId>)>>,
+    /// For a case's binder slot that a borrowed scrutinee lends a payload field (T1 draft), the origin of the borrow,
+    /// which a read of the slot gives.
+    lent: Vec<Option<Origin>>,
     owner: OwnerId,
     /// Owned argument and callee temporaries, released at the return.
     temps: Vec<OwnerId>,
@@ -1195,6 +1317,8 @@ enum Task {
     LoopTest(NodeId),
     /// An iteration's body has its value.
     LoopNext(NodeId),
+    /// A case's arm, by its index, has its value (T1 draft).
+    CaseExit(NodeId, usize),
 }
 
 /// An open child scope (DET.60; LP2 draft): its meter scope and node, the depths its unwinding restores, and its
@@ -1390,7 +1514,8 @@ impl<'a> Machine<'a> {
             SlotRef::Param(i) => (frame.params[i].clone(), Origin::Frame),
             SlotRef::Capture(i) => (frame.captures[i].clone(), Origin::Frame),
             SlotRef::Let(i) => {
-                (frame.lets[i].as_ref().expect("a bound let").0.clone(), Origin::Let { slot: i, whole: true })
+                let origin = frame.lent[i].unwrap_or(Origin::Let { slot: i, whole: true });
+                (frame.lets[i].as_ref().expect("a bound let").0.clone(), origin)
             }
         }
     }
@@ -1416,6 +1541,7 @@ impl<'a> Machine<'a> {
                 Task::LoopEnter(n) => self.loop_enter(n),
                 Task::LoopTest(n) => self.loop_test(n),
                 Task::LoopNext(n) => self.loop_next(n),
+                Task::CaseExit(n, arm) => self.case_exit(n, arm),
             };
             if let Err(stop) = done {
                 self.unwind(stop)?;
@@ -1533,7 +1659,7 @@ impl<'a> Machine<'a> {
                 self.tasks.push(Task::Eval(node.kids[1]));
                 self.tasks.push(Task::Eval(node.kids[0]));
             }
-            Kind::If | Kind::DisplayIf | Kind::Match(_) | Kind::Prim(Prim::And | Prim::Or) => {
+            Kind::If | Kind::DisplayIf | Kind::Match(_) | Kind::Case { .. } | Kind::Prim(Prim::And | Prim::Or) => {
                 self.tasks.push(Task::Branch(n));
                 self.tasks.push(Task::Eval(node.kids[0]));
             }
@@ -1550,10 +1676,12 @@ impl<'a> Machine<'a> {
                 }
                 self.push(Value::Closure(Arc::new(Closure::new(*code, values))), owners);
             }
-            Kind::ReadSnapshot { query, ty } => self.host_read(n, "kernel", Request::Snapshot { query, ty }, 0)?,
-            Kind::Declassified { id, ty } => self.host_read(n, "kernel", Request::Declassified { id, ty }, 0)?,
-            Kind::FileRead { path, ty } => self.host_read(n, "read", Request::FileRead { path, ty }, 0)?,
-            Kind::ReadClock => self.host_read(n, "read", Request::Clock, 0)?,
+            Kind::ReadSnapshot { query, ty } => {
+                self.host_read(n, "kernel", Request::Snapshot { query, ty }, 0, None)?
+            }
+            Kind::Declassified { id, ty } => self.host_read(n, "kernel", Request::Declassified { id, ty }, 0, None)?,
+            Kind::FileRead { path, ty } => self.host_read(n, "read", Request::FileRead { path, ty }, 0, None)?,
+            Kind::ReadClock => self.host_read(n, "read", Request::Clock, 0, None)?,
             Kind::Accounting(a) => self.accounting(n, *a)?,
             Kind::RandomDraw => self.draw(n)?,
             Kind::RngInit(segments) => self.rng_init(n, segments)?,
@@ -1693,6 +1821,9 @@ impl<'a> Machine<'a> {
         let loaded = self.loaded;
         let node = &loaded.nodes[n];
         let held = self.values.pop().expect("a condition");
+        if let Kind::Case { .. } = node.kind {
+            return self.case(n, held);
+        }
         let next = match (&node.kind, &held.value) {
             (Kind::If, Value::Bool(b)) => {
                 self.charge(Some(n), "branch", 0, 0, 0)?;
@@ -1771,6 +1902,8 @@ impl<'a> Machine<'a> {
             Kind::FileWrite { path } => self.output(n, Sink::File { path }, args.pop().expect("a value")),
             Kind::Propose => self.propose(n, args),
             Kind::ReadSnapshotWith { query, ty } => self.read_with(n, query, ty, args.pop().expect("an argument")),
+            Kind::Construct { ty, ctor } => self.construct(n, ty, ctor, args),
+            Kind::Kernel { op, ty } => self.kernel(n, *op, ty, args),
             Kind::UseExact(role) => {
                 let held = args.pop().expect("a value");
                 if is_approx(&held.value) {
@@ -1825,8 +1958,8 @@ impl<'a> Machine<'a> {
             temps.extend(a.owners);
         }
         temps.extend(callee);
-        let lets = vec![None; c.lets];
-        self.frames.push(Frame { code, site, params, captures, lets, owner, temps, loops: Vec::new() });
+        let (lets, lent) = (vec![None; c.lets], vec![None; c.lets]);
+        self.frames.push(Frame { code, site, params, captures, lets, lent, owner, temps, loops: Vec::new() });
         self.tasks.push(Task::Return);
         self.tasks.push(Task::Eval(c.body));
         Ok(())
@@ -1907,7 +2040,10 @@ impl<'a> Machine<'a> {
             Prim::TextDecode => return self.text_decode(n, args),
             Prim::WordStream => return self.word_stream(n, args),
             Prim::StreamDigest => return self.stream_digest(n, args),
-            Prim::Stage(_) | Prim::Imply(_) | Prim::ToCost(..) | Prim::CostValue => unreachable!("refused when loaded"),
+            Prim::Imply(goal) => return self.imply(n, goal, args),
+            Prim::ToCost(..) => "to_cost",
+            Prim::CostValue => "cost_value",
+            Prim::Stage(_) => unreachable!("refused when loaded"),
         };
         let display = |v: &Value| match v {
             Value::Bool(x) | Value::ApproxBool(x) => Some(*x),
@@ -1932,16 +2068,22 @@ impl<'a> Machine<'a> {
             (Prim::ExactLess, a, Some(b)) => value::compare_price(a, b, &d).map(|k| (k, 1)),
             // A compressed word has no exact equality, and an end test's verdict is matched on its outcomes only, so
             // an equality of verdicts behind a type variable stops here (LP2 drafts; LG2.9).
+            // A sum value, a certificate and a handle other than a pose's have no exact equality either (T1 drafts).
             (Prim::ExactEq, a, Some(b))
                 if !is_approx(a)
                     && !is_approx(b)
                     && !is_compressed(a)
                     && !is_compressed(b)
                     && !a.holds_end_test()
-                    && !b.holds_end_test() =>
+                    && !b.holds_end_test()
+                    && !a.holds_unequal()
+                    && !b.holds_unequal() =>
             {
                 Some((value::equal_price(a, b, &t, &d), 1))
             }
+            // A count as a cost, and a cost's count, reserve the count and cost no kernel units (LG2.6; T1 drafts).
+            (Prim::ToCost(..), Value::Int(i), None) if i.sign() != Sign::Minus => Some((0, a.size())),
+            (Prim::CostValue, Value::Cost(..), None) => Some((0, a.size())),
             (Prim::Not, Value::Bool(_), None) => Some((0, 1)),
             (Prim::ToApprox(p), a, None) if exact(a) => Some((value::convert_price(a, p, &d), approx::width(p))),
             (Prim::ApproxAdd, Value::Approx(x), Some(Value::Approx(y))) if x.precision == y.precision => {
@@ -1981,6 +2123,8 @@ impl<'a> Machine<'a> {
             }
             (Prim::ApproxAnd, a, Some(b)) => Value::ApproxBool(display(a) == Some(true) && display(b) == Some(true)),
             (Prim::ApproxNot, a, None) => Value::ApproxBool(display(a) == Some(false)),
+            (Prim::ToCost(puzzle, unit), Value::Int(i), None) => Value::Cost(puzzle, unit, Arc::clone(i)),
+            (Prim::CostValue, Value::Cost(_, _, count), None) => Value::Int(Arc::clone(count)),
             _ => unreachable!("a priced operation"),
         };
         self.settle(memory, result);
@@ -2557,6 +2701,179 @@ impl<'a> Machine<'a> {
         Ok(())
     }
 
+    /// A sum value from its payloads (LG2.1; T1 draft), built as a record is: `value` for the header, then per payload
+    /// `visit` (a move) or `alias` (a borrow).
+    fn construct(&mut self, n: NodeId, ty: &SumTy, ctor: &Arc<Text>, args: Vec<Held>) -> Result<(), Stop> {
+        let values: Vec<Value> = args.iter().map(|h| h.value.clone()).collect();
+        let header = Sum::header(&values);
+        self.charge(Some(n), "value", 0, header, 0)?;
+        let mut owners = self.own(header);
+        for held in args {
+            if held.origin == Origin::Owned {
+                self.charge(Some(n), "visit", 0, 0, 0)?;
+                owners.extend(held.owners);
+            } else {
+                let size = held.value.size();
+                self.charge(Some(n), "alias", 0, size, 0)?;
+                owners.extend(self.own(size));
+            }
+        }
+        self.push(Value::Sum(Arc::new(Sum::new(ty.clone(), Arc::clone(ctor), values))), owners);
+        Ok(())
+    }
+
+    /// A case's `branch` (LG2.1, LG2.9; T1 draft): the arm of the scrutinee's constructor, or the default arm. The arm's
+    /// binders take the payload fields as a field read takes a field: a borrowed scrutinee lends them, so each slot
+    /// reads as a borrow of what the scrutinee borrows; an owned one retains each with a charged owner, all admitted
+    /// in the step, and is released after admission. An arm that bound a slot ends with [`Machine::case_exit`].
+    fn case(&mut self, n: NodeId, held: Held) -> Result<(), Stop> {
+        let loaded = self.loaded;
+        let node = &loaded.nodes[n];
+        let Kind::Case { arms, default } = &node.kind else { unreachable!("a case") };
+        let Value::Sum(sum) = &held.value else {
+            return Err(self.fail(Some(n), "branch", code::IR_REJECTED));
+        };
+        let sum = Arc::clone(sum);
+        // A verdict's default arm takes `unknown` alone or not at all (LG2.9); the checker refuses such a case.
+        if let (SumTy::Verdict(..), true) = (sum.ty(), *default) {
+            let named = |c: &str| arms.iter().any(|(a, _)| &**a == c);
+            let taken: Vec<&str> = ["yes", "no", "unknown"].into_iter().filter(|c| !named(c)).collect();
+            if taken.len() > 1 && taken.contains(&"unknown") {
+                return Err(self.fail(Some(n), "branch", code::IR_REJECTED));
+            }
+        }
+        let Some(arm) = arms.iter().position(|(c, _)| &**c == sum.ctor()) else {
+            if !*default {
+                return Err(self.fail(Some(n), "branch", code::IR_REJECTED));
+            }
+            self.charge(Some(n), "branch", 0, 0, 0)?;
+            self.release(held);
+            self.tasks.push(Task::Eval(node.kids[1 + arms.len()]));
+            return Ok(());
+        };
+        let binders = &arms[arm].1;
+        if binders.len() != sum.payload().len() {
+            return Err(self.fail(Some(n), "branch", code::IR_REJECTED));
+        }
+        let bound: Vec<(usize, &Value)> =
+            binders.iter().zip(sum.payload()).filter_map(|(slot, v)| slot.map(|s| (s, v))).collect();
+        let lent = match held.origin {
+            Origin::Owned => None,
+            Origin::Frame => Some(Origin::Frame),
+            Origin::Let { slot, .. } => Some(Origin::Let { slot, whole: false }),
+        };
+        let memory = match lent {
+            None => bound.iter().fold(0u128, |s, (_, v)| s.saturating_add(v.size())),
+            Some(_) => 0,
+        };
+        self.charge(Some(n), "branch", 0, memory, 0)?;
+        for &(slot, v) in &bound {
+            let owners = if lent.is_none() { self.own(v.size()) } else { Vec::new() };
+            let frame = self.frames.last_mut().expect("a frame");
+            frame.lets[slot] = Some((v.clone(), owners));
+            frame.lent[slot] = lent;
+        }
+        self.release(held);
+        if !bound.is_empty() {
+            self.tasks.push(Task::CaseExit(n, arm));
+        }
+        self.tasks.push(Task::Eval(node.kids[1 + arm]));
+        Ok(())
+    }
+
+    /// The end of a case's arm that bound a slot (T1 draft), as a `let`'s `scope_exit`: a result that borrows part of
+    /// an owned binder slot first gets a charged owner (`alias`); then `scope_exit` releases the arm's slots, and a
+    /// result that is a whole owned slot moves out with its owners.
+    fn case_exit(&mut self, n: NodeId, arm: usize) -> Result<(), Stop> {
+        let Kind::Case { arms, .. } = &self.loaded.nodes[n].kind else { unreachable!("a case") };
+        let slots: Vec<usize> = arms[arm].1.iter().flatten().copied().collect();
+        let mut result = self.values.pop().expect("the arm's value");
+        let mut moved = None;
+        if let Origin::Let { slot, whole } = result.origin {
+            if slots.contains(&slot) {
+                if whole {
+                    moved = Some(slot);
+                } else {
+                    let size = result.value.size();
+                    self.charge(Some(n), "alias", 0, size, 0)?;
+                    result.value = result.value.alias();
+                    result.owners = self.own(size);
+                    result.origin = Origin::Owned;
+                }
+            }
+        }
+        self.charge(Some(n), "scope_exit", 0, 0, 0)?;
+        let frame = self.frames.last_mut().expect("a frame");
+        let mut released = Vec::new();
+        for &slot in &slots {
+            frame.lent[slot] = None;
+            let (_, owners) = frame.lets[slot].take().expect("a bound case slot");
+            if moved == Some(slot) {
+                result.owners = owners;
+                result.origin = Origin::Owned;
+            } else {
+                released.extend(owners);
+            }
+        }
+        for owner in released {
+            self.meter.drop_owner(owner, true);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `imply(h, goal)` (LG2.11; T1 draft): one pure step that takes a certificate along LG2.11's edges to `goal`, for
+    /// the same subject, with the bound of the low-height goal. The checker proves the edge; at run time a missing
+    /// edge stops with `LG4:input.ir_rejected`, and a negative bound or a low-height certificate taken to another
+    /// bound with `LG4:input.pointwise_failed`, both before the step.
+    fn imply(&mut self, n: NodeId, goal: Goal, args: Vec<Held>) -> Result<(), Stop> {
+        let Some(Value::Holds(h)) = args.first().map(|h| &h.value) else {
+            return Err(self.fail(Some(n), "imply", code::IR_REJECTED));
+        };
+        let bound = match args.get(1).map(|h| &h.value) {
+            None => None,
+            Some(Value::Int(b)) => Some(&**b),
+            Some(_) => return Err(self.fail(Some(n), "imply", code::IR_REJECTED)),
+        };
+        let implied = match h.implied(goal, bound) {
+            Ok(implied) => Value::holds(implied),
+            Err(true) => return Err(self.fail(Some(n), "imply", code::IR_REJECTED)),
+            Err(false) => return Err(self.fail(Some(n), "imply", meter::code::POINTWISE_FAILED)),
+        };
+        let size = implied.size();
+        self.charge(Some(n), "imply", 0, size, 0)?;
+        self.settle(size, implied);
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// A kernel row of the identity tower (T1 draft): its arguments' run-time checks ([`kernel_args`]), then the host
+    /// row as a snapshot read, whose answer must have the declared type. The arguments are borrowed and released after
+    /// the answer.
+    fn kernel(&mut self, n: NodeId, op: KernelOp, ty: &QTy, args: Vec<Held>) -> Result<(), Stop> {
+        let values: Vec<Value> = args.iter().map(|h| h.value.clone()).collect();
+        match kernel_args(op, &values) {
+            Ok(()) => {}
+            Err(KernelRefusal::Mistyped) => return Err(self.fail(Some(n), "kernel", code::IR_REJECTED)),
+            Err(KernelRefusal::Pointwise) => return Err(self.fail(Some(n), "kernel", meter::code::POINTWISE_FAILED)),
+            Err(KernelRefusal::Kernel(c)) => {
+                self.charge(Some(n), "kernel", 0, 0, 0)?;
+                return Err(self.fail(Some(n), "kernel", c));
+            }
+        }
+        self.host_read(n, "kernel", Request::Kernel { op, args: &values, ty }, 0, Some(&ty.ty))?;
+        let answer = self.values.pop().expect("the row's answer");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(answer);
+        Ok(())
+    }
+
     /// One part of a container, taken as a field read takes a field: a borrowed container lends it, and an owned one
     /// retains it with a charged owner and is released.
     fn take_part(&mut self, n: NodeId, name: &str, kernel: u128, container: Held, part: Value) -> Result<(), Stop> {
@@ -2593,6 +2910,10 @@ impl<'a> Machine<'a> {
         let name = if map { "map" } else { "set" };
         let values: Vec<Value> = args.iter().map(|h| h.value.clone()).collect();
         let step = if map { 2 } else { 1 };
+        // No sum value, certificate or handle other than a pose's is a key (T1 drafts).
+        if values.iter().step_by(step).any(Value::holds_unequal) {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        }
         let count = (values.len() / step) as u128;
         let widest = values.iter().step_by(step).map(Value::size).max().unwrap_or(0);
         let order = self.order_price(count.saturating_mul(log2_ceil(count)), widest);
@@ -2647,7 +2968,9 @@ impl<'a> Machine<'a> {
             Prim::Insert | Prim::Elements(_) => !is_map,
             _ => is_map,
         };
-        if !fits {
+        // No sum value, certificate or handle other than a pose's is a key or an element (T1 drafts).
+        let probe = matches!(op, Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup);
+        if !fits || (probe && args[1].value.holds_unequal()) {
             return Err(self.fail(Some(n), name, code::IR_REJECTED));
         }
         let count = items.items().len() as u128;
@@ -2759,7 +3082,17 @@ impl<'a> Machine<'a> {
     /// A host row: a refused tariff costs the step only; an admitted one reserves its result bound, and the `sent`
     /// bytes it hands the host count as output, as a preview's request bytes do. The answer's menu words and trace keys
     /// are checked against the run's pinned alphabet and relation at the boundary, after the row.
-    fn host_read(&mut self, n: NodeId, op: &str, request: Request, sent: u128) -> Result<(), Stop> {
+    ///
+    /// With `expect`, a kernel row's declared result type (T1 draft), an answer that does not have it stops the run
+    /// with `LG4:input.ir_rejected` after the row ([`tower::fits`]).
+    fn host_read(
+        &mut self,
+        n: NodeId,
+        op: &str,
+        request: Request,
+        sent: u128,
+        expect: Option<&Ty>,
+    ) -> Result<(), Stop> {
         let tariff = match self.host.tariff(&request) {
             Ok(t) => t,
             Err(c) => {
@@ -2774,6 +3107,9 @@ impl<'a> Machine<'a> {
         };
         if value.size() > tariff.result_bound {
             return Err(self.fail(Some(n), op, code::HOST_EXHAUSTED));
+        }
+        if expect.is_some_and(|ty| !tower::fits(&value, ty)) {
+            return Err(self.fail(Some(n), op, code::IR_REJECTED));
         }
         if menu::check_words(&value, self.menu).is_err() {
             return Err(self.fail(Some(n), op, code::INCOMPATIBLE_ALPHABET));
@@ -2797,7 +3133,7 @@ impl<'a> Machine<'a> {
         }
         let (bytes, buffer) = self.encode(Some(n), &held.value)?;
         let sent = bytes.len() as u128;
-        self.host_read(n, "kernel", Request::SnapshotWith { query, arg: &bytes, ty }, sent)?;
+        self.host_read(n, "kernel", Request::SnapshotWith { query, arg: &bytes, ty }, sent, None)?;
         let answer = self.values.pop().expect("the read's answer");
         self.meter.drop_owner(buffer, true);
         self.release(held);
@@ -2964,6 +3300,71 @@ impl<'a> Machine<'a> {
         let value = result.value.clone();
         self.release(result);
         Ok((value, bytes))
+    }
+}
+
+/// Why a kernel row's arguments are refused at run time (T1 draft).
+enum KernelRefusal {
+    /// An argument of the wrong kind, which the checker refuses: `LG4:input.ir_rejected` before the step.
+    Mistyped,
+    /// A negative bound: `LG4:input.pointwise_failed` before the step.
+    Pointwise,
+    /// A refusal the kernel would give, after the step, as a refused tariff's: `KN1:input.level_not_held` or
+    /// `KN1:input.identity_mismatch`.
+    Kernel(&'static str),
+}
+
+/// The run-time checks of a kernel row's arguments (T1 draft): each argument's kind, a level the state's puzzle holds
+/// (KN1.7, ONE.25), one puzzle for both states of a comparison and for a derivation's state and word (ONE.22: Jumble
+/// off, a `Word`, for 600-cell-Full, on, a `MenuWord`, for the jumbling puzzle), a jumbling claim for an import, a goal
+/// defined on the state's puzzle, and a natural bound. `derive`'s word is literal letters, never a key.
+fn kernel_args(op: KernelOp, args: &[Value]) -> Result<(), KernelRefusal> {
+    use KernelRefusal::*;
+    let state = |v: &Value| match v {
+        Value::Handle(h) => match h.ty() {
+            HandleTy::State(p) => Ok(p),
+            _ => Err(Mistyped),
+        },
+        _ => Err(Mistyped),
+    };
+    let held = |level: ir::Level, p: Puzzle| if level.held_by(p) { Ok(()) } else { Err(Kernel(code::LEVEL_NOT_HELD)) };
+    match (op, args) {
+        (KernelOp::Snapshot(_), []) => Ok(()),
+        (KernelOp::Project(level), [s]) => held(level, state(s)?),
+        (KernelOp::Digest, [Value::Handle(h)]) if matches!(h.ty(), HandleTy::LevelValue(..)) => Ok(()),
+        (KernelOp::Compare(level), [a, b]) => {
+            let (p, q) = (state(a)?, state(b)?);
+            if p != q {
+                return Err(Kernel(code::IDENTITY_MISMATCH));
+            }
+            held(level, p)
+        }
+        (KernelOp::Derive, [s, w]) => match (state(s)?, w) {
+            (Puzzle::Full, Value::Word(_)) | (Puzzle::Jumbling, Value::MenuWord(_)) => Ok(()),
+            (_, Value::Word(_) | Value::MenuWord(_)) => Err(Kernel(code::IDENTITY_MISMATCH)),
+            _ => Err(Mistyped),
+        },
+        (KernelOp::Import, [Value::Handle(t), Value::Sum(r)]) if t.ty() == HandleTy::PoseTable => match r.ty() {
+            SumTy::Reachability(Puzzle::Jumbling) => Ok(()),
+            SumTy::Reachability(_) => Err(Kernel(code::IDENTITY_MISMATCH)),
+            _ => Err(Mistyped),
+        },
+        (KernelOp::Reachability, [s]) => state(s).map(|_| ()),
+        (KernelOp::Check(goal), [s, rest @ ..]) => {
+            let p = state(s)?;
+            match (goal.takes_bound(), rest) {
+                (false, []) => {}
+                (true, [Value::Int(b)]) if b.sign() == Sign::Minus => return Err(Pointwise),
+                (true, [Value::Int(_)]) => {}
+                _ => return Err(Mistyped),
+            }
+            if goal.puzzles().contains(&p) {
+                Ok(())
+            } else {
+                Err(Kernel(code::IDENTITY_MISMATCH))
+            }
+        }
+        _ => Err(Mistyped),
     }
 }
 

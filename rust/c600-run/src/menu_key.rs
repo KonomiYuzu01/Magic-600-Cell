@@ -308,6 +308,7 @@ pub fn check_keys(value: &Value, alphabet: Option<&MenuAlphabet>) -> Result<(), 
             }
             Value::Record(r) | Value::Receipt(r) => stack.extend(r.fields().iter().map(|(_, v)| v)),
             Value::List(l) | Value::Set(l) | Value::Map(l) => stack.extend(l.items()),
+            Value::Sum(s) => stack.extend(s.payload()),
             _ => {}
         }
     }

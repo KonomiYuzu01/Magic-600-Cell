@@ -18,6 +18,8 @@
 //! - [`contract`] runs a whole-state contract once per revision (LG4.10; LP2 draft).
 //! - [`step`] stops a run at each of its LG4/DET.20 boundaries and shows a gate where it is, on the caller's thread
 //!   (EV2.12; LP4-5).
+//! - [`tower`] holds the identity tower's run-time values: canonical IDs, digests, costs, certificates, sum values and
+//!   the handles of the values a host makes (T1c; T1 drafts).
 
 #![forbid(unsafe_code)]
 
@@ -32,5 +34,6 @@ pub mod meter;
 pub mod provenance;
 pub mod rng;
 pub mod step;
+pub mod tower;
 pub mod trace;
 pub mod value;

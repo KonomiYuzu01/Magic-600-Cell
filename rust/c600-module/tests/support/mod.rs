@@ -261,6 +261,8 @@ impl Host for Engine {
                 self.traps += 1;
                 Ok(Value::text(PLANTED[1]))
             }
+            // The fixture serves no kernel row of the identity tower (T1 draft).
+            Request::Kernel { .. } => Err(NOT_GRANTED),
         }
     }
 

@@ -7,7 +7,7 @@
 use std::cmp::Ordering;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use c600_ir::{EndTest, EndTestOutcome, Field};
+use c600_ir::{CostUnit, EndTest, EndTestOutcome, Field, Puzzle};
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
@@ -17,6 +17,7 @@ use crate::menu::{MenuIdentity, MENU_INDEX_LIMIT};
 use crate::menu_key::MenuWordKey;
 use crate::meter::{integer_size, DraftTariffs, IntOp, Tariffs, GENERATOR_SIZE};
 use crate::rng::Cursor;
+use crate::tower::{Digest, Handle, Holds, IdKind, Sum};
 use crate::trace::{tokens_order, TraceKey};
 
 /// The most decimal digits an exact literal may have: PS1.5's limit for persisted integers, applied to IR literals.
@@ -79,6 +80,22 @@ pub enum Value {
     /// one grip, under its alphabet's header ([`crate::menu_key`]). It is never a menu word, and the checker gives it
     /// the type of a Full word's key, `WordEqualityKey`.
     MenuWordKey(Arc<MenuWordKey>),
+    // The identity tower's values (T1c; T1 drafts until the IR freeze, PHS.49): their sizes, canonical forms and key
+    // orders are [`crate::tower`]'s.
+    /// A canonical ID bound to its puzzle (KN1.5, LG2.2): a piece, a sticker or a slot and its index.
+    Id(IdKind, Puzzle, u32),
+    /// A per-revision index into a pose table (KN2.9): never an identity, and no key.
+    PoseTableIndex(u32),
+    /// A digest that names its puzzle and level (KN1.8).
+    Digest(Arc<Digest>),
+    /// An exact natural cost of a puzzle in one unit (LG2.6).
+    Cost(Puzzle, CostUnit, Arc<BigInt>),
+    /// A value of a built-in or declared sum type: its constructor and payloads (LG2.1).
+    Sum(Arc<Sum>),
+    /// A certificate that a goal holds of a state (LG2.10, LG2.11), which only a host makes.
+    Holds(Arc<Holds>),
+    /// An opaque value a host made and keeps: a state, a level value, a pose table, evidence or a pose.
+    Handle(Arc<Handle>),
 }
 
 /// A completed word stream (DET.63, KN2.10, LG4.6; LP2 draft): the exact length its chunks covered and the literal
@@ -562,6 +579,13 @@ fn kind(v: &Value) -> u8 {
         Value::Bytes(_) => 24,
         Value::WordStream(_) => 25,
         Value::MenuWordKey(_) => 26,
+        Value::Id(..) => 27,
+        Value::PoseTableIndex(_) => 28,
+        Value::Digest(_) => 29,
+        Value::Cost(..) => 30,
+        Value::Sum(_) => 31,
+        Value::Holds(_) => 32,
+        Value::Handle(_) => 33,
     }
 }
 
@@ -620,6 +644,23 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                 (Value::Bytes(x), Value::Bytes(y)) => x.cmp(y),
                 // By their lengths and digests: no key or equality of a checked program holds a word stream.
                 (Value::WordStream(x), Value::WordStream(y)) => (&x.length, x.digest).cmp(&(&y.length, y.digest)),
+                // The identity tower's key orders (T1 drafts): an ID by its kind, puzzle and index, a digest by its
+                // puzzle, level and hex, and a cost by its puzzle, unit and count. A pose-table index, a sum value, a
+                // certificate and a handle are no keys in a checked program; their orders only keep this one total, and
+                // a handle's never reads its id.
+                (Value::Id(k, p, i), Value::Id(l, q, j)) => (k, p, i).cmp(&(l, q, j)),
+                (Value::PoseTableIndex(x), Value::PoseTableIndex(y)) => x.cmp(y),
+                (Value::Digest(x), Value::Digest(y)) => x.cmp(y),
+                (Value::Cost(p, u, x), Value::Cost(q, v, y)) => (p, u, &**x).cmp(&(q, v, &**y)),
+                (Value::Holds(x), Value::Holds(y)) => x.cmp(y),
+                (Value::Handle(x), Value::Handle(y)) => x.order(y),
+                (Value::Sum(x), Value::Sum(y)) => match x.ty().cmp(y.ty()).then_with(|| x.ctor().cmp(y.ctor())) {
+                    Ordering::Equal => {
+                        parts(&mut stack, x.payload(), y.payload());
+                        Ordering::Equal
+                    }
+                    order => order,
+                },
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
                     (Some(_), Some(_)) => compare(a, b).expect("exact numbers"),
@@ -814,7 +855,7 @@ impl Closure {
 }
 
 /// Moves the children of a value out for an explicit-stack drop.
-fn take_children(value: Value, out: &mut Vec<Value>) {
+pub(crate) fn take_children(value: Value, out: &mut Vec<Value>) {
     match value {
         Value::Record(r) | Value::Receipt(r) => {
             if let Some(mut r) = Arc::into_inner(r) {
@@ -829,6 +870,11 @@ fn take_children(value: Value, out: &mut Vec<Value>) {
         Value::List(l) | Value::Set(l) | Value::Map(l) => {
             if let Some(mut l) = Arc::into_inner(l) {
                 out.append(&mut l.items);
+            }
+        }
+        Value::Sum(s) => {
+            if let Some(mut s) = Arc::into_inner(s) {
+                out.append(&mut s.take_payload());
             }
         }
         _ => {}
@@ -853,17 +899,17 @@ impl Drop for Closure {
     }
 }
 
-fn int_size(n: &BigInt) -> u128 {
+pub(crate) fn int_size(n: &BigInt) -> u128 {
     integer_size(n.bits() as u128)
 }
 
 /// An upper bound of the decimal digits of `n`: log10(2) < 0.302.
-fn digits_bound(n: &BigInt) -> u128 {
+pub(crate) fn digits_bound(n: &BigInt) -> u128 {
     (n.bits() as u128) * 302 / 1000 + 1
 }
 
 /// An upper bound of a JSON string's bytes: two quotes and at most six bytes per scalar (FP.5).
-fn text_bound(t: &Text) -> u128 {
+pub(crate) fn text_bound(t: &Text) -> u128 {
     t.scalars.saturating_mul(6).saturating_add(2)
 }
 
@@ -977,6 +1023,13 @@ impl Value {
             // One byte per octet.
             Value::Bytes(b) => b.len() as u128,
             Value::WordStream(s) => WordStream::cursor_size(&s.length),
+            // The identity tower's values (T1 drafts; `crate::tower`).
+            Value::Id(..) | Value::PoseTableIndex(_) => 4,
+            Value::Digest(d) => d.size(),
+            Value::Cost(_, _, n) => int_size(n),
+            Value::Sum(s) => s.size(),
+            Value::Holds(h) => h.size(),
+            Value::Handle(h) => h.size(),
         }
     }
 
@@ -1015,6 +1068,21 @@ impl Value {
             Value::EndTest(..) => true,
             Value::Record(r) => r.fields().iter().any(|(_, v)| v.holds_end_test()),
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.items().iter().any(Value::holds_end_test),
+            Value::Sum(s) => s.payload().iter().any(Value::holds_end_test),
+            _ => false,
+        }
+    }
+
+    /// Whether the value is or holds, in a record field or a collection's element, key or value, a value that has no
+    /// exact equality and is no key (T1 draft; the checker's `holds_unequal`): a sum value, a certificate or a handle
+    /// other than a pose's. The run refuses an equality, a set element or a map key that the checker could not see,
+    /// behind a type variable.
+    pub fn holds_unequal(&self) -> bool {
+        match self {
+            Value::Sum(_) | Value::Holds(_) => true,
+            Value::Handle(h) => h.key().is_none(),
+            Value::Record(r) => r.fields().iter().any(|(_, v)| v.holds_unequal()),
+            Value::List(l) | Value::Set(l) | Value::Map(l) => l.items().iter().any(Value::holds_unequal),
             _ => false,
         }
     }
@@ -1037,6 +1105,12 @@ impl Value {
             Value::EndTest(test, outcome) => 24 + (test.row().len() + outcome.tag().len()) as u128,
             Value::Record(r) => r.bound,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
+            // `{"<kind>":{"index":N,"puzzle":"<P>"}}`: at most 64 bytes.
+            Value::Id(..) => 64,
+            Value::Digest(d) => d.bound(),
+            // `{"cost":{"count":{"int":"N"},"puzzle":"<P>","unit":"<U>"}}`: 80 bytes of keys, names and punctuation.
+            Value::Cost(_, _, n) => 80 + digits_bound(n),
+            Value::Sum(s) => s.bound(),
             // A word key or a trace key has no canonical form in the LP2 draft: it is never output as letters (LG2.13,
             // LB1.10). Nor has a compressed word, whose output would be its expansion (DET.59), a generator, which is
             // a stream's cursor (DET.61), or an F2 or F5 element, which FP.6 does not wrap.
@@ -1051,6 +1125,8 @@ impl Value {
             | Value::Field(..)
             | Value::Bytes(_)
             | Value::WordStream(_) => 0,
+            // A pose-table index is per revision, and a certificate and a handle are host values (T1 drafts).
+            Value::PoseTableIndex(_) | Value::Holds(_) | Value::Handle(_) => 0,
         }
     }
 }
@@ -1121,8 +1197,20 @@ pub fn sign_q5(a: &BigInt, b: &BigInt) -> Ordering {
     }
 }
 
-/// Exact addition with widening along Int, Rat and Q5; `None` if an operand is not an exact number.
+/// Two costs of one puzzle and unit (LG2.6; T1 draft).
+fn cost_pair<'a>(a: &'a Value, b: &'a Value) -> Option<(Puzzle, CostUnit, &'a BigInt, &'a BigInt)> {
+    match (a, b) {
+        (Value::Cost(p, u, x), Value::Cost(q, v, y)) if (p, u) == (q, v) => Some((*p, *u, x, y)),
+        _ => None,
+    }
+}
+
+/// Exact addition with widening along Int, Rat and Q5, and of two costs of one puzzle and unit (T1 draft); `None` if
+/// an operand is not an exact number or the costs differ in puzzle or unit.
 pub fn add(a: &Value, b: &Value) -> Option<Value> {
+    if let Some((p, u, x, y)) = cost_pair(a, b) {
+        return Some(Value::Cost(p, u, Arc::new(x + y)));
+    }
     let (x, y, rank) = exact_pair(a, b)?;
     Some(match (rank, &x, &y) {
         (0, Num::Int(m), Num::Int(n)) => Value::int(*m + *n),
@@ -1140,6 +1228,10 @@ pub fn add(a: &Value, b: &Value) -> Option<Value> {
 /// The kernel cost and the result reservation of an exact addition. Integers use the vectors' integer row; a rational
 /// or Q(√5) sum costs `field_per_unit_pair` per pair of widened operand bytes and reserves the unreduced result.
 pub fn add_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> Option<(u128, u128)> {
+    // A sum of costs is priced by the integer row, as a sum of their counts is (T1 draft).
+    if let Some((_, _, x, y)) = cost_pair(a, b) {
+        return Some(t.integer(IntOp::Add, x.bits() as u128, y.bits() as u128));
+    }
     let (x, y, rank) = exact_pair(a, b)?;
     if let (Num::Int(m), Num::Int(n)) = (&x, &y) {
         return Some(t.integer(IntOp::Add, m.bits() as u128, n.bits() as u128));
@@ -1241,6 +1333,10 @@ pub fn compare(a: &Value, b: &Value) -> Option<Ordering> {
     if let (Value::Text(x), Value::Text(y)) = (a, b) {
         return Some(x.as_str().cmp(y.as_str()));
     }
+    // Two costs of one puzzle and unit order by their counts (LG2.6; T1 draft).
+    if let Some((_, _, x, y)) = cost_pair(a, b) {
+        return Some(x.cmp(y));
+    }
     let (x, y, rank) = exact_pair(a, b)?;
     Some(match (rank, &x, &y) {
         (0, Num::Int(m), Num::Int(n)) => m.cmp(n),
@@ -1253,6 +1349,10 @@ pub fn compare(a: &Value, b: &Value) -> Option<Ordering> {
 
 /// The kernel cost of an exact order: a walk over both integers, or a product of widened sizes for fields.
 pub fn compare_price(a: &Value, b: &Value, d: &DraftTariffs) -> Option<u128> {
+    // Two costs: a walk over both counts, as for two integers (T1 draft).
+    if cost_pair(a, b).is_some() {
+        return Some(d.compare_per_unit.saturating_mul(a.size().saturating_add(b.size())));
+    }
     let (x, y, rank) = exact_pair(a, b)?;
     Some(if rank == 0 {
         d.compare_per_unit.saturating_mul(a.size().saturating_add(b.size()))
@@ -1303,6 +1403,18 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             (Value::Field(f, x), Value::Field(g, y)) => f == g && x == y,
             (Value::Bytes(x), Value::Bytes(y)) => x == y,
             (Value::WordStream(x), Value::WordStream(y)) => x == y,
+            // The identity tower (T1 drafts): an ID, an index, a digest and a certificate compare by their parts, a cost
+            // by its puzzle, unit and count (below), a sum value by its type, constructor and payloads, and a handle
+            // only as a pose, by its exact key.
+            (Value::Id(k, p, i), Value::Id(l, q, j)) => (k, p, i) == (l, q, j),
+            (Value::PoseTableIndex(x), Value::PoseTableIndex(y)) => x == y,
+            (Value::Digest(x), Value::Digest(y)) => x == y,
+            (Value::Holds(x), Value::Holds(y)) => x == y,
+            (Value::Handle(x), Value::Handle(y)) => x.same(y),
+            (Value::Sum(x), Value::Sum(y)) => {
+                stack.extend(x.payload().iter().zip(y.payload()));
+                x.ty() == y.ty() && x.ctor() == y.ctor() && x.payload().len() == y.payload().len()
+            }
             _ => compare(a, b) == Some(Ordering::Equal),
         };
         if !same {
@@ -1327,7 +1439,9 @@ pub fn equal_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> u128 
             | Value::Colour(_)
             | Value::Fn(_)
             | Value::EndTest(..)
-            | Value::Field(..),
+            | Value::Field(..)
+            | Value::Id(..)
+            | Value::PoseTableIndex(_),
             Value::Unit
             | Value::Bool(_)
             | Value::ApproxBool(_)
@@ -1335,7 +1449,9 @@ pub fn equal_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> u128 
             | Value::Colour(_)
             | Value::Fn(_)
             | Value::EndTest(..)
-            | Value::Field(..),
+            | Value::Field(..)
+            | Value::Id(..)
+            | Value::PoseTableIndex(_),
         ) => 0,
         _ => d.compare_per_unit.saturating_mul(a.size().saturating_add(b.size())),
     }

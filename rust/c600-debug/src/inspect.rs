@@ -10,14 +10,20 @@
 //!
 //! - **Type names** follow the surface spelling of chapter 02's types for the value as the run holds it; a record
 //!   lists its fields' types.
-//! - **Partial results.** The IR draft has no `Partial<T>` type. A record whose `result` field is the tag or text
-//!   `total`, `partial` or `undefined`, as the jumbling rows answer, is read as KN0.4's partial result in that form.
+//! - **Partial results.** A `Partial<T>` value of the identity tower (T1 draft) is read as KN0.4's partial result by
+//!   its constructor, `total`, `partial` or `undefined`, and so is a record whose `result` field is the tag or text of
+//!   one of these, as the jumbling rows answer.
+//! - **The identity tower** (T1 drafts). Type names carry their puzzle, level, goal and unit indices as the checker
+//!   writes them (`Piece<Full>`, `Digest<Full, labels>`, `WordEqualityKey<Jumbling>`). A verdict of the tower is read
+//!   as KN0.5's verdict with its row `compare` and its constructor as the outcome; a host's handle and a certificate
+//!   have no canonical form and are opaque, and a handle's id is never shown.
 //! - **Identity and level.** A Full word names the session's pinned identity at level `labels`, and a menu word its
 //!   own alphabet's identity block at level `poses`; other values carry none.
 
 use c600_run::encode::encode;
 use c600_run::meter::SourceRange;
 use c600_run::step::Slot;
+use c600_run::tower::{HandleTy, IdKind, SumTy};
 use c600_run::value::Value;
 
 use crate::{Identity, Pinned};
@@ -116,12 +122,18 @@ pub fn class(value: &Value) -> Class {
         Value::ApproxBool(_) => Class::Approximate { precision: 1 },
         Value::EndTest(test, outcome) => Class::Verdict { test: test.row(), outcome: outcome.tag() },
         Value::Record(r) => match r.get("result") {
-            Some(Value::Tag(t) | Value::Text(t)) => match t.as_str() {
-                "total" => Class::Partial(PartialForm::Total),
-                "partial" => Class::Partial(PartialForm::Partial),
-                "undefined" => Class::Partial(PartialForm::Undefined),
-                _ => Class::Exact,
-            },
+            Some(Value::Tag(t) | Value::Text(t)) => partial_form(t.as_str()).map_or(Class::Exact, Class::Partial),
+            _ => Class::Exact,
+        },
+        Value::Sum(s) => match s.ty() {
+            SumTy::Partial => partial_form(s.ctor()).map_or(Class::Exact, Class::Partial),
+            SumTy::Verdict(..) => {
+                let ctors = s.ty().builtin().unwrap_or_default();
+                match ctors.into_iter().find(|(name, _)| *name == s.ctor()) {
+                    Some((outcome, _)) => Class::Verdict { test: "compare", outcome },
+                    None => Class::Exact,
+                }
+            }
             _ => Class::Exact,
         },
         Value::Fn(_)
@@ -129,8 +141,20 @@ pub fn class(value: &Value) -> Class {
         | Value::Generator(_)
         | Value::WordStream(_)
         | Value::Receipt(_)
-        | Value::Bytes(_) => Class::Opaque,
+        | Value::Bytes(_)
+        | Value::Handle(_)
+        | Value::Holds(_) => Class::Opaque,
         _ => Class::Exact,
+    }
+}
+
+/// KN0.4's form of a partial result by its constructor or result tag.
+fn partial_form(name: &str) -> Option<PartialForm> {
+    match name {
+        "total" => Some(PartialForm::Total),
+        "partial" => Some(PartialForm::Partial),
+        "undefined" => Some(PartialForm::Undefined),
+        _ => None,
     }
 }
 
@@ -157,7 +181,8 @@ pub fn type_name(value: &Value) -> String {
         Value::Closure(_) | Value::Fn(_) => "Fn".into(),
         Value::Receipt(_) => "Receipt".into(),
         Value::List(l) => format!("List<{}>", l.items().first().map_or("_".into(), type_name)),
-        Value::WordEqualityKey(_) | Value::MenuWordKey(_) => "WordEqualityKey".into(),
+        Value::WordEqualityKey(_) => "WordEqualityKey<Full>".into(),
+        Value::MenuWordKey(_) => "WordEqualityKey<Jumbling>".into(),
         Value::Set(l) => format!("Set<{}>", l.items().first().map_or("_".into(), type_name)),
         Value::Map(_) => "Map".into(),
         Value::Compressed(_) => "CompressedWord".into(),
@@ -168,6 +193,33 @@ pub fn type_name(value: &Value) -> String {
         Value::Field(f, _) => format!("{f:?}"),
         Value::Bytes(_) => "Bytes".into(),
         Value::WordStream(_) => "WordStream".into(),
+        Value::Id(kind, puzzle, _) => {
+            let name = match kind {
+                IdKind::Piece => "Piece",
+                IdKind::Sticker => "Sticker",
+                IdKind::Slot => "Slot",
+            };
+            format!("{name}<{}>", puzzle.name())
+        }
+        Value::PoseTableIndex(_) => "PoseTableIndex".into(),
+        Value::Digest(d) => format!("Digest<{}, {}>", d.puzzle().name(), d.level().name()),
+        Value::Cost(puzzle, unit, _) => format!("Cost<{}, {}>", puzzle.name(), unit.name()),
+        Value::Holds(h) => format!("Holds<{}, {}>", h.puzzle().name(), h.goal().name()),
+        Value::Handle(h) => match h.ty() {
+            HandleTy::State(p) => format!("State<{}>", p.name()),
+            HandleTy::LevelValue(p, l) => format!("LevelValue<{}, {}>", p.name(), l.name()),
+            HandleTy::PoseTable => "PoseTable".into(),
+            HandleTy::Evidence => "Evidence".into(),
+            HandleTy::Pose => "Pose".into(),
+        },
+        Value::Sum(s) => match s.ty() {
+            SumTy::Verdict(p, l, None) => format!("Verdict<{}, {}>", p.name(), l.name()),
+            SumTy::Verdict(p, l, Some(g)) => format!("Verdict<{}, {}, {}>", p.name(), l.name(), g.name()),
+            SumTy::Partial => format!("Partial<{}>", s.payload().first().map_or("_".into(), type_name)),
+            SumTy::Reachability(p) => format!("Reachability<{}>", p.name()),
+            SumTy::Derivation(p) => format!("Derivation<{}>", p.name()),
+            SumTy::Named { module, name } => format!("{module}.{name}"),
+        },
     }
 }
 

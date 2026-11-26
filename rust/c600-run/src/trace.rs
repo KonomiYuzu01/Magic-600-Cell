@@ -738,6 +738,7 @@ pub fn check_keys(value: &Value, relation: Option<&Relation>) -> Result<(), Stri
             }
             Value::Record(r) | Value::Receipt(r) => stack.extend(r.fields().iter().map(|(_, v)| v)),
             Value::List(l) | Value::Set(l) | Value::Map(l) => stack.extend(l.items()),
+            Value::Sum(s) => stack.extend(s.payload()),
             _ => {}
         }
     }

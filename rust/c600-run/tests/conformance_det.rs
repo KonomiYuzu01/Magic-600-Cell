@@ -161,6 +161,7 @@ fn request_name(request: &Request) -> &'static str {
         Request::Clock => "clock",
         Request::Propose { .. } => "propose",
         Request::ProposeMenu { .. } => "propose_menu",
+        Request::Kernel { .. } => "kernel",
     }
 }
 

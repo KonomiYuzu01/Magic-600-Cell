@@ -78,7 +78,9 @@ pub struct ReproKey {
     pub cost_units: String,
 }
 
-/// A host request as a record holds it.
+/// A host request as a record holds it. A kernel row of the identity tower (T1 draft) is held by its row, its arguments
+/// as the run held them (a host's handles by the ids the recorded host gave them, which name them to that host only)
+/// and its declared result type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RequestKey {
     Snapshot { query: String, ty: String },
@@ -88,6 +90,7 @@ pub enum RequestKey {
     Clock,
     Propose { word: Vec<i32>, target: String, request: Vec<u8> },
     ProposeMenu { letters: Vec<[u32; 2]>, menu: String, target: String, request: Vec<u8> },
+    Kernel { row: String, args: String, ty: String },
 }
 
 impl RequestKey {
@@ -109,6 +112,9 @@ impl RequestKey {
                 target: target.into(),
                 request: request.to_vec(),
             },
+            Request::Kernel { op, args, ty } => {
+                RequestKey::Kernel { row: format!("{op:?}"), args: format!("{args:?}"), ty: format!("{ty:?}") }
+            }
         }
     }
 

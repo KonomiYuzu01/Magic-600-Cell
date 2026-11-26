@@ -448,9 +448,10 @@ fn collections_outside_their_canonical_form_are_refused_on_both_sides() {
             }),
             "a part the word does not reach",
         ),
-        // The first tag after a menu word key's (LP2 draft, LG2.18), which follows a menu trace key's (LB1.10),
-        // captured bytes' (DET.62) and an F2 or F5 element's (KN3.2).
-        (decoded(|e| e.u8(28)), "an unknown value tag"),
+        // The first tag after the identity tower's (28 to 34; T1 drafts, `tests/tower_wire.rs`), which follow a menu
+        // word key's (LP2 draft, LG2.18), a menu trace key's (LB1.10), captured bytes' (DET.62) and an F2 or F5
+        // element's (KN3.2).
+        (decoded(|e| e.u8(35)), "an unknown value tag"),
     ] {
         assert_eq!(got.err().as_deref(), Some(why));
     }
@@ -562,9 +563,9 @@ fn collection_types_round_trip_under_the_depth_bound() {
     };
     assert_eq!(written(codec::TYPE_DEPTH), Ok(nested(codec::TYPE_DEPTH)));
     assert!(written(codec::TYPE_DEPTH + 1).is_err(), "a set type nested beyond the bound");
-    // The first type tag after a menu word key's type (30) and a controlled function type's (31; T1 drafts), which
-    // follow a word stream's (LP2 draft, DET.63).
-    assert!(codec::decode_ty(&mut Dec::new(&[32])).is_err());
+    // The first type tag after the identity tower's (32 to 48; T1 drafts, `tests/tower_wire.rs`), which follow a menu
+    // word key's type (30) and a controlled function type's (31; T1 drafts) after a word stream's (LP2 draft, DET.63).
+    assert!(codec::decode_ty(&mut Dec::new(&[49])).is_err());
 }
 
 const COLLECTIONS: &str = "\

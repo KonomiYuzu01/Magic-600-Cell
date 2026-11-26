@@ -15,13 +15,14 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use c600_check::{Profile, Row};
-use c600_ir::{Capability, EndTest, EndTestOutcome, ExactRole, QTy, Ty};
+use c600_ir::{Capability, EndTest, EndTestOutcome, ExactRole, Goal, KernelOp, Level, Puzzle, QTy, Ty};
 use c600_run::approx::Approx;
 use c600_run::interp::{NoHost, Request, RowTariff, Run, Sink};
 use c600_run::menu::{menu_digests, ItemMatrix, MenuAlphabet, MenuError, MenuIdentity};
 use c600_run::meter::code::STEPS;
 use c600_run::meter::{Amounts, ChildRecord, Interruption, Outcome, Position, SourceRange};
 use c600_run::rng::Cursor;
+use c600_run::tower::{Handle, HandleTy};
 use c600_run::trace::{Relation, RelationError, TraceKey, FULL_DISJOINT_SUPPORT};
 use c600_run::value::{Closure, Generator, Quad, Ratio, Value};
 use c600_runtime::codec::{self, Codes};
@@ -74,6 +75,8 @@ fn samples() -> Vec<Enc> {
     let qty = QTy { ty: Ty::Nat, display: false };
     let ty = Ty::Word;
     let menu = identity("menu");
+    let state = |id| Value::handle(Handle::new(HandleTy::State(Puzzle::Full), id, 64));
+    let kernel_args = [state(1), state(2)];
     let requests = [
         Request::Snapshot { query: "pieces", ty: &qty },
         Request::Declassified { id: "d", ty: &ty },
@@ -82,6 +85,7 @@ fn samples() -> Vec<Enc> {
         Request::Propose { word: &[1, -2], target: "t", request: b"r" },
         Request::SnapshotWith { query: "protection", arg: b"[1,-2]\n", ty: &qty },
         Request::ProposeMenu { letters: &[[0, 1]], menu: &menu, target: "t", request: b"r" },
+        Request::Kernel { op: KernelOp::Check(Goal::LowHeight), args: &kernel_args, ty: &qty },
     ];
     let sinks = [
         Sink::View,
@@ -187,7 +191,8 @@ fn unknown_protocols_and_kinds_are_refused() {
 }
 
 /// Every host request decodes to the request it was encoded from. Tags 0 to 4 keep their bytes; LP2's snapshot read
-/// with an argument is tag 5 and a menu-word preview tag 6 (LP2 drafts). A cut request and an unknown tag are
+/// with an argument is tag 5 and a menu-word preview tag 6 (LP2 drafts), and a kernel row of the identity tower tag 7
+/// (T1 draft). A cut request and an unknown tag are
 /// refused, and so is, on both sides, a menu-word preview with a letter index of 600 or more or an identity block
 /// that names no alphabet.
 #[test]
@@ -195,6 +200,8 @@ fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
     let qty = QTy { ty: Ty::Nat, display: false };
     let ty = Ty::Word;
     let menu = identity("menu");
+    let state = |id| Value::handle(Handle::new(HandleTy::State(Puzzle::Full), id, 64));
+    let kernel_args = [state(1), state(2)];
     let requests = [
         Request::Snapshot { query: "pieces", ty: &qty },
         Request::Declassified { id: "d", ty: &ty },
@@ -203,6 +210,7 @@ fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
         Request::Propose { word: &[1, -2], target: "t", request: b"r" },
         Request::SnapshotWith { query: "protection", arg: b"[1,-2]\n", ty: &qty },
         Request::ProposeMenu { letters: &[[0, 1], [3, 2]], menu: &menu, target: "t", request: b"r" },
+        Request::Kernel { op: KernelOp::Compare(Level::Labels), args: &kernel_args, ty: &qty },
     ];
     for (tag, r) in requests.iter().enumerate() {
         let mut e = Enc::new();
@@ -222,7 +230,7 @@ fn every_request_round_trips_and_a_cut_or_unknown_one_is_refused() {
     let mut with = Enc::new();
     codec::encode_request(&requests[5], &mut with).unwrap();
     assert_eq!(with.bytes[0], 5);
-    with.bytes[0] = 7;
+    with.bytes[0] = 8;
     assert!(codec::decode_request(&mut Dec::new(&with.bytes)).is_err(), "an unknown tag");
 
     let nameless = MenuIdentity::default();

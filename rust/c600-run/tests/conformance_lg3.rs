@@ -71,7 +71,11 @@ fn block_of(store: &Store, digest: &[u8; 32]) -> Json {
 fn ct_lg3_02_no_request_commits_or_obtains_a_token() {
     fn request(r: &Request) -> &'static str {
         match r {
-            Request::Snapshot { .. } | Request::SnapshotWith { .. } | Request::Declassified { .. } => "state read",
+            // A kernel row of the identity tower (T1 draft) reads a value of the run's state and adopts nothing.
+            Request::Snapshot { .. }
+            | Request::SnapshotWith { .. }
+            | Request::Declassified { .. }
+            | Request::Kernel { .. } => "state read",
             Request::FileRead { .. } | Request::Clock => "granted input",
             Request::Propose { .. } | Request::ProposeMenu { .. } => "preview",
         }

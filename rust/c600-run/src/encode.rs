@@ -17,16 +17,23 @@
 //! - A set is an array of its distinct elements and a map an array of its `{"key":…,"value":…}` entries, both in
 //!   canonical key order (DET.9; LP2 drafts). A set or map out of that order has no canonical form.
 //! - A compressed word has no form in the LP2 draft; its letters are output after an explicit `expand`.
+//! - The identity tower (T1 drafts; [`crate::tower`]): a canonical ID is `{"<kind>":{"index":N,"puzzle":"<P>"}}`, a
+//!   digest `{"digest":{"hex":"<hex>","level":"<L>","puzzle":"<P>"}}`, a cost
+//!   `{"cost":{"count":{"int":"N"},"puzzle":"<P>","unit":"<U>"}}` and a partial result `{"<constructor>":[payload, …]}`.
+//!   A pose-table index, every other sum value, a certificate and a handle have no form: they are never published or
+//!   stored.
 //!
 //! The encoder walks with an explicit stack, so a deep value cannot overflow the host stack.
 
 use std::cmp::Ordering;
 
+use crate::tower::Digest;
 use crate::value::{entry_key, value_order, Text, Value};
 
 /// Why a value has no canonical form: a closure, a function, a receipt, a word equality key, a compressed word, an F2
 /// or F5 element, an approximation that is not exactly a binary64 number, a word with a letter of magnitude above
-/// 1200, a menu word that names no alphabet, a record with a repeated key, or a set or map out of canonical key order.
+/// 1200, a menu word that names no alphabet, a record with a repeated key, a set or map out of canonical key order, or
+/// a host value of the identity tower (T1 drafts).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Noncanonical;
 
@@ -55,6 +62,17 @@ pub(crate) fn string(s: &str, out: &mut Vec<u8>) {
         }
     }
     out.push(b'"');
+}
+
+/// A digest's object `{"hex":"<hex>","level":"<L>","puzzle":"<P>"}` (T1 draft).
+fn digest(d: &Digest, out: &mut Vec<u8>) {
+    out.extend_from_slice(b"{\"hex\":");
+    string(d.hex(), out);
+    out.extend_from_slice(b",\"level\":");
+    string(d.level().name(), out);
+    out.extend_from_slice(b",\"puzzle\":");
+    string(d.puzzle().name(), out);
+    out.push(b'}');
 }
 
 fn exact(kind: &str, parts: &[String], out: &mut Vec<u8>) {
@@ -188,6 +206,43 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
             // canonical form. Nor does it give one to a compressed word, whose output would be its priced expansion
             // (DET.59), to a generator, a stream's cursor (DET.61), or to an F2 or F5 element: FP.6 wraps only int,
             // rat and q5 (PS1.5), so a program outputs the element's residue.
+            // The identity tower's portable values and keys (T1 drafts): an ID, a digest and a cost, each under its
+            // kind's name with its fields in key order, and a partial result under its constructor's name with its
+            // payloads in order.
+            Value::Id(kind, puzzle, index) => {
+                out.extend_from_slice(b"{");
+                string(kind.name(), out);
+                out.extend_from_slice(format!(":{{\"index\":{index},\"puzzle\":").as_bytes());
+                string(puzzle.name(), out);
+                out.extend_from_slice(b"}}");
+            }
+            Value::Digest(d) => {
+                out.extend_from_slice(b"{\"digest\":");
+                digest(d, out);
+                out.push(b'}');
+            }
+            Value::Cost(puzzle, unit, count) => {
+                out.extend_from_slice(b"{\"cost\":{\"count\":");
+                exact("int", &[count.to_str_radix(10)], out);
+                out.extend_from_slice(b",\"puzzle\":");
+                string(puzzle.name(), out);
+                out.extend_from_slice(b",\"unit\":");
+                string(unit.name(), out);
+                out.extend_from_slice(b"}}");
+            }
+            Value::Sum(s) if s.portable() => {
+                out.push(b'{');
+                string(s.ctor(), out);
+                out.extend_from_slice(b":[");
+                stack.push(Task::Byte(b'}'));
+                stack.push(Task::Byte(b']'));
+                for (i, item) in s.payload().iter().enumerate().rev() {
+                    stack.push(Task::Value(item));
+                    if i > 0 {
+                        stack.push(Task::Byte(b','));
+                    }
+                }
+            }
             Value::Closure(_)
             | Value::Fn(_)
             | Value::Receipt(_)
@@ -198,7 +253,11 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
             | Value::Generator(_)
             | Value::Field(..)
             | Value::Bytes(_)
-            | Value::WordStream(_) => return Err(Noncanonical),
+            | Value::WordStream(_)
+            | Value::PoseTableIndex(_)
+            | Value::Sum(_)
+            | Value::Holds(_)
+            | Value::Handle(_) => return Err(Noncanonical),
         }
     }
     out.push(b'\n');

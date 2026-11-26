@@ -21,13 +21,25 @@
 //! in their canonical form, and the run checks its header against its pinned menu. A generator (DET.61; LP2 draft)
 //! has no transfer form, since a copy would be a second cursor on its stream; its type is type tag 27. An F2 or F5
 //! element (KN3.2; LP2 draft) crosses as its field and its residue, which is below the field's prime.
+//!
+//! The identity tower (T1c; T1 drafts) crosses so that a run in the runtime's own process can hand its values to its
+//! host and back: a canonical ID (value tag 28) as its kind, puzzle and index; a pose-table index (29) as its index; a
+//! digest (30) as its puzzle, level and hex; a cost (31) as its puzzle, unit and natural count; a sum value (32) as its
+//! type, its constructor and its payloads, a built-in type's constructor with its payload count; a certificate (33) as
+//! its goal, its subject digest and the low-height goal's bound; and a handle (34) as its type with its indices, the
+//! host's id, the declared logical size and a pose's exact key. A handle's id crosses here only, between a run and its
+//! own host, and never enters a canonical form. The tower's types take type tags 32 to 48, and a kernel row is request
+//! 7: its operation, its argument values and its declared type. Each is refused outside its form on both sides.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use c600_check::Row as ClassRow;
-use c600_ir::{Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Field, FnTy, Puzzle, QTy, Ty};
+use c600_ir::{
+    Capability, CostUnit, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Field, FnTy, Goal, KernelOp, Level,
+    Puzzle, QTy, Ty,
+};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
 use c600_run::menu::{ItemMatrix, MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
@@ -35,6 +47,7 @@ use c600_run::menu_key::{MenuWordKey, Token, WORD_KEY};
 use c600_run::meter::{
     self, Amounts, ChildRecord, DraftTariffs, Interruption, Outcome, Position, Row, SourceRange, Summary, Tariffs,
 };
+use c600_run::tower::{Digest, Handle, HandleTy, Holds, IdKind, Sum, SumTy};
 use c600_run::trace::{MenuHeader, Relation, TraceHeader, TraceKey, JUMBLE_LOCALITY};
 use c600_run::value::{entry, value_order, Closure, Compressed, List, Part, Quad, Ratio, Record, Text, Value};
 use num_bigint::{BigInt, Sign};
@@ -99,6 +112,220 @@ mod tag {
     /// grip and the sixteen entries of its product row-major, each as its three integers. Only a key in its canonical
     /// form is written or read ([`MenuWordKey::canonical`]).
     pub const MENU_WORD_KEY: u8 = 27;
+    /// The identity tower's values (T1 drafts): a canonical ID as its kind's, its puzzle's and its index's bytes.
+    pub const ID: u8 = 28;
+    /// A pose-table index as its index.
+    pub const POSE_TABLE_INDEX: u8 = 29;
+    /// A digest as its puzzle's and level's bytes and its lowercase hex.
+    pub const DIGEST: u8 = 30;
+    /// A cost as its puzzle's and unit's bytes and its natural count.
+    pub const COST: u8 = 31;
+    /// A sum value as its type (`encode_sum_ty`), its constructor, its payload count and its payloads.
+    pub const SUM: u8 = 32;
+    /// A certificate as its goal's byte, its subject digest (puzzle, level, hex) and its bound, a flag and a natural.
+    pub const HOLDS: u8 = 33;
+    /// A handle as its type with its indices (`encode_handle_ty`), the host's id, the declared logical size and a
+    /// pose's key, a flag and a text.
+    pub const HANDLE: u8 = 34;
+}
+
+/// The identity tower's index bytes (T1 drafts): each index's position in its type's declared order.
+fn puzzle_byte(p: Puzzle) -> u8 {
+    Puzzle::ALL.iter().position(|q| *q == p).expect("a puzzle") as u8
+}
+
+fn puzzle_from(byte: u8) -> Result<Puzzle, Malformed> {
+    Puzzle::ALL.get(usize::from(byte)).copied().ok_or_else(|| Malformed::new("an unknown puzzle"))
+}
+
+fn level_byte(l: Level) -> u8 {
+    Level::ALL.iter().position(|m| *m == l).expect("a level") as u8
+}
+
+fn level_from(byte: u8) -> Result<Level, Malformed> {
+    Level::ALL.get(usize::from(byte)).copied().ok_or_else(|| Malformed::new("an unknown level"))
+}
+
+fn goal_byte(g: Goal) -> u8 {
+    Goal::ALL.iter().position(|h| *h == g).expect("a goal") as u8
+}
+
+fn goal_from(byte: u8) -> Result<Goal, Malformed> {
+    Goal::ALL.get(usize::from(byte)).copied().ok_or_else(|| Malformed::new("an unknown goal"))
+}
+
+fn unit_byte(u: CostUnit) -> u8 {
+    CostUnit::ALL.iter().position(|v| *v == u).expect("a unit") as u8
+}
+
+fn unit_from(byte: u8) -> Result<CostUnit, Malformed> {
+    CostUnit::ALL.get(usize::from(byte)).copied().ok_or_else(|| Malformed::new("an unknown cost unit"))
+}
+
+fn id_kind_from(byte: u8) -> Result<IdKind, Malformed> {
+    IdKind::ALL.get(usize::from(byte)).copied().ok_or_else(|| Malformed::new("an unknown ID kind"))
+}
+
+/// A handle's type (T1 draft): 0 a state and its puzzle, 1 a level value, its puzzle and its level, 2 a pose table,
+/// 3 evidence, 4 a pose.
+fn encode_handle_ty(t: HandleTy, e: &mut Enc) {
+    match t {
+        HandleTy::State(p) => {
+            e.u8(0);
+            e.u8(puzzle_byte(p));
+        }
+        HandleTy::LevelValue(p, l) => {
+            e.u8(1);
+            e.u8(puzzle_byte(p));
+            e.u8(level_byte(l));
+        }
+        HandleTy::PoseTable => e.u8(2),
+        HandleTy::Evidence => e.u8(3),
+        HandleTy::Pose => e.u8(4),
+    }
+}
+
+fn decode_handle_ty(d: &mut Dec) -> Result<HandleTy, Malformed> {
+    Ok(match d.u8()? {
+        0 => HandleTy::State(puzzle_from(d.u8()?)?),
+        1 => HandleTy::LevelValue(puzzle_from(d.u8()?)?, level_from(d.u8()?)?),
+        2 => HandleTy::PoseTable,
+        3 => HandleTy::Evidence,
+        4 => HandleTy::Pose,
+        _ => return Err(Malformed::new("an unknown handle type")),
+    })
+}
+
+/// An optional goal: 0, or 1 and the goal's byte.
+fn encode_goal_option(g: Option<Goal>, e: &mut Enc) {
+    match g {
+        None => e.u8(0),
+        Some(g) => {
+            e.u8(1);
+            e.u8(goal_byte(g));
+        }
+    }
+}
+
+fn decode_goal_option(d: &mut Dec) -> Result<Option<Goal>, Malformed> {
+    match d.u8()? {
+        0 => Ok(None),
+        1 => Ok(Some(goal_from(d.u8()?)?)),
+        _ => Err(Malformed::new("an optional goal's flag other than 0 or 1")),
+    }
+}
+
+/// A sum value's type (T1 draft): 0 a verdict, its puzzle, its level and its optional goal, 1 a partial result, 2 a
+/// reachability claim and its puzzle, 3 a derivation and its puzzle, 4 a declared type, its module and its name.
+fn encode_sum_ty(t: &SumTy, e: &mut Enc) {
+    match t {
+        SumTy::Verdict(p, l, g) => {
+            e.u8(0);
+            e.u8(puzzle_byte(*p));
+            e.u8(level_byte(*l));
+            encode_goal_option(*g, e);
+        }
+        SumTy::Partial => e.u8(1),
+        SumTy::Reachability(p) => {
+            e.u8(2);
+            e.u8(puzzle_byte(*p));
+        }
+        SumTy::Derivation(p) => {
+            e.u8(3);
+            e.u8(puzzle_byte(*p));
+        }
+        SumTy::Named { module, name } => {
+            e.u8(4);
+            e.text(module);
+            e.text(name);
+        }
+    }
+}
+
+fn decode_sum_ty(d: &mut Dec) -> Result<SumTy, Malformed> {
+    Ok(match d.u8()? {
+        0 => SumTy::Verdict(puzzle_from(d.u8()?)?, level_from(d.u8()?)?, decode_goal_option(d)?),
+        1 => SumTy::Partial,
+        2 => SumTy::Reachability(puzzle_from(d.u8()?)?),
+        3 => SumTy::Derivation(puzzle_from(d.u8()?)?),
+        4 => SumTy::Named { module: d.text()?.into(), name: d.text()?.into() },
+        _ => return Err(Malformed::new("an unknown sum type")),
+    })
+}
+
+/// Whether a sum value's constructor and payload count fit its type (T1 draft): a built-in type's constructor with its
+/// payload count, and a declared type's nonempty names.
+fn sum_form(t: &SumTy, ctor: &str, payloads: usize) -> Result<(), &'static str> {
+    let fits = match t.builtin() {
+        Some(ctors) => ctors.iter().any(|(name, n)| *name == ctor && *n == payloads),
+        None => {
+            let SumTy::Named { module, name } = t else { unreachable!("a declared type") };
+            !ctor.is_empty() && !module.is_empty() && !name.is_empty()
+        }
+    };
+    fits.then_some(()).ok_or("a constructor that its sum type does not have")
+}
+
+/// A kernel row's operation (T1 draft): 0 `snapshot` and its puzzle, 1 `project` and its level, 2 `digest`, 3
+/// `compare` and its level, 4 `derive`, 5 `import`, 6 `reachability`, 7 `check` and its goal.
+fn encode_kernel_op(op: KernelOp, e: &mut Enc) {
+    match op {
+        KernelOp::Snapshot(p) => {
+            e.u8(0);
+            e.u8(puzzle_byte(p));
+        }
+        KernelOp::Project(l) => {
+            e.u8(1);
+            e.u8(level_byte(l));
+        }
+        KernelOp::Digest => e.u8(2),
+        KernelOp::Compare(l) => {
+            e.u8(3);
+            e.u8(level_byte(l));
+        }
+        KernelOp::Derive => e.u8(4),
+        KernelOp::Import => e.u8(5),
+        KernelOp::Reachability => e.u8(6),
+        KernelOp::Check(g) => {
+            e.u8(7);
+            e.u8(goal_byte(g));
+        }
+    }
+}
+
+fn decode_kernel_op(d: &mut Dec) -> Result<KernelOp, Malformed> {
+    Ok(match d.u8()? {
+        0 => KernelOp::Snapshot(puzzle_from(d.u8()?)?),
+        1 => KernelOp::Project(level_from(d.u8()?)?),
+        2 => KernelOp::Digest,
+        3 => KernelOp::Compare(level_from(d.u8()?)?),
+        4 => KernelOp::Derive,
+        5 => KernelOp::Import,
+        6 => KernelOp::Reachability,
+        7 => KernelOp::Check(goal_from(d.u8()?)?),
+        _ => return Err(Malformed::new("an unknown kernel row")),
+    })
+}
+
+/// A digest's puzzle's and level's bytes and its hex (T1 draft).
+fn encode_digest(digest: &Digest, e: &mut Enc) {
+    e.u8(puzzle_byte(digest.puzzle()));
+    e.u8(level_byte(digest.level()));
+    e.text(digest.hex());
+}
+
+fn decode_digest_value(d: &mut Dec) -> Result<Digest, Malformed> {
+    let (puzzle, level) = (puzzle_from(d.u8()?)?, level_from(d.u8()?)?);
+    Digest::new(puzzle, level, d.text()?).ok_or_else(|| Malformed::new("a digest that is not lowercase hex bytes"))
+}
+
+/// A natural number, refused when negative.
+fn decode_natural(d: &mut Dec) -> Result<BigInt, Malformed> {
+    let n = decode_bigint(d)?;
+    if n.is_negative() {
+        return Err(Malformed::new("a negative count or bound"));
+    }
+    Ok(n)
 }
 
 /// A finite field's byte in a value or a type (LP2 draft): 0 for F2, 1 for F5.
@@ -648,6 +875,64 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.u8(tag::BYTES);
                 e.bytes(b);
             }
+            Value::Id(kind, puzzle, index) => {
+                e.u8(tag::ID);
+                e.u8(IdKind::ALL.iter().position(|k| k == kind).expect("an ID kind") as u8);
+                e.u8(puzzle_byte(*puzzle));
+                e.u32(*index);
+            }
+            Value::PoseTableIndex(index) => {
+                e.u8(tag::POSE_TABLE_INDEX);
+                e.u32(*index);
+            }
+            Value::Digest(digest) => {
+                e.u8(tag::DIGEST);
+                encode_digest(digest, e);
+            }
+            Value::Cost(puzzle, unit, count) => {
+                if count.is_negative() {
+                    return Err(Unencodable("a negative cost"));
+                }
+                e.u8(tag::COST);
+                e.u8(puzzle_byte(*puzzle));
+                e.u8(unit_byte(*unit));
+                bigint(count, e);
+            }
+            Value::Holds(h) => {
+                e.u8(tag::HOLDS);
+                e.u8(goal_byte(h.goal()));
+                encode_digest(h.subject(), e);
+                match h.bound() {
+                    None => e.u8(0),
+                    Some(b) => {
+                        e.u8(1);
+                        bigint(b, e);
+                    }
+                }
+            }
+            Value::Handle(h) => {
+                e.u8(tag::HANDLE);
+                encode_handle_ty(h.ty(), e);
+                e.u64(h.id());
+                e.u128(h.size());
+                match h.key() {
+                    None => e.u8(0),
+                    Some(key) => {
+                        e.u8(1);
+                        e.text(key);
+                    }
+                }
+            }
+            Value::Sum(s) => {
+                sum_form(s.ty(), s.ctor(), s.payload().len()).map_err(Unencodable)?;
+                e.u8(tag::SUM);
+                encode_sum_ty(s.ty(), e);
+                e.text(s.ctor());
+                e.count(s.payload().len());
+                for v in s.payload().iter().rev() {
+                    stack.push(Item::Value(v));
+                }
+            }
             Value::Record(r) | Value::Receipt(r) => {
                 if r.fields().iter().map(|(n, _)| n.as_str()).collect::<BTreeSet<_>>().len() != r.fields().len() {
                     return Err(Unencodable("a record with a repeated field"));
@@ -754,9 +1039,29 @@ enum Seq {
 }
 
 enum Frame {
-    Record { receipt: bool, left: usize, fields: Vec<(Arc<Text>, Value)>, name: Option<Arc<Text>> },
-    Closure { code: usize, left: usize, captures: Vec<Value> },
-    Seq { kind: Seq, left: usize, items: Vec<Value> },
+    Record {
+        receipt: bool,
+        left: usize,
+        fields: Vec<(Arc<Text>, Value)>,
+        name: Option<Arc<Text>>,
+    },
+    Closure {
+        code: usize,
+        left: usize,
+        captures: Vec<Value>,
+    },
+    Seq {
+        kind: Seq,
+        left: usize,
+        items: Vec<Value>,
+    },
+    /// A sum value's payloads (T1 draft).
+    Sum {
+        ty: SumTy,
+        ctor: Arc<Text>,
+        left: usize,
+        payload: Vec<Value>,
+    },
 }
 
 /// A decoded list, set or map. A set's elements and a map's keys must be strictly increasing in the canonical key
@@ -851,6 +1156,53 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 Value::Field(field, residue)
             }
             tag::BYTES => Value::Bytes(d.bytes()?.into()),
+            tag::ID => {
+                let kind = id_kind_from(d.u8()?)?;
+                Value::Id(kind, puzzle_from(d.u8()?)?, d.u32()?)
+            }
+            tag::POSE_TABLE_INDEX => Value::PoseTableIndex(d.u32()?),
+            tag::DIGEST => Value::Digest(Arc::new(decode_digest_value(d)?)),
+            tag::COST => {
+                let (puzzle, unit) = (puzzle_from(d.u8()?)?, unit_from(d.u8()?)?);
+                Value::Cost(puzzle, unit, Arc::new(decode_natural(d)?))
+            }
+            tag::HOLDS => {
+                let goal = goal_from(d.u8()?)?;
+                let subject = decode_digest_value(d)?;
+                let bound = match d.u8()? {
+                    0 => None,
+                    1 => Some(decode_natural(d)?),
+                    _ => return Err(Malformed::new("a bound's flag other than 0 or 1")),
+                };
+                let holds = Holds::new(goal, subject, bound)
+                    .ok_or_else(|| Malformed::new("a certificate whose bound or puzzle does not fit its goal"))?;
+                Value::Holds(Arc::new(holds))
+            }
+            tag::HANDLE => {
+                let ty = decode_handle_ty(d)?;
+                let handle = Handle::new(ty, d.u64()?, d.u128()?);
+                let handle = match d.u8()? {
+                    0 => handle,
+                    1 => {
+                        handle.with_key(d.text()?).ok_or_else(|| Malformed::new("a key on a handle that is no pose"))?
+                    }
+                    _ => return Err(Malformed::new("a key's flag other than 0 or 1")),
+                };
+                Value::Handle(Arc::new(handle))
+            }
+            tag::SUM => {
+                let ty = decode_sum_ty(d)?;
+                let ctor = text_value(d)?;
+                // A payload takes at least its tag.
+                let n = d.count(1)?;
+                sum_form(&ty, ctor.as_str(), n).map_err(Malformed::new)?;
+                if n == 0 {
+                    Value::Sum(Arc::new(Sum::new(ty, ctor, Vec::new())))
+                } else {
+                    stack.push(Frame::Sum { ty, ctor, left: n, payload: Vec::with_capacity(n.min(64)) });
+                    continue;
+                }
+            }
             tag::WORD_KEY => {
                 let letters = decode_letters(d)?;
                 if !freely_reduced(&letters) {
@@ -937,6 +1289,11 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                     *left -= 1;
                     *left
                 }
+                Frame::Sum { left, payload, .. } => {
+                    payload.push(value);
+                    *left -= 1;
+                    *left
+                }
             };
             if left > 0 {
                 break;
@@ -951,6 +1308,7 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 Some(Frame::Record { receipt: true, fields, .. }) => Value::Receipt(Arc::new(Record::new(fields))),
                 Some(Frame::Closure { code, captures, .. }) => Value::Closure(Arc::new(Closure::new(code, captures))),
                 Some(Frame::Seq { kind, items, .. }) => sequence(kind, items)?,
+                Some(Frame::Sum { ty, ctor, payload, .. }) => Value::Sum(Arc::new(Sum::new(ty, ctor, payload))),
                 None => return Err(Malformed::new("a value frame went missing")),
             };
         }
@@ -1218,25 +1576,70 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
         Ty::Bytes => e.u8(28),
         // LP2's draft word stream (DET.63).
         Ty::WordStream => e.u8(29),
-        // The identity tower's types (T1 drafts) cross to a host with their rows (T1c).
-        Ty::Piece(_)
-        | Ty::Sticker(_)
-        | Ty::Slot(_)
-        | Ty::Pose
-        | Ty::PoseTableIndex
-        | Ty::Digest(..)
-        | Ty::LevelValue(..)
-        | Ty::State(_)
-        | Ty::PoseTable
-        | Ty::Reachability(_)
-        | Ty::Evidence
-        | Ty::Verdict(..)
-        | Ty::Partial(_)
-        | Ty::Holds(..)
-        | Ty::Cost(..)
-        | Ty::Derivation(_)
-        | Ty::Named { .. } => {
-            return Err(Unencodable("an identity-tower type, which crosses with its host rows (T1c)"));
+        // The identity tower's types (T1 drafts): a tag each, then the indices' bytes, a partial result's payload type,
+        // or a declared type's module and name.
+        Ty::Piece(p) => {
+            e.u8(32);
+            e.u8(puzzle_byte(*p));
+        }
+        Ty::Sticker(p) => {
+            e.u8(33);
+            e.u8(puzzle_byte(*p));
+        }
+        Ty::Slot(p) => {
+            e.u8(34);
+            e.u8(puzzle_byte(*p));
+        }
+        Ty::Pose => e.u8(35),
+        Ty::PoseTableIndex => e.u8(36),
+        Ty::Digest(p, l) => {
+            e.u8(37);
+            e.u8(puzzle_byte(*p));
+            e.u8(level_byte(*l));
+        }
+        Ty::LevelValue(p, l) => {
+            e.u8(38);
+            e.u8(puzzle_byte(*p));
+            e.u8(level_byte(*l));
+        }
+        Ty::State(p) => {
+            e.u8(39);
+            e.u8(puzzle_byte(*p));
+        }
+        Ty::PoseTable => e.u8(40),
+        Ty::Reachability(p) => {
+            e.u8(41);
+            e.u8(puzzle_byte(*p));
+        }
+        Ty::Evidence => e.u8(42),
+        Ty::Verdict(p, l, g) => {
+            e.u8(43);
+            e.u8(puzzle_byte(*p));
+            e.u8(level_byte(*l));
+            encode_goal_option(*g, e);
+        }
+        Ty::Partial(t) => {
+            e.u8(44);
+            qty(t, e, depth + 1)?;
+        }
+        Ty::Holds(p, g) => {
+            e.u8(45);
+            e.u8(puzzle_byte(*p));
+            e.u8(goal_byte(*g));
+        }
+        Ty::Cost(p, u) => {
+            e.u8(46);
+            e.u8(puzzle_byte(*p));
+            e.u8(unit_byte(*u));
+        }
+        Ty::Derivation(p) => {
+            e.u8(47);
+            e.u8(puzzle_byte(*p));
+        }
+        Ty::Named { module, name } => {
+            e.u8(48);
+            e.text(module);
+            e.text(name);
         }
     }
     Ok(())
@@ -1326,12 +1729,42 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         27 => Ty::Generator,
         28 => Ty::Bytes,
         29 => Ty::WordStream,
+        32 => Ty::Piece(puzzle_from(d.u8()?)?),
+        33 => Ty::Sticker(puzzle_from(d.u8()?)?),
+        34 => Ty::Slot(puzzle_from(d.u8()?)?),
+        35 => Ty::Pose,
+        36 => Ty::PoseTableIndex,
+        37 => Ty::Digest(puzzle_from(d.u8()?)?, level_from(d.u8()?)?),
+        38 => Ty::LevelValue(puzzle_from(d.u8()?)?, level_from(d.u8()?)?),
+        39 => Ty::State(puzzle_from(d.u8()?)?),
+        40 => Ty::PoseTable,
+        41 => Ty::Reachability(puzzle_from(d.u8()?)?),
+        42 => Ty::Evidence,
+        43 => Ty::Verdict(puzzle_from(d.u8()?)?, level_from(d.u8()?)?, decode_goal_option(d)?),
+        44 => Ty::Partial(Box::new(decode_qty_at(d, depth + 1)?)),
+        45 => Ty::Holds(puzzle_from(d.u8()?)?, goal_from(d.u8()?)?),
+        46 => Ty::Cost(puzzle_from(d.u8()?)?, unit_from(d.u8()?)?),
+        47 => Ty::Derivation(puzzle_from(d.u8()?)?),
+        48 => Ty::Named { module: d.text()?.to_string(), name: d.text()?.to_string() },
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 // Host requests and sinks
+
+/// A kernel row's argument values as the parent receives them (T1 draft). Two lists are equal when their values have
+/// equal transfer bytes ([`same_value`]).
+#[derive(Clone, Debug)]
+pub struct KernelArgs(pub Vec<Value>);
+
+impl PartialEq for KernelArgs {
+    fn eq(&self, other: &KernelArgs) -> bool {
+        self.0.len() == other.0.len() && self.0.iter().zip(&other.0).all(|(a, b)| same_value(a, b))
+    }
+}
+
+impl Eq for KernelArgs {}
 
 /// A host request as the parent receives it. [`OwnedRequest::as_request`] lends it to the caller's host in the form
 /// the interpreter built.
@@ -1370,6 +1803,12 @@ pub enum OwnedRequest {
         target: String,
         request: Vec<u8>,
     },
+    /// A kernel row of the identity tower (T1 draft): its operation, its argument values and its declared type.
+    Kernel {
+        op: KernelOp,
+        args: KernelArgs,
+        ty: QTy,
+    },
 }
 
 impl OwnedRequest {
@@ -1384,6 +1823,7 @@ impl OwnedRequest {
             OwnedRequest::ProposeMenu { letters, menu, target, request } => {
                 Request::ProposeMenu { letters, menu, target, request }
             }
+            OwnedRequest::Kernel { op, args, ty } => Request::Kernel { op: *op, args: &args.0, ty },
         }
     }
 }
@@ -1476,6 +1916,19 @@ pub fn encode_request(r: &Request, e: &mut Enc) -> Result<(), Unencodable> {
             e.field("request.propose_menu.request");
             e.bytes(request);
         }
+        Request::Kernel { op, args, ty } => {
+            e.field("request.kernel");
+            e.u8(7);
+            e.field("request.kernel.op");
+            encode_kernel_op(*op, e);
+            e.field("request.kernel.args");
+            e.count(args.len());
+            for a in args.iter() {
+                encode_value(a, e)?;
+            }
+            e.field("request.kernel.type");
+            encode_qty(ty, e)?;
+        }
     }
     Ok(())
 }
@@ -1499,6 +1952,13 @@ pub fn decode_request(d: &mut Dec) -> Result<OwnedRequest, Malformed> {
             let letters = decode_menu_letters(d)?;
             let menu = decode_identity(d)?;
             OwnedRequest::ProposeMenu { letters, menu, target: d.text()?.to_string(), request: d.bytes()?.to_vec() }
+        }
+        7 => {
+            let op = decode_kernel_op(d)?;
+            // An argument takes at least its tag.
+            let n = d.count(1)?;
+            let args = (0..n).map(|_| decode_value(d)).collect::<Result<Vec<_>, _>>()?;
+            OwnedRequest::Kernel { op, args: KernelArgs(args), ty: decode_qty(d)? }
         }
         _ => return Err(Malformed::new("an unknown request")),
     })
