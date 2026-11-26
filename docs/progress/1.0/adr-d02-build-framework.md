@@ -722,6 +722,14 @@ relative path is from the repository root.
     - a click in each view selects the expected piece;
     - `M600_FRAME_PICTURE` is transparent inside both openings and opaque between them.
   - A `tests/test_renderer_shell.py` case: without `--d02` the launch environment and the shell's core calls are unchanged.
+- **As built, part 1 (integrator, 26 November 2026):**
+  - `Model/ViewPanes.cs`, pure:
+    - `PaneRect` is a rectangle in whole pixels, and `PaneSpec` a view with its rectangle.
+    - `Layout(openings)` gives the surface (the openings' bounding box in the window) and each pane at its offset within it. It refuses no opening, a fifth, an empty one, and any two that overlap.
+    - `Split(opening)` gives two side-by-side panes of one view: the left takes the floor of half the width.
+    - `Hit(layout, x, y)` gives the view and the point in surface pixels, and nothing between or outside the panes. `Takes(clicked, replied)` drops a pick reply that names another view.
+  - Checks: console tests `D02PaneLayoutIsBoundingBox`, `D02PanesNeverOverlap`, `D02FifthPaneRefused` and `D02HitResolvesItsView` pass; the lane passed 203 of 203.
+  - Not built yet: the shell part (Local as a second opening, the surface over the bounding box, the panes through `m6h_set_pane`, picks per view, Local's shape and the event log's `panes`) and the `two-views` script.
 - **Owner sees:** `watch_d02.py --state wj-ia-300`: Global and Local drawn at once; a twist moves both.
 - **Machine:** H, W.
 - **Checkpoint:** no; C3 follows B19.

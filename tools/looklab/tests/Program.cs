@@ -238,7 +238,11 @@ internal static partial class Program
             ("D02SealedSpanRemovedWhole", D02SealedSpanRemovedWhole),
             ("D02TypedTwistsAreOrdinaryWord", D02TypedTwistsAreOrdinaryWord),
             ("D02ResearchOriginRefusedInSolvingSession", D02ResearchOriginRefusedInSolvingSession),
-            ("D02BoundaryCountZeroOverScriptedSession", D02BoundaryCountZeroOverScriptedSession)
+            ("D02BoundaryCountZeroOverScriptedSession", D02BoundaryCountZeroOverScriptedSession),
+            ("D02PaneLayoutIsBoundingBox", D02PaneLayoutIsBoundingBox),
+            ("D02PanesNeverOverlap", D02PanesNeverOverlap),
+            ("D02FifthPaneRefused", D02FifthPaneRefused),
+            ("D02HitResolvesItsView", D02HitResolvesItsView)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)
