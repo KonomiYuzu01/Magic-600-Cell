@@ -7,8 +7,9 @@ namespace LookLab.App.Live;
 
 // The inspector and the bottom index on sample data, shared by Look Lab and the product shell's sample mode
 // (renderer/shell/build_shell.py stages this file). The selection, the preview parameters, the problems and the task
-// are sample data. A host may add its own View fields through `viewFields` and act on their edits (ViewEdited):
-// Look Lab binds its parameters there (LabInspect); the shell adds none.
+// are sample data. A host adds its View fields through `viewFields`, with the shared ViewFields (ADR-D01.22 and
+// revision 6's Q3): Look Lab binds its parameters there (LabInspect, Both only), the product's sample mode the core's
+// view shape per view (SampleMount, Both, Global and Local).
 internal sealed class SampleInspect
 {
     public const string SampleTask = "orbit census (sample)";
@@ -22,8 +23,6 @@ internal sealed class SampleInspect
     public FeedbackPanel Problems { get; }
     public FeedbackPanel Console { get; }
     public FeedbackPanel Tasks { get; }
-    // An edit of a View field (InspectorModel.View) the host added.
-    public event Action<InspectField>? ViewEdited;
     private readonly ChromeFrame frame;
     private TaskItem? running;
 
@@ -40,8 +39,8 @@ internal sealed class SampleInspect
         Inspector.Edited += field =>
         {
             if (field.Binding != null) { frame.Say($"{field.Label} = {field.Binding}: kept as a live binding", true); return; }
-            if (field.Section == InspectorModel.View) ViewEdited?.Invoke(field);
-            else if (demo.Current >= 0 && demo.Preview.Pending != null) demo.Stage(demo.Current);
+            // A View field's edit is the host's (ViewFields.Changed); a preview parameter's stages the preview again.
+            if (field.Section != InspectorModel.View && demo.Current >= 0 && demo.Preview.Pending != null) demo.Stage(demo.Current);
         };
         // The preview parameters follow what is staged: typed parameters of the staged program, sample values here.
         demo.Preview.Changed += () =>

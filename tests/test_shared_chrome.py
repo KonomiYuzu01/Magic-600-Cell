@@ -51,7 +51,8 @@ class Staged(unittest.TestCase):
         return (self.project / "Chrome" / relative).read_bytes()
 
     def test_the_ported_files_are_staged_as_they_are(self):
-        for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs", "Model/CorePlaces.cs", "Model/LayoutTracker.cs", "Ui/FrameLayout.cs"):
+        for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs", "Model/CorePlaces.cs", "Model/LayoutTracker.cs", "Ui/FrameLayout.cs",
+                         "Model/ViewFields.cs", "Model/Inspect.cs", "Ui/InspectorPanels.cs"):
             self.assertEqual(self.staged(relative), (CHROME / relative).read_bytes(), relative)
 
 
@@ -156,6 +157,41 @@ class LayoutSteps(unittest.TestCase):
         self.assertIn('Demo.TrackLayout(FrameLayout.State(frame, () => Look?.Look.Store() ?? "", () => Scripts.Store()),', mount)
         self.assertIn("LayoutHistory? layout = null)", mount)
         self.assertIn('demo.TrackLayout(FrameLayout.State(frame, () => app.ViewParts["frame.appearance"].Get(), () => app.ViewParts["frame.keymap"].Get()),', text(LIVE / "LabFrame.cs"))
+
+
+class ViewSection(unittest.TestCase):
+    """Item 4 (ADR-D01.22 with revision 6's Q3): the View section's fields and its scope, Both (the default), Global or
+    Local, in one copy that Look Lab and the product's sample mode both build."""
+
+    def test_one_copy_of_the_fields_and_the_scope(self):
+        fields = text(CHROME / "Model" / "ViewFields.cs")
+        self.assertIn("public enum ViewScope { Both, Global, Local }", fields)
+        # The eligible fields: projection, shrink and frame visibility.
+        for line in ('ViewFieldSpec.Choice(Projection, "Projection", "perspective", "orthographic"),',
+                     'new ViewFieldSpec(CellShrink, "Cell shrink", .3, 1, .01),',
+                     'new ViewFieldSpec(StickerShrink, "Sticker shrink", .3, 1, .01),',
+                     'ViewFieldSpec.Choice(Frame, "Frame", "shown", "hidden"),'):
+            self.assertIn(line, fields)
+        # Under Both an edit writes both views.
+        self.assertIn('ViewScope.Global => new[] { "Global" }, ViewScope.Local => new[] { "Local" }, _ => Views };', fields)
+        inspect = text(CHROME / "Model" / "Inspect.cs")
+        self.assertIn("public ViewScope Scope { get; private set; } = ViewScope.Both;", inspect)
+        self.assertIn("public InspectField AddChoice(", inspect)
+        self.assertIn("public void Rebase(string id, double value, double @default, Provenance provenance)", inspect)
+        # The docked inspector draws the switch in the View head when the host keeps per-view values.
+        panel = text(CHROME / "Ui" / "InspectorPanels.cs")
+        self.assertIn("if (section == InspectorModel.View && Model.Scopes.Count > 1)", panel)
+        self.assertIn("string said = section == InspectorModel.View ? ViewFields.Note(Model.Scope) : Notes[section];", panel)
+
+    def test_both_apps_build_the_section(self):
+        mount = text(LIVE / "SampleMount.cs")
+        self.assertIn("inspector => views = new ViewFields(inspector, ViewFields.Product, true, start));", mount)
+        self.assertIn("public Func<string, ViewFields, string?>? ApplyView { get; set; }", mount)
+        self.assertIn('ProjectSettings.GlobalizePath("res://look/local-view.json")', mount)
+        lab = text(LIVE / "LabInspect.cs")
+        self.assertIn("views = new ViewFields(inspector, specs, false,", lab)
+        self.assertNotIn("ViewEdited", lab)
+        self.assertNotIn("ViewEdited", text(LIVE / "SampleInspect.cs"))
 
 
 if __name__ == "__main__":

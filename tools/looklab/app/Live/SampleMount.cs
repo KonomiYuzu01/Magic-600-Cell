@@ -39,6 +39,13 @@ internal sealed class SampleMount
     // The host's appearance panel, so the layout history keeps the appearance (ADR-D01.14); without it the history
     // keeps the workspace, the pane layout, the labels and the key bindings.
     public AppearancePanel? Look { get; set; }
+    // The inspector's View section (ADR-D01.22 with revision 6's Q3): projection, shrink and frame visibility, each kept
+    // per view and edited for the chosen scope (Both, Global or Local). Global starts from the core's own view shape,
+    // Local from Look Lab's local-view.json, as the shell's Local does.
+    public ViewFields Views { get; }
+    // The host draws a View edit on the core for one view ("Global" or "Local") and answers why it did not, or null.
+    // Without it an edit is kept in the section and said to be sample only, and the anchors keep the core's view.
+    public Func<string, ViewFields, string?>? ApplyView { get; set; }
     public IReadOnlyDictionary<string, FocusLayers> Layers => layers;
     // A pick layer, the inactive mode or the staged preview changed: the host draws its view marks again (Marks).
     public event Action? Changed;
@@ -62,7 +69,11 @@ internal sealed class SampleMount
         Demo = new LabDemo(frame, keymap, run, layout);
         frame.AddDockPanel(DockSide.Right, HistoryPanel, "History (sample)", "panel.history", Demo.History);
         frame.SetContent(LabDemo.PreviewPane, Demo.PreviewView);
-        Inspect = new SampleInspect(frame, Demo, SampleCells);
+        ViewFields? views = null;
+        Func<string, string, double> start = ViewStart();
+        Inspect = new SampleInspect(frame, Demo, SampleCells, inspector => views = new ViewFields(inspector, ViewFields.Product, true, start));
+        Views = views!;
+        Views.Changed += ViewEdited;
         // Failures show: the shared error lamp lists them in Problems beside the sample rows (ChromeErrors).
         ChromeErrors.Mount(frame, Inspect.Feedback, ErrorSource);
         Places = LoadPlaces(System.Environment.GetEnvironmentVariable("M600_ASSETS") is { Length: > 0 } assets ? assets : System.IO.Path.Combine(root, "assets"));
@@ -102,6 +113,43 @@ internal sealed class SampleMount
             FrameLayout.Apply(frame, v => { if (v.Length > 0) Look?.Edit(a => a.Restore(v), true, true); }, v => Scripts.Restore(v)));
     }
 
+    // Each view's View values at the start: Global the core's default shape (perspective, its two shrinks, the frame
+    // shown), Local the shell's local-view.json (under M600_D02_DATA when it holds one, else the build's copy).
+    private static Func<string, string, double> ViewStart()
+    {
+        IReadOnlyDictionary<string, double>? local = null;
+        string? data = System.Environment.GetEnvironmentVariable("M600_D02_DATA");
+        string[] files =
+        {
+            data is { Length: > 0 } ? System.IO.Path.Combine(data.EndsWith("samples", StringComparison.Ordinal) ? System.IO.Path.GetDirectoryName(data)! : data, "local-view.json") : "",
+            ProjectSettings.GlobalizePath("res://look/local-view.json"),
+        };
+        foreach (string file in files)
+        {
+            if (file.Length == 0 || !System.IO.File.Exists(file)) continue;
+            try { local = ViewFields.LocalShape(System.IO.File.ReadAllText(file)); }
+            catch (System.IO.IOException ex) { Safe.Report("View: " + file + " could not be read: " + ex.Message); }
+            if (local != null) break;
+        }
+        return (view, id) => view == "Local" && local != null && local.TryGetValue(id, out double value) ? value : id switch
+        {
+            ViewFields.CellShrink => CoreView.DefaultCellShrink,
+            ViewFields.StickerShrink => CoreView.DefaultStickerShrink,
+            _ => 0,
+        };
+    }
+
+    // A View edit: the host draws it on each view the scope writes; without a host it stays in the section.
+    private void ViewEdited(ViewChange change)
+    {
+        string label = ViewFields.Product.First(f => f.Id == change.Id).Label;
+        if (ApplyView == null) frame.Say($"{label} ({ViewFields.Note(change.Scope)}): kept here; the core does not draw it from the inspector yet (sample)", true);
+        else
+            foreach (string view in ViewFields.Written(change.Scope))
+                if (ApplyView(view, Views) is { } why) frame.Say($"{label} ({view}): {why}", true);
+        Safe.Raise(Changed);
+    }
+
     private static CorePlaces? LoadPlaces(string folder)
     {
         try { return CorePlaces.Load(folder); }
@@ -119,7 +167,14 @@ internal sealed class SampleMount
         if (GlobalView != null) return GlobalView();
         if (System.Environment.GetEnvironmentVariable("M600_D02") == "1") return null;
         Vector2 size = frame.Global.Slot.Size;
-        return size.X > 0 && size.Y > 0 ? CoreView.Default(size.X / size.Y) : null;
+        if (size.X <= 0 || size.Y <= 0) return null;
+        CoreView core = CoreView.Default(size.X / size.Y);
+        // The View section's Global values, once the host draws them.
+        return ApplyView == null ? core : core with
+        {
+            CellShrink = Views.Value("Global", ViewFields.CellShrink), StickerShrink = Views.Value("Global", ViewFields.StickerShrink),
+            Orthographic = Views.Value("Global", ViewFields.Projection) == 1,
+        };
     }
 
     // Local's anchor layer covers Local's whole slot, and the core draws Local in the slot's opening (its top): a place

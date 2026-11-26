@@ -55,6 +55,7 @@ public sealed partial class ValueField : HBoxContainer
         ChromeIcons.Apply(Mark, icon, t.Px("icon.small")); Mark.AddThemeColorOverride("font_color", t.C(colour));
         Mark.TooltipText = "Value " + text; Mark.MouseFilter = MouseFilterEnum.Pass;
         Value.TooltipText = Field.Binding != null ? $"Live binding: = {Field.Binding}. Its value is derived each time and never stored."
+            : Field.Choices is { } named ? $"{Field.Label}: drag, or double-click to type one of {string.Join(", ", named)}"
             : $"{Field.Label}: drag, or double-click to type a value or = and an expression ({Field.Min}..{Field.Max})";
         Value.AddThemeColorOverride("font_color", t.C(Field.Binding != null ? "state.preview" : Field.Provenance == Provenance.Default ? "text.dim" : "text"));
         Ladder.TooltipText = $"Ladder: {InspectorModel.Rungs[model.Rung(Field.Id)]:0} of its steps for each notch. Up and Down change the rung; Left and Right step.";
@@ -246,7 +247,17 @@ public sealed partial class InspectorPanel : ScrollContainer
                 () => { if (!Folded.Remove(section)) Folded.Add(section); Refresh(); });
             fold.SetMeta("section", section); head.AddChild(fold);
             head.AddChild(ChromeWidgets.Text(section.ToUpperInvariant(), "MicroLabel"));
-            Label note = ChromeWidgets.Text(Notes[section], "MicroLabel", true); note.HorizontalAlignment = HorizontalAlignment.Right; head.AddChild(note);
+            string said = section == InspectorModel.View ? ViewFields.Note(Model.Scope) : Notes[section];
+            Label note = ChromeWidgets.Text(said, "MicroLabel", true); note.HorizontalAlignment = HorizontalAlignment.Right; head.AddChild(note);
+            // The View section's scope switch (revision 6, Q3): Both, Global or Local, when the host's views keep their own values.
+            if (section == InspectorModel.View && Model.Scopes.Count > 1)
+                foreach (ViewScope scope in Model.Scopes)
+                {
+                    Button choose = ChromeWidgets.Tool(scope.ToString(), scope == ViewScope.Both ? "Edit both views" : $"Edit the {scope} view only", true);
+                    choose.Name = "Scope" + scope; choose.ButtonPressed = Model.Scope == scope; choose.SetMeta("scope", scope.ToString());
+                    choose.Pressed += () => { if (!Model.SetScope(scope)) Refresh(); };
+                    head.AddChild(choose);
+                }
             Label away = ChromeWidgets.Text("", "MicroLabel"); away.Name = "Away"; away.AddThemeColorOverride("font_color", t.C("accent.strong")); head.AddChild(away);
             Button reset = ChromeWidgets.Tool("Reset", $"Reset every {section} field to its default"); reset.Name = "ResetSection";
             reset.Pressed += () => Model.ResetSection(section); head.AddChild(reset); heads[section] = (away, reset);

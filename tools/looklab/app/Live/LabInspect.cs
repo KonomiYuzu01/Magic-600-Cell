@@ -5,12 +5,13 @@ using Magic600.Chrome;
 
 namespace LookLab.App.Live;
 
-// The lab's inspector: the shared sample inspector (SampleInspect) with the lab's own parameters as its View fields,
-// which act on both views. The selection, the preview parameters, the problems and the task are sample data, because
-// the lab has no engine and no runtime.
+// The lab's inspector: the shared sample inspector (SampleInspect) with the lab's own parameters as its View fields
+// (the shared ViewFields), which act on both views: the lab's two views share one set, so Both is its only scope. The
+// selection, the preview parameters, the problems and the task are sample data, because the lab has no engine and no
+// runtime.
 internal static class LabInspect
 {
-    public static readonly (string Id, string Label)[] ViewFields =
+    public static readonly (string Id, string Label)[] Parameters =
     {
         ("gap", "Cell gap"), ("stickerShrink", "Sticker size"), ("fieldOfView", "Field of view"), ("d4", "4D distance"), ("edgeWeight", "Edge weight"), ("fog", "Fog"),
     };
@@ -18,19 +19,16 @@ internal static class LabInspect
     public static SampleInspect Create(LabApp app, ChromeFrame frame, LabDemo demo)
     {
         static double Default(ParameterDefinition p) => ((NumberValue)p.Default).Value;
+        ViewFields views = null!;
         var inspect = new SampleInspect(frame, demo, app.Linked.FocusCells, inspector =>
         {
-            foreach ((string id, string label) in ViewFields)
-            {
-                ParameterDefinition p = app.State.Schema[id]; double value = app.State.Preset.Params.Number(id);
-                inspector.AddNumber(InspectorModel.View, "view." + id, label, p.Min!.Value, p.Max!.Value, p.Step ?? .01, Default(p), value, false, value == Default(p) ? Provenance.Default : Provenance.Session);
-            }
+            ViewFieldSpec[] specs = Parameters.Select(f => { ParameterDefinition p = app.State.Schema[f.Id]; return new ViewFieldSpec("view." + f.Id, f.Label, p.Min!.Value, p.Max!.Value, p.Step ?? .01); }).ToArray();
+            views = new ViewFields(inspector, specs, false, (_, id) => app.State.Preset.Params.Number(id.Substring(5)), (_, id) => Default(app.State.Schema[id.Substring(5)]));
         });
-        inspect.ViewEdited += field => app.State.Set(field.Id.Substring(5), new NumberValue(field.Value));
+        views.Changed += change => app.State.Set(change.Id.Substring(5), new NumberValue(change.Value));
         app.State.Changed += (id, value) =>
         {
-            if (GodotObject.IsInstanceValid(frame) && value is NumberValue number && ViewFields.Any(f => f.Id == id))
-                inspect.Inspector.Sync("view." + id, number.Value, number.Value == Default(app.State.Schema[id]) ? Provenance.Default : Provenance.Session);
+            if (GodotObject.IsInstanceValid(frame) && value is NumberValue number && Parameters.Any(f => f.Id == id)) views.Sync("Global", "view." + id, number.Value);
         };
         return inspect;
     }
