@@ -1,14 +1,15 @@
 """Interleaved on-screen runs of one product build with its own host (`old-N`) and another host DLL (`new-N`), with
 turn keys posted to the shell's window.
 
-    python -B work/experiments/key-stall-20261126/ab_keys.py --build DIR --host DLL --out-root DIR
+    python -B work/experiments/key-stall-20261126/ab_keys.py --build DIR --host DLL --out-root DIR [--core DLL]
         [--seconds 120] [--pace 0.5] [--plan old-1,new-1,old-2,new-2] [--puzzle jumble-off|jumble-on]
 
 Each run starts the build's shell with the command and environment that `renderer/shell/launch.py` gives it (after
 `build_product.verify`, a fresh copy of the puzzle's session fixture, no LX-4, LX-2 or editor), with only
 `M600_HOST_DLL` replaced in a `new` run (and `+host-key-stall` appended to `M600_BUILD_IDENTITY`, so its run row says
-so). It finds the shell's window, asks once for the foreground (SetForegroundWindow, no foreground-lock workaround),
-waits 10 s, then posts one turn key every `--pace` seconds for `--seconds`, cycling J, K and L (WM_KEYDOWN and WM_KEYUP
+so); with `--core`, a `new` run also replaces `M600_CORE_DLL` (a `renderer/core/build.cmd` output folder's
+`sa2_interop.dll`, which loads the shaders beside it) and appends `+core`. It finds the shell's window, asks once for
+the foreground (SetForegroundWindow, no foreground-lock workaround), waits 10 s, then posts one turn key every `--pace` seconds for `--seconds`, cycling J, K and L (WM_KEYDOWN and WM_KEYUP
 with the key's scan code, as tools/perf/c9/lx4.py posts a turn). Then it posts WM_CLOSE and writes `launch.json`
 (`keys.py` in work/experiments/presented-gap-20261126 reads the run folder) and `posts.json` (each post's QPC time and
 whether the shell had the foreground then; the owner's idle seconds at the start). Keep `--out-root` under the
@@ -85,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--build", type=Path, required=True)
     parser.add_argument("--host", type=Path, required=True)
+    parser.add_argument("--core", type=Path)
     parser.add_argument("--out-root", type=Path, required=True)
     parser.add_argument("--seconds", type=float, default=120.0)
     parser.add_argument("--pace", type=float, default=0.5)
@@ -104,6 +106,9 @@ def main(argv: list[str] | None = None) -> int:
         if new:
             env["M600_HOST_DLL"] = str(args.host)
             env["M600_BUILD_IDENTITY"] = product["identity"] + "+host-key-stall"
+            if args.core:
+                env["M600_CORE_DLL"] = str(args.core)
+                env["M600_BUILD_IDENTITY"] += "+core"
         started = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         idle = idle_seconds()
         print(name, "start", started, f"owner idle {idle:.0f} s", flush=True)
@@ -139,7 +144,8 @@ def main(argv: list[str] | None = None) -> int:
             code = process.wait(timeout=30)
         record = {"format": "magic600-key-stall-20261126-ab-launch-v1", "run_id": run_id, "started_utc": started,
                   "command": [Path(arguments[0]).name] + arguments[1:], "lx4": False, "editor": False,
-                  "lx2_injection": None, "host": "new" if new else "build", "puzzle": args.puzzle, "exit_code": code}
+                  "lx2_injection": None, "host": "new" if new else "build",
+                  "core": "new" if new and args.core else "build", "puzzle": args.puzzle, "exit_code": code}
         (out / "launch.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
         (out / "posts.json").write_text(json.dumps({"owner_idle_s_at_start": round(idle, 1), "pace_s": args.pace,
                                                     "posts": posts}, indent=1) + "\n", encoding="utf-8")

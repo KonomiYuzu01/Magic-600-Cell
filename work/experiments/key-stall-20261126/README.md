@@ -119,3 +119,48 @@ install, publish and preparation), p50 ms:
 `sa2_prepare` creates a new command allocator, a command list, two 1 MB default-heap buffers and a 2 MB upload buffer
 for every preparation (`Scene::product_prepare` in `renderer/core/src/scene.cpp`), so every twist creates GPU
 resources on the frame thread. That and the commit are the two parts left, each over a refresh on this machine.
+
+## Phase 1b: the core's preparation and the menu's resolve
+
+The owner chose to remove the rest before U7 (26 November 2026). Both parts were timed headless on this machine.
+
+### The core's `sa2_prepare`
+
+`sa2_selftest.exe --hardware --measure-prepare 200 --out FILE` (`run_measure_prepare` in `renderer/core/src/gpu_test.cpp`)
+prepares 200 full sets on one view on the hardware adapter, without a window, each activated and its predecessor
+retired as the shell does per twist, and writes the duration of each `sa2_prepare` call. `results/prepare-before.jsonl`
+ran the core of this branch's base with only that option added; `results/prepare-after.jsonl` the change. Rounds 11 to
+200, ms:
+
+| | p50 | p90 | p99 | max |
+| --- | --- | --- | --- | --- |
+| before | 10.10 | 11.18 | 14.98 | 22.85 |
+| after | 1.21 | 1.49 | 1.72 | 1.97 |
+
+Temporary timers in the core (`timers-core.py` applies them; never committed; `results/prepare-split.txt`, with the
+resources already reused) split the call: the conversion of the caller's arrays (`sa2::preparation`) 9.0 ms, the
+resources 0.01 ms, the copy into the upload buffer 0.12 ms, the recording and submission 0.19 ms, the checks and the
+release under 0.01 ms. The conversion checks each of the 259,800 slots with `argument`, which built a `std::string` of
+its message on every call; it now builds it only for a failure. Reusing the resources, the change the integrator
+asked for, saves about 0.7 ms of creating them (10.1 to 9.4 ms with the reuse alone).
+
+### The menu's resolve
+
+`renderer/bridge/host/tests/key_timing.rs` (fake core, modelled 60 Hz loop, 60 keys) on the memo's commit and on its
+parent (`twist.rs` swapped, the rest of the branch the same), interleaved: without, with, without, with, each with
+Jumble off and on (`results/bench-1b-without-memo-p*.txt`, `results/bench-1b-with-memo-p*.txt`, both rounds in each).
+The owner was using the machine, so every run is slower than the same bench earlier in the day; the difference is what
+counts:
+
+| `m6h_key_down`, ms, round 1 / round 2 | p50 | p90 | p99 |
+| --- | --- | --- | --- |
+| Jumble off, without the memo | 12.76 / 12.79 | 15.22 / 16.27 | 19.07 / 20.07 |
+| Jumble off, with it | 7.30 / 7.67 | 8.41 / 12.56 | 14.87 / 14.97 |
+| Jumble on, without the memo | 10.18 / 10.01 | 10.91 / 16.02 | 11.70 / 17.20 |
+| Jumble on, with it | 4.91 / 5.15 | 5.65 / 9.06 | 12.38 / 12.39 |
+
+The memo takes about 5 ms off each key's call at p50 in both puzzles.
+
+The bench's frame calls have no wait for the display (the fake core's frame returns at once), so its post-submit wait
+for a pending build (up to 12 ms) shows there as missed refreshes, which it is not on the real core, where that wait
+follows the display's; its refresh counts are not compared here.
