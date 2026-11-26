@@ -313,6 +313,11 @@ impl Host for Boundary<'_> {
                 self.reads_state = true;
                 return self.engine.perform(request);
             }
+            // A kernel row of the identity tower reads state, as the checker counts it (T1 draft).
+            Request::Kernel { .. } => {
+                self.reads_state = true;
+                return self.engine.perform(request);
+            }
             _ => return self.engine.perform(request),
         };
         if let Some(stored) = self.store.records.get(&place) {

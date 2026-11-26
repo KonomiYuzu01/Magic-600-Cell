@@ -728,3 +728,53 @@ fn tower_values_have_sizes_and_canonical_forms() {
         "a handle has the size its host declared"
     );
 }
+
+/// A source program over the tower's kernel rows: a snapshot, a projection matched by its constructors, and a
+/// comparison whose verdict is matched inside the `total` arm.
+const SOURCE_ROWS: &str = "edition \"6cs-draft-1\";\nmodule m requires [];\n\n\
+    export fn f() -> Nat effects [snapshot] {\n    let s = snapshot<Jumbling>();\n    \
+    let n = match project<labels>(s) {\n        total(_) => 1;\n        partial(_, missing) => missing.off;\n        \
+    undefined(_) => 0;\n    };\n    \
+    return match compare<poses>(s, s) {\n        total(v) => match v {\n            yes(_) => exact_add(n, 1);\n            \
+    no(_) => n;\n            unknown(_) => 0;\n        };\n        partial(_, _) => 0;\n        undefined(_) => 0;\n    };\n}\n";
+
+/// The source program, lowered and checked with no diagnostic.
+fn source_rows() -> Program {
+    let file = c600_syntax::parse(SOURCE_ROWS.as_bytes());
+    assert!(file.diagnostics.is_empty(), "{:#?}", file.diagnostics);
+    let lowered = c600_syntax::lower(&[file]).unwrap_or_else(|e| panic!("{e}"));
+    let report = c600_check::check(&lowered.program).unwrap_or_else(|e| panic!("{e}"));
+    assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    lowered.program
+}
+
+/// CT-LG2-01 (part: a source program's kernel rows at run time: lowering declares each row's type as the unknown
+/// `_`, since it does not type the arguments, and the interpreter then holds the host's answer to the type the row
+/// returns for its arguments, the checker's; not run: the kernel host rows over c600-jumble and c600-kernel, which
+/// `c600-jumble-tool/tests/tower_rows.rs` and `c600-tools/tests/tower_rows.rs` run on hand-built IR). The fake host is
+/// asked with the computed types, and an answer of another type to a source row is refused with
+/// `LG4:input.ir_rejected`, as it is for a hand-built row.
+#[test]
+fn ct_lg2_01_a_source_rows_answer_is_held_to_the_type_the_row_returns() {
+    let program = source_rows();
+    let mut host = TowerHost::default();
+    let r = run_on(&program, &mut host);
+    completed(&r);
+    assert_eq!(nat_of(&r), 2, "a total projection and a total yes");
+    let j = Puzzle::Jumbling;
+    let partial = |ty: Ty| Ty::Partial(Box::new(exact(ty)));
+    let asked: Vec<(KernelOp, Ty)> = host.asked.iter().map(|(op, _, ty)| (*op, ty.clone())).collect();
+    assert_eq!(
+        asked,
+        [
+            (KernelOp::Snapshot(j), Ty::State(j)),
+            (KernelOp::Project(Level::Labels), partial(Ty::LevelValue(j, Level::Labels))),
+            (KernelOp::Compare(Level::Poses), partial(Ty::Verdict(j, Level::Poses, None))),
+        ]
+    );
+    // The projection answered with a state is refused, as a hand-built row's wrong answer is.
+    let wrong = Value::handle(Handle::new(HandleTy::State(j), 9, 8));
+    let mut host = Replacing { inner: TowerHost::default(), at: 1, answer: wrong };
+    let r = load(&program).unwrap().run("m", "f", vec![], &mut host, &Options::new(WIDE)).unwrap();
+    assert_eq!(r.summary.code, Some(IR_REJECTED));
+}

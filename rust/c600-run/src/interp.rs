@@ -2856,16 +2856,23 @@ impl<'a> Machine<'a> {
     /// the answer.
     fn kernel(&mut self, n: NodeId, op: KernelOp, ty: &QTy, args: Vec<Held>) -> Result<(), Stop> {
         let values: Vec<Value> = args.iter().map(|h| h.value.clone()).collect();
-        match kernel_args(op, &values) {
-            Ok(()) => {}
+        let returns = match kernel_args(op, &values) {
+            Ok(returns) => returns,
             Err(KernelRefusal::Mistyped) => return Err(self.fail(Some(n), "kernel", code::IR_REJECTED)),
             Err(KernelRefusal::Pointwise) => return Err(self.fail(Some(n), "kernel", meter::code::POINTWISE_FAILED)),
             Err(KernelRefusal::Kernel(c)) => {
                 self.charge(Some(n), "kernel", 0, 0, 0)?;
                 return Err(self.fail(Some(n), "kernel", c));
             }
-        }
-        self.host_read(n, "kernel", Request::Kernel { op, args: &values, ty }, 0, Some(&ty.ty))?;
+        };
+        // Lowering cannot type the arguments, so a row written in source declares the unknown type `_`; the answer
+        // must then have the type the row returns for these arguments, as the checker computed it (T1b draft). A
+        // hand-built row's concrete declared type keeps its check.
+        let expect = match &ty.ty {
+            Ty::Var(_) => QTy { ty: returns, display: ty.display },
+            _ => ty.clone(),
+        };
+        self.host_read(n, "kernel", Request::Kernel { op, args: &values, ty: &expect }, 0, Some(&expect.ty))?;
         let answer = self.values.pop().expect("the row's answer");
         for held in args {
             self.release(held);
@@ -3317,8 +3324,9 @@ enum KernelRefusal {
 /// The run-time checks of a kernel row's arguments (T1 draft): each argument's kind, a level the state's puzzle holds
 /// (KN1.7, ONE.25), one puzzle for both states of a comparison and for a derivation's state and word (ONE.22: Jumble
 /// off, a `Word`, for 600-cell-Full, on, a `MenuWord`, for the jumbling puzzle), a jumbling claim for an import, a goal
-/// defined on the state's puzzle, and a natural bound. `derive`'s word is literal letters, never a key.
-fn kernel_args(op: KernelOp, args: &[Value]) -> Result<(), KernelRefusal> {
+/// defined on the state's puzzle, and a natural bound. `derive`'s word is literal letters, never a key. It gives the
+/// type the row returns for these arguments, the checker's (`c600-check`'s `kernel`).
+fn kernel_args(op: KernelOp, args: &[Value]) -> Result<Ty, KernelRefusal> {
     use KernelRefusal::*;
     let state = |v: &Value| match v {
         Value::Handle(h) => match h.ty() {
@@ -3328,28 +3336,37 @@ fn kernel_args(op: KernelOp, args: &[Value]) -> Result<(), KernelRefusal> {
         _ => Err(Mistyped),
     };
     let held = |level: ir::Level, p: Puzzle| if level.held_by(p) { Ok(()) } else { Err(Kernel(code::LEVEL_NOT_HELD)) };
+    let partial = |ty: Ty| Ty::Partial(Box::new(QTy { ty, display: false }));
     match (op, args) {
-        (KernelOp::Snapshot(_), []) => Ok(()),
-        (KernelOp::Project(level), [s]) => held(level, state(s)?),
-        (KernelOp::Digest, [Value::Handle(h)]) if matches!(h.ty(), HandleTy::LevelValue(..)) => Ok(()),
+        (KernelOp::Snapshot(p), []) => Ok(Ty::State(p)),
+        (KernelOp::Project(level), [s]) => {
+            let p = state(s)?;
+            held(level, p)?;
+            Ok(partial(Ty::LevelValue(p, level)))
+        }
+        (KernelOp::Digest, [Value::Handle(h)]) => match h.ty() {
+            HandleTy::LevelValue(p, level) => Ok(Ty::Digest(p, level)),
+            _ => Err(Mistyped),
+        },
         (KernelOp::Compare(level), [a, b]) => {
             let (p, q) = (state(a)?, state(b)?);
             if p != q {
                 return Err(Kernel(code::IDENTITY_MISMATCH));
             }
-            held(level, p)
+            held(level, p)?;
+            Ok(partial(Ty::Verdict(p, level, None)))
         }
         (KernelOp::Derive, [s, w]) => match (state(s)?, w) {
-            (Puzzle::Full, Value::Word(_)) | (Puzzle::Jumbling, Value::MenuWord(_)) => Ok(()),
+            (p @ Puzzle::Full, Value::Word(_)) | (p @ Puzzle::Jumbling, Value::MenuWord(_)) => Ok(Ty::Derivation(p)),
             (_, Value::Word(_) | Value::MenuWord(_)) => Err(Kernel(code::IDENTITY_MISMATCH)),
             _ => Err(Mistyped),
         },
         (KernelOp::Import, [Value::Handle(t), Value::Sum(r)]) if t.ty() == HandleTy::PoseTable => match r.ty() {
-            SumTy::Reachability(Puzzle::Jumbling) => Ok(()),
+            SumTy::Reachability(Puzzle::Jumbling) => Ok(Ty::State(Puzzle::Jumbling)),
             SumTy::Reachability(_) => Err(Kernel(code::IDENTITY_MISMATCH)),
             _ => Err(Mistyped),
         },
-        (KernelOp::Reachability, [s]) => state(s).map(|_| ()),
+        (KernelOp::Reachability, [s]) => state(s).map(Ty::Reachability),
         (KernelOp::Check(goal), [s, rest @ ..]) => {
             let p = state(s)?;
             match (goal.takes_bound(), rest) {
@@ -3359,7 +3376,7 @@ fn kernel_args(op: KernelOp, args: &[Value]) -> Result<(), KernelRefusal> {
                 _ => return Err(Mistyped),
             }
             if goal.puzzles().contains(&p) {
-                Ok(())
+                Ok(Ty::Verdict(p, goal.level(), Some(goal)))
             } else {
                 Err(Kernel(code::IDENTITY_MISMATCH))
             }
