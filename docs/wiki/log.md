@@ -3,7 +3,7 @@
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
 ## [2026-11-26] update | The twist key's stall moves off the frame thread
-Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) where the twist key's time on the frame thread went (the commit, with its journal sync a small share, and the view's build and checks) and the change that builds and checks the view's work on a worker thread and adopts it at the next frame call, leaving the commit boundary as it was.
+Recorded in [key-stall-2026-11-26](evidence/key-stall-2026-11-26.md) where the twist key's time on the frame thread went (the commit, with its journal sync a small share, and the view's build and checks) and the change that builds and checks the view's work on a worker thread and adopts it at the next frame call, leaving the commit boundary as it was. On screen on the real core the key call fell from 57 to 18 ms and the refreshes without a frame from 3.35 to 2.0 per key; a short wait after a frame's submission keeps the press at the frame it had before, and the core's per-twist GPU buffers are what is left besides the commit.
 
 ## [2026-11-26] decision | ADR-D02: open research and the A4 picks
 The owner made open research ADR-D02's core (25 November 2026) and answered A4 with every recommended option except item 9, Q3.b, taken as the owner's reading of the frozen J-7 and N-1, and item 12c, the base targets: at most 3,000 hours of real time for a true expert's full solve without jumbling, and substantive progress on restoration theory for the jumbled puzzle ([decision](decisions/owner-decisions-2026-11-26-adr-d02-a4.md)).

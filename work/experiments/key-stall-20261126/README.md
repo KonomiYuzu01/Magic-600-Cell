@@ -58,3 +58,64 @@ PUZZLE=1 cargo test ... (Jumble on)
 The press reaches the screen at the same refresh at the median. With Jumble on, the 90th percentile is one refresh
 later than before: some presses are shown a frame later, when the worker's build ends just after a frame boundary. The remaining missed refreshes
 come from key calls over one refresh: the commit itself, which this change leaves as it is.
+
+## On the real core: the product shell on screen
+
+`ab_keys.py` runs one product build (`c9-product-795b9d7ad272d5e2`, made from `06e3c26d`, the commit before the
+change) on screen with its own host library (`old`) and with the change's host library (`new`), interleaved, Jumble
+off. It finds the shell's window, asks once for the foreground, and posts one turn key every 0.5 s, cycling J, K and L
+as tools/perf/c9/lx4.py posts a turn. `ab_keys_report.py` reads the shell's own `events.jsonl`. The raw run folders
+stay on the owner's machine; the records here hold run IDs and counts.
+
+`results/real-core-old-new.json`: 90 s each, 180 keys each, every key posted while the shell had the foreground, the
+owner idle throughout.
+
+| | old-1 | old-2 | new-1 | new-2 |
+| --- | --- | --- | --- | --- |
+| Key call (`handled_qpc - qpc`) p50 ms | 57.5 | 57.2 | 18.5 | 17.6 |
+| Frame intervals above 1.5 refreshes, per key | 1.0 | 1.0 | 1.9 | 2.0 |
+| Frame interval p99 / max ms | 75.3 / 81.7 | 74.9 / 78.8 | 36.1 / 47.4 | 34.9 / 45.6 |
+| Refreshes without a submitted frame, per key | 3.37 | 3.33 | 1.93 | 2.01 |
+| Key-down to the confirmed present showing it, p50 / p90 / p99 ms | 82.3 / 98.9 / 115.8 | 82.4 / 84.1 / 115.7 | 99.1 / 99.4 / 115.6 | 99.1 / 99.4 / 99.5 |
+| Frames from the key-down to the frame showing it, p50 | 1 | 1 | 3 | 3 |
+
+The stall per key fell from one interval of about 75 ms to two of about 35 ms. But the press was shown one refresh
+later than before at the median: the key call returns before the worker's build ends (10.7 ms), the next frame call
+returns at once because the key call already passed a refresh, and the build was adopted only after the frame after
+that. The change's last part (the frame call waits at most 12 ms for a pending build after its submission) adopts it
+one frame earlier.
+
+`results/real-core-wait.json`: 60 s each, 120 keys each, the change without that wait (`new-1`, `new-2`) and with it
+(`new-w1`, `new-w2`), interleaved. The owner returned to the machine during `new-w1`: only `new-1` had the foreground,
+and the other three runs confirmed few presents, so their shown times are partial.
+
+| | new-1 | new-w1 | new-2 | new-w2 |
+| --- | --- | --- | --- | --- |
+| Frames from the key-down to the frame showing it, p50 / p90 | 3 / 3 | 2 / 3 | 3 / 3 | 2 / 2 |
+| Key-down to the confirmed present, p50 ms (confirmed keys) | 99.1 (120) | none (0) | 99.1 (15) | 82.3 (25) |
+| Refreshes without a submitted frame, per key | 2.01 | 2.00 | 2.00 | 1.97 |
+
+The frame that shows the press comes from frame IDs, which do not depend on the foreground. With the wait it is the
+second frame after the key, and the one run with confirmed presents shows it at 82.3 ms, as before the change.
+
+### Where the frame thread's time per key goes now
+
+Temporary timers (`timers-ab.patch`, `timers-prepare.patch`, `timers-host.patch`; never committed to the sources) in
+the change's host, on screen as above, 30 to 45 s each (`results/real-core-timers-*.txt`, one line per build,
+install, publish and preparation), p50 ms:
+
+| Part | ms |
+| --- | --- |
+| The key call: the commit (unchanged) | 17.6 to 18.5 (from the runs above) |
+| The worker's build and checks (off the frame thread) | 10.7 |
+| The install on the frame thread: the core's adoption | 0.2 |
+| The install on the frame thread: the publish | 14.3 to 15.3 |
+| ... the request digest | 0.06 |
+| ... admission (`describe_backend`, a core call) | 1.4 |
+| ... the backend's slot rows | 0.2 |
+| ... the core's `sa2_prepare` | 10.6 to 11.3 |
+| ... the host's pump after the publish | about 2 |
+
+`sa2_prepare` creates a new command allocator, a command list, two 1 MB default-heap buffers and a 2 MB upload buffer
+for every preparation (`Scene::product_prepare` in `renderer/core/src/scene.cpp`), so every twist creates GPU
+resources on the frame thread. That and the commit are the two parts left, each over a refresh on this machine.

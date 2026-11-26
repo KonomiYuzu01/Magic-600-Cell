@@ -1,0 +1,250 @@
+{
+  "evidence": "actual_windows_directx: what the shell's own logs show",
+  "format": "magic600-key-stall-20261126-ab-keys-v1",
+  "runs": [
+    {
+      "build_identity": "c9-product-795b9d7ad272d5e2",
+      "exit_code": 0,
+      "frame_call_ms": {
+        "max": 33.6,
+        "n": 5850,
+        "p50": 16.26,
+        "p90": 16.59,
+        "p99": 16.77
+      },
+      "frame_call_ms_four_after_key": {
+        "max": 33.6,
+        "n": 720,
+        "p50": 1.84,
+        "p90": 16.34,
+        "p99": 17.51
+      },
+      "frames": 5850,
+      "frames_to_shown": {
+        "max": 2.0,
+        "n": 180,
+        "p50": 1.0,
+        "p90": 1.0,
+        "p99": 1.0
+      },
+      "host": "build",
+      "inputs": {
+        "events.jsonl": "27bc8e11e4dde3e28d5e7f8afb1ef374880309717f9bc2c6c625061811c6799c"
+      },
+      "interval_ms": {
+        "max": 81.68,
+        "n": 5849,
+        "p50": 16.66,
+        "p90": 17.04,
+        "p99": 75.27
+      },
+      "key_call_ms": {
+        "max": 64.9,
+        "n": 180,
+        "p50": 57.5,
+        "p90": 59.71,
+        "p99": 61.77
+      },
+      "keys": 180,
+      "long_intervals": 182,
+      "long_intervals_in_key_windows": 180,
+      "owner_idle_s_at_start": 408.0,
+      "posts": 180,
+      "posts_with_foreground": 180,
+      "puzzle": "jumble-off",
+      "refresh_ms": 16.663,
+      "run_id": "20261126T090249Z",
+      "shown_ms": {
+        "max": 116.0,
+        "n": 180,
+        "p50": 82.29,
+        "p90": 98.92,
+        "p99": 115.81
+      },
+      "unconfirmed_keys": 0
+    },
+    {
+      "build_identity": "c9-product-795b9d7ad272d5e2+host-key-stall",
+      "exit_code": 0,
+      "frame_call_ms": {
+        "max": 36.79,
+        "n": 6058,
+        "p50": 16.27,
+        "p90": 16.59,
+        "p99": 29.79
+      },
+      "frame_call_ms_four_after_key": {
+        "max": 36.79,
+        "n": 720,
+        "p50": 8.76,
+        "p90": 27.96,
+        "p99": 31.75
+      },
+      "frames": 6058,
+      "frames_to_shown": {
+        "max": 4.0,
+        "n": 180,
+        "p50": 3.0,
+        "p90": 3.0,
+        "p99": 4.0
+      },
+      "host": "new",
+      "inputs": {
+        "events.jsonl": "b49007dc03cf5109cd0ae36a1092260e14ff933e3e973c76386698e33a0a6777"
+      },
+      "interval_ms": {
+        "max": 47.35,
+        "n": 6057,
+        "p50": 16.69,
+        "p90": 17.07,
+        "p99": 36.07
+      },
+      "key_call_ms": {
+        "max": 30.66,
+        "n": 180,
+        "p50": 18.46,
+        "p90": 20.18,
+        "p99": 21.41
+      },
+      "keys": 180,
+      "long_intervals": 347,
+      "long_intervals_in_key_windows": 347,
+      "owner_idle_s_at_start": 523.6,
+      "posts": 180,
+      "posts_with_foreground": 180,
+      "puzzle": "jumble-off",
+      "refresh_ms": 16.686,
+      "run_id": "20261126T090445Z",
+      "shown_ms": {
+        "max": 115.85,
+        "n": 180,
+        "p50": 99.12,
+        "p90": 99.4,
+        "p99": 115.55
+      },
+      "unconfirmed_keys": 0
+    },
+    {
+      "build_identity": "c9-product-795b9d7ad272d5e2",
+      "exit_code": 0,
+      "frame_call_ms": {
+        "max": 33.59,
+        "n": 5856,
+        "p50": 16.26,
+        "p90": 16.57,
+        "p99": 16.71
+      },
+      "frame_call_ms_four_after_key": {
+        "max": 33.59,
+        "n": 720,
+        "p50": 1.82,
+        "p90": 16.34,
+        "p99": 17.42
+      },
+      "frames": 5856,
+      "frames_to_shown": {
+        "max": 1.0,
+        "n": 180,
+        "p50": 1.0,
+        "p90": 1.0,
+        "p99": 1.0
+      },
+      "host": "build",
+      "inputs": {
+        "events.jsonl": "b7ede16429db7c3623d5a8e3c5d29954a0a37ebd3c5e600df02a66e0d3d32ded"
+      },
+      "interval_ms": {
+        "max": 78.82,
+        "n": 5855,
+        "p50": 16.66,
+        "p90": 17.02,
+        "p99": 74.9
+      },
+      "key_call_ms": {
+        "max": 61.56,
+        "n": 180,
+        "p50": 57.2,
+        "p90": 59.31,
+        "p99": 61.49
+      },
+      "keys": 180,
+      "long_intervals": 184,
+      "long_intervals_in_key_windows": 180,
+      "owner_idle_s_at_start": 639.4,
+      "posts": 180,
+      "posts_with_foreground": 180,
+      "puzzle": "jumble-off",
+      "refresh_ms": 16.662,
+      "run_id": "20261126T090641Z",
+      "shown_ms": {
+        "max": 115.81,
+        "n": 180,
+        "p50": 82.35,
+        "p90": 84.12,
+        "p99": 115.69
+      },
+      "unconfirmed_keys": 0
+    },
+    {
+      "build_identity": "c9-product-795b9d7ad272d5e2+host-key-stall",
+      "exit_code": 0,
+      "frame_call_ms": {
+        "max": 32.19,
+        "n": 6052,
+        "p50": 16.27,
+        "p90": 16.58,
+        "p99": 30.07
+      },
+      "frame_call_ms_four_after_key": {
+        "max": 32.19,
+        "n": 720,
+        "p50": 6.58,
+        "p90": 29.52,
+        "p99": 31.62
+      },
+      "frames": 6052,
+      "frames_to_shown": {
+        "max": 4.0,
+        "n": 180,
+        "p50": 3.0,
+        "p90": 3.0,
+        "p99": 3.0
+      },
+      "host": "new",
+      "inputs": {
+        "events.jsonl": "7a0f3228f057ef50565cc578af324790bc8bd8df89d8e0f770d86ff79dc41112"
+      },
+      "interval_ms": {
+        "max": 45.61,
+        "n": 6051,
+        "p50": 16.68,
+        "p90": 17.04,
+        "p99": 34.86
+      },
+      "key_call_ms": {
+        "max": 28.51,
+        "n": 180,
+        "p50": 17.64,
+        "p90": 18.64,
+        "p99": 19.37
+      },
+      "keys": 180,
+      "long_intervals": 360,
+      "long_intervals_in_key_windows": 360,
+      "owner_idle_s_at_start": 755.2,
+      "posts": 180,
+      "posts_with_foreground": 180,
+      "puzzle": "jumble-off",
+      "refresh_ms": 16.684,
+      "run_id": "20261126T090837Z",
+      "shown_ms": {
+        "max": 115.68,
+        "n": 180,
+        "p50": 99.08,
+        "p90": 99.37,
+        "p99": 99.49
+      },
+      "unconfirmed_keys": 0
+    }
+  ]
+}
