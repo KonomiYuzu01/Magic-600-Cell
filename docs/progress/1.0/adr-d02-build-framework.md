@@ -1083,6 +1083,25 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B13.
+- **As built (26 November 2026):**
+  - Part 1 (b6e12f9b): `Model/Research.cs` holds `IResearchSource` (one method per research row and the draft `RecordText`), `SampleResearchSource` (synthetic; it answers the reading rows, and the rows that run, import or export refuse until K2), `ResearchWords` (ADR-D02.46's words; `ColourRole` is null for every kind), `ResearchRows` and `ResearchModel` (tabs, the in-place record with its folded tree of named parts, names, copy and save with `Origin.Research`, current and stale answers, the pinned input). `Ui/ResearchPane.cs` is the Library panel's port: tabs, a head with the counts and `evidence: synthetic`, a carried line, and a line-stepped virtual list whose every control sends its row. `data/samples/research/panel.json` holds 8 records (stages 15, 16 and 18), 8 claim groups and 5 runs, with field names from `rust/c600-research/src/panel/answers.rs` and `wire.rs`.
+  - `renderer/shell/project/D02/ShellResearch.cs` mounts the pane in every mode, so Analyse never shows a missing pane; without the sample it says "Research rows wait for K2". In sample mode it reads `res://samples/research/panel.json` (or `M600_D02_DATA`), registers the sample's draft row `research.record.read`, which the palette marks as a draft row, and opens the first failing claim group. Its `Dump` writes the tab, the open object, the counts, staleness, the carried line, the names and the lines for a run.
+  - `ShellChrome.cs` routes the pane's rows: a research row naming a research object, or a tab row, is available and runs first, before `workspace.set` (a name is `workspace.set research.names:<ref>=<name>`), and its words go to the status line. The pane's controls send their rows through the palette's path, and a commit, undo or redo marks the answers stale.
+  - `workspaces.json`: Analyse's centre splits horizontally (0.58): the pair and the Preview and Canvas tabs above, the Research tab below.
+  - Departures:
+    - The files list grows by `ShellChrome.cs`, `ShellJumble.cs` (the dump), `renderer/shell/d02_run.py`, the `research-pane` script and `tests/test_renderer_shell.py`.
+    - Look Lab Live shows "Pane not available" for the Research tab in Analyse, because Live is not edited; the pane is mounted in the product only.
+    - The sample opens the first failing claim group at load, so the owner sees it one workspace tab away; the script folds it and opens it again with `object.inspect`.
+    - `Ui/ResearchPane.cs` changed after the first product run hung when Analyse first showed the pane: the list sat in a container, so each rebuild of fresh, zero-width wrapped labels resized it and its resize rebuilt it again. The list now hangs in a plain clipping window whose resize lays the lines.
+    - The Runs and Obligations tabs show their counts only; their rows come in B29.
+    - The revision's nine keys are checked against the command layer's `Revision` (`c600-command/src/receipt.rs`), which `wire.rs` writes.
+  - Row requests: `research.record.read` (a query that reads a record's finding and named parts); the researcher's name as a `workspace.set` write of the record `research.names` (payload form open); a command-icons entry or a label-only mark for `research.record.read`.
+  - Checks:
+    - the six console tests and the other 248 (254 PASS), and `tools/looklab/check.py` PASS with the checkout unchanged;
+    - `python tests/test_d02_research_sample.py` OK (7 tests: format and synthetic evidence, the envelope and one research digest, the panel's field names, the draft row outside the command table, every verdict kind, part sums, claim groups' records in the inventory);
+    - `build_product.py` PASS;
+    - `test_renderer_shell.py`, `test_shared_chrome.py` and `test_d02_drawing.py` OK;
+    - `d02_run.py --script research-pane --state wj-ia-300` PASS at 1280x720 (7 steps: Solve shows no research pane; `workspace.set layout:analyse` shows it with the Fail row open on "fails within on one instance", "first claim that does not hold: cycle.closes" and "code: KN6:evidence.certificate_rejected"; `object.inspect` folds the row and opens it again; the head says `evidence: synthetic`; the error lamp counts no failure).
 
 ### B29. The research pane: Runs and Obligations
 - **Goal:** declared budgets, reproduction, obligations, the two CR-17 controls.

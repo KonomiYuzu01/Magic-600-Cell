@@ -1,0 +1,14 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "research-pane",
+  "resolution": "1280x720",
+  "note": "B28, sample mode at the default 1280x720: the research pane in Analyse, one workspace tab away from the opening Solve layout, on the synthetic research sample (evidence: synthetic). The first failing claim group opens at load, so the Fail row shows expanded to its first failing claim (cycle.closes, code KN6:evidence.certificate_rejected). object.inspect on that claim group folds it and opens it again, through the palette's path (ShellChrome.Run). The error lamp counts no failure at any step. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"command": "workspace.set", "argument": "layout:analyse"},
+    {"wait_ms": 1500},
+    {"command": "object.inspect", "argument": "research.claim/16/macro:sample/stage-16/macro-i7303.json#"},
+    {"command": "object.inspect", "argument": "research.claim/16/macro:sample/stage-16/macro-i7303.json#"},
+    {"wait_ms": 3000}
+  ]
+}
