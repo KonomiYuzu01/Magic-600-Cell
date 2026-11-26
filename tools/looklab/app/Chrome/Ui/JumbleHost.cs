@@ -46,6 +46,7 @@ public sealed class JumbleHost
         frame.Model.Changed += () => { if (!following) Settings.Set("dock.bottom", frame.Model.Docks[DockSide.Bottom].Open); };
         source.Changed += Follow;
         frame.Rebuilt += Place;
+        frame.Rebuilt += () => { if (GodotObject.IsInstanceValid(CapMap)) CapMap.Refresh(); };
         Follow(source.State);
     }
 
@@ -63,6 +64,12 @@ public sealed class JumbleHost
         IReadOnlyList<ReadoutSlot>? slots = value?.Slots(unit);
         capMarked = slots == null ? new HashSet<int>() : ReadoutChanges.Marked(cap, slots); cap = slots;
         Place();
+    }
+
+    // The cap map for the bound state, or every cap pending while none is bound (ADR-D02.13, .14).
+    public void SetCapMap(CapLayout? layout, CapMapModel map)
+    {
+        if (GodotObject.IsInstanceValid(CapMap)) CapMap.Show(layout, map);
     }
 
     public IReadOnlyList<ReadoutSlot> Totals => totals;

@@ -66,10 +66,10 @@ class SampleTests(unittest.TestCase):
         case = self.index['start_digest_case']
         self.assertTrue(case['equal'])
         self.assertEqual(case['adapter_start_digest'], case['wj_stages_start_digest'])
-        self.assertEqual(set(self.index['not_built']), {'contact.json', 'hidden-piece masks', 'cap-layout.json'})
+        self.assertEqual(set(self.index['not_built']), {'contact.json', 'hidden-piece masks'})
 
     def test_every_file_listed_exists_and_nothing_else(self):
-        listed = {'states.json', 'corrections.json'}
+        listed = {'states.json', 'corrections.json', 'cap-layout.json'}
         for row in self.index['states']:
             listed |= {f"{row['state']}/{name}" for name in row['files']}
         present = {str(p.relative_to(SAMPLES)).replace('\\', '/') for p in SAMPLES.rglob('*') if p.is_file()}
@@ -180,6 +180,32 @@ class SampleTests(unittest.TestCase):
                     for entry in step['moving_sets']:
                         self.check_mask(entry, f'{label} repair row {step["row"]}')
             self.assertIn('blocked', kinds, sid)
+
+    def test_cap_layout_is_the_ring_sheet(self):
+        # B8 (M-RING redone): a bijection of the 600 caps onto 20 rows of 30, each row a Hopf ring of
+        # hopf-rings.json, cap c being cell c of assets/model.npz; row neighbours, the last and the first included,
+        # are face neighbours (their normals are each other's nearest).
+        import numpy
+        layout = read('cap-layout.json')
+        hopf = json.loads((ROOT / 'tools/looklab/fixtures/hopf-rings.json').read_text(encoding='utf-8'))
+        self.assertEqual(layout['format'], FORMAT)
+        self.assertEqual(layout['model'], hopf['modelDigest'])
+        self.assertEqual(layout['rows'], [ring['cells'] for ring in hopf['rings']])
+        self.assertEqual(sorted(c for row in layout['rows'] for c in row), list(range(600)))
+        self.assertEqual([len(row) for row in layout['rows']], [30] * 20)
+        for c, (r, j) in enumerate(layout['position']):
+            self.assertEqual(layout['rows'][r][j], c)
+        with numpy.load(ROOT / 'assets' / 'model.npz') as z:
+            normals = numpy.asarray(z['normals'], dtype=numpy.float64)
+        unit = normals / numpy.linalg.norm(normals, axis=1, keepdims=True)
+        dots = unit @ unit.T
+        numpy.fill_diagonal(dots, -2.0)
+        nearest = dots.max(axis=1)
+        for row in layout['rows']:
+            for j, c in enumerate(row):
+                d = row[(j + 1) % 30]
+                self.assertAlmostEqual(dots[c, d], nearest[c], places=9)
+                self.assertAlmostEqual(dots[c, d], nearest[d], places=9)
 
     def test_corrections(self):
         doc = read('corrections.json')

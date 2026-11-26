@@ -210,7 +210,12 @@ internal static partial class Program
             ("D02TotalNIsNotSumOfCaps", D02TotalNIsNotSumOfCaps),
             ("D02BlockedCapReadoutUndefined", D02BlockedCapReadoutUndefined),
             ("D02Above6MaxUndefinedAtZero", D02Above6MaxUndefinedAtZero),
-            ("D02TotalsMatchSample", D02TotalsMatchSample)
+            ("D02TotalsMatchSample", D02TotalsMatchSample),
+            ("D02CapClassesExclusiveAndExhaustive", D02CapClassesExclusiveAndExhaustive),
+            ("D02NoNumeralAtBlockedCap", D02NoNumeralAtBlockedCap),
+            ("D02UncertainRimRowIsPending", D02UncertainRimRowIsPending),
+            ("D02CapMapMatchesRim", D02CapMapMatchesRim),
+            ("D02CapLayoutIsRingSheet", D02CapLayoutIsRingSheet)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

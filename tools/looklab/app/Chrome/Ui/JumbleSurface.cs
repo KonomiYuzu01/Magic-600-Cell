@@ -48,27 +48,60 @@ public sealed partial class JumbleSurface : VBoxContainer
     }
 }
 
-// The cap map's panel in Solve's bottom dock, which the entry slot opens (ADR-D02.12). B8 draws the map; until then the
-// panel says so, and its legend shows what the entry armed.
+// The cap map's panel in Solve's bottom dock, which the entry slot opens (ADR-D02.12, .13): its head, the map (B8),
+// the legend of the classes with their counts, and the legend of what the entry armed.
 public sealed partial class CapMapPanel : VBoxContainer
 {
+    public CapMapControl Map { get; }
     private readonly ChromeSettings settings;
     private readonly Func<TokenSet> tokens;
-    private readonly Label legend;
+    private readonly string title;
+    private readonly Label head, legend;
+    private readonly HFlowContainer classes = new() { Name = "CapMapClasses" };
 
     public CapMapPanel(ChromeSettings settings, Func<TokenSet> tokens, string title)
     {
-        this.settings = settings; this.tokens = tokens; Name = "CapMapPanel";
-        Label head = ChromeWidgets.Text(title + ": not drawn in this build yet", "DimLabel"); head.Name = "CapMapState"; AddChild(head);
+        this.settings = settings; this.tokens = tokens; this.title = title; Name = "CapMapPanel";
+        head = ChromeWidgets.Text(title, "DimLabel"); head.Name = "CapMapState"; AddChild(head);
+        Map = new CapMapControl(tokens); AddChild(Map);
+        AddChild(classes);
         legend = ChromeWidgets.Text("", "MicroLabel"); legend.Name = "CapMapLegend"; AddChild(legend);
         settings.Changed += _ => { if (IsInstanceValid(this)) Refresh(); };
         Refresh();
     }
 
+    // The bound state's map, or every cap pending while none is bound; no layout, no sheet.
+    public void Show(CapLayout? layout, CapMapModel map)
+    {
+        Map.Show(layout, map);
+        Refresh();
+    }
+
     public void Refresh()
     {
+        TokenSet t = tokens();
+        head.Text = Map.Layout == null ? title + ": no cap layout in this build" : title + " · 20 rings of 30 caps";
         string Word(string key) => settings.Get(key) == EntrySlot.Armed ? "armed" : "off";
         legend.Text = "contact classes · " + Word(EntrySlot.ContactClasses) + "   never hidden · " + Word(EntrySlot.NeverHidden);
-        legend.AddThemeColorOverride("font_color", tokens().C("text.dim"));
+        legend.AddThemeColorOverride("font_color", t.C("text.dim"));
+        foreach (Node child in classes.GetChildren()) { classes.RemoveChild(child); child.QueueFree(); }
+        if (Map.Layout == null) return;
+        classes.AddThemeConstantOverride("h_separation", t.Px("space.3"));
+        IReadOnlyDictionary<CapClass, int> counts = Map.Map.Counts();
+        foreach (CapClass k in new[] { CapClass.Blocked, CapClass.Closed, CapClass.AtFloor, CapClass.AboveFloor, CapClass.Pending })
+        {
+            string word = k == CapClass.AtFloor ? "at floor (N_c = F_c > 0)" : CapMapModel.Word(k);
+            Entry(new CapSwatch(tokens, k), word + " · " + counts[k], "CapMapClass_" + k);
+        }
+        Entry(new CapSwatch(tokens, null), "columns wrap", "CapMapWrap");
+        Map.Restyle();
+
+        void Entry(Control swatch, string text, string name)
+        {
+            var row = new HBoxContainer { Name = name }; row.AddThemeConstantOverride("separation", t.Px("space.1"));
+            row.AddChild(swatch);
+            Label label = ChromeWidgets.Text(text, "MicroLabel"); label.AddThemeColorOverride("font_color", t.C("text.dim")); row.AddChild(label);
+            classes.AddChild(row);
+        }
     }
 }

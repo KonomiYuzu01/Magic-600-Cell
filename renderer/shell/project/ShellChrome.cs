@@ -275,10 +275,16 @@ public sealed class ShellChrome
             var (names, empty, nothing) = ShellJumble.Words(folder);
             var sentences = ShellJumble.Sentences(folder);
             Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing, sentences["totals.unit"], sentences["totals.above"]);
-            // B7: Global's totals follow the bound state, pending while none is bound.
+            // B7: Global's totals follow the bound state, pending while none is bound; B8: so does the cap map.
             var host = Jumble;
-            ShellJumble.BindingChanged += () => host.SetTotals(ShellJumble.Totals());
+            var layout = ShellJumble.Layout();
+            ShellJumble.BindingChanged += () =>
+            {
+                host.SetTotals(ShellJumble.Totals());
+                host.SetCapMap(layout, ShellJumble.CapMap());
+            };
             host.SetTotals(ShellJumble.Totals());
+            host.SetCapMap(layout, ShellJumble.CapMap());
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
             Jumble.Changed += Describe;

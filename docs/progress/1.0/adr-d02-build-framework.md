@@ -326,6 +326,17 @@ relative path is from the repository root.
   - One `_Draw` with the `pattern.cap.*` patterns, a wrap mark on the cyclic columns, and the legend "at floor (N_c = F_c > 0)".
   - The dock panel `capmap`, collapsed by default and droppable as a free pane.
 - **Check:** `D02CapClassesExclusiveAndExhaustive`; `D02NoNumeralAtBlockedCap`; `D02UncertainRimRowIsPending`; `D02CapMapMatchesRim` (27 admissible, 573 blocked at the journal's end); `D02CapLayoutIsRingSheet`.
+- **As built (integrator, 26 November 2026):**
+  - `make_d02_samples.py` writes `cap-layout.json` (`--layout` writes only it). Cap c is cell c of `assets/model.npz`; the builder reads the 20 rings of `hopf-rings.json`, checks that its model digest is the shipped model's, that the rows are a bijection onto 20 rows of 30, and that each row's neighbours, the last column with the first, are face neighbours by the cells' normals. `test_d02_samples.py` repeats both checks against `model.npz`. M-RING is redone as that tracked test.
+  - `Model/CapMap.cs`:
+    - `CapLayout.Read`, which refuses anything but a bijection onto 20 rows of 30; `At` wraps the columns.
+    - `CapMapModel.Read(rim)` with the builder's rule: blocked, closed (N_c = 0), at floor, above floor. A row counts only in a complete record and only when it is certified (blocked or admissible); an uncertain or missing row, or an admissible row without N_c, leaves its cap pending.
+    - The numeral: N_c at an admissible cap with N_c > 0. A closed cap is a plain cell (its N_c = 0 is its class and its tooltip), and a blocked or pending cap shows none.
+  - `Ui/CapMapControl.cs`: one `_Draw` of the 600 cells. Blocked is the dark `pattern.cap.blocked` ground with a level bar; closed a plain cell; at floor a corner bracket and its N_c; above floor its N_c numeral only; pending ADR-D01's pending ring. A dashed wrap mark runs down both sides. Each cell keeps room for a four-digit numeral (the samples reach N_c 1,368). Hovering a cell shows its cap, ring, place, class and N_c; naming a cap waits for B9.
+  - `CapMapPanel`: the head "Cap map · 20 rings of 30 caps", the map, a legend of the five classes with their counts ("at floor (N_c = F_c > 0)") and the wrap mark, then the armed-modes legend.
+  - In the shell, the map follows the binding with the totals: the bound state's `rim.json` and the staged `cap-layout.json`. Every cap is pending while nothing is bound, and also for a sample written without its rim rows: only `wj-ia-300`, `wj-ia-end`, `ia-40`, `deep-1` and `deep-2` carry them, so `on-zero` shows 600 pending caps.
+  - Not built here: the free pane. The frame has no free panes yet, so the cap map stays in the bottom dock; the item goes on the refinement round's list.
+  - Checks: the console lane passed 176 of 176, with the five named tests; `test_d02_samples.py` 10 of 10 and `test_renderer_shell.py` 63 of 63. `d02_run.py --script host` passed on `ia-40` and `on-zero` (`c9-product-a284d6f724cc78d1`); on `ia-40` the legend reads blocked 25, closed 560, at floor 8, above floor 7 and pending 0, as its totals count them. The first `on-zero` run stopped because another window took the foreground in its first five seconds; the rerun passed.
 - **Owner sees:** 20 rows of 30 cells in the bottom dock; mostly blocked ground at the W-J end state.
 - **Machine:** H, W.
 - **Checkpoint:** no.

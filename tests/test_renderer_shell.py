@@ -1522,8 +1522,12 @@ class D02Host(unittest.TestCase):
         self.assertEqual(chrome.count("new JumbleHost("), 1)
         self.assertIn('Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing, sentences["totals.unit"], '
                       'sentences["totals.above"]);', block)
-        # B7: Global's totals follow the binding, pending while nothing is bound.
-        self.assertIn("ShellJumble.BindingChanged += () => host.SetTotals(ShellJumble.Totals());", block)
+        # B7: Global's totals follow the binding, pending while nothing is bound; B8: the cap map follows it too.
+        changed = block[block.index("ShellJumble.BindingChanged += () =>"):block.index("};", block.index("ShellJumble.BindingChanged += () =>"))]
+        self.assertIn("host.SetTotals(ShellJumble.Totals());", changed)
+        self.assertIn("host.SetCapMap(layout, ShellJumble.CapMap());", changed)
+        self.assertEqual(block.count("host.SetCapMap(layout, ShellJumble.CapMap());"), 2)
+        self.assertIn("var layout = ShellJumble.Layout();", block)
         self.assertIn("frame.SetMainViews(global, Jumble.Surface);", block)
         # The feed adopts only what m6h_state_digest answered at a newly shown revision.
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
@@ -1564,20 +1568,31 @@ class D02Host(unittest.TestCase):
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]
 
-        def dumps(cell, undefined, marks=True):
+        samples = ROOT / "tools" / "looklab" / "data" / "samples" / "jumble"
+
+        def dumps(cell, undefined, marks=True, state="ia-40", drop=None):
+            # B8: the cap map's head and its class counts; a sample without rim rows leaves every cap pending.
+            classes = json.loads(text(samples / state / "totals.json"))["cap_classes"]
+            if not (samples / state / "rim.json").is_file():
+                classes = {"blocked": 0, "closed": 0, "at_floor": 0, "above_floor": 0, "pending": 600}
+            words = {"blocked": "blocked", "closed": "closed", "at_floor": "at floor (N_c = F_c > 0)",
+                     "above_floor": "above floor", "pending": "pending"}
             lines = [["frame", cell], ["view:Local", "Name a cap: click its cell, or type its number."],
-                     ["panel:jumble.cap_map", "Cap map: not drawn in this build yet"],
+                     ["panel:jumble.cap_map", "Cap map · 20 rings of 30 caps"],
                      ["panel:jumble.cap_map", "contact classes · armed   never hidden · armed"]]
+            lines += [["panel:jumble.cap_map", f"{words[key]} · {classes[key]}"] for key in words if key != drop]
             lines += [["view:Local", f"▸ {name} · 0"] for name in ("Named cap", "Twist check", "Cap covers", "Repair list")]
             lines += [["frame", "undefined"]] * undefined
             tips = {"Global": ["jumble: Jumble is on"], "Local": ["jumble: Jumble is on"]} if marks else {}
             return [{"do": do, "lines": lines, "marks": tips} for do in steps]
         self.assertEqual(run.expect_host(dumps("Jumble · off the lattice", 2), {}, "ia-40"), [])
-        self.assertEqual(run.expect_host(dumps("Jumble · on the lattice", 0), {}, "on-zero"), [])
+        self.assertEqual(run.expect_host(dumps("Jumble · on the lattice", 0, state="on-zero"), {}, "on-zero"), [])
+        self.assertEqual(len(run.expect_host(dumps("Jumble · off the lattice", 2, drop="blocked"), {}, "ia-40")), 1)
+        self.assertEqual(len(run.expect_host(dumps("Jumble · on the lattice", 0, state="ia-40"), {}, "on-zero")), 5)
         self.assertEqual(len(run.expect_host(dumps("Jumble · off the lattice", 2, marks=False), {}, "ia-40")), 2)
         self.assertEqual(len(run.expect_host(dumps("Jumble · on the lattice", 2), {}, "ia-40")), 1)
-        self.assertEqual(len(run.expect_host(dumps("Jumble · on the lattice", 1), {}, "on-zero")), 1)
-        self.assertTrue(run.expect_host(dumps("Jumble · on the lattice", 0)[:2], {}, "on-zero"))
+        self.assertEqual(len(run.expect_host(dumps("Jumble · on the lattice", 1, state="on-zero"), {}, "on-zero")), 1)
+        self.assertTrue(run.expect_host(dumps("Jumble · on the lattice", 0, state="on-zero")[:2], {}, "on-zero"))
         self.assertTrue(run.expect_host(dumps("Jumble · on the lattice", 0), {}, None))
 
 

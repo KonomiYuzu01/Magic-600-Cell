@@ -140,8 +140,9 @@ def texts(dump: dict, prefix: str = "") -> list[str]:
 
 def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """B6's host script, in sample mode on the state's session fixture: the Jumble cell, the mark on both view borders,
-    Local's empty sentence and four closed sections, the cap map open with its legend armed, and the strip and the rail
-    undefined exactly when the sample is off the lattice (its totals' exact off-lattice count)."""
+    Local's empty sentence and four closed sections, the cap map drawn (B8) with its class counts and its legend armed,
+    and the strip and the rail undefined exactly when the sample is off the lattice (its totals' exact off-lattice
+    count)."""
     if [dump["do"] for dump in dumps] != ["start", "wait 3000 ms", "wait 3000 ms"]:
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
     if state is None:
@@ -162,8 +163,17 @@ def expect_host(dumps: list[dict], source: dict, state: str | None) -> list[str]
     for header in ("▸ Named cap · 0", "▸ Twist check · 0", "▸ Cap covers · 0", "▸ Repair list · 0"):
         if header not in every:
             problems.append(f"step 1: Local lacks the closed header {header!r}")
-    if "Cap map: not drawn in this build yet" not in every:
-        problems.append("step 1: the cap map is not open in the bottom dock")
+    if "Cap map · 20 rings of 30 caps" not in every:
+        problems.append("step 1: the cap map is not drawn in the bottom dock")
+    # B8: the map's legend counts the bound state's cap classes, as its totals record them; a sample written without
+    # its rim rows (rim.json) leaves every cap pending, since the map draws certified rows only.
+    classes = load(SAMPLES / state / "totals.json")["cap_classes"]
+    if not (SAMPLES / state / "rim.json").is_file():
+        classes = {"blocked": 0, "closed": 0, "at_floor": 0, "above_floor": 0, "pending": 600}
+    for key, word in (("blocked", "blocked"), ("closed", "closed"), ("at_floor", "at floor (N_c = F_c > 0)"),
+                      ("above_floor", "above floor"), ("pending", "pending")):
+        if f"{word} · {classes[key]}" not in every:
+            problems.append(f"step 1: the cap map's legend does not count {classes[key]} caps {word}")
     if not any("contact classes · armed" in text and "never hidden · armed" in text for text in every):
         problems.append("step 1: the cap map's legend does not show the entry's armed modes")
     # The strip and the rail are in the frame; the totals on the view borders have their own undefined slots (B7).

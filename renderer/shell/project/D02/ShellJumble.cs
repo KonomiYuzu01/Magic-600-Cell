@@ -77,6 +77,30 @@ public static class ShellJumble
         return File.Exists(path) ? GlobalTotals.Read(File.ReadAllText(path), SeamCoverage.Complete) : GlobalTotals.Pending;
     }
 
+    /// <summary>
+    /// The cap map's ring sheet (B8): the samples' cap-layout.json, which maps each cap to its Hopf ring and its place
+    /// along it; none when the build has no layout.
+    /// </summary>
+    public static CapLayout? Layout()
+    {
+        var path = Path.Combine(JumbleFolder(), "cap-layout.json");
+        return File.Exists(path) ? CapLayout.Read(File.ReadAllText(path)) : null;
+    }
+
+    /// <summary>
+    /// The cap map's classes (B8): from the bound sample state's rim record, certified and completed rows only; every
+    /// cap pending while no state is bound or the state has no rim record.
+    /// </summary>
+    public static CapMapModel CapMap()
+    {
+        if (Bound is not { } state)
+        {
+            return CapMapModel.Pending();
+        }
+        var path = Path.Combine(JumbleFolder(), state, "rim.json");
+        return File.Exists(path) ? CapMapModel.Read(File.ReadAllText(path)) : CapMapModel.Pending();
+    }
+
     /// <summary>The folder of the D02 jumble samples: under M600_D02_DATA when set, else the build's staged copy.</summary>
     public static string JumbleFolder()
     {

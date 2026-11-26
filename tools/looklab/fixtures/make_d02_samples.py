@@ -42,6 +42,7 @@ REPAIR_ROWS = 9
 
 # The research records each state is rebuilt from, relative to the repository root.
 WJ = 'research/jumbling/fixtures/wj-I_a.json'
+HOPF = 'tools/looklab/fixtures/hopf-rings.json'
 DEEP = 'research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json'
 S7001 = 'research/jumbling/restoration/11-scramble-census/runs/round1/ia-k10-s7001.json'
 S7001_WORDS = 'research/jumbling/restoration/13-tutorial-runner/runs/depth10-seed7001/words'
@@ -59,7 +60,6 @@ CORRECTIONS = (0, 35)
 NOT_BUILT = {
     'contact.json': 'B15 builds it: the contact graph of the alignment domains needs the seam-face geometry',
     'hidden-piece masks': 'B16 builds them, under jumbling-observation.md rule 5',
-    'cap-layout.json': 'B8 builds it with the M-RING redo',
 }
 FULL_STATES = ('wj-ia-300', 'wj-ia-end', 'ia-40', 'deep-1', 'deep-2')
 CAP_STATES = ('wj-ia-300', 'wj-ia-end', 'deep-2')
@@ -122,6 +122,45 @@ class Research:
         outcome, inside = self.api.apply_with_inside(copy, twist)
         assert outcome.applied, (letter, outcome.status)
         return [int(p) for p in inside], copy
+
+
+def cap_layout(model, hopf, normals):
+    """cap-layout.json (B8, M-RING redone): each cap's row and column in the ring sheet, 20 rows of 30.
+
+    The adapter's 600 caps are the model's 600 pole normals in their stored order (rust/c600-jumble/src/model.rs reads
+    `normals` of assets/model.npz as its poles), and hopf-rings.json's cells are the same file's cells (its modelDigest
+    is the adapter's model.npz digest). So cap c is cell c: its row is the Hopf ring that holds cell c, its column the
+    cell's place along that ring, and the columns are cyclic. Row neighbours are face neighbours: two cells share a
+    facet exactly when their normals are nearest, which the check below confirms for every pair of row neighbours.
+    """
+    assert model['files']['assets/model.npz'] == hopf['modelDigest'], 'hopf-rings.json names another model'
+    rows = [ring['cells'] for ring in hopf['rings']]
+    assert len(rows) == 20 and all(len(row) == 30 for row in rows), 'not 20 rows of 30'
+    assert sorted(c for row in rows for c in row) == list(range(600)), 'the rows are not a bijection onto the caps'
+    unit = normals / ((normals * normals).sum(axis=1, keepdims=True) ** 0.5)
+    dots = unit @ unit.T
+    for c in range(600):
+        dots[c, c] = -2.0
+    nearest = dots.max(axis=1)
+    for row in rows:
+        for j, c in enumerate(row):
+            d = row[(j + 1) % 30]
+            assert abs(dots[c, d] - nearest[c]) < 1e-9 and abs(dots[c, d] - nearest[d]) < 1e-9, (c, d)
+    position = [None] * 600
+    for r, row in enumerate(rows):
+        for j, c in enumerate(row):
+            position[c] = [r, j]
+    return {'format': FORMAT, 'kind': 'cap-layout', 'model': hopf['modelDigest'], 'source': HOPF,
+            'columns_cyclic': True, 'rows': rows, 'position': position,
+            'reading': 'cap c is cell c of assets/model.npz; row = its Hopf ring, column = its place along the ring; '
+                       'row neighbours are face neighbours, and the last column neighbours the first'}
+
+
+def model_normals():
+    """The 600 pole normals of the tracked assets/model.npz, as the adapter reads them."""
+    import numpy
+    with numpy.load(ROOT / 'assets' / 'model.npz') as z:
+        return numpy.asarray(z['normals'], dtype=numpy.float64)
 
 
 def mask(pieces):
@@ -288,6 +327,7 @@ class Builder:
             e.start(menu)
             identity = e.identity()
             model = e.model()
+            self.put('cap-layout.json', cap_layout(model, read_json(HOPF), model_normals()))
             start = e.record()['digest']
             start_case = start == stages['start']['digest']
             self.state(e, 'on-zero', 'start(I_a), no twist', stages['start']['digest'], full=False)
@@ -474,8 +514,17 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--write', action='store_true', help='rebuild the tracked samples')
     mode.add_argument('--verify', action='store_true', help='rebuild into a temporary folder and compare')
+    mode.add_argument('--layout', action='store_true', help="write cap-layout.json only (B8), from the adapter's model")
     args = parser.parse_args(argv)
     started = time.perf_counter()
+    if args.layout:
+        research = Research()
+        with research.R.RustJumbleEngine() as e:
+            e.start(read_json(WJ)['menu'])
+            model = e.model()
+        (OUT / 'cap-layout.json').write_bytes(dump(cap_layout(model, read_json(HOPF), model_normals())))
+        log('wrote cap-layout.json')
+        return 0
     builder = Builder(Research(), OUT)
     builder.build()
     states = len(builder.index)
