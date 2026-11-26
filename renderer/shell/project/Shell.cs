@@ -331,7 +331,7 @@ public partial class Shell : Control
     public override void _Input(InputEvent @event)
     {
         var qpc = EventLog.Now();
-        var turned = D02.ShellJumble.On && _camera.Follow(@event, InOpening);
+        var turned = D02.ShellJumble.On && Turn(@event);
         if (turned)
         {
             GetViewport().SetInputAsHandled();
@@ -409,6 +409,26 @@ public partial class Shell : Control
     private bool InOpening(Vector2 point) =>
         (_chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize()))
             .HasPoint(new Vector2I((int)point.X, (int)point.Y));
+
+    /// <summary>
+    /// ADR-D01.40/.41: a drag that starts in Global's opening or in Local's drawn opening turns the rotation that view
+    /// draws from. Linked (the default) both views draw from the one camera, so a drag in either turns both together;
+    /// unlinked, a drag in Local turns only Local's own rotation and a drag in Global only Global's. Each camera keeps
+    /// the three-pixel rule, so a click in either view still picks.
+    /// </summary>
+    private bool Turn(InputEvent input)
+    {
+        if (D02.ShellLocal.Linked)
+        {
+            return _camera.Follow(input, point => InOpening(point) || InLocal(point));
+        }
+        var global = _camera.Follow(input, InOpening);
+        var local = D02.ShellLocal.Own.Follow(input, InLocal);
+        return global || local;
+    }
+
+    /// <summary>A window point in Local's drawn opening (through the pane layout's hit), outside Global's.</summary>
+    private bool InLocal(Vector2 point) => _localOpen && ViewAt(point) == HostLibrary.Local;
 
     /// <summary>ADR-D02 B17: a window point in a drawn view as a pixel of the core's surface, or none.</summary>
     private (uint X, uint Y)? SurfacePoint(Vector2 point)
@@ -549,13 +569,16 @@ public partial class Shell : Control
         _layout = layout;
     }
 
-    /// <summary>Local's camera: the layout spin as Look Lab's LocalShape.Frame takes it (column-major as it lies).</summary>
-    private static float[] LocalCamera()
+    /// <summary>
+    /// A rotation's layout spin as a view camera, as Look Lab's LocalShape.Frame takes it (column-major as it lies):
+    /// Local's camera, and Global's on a Hopf layout.
+    /// </summary>
+    private static float[] SpinOf(D02.ShellCamera camera)
     {
         var m = new float[16];
         for (var i = 0; i < 16; i++)
         {
-            m[i] = (float)_camera.Spin[i];
+            m[i] = (float)camera.Spin[i];
         }
         return m;
     }
@@ -626,15 +649,25 @@ public partial class Shell : Control
         {
             SetPanes(library, global, layout);
         }
-        if (D02.ShellJumble.On && _camera.Dirty)
+        var turning = D02.ShellLocal.Camera(_camera);
+        if (D02.ShellJumble.On && (_camera.Dirty || turning.Dirty))
         {
-            Require(library, "m6h_set_camera", library.SetCamera(_host, _hopf ? LocalCamera() : _camera.ColumnMajor()));
-            // B18c: Local turns with the linked 3D spin, as Look Lab's Local does; the core turns the cap's pole to +w.
+            if (_camera.Dirty)
+            {
+                var camera = _hopf ? SpinOf(_camera) : _camera.ColumnMajor();
+                Require(library, "m6h_set_camera", library.SetCamera(_host, camera));
+                D02.ShellLocal.Sent(HostLibrary.View, camera);
+            }
+            // B18c: Local turns with its 3D spin, as Look Lab's Local does, the linked one unless Local is unlinked
+            // (ADR-D01.41); the core turns the cap's pole to +w.
             if (_localOpen)
             {
-                Require(library, "m6h_set_view_camera", library.SetViewCamera(_host, HostLibrary.Local, LocalCamera()));
+                var spin = SpinOf(turning);
+                Require(library, "m6h_set_view_camera", library.SetViewCamera(_host, HostLibrary.Local, spin));
+                D02.ShellLocal.Sent(HostLibrary.Local, spin);
             }
             _camera.Dirty = false;
+            turning.Dirty = false;
         }
         if (D02.ShellJumble.On)
         {

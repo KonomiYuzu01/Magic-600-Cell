@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "two-views",
-  "note": "B18c's run on wj-ia-300's session fixture: before a cap is named Local is not drawn and frames are one-view frames; naming cap 150 draws Local beside Global as the second pane of composite frames (orthographic, only the cap's turning region, pulled apart); two twists (J, the router's KeyJ) and an undo keep both views on one revision.",
+  "note": "B18c's run on wj-ia-300's session fixture: before a cap is named Local is not drawn and frames are one-view frames; naming cap 150 draws Local beside Global as the second pane of composite frames (orthographic, only the cap's turning region, pulled apart); two twists (J, the router's KeyJ) and an undo keep both views on one revision. ADR-D01.41: a drag in Local and one in Global each turn both views (linked); unlinked, each drag turns only its own view; linking again returns Local to the shared rotation.",
   "steps": [
     {"wait_ms": 2500},
     {"chord": "F1"},
@@ -13,6 +13,17 @@
     {"chord": "J"},
     {"wait_ms": 700},
     {"chord": "Ctrl+Z"},
-    {"wait_ms": 4000}
+    {"wait_ms": 4000},
+    {"drag": [160, 0], "in": "local"},
+    {"wait_ms": 701},
+    {"drag": [0, 100]},
+    {"wait_ms": 702},
+    {"link": false},
+    {"drag": [-120, 0], "in": "local"},
+    {"wait_ms": 703},
+    {"drag": [0, -80]},
+    {"wait_ms": 704},
+    {"link": true},
+    {"wait_ms": 705}
   ]
 }

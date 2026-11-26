@@ -528,8 +528,17 @@ internal sealed partial class D02Driver : Node
         {
             var dx = drag[0].GetSingle();
             var dy = drag[1].GetSingle();
-            _doing = "drag " + dx.ToString(CultureInfo.InvariantCulture) + " " + dy.ToString(CultureInfo.InvariantCulture);
-            Drag(_frame.Opening, new Vector2(dx, dy));
+            // ADR-D01.41: "in": "local" starts the drag in Local's drawn opening instead of Global's.
+            var inLocal = step.TryGetProperty("in", out var view) && view.GetString() == "local";
+            _doing = "drag " + dx.ToString(CultureInfo.InvariantCulture) + " " + dy.ToString(CultureInfo.InvariantCulture)
+                + (inLocal ? " in local" : "");
+            Drag(inLocal ? _frame.LocalOpening : _frame.Opening, new Vector2(dx, dy));
+        }
+        else if (step.TryGetProperty("link", out var link))
+        {
+            // ADR-D01.41: links or unlinks Local's rotation (no command row yet: row request camera.link).
+            _doing = "link " + (link.GetBoolean() ? "on" : "off");
+            ShellLocal.Linked = link.GetBoolean();
         }
         else if (step.TryGetProperty("wheel", out var wheel))
         {
@@ -727,6 +736,7 @@ internal sealed partial class D02Driver : Node
             }
             json.WriteEndObject();
             ShellPick.Dump(json);
+            ShellLocal.Dump(json);
             // B11: the covers lines, the inspect line, the cap map's marks and the focus layers' keys.
             if (ShellJumble.Host is { } shown)
             {

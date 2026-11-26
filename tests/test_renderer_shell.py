@@ -1929,8 +1929,9 @@ class D02Rotation(unittest.TestCase):
 
     def test_the_drag_turns_the_camera_only_with_d02(self):
         shell = text(PROJECT / "Shell.cs")
-        self.assertIn("var turned = D02.ShellJumble.On && _camera.Follow(@event, InOpening);", shell)
-        self.assertIn("if (D02.ShellJumble.On && _camera.Dirty)", shell)
+        self.assertIn("var turned = D02.ShellJumble.On && Turn(@event);", shell)
+        self.assertIn("var global = _camera.Follow(input, InOpening);", shell)
+        self.assertIn("if (D02.ShellJumble.On && (_camera.Dirty || turning.Dirty))", shell)
         self.assertEqual(shell.count("SetCamera("), 1)
         camera = text(PROJECT / "D02" / "ShellCamera.cs")
         # Look Lab's drag: x-w and y-w for the 4D camera, x-z and y-z for the layout spin, 0.004 rad per pixel.
