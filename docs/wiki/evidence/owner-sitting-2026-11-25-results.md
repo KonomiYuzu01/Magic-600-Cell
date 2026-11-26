@@ -3,8 +3,8 @@ id: owner-sitting-2026-11-25-results
 type: evidence
 status: verified
 visibility: public
-summary: The owner-machine sitting of 25 November 2026, on builds from main bb416a2c (whose code equals LP4's candidate 0208e78d), on the owner's RTX 4070 Laptop GPU. The greybox flow (LP4-3) and three of CT-EV4-05's four legs ran on screen, driven by the integrator through Windows input, and every step worked. No twist is visible in the default view. U4: the renderer gate is met in W-J (60 fps, p99 16.9 ms); W3 has 2 of 3 runs. U7: the stutter under runtime loss is unchanged (38 to 58 fps, p99 55 to 61 ms). LX-2 and LX-4 read not-met. Their latencies over confirmed frames hold, and all 152 LX-4 cells meet their bars, but 15 to 18% of the measured runs' frames have no confirmed present (2 to 6% on 21 November), so E2 fails on keys without a confirmed frame. L completion and L diagnostics are about 50 ms slower. Neither cause is established. Reading (a)'s halves and the lattice replay did not run.
-related: [owner-decisions-2026-11-25, owner-decisions-2026-11-24-lp4-lp5-exit, owner-decisions-2026-11-22-c10-lp2-exit, owner-decisions-2026-11-22-lx-bars-freeze, c9-sitting-results]
+summary: The owner-machine sitting of 25 November 2026, on builds from main bb416a2c (whose code equals LP4's candidate 0208e78d), on the owner's RTX 4070 Laptop GPU. The greybox flow (LP4-3) and three of CT-EV4-05's four legs ran on screen, driven by the integrator through Windows input, and every step worked. No twist is visible in the default view. U4: the renderer gate is met in W-J (60 fps, p99 16.9 ms); W3 has 2 of 3 runs. U7: the stutter under runtime loss is unchanged (38 to 58 fps, p99 55 to 61 ms). LX-2 and LX-4 read not-met. Their latencies over confirmed frames hold, and all 152 LX-4 cells meet their bars, but 15 to 18% of the measured runs' frames have no confirmed present (2 to 6% on 21 November), so E2 fails on keys without a confirmed frame. L completion and L diagnostics are about 50 ms slower; on 26 November 2026 headless timing traced that to the editor services reading each L buffer again, and the fix removes most of it. The confirmation gap is a sampling race, traced on 26 November 2026 in presented-gap-2026-11-26. Reading (a)'s halves and the lattice replay did not run.
+related: [owner-decisions-2026-11-25, owner-decisions-2026-11-24-lp4-lp5-exit, owner-decisions-2026-11-22-c10-lp2-exit, owner-decisions-2026-11-22-lx-bars-freeze, c9-sitting-results, presented-gap-2026-11-26]
 supersedes: []
 claims:
   - {id: os1125-sitting-agreed, evidence_kind: decision, path: docs/wiki/decisions/owner-decisions-2026-11-24-lp4-lp5-exit.md, line: 90, sha256: 2fe0644a17ffabbb38978b7b39d7bcd16a1abd834dfacd3577f6a54c7c628177, checked_at: 2026-11-25}
@@ -29,6 +29,7 @@ claims:
   - {id: os1125-presented-share-tonight, evidence_kind: actual_windows_directx, path: work/experiments/owner-sitting-20261125/results/presented-share-s1125.json, sha256: f61ca64965d6da462f4d489aee501c4f4384bd3a0d49ff1dc8b104f37e205a71, checked_at: 2026-11-25}
   - {id: os1125-presented-share-c9, evidence_kind: actual_windows_directx, path: work/experiments/owner-sitting-20261125/results/presented-share-c9-20261121.json, sha256: 1f13adc7dba95db68ff7f19f9b9e100458001705355e52a48ffb9ae652dd7737, checked_at: 2026-11-25}
   - {id: os1125-chrome-off-without-env, evidence_kind: source, path: renderer/shell/project/Shell.cs, line: 124, sha256: 1a4c4c523f8f58d7a093817b49fb5d7857d1efb9f35173b291aefbc50554eda0, checked_at: 2026-11-25}
+  - {id: os1125-lx4-l-slowdown-found, evidence_kind: performance, path: work/experiments/lx4-latency-20261126/README.md, sha256: 715980aa091b970ab4c14df6cf9c464e26a6024674367d5f746f3a7a3caea876, checked_at: 2026-11-26}
 ---
 
 # Owner-machine sitting of 25 November 2026
@@ -251,8 +252,17 @@ few milliseconds of 21 November.
 
 The rise is the same in every series and with Jumble on or off. Both still meet their bars, but L completion has only
 5 ms of headroom. Between 21 November's candidate `013900ff` and `bb416a2c`, 454 files under `rust/` changed (LP4's
-and LP5's work), and so did the LX-4 library in `renderer/bridge/lx4`. Which change costs the time is not established.
-A headless timing of the L fixtures on both commits would narrow it down.
+and LP5's work), and so did the LX-4 library in `renderer/bridge/lx4`.
+
+**Update, 26 November 2026: the cause, found headless.** LP4-3 moved LX-4's library onto EV1's editor services
+(`rust/c600-editor`). Their completion read the buffer again: a parse, two lexes, and a name index that scanned every
+binding of the file for each name it resolved, about 20 ms on L alone. Their diagnostics parsed and lexed the buffer
+once more before the check. Since then the index looks names up by owner and by name, and a document shares one parse
+between completion and diagnostics; no answer changes. In headless timing of U8's fixtures through LX-4's C interface,
+the fix removes about 55% of the extra L completion time and about 63% of the extra L diagnostics time, and L syntax
+keeps its path ([records](../../../work/experiments/lx4-latency-20261126/README.md)). The rest is the new
+completion's own work: one more parse, a lex and the index. Whether the fixed L completion and diagnostics land on
+21 November's frames on screen waits for the next U8 run.
 
 ## Finding: far fewer frames are confirmed as presented
 

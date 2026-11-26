@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] update | LX-4's L slowdown found headless and fixed
+The 50 ms rise of L completion and L diagnostics in [owner-sitting-2026-11-25-results](evidence/owner-sitting-2026-11-25-results.md) is the editor services reading each L buffer again, with a name index that scanned every binding per name; the index now looks names up by owner and by name and a document shares one parse, with no answer changed, and headless timing shows most of the rise gone. The on-screen effect waits for the next U8 run.
+
 ## [2026-11-26] update | The confirmation gap's cause and the core's in-wait sample
 Recorded in [presented-gap-2026-11-26](evidence/presented-gap-2026-11-26.md) why far fewer frames were confirmed as presented at the sitting of 25 November (a sampling race that the window and desktop decide, not the build), the core's fix (one more statistics sample inside a product frame's wait) and its interleaved runs, and that the stutter in LX-2's runtime-losing faults comes from the turn key's synchronous commit.
 
