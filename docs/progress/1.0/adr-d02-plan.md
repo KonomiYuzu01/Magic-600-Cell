@@ -19,8 +19,13 @@ I_a@40 stop), the seam-face mesh size (0.59 to 0.66 million triangles at the dee
 drawings of the deep exports in both Global layouts, stand-ins for L1 and not Look Lab output. Following the owner's
 direction that open research is ADR-D02's core ("开放式研究是D02的核心"), it recommends the freer option inside the
 frozen frame at items 1, 3 and 12. Item 13, who builds the ADR-D02 and ADR-D03 shells, was settled by the owner the
-same day: Fable writes the build framework, Opus builds, on the subscription. The owner's picks are awaited; the page,
-data and scripts stay private in the main checkout's `work/adr-d02/a4/`.
+same day: Fable writes the build framework, Opus builds, on the subscription. The page, data and scripts stay private
+in the main checkout's `work/adr-d02/a4/`.
+
+A4 answered, 26 November 2026: every recommended option except item 9 (Q3.b, the owner's reading of the frozen J-7
+and N-1) and item 12c (the base targets: at most 3,000 hours of real time for an expert full solve without jumbling;
+substantive progress on restoration theory for the jumbled puzzle); recorded in
+[the decision page](../../wiki/decisions/owner-decisions-2026-11-26-adr-d02-a4.md). The ADR text follows.
 
 Inputs:
 - The owner decisions on ADR-D02:
