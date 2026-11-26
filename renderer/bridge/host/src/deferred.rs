@@ -21,13 +21,15 @@ use c600_display::produce::{self, GeometryInput};
 use c600_display::validate::{CheckedBundle, CheckedPublication, Context};
 
 use crate::turns::Head;
-use crate::{adoption, host_error, publication, Failure, M6H_E_HOST};
+use crate::{adoption, host_error, local_publication, publication, Failure, M6H_E_HOST};
 
 /// A head to build at an engine revision, with the host context the frame thread had when it asked.
 pub(crate) struct Job {
     pub revision: u64,
     pub head: Head,
     pub ctx: Context,
+    /// Whether Local is open (ADR-D02 B18b): its publication is checked too.
+    pub local: bool,
 }
 
 /// A head built and checked at its engine revision: what the host's frame thread adopts (`ShellHost::install`).
@@ -43,6 +45,8 @@ pub(crate) struct Built {
     /// The publication checked against the context it will be published under, or `None` when that check refused it:
     /// the frame thread then publishes it unchecked, and the display host refuses it there as before.
     pub checked: Option<CheckedPublication>,
+    /// Local's publication checked as `checked` is, when the job's Local was open (ADR-D02 B18b).
+    pub checked_local: Option<CheckedPublication>,
 }
 
 /// The host context for a head under `identity` that is not the current context's block: the puzzle's declared
@@ -61,24 +65,32 @@ pub(crate) fn context_for(geometry: &GeometryInput, head: &Head, base: &Revision
 /// publication and its check against the context it will be published under. A bundle that does not check, and a head
 /// that builds none, answer [`M6H_E_HOST`] as the display host's refusal did.
 pub(crate) fn build(geometry: &GeometryInput, job: Job) -> Result<Built, Failure> {
-    let Job { revision, head, ctx } = job;
+    let Job { revision, head, ctx, local } = job;
     let (base, bundle, primitive) = adoption(geometry, &head, revision)?;
     let new_ctx = (base.identity != ctx.identity).then(|| context_for(geometry, &head, &base, &ctx));
     let publication = publication(geometry, primitive, &base);
     let publish_ctx = new_ctx.as_ref().unwrap_or(&ctx);
-    // The two checks read nothing in common, so they run side by side; without a second thread they run in turn.
-    let (bundle, checked) = std::thread::scope(|scope| {
-        let check = || CheckedPublication::check(publication.clone(), publish_ctx).ok();
-        let side = std::thread::Builder::new().name("c600-shell-adoption-check".to_owned()).spawn_scoped(scope, check);
+    let local = local.then(|| local_publication(&publication));
+    // The checks read nothing in common, so they run side by side; without another thread they run in turn.
+    let (bundle, checked, checked_local) = std::thread::scope(|scope| {
+        let check = |publication: &Publication| CheckedPublication::check(publication.clone(), publish_ctx).ok();
+        let named = || std::thread::Builder::new().name("c600-shell-adoption-check".to_owned());
+        let view = &publication;
+        let side = named().spawn_scoped(scope, move || check(view));
+        let side_local = local.as_ref().map(|local| (local, named().spawn_scoped(scope, move || check(local))));
         let bundle = CheckedBundle::check(bundle);
         let checked = match side {
             Ok(side) => side.join().unwrap_or(None),
-            Err(_) => check(),
+            Err(_) => check(&publication),
         };
-        (bundle, checked)
+        let checked_local = side_local.and_then(|(local, side)| match side {
+            Ok(side) => side.join().unwrap_or(None),
+            Err(_) => check(local),
+        });
+        (bundle, checked, checked_local)
     });
     let bundle = bundle.map_err(host_error)?;
-    Ok(Built { revision, digest: head.digest(), ctx: new_ctx, bundle, publication, checked })
+    Ok(Built { revision, digest: head.digest(), ctx: new_ctx, bundle, publication, checked, checked_local })
 }
 
 /// One built job: its engine revision and its outcome.

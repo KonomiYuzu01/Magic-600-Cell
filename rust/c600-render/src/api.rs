@@ -1,8 +1,11 @@
-//! The core's product calls as a safe Rust interface: one method per ABI 5 product call, with slices where the C
+//! The core's product calls as a safe Rust interface: one method per ABI 8 product call, with slices where the C
 //! structs carry pointers. `DllCore` in `renderer/bridge` (`c600-render-ffi`) implements it over the C functions;
 //! [`crate::fake::FakeCore`] implements it in Rust for headless tests.
 
-use crate::abi::{Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2PickRow, Sa2PollRow, Sa2PresentedRow, Status};
+use crate::abi::{
+    Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2Pane, Sa2PaneRow, Sa2PickRow, Sa2PollRow, Sa2PresentedRow,
+    Sa2ViewShape, Sa2ViewStyle, Status,
+};
 
 /// The pose path arrays of a posed engine state.
 #[derive(Clone, Copy, Debug)]
@@ -77,4 +80,16 @@ pub trait CoreAbi {
     fn device_status(&self) -> (Status, i32);
     /// `sa2_last_error` of the context.
     fn last_error(&self) -> String;
+    /// ABI 6's `sa2_view_shape_set`: the shape of `view`'s frames, or `None` for the defaults (ABI 5's constants).
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status>;
+    /// ABI 7's `sa2_style_set`: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear
+    /// it.
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status>;
+    /// ABI 7's `sa2_view_style_set`: style slot 1 to 4, or `None` to clear it.
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status>;
+    /// ABI 8's `sa2_frame_submit_panes`: a composite frame of 1 to `PANES_MAX` panes; the frame ID.
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status>;
+    /// ABI 8's `sa2_frame_panes`: a produced composite frame's panes, the first `rows.len()` of them written; the
+    /// frame's pane count.
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status>;
 }

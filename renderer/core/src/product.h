@@ -22,6 +22,10 @@ static_assert(sizeof(sa2_frame_report) == 104);
 static_assert(sizeof(sa2_presented_row) == 56);
 static_assert(sizeof(sa2_pick_row) == 112);
 static_assert(sizeof(sa2_counter_values) == 64);
+static_assert(sizeof(sa2_view_shape) == 24);
+static_assert(sizeof(sa2_view_style) == 316);
+static_assert(sizeof(sa2_pane) == 112);
+static_assert(sizeof(sa2_pane_row) == 32);
 
 namespace sa2 {
 using Digest = std::array<uint8_t, 32>;
@@ -87,6 +91,35 @@ struct PreparedData {
     uint64_t bytes() const { return uint64_t(visible.size() + instances.size()) * 4; }
 };
 PreparedData preparation(const sa2_preparation* preparation); // validates and copies
+// ABI 6: the shape a view's frames draw with (sa2_view_shape_set). The defaults are ABI 5's constants, so a view whose
+// shape was never set draws exactly as before.
+struct ViewShape {
+    float cell_shrink = SA2_SHAPE_DEFAULT_CELL_SHRINK, sticker_shrink = SA2_SHAPE_DEFAULT_STICKER_SHRINK;
+    float d4 = SA2_SHAPE_DEFAULT_D4, zoom = SA2_SHAPE_DEFAULT_ZOOM;
+    bool operator==(const ViewShape&) const = default;
+};
+ViewShape view_shape(const sa2_view_shape* shape); // validates (SA2_E_INVALID_ARGUMENT); NULL gives the defaults
+// ABI 7: a style slot (sa2_view_style_set), as the styled pass reads it (register b1): 16 palette entries, the three
+// matrix rows (xyz), then the modes. 320 bytes, inside one 256-byte-aligned constant buffer.
+struct ViewStyle {
+    std::array<float, 64> palette{};
+    std::array<float, 12> rows{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
+    uint32_t tint_mode = 0, dim_mode = 0;
+    float dim_amount = 0, outline_width = 0;
+    uint32_t matrix_on = 0, pad[3]{};
+    bool operator==(const ViewStyle&) const = default;
+};
+static_assert(sizeof(ViewStyle) == 336);
+ViewStyle view_style(const sa2_view_style* style); // validates (SA2_E_INVALID_ARGUMENT)
+// ABI 7: one revision's piece style, packed per piece as the styled pass reads it (register t17): the fill byte, then
+// the outline byte << 8.
+struct PieceStyle {
+    uint64_t revision = 0, version = 0; // version: the style's upload key, never 0
+    std::vector<uint32_t> packed; // SA2_PIECES
+    std::array<bool, 2> any{}; // per channel: a non-zero byte
+    bool dim = false; // a fill byte has SA2_STYLE_DIM
+};
+void validate_piece_style(const uint8_t* bytes, uint32_t channel); // SA2_E_INVALID_ARGUMENT
 void validate_frame_input(const sa2_frame_input* input);
 void validate_cancel(int32_t reason, uint64_t superseded_by);
 template<class Row> void validate_rows(const Row* rows, uint32_t capacity) {
@@ -95,6 +128,15 @@ template<class Row> void validate_rows(const Row* rows, uint32_t capacity) {
         scene_require(rows[i].struct_size == sizeof(Row), "a row's struct_size is not sizeof the row", SA2_E_INVALID_ARGUMENT);
 }
 
+// ABI 8: one pane of a composite frame as planned: its row, resource set ticket, shape and style.
+struct PanePlan {
+    sa2_pane pane{};
+    uint64_t set_ticket = 0;
+    uint64_t publication_generation = 0; // the pane's set's (the frame's for the first pane)
+    ViewShape shape;
+    bool styled = false;
+    ViewStyle view_style;
+};
 // What a frame draws: the engine ring copy (uploaded first when upload is
 // set, after a CPU wait for upload_wait, the frame that last read the copy's
 // staging), the pose path and the resource set (0: every slot drawn, no
@@ -106,12 +148,24 @@ struct FramePlan {
     const EngineImage* image = nullptr;
     uint32_t pose_count = 0;
     uint64_t set_ticket = 0;
+    ViewShape shape; // ABI 6: the frame's view's shape
+    // ABI 7: the revision's piece style (null: none; uploaded with the copy, whose key includes style_version) and,
+    // when the frame draws styled, its slot's style.
+    const std::vector<uint32_t>* style = nullptr;
+    uint64_t style_version = 0;
+    bool styled = false;
+    ViewStyle view_style;
+    std::vector<PanePlan> panes; // ABI 8: a composite frame's panes; empty for a one-view frame
 };
-// An ID pass: the frame's camera, viewport, engine copy and resource set.
+// An ID pass: the frame's camera, viewport, engine copy, resource set and (ABI 6) shape.
 struct PassInput {
     std::array<float, 16> camera{};
     uint32_t width = 0, height = 0, x = 0, y = 0, copy = 0, pose_count = 0;
     uint64_t set_ticket = 0;
+    ViewShape shape;
+    // ABI 8: a composite frame's pane: the viewport's origin and size in the scene-size ID target (0: the whole target).
+    int32_t origin_x = 0, origin_y = 0;
+    uint32_t view_width = 0, view_height = 0;
 };
 struct PickPlan {
     uint64_t frame = 0;
@@ -119,6 +173,7 @@ struct PickPlan {
     uint32_t stale = 0;
     bool pass = false;
     PassInput input;
+    int32_t pane = -1; // ABI 8: the composite frame's pane that holds the point
 };
 struct Counters {
     uint64_t evals_last = 0, evals_total = 0, bytes_uploaded = 0, frames_submitted = 0, frames_reported = 0, id_passes = 0, reports_dropped = 0;
@@ -220,6 +275,17 @@ public:
     uint64_t adopt(EngineImage image); // revisions increase strictly; no GPU work; works after device loss (RM.16)
     const EngineImage* image() const { return image_ ? &*image_ : nullptr; }
 
+    // ABI 6: a view's shape; the defaults until it is set. Kept across a recovery.
+    void set_shape(uint64_t view, const ViewShape& shape);
+    ViewShape shape(uint64_t view) const;
+    // ABI 7: the adopted revision's piece style (a channel, or null to clear it) and the style slots. Kept across a
+    // recovery; an adoption drops the piece style.
+    void set_style(uint64_t revision, const uint8_t* bytes, uint32_t channel);
+    void set_view_style(uint32_t slot, const sa2_view_style* style);
+    const PieceStyle* piece_style() const { return style_ ? &*style_ : nullptr; }
+    // Whether a frame with this slot draws styled, and with what (false: the unchanged product pipeline).
+    bool styled(uint32_t slot, ViewStyle& out) const;
+
     void check_prepare(const PreparedData& data) const; // removal, epoch, GPU capacity
     uint64_t reserve_ticket() { return next_ticket_++; }
     void prepared(uint64_t ticket, const PreparedData& data, uint64_t fence); // the upload signals fence
@@ -233,6 +299,11 @@ public:
     std::vector<uint64_t> releasable(uint64_t frames_completed, uint64_t product_completed);
 
     FramePlan plan(const sa2_frame_input& input, uint32_t width, uint32_t height) const;
+    // ABI 8: a composite frame's plan (sa2_frame_submit_panes): the one-view plan of the frame input, then each pane's
+    // checks, set, shape and style. commit records the panes; pane_evals and pane_rows answer sa2_frame_panes.
+    FramePlan plan_panes(const sa2_frame_input& input, const sa2_pane* panes, uint32_t count, uint32_t width, uint32_t height) const;
+    void pane_evals(uint64_t frame, const std::vector<uint64_t>& evals);
+    uint32_t pane_rows(uint64_t frame, sa2_pane_row* rows, uint32_t capacity) const;
     void commit(const sa2_frame_input& input, const FramePlan& plan, uint64_t frame, uint32_t ring);
     uint64_t unharvested(uint32_t ring) const { return ring < unharvested_.size() ? unharvested_[ring] : 0; }
     void produced(uint64_t frame, uint64_t gpu_ns, uint64_t evals, int32_t error = SA2_OK);
@@ -263,11 +334,14 @@ private:
         bool visible() const { return !retired; }
         bool ended() const { return state == SA2_TICKET_CANCELLED || state == SA2_TICKET_FAILED; }
     };
-    struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; };
+    struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; uint64_t style = 0; };
+    struct PaneRecord { sa2_pane pane{}; uint64_t set_ticket = 0, evals = 0, publication_generation = 0; ViewShape shape; };
     struct Frame {
         sa2_frame_input input{};
+        std::vector<PaneRecord> panes; // ABI 8: a composite frame's panes
         uint64_t id = 0, target_generation = 0, set_ticket = 0;
         uint32_t ring = 0, copy = 0;
+        ViewShape shape; // ABI 6: the shape the frame drew with, for its picks
         bool produced = false, reported = false;
         int32_t error = SA2_OK;
         uint64_t gpu_ns = 0, evals = 0;
@@ -282,6 +356,8 @@ private:
     Entry* set_entry(uint64_t set);
     const Entry* set_entry(uint64_t set) const;
     const Frame* frame(uint64_t id) const;
+    static sa2_frame_input pane_binding(const Frame& record, int32_t pane); // ABI 8
+    PickPlan pick_pane(const Frame& record, PickPlan out) const; // ABI 8
     uint32_t stale(const sa2_frame_input& binding, uint64_t target_generation) const;
     void require_live() const;
     void trim();
@@ -299,6 +375,10 @@ private:
     std::array<uint64_t, SA2_RING_SLOTS> unharvested_{};
     std::map<uint64_t, std::pair<uint64_t, uint64_t>> surfaces_; // surface -> (last sequence, newest surface_generation)
     std::map<uint64_t, uint64_t> views_; // view -> newest view_generation
+    std::map<uint64_t, ViewShape> shapes_; // ABI 6: view -> shape, for views whose shape is not the default
+    std::optional<PieceStyle> style_; // ABI 7: the adopted revision's piece style
+    uint64_t style_version_ = 0;
+    std::array<std::optional<ViewStyle>, SA2_STYLE_SLOTS> view_styles_; // ABI 7: slots 1..4
     std::map<uint64_t, Pick> picks_;
     Counters counters_;
 };

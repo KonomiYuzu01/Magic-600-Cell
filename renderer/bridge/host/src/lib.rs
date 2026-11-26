@@ -14,6 +14,14 @@
 //! Drafts that the sources leave open, each to be replaced by LP3's parts:
 //! - One view, which shows the adopted state as one retained publication of every slot, visible and interactive.
 //!   There is no picking or preview yet.
+//! - Two views (ADR-D02 B18b, version 11, a candidate behind the shell's --d02): [`m6h_open_local`] opens Local
+//!   ([`LOCAL`]) beside the view ([`VIEW`], Global). Each adoption publishes every open view from the same bundle, a
+//!   preparation per view. With panes set ([`m6h_set_pane`]), [`m6h_frame`] draws them as one composite frame (the
+//!   core's ABI 8), and only when every drawn pane's view shows the adopted revision; until then it submits nothing
+//!   and the surface keeps the last frame ([`M6hFrame::held`]), so a frame never mixes two revisions. A hidden Local
+//!   ([`m6h_set_view_visible`]) gets no pane and no draw. With no pane set, frames are the one-view frames of before.
+//!   Picks per view (B17) are not built: a pick on a composite frame will take surface coordinates and answer the
+//!   view whose pane holds the point, beside [`m6h_frame`].
 //! - The adopted state starts as the shipped model's solved state at engine revision [`ENGINE_REVISION`]. With a
 //!   session open ([`m6h_open_session`], charter E2), each twist key the shell routes ([`m6h_key_down`]) that commits
 //!   the puzzle's twist row (the [`turns`] module) adopts the layer's new head at the next engine revision and
@@ -93,8 +101,11 @@ use c600_display::validate::{BoundArray, CheckedPublication, EngineBundle, Limit
 use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
-use c600_render::abi::TARGET_SURFACE;
-use c600_render::{DisplayTime, RenderBackend};
+use c600_render::abi::{
+    piece_style_valid, Sa2Pane, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES, STYLE_CHANNEL_FILL,
+    STYLE_CHANNEL_OUTLINE, STYLE_SLOTS, TARGET_SURFACE,
+};
+use c600_render::{DisplayTime, PaneSpec, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
 
@@ -112,8 +123,12 @@ use turns::{Head, Pending, Press, Puzzle, Turns};
 /// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
 /// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs; version 5
 /// the session's puzzle; version 6 the preload; version 7 LP4-3's write-check-run flow; version 8 the head's state
-/// digests ([`m6h_state_digest`], ADR-D02 B5).
-pub const M6H_ABI_VERSION: u32 = 8;
+/// digests ([`m6h_state_digest`], ADR-D02 B5); version 9 a view's shape ([`m6h_set_view_shape`], ADR-D02, over the
+/// core's ABI 6); version 10 the piece style and the style slots ([`m6h_set_piece_style`], [`m6h_set_view_style`],
+/// ADR-D02 B14, over the core's ABI 7); version 11 Local and the composite frame ([`m6h_open_local`],
+/// [`m6h_set_view_camera`], [`m6h_set_view_visible`], [`m6h_set_pane`], [`m6h_clear_pane`] and [`M6hFrame`]'s pane
+/// count and held flag, ADR-D02 B18b, over the core's ABI 8).
+pub const M6H_ABI_VERSION: u32 = 11;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -167,8 +182,12 @@ pub const M6H_VIEW_KIND_RUN: u32 = 0;
 /// [`M6hViewResult::kind`]: a draft of [`m6h_view_draft`].
 pub const M6H_VIEW_KIND_DRAFT: u32 = 1;
 
-/// The one view of the draft.
+/// The one view of the draft: Global.
 pub const VIEW: ViewId = ViewId(1);
+/// Local, the second view (ADR-D02 B18b; [`m6h_open_local`]).
+pub const LOCAL: ViewId = ViewId(2);
+/// The panes of a composite frame ([`m6h_set_pane`]; the core's `SA2_PANES_MAX`).
+pub const M6H_PANES_MAX: u32 = 4;
 /// The engine revision of the adopted state.
 pub const ENGINE_REVISION: u64 = 1;
 /// The declared limit profile of the draft, not a measured one.
@@ -200,7 +219,15 @@ pub struct M6hFrame {
     pub engine_revision: u64,
     /// The engine revision of the publication the frame draws, or 0 when it draws none.
     pub publication_revision: u64,
+    /// The panes of a composite frame (version 11), or 0 for a one-view frame.
+    pub panes: u32,
+    /// 1 when no frame was submitted because a drawn pane's view did not show the adopted revision yet (version 11):
+    /// the surface keeps the last frame, which the other fields name (all 0 before the first frame).
+    pub held: u32,
 }
+
+const _: () = assert!(std::mem::size_of::<M6hFrame>() == 48);
+const _: () = assert!(M6H_PANES_MAX == PANES_MAX);
 
 /// What [`m6h_key_down`] did with one key-down.
 #[repr(C)]
@@ -303,6 +330,15 @@ pub struct ShellHost {
     runtime: Option<(Runtime, PathBuf)>,
     /// The command of the newest reference publication ([`ShellHost::publish`]).
     reference: Option<CommandId>,
+    /// ADR-D02 B18b: whether Local is open (it is never closed) and drawn, and the command of its newest reference
+    /// publication.
+    local_open: bool,
+    local_visible: bool,
+    local_reference: Option<CommandId>,
+    /// ADR-D02 B18b: the pane table, by pane index ([`m6h_set_pane`]); empty for one-view frames.
+    panes: [Option<Pane>; M6H_PANES_MAX as usize],
+    /// The last frame submitted, which a held frame names.
+    last_frame: M6hFrame,
     views: view::Views,
     presented: VecDeque<M6hPresented>,
     /// The engine's pending preview the view shows ([`ShellHost::sync_preview`]).
@@ -319,6 +355,24 @@ pub struct ShellHost {
 struct Shown {
     pending: Pending,
     display: u64,
+}
+
+/// One pane of the pane table: a view drawn into a rectangle of the surface, in surface pixels, with a style slot.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Pane {
+    view: ViewId,
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+    style: u32,
+}
+
+impl Pane {
+    /// The rectangle as the core's pane, for its geometry checks.
+    fn rect(&self) -> Sa2Pane {
+        Sa2Pane { x: self.x, y: self.y, width: self.width, height: self.height, ..Sa2Pane::default() }
+    }
 }
 
 type Failure = (i32, String);
@@ -414,6 +468,11 @@ pub fn publication(geometry: &GeometryInput, primitive: Primitive, base: &Revisi
     }
 }
 
+/// `publication` for Local: the same plans and maps, targeted at [`LOCAL`] (ADR-D02 B18b).
+pub fn local_publication(publication: &Publication) -> Publication {
+    Publication { target: LOCAL, ..publication.clone() }
+}
+
 impl ShellHost {
     fn create(core: DllCore, loads: Preload) -> Result<ShellHost, Failure> {
         let Preload { assets, kernel, geometry, exact } = loads;
@@ -449,6 +508,11 @@ impl ShellHost {
             check: String::new(),
             runtime: None,
             reference: None,
+            local_open: false,
+            local_visible: false,
+            local_reference: None,
+            panes: [None; M6H_PANES_MAX as usize],
+            last_frame: M6hFrame::default(),
             views: view::Views::default(),
             presented: VecDeque::new(),
             shown: None,
@@ -463,7 +527,7 @@ impl ShellHost {
     /// Adopts `head` at engine revision `revision`, which must follow the adopted one, on the calling thread: builds
     /// and checks it as the adoption worker does ([`deferred::build`]), then installs it ([`ShellHost::install`]).
     fn adopt(&mut self, head: &Head, revision: u64) -> Result<u64, Failure> {
-        let job = deferred::Job { revision, head: head.clone(), ctx: self.host.ctx.clone() };
+        let job = deferred::Job { revision, head: head.clone(), ctx: self.host.ctx.clone(), local: self.local_open };
         let built = deferred::build(&self.geometry, job)?;
         self.install(built)
     }
@@ -476,7 +540,7 @@ impl ShellHost {
     /// `KN7:cancelled.revision_replaced` ([`ShellHost::replace_runs`]). While the device is lost the publication waits
     /// for [`m6h_recover`], which publishes it. A host or core that refuses the bundle changes nothing.
     fn install(&mut self, built: deferred::Built) -> Result<u64, Failure> {
-        let deferred::Built { revision, digest, ctx, bundle, publication, checked } = built;
+        let deferred::Built { revision, digest, ctx, bundle, publication, checked, checked_local } = built;
         if revision <= self.revision {
             return Err((M6H_E_HOST, format!("engine revision {revision} does not follow {}", self.revision)));
         }
@@ -500,10 +564,15 @@ impl ShellHost {
             Some(checked) => self.publish_checked(checked),
             None => self.publish(),
         };
-        match published {
-            Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => Ok(revision),
-            Err(failure) => Err(failure),
+        // ADR-D02 B18b: Local is published from the same adoption, so both views reach the revision together.
+        let local = if self.local_open { self.publish_local(checked_local) } else { Ok(()) };
+        for result in [published, local] {
+            match result {
+                Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => {}
+                Err(failure) => return Err(failure),
+            }
         }
+        Ok(revision)
     }
 
     /// A twist key changed the session's head: hands `head` to the adoption worker at the engine revision after the
@@ -511,7 +580,7 @@ impl ShellHost {
     /// this thread. Without a worker (its thread did not start or has ended) the head is built and installed here.
     fn defer(&mut self, head: Head) -> Result<u64, Failure> {
         let revision = self.assigned + 1;
-        let job = deferred::Job { revision, head, ctx: self.host.ctx.clone() };
+        let job = deferred::Job { revision, head, ctx: self.host.ctx.clone(), local: self.local_open };
         if self.adoptions.is_none() {
             self.adoptions = deferred::Worker::start(&self.geometry);
         }
@@ -581,21 +650,38 @@ impl ShellHost {
     /// Publishes the view's publication under a new command and starts its preparation.
     fn publish(&mut self) -> Result<(), Failure> {
         let publication = self.publication.clone();
-        self.publish_by(|host, command| host.publish(command, publication))
+        self.publish_by(VIEW, |host, command| host.publish(command, publication))
+    }
+
+    /// ADR-D02 B18b: publishes Local's publication of the adopted revision under a new command, checked off the frame
+    /// thread when `checked` holds its check ([`deferred::build`]).
+    fn publish_local(&mut self, checked: Option<CheckedPublication>) -> Result<(), Failure> {
+        match checked {
+            Some(checked) => self.publish_by(LOCAL, |host, command| host.publish_checked(command, checked)),
+            None => {
+                let publication = local_publication(&self.publication);
+                self.publish_by(LOCAL, |host, command| host.publish(command, publication))
+            }
+        }
     }
 
     /// [`ShellHost::publish`] of the view's publication checked off the frame thread ([`deferred::build`]).
     fn publish_checked(&mut self, checked: CheckedPublication) -> Result<(), Failure> {
-        self.publish_by(|host, command| host.publish_checked(command, checked))
+        self.publish_by(VIEW, |host, command| host.publish_checked(command, checked))
     }
 
     fn publish_by(
         &mut self,
+        view: ViewId,
         publish: impl FnOnce(&mut Host<RenderBackend<DllCore>>, CommandId) -> HostReceipt,
     ) -> Result<(), Failure> {
         let command = CommandId(self.next_command);
         self.next_command += 1;
-        self.reference = Some(command);
+        if view == LOCAL {
+            self.local_reference = Some(command);
+        } else {
+            self.reference = Some(command);
+        }
         let receipt = publish(&mut self.host, command);
         match receipt.status {
             CommandStatus::Refused(error) | CommandStatus::Failed(error) => Err(host_error(error)),
@@ -643,6 +729,105 @@ impl ShellHost {
         self.host.show_preview(VIEW, display).map_err(host_error)?;
         self.shown = want.map(|pending| Shown { pending, display: base.state });
         Ok(())
+    }
+
+    /// Today's one-view frame of the view (no pane set).
+    fn frame_one(&mut self) -> Result<M6hFrame, Failure> {
+        let stamp = self.host.frame(VIEW).map_err(host_error)?;
+        let _ = self.host.backend.read_frame_reports();
+        let drawn = match self.host.installed(VIEW) {
+            Some(installed) if stamp.publication_generation != 0 => {
+                let command =
+                    if installed.generation == stamp.publication_generation { installed.command.0 } else { 0 };
+                Some((installed.publication.base.state, command))
+            }
+            _ => None,
+        };
+        let (publication_revision, command) = drawn.unwrap_or((0, 0));
+        let stale = self.host.stale(VIEW);
+        self.views.submitted(stamp.sequence, command, stale);
+        let frame = M6hFrame {
+            sequence: stamp.sequence,
+            device_epoch: stamp.device_epoch,
+            surface: stamp.surface,
+            engine_revision: stamp.engine_revision,
+            publication_revision,
+            panes: 0,
+            held: 0,
+        };
+        self.last_frame = frame;
+        Ok(frame)
+    }
+
+    /// ADR-D02 B18b: the composite frame of the pane table's drawn panes (a hidden Local's are skipped), in pane order,
+    /// when every drawn pane's view shows its installed publication of the adopted revision; otherwise nothing is
+    /// submitted and the last frame is named as held. A pane outside the surface (after a resize) answers
+    /// [`M6H_E_INVALID_ARGUMENT`]; a view whose publication has no resources on the device yet, [`M6H_E_UNAVAILABLE`].
+    fn frame_panes(&mut self) -> Result<M6hFrame, Failure> {
+        let viewport = self.host.view(VIEW).map_or((0, 0), |v| v.viewport);
+        let local_visible = self.local_visible;
+        let drawn: Vec<Pane> =
+            self.panes.iter().flatten().copied().filter(|pane| pane.view == VIEW || local_visible).collect();
+        if drawn.iter().any(|pane| !pane.rect().inside(viewport)) {
+            return Err((
+                M6H_E_INVALID_ARGUMENT,
+                "a pane lies outside the surface; set the panes again after a resize".to_owned(),
+            ));
+        }
+        let adopted = self.host.adopted().state;
+        let mut specs = Vec::with_capacity(drawn.len());
+        for pane in &drawn {
+            let Some(view) = self.host.view(pane.view).filter(|v| v.open) else { break };
+            let installed = self.host.installed(pane.view).filter(|i| i.view_generation == view.generation);
+            match installed {
+                Some(i) if !i.available => {
+                    return Err((M6H_E_UNAVAILABLE, "a pane's view has no resources on this device yet".to_owned()));
+                }
+                Some(i) if i.publication.base.state == adopted => specs.push(PaneSpec {
+                    view: pane.view,
+                    view_generation: view.generation,
+                    publication_generation: i.generation,
+                    camera: view.camera,
+                    x: pane.x,
+                    y: pane.y,
+                    width: pane.width,
+                    height: pane.height,
+                    style: pane.style,
+                }),
+                _ => break,
+            }
+        }
+        if drawn.is_empty() || specs.len() < drawn.len() {
+            return Ok(M6hFrame { panes: drawn.len() as u32, held: 1, ..self.last_frame });
+        }
+        let first = specs[0].view;
+        self.host.backend.set_panes(specs);
+        let stamp = self.host.frame(first);
+        self.host.backend.set_panes(Vec::new());
+        let stamp = stamp.map_err(host_error)?;
+        let _ = self.host.backend.read_frame_reports();
+        // The view jobs' notes are about the view: only a frame that drew it is noted.
+        if drawn.iter().any(|pane| pane.view == VIEW) {
+            let command = self.host.installed(VIEW).map_or(0, |installed| installed.command.0);
+            let stale = self.host.stale(VIEW);
+            self.views.submitted(stamp.sequence, command, stale);
+        }
+        let frame = M6hFrame {
+            sequence: stamp.sequence,
+            device_epoch: stamp.device_epoch,
+            surface: stamp.surface,
+            engine_revision: stamp.engine_revision,
+            publication_revision: adopted,
+            panes: drawn.len() as u32,
+            held: 0,
+        };
+        self.last_frame = frame;
+        Ok(frame)
+    }
+
+    /// Whether `view` is a view of this host that a call may name: the view, or Local once it is open.
+    fn names_open_view(&self, view: ViewId) -> bool {
+        view == VIEW || (view == LOCAL && self.local_open)
     }
 
     /// The command layer's report of a confirmed frame (RM.26): its stamp, and the preview its row names, with the
@@ -949,7 +1134,8 @@ pub unsafe extern "C" fn m6h_set_camera(handle: *mut ShellHost, matrix: *const f
     }
 }
 
-/// Sets the view's viewport in pixels; it must equal the surface's size, which the shell sets with `sa2_resize`.
+/// Sets the view's viewport in pixels; it must equal the surface's size, which the shell sets with `sa2_resize`. An
+/// open Local takes the same viewport, and panes must lie inside it.
 ///
 /// # Safety
 ///
@@ -960,6 +1146,285 @@ pub unsafe extern "C" fn m6h_set_viewport(handle: *mut ShellHost, width: u32, he
     unsafe {
         with_host(handle, |shell| {
             shell.host.set_viewport(VIEW, (width, height));
+            if shell.local_open {
+                shell.host.set_viewport(LOCAL, (width, height));
+            }
+            Ok(())
+        })
+    }
+}
+
+/// Sets the shape that `view`'s frames draw with (version 9, ADR-D02; the core's ABI 6 `sa2_view_shape_set`):
+/// `shape` points to four floats, the cell shrink, the sticker shrink, d4 and the zoom, or is null for the defaults,
+/// the core's ABI 5 constants, which a view keeps until this call. A view that is not open, or a value that is not
+/// finite or lies outside the core's range, answers [`M6H_E_INVALID_ARGUMENT`] and changes nothing. The core keeps
+/// the shape across a recovery.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `shape` is null or points to 4 readable floats.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_view_shape(handle: *mut ShellHost, view: u64, shape: *const f32) -> i32 {
+    let shape = (!shape.is_null()).then(|| {
+        // SAFETY: 4 readable floats (the contract); no alignment is assumed.
+        let [cell_shrink, sticker_shrink, d4, zoom] = unsafe { ptr::read_unaligned(shape.cast::<[f32; 4]>()) };
+        Sa2ViewShape { cell_shrink, sticker_shrink, d4, zoom, ..Sa2ViewShape::new() }
+    });
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let id = ViewId(view);
+            if !shell.names_open_view(id) {
+                return Err((M6H_E_INVALID_ARGUMENT, format!("view {view} is not an open view of this host")));
+            }
+            if shape.is_some_and(|s| !s.in_range()) {
+                return Err((
+                    M6H_E_INVALID_ARGUMENT,
+                    "a view shape value is not finite or out of its range".to_owned(),
+                ));
+            }
+            shell.host.backend.set_view_shape(id, shape).map_err(host_error)
+        })
+    }
+}
+
+/// Sets one channel of the adopted revision's piece style (version 10, ADR-D02 B14; the core's ABI 7 `sa2_style_set`):
+/// `channel` 0 is the fill (a palette entry in the low four bits, bit 7 the dim set) and 1 the outline (a palette
+/// entry). With `by_pose` 0, `styles` holds one byte per piece (`count` = 177,120). With `by_pose` 1 it holds one byte
+/// per pose of the session's head, which must be the adopted revision, and the host expands it to pieces with the
+/// head's own pose index; a head that is not adopted yet answers [`M6H_E_UNAVAILABLE`] (set it again once the
+/// revision is shown), and a session without Jumble [`M6H_E_SESSION`]. A null `styles` with `count` 0 clears the
+/// channel. The core drops the style at the next adoption, so the shell sets it again for each revision. A wrong
+/// count or a byte with bits outside the channel's answers [`M6H_E_INVALID_ARGUMENT`] and changes nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `styles` is null or points to `count` readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_piece_style(
+    handle: *mut ShellHost,
+    channel: u32,
+    styles: *const u8,
+    count: u32,
+    by_pose: u32,
+) -> i32 {
+    // SAFETY: `count` readable bytes (the contract).
+    let bytes = (!styles.is_null()).then(|| unsafe { std::slice::from_raw_parts(styles, count as usize) });
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let revision = shell.revision;
+            let pieces = match (bytes, by_pose) {
+                (None, 0 | 1) if count == 0 => None,
+                (Some(bytes), 0) if bytes.len() == PIECES => Some(bytes.to_vec()),
+                (Some(bytes), 1) => {
+                    let adopted = shell.digests.get(&revision).cloned().unwrap_or_default();
+                    let (digest, index) = shell.turns()?.pose_index().map_err(|e| (M6H_E_SESSION, e))?;
+                    let (ids, poses) = index
+                        .ok_or_else(|| (M6H_E_SESSION, "a per-pose style needs a session with Jumble on".to_owned()))?;
+                    if digest != adopted {
+                        return Err((
+                            M6H_E_UNAVAILABLE,
+                            "the session's head is not the adopted revision yet".to_owned(),
+                        ));
+                    }
+                    if bytes.len() != poses {
+                        return Err((M6H_E_INVALID_ARGUMENT, format!("{} bytes for {poses} poses", bytes.len())));
+                    }
+                    Some(ids.iter().map(|&id| bytes[id as usize]).collect())
+                }
+                _ => {
+                    return Err((
+                        M6H_E_INVALID_ARGUMENT,
+                        "a piece style is null with count 0, or one byte per piece or pose".to_owned(),
+                    ))
+                }
+            };
+            if pieces.as_deref().is_some_and(|bytes| !piece_style_valid(bytes, channel))
+                || (channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE)
+            {
+                return Err((
+                    M6H_E_INVALID_ARGUMENT,
+                    "a channel is 0 or 1, and its bytes use only its bits".to_owned(),
+                ));
+            }
+            shell.host.backend.set_piece_style(revision, pieces.as_deref(), channel).map_err(host_error)
+        })
+    }
+}
+
+/// Sets style slot `slot` (1 to 4; a one-view frame uses slot 1), or clears it with a null `style` (version 10,
+/// ADR-D02 B14; the core's ABI 7 `sa2_view_style_set`): the tint and dim modes, the dim amount, the outline width, a
+/// 16-entry RGBA palette and a row-major 3x3 output colour matrix, laid out as `sa2_view_style` (316 bytes). Unknown
+/// bits or values out of range answer [`M6H_E_INVALID_ARGUMENT`] and change nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `style` is null or points to a readable `sa2_view_style`.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_view_style(handle: *mut ShellHost, slot: u32, style: *const Sa2ViewStyle) -> i32 {
+    // SAFETY: a readable row (the contract); no alignment is assumed.
+    let style = (!style.is_null()).then(|| unsafe { ptr::read_unaligned(style) });
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if !(1..=STYLE_SLOTS).contains(&slot)
+                || style.is_some_and(|s| s.struct_size as usize != std::mem::size_of::<Sa2ViewStyle>() || !s.in_range())
+            {
+                return Err((
+                    M6H_E_INVALID_ARGUMENT,
+                    "a style slot is 1..4 with values inside their ranges".to_owned(),
+                ));
+            }
+            shell.host.backend.set_view_style(slot, style).map_err(host_error)
+        })
+    }
+}
+
+/// Opens Local, the second view (version 11, ADR-D02 B18b), at the viewport of the view and the identity camera, and
+/// publishes it at the adopted revision; from then on each adoption publishes both views. Local is never closed: a
+/// second call answers [`M6H_E_INVALID_ARGUMENT`]. While the device is lost the publication waits for
+/// [`m6h_recover`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_open_local(handle: *mut ShellHost) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if shell.local_open {
+                return Err((M6H_E_INVALID_ARGUMENT, "Local is open; it is hidden, never closed".to_owned()));
+            }
+            shell.host.open_view(LOCAL).map_err(host_error)?;
+            let viewport = shell.host.view(VIEW).map_or((800, 600), |v| v.viewport);
+            shell.host.set_viewport(LOCAL, viewport);
+            let version = shell.host.view(LOCAL).map_or(0, |v| v.camera);
+            shell.host.backend.set_camera_matrix(LOCAL, version, IDENTITY);
+            shell.local_open = true;
+            shell.local_visible = true;
+            match shell.publish_local(None) {
+                Err((M6H_E_UNAVAILABLE, _)) | Ok(()) => Ok(()),
+                Err(failure) => Err(failure),
+            }
+        })
+    }
+}
+
+/// Sets `view`'s 4D rotation (16 floats, column-major) as a new camera version (version 11): [`m6h_set_camera`] for
+/// the view or an open Local. Another view answers [`M6H_E_INVALID_ARGUMENT`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `matrix` points to 16 readable floats.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_view_camera(handle: *mut ShellHost, view: u64, matrix: *const f32) -> i32 {
+    if matrix.is_null() {
+        return M6H_E_INVALID_ARGUMENT;
+    }
+    // SAFETY: 16 readable floats (the contract); no alignment is assumed.
+    let matrix = unsafe { ptr::read_unaligned(matrix.cast::<[f32; 16]>()) };
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let id = ViewId(view);
+            if !shell.names_open_view(id) {
+                return Err((M6H_E_INVALID_ARGUMENT, format!("view {view} is not an open view of this host")));
+            }
+            shell.host.set_camera(id);
+            let version = shell.host.view(id).map_or(0, |v| v.camera);
+            shell.host.backend.set_camera_matrix(id, version, matrix);
+            Ok(())
+        })
+    }
+}
+
+/// Shows (`visible` 1) or hides (0) an open Local (version 11): a hidden Local gets no pane and no draw, and its
+/// panes stay in the table for when it is shown again; its publications go on. The view (Global) is never hidden, and
+/// another view or value answers [`M6H_E_INVALID_ARGUMENT`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_view_visible(handle: *mut ShellHost, view: u64, visible: u32) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if ViewId(view) != LOCAL || !shell.local_open || visible > 1 {
+                return Err((M6H_E_INVALID_ARGUMENT, "only an open Local is hidden or shown, with 0 or 1".to_owned()));
+            }
+            shell.local_visible = visible == 1;
+            Ok(())
+        })
+    }
+}
+
+/// Sets pane `pane` (0 to 3) of the pane table (version 11): `view` (the view or an open Local) drawn into the
+/// rectangle at (`x`, `y`) of `width` by `height` surface pixels with style slot `style` (0 for none, else 1 to 4).
+/// While any pane is set, [`m6h_frame`] draws composite frames. A fifth pane, another view, an empty rectangle or one
+/// outside the viewport, one that overlaps another pane, or another style answers [`M6H_E_INVALID_ARGUMENT`] and
+/// changes nothing. Two panes may name one view.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_pane(
+    handle: *mut ShellHost,
+    pane: u32,
+    view: u64,
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+    style: u32,
+) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let invalid = |why: &str| Err((M6H_E_INVALID_ARGUMENT, why.to_owned()));
+            if pane >= M6H_PANES_MAX {
+                return invalid("a pane index is 0..3");
+            }
+            let id = ViewId(view);
+            if !shell.names_open_view(id) {
+                return invalid("a pane names the view or an open Local");
+            }
+            if style > STYLE_SLOTS {
+                return invalid("a pane's style is 0 or a style slot 1..4");
+            }
+            let set = Pane { view: id, x, y, width, height, style };
+            let viewport = shell.host.view(VIEW).map_or((0, 0), |v| v.viewport);
+            if !set.rect().inside(viewport) {
+                return invalid("a pane's rectangle is empty or lies outside the viewport");
+            }
+            let others = shell.panes.iter().enumerate().filter(|(i, _)| *i != pane as usize);
+            if others.filter_map(|(_, other)| other.as_ref()).any(|other| other.rect().overlaps(&set.rect())) {
+                return invalid("a pane overlaps another pane");
+            }
+            shell.panes[pane as usize] = Some(set);
+            Ok(())
+        })
+    }
+}
+
+/// Clears pane `pane` (0 to 3) of the pane table (version 11); with every pane clear, frames are one-view frames
+/// again. Another index answers [`M6H_E_INVALID_ARGUMENT`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_clear_pane(handle: *mut ShellHost, pane: u32) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if pane >= M6H_PANES_MAX {
+                return Err((M6H_E_INVALID_ARGUMENT, "a pane index is 0..3".to_owned()));
+            }
+            shell.panes[pane as usize] = None;
             Ok(())
         })
     }
@@ -991,6 +1456,10 @@ pub unsafe extern "C" fn m6h_pump(handle: *mut ShellHost) -> i32 {
 /// that ended; if that adoption fails, the next call that adopts answers the failure. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are
 /// read and dropped here. The frame names the preview the view shows, if any.
 ///
+/// With panes set (version 11, ADR-D02 B18b) the frame is a composite frame of the drawn panes, submitted only when
+/// every drawn pane's view shows the adopted revision; otherwise nothing is submitted, `*out` names the last frame with
+/// `held` 1, and the call answers [`M6H_OK`]. `panes` counts the drawn panes.
+///
 /// # Safety
 ///
 /// `handle` is a live handle that no other thread is using; `out` is null or writable.
@@ -1002,27 +1471,11 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
             shell.settle(deferred::Wait::No)?;
             shell.poll();
             shell.sync_preview()?;
-            let stamp = shell.host.frame(VIEW).map_err(host_error)?;
-            let _ = shell.host.backend.read_frame_reports();
-            let drawn = match shell.host.installed(VIEW) {
-                Some(installed) if stamp.publication_generation != 0 => {
-                    let command =
-                        if installed.generation == stamp.publication_generation { installed.command.0 } else { 0 };
-                    Some((installed.publication.base.state, command))
-                }
-                _ => None,
-            };
-            let (publication_revision, command) = drawn.unwrap_or((0, 0));
-            let stale = shell.host.stale(VIEW);
-            shell.views.submitted(stamp.sequence, command, stale);
+            // ADR-D02 B18b: with no pane set, today's one-view frame.
+            let submitted =
+                if shell.panes.iter().all(Option::is_none) { shell.frame_one() } else { shell.frame_panes() }?;
             if !out.is_null() {
-                out.write(M6hFrame {
-                    sequence: stamp.sequence,
-                    device_epoch: stamp.device_epoch,
-                    surface: stamp.surface,
-                    engine_revision: stamp.engine_revision,
-                    publication_revision,
-                });
+                out.write(submitted);
             }
             // A build that ended while the frame was submitted (the core's frame call waits for the display) is adopted
             // now, so its publication is prepared before the next frame; a failure is answered by the next call. A build
@@ -1087,7 +1540,8 @@ pub unsafe extern "C" fn m6h_read_presented(
     }
 }
 
-/// Recovers a removed device (a new device epoch) and starts the view's preparation for the new device. When the
+/// Recovers a removed device (a new device epoch) and starts the view's preparation (and an open Local's) for the new
+/// device. When the
 /// installed publication is the newest one the library published, the host prepares it again under its own command
 /// (RM.23). Otherwise the newest one was never installed, because it was published or adopted while the device was
 /// lost, and the library publishes it again.
@@ -1103,10 +1557,15 @@ pub unsafe extern "C" fn m6h_recover(handle: *mut ShellHost) -> i32 {
             shell.host.recover().map_err(host_error)?;
             if shell.host.installed(VIEW).is_some_and(|installed| Some(installed.command) == shell.reference) {
                 shell.host.pump();
-                Ok(())
             } else {
-                shell.publish()
+                shell.publish()?;
             }
+            // ADR-D02 B18b: Local likewise.
+            let local = shell.host.installed(LOCAL).map(|installed| installed.command);
+            if shell.local_open && (local.is_none() || local != shell.local_reference) {
+                shell.publish_local(None)?;
+            }
+            Ok(())
         })
     }
 }

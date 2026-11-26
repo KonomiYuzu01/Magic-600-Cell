@@ -242,7 +242,7 @@ fn int(record: &Value, key: &str) -> Option<i64> {
 
 #[test]
 fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
-    assert_eq!(m6h_abi_version(), 8);
+    assert_eq!(m6h_abi_version(), 11);
     let run = Run::new();
     let folder = fresh("pass");
 
@@ -991,5 +991,80 @@ fn the_state_digest_follows_undo_and_redo() {
         assert_eq!(off.get(key), Some(&Value::Null), "{key}");
     }
     drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+/// ADR-D02 B18b: a session's host with Local open and installed, Global on the left half and Local on the right.
+fn two_views(name: &str) -> (Run, String) {
+    let run = Run::new();
+    let folder = fresh(name);
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    // SAFETY: a live handle.
+    unsafe {
+        assert_eq!(m6h_open_local(run.host), M6H_OK, "{}", last_error(run.host));
+        run.fake().complete();
+        assert_eq!(m6h_pump(run.host), M6H_OK);
+        let (w, h) = (SIZE.0 / 2, SIZE.1);
+        assert_eq!(m6h_set_pane(run.host, 0, VIEW.0, 0, 0, w, h, 0), M6H_OK, "{}", last_error(run.host));
+        assert_eq!(m6h_set_pane(run.host, 1, LOCAL.0, w as i32, 0, w, h, 0), M6H_OK, "{}", last_error(run.host));
+    }
+    (run, folder)
+}
+
+#[test]
+fn two_views_publish_one_revision() {
+    let (run, folder) = two_views("two-views");
+    let first = run.frame();
+    assert_eq!((first.panes, first.held, first.engine_revision, first.publication_revision), (2, 0, 1, 1));
+    let before = run.fake().prepared.len();
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    run.settle();
+    // One adoption publishes both views: one preparation each, from the same bundle.
+    let views: Vec<u64> = run.fake().prepared[before..].iter().map(|(view, _, _)| *view).collect();
+    assert_eq!(views, [VIEW.0, LOCAL.0]);
+    assert_eq!(run.fake().adoptions.last().map(|a| a.0), Some(2));
+    run.fake().complete();
+    let shown = run.frame();
+    assert_eq!((shown.panes, shown.held, shown.engine_revision, shown.publication_revision), (2, 0, 2, 2));
+    let input = *run.fake().submitted.last().expect("a frame");
+    let panes = run.fake().submitted_panes.last().cloned().expect("a frame");
+    assert_eq!(input.engine_revision, 2);
+    assert_eq!(panes.iter().map(|p| p.view).collect::<Vec<_>>(), [VIEW.0, LOCAL.0]);
+    assert!(panes.iter().all(|p| p.resource_set != 0), "both panes draw their installed sets of revision 2");
+    let rows = run.present();
+    assert_eq!(rows.last().map(|row| (row.sequence, row.engine_revision)), Some((shown.sequence, 2)));
+    assert_eq!(run.close(2), (M6H_OK, 1), "{}", last_error(run.host));
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+#[test]
+fn a_frame_never_mixes_revisions() {
+    let (run, folder) = two_views("never-mixes");
+    let first = run.frame();
+    assert_eq!((first.panes, first.held, first.engine_revision), (2, 0, 1));
+    // The fake core delays Local's activation: its preparation for the next revision stays pending.
+    run.fake().hold_view = Some(LOCAL.0);
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    run.settle();
+    let submitted = run.fake().submitted.len();
+    for _ in 0..3 {
+        run.fake().complete();
+        let held = run.frame();
+        assert_eq!(held.held, 1, "Global shows revision 2 and Local revision 1: no frame");
+        assert_eq!((held.sequence, held.engine_revision, held.panes), (first.sequence, 1, 2), "{held:?}");
+    }
+    assert_eq!(run.fake().submitted.len(), submitted, "a held frame submits nothing");
+    // Local's preparation lands: the next frame draws both views at revision 2.
+    run.fake().hold_view = None;
+    run.fake().complete();
+    let shown = run.frame();
+    assert_eq!((shown.held, shown.engine_revision, shown.publication_revision), (0, 2, 2), "{shown:?}");
+    assert!(shown.sequence > first.sequence);
+    // Every composite frame the core took drew one revision: the fake core refuses a pane of another.
+    let revisions: Vec<u64> = run.fake().submitted.iter().map(|input| input.engine_revision).collect();
+    assert!(revisions.windows(2).all(|pair| pair[0] <= pair[1]), "{revisions:?}");
+    let rows = run.present();
+    assert_eq!(rows.last().map(|row| (row.sequence, row.engine_revision)), Some((shown.sequence, 2)));
+    assert_eq!(run.close(2), (M6H_OK, 1), "{}", last_error(run.host));
     let _ = std::fs::remove_dir_all(&folder);
 }

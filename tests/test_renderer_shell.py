@@ -1492,10 +1492,12 @@ class D02Fixtures(unittest.TestCase):
 
     def test_the_host_gives_the_state_digest_and_the_shell_binds_only_by_it(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 8;", lib)
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 11;", lib)
         self.assertIn('pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32', lib)
-        self.assertIn("public const uint AbiVersion = 8;", text(PROJECT / "HostLibrary.cs"))
-        self.assertIn("refuses another version than its `AbiVersion` (8 since ADR-D02 B5)", text(SHELL / "README.md"))
+        self.assertIn("public const uint AbiVersion = 11;", text(PROJECT / "HostLibrary.cs"))
+        self.assertIn("refuses another version than its `AbiVersion` (11 since ADR-D02 B18b's two views; 10 at B14's "
+                      "style, 9 at the view shape, 8 at B5)",
+                      text(SHELL / "README.md"))
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
         # A sample binds by its state digest and its two pose-array digests (checkpoint C1: pose ids are ranks in a
         # table compacted per state); the asked state only breaks a tie between equal states.
@@ -1508,6 +1510,78 @@ class D02Fixtures(unittest.TestCase):
         self.assertIn("if (D02.ShellJumble.On && _session && _adoptedRevision != _boundRevision)", shell)
         self.assertIn("_adoptedRevision = frame.EngineRevision;", shell)
         self.assertEqual(shell.count("StateDigest("), 1)
+
+
+class D02Shape(unittest.TestCase):
+    """ADR-D02's view shape (host version 9 over the core's ABI 6): the shell sets the owner's opening values from Look
+    Lab's opening file, only with D02 on; the values live in the file, never in the shell's code."""
+
+    def test_the_host_and_the_shell_expose_the_view_shape(self):
+        lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        self.assertIn('pub unsafe extern "C" fn m6h_set_view_shape(handle: *mut ShellHost, view: u64, '
+                      'shape: *const f32) -> i32', lib)
+        self.assertIn("shell.host.backend.set_view_shape(id, shape)", lib)
+        host = text(PROJECT / "HostLibrary.cs")
+        self.assertIn("public int SetViewShape(IntPtr host, ulong view, float[]? shape)", host)
+        self.assertIn('_exports["m6h_set_view_shape"])(host, view, s)', host)
+        self.assertIn('"sa2_view_shape_set"', text(PROJECT / "CoreLibrary.cs"))
+
+    def test_the_shell_reads_the_opening_values_only_with_d02_on(self):
+        shape = text(PROJECT / "D02" / "ShellShape.cs")
+        self.assertIn("ShellJumble.On ? library.SetViewShape(host, HostLibrary.View, Read(OpeningPath())) : "
+                      "HostLibrary.Ok", shape)
+        self.assertIn('return new[] { 1.0f - gap, sticker, D4, Zoom };', shape)
+        self.assertIn('GetProperty("gap")', shape)
+        self.assertIn('GetProperty("stickerShrink")', shape)
+        self.assertIn('ProjectSettings.GlobalizePath("res://look/opening.json")', shape)
+        # The chain projection keeps the core's zoom until the Hopf-ring layout exists; the file's field of view
+        # belongs to that layout.
+        self.assertIn("public const float Zoom = 1.15f;", shape)
+        self.assertIn("Hopf-ring layout", shape)
+        # No opening value is a constant in code.
+        self.assertNotRegex(shape, r"0\.3f?\b|0\.55f?\b|0\.7f?\b")
+        opening = json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))
+        self.assertEqual(opening["format"], "magic600-look-opening")
+        gap, sticker = opening["params"]["gap"], opening["params"]["stickerShrink"]
+        self.assertTrue(0 < 1 - gap <= 1 and 0 < sticker <= 1, "the opening values lie in the core's range")
+        self.assertLess(sticker, 0.82, "the opening stickers are smaller than the core's default")
+
+    def test_the_build_stages_the_opening_file(self):
+        build_shell = shell_module("build_shell")
+        temp = Path(tempfile.mkdtemp(prefix="c9-shape-"))
+        self.addCleanup(shutil.rmtree, temp, True)
+        project = temp / "staged"
+        build_shell.stage(project)
+        self.assertEqual((project / "look" / "opening.json").read_bytes(),
+                         (ROOT / "tools" / "looklab" / "data" / "opening.json").read_bytes())
+        self.assertTrue((project / "D02" / "ShellShape.cs").is_file())
+
+
+
+class D02Panes(unittest.TestCase):
+    """ADR-D02 B18b (host version 11 over the core's ABI 8): Local and the composite frame, the same on both sides of
+    the host library's C interface. Nothing in the shell calls them yet (B18c)."""
+
+    def test_the_frame_row_and_the_view_numbers_match(self):
+        lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        host = text(PROJECT / "HostLibrary.cs")
+        rust_row = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hFrame \{(.*?)\}", lib, re.S)
+        csharp_row = re.search(r"LayoutKind\.Sequential\)\]\s*public struct Submitted\s*\{(.*?)\}", host, re.S)
+        self.assertTrue(rust_row and csharp_row)
+        self.assertEqual(re.findall(r"pub (\w+): u32,", rust_row.group(1)), ["panes", "held"])
+        self.assertEqual(re.findall(r"public uint (\w+);", csharp_row.group(1)), ["Panes", "Held"])
+        self.assertIn("size_of::<M6hFrame>() == 48", lib)
+        self.assertIn("pub const LOCAL: ViewId = ViewId(2);", lib)
+        self.assertIn("public const ulong Local = 2;", host)
+        self.assertIn("pub const M6H_PANES_MAX: u32 = 4;", lib)
+        self.assertIn("public const uint PanesMax = 4;", host)
+        self.assertIn("const _: () = assert!(M6H_PANES_MAX == PANES_MAX);", lib)
+
+    def test_one_view_frames_stay_the_path_without_panes(self):
+        lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        self.assertIn("if shell.panes.iter().all(Option::is_none) { shell.frame_one() } else { shell.frame_panes() }",
+                      lib)
+        self.assertNotIn("OpenLocal(", text(PROJECT / "Shell.cs"))
 
 
 class D02Host(unittest.TestCase):

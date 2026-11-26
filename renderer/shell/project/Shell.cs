@@ -185,6 +185,8 @@ public partial class Shell : Control
                 $"m6h_create_preloaded answered {code}: {hostLibrary.LastError(IntPtr.Zero)}");
         }
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
+        // ADR-D02 (owner, 26 November 2026: smaller stickers): with --d02 the view takes the owner's opening shape.
+        Require(hostLibrary, "m6h_set_view_shape", D02.ShellShape.Apply(hostLibrary, _host));
         _log = EventLog.FromEnvironment();
         if (_log is { } log)
         {

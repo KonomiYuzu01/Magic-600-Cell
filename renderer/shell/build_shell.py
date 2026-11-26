@@ -31,6 +31,8 @@ CHROME = ROOT / "tools" / "looklab" / "app" / "Chrome"
 DESIGN = ROOT / "tools" / "looklab" / "data" / "design"
 # ADR-D02's sample data (B1), which the D02 surfaces read behind M600_D02=1; staged as samples/.
 SAMPLES = ROOT / "tools" / "looklab" / "data" / "samples"
+# The owner's opening look values, which the D02 view shape reads behind M600_D02=1; staged as look/opening.json.
+OPENING = ROOT / "tools" / "looklab" / "data" / "opening.json"
 # Sample mode (B4a, launch.py --sample): ADR-D01's frame on sample data. Look Lab's sample wiring is staged as Live/,
 # one copy shared with Look Lab, and the files it reads as sample-root/ at their repository paths.
 LIVE = ROOT / "tools" / "looklab" / "app" / "Live"
@@ -57,13 +59,15 @@ def dotnet_version() -> str:
 
 def stage(project: Path) -> None:
     """Copy the shell project and the frame's sources into `project` (a new folder): the chrome library as Chrome/,
-    the design data with the command table as design/, ADR-D02's samples as samples/, and sample mode's wiring as
-    Live/ with the files it reads under sample-root/."""
+    the design data with the command table as design/, ADR-D02's samples as samples/, the opening look values as
+    look/opening.json, and sample mode's wiring as Live/ with the files it reads under sample-root/."""
     shutil.copytree(PROJECT, project, ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
     shutil.copytree(CHROME, project / "Chrome", ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
     shutil.copytree(DESIGN, project / "design")
     shutil.copy2(COMMANDS, project / "design" / "command-table.json")
     shutil.copytree(SAMPLES, project / "samples")
+    (project / "look").mkdir()
+    shutil.copy2(OPENING, project / "look" / "opening.json")
     (project / "Live").mkdir()
     for name in LIVE_FILES:
         shutil.copy2(LIVE / name, project / "Live" / name)

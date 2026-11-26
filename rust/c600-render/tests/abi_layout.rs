@@ -1,4 +1,4 @@
-//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 5 row's field names, offsets and
+//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 8 row's field names, offsets and
 //! size under the C rules of x64 (each against the header's static_assert too) and every constant. The header is
 //! read, not copied, so a header change fails here. The function table's signatures are checked in `renderer/bridge`.
 
@@ -215,6 +215,30 @@ fn every_row_has_the_header_layout() {
     for (name, rust) in rows {
         assert_eq!(c_struct(&h, name), rust, "{name}");
     }
+    // ABI 6: a view's shape.
+    let shape = rust_struct!(Sa2ViewShape { struct_size, cell_shrink, sticker_shrink, d4, zoom, reserved });
+    assert_eq!(c_struct(&h, "sa2_view_shape"), shape, "sa2_view_shape");
+    assert_eq!(Sa2ViewShape::new().struct_size, 24, "new() sets struct_size");
+    // ABI 7: a style slot.
+    let style = rust_struct!(Sa2ViewStyle {
+        struct_size,
+        tint_mode,
+        dim_mode,
+        dim_amount,
+        outline_width,
+        palette,
+        matrix,
+        reserved
+    });
+    assert_eq!(c_struct(&h, "sa2_view_style"), style, "sa2_view_style");
+    assert_eq!(Sa2ViewStyle::new().struct_size, 316, "new() sets struct_size");
+    // ABI 8: a composite frame's pane and pane row.
+    let pane =
+        rust_struct!(Sa2Pane { view, view_generation, resource_set, x, y, width, height, camera_matrix, style, flags });
+    assert_eq!(c_struct(&h, "sa2_pane"), pane, "sa2_pane");
+    let row = rust_struct!(Sa2PaneRow { struct_size, pane, view, view_generation, vertex_evals });
+    assert_eq!(c_struct(&h, "sa2_pane_row"), row, "sa2_pane_row");
+    assert_eq!((size_of::<Sa2Pane>(), Sa2PaneRow::new().struct_size), (112, 32), "sizes");
     let sizes = [
         Sa2PollRow::new().struct_size,
         Sa2FrameInput::new().struct_size,
@@ -270,6 +294,18 @@ fn every_constant_has_the_header_value() {
         ("SURFACE_BUFFERS".into(), i64::from(SURFACE_BUFFERS)),
         ("SURFACE_MAX_PX".into(), i64::from(SURFACE_MAX_PX)),
         ("RING_SLOTS".into(), i64::from(RING_SLOTS)),
+        ("STYLE_CHANNEL_FILL".into(), i64::from(STYLE_CHANNEL_FILL)),
+        ("STYLE_CHANNEL_OUTLINE".into(), i64::from(STYLE_CHANNEL_OUTLINE)),
+        ("STYLE_INDEX".into(), i64::from(STYLE_INDEX)),
+        ("STYLE_DIM".into(), i64::from(STYLE_DIM)),
+        ("STYLE_SLOTS".into(), i64::from(STYLE_SLOTS)),
+        ("STYLE_PALETTE".into(), i64::from(STYLE_PALETTE)),
+        ("STYLE_TINT_FILL".into(), i64::from(STYLE_TINT_FILL)),
+        ("STYLE_TINT_OUTLINE".into(), i64::from(STYLE_TINT_OUTLINE)),
+        ("STYLE_DIM_NONE".into(), i64::from(STYLE_DIM_NONE)),
+        ("STYLE_DIM_MARKED".into(), i64::from(STYLE_DIM_MARKED)),
+        ("STYLE_DIM_UNMARKED".into(), i64::from(STYLE_DIM_UNMARKED)),
+        ("PANES_MAX".into(), i64::from(PANES_MAX)),
     ];
     for code in 0..=10 {
         rust.push((Status(code).name().to_owned(), i64::from(code)));
@@ -278,4 +314,23 @@ fn every_constant_has_the_header_value() {
         assert_eq!(defines.get(&name), Some(&value), "SA2_{name}");
     }
     assert_eq!(Status(11).name(), "unknown");
+    // ABI 6's shape constants are floats, written as the header writes them.
+    let h = header();
+    for (name, value) in [
+        ("SHAPE_DEFAULT_CELL_SHRINK", SHAPE_DEFAULT_CELL_SHRINK),
+        ("SHAPE_DEFAULT_STICKER_SHRINK", SHAPE_DEFAULT_STICKER_SHRINK),
+        ("SHAPE_DEFAULT_D4", SHAPE_DEFAULT_D4),
+        ("SHAPE_DEFAULT_ZOOM", SHAPE_DEFAULT_ZOOM),
+        ("SHAPE_D4_MAX", SHAPE_D4_MAX),
+        ("SHAPE_ZOOM_MAX", SHAPE_ZOOM_MAX),
+        ("STYLE_OUTLINE_MAX", STYLE_OUTLINE_MAX),
+        ("STYLE_MATRIX_MAX", STYLE_MATRIX_MAX),
+    ] {
+        let line = h
+            .lines()
+            .find_map(|line| line.trim().strip_prefix(&format!("#define SA2_{name} ")))
+            .unwrap_or_else(|| panic!("SA2_{name} is in the header"));
+        let text = line.split_whitespace().next().unwrap().trim_end_matches('f');
+        assert_eq!(text.parse::<f32>().expect("a float"), value, "SA2_{name}");
+    }
 }

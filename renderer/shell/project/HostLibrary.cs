@@ -15,12 +15,17 @@ namespace Magic600.Shell;
 /// editor panel (<see cref="Editor.EditorPanel"/>) makes: <see cref="SetFocus"/>, <see cref="RegisterRow"/>,
 /// <see cref="Palette"/>, <see cref="Invoke"/>, <see cref="TakeJob"/>, <see cref="FinishJob"/>,
 /// <see cref="SetDraftWord"/> and <see cref="Answer"/>. Version 8 (ADR-D02 B5) adds <see cref="StateDigest"/>, the
-/// head's state digests, by which a D02 sample binds to the session.
+/// head's state digests, by which a D02 sample binds to the session. Version 9 (ADR-D02, over the core's ABI 6) adds
+/// <see cref="SetViewShape"/>, a view's cell gap, sticker shrink, d4 and zoom. Version 10 (ADR-D02 B14, over the core's
+/// ABI 7) adds <see cref="SetPieceStyle"/> and <see cref="SetViewStyle"/>, the per-piece style and the style slots.
+/// Version 11 (ADR-D02 B18b, over the core's ABI 8) adds Local and the composite frame: <see cref="OpenLocal"/>,
+/// <see cref="SetViewCamera"/>, <see cref="SetViewVisible"/>, <see cref="SetPane"/>, <see cref="ClearPane"/>, and
+/// <see cref="Submitted"/>'s pane count and held flag.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 8;
+    public const uint AbiVersion = 11;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -84,6 +89,14 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_preload_free",
         "m6h_set_camera",
         "m6h_set_viewport",
+        "m6h_set_view_shape",
+        "m6h_set_piece_style",
+        "m6h_set_view_style",
+        "m6h_open_local",
+        "m6h_set_view_camera",
+        "m6h_set_view_visible",
+        "m6h_set_pane",
+        "m6h_clear_pane",
         "m6h_pump",
         "m6h_frame",
         "m6h_read_presented",
@@ -122,6 +135,11 @@ public sealed unsafe class HostLibrary : IDisposable
         public ulong EngineRevision;
         /// <summary>The engine revision of the publication the frame draws, or 0 for none.</summary>
         public ulong PublicationRevision;
+        /// <summary>The panes of a composite frame, or 0 for a one-view frame (version 11).</summary>
+        public uint Panes;
+        /// <summary>1 when nothing was submitted because a drawn pane's view did not show the adopted revision yet; the
+        /// other fields then name the last frame (version 11).</summary>
+        public uint Held;
     }
 
     /// <summary>What m6h_key_down did with one key-down (the Rust M6hKey).</summary>
@@ -309,6 +327,112 @@ public sealed unsafe class HostLibrary : IDisposable
 
     public int SetViewport(IntPtr host, uint width, uint height) =>
         ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, int>)_exports["m6h_set_viewport"])(host, width, height);
+
+    /// <summary>The view number of the host's one view (the Rust source's VIEW).</summary>
+    public const ulong View = 1;
+    /// <summary>Local's view number (the Rust source's LOCAL; version 11).</summary>
+    public const ulong Local = 2;
+    /// <summary>The panes of a composite frame (the Rust source's M6H_PANES_MAX).</summary>
+    public const uint PanesMax = 4;
+
+    /// <summary>Opens Local beside the view (version 11); each adoption then publishes both. Local is never closed.
+    /// </summary>
+    public int OpenLocal(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_open_local"])(host);
+
+    /// <summary>Sets a view's 4D rotation, 16 floats column-major (version 11; <see cref="SetCamera"/> for any view).
+    /// </summary>
+    public int SetViewCamera(IntPtr host, ulong view, ReadOnlySpan<float> matrix)
+    {
+        if (matrix.Length != 16)
+        {
+            throw new ArgumentException("a camera is 16 floats", nameof(matrix));
+        }
+        fixed (float* m = matrix)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, int>)_exports["m6h_set_view_camera"])(host, view, m);
+        }
+    }
+
+    /// <summary>Shows or hides an open Local (version 11): a hidden Local gets no pane and no draw.</summary>
+    public int SetViewVisible(IntPtr host, ulong view, bool visible) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, int>)_exports["m6h_set_view_visible"])(host, view, visible ? 1u : 0u);
+
+    /// <summary>
+    /// Sets pane 0 to 3 (version 11): a view drawn into a rectangle of the surface, in surface pixels, with style slot
+    /// 0 (none) to 4. While any pane is set, frames are composite frames; panes lie inside the viewport and never
+    /// overlap.
+    /// </summary>
+    public int SetPane(IntPtr host, uint pane, ulong view, int x, int y, uint width, uint height, uint style) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, ulong, int, int, uint, uint, uint, int>)_exports["m6h_set_pane"])(
+            host, pane, view, x, y, width, height, style);
+
+    /// <summary>Clears pane 0 to 3 (version 11); with every pane clear, frames are one-view frames again.</summary>
+    public int ClearPane(IntPtr host, uint pane) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, int>)_exports["m6h_clear_pane"])(host, pane);
+
+    /// <summary>
+    /// Sets the shape that a view's frames draw with (version 9): the cell shrink, the sticker shrink, d4 and the zoom,
+    /// or null for the core's defaults (0.76, 0.82, 1.18 and 1.15, the shape every view has until this call). A view
+    /// that is not open or a value out of the core's range answers <see cref="InvalidArgument"/> and changes nothing.
+    /// </summary>
+    public int SetViewShape(IntPtr host, ulong view, float[]? shape)
+    {
+        if (shape is not null && shape.Length != 4)
+        {
+            throw new ArgumentException("a view shape is 4 floats", nameof(shape));
+        }
+        fixed (float* s = shape)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, int>)_exports["m6h_set_view_shape"])(host, view, s);
+        }
+    }
+
+    /// <summary>A style slot as the core's sa2_view_style lays it out (316 bytes; version 10).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ViewStyle
+    {
+        public uint StructSize, TintMode, DimMode;
+        public float DimAmount, OutlineWidth;
+        public fixed float Palette[64];
+        public fixed float Matrix[9];
+        public uint Reserved;
+
+        /// <summary>A slot that changes nothing: no tint, no dim, an empty palette, the identity matrix.</summary>
+        public static ViewStyle Plain()
+        {
+            var style = new ViewStyle { StructSize = (uint)sizeof(ViewStyle) };
+            style.Matrix[0] = style.Matrix[4] = style.Matrix[8] = 1;
+            return style;
+        }
+    }
+
+    /// <summary>The piece style's channels and the tint and dim modes (the core's SA2_STYLE_* values).</summary>
+    public const uint StyleFill = 0, StyleOutline = 1, TintFill = 1, TintOutline = 2, DimMarked = 1, DimUnmarked = 2;
+
+    /// <summary>
+    /// Sets one channel of the adopted revision's piece style (version 10): one byte per piece, or with
+    /// <paramref name="byPose"/> one byte per pose of the session's head, which the host expands with the head's own pose
+    /// index; null clears the channel. The core drops it at the next adoption, so it is set again for each shown revision.
+    /// </summary>
+    public int SetPieceStyle(IntPtr host, uint channel, byte[]? styles, bool byPose)
+    {
+        fixed (byte* s = styles)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, uint, byte*, uint, uint, int>)_exports["m6h_set_piece_style"])(
+                host, channel, s, (uint)(styles?.Length ?? 0), byPose ? 1u : 0u);
+        }
+    }
+
+    /// <summary>Sets style slot 1 to 4 (a one-view frame uses slot 1), or clears it with null (version 10).</summary>
+    public int SetViewStyle(IntPtr host, uint slot, ViewStyle? style)
+    {
+        var call = (delegate* unmanaged[Cdecl]<IntPtr, uint, ViewStyle*, int>)_exports["m6h_set_view_style"];
+        if (style is not { } value)
+        {
+            return call(host, slot, null);
+        }
+        return call(host, slot, &value);
+    }
 
     public int Pump(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_pump"])(host);
 

@@ -226,6 +226,55 @@ unsafe extern "C" fn device_status(ctx: *mut c_void, out: *mut i32) -> i32 {
     status.0
 }
 
+unsafe extern "C" fn view_shape_set(ctx: *mut c_void, view: u64, shape: *const Sa2ViewShape) -> i32 {
+    let shape = unsafe { shape.as_ref() };
+    if shape.is_some_and(|s| !sized::<Sa2ViewShape>(s.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_shape_set(view, shape), |()| ())
+}
+
+unsafe extern "C" fn style_set(ctx: *mut c_void, revision: u64, bytes: *const u8, channel: u32) -> i32 {
+    let bytes = (!bytes.is_null()).then(|| unsafe { std::slice::from_raw_parts(bytes, PIECES) });
+    code(unsafe { shim(ctx) }.fake.style_set(revision, bytes, channel), |()| ())
+}
+
+unsafe extern "C" fn view_style_set(ctx: *mut c_void, slot: u32, style: *const Sa2ViewStyle) -> i32 {
+    let style = unsafe { style.as_ref() };
+    if style.is_some_and(|s| !sized::<Sa2ViewStyle>(s.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_style_set(slot, style), |()| ())
+}
+
+unsafe extern "C" fn frame_submit_panes(
+    ctx: *mut c_void,
+    input: *const Sa2FrameInput,
+    panes: *const Sa2Pane,
+    count: u32,
+    out: *mut u64,
+) -> i32 {
+    if panes.is_null() || count == 0 || count > PANES_MAX {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let panes = unsafe { slice::from_raw_parts(panes, count as usize) };
+    code(unsafe { shim(ctx) }.fake.frame_submit_panes(unsafe { &*input }, panes), |frame| unsafe { *out = frame })
+}
+
+unsafe extern "C" fn frame_panes(
+    ctx: *mut c_void,
+    frame: u64,
+    rows: *mut Sa2PaneRow,
+    capacity: u32,
+    out: *mut u32,
+) -> i32 {
+    let rows = unsafe { slice::from_raw_parts_mut(rows, capacity as usize) };
+    if rows.iter().any(|row| !sized::<Sa2PaneRow>(row.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.frame_panes(frame, rows), |n| unsafe { *out = n as u32 })
+}
+
 /// The shim's function table.
 pub fn functions() -> CoreFunctions {
     CoreFunctions {
@@ -246,6 +295,11 @@ pub fn functions() -> CoreFunctions {
         recover,
         counters,
         device_status,
+        view_shape_set,
+        style_set,
+        view_style_set,
+        frame_submit_panes,
+        frame_panes,
     }
 }
 
@@ -259,7 +313,7 @@ impl Shimmed {
     pub fn new(fake: FakeCore, pad: usize) -> Shimmed {
         let shim = Box::into_raw(Box::new(Shim { fake, pad }));
         // SAFETY: the table is the shim's and the context a live shim, which this value owns and frees last.
-        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 5");
+        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 8");
         Shimmed { dll, shim }
     }
 }
@@ -319,6 +373,21 @@ impl CoreAbi for Shimmed {
     }
     fn last_error(&self) -> String {
         self.dll.last_error()
+    }
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
+        self.dll.view_shape_set(view, shape)
+    }
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {
+        self.dll.style_set(revision, piece_style, channel)
+    }
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status> {
+        self.dll.view_style_set(slot, style)
+    }
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status> {
+        self.dll.frame_submit_panes(input, panes)
+    }
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status> {
+        self.dll.frame_panes(frame_id, rows)
     }
 }
 

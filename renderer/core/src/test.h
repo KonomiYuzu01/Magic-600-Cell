@@ -13,6 +13,9 @@ struct Options {
     bool debug = false;
     bool stages = false; // C9 U5: --warp --stages runs only the user-stage check (run_stages)
     bool poses = false; // C9 jumble-on: --warp --poses runs only the product pose check (run_poses)
+    bool shape = false; // ABI 6: --warp --shape runs only the view shape check (run_shape)
+    bool style = false; // ABI 7: --warp --style runs only the piece style check (run_style)
+    bool panes = false; // ABI 8: --warp --panes runs only the composite frame check (run_panes)
     // C9 U5c: --warp --measure-stages DIR [--size WxH] [--frames N] [--traced N] [--turn-ms X] --out FILE measures U
     // for W3 with the stage pair in DIR (run_measure); the default size is the owner's native 2560 x 1600.
     std::filesystem::path measure;
@@ -32,6 +35,9 @@ std::filesystem::path executable_path();
 void run_gpu(Suite& suite, const Options& options);
 void run_stages(Suite& suite, const Options& options);
 void run_poses(Suite& suite, const Options& options);
+void run_shape(Suite& suite, const Options& options);
+void run_style(Suite& suite, const Options& options);
+void run_panes(Suite& suite, const Options& options);
 void run_measure(const Options& options);
 void run_measure_prepare(const Options& options);
 int run_child(const Options& options);
