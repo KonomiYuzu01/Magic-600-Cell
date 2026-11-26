@@ -61,7 +61,7 @@ public struct Sa2StageFrame
 
 public unsafe sealed class Native : IDisposable
 {
-    public const uint SA2_ABI_VERSION = 8;
+    public const uint SA2_ABI_VERSION = 9;
     public const int SA2_OK = 0;
     public const int SA2_E_INVALID_ARGUMENT = 1;
     public const int SA2_E_WRONG_STATE = 2;

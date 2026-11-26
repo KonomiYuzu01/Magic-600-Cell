@@ -93,6 +93,25 @@ ViewShape view_shape(const sa2_view_shape* shape) {
     return ViewShape{shape->cell_shrink, shape->sticker_shrink, shape->d4, shape->zoom};
 }
 
+// ABI 9.
+void view_focus(const sa2_view_focus* focus, ViewShape& shape) {
+    const ViewShape defaults;
+    if (!focus) {
+        shape.projection = defaults.projection; shape.focus_cell = defaults.focus_cell;
+        shape.focus_cos = defaults.focus_cos; shape.spread = defaults.spread;
+        return;
+    }
+    argument(focus->struct_size == sizeof(*focus), "invalid view_focus struct_size");
+    argument(focus->reserved == 0, "view_focus reserved must be 0");
+    argument(focus->projection == SA2_PROJECTION_PERSPECTIVE || focus->projection == SA2_PROJECTION_ORTHOGRAPHIC,
+             "projection must be SA2_PROJECTION_PERSPECTIVE or SA2_PROJECTION_ORTHOGRAPHIC");
+    argument(focus->focus_cell == SA2_FOCUS_NONE || focus->focus_cell < 600, "focus_cell must be a cell 0..599 or SA2_FOCUS_NONE");
+    argument(std::isfinite(focus->focus_cos) && focus->focus_cos >= -1.0f && focus->focus_cos <= 1.0f, "focus_cos must be finite and within -1..1");
+    argument(std::isfinite(focus->spread) && focus->spread >= 1.0f && focus->spread <= 3.0f, "spread must be finite and within 1..3");
+    shape.projection = focus->projection; shape.focus_cell = focus->focus_cell;
+    shape.focus_cos = focus->focus_cell == SA2_FOCUS_NONE ? defaults.focus_cos : focus->focus_cos; shape.spread = focus->spread;
+}
+
 // ABI 7.
 ViewStyle view_style(const sa2_view_style* style) {
     argument(style != nullptr, "view_style is NULL");

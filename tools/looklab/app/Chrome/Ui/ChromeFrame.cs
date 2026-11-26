@@ -296,6 +296,19 @@ public sealed partial class ChromeFrame : Control
     // the Global view: every other region stays opaque chrome.
     public bool OpenGround { get; set; }
     public Rect2 Opening => OpenGround && Global != null && IsInstanceValid(Global) && Global.Slot.IsVisibleInTree() ? Global.Slot.GetGlobalRect() : default;
+    // ADR-D02 B18c: a host that draws Local as well opens the top of Local's slot, a square of the slot's width capped at
+    // 60% of its height; Local's content scrolls below it. While LocalOpeningShown is false (no cap named) the opening
+    // collapses and Local's content, its empty sentence first, takes its place.
+    public bool LocalDrawn { get; set; }
+    private bool localOpeningShown;
+    public bool LocalOpeningShown
+    {
+        get => localOpeningShown;
+        set { if (value == localOpeningShown) return; localOpeningShown = value; if (localLayout != null && IsInstanceValid(localLayout)) localLayout.QueueSort(); }
+    }
+    private LocalOpeningLayout? localLayout;
+    public Rect2 LocalOpening => OpenGround && LocalDrawn && LocalOpeningShown && localLayout != null && IsInstanceValid(localLayout) && localLayout.IsVisibleInTree()
+        ? localLayout.Opening.GetGlobalRect() : default;
 
     // Whether the chrome takes this key. A host that also routes keys elsewhere asks first, so that no key does both.
     public bool Claims(string key, Func<Binding, bool>? can = null)
@@ -360,8 +373,10 @@ public sealed partial class ChromeFrame : Control
         if (!focus) middle.AddChild(SideDock(DockSide.Left));
         var centre = (VBoxContainer)Tight(new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }); middle.AddChild(centre);
         if (topStrip != null && !focus) centre.AddChild(topStrip);
-        Global = View("Global", globalContent); Local = View("Local", localContent);
+        bool localDrawn = OpenGround && LocalDrawn;
+        Global = View("Global", globalContent); Local = View("Local", localDrawn ? LocalWrap(localContent) : localContent);
         if (OpenGround) { Global.Open = true; Global.SetFocused(false); }
+        if (localDrawn) { Local.Open = true; Local.SetFocused(false); }
         centre.AddChild(Model.OnlyPairShown ? PairControl() : Node(Model.Centre));
         if (strip != null) centre.AddChild(strip);
         if (!focus) { centre.AddChild(BottomDock()); middle.AddChild(SideDock(DockSide.Right)); }
@@ -471,6 +486,16 @@ public sealed partial class ChromeFrame : Control
         return holder;
     }
 
+    // B18c: Local's opening on top and its content in a scroll below, so an open section never covers the opening.
+    private Control LocalWrap(Control? content)
+    {
+        var layout = localLayout = new LocalOpeningLayout(this) { Name = "LocalDrawn" };
+        var scroll = new ScrollContainer { Name = "LocalScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        layout.AddChild(layout.Opening); layout.AddChild(scroll);
+        if (content != null) { content.SizeFlagsHorizontal = SizeFlags.ExpandFill; scroll.AddChild(content); }
+        return layout;
+    }
+
     private ViewFrame View(string name, Control? content)
     {
         var view = new ViewFrame(name, Tokens) { ShowLabels = Labels };
@@ -560,24 +585,43 @@ public sealed partial class ChromeFrame : Control
 // The ground of a frame over a transparent window: the window colour everywhere but the opening.
 internal sealed partial class GroundMask : Control
 {
-    private readonly ChromeFrame frame; private Rect2 last;
+    private readonly ChromeFrame frame; private Rect2 last, lastLocal;
     public GroundMask(ChromeFrame frame) { this.frame = frame; Name = "GroundMask"; MouseFilter = MouseFilterEnum.Ignore; }
 
     public override void _Process(double delta)
     {
-        Rect2 now = frame.Opening;
-        if (now != last) { last = now; QueueRedraw(); }
+        Rect2 now = frame.Opening, local = frame.LocalOpening;
+        if (now != last || local != lastLocal) { last = now; lastLocal = local; QueueRedraw(); }
     }
 
+    // B18c: the ground with both openings cut out, Global's and Local's (ViewPanes.Ground).
     public override void _Draw()
     {
         Color ground = frame.Tokens.C("window.background");
-        var all = new Rect2(Vector2.Zero, Size);
-        Rect2 open = new Rect2(last.Position - GlobalPosition, last.Size).Intersection(all);
-        if (!open.HasArea()) { DrawRect(all, ground); return; }
-        DrawRect(new Rect2(0, 0, Size.X, open.Position.Y), ground);
-        DrawRect(new Rect2(0, open.End.Y, Size.X, Size.Y - open.End.Y), ground);
-        DrawRect(new Rect2(0, open.Position.Y, open.Position.X, open.Size.Y), ground);
-        DrawRect(new Rect2(open.End.X, open.Position.Y, Size.X - open.End.X, open.Size.Y), ground);
+        var all = new PaneRect(0, 0, (int)Math.Ceiling(Size.X), (int)Math.Ceiling(Size.Y));
+        var holes = new List<PaneRect>();
+        foreach (Rect2 open in new[] { last, lastLocal })
+        {
+            if (!open.HasArea()) continue;
+            Vector2 at = open.Position - GlobalPosition;
+            holes.Add(new PaneRect((int)Math.Round(at.X), (int)Math.Round(at.Y), (int)Math.Floor(open.Size.X), (int)Math.Floor(open.Size.Y)));
+        }
+        foreach (PaneRect piece in ViewPanes.Ground(all, holes)) DrawRect(new Rect2(piece.X, piece.Y, piece.Width, piece.Height), ground);
+    }
+}
+
+// B18c: Local's slot with the host's drawing on top (the opening) and Local's content below it.
+internal sealed partial class LocalOpeningLayout : Container
+{
+    private readonly ChromeFrame frame;
+    public Control Opening { get; } = new() { Name = "LocalOpening", MouseFilter = MouseFilterEnum.Pass };
+    public LocalOpeningLayout(ChromeFrame frame) { this.frame = frame; MouseFilter = MouseFilterEnum.Pass; }
+
+    public override void _Notification(int what)
+    {
+        if (what != NotificationSortChildren || GetChildCount() < 2) return;
+        int height = ViewPanes.OpeningHeight((int)Size.X, (int)Size.Y, frame.LocalOpeningShown);
+        FitChildInRect(GetChild<Control>(0), new Rect2(0, 0, Size.X, height));
+        FitChildInRect(GetChild<Control>(1), new Rect2(0, height, Size.X, Math.Max(0, Size.Y - height)));
     }
 }

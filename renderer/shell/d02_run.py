@@ -603,6 +603,51 @@ ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-laye
 IN_SAMPLE_MODE = {"host"}
 
 
+# The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.
+def expect_two_views(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B18c: the script ran to its end; the frame rows decide (check_two_views_events)."""
+    return [] if dumps else ["the two-views run wrote no screen"]
+
+
+def frame_rows(events: Path) -> list[dict]:
+    if not events.is_file():
+        return []
+    rows = (json.loads(line) for line in events.read_text(encoding="utf-8").splitlines() if line.strip())
+    return [row for row in rows if row.get("t") == "frame"]
+
+
+def check_two_views_events(events: Path) -> list[str]:
+    """B18c: one-view frames until a cap is named, then composite frames of two panes that are drawn, not held, at
+    every engine revision the run reached after that (twists by the router's KeyJ and an undo), so both views show one
+    revision; at least one revision change happens while Local is drawn."""
+    frames = frame_rows(events)
+    if not frames:
+        return ["the run wrote no frame rows"]
+    problems = []
+    if "panes" in frames[0]:
+        problems.append("the first frame is a composite frame before any cap was named")
+    paned = [row for row in frames if row.get("panes")]
+    drawn = [row for row in paned if row.get("held") == 0]
+    if not drawn or any(row.get("panes") != 2 for row in drawn):
+        problems.append(f"no composite frame of two drawn panes ({len(paned)} composite rows)")
+    if drawn:
+        after = {row["engine_revision"] for row in frames if row["frame_id"] >= drawn[0]["frame_id"]}
+        shown = {row["engine_revision"] for row in drawn}
+        if after - shown:
+            problems.append(f"revisions {sorted(after - shown)} were never drawn in both views")
+        if len(after) < 2:
+            problems.append(f"no revision changed while Local was drawn ({sorted(after)})")
+    held = sum(1 for row in paned if row.get("held") == 1)
+    print(f"two-views: {len(frames)} frames, {len(drawn)} drawn with two panes, {held} held, revisions "
+          f"{sorted({row['engine_revision'] for row in drawn})}")
+    return problems
+
+
+EXPECT["two-views"] = expect_two_views
+ON_FIXTURE.add("two-views")
+EVENT_CHECKS = {"two-views": check_two_views_events}
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []
@@ -729,6 +774,8 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     if dumps:
         problems += window_problems(dumps)
         problems += EXPECT[script](dumps, source, state)
+    if script in EVENT_CHECKS:
+        problems += EVENT_CHECKS[script](out / "events.jsonl")
     record = {"format": FORMAT, "script": script, "state": state, "steps": len(dumps), "mismatches": problems,
               "foreground_kept": after is not None and after == before, "topmost": bool(topmost), "windows": seen,
               "gave_back": max((dump.get("window", {}).get("gave_back", 0) for dump in dumps), default=0)}

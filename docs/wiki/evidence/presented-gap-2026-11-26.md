@@ -11,9 +11,9 @@ claims:
   - {id: pg1126-race-builds, evidence_kind: actual_windows_directx, path: work/experiments/presented-gap-20261126/results/race-builds-20261126.json, sha256: 59cd9986ae23d4503bd5216f5a549a072ab623e3f8f9655f600cc29074efdc0a, checked_at: 2026-11-26}
   - {id: pg1126-race-core-fix, evidence_kind: actual_windows_directx, path: work/experiments/presented-gap-20261126/results/race-core-fix-20261126.json, sha256: 2f1c8b1e499c1c86bd55cee40cd743508ddcc9f0e2b37bc241d4479de24f1916, checked_at: 2026-11-26}
   - {id: pg1126-share-today, evidence_kind: actual_windows_directx, path: work/experiments/presented-gap-20261126/results/presented-share-20261126.json, sha256: 1c0d93195d59682923d506c9b7c62d2db42480a94576a46cff81ee1758cb6f22, checked_at: 2026-11-26}
-  - {id: pg1126-core-sample, evidence_kind: source, path: renderer/core/src/interop.cpp, line: 108, sha256: 780ca357ea81e21146e8e8dc4e41bea8a181ffafde50b1f3ddf6102228c2828f, checked_at: 2026-11-26}
-  - {id: pg1126-latency-wait, evidence_kind: source, path: renderer/core/src/product.h, line: 232, sha256: 07813b33072681067923ea1e24012dc65d79edf359c615c0e47c2f30136d7532, checked_at: 2026-11-26}
-  - {id: pg1126-latency-wait-check, evidence_kind: fixture, path: renderer/core/src/selftest.cpp, line: 1397, sha256: aa7c39efb2f0466cd0f7972cc0e9e83b4f5ddf2d2c5108c7c99d897b530c7bfa, checked_at: 2026-11-26}
+  - {id: pg1126-core-sample, evidence_kind: source, path: renderer/core/src/interop.cpp, line: 108, sha256: cb6327b7b973510ba94780ffb2ec5fa5aade6ef56d2ad6d136c9a65f763fcfe9, checked_at: 2026-11-26}
+  - {id: pg1126-latency-wait, evidence_kind: source, path: renderer/core/src/product.h, line: 238, sha256: cd023b4ddb321258f82b7ccf7e9b5d201f987634902b3a347f916dba81a56e74, checked_at: 2026-11-26}
+  - {id: pg1126-latency-wait-check, evidence_kind: fixture, path: renderer/core/src/selftest.cpp, line: 1397, sha256: 5327c604989a84018ae279217ce9304429e4a3990743ac9c0c6682f30cbc1958, checked_at: 2026-11-26}
   - {id: pg1126-keys, evidence_kind: actual_windows_directx, path: work/experiments/presented-gap-20261126/results/keys-sittings.json, sha256: ec047018b3a3c2ab610fca11293ec2ebc84a051b0646e64394f32e1f6392db50, checked_at: 2026-11-26}
   - {id: pg1126-gate-not-required, evidence_kind: performance, path: work/experiments/owner-sitting-20261125/results/u7-s1125-lx2.json, line: 81, sha256: 854f4c729a9d22e2c0fb394ea3a71fdc8adb7d2861c6f4499b44e0e61f689346, checked_at: 2026-11-26}
 ---

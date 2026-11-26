@@ -46,7 +46,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 8u
+#define SA2_ABI_VERSION 9u
 
 /* Code layout; must match code_layout.json and the host's CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -1201,6 +1201,45 @@ static_assert(sizeof(sa2_pane_row) == 32, "sa2_pane_row requires the x64 ABI");
 
 SA2_API int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* frame, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id);
 SA2_API int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_row* rows, uint32_t capacity, uint32_t* out_count);
+
+/* ABI 9: a view's focus (ADR-D02 build step B18c, a candidate behind the shell's --d02): Local's own shape from Look
+ * Lab's local-view.json, which draws only the named cap's turning region, centred, pulled apart and orthographic.
+ * Additive: every ABI 8 call, struct and behaviour is unchanged, and a view whose focus was never set draws
+ * byte-identically to ABI 8.
+ *
+ * sa2_view_focus_set sets the focus that the product frames of `view`, their panes and their ID passes draw with:
+ * - projection: SA2_PROJECTION_PERSPECTIVE (the view shape's d4) or SA2_PROJECTION_ORTHOGRAPHIC (d4 unused);
+ * - focus_cell: a cell 0..599 whose centre is the focus pole, or SA2_FOCUS_NONE. With a pole, the core turns the
+ *   pole to +w before the frame's camera (world' = camera * T * world, T the rotation taking the pole to +w, as Look
+ *   Lab's LocalShape.Frame builds it), and draws only the stickers whose posed, unshrunk centre c has
+ *   dot(c, pole) >= focus_cos, where the world's unit is the cell inradius (cell centres have length 1). Every other
+ *   sticker is placed outside the clip volume, as an invisible slot is, so it enters neither the frame nor the ID pass;
+ * - focus_cos: -1 <= focus_cos <= 1, read only with a pole;
+ * - spread: 1 <= spread <= 3. Above 1 each sticker moves by (spread - 1) times its posed cell centre's projected
+ *   position, so the cells are pulled apart (Look Lab's focus_spread); 1 draws them in place.
+ * A NULL focus restores the default (perspective, no pole, spread 1). struct_size must be sizeof(sa2_view_focus) and
+ * reserved 0; a value outside its range is SA2_E_INVALID_ARGUMENT and changes nothing. Like the shape (ABI 6) the
+ * focus is device-free product state: it needs a loaded scene outside a trace (SA2_E_WRONG_STATE), is kept by
+ * sa2_recover and forgotten by sa2_scene_unload. A frame keeps the focus it was drawn with, so a pick on it draws its
+ * ID pass with that focus.
+ */
+#define SA2_PROJECTION_PERSPECTIVE 0u
+#define SA2_PROJECTION_ORTHOGRAPHIC 1u
+#define SA2_FOCUS_NONE 0xFFFFFFFFu
+
+typedef struct sa2_view_focus {
+    uint32_t struct_size; /* sizeof(sa2_view_focus); 24 on x64 */
+    uint32_t projection; /* SA2_PROJECTION_PERSPECTIVE or SA2_PROJECTION_ORTHOGRAPHIC */
+    uint32_t focus_cell; /* 0..599, or SA2_FOCUS_NONE */
+    float focus_cos; /* -1..1: the drawn stickers' least dot product with the pole */
+    float spread; /* 1..3 */
+    uint32_t reserved; /* must be 0 */
+} sa2_view_focus;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_view_focus) == 24, "sa2_view_focus requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus);
 
 #ifdef __cplusplus
 }

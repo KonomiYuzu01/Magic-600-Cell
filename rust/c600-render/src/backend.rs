@@ -272,6 +272,16 @@ impl<C: CoreAbi> RenderBackend<C> {
         self.core.view_shape_set(view.0, shape.as_ref()).map_err(|status| self.error(status))
     }
 
+    /// ABI 9: the focus `view`'s frames and their ID passes draw with, or `None` for the defaults. The core keeps it
+    /// across a recovery. A value out of the header's range is refused before the core is asked.
+    pub fn set_view_focus(&mut self, view: ViewId, focus: Option<Sa2ViewFocus>) -> Result<(), Error> {
+        let focus = focus.map(|f| Sa2ViewFocus { struct_size: Sa2ViewFocus::new().struct_size, reserved: 0, ..f });
+        if focus.is_some_and(|f| !f.in_range()) {
+            return Err(Error::invalid("a view focus value is not finite or lies outside its range"));
+        }
+        self.core.view_focus_set(view.0, focus.as_ref()).map_err(|status| self.error(status))
+    }
+
     /// ABI 7: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear it. A new
     /// adoption drops it in the core, so the caller sets it again for each revision. Bytes with bits outside the
     /// channel's are refused before the core is asked.

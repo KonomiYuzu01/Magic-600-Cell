@@ -1,4 +1,4 @@
-# Renderer core (S-A2, ABI 8)
+# Renderer core (S-A2, ABI 9)
 
 `renderer/core/` is the product copy of the selected S-A2 renderer core. It is a native Direct3D 12 producer DLL, `sa2_interop.dll`, that a Godot 4.7.2 .NET host loads. It draws into textures that Godot shares with it, on Godot's device and queue. W-J's per-piece pose path is added as ABI 3, so W-J item 5 (S4, I_a, I_b) and the W3 re-acceptance can run on the S-A2 host with unchanged bars. ABI 4 adds the product API that the Rust display host calls, one C call per RM.14 operation. ABI 5 adds route B: the core's own device presenting in a DirectComposition layer. Route B is accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks. `PROVENANCE.md` lists every file's source under `work/experiments/` and how it changed. The build compiles nothing from there.
 
@@ -149,6 +149,21 @@ SA2_API int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_ro
 - Each pane draws inside its own pipeline-statistics query; `sa2_frame_panes` answers each pane's vertex evaluations and the report's `view_vertex_evals` is their sum. A pick on a composite frame draws the ID pass with the pane that holds the point (its camera, set, shape and viewport), and its reply names that pane's view, view generation and publication generation. Each view keeps its own publication generation: only the first pane's set must carry the frame input's.
 - `python renderer/core/check_core.py --panes` runs `sa2_selftest.exe --warp --panes --debug` on WARP only: one pane covering the target is byte-identical to `sa2_frame_submit`; each of two 300 x 300 panes matches its one-view frame drawn at 300 x 300 (at most 1% of covered pixels differ by more than 2); pixels outside every pane hold the clear colour; overlap, a fifth pane and a mixed revision are refused; a pick in each pane names its view and the one-view pick's instance; the composite frame's vertex evaluations equal the two one-view frames' sum.
 
+## ABI 9: a view's focus (ADR-D02 B18c, a candidate behind --d02)
+
+ABI 9 gives a view a focus: Local's own projection, the cap it draws and the spread that pulls its cells apart. Every ABI 8 call, struct and behaviour is unchanged, and the default focus draws byte-identically to ABI 8.
+
+```c
+#define SA2_PROJECTION_PERSPECTIVE 0u
+#define SA2_PROJECTION_ORTHOGRAPHIC 1u
+#define SA2_FOCUS_NONE 0xFFFFFFFFu
+SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus); /* sa2_view_focus: 24 bytes */
+```
+
+- A focus is a projection (perspective or orthographic), a focus cell (0 to 599, or `SA2_FOCUS_NONE`), a threshold `focus_cos` (-1 to 1) and a spread (1 to 3). NULL restores the default (perspective, none, -1, 1). A shape set later keeps the focus, and a frame keeps the focus it was drawn with, so a pick on it uses the same one.
+- With a focus cell the core turns the cell's unit centre (the pole) to +w before the view's camera, as Look Lab's `LocalShape.Frame` does, so the cap faces the viewer. A sticker whose posed, unshrunk centre has a dot product with the pole below `focus_cos` is placed outside the clip volume. The spread moves each drawn sticker by (spread - 1) times its posed cell centre's projection. The orthographic projection drops d4's divide.
+- `python renderer/core/check_core.py --focus` runs `sa2_selftest.exe --warp --focus --debug` on WARP only: the default focus draws byte-identically to no call; with cell 150's pole turned to +w and orthographic, the whole view changes the picture; the cap test (121/125) draws fewer pixels, around the target's centre; the spread changes the picture; another view keeps its frames; a later shape keeps the focus; a refused focus changes nothing, and NULL restores the default. It writes three pictures beside its report.
+
 ## Build and CPU check
 
 These need Windows, MSVC x64, the Windows SDK's `dxc` and the pinned `renderer-spike` CMake and Ninja. A worktree without `tools/.venv/renderer-spike` can set `M600_RENDERER_SPIKE_SCRIPTS` to another checkout's `Scripts` folder.
@@ -193,4 +208,4 @@ None of these has been run for this copy. Each starts a D3D12 device:
 - The ABI 4 GPU paths: the engine and preparation uploads, a product frame with its timestamp and pipeline-statistics queries, the ID pass and its readback, `sa2_resize`, and device loss during product work. They compile, but no self-test mode exercises them yet.
 - The ABI 5 route B paths: `sa2_create`, the surface calls in a real window, surface frames and their presentation, `sa2_presented` and a traced run's `presented.jsonl` against real frame statistics, `sa2_resize` of the swap chain, and `sa2_recover` after `sa2_remove_device`. They compile, but no self-test mode exercises them; route B's three owner-machine checks are still open.
 
-The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 8 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 8 and uses only ABI 1 to 3 calls.
+The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 9 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 9 and uses only ABI 1 to 3 calls.

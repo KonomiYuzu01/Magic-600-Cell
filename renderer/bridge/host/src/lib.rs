@@ -102,7 +102,7 @@ use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::{
-    piece_style_valid, Sa2Pane, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES, STYLE_CHANNEL_FILL,
+    piece_style_valid, Sa2Pane, Sa2ViewFocus, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES, STYLE_CHANNEL_FILL,
     STYLE_CHANNEL_OUTLINE, STYLE_SLOTS, TARGET_SURFACE,
 };
 use c600_render::{DisplayTime, PaneSpec, RenderBackend};
@@ -127,8 +127,9 @@ use turns::{Head, Pending, Press, Puzzle, Turns};
 /// core's ABI 6); version 10 the piece style and the style slots ([`m6h_set_piece_style`], [`m6h_set_view_style`],
 /// ADR-D02 B14, over the core's ABI 7); version 11 Local and the composite frame ([`m6h_open_local`],
 /// [`m6h_set_view_camera`], [`m6h_set_view_visible`], [`m6h_set_pane`], [`m6h_clear_pane`] and [`M6hFrame`]'s pane
-/// count and held flag, ADR-D02 B18b, over the core's ABI 8).
-pub const M6H_ABI_VERSION: u32 = 11;
+/// count and held flag, ADR-D02 B18b, over the core's ABI 8); version 12 a view's focus ([`m6h_set_view_focus`],
+/// ADR-D02 B18c, over the core's ABI 9).
+pub const M6H_ABI_VERSION: u32 = 12;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -1184,6 +1185,42 @@ pub unsafe extern "C" fn m6h_set_view_shape(handle: *mut ShellHost, view: u64, s
                 ));
             }
             shell.host.backend.set_view_shape(id, shape).map_err(host_error)
+        })
+    }
+}
+
+/// Sets the focus that `view`'s frames draw with (version 12, ADR-D02 B18c; the core's ABI 9 `sa2_view_focus_set`):
+/// `projection` 0 (perspective) or 1 (orthographic), `focus_cell` a cell 0..599 whose centre is the pole, turned to
+/// +w before the view's camera, or `u32::MAX` for none, `focus_cos` the least dot product with the pole of a drawn
+/// sticker's posed centre (-1..1), and `spread` 1..3, which pulls the cells apart. (0, `u32::MAX`, -1, 1) restores
+/// the default, which draws as before. A view that is not open, or a value out of range, answers
+/// [`M6H_E_INVALID_ARGUMENT`] and changes nothing. The core keeps the focus across a recovery.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_view_focus(
+    handle: *mut ShellHost,
+    view: u64,
+    projection: u32,
+    focus_cell: u32,
+    focus_cos: f32,
+    spread: f32,
+) -> i32 {
+    let focus = Sa2ViewFocus { projection, focus_cell, focus_cos, spread, ..Sa2ViewFocus::new() };
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let id = ViewId(view);
+            if !shell.names_open_view(id) {
+                return Err((M6H_E_INVALID_ARGUMENT, format!("view {view} is not an open view of this host")));
+            }
+            if !focus.in_range() {
+                return Err((M6H_E_INVALID_ARGUMENT, "a view focus value is not finite or out of its range".to_owned()));
+            }
+            let focus = (focus != Sa2ViewFocus::defaults()).then_some(focus);
+            shell.host.backend.set_view_focus(id, focus).map_err(host_error)
         })
     }
 }

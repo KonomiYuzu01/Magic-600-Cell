@@ -20,12 +20,13 @@ namespace Magic600.Shell;
 /// ABI 7) adds <see cref="SetPieceStyle"/> and <see cref="SetViewStyle"/>, the per-piece style and the style slots.
 /// Version 11 (ADR-D02 B18b, over the core's ABI 8) adds Local and the composite frame: <see cref="OpenLocal"/>,
 /// <see cref="SetViewCamera"/>, <see cref="SetViewVisible"/>, <see cref="SetPane"/>, <see cref="ClearPane"/>, and
-/// <see cref="Submitted"/>'s pane count and held flag.
+/// <see cref="Submitted"/>'s pane count and held flag. Version 12 (ADR-D02 B18c, over the core's ABI 9) adds
+/// <see cref="SetViewFocus"/>, Local's own projection, focus cap and spread.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 11;
+    public const uint AbiVersion = 12;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -90,6 +91,7 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_camera",
         "m6h_set_viewport",
         "m6h_set_view_shape",
+        "m6h_set_view_focus",
         "m6h_set_piece_style",
         "m6h_set_view_style",
         "m6h_open_local",
@@ -369,6 +371,23 @@ public sealed unsafe class HostLibrary : IDisposable
     /// <summary>Clears pane 0 to 3 (version 11); with every pane clear, frames are one-view frames again.</summary>
     public int ClearPane(IntPtr host, uint pane) =>
         ((delegate* unmanaged[Cdecl]<IntPtr, uint, int>)_exports["m6h_clear_pane"])(host, pane);
+
+    /// <summary>The focus's perspective projection (the shape's d4).</summary>
+    public const uint ProjectionPerspective = 0;
+    /// <summary>The focus's orthographic projection.</summary>
+    public const uint ProjectionOrthographic = 1;
+    /// <summary>No focus cell: every sticker is drawn.</summary>
+    public const uint FocusNone = uint.MaxValue;
+
+    /// <summary>
+    /// Sets the focus a view's frames draw with (version 12): the projection, the cell whose centre is the pole (turned
+    /// to +w before the view's camera) or <see cref="FocusNone"/>, the least dot product with the pole of a drawn
+    /// sticker's posed centre, and the spread (1 to 3) that pulls the cells apart. (perspective, none, -1, 1) is the
+    /// default. A view that is not open or a value out of range answers <see cref="InvalidArgument"/>.
+    /// </summary>
+    public int SetViewFocus(IntPtr host, ulong view, uint projection, uint focusCell, float focusCos, float spread) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, uint, float, float, int>)_exports["m6h_set_view_focus"])(
+            host, view, projection, focusCell, focusCos, spread);
 
     /// <summary>
     /// Sets the shape that a view's frames draw with (version 9): the cell shrink, the sticker shrink, d4 and the zoom,

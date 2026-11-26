@@ -26,6 +26,7 @@ static_assert(sizeof(sa2_view_shape) == 24);
 static_assert(sizeof(sa2_view_style) == 316);
 static_assert(sizeof(sa2_pane) == 112);
 static_assert(sizeof(sa2_pane_row) == 32);
+static_assert(sizeof(sa2_view_focus) == 24);
 
 namespace sa2 {
 using Digest = std::array<uint8_t, 32>;
@@ -96,9 +97,14 @@ PreparedData preparation(const sa2_preparation* preparation); // validates and c
 struct ViewShape {
     float cell_shrink = SA2_SHAPE_DEFAULT_CELL_SHRINK, sticker_shrink = SA2_SHAPE_DEFAULT_STICKER_SHRINK;
     float d4 = SA2_SHAPE_DEFAULT_D4, zoom = SA2_SHAPE_DEFAULT_ZOOM;
+    // ABI 9: the view's focus (sa2_view_focus_set); the defaults draw exactly as ABI 8.
+    uint32_t projection = SA2_PROJECTION_PERSPECTIVE, focus_cell = SA2_FOCUS_NONE;
+    float focus_cos = -1.0f, spread = 1.0f;
     bool operator==(const ViewShape&) const = default;
 };
 ViewShape view_shape(const sa2_view_shape* shape); // validates (SA2_E_INVALID_ARGUMENT); NULL gives the defaults
+// ABI 9: validates a focus (SA2_E_INVALID_ARGUMENT) and writes it into `shape`; NULL writes the defaults.
+void view_focus(const sa2_view_focus* focus, ViewShape& shape);
 // ABI 7: a style slot (sa2_view_style_set), as the styled pass reads it (register b1): 16 palette entries, the three
 // matrix rows (xyz), then the modes. 320 bytes, inside one 256-byte-aligned constant buffer.
 struct ViewStyle {

@@ -173,6 +173,12 @@ public sealed class EventLog : IDisposable
             json.WriteNumber("engine_revision", frame.EngineRevision);
             json.WriteNumber("publication_revision", frame.PublicationRevision);
             json.WriteNumber("returned_qpc", returned);
+            // ADR-D02 B18c: a composite frame names its pane count and whether it was held (one-view rows are unchanged).
+            if (frame.Panes > 0)
+            {
+                json.WriteNumber("panes", frame.Panes);
+                json.WriteNumber("held", frame.Held);
+            }
         });
         Drain(frame);
     }

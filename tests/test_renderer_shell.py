@@ -296,8 +296,10 @@ class ShellProject(unittest.TestCase):
         for block in re.findall(r'json\.WriteString\("t", "(\w+)"\);(.*?)\}\)', log, re.S):
             written[block[0]] = re.findall(r'json\.Write\w+\("(\w+)"', block[1])
         self.assertEqual(written["presented"], list(key_to_frame.FIELDS["presented"]))
+        # ADR-D02 B18c: a composite frame's row adds its pane count and held flag; a one-view row is unchanged.
         self.assertEqual(written["frame"], [*key_to_frame.FIELDS["frame"], "engine_revision", "publication_revision",
-                                            "returned_qpc"])
+                                            "returned_qpc", "panes", "held"])
+        self.assertIn('if (frame.Panes > 0)\n            {\n                json.WriteNumber("panes", frame.Panes);', log)
         # A key row: seq and qpc, the QPC when m6h_key_down returned, then frame_id as a number or as null.
         self.assertEqual(written["key"][:2], list(key_to_frame.FIELDS["key"]))
         self.assertEqual(written["key"][2:], ["handled_qpc", "frame_id", "frame_id"])
@@ -1493,11 +1495,11 @@ class D02Fixtures(unittest.TestCase):
 
     def test_the_host_gives_the_state_digest_and_the_shell_binds_only_by_it(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 11;", lib)
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 12;", lib)
         self.assertIn('pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32', lib)
-        self.assertIn("public const uint AbiVersion = 11;", text(PROJECT / "HostLibrary.cs"))
-        self.assertIn("refuses another version than its `AbiVersion` (11 since ADR-D02 B18b's two views; 10 at B14's "
-                      "style, 9 at the view shape, 8 at B5)",
+        self.assertIn("public const uint AbiVersion = 12;", text(PROJECT / "HostLibrary.cs"))
+        self.assertIn("refuses another version than its `AbiVersion` (12 since ADR-D02 B18c's view focus; 11 at "
+                      "B18b's two views; 10 at B14's style, 9 at the view shape, 8 at B5)",
                       text(SHELL / "README.md"))
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
         # A sample binds by its state digest and its two pose-array digests (checkpoint C1: pose ids are ranks in a
@@ -1563,7 +1565,7 @@ class D02Shape(unittest.TestCase):
 
 class D02Panes(unittest.TestCase):
     """ADR-D02 B18b (host version 11 over the core's ABI 8): Local and the composite frame, the same on both sides of
-    the host library's C interface. Nothing in the shell calls them yet (B18c)."""
+    the host library's C interface. The shell calls them from B18c on, only with --d02 (tests/test_d02_drawing.py)."""
 
     def test_the_frame_row_and_the_view_numbers_match(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
@@ -1584,7 +1586,11 @@ class D02Panes(unittest.TestCase):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
         self.assertIn("if shell.panes.iter().all(Option::is_none) { shell.frame_one() } else { shell.frame_panes() }",
                       lib)
-        self.assertNotIn("OpenLocal(", text(PROJECT / "Shell.cs"))
+        # B18c: Local opens only with --d02; without it the shell sets no pane and draws one-view frames.
+        shell = text(PROJECT / "Shell.cs")
+        self.assertEqual(shell.count("OpenLocal(hostLibrary);"), 1)
+        self.assertIn("if (D02.ShellJumble.On)\n        {\n            OpenLocal(hostLibrary);", shell)
+        self.assertIn("if (_localOpen && area == _area)", shell)
 
 
 class D02Host(unittest.TestCase):
@@ -1989,7 +1995,9 @@ class D02Zoom(unittest.TestCase):
     def test_the_shell_zooms_the_view_under_the_pointer(self):
         shell = text(PROJECT / "Shell.cs")
         self.assertIn("if (D02.ShellJumble.On && D02.ShellJumble.Zoom.Follow(@event, ViewAt))", shell)
-        self.assertIn("private ulong? ViewAt(Vector2 point) => InOpening(point) ? HostLibrary.View : null;", shell)
+        # Global in its opening; Local (B18c) in its drawn pane, through the pane layout's hit.
+        self.assertIn("private ulong? ViewAt(Vector2 point)\n", shell)
+        self.assertIn('ViewPanes.Hit(layout, (int)point.X, (int)point.Y) is { View: "Local" }', shell)
         self.assertIn("D02.ShellShape.ApplyZoom(library, _host, view, D02.ShellJumble.Zoom.Factor(view))", shell)
         shape = text(PROJECT / "D02" / "ShellShape.cs")
         self.assertIn("shape[3] = (float)(opening[3] * factor);", shape)

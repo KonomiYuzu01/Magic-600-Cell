@@ -266,6 +266,11 @@ ABI8 = {
     "SA2_API int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* frame, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id);",
     "SA2_API int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_row* rows, uint32_t capacity, uint32_t* out_count);",
 }
+# ABI 9: a view's focus (ADR-D02 B18c, Local's own shape, a candidate behind --d02).
+ABI9 = {
+    "SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus);",
+}
+ABI9_DEFINES = {"SA2_PROJECTION_PERSPECTIVE": "0u", "SA2_PROJECTION_ORTHOGRAPHIC": "1u", "SA2_FOCUS_NONE": "0xFFFFFFFFu"}
 
 
 class AbiTests(unittest.TestCase):
@@ -273,8 +278,8 @@ class AbiTests(unittest.TestCase):
         self.header = text(CORE / "include" / "sa2_interop.h")
         self.abi2 = text(SA2_HEADER)
 
-    def test_version_is_8(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["8u"])
+    def test_version_is_9(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["9u"])
         self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.abi2, re.M), ["2u"])
 
     def test_abi2_scene_config_layout_is_pinned(self):
@@ -301,7 +306,17 @@ class AbiTests(unittest.TestCase):
 
     def test_abi4_and_abi5_additions(self):
         added = declarations(self.header) - declarations(self.abi2)
-        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5 | ABI6 | ABI7 | ABI8)
+        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5 | ABI6 | ABI7 | ABI8 | ABI9)
+
+    def test_abi9_view_focus_is_pinned(self):
+        values = defines(self.header)
+        for name, value in ABI9_DEFINES.items():
+            with self.subTest(define=name):
+                self.assertEqual(values.get(name), value)
+        self.assertTrue(structs(self.header).get("sa2_view_focus", "").startswith(
+            "typedef struct sa2_view_focus {\n    uint32_t struct_size;"))
+        self.assertIn('static_assert(sizeof(sa2_view_focus) == 24, "sa2_view_focus requires the x64 ABI");', self.header)
+        self.assertIn("static_assert(sizeof(sa2_view_focus) == 24);", text(CORE / "src" / "product.h"))
 
     def test_abi4_struct_sizes_are_pinned(self):
         layouts = structs(self.header)

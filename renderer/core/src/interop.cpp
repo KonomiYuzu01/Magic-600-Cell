@@ -2017,7 +2017,24 @@ int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape
         context(ctx);
         const auto value = sa2::view_shape(shape);
         auto& scene = product_scene(ctx);
-        scene.product.set_shape(view, value);
+        // ABI 9: the shape's four values change; the view's focus stays.
+        auto merged = scene.product.shape(view);
+        merged.cell_shrink = value.cell_shrink; merged.sticker_shrink = value.sticker_shrink; merged.d4 = value.d4; merged.zoom = value.zoom;
+        scene.product.set_shape(view, merged);
+        return SA2_OK;
+    });
+}
+
+// ABI 9: a view's focus (sa2_interop.h). Device-free product state, kept with the view's shape.
+int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus) {
+    return invoke(ctx, "sa2_view_focus_set", [&] {
+        context(ctx);
+        sa2::ViewShape checked;
+        sa2::view_focus(focus, checked);
+        auto& scene = product_scene(ctx);
+        auto merged = scene.product.shape(view);
+        sa2::view_focus(focus, merged);
+        scene.product.set_shape(view, merged);
         return SA2_OK;
     });
 }

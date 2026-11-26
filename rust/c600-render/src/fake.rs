@@ -126,6 +126,8 @@ pub struct FakeCore {
     pub adoptions: Vec<(u64, u32)>,
     /// ABI 6: every view's shape that `sa2_view_shape_set` set and did not restore to the defaults.
     pub shapes: BTreeMap<u64, Sa2ViewShape>,
+    /// ABI 9: every view's focus that `sa2_view_focus_set` set and did not restore to the defaults.
+    pub focuses: BTreeMap<u64, Sa2ViewFocus>,
     /// ABI 7: the adopted revision's piece style by channel (fill, outline), dropped by an adoption.
     pub piece_styles: [Option<Vec<u8>>; 2],
     /// ABI 7: the style slots 1 to 4 (index 0 is slot 1).
@@ -157,6 +159,7 @@ impl FakeCore {
             picks: BTreeMap::new(),
             placed: BTreeMap::new(),
             shapes: BTreeMap::new(),
+            focuses: BTreeMap::new(),
             piece_styles: [None, None],
             view_styles: [None; 4],
             counters: Sa2CounterValues::new(),
@@ -736,6 +739,28 @@ impl CoreAbi for FakeCore {
 
     fn last_error(&self) -> String {
         self.error.clone()
+    }
+
+    /// The header's checks; device-free, so it works during device loss.
+    fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
+        let focus = match focus {
+            None => Sa2ViewFocus::defaults(),
+            Some(focus) => {
+                if focus.struct_size as usize != std::mem::size_of::<Sa2ViewFocus>() || focus.reserved != 0 {
+                    return self.fail(Status::INVALID_ARGUMENT, "invalid view_focus struct_size or reserved");
+                }
+                if !focus.in_range() {
+                    return self.fail(Status::INVALID_ARGUMENT, "a view focus value is not finite or out of its range");
+                }
+                *focus
+            }
+        };
+        if focus == Sa2ViewFocus::defaults() {
+            self.focuses.remove(&view);
+        } else {
+            self.focuses.insert(view, focus);
+        }
+        Ok(())
     }
 
     /// The header's checks; device-free, so it works during device loss.
