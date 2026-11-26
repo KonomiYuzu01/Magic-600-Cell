@@ -314,11 +314,11 @@ fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
 }
 
 /// The frame thread's share of a twist (26 Nov 2026): the key call commits, with the journal written before it returns,
-/// and does none of the view's work, which a stalled frame thread showed as one long frame per key. Frames never wait
-/// for the head's build: each draws the adopted revision, and the first frame after the build ends adopts the press's
-/// revision and publishes it, so a later frame shows the press.
+/// and does none of the view's work, which a stalled frame thread showed as one long frame per key. Frames wait for
+/// the head's build only briefly, after their submission: each draws the adopted revision, and the first frame call
+/// that finds the build ended adopts the press's revision and publishes it, so a later frame shows the press.
 #[test]
-fn a_twist_key_leaves_the_view_work_to_later_frames_that_never_wait_for_it() {
+fn a_twist_key_leaves_the_view_work_to_later_frames() {
     let run = Run::new();
     let folder = fresh("deferred");
     assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
@@ -350,7 +350,7 @@ fn a_twist_key_leaves_the_view_work_to_later_frames_that_never_wait_for_it() {
 }
 
 /// A burst of keys faster than the builds: each commit is durable and names its own revision, in order; the frames
-/// between them never wait and never go back to an older revision; the core adopts revisions in increasing order,
+/// between them never go back to an older revision; the core adopts revisions in increasing order,
 /// skipping only ones a newer head replaced, and ends on the newest; the control at the close passes on the frame
 /// that shows it.
 #[test]

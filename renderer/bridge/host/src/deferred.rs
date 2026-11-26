@@ -13,6 +13,7 @@
 
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
 use c600_display::jumble;
 use c600_display::plan::{Publication, RevisionRef};
@@ -129,13 +130,32 @@ impl Worker {
         }
     }
 
-    /// The next built job, waiting for it when `wait`; `None` when none is ready (or, waiting, the thread ended).
-    pub(crate) fn take(&self, wait: bool) -> Option<Outcome> {
-        if wait {
-            self.built.recv().ok()
-        } else {
-            self.built.try_recv().ok()
+    /// The next built job: at once, until `deadline`, or for as long as it takes. `None` when none is ready by then
+    /// (or the thread ended).
+    pub(crate) fn take(&self, wait: Wait) -> Option<Outcome> {
+        match wait {
+            Wait::No => self.built.try_recv().ok(),
+            Wait::Until(deadline) => self.built.recv_timeout(deadline.saturating_duration_since(Instant::now())).ok(),
+            Wait::Done => self.built.recv().ok(),
         }
+    }
+}
+
+/// How long [`Worker::take`] waits for a build.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum Wait {
+    /// Not at all.
+    No,
+    /// Until this instant.
+    Until(Instant),
+    /// Until the build ends.
+    Done,
+}
+
+impl Wait {
+    /// A wait of at most `limit` from now.
+    pub(crate) fn at_most(limit: Duration) -> Wait {
+        Wait::Until(Instant::now() + limit)
     }
 }
 

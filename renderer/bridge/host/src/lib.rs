@@ -22,8 +22,9 @@
 //!   reached the press's revision.
 //! - The commit stays on the caller's thread and is durable when the key call returns; the head's engine bundle and
 //!   publication are built and checked on a worker thread (the `deferred` module, 26 Nov 2026), and the first
-//!   [`m6h_frame`] after the build ends adopts and publishes them, so a twist no longer holds the frame thread for its
-//!   view work. [`m6h_pump`] waits for a pending build first.
+//!   [`m6h_frame`] call that finds the build ended adopts and publishes them, so a twist no longer holds the frame
+//!   thread for the build and its checks; after its submission a frame call waits briefly for a pending build.
+//!   [`m6h_pump`] waits for a pending build first.
 //! - The jumbled puzzle (LX-4's jumble-on half; a draft): a session opened with [`M6H_PUZZLE_JUMBLE_ON`] commits
 //!   `jumble.on` at its start, and the host adopts the poses at the next engine revision as c600-display's posed row
 //!   (J02: `jumble::posed` and `jumble::bundle`), with one posed primitive in the view's plan ([`adoption`]). The host
@@ -179,6 +180,10 @@ pub const VIEW_DEADLINE: Duration = Duration::from_secs(60);
 /// 1,561,680 bytes that the reference publication of the shipped model with a `program` dependency measured on
 /// 19 Nov 2026.
 pub const VIEW_ALLOWANCE: u64 = 1 << 24;
+
+/// How long a frame call waits, after its submission, for a twist's head that the adoption worker is still building
+/// ([`m6h_frame`]): about one build of a head on the owner's machine (10.7 ms on 26 November 2026, real core).
+const POST_SUBMIT_WAIT: Duration = Duration::from_millis(12);
 
 const IDENTITY: [f32; 16] = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
 
@@ -528,10 +533,11 @@ impl ShellHost {
         }
     }
 
-    /// Installs the newest head the adoption worker has built, if one is ready. With `wait`, it first waits until the
-    /// worker has built the newest head handed out, so that afterwards nothing is pending. A build that failed
-    /// answers its failure when it is the newest; an older one, which a newer head replaced, is dropped.
-    fn settle(&mut self, wait: bool) -> Result<(), Failure> {
+    /// Installs the newest head the adoption worker has built, if one is ready. With [`deferred::Wait::Done`] it first
+    /// waits until the worker has built the newest head handed out, so that afterwards nothing is pending; with
+    /// [`deferred::Wait::Until`] it waits for that build at most until then. A build that failed answers its failure
+    /// when it is the newest; an older one, which a newer head replaced, is dropped.
+    fn settle(&mut self, wait: deferred::Wait) -> Result<(), Failure> {
         if let Some(failure) = self.failed.take() {
             return Err(failure);
         }
@@ -552,7 +558,7 @@ impl ShellHost {
                         newest = Some(outcome);
                     }
                 }
-                None if wait => {
+                None if matches!(wait, deferred::Wait::Done) => {
                     self.awaited = None;
                     self.adoptions = None;
                     return Err((M6H_E_HOST, "the adoption worker has stopped".to_owned()));
@@ -971,17 +977,17 @@ pub unsafe extern "C" fn m6h_pump(handle: *mut ShellHost) -> i32 {
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            shell.settle(true)?;
+            shell.settle(deferred::Wait::Done)?;
             shell.poll();
             shell.sync_preview()
         })
     }
 }
 
-/// Polls the host as [`m6h_pump`] does, except that it adopts a pending head only when its build has ended and never
-/// waits for one, then submits a frame of the view to the surface and writes its sequence, device epoch, surface and
-/// revisions to `*out`. A build that ended while the frame was submitted is adopted after the submission; if that
-/// adoption fails, the next call that adopts answers the failure. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are
+/// Polls the host as [`m6h_pump`] does, except that it adopts a pending head only when its build has ended and does
+/// not wait for one, then submits a frame of the view to the surface and writes its sequence, device epoch, surface and
+/// revisions to `*out`. After the submission it waits at most 12 ms for a pending head's build and adopts the build
+/// that ended; if that adoption fails, the next call that adopts answers the failure. A lost device answers [`M6H_E_UNAVAILABLE`]. The frame reports are
 /// read and dropped here. The frame names the preview the view shows, if any.
 ///
 /// # Safety
@@ -992,7 +998,7 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            shell.settle(false)?;
+            shell.settle(deferred::Wait::No)?;
             shell.poll();
             shell.sync_preview()?;
             let stamp = shell.host.frame(VIEW).map_err(host_error)?;
@@ -1018,8 +1024,11 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
                 });
             }
             // A build that ended while the frame was submitted (the core's frame call waits for the display) is adopted
-            // now, so its publication is prepared before the next frame; a failure is answered by the next call.
-            if let Err(failure) = shell.settle(false) {
+            // now, so its publication is prepared before the next frame; a failure is answered by the next call. A build
+            // still running is waited for a short time, which the next frame's wait for the display would mostly spend
+            // anyway: a frame call right after a twist key returns at once, before the build ends, and without this wait
+            // the press would be adopted only after the next frame and shown one frame later.
+            if let Err(failure) = shell.settle(deferred::Wait::at_most(POST_SUBMIT_WAIT)) {
                 shell.failed = Some(failure);
             }
             Ok(())
@@ -1268,7 +1277,7 @@ pub unsafe extern "C" fn m6h_run_view(
         with_host(handle, |shell| {
             let source = utf8(source, source_len, "program text")?;
             let entry = utf8(entry, entry_len, "entry name")?;
-            shell.settle(true)?;
+            shell.settle(deferred::Wait::Done)?;
             let ticket = shell.run_view(source, entry)?;
             out_ticket.write(ticket);
             Ok(())
@@ -1327,7 +1336,7 @@ pub unsafe extern "C" fn m6h_view_draft(handle: *mut ShellHost, digest: *const u
     unsafe {
         with_host(handle, |shell| {
             let digest = digest.cast::<[u8; 32]>().read_unaligned();
-            shell.settle(true)?;
+            shell.settle(deferred::Wait::Done)?;
             let ticket = shell.view_draft(digest);
             out_ticket.write(ticket);
             Ok(())
