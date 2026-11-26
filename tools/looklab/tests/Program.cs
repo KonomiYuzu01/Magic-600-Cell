@@ -268,6 +268,8 @@ internal static partial class Program
             ("D02PortPlacesFocusAsTheCore", D02PortPlacesFocusAsTheCore),
             ("D02PortLayoutTrackerNamesAndRestoresSteps", D02PortLayoutTrackerNamesAndRestoresSteps),
             ("D02PortAppearanceRestoresInPlace", D02PortAppearanceRestoresInPlace),
+            ("D02PortViewFieldsKeepEachViewAndWriteTheScope", D02PortViewFieldsKeepEachViewAndWriteTheScope),
+            ("D02PortViewLinkMarksEachState", D02PortViewLinkMarksEachState),
             ("D02CapPromptListsCapsInIdOrder", D02CapPromptListsCapsInIdOrder),
             ("D02CapPromptEnterNamesTheChosenCap", D02CapPromptEnterNamesTheChosenCap),
             ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy)

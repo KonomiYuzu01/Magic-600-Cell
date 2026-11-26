@@ -336,7 +336,10 @@ internal static class LabFrame
         }
         app.Greybox.Toggle.Toggled += ShowGreybox;
         frame.Rebuilt += () => { if (app.Greybox.Toggle.ButtonPressed != frame.Model.IsOpen(Greybox)) app.Greybox.Toggle.ButtonPressed = frame.Model.IsOpen(Greybox); };
-        // Status lines and frame marks. Both main views show the committed state; the 4D rotation link is named on both.
+        // Status lines and frame marks. Both main views show the committed state; the rotation link is named on both
+        // (ADR-D01.41, the shared mark): Look Lab draws both views and Local takes Global's camera at every step
+        // (LinkedViews.Step), so its rotation is always linked.
+        static bool? Linked() => true;
         void Describe()
         {
             var p = app.State.Preset.Params;
@@ -346,7 +349,7 @@ internal static class LabFrame
                 view.ClearMarks();
                 view.AddMark("mark.committed", "committed", "state.committed", "This view shows the committed state.");
                 if (demo.Preview.Pending != null) view.AddMark("mark.pending", "preview pending", "state.pending", "A preview waits in the preview view; this view still shows the committed state.");
-                view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
+                ViewLink.Mark(view, Linked);
                 foreach (var mark in scripts.ViewMarks()) view.AddMark(mark.Glyph, mark.Text, mark.Colour, mark.Tip);
                 FocusLayers own = layers[view == frame.Global ? "global" : "local"]; var picked = FocusLayers.Layers.First(l => l.Id == own.Pick);
                 view.AddMark(picked.Icon, picked.Name.ToLowerInvariant(), "text.dim", $"A click picks {picked.Name.ToLowerInvariant()} in this view.");

@@ -1111,7 +1111,16 @@ SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_vi
  * A frame draws styled only when its slot is set and the style changes something: a non-zero piece byte in a drawn
  * channel, a dim that applies, or a matrix other than the identity. Otherwise it draws exactly as ABI 6. Both calls are
  * device-free product state: they need a loaded scene outside a trace (SA2_E_WRONG_STATE), work during device loss,
- * are kept by sa2_recover and are forgotten by sa2_scene_unload. The ID pass (sa2_pick_request) ignores the style.
+ * are kept by sa2_recover and are forgotten by sa2_scene_unload. Until ADR-D02 B17 the ID pass (sa2_pick_request)
+ * ignored the style.
+ *
+ * ADR-D02 B17 (ADR-D01.46's focus layers, added to ABI 10 before any release): dim_mode SA2_STYLE_HIDE_MARKED and
+ * SA2_STYLE_HIDE_UNMARKED hide the same pieces that SA2_STYLE_DIM_MARKED and SA2_STYLE_DIM_UNMARKED dim: their stickers
+ * are not drawn (dim_amount is unused), so what lies behind them shows. A hide that applies makes the frame draw
+ * styled. Picking follows visibility: the ID pass of a frame, or of the pane under the point, uses the style slot that
+ * frame or pane drew with, and a piece that slot hides or dims (dim_amount > 0) answers no instance; a tint, an
+ * outline or a matrix leaves the answer as it was. A pick on a styled frame whose engine copy has since taken another
+ * piece style answers SA2_PICK_STALE_ENGINE. A frame drawn without a style picks exactly as before.
  */
 #define SA2_STYLE_CHANNEL_FILL 0u
 #define SA2_STYLE_CHANNEL_OUTLINE 1u
@@ -1124,13 +1133,15 @@ SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_vi
 #define SA2_STYLE_DIM_NONE 0u
 #define SA2_STYLE_DIM_MARKED 1u
 #define SA2_STYLE_DIM_UNMARKED 2u
+#define SA2_STYLE_HIDE_MARKED 3u /* ADR-D02 B17 (ABI 10) */
+#define SA2_STYLE_HIDE_UNMARKED 4u /* ADR-D02 B17 (ABI 10) */
 #define SA2_STYLE_OUTLINE_MAX 0.5f
 #define SA2_STYLE_MATRIX_MAX 8.0f
 
 typedef struct sa2_view_style {
     uint32_t struct_size; /* sizeof(sa2_view_style); 316 on x64 */
     uint32_t tint_mode; /* SA2_STYLE_TINT_* flags */
-    uint32_t dim_mode; /* SA2_STYLE_DIM_* */
+    uint32_t dim_mode; /* SA2_STYLE_DIM_* or SA2_STYLE_HIDE_* */
     float dim_amount; /* 0 <= dim_amount <= 1 */
     float outline_width; /* 0 <= outline_width <= SA2_STYLE_OUTLINE_MAX */
     float palette[64]; /* SA2_STYLE_PALETTE RGBA entries, each channel 0..1; entry 0 is never drawn */

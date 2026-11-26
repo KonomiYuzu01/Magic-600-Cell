@@ -78,4 +78,34 @@ public static class ShellLocal
     /// <summary>The four floats of Local's view shape: cell shrink (1 − gap), sticker shrink, d4 and zoom.</summary>
     public static float[] ViewShape(Shape shape, double aspect) =>
         new[] { 1 - shape.Gap, shape.StickerShrink, shape.D4, (float)Zoom(shape, aspect) };
+
+    /// <summary>
+    /// ADR-D01.41: Local re-frames on a selection change by default. Auto-framing can be turned off for Local (a
+    /// script turns it off through the same switch); then Local follows only the named cap.
+    /// </summary>
+    public static bool AutoFrame { get; set; } = true;
+
+    private static int? _cap, _selected;
+    private static bool _selectionNewer;
+
+    /// <summary>
+    /// ADR-D02 B17 (ADR-D01.41): the cell Local frames, the newer of two sources. Naming a cap frames that cap; a later
+    /// selection, while auto-framing is on, frames the cell its sticker occupies (none off the lattice). Clearing the
+    /// selection, or naming another cap, returns Local to the named cap.
+    /// </summary>
+    public static int? Frame(int? namedCap)
+    {
+        if (namedCap != _cap)
+        {
+            _cap = namedCap;
+            _selectionNewer = false;
+        }
+        var picked = ShellPick.Selection?.Cell;
+        if (picked != _selected)
+        {
+            _selected = picked;
+            _selectionNewer = picked is not null;
+        }
+        return AutoFrame && _selectionNewer && _selected is int cell ? cell : _cap;
+    }
 }

@@ -109,7 +109,9 @@ Projection hopfVertex(float4 world, uint cell, uint slot) {
     int place = int(round((phase - float(parity)) * 0.5));
     place = ((place % 30) + 30) % 30;
     uint e = ring * 30 + uint(place);
-    uint chart = asuint(hopfRows[2461 + e / 4][e % 4]);
+    // B22: t18 is a root SRV, which nothing bounds; a chart index read from anything but the table must not send the
+    // next reads past it (a sheet once drew without its table: DXGI_ERROR_DEVICE_HUNG).
+    uint chart = min(asuint(hopfRows[2461 + e / 4][e % 4]), 599u);
     bool sheet = (viewFlags & 16u) != 0;
     uint first = (sheet ? 2611u : 0u) + chart * 4;
     float3 placed = float3(dot(hopfRows[first], world), dot(hopfRows[first+1], world), dot(hopfRows[first+2], world))

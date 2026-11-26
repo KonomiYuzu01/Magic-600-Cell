@@ -460,6 +460,7 @@ public partial class Shell : Control
     /// <summary>
     /// ADR-D02 B18c: follows the named cap. Local is focused on it (its pole centred, only its turning region drawn) and
     /// shown, and the chrome opens Local's slot; with no cap Local is hidden and its empty sentence takes the place.
+    /// B17 (ADR-D01.41): a later selection re-frames Local on its sticker's cell while auto-framing is on.
     /// </summary>
     private void FollowLocalCap(HostLibrary library)
     {
@@ -467,7 +468,7 @@ public partial class Shell : Control
         {
             return;
         }
-        int? cap = _chrome?.Jumble?.Naming.Named;
+        int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);
         if (cap == _localCap)
         {
             return;

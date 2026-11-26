@@ -815,8 +815,8 @@ EVENT_CHECKS["hopf"] = check_hopf_events
 
 
 # B22, bare: the ring sheet. The owner's opening file names the Hopf rings, so the run reads a data folder of its own
-# (launch.py's --d02-data): a copy of Look Lab's samples beside an opening file that names the ring sheet. Red while the
-# shell holds the sheet back (ShellHopf.Opens): on the owner's GPU it removed the device in its first frames.
+# (launch.py's --d02-data): a copy of Look Lab's samples beside an opening file that names the ring sheet. It was red
+# while the shell held the sheet back: the core built no Hopf table for a sheet named first (DXGI_ERROR_DEVICE_HUNG).
 def ring_sheet_data(out: Path) -> Path:
     """Writes the ring-sheet run's data folder next to the run folder and answers it."""
     import shutil
