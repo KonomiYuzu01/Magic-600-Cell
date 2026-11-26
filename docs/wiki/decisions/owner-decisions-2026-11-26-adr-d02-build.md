@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-26-adr-d02-build
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; the build waits for the owner's go before B1; and, later that day, ADR-D01's whole frame enters the product shell on sample data in this build (part of ADR-D03's scope), after which B5 and B6 run without a stop for the owner's check; the product window turns, opens on the owner's view with smaller stickers, and Local shows only the turning cells; checkpoints do not stop the build; the drawing runs as a second track; and the finished build gets one Fable refinement round, then two Astra rounds, then the owner's freeze; the product window zooms with the wheel; and the 0.4 Piece Filter enters the default view as a Focus layer, with "piece filter" as a palette alias.
+summary: Owner answers of 26 November 2026 on ADR-D02's build framework - the build, the owner's view and the acceptance are in the product shell, with Look Lab dropped and Jumble drawing built in this build; J0 and J1 gain one lean researcher subagent on the subscription; the core draws two views, Global and Local, in this build; the drawing is built and measured as candidates before R5 admits it; the watching window never sits on top and never takes focus; the build waits for the owner's go before B1; and, later that day, ADR-D01's whole frame enters the product shell on sample data in this build (part of ADR-D03's scope), after which B5 and B6 run without a stop for the owner's check; the product window turns, opens on the owner's view with smaller stickers, and Local shows only the turning cells; checkpoints do not stop the build; the drawing runs as a second track; and the finished build gets one Fable refinement round, then two Astra rounds, then the owner's freeze; the product window zooms with the wheel; and the 0.4 Piece Filter enters the default view as a Focus layer, with "piece filter" as a palette alias; and, in the evening, all of ADR-D01 is the base of D02's build, every piece of UI lives in one shared library with reuse first, D02 builds on through the night, the work runs in a set order on parallel tracks with slow generation in Rust, and the whole of D02 fits this week's quota.
 related: [owner-decisions-2026-11-26-adr-d02-a4, owner-decisions-2026-11-25, owner-decisions-2026-11-22-adr-line-evening, owner-decisions-2026-11-22-design-art-path]
 supersedes: []
 claims:
@@ -22,6 +22,11 @@ claims:
   - {id: fable-refinement-before-astra, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: wheel-zoom, evidence_kind: decision, checked_at: 2026-11-26}
   - {id: focus-layer-piece-filter, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: d01-whole-base, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: one-shared-ui-library, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: d02-through-the-night, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: evening-order-of-work, evidence_kind: decision, checked_at: 2026-11-26}
+  - {id: d02-within-week-quota, evidence_kind: decision, checked_at: 2026-11-26}
 ---
 
 # Owner decisions on ADR-D02's build framework
@@ -238,3 +243,64 @@ The integrator's reading:
   259,800-label model.
 - Sample mode: counts are exact on the bound sample state's pose rows (domain, height, lattice). The engine's filter
   (`c600-command`'s `filter.preview` and `filter.apply`) is not reached through the host yet; the editor says so.
+
+## 14. All of ADR-D01 as the base of D02's build
+
+A read-only inventory of ADR-D01's 112 items in the product window, made for the design-system ADR line on the evening
+of 26 November 2026, found 18 items on real session data, 43 on sample data, 5 only in Look Lab, 27 built nowhere, 6
+mounted but broken, 9 waiting for a server row (K2) and 4 that are values only (round 3). It asked whether D02 should
+carry less of it. The owner's words, translated: "No. What D02 needs was always the Jumble and research interface on
+the basis of D01; it cannot be less."
+
+The integrator's reading:
+- D02's build carries all of ADR-D01 revision 6 as its base, in the product: real session data where it exists, and
+  elsewhere sample data under the sample chip, with the draft-row mark on rows the command table does not have yet.
+- An item that needs a server row is present in the frame and says it waits for its row. K2 wires the rows later.
+- This moves ADR-D03's complete canvas and UI/UX on sample data into D02's build. ADR-D03's acceptance, the
+  learning-curve solve test, is unchanged.
+- The inventory's bugs are fixed first; then the Look-Lab-only items are ported and the items built nowhere are built.
+
+## 15. One shared UI library, and reuse first
+
+The inventory estimated about 130 agent hours for the rest of ADR-D01. The owner's words, translated: "It has to be
+settled. 130 hours is too long; this should have been directly reusable."
+
+The integrator's reading:
+- The product is the only place where UI is built, shown and accepted.
+- All UI and its wiring live in the shared library (`tools/looklab/app/Chrome` and `tools/looklab/data/design`), never in
+  Look Lab's own app (`tools/looklab/app/Live`). Look Lab keeps two roles: a sandbox, and console tests.
+- Reuse first: check Look Lab, Taste Lab and the 0.4 code before writing anything; port rather than rewrite; each
+  step's note says what was reused.
+- The work runs as parallel tracks on disjoint files, and reports give actual times, not estimates.
+
+## 16. D02 first, through the night
+
+The owner's words, translated: "D02 is the top priority. This is not needed for now, so do not run it; tonight's plan
+is cancelled."
+
+The integrator's reading: the evening's other runs on the owner's machine, and the stop they needed, are cancelled.
+D02 builds on through the night, with builds, tests, the watching window and the GPU allowed. Section 6 still holds.
+
+## 17. The order of work after the bug fixes
+
+The owner's words, translated: "One: the new drawing agent first fixes the drag in Local (the two views turn together),
+then B15, B16, B18 (only what B20 needs), B20 and B21. Two: open another line now for B27, B28 and B29, and start B30
+and B31 once B15 is done. Three: nu-c35 and every later slow generation use Rust. Four: subagents are fresh agents, one
+step each, and write their logs to files."
+
+The integrator's reading:
+- ADR-D01.41 links the 4D rotation of Global and Local by default and lets it be unlinked. A drag in either view turns
+  both while they are linked.
+- B18 is built only as far as B20 needs it. The rest of B18 waits for its own turn.
+- The research line (B27 to B29) runs beside the drawing track on its own files. B30 and B31 depend on B15.
+- Generation that takes minutes goes through the Rust adapter, with a digest check on every state.
+
+## 18. The whole of D02 within this week's quota
+
+The owner's words, translated: "D02's complete work, including Fable's last round, must fit in this week's quota, and
+the result must absolutely not be worse than expected."
+
+The integrator's reading:
+- Scope, models, effort, steps, checks and the Fable checkpoint reads do not change.
+- What changes is how the work is run: fresh subagents, one step each; build, test and run output go to files and
+  only their tails are read; the integrating session orchestrates and leaves large reads to subagents.
