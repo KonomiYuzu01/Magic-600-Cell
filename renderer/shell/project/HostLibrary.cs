@@ -14,12 +14,13 @@ namespace Magic600.Shell;
 /// and view-result rows against the Rust source. Version 7 (LP4-3) adds the write-check-run flow's calls, which the
 /// editor panel (<see cref="Editor.EditorPanel"/>) makes: <see cref="SetFocus"/>, <see cref="RegisterRow"/>,
 /// <see cref="Palette"/>, <see cref="Invoke"/>, <see cref="TakeJob"/>, <see cref="FinishJob"/>,
-/// <see cref="SetDraftWord"/> and <see cref="Answer"/>.
+/// <see cref="SetDraftWord"/> and <see cref="Answer"/>. Version 8 (ADR-D02 B5) adds <see cref="StateDigest"/>, the
+/// head's state digests, by which a D02 sample binds to the session.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 7;
+    public const uint AbiVersion = 8;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -102,6 +103,7 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_take_job",
         "m6h_finish_job",
         "m6h_set_draft_word",
+        "m6h_state_digest",
         "m6h_answer",
         "m6h_close_session",
         "m6h_check",
@@ -560,6 +562,12 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>The JSON answer of the last call of the write-check-run flow.</summary>
     public string Answer(IntPtr host) => Text(host, "m6h_answer");
+
+    /// <summary>
+    /// Reads the head's state digests (ADR-D02 B5); <see cref="Answer"/> gives {"digest", "pose_ids_sha256",
+    /// "pose_lattice_sha256"}, the last two null with Jumble off.
+    /// </summary>
+    public int StateDigest(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_state_digest"])(host);
 
     /// <summary>
     /// Closes the session and runs its correctness control once. <paramref name="shownRevision"/> is the engine

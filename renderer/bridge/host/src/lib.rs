@@ -111,8 +111,9 @@ use turns::{Head, Pending, Press, Puzzle, Turns};
 
 /// The version of this C interface. The shell refuses a library that answers another. Version 2 added the frame's
 /// revisions and the session calls; version 3 the session fixture and the runtime; version 4 the view jobs; version 5
-/// the session's puzzle; version 6 the preload; version 7 LP4-3's write-check-run flow.
-pub const M6H_ABI_VERSION: u32 = 7;
+/// the session's puzzle; version 6 the preload; version 7 LP4-3's write-check-run flow; version 8 the head's state
+/// digests ([`m6h_state_digest`], ADR-D02 B5).
+pub const M6H_ABI_VERSION: u32 = 8;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -1655,9 +1656,28 @@ pub unsafe extern "C" fn m6h_set_draft_word(handle: *mut ShellHost, letters: *co
     }
 }
 
+/// The head's state digests (ADR-D02 B5; [`turns::Turns::state_digests`]): [`m6h_answer`] gives
+/// `{"digest", "pose_ids_sha256", "pose_lattice_sha256"}`, the last two `null` with Jumble off. The shell reads them
+/// at each newly shown revision and binds the D02 sample whose digests equal them. The read changes nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let digests = shell.turns()?.state_digests().map_err(|e| (M6H_E_SESSION, e))?;
+            shell.answer = digests.canonical();
+            Ok(())
+        })
+    }
+}
+
 /// The JSON answer of the last call of the write-check-run flow ([`m6h_register_row`], [`m6h_palette`],
-/// [`m6h_invoke`], [`m6h_take_job`], [`m6h_finish_job`]), NUL-terminated and sized as [`m6h_last_error`] sizes its
-/// text.
+/// [`m6h_invoke`], [`m6h_take_job`], [`m6h_finish_job`]) or of [`m6h_state_digest`], NUL-terminated and sized as
+/// [`m6h_last_error`] sizes its text.
 ///
 /// # Safety
 ///

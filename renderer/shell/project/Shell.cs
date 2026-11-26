@@ -55,6 +55,8 @@ public partial class Shell : Control
     private bool _session;
     /// <summary>The engine revision of the newest presentation the core confirmed.</summary>
     private ulong _shownRevision;
+    /// <summary>The shown revision at which ADR-D02 last bound a sample state to the session (B5).</summary>
+    private ulong _boundRevision;
     private Vector2I _size;
     /// <summary>The 3D frame submitted in this process frame, for the next ui_frame row.</summary>
     private ulong? _submittedThisFrame;
@@ -459,6 +461,15 @@ public partial class Shell : Control
             }
         } while (count == _presented.Length);
         _chrome?.Shown(_shownRevision);
+        // ADR-D02 B5: at each newly shown revision, the sample state whose pose digests equal the head's binds.
+        if (D02.ShellJumble.On && _session && _shownRevision != _boundRevision)
+        {
+            _boundRevision = _shownRevision;
+            if (library.StateDigest(_host) == HostLibrary.Ok)
+            {
+                D02.ShellJumble.Bind(library.Answer(_host));
+            }
+        }
     }
 
     /// <summary>Before Godot draws and presents its frame (RenderingServer's frame_pre_draw).</summary>

@@ -9,6 +9,10 @@ the run folder, then quits after the last step. This script computes each step's
 sample files and prints `M600_D02_RUN_PASS script=NAME steps=N mismatches=0`, or `M600_D02_RUN_FAIL` with the
 mismatches, and writes d02-run.json beside the shell's logs.
 
+The `bind` script (B5) runs on the named state's session fixture, which `build_d02_fixtures.py` writes under
+work/build/d02-fixtures/: the sample binds by its pose digests after the open, a twist unbinds it, an undo binds it
+again. A state with a written fixture also opens it in the other scripts.
+
 The owner's window rule (26 November 2026) is checked on the way: the window that has the foreground before the
 launch must still have it five seconds after it, the shell's window never carries WS_EX_TOPMOST, and no screen dump
 finds the shell in the foreground. A click into the window during the run fails that check; leave it alone. A run
@@ -38,6 +42,9 @@ DESIGN = ROOT / "tools" / "looklab" / "data" / "design"
 SAMPLES = ROOT / "tools" / "looklab" / "data" / "samples" / "jumble"
 TABLE = ROOT / "docs" / "progress" / "1.0" / "command-table.json"
 SCREEN = "d02-screen.jsonl"
+# The D02 session fixtures, one folder per sample state (build_d02_fixtures.py), and the binding chip's words.
+FIXTURES = ROOT / "work" / "build" / "d02-fixtures"
+BOUND, UNBOUND = "bound · ", "unbound · stale"
 RECORD = "d02-run.json"
 FORMAT = "magic600-d02-run-v1"
 FOREGROUND_AFTER_S = 5.0
@@ -99,7 +106,36 @@ def expect_smoke(dumps: list[dict], source: dict, state: str | None) -> list[str
     return problems
 
 
-EXPECT = {"smoke": expect_smoke}
+def bind_chip(dump: dict) -> str | None:
+    """The binding chip's words in a dump (B5): `bound · <state>` or `unbound · stale`."""
+    for group, text in map(tuple, dump["lines"]):
+        if group == "frame" and (text.startswith(BOUND) or text == UNBOUND):
+            return text
+    return None
+
+
+def expect_bind(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B5's bind script on the state's session fixture: the sample binds after the open, one twist unbinds it, and an
+    undo binds it again. The dumps right after a key are not judged: the shown revision may still lag the head."""
+    steps = ["start", "wait 3000 ms", "chord J", "wait 1500 ms", "chord Ctrl+Z", "wait 3000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None:
+        return ["the bind script needs a sample state"]
+    problems = []
+    if any("the session refused this twist" in text for group, text in map(tuple, dumps[3]["lines"])):
+        problems.append(f"step 2: the session refused the twist at {state}: the router turns cap 0 only (grip.select "
+                        "is not built), so the bind script needs a state where cap 0 admits a twist, such as on-zero")
+    for index, wanted in ((1, BOUND + state), (3, UNBOUND), (5, BOUND + state)):
+        shown = bind_chip(dumps[index])
+        if shown != wanted:
+            problems.append(f"step {index}: the binding chip shows {shown!r}, expected {wanted!r}")
+    return problems
+
+
+EXPECT = {"smoke": expect_smoke, "bind": expect_bind}
+# Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes.
+ON_FIXTURE = {"bind"}
 
 
 def window_problems(dumps: list[dict]) -> list[str]:
@@ -170,6 +206,10 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         raise ValueError(f"no D02 script named {script} (renderer/shell/d02_scripts/)")
     if state is not None and state not in source["states"]:
         raise ValueError(f"no sample state named {state}")
+    fixture = FIXTURES / state if state else None
+    if script in ON_FIXTURE and (fixture is None or not (fixture / "fixture.json").is_file()):
+        raise ValueError(f"the {script} script needs a written session fixture of its state "
+                         "(renderer/shell/build_d02_fixtures.py --state ID)")
     desktop = desktop or Desktop()
     started: dict = {}
     lines: list[str] = []
@@ -182,6 +222,7 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     arguments = ["--out", str(out), "--frame", "--puzzle", "jumble-on", "--d02", "--d02-script", str(path)]
     arguments += ["--build", str(build)] if build else []
     arguments += ["--d02-state", state] if state else []
+    arguments += ["--d02-fixture", str(fixture)] if fixture is not None and (fixture / "fixture.json").is_file() else []
     result: dict = {}
     before = desktop.foreground()
     thread = threading.Thread(target=lambda: result.update(code=launcher(arguments, popen=popen, out_stream=lines.append)),

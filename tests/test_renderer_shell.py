@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import hashlib
 import importlib
+import importlib.util
 import json
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -1367,6 +1369,132 @@ class SampleMode(unittest.TestCase):
         lines = []
         self.assertEqual(self.launch.main(arguments[3:] + ["--dry-run"], popen=None, out_stream=lines.append), 0, lines)
         self.assertIn("env: M600_SAMPLE=1", lines)
+
+class D02Fixtures(unittest.TestCase):
+    """ADR-D02 build step B5: the words the session fixtures are written from, the digest check that ties a fixture to
+    its sample, the watch command's and the runner's use of a written fixture, the host's state-digest export, and the
+    shell's binding by digests. Nothing is built, and the fixture writer is a fake."""
+
+    def setUp(self):
+        self.fixtures = shell_module("build_d02_fixtures")
+        self.temp = Path(tempfile.mkdtemp(prefix="d02-fixtures-"))
+        self.addCleanup(shutil.rmtree, self.temp, True)
+
+    def test_the_words_rebuild_each_sample_from_its_records(self):
+        words = self.fixtures.words()
+        index = json.loads((self.fixtures.SAMPLES / "states.json").read_text(encoding="utf-8"))
+        states = [state["state"] for state in index["states"]]
+        self.assertEqual(sorted(set(states) - set(words)), sorted(self.fixtures.NOT_BUILT))
+        self.assertFalse(set(words) - set(states))
+        lengths = {state: len(words[state]) for state in ("on-zero", "wj-ia-300", "wj-ia-420", "wj-ia-end", "ia-40",
+                                                          "deep-1", "s7001-0")}
+        self.assertEqual(lengths, {"on-zero": 0, "wj-ia-300": 300, "wj-ia-420": 420, "wj-ia-end": 841, "ia-40": 102,
+                                   "deep-1": 3000, "s7001-0": 10})
+        self.assertEqual(words["wj-ia-300"], words["wj-ia-end"][:300])
+        self.assertEqual(words["wj-ia-300"][0], [57, 17], "record 0: grip 57, label I_a[17]")
+        self.assertEqual(words["deep-2"][:3000], words["deep-1"])
+        self.assertEqual(words["deep-2"][-12:], self.fixtures.H4_LETTERS)
+        self.assertEqual(words["s7001-9"][:10], words["s7001-0"])
+        # The research records are the ones the samples were made from.
+        spec = importlib.util.spec_from_file_location("make_d02_samples", ROOT / "tools/looklab/fixtures/make_d02_samples.py")
+        samples = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(samples)
+        for name in ("WJ", "DEEP", "S7001", "S7001_WORDS", "H4_LETTERS"):
+            self.assertEqual(getattr(self.fixtures, name), getattr(samples, name), name)
+        # The menu's identity item moves no piece; the stop-40 restorer has four of its letters.
+        self.assertEqual(self.fixtures.identity_items(), {0})
+        kept, left_out = self.fixtures.moving(words["ia-40"], {0})
+        self.assertEqual((len(kept), left_out), (98, 4))
+        self.assertEqual(self.fixtures.moving(words["wj-ia-end"], {0})[1], 0)
+
+    def written(self, record):
+        def run(command, **options):
+            folder = Path(command[command.index("--out") + 1])
+            (folder / "session").mkdir(parents=True)
+            (folder / "fixture.json").write_text(json.dumps(record), encoding="utf-8")
+            return subprocess.CompletedProcess(command, 0, stdout="fixture: jumble-on\nreopen_ms: 12\n", stderr="")
+        return run
+
+    def test_a_fixture_must_match_its_sample_by_all_three_digests(self):
+        sample = self.fixtures.sample_digests("wj-ia-300")
+        letters = [[57, 17]]
+        good = {"digest": sample["adapter"], "word": letters,
+                "state_digests": {"digest": sample["adapter"], "pose_ids_sha256": sample["pose_ids_sha256"],
+                                  "pose_lattice_sha256": sample["pose_lattice_sha256"]}}
+        out = self.temp / "fixtures"
+        row = self.fixtures.write(Path("writer.exe"), "wj-ia-300", letters, out, run=self.written(good))
+        self.assertEqual((row["kept"], row["reopen_ms"], row["digest"]), (False, 12, sample["adapter"]))
+        word = json.loads((out / "wj-ia-300" / "word.json").read_text(encoding="utf-8"))
+        self.assertEqual((word["format"], word["letters"]), (self.fixtures.WORD_FORMAT, letters))
+
+        def refuse(command, **options):
+            raise AssertionError("a matching fixture is written again")
+        self.assertTrue(self.fixtures.write(Path("writer.exe"), "wj-ia-300", letters, out, run=refuse)["kept"])
+
+        for name in ("digest", "pose_ids_sha256", "pose_lattice_sha256"):
+            shutil.rmtree(out / "wj-ia-300")
+            bad = json.loads(json.dumps(good))
+            if name == "digest":
+                bad["digest"] = "0" * 64
+            else:
+                bad["state_digests"][name] = "0" * 64
+            with self.assertRaises(self.fixtures.FixtureError, msg=name):
+                self.fixtures.write(Path("writer.exe"), "wj-ia-300", letters, out, run=self.written(bad))
+            self.assertFalse((out / "wj-ia-300").exists(), name)
+            (out / "wj-ia-300").mkdir()
+
+    def test_the_watch_command_and_the_runner_open_a_written_fixture(self):
+        watch = shell_module("watch_d02")
+        run = shell_module("d02_run")
+        fixtures = self.temp / "d02-fixtures"
+        for module in (watch, run):
+            old = module.FIXTURES
+            module.FIXTURES = fixtures
+            self.addCleanup(setattr, module, "FIXTURES", old)
+        build, out = self.temp / "build", self.temp / "out"
+        self.assertNotIn("--d02-fixture", watch.launch_arguments(build, out, "wj-ia-300"))
+        with self.assertRaises(ValueError):
+            run.run("bind", out, build, "wj-ia-300", desktop=object(), launcher=None)
+        (fixtures / "wj-ia-300").mkdir(parents=True)
+        (fixtures / "wj-ia-300" / "fixture.json").write_text("{}", encoding="utf-8")
+        arguments = watch.launch_arguments(build, out, "wj-ia-300")
+        self.assertEqual(arguments[arguments.index("--d02-fixture") + 1], str(fixtures / "wj-ia-300"))
+        self.assertNotIn("--d02-fixture", watch.launch_arguments(build, out, "wj-ia-420"))
+
+    def test_the_bind_expectation_needs_bound_unbound_bound(self):
+        run = shell_module("d02_run")
+        steps = ["start", "wait 3000 ms", "chord J", "wait 1500 ms", "chord Ctrl+Z", "wait 3000 ms"]
+
+        def dumps(chips):
+            return [{"do": do, "lines": [["frame", "D02 · wj-ia-300"]] + ([["frame", chip]] if chip else [])}
+                    for do, chip in zip(steps, chips)]
+        good = ["unbound · stale", "bound · wj-ia-300", None, "unbound · stale", None, "bound · wj-ia-300"]
+        self.assertEqual(run.expect_bind(dumps(good), {}, "wj-ia-300"), [])
+        stuck = good[:3] + ["bound · wj-ia-300"] + good[4:]
+        self.assertEqual(len(run.expect_bind(dumps(stuck), {}, "wj-ia-300")), 1)
+        self.assertEqual(len(run.expect_bind(dumps(good[:5] + ["unbound · stale"]), {}, "wj-ia-300")), 1)
+        self.assertTrue(run.expect_bind(dumps(good)[:4], {}, "wj-ia-300"))
+        self.assertTrue((SHELL / "d02_scripts" / "bind.json").is_file())
+        self.assertEqual(run.BOUND, "bound · ")
+        jumble = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertIn('public const string Unbound = "unbound · stale";', jumble)
+        self.assertIn('public static string BoundWords(string state) => "bound · " + state;', jumble)
+
+    def test_the_host_gives_the_state_digest_and_the_shell_binds_only_by_it(self):
+        lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 8;", lib)
+        self.assertIn('pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32', lib)
+        self.assertIn("public const uint AbiVersion = 8;", text(PROJECT / "HostLibrary.cs"))
+        self.assertIn("refuses another version than its `AbiVersion` (8 since ADR-D02 B5)", text(SHELL / "README.md"))
+        jumble = text(PROJECT / "D02" / "ShellJumble.cs")
+        # A sample binds by its two pose-array digests; the asked state only breaks a tie between equal poses.
+        self.assertIn('Samples.TryGetValue(Key(root.GetProperty("pose_ids_sha256").GetString(), '
+                      'root.GetProperty("pose_lattice_sha256").GetString()), out var ids)', jumble)
+        self.assertIn("bound = Asked is { } asked && ids.Contains(asked) ? asked : ids[0];", jumble)
+        self.assertEqual(jumble.count("Bound = "), 1)
+        shell = text(PROJECT / "Shell.cs")
+        self.assertIn("if (D02.ShellJumble.On && _session && _shownRevision != _boundRevision)", shell)
+        self.assertEqual(shell.count("StateDigest("), 1)
 
 if __name__ == "__main__":
     unittest.main()

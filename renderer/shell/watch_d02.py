@@ -15,6 +15,10 @@ with it.
   once the new one is up.
 Ctrl+C ends --follow and closes the window. Closing the window ends it too.
 
+--state ID names the sample state the D02 surfaces read. When `renderer/shell/build_d02_fixtures.py` has written that
+state's session fixture under work/build/d02-fixtures/, the window opens a copy of it, so the session's head is the
+sample's state and the sample binds to it by its digests (B5); otherwise the session opens at the build's own fixture.
+
 --runs puts the run folders in another folder than work/d02-watch/, for example outside the checkout while
 tools/looklab/check.py runs, which fails on any change in the checkout, ignored files included.
 """
@@ -40,6 +44,8 @@ ROOT = HERE.parents[1]
 DATA = ROOT / "tools" / "looklab" / "data"
 WATCH_ROOT = ROOT / "work" / "d02-watch"
 STATES = DATA / "samples" / "jumble" / "states.json"
+# The D02 session fixtures, one folder per sample state (build_d02_fixtures.py).
+FIXTURES = ROOT / "work" / "build" / "d02-fixtures"
 POLL_S = 3.0
 UP_TIMEOUT_S = 90.0
 CLOSE_TIMEOUT_S = 30.0
@@ -51,12 +57,15 @@ def run_folder(now: dt.datetime | None = None) -> Path:
 
 
 def launch_arguments(build: Path, out: Path, state: str | None, place: dict | None = None) -> list[str]:
-    """launch.py's arguments for a watched start: the frame, Jumble on, D02 on with a data-only reload, and the old
-    window's place and size on a restart. Nothing asks for the foreground or for a topmost window."""
+    """launch.py's arguments for a watched start: the frame, Jumble on, D02 on with a data-only reload, the state's
+    session fixture when there is one, and the old window's place and size on a restart. Nothing asks for the
+    foreground or for a topmost window."""
     arguments = [sys.executable, "-B", str(HERE / "launch.py"), "--out", str(out), "--build", str(build), "--frame",
                  "--puzzle", "jumble-on", "--sample", "--d02", "--d02-data", str(DATA)]
     if state:
         arguments += ["--d02-state", state]
+        if (FIXTURES / state / "fixture.json").is_file():
+            arguments += ["--d02-fixture", str(FIXTURES / state)]
     if place:
         x, y = place["position"]
         width, height = place["size"]

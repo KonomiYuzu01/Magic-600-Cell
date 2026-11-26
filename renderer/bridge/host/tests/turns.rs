@@ -242,7 +242,7 @@ fn int(record: &Value, key: &str) -> Option<i64> {
 
 #[test]
 fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
-    assert_eq!(m6h_abi_version(), 7);
+    assert_eq!(m6h_abi_version(), 8);
     let run = Run::new();
     let folder = fresh("pass");
 
@@ -886,4 +886,106 @@ fn a_jumble_on_fixture_records_its_puzzle_and_reopens_with_its_head() {
     assert_eq!(run.fake().posed, [posed_record(&bundle)], "the fixture head's poses at revision 26");
     let _ = std::fs::remove_dir_all(&copy);
     let _ = std::fs::remove_dir_all(&out);
+}
+
+/// The answer of the last call that gives one ([`m6h_answer`]).
+fn answer_of(handle: *mut ShellHost) -> Value {
+    let mut size = 0u32;
+    // SAFETY: a null buffer only asks for the size.
+    assert_eq!(unsafe { m6h_answer(handle, ptr::null_mut(), 0, &mut size) }, M6H_E_INVALID_ARGUMENT);
+    let mut buffer = vec![0u8; size as usize];
+    // SAFETY: the buffer holds `size` bytes.
+    assert_eq!(unsafe { m6h_answer(handle, buffer.as_mut_ptr(), size, &mut size) }, M6H_OK);
+    assert_eq!(buffer.pop(), Some(0));
+    json::parse(&buffer).expect("the answer is JSON")
+}
+
+/// The head's state digests through the C interface ([`m6h_state_digest`]).
+fn state_digest(run: &Run) -> Value {
+    // SAFETY: a live handle.
+    assert_eq!(unsafe { m6h_state_digest(run.host) }, M6H_OK, "{}", last_error(run.host));
+    answer_of(run.host)
+}
+
+/// ADR-D02 B5: a word fixture commits each menu letter `[cap, item]` as `jumble.twist.menu` through the shell's route,
+/// at any cap. Its record names the word and the head's state digests; a copy reopens with that head and those
+/// digests, and the control replays the letters. The empty word's digests are the D02 sample `on-zero`'s, by which the
+/// shell binds that sample. A letter outside the menu fails the writer.
+#[test]
+fn a_word_fixture_reopens_at_its_digest() {
+    let letters = [[57u64, 17], [388, 44], [62, 46]];
+    let out = PathBuf::from(fresh("word-fixture"));
+    let record = fixture::write_word(kernel(), &assets(), Path::new(&menu()), &out, &letters).expect("the fixture");
+    assert_eq!(record.get("puzzle").and_then(Value::as_str), Some("jumble-on"));
+    assert_eq!(int(&record, "revision"), Some(2 + 3));
+    assert_eq!(record.get("control").and_then(|c| c.get("pass")), Some(&Value::Bool(true)));
+    let word = letters.iter().map(|&[cap, item]| Value::Array(vec![Value::Int(cap as i64), Value::Int(item as i64)]));
+    assert_eq!(record.get("word"), Some(&Value::Array(word.collect())));
+    let read = fixture::read(&out.join(fixture::RECORD)).expect("the record reads");
+    let caps: Vec<_> = read.committed.iter().map(|args| args.get("cap").and_then(Value::as_i64)).collect();
+    assert_eq!(caps, [Some(57), Some(388), Some(62)]);
+
+    let copy = fresh("word-fixture-copy");
+    copy_dir(&out.join("session"), Path::new(&copy));
+    let mut turns =
+        Turns::reopen(kernel(), &assets(), Path::new(&copy), Path::new(&menu()), &read).expect("the copy reopens");
+    let digests = turns.state_digests().expect("the digests");
+    assert_eq!(digests.get("digest").and_then(Value::as_str), Some(read.digest.as_str()));
+    assert_eq!(Some(&digests), record.get("state_digests"));
+    let control = turns.check(Some((5, read.digest.clone())));
+    assert_eq!(control.get("pass"), Some(&Value::Bool(true)), "{}", control.canonical());
+    let _ = std::fs::remove_dir_all(&copy);
+    let _ = std::fs::remove_dir_all(&out);
+
+    // The empty word: the solved poses, with the digests of the sample `on-zero`.
+    let out = PathBuf::from(fresh("word-fixture-empty"));
+    let record = fixture::write_word(kernel(), &assets(), Path::new(&menu()), &out, &[]).expect("the empty word");
+    let sample =
+        std::fs::read(checkout().join("tools/looklab/data/samples/jumble/on-zero/state.json")).expect("a file");
+    let sample = json::parse(&sample).expect("the sample is JSON");
+    let (sample, digests) = (sample.get("digests").expect("its digests"), record.get("state_digests").expect("ours"));
+    assert_eq!(digests.get("digest"), sample.get("adapter"));
+    for key in ["pose_ids_sha256", "pose_lattice_sha256"] {
+        assert_eq!(digests.get(key), sample.get(key), "{key}");
+    }
+    let _ = std::fs::remove_dir_all(&out);
+
+    // A letter outside the menu's 60 items does not commit, and the writer fails.
+    let out = PathBuf::from(fresh("word-fixture-refused"));
+    let error = fixture::write_word(kernel(), &assets(), Path::new(&menu()), &out, &[[0, 60]]).expect_err("refused");
+    assert!(error.starts_with("letter 0: "), "{error}");
+    let _ = std::fs::remove_dir_all(&out);
+}
+
+/// ADR-D02 B5: the head's state digests at the C interface follow the session: a twist changes them, an undo brings
+/// back the earlier ones and a redo the later. With Jumble off the two pose digests are null; with no session the call
+/// is refused.
+#[test]
+fn the_state_digest_follows_undo_and_redo() {
+    let run = Run::new();
+    // SAFETY: a live handle.
+    assert_eq!(unsafe { m6h_state_digest(run.host) }, M6H_E_SESSION);
+    let folder = fresh("state-digest");
+    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let entered = state_digest(&run);
+    assert!(entered.get("pose_ids_sha256").and_then(Value::as_str).is_some(), "{}", entered.canonical());
+    assert_eq!(run.press("KeyJ").0, M6H_PRESS_COMMITTED);
+    let twisted = state_digest(&run);
+    assert_ne!(twisted.get("digest"), entered.get("digest"));
+    assert_ne!(twisted.get("pose_ids_sha256"), entered.get("pose_ids_sha256"));
+    assert_eq!(run.press("Ctrl+KeyZ").0, M6H_PRESS_OTHER);
+    assert_eq!(state_digest(&run), entered, "the undo");
+    assert_eq!(run.press("Ctrl+KeyY").0, M6H_PRESS_OTHER);
+    assert_eq!(state_digest(&run), twisted, "the redo");
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+
+    let run = Run::new();
+    let folder = fresh("state-digest-off");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let off = state_digest(&run);
+    assert!(off.get("digest").and_then(Value::as_str).is_some());
+    assert_eq!((off.get("pose_ids_sha256"), off.get("pose_lattice_sha256")), (Some(&Value::Null), Some(&Value::Null)));
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
 }

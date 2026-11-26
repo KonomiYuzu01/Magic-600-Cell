@@ -45,6 +45,11 @@
 //!   shell mints from the press, and undoes it with `session.undo` (Ctrl+KeyZ). A text field's focus
 //!   ([`Turns::set_focus`]) keeps the keys it takes, a commit chord among them (DT-M1 C4).
 //!
+//! - ADR-D02 B5 (a draft): [`Turns::twist_letter`] commits any item of the pinned menu at any cap as
+//!   `jumble.twist.menu` through the shell's route, with the arguments a twist key gives, so that a session fixture's
+//!   word can reach a D02 sample state; [`Turns::state_digests`] gives the head's digest and the two pose-array
+//!   digests by which the shell binds that sample to the session.
+//!
 //! Nothing here is Windows/DirectX, input or performance evidence.
 
 use std::path::{Path, PathBuf};
@@ -54,6 +59,7 @@ use c600_command::{
     CommandLayer, Error as LayerError, Kind, Overlay, PresentedFrame, PreviewState, ProgramJob, Receipt, Registration,
     Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, TWIST_ROW,
 };
+use c600_digest::sha256_hex;
 use c600_input::{
     default_specs, Arg, BindingSpec, Chord, ChordIntent, Context as Keys, Focus, KeyEvent, KeyMap, Layout, Routed,
     Router, RoutingClass, Slot,
@@ -63,7 +69,7 @@ use c600_jumble::state::{State, Status as Admissibility};
 use c600_jumble::twist::Menu;
 use c600_jumble::Context as Exact;
 use c600_kernel::json::{self, Value};
-use c600_kernel::request::{Binding, MenuPin};
+use c600_kernel::request::{menu_request, Binding, MenuPin};
 use c600_kernel::{Derivation, Kernel, ProtectedSet, Snapshot};
 use c600_session::disk::FsDisk;
 use c600_session::JournalStore;
@@ -176,6 +182,8 @@ pub struct Turns {
     layer: Option<CommandLayer<JournalStore>>,
     shell: Shell,
     router: Router,
+    /// The pinned menu's two digests, which a menu letter names ([`Turns::twist_letter`]).
+    pin: MenuPin,
     /// The router's specs: the puzzle's draft defaults and the keys of the rows registered since ([`specs`]).
     specs: Vec<BindingSpec>,
     /// The arguments of every committed press, in order.
@@ -236,6 +244,8 @@ struct Pinned {
     record: Value,
     menu: Menu,
     router: Router,
+    /// The menu's two digests, which a menu letter names ([`Turns::twist_letter`]).
+    pin: MenuPin,
 }
 
 impl Pinned {
@@ -252,9 +262,9 @@ impl Pinned {
         let menu = menu(&exact, &record)?;
         let pin = MenuPin { set: menu.identity.clone(), order: menu.order.clone() };
         let mut keys = Keys::new(vec![Slot { cap: Value::Int(CAP), frame: Value::Null }]);
-        keys.menu = Some(pin);
+        keys.menu = Some(pin.clone());
         keys.grip = Some(0);
-        Ok(Pinned { exact, record, menu, router: Router::new(keymap(puzzle)?, keys) })
+        Ok(Pinned { exact, record, menu, router: Router::new(keymap(puzzle)?, keys), pin })
     }
 }
 
@@ -300,7 +310,7 @@ impl Turns {
         if std::fs::read_dir(folder).is_ok_and(|mut entries| entries.next().is_some()) {
             return Err("the session folder is not empty; a run never reuses a session".to_owned());
         }
-        let Pinned { exact, record, menu, router } = Pinned::read(exact, menu_file, puzzle)?;
+        let Pinned { exact, record, menu, router, pin } = Pinned::read(exact, menu_file, puzzle)?;
         let disk = FsDisk::new(folder).map_err(|error| format!("the session folder: {error}"))?;
         let store = JournalStore::create(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
         let mut layer = CommandLayer::new(
@@ -313,7 +323,7 @@ impl Turns {
             ProtectedSet::none(),
         );
         layer.pin_menu(exact.clone(), menu).map_err(|error| format!("the menu pin: {error:?}"))?;
-        let mut turns = Turns::with(kernel, exact, puzzle, record, folder, layer, router, Vec::new());
+        let mut turns = Turns::with(kernel, exact, puzzle, record, folder, layer, router, pin, Vec::new());
         if puzzle == Puzzle::JumbleOn {
             turns.enter()?;
         }
@@ -346,7 +356,7 @@ impl Turns {
             return Err("the session folder does not exist; a reopen needs a copy of the fixture's session".to_owned());
         }
         let puzzle = fixture.puzzle;
-        let Pinned { exact, record, menu, router } = Pinned::read(exact, menu_file, puzzle)?;
+        let Pinned { exact, record, menu, router, pin } = Pinned::read(exact, menu_file, puzzle)?;
         let disk = FsDisk::new(folder).map_err(|error| format!("the session folder: {error}"))?;
         let store = JournalStore::open(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
         let layer = CommandLayer::open_with_menu(
@@ -365,7 +375,7 @@ impl Turns {
         if digest != fixture.digest {
             return Err(format!("the reopened session's state {digest} is not the fixture's {}", fixture.digest));
         }
-        Ok(Turns::with(kernel, exact, puzzle, record, folder, layer, router, fixture.committed.clone()))
+        Ok(Turns::with(kernel, exact, puzzle, record, folder, layer, router, pin, fixture.committed.clone()))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -377,6 +387,7 @@ impl Turns {
         folder: &Path,
         layer: CommandLayer<JournalStore>,
         router: Router,
+        pin: MenuPin,
         committed: Vec<Value>,
     ) -> Turns {
         // One key map: the shell's palette names the keys the router binds (LP4-8).
@@ -391,6 +402,7 @@ impl Turns {
             layer: Some(layer),
             shell,
             router,
+            pin,
             specs: specs(puzzle),
             committed,
             refused: 0,
@@ -491,6 +503,61 @@ impl Turns {
     /// The arguments of every committed press, in order, a reopened fixture's first.
     pub fn committed(&self) -> &[Value] {
         &self.committed
+    }
+
+    /// Commits item `item` of the pinned menu at cap `cap` as `jumble.twist.menu` through the shell's route
+    /// ([`Turns::invoke`]), the arguments a twist key gives (the router's `menu_item` letter, the cap and the layer's
+    /// revision) at any cap and item: a letter of a session fixture's word (ADR-D02 B5). It must commit; its
+    /// arguments join the committed presses, so the control replays it. Jumble on only.
+    pub fn twist_letter(&mut self, cap: u32, item: u64) -> Result<(), String> {
+        if self.puzzle != Puzzle::JumbleOn {
+            return Err("a menu letter needs the jumbled puzzle".to_owned());
+        }
+        let text = |s: &str| Value::String(s.to_owned());
+        let request = String::from_utf8_lossy(&menu_request(&self.pin.set, &self.pin.order, item)).into_owned();
+        let letter = json::object([
+            ("request", Value::String(request)),
+            ("operation", json::object([("kind", text("menu_direct"))])),
+            ("menu", json::object([("set", text(&self.pin.set)), ("order", text(&self.pin.order))])),
+        ]);
+        let revision = self.layer()?.revision().to_json();
+        let args = json::object([("cap", Value::Int(i64::from(cap))), ("letter", letter), ("revision", revision)]);
+        let receipt = self.invoke(JUMBLE_TWIST_ROW, args.clone())?;
+        match &receipt.status {
+            Status::Committed(_) => {
+                self.committed.push(args);
+                Ok(())
+            }
+            Status::Refused(error) | Status::Failed(error) => {
+                Err(format!("the letter [{cap}, {item}] did not commit: {}: {}", error.code, error.detail))
+            }
+            status => Err(format!("the letter [{cap}, {item}] did not commit: the layer answered {}", status.name())),
+        }
+    }
+
+    /// The head's digests as ADR-D02's sample states name them (B5), by which a sample binds to the session: KN0.2's
+    /// digest, and with Jumble on the SHA-256 of the pose ids (u32 little-endian per piece, the jumbling engine's
+    /// record) and of the lattice flags (one byte per piece, 1 when its pose is in K⁺). With Jumble off the two are
+    /// `null`. The answer is `{"digest", "pose_ids_sha256", "pose_lattice_sha256"}`.
+    pub fn state_digests(&mut self) -> Result<Value, String> {
+        let layer = self.layer()?;
+        let digest = head_digest(layer);
+        let (ids, lattice) = match layer.jumbled() {
+            Some(jumbled) => {
+                let state = jumbled.state();
+                let raw: Vec<u8> = state.pose_ids().iter().flat_map(|id| id.to_le_bytes()).collect();
+                let poses = state.poses();
+                let flags: Vec<u8> =
+                    state.pose_ids().iter().map(|&id| u8::from(poses[id as usize].kidx().is_some())).collect();
+                (Value::String(sha256_hex(&raw)), Value::String(sha256_hex(&flags)))
+            }
+            None => (Value::Null, Value::Null),
+        };
+        Ok(json::object([
+            ("digest", Value::String(digest)),
+            ("pose_ids_sha256", ids),
+            ("pose_lattice_sha256", lattice),
+        ]))
     }
 
     // ----- LP4-3's write-check-run flow (a draft)

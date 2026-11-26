@@ -54,7 +54,7 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     D3D12 physical device), not DXGI's first hardware adapter. Draft choices: the acceptance harness's default
     config, and scene 1.
   - `HostLibrary.cs` loads the native host library (`c600_shell_host.dll`, step S3), resolves its `m6h_*` exports,
-    refuses another version than 2, and wraps each call. `Create` hands the library the core's table and a context.
+    refuses another version than its `AbiVersion` (8 since ADR-D02 B5), and wraps each call. `Create` hands the library the core's table and a context.
   - `CoreLibrary.cs` loads the core from an absolute path, resolves the exports that `renderer/bridge`'s function
     table names, in its order, and refuses another ABI version than 5. It also resolves `ShellCalls`, the route-B
     calls the shell makes itself and the table does not hold: `sa2_create`, `sa2_scene_load`, the three surface

@@ -14,15 +14,91 @@ namespace Magic600.Shell.D02;
 /// ADR-D02's surfaces in the product shell (build step B4), all behind M600_D02=1 so that the measured C9 runs are
 /// unchanged. It registers the D02 draft rows after the command table (tools/looklab/data/design/command-rows-d02.json,
 /// staged as design/), shows the table's Jumble rows by their display names, marks the draft rows in the palette, and
-/// adds a driver node that keeps the owner's window rule, answers the watch command and plays a D02 script.
+/// adds a driver node that keeps the owner's window rule, answers the watch command and plays a D02 script. B5 binds
+/// a sample state to the session by the head's two pose-array digests (<see cref="Bind"/>), never by its name.
 /// </summary>
 public static class ShellJumble
 {
     public const string DraftReason = "a draft row: this build does not carry it out yet";
+    /// <summary>The binding chip's words with no sample bound: every D02 slot is stale and its readouts pending.</summary>
+    public const string Unbound = "unbound · stale";
     private static readonly HashSet<string> DraftIds = new(StringComparer.Ordinal);
+    // The sample states by their pose-array digests ("<pose ids>/<lattice>"), in the index's order.
+    private static readonly Dictionary<string, List<string>> Samples = new(StringComparer.Ordinal);
 
     public static bool On => System.Environment.GetEnvironmentVariable("M600_D02") == "1";
     public static IReadOnlyCollection<string> Drafts => DraftIds;
+    /// <summary>The sample state the launch asked for (M600_D02_STATE), or null.</summary>
+    public static string? Asked => System.Environment.GetEnvironmentVariable("M600_D02_STATE") is { Length: > 0 } named ? named : null;
+    /// <summary>The sample state bound to the session, or null (B5).</summary>
+    public static string? Bound { get; private set; }
+    /// <summary>The binding changed.</summary>
+    public static event Action? BindingChanged;
+
+    /// <summary>The binding chip's words for a bound sample state.</summary>
+    public static string BoundWords(string state) => "bound · " + state;
+
+    /// <summary>The folder of the D02 jumble samples: under M600_D02_DATA when set, else the build's staged copy.</summary>
+    public static string JumbleFolder()
+    {
+        var data = System.Environment.GetEnvironmentVariable("M600_D02_DATA") is { Length: > 0 } source
+            ? source : ProjectSettings.GlobalizePath("res://samples");
+        return Path.Combine(data, data.EndsWith("samples", StringComparison.Ordinal) ? "" : "samples", "jumble");
+    }
+
+    /// <summary>Reads every sample state's pose-array digests from its state.json header (B1); answers how many.</summary>
+    public static int LoadSamples()
+    {
+        Samples.Clear();
+        var folder = JumbleFolder();
+        using var index = JsonDocument.Parse(File.ReadAllText(Path.Combine(folder, "states.json")));
+        var count = 0;
+        foreach (var entry in index.RootElement.GetProperty("states").EnumerateArray())
+        {
+            var id = entry.GetProperty("state").GetString() ?? "";
+            using var state = JsonDocument.Parse(File.ReadAllText(Path.Combine(folder, id, "state.json")));
+            var digests = state.RootElement.GetProperty("digests");
+            var key = Key(digests.GetProperty("pose_ids_sha256").GetString(), digests.GetProperty("pose_lattice_sha256").GetString());
+            if (!Samples.TryGetValue(key, out var ids))
+            {
+                Samples[key] = ids = new List<string>();
+            }
+            ids.Add(id);
+            count++;
+        }
+        return count;
+    }
+
+    private static string Key(string? ids, string? lattice) => ids + "/" + lattice;
+
+    /// <summary>
+    /// Binds the sample state whose two pose-array digests equal the session head's (B5). <paramref name="digests"/> is
+    /// m6h_state_digest's answer, read at each newly shown revision. Several states with the same poses bind the asked
+    /// one when it is among them, else the first in the index's order. With none, or with Jumble off, nothing is bound.
+    /// </summary>
+    public static void Bind(string digests)
+    {
+        string? bound = null;
+        try
+        {
+            using var document = JsonDocument.Parse(digests);
+            var root = document.RootElement;
+            if (root.GetProperty("pose_ids_sha256").ValueKind == JsonValueKind.String
+                && Samples.TryGetValue(Key(root.GetProperty("pose_ids_sha256").GetString(), root.GetProperty("pose_lattice_sha256").GetString()), out var ids))
+            {
+                bound = Asked is { } asked && ids.Contains(asked) ? asked : ids[0];
+            }
+        }
+        catch (Exception error) when (error is JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            bound = null;
+        }
+        if (bound != Bound)
+        {
+            Bound = bound;
+            BindingChanged?.Invoke();
+        }
+    }
 
     /// <summary>Adds the draft rows after the table's, then relabels with the owner's words and the display names.</summary>
     public static void AddRows(CommandRegistry registry, string folder)
@@ -45,6 +121,30 @@ public static class ShellJumble
             "ADR-D02's build: the Jumble and research surfaces; the palette marks the draft rows");
         chip.Name = "D02Chip";
         frame.BarTools.AddChild(chip);
+        var binding = SessionWidgets.Chip(Unbound, frame.Tokens.C("text.dim"), "No sample state has this session's pose digests");
+        binding.Name = "D02BindChip";
+        frame.BarTools.AddChild(binding);
+        var words = binding.GetChild<Label>(0);
+        BindingChanged += () =>
+        {
+            if (!GodotObject.IsInstanceValid(binding))
+            {
+                return;
+            }
+            words.Text = Bound is { } state ? BoundWords(state) : Unbound;
+            binding.TooltipText = Bound is { } named
+                ? $"The session's poses are sample state {named}'s, by their two digests"
+                : "No sample state has this session's pose digests: every D02 slot is stale and its readouts pending";
+            frame.Invalidate();
+        };
+        try
+        {
+            LoadSamples();
+        }
+        catch (Exception error) when (error is IOException or JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            frame.Say("D02 samples did not load: " + error.Message, true);
+        }
         parent.AddChild(new D02Driver(frame));
     }
 }
@@ -152,17 +252,14 @@ internal sealed partial class D02Driver : Node
     }
 
     /// <summary>Reads the D02 data again (the watch command's data-only change): from M600_D02_DATA when set, else the
-    /// build's staged copy. B4 has no surface that draws it yet, so it counts what it read.</summary>
+    /// build's staged copy. It reads the samples' digests again; the next shown revision binds against them.</summary>
     private void Reload()
     {
-        var data = System.Environment.GetEnvironmentVariable("M600_D02_DATA") is { Length: > 0 } source
-            ? source : ProjectSettings.GlobalizePath("res://samples");
-        var states = Path.Combine(data, data.EndsWith("samples", StringComparison.Ordinal) ? "" : "samples", "jumble", "states.json");
         try
         {
-            using var document = JsonDocument.Parse(File.ReadAllText(states));
+            var count = ShellJumble.LoadSamples();
             _reloads++;
-            _frame.Say($"D02 data reloaded ({_reloads}): {document.RootElement.GetProperty("states").GetArrayLength()} sample states");
+            _frame.Say($"D02 data reloaded ({_reloads}): {count} sample states");
         }
         catch (Exception error) when (error is IOException or JsonException or KeyNotFoundException or InvalidOperationException)
         {
@@ -206,7 +303,15 @@ internal sealed partial class D02Driver : Node
         if (step.TryGetProperty("chord", out var chord))
         {
             _doing = "chord " + chord.GetString();
-            Press(chord.GetString()!);
+            try
+            {
+                Press(chord.GetString()!);
+            }
+            catch (FormatException error)
+            {
+                // A key Godot does not name (KeyJ, not J) is written as such, so the run's expectation fails on it.
+                _doing += " (not pressed: " + error.Message + ")";
+            }
         }
         else if (step.TryGetProperty("text", out var text))
         {
