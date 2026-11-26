@@ -709,5 +709,39 @@ class HopfRun(unittest.TestCase):
                         problems)
 
 
+class TintRun(unittest.TestCase):
+    """B15: the tint run's check recomputes the bytes the shell sent to the core from the sample, piece by piece."""
+
+    def test_the_script_the_check_and_the_shell_side_exist(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["tint"], run.expect_tint)
+        self.assertIn("tint", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "tint.json"))
+        waits = [f"wait {step['wait_ms']} ms" for step in script["steps"] if "wait_ms" in step]
+        self.assertEqual(waits, [mark for mark, _, _ in run.TINT_STEPS])
+        self.assertIn("ShellTint.Attach(host, frame);", text(PROJECT / "ShellChrome.cs"))
+        self.assertIn("ShellTint.Dump(json, _frame);", text(PROJECT / "D02" / "ShellJumble.cs"))
+        style = text(PROJECT / "D02" / "ShellStyle.cs")
+        self.assertIn("var outline = _tintOutline is null ? new byte[PieceCount] : (byte[])_tintOutline.Clone();", style)
+        self.assertIn("fill[piece] = (byte)(_tintFill[piece] | _focus[piece]);", style)
+
+    def test_a_good_run_passes_and_a_wrong_byte_is_named(self):
+        run = shell_module("d02_run")
+        tables = run.tint_tables("wj-ia-300")
+        self.assertEqual(len(tables["ids"]), 177120)
+        self.assertEqual(sorted(set(tables["classes"]) - {0}), [1, 2, 3, 4])
+        dumps = [{"do": mark, "tint": run.tint_expected(tables, mode, focused, None, 7 if mode == "height" else None)}
+                 for mark, mode, focused in run.TINT_STEPS]
+        self.assertEqual(run.expect_tint(dumps, {}, "wj-ia-300", tables), [])
+        self.assertTrue(dumps[0]["tint"]["line"].startswith("Contact classes · 1 "), dumps[0]["tint"]["line"])
+        self.assertEqual(dumps[4]["tint"]["dims"], [True, True])
+        dumps[2]["tint"]["outline_sha256"] = dumps[3]["tint"]["outline_sha256"]
+        problems = run.expect_tint(dumps, {}, "wj-ia-300", tables)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("after 'wait 812 ms' (off-lattice) outline_sha256", problems[0])
+        dumps[5]["tint"]["fill_sha256"] = run.tint_expected(tables, "height", None, None, 7)["fill_sha256"]
+        self.assertTrue(any("domain 5 focused) fill_sha256" in p for p in run.expect_tint(dumps, {}, "wj-ia-300", tables)))
+
+
 if __name__ == "__main__":
     unittest.main()

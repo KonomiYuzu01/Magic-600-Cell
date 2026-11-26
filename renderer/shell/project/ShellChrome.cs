@@ -359,6 +359,8 @@ public sealed class ShellChrome
             // Step C-.40: on the base puzzle Local draws cell 0 without a Jumble cap, so the Jumble empty sentence stays hidden.
             host.SetDrawnWithoutCap(live && !ShellLocal.Plan.Jumble);
             ShellJumble.Host = host;
+            // B15: the tint channel and the focus layers, drawn by the core.
+            ShellTint.Attach(host, frame);
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
             Jumble.Changed += Describe;

@@ -27,6 +27,25 @@ public static class ShellStyle
     private static byte[]? _focus;
     private static bool _focusSent, _hide;
 
+    // B15 (ADR-D02.20): the tint channel's bytes per piece (the contact classes or the off-lattice mark on the outline,
+    // the height ramp on the fill), its palette (entries 3 to 14 read), and per style slot (1 Global, 2 Local) whether
+    // that view's own focus layers dim.
+    private static byte[]? _tintOutline, _tintFill;
+    private static float[]? _tintPalette;
+    private static readonly bool[] _slotDims = { true, true, true };
+
+    /// <summary>The bytes last sent on each channel (the fill null once cleared), for a D02 run's dump.</summary>
+    public static byte[]? SentOutline { get; private set; }
+
+    /// <summary>The fill channel's bytes last sent, or null when none are.</summary>
+    public static byte[]? SentFill { get; private set; }
+
+    /// <summary>The hovered and the selected piece the last sent outline marks.</summary>
+    public static int? SentHover { get; private set; }
+
+    /// <summary>The selected piece the last sent outline marks.</summary>
+    public static int? SentSelection { get; private set; }
+
     /// <summary>
     /// ADR-D01.46's focus layer in both views, through Look Lab's <see cref="FocusLayers"/> model: while it dims (a
     /// focused predicate that applies, and a cycle that is not Normal), a piece shows fully when
@@ -39,6 +58,7 @@ public static class ShellStyle
     {
         _focus = null;
         _hide = false;
+        _slotDims[1] = _slotDims[2] = true;
         if (layers is { Dimming: true } && member is not null)
         {
             _focus = new byte[PieceCount];
@@ -57,6 +77,53 @@ public static class ShellStyle
     /// <summary>The focus layer's mode as the core draws it: none, dimmed or hidden (for a D02 run's dump).</summary>
     public static string FocusMode => _focus is null ? "none" : _hide ? "hidden" : "dimmed";
 
+    /// <summary>
+    /// ADR-D01.46 per view: the dim set from the view whose layers dim (Global's first), and each style slot dims only
+    /// while its own view's layers dim with the same focused predicate. With both views dimming, Global's mode (dimmed or
+    /// hidden) serves both. <paramref name="member"/> gives a view's focused predicate's members, piece by piece.
+    /// </summary>
+    public static void SetFocusViews(FocusLayers? global, FocusLayers? local, Func<FocusLayers, Func<int, bool>?> member)
+    {
+        var source = global is { Dimming: true } ? global : local;
+        SetFocus(source, source is null ? null : member(source));
+        _slotDims[1] = _focus is not null && global is { Dimming: true } && global.Focused == source!.Focused;
+        _slotDims[2] = _focus is not null && local is { Dimming: true } && local.Focused == source!.Focused;
+    }
+
+    /// <summary>Whether a style slot dims the focus set now (for a D02 run's dump).</summary>
+    public static bool SlotDims(uint slot) => _focus is not null && _slotDims[slot is 1 or 2 ? slot : 1];
+
+    /// <summary>
+    /// B15 (ADR-D02.20): the tint channel's bytes per piece on the outline and the fill (null where the mode draws
+    /// nothing there; another length is dropped) and the palette, 64 floats of which entries 3 to 14 are read.
+    /// </summary>
+    public static void SetTint(byte[]? outline, byte[]? fill, float[]? palette)
+    {
+        _tintOutline = outline?.Length == PieceCount ? outline : null;
+        _tintFill = fill?.Length == PieceCount ? fill : null;
+        _tintPalette = palette?.Length == 64 ? palette : null;
+        Invalidate();
+    }
+
+    // The fill channel: the height ramp's palette index with the focus layer's dim bit, or null when neither is set.
+    private static byte[]? Fill()
+    {
+        if (_tintFill is null)
+        {
+            return _focus;
+        }
+        if (_focus is null)
+        {
+            return _tintFill;
+        }
+        var fill = new byte[PieceCount];
+        for (var piece = 0; piece < PieceCount; piece++)
+        {
+            fill[piece] = (byte)(_tintFill[piece] | _focus[piece]);
+        }
+        return fill;
+    }
+
     static ShellStyle() => ShellPick.Changed += Invalidate;
 
     /// <summary>Marks the style for sending again (the selection or hover changed).</summary>
@@ -72,33 +139,43 @@ public static class ShellStyle
         {
             return HostLibrary.Ok;
         }
-        var outline = new byte[PieceCount];
+        // B15: the tint's outline bytes under the selection's and the hover's outlines.
+        var outline = _tintOutline is null ? new byte[PieceCount] : (byte[])_tintOutline.Clone();
+        int? hovered = null, selected = null;
         if (ShellPick.Hover is { } hover && hover.Piece < PieceCount)
         {
             outline[hover.Piece] = Hovered;
+            hovered = (int)hover.Piece;
         }
         if (ShellPick.Selection is { } selection && selection.Piece < PieceCount)
         {
             outline[selection.Piece] = Selected;
+            selected = (int)selection.Piece;
         }
         var code = library.SetPieceStyle(host, HostLibrary.StyleOutline, outline, false);
         if (code != HostLibrary.Ok)
         {
             return code;
         }
-        // ADR-D01.46: the focus layer's fill bytes; once sent, a cleared focus clears the channel.
-        if (_focus is not null || _focusSent)
+        SentOutline = outline;
+        SentHover = hovered;
+        SentSelection = selected;
+        // ADR-D01.46 and B15: the fill bytes, the height ramp with the focus layer's dim bit; once sent, a cleared fill
+        // clears the channel.
+        var fill = Fill();
+        if (fill is not null || _focusSent)
         {
-            code = library.SetPieceStyle(host, HostLibrary.StyleFill, _focus, false);
+            code = library.SetPieceStyle(host, HostLibrary.StyleFill, fill, false);
             if (code != HostLibrary.Ok)
             {
                 return code;
             }
-            _focusSent = _focus is not null;
+            _focusSent = fill is not null;
         }
+        SentFill = fill;
         foreach (var slot in new uint[] { 1, 2 })
         {
-            code = library.SetViewStyle(host, slot, View());
+            code = library.SetViewStyle(host, slot, View(slot));
             if (code != HostLibrary.Ok)
             {
                 return code;
@@ -113,15 +190,15 @@ public static class ShellStyle
     public const int PieceCount = 177_120;
 
     /// <summary>
-    /// The style slots' style: outlines drawn, the focus layer's pieces dimmed or hidden (none without a focus), the
-    /// identity matrix.
+    /// The style slots' style: outlines and the fill tint drawn, the focus layer's pieces dimmed or hidden where the
+    /// slot's view dims (none without a focus), the selection, hover and tint palette entries, the identity matrix.
     /// </summary>
-    public static unsafe HostLibrary.ViewStyle View()
+    public static unsafe HostLibrary.ViewStyle View(uint slot = 1)
     {
         var style = HostLibrary.ViewStyle.Plain();
-        style.TintMode = HostLibrary.TintOutline;
+        style.TintMode = HostLibrary.TintOutline | HostLibrary.TintFill;
         style.OutlineWidth = OutlineWidth;
-        if (_focus is not null)
+        if (_focus is not null && _slotDims[slot is 1 or 2 ? slot : 1])
         {
             style.DimMode = _hide ? HostLibrary.HideMarked : HostLibrary.DimMarked;
             style.DimAmount = _hide ? 0 : DimAmount;
@@ -133,6 +210,14 @@ public static class ShellStyle
         {
             style.Palette[4 * Selected + i] = entries[i];
             style.Palette[4 * Hovered + i] = entries[4 + i];
+        }
+        // B15: the tint's entries, 3 to 14 (JumbleTint's palette plan).
+        if (_tintPalette is not null)
+        {
+            for (var i = 4 * JumbleTint.FirstClass; i < 64; i++)
+            {
+                style.Palette[i] = _tintPalette[i];
+            }
         }
         return style;
     }

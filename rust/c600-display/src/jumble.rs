@@ -71,6 +71,7 @@ pub enum Missing {
     Undefined { row: &'static str, reason: String },
 }
 
+pub mod contacts;
 pub mod observations;
 
 /// The binary64 value of an exact number: (a + b√5)/d, each operation rounded. `None` when a coefficient does not

@@ -551,6 +551,21 @@ relative path is from the repository root.
   - Focus dim through the dim mode. The straddler layer is never a default and is active only at a blocked cap.
   - Legends with counts.
 - **Check:** `D02TintModesExclusive`; `D02ContactColouringIsProper`; `D02FourClassesAtWj300AndDeepExports`; `D02OneClassAtIa40`; `D02ClassStickyAcrossCommitUndoRedoBranchReopen`; `D02OverflowNeverReusesAcrossContact`; `D02OffLatticeFromFlagNotHeights`; `D02StraddlerLayerOnlyAtBlockedCap`. Then `d02_run.py --script tint`: the style bytes sent to the host equal the sample's classes, piece by piece.
+- **As built (drawing track, 26 November 2026):**
+  - Samples: each full state has `poses.json` (each piece's pose row, u32 little-endian, its sha256 the state's `pose_ids_sha256`) and `contact.json` (the domains, the lattice domain, the edges with on-grip and off-grip flags, and the first class assignment).
+    - The contact graph is A4's method, built in Rust: `c600-jumble`'s `observe::seam_cells` gives the exact seam cells, and `c600-display`'s `jumble::contacts` runs the binary64 separating-axis test, since CT-KN2-05 keeps floats out of `c600-jumble`. The binary `c600-jumble-contacts` checks each record's digest.
+    - At wj-ia-300 it gives A4's counts: 54 contacts, 20 with the lattice domain, 707 planes and 98,048 seam faces; four classes there and at the deep exports, one at ia-40.
+  - Model (`Model/JumbleTint.cs`): `TintMode`, one setting `tint.mode`, so modes never stack. While it is unset the entry slot's armed `tint.contact_class` is the mode, so contact classes are on at open.
+    - `ContactClasses.Assign` keeps a remembered class unless a touching domain, in index order, already kept it, then colours the rest by DSatur with six classes and the overflow state; the lattice domain is neutral.
+    - The memory keeps the first class each domain id was given (overflow never), so an undo, a redo, a branch switch or a reopen draws a state as it did. It is saved as view-state text in the chrome setting `tint.contact_class.memory`.
+    - The core's palette: 1 and 2 the selection and the hover, 3 to 8 classes 1 to 6, 9 the overflow, 10 to 13 the height steps 2, 4, 6 and above 6 (alpha 0.6 on the fill, so the label shows), 14 off-lattice.
+  - Host (`Ui/JumbleLegend.cs`, a part of `JumbleHost`): the palette row `jumble.tint.mode` (CR-14's draft row; a mode, or without one the next) and the tint legend with counts on Global's and Local's borders. `jumble.focus.domain` now dims the other domains at once, as its draft row says; height and straddler focus still dim on F10.
+  - Shell (`D02/ShellTint.cs`, `D02/ShellStyle.cs`): at each binding the host gets the contact graph and pose ids. Each change sends per piece the classes or the off-lattice mark on the outline channel under the selection and hover outlines, and the height ramp on the fill with the focus dim bit. Both views take the same bytes (slots 1 and 2), so Local draws Global's tint for its cap; each slot dims only while its own view's focus layers dim. `FocusLayers.Changed` now reaches `ShellStyle`, which B17 part 2 left to the integrator.
+  - Readings, for the owner:
+    - Off-lattice has no design slot. It takes the darker of `surface.window` and `text.primary`; a slot `tint.jumble.off_lattice` is requested.
+    - The overflow's "double outline" cue is drawn as its slot's colour only.
+  - Reused: A4's contact method and `observe.rs` (seam scan, domains, pole of a face); `faces.rs`'s piece faces; B11's `PoseStyle`, `FocusLayers`, `JumbleFocus` and the Focus layer's `FilterExpr`; B14's style path and B17's `ShellStyle`; `ReadoutRow`'s border pattern for the legend.
+  - Checks: `check.py`'s console lane passed 246 of 246 with the eight named tests; `test_shared_chrome.py` (12 OK), `build_product.py` (PASS), `test_renderer_shell.py` (95 OK), `test_d02_drawing.py` (45 OK). `d02_run.py --script tint --state wj-ia-300` passed: in seven steps the bytes sent on both channels equal the sample's piece by piece. `two-views` on wj-ia-300 passed in sample mode, with 1,195 of 1,203 frames drawn with two panes and none held, so the sample-mode collapse does not show.
 - **Owner sees:** switch the tint mode from the palette on a deep export: four outline classes, the height ramp, the dim of one domain.
 - **Machine:** H, W.
 - **Checkpoint:** no.
