@@ -76,7 +76,7 @@ SUBSCRIPTION_OVERRIDES = ["-c", 'model_provider="openai"', "-c", 'forced_login_m
 # sandbox backend must then be named, or Codex falls back to a mode that rejects every command, even file reads.
 # The unelevated backend needs no administrator setup; it enforces filesystem boundaries but not a network firewall.
 USER_CONFIG_ISOLATION = ["--ignore-user-config"] + (["-c", 'windows.sandbox="unelevated"'] if os.name == "nt" else [])
-# The user config is not the only source of MCP servers. Codex 0.159 turns these features on by default: with a ChatGPT
+# The user config is not the only source of MCP servers. Codex 0.171 turns these features on by default: with a ChatGPT
 # sign-in, `plugins` loads the plugins installed on the account (listed by the ChatGPT backend and cached under
 # CODEX_HOME/plugins) and starts their MCP servers outside the sandbox; `apps` connects the hosted ChatGPT connector
 # MCP endpoint; `skill_mcp_dependency_install` adds the MCP servers that a mentioned skill declares. Disabling

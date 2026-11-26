@@ -197,9 +197,9 @@
 //!     solved: a session that started elsewhere holds no retained word from solved, even at a solved head, and is
 //!     refused with `KN5:input.jumble_on_labels_only`, as is a word whose replay does not reach the current labels.
 //!     Either replay runs in the jumbling engine under the pinned menu, with Net protection and no protected piece,
-//!     and the entry enters at its poses. A suffix's derivation nests on the exit's poses, so at the 64th chained
-//!     derivation the layer replays the jumbling journal flat from solved instead, as for a pose move. No protection
-//!     gate applies: H-08 gives the row `model_match` only, and a crossing moves no piece.
+//!     and the entry enters at its poses. A suffix's derivation on the exit's poses keeps their flat claim flat, as a
+//!     pose move does. No protection gate applies: H-08 gives the row `model_match` only, and a crossing moves no
+//!     piece.
 //!   - The crossing is a node of the move tree that holds no retained recipe. The revision's mode becomes `jumble_on`
 //!     ([`layer::JUMBLE_ON_MODE`]), its state revision advances and its digest is the pose digest
 //!     ([`CommandLayer::jumbled`] is the head's value). Like a commit, it answers `committed`, ends the pending preview
@@ -286,10 +286,13 @@
 //!     each move in it was judged when it was made. A reopen derives a stored pose move as the live move does, under
 //!     the protection in force at its place in the journal, so one that would move a protected piece leaves the layer
 //!     in read-only recovery before it with the engine's code.
-//!   - The jumbling engine nests each derivation's reachability evidence in the next, and a chain of some hundreds of
-//!     derivations overflows a thread's stack. After 64 chained moves the layer replays the jumbling journal flat from
-//!     solved instead (the retained letters of the path's commits, then the pose moves' twists), which must reach the
-//!     chained poses. Such a replay costs time linear in the journal.
+//!   - Every value the layer holds has a flat reachability claim (26 November 2026): its evidence names solved and the
+//!     whole word from solved, by its digest and length, never the claim it extends. Each pose move derives with the
+//!     head's flat claim kept flat (`levels::derive_flat`), with the same protection verdicts as a plain derivation,
+//!     so a move costs the same however long the session and a reopen replays the stored moves in time linear in
+//!     their number. The engine's plain derivation nests each claim in the next, and a chain of some hundreds overflows
+//!     a thread's stack; until then the layer replayed the jumbling journal from solved after every 64 chained moves,
+//!     which made writing and reopening a session cost time quadratic in its length.
 //!   - An undo applies the exact inverse of the move's twist when the menu holds it and replays the journal to the
 //!     move's parent otherwise; a redo applies the twist again. Each must reach the recorded poses of its target
 //!     (JI.27), and each advances the state revision.

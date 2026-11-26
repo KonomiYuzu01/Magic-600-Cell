@@ -136,6 +136,19 @@ fn poses(word: &[Twist]) -> String {
     }
 }
 
+/// The flat reachability claim of the same replay: the solved claim carried along `word`.
+fn flat_claim(word: &[Twist]) -> levels::Reachability {
+    let ctx = ctx();
+    let menu = Arc::new(pinned());
+    let identity = ctx.identity(Some(&menu));
+    let solved = levels::Snapshot::solved(&ctx, Some(menu));
+    let derivation = levels::derive(&ctx, Base::Snapshot(&solved), &identity, word, ProtectionMode::Net, &[]);
+    match derivation.expect("no engine error") {
+        Ok(levels::Derivation::Derived(derived)) => derived.reachability().clone(),
+        _ => panic!("the word does not replay from solved"),
+    }
+}
+
 /// The exit record (draft) that A5's label checkpoint makes when it ends the episode `episode` along the jumbling
 /// journal `journal` at the poses `poses` with the labels `labels`, ν = 0 shown by `source`.
 fn exit_record(episode: &str, journal: &[Twist], poses: &str, labels: &str, source: &str) -> Value {
@@ -1143,13 +1156,13 @@ fn an_entry_from_an_exit_root_needs_the_exit_s_menu() {
     assert_eq!(log.last().and_then(|t| t.crossing.as_ref()), Some(&exit_root("e3", &exit, &[2])));
 }
 
-/// The chain bound (draft): an entry from an exit root nests the suffix's derivation on the exit's poses, so where
-/// that is the 64th chained derivation the layer replays the jumbling journal flat from solved instead, which must
-/// reach the same poses. After 63 pose moves, an exit and a retained twist, the entry's poses are the journal's from
-/// solved, its undo and redo reach them again, a pose move and an exit work from them, and a reopen under the menu
-/// replays the whole chain. Not run: the chain depth itself, which the public API does not show.
+/// A long chain through an exit (draft): an entry from an exit root derives the suffix on the exit's poses with their
+/// flat claim kept flat, where the layer once replayed the jumbling journal from solved at the 64th chained derivation.
+/// After 63 pose moves, an exit and a retained twist, the entry's poses are the journal's from solved, its claim is
+/// the flat claim of one replay of the whole journal from solved, its undo and redo reach them again, a pose move and
+/// an exit work from them, and a reopen under the menu replays the whole chain.
 #[test]
-fn an_entry_at_the_chain_bound_replays_the_journal_flat() {
+fn an_entry_after_a_long_chain_keeps_the_journal_s_flat_claim() {
     let t6 = resolved(&item(6));
     let mut f = fixture(&[]);
     assert!(committed(&f.enter()));
@@ -1163,6 +1176,8 @@ fn an_entry_at_the_chain_bound_replays_the_journal_flat() {
     moves.extend(primitives(&[1, -2, 1]));
     let on = f.layer.revision().clone();
     assert_eq!(on.digest, poses(&moves));
+    let claim = f.layer.jumbled().expect("Jumble is on").reachability().clone();
+    assert_eq!(claim, flat_claim(&moves), "the entry's claim is the journal's flat claim from solved");
     assert!(committed(&f.step(Direction::Undo)));
     assert!(committed(&f.step(Direction::Redo)));
     assert_eq!(f.layer.revision().digest, on.digest);

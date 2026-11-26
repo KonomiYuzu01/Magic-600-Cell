@@ -1211,13 +1211,19 @@ pub fn journal_word(ctx: &Context, journal: &[Twist]) -> Result<Vec<i64>, String
 /// primitive letters only): the SHA-256 over every letter's grip as little-endian u32, its compact exact matrix text
 /// and a line feed.
 pub fn word_digest(twists: &[Twist]) -> String {
-    let mut bytes = Vec::new();
+    let mut word = c600_digest::Sha256::new();
+    feed_word(&mut word, twists);
+    c600_digest::hex(&word.finish())
+}
+
+/// Gives `word` the literal bytes of `twists` that [`word_digest`] hashes, in order, so a running digest of a word
+/// extends by its next letters.
+fn feed_word(word: &mut c600_digest::Sha256, twists: &[Twist]) {
     for twist in twists {
-        bytes.extend_from_slice(&(twist.grip as u32).to_le_bytes());
-        bytes.extend_from_slice(crate::q5::matrix_compact(&twist.matrix).as_bytes());
-        bytes.push(b'\n');
+        word.update(&(twist.grip as u32).to_le_bytes());
+        word.update(crate::q5::matrix_compact(&twist.matrix).as_bytes());
+        word.update(b"\n");
     }
-    c600_digest::sha256_hex(&bytes)
 }
 
 /// Replays twists from solved, each admissible as recorded; `Err` names the first step that is not.
@@ -1311,8 +1317,14 @@ impl ReachKind {
 
 /// A reachability claim in the jumbling puzzle (KN2.13). The evidence is an envelope reference (chapter 06), passed
 /// through as given; this crate never searches for a witness. A witnessed claim is made only by a replay from solved
-/// ([`witness`]) or by a derivation from a witnessed base ([`derive`]), and it speaks only of the state it reached.
-#[derive(Clone, Debug, PartialEq)]
+/// ([`witness`]) or by a derivation from a witnessed base ([`derive`], [`derive_flat`]), and it speaks only of the
+/// state it reached.
+///
+/// A claim is flat (draft, 26 November 2026) when it is the solved claim or the solved claim carried along one word:
+/// its evidence names solved and the whole word from solved, never a claim it extends. [`derive_flat`] keeps a flat
+/// claim flat, so a chain of derivations keeps a claim of fixed size, the claim a replay of the chain's whole word from
+/// solved makes.
+#[derive(Clone, Debug)]
 pub struct Reachability {
     kind: ReachKind,
     evidence: Value,
@@ -1321,6 +1333,24 @@ pub struct Reachability {
     /// The pose digest of the state that a claim this crate made speaks of; a stated claim names none. A witnessed
     /// claim holds for that state only (A4, A5).
     at: Option<String>,
+    /// Whether the claim is flat, with the running `Digest<literal word>` of its word from solved; `None` otherwise.
+    flat: Option<Flat>,
+}
+
+/// A flat claim's word from solved: none for the solved claim itself, or the running SHA-256 of the word's literal
+/// bytes ([`word_digest`]) with its length.
+#[derive(Clone, Debug)]
+enum Flat {
+    Solved,
+    Word(c600_digest::Sha256, usize),
+}
+
+/// Two claims are equal when their kinds, evidence, retained flags and states are: a flat claim's running word is not
+/// compared, since its evidence names that word by its digest and length.
+impl PartialEq for Reachability {
+    fn eq(&self, other: &Reachability) -> bool {
+        (self.kind, &self.evidence, self.retained, &self.at) == (other.kind, &other.evidence, other.retained, &other.at)
+    }
 }
 
 impl Reachability {
@@ -1331,13 +1361,14 @@ impl Reachability {
             evidence: object(vec![("from", text("solved")), ("word", text(&word_digest(&[]))), ("letters", int(0))]),
             retained: true,
             at: Some(State::new(None).digest(ctx)),
+            flat: Some(Flat::Solved),
         }
     }
 
     /// A claim the caller states: by theorem, promised, refuted or open, with its evidence reference. A witnessed claim
     /// cannot be stated; it is replayed ([`witness`]) or derived.
     pub fn stated(kind: ReachKind, evidence: Value) -> Option<Reachability> {
-        (kind != ReachKind::Witnessed).then_some(Reachability { kind, evidence, retained: false, at: None })
+        (kind != ReachKind::Witnessed).then_some(Reachability { kind, evidence, retained: false, at: None, flat: None })
     }
 
     pub fn kind(&self) -> ReachKind {
@@ -1361,7 +1392,8 @@ impl Reachability {
     /// The claim of the state `reached` that an admissible word reaches from the state `base_digest`, which has this
     /// claim. Reachability moves along admissible twists both ways (an admissible twist's inverse is admissible from
     /// its result), so every value carries over; a witnessed claim records the base and the word. Only a replay
-    /// ([`witness`]) and a derivation ([`derive`]) call it, once they have reached `reached`.
+    /// ([`witness`]) and a derivation ([`derive`]) call it, once they have reached `reached`. The solved claim carried
+    /// along the word is flat; any other claim carried along it is not.
     pub(crate) fn then(&self, base_digest: &str, twists: &[Twist], reached: &str) -> Reachability {
         let evidence = object(vec![
             ("base", text(base_digest)),
@@ -1370,7 +1402,37 @@ impl Reachability {
             ("letters", int(twists.len())),
         ]);
         let retained = self.retained && twists.iter().all(|t| t.kidx.is_some());
-        Reachability { kind: self.kind, evidence, retained, at: Some(reached.to_string()) }
+        let flat = matches!(self.flat, Some(Flat::Solved)).then(|| {
+            let mut word = c600_digest::Sha256::new();
+            feed_word(&mut word, twists);
+            Flat::Word(word, twists.len())
+        });
+        Reachability { kind: self.kind, evidence, retained, at: Some(reached.to_string()), flat }
+    }
+
+    /// The claim of the state `reached` that a flat claim carries along `twists`, which reach it from the claim's own
+    /// state (draft, 26 November 2026): the solved claim carried along the claim's whole word from solved followed by
+    /// `twists`, exactly as [`Reachability::then`] carries the solved claim along that word, so the claim stays flat
+    /// and of fixed size. `None` for a claim that is not flat. Only [`derive_flat`] calls it, once it has reached
+    /// `reached`.
+    fn then_flat(&self, twists: &[Twist], reached: &str) -> Option<Reachability> {
+        let (word, letters) = match &self.flat {
+            None => return None,
+            Some(Flat::Solved) => return Some(self.then(self.at.as_deref()?, twists, reached)),
+            Some(Flat::Word(word, letters)) => (word, letters),
+        };
+        let mut word = word.clone();
+        feed_word(&mut word, twists);
+        let letters = letters + twists.len();
+        let evidence = object(vec![
+            ("base", self.evidence.get("base")?.clone()),
+            ("base_claim", self.evidence.get("base_claim")?.clone()),
+            ("word", text(&c600_digest::hex(&word.clone().finish()))),
+            ("letters", int(letters)),
+        ]);
+        let retained = self.retained && twists.iter().all(|t| t.kidx.is_some());
+        let at = Some(reached.to_string());
+        Some(Reachability { kind: self.kind, evidence, retained, at, flat: Some(Flat::Word(word, letters)) })
     }
 
     pub fn to_json(&self) -> Value {
@@ -2053,10 +2115,43 @@ pub fn derive(
     mode: ProtectionMode,
     protect: &[u32],
 ) -> Result<Result<Derivation, Refusal>, EngineError> {
+    derive_claimed(ctx, base, identity, twists, mode, protect, false)
+}
+
+/// [`derive`] with the base's flat claim kept flat (draft, 26 November 2026): the same requests refused, the same
+/// letters executed with the same protection verdicts, refusals and certificates, and the same state, derivation,
+/// lineage and protection report; only the derived value's claim differs. It is the base's flat claim carried along the
+/// word ([`Reachability`]), whose evidence names solved and the whole word from solved instead of nesting the base's
+/// claim, so a chain of flat derivations keeps a claim of fixed size: the claim a replay of the chain's whole word from
+/// solved makes. A base whose claim is not flat is an engine error.
+pub fn derive_flat(
+    ctx: &Context,
+    base: Base,
+    identity: &IdentityBlock,
+    twists: &[Twist],
+    mode: ProtectionMode,
+    protect: &[u32],
+) -> Result<Result<Derivation, Refusal>, EngineError> {
+    derive_claimed(ctx, base, identity, twists, mode, protect, true)
+}
+
+/// [`derive`], whose derived value's claim is the base's carried along the word flat ([`derive_flat`]) when `flat`.
+fn derive_claimed(
+    ctx: &Context,
+    base: Base,
+    identity: &IdentityBlock,
+    twists: &[Twist],
+    mode: ProtectionMode,
+    protect: &[u32],
+    flat: bool,
+) -> Result<Result<Derivation, Refusal>, EngineError> {
     let (start, claim, root) = match base {
         Base::Snapshot(snapshot) => (&snapshot.state, &snapshot.reach, None),
         Base::Derived(derived) => (&derived.state, &derived.reach, Some(&derived.lineage)),
     };
+    if flat && claim.flat.is_none() {
+        return Err(engine("a flat derivation needs a base whose claim is flat"));
+    }
     if let Err(refusal) = ctx.check_identity(start.menu(), identity) {
         return Ok(Err(refusal));
     }
@@ -2170,7 +2265,12 @@ pub fn derive(
         return refused(None, Status::Protected, refusal, certificates, protection);
     }
 
-    let reach = claim.then(&base_digest, twists, &state.digest(ctx));
+    let reached = state.digest(ctx);
+    let reach = if flat {
+        claim.then_flat(twists, &reached).ok_or_else(|| engine("a flat claim does not carry along its word"))?
+    } else {
+        claim.then(&base_digest, twists, &reached)
+    };
     let lineage = root.cloned().unwrap_or_else(|| Lineage::Snapshot(base_digest.clone()));
     Ok(Ok(Derivation::Derived(Derived {
         identity: ctx.identity(state.menu()),

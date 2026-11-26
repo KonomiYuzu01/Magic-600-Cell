@@ -75,10 +75,11 @@
 //! ([`TransactionKind::JumbleMove`]): a node of the move tree that holds the item's exact twist, derived in the
 //! jumbling engine from the head's value under the policy in force, with the engine's pieces that carry the
 //! protected orbits as pose-protected pieces (finding B5, the owner's reading of 18 November 2026): a pose move that
-//! would move one is the engine's `KN2:protection.piece_would_move`. The engine nests each derivation's
-//! evidence in the next, so after 64 chained moves the layer replays the jumbling journal flat from solved instead. An
-//! undo applies the exact inverse twist when the menu holds it and replays the journal otherwise, a redo applies the
-//! twist again, and each must reach the move's recorded poses.
+//! would move one is the engine's `KN2:protection.piece_would_move`. Each derivation keeps the head's flat
+//! reachability claim flat (`levels::derive_flat`), so a move costs the same however long the session, and a reopen
+//! replays the stored moves in time linear in their number. An undo applies the exact inverse twist when the menu
+//! holds it and replays the journal otherwise, a redo applies the twist again, and each must reach the move's recorded
+//! poses.
 //!
 //! `jumble.off` ([`JUMBLE_OFF_ROW`]) is A5's exit (ONE.54, JI.27; draft): a crossing commit from Jumble on back to
 //! Jumble off, allowed exactly at A5's label checkpoint ([`jumble::exit`]): every piece on the lattice, every centre in
@@ -217,11 +218,6 @@ pub const ONE_KEY_ROW: &str = "operation.preview.commit";
 const SOLVER_COMMAND_CHECK: bool = true;
 /// A star certificate failure has no registered code yet (draft).
 pub const CERTIFICATE: &str = "KN2:consistency.star_certificate";
-
-/// The number of pose moves derived in a chain before the layer replays the jumbling journal flat from solved (draft).
-/// The jumbling engine nests each derivation's reachability evidence in the next, and a chain of some hundreds of
-/// derivations overflows a thread's stack when its value is cloned or dropped.
-const POSE_CHAIN: usize = 64;
 
 /// Who invokes.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -652,13 +648,13 @@ enum Explorer {
     Run,
 }
 
-/// The jumbling engine's value at the head while Jumble is on, with its pose digest.
+/// The jumbling engine's value at the head while Jumble is on, with its pose digest. Its reachability claim is flat
+/// (`levels::derive_flat`): it names solved and the whole word from solved, so it keeps a fixed size however long the
+/// session.
 #[derive(Clone, Debug)]
 struct Jumbled {
     derived: Derived,
     digest: String,
-    /// How many pose moves were derived in a chain since the value was last replayed from solved ([`POSE_CHAIN`]).
-    depth: usize,
 }
 
 /// What an exit's undo restores and its redo checks: the head's poses before the exit, the retained state the entry
@@ -4028,13 +4024,13 @@ impl<S: Store> CommandLayer<S> {
                             let detail = "the pinned twist menu is not the one the crossing was made under";
                             return Err(Error::new(c600_kernel::codes::IDENTITY_MISMATCH, detail));
                         }
-                        let (entry, depth) = self.entry_at_head(twists)?;
+                        let entry = self.entry_at_head(twists)?;
                         if entry.digest != self.nodes[&to].digest || entry.record != record {
                             let detail = "the witness does not reach the crossing's recorded poses and record";
                             return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
                         }
                         let digest = entry.digest.clone();
-                        let jumbled = Jumbled { derived: entry.derived, digest: entry.digest, depth };
+                        let jumbled = Jumbled { derived: entry.derived, digest: entry.digest };
                         (JUMBLE_ON_MODE, digest, Side::On(jumbled))
                     }
                 };
@@ -4067,8 +4063,11 @@ impl<S: Store> CommandLayer<S> {
                     }
                     Direction::Redo => twist,
                 };
-                let held = twists.menu.contains(&twists.context, &step).then_some(&step);
-                let jumbled = self.pose_value(held, || self.jumble_journal(to))?;
+                let jumbled = if twists.menu.contains(&twists.context, &step) {
+                    self.pose_value(&step)?
+                } else {
+                    self.replayed_poses(to)?
+                };
                 if jumbled.digest != self.nodes[&to].digest {
                     let detail = "the step does not reach the move's recorded poses";
                     return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
@@ -5150,7 +5149,7 @@ impl<S: Store> CommandLayer<S> {
         if self.current.digest() != self.nodes[&self.head].digest {
             return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
         }
-        let (entry, chain) = self.entry_at_head(twists)?;
+        let entry = self.entry_at_head(twists)?;
         let order = self.order + 1;
         let event = format!("e{order}");
         let revision = Revision {
@@ -5199,35 +5198,22 @@ impl<S: Store> CommandLayer<S> {
         let (identity, record) = (entry.identity, entry.record);
         let change = Change::Crossing { before: self.head, after: order, identity, record };
         let tree = Tree::Push { node: Some((order, node)), change };
-        let side = Side::On(Jumbled { derived: entry.derived, digest: entry.digest, depth: chain });
+        let side = Side::On(Jumbled { derived: entry.derived, digest: entry.digest });
         Ok(Adoption { transaction, state: None, protected: None, head: order, tree, preview: None, side })
     }
 
-    /// The entry at the head with Jumble off (JI.25 to JI.27; draft), with the chain depth of its value: from the
-    /// active exit's root ([`CommandLayer::active_exit`], [`jumble::replay_from_exit`]) when there is one, and
-    /// otherwise from the solved witness ([`jumble::replay_from_solved`]), whose value is replayed from solved. A
-    /// non-empty suffix nests one more derivation on the exit's poses, so after [`POSE_CHAIN`] chained derivations the
-    /// value is the jumbling journal to the head replayed flat from solved ([`jumble::replay_poses`]), which must reach
-    /// the same poses.
-    fn entry_at_head(&self, twists: &Twists) -> Result<(jumble::Entry, usize), Error> {
+    /// The entry at the head with Jumble off (JI.25 to JI.27; draft): from the active exit's root
+    /// ([`CommandLayer::active_exit`], [`jumble::replay_from_exit`]) when there is one, and otherwise from the solved
+    /// witness ([`jumble::replay_from_solved`]), whose value is replayed from solved. Either value's claim is flat, so
+    /// a suffix derived on the exit's poses keeps it of fixed size however many crossings the session makes.
+    fn entry_at_head(&self, twists: &Twists) -> Result<jumble::Entry, Error> {
         let labels = self.current.digest();
         let Some((exit, point, suffix)) = self.active_exit()? else {
             let letters = self.solved_witness()?;
-            return Ok((jumble::replay_from_solved(twists, &letters, labels)?, 0));
+            return jumble::replay_from_solved(twists, &letters, labels);
         };
         let (root, crossing) = (&point.poses.derived, format!("e{exit}"));
-        let mut entry = jumble::replay_from_exit(twists, root, &point.record, &crossing, &suffix, labels)?;
-        let chain = point.poses.depth + usize::from(!suffix.is_empty());
-        if chain < POSE_CHAIN {
-            return Ok((entry, chain));
-        }
-        let (derived, digest) = jumble::replay_poses(twists, &self.jumble_journal(self.head)?)?;
-        if digest != entry.digest {
-            let detail = "the jumbling journal's replay from solved does not reach the exit root's replay";
-            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
-        }
-        entry.derived = derived;
-        Ok((entry, 0))
+        jumble::replay_from_exit(twists, root, &point.record, &crossing, &suffix, labels)
     }
 
     /// The active exit at the head with Jumble off (JI.26; draft): the exit that the path from the head reaches through
@@ -5476,11 +5462,7 @@ impl<S: Store> CommandLayer<S> {
         if self.state_digest() != self.nodes[&self.head].digest {
             return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
         }
-        let jumbled = self.pose_value(Some(&twist), || {
-            let mut word = self.jumble_journal(self.head)?;
-            word.push(twist.clone());
-            Ok(word)
-        })?;
+        let jumbled = self.pose_value(&twist)?;
         let order = self.order + 1;
         let event = format!("e{order}");
         let revision = Revision {
@@ -5531,51 +5513,44 @@ impl<S: Store> CommandLayer<S> {
     /// protected orbits as pose-protected pieces ([`jumble::protected_pieces`]; finding B5, the owner's reading of 18
     /// November 2026). The verdict is the engine's own at the pose level, so no label verdict crosses into Jumble
     /// (chapter 03, KN1.11). A step that would move such a piece is refused with `KN2:protection.piece_would_move`,
-    /// and a blocked step with the engine's code (`KN2:input.word_blocked_prefix`). The engine nests each derivation's
-    /// evidence in the next, so the chain is bounded: after [`POSE_CHAIN`] chained steps, or with no step (an undo
-    /// whose exact inverse the menu does not hold), the value is `journal`, the whole jumbling journal to the step's
-    /// end, replayed flat from solved ([`jumble::replay_poses`]), which must reach the step's poses. Such an undo has
-    /// no verdict and needs none: every protection change made after the move it takes back is undone before it, so the
-    /// protection in force is the one the move was judged under, and the inverse moves only the pieces the move moved.
-    /// A reopen replays a stored pose move through this step too, so one that would move a protected piece leaves the
-    /// layer in read-only recovery before it with the engine's code.
-    fn pose_value(
-        &self,
-        step: Option<&Twist>,
-        journal: impl FnOnce() -> Result<Vec<Twist>, Error>,
-    ) -> Result<Jumbled, Error> {
+    /// and a blocked step with the engine's code (`KN2:input.word_blocked_prefix`). The derivation keeps the head's
+    /// flat claim flat (`levels::derive_flat`): its evidence names solved and the whole word from solved, never the
+    /// head's claim, so a step costs the same however long the session. A reopen replays a stored pose move through
+    /// this step too, so one that would move a protected piece leaves the layer in read-only recovery before it with
+    /// the engine's code.
+    fn pose_value(&self, step: &Twist) -> Result<Jumbled, Error> {
         let (Some(twists), Some(head)) = (&self.twists, &self.jumbled) else {
             let detail = "a pose move needs Jumble on under the pinned twist menu";
             return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
         };
         let ctx = &*twists.context;
-        let chained = match step {
-            None => None,
-            Some(twist) => {
-                let (base, identity) = (Base::Derived(&head.derived), head.derived.identity());
-                let protect = jumble::protected_pieces(twists, self.protected.orbits());
-                let derivation =
-                    levels::derive(ctx, base, identity, std::slice::from_ref(twist), self.policy, &protect);
-                let engine = |error| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
-                match derivation.map_err(engine)? {
-                    Err(refusal) => return Err(refusal.into()),
-                    Ok(levels::Derivation::Refused(refused)) => return Err(refused.refusal.into()),
-                    Ok(levels::Derivation::Derived(derived)) => {
-                        let digest = derived.digest(ctx);
-                        if head.depth + 1 < POSE_CHAIN {
-                            return Ok(Jumbled { derived, digest, depth: head.depth + 1 });
-                        }
-                        Some(digest)
-                    }
-                }
+        let (base, identity) = (Base::Derived(&head.derived), head.derived.identity());
+        let protect = jumble::protected_pieces(twists, self.protected.orbits());
+        let derivation = levels::derive_flat(ctx, base, identity, std::slice::from_ref(step), self.policy, &protect);
+        let engine = |error| Error::new(code::STATE_HASH_MISMATCH, format!("the jumbling engine: {error}"));
+        match derivation.map_err(engine)? {
+            Err(refusal) => Err(refusal.into()),
+            Ok(levels::Derivation::Refused(refused)) => Err(refused.refusal.into()),
+            Ok(levels::Derivation::Derived(derived)) => {
+                let digest = derived.digest(ctx);
+                Ok(Jumbled { derived, digest })
             }
-        };
-        let (derived, digest) = jumble::replay_poses(twists, &journal()?)?;
-        if chained.is_some_and(|chained| chained != digest) {
-            let detail = "the jumbling journal's replay from solved does not reach the chained poses";
-            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
         }
-        Ok(Jumbled { derived, digest, depth: 0 })
+    }
+
+    /// The jumbling engine's value at node `to` for an undo whose exact inverse the menu does not hold (draft): the
+    /// jumbling journal to `to` replayed from solved ([`jumble::replay_poses`]), whose claim is flat. Such an undo has
+    /// no verdict and needs none: every protection change made after the move it takes back is undone before it, so the
+    /// protection in force is the one the move was judged under, and the inverse moves only the pieces the move moved.
+    /// A menu record must be inverse-closed (`Menu::from_record`), so a menu the layer pins holds every inverse and
+    /// this replay, linear in the journal, runs for none of its moves.
+    fn replayed_poses(&self, to: u64) -> Result<Jumbled, Error> {
+        let Some(twists) = &self.twists else {
+            let detail = "a pose move needs Jumble on under the pinned twist menu";
+            return Err(Error::new(code::STATE_HASH_MISMATCH, detail));
+        };
+        let (derived, digest) = jumble::replay_poses(twists, &self.jumble_journal(to)?)?;
+        Ok(Jumbled { derived, digest })
     }
 
     /// The jumbling journal from solved to node `to` (draft): along the move tree's path from the start, the primitive
@@ -6011,5 +5986,89 @@ mod tests {
         layer.finish_program_job(outer.job, Ok(Value::Null)).expect("reported");
         assert!(!layer.inside_solver_command(&outer.run()));
         assert!(!layer.inside_solver_command(&inner.run()));
+    }
+
+    /// An undo of a pose move whose exact inverse the pinned menu does not hold (draft) adopts the jumbling journal's
+    /// replay from solved to its target ([`CommandLayer::replayed_poses`]), where an undo by the inverse derives one
+    /// step from the head's value ([`CommandLayer::pose_value`]). A menu record must be inverse-closed, so no row
+    /// reaches that branch; here it is taken after the first seventy and the first 320 records of the I_a fixture's
+    /// jumbling journal, pressed as pose moves past the old chain bound of 64: at every target of the seventy, and at
+    /// the solved root, moves 64, 65 and 300 and the head of the 320. Each replay has the chained value's pose digest
+    /// and the same flat claim. Seventy undos through the row, by the inverse, reach the same poses again, each with
+    /// the flat claim of its path from solved: the moves, then the inverse of each move undone so far. (A replay of a
+    /// jumbled word costs some milliseconds a letter, so the longer chain replays at those points only.)
+    #[test]
+    fn an_undo_without_an_exact_inverse_reaches_the_chained_poses() {
+        use c600_kernel::request::{self as wire, Binding as Press, MenuPin, Operation};
+        const SET: &str = "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c";
+        const ORDER: &str = "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c";
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+        let ctx = Arc::new(Context::load(&root.join("assets")).expect("the exact model loads"));
+        let fixture = std::fs::read(root.join("research/jumbling/fixtures/wj-I_a.json")).expect("the I_a fixture");
+        let fixture = json::parse(&fixture).expect("the I_a fixture is JSON");
+        let records = fixture.get("journal").and_then(|journal| journal.get("records")).and_then(Value::as_array);
+        let records = records.expect("the fixture's journal");
+        for n in [70, 320] {
+            let (mut layer, mut shell) = layer();
+            let menu = Menu::from_record(&ctx, fixture.get("menu").expect("a menu")).expect("the pinned I_a menu");
+            let (mut presses, mut steps) = (Vec::new(), Vec::new());
+            for record in &records[..n] {
+                let twist = Twist::from_record(&ctx, record).expect("a journal twist");
+                steps.push(twist.clone());
+                let items = menu.for_cap(&ctx, twist.grip).expect("the menu at the grip");
+                let index = items.iter().position(|item| item.matrix == twist.matrix).expect("an item of the menu");
+                presses.push(Press {
+                    request: wire::menu_request(SET, ORDER, index as u64),
+                    cap: twist.grip as u32,
+                    operation: Operation::MenuDirect,
+                    menu: Some(MenuPin { set: SET.to_owned(), order: ORDER.to_owned() }),
+                });
+            }
+            layer.pin_menu(ctx.clone(), menu).unwrap();
+            let revision = layer.revision().to_json();
+            let entered = shell.invoke(&mut layer, JUMBLE_ON_ROW, json::object([("revision", revision)])).unwrap();
+            assert!(matches!(entered.status, Status::Committed(_)), "{n}: {:?}", entered.status);
+
+            // Each node with its chained value's pose digest and claim.
+            let value = |layer: &CommandLayer| {
+                let jumbled = layer.jumbled.as_ref().expect("Jumble is on");
+                (layer.head, jumbled.digest.clone(), jumbled.derived.reachability().clone())
+            };
+            let mut chain = vec![value(&layer)];
+            for (index, press) in presses.iter().enumerate() {
+                let Value::Object(mut letter) = press.to_json() else { panic!("a binding is an object") };
+                let cap = letter.remove("cap").expect("a binding has a cap");
+                let revision = layer.revision().to_json();
+                let args = json::object([("cap", cap), ("letter", Value::Object(letter)), ("revision", revision)]);
+                let receipt = shell.invoke(&mut layer, JUMBLE_TWIST_ROW, args).unwrap();
+                assert!(matches!(receipt.status, Status::Committed(_)), "{n}: move {index}: {:?}", receipt.status);
+                chain.push(value(&layer));
+            }
+
+            let targets: Vec<usize> = if n == 70 { (0..=n).collect() } else { vec![0, 64, 65, 300, n] };
+            for k in targets {
+                let (node, digest, claim) = &chain[k];
+                let replayed = layer.replayed_poses(*node).expect("the journal replays from solved");
+                assert_eq!(&replayed.digest, digest, "{n}: the replay to move {k}");
+                assert_eq!(replayed.derived.reachability(), claim, "{n}: the claim at move {k}");
+            }
+            // Seventy undos, to `low`; the path's claim at the first, at the old bound and at the last.
+            let low = n - 70;
+            for (k, (node, digest, _)) in chain.iter().enumerate().rev().skip(1).take(70) {
+                let hint = layer.undo_hint(Direction::Undo).expect("an eligible undo");
+                let undone =
+                    shell.invoke(&mut layer, "session.undo", json::object([("hint", hint.to_json())])).unwrap();
+                assert!(matches!(undone.status, Status::Committed(_)), "{n}: the undo to {k}: {:?}", undone.status);
+                let head = layer.jumbled.as_ref().expect("Jumble is on");
+                assert_eq!((layer.head, &head.digest), (*node, digest), "{n}: the undo to move {k}");
+                let undone = &steps[k];
+                steps.push(Twist::new(&ctx, undone.grip, transpose(&undone.matrix)).expect("the exact inverse"));
+                if [n - 1, 64, 63, low].contains(&k) {
+                    let twists = layer.twists.as_ref().expect("the pinned menu");
+                    let (path, _) = jumble::replay_poses(twists, &steps).expect("the path replays from solved");
+                    assert_eq!(head.derived.reachability(), path.reachability(), "{n}: the undo's claim at move {k}");
+                }
+            }
+        }
     }
 }

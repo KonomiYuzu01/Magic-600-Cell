@@ -9,7 +9,7 @@ supersedes: []
 claims:
   - {id: harness-results, evidence_kind: fixture, path: work/experiments/codex-mcp-isolation/results/summary.json, sha256: 58057406e7649bc34a4ebd3897f0a32559e2d64e3ce535cd8ce6b30d2ce6e077, checked_at: 2026-10-20}
   - {id: harness-method, evidence_kind: fixture, path: work/experiments/codex-mcp-isolation/README.md, sha256: f7dc1f476fdef6d73ca0cc82674b8d691cbed2c1af05d66059aec14bb8832a09, checked_at: 2026-10-20}
-  - {id: wrapper-disables-features, evidence_kind: source, path: tools/agents/codex_review.py, line: 85, sha256: ce68ac8ba327fc5a7733f444ac8f7b81dabc97ab14d313a4d57867574faf68e3, checked_at: 2026-11-22}
+  - {id: wrapper-disables-features, evidence_kind: source, path: tools/agents/codex_review.py, line: 85, sha256: cac3bf864d631334d0e360962ee8941c46fd24a98cd9c7759b022b28777641c4, checked_at: 2026-11-26}
   - {id: tests-require-the-flags, evidence_kind: fixture, path: tests/test_codex_review.py, sha256: c7a122ec60bb73653d98b289e3cd5594de9d425ea73b3242802b7624094660ad, checked_at: 2026-11-22}
 ---
 
@@ -62,3 +62,5 @@ Run the harness again after any Codex upgrade. A new default or a new MCP source
 - the stand-in plugin server starts;
 - `codex exec` gets a new child process;
 - the mock backend receives a new request.
+
+On 26 November 2026 the pin moved to codex-cli 0.171.0, because the server refuses the gpt-6.2 models to 0.159.0 on a ChatGPT sign-in. The harness has not been rerun on 0.171.0, so the result above applies to 0.159.0 only, and a rerun is still owed. Checked on 0.171.0 so far: `codex features list` still names the four features, all on by default, and `--disable` accepts them; during the first wrapper call on Windows, `codex exec` had one child process, `codex-code-mode-host.exe` (Codex's own code-mode host, on stdio), and no MCP server. That names the process but does not show what it can reach. The gpt-6.2 models select Code Mode, and the harness returns a fixed review response, so it never exercises Code Mode: whether operations the model directs through the host stay inside the sandbox is untested on any version.
