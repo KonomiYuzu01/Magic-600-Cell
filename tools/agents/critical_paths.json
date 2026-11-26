@@ -12,6 +12,8 @@
     "schemas/*",
     "AGENTS.md",
     "CLAUDE.md",
+    "docs/development-guide/codex-protocol.md",
+    "docs/development-guide/claude-session-operations.md",
     ".claude/settings.json",
     ".claude/hooks/*",
     "tools/agents/*",
