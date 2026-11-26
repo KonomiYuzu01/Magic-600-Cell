@@ -81,18 +81,22 @@ impl MenuMismatch {
 
 /// The typed failed fact of ERR.8 for the three rotation-request refusals (CT-ERR-16; draft until the freeze).
 ///
-/// - [`Fact::MalformedField`]: the part of the request or its binding that failed, by a dotted name: `request.length`,
-///   `request.line_end`, `request.charset`, `request.field_count`, `request.prefix`, `request.form`,
-///   `request.token.<0..2>`, `request.axis`, `request.set`, `request.order`, `request.index`, `request.canonical`;
-///   `binding`, `binding.fields`, `binding.request`, `binding.cap`, `binding.operation`, `binding.operation.kind`,
-///   `binding.operation.n`, `binding.operation.d`, `binding.menu`, `binding.shape`; a twist row's argument by its
-///   own name (`rotation`, `letter`); `cap`, `operation`, `menu`, `value`.
+/// - [`Fact::MalformedField`]: the part of the request or its binding that failed, by a dotted name. From the request
+///   line: `request.length`, `request.line_end`, `request.charset`, `request.field_count`, `request.prefix`,
+///   `request.form`, `request.token.<0..2>`, `request.axis`, `request.set`, `request.order`, `request.index`,
+///   `request.canonical`, and `request` for an exact rotation that fails its check. From the binding: `binding`,
+///   `binding.fields`, `binding.request`, `binding.cap`, `binding.operation`, `binding.operation.kind`,
+///   `binding.operation.n`, `binding.operation.d`, `binding.menu`, `binding.shape`; and, once resolved, `cap`,
+///   `operation` and `menu`. `value` names a non-finite binary64 value with no exact request token. A twist row's
+///   argument is named by its own name, `rotation` or `letter`, which `c600-command` emits.
 /// - [`Fact::MenuBinding`]: which digest differs (or that free mode pins no menu), with the pinned menu's digest as
-///   `expected` and the digest the binding or the request named as `held`, each `None` when there is none. `source`
-///   says whether the binding or the M request named it.
+///   `expected` and the digest the binding or the request named as `held`, each `None` when there is none. A digest is
+///   echoed only when it has a digest's shape (64 lowercase hexadecimal digits), so the fact stays bounded whatever
+///   the binding names; otherwise it is `None`. `source` says whether the binding or the M request named it.
 /// - [`Fact::SearchBound`]: the free-mode bounds N and D in decimal against the limit of (2N+1)^3*D (draft limit
-///   [`SEARCH_LIMIT`]); `None` for a bound not yet read when a Nat above `u128` stopped the read first.
-/// - [`Fact::SearchBoundNat`]: a bound `n` or `d` that is a Nat above `u128`, with its digit count.
+///   [`SEARCH_LIMIT`]), both bounds read.
+/// - [`Fact::SearchBoundNat`]: the bound `n` or `d` that is a Nat above `u128`, with its digit count; the bound that
+///   follows it is not read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Fact {
     MalformedField { field: String },
@@ -102,7 +106,8 @@ pub enum Fact {
 }
 
 impl Fact {
-    /// The fact as a JSON object, `kind` first among its keys by name (the receipt's `fact`).
+    /// The fact as a JSON object with a `kind` key (the receipt's `fact`). Its keys sort by name, as every
+    /// [`Value::Object`] does, so `kind` is not first.
     pub fn to_json(&self) -> Value {
         let text = |s: &str| Value::String(s.to_owned());
         let opt = |s: &Option<String>| s.as_deref().map_or(Value::Null, |s| Value::String(s.to_owned()));

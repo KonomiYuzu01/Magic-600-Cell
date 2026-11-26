@@ -457,6 +457,24 @@ fn malformed_field(field: &str) -> (&'static str, Option<Fact>) {
     (codes::ROTATION_REQUEST_MALFORMED, Some(Fact::MalformedField { field: field.to_owned() }))
 }
 
+fn mismatch(
+    source: &'static str,
+    differs: MenuMismatch,
+    expected: Option<&str>,
+    held: Option<&str>,
+) -> (&'static str, Option<Fact>) {
+    let (expected, held) = (expected.map(str::to_owned), held.map(str::to_owned));
+    (codes::MENU_BINDING_MISMATCH, Some(Fact::MenuBinding { source, differs, expected, held }))
+}
+
+/// The binding's JSON fields, for a test that spells one wrongly.
+fn fields_of(binding: &Binding) -> std::collections::BTreeMap<String, Value> {
+    match binding.to_json() {
+        Value::Object(fields) => fields,
+        _ => unreachable!("a binding is an object"),
+    }
+}
+
 /// CT-ERR-16 (part: the typed failed fact of the three KN2 refusals (ERR.8): a malformed request or binding names the
 /// part that failed, a binding mismatch names which digest differs with the pinned menu's value and the named one, or
 /// that free mode pins no menu, and the search bound names N and D against the limit; every refusal carries its code
@@ -467,15 +485,15 @@ fn rotation_refusals_carry_a_typed_failed_fact() {
     let menu = pinned();
     let rev = reversed();
     let quarter = wire::cayley_request(["1:0", "0:0", "0:0"]);
+    let zeros = "0".repeat(64);
 
-    // A malformed request names the failing part of the request line.
+    // A malformed request names the failing part of the request line, through the decoder and through the binding.
     let long = {
         let mut bytes = vec![b'a'; 2048];
         bytes.push(b'\n');
         bytes
     };
-    let zeros = "0".repeat(64);
-    let cases: [(Vec<u8>, &str); 11] = [
+    let cases: [(Vec<u8>, &str); 12] = [
         (long, "request.length"),
         (b"LX9B1|C|1:0|0:0|0:0".to_vec(), "request.line_end"),
         (b"LX9B1|C|1:0|0:0|0:0 \n".to_vec(), "request.charset"),
@@ -486,35 +504,114 @@ fn rotation_refusals_carry_a_typed_failed_fact() {
         (b"LX9B1|H|1:0|0:0|0:1\n".to_vec(), "request.token.2"),
         (b"LX9B1|H|0:0|0:0|0:0\n".to_vec(), "request.axis"),
         (format!("LX9B1|M|{}|{ORDER}|0\n", &SET[1..]).into_bytes(), "request.set"),
+        (format!("LX9B1|M|{SET}|{}|0\n", &ORDER[1..]).into_bytes(), "request.order"),
         (format!("LX9B1|M|{SET}|{ORDER}|01\n").into_bytes(), "request.index"),
     ];
     for (bytes, field) in cases {
         let refusal = Request::decode(&bytes).map(|_| ()).expect_err("refused");
         assert_eq!((refusal.code, refusal.fact), malformed_field(field), "{field}");
+        assert_eq!(failed(Some(&menu), &bound(bytes, Operation::MenuDirect, &menu)), malformed_field(field), "{field}");
     }
     let mut far = free(quarter.clone(), 1, 1);
     far.cap = 600;
     assert_eq!(failed(None, &far), malformed_field("cap"));
+    let past = bound(wire::menu_request(SET, ORDER, 60), Operation::MenuDirect, &menu);
+    assert_eq!(failed(Some(&menu), &past), malformed_field("request.index"));
+    let drag_m = bound(wire::menu_request(SET, ORDER, 15), Operation::MenuDrag, &menu);
+    assert_eq!(failed(Some(&menu), &drag_m), malformed_field("operation"));
 
     // A malformed binding names its field.
     let bad = |value: Value| Binding::from_json(&value).expect_err("refused");
-    assert_eq!(bad(Value::Null).fact, Some(Fact::MalformedField { field: "binding".into() }));
+    let field = |field: &str| Some(Fact::MalformedField { field: field.to_owned() });
+    let good = fields_of(&bound(quarter.clone(), Operation::MenuDirect, &menu));
+    let changed = |name: &str, value: Value| {
+        let mut fields = good.clone();
+        fields.insert(name.to_owned(), value);
+        Value::Object(fields)
+    };
+    let operation = |pairs: Vec<(&str, Value)>| {
+        Value::Object(pairs.into_iter().map(|(key, value)| (key.to_owned(), value)).collect())
+    };
+    assert_eq!(bad(Value::Null).fact, field("binding"));
+    assert_eq!(bad(json::object([("cap", Value::Int(0))])).fact, field("binding.fields"));
+    assert_eq!(bad(changed("request", Value::Int(1))).fact, field("binding.request"));
+    assert_eq!(bad(changed("cap", Value::String("0".into()))).fact, field("binding.cap"));
+    assert_eq!(bad(changed("menu", Value::Int(1))).fact, field("binding.menu"));
+    let one_digest = json::object([("set", Value::String(SET.into())), ("order", Value::Int(1))]);
+    assert_eq!(bad(changed("menu", one_digest)).fact, field("binding.menu"));
+    assert_eq!(bad(changed("operation", Value::Int(1))).fact, field("binding.operation"));
+    assert_eq!(bad(changed("operation", operation(vec![]))).fact, field("binding.operation.kind"));
+    let unknown = operation(vec![("kind", Value::String("spin".into()))]);
+    assert_eq!(bad(changed("operation", unknown)).fact, field("binding.operation.kind"));
+    let extra = operation(vec![("kind", Value::String("menu_drag".into())), ("n", Value::Int(1))]);
+    assert_eq!(bad(changed("operation", extra)).fact, field("binding.operation"));
+    let free_with = |n: Option<Value>, d: Option<Value>| {
+        let mut pairs = vec![("kind", Value::String("free".into()))];
+        pairs.extend(n.map(|n| ("n", n)));
+        pairs.extend(d.map(|d| ("d", d)));
+        operation(pairs)
+    };
+    let pinned_free = |operation| {
+        let mut fields = fields_of(&free(quarter.clone(), 1, 1));
+        fields.insert("operation".to_owned(), operation);
+        Value::Object(fields)
+    };
+    let nat = |n: i64| Some(Value::Int(n));
+    assert_eq!(bad(pinned_free(free_with(Some(Value::String("1".into())), nat(1)))).fact, field("binding.operation.n"));
+    assert_eq!(bad(pinned_free(free_with(nat(1), Some(Value::Int(-1))))).fact, field("binding.operation.d"));
+    // A free binding that pins a menu, and a menu operation that names none, have the wrong shape.
+    let mut pins_menu = fields_of(&free(quarter.clone(), 1, 1));
+    pins_menu.insert(
+        "menu".to_owned(),
+        json::object([("set", Value::String(SET.into())), ("order", Value::String(ORDER.into()))]),
+    );
+    assert_eq!(bad(Value::Object(pins_menu)).fact, field("binding.shape"));
+    assert_eq!(bad(changed("menu", Value::Null)).fact, field("binding.shape"));
 
     // A binding mismatch names the digest that differs, the pinned menu's value and the named one.
-    let mismatch = |source, differs, expected: Option<&str>, held: Option<&str>| {
-        let (expected, held) = (expected.map(str::to_owned), held.map(str::to_owned));
-        (codes::MENU_BINDING_MISMATCH, Some(Fact::MenuBinding { source, differs, expected, held }))
+    let set = Some(SET);
+    let elsewhere = Binding {
+        menu: Some(MenuPin { set: zeros.clone(), order: ORDER.into() }),
+        ..bound(quarter.clone(), Operation::MenuDirect, &menu)
     };
+    assert_eq!(failed(Some(&menu), &elsewhere), mismatch("binding", MenuMismatch::Set, set, Some(&zeros)));
+    let bound_to_old = bound(quarter.clone(), Operation::MenuDirect, &menu);
+    let order = mismatch("binding", MenuMismatch::Order, Some(REVERSED_ORDER), Some(ORDER));
+    assert_eq!(failed(Some(&rev), &bound_to_old), order);
+    let old_item = bound(wire::menu_request(SET, ORDER, 15), Operation::MenuDirect, &rev);
+    let order = mismatch("request", MenuMismatch::Order, Some(REVERSED_ORDER), Some(ORDER));
+    assert_eq!(failed(Some(&rev), &old_item), order);
+    let foreign = bound(wire::menu_request(&zeros, ORDER, 0), Operation::MenuDirect, &menu);
+    assert_eq!(failed(Some(&menu), &foreign), mismatch("request", MenuMismatch::Set, set, Some(&zeros)));
+    let free_menu = bound(quarter.clone(), Operation::MenuDrag, &menu);
+    assert_eq!(failed(None, &free_menu), mismatch("binding", MenuMismatch::FreeModePinsNoMenu, None, set));
+    let free_m = free(wire::menu_request(SET, ORDER, 0), 1, 1);
+    assert_eq!(failed(None, &free_m), mismatch("request", MenuMismatch::FreeModePinsNoMenu, None, set));
     let free_binding = free(quarter.clone(), 1, 1);
-    assert_eq!(
-        failed(Some(&menu), &free_binding),
-        mismatch("binding", MenuMismatch::PinnedMenuNotNamed, Some(SET), None)
-    );
-    let _ = (&rev, &zeros);
+    assert_eq!(failed(Some(&menu), &free_binding), mismatch("binding", MenuMismatch::PinnedMenuNotNamed, set, None));
 
-    // The search bound names N and D against the limit.
+    // A digest that has no digest's shape is not echoed: the fact names the mismatch and carries nothing from the binding.
+    let odd = Binding {
+        menu: Some(MenuPin { set: "x".repeat(10_000), order: ORDER.into() }),
+        ..bound(quarter.clone(), Operation::MenuDirect, &menu)
+    };
+    assert_eq!(failed(Some(&menu), &odd), mismatch("binding", MenuMismatch::Set, set, None));
+
+    // The search bound names N and D against the limit, and a Nat above u128 names its field and length.
     for (n, d) in [(5000u128, 10u128), (6000, 1), (0, (1 << 40) + 1), (1, 0), (u128::MAX, 1)] {
         let fact = Fact::SearchBound { n: n.to_string(), d: d.to_string(), limit: SEARCH_LIMIT };
         assert_eq!(failed(None, &free(quarter.clone(), n, d)), (codes::ROTATION_SEARCH_BOUND, Some(fact)));
+    }
+    let huge = "340282366920938463463374607431768211456";
+    for (name, n, d) in
+        [("n", Value::Number(huge.into()), Value::Int(1)), ("d", Value::Int(1), Value::Number(huge.into()))]
+    {
+        let operation = operation(vec![("kind", Value::String("free".into())), ("n", n), ("d", d)]);
+        let refusal = bad(pinned_free(operation));
+        assert_eq!(refusal.code, codes::ROTATION_SEARCH_BOUND);
+        assert_eq!(
+            refusal.fact,
+            Some(Fact::SearchBoundNat { field: if name == "n" { "n" } else { "d" }, digits: huge.len() })
+        );
     }
 }

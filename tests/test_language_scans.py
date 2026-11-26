@@ -628,10 +628,10 @@ class ScanTests(unittest.TestCase):
     def test_ct_err_07_08_16_emitted_category_rules(self):
         """CT-ERR-07, CT-ERR-08 and CT-ERR-16 (part: the emitted halves; not run: the session-freeze and budget-stop
         fixtures, which need the session store (M6) and the renderer (LP3); the rotation-request fixtures run in
-        rust/c600-jumble/tests/kn3.rs and rust/c600-command/tests/twist_apply.rs): every emitted budget code is an active KN7 budget
-        row on a declared allowance, every emitted consistency code comes from KN1 to KN7 (the session store and
-        LP3's crates emit KN2 and KN5 ones), and no member emits a KN3 code. Controls: a budget code outside KN7, a
-        retired budget code, a non-kernel consistency code and a KN3 code fail."""
+        rust/c600-jumble/tests/kn3.rs and rust/c600-command/tests/twist_apply.rs): every emitted budget code is an
+        active KN7 budget row on a declared allowance, every emitted consistency code comes from KN1 to KN7 (the
+        session store and LP3's crates emit KN2 and KN5 ones), and no member emits a KN3 code. Controls: a budget
+        code outside KN7, a retired budget code, a non-kernel consistency code and a KN3 code fail."""
         self.assertEqual(category_problems(self.sources, self.registry), [])
         consistency = {e.code for e in self.emitted if reg.split_code(e.code)[1] == "consistency"}
         self.assertTrue(consistency, "the scan reads emitted consistency codes")

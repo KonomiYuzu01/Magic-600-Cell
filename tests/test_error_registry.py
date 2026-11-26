@@ -872,10 +872,10 @@ class RegistryTests(unittest.TestCase):
     def test_ct_err_16_rotation_requests_are_kn2_codes(self):
         """CT-ERR-16 (part: the registry half; the three refusals at run time with their typed failed fact (ERR.8) are
         run in rust/c600-jumble/tests/kn3.rs and rust/c600-command/tests/twist_apply.rs (a draft form of the fact:
-        `request::Fact`); that no crate emits a KN3 code is checked in tests/test_language_scans.py): the exact-request format, menu-binding and free-search-cap
-        failures keep their three KN2 codes with refusal form, after_user_change retry and the KN3.7/KN3.8 rule
-        sources, and KN3 has no registry section, row, reconciled code or errors-line code (ERR.23). Controls: a
-        planted KN3 row and a retry change fail."""
+        `request::Fact`); that no crate emits a KN3 code is checked in tests/test_language_scans.py): the
+        exact-request format, menu-binding and free-search-cap failures keep their three KN2 codes with refusal form,
+        after_user_change retry and the KN3.7/KN3.8 rule sources, and KN3 has no registry section, row, reconciled
+        code or errors-line code (ERR.23). Controls: a planted KN3 row and a retry change fail."""
         self.assertEqual(rotation_problems(self.registry, self.entries), [])
         template = self.row("KN2:input.rotation_request_malformed")
         planted = add_rows(self.registry, dataclasses.replace(template, source="KN3", code="KN3:input.not_exact"))

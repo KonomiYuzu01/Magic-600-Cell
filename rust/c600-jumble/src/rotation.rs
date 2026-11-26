@@ -37,7 +37,7 @@
 use std::cell::Cell;
 
 use c600_kernel::json::{self, Value};
-use c600_kernel::request::{malformed_at, Binding, Fact, MenuMismatch, Operation, HALF_TURN_THRESHOLD};
+use c600_kernel::request::{malformed_at as malformed, Binding, Fact, MenuMismatch, Operation, HALF_TURN_THRESHOLD};
 use c600_kernel::request::{MAX_EXPONENT, MAX_MAGNITUDE_BITS};
 use c600_kernel::request::{MAX_REQUEST_BYTES, PREFIX};
 use c600_kernel::Refusal;
@@ -55,13 +55,14 @@ fn refuse(code: &'static str, message: impl Into<String>) -> Refusal {
     Refusal { code, message: message.into(), fact: None }
 }
 
-/// A malformed-request refusal for the part named `field` of the request or its binding (CT-ERR-16, ERR.8; the names
-/// are [`Fact::MalformedField`]'s).
-fn malformed(field: &str, message: impl Into<String>) -> Refusal {
-    malformed_at(field, message)
+/// A digest as the fact may echo it: only a value with a digest's shape (64 lowercase hexadecimal digits), so a binding
+/// that names a long or odd string adds nothing to the refusal.
+fn echo(digest: Option<&str>) -> Option<String> {
+    digest.filter(|d| d.len() == 64 && d.bytes().all(|c| matches!(c, b'0'..=b'9' | b'a'..=b'f'))).map(str::to_owned)
 }
 
-/// A binding refusal with its typed fact (CT-ERR-16, ERR.8): which digest differs, the pinned menu's and the named one.
+/// A binding refusal with its typed fact (CT-ERR-16, ERR.8): which digest differs, the pinned menu's and the named one,
+/// each echoed only with a digest's shape.
 fn binding_mismatch(
     source: &'static str,
     differs: MenuMismatch,
@@ -69,7 +70,7 @@ fn binding_mismatch(
     held: Option<&str>,
     message: &str,
 ) -> Refusal {
-    let (expected, held) = (expected.map(str::to_owned), held.map(str::to_owned));
+    let (expected, held) = (echo(expected), echo(held));
     refuse(codes::MENU_BINDING_MISMATCH, message).with_fact(Fact::MenuBinding { source, differs, expected, held })
 }
 
