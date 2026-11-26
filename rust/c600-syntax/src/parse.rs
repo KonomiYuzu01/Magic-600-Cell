@@ -7,7 +7,7 @@ use crate::{sha256_hex, Diagnostic, RawContext, Span, EDITION};
 use c600_ir::MENU_INDEX_LIMIT;
 
 /// Names that begin a declaration in column 1. Recovery resumes at the next one (LG1.5).
-const STARTS: [&str; 6] = ["fn", "view", "command", "contract", "import", "export"];
+const STARTS: [&str; 7] = ["fn", "view", "command", "contract", "type", "import", "export"];
 
 struct Problem {
     code: &'static str,
@@ -326,6 +326,9 @@ impl Parser {
         }
         let exported = self.accept("export");
         self.partial.exported = exported;
+        if self.accept("type") {
+            return self.type_decl(exported, start);
+        }
         let kind = if self.accept("fn") {
             DeclKind::Fn
         } else if self.accept("view") {
@@ -335,7 +338,7 @@ impl Parser {
         } else if self.accept("contract") {
             DeclKind::Contract
         } else {
-            return Err(self.unexpected("expected `fn`, `view`, `command`, `contract` or `import`"));
+            return Err(self.unexpected("expected `fn`, `view`, `command`, `contract`, `type` or `import`"));
         };
         self.partial.kind = Some(kind);
         let name = self.name()?;
@@ -381,6 +384,25 @@ impl Parser {
             body,
             loc: Loc(self.since(start)),
         })))
+    }
+
+    /// `type Name { ctor(T, U); other(); }` after `type` (LG2.1; T1 draft): each constructor names its payload types
+    /// in parentheses, as parameter types, and ends with `;`.
+    fn type_decl(&mut self, exported: bool, start: Span) -> R<Item> {
+        let name = self.name()?;
+        self.partial.name = Some(name.clone());
+        self.expect("{")?;
+        let mut ctors = Vec::new();
+        while !self.at("}") {
+            let at = self.tok().span;
+            let ctor = self.name()?;
+            self.expect("(")?;
+            let payload = self.separated(")", Self::ty)?;
+            self.expect(";")?;
+            ctors.push(CtorDecl { name: ctor, payload, loc: Loc(self.since(at)) });
+        }
+        self.expect("}")?;
+        Ok(Item::Type(Box::new(TypeDecl { exported, name, ctors, loc: Loc(self.since(start)) })))
     }
 
     fn params(&mut self) -> R<Vec<ParamDecl>> {
@@ -466,7 +488,9 @@ impl Parser {
             })?;
             return Ok(TypeExpr::Record { fields, loc: Loc(self.since(start)) });
         }
-        let name = self.name()?;
+        let mut name = self.name()?;
+        // `alias.Name`: a sum type an imported module declares (T1 draft).
+        let module = if self.accept(".") { Some(std::mem::replace(&mut name, self.name()?)) } else { None };
         let mut args = Vec::new();
         if self.accept("<") {
             if self.at(">") {
@@ -474,7 +498,7 @@ impl Parser {
             }
             args = self.separated(">", Self::ty)?;
         }
-        Ok(TypeExpr::Named { name, args, loc: Loc(self.since(start)) })
+        Ok(TypeExpr::Named { module, name, args, loc: Loc(self.since(start)) })
     }
 
     fn expr(&mut self) -> R<Expr> {
@@ -498,28 +522,57 @@ impl Parser {
         let pattern = if self.at("_") {
             self.take();
             Pattern::Wildcard
-        } else if self.tok().kind == Kind::Id
-            && is(self.peek(1), "(")
-            && self.peek(2).kind == Kind::Id
-            && is(self.peek(3), ")")
-        {
-            let tag = self.name()?;
-            self.take();
-            let binder = self.name()?;
+        } else if let Some(count) = self.ctor_pattern() {
+            // `ctor(a, _, b)` or `ctor()`: names only between the parentheses (T1 draft).
+            let ctor = self.name()?;
             self.take();
             self.open();
-            let after = self.since(binder.loc.0).end;
-            self.bind(&binder, BindingKind::MatchBinder, None, after);
-            Pattern::Binder { tag, binder }
+            let mut binders = Vec::new();
+            for i in 0..count {
+                if i > 0 {
+                    self.take();
+                }
+                binders.push(self.name()?);
+            }
+            self.take();
+            let after = self.since(start).end;
+            for binder in binders.iter().filter(|b| b.text != "_") {
+                self.bind(binder, BindingKind::MatchBinder, None, after);
+            }
+            Pattern::Ctor { ctor, binders }
         } else {
             Pattern::Lit(self.postfix(false)?)
         };
         self.expect("=>")?;
         let body = self.expr()?;
-        if matches!(pattern, Pattern::Binder { .. }) {
+        if matches!(pattern, Pattern::Ctor { .. }) {
             self.close();
         }
         Ok(Arm { pattern, body, loc: Loc(self.since(start)) })
+    }
+
+    /// The number of binders when the tokens ahead are a constructor pattern: a name, `(`, names separated by
+    /// commas, and `)`. Any other pattern is a literal one.
+    fn ctor_pattern(&self) -> Option<usize> {
+        if self.tok().kind != Kind::Id || !is(self.peek(1), "(") {
+            return None;
+        }
+        if is(self.peek(2), ")") {
+            return Some(0);
+        }
+        let mut n = 2;
+        loop {
+            if self.peek(n).kind != Kind::Id {
+                return None;
+            }
+            if is(self.peek(n + 1), ")") {
+                return Some(n / 2);
+            }
+            if !is(self.peek(n + 1), ",") {
+                return None;
+            }
+            n += 2;
+        }
     }
 
     /// An atom followed by field accesses and calls. In a match scrutinee, `record {` is not a record literal.

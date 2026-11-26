@@ -4,14 +4,23 @@
 //! from, keyed by the node's path: the path the checker's diagnostics carry. A draft with syntax diagnostics or
 //! recovery holes does not lower (LG1.5). What the IR draft cannot hold yet is refused with a message that names
 //! what it waits for.
+//!
+//! The identity tower and the domain families (T1 drafts until the IR freeze, PHS.49) lower as written: their types
+//! with static indices (`State<Jumbling>`, `Digest<Full, labels>`), a module's sum types (`type Shape { ... }`) and
+//! their constructors, the built-in constructors with their type as a type argument (`total<Partial<Nat>>(x)`), the
+//! kernel rows with their indices as type arguments (`project<labels>(s)`, `check<exact_pose>(s)`), and a `match` on
+//! constructor patterns as a case. The built-in constructors and the operations with a static index are no reserved
+//! names: a call with type arguments names them. Lowering does not type its operands, so a kernel row's declared type
+//! is the checker's unknown type, which the checker replaces with the type the row returns.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use c600_ir::Expr as Ir;
 use c600_ir::{
-    Accounting, Callee, Capability, ChildCaps, Effect, EffectBound, EndTest, ExactRole, Field, FnKind, FnTy, Function,
-    Lit, Module, ModuleKind, Order, Param, Prim, Program, Puzzle, QTy, ReceiptField, StageDecl, StageKind, StageOp, Ty,
+    Accounting, Callee, Capability, ChildCaps, CostUnit, Effect, EffectBound, EndTest, ExactRole, Field, FnKind, FnTy,
+    Function, Goal, KernelOp, Level, Lit, Module, ModuleKind, Order, Param, Prim, Program, Puzzle, QTy, ReceiptField,
+    StageDecl, StageKind, StageOp, Ty,
 };
 
 use crate::ast::*;
@@ -21,7 +30,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 94] = [
+const BUILTINS: [&str; 99] = [
     "if",
     "display_if",
     "exact_add",
@@ -129,6 +138,60 @@ const BUILTINS: [&str; 94] = [
     "approx_exp2",
     "approx_log2",
     "exclude",
+    // The identity tower's kernel rows without a static index and LG2.6's cost value (T1 drafts); the rows with one
+    // are `INDEXED`.
+    "digest",
+    "derive",
+    "import",
+    "reachability",
+    "cost_value",
+];
+
+/// The identity tower's operations whose static index is a type argument (T1 drafts): the kernel rows
+/// `snapshot<Full>()`, `project<labels>(s)`, `compare<labels>(a, b)` and `check<exact_pose>(s)`, LG2.11's
+/// `imply<sticker_test>(h)` and LG2.6's `to_cost<Full, generator>(n)`. Like the built-in constructors they are no
+/// reserved names: a call with type arguments names the operation, since a function takes none, and a program may
+/// still bind `check` or `compare`.
+const INDEXED: [&str; 6] = ["snapshot", "project", "compare", "check", "imply", "to_cost"];
+
+/// The constructors of the built-in sum types `Verdict`, `Partial`, `Reachability` and `Derivation` (T1 drafts). A
+/// call names its type as a type argument, since lowering cannot infer the indices (`yes<Verdict<Full, labels>>(e)`);
+/// a pattern names the constructor alone. They are no reserved names: a program may still bind `total` or `open`.
+const CONSTRUCTORS: [&str; 13] = [
+    "yes",
+    "no",
+    "unknown",
+    "total",
+    "partial",
+    "undefined",
+    "witnessed",
+    "by_theorem",
+    "promised",
+    "refuted",
+    "open",
+    "derived",
+    "refused",
+];
+
+/// The type constructors lowering reads: the draft's own and the identity tower's (T1 drafts).
+const TYPE_CONSTRUCTORS: [&str; 17] = [
+    "Display",
+    "Approx",
+    "List",
+    "Set",
+    "Map",
+    "Piece",
+    "Sticker",
+    "Slot",
+    "Digest",
+    "LevelValue",
+    "State",
+    "Reachability",
+    "Verdict",
+    "Partial",
+    "Holds",
+    "Cost",
+    "Derivation",
 ];
 
 /// The named orders of an ordered collection result (LG4.3; LP2 draft). A program cannot bind these names either.
@@ -137,7 +200,7 @@ const ORDERS: [&str; 2] = ["ascending", "descending"];
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 26] = [
+const BASE_TYPES: [&str; 30] = [
     "Unit",
     "Bool",
     "Nat",
@@ -168,6 +231,11 @@ const BASE_TYPES: [&str; 26] = [
     "Bytes",
     // DET.63's word stream (LP2 draft).
     "WordStream",
+    // The identity tower's types without an index (T1 drafts).
+    "Pose",
+    "PoseTableIndex",
+    "PoseTable",
+    "Evidence",
 ];
 
 fn reserved(name: &str) -> bool {
@@ -193,9 +261,34 @@ pub fn base_types() -> &'static [&'static str] {
     &BASE_TYPES
 }
 
-/// The type constructors lowering reads: `Display<T>`, `Approx<P>`, `List<T>`, `Set<T>` and `Map<K, V>`.
+/// The type constructors lowering reads: `Display<T>`, `Approx<P>`, `List<T>`, `Set<T>` and `Map<K, V>`, and the
+/// identity tower's (T1 drafts): `Piece<P>`, `Sticker<P>`, `Slot<P>`, `Digest<P, L>`, `LevelValue<P, L>`, `State<P>`,
+/// `Reachability<P>`, `Verdict<P, L>` and `Verdict<P, L, G>`, `Partial<T>`, `Holds<P, G>`, `Cost<P, U>` and
+/// `Derivation<P>`. `WordEqualityKey` is a base type that may name its puzzle, `WordEqualityKey<Jumbling>`.
 pub fn type_constructors() -> &'static [&'static str] {
-    &["Display", "Approx", "List", "Set", "Map"]
+    &TYPE_CONSTRUCTORS
+}
+
+/// The static indices of the identity tower's types and kernel rows, written as type arguments (T1 drafts; the IR's
+/// own names): the puzzles `Full` and `Jumbling`, KN1.7's levels, LG2.10's goals and LG2.6's cost units.
+pub fn type_indices() -> Vec<&'static str> {
+    let mut out: Vec<&'static str> = Puzzle::ALL.iter().map(|p| p.name()).collect();
+    out.extend(Level::ALL.iter().map(|l| l.name()));
+    out.extend(Goal::ALL.iter().map(|g| g.name()));
+    out.extend(CostUnit::ALL.iter().map(|u| u.name()));
+    out
+}
+
+/// The constructors of the built-in sum types (T1 drafts), which a call names with its type as a type argument. A
+/// program may bind these names.
+pub fn constructors() -> &'static [&'static str] {
+    &CONSTRUCTORS
+}
+
+/// The identity tower's operations whose static index is a type argument (T1 drafts): `snapshot`, `project`,
+/// `compare`, `check`, `imply` and `to_cost`. A call with type arguments names them; a program may bind these names.
+pub fn indexed_operations() -> &'static [&'static str] {
+    &INDEXED
 }
 
 /// The precisions an `Approx` type takes.
@@ -218,13 +311,21 @@ pub fn orders() -> &'static [&'static str] {
     &ORDERS
 }
 
-/// Whether a type is or holds a function. The LP2 draft's lists hold none, so a callable's needs never hide in one.
+/// Whether a type is or holds a function. The LP2 draft's lists hold none, so a callable's needs never hide in one;
+/// nor does a `Partial` or a sum type's payload (T1 drafts).
 fn holds_callable(ty: &Ty) -> bool {
     match ty {
         Ty::Fn(_) => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| holds_callable(&f.ty)),
-        other => other.elements().into_iter().any(|e| holds_callable(&e.ty)),
+        other => other.parts().into_iter().any(|e| holds_callable(&e.ty)),
     }
+}
+
+/// The type a kernel row declares in the IR: the checker's unknown type (`c600-check`'s `unknown()`, the type
+/// variable `_` that no source names). Lowering does not type the row's arguments, so it cannot know the row's result;
+/// the checker gives the row the type it computes (T1 draft).
+fn inferred() -> QTy {
+    QTy { ty: Ty::Var("_".into()), display: false }
 }
 
 /// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
@@ -316,13 +417,19 @@ fn error(module: &str, span: Span, message: impl Into<String>) -> LowerError {
     LowerError { module: Some(module.into()), span: Some(span), message: message.into() }
 }
 
-/// What a module declares: its functions, each with what a call of it needs, and its import aliases.
+/// What a module declares: its functions, each with what a call of it needs, its import aliases, and its sum types and
+/// their constructors (T1 drafts).
 struct Scope {
     name: String,
     /// Whether the module is a stage module, the only place a stage operation lowers (RPI.68).
     stage: bool,
     functions: BTreeMap<String, Signature>,
     aliases: BTreeMap<String, String>,
+    /// Each declared sum type and whether the module exports it.
+    types: BTreeMap<String, bool>,
+    /// Each constructor and its type's name. A module's constructor names are unique among its constructors and
+    /// functions, so a call or a pattern names one.
+    ctors: BTreeMap<String, String>,
 }
 
 /// What a call of a module function needs: one argument per parameter and, from another module, an export.
@@ -366,6 +473,11 @@ pub fn lower(files: &[ParsedFile]) -> Result<Lowered, LowerError> {
     let mut sources = Vec::new();
     for ((((file, _, digest), scope), capabilities), kind) in headers.iter().zip(&scopes).zip(capabilities).zip(kinds) {
         let mut source = SourceMap { module: scope.name.clone(), digest: (*digest).clone(), ..SourceMap::default() };
+        let mut types = Vec::new();
+        for t in file.types() {
+            let body = Body { scope, all: &scopes, generics: Vec::new(), locals: Vec::new(), paths: BTreeMap::new() };
+            types.push(body.type_decl(t)?);
+        }
         let mut functions = Vec::new();
         for d in file.declarations() {
             let mut body =
@@ -375,7 +487,7 @@ pub fn lower(files: &[ParsedFile]) -> Result<Lowered, LowerError> {
             source.paths.insert(function.name.clone(), body.paths);
             functions.push(function);
         }
-        modules.push(Module { name: scope.name.clone(), kind, capabilities, types: Vec::new(), functions });
+        modules.push(Module { name: scope.name.clone(), kind, capabilities, types, functions });
         sources.push(source);
     }
     Ok(Lowered { program: Program::new(modules), sources })
@@ -433,6 +545,8 @@ fn declare(file: &ParsedFile, header: &ModuleHeader, digests: &BTreeMap<&str, &s
         stage: header.stage.is_some(),
         functions: BTreeMap::new(),
         aliases: BTreeMap::new(),
+        types: BTreeMap::new(),
+        ctors: BTreeMap::new(),
     };
     for item in &file.items {
         let Item::Import(i) = item else { continue };
@@ -447,12 +561,47 @@ fn declare(file: &ParsedFile, header: &ModuleHeader, digests: &BTreeMap<&str, &s
             return Err(error(module, i.alias.loc.0, format!("the alias `{alias}` is imported twice")));
         }
     }
+    // A module's sum types (LG2.1; T1 draft): a type's name is no built-in type or index, and its constructors' names
+    // are unique among the module's constructors and functions.
+    for t in file.types() {
+        let name = t.name.text.as_str();
+        let why = if builtin_type_name(name) {
+            "names a built-in type, type constructor or index"
+        } else if scope.types.contains_key(name) {
+            "is declared twice"
+        } else {
+            ""
+        };
+        if !why.is_empty() {
+            return Err(error(module, t.name.loc.0, format!("the type `{name}` {why}")));
+        }
+        if t.ctors.is_empty() {
+            return Err(error(module, t.name.loc.0, format!("the type `{name}` declares no constructor (LG2.1)")));
+        }
+        scope.types.insert(name.into(), t.exported);
+        for c in &t.ctors {
+            let ctor = c.name.text.as_str();
+            let why = if reserved(ctor) {
+                "is reserved"
+            } else if scope.aliases.contains_key(ctor) {
+                "already names an imported module"
+            } else if scope.ctors.contains_key(ctor) {
+                "is declared twice: constructor names are unique within a module"
+            } else {
+                scope.ctors.insert(ctor.into(), name.into());
+                continue;
+            };
+            return Err(error(module, c.name.loc.0, format!("the constructor `{ctor}` {why}")));
+        }
+    }
     for d in file.declarations() {
         let name = d.name.text.as_str();
         let why = if reserved(name) {
             "is reserved"
         } else if scope.aliases.contains_key(name) {
             "already names an imported module"
+        } else if scope.ctors.contains_key(name) {
+            "already names a constructor of this module"
         } else if scope.functions.contains_key(name) {
             "is declared twice"
         } else {
@@ -462,6 +611,24 @@ fn declare(file: &ParsedFile, header: &ModuleHeader, digests: &BTreeMap<&str, &s
         return Err(error(module, d.name.loc.0, format!("`{name}` {why}")));
     }
     Ok(scope)
+}
+
+/// Whether a name is a built-in type, a type constructor, a precision or an index of the identity tower, which no
+/// declared type or generic parameter takes (T1 draft).
+fn builtin_type_name(name: &str) -> bool {
+    BASE_TYPES.contains(&name)
+        || TYPE_CONSTRUCTORS.contains(&name)
+        || precisions().contains(&name)
+        || type_indices().contains(&name)
+        || EndTest::of_type_name(name).is_some()
+}
+
+/// The static index a type argument names, if `of_name` reads its name: a bare name without type arguments.
+fn index<T>(t: &TypeExpr, of_name: impl Fn(&str) -> Option<T>) -> Option<T> {
+    match t {
+        TypeExpr::Named { module: None, name, args, .. } if args.is_empty() => of_name(&name.text),
+        _ => None,
+    }
 }
 
 /// The text of a path: "root" or dot-joined child indices.
@@ -533,8 +700,8 @@ impl Body<'_> {
         for g in &d.generics {
             let name = g.text.as_str();
             if reserved(name)
-                || BASE_TYPES.contains(&name)
-                || matches!(name, "Display" | "Approx")
+                || builtin_type_name(name)
+                || self.scope.types.contains_key(name)
                 || EFFECTS.contains(&name)
                 || capability(name).is_some()
                 || self.is_generic(name)
@@ -577,6 +744,8 @@ impl Body<'_> {
             "is already bound here, and a binding does not shadow another"
         } else if self.scope.functions.contains_key(n) {
             "names a function of this module"
+        } else if self.scope.ctors.contains_key(n) {
+            "names a constructor of this module"
         } else if self.scope.aliases.contains_key(n) {
             "names an imported module"
         } else {
@@ -663,6 +832,14 @@ impl Body<'_> {
         }
         let message = if BUILTINS.contains(&n) {
             format!("`{n}` is a reserved operation: call it")
+        } else if self.scope.ctors.contains_key(n) {
+            format!("`{n}` is a constructor: call it, as in `{n}(...)`")
+        } else if CONSTRUCTORS.contains(&n) {
+            format!("`{n}` is not bound; the built-in constructor `{n}` is called with its type, as in `{n}<T>(...)`")
+        } else if INDEXED.contains(&n) {
+            format!(
+                "`{n}` is not bound; the tower's operation `{n}` is called with its static index, as in `{n}<I>(...)`"
+            )
         } else if self.scope.aliases.contains_key(n) {
             format!("`{n}` names an imported module: write `{n}.f` for its function `f`")
         } else {
@@ -683,7 +860,11 @@ impl Body<'_> {
     /// a function another module calls or names.
     fn imported(&self, module: &str, f: &Name) -> R<Signature> {
         let name = f.text.as_str();
-        match self.all.iter().find(|s| s.name == module).and_then(|s| s.functions.get(name)) {
+        let target = self.all.iter().find(|s| s.name == module);
+        match target.and_then(|s| s.functions.get(name)) {
+            None if target.is_some_and(|s| s.ctors.contains_key(name)) => {
+                Err(self.err(f.loc.0, format!("`{name}` is a constructor of module `{module}`: call it")))
+            }
             None => Err(self.err(f.loc.0, format!("module `{module}` declares no function `{name}`"))),
             Some(s) if !s.exported => Err(self.err(f.loc.0, format!("module `{module}` does not export `{name}`"))),
             Some(s) => Ok(*s),
@@ -733,7 +914,8 @@ impl Body<'_> {
         } else {
             Err(self.err(
                 span,
-                "only a reserved operation takes type arguments; the IR draft has no explicit instantiation",
+                "only a reserved operation, an identity tower operation or a built-in constructor takes type arguments; \
+                 the IR draft has no explicit instantiation",
             ))
         }
     }
@@ -747,16 +929,53 @@ impl Body<'_> {
             if !self.is_local(n) && BUILTINS.contains(&n.as_str()) {
                 return self.builtin(n, type_args, args, span, path);
             }
+            // The identity tower's indexed operations and the built-in constructors are no reserved names (T1
+            // drafts): a call with type arguments names them, since a function takes none. An indexed operation's
+            // name that the module does not bind names the operation without them too, which says what it takes.
+            if !self.is_local(n) {
+                let bound = self.scope.functions.contains_key(n) || self.scope.ctors.contains_key(n);
+                if INDEXED.contains(&n.as_str()) && (!type_args.is_empty() || !bound) {
+                    return self.builtin(n, type_args, args, span, path);
+                }
+                // A built-in constructor names its type: `total<Partial<Nat>>(x)`. The checker checks the constructor
+                // and its payload against the type.
+                if !type_args.is_empty() && CONSTRUCTORS.contains(&n.as_str()) {
+                    let [t] = type_args else {
+                        return Err(self.err(span, format!("`{n}` takes one type argument, the type it constructs")));
+                    };
+                    let ty = self.unqualified(n, t, span)?;
+                    return Ok(Ir::Construct { ty, ctor: n.clone(), args: self.args(args, path)? });
+                }
+            }
             if let Some(&signature) = self.scope.functions.get(n).filter(|_| !self.is_local(n)) {
                 self.untyped(type_args, span)?;
                 self.takes(n, signature.params, args, span)?;
                 let args = self.args(args, path)?;
                 return Ok(Ir::Call { callee: Callee::Fn { module: None, name: n.clone() }, args });
             }
+            if !self.is_local(n) {
+                // A constructor of a sum type this module declares (T1 draft): `circle(3)`, `empty()`.
+                if let Some(ty) = self.scope.ctors.get(n) {
+                    self.untyped(type_args, span)?;
+                    let ty = Ty::Named { module: self.scope.name.clone(), name: ty.clone() };
+                    return Ok(Ir::Construct { ty, ctor: n.clone(), args: self.args(args, path)? });
+                }
+            }
         }
         if let ExprKind::Field { value, field } = &callee.kind {
             if let (ExprKind::Name(alias), Some(module)) = (&value.kind, self.alias_of(value)) {
                 let module = module.to_string();
+                // A constructor of a sum type the imported module exports (T1 draft): `m.circle(3)`.
+                let target = self.all.iter().find(|s| s.name == module);
+                if let Some(ty) = target.and_then(|s| s.ctors.get(&field.text)) {
+                    if !target.and_then(|s| s.types.get(ty)).copied().unwrap_or(false) {
+                        let note = format!("module `{module}` does not export the type `{ty}` of `{}`", field.text);
+                        return Err(self.err(field.loc.0, note));
+                    }
+                    self.untyped(type_args, span)?;
+                    let ty = Ty::Named { module, name: ty.clone() };
+                    return Ok(Ir::Construct { ty, ctor: field.text.clone(), args: self.args(args, path)? });
+                }
                 let signature = self.imported(&module, field)?;
                 self.untyped(type_args, span)?;
                 self.takes(&format!("{alias}.{}", field.text), signature.params, args, span)?;
@@ -797,6 +1016,9 @@ impl Body<'_> {
     }
 
     fn builtin(&mut self, op: &str, type_args: &[TypeExpr], args: &[Expr], span: Span, path: &mut Vec<u32>) -> R<Ir> {
+        if let Some(ir) = self.tower(op, type_args, args, span, path)? {
+            return Ok(ir);
+        }
         let typed = match op {
             "read_snapshot" | "write_workspace" | "declassified" | "file_read" | "list" | "set" => 1,
             "map" => 2,
@@ -1010,6 +1232,102 @@ impl Body<'_> {
         })
     }
 
+    /// The identity tower's operations (T1 drafts): the kernel rows, `imply`, `to_cost` and `cost_value`. A static
+    /// index is a type argument, a name the IR gives (`Full`, `labels`, `exact_pose`, `generator`); the operation's
+    /// arguments lower in order at children 0 and up. `None` for another operation.
+    fn tower(
+        &mut self,
+        op: &str,
+        type_args: &[TypeExpr],
+        args: &[Expr],
+        span: Span,
+        path: &mut Vec<u32>,
+    ) -> R<Option<Ir>> {
+        let shape = match op {
+            "snapshot" => "one type argument, a puzzle: `Full` or `Jumbling`",
+            "project" | "compare" => "one type argument, a level, such as `labels` or `poses`",
+            "check" | "imply" => "one type argument, a goal, such as `exact_pose` or `sticker_test`",
+            "to_cost" => "two type arguments, a puzzle and a cost unit, as in `to_cost<Full, generator>(n)`",
+            "digest" | "derive" | "import" | "reachability" | "cost_value" => "no type argument",
+            _ => return Ok(None),
+        };
+        let wanted = match op {
+            "snapshot" | "project" | "compare" | "check" | "imply" => 1,
+            "to_cost" => 2,
+            _ => 0,
+        };
+        let (module, note) = (self.scope.name.clone(), format!("`{op}` takes {shape}"));
+        let refuse = || error(&module, span, note.clone());
+        if type_args.len() != wanted {
+            return Err(refuse());
+        }
+        let index = |i: usize| match &type_args[i] {
+            TypeExpr::Named { module: None, name, args, .. } if args.is_empty() => Some(name.text.as_str()),
+            _ => None,
+        };
+        let row = match op {
+            "snapshot" => KernelOp::Snapshot(index(0).and_then(Puzzle::of_name).ok_or_else(refuse)?),
+            "project" => KernelOp::Project(index(0).and_then(Level::of_name).ok_or_else(refuse)?),
+            "compare" => KernelOp::Compare(index(0).and_then(Level::of_name).ok_or_else(refuse)?),
+            "check" => KernelOp::Check(index(0).and_then(Goal::of_name).ok_or_else(refuse)?),
+            "digest" => KernelOp::Digest,
+            "derive" => KernelOp::Derive,
+            "import" => KernelOp::Import,
+            "reachability" => KernelOp::Reachability,
+            "imply" => {
+                // To the low-height goal, `imply` takes the bound too (LG2.10, LG2.20).
+                let goal = index(0).and_then(Goal::of_name).ok_or_else(refuse)?;
+                self.takes(&format!("imply<{}>", goal.name()), 1 + usize::from(goal.takes_bound()), args, span)?;
+                return Ok(Some(Ir::Prim { op: Prim::Imply(goal), args: self.args(args, path)? }));
+            }
+            "to_cost" => {
+                let puzzle = index(0).and_then(Puzzle::of_name).ok_or_else(refuse)?;
+                let unit = index(1).and_then(CostUnit::of_name).ok_or_else(refuse)?;
+                self.takes(op, 1, args, span)?;
+                return Ok(Some(Ir::Prim { op: Prim::ToCost(puzzle, unit), args: self.args(args, path)? }));
+            }
+            _ => {
+                self.takes(op, 1, args, span)?;
+                return Ok(Some(Ir::Prim { op: Prim::CostValue, args: self.args(args, path)? }));
+            }
+        };
+        let arity = match row {
+            KernelOp::Snapshot(_) => 0,
+            KernelOp::Project(_) | KernelOp::Digest | KernelOp::Reachability => 1,
+            KernelOp::Compare(_) | KernelOp::Derive => 2,
+            // To the low-height goal, `check` takes the bound too (LG2.10).
+            KernelOp::Check(goal) => 1 + usize::from(goal.takes_bound()),
+            // An `import` without its claim lowers, so that the checker refuses it with
+            // `LG2:type.reachability_missing` (LG2.7, KN2.14).
+            KernelOp::Import => args.len().clamp(1, 2),
+        };
+        let name = match row {
+            KernelOp::Check(goal) => format!("check<{}>", goal.name()),
+            _ => op.to_string(),
+        };
+        self.takes(&name, arity, args, span)?;
+        Ok(Some(Ir::Kernel { op: row, args: self.args(args, path)?, ty: inferred() }))
+    }
+
+    /// A module's sum type (LG2.1; T1 draft): its constructors' payload types, which hold no function.
+    fn type_decl(&self, t: &TypeDecl) -> R<c600_ir::TypeDecl> {
+        let mut ctors = Vec::new();
+        for c in &t.ctors {
+            let mut payload = Vec::new();
+            for p in &c.payload {
+                let q = self.ty(p)?;
+                if holds_callable(&q.ty) {
+                    let note =
+                        format!("the payload of `{}` holds a function, which a sum type's value does not", c.name.text);
+                    return Err(self.err(c.loc.0, note));
+                }
+                payload.push(q);
+            }
+            ctors.push(c600_ir::Ctor { name: c.name.text.clone(), payload });
+        }
+        Ok(c600_ir::TypeDecl { name: t.name.text.clone(), exported: t.exported, ctors })
+    }
+
     fn closure(&mut self, params: &[ParamDecl], result: &TypeExpr, body: &Block, path: &mut Vec<u32>) -> R<Ir> {
         let mut out = Vec::new();
         for p in params {
@@ -1119,10 +1437,10 @@ impl Body<'_> {
     }
 
     /// A match on literals with a final `_` arm: the scrutinee at child 0, arm `i` at child `i + 1` and the `_` arm
-    /// last.
+    /// last. A match with a constructor pattern is a case ([`Body::case`]).
     fn matching(&mut self, scrutinee: &Expr, arms: &[Arm], span: Span, path: &mut Vec<u32>) -> R<Ir> {
-        if let Some(arm) = arms.iter().find(|a| matches!(a.pattern, Pattern::Binder { .. })) {
-            return Err(self.err(arm.loc.0, "a verdict match waits for the IR's domain families (M4)"));
+        if arms.iter().any(|a| matches!(a.pattern, Pattern::Ctor { .. })) {
+            return self.case(scrutinee, arms, path);
         }
         let Some((last, rest)) = arms.split_last().filter(|(last, _)| last.pattern == Pattern::Wildcard) else {
             return Err(self.err(span, "a match ends with a `_` arm"));
@@ -1141,6 +1459,47 @@ impl Body<'_> {
         }
         let default = self.at(path, rest.len() + 1, |b, p| b.expr(&last.body, p))?;
         Ok(Ir::Match { scrutinee: Box::new(scrutinee), arms: out, default: Box::new(default) })
+    }
+
+    /// A match on constructor patterns (LG2.1, LG2.9; T1 draft): the scrutinee at child 0, arm `i` at child `i + 1`
+    /// with its binders bound, and an optional final `_` arm last. Every other arm is a constructor pattern: literal
+    /// and constructor arms do not mix. Which constructors a pattern may name, and whether the arms account for every
+    /// constructor, is the checker's question, since lowering does not type the scrutinee.
+    fn case(&mut self, scrutinee: &Expr, arms: &[Arm], path: &mut Vec<u32>) -> R<Ir> {
+        let (rest, default) = match arms.split_last() {
+            Some((last, rest)) if last.pattern == Pattern::Wildcard => (rest, Some(last)),
+            _ => (arms, None),
+        };
+        for arm in rest {
+            match &arm.pattern {
+                Pattern::Ctor { .. } => {}
+                Pattern::Wildcard => return Err(self.err(arm.loc.0, "only the last arm of a match is `_`")),
+                Pattern::Lit(_) => {
+                    let note = "a match's arms are all constructor patterns or all literals, with a final `_` arm";
+                    return Err(self.err(arm.loc.0, note));
+                }
+            }
+        }
+        let scrutinee = self.at(path, 0, |b, p| b.expr(scrutinee, p))?;
+        let mut out = Vec::new();
+        for (i, arm) in rest.iter().enumerate() {
+            let Pattern::Ctor { ctor, binders } = &arm.pattern else { unreachable!("checked above") };
+            let depth = self.locals.len();
+            let body = binders
+                .iter()
+                .filter(|b| b.text != "_")
+                .try_for_each(|b| self.bind(b))
+                .and_then(|()| self.at(path, i + 1, |b, p| b.expr(&arm.body, p)));
+            self.locals.truncate(depth);
+            let pattern =
+                c600_ir::Pattern { ctor: ctor.text.clone(), binders: binders.iter().map(|b| b.text.clone()).collect() };
+            out.push((pattern, body?));
+        }
+        let default = match default {
+            Some(last) => Some(Box::new(self.at(path, rest.len() + 1, |b, p| b.expr(&last.body, p))?)),
+            None => None,
+        };
+        Ok(Ir::Case { scrutinee: Box::new(scrutinee), arms: out, default })
     }
 
     /// A literal pattern: a literal, or `tag`, `colour` or `target` of a literal string.
@@ -1169,7 +1528,10 @@ impl Body<'_> {
     fn ty(&self, t: &TypeExpr) -> R<QTy> {
         let exact = |ty| QTy { ty, display: false };
         match t {
-            TypeExpr::Named { name, args, loc } => {
+            TypeExpr::Named { module: Some(alias), name, args, loc } => {
+                Ok(exact(self.imported_type(alias, name, args, loc.0)?))
+            }
+            TypeExpr::Named { module: None, name, args, loc } => {
                 let n = name.text.as_str();
                 match n {
                     "Display" => {
@@ -1197,12 +1559,14 @@ impl Body<'_> {
                     }
                     "Approx" => {
                         let precision = match args.as_slice() {
-                            [TypeExpr::Named { name, args, .. }] if args.is_empty() => match name.text.as_str() {
-                                "P24" => Some(24),
-                                "P53" => Some(53),
-                                "P113" => Some(113),
-                                _ => None,
-                            },
+                            [TypeExpr::Named { module: None, name, args, .. }] if args.is_empty() => {
+                                match name.text.as_str() {
+                                    "P24" => Some(24),
+                                    "P53" => Some(53),
+                                    "P113" => Some(113),
+                                    _ => None,
+                                }
+                            }
                             _ => None,
                         };
                         let p = precision
@@ -1213,7 +1577,7 @@ impl Body<'_> {
                     // Full word's key, `WordEqualityKey<Jumbling>` a menu word's.
                     "WordEqualityKey" if !self.is_generic(n) && !args.is_empty() => {
                         let puzzle = match args.as_slice() {
-                            [TypeExpr::Named { name, args, .. }] if args.is_empty() => Puzzle::of_name(&name.text),
+                            [t] => index(t, Puzzle::of_name),
                             _ => None,
                         };
                         let p = puzzle.ok_or_else(|| {
@@ -1221,13 +1585,12 @@ impl Body<'_> {
                         })?;
                         Ok(exact(Ty::WordEqualityKey(p)))
                     }
+                    _ if TYPE_CONSTRUCTORS.contains(&n) => self.tower_type(n, args, loc.0),
                     _ if BASE_TYPES.contains(&n) || self.is_generic(n) => {
                         if !args.is_empty() {
-                            let message = format!(
-                                "`{n}` takes no type arguments here; LX-8's domain types wait for the IR's domain \
-                                 families (M4, M5)"
-                            );
-                            return Err(self.err(loc.0, message));
+                            // LX-8's typed words, such as `Word<Full,Retained>`, are not the IR draft's: a Full word is
+                            // `Word` and a jumbling word `MenuWord` (LB1.8).
+                            return Err(self.err(loc.0, format!("`{n}` takes no type arguments")));
                         }
                         Ok(exact(match n {
                             "Unit" => Ty::Unit,
@@ -1253,18 +1616,30 @@ impl Body<'_> {
                             "WordStream" => Ty::WordStream,
                             "F2" => Ty::Field(Field::F2),
                             "F5" => Ty::Field(Field::F5),
+                            "Pose" => Ty::Pose,
+                            "PoseTableIndex" => Ty::PoseTableIndex,
+                            "PoseTable" => Ty::PoseTable,
+                            "Evidence" => Ty::Evidence,
                             _ => match EndTest::of_type_name(n) {
                                 Some(test) => Ty::EndTest(test),
                                 None => Ty::Var(n.into()),
                             },
                         }))
                     }
-                    _ => {
+                    // A sum type this module declares (T1 draft).
+                    _ if self.scope.types.contains_key(n) => {
+                        if !args.is_empty() {
+                            return Err(self.err(loc.0, format!("the declared type `{n}` takes no type arguments")));
+                        }
+                        Ok(exact(Ty::Named { module: self.scope.name.clone(), name: n.into() }))
+                    }
+                    _ if type_indices().contains(&n) => {
                         let message = format!(
-                            "unknown type `{n}`; LX-8's domain types wait for the IR's domain families (M4, M5)"
+                            "`{n}` is an index of the identity tower: it is a type argument, as in `State<Full>`"
                         );
                         Err(self.err(loc.0, message))
                     }
+                    _ => Err(self.err(loc.0, format!("unknown type `{n}`"))),
                 }
             }
             TypeExpr::Fn { params, result, effects, .. } => {
@@ -1283,6 +1658,82 @@ impl Body<'_> {
                 }
                 Ok(exact(Ty::Record(out)))
             }
+        }
+    }
+
+    /// A type of the identity tower (T1 drafts) with its static indices as type arguments: `Piece<P>`, `Sticker<P>`,
+    /// `Slot<P>`, `State<P>`, `Reachability<P>` and `Derivation<P>` take a puzzle; `Digest<P, L>` and
+    /// `LevelValue<P, L>` a puzzle and a level; `Verdict<P, L>` a puzzle and a level, and `Verdict<P, L, G>` a goal
+    /// too; `Holds<P, G>` a puzzle and a goal; `Cost<P, U>` a puzzle and a cost unit; `Partial<T>` a type.
+    fn tower_type(&self, n: &str, args: &[TypeExpr], span: Span) -> R<QTy> {
+        let exact = |ty| QTy { ty, display: false };
+        if n == "Partial" {
+            let [inner] = args else { return Err(self.err(span, "`Partial` takes one type argument")) };
+            return Ok(exact(Ty::Partial(Box::new(self.ty(inner)?))));
+        }
+        let shape = match n {
+            "Digest" | "LevelValue" => "a puzzle and a level, as in `Digest<Jumbling, labels>`",
+            "Verdict" => "a puzzle, a level and optionally a goal, as in `Verdict<Jumbling, labels, sticker_test>`",
+            "Holds" => "a puzzle and a goal, as in `Holds<Jumbling, exact_pose>`",
+            "Cost" => "a puzzle and a cost unit, as in `Cost<Full, generator>`",
+            _ => "one puzzle, `Full` or `Jumbling`",
+        };
+        let refuse = || self.err(span, format!("`{n}` takes {shape}"));
+        let puzzle = args.first().and_then(|t| index(t, Puzzle::of_name)).ok_or_else(refuse)?;
+        let level = || args.get(1).and_then(|t| index(t, Level::of_name)).ok_or_else(refuse);
+        let goal = |i: usize| args.get(i).and_then(|t| index(t, Goal::of_name)).ok_or_else(refuse);
+        let count = |c: usize| if args.len() == c { Ok(()) } else { Err(refuse()) };
+        let ty = match n {
+            "Piece" | "Sticker" | "Slot" | "State" | "Reachability" | "Derivation" => {
+                count(1)?;
+                match n {
+                    "Piece" => Ty::Piece(puzzle),
+                    "Sticker" => Ty::Sticker(puzzle),
+                    "Slot" => Ty::Slot(puzzle),
+                    "State" => Ty::State(puzzle),
+                    "Reachability" => Ty::Reachability(puzzle),
+                    _ => Ty::Derivation(puzzle),
+                }
+            }
+            "Digest" => {
+                count(2)?;
+                Ty::Digest(puzzle, level()?)
+            }
+            "LevelValue" => {
+                count(2)?;
+                Ty::LevelValue(puzzle, level()?)
+            }
+            "Verdict" if args.len() == 3 => Ty::Verdict(puzzle, level()?, Some(goal(2)?)),
+            "Verdict" => {
+                count(2)?;
+                Ty::Verdict(puzzle, level()?, None)
+            }
+            "Holds" => {
+                count(2)?;
+                Ty::Holds(puzzle, goal(1)?)
+            }
+            _ => {
+                count(2)?;
+                let unit = args.get(1).and_then(|t| index(t, CostUnit::of_name)).ok_or_else(refuse)?;
+                Ty::Cost(puzzle, unit)
+            }
+        };
+        Ok(exact(ty))
+    }
+
+    /// `alias.Name`: a sum type that the imported module `alias` declares and exports (T1 draft).
+    fn imported_type(&self, alias: &Name, name: &Name, args: &[TypeExpr], span: Span) -> R<Ty> {
+        let Some(module) = self.scope.aliases.get(&alias.text) else {
+            return Err(self.err(alias.loc.0, format!("`{}` names no imported module", alias.text)));
+        };
+        let (a, n) = (alias.text.as_str(), name.text.as_str());
+        match self.all.iter().find(|s| &s.name == module).and_then(|s| s.types.get(n)) {
+            None => Err(self.err(name.loc.0, format!("module `{module}` declares no type `{n}`"))),
+            Some(false) => Err(self.err(name.loc.0, format!("module `{module}` does not export the type `{n}`"))),
+            Some(true) if !args.is_empty() => {
+                Err(self.err(span, format!("the declared type `{a}.{n}` takes no type arguments")))
+            }
+            Some(true) => Ok(Ty::Named { module: module.clone(), name: n.into() }),
         }
     }
 
@@ -1335,11 +1786,43 @@ mod tests {
         assert_eq!(effect_names(), EFFECTS);
     }
 
-    /// `BUILTINS` and `Body::builtin` name the same operations: each reserved name lowers when it is called with
+    /// The built-in constructors are the IR's (T1 draft): those of `Verdict`, `Partial`, `Reachability` and
+    /// `Derivation`, each once; no constructor is a reserved name, and every index names one puzzle, level, goal or
+    /// cost unit.
+    #[test]
+    fn the_built_in_constructors_and_indices_are_the_irs() {
+        let nat = QTy { ty: Ty::Nat, display: false };
+        let sums = [
+            Ty::Verdict(Puzzle::Full, Level::Labels, None),
+            Ty::Partial(Box::new(nat)),
+            Ty::Reachability(Puzzle::Full),
+            Ty::Derivation(Puzzle::Full),
+        ];
+        let mut names: Vec<&str> = sums.iter().flat_map(|t| t.builtin_ctors().unwrap()).map(|(n, _)| n).collect();
+        let total = names.len();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), total, "a constructor name of two built-in sum types");
+        let mut listed = constructors().to_vec();
+        listed.sort_unstable();
+        assert_eq!(listed, names);
+        assert!(constructors().iter().all(|n| !reserved(n)));
+        assert!(INDEXED.iter().all(|n| !reserved(n) && !CONSTRUCTORS.contains(n)));
+        let indices = type_indices();
+        assert_eq!(indices.len(), Puzzle::ALL.len() + Level::ALL.len() + Goal::ALL.len() + CostUnit::ALL.len());
+        let mut distinct = indices.clone();
+        distinct.sort_unstable();
+        distinct.dedup();
+        assert_eq!(distinct.len(), indices.len());
+        assert!(indices.iter().all(|n| !reserved(n) && !BASE_TYPES.contains(n) && !TYPE_CONSTRUCTORS.contains(n)));
+    }
+
+    /// `BUILTINS`, `INDEXED` and `Body::builtin` name the same operations: each lowers when it is called with
     /// arguments of its shape. Lowering does not type the call; the checker does.
     #[test]
     fn every_reserved_operation_has_a_lowering() {
-        for op in BUILTINS {
+        for op in BUILTINS.iter().chain(&INDEXED) {
+            let op = *op;
             let call = match op {
                 "read_snapshot" | "declassified" | "file_read" => format!("{op}<Nat>(\"q\")"),
                 "write_workspace" => format!("{op}<Nat>(\"r\", 1)"),
@@ -1361,6 +1844,13 @@ mod tests {
                     "{op}(record {{ steps = 2 }}, fn() -> Nat {{ return 1; }}, fn(s: Status) -> Nat {{ return 2; }})"
                 ),
                 "repeat" => format!("{op}(2, 0, fn(acc: Nat) -> Nat {{ return acc; }})"),
+                // The identity tower's operations (T1 drafts) name their static indices as type arguments.
+                "snapshot" => format!("{op}<Jumbling>()"),
+                "project" => format!("{op}<labels>(1)"),
+                "compare" => format!("{op}<labels>(1, 2)"),
+                "derive" | "import" => format!("{op}(1, 2)"),
+                "check" | "imply" => format!("{op}<exact_pose>(1)"),
+                "to_cost" => format!("{op}<Full, generator>(1)"),
                 _ => format!("{op}(1)"),
             };
             // A stage operation lowers only in a stage module.

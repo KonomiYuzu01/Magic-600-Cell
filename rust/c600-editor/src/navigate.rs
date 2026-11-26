@@ -7,7 +7,7 @@
 use c600_check::{separation, Policy, Report, Summary};
 use c600_ir::{Capability, Effect};
 use c600_syntax::ast::{Decl, TypeExpr};
-use c600_syntax::{base_types, type_text};
+use c600_syntax::{base_types, type_constructors, type_text};
 
 use crate::analysis::{Closure, Source};
 use crate::complete::{signature, DeclIdentity};
@@ -173,7 +173,8 @@ fn exactness(t: &TypeExpr) -> Exactness {
         TypeExpr::Named { name, .. } => match name.text.as_str() {
             "Display" => Exactness::Display,
             "Approx" | "ApproxBool" => Exactness::Approximate,
-            n if base_types().contains(&n) || matches!(n, "List" | "Set" | "Map") => Exactness::Exact,
+            // The collections and the identity tower's types (T1 drafts) are exact.
+            n if base_types().contains(&n) || type_constructors().contains(&n) => Exactness::Exact,
             _ => Exactness::Unknown,
         },
         TypeExpr::Fn { .. } | TypeExpr::Record { .. } => Exactness::Exact,

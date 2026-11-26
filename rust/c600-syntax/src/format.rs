@@ -49,6 +49,11 @@ pub fn format(file: &ParsedFile) -> Option<String> {
                 out.push_str(&declaration(d));
                 after_declaration = true;
             }
+            Item::Type(t) => {
+                out.push('\n');
+                out.push_str(&type_declaration(t));
+                after_declaration = true;
+            }
         }
     }
     Some(out)
@@ -103,6 +108,19 @@ fn declaration(d: &Decl) -> String {
     format!("{out} {{\n{}}}\n", block(&d.body, 1))
 }
 
+/// A sum type declaration (T1 draft): one constructor per line, `type Never {}` without one.
+fn type_declaration(t: &TypeDecl) -> String {
+    let export = if t.exported { "export " } else { "" };
+    if t.ctors.is_empty() {
+        return format!("{export}type {} {{}}\n", t.name.text);
+    }
+    let mut out = format!("{export}type {} {{\n", t.name.text);
+    for c in &t.ctors {
+        out.push_str(&format!("{INDENT}{}({});\n", c.name.text, list(c.payload.iter().map(ty), ", ")));
+    }
+    out + "}\n"
+}
+
 fn params(params: &[ParamDecl]) -> String {
     list(params.iter().map(|p| format!("{}: {}", p.name.text, ty(&p.ty))), ", ")
 }
@@ -119,8 +137,14 @@ fn block(b: &Block, depth: usize) -> String {
 
 fn ty(t: &TypeExpr) -> String {
     match t {
-        TypeExpr::Named { name, args, .. } if args.is_empty() => name.text.clone(),
-        TypeExpr::Named { name, args, .. } => format!("{}<{}>", name.text, list(args.iter().map(ty), ",")),
+        TypeExpr::Named { module, name, args, .. } => {
+            let mut out = module.as_ref().map_or(String::new(), |m| format!("{}.", m.text));
+            out.push_str(&name.text);
+            if !args.is_empty() {
+                out.push_str(&format!("<{}>", list(args.iter().map(ty), ",")));
+            }
+            out
+        }
         TypeExpr::Fn { params, result, effects, .. } => {
             format!("fn({}) -> {} effects {}", list(params.iter().map(ty), ", "), ty(result), names(effects))
         }
@@ -206,14 +230,16 @@ fn head(e: &Expr) -> &Expr {
 fn pattern(p: &Pattern, depth: usize) -> String {
     match p {
         Pattern::Wildcard => "_".into(),
-        Pattern::Binder { tag, binder } => format!("{}({})", tag.text, binder.text),
+        Pattern::Ctor { ctor, binders } => {
+            format!("{}({})", ctor.text, list(binders.iter().map(|b| b.text.clone()), ", "))
+        }
         Pattern::Lit(e) if plain_pattern(e) => expr(e, depth),
         Pattern::Lit(e) => format!("({})", expr(e, depth)),
     }
 }
 
-/// Whether a literal pattern reads back as itself without parentheses: not `_`, not a binder such as `yes(proof)`,
-/// and no other construct that an arm would read differently.
+/// Whether a literal pattern reads back as itself without parentheses: not `_`, not a constructor pattern such as
+/// `yes(proof)`, `partial(v, _)` or `empty()`, and no other construct that an arm would read differently.
 fn plain_pattern(e: &Expr) -> bool {
     let name = |e: &Expr| matches!(&e.kind, ExprKind::Name(n) if n != "_");
     match &e.kind {
@@ -227,10 +253,11 @@ fn plain_pattern(e: &Expr) -> bool {
         | ExprKind::Word(_)
         | ExprKind::Menu(_) => true,
         ExprKind::Name(_) => name(e),
-        // `f(x)` and `f(true)` read as binders: one name token between the parentheses.
+        // `f()`, `f(x)`, `f(x, _)` and `f(true)` read as constructor patterns: only name tokens between the
+        // parentheses.
         ExprKind::Call { callee, type_args, args } => {
             let binder = |a: &Expr| matches!(a.kind, ExprKind::Name(_) | ExprKind::Bool(_));
-            name(callee) && !(type_args.is_empty() && args.len() == 1 && binder(&args[0]))
+            name(callee) && !(type_args.is_empty() && args.iter().all(binder))
         }
         _ => false,
     }

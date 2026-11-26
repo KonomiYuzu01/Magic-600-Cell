@@ -302,6 +302,7 @@ fn declarations<'f>(file: &'f ParsedFile, text: &str) -> Vec<(&'f Decl, Vec<Span
         let span = match item {
             Item::Import(i) => i.loc.0,
             Item::Decl(d) => d.loc.0,
+            Item::Type(t) => t.loc.0,
         };
         if let Item::Decl(d) = item {
             let directives = file

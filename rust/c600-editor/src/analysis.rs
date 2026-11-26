@@ -193,7 +193,7 @@ fn imports(file: &ParsedFile) -> Vec<(String, String, Span)> {
         .iter()
         .filter_map(|item| match item {
             Item::Import(i) => Some((i.alias.text.clone(), i.digest.clone(), i.loc.0)),
-            Item::Decl(_) => None,
+            Item::Decl(_) | Item::Type(_) => None,
         })
         .collect()
 }

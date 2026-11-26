@@ -1,7 +1,8 @@
 //! LB3.2's end tests' verdicts in source (LP2 draft until the IR freeze, PHS.49). Each end test answers a verdict of
 //! its own type, `RetainedCheckpointVerdict`, `LabelCheckpointVerdict` or `StickerTestVerdict`, read from the engine
 //! row of its test and used through a `match` on its outcomes `holds`, `fails` and `unestablished` only (LG2.9). The
-//! end tests' bare names stay chapter 02's goal names (LG2.10), which wait for the IR's goals. The checker refuses a
+//! end tests' bare names stay chapter 02's goal names (LG2.10), the IR's goals (`check<sticker_test>(s)`, T1 drafts,
+//! in `conformance_lg2.rs`). The checker refuses a
 //! verdict used as a boolean, an equality of verdicts, a read of an end test's row declared `Bool` and a `_` arm that
 //! takes `unestablished` together with another outcome (`LG2:type.verdict_required`), and one test's verdict where
 //! another's is expected (`LG2:type.mismatch`). The run-time halves are `c600-run`'s `end_tests.rs`.
@@ -170,8 +171,8 @@ fn ct_lb3_01_only_an_end_tests_row_answers_its_verdict() {
 }
 
 /// CT-LG2-01 (part: a match over the verdict constructors with a `_` arm admits the arms that name an outcome and takes
-/// the remaining outcomes in its `_` arm; not run: matches over other algebraic types, and model, level and mode
-/// indices).
+/// the remaining outcomes in its `_` arm; the matches over other algebraic types and the indices through generics are
+/// `conformance_lg2.rs`'s).
 /// CT-LG2-09 (part: unknown cannot pass as false: a match's `_` arm on an end test's verdict takes `unestablished`
 /// alone or not at all; LP2 draft).
 ///
@@ -195,8 +196,9 @@ fn ct_lg2_09_unestablished_never_falls_together_with_another_outcome() {
 }
 
 /// CT-LG2-01 (part: a match over the verdict constructors with `holds`, `fails` and `unestablished` arms and no `_` arm
-/// is refused at lowering with the message that a match ends with a `_` arm; not run: matches over other algebraic
-/// types, and model, level and mode indices).
+/// is refused at lowering with the message that a match ends with a `_` arm, since an end test's outcomes are status
+/// tags, not constructors; the matches over other algebraic types and the indices through generics are
+/// `conformance_lg2.rs`'s).
 #[test]
 fn a_verdict_match_without_a_wildcard_arm_does_not_lower() {
     let arms = "tag(\"holds\") => 1;\n        tag(\"fails\") => 2;\n        tag(\"unestablished\") => 3;\n";

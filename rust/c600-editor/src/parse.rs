@@ -17,6 +17,8 @@ pub enum OutlineKind {
     View,
     Command,
     Contract,
+    /// A sum type declaration, `type Shape { ... }` (T1 draft).
+    Type,
     /// A recovery hole: a declaration that did not parse.
     Hole,
     Comment,
@@ -103,6 +105,14 @@ pub(crate) fn outline(file: &ParsedFile, digest: &str) -> Vec<OutlineItem> {
                 name: Some(d.name.text.clone()),
                 name_range: Some(range(d.name.loc.0)),
                 exported: d.exported,
+                recovered_kind: None,
+            },
+            Item::Type(t) => OutlineItem {
+                kind: OutlineKind::Type,
+                range: range(t.loc.0),
+                name: Some(t.name.text.clone()),
+                name_range: Some(range(t.name.loc.0)),
+                exported: t.exported,
                 recovered_kind: None,
             },
         });

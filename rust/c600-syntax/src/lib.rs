@@ -10,8 +10,8 @@
 //! - [`lower`] turns parsed files into an IR [`c600_ir::Program`] with a source map (LG4.12). Exact literals stay
 //!   exact decimal text and approximate literals keep their precision (LG1.6, LG1.7).
 //! - [`keywords`] and [`builtins`] give, read-only, the reserved names lowering checks, for a host's completion list,
-//!   and [`base_types`], [`type_constructors`], [`precisions`], [`effect_names`], [`capability_names`] and [`orders`]
-//!   the other names lowering reads.
+//!   and [`base_types`], [`type_constructors`], [`type_indices`], [`constructors`], [`indexed_operations`],
+//!   [`precisions`], [`effect_names`], [`capability_names`] and [`orders`] the other names lowering reads.
 //!
 //! For the authoring services (LP4, EV1.2; M7 deferred them, PHS.21) a parsed file also keeps its comments and
 //! whitespace ([`ast::Trivia`]) and, for each recovery hole, what the parser read of the broken declaration
@@ -31,8 +31,8 @@ pub use c600_digest::sha256_hex;
 pub use format::{format, type_text};
 pub use lex::{lexemes, Lexeme, LexemeKind};
 pub use lower::{
-    base_types, builtins, capability_names, effect_names, keywords, lower, orders, precisions, type_constructors,
-    LowerError, Lowered, SourceMap,
+    base_types, builtins, capability_names, constructors, effect_names, indexed_operations, keywords, lower, orders,
+    precisions, type_constructors, type_indices, LowerError, Lowered, SourceMap,
 };
 pub use parse::{parse, pinned};
 

@@ -15,14 +15,15 @@ use std::collections::HashMap;
 
 use c600_syntax::ast::{BindingKind, Block, Decl, Expr, ExprKind, Item, ParsedFile, Pattern, TypeExpr};
 use c600_syntax::{
-    base_types, builtins, capability_names, effect_names, keywords, orders, precisions, type_constructors, Lexeme,
-    LexemeKind, Span,
+    base_types, builtins, capability_names, constructors, effect_names, indexed_operations, keywords, orders,
+    precisions, type_constructors, type_indices, Lexeme, LexemeKind, Span,
 };
 
 /// How a name is bound.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NameKind {
-    /// A module function: `fn`, `view`, `command` or `contract`.
+    /// A module function: `fn`, `view`, `command` or `contract`; or a constructor of a sum type the module declares
+    /// (T1 draft).
     Declaration,
     /// An import alias.
     Import,
@@ -170,6 +171,21 @@ impl<'a> Index<'a> {
                     });
                     position += 1;
                 }
+                // A sum type's constructors are module names that a call resolves to (T1 draft).
+                Item::Type(t) => {
+                    for c in &t.ctors {
+                        index.push(Binding {
+                            name: c.name.text.clone(),
+                            span: c.name.loc.0,
+                            kind: NameKind::Declaration,
+                            owner: Owner::Module,
+                            scope: all,
+                            ty: None,
+                            decl: None,
+                            digest: None,
+                        });
+                    }
+                }
             }
         }
         for r in &file.recovered {
@@ -314,9 +330,11 @@ impl<'a> Index<'a> {
                 self.expr(scrutinee, owner);
                 for arm in arms {
                     match &arm.pattern {
-                        Pattern::Binder { binder, .. } => {
-                            let scope = (binder.loc.0.end, arm.body.loc.0.end);
-                            self.bind(binder, NameKind::MatchBinder, owner, scope);
+                        Pattern::Ctor { binders, .. } => {
+                            for binder in binders.iter().filter(|b| b.text != "_") {
+                                let scope = (binder.loc.0.end, arm.body.loc.0.end);
+                                self.bind(binder, NameKind::MatchBinder, owner, scope);
+                            }
                         }
                         Pattern::Lit(e) => self.expr(e, owner),
                         Pattern::Wildcard => {}
@@ -404,7 +422,9 @@ impl<'a> Index<'a> {
         let value = || {
             if let Some(i) = self.module_binding(name) {
                 Some(Target::Binding(i))
-            } else if builtins().contains(&name) {
+            } else if builtins().iter().chain(indexed_operations()).chain(constructors()).any(|b| *b == name) {
+                // The tower's indexed operations and the built-in constructors are no reserved names; unbound, they
+                // name the operation (T1 drafts).
                 Some(Target::Builtin)
             } else if orders().contains(&name) {
                 Some(Target::Order)
@@ -415,7 +435,8 @@ impl<'a> Index<'a> {
             }
         };
         let ty = || {
-            let known = base_types().iter().chain(type_constructors()).chain(precisions()).any(|t| *t == name);
+            let known = base_types().iter().chain(type_constructors()).chain(precisions()).any(|t| *t == name)
+                || type_indices().contains(&name);
             known.then_some(Target::Type)
         };
         let effect = || {

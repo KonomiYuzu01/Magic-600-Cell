@@ -60,7 +60,7 @@ pub enum BindingKind {
     Parameter,
     Let,
     ClosureParameter,
-    /// The binder of a `tag(binder)` arm.
+    /// A binder of a constructor pattern's arm, `ctor(a, b)` (T1 draft).
     MatchBinder,
 }
 
@@ -104,7 +104,15 @@ impl ParsedFile {
     pub fn declarations(&self) -> impl Iterator<Item = &Decl> {
         self.items.iter().filter_map(|item| match item {
             Item::Decl(d) => Some(&**d),
-            Item::Import(_) => None,
+            Item::Import(_) | Item::Type(_) => None,
+        })
+    }
+
+    /// The sum type declarations, in source order (T1 draft).
+    pub fn types(&self) -> impl Iterator<Item = &TypeDecl> {
+        self.items.iter().filter_map(|item| match item {
+            Item::Type(t) => Some(&**t),
+            Item::Import(_) | Item::Decl(_) => None,
         })
     }
 }
@@ -140,6 +148,26 @@ pub struct StageHeader {
 pub enum Item {
     Import(Import),
     Decl(Box<Decl>),
+    /// A sum type declaration (LG2.1; T1 draft until the IR freeze, PHS.49).
+    Type(Box<TypeDecl>),
+}
+
+/// `type Shape { circle(Nat); empty(); }` or `export type ...` in column 1 (LG2.1; T1 draft until the IR freeze,
+/// PHS.49): constructors with fixed payload types, written as parameter types, each constructor ending with `;`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TypeDecl {
+    pub exported: bool,
+    pub name: Name,
+    pub ctors: Vec<CtorDecl>,
+    pub loc: Loc,
+}
+
+/// One constructor of a declared sum type, `circle(Nat)` or nullary `empty()` (T1 draft).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CtorDecl {
+    pub name: Name,
+    pub payload: Vec<TypeExpr>,
+    pub loc: Loc,
 }
 
 /// `import alias "<sha256>";`: a module named by the digest of its source, not by a path.
@@ -208,8 +236,10 @@ pub struct LetStmt {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypeExpr {
-    /// `Name` or `Name<A,B>`, including `Display<T>` and `Approx<P53>`.
-    Named { name: Name, args: Vec<TypeExpr>, loc: Loc },
+    /// `Name` or `Name<A,B>`, including `Display<T>`, `Approx<P53>` and the identity tower's `State<Jumbling>`; or
+    /// `alias.Name`, a sum type an imported module declares (T1 draft). The index of a tower type, a puzzle, a level,
+    /// a goal or a cost unit, is written as a type argument without arguments of its own.
+    Named { module: Option<Name>, name: Name, args: Vec<TypeExpr>, loc: Loc },
     /// `fn(A, B) -> R effects [..]`
     Fn { params: Vec<TypeExpr>, result: Box<TypeExpr>, effects: Vec<Name>, loc: Loc },
     /// `record { a: T, b: U }`
@@ -269,7 +299,8 @@ pub enum ExprKind {
         result: TypeExpr,
         body: Box<Block>,
     },
-    /// `match e { pattern => e; ... }`
+    /// `match e { pattern => e; ... }`: literal arms and a final `_` arm, or constructor arms and an optional final
+    /// `_` arm (T1 draft).
     Match {
         scrutinee: Box<Expr>,
         arms: Vec<Arm>,
@@ -287,8 +318,9 @@ pub struct Arm {
 pub enum Pattern {
     /// `_`
     Wildcard,
-    /// `tag(binder)`: LX-8's verdict arms.
-    Binder { tag: Name, binder: Name },
+    /// `ctor(a, b)` or nullary `ctor()`: a constructor of the scrutinee's sum type and one binder per payload value,
+    /// a name or `_` (LG2.1; T1 draft).
+    Ctor { ctor: Name, binders: Vec<Name> },
     /// A literal, such as `3` or `tag("KN7:budget.output")`.
     Lit(Expr),
 }
