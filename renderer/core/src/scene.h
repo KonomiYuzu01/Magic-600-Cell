@@ -40,7 +40,8 @@ public:
     // producer queue. A failure while creating resources leaves the scene
     // usable; a failure while recording or submitting poisons it.
     // ABI 5: a B8G8R8A8_UNORM format also builds the route-B surface pipeline.
-    void product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM, bool styled = false); // ABI 7: styled
+    void product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM, bool styled = false,
+                       bool panes = false); // ABI 7: styled; ABI 8: panes
     // Records the preparation's upload with its own list and signals the
     // product fence; returns the fence value.
     uint64_t product_prepare(uint64_t ticket, const PreparedData& data, ID3D12CommandQueue* queue, const std::function<void()>& submitting);
@@ -52,6 +53,10 @@ public:
                        D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
     // The ring's last frame results, read after that frame completed: GPU nanoseconds and VSInvocations.
     std::pair<uint64_t, uint64_t> product_results(uint32_t ring);
+    // ABI 8: the composite frame (sa2_frame_submit_panes) and its per-pane vertex evaluations.
+    void product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame_input& input, const FramePlan& plan,
+                             D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format);
+    std::vector<uint64_t> product_pane_evals(uint32_t ring);
     // Records an ID pass and the texel copy with its own list and signals the product fence.
     uint64_t product_pick(uint64_t ticket, const PassInput& input, ID3D12CommandQueue* queue, const std::function<void()>& submitting);
     uint32_t product_pick_value(uint64_t ticket); // after the pick's fence completed

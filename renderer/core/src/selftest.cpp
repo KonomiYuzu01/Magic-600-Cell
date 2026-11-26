@@ -146,7 +146,7 @@ std::pair<uint64_t, uint64_t> ready_set(sa2::Product& product, const sa2::Prepar
     return {ticket, row.resource_set};
 }
 void run_cpu(Suite& suite, const Options& options) {
-    suite.check("abi", [] { expect(sa2_abi_version() == 7, "ABI version mismatch"); });
+    suite.check("abi", [] { expect(sa2_abi_version() == 8, "ABI version mismatch"); });
     suite.check("exports", [] {
         const auto dll = executable_path().parent_path() / "sa2_interop.dll";
         HMODULE module = LoadLibraryW(dll.c_str());
@@ -159,7 +159,7 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_describe", "sa2_engine_adopt", "sa2_prepare", "sa2_poll", "sa2_activate", "sa2_cancel", "sa2_retire",
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
-            "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set"};
+            "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1021,7 +1021,7 @@ void run_cpu(Suite& suite, const Options& options) {
     });
     suite.check("product describe", [] {
         const auto json = Json::parse(sa2::describe("abc", 0).dump());
-        expect(json.at("interface_version").integer() == 7 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
+        expect(json.at("interface_version").integer() == 8 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
             && json.at("device_removed").null() && json.at("evidence").array().empty(), "the SupportReport header is wrong");
         const auto& features = json.at("features");
         expect(features.object().size() == 8, "the SupportReport does not list eight rows");
@@ -1035,7 +1035,7 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(sa2::removed_text(int32_t(0x887A0005)) == "0x887a0005", "the removal text is not 0x%08x");
         // ABI 5, route B: F22 and F23 on a sa2_create context with a surface.
         const auto route_b = Json::parse(sa2::describe("abc", 0, 3, true).dump());
-        expect(route_b.at("interface_version").integer() == 7 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
+        expect(route_b.at("interface_version").integer() == 8 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
         for (const char* row : {"F22", "F23"})
             expect(route_b.at("features").at(row).at("status").string() == "supported"
                 && route_b.at("features").at(row).at("layout_version").integer() == 1, "route B does not support F22 and F23");
@@ -1190,6 +1190,80 @@ void run_cpu(Suite& suite, const Options& options) {
         EngineArrays next(2, 0);
         product.adopt(sa2::engine_image(&next.image));
         expect(product.piece_style() == nullptr, "an adoption kept the previous revision's piece style");
+    });
+    // ABI 8 (ADR-D02 B18a): the composite frame's checks, its pane rows and a pick that resolves its pane.
+    suite.check("pane arguments", [] {
+        static_assert(SA2_PANES_MAX == 4u, "the ABI 8 defines changed");
+        sa2::Product product;
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        auto input = frame_input(1, 1);
+        const auto pane = [&](uint64_t view, int32_t x, int32_t y, uint32_t w, uint32_t h) {
+            sa2_pane out{};
+            out.view = view; out.view_generation = 1; out.x = x; out.y = y; out.width = w; out.height = h;
+            std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), std::begin(out.camera_matrix));
+            return out;
+        };
+        sa2_pane two[2] = {pane(1, 0, 0, 128, 256), pane(2, 128, 0, 128, 256)};
+        auto plan = product.plan_panes(input, two, 2, 256, 256);
+        expect(plan.panes.size() == 2 && plan.panes[1].pane.view == 2 && !plan.panes[0].styled && !plan.panes[1].set_ticket,
+            "two panes were not planned");
+        const auto refused = [&](auto change, uint32_t count = 2) {
+            sa2_pane copy[2] = {two[0], two[1]};
+            auto frame = input;
+            change(copy, frame);
+            return rejects([&] { product.plan_panes(frame, copy, count, 256, 256); });
+        };
+        expect(refused([](sa2_pane*, sa2_frame_input&) {}, 0) && rejects([&] { product.plan_panes(input, nullptr, 1, 256, 256); }),
+            "a composite frame without panes was accepted");
+        sa2_pane five[5] = {pane(1, 0, 0, 32, 32), pane(2, 32, 0, 32, 32), pane(3, 64, 0, 32, 32), pane(4, 96, 0, 32, 32), pane(5, 128, 0, 32, 32)};
+        expect(rejects([&] { product.plan_panes(input, five, 5, 256, 256); }), "a fifth pane was accepted");
+        expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].x = 127; }), "overlapping panes were accepted");
+        expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].x = 200; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[0].y = -1; })
+            && refused([](sa2_pane* p, sa2_frame_input&) { p[1].width = 0; }), "a pane outside the target or empty was accepted");
+        expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].flags = 1; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[1].style = 5; })
+            && refused([](sa2_pane* p, sa2_frame_input&) { p[1].camera_matrix[3] = std::numeric_limits<float>::infinity(); }),
+            "a pane's flags, style or camera was accepted out of range");
+        expect(refused([](sa2_pane*, sa2_frame_input& f) { f.view = 2; }) && refused([](sa2_pane*, sa2_frame_input& f) { f.camera_matrix[1] = 0.5f; }),
+            "a frame input that is not the first pane's was accepted");
+        // A pane's set prepared at another engine revision refuses the whole frame.
+        PreparationArrays arrays(2, 1, 1);
+        arrays.value.base_revision = 2;
+        const auto readied = ready_set(product, sa2::preparation(&arrays.value), 0);
+        const uint8_t stamp[32]{};
+        product.activate(readied.second, stamp);
+        two[1].resource_set = readied.second;
+        expect(wrong_state([&] { product.plan_panes(input, two, 2, 256, 256); }), "a pane of another engine revision was accepted");
+        PreparationArrays current(2, 1, 1);
+        current.value.base_revision = 1;
+        const auto good = ready_set(product, sa2::preparation(&current.value), 0);
+        product.activate(good.second, stamp);
+        two[1].resource_set = good.second;
+        plan = product.plan_panes(input, two, 2, 256, 256);
+        expect(plan.panes[1].set_ticket == good.first, "a pane's set was not planned");
+        product.commit(input, plan, 1, 0);
+        expect(wrong_state([&] { product.pane_rows(1, nullptr, 0); }), "pane rows were answered before the frame produced");
+        product.produced(1, 100, 7);
+        product.pane_evals(1, {3, 4});
+        sa2_pane_row rows[4]{};
+        for (auto& row : rows) row.struct_size = sizeof(row);
+        expect(product.pane_rows(1, rows, 4) == 2 && rows[0].view == 1 && rows[1].view == 2 && rows[0].vertex_evals == 3
+            && rows[1].vertex_evals == 4 && rows[1].pane == 1, "the pane rows are wrong");
+        // A pick resolves its pane: the right pane has a set (an ID pass), the left none, a point outside is refused.
+        auto pick = product.pick_plan(1, 200, 10);
+        expect(pick.pane == 1 && pick.pass && pick.input.origin_x == 128 && pick.input.view_width == 128 && pick.input.width == 256,
+            "a pick in the right pane did not plan that pane's ID pass");
+        pick = product.pick_plan(1, 10, 10);
+        expect(pick.pane == 0 && !pick.pass && pick.state == SA2_PICK_READY, "a pick in the left pane did not resolve it");
+        product.pick_commit(9, pick, 0);
+        bool release = false;
+        const auto row = product.pick_poll(9, 0, [] { return 0u; }, release);
+        expect(row.view == 1 && row.state == SA2_PICK_READY, "a pane pick did not name its view");
+        input.sequence = 2;
+        auto one = product.plan(input, 256, 256);
+        product.commit(input, one, 2, 1);
+        product.produced(2, 100, 7);
+        expect(wrong_state([&] { product.pane_rows(2, rows, 4); }), "a one-view frame answered pane rows");
     });
     // ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending
     // three owner-machine checks): the argument checks, the present ledger's
@@ -1580,6 +1654,7 @@ Options parse(int argc, char** argv) {
         else if (arg == "--poses") options.poses = true;
         else if (arg == "--shape") options.shape = true;
         else if (arg == "--style") options.style = true;
+        else if (arg == "--panes") options.panes = true;
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
             const auto text = value();
@@ -1626,12 +1701,15 @@ Options parse(int argc, char** argv) {
     // ABI 7: the piece style check runs on WARP only, alone.
     expect(!options.style || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
         && options.measure.empty()), "--style requires --warp, without --stages, --poses, --shape or --measure-stages");
+    // ABI 8: the composite frame check runs on WARP only, alone.
+    expect(!options.panes || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && options.measure.empty()), "--panes requires --warp, alone");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
     // C9 (26 Nov 2026): the preparation timing needs a device and runs alone.
     expect(!options.prepares || (options.mode != "cpu" && options.child.empty() && !options.stages && !options.poses
-        && !options.shape && !options.style && options.measure.empty() && !options.out.empty()), "--measure-prepare requires --warp or --hardware and --out, alone");
+        && !options.shape && !options.style && !options.panes && options.measure.empty() && !options.out.empty()), "--measure-prepare requires --warp or --hardware and --out, alone");
     return options;
 }
 }
@@ -1657,6 +1735,7 @@ int main(int argc, char** argv) {
         else if (options.poses) sa2test::run_poses(suite, options);
         else if (options.shape) sa2test::run_shape(suite, options);
         else if (options.style) sa2test::run_style(suite, options);
+        else if (options.panes) sa2test::run_panes(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

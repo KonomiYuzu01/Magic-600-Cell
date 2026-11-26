@@ -2,15 +2,16 @@
  * sa2_interop.h: the C ABI between the Godot C# host and the native Direct3D
  * 12 producer DLL sa2_interop.dll (renderer/core/, the product copy of the
  * selected S-A2 core).
- * ABI version 7; the ABI 1 to ABI 6 declarations, layouts and behaviour are
+ * ABI version 8; the ABI 1 to ABI 7 declarations, layouts and behaviour are
  * retained, except that ABI 5 extends sa2_presented_row with display_qpc (no
  * ABI 4 core wrote that row: without a surface sa2_presented answers
  * SA2_E_UNAVAILABLE). ABI 3 adds W-J's per-piece pose path (sa2_scene_load_wj and
  * sa2_scene_lattice_check). ABI 4 adds the product API, one call per RM.14
  * operation. ABI 5 adds route B: the core's own device, a DirectComposition
  * layer and a composition swap chain (both at the end of this file). ABI 6
- * adds a view's shape (sa2_view_shape_set) and ABI 7 per-piece style
- * (sa2_style_set, sa2_view_style_set), both at the end of this file.
+ * adds a view's shape (sa2_view_shape_set), ABI 7 per-piece style
+ * (sa2_style_set, sa2_view_style_set) and ABI 8 the composite frame
+ * (sa2_frame_submit_panes, sa2_frame_panes), all at the end of this file.
  *
  * The integrator owns this file. An implementation must not change it; if a
  * change is unavoidable, stop and report the reason instead.
@@ -45,7 +46,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 7u
+#define SA2_ABI_VERSION 8u
 
 /* Code layout; must match code_layout.json and the host's CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -1142,6 +1143,62 @@ static_assert(sizeof(sa2_view_style) == 316, "sa2_view_style requires the x64 AB
 
 SA2_API int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_style, uint32_t channel);
 SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style* style);
+
+/* ABI 8: the composite frame (ADR-D02 build step B18a, a candidate behind the shell's --d02; row F27 of the feature
+ * matrix). Additive: every ABI 7 call, struct and behaviour is unchanged.
+ *
+ * sa2_frame_submit_panes draws up to SA2_PANES_MAX panes of one engine revision into one target as one frame: one
+ * clear of the whole target, one draw per pane with its viewport and scissor at the pane's rectangle, one present on
+ * a surface, one frame ID, one report and one presented row. `frame` is validated as sa2_frame_submit validates it
+ * and names the target, surface, sequence, engine revision, publication generation and stamps; its view,
+ * view_generation, resource_set and camera_matrix must equal the first pane's, so its report and presented row read
+ * as a one-view frame's. Each pane names its view, view generation, resource set (0: every slot drawn, nothing
+ * pickable), rectangle in target pixels, camera matrix and style slot (0: no style, else 1 to SA2_STYLE_SLOTS); its
+ * shape is its view's (ABI 6). Rectangles lie inside the target and do not overlap; a count of 0 or above
+ * SA2_PANES_MAX, an empty rectangle, nonzero flags or a non-finite camera is SA2_E_INVALID_ARGUMENT. Two panes may
+ * name one view (a held split with two styles). Every pane's resource set must be active, stamped for its view, view
+ * generation and the frame's publication generation, and prepared at the frame's engine revision; otherwise the
+ * whole frame is refused (SA2_E_WRONG_STATE) and nothing is drawn.
+ *
+ * sa2_frame_panes returns a produced composite frame's panes in order: each one's view, view generation and vertex
+ * evaluations; the frame report's view_vertex_evals is their sum. A frame that is not a retained composite frame, or
+ * that has not produced yet, answers SA2_E_WRONG_STATE.
+ *
+ * sa2_pick_request on a composite frame takes target coordinates and draws the ID pass with the camera, resource set,
+ * shape and viewport of the pane that contains the point; a point in no pane is SA2_E_INVALID_ARGUMENT. The reply
+ * names that pane's view and view generation, and only a newer generation of that view makes it stale.
+ */
+#define SA2_PANES_MAX 4u
+
+typedef struct sa2_pane {
+    uint64_t view;
+    uint64_t view_generation;
+    uint64_t resource_set;
+    int32_t x; /* the rectangle's left edge, in target pixels */
+    int32_t y; /* its top edge */
+    uint32_t width;
+    uint32_t height;
+    float camera_matrix[16]; /* column-major, as sa2_frame_input's */
+    uint32_t style; /* 0: no style; else a style slot 1..SA2_STYLE_SLOTS (ABI 7) */
+    uint32_t flags; /* must be 0 */
+} sa2_pane;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_pane) == 112, "sa2_pane requires the x64 ABI");
+#endif
+
+typedef struct sa2_pane_row {
+    uint32_t struct_size; /* sizeof(sa2_pane_row); 32 on x64 */
+    uint32_t pane; /* the pane's index in the frame */
+    uint64_t view;
+    uint64_t view_generation;
+    uint64_t vertex_evals;
+} sa2_pane_row;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_pane_row) == 32, "sa2_pane_row requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* frame, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id);
+SA2_API int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_row* rows, uint32_t capacity, uint32_t* out_count);
 
 #ifdef __cplusplus
 }

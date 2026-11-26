@@ -1,4 +1,4 @@
-"""Headless checks of the renderer core's product copy (renderer/core/, S-A2 with ABI 7).
+"""Headless checks of the renderer core's product copy (renderer/core/, S-A2 with ABI 8).
 
 The core builds only on Windows with MSVC (renderer/core/check_core.py). These checks need only the
 Python standard library and run anywhere. They check that:
@@ -6,13 +6,14 @@ Python standard library and run anywhere. They check that:
   work/experiments/, and every "verbatim" product file equals its source;
 - the provenance table lists exactly the files under renderer/core/;
 - the CMake build names no source outside renderer/core/;
-- the ABI header pins version 7, keeps every ABI 2 declaration, layout and constant and the ABI 3
+- the ABI header pins version 8, keeps every ABI 2 declaration, layout and constant and the ABI 3
   additions, pins the ABI 4 product declarations, struct sizes and constants, and pins ABI 5's
   route B declarations and constants (route B is accepted for now by the owner on 18 Nov 2026,
   pending three owner-machine checks), and pins C9 U5's user-stage declarations, constants and
   report layout, added to ABI 5 without changing it, and pins ABI 6's view shape (ADR-D02), whose
   defaults are the scene's ABI 5 constants, and ABI 7's piece style (ADR-D02 B14), whose styled pass
-  is embedded in the DLL and leaves the identity's shader list unchanged.
+  is embedded in the DLL and leaves the identity's shader list unchanged, and ABI 8's composite frame
+  (ADR-D02 B18a).
 """
 from __future__ import annotations
 
@@ -157,7 +158,8 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(values["SHADERS"], built)
         self.assertEqual(len(built), 8)
         self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
-        self.assertEqual(len(values["CPU_CHECKS"]), 39)
+        self.assertEqual(len(values["CPU_CHECKS"]), 40)
+        self.assertIn("pane arguments", values["CPU_CHECKS"])  # ADR-D02 B18a, ABI 8
         self.assertIn("piece style", values["CPU_CHECKS"])  # ADR-D02 B14, ABI 7
         self.assertIn("view shape", values["CPU_CHECKS"])  # ADR-D02, ABI 6
         self.assertIn("preparation reuse", values["CPU_CHECKS"])  # C9, 26 Nov 2026
@@ -259,6 +261,11 @@ ABI7_DEFINES = {
     "SA2_STYLE_DIM_NONE": "0u", "SA2_STYLE_DIM_MARKED": "1u", "SA2_STYLE_DIM_UNMARKED": "2u",
     "SA2_STYLE_OUTLINE_MAX": "0.5f", "SA2_STYLE_MATRIX_MAX": "8.0f",
 }
+# ABI 8: the composite frame (ADR-D02 B18a, a candidate behind --d02).
+ABI8 = {
+    "SA2_API int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* frame, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id);",
+    "SA2_API int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_row* rows, uint32_t capacity, uint32_t* out_count);",
+}
 
 
 class AbiTests(unittest.TestCase):
@@ -266,8 +273,8 @@ class AbiTests(unittest.TestCase):
         self.header = text(CORE / "include" / "sa2_interop.h")
         self.abi2 = text(SA2_HEADER)
 
-    def test_version_is_7(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["7u"])
+    def test_version_is_8(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["8u"])
         self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.abi2, re.M), ["2u"])
 
     def test_abi2_scene_config_layout_is_pinned(self):
@@ -294,7 +301,7 @@ class AbiTests(unittest.TestCase):
 
     def test_abi4_and_abi5_additions(self):
         added = declarations(self.header) - declarations(self.abi2)
-        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5 | ABI6 | ABI7)
+        self.assertEqual(added, ABI3 | ABI4 | ABI5 | ABI5_U5 | ABI6 | ABI7 | ABI8)
 
     def test_abi4_struct_sizes_are_pinned(self):
         layouts = structs(self.header)
@@ -361,6 +368,16 @@ class AbiTests(unittest.TestCase):
         self.assertNotIn("styled", text(CORE / "src" / "scene_record.cpp"))
         self.assertIn('#include "product.hlsl"', text(CORE / "shaders" / "styled.hlsl"))
         self.assertNotIn("pieceStyle", text(CORE / "shaders" / "product.hlsl"))
+
+    def test_abi8_panes_are_pinned(self):
+        self.assertEqual(defines(self.header).get("SA2_PANES_MAX"), "4u")
+        layouts = structs(self.header)
+        self.assertTrue(layouts.get("sa2_pane", "").startswith("typedef struct sa2_pane {\n    uint64_t view;"))
+        self.assertTrue(layouts.get("sa2_pane_row", "").startswith("typedef struct sa2_pane_row {\n    uint32_t struct_size;"))
+        for name, size in (("sa2_pane", 112), ("sa2_pane_row", 32)):
+            with self.subTest(struct=name):
+                self.assertIn(f'static_assert(sizeof({name}) == {size}, "{name} requires the x64 ABI");', self.header)
+                self.assertIn(f"static_assert(sizeof({name}) == {size});", text(CORE / "src" / "product.h"))
 
 
 if __name__ == "__main__":

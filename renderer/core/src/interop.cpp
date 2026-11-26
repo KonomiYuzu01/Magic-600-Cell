@@ -526,6 +526,7 @@ void harvest(sa2_context* ctx, sa2::Scene& scene) {
         if (!frame || frame > done) continue;
         const auto [gpu_ns, evals] = scene.product_results(ring);
         scene.product.produced(frame, gpu_ns, evals);
+        if (const auto panes = scene.product_pane_evals(ring); !panes.empty()) scene.product.pane_evals(frame, panes); // ABI 8
     }
 }
 // Releases the GPU resources of finished tickets and the staging of completed
@@ -1733,6 +1734,63 @@ int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_
             scene.product.presents().presented(*input, frame, surface->generation(), *surface->present_count());
         *out_frame_id = frame;
         release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+// ABI 8 (ADR-D02 B18a): a composite frame, as sa2_frame_submit with each pane drawn into its rectangle.
+int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* input, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id) {
+    if (out_frame_id) *out_frame_id = 0;
+    return invoke(ctx, "sa2_frame_submit_panes", [&] {
+        context(ctx);
+        require(out_frame_id != nullptr, "null frame ID output");
+        sa2::validate_frame_input(input);
+        require(panes != nullptr && count >= 1 && count <= SA2_PANES_MAX, "a composite frame has 1..SA2_PANES_MAX panes");
+        auto& scene = product_scene(ctx);
+        std::optional<SlotTarget> slot;
+        std::optional<SurfaceTarget> surface;
+        if (input->target == SA2_TARGET_SURFACE) {
+            surface.emplace(ctx);
+            surface->sample_while_waiting([ctx, &scene] { product_statistics(ctx, scene); });
+        } else {
+            slot_route(ctx);
+            slot.emplace(ctx, input->target);
+        }
+        sa2::FrameTarget& target = surface ? static_cast<sa2::FrameTarget&>(*surface) : *slot;
+        require(target.width() == scene.record.width && target.height() == scene.record.height,
+            "the frame target is not at the scene's size", SA2_E_WRONG_STATE);
+        require(ctx->last_frame < UINT64_MAX - 1, "frame IDs are exhausted", SA2_E_WRONG_STATE);
+        const uint64_t frame = ctx->last_frame + 1;
+        const auto plan = scene.product.plan_panes(*input, panes, count, target.width(), target.height());
+        const bool styled = std::any_of(plan.panes.begin(), plan.panes.end(), [](const sa2::PanePlan& pane) { return pane.styled; });
+        scene.require_healthy();
+        live(ctx);
+        scene.wait_geometry(ctx->config.wait_timeout_ms);
+        scene.product_ready(ctx->producer(), target.format(), styled, true);
+        if (plan.upload) target.wait(plan.upload_wait); // the copy's staging was last read by that frame
+        auto* list = target.open();
+        try {
+            harvest(ctx, scene); // the target's previous frame completed: read its ring results before this frame reuses them
+            scene.product_frame_panes(list, *input, plan, target.view(), target.ring(), target.format());
+            target.close(frame);
+        } catch (...) { scene.poison(); throw; }
+        scene.product.commit(*input, plan, frame, target.ring());
+        if (surface && surface->present_count())
+            scene.product.presents().presented(*input, frame, surface->generation(), *surface->present_count());
+        *out_frame_id = frame;
+        release(ctx, scene);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_row* rows, uint32_t capacity, uint32_t* out_count) {
+    if (out_count) *out_count = 0;
+    return invoke(ctx, "sa2_frame_panes", [&] {
+        context(ctx);
+        require(out_count != nullptr, "null count output");
+        auto& scene = product_scene(ctx);
+        harvest(ctx, scene);
+        *out_count = scene.product.pane_rows(frame_id, rows, capacity);
         return SA2_OK;
     });
 }

@@ -60,7 +60,7 @@ These window settings are the route-B probe's (`work/experiments/c9-present-prob
     shrink as given), with the core's d4 and the chain projection's zoom 1.15. The file's field of view belongs to the
     Hopf-ring layout, which the core does not draw yet. Without `M600_D02=1` nothing is called.
   - `CoreLibrary.cs` loads the core from an absolute path, resolves the exports that `renderer/bridge`'s function
-    table names, in its order, and refuses another ABI version than 7. It also resolves `ShellCalls`, the route-B
+    table names, in its order, and refuses another ABI version than 8. It also resolves `ShellCalls`, the route-B
     calls the shell makes itself and the table does not hold: `sa2_create`, `sa2_scene_load`, the three surface
     calls, `sa2_resize`, `sa2_drain`, `sa2_scene_unload` and `sa2_detach`. The bridge crates load no library
     (CT-RPI-20), so the shell is the only place that loads the core.

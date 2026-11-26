@@ -376,12 +376,83 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
     return out;
 }
 
+// ABI 8. The frame input is planned as a one-view frame (its view, generation, set and camera are the first pane's),
+// then every pane is checked; any refusal refuses the whole frame.
+FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* panes, uint32_t count, uint32_t width, uint32_t height) const {
+    argument(panes != nullptr && count >= 1 && count <= SA2_PANES_MAX, "a composite frame has 1..SA2_PANES_MAX panes");
+    const auto& first = panes[0];
+    argument(input.view == first.view && input.view_generation == first.view_generation && input.resource_set == first.resource_set
+        && std::equal(std::begin(input.camera_matrix), std::end(input.camera_matrix), std::begin(first.camera_matrix)),
+        "the frame input's view, view generation, resource set and camera must be the first pane's");
+    for (uint32_t i = 0; i < count; ++i) {
+        const auto& pane = panes[i];
+        argument(pane.flags == 0, "a pane's flags must be 0");
+        argument(pane.style <= SA2_STYLE_SLOTS, "a pane's style is 0 or a style slot 1..SA2_STYLE_SLOTS");
+        argument(pane.width >= 1 && pane.height >= 1 && pane.x >= 0 && pane.y >= 0
+            && uint64_t(pane.x) + pane.width <= width && uint64_t(pane.y) + pane.height <= height, "a pane's rectangle must lie inside the target");
+        argument(std::all_of(std::begin(pane.camera_matrix), std::end(pane.camera_matrix), [](float v) { return std::isfinite(v); }),
+            "a pane's camera must be finite");
+        for (uint32_t j = 0; j < i; ++j) {
+            const auto& other = panes[j];
+            const bool apart = uint64_t(pane.x) + pane.width <= uint64_t(other.x) || uint64_t(other.x) + other.width <= uint64_t(pane.x)
+                || uint64_t(pane.y) + pane.height <= uint64_t(other.y) || uint64_t(other.y) + other.height <= uint64_t(pane.y);
+            argument(apart, "pane rectangles must not overlap");
+        }
+    }
+    FramePlan out = plan(input, width, height);
+    for (uint32_t i = 0; i < count; ++i) {
+        const auto& pane = panes[i];
+        if (auto view = views_.find(pane.view); view != views_.end())
+            state(pane.view_generation >= view->second, "a pane's view_generation must not decrease");
+        PanePlan made;
+        made.pane = pane;
+        made.shape = shape(pane.view);
+        made.styled = pane.style != 0 && styled(pane.style, made.view_style);
+        if (pane.resource_set) {
+            const Entry* entry = set_entry(pane.resource_set);
+            state(entry && entry->active, "a pane's resource_set is not an active set");
+            state(entry->stamp.view == pane.view && entry->stamp.view_generation == pane.view_generation
+                && entry->stamp.publication_generation == input.publication_generation,
+                "a pane's resource_set was prepared for another view, view generation or publication generation");
+            state(entry->stamp.base_revision == input.engine_revision, "a pane's resource_set was prepared at another engine revision");
+            made.set_ticket = sets_.at(pane.resource_set);
+        }
+        out.panes.push_back(made);
+    }
+    return out;
+}
+
+void Product::pane_evals(uint64_t frame, const std::vector<uint64_t>& evals) {
+    for (auto& record : frames_) {
+        if (record.id != frame) continue;
+        for (size_t i = 0; i < record.panes.size() && i < evals.size(); ++i) record.panes[i].evals = evals[i];
+        return;
+    }
+}
+
+uint32_t Product::pane_rows(uint64_t id, sa2_pane_row* rows, uint32_t capacity) const {
+    validate_rows(rows, capacity);
+    const Frame* record = frame(id);
+    state(record != nullptr && !record->panes.empty(), "the frame is not a retained composite frame");
+    state(record->produced && record->error == SA2_OK, "the composite frame has not produced");
+    const auto count = uint32_t(record->panes.size());
+    for (uint32_t i = 0; i < count && i < capacity; ++i) {
+        rows[i] = sa2_pane_row{sizeof(sa2_pane_row), i, record->panes[i].pane.view, record->panes[i].pane.view_generation, record->panes[i].evals};
+    }
+    return count;
+}
+
 void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64_t frame, uint32_t ring) {
     auto& surface = surfaces_[input.surface];
     surface.first = input.sequence;
     surface.second = std::max(surface.second, input.surface_generation);
     auto& view = views_[input.view];
     view = std::max(view, input.view_generation);
+    for (const auto& pane : plan.panes) { // ABI 8
+        auto& generation = views_[pane.pane.view];
+        generation = std::max(generation, pane.pane.view_generation);
+        if (pane.set_ticket) entries_.at(pane.set_ticket).last_frame = frame;
+    }
     if (plan.upload) {
         copies_[plan.copy] = {plan.image->revision, frame, ++copy_sequence_, plan.image->pose_count, true, plan.style_version};
         counters_.bytes_uploaded += plan.image->bytes() + (plan.style ? uint64_t(SA2_PIECES) * 4 : 0);
@@ -399,6 +470,7 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     record.ring = ring;
     record.copy = plan.copy;
     record.shape = plan.shape;
+    for (const auto& pane : plan.panes) record.panes.push_back(PaneRecord{pane.pane, pane.set_ticket, 0, pane.shape});
     frames_.push_back(record);
     if (ring < unharvested_.size()) unharvested_[ring] = frame;
     ++counters_.frames_submitted;
@@ -495,6 +567,7 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
     out.frame = id;
     out.input.x = x;
     out.input.y = y;
+    if (!record->panes.empty()) return pick_pane(*record, out);
     if (const uint32_t reason = stale(record->input, record->target_generation)) {
         out.state = SA2_PICK_STALE;
         out.stale = reason;
@@ -527,11 +600,68 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
     return out;
 }
 
+// ABI 8: a pick on a composite frame: the pane that holds the point, bound to that pane's view and generation.
+sa2_frame_input Product::pane_binding(const Frame& record, int32_t pane) {
+    auto binding = record.input;
+    if (pane < 0) return binding;
+    const auto& row = record.panes.at(size_t(pane)).pane;
+    binding.view = row.view;
+    binding.view_generation = row.view_generation;
+    binding.resource_set = row.resource_set;
+    std::copy(std::begin(row.camera_matrix), std::end(row.camera_matrix), std::begin(binding.camera_matrix));
+    return binding;
+}
+PickPlan Product::pick_pane(const Frame& record, PickPlan out) const {
+    const auto x = out.input.x, y = out.input.y;
+    for (size_t i = 0; i < record.panes.size(); ++i) {
+        const auto& pane = record.panes[i].pane;
+        if (x < uint32_t(pane.x) || y < uint32_t(pane.y) || x >= uint32_t(pane.x) + pane.width || y >= uint32_t(pane.y) + pane.height) continue;
+        out.pane = int32_t(i);
+        const auto binding = pane_binding(record, out.pane);
+        if (const uint32_t reason = stale(binding, record.target_generation)) {
+            out.state = SA2_PICK_STALE;
+            out.stale = reason;
+            return out;
+        }
+        if (!pane.resource_set) {
+            out.state = SA2_PICK_READY; // nothing was pickable in this pane
+            return out;
+        }
+        const auto mapped = sets_.find(pane.resource_set);
+        if (mapped == sets_.end() || mapped->second != record.panes[i].set_ticket) {
+            out.state = SA2_PICK_STALE;
+            out.stale = SA2_PICK_STALE_PUBLICATION;
+            return out;
+        }
+        const Copy& copy = copies_[record.copy];
+        if (!copy.valid || copy.revision != record.input.engine_revision) {
+            out.state = SA2_PICK_STALE;
+            out.stale = SA2_PICK_STALE_ENGINE;
+            return out;
+        }
+        out.pass = true;
+        std::copy(std::begin(pane.camera_matrix), std::end(pane.camera_matrix), out.input.camera.begin());
+        out.input.width = record.input.viewport_width;
+        out.input.height = record.input.viewport_height;
+        out.input.origin_x = pane.x;
+        out.input.origin_y = pane.y;
+        out.input.view_width = pane.width;
+        out.input.view_height = pane.height;
+        out.input.copy = record.copy;
+        out.input.pose_count = copy.pose_count;
+        out.input.set_ticket = record.panes[i].set_ticket;
+        out.input.shape = record.panes[i].shape;
+        return out;
+    }
+    argument(false, "the point lies in no pane of the composite frame");
+    return out;
+}
+
 void Product::pick_commit(uint64_t ticket, const PickPlan& plan, uint64_t fence) {
     const Frame* record = frame(plan.frame);
     state(record != nullptr, "frame is not retained");
     Pick pick;
-    pick.binding = record->input;
+    pick.binding = pane_binding(*record, plan.pane);
     pick.frame = plan.frame;
     pick.fence = fence;
     pick.target_generation = record->target_generation;

@@ -98,6 +98,15 @@ struct ProductGpu {
     ComPtr<ID3D12PipelineState> styled_pso, styled_surface_pso;
     std::array<Buffer, SA2_RING_SLOTS> style_cb;
     std::array<uint8_t*, SA2_RING_SLOTS> style_cb_data{};
+    // ABI 8 (ADR-D02 B18a): a composite frame's per-pane constants and style constants (ring r, pane i at r * 4 + i),
+    // its per-pane statistics queries resolved to pane_read (ring r at r * 512, pane i at + i * 128), and the pane
+    // count each ring slot's frame drew (0: a one-view frame). Built on the first composite frame.
+    static constexpr size_t PaneSlots = size_t(SA2_RING_SLOTS) * SA2_PANES_MAX;
+    std::array<Buffer, PaneSlots> pane_cb, pane_style_cb;
+    std::array<uint8_t*, PaneSlots> pane_cb_data{}, pane_style_cb_data{};
+    ComPtr<ID3D12QueryHeap> pane_statistics;
+    Buffer pane_read;
+    std::array<uint32_t, SA2_RING_SLOTS> pane_count{};
     std::array<EngineCopy, EngineCopies> copies;
     Buffer all_visible, no_instances, statics; // a frame without a resource set: every slot drawn, nothing pickable
     std::array<Buffer, SA2_RING_SLOTS> cb;
@@ -122,6 +131,10 @@ struct ProductGpu {
         for (auto& copy : copies) if (copy.data) copy.staging.resource->Unmap(0, nullptr);
         for (size_t i = 0; i < cb.size(); ++i) if (cb_data[i]) cb[i].resource->Unmap(0, nullptr);
         for (size_t i = 0; i < style_cb.size(); ++i) if (style_cb_data[i]) style_cb[i].resource->Unmap(0, nullptr);
+        for (size_t i = 0; i < PaneSlots; ++i) {
+            if (pane_cb_data[i]) pane_cb[i].resource->Unmap(0, nullptr);
+            if (pane_style_cb_data[i]) pane_style_cb[i].resource->Unmap(0, nullptr);
+        }
     }
 };
 constexpr uint64_t QueryStride = 256, StatisticsOffset = 16;
@@ -835,6 +848,23 @@ struct Scene::Impl {
         }
         return slot.Get();
     }
+    // ABI 8: the composite frame's resources, built once.
+    void panes_create() {
+        auto& p = product_gpu();
+        if (p.pane_statistics) return;
+        std::array<Buffer, ProductGpu::PaneSlots> cbs, styles;
+        for (size_t i = 0; i < cbs.size(); ++i) {
+            cbs[i] = buffer(256, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+            styles[i] = buffer(512, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        }
+        auto read = buffer(512 * SA2_RING_SLOTS, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
+        D3D12_QUERY_HEAP_DESC query{}; query.Type = D3D12_QUERY_HEAP_TYPE_PIPELINE_STATISTICS; query.Count = UINT(ProductGpu::PaneSlots);
+        ComPtr<ID3D12QueryHeap> heap;
+        hr(device, device->CreateQueryHeap(&query, IID_PPV_ARGS(&heap)), "CreateQueryHeap(pane statistics)");
+        name(heap.Get(), L"SA2 pane pipeline statistics");
+        for (size_t i = 0; i < cbs.size(); ++i) { p.pane_cb_data[i] = map(cbs[i]); p.pane_style_cb_data[i] = map(styles[i]); }
+        p.pane_cb = std::move(cbs); p.pane_style_cb = std::move(styles); p.pane_read = std::move(read); p.pane_statistics = std::move(heap);
+    }
     std::pair<Buffer*, Buffer*> product_set(uint64_t set_ticket) {
         auto& p = product_gpu();
         if (!set_ticket) return {&p.all_visible, &p.no_instances};
@@ -848,7 +878,8 @@ struct Scene::Impl {
     // ABI 7: with style and style_constants, the styled root signature and its two parameters.
     void product_draw(ID3D12GraphicsCommandList* list, ID3D12PipelineState* pipeline, Buffer& constants_buffer, ProductGpu::EngineCopy& copy,
                       uint64_t set_ticket, D3D12_CPU_DESCRIPTOR_HANDLE rtv, UINT width, UINT height, const float* colour, const D3D12_RECT* pixel,
-                      const Buffer* style = nullptr, const Buffer* style_constants = nullptr) {
+                      const Buffer* style = nullptr, const Buffer* style_constants = nullptr, const D3D12_RECT* area = nullptr,
+                      bool clear = true) {
         auto& p = product_gpu();
         const auto [visible, instances] = product_set(set_ticket);
         list->SetPipelineState(pipeline); list->SetGraphicsRootSignature(style ? p.styled_root.Get() : p.root.Get());
@@ -862,13 +893,18 @@ struct Scene::Impl {
         // t7..t16: slot -> piece, pose index, rows, lattice, destination, overlay points, straddles, offsets, visibility, instance IDs.
         const Buffer* additional[] = {&extra[0], &copy.pose[0], &copy.pose[1], &copy.pose[2], &extra[1], &extra[2], &extra[3], &extra[4], visible, instances};
         for (UINT i = 0; i < 10; ++i) list->SetGraphicsRootShaderResourceView(i + 10, additional[i]->resource->GetGPUVirtualAddress());
-        D3D12_VIEWPORT viewport{0, 0, float(width), float(height), 0, 1};
-        const D3D12_RECT rect = pixel ? *pixel : D3D12_RECT{0, 0, LONG(width), LONG(height)};
+        // ABI 8: a pane's area sets the viewport and the scissor; a composite frame clears only before its first pane.
+        const D3D12_VIEWPORT viewport = area
+            ? D3D12_VIEWPORT{float(area->left), float(area->top), float(area->right - area->left), float(area->bottom - area->top), 0, 1}
+            : D3D12_VIEWPORT{0, 0, float(width), float(height), 0, 1};
+        const D3D12_RECT rect = pixel ? *pixel : area ? *area : D3D12_RECT{0, 0, LONG(width), LONG(height)};
         list->RSSetViewports(1, &viewport); list->RSSetScissorRects(1, &rect);
         const auto dsv = dsv_heap->GetCPUDescriptorHandleForHeapStart();
         list->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
-        list->ClearRenderTargetView(rtv, colour, 0, nullptr);
-        list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
+        if (clear) {
+            list->ClearRenderTargetView(rtv, colour, 0, nullptr);
+            list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
+        }
         list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); list->DrawInstanced(sb::Vertices, sb::Cells, 0, 0);
     }
     void make_id_target(uint32_t width, uint32_t height) {
@@ -1281,11 +1317,12 @@ Json Scene::lattice_error(const std::string& error) const {
 }
 
 // ABI 4.
-void Scene::product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format, bool styled) {
+void Scene::product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format, bool styled, bool panes) {
     if (!gpu->product) gpu->product = gpu->product_create(queue);
     if (format == DXGI_FORMAT_B8G8R8A8_UNORM && !gpu->product->surface_pso)
         gpu->product->surface_pso = gpu->product_surface_pipeline(gpu->product->root.Get());
     if (styled) gpu->styled_pipeline(format); // ABI 7: only a styled frame builds the styled pass
+    if (panes) gpu->panes_create(); // ABI 8: only a composite frame builds its resources
 }
 uint64_t Scene::product_prepare(uint64_t ticket, const PreparedData& data, ID3D12CommandQueue* queue, const std::function<void()>& submitting) {
     auto& g = *gpu; auto& p = g.product_gpu();
@@ -1340,6 +1377,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     g.initialize(list); g.product_initialize(list);
     auto& copy = p.copies[plan.copy];
     if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style);
+    p.pane_count[ring] = 0; // ABI 8: a one-view frame
     std::array<float, 16> camera; std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), camera.begin());
     const auto c = g.product_constants(camera, input.viewport_width, input.viewport_height, plan.pose_count, plan.shape);
     std::memcpy(p.cb_data[ring], &c, sizeof(c));
@@ -1372,7 +1410,70 @@ std::pair<uint64_t, uint64_t> Scene::product_results(uint32_t ring) {
     D3D12_RANGE none{0, 0}; p.query_read.resource->Unmap(0, &none);
     const uint64_t elapsed = ticks[1] > ticks[0] ? ticks[1] - ticks[0] : 0;
     const auto ns = uint64_t(double(elapsed) * 1e9 / double(p.frequency));
+    if (p.pane_count[ring]) { // ABI 8: a composite frame's evaluations are its panes' sum
+        uint64_t sum = 0;
+        for (const auto evals : product_pane_evals(ring)) sum += evals;
+        return {ns, sum};
+    }
     return {ns, statistics.VSInvocations};
+}
+// ABI 8: each pane's vertex evaluations of the composite frame that ring slot drew last (empty for a one-view frame).
+std::vector<uint64_t> Scene::product_pane_evals(uint32_t ring) {
+    auto& g = *gpu; auto& p = g.product_gpu();
+    scene_require(ring < SA2_RING_SLOTS, "ring slot out of range", SA2_E_INVALID_ARGUMENT);
+    std::vector<uint64_t> out;
+    if (!p.pane_count[ring]) return out;
+    const SIZE_T begin = SIZE_T(ring) * 512;
+    D3D12_RANGE range{begin, begin + 512};
+    void* data = nullptr;
+    hr(g.device, p.pane_read.resource->Map(0, &range, &data), "Map(pane queries)");
+    for (uint32_t i = 0; i < p.pane_count[ring]; ++i) {
+        D3D12_QUERY_DATA_PIPELINE_STATISTICS statistics{};
+        std::memcpy(&statistics, static_cast<const uint8_t*>(data) + begin + i * 128, sizeof(statistics));
+        out.push_back(statistics.VSInvocations);
+    }
+    D3D12_RANGE none{0, 0}; p.pane_read.resource->Unmap(0, &none);
+    return out;
+}
+// ABI 8: a composite frame: one clear, then each pane with its own constants, set, style, viewport and scissor, each
+// inside its own statistics query; the frame's timestamps cover all of them.
+void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame_input& input, const FramePlan& plan,
+                                D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format) {
+    auto& g = *gpu; auto& p = g.product_gpu();
+    scene_require(plan.image != nullptr && plan.copy < EngineCopies && ring < SA2_RING_SLOTS && !plan.panes.empty()
+        && plan.panes.size() <= SA2_PANES_MAX && p.pane_statistics, "composite frame without a plan", SA2_E_WRONG_STATE);
+    const bool surface = format == DXGI_FORMAT_B8G8R8A8_UNORM;
+    scene_require(surface || format == DXGI_FORMAT_R8G8B8A8_UNORM, "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
+    g.initialize(list); g.product_initialize(list);
+    auto& copy = p.copies[plan.copy];
+    if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style);
+    list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
+    const float colour[4] = {0.13f, 0.145f, 0.16f, 1};
+    for (size_t i = 0; i < plan.panes.size(); ++i) {
+        const auto& pane = plan.panes[i];
+        const size_t slot = size_t(ring) * SA2_PANES_MAX + i;
+        std::array<float, 16> camera; std::copy(std::begin(pane.pane.camera_matrix), std::end(pane.pane.camera_matrix), camera.begin());
+        const auto c = g.product_constants(camera, pane.pane.width, pane.pane.height, plan.pose_count, pane.shape);
+        std::memcpy(p.pane_cb_data[slot], &c, sizeof(c));
+        ID3D12PipelineState* pso = surface ? p.surface_pso.Get() : p.draw_pso.Get();
+        const Buffer* style = nullptr;
+        if (pane.styled) {
+            pso = g.styled_pipeline(format);
+            std::memcpy(p.pane_style_cb_data[slot], &pane.view_style, sizeof(pane.view_style));
+            style = plan.style ? &copy.style : &p.no_instances;
+        }
+        scene_require(pso != nullptr, "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
+        const D3D12_RECT area{LONG(pane.pane.x), LONG(pane.pane.y), LONG(pane.pane.x + int64_t(pane.pane.width)), LONG(pane.pane.y + int64_t(pane.pane.height))};
+        list->BeginQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
+        g.product_draw(list, pso, p.pane_cb[slot], copy, pane.set_ticket, target, input.viewport_width, input.viewport_height, colour, nullptr,
+                       style, style ? &p.pane_style_cb[slot] : nullptr, &area, i == 0);
+        list->EndQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
+        list->ResolveQueryData(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot), 1, p.pane_read.resource.Get(),
+                               uint64_t(ring) * 512 + i * 128);
+    }
+    list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring + 1);
+    list->ResolveQueryData(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring, 2, p.query_read.resource.Get(), ring * QueryStride);
+    p.pane_count[ring] = uint32_t(plan.panes.size());
 }
 uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12CommandQueue* queue, const std::function<void()>& submitting) {
     auto& g = *gpu; auto& p = g.product_gpu();
@@ -1386,7 +1487,9 @@ uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12Comm
     std::tie(pick.allocator, pick.list) = g.product_list(L"SA2 ID pass command list");
     pick.constants = g.buffer(256, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
     pick.read = g.buffer(256, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
-    const auto c = g.product_constants(input.camera, input.width, input.height, input.pose_count, input.shape);
+    const bool pane = input.view_width != 0; // ABI 8: a composite frame's pane draws at its own size and origin
+    const auto c = g.product_constants(input.camera, pane ? input.view_width : input.width, pane ? input.view_height : input.height,
+                                       input.pose_count, input.shape);
     std::memcpy(g.map(pick.constants), &c, sizeof(c)); pick.constants.resource->Unmap(0, nullptr);
     auto& stored = p.picks[ticket] = std::move(pick);
     bool submitted = false;
@@ -1395,8 +1498,11 @@ uint64_t Scene::product_pick(uint64_t ticket, const PassInput& input, ID3D12Comm
         g.initialize(list); g.product_initialize(list);
         const float zero[4] = {0, 0, 0, 0};
         const D3D12_RECT pixel{LONG(input.x), LONG(input.y), LONG(input.x + 1), LONG(input.y + 1)};
+        const D3D12_RECT area{LONG(input.origin_x), LONG(input.origin_y), LONG(input.origin_x + int64_t(input.view_width)),
+                              LONG(input.origin_y + int64_t(input.view_height))};
         g.product_draw(list, p.id_pso.Get(), stored.constants, p.copies[input.copy], input.set_ticket,
-                       p.id_heap->GetCPUDescriptorHandleForHeapStart(), input.width, input.height, zero, &pixel);
+                       p.id_heap->GetCPUDescriptorHandleForHeapStart(), input.width, input.height, zero, &pixel, nullptr, nullptr,
+                       pane ? &area : nullptr);
         g.texture_barrier(list, p.id_target.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
         D3D12_TEXTURE_COPY_LOCATION destination{}; destination.pResource = stored.read.resource.Get();
         destination.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;

@@ -2,7 +2,8 @@
 
 --stages DXC_DIR also runs C9 U5's user-stage check on WARP only (never a hardware adapter), with dxcompiler.dll and
 dxil.dll copied from DXC_DIR beside the built DLL. --poses also runs the product pose check on WARP only, --shape
-(ABI 6) the view shape check on WARP only, and --style (ABI 7) the piece style check on WARP only.
+(ABI 6) the view shape check on WARP only, --style (ABI 7) the piece style check on WARP only, and --panes (ABI 8) the
+composite frame check on WARP only.
 
 Derived from work/experiments/renderer-sa2/native/check_native.py (see PROVENANCE.md).
 """
@@ -48,6 +49,8 @@ CPU_CHECKS = {
     # ABI 7: the piece style and the style slots: their checks, when a frame draws styled, the upload key, and an
     # adoption dropping the style.
     "piece style",
+    # ABI 8: the composite frame: its checks, its pane rows and a pick that resolves its pane.
+    "pane arguments",
 }
 DXC_LIBRARIES = ("dxcompiler.dll", "dxil.dll")
 BUILD_TEXT = {".make", ".cmake", ".d", ".rsp", ".ninja"}
@@ -75,7 +78,7 @@ def run_bounded(arguments, timeout, **kwargs):
 
 
 def check_result(executable, build, mode, vectors, stages=False, poses=False, warp_mode=None):
-    """warp_mode names an alone WARP check by its self-test flag (shape: ABI 6's --shape; style: ABI 7's --style)."""
+    """warp_mode names an alone WARP check by its self-test flag (shape: ABI 6's --shape; style: ABI 7's --style; panes: ABI 8's --panes)."""
     poses = poses or warp_mode == "poses"
     suffix = "-stages" if stages else "-poses" if poses else f"-{warp_mode}" if warp_mode else ""
     output = build / f"{mode}{suffix}.json"
@@ -145,6 +148,8 @@ def main():
                         help="also run ABI 6's WARP check of a view's shape (sa2_view_shape)")
     parser.add_argument("--style", action="store_true",
                         help="also run ABI 7's WARP check of the piece style (sa2_style_set, sa2_view_style_set)")
+    parser.add_argument("--panes", action="store_true",
+                        help="also run ABI 8's WARP check of the composite frame (sa2_frame_submit_panes)")
     options = parser.parse_args()
     source = Path(__file__).resolve().parent
     root = source.parent.parent
@@ -187,9 +192,12 @@ def main():
             check_result(executable, build, "warp", vectors, warp_mode="shape")
         if options.style:
             check_result(executable, build, "warp", vectors, warp_mode="style")
+        if options.panes:
+            check_result(executable, build, "warp", vectors, warp_mode="panes")
         summary = " (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"
         warp = " and ".join(name for name, run in (("stage", options.stages), ("pose", options.poses),
-                                                   ("shape", options.shape), ("style", options.style)) if run)
+                                                   ("shape", options.shape), ("style", options.style),
+                                                   ("panes", options.panes)) if run)
         if warp:
             summary = f" (CPU, WARP and hardware; WARP {warp} checks)" if options.gpu else f" (CPU and the WARP {warp} checks; no hardware run)"
         print("check_core: ok" + summary)

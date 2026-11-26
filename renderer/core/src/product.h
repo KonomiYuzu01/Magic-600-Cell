@@ -24,6 +24,8 @@ static_assert(sizeof(sa2_pick_row) == 112);
 static_assert(sizeof(sa2_counter_values) == 64);
 static_assert(sizeof(sa2_view_shape) == 24);
 static_assert(sizeof(sa2_view_style) == 316);
+static_assert(sizeof(sa2_pane) == 112);
+static_assert(sizeof(sa2_pane_row) == 32);
 
 namespace sa2 {
 using Digest = std::array<uint8_t, 32>;
@@ -126,6 +128,14 @@ template<class Row> void validate_rows(const Row* rows, uint32_t capacity) {
         scene_require(rows[i].struct_size == sizeof(Row), "a row's struct_size is not sizeof the row", SA2_E_INVALID_ARGUMENT);
 }
 
+// ABI 8: one pane of a composite frame as planned: its row, resource set ticket, shape and style.
+struct PanePlan {
+    sa2_pane pane{};
+    uint64_t set_ticket = 0;
+    ViewShape shape;
+    bool styled = false;
+    ViewStyle view_style;
+};
 // What a frame draws: the engine ring copy (uploaded first when upload is
 // set, after a CPU wait for upload_wait, the frame that last read the copy's
 // staging), the pose path and the resource set (0: every slot drawn, no
@@ -144,6 +154,7 @@ struct FramePlan {
     uint64_t style_version = 0;
     bool styled = false;
     ViewStyle view_style;
+    std::vector<PanePlan> panes; // ABI 8: a composite frame's panes; empty for a one-view frame
 };
 // An ID pass: the frame's camera, viewport, engine copy, resource set and (ABI 6) shape.
 struct PassInput {
@@ -151,6 +162,9 @@ struct PassInput {
     uint32_t width = 0, height = 0, x = 0, y = 0, copy = 0, pose_count = 0;
     uint64_t set_ticket = 0;
     ViewShape shape;
+    // ABI 8: a composite frame's pane: the viewport's origin and size in the scene-size ID target (0: the whole target).
+    int32_t origin_x = 0, origin_y = 0;
+    uint32_t view_width = 0, view_height = 0;
 };
 struct PickPlan {
     uint64_t frame = 0;
@@ -158,6 +172,7 @@ struct PickPlan {
     uint32_t stale = 0;
     bool pass = false;
     PassInput input;
+    int32_t pane = -1; // ABI 8: the composite frame's pane that holds the point
 };
 struct Counters {
     uint64_t evals_last = 0, evals_total = 0, bytes_uploaded = 0, frames_submitted = 0, frames_reported = 0, id_passes = 0, reports_dropped = 0;
@@ -283,6 +298,11 @@ public:
     std::vector<uint64_t> releasable(uint64_t frames_completed, uint64_t product_completed);
 
     FramePlan plan(const sa2_frame_input& input, uint32_t width, uint32_t height) const;
+    // ABI 8: a composite frame's plan (sa2_frame_submit_panes): the one-view plan of the frame input, then each pane's
+    // checks, set, shape and style. commit records the panes; pane_evals and pane_rows answer sa2_frame_panes.
+    FramePlan plan_panes(const sa2_frame_input& input, const sa2_pane* panes, uint32_t count, uint32_t width, uint32_t height) const;
+    void pane_evals(uint64_t frame, const std::vector<uint64_t>& evals);
+    uint32_t pane_rows(uint64_t frame, sa2_pane_row* rows, uint32_t capacity) const;
     void commit(const sa2_frame_input& input, const FramePlan& plan, uint64_t frame, uint32_t ring);
     uint64_t unharvested(uint32_t ring) const { return ring < unharvested_.size() ? unharvested_[ring] : 0; }
     void produced(uint64_t frame, uint64_t gpu_ns, uint64_t evals, int32_t error = SA2_OK);
@@ -314,8 +334,10 @@ private:
         bool ended() const { return state == SA2_TICKET_CANCELLED || state == SA2_TICKET_FAILED; }
     };
     struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; uint64_t style = 0; };
+    struct PaneRecord { sa2_pane pane{}; uint64_t set_ticket = 0, evals = 0; ViewShape shape; };
     struct Frame {
         sa2_frame_input input{};
+        std::vector<PaneRecord> panes; // ABI 8: a composite frame's panes
         uint64_t id = 0, target_generation = 0, set_ticket = 0;
         uint32_t ring = 0, copy = 0;
         ViewShape shape; // ABI 6: the shape the frame drew with, for its picks
@@ -333,6 +355,8 @@ private:
     Entry* set_entry(uint64_t set);
     const Entry* set_entry(uint64_t set) const;
     const Frame* frame(uint64_t id) const;
+    static sa2_frame_input pane_binding(const Frame& record, int32_t pane); // ABI 8
+    PickPlan pick_pane(const Frame& record, PickPlan out) const; // ABI 8
     uint32_t stale(const sa2_frame_input& binding, uint64_t target_generation) const;
     void require_live() const;
     void trim();

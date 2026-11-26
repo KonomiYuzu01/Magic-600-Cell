@@ -1,12 +1,12 @@
-//! ABI 7's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
+//! ABI 8's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
 //! `renderer/core/include/sa2_interop.h`, x64 layout. `tests/abi_layout.rs` checks every name, offset, size and
 //! constant against the header.
 
 use std::mem::size_of;
 
 /// `SA2_ABI_VERSION`. ABI 6 adds a view's shape ([`Sa2ViewShape`]); ABI 7 the piece style and the style slots
-/// ([`Sa2ViewStyle`]).
-pub const ABI_VERSION: u32 = 7;
+/// ([`Sa2ViewStyle`]); ABI 8 the composite frame (`sa2_frame_submit_panes`; the bridge binds it in ADR-D02 B18b).
+pub const ABI_VERSION: u32 = 8;
 /// `SA2_SLOTS`: the labelled sticker slots of 600-cell-Full.
 pub const SLOTS: usize = 259_800;
 /// `SA2_PIECES`: the length of a pose index.

@@ -37,7 +37,7 @@ pub const SYMBOLS: [&str; 20] = [
     "sa2_view_style_set",
 ];
 
-/// The ABI 7 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
+/// The ABI 8 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
 /// language can fill it.
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -81,7 +81,7 @@ pub const JSON_LIMIT: usize = 16 << 20;
 
 impl DllCore {
     /// Binds an attached context. Fails with `SA2_E_INVALID_ARGUMENT` for a null context and `SA2_E_UNSUPPORTED`
-    /// when the library is not ABI 7.
+    /// when the library is not ABI 8.
     ///
     /// # Safety
     ///

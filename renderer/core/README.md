@@ -1,4 +1,4 @@
-# Renderer core (S-A2, ABI 7)
+# Renderer core (S-A2, ABI 8)
 
 `renderer/core/` is the product copy of the selected S-A2 renderer core. It is a native Direct3D 12 producer DLL, `sa2_interop.dll`, that a Godot 4.7.2 .NET host loads. It draws into textures that Godot shares with it, on Godot's device and queue. W-J's per-piece pose path is added as ABI 3, so W-J item 5 (S4, I_a, I_b) and the W3 re-acceptance can run on the S-A2 host with unchanged bars. ABI 4 adds the product API that the Rust display host calls, one C call per RM.14 operation. ABI 5 adds route B: the core's own device presenting in a DirectComposition layer. Route B is accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks. `PROVENANCE.md` lists every file's source under `work/experiments/` and how it changed. The build compiles nothing from there.
 
@@ -135,6 +135,20 @@ SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_vi
 - A frame draws styled only when its slot changes something (a drawn non-zero piece byte, a dim that applies, a matrix other than the identity); otherwise it draws through the unchanged product pipeline. The styled pass (`shaders/styled.hlsl`) reuses `product.hlsl`'s vertex stage and `draw.hlsl`'s colour, and runs under its own root signature (the product's twenty parameters, then t17 and b1). Its DXIL is embedded in the DLL (`embed_dxil.cmake`), so the build identity's eight shader files and the acceptance harness's copied set are unchanged. The piece style is uploaded with the engine ring copy, whose key includes the style's version.
 - `python renderer/core/check_core.py --style` runs `sa2_selftest.exe --warp --style --debug` on WARP only: a slot that changes nothing and an empty mask draw byte-identically to no style; a fill tint and an outline on a quarter of the pieces change only pixels those pieces cover; a style for another or a replaced revision is refused; a focus dim and a colour matrix change the frame without a piece style; clearing the slot restores the unstyled frame.
 
+## ABI 8: the composite frame (ADR-D02 B18a, a candidate behind --d02)
+
+ABI 8 draws up to four panes of one engine revision into one target as one frame, so Global and Local are drawn at once with one present and one `presented` row. Every ABI 7 call, struct and behaviour is unchanged.
+
+```c
+#define SA2_PANES_MAX 4u
+SA2_API int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* frame, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id); /* sa2_pane: 112 bytes */
+SA2_API int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_row* rows, uint32_t capacity, uint32_t* out_count); /* sa2_pane_row: 32 bytes */
+```
+
+- One clear of the whole target, one draw per pane with viewport and scissor at its rectangle, each with its own constants (its camera, its view's shape), resource set and style slot, then one present and one frame ID. The frame input names the first pane. Rectangles lie inside the target and do not overlap; 0 or more than four panes, a pane's set prepared at another engine revision, and the other checks refuse the whole frame.
+- Each pane draws inside its own pipeline-statistics query; `sa2_frame_panes` answers each pane's vertex evaluations and the report's `view_vertex_evals` is their sum. A pick on a composite frame draws the ID pass with the pane that holds the point (its camera, set, shape and viewport), and its reply names that pane's view.
+- `python renderer/core/check_core.py --panes` runs `sa2_selftest.exe --warp --panes --debug` on WARP only: one pane covering the target is byte-identical to `sa2_frame_submit`; each of two 300 x 300 panes matches its one-view frame drawn at 300 x 300 (at most 1% of covered pixels differ by more than 2); pixels outside every pane hold the clear colour; overlap, a fifth pane and a mixed revision are refused; a pick in each pane names its view and the one-view pick's instance; the composite frame's vertex evaluations equal the two one-view frames' sum.
+
 ## Build and CPU check
 
 These need Windows, MSVC x64, the Windows SDK's `dxc` and the pinned `renderer-spike` CMake and Ninja. A worktree without `tools/.venv/renderer-spike` can set `M600_RENDERER_SPIKE_SCRIPTS` to another checkout's `Scripts` folder.
@@ -149,7 +163,7 @@ The default build directory is `work\build\renderer-core`. Build only under the 
 python renderer/core/check_core.py
 ```
 
-This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose checks must all pass (39 with ABI 6's view shape and ABI 7's piece style) (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
+This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose checks must all pass (40 with ABI 6's view shape, ABI 7's piece style and ABI 8's pane arguments) (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
 
 `tests/test_renderer_core.py` checks the provenance digests, the file list, the CMake sources and the ABI pins. It needs only the Python standard library and runs on Linux.
 
@@ -179,4 +193,4 @@ None of these has been run for this copy. Each starts a D3D12 device:
 - The ABI 4 GPU paths: the engine and preparation uploads, a product frame with its timestamp and pipeline-statistics queries, the ID pass and its readback, `sa2_resize`, and device loss during product work. They compile, but no self-test mode exercises them yet.
 - The ABI 5 route B paths: `sa2_create`, the surface calls in a real window, surface frames and their presentation, `sa2_presented` and a traced run's `presented.jsonl` against real frame statistics, `sa2_resize` of the swap chain, and `sa2_recover` after `sa2_remove_device`. They compile, but no self-test mode exercises them; route B's three owner-machine checks are still open.
 
-The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 7 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 7 and uses only ABI 1 to 3 calls.
+The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 8 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 8 and uses only ABI 1 to 3 calls.

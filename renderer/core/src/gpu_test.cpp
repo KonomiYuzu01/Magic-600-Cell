@@ -13,7 +13,9 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <map>
 #include <sstream>
+#include <thread>
 #include <utility>
 
 namespace sa2test {
@@ -931,8 +933,34 @@ struct PoseFrames {
         uint64_t id = 0;
         api(ctx, sa2_frame_submit(ctx, &input, &id));
         expect(id == expected, "a pose-check frame did not get the next frame ID");
+        return read(id, slot);
+    }
+    // ABI 8: a composite frame of the panes at the engine revision; the frame input names the first pane.
+    std::vector<uint32_t> draw_panes(uint64_t revision, const std::vector<sa2_pane>& panes) {
+        auto* ctx = harness.ctx;
+        const uint64_t expected = ++frame;
+        const auto slot = uint32_t(expected % SA2_RING_SLOTS);
+        sa2_frame_input input{};
+        input.struct_size = sizeof(input);
+        input.target = slot;
+        input.device_epoch = 1;
+        input.surface = 1; input.surface_generation = 1; input.sequence = ++sequence;
+        input.engine_revision = revision;
+        input.view = panes[0].view; input.view_generation = panes[0].view_generation; input.publication_generation = 1;
+        input.camera = sequence;
+        input.viewport_width = harness.width; input.viewport_height = harness.height;
+        input.visibility = 1; input.interaction = 1; input.resource_set = panes[0].resource_set;
+        std::copy(std::begin(panes[0].camera_matrix), std::end(panes[0].camera_matrix), std::begin(input.camera_matrix));
+        api(ctx, sa2_signal_godot_free(ctx, expected - 1));
+        uint64_t id = 0;
+        api(ctx, sa2_frame_submit_panes(ctx, &input, panes.data(), uint32_t(panes.size()), &id));
+        expect(id == expected, "a composite frame did not get the next frame ID");
+        return read(id, slot);
+    }
+    std::vector<uint32_t> read(uint64_t id, uint32_t slot) {
+        auto* ctx = harness.ctx;
         api(ctx, sa2_godot_wait_ready(ctx, id));
-        harness.consume(id, 0, false);
+        harness.consume(uint32_t(id), 0, false);
         std::vector<uint32_t> pixels(size_t(harness.width) * harness.height);
         void* bytes = nullptr;
         const D3D12_RANGE read_range{static_cast<SIZE_T>(harness.footprint.Offset), static_cast<SIZE_T>(harness.readback_bytes)};
@@ -1217,6 +1245,206 @@ void product_style(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ABI 8 (ADR-D02 B18a): --warp --panes. Two one-view frames at 300 x 300 (harness A), then composite frames of the
+// same two views at 640 x 360 (harness B): a single pane covering the target draws byte-identically to
+// sa2_frame_submit; each of two panes matches its one-view frame (at most 1% of covered pixels differ by more than 2
+// in a channel); pixels outside every pane hold the clear colour; overlap, a fifth pane and a mixed revision are
+// refused; a pick in each pane names its view and the instance the one-view pick returns; the composite frame's
+// vertex evaluations are the sum of the two one-view frames'.
+namespace panes_check {
+constexpr uint32_t Side = 300;
+uint64_t pickable_set(Harness& harness, uint64_t view, uint64_t revision) {
+    auto* ctx = harness.ctx;
+    const std::vector<uint8_t> visible(SA2_SLOTS, 1), interaction(SA2_SLOTS, 1);
+    std::vector<uint32_t> instances(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) instances[slot] = slot + 1;
+    sa2_preparation preparation{};
+    preparation.struct_size = sizeof(preparation);
+    preparation.command = view; preparation.view = view;
+    preparation.view_generation = 1; preparation.publication_generation = 1;
+    preparation.device_epoch = 1; preparation.base_revision = revision;
+    preparation.visibility = visible.data(); preparation.interaction = interaction.data(); preparation.instances = instances.data();
+    uint64_t ticket = 0;
+    api(ctx, sa2_prepare(ctx, &preparation, &ticket));
+    const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(harness.wait);
+    for (;;) {
+        sa2_poll_row row{sizeof(sa2_poll_row)};
+        api(ctx, sa2_poll(ctx, ticket, &row));
+        if (row.state == SA2_TICKET_READY) {
+            const uint8_t digest[32]{};
+            api(ctx, sa2_activate(ctx, row.resource_set, digest));
+            return row.resource_set;
+        }
+        expect(row.state == SA2_TICKET_PENDING, "a pane-check preparation was cancelled or failed");
+        expect(std::chrono::steady_clock::now() < until, "a pane-check preparation timed out");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+sa2_pick_row pick(Harness& harness, uint64_t frame, uint32_t x, uint32_t y) {
+    auto* ctx = harness.ctx;
+    uint64_t ticket = 0;
+    api(ctx, sa2_pick_request(ctx, frame, x, y, &ticket));
+    const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(harness.wait);
+    for (;;) {
+        sa2_pick_row row{};
+        row.struct_size = sizeof(row);
+        api(ctx, sa2_pick_poll(ctx, ticket, &row));
+        if (row.state != SA2_PICK_PENDING) return row;
+        expect(std::chrono::steady_clock::now() < until, "a pane-check pick timed out");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+std::map<uint64_t, uint64_t> evals(Harness& harness) {
+    std::map<uint64_t, uint64_t> out;
+    sa2_frame_report rows[16]{};
+    for (auto& row : rows) row.struct_size = sizeof(row);
+    uint32_t count = 0;
+    api(harness.ctx, sa2_frame_reports(harness.ctx, rows, 16, &count));
+    for (uint32_t i = 0; i < count; ++i) out[rows[i].frame_id] = rows[i].view_vertex_evals;
+    return out;
+}
+void load(Harness& harness, uint32_t width, uint32_t height) {
+    harness.make_ring(width, height);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(harness.ctx, sa2_engine_adopt(harness.ctx, &image, &adopted));
+}
+// The covered pixel of a one-view frame nearest its centre.
+std::pair<uint32_t, uint32_t> covered_point(const std::vector<uint32_t>& image) {
+    std::pair<uint32_t, uint32_t> best{Side / 2, Side / 2};
+    uint64_t nearest = UINT64_MAX;
+    for (uint32_t y = 0; y < Side; ++y)
+        for (uint32_t x = 0; x < Side; ++x) {
+            if (image[size_t(y) * Side + x] == image[0]) continue;
+            const int64_t dx = int64_t(x) - Side / 2, dy = int64_t(y) - Side / 2;
+            if (uint64_t(dx * dx + dy * dy) < nearest) { nearest = uint64_t(dx * dx + dy * dy); best = {x, y}; }
+        }
+    return best;
+}
+sa2_pane make(uint64_t view, uint64_t set, int32_t x, int32_t y, uint32_t w, uint32_t h, const Rows& camera) {
+    sa2_pane pane{};
+    pane.view = view; pane.view_generation = 1; pane.resource_set = set;
+    pane.x = x; pane.y = y; pane.width = w; pane.height = h;
+    for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) pane.camera_matrix[c * 4 + r] = float(camera[r * 4 + c]);
+    return pane;
+}
+}
+
+void product_panes(const Options& options) {
+    using namespace panes_check;
+    const Rows Q1 = double_rotation(0, 3, 0.35, 1, 2, 0.2), Q2 = double_rotation(0, 2, 0.9, 1, 3, 0.4);
+    // Harness A: the two views as one-view frames at the pane size, their picks and their evaluations.
+    std::vector<uint32_t> a1, a2;
+    sa2_pick_row a1_pick{}, a2_pick{};
+    std::pair<uint32_t, uint32_t> p1, p2;
+    uint64_t a1_evals = 0, a2_evals = 0;
+    {
+        Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+        load(harness, Side, Side);
+        const auto set1 = pickable_set(harness, 1, 1), set2 = pickable_set(harness, 2, 1);
+        PoseFrames frames{harness};
+        a1 = frames.draw(1, 1, set1, Q1);
+        const auto f1 = frames.frame;
+        a2 = frames.draw(1, 2, set2, Q2);
+        const auto f2 = frames.frame;
+        p1 = covered_point(a1); p2 = covered_point(a2);
+        a1_pick = pick(harness, f1, p1.first, p1.second);
+        a2_pick = pick(harness, f2, p2.first, p2.second);
+        const auto reported = evals(harness);
+        expect(reported.count(f1) && reported.count(f2), "the one-view frames were not reported");
+        a1_evals = reported.at(f1); a2_evals = reported.at(f2);
+        api(harness.ctx, sa2_drain(harness.ctx, harness.wait));
+        api(harness.ctx, sa2_scene_unload(harness.ctx));
+        harness.finish(options.debug);
+    }
+    expect(a1_pick.state == SA2_PICK_READY && a1_pick.instance != 0 && a2_pick.state == SA2_PICK_READY && a2_pick.instance != 0,
+        "a one-view pick on a covered pixel found no instance");
+    // Harness B: composite frames at 640 x 360.
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    load(harness, 640, 360);
+    auto* ctx = harness.ctx;
+    const auto set1 = pickable_set(harness, 1, 1), set2 = pickable_set(harness, 2, 1);
+    PoseFrames frames{harness};
+    // One pane covering the target draws byte-identically to sa2_frame_submit.
+    const auto single = frames.draw(1, 1, set1, Q1);
+    const auto whole = frames.draw_panes(1, {make(1, set1, 0, 0, 640, 360, Q1)});
+    expect(whole == single, "one pane covering the target does not draw byte-identically to sa2_frame_submit");
+    // Two panes, each matching its one-view frame; outside them the clear colour.
+    const auto two = frames.draw_panes(1, {make(1, set1, 10, 30, Side, Side, Q1), make(2, set2, 330, 30, Side, Side, Q2)});
+    const auto composite = frames.frame;
+    const auto background = a1[0];
+    uint64_t covered = 0, differing = 0, outside = 0;
+    const auto compare = [&](const std::vector<uint32_t>& one, uint32_t ox, uint32_t oy) {
+        for (uint32_t y = 0; y < Side; ++y)
+            for (uint32_t x = 0; x < Side; ++x) {
+                const auto a = one[size_t(y) * Side + x], b = two[size_t(y + oy) * 640 + x + ox];
+                if (a == background && b == background) continue;
+                ++covered;
+                for (int shift = 0; shift < 32; shift += 8)
+                    if (std::abs(int((a >> shift) & 255) - int((b >> shift) & 255)) > 2) { ++differing; break; }
+            }
+    };
+    compare(a1, 10, 30);
+    compare(a2, 330, 30);
+    for (uint32_t y = 0; y < 360; ++y)
+        for (uint32_t x = 0; x < 640; ++x) {
+            const bool in = y >= 30 && y < 30 + Side && ((x >= 10 && x < 10 + Side) || (x >= 330 && x < 330 + Side));
+            if (!in && two[size_t(y) * 640 + x] != background) ++outside;
+        }
+    std::cout << "panes: covered " << covered << ", differing from the one-view frames " << differing << ", outside the panes "
+              << outside << std::endl;
+    expect(covered >= uint64_t(Side) * Side / 20, "the panes cover less than 5% of their area");
+    expect(differing * 100 <= covered, "a pane differs from its one-view frame (over 1% of covered pixels)");
+    expect(outside == 0, "a pixel outside every pane is not the clear colour");
+    // Refusals: overlap, a fifth pane, a mixed revision.
+    const auto refused = [&](const std::vector<sa2_pane>& panes, int32_t status) {
+        sa2_frame_input input{};
+        input.struct_size = sizeof(input);
+        input.target = uint32_t((frames.frame + 1) % SA2_RING_SLOTS);
+        input.device_epoch = 1; input.surface = 1; input.surface_generation = 1; input.sequence = frames.sequence + 1;
+        input.engine_revision = 1; input.view = panes[0].view; input.view_generation = 1; input.publication_generation = 1;
+        input.viewport_width = 640; input.viewport_height = 360; input.resource_set = panes[0].resource_set;
+        std::copy(std::begin(panes[0].camera_matrix), std::end(panes[0].camera_matrix), std::begin(input.camera_matrix));
+        uint64_t id = 0;
+        return sa2_frame_submit_panes(ctx, &input, panes.data(), uint32_t(panes.size()), &id) == status && id == 0;
+    };
+    expect(refused({make(1, set1, 10, 30, Side, Side, Q1), make(2, set2, 300, 30, Side, Side, Q2)}, SA2_E_INVALID_ARGUMENT),
+        "overlapping panes were accepted");
+    expect(refused({make(1, 0, 0, 0, 64, 64, Q1), make(2, 0, 64, 0, 64, 64, Q1), make(3, 0, 128, 0, 64, 64, Q1),
+                    make(4, 0, 192, 0, 64, 64, Q1), make(5, 0, 256, 0, 64, 64, Q1)}, SA2_E_INVALID_ARGUMENT), "a fifth pane was accepted");
+    const auto stale = pickable_set(harness, 3, 2);
+    expect(refused({make(1, set1, 10, 30, Side, Side, Q1), make(3, stale, 330, 30, Side, Side, Q2)}, SA2_E_WRONG_STATE),
+        "a pane of another engine revision was accepted");
+    // A pick in each pane names its view and the one-view pick's instance; a point in no pane is refused.
+    const auto left = pick(harness, composite, 10 + p1.first, 30 + p1.second), right = pick(harness, composite, 330 + p2.first, 30 + p2.second);
+    expect(left.state == SA2_PICK_READY && left.view == 1 && left.instance == a1_pick.instance, "a pick in the left pane is not the one-view pick");
+    expect(right.state == SA2_PICK_READY && right.view == 2 && right.instance == a2_pick.instance, "a pick in the right pane is not the one-view pick");
+    uint64_t ticket = 0;
+    expect(sa2_pick_request(ctx, composite, 5, 5, &ticket) == SA2_E_INVALID_ARGUMENT, "a pick in no pane was accepted");
+    // The vertex evaluations: the frame's sum, and each pane's own.
+    const auto reported = evals(harness);
+    expect(reported.count(composite) != 0, "the composite frame was not reported");
+    sa2_pane_row rows[4]{};
+    for (auto& row : rows) row.struct_size = sizeof(row);
+    uint32_t count = 0;
+    api(ctx, sa2_frame_panes(ctx, composite, rows, 4, &count));
+    std::cout << "panes: one-view evaluations " << a1_evals << " + " << a2_evals << ", composite " << reported.at(composite)
+              << " (panes " << rows[0].vertex_evals << ", " << rows[1].vertex_evals << ")" << std::endl;
+    expect(count == 2 && rows[0].view == 1 && rows[1].view == 2, "the pane rows do not name the two views");
+    expect(reported.at(composite) == a1_evals + a2_evals && rows[0].vertex_evals == a1_evals && rows[1].vertex_evals == a2_evals,
+        "the composite frame's vertex evaluations are not the sum of the one-view frames'");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
 struct ChildResult { DWORD code = 0; std::string output, error; };
 std::string read_pipe(HANDLE pipe) {
     std::string text;
@@ -1331,6 +1559,12 @@ void run_poses(Suite& suite, const Options& options) {
 void run_shape(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the shape check runs on WARP only");
     suite.check("view shape warp", [&] { product_shape(options); });
+}
+
+// ABI 8: --warp --panes. Only WARP; parse refuses any other mode.
+void run_panes(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the composite frame check runs on WARP only");
+    suite.check("panes warp", [&] { product_panes(options); });
 }
 
 // ABI 7: --warp --style. Only WARP; parse refuses any other mode.
