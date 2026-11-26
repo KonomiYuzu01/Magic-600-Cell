@@ -6,6 +6,12 @@
 //! Resolution follows lowering's rules: a local binding of the same declaration whose scope holds the position, then
 //! the module's declarations and import aliases, then the reserved names. A binding never shadows another in one
 //! declaration, so equal names in different declarations or sibling scopes resolve apart.
+//!
+//! Each binding is also listed under its owner, and the module's names are looked up by name, so that resolving a
+//! reference reads its own owner's bindings and not every binding of the file: on LX-4's L fixture (about 5,000
+//! lines) a scan of every binding per reference cost about 20 ms of each completion.
+
+use std::collections::HashMap;
 
 use c600_syntax::ast::{BindingKind, Block, Decl, Expr, ExprKind, Item, ParsedFile, Pattern, TypeExpr};
 use c600_syntax::{
@@ -103,6 +109,14 @@ pub(crate) struct Index<'a> {
     pub decls: Vec<&'a Decl>,
     pub bindings: Vec<Binding>,
     pub refs: Vec<Ref>,
+    /// The positions in `bindings` of each owner's bindings, in binding order: the module's, each complete
+    /// declaration's (by its position among the declarations) and each hole's (by its position among the holes).
+    module_owned: Vec<usize>,
+    decl_owned: Vec<Vec<usize>>,
+    hole_owned: Vec<Vec<usize>>,
+    /// The first module-level binding of each name, by kind: declarations and import aliases.
+    first_declaration: HashMap<String, usize>,
+    first_import: HashMap<String, usize>,
 }
 
 #[derive(Clone, Copy)]
@@ -118,12 +132,22 @@ impl<'a> Index<'a> {
     /// The index of a parsed file and its tokens.
     pub fn build(file: &'a ParsedFile, lexemes: &[Lexeme]) -> Index<'a> {
         let decls: Vec<&Decl> = file.declarations().collect();
-        let mut index = Index { file, decls, bindings: Vec::new(), refs: Vec::new() };
+        let mut index = Index {
+            file,
+            module_owned: Vec::new(),
+            decl_owned: vec![Vec::new(); decls.len()],
+            hole_owned: vec![Vec::new(); file.recovered.len()],
+            first_declaration: HashMap::new(),
+            first_import: HashMap::new(),
+            decls,
+            bindings: Vec::new(),
+            refs: Vec::new(),
+        };
         let all = (0, usize::MAX);
         let mut position = 0;
         for item in &file.items {
             match item {
-                Item::Import(i) => index.bindings.push(Binding {
+                Item::Import(i) => index.push(Binding {
                     name: i.alias.text.clone(),
                     span: i.alias.loc.0,
                     kind: NameKind::Import,
@@ -134,7 +158,7 @@ impl<'a> Index<'a> {
                     digest: Some(i.digest.clone()),
                 }),
                 Item::Decl(d) => {
-                    index.bindings.push(Binding {
+                    index.push(Binding {
                         name: d.name.text.clone(),
                         span: d.name.loc.0,
                         kind: NameKind::Declaration,
@@ -150,7 +174,7 @@ impl<'a> Index<'a> {
         }
         for r in &file.recovered {
             if let Some(name) = &r.name {
-                index.bindings.push(Binding {
+                index.push(Binding {
                     name: name.text.clone(),
                     span: name.loc.0,
                     kind: NameKind::Declaration,
@@ -171,8 +195,39 @@ impl<'a> Index<'a> {
         index
     }
 
+    /// Adds a binding and lists it under its owner and, at the module level, under its name.
+    fn push(&mut self, binding: Binding) {
+        let i = self.bindings.len();
+        match binding.owner {
+            Owner::Module => {
+                self.module_owned.push(i);
+                let first = match binding.kind {
+                    NameKind::Declaration => Some(&mut self.first_declaration),
+                    NameKind::Import => Some(&mut self.first_import),
+                    _ => None,
+                };
+                if let Some(first) = first {
+                    first.entry(binding.name.clone()).or_insert(i);
+                }
+            }
+            Owner::Decl(n) => self.decl_owned[n].push(i),
+            Owner::Hole(h) => self.hole_owned[h].push(i),
+        }
+        self.bindings.push(binding);
+    }
+
+    /// The positions of `owner`'s bindings, in binding order.
+    fn owned(&self, owner: Owner) -> &[usize] {
+        let list = match owner {
+            Owner::Module => Some(&self.module_owned),
+            Owner::Decl(n) => self.decl_owned.get(n),
+            Owner::Hole(h) => self.hole_owned.get(h),
+        };
+        list.map_or(&[], Vec::as_slice)
+    }
+
     fn bind(&mut self, name: &c600_syntax::ast::Name, kind: NameKind, owner: Owner, scope: (usize, usize)) {
-        self.bindings.push(Binding {
+        self.push(Binding {
             name: name.text.clone(),
             span: name.loc.0,
             kind,
@@ -381,21 +436,21 @@ impl<'a> Index<'a> {
         found.unwrap_or(Target::Unresolved)
     }
 
-    /// The innermost local binding of `name` that `owner` sees at byte `at`.
+    /// The innermost local binding of `name` that `owner` sees at byte `at`; of equally inner ones, the last bound.
     pub fn local(&self, name: &str, at: usize, owner: Owner) -> Option<usize> {
-        self.bindings
+        self.owned(owner)
             .iter()
-            .enumerate()
-            .filter(|(_, b)| b.owner == owner && b.name == name && b.scope.0 <= at && at <= b.scope.1)
-            .max_by_key(|(_, b)| b.scope.0)
-            .map(|(i, _)| i)
+            .copied()
+            .filter(|&i| {
+                let b = &self.bindings[i];
+                b.name == name && b.scope.0 <= at && at <= b.scope.1
+            })
+            .max_by_key(|&i| self.bindings[i].scope.0)
     }
 
-    /// The module-level binding of `name`, a declaration before an alias.
+    /// The module-level binding of `name`, a declaration before an alias; of each kind, the first bound.
     pub fn module_binding(&self, name: &str) -> Option<usize> {
-        let module =
-            |kind| self.bindings.iter().position(|b| b.owner == Owner::Module && b.kind == kind && b.name == name);
-        module(NameKind::Declaration).or_else(|| module(NameKind::Import))
+        self.first_declaration.get(name).or_else(|| self.first_import.get(name)).copied()
     }
 
     /// Who owns byte `at`: the complete declaration holding it, else the hole, else the module.
@@ -443,5 +498,101 @@ impl<'a> Index<'a> {
     /// The references that resolve to a binding.
     pub fn references(&self, binding: usize) -> impl Iterator<Item = &Ref> {
         self.refs.iter().filter(move |r| r.target == Target::Binding(binding))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use super::*;
+
+    /// `local` as it was before the bindings were listed by owner: a scan of every binding of the file.
+    fn local_scan(index: &Index, name: &str, at: usize, owner: Owner) -> Option<usize> {
+        index
+            .bindings
+            .iter()
+            .enumerate()
+            .filter(|(_, b)| b.owner == owner && b.name == name && b.scope.0 <= at && at <= b.scope.1)
+            .max_by_key(|(_, b)| b.scope.0)
+            .map(|(i, _)| i)
+    }
+
+    /// `module_binding` as it was before the module's names were mapped: a scan of every binding of the file.
+    fn module_binding_scan(index: &Index, name: &str) -> Option<usize> {
+        let module =
+            |kind| index.bindings.iter().position(|b| b.owner == Owner::Module && b.kind == kind && b.name == name);
+        module(NameKind::Declaration).or_else(|| module(NameKind::Import))
+    }
+
+    /// Two declarations named `f` and an import alias `f`; generics, parameters, lets, closures and match binders
+    /// that reuse names, a closure whose two parameters share a name and a scope start, and a broken command, whose
+    /// recovery hole has bindings and names a declaration that is also declared complete after it.
+    fn source() -> String {
+        let (a, b) = ("a".repeat(64), "b".repeat(64));
+        format!(
+            "edition \"6cs-draft-1\";\nmodule tool requires [];\nimport lib \"{a}\";\nimport f \"{b}\";\n\n\
+             fn f<T>(x: Nat, t: T) -> Nat effects [] {{\n    let y = exact_add(x, 1);\n    \
+             let g = fn(x: Nat, x: Nat) -> Nat {{ let y = x; return y; }};\n    \
+             let k = match tag(\"x\") {{ holds(y) => g(y, x); }};\n    return k;\n}}\n\n\
+             fn f(x: Nat) -> Nat effects [] {{\n    return lib.double(x);\n}}\n\n\
+             export command go(w: Word, n: Nat) -> Nat effects [] {{\n    let m = f(n);\n    \
+             let x = repeat(n, 0, fn(acc: Nat) -> Nat {{ return acc; }});\n    return m(\n\n\
+             fn go(x: Nat) -> Nat effects [] {{\n    let x = f(x);\n    return x;\n}}\n"
+        )
+    }
+
+    /// The owner lists, the name maps and therefore every lookup answer as the scans did, at every position, for
+    /// every owner and every name the file binds or references, so resolution's rules and its tie-breaks are kept.
+    #[test]
+    fn indexed_lookups_answer_as_a_scan_of_every_binding() {
+        let source = source();
+        let file = c600_syntax::parse(source.as_bytes());
+        let (lexemes, _) = c600_syntax::lexemes(&source);
+        let index = Index::build(&file, &lexemes);
+        assert_eq!(file.recovered.len(), 1, "the broken command is a recovery hole");
+        assert!(!file.recovered[0].bindings.is_empty(), "the hole has bindings");
+        assert_eq!(index.decls.len(), 3);
+
+        let mut owners = vec![Owner::Module];
+        owners.extend((0..index.decls.len()).map(Owner::Decl));
+        owners.extend((0..file.recovered.len()).map(Owner::Hole));
+        for &owner in &owners {
+            let scan: Vec<usize> = (0..index.bindings.len()).filter(|&i| index.bindings[i].owner == owner).collect();
+            assert_eq!(index.owned(owner), scan.as_slice(), "{owner:?}");
+        }
+        assert!(index.owned(Owner::Decl(index.decls.len())).is_empty());
+        assert!(index.owned(Owner::Hole(file.recovered.len())).is_empty());
+
+        let mut names: BTreeSet<&str> = index.bindings.iter().map(|b| b.name.as_str()).collect();
+        names.extend(index.refs.iter().map(|r| r.name.as_str()));
+        names.extend(["exact_add", "Nat", "nothing_binds_this"]);
+        owners.extend([Owner::Decl(index.decls.len()), Owner::Hole(file.recovered.len())]);
+        for name in &names {
+            assert_eq!(index.module_binding(name), module_binding_scan(&index, name), "{name}");
+            for &owner in &owners {
+                for at in 0..=source.len() + 1 {
+                    let (found, scan) = (index.local(name, at, owner), local_scan(&index, name, at, owner));
+                    assert_eq!(found, scan, "{name} at {at} in {owner:?}");
+                }
+            }
+        }
+
+        // The cases whose order rules matter are present: a declaration before an alias of the same name, the first
+        // of two declarations, and two parameters with the same scope, of which the later one is found.
+        let f = index.module_binding("f").unwrap();
+        assert_eq!((index.bindings[f].kind, index.bindings[f].decl), (NameKind::Declaration, Some(0)));
+        let go = index.module_binding("go").unwrap();
+        assert_eq!(index.bindings[go].decl, Some(2), "a complete declaration comes before a hole's name");
+        let tied: Vec<usize> = index
+            .owned(Owner::Decl(0))
+            .iter()
+            .copied()
+            .filter(|&i| index.bindings[i].kind == NameKind::ClosureParameter && index.bindings[i].name == "x")
+            .collect();
+        assert_eq!(tied.len(), 2);
+        assert_eq!(index.bindings[tied[0]].scope, index.bindings[tied[1]].scope);
+        let inside = index.bindings[tied[0]].scope.0 + 1;
+        assert_eq!(index.local("x", inside, Owner::Decl(0)), Some(tied[1]));
     }
 }

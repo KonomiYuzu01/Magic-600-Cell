@@ -3,29 +3,48 @@
 //! an envelope with its source range. Nothing here runs a program (EV1.9).
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{Arc, OnceLock};
 
 use c600_check::{check, Report};
 use c600_ir::ExactRole;
-use c600_syntax::ast::{Item, ParsedFile};
+use c600_syntax::ast::{Item, ParsedFile, Trivia};
 use c600_syntax::{lexemes, lower, parse, Diagnostic, Lexeme, Lowered, Span};
 
 use crate::context::{ModelIdentity, ModuleContext, Obligation};
-use crate::document::SourceRange;
+use crate::document::{Document, SourceRange};
 use crate::envelope::{code, Envelope, Form, IdentitySubject, NextAction, Reason, Service};
 
-/// A parsed file and its tokens.
+/// A parsed file and, lexed when first asked for, its tokens and trivia (none when the bytes are not UTF-8).
 pub(crate) struct Source {
     pub digest: String,
     pub bytes: Vec<u8>,
-    pub file: ParsedFile,
-    pub lexemes: Vec<Lexeme>,
+    pub file: Arc<ParsedFile>,
+    lexed: OnceLock<(Vec<Lexeme>, Vec<Trivia>)>,
 }
 
 impl Source {
     pub fn read(bytes: &[u8], digest: &str) -> Source {
-        let file = parse(bytes);
-        let lexemes = std::str::from_utf8(bytes).map(|t| lexemes(t).0).unwrap_or_default();
-        Source { digest: digest.to_owned(), bytes: bytes.to_vec(), file, lexemes }
+        let file = Arc::new(parse(bytes));
+        Source { digest: digest.to_owned(), bytes: bytes.to_vec(), file, lexed: OnceLock::new() }
+    }
+
+    /// A document's bytes read as [`Source::read`] reads them, with the parse the document shares between the
+    /// services that ask about it.
+    pub fn of(document: &Document, digest: &str) -> Source {
+        let bytes = document.bytes().to_vec();
+        Source { digest: digest.to_owned(), bytes, file: document.parsed(), lexed: OnceLock::new() }
+    }
+
+    fn lexed(&self) -> &(Vec<Lexeme>, Vec<Trivia>) {
+        self.lexed.get_or_init(|| std::str::from_utf8(&self.bytes).map(lexemes).unwrap_or_default())
+    }
+
+    pub fn lexemes(&self) -> &[Lexeme] {
+        &self.lexed().0
+    }
+
+    pub fn trivia(&self) -> &[Trivia] {
+        &self.lexed().1
     }
 
     pub fn range(&self, span: Span) -> SourceRange {
@@ -110,7 +129,7 @@ impl Closure {
             return None;
         }
         let files: Vec<ParsedFile> =
-            std::iter::once(&self.root).chain(self.deps.values()).map(|s| s.file.clone()).collect();
+            std::iter::once(&self.root).chain(self.deps.values()).map(|s| ParsedFile::clone(&s.file)).collect();
         Some(self.lower_and_check(&files))
     }
 
@@ -120,7 +139,7 @@ impl Closure {
         if self.deps.is_empty() || !self.deps.values().all(clean) {
             return None;
         }
-        let files: Vec<ParsedFile> = self.deps.values().map(|s| s.file.clone()).collect();
+        let files: Vec<ParsedFile> = self.deps.values().map(|s| ParsedFile::clone(&s.file)).collect();
         self.lower_and_check(&files).ok()
     }
 
