@@ -926,7 +926,7 @@ fn ct_det_09_every_limit_below_use_stops_at_the_predicted_row() {
 }
 
 /// CT-DET-27 (part: the reference model over the library meter; RT1's runs are in `conformance_det.rs`; not run:
-/// child scopes in a program, since the IR has no child construct (child jobs, M6), and RT2 and RT3 (no owner yet)):
+/// child scopes in a program, which run in `child_scopes.rs`, and RT2 and RT3 (no owner yet)):
 /// at each row of each completed child-free frozen trace, every set of the dimensions the row requests is made one
 /// short at that row, the other limits at their use. Every run stops where DET.56 predicts. When it stops at that row,
 /// the first short dimension in the order steps, kernel cost, memory, output decides, whichever others are also short:
@@ -1154,8 +1154,8 @@ fn ct_det_28_operations_keep_their_rows_and_operand_sized_tariffs() {
 }
 
 /// CT-DET-29 (part: the reference model over the library meter; RT1's draws are in
-/// `det65_programs.rs` and `conformance_det.rs`; not run: child stream paths in a program, since
-/// the IR has no child construct (child jobs, M6)): the frozen trace `generator` runs under every limit from zero to
+/// `det65_programs.rs` and `conformance_det.rs`; not run: child stream paths in a program, which run in
+/// `child_scopes.rs`): the frozen trace `generator` runs under every limit from zero to
 /// its full use in each dimension. A denied initialization leaves no generator; afterwards the generator keeps its
 /// key, its counter is the number of admitted draws, and each admitted draw is the block of its index: a draw denied
 /// on any dimension consumes nothing (DET.61).

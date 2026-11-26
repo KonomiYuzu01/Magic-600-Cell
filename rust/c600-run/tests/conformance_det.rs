@@ -482,7 +482,8 @@ fn ct_det_03_missing_or_substituted_inputs_are_refused_before_any_effect() {
 }
 
 /// CT-DET-05 (part: hash state, declaration and insertion order, allocation and threads within this process; not
-/// run: another process or platform (the headless Linux leg, no owner yet)): canonical traversal, key order, draw order
+/// run: another process; CI's Linux job runs these tests on a second platform since the owner's answer of 16
+/// November 2026): canonical traversal, key order, draw order
 /// and output do not depend on hash seeds, declaration order, record insertion order or allocation history.
 #[test]
 fn ct_det_05_hash_state_insertion_order_and_allocation_do_not_change_results() {
@@ -520,9 +521,9 @@ fn ct_det_05_hash_state_insertion_order_and_allocation_do_not_change_results() {
 }
 
 /// CT-DET-06 and CT-DET-29 (part: the stream keys, draws and exhaustion of DET.61 and the interpreter's streams; not
-/// run: child stream assignments in a program, since the IR has no child construct (they replay in `tests/traces.rs`),
-/// other routes (no owner yet), the headless Linux leg (no owner yet), and the run record that seals the seed and
-/// refuses host entropy or a clock-derived seed (M6)): four independent reference vectors give their keys, first draws,
+/// run: other routes (RT2 and RT3, no owner yet); child stream paths run in `tests/child_scopes.rs` and the run
+/// record's seed checks in `c600-session/tests/persist_run.rs`; CI's Linux job runs these tests on a second platform
+/// since the owner's answer of 16 November 2026): four independent reference vectors give their keys, first draws,
 /// last draw and program output; segment boundaries and the segment count are part of the key; a run has no
 /// generator without a seed; and a seed of the wrong length is refused.
 #[test]
@@ -944,7 +945,7 @@ fn ct_det_17_ambient_access_without_a_grant_is_refused() {
 }
 
 /// CT-DET-18 (part: the checker's grants through calls and imports, and RT1 asking its host per resource and right;
-/// not run: the file-grant host and its rights (LP3), grants of child jobs (M6; the IR has no child construct), and
+/// not run: the file-grant host and its rights (LP3), grants of child jobs (M6), and
 /// saved descriptors and replay authority (M6)): a capability needed through a call or an import is the caller's
 /// requirement, an import supplies none, and a grant of other capabilities does not cover it; at run time each file
 /// request names its path, and a host that grants one file for reading refuses another file and a write.

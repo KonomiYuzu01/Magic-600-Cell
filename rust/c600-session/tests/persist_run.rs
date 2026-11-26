@@ -14,6 +14,7 @@ use c600_check::check;
 use c600_digest::{sha256, sha256_hex};
 use c600_kernel::IdentityBlock;
 use c600_run::interp::{load, CancelFlag, Host, Loaded, Options, Request, RowTariff, Sink};
+use c600_run::meter::code::GENERATOR_INPUT;
 use c600_run::meter::{self, Amounts, Interruption};
 use c600_run::provenance::{self, Author, Pin, Producer, Profile};
 use c600_run::value::Value;
@@ -330,6 +331,9 @@ fn refused(bytes: &[u8]) -> &'static str {
 /// edition, IR version, identity, metering revision, kernel cost table, kernel or checker set before executing; not
 /// run: the closure, manifest and lock digests, which the draft payload does not carry (PS1.31), and the record's tie
 /// to `c600-module`'s approval).
+/// CT-DET-06 and CT-DET-29 (part: a seeded run reproduces from its sealed seed, fetched by digest: a missing seed
+/// answers `not run` and other bytes are refused; not run: the seed's algorithm, length and grant checks, which
+/// `ct_det_06_*` below runs, and the generator's own vectors, in `c600-run`'s tests).
 /// CT-PS1-16 (whole), PS1.31, DET.1, DET.5 to DET.7, DET.17, KN7.10: a run record keeps chapter 09's complete key, its
 /// version and digest, and the exact payload; it reads back field for field. Reproducing a completed run or a
 /// deterministic cut-off gives the same exact bytes. Missing bytes give `not run`; other supplied bytes, another
@@ -719,6 +723,80 @@ fn ct_det_14_a_checked_witness_survives_an_interrupted_search() {
     assert_eq!(wrong.write().unwrap_err().code, VERSION);
 }
 
+// ------------------------------------------------------------------------------------------------- CT-DET-06
+
+/// CT-DET-06 (part: the run record's half: a seed is sealed in the key with its stream path and its generator
+/// algorithm, and only `sha256-counter-draft-1` is read; a key that holds a randomness grant without a sealed seed is no
+/// record, so no seed comes from host entropy or a clock during execution; a reproduction whose sealed seed is not 32
+/// bytes is refused before it runs; not run: the generator's reference vectors and the child stream assignments, in
+/// `c600-run/tests/conformance_det.rs` and `child_scopes.rs`, and other routes (RT2 and RT3, no owner yet)).
+/// CT-DET-29 (part: the run record's half, as above; not run: the generator's initialization, draws and denied draws,
+/// in `c600-run`'s tests, and RT2 and RT3 (no owner yet)).
+/// DET.11, DET.12, DET.61. Draft codes for the freeze card: `LG4:input.generator_input` for a missing or malformed
+/// seed and `PS2:input.persistence_version` for another algorithm identity.
+#[test]
+fn ct_det_06_the_seed_is_sealed_pinned_and_never_the_hosts() {
+    let seed = [7u8; 32];
+    let mut drawn = Job::new(DRAW, "main", &[]);
+    drawn.grants =
+        vec![Grant { kind: "randomness".into(), rights: vec!["draw".into()], ..file_grant("stream", DRAW.as_bytes()) }];
+    drawn.seed = Some(seed.to_vec());
+    let (seeded, seeded_bytes, available) = drawn.record();
+    assert_eq!(seeded.key.seeds[0].algorithm, run::GENERATOR);
+    assert_eq!(seeded.key.seeds[0].path, ["test"], "the named stream is sealed with the seed");
+    let value = codec::read_canonical(&seeded_bytes).unwrap();
+
+    // A randomness grant without a sealed seed is refused, when written and when read; nothing falls back to entropy
+    // or a clock.
+    let mut unsealed = seeded.clone();
+    unsealed.key.seeds.clear();
+    assert_eq!(unsealed.write().unwrap_err().code, GENERATOR_INPUT);
+    let emptied = with(&value, &["payload", "key", "seeds"], Some(Json::List(Vec::new())));
+    assert_eq!(refused(&canonical(&emptied)), GENERATOR_INPUT);
+    let mut clocked = unsealed.clone();
+    clocked.key.parameters.grants.push(Grant {
+        kind: "clock".into(),
+        rights: vec!["read".into()],
+        ..file_grant("wall", DRAW.as_bytes())
+    });
+    assert_eq!(clocked.write().unwrap_err().code, GENERATOR_INPUT, "a clock is no seed either");
+    let mut undrawing = unsealed.clone();
+    undrawing.key.parameters.grants.clear();
+    assert!(undrawing.write().is_ok(), "a run that draws nothing needs no seed");
+
+    // Another generator identity cannot reinterpret saved seeds (DET.12): it is refused, written or read.
+    let mut other = seeded.clone();
+    other.key.seeds[0].algorithm = "xorshift-draft-1".into();
+    assert_eq!(other.write().unwrap_err().code, VERSION);
+    let entry = Json::object([
+        ("seed", Json::object([("role", Json::text("bytes")), ("sha256", Json::text(&sha256_hex(&seed)))])),
+        ("path", Json::List(vec![Json::text("test")])),
+        ("algorithm", Json::text("xorshift-draft-1")),
+    ]);
+    let renamed = with(&value, &["payload", "key", "seeds"], Some(Json::List(vec![entry])));
+    assert_eq!(refused(&canonical(&renamed)), VERSION);
+
+    // A sealed seed of another length is refused before the run starts, as `rng_init` would refuse it; the exact bytes
+    // of 32 are the only seed that reproduces.
+    let short = vec![7u8; 31];
+    let mut sealed_short = seeded.clone();
+    sealed_short.key.seeds[0].sha256 = sha256_hex(&short);
+    let short_bytes = sealed_short.write().unwrap();
+    let mut with_short = available.clone();
+    with_short.insert(sha256_hex(&short), short);
+    let ran = Cell::new(false);
+    let watched = |key: &Key, inputs: &Inputs| {
+        ran.set(true);
+        rerun(key, inputs)
+    };
+    let now = Admission::of(&sealed_short.key);
+    let answer = reproduce(&short_bytes, &with_short, &now, watched);
+    assert_eq!(answer, Reproduction::Refused(GENERATOR_INPUT.into()));
+    assert!(!ran.get(), "refused before execution");
+    let now = Admission::of(&seeded.key);
+    assert_eq!(reproduce(&seeded_bytes, &available, &now, rerun), Reproduction::Same(seeded.result.clone()));
+}
+
 // ------------------------------------------------------------------------------------------------- CT-DET-13
 
 /// A completed enumeration of a declared set that finds nothing.
@@ -863,6 +941,7 @@ fn ct_bnd_23_every_run_record_names_its_policy_and_reproduces_under_it_only() {
     let draw =
         Grant { kind: "randomness".into(), rights: vec!["draw".into()], ..file_grant("stream", READS.as_bytes()) };
     two.grants.push(draw);
+    two.seed = Some(vec![7; 32]);
     let (two_record, two_bytes, two_available) = two.record();
     let mut reordered = Admission::of(&two_record.key);
     reordered.grants.reverse();

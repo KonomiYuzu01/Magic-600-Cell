@@ -22,6 +22,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use c600_digest::sha256_hex;
 use c600_kernel::{IdentityBlock, Puzzle};
 use c600_run::encode::encode;
+use c600_run::meter::code::GENERATOR_INPUT;
 use c600_run::meter::{Amounts, ChildRecord, Position, Summary};
 use c600_run::provenance::{Pin, Profile};
 use c600_run::value::Value;
@@ -39,6 +40,11 @@ pub const KEY_VERSION: &str = "c600-repro-key-draft-1";
 pub const POLICY_VERSION: &str = "c600-policy-draft-1";
 /// DET.4's consulted inputs, which a key names by captured digest.
 pub const CAPTURED_KINDS: [&str; 5] = ["file", "workspace", "protection", "pick", "provenance"];
+/// The generator a seed names: DET.61's counter-addressed `sha256-counter-draft-1`, the only algorithm identity this
+/// draft reads (DET.12; an LP2 draft until the IR freeze, PHS.49).
+pub const GENERATOR: &str = "sha256-counter-draft-1";
+/// The length of a sealed seed in bytes (DET.61): `rng_init` refuses any other.
+pub const SEED_LEN: usize = 32;
 /// The capabilities a grant can name in 1.0: network, process and session-file access are never granted (DET.42).
 pub const GRANT_KINDS: [&str; 3] = ["file", "clock", "randomness"];
 
@@ -409,7 +415,11 @@ pub fn reproduce(
             inputs.modules.insert(name.as_str(), fetch(sha256)?);
         }
         for seed in &key.seeds {
-            inputs.seeds.push(fetch(&seed.sha256)?);
+            let bytes = fetch(&seed.sha256)?;
+            if bytes.len() != SEED_LEN {
+                return Err(Reproduction::Refused(GENERATOR_INPUT.into()));
+            }
+            inputs.seeds.push(bytes);
         }
         for captured in &parameters.captured {
             inputs.captured.insert((captured.kind.as_str(), captured.name.as_str()), fetch(&captured.sha256)?);
@@ -544,6 +554,9 @@ impl Key {
         let modules_once = modules.windows(2).all(|pair| pair[0] != pair[1]);
         let sets = once(list(p, "grants")?) && once(list(value, "checkers")?);
         require(named_once && modules_once && sets, FORMAT)?;
+        // DET.11: a randomness grant needs a sealed seed; no seed comes from host entropy or a clock during execution.
+        let draws = key.parameters.grants.iter().any(|grant| grant.kind == "randomness");
+        require(!draws || !key.seeds.is_empty(), GENERATOR_INPUT)?;
         Ok(key)
     }
 
@@ -720,12 +733,16 @@ impl Seed {
         ])
     }
 
+    /// Reads a sealed seed; its generator must be the one this draft pins, [`GENERATOR`]: another algorithm identity
+    /// cannot reinterpret saved seeds (DET.12), so it is refused as another version of the draft.
     fn read(value: &Json) -> Result<Seed, Refusal> {
         require(has_exactly(value, &["seed", "path", "algorithm"]), FORMAT)?;
         let path = list(value, "path")?;
         let path = path.iter().map(|s| s.as_text().map(str::to_owned).ok_or(Refusal::new(FORMAT)));
         let path = path.collect::<Result<_, _>>()?;
-        Ok(Seed { sha256: sha(value.get("seed"), "bytes")?, path, algorithm: text(value, "algorithm")? })
+        let algorithm = text(value, "algorithm")?;
+        require(algorithm == GENERATOR, VERSION)?;
+        Ok(Seed { sha256: sha(value.get("seed"), "bytes")?, path, algorithm })
     }
 }
 
