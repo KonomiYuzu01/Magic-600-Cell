@@ -558,6 +558,22 @@ fn rejected(detail: impl Into<String>) -> Refusal {
     refuse(code::IR_REJECTED, detail)
 }
 
+/// The refusal's detail for a node of the identity tower (T1 draft): the checker types it, and the interpreter runs it
+/// once its values and host rows exist (T1c).
+fn tower(expr: &Expr) -> String {
+    let what = match expr {
+        Expr::Construct { ctor, .. } => format!("the construction `{ctor}`"),
+        Expr::Case { .. } => "a case on a sum type".to_string(),
+        Expr::Kernel { op, .. } => format!("the kernel row `{}`", op.row()),
+        Expr::Prim { op, .. } => format!("the operation {op:?}"),
+        _ => "this node".to_string(),
+    };
+    format!(
+        "{what} is an identity-tower node of the IR draft, which the interpreter runs once its values and host rows \
+         exist (T1c)"
+    )
+}
+
 /// Loads a program: checks its IR identity and names and compiles every function body.
 pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
     if program.ir_version != ir::IR_VERSION || program.exec_contract != ir::EXEC_CONTRACT {
@@ -652,6 +668,9 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::WordStream => Some(2),
         Prim::FieldAdd | Prim::FieldSub | Prim::FieldMul => Some(2),
         Prim::Stage(s) => Some(s.arity()),
+        // The identity tower's operations (T1 drafts) are refused when loaded until their values exist (T1c).
+        Prim::Imply(goal) => Some(1 + usize::from(goal.takes_bound())),
+        Prim::ToCost(..) | Prim::CostValue => Some(1),
     }
 }
 
@@ -895,6 +914,7 @@ impl Compiler {
                             format!("the stage operation `{}` runs only in a stage's evaluator (RPI.68)", s.name());
                         return Err(rejected(note));
                     }
+                    (_, Prim::Imply(_) | Prim::ToCost(..) | Prim::CostValue) => return Err(rejected(tower(expr))),
                     (Some(n), _) if n != args.len() => return Err(rejected(format!("{op:?} takes {n} operands"))),
                     (_, Prim::ToApprox(p)) if !approx::PRECISIONS.contains(p) => {
                         return Err(rejected(format!("unsupported precision {p}")))
@@ -946,6 +966,7 @@ impl Compiler {
                 kids(steps, expr.children());
                 Kind::Propose
             }
+            Expr::Construct { .. } | Expr::Case { .. } | Expr::Kernel { .. } => return Err(rejected(tower(expr))),
             Expr::ReadReceipt { field, .. } => {
                 kids(steps, expr.children());
                 Kind::ReadReceipt(*field)
@@ -1886,7 +1907,7 @@ impl<'a> Machine<'a> {
             Prim::TextDecode => return self.text_decode(n, args),
             Prim::WordStream => return self.word_stream(n, args),
             Prim::StreamDigest => return self.stream_digest(n, args),
-            Prim::Stage(_) => unreachable!("refused when loaded"),
+            Prim::Stage(_) | Prim::Imply(_) | Prim::ToCost(..) | Prim::CostValue => unreachable!("refused when loaded"),
         };
         let display = |v: &Value| match v {
             Value::Bool(x) | Value::ApproxBool(x) => Some(*x),

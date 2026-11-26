@@ -37,6 +37,8 @@ pub struct Module {
     pub kind: ModuleKind,
     /// The capabilities the module declares (LG3.9). A declaration requests authority and never supplies it.
     pub capabilities: BTreeSet<Capability>,
+    /// The sum types the module declares (LG2.1; T1 draft until the IR freeze, PHS.49).
+    pub types: Vec<TypeDecl>,
     pub functions: Vec<Function>,
 }
 
@@ -46,6 +48,17 @@ impl Module {
         self
     }
 
+    /// The module with the sum types `types` declared (T1 draft).
+    pub fn with_types(mut self, types: Vec<TypeDecl>) -> Self {
+        self.types.extend(types);
+        self
+    }
+
+    /// The declared sum type `name`, if the module declares one.
+    pub fn type_decl(&self, name: &str) -> Option<&TypeDecl> {
+        self.types.iter().find(|t| t.name == name)
+    }
+
     /// The stage declaration of a stage module.
     pub fn stage(&self) -> Option<&StageDecl> {
         match &self.kind {
@@ -53,6 +66,35 @@ impl Module {
             ModuleKind::Program => None,
         }
     }
+}
+
+/// A sum type a module declares (LG2.1; T1 draft until the IR freeze, PHS.49): constructors with fixed payload types.
+/// It is monomorphic, and its constructor names are unique within the module, so a pattern names one constructor of
+/// the scrutinee's type. A declared type is written `Named { module, name }` with its defining module.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TypeDecl {
+    pub name: String,
+    pub exported: bool,
+    pub ctors: Vec<Ctor>,
+}
+
+impl TypeDecl {
+    pub fn exported(mut self) -> Self {
+        self.exported = true;
+        self
+    }
+
+    /// The constructor `name`, if the type has one.
+    pub fn ctor(&self, name: &str) -> Option<&Ctor> {
+        self.ctors.iter().find(|c| c.name == name)
+    }
+}
+
+/// One constructor of a declared sum type and its payload types, in order (T1 draft).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Ctor {
+    pub name: String,
+    pub payload: Vec<QTy>,
 }
 
 /// A module's kind (LG5.12). There is no fourth profile: a stage module is a kind of module, which any profile may use
@@ -249,9 +291,10 @@ pub enum Ty {
     /// `List<T>`: a finite sequence in written order. Draft (LP2) until the IR freeze (PHS.49), like every
     /// collection and word form below.
     List(Box<QTy>),
-    /// LG2.13's word equality key of a Full word, under LG2.18's free reduction. It is never a `Word` and never
-    /// converts to one (CT-LG2-11).
-    WordEqualityKey,
+    /// LG2.13's word equality key, indexed by its word's puzzle (T1 draft): a Full word's key is `Full`, under LG2.18's
+    /// free reduction, and a menu word's key is `Jumbling`. It is never a `Word` and never converts to one
+    /// (CT-LG2-11), and keys of two puzzles do not compare (LG2.2).
+    WordEqualityKey(Puzzle),
     /// `Set<T>`: distinct exact elements (LG2.20), kept in their canonical key order (DET.9).
     Set(Box<QTy>),
     /// `Map<K, V>`: values under distinct exact keys (LG2.20), kept in the keys' canonical key order (DET.9).
@@ -291,6 +334,364 @@ pub enum Ty {
     /// literal digest, which `stream_digest` reads. It holds no letter, so it carries no word, and like a generator
     /// it stays in its run: no canonical form, no equality and no key order.
     WordStream,
+    // The identity tower and the domain families (LG2.2 to LG2.13; KN0.3 to KN0.5, KN1.5 to KN1.11, KN2.11 to
+    // KN2.14). T1 drafts until the IR freeze (PHS.49): every type below is exact, with no display qualifier of its own,
+    // and none converts into another.
+    /// A canonical piece ID bound to its puzzle (KN1.5, LG2.2).
+    Piece(Puzzle),
+    /// A canonical sticker ID bound to its puzzle (KN1.5, LG2.2).
+    Sticker(Puzzle),
+    /// A canonical slot ID bound to its puzzle (KN1.5, LG2.2).
+    Slot(Puzzle),
+    /// The exact key of one piece's rotation in the jumbling puzzle (KN1.5).
+    Pose,
+    /// A per-revision index into a pose table: never an identity, so it fits no slot that takes one (KN1.5, LG2.2,
+    /// KN2.9).
+    PoseTableIndex,
+    /// A digest that names its puzzle and level; it compares only with a digest of the same two (KN1.8).
+    Digest(Puzzle, Level),
+    /// A state's value at one level, a host handle (KN1.9).
+    LevelValue(Puzzle, Level),
+    /// KN0.3's state reference, a snapshot or a derived state, with its reachability claim (KN0.3, LG2.7, KN2.11).
+    State(Puzzle),
+    /// Raw pose data: data only, never a state (KN2.14, LG2.7).
+    PoseTable,
+    /// KN2.13's reachability claim, the built-in sum type of [`ReachKind`]'s five constructors, each with its
+    /// evidence (LG2.7).
+    Reachability(Puzzle),
+    /// An evidence envelope reference (KN0.5, chapter 06). A program passes one on and never makes one: it has no
+    /// constructor, no literal and no conversion.
+    Evidence,
+    /// KN0.5's verdict at a puzzle and the level it was reached at (KN1.11, LG2.9), the built-in sum type `yes`, `no`,
+    /// `unknown`. With a goal, the verdict of `check(g, s)`: `yes` carries `Holds<P, g>`; without one, `yes` carries
+    /// `Evidence`. `no` carries `Evidence` and `unknown` a `Text` reason.
+    Verdict(Puzzle, Level, Option<Goal>),
+    /// KN0.4's typed partial result, the built-in sum type `total(T)`, `partial(T, Missing)`, `undefined(Text)`, where
+    /// `Missing` is the record `{ off: Nat, uncovered: Nat, collisions: Nat }` (LG2.3, LG2.9).
+    Partial(Box<QTy>),
+    /// A certificate that a goal holds of a state of a puzzle (LG2.10, LG2.11). It has no constructor: only `check`
+    /// gives one, and `imply` follows LG2.11's edges only.
+    Holds(Puzzle, Goal),
+    /// An exact nonnegative cost of a puzzle in one unit (LG2.6).
+    Cost(Puzzle, CostUnit),
+    /// The result of `derive` (KN2.11, ONE.20 to ONE.22), the built-in sum type `derived(State<P>)` or
+    /// `refused({ prefix: Nat, outcome: Text, code: Text })`. Only the host constructs one.
+    Derivation(Puzzle),
+    /// A sum type that the module `module` declares (LG2.1), resolved by its [`TypeDecl`].
+    Named {
+        module: String,
+        name: String,
+    },
+}
+
+/// The two puzzles of KN0.1 (T1 draft until the IR freeze, PHS.49): 600-cell-Full and the jumbling puzzle.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Puzzle {
+    Full,
+    Jumbling,
+}
+
+impl Puzzle {
+    pub const ALL: [Puzzle; 2] = [Puzzle::Full, Puzzle::Jumbling];
+
+    /// The puzzle's name in source.
+    pub fn name(self) -> &'static str {
+        match self {
+            Puzzle::Full => "Full",
+            Puzzle::Jumbling => "Jumbling",
+        }
+    }
+
+    pub fn of_name(name: &str) -> Option<Puzzle> {
+        Puzzle::ALL.into_iter().find(|p| p.name() == name)
+    }
+}
+
+/// The identity levels of KN1.7, as `c600-jumble`'s `levels` module names them (T1 draft until the IR freeze).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Level {
+    Poses,
+    StickerClass,
+    Labels,
+    RegionClass,
+    Position,
+    Coset,
+    TreeData,
+    Shape,
+}
+
+impl Level {
+    pub const ALL: [Level; 8] = [
+        Level::Poses,
+        Level::StickerClass,
+        Level::Labels,
+        Level::RegionClass,
+        Level::Position,
+        Level::Coset,
+        Level::TreeData,
+        Level::Shape,
+    ];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Level::Poses => "poses",
+            Level::StickerClass => "sticker_class",
+            Level::Labels => "labels",
+            Level::RegionClass => "region_class",
+            Level::Position => "position",
+            Level::Coset => "coset",
+            Level::TreeData => "tree_data",
+            Level::Shape => "shape",
+        }
+    }
+
+    pub fn of_name(name: &str) -> Option<Level> {
+        Level::ALL.into_iter().find(|level| level.name() == name)
+    }
+
+    /// The maps of KN1.7's table that leave this level, each one step from a finer level to a coarser one.
+    pub fn maps(self) -> &'static [Level] {
+        match self {
+            Level::Poses => &[Level::StickerClass],
+            Level::StickerClass => &[Level::Labels, Level::RegionClass],
+            Level::Labels => &[Level::Position],
+            Level::RegionClass => &[Level::Coset, Level::Shape],
+            Level::Coset => &[Level::TreeData],
+            Level::Position | Level::TreeData | Level::Shape => &[],
+        }
+    }
+
+    /// Whether a chain of KN1.7's maps leads from this level to `to`; every level reaches itself. No map leads back,
+    /// so nothing lifts a coarser level to a finer one (KN1.10).
+    pub fn reaches(self, to: Level) -> bool {
+        let mut stack = vec![self];
+        let mut seen = Vec::new();
+        while let Some(level) = stack.pop() {
+            if level == to {
+                return true;
+            }
+            if !seen.contains(&level) {
+                seen.push(level);
+                stack.extend_from_slice(level.maps());
+            }
+        }
+        false
+    }
+
+    /// Whether the level is defined on lattice configurations only (KN1.7's table).
+    pub fn lattice_only(self) -> bool {
+        matches!(self, Level::Labels | Level::Position)
+    }
+
+    /// Whether a puzzle holds the level (KN1.7's table): the jumbling puzzle holds all eight, 600-cell-Full the labels
+    /// and the position only.
+    pub fn held_by(self, puzzle: Puzzle) -> bool {
+        match puzzle {
+            Puzzle::Jumbling => true,
+            Puzzle::Full => matches!(self, Level::Labels | Level::Position),
+        }
+    }
+}
+
+/// LG2.10's goals (T1 draft until the IR freeze): predicates indexed by puzzle and the level they read. Their library
+/// entries are chapter 03's and their claims chapter 06's.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Goal {
+    ExactPose,
+    StickerTest,
+    LatticePlacement,
+    /// The declared exact height bound of the goal: `check` and `imply` to it take the bound as an exact `Nat`.
+    LowHeight,
+    RetainedCheckpoint,
+    LabelCheckpoint,
+}
+
+impl Goal {
+    pub const ALL: [Goal; 6] = [
+        Goal::ExactPose,
+        Goal::StickerTest,
+        Goal::LatticePlacement,
+        Goal::LowHeight,
+        Goal::RetainedCheckpoint,
+        Goal::LabelCheckpoint,
+    ];
+
+    /// The goal's name in source and in a row's name (`check:<goal>`).
+    pub fn name(self) -> &'static str {
+        match self {
+            Goal::ExactPose => "exact_pose",
+            Goal::StickerTest => "sticker_test",
+            Goal::LatticePlacement => "lattice_placement",
+            Goal::LowHeight => "low_height",
+            Goal::RetainedCheckpoint => "retained_checkpoint",
+            Goal::LabelCheckpoint => "label_checkpoint",
+        }
+    }
+
+    pub fn of_name(name: &str) -> Option<Goal> {
+        Goal::ALL.into_iter().find(|g| g.name() == name)
+    }
+
+    /// The level the goal reads (LG2.10's table, KN1.11): the sticker test and the label checkpoint read the labels,
+    /// the others the poses.
+    pub fn level(self) -> Level {
+        match self {
+            Goal::StickerTest | Goal::LabelCheckpoint => Level::Labels,
+            Goal::ExactPose | Goal::LatticePlacement | Goal::LowHeight | Goal::RetainedCheckpoint => Level::Poses,
+        }
+    }
+
+    /// The puzzles whose states the goal is defined on (LG2.10's table): the sticker test on both, the others on the
+    /// jumbling puzzle only.
+    pub fn puzzles(self) -> &'static [Puzzle] {
+        match self {
+            Goal::StickerTest => &Puzzle::ALL,
+            _ => &[Puzzle::Jumbling],
+        }
+    }
+
+    /// Whether `check(g, s)` and `imply` to it take a second argument, the goal's exact `Nat` bound (LG2.10, LG2.20).
+    pub fn takes_bound(self) -> bool {
+        self == Goal::LowHeight
+    }
+
+    /// LG2.11's unconditional edges leaving this goal: exact pose ⇒ sticker test ⇒ lattice placement ⇒ low height,
+    /// retained checkpoint ⇒ label checkpoint, label checkpoint ⇒ lattice placement. Sticker test ⇒ label checkpoint
+    /// holds only within the reachable-state scope, so it is no edge: it goes through `check(label_checkpoint, s)`,
+    /// which reads the state's claim (ONE.28). No edge enters the retained checkpoint.
+    pub fn edges(self) -> &'static [Goal] {
+        match self {
+            Goal::ExactPose => &[Goal::StickerTest],
+            Goal::StickerTest => &[Goal::LatticePlacement],
+            Goal::LatticePlacement => &[Goal::LowHeight],
+            Goal::RetainedCheckpoint => &[Goal::LabelCheckpoint],
+            Goal::LabelCheckpoint => &[Goal::LatticePlacement],
+            Goal::LowHeight => &[],
+        }
+    }
+
+    /// The reflexive-transitive closure of [`Goal::edges`]: whether `imply` takes a certificate of this goal to `to`.
+    pub fn implies(self, to: Goal) -> bool {
+        let mut stack = vec![self];
+        let mut seen = Vec::new();
+        while let Some(goal) = stack.pop() {
+            if goal == to {
+                return true;
+            }
+            if !seen.contains(&goal) {
+                seen.push(goal);
+                stack.extend_from_slice(goal.edges());
+            }
+        }
+        false
+    }
+}
+
+/// LG2.6's cost units (T1 draft until the IR freeze): retained generators, menu letters and UI actions are distinct.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum CostUnit {
+    Generator,
+    MenuLetter,
+    UiAction,
+}
+
+impl CostUnit {
+    pub const ALL: [CostUnit; 3] = [CostUnit::Generator, CostUnit::MenuLetter, CostUnit::UiAction];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            CostUnit::Generator => "generator",
+            CostUnit::MenuLetter => "menu_letter",
+            CostUnit::UiAction => "ui_action",
+        }
+    }
+
+    pub fn of_name(name: &str) -> Option<CostUnit> {
+        CostUnit::ALL.into_iter().find(|u| u.name() == name)
+    }
+}
+
+/// KN2.13's five reachability kinds, as `c600-jumble` names them (T1 draft): the constructors of `Reachability<P>`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ReachKind {
+    Witnessed,
+    ByTheorem,
+    Promised,
+    Refuted,
+    Open,
+}
+
+impl ReachKind {
+    pub const ALL: [ReachKind; 5] =
+        [ReachKind::Witnessed, ReachKind::ByTheorem, ReachKind::Promised, ReachKind::Refuted, ReachKind::Open];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            ReachKind::Witnessed => "witnessed",
+            ReachKind::ByTheorem => "by_theorem",
+            ReachKind::Promised => "promised",
+            ReachKind::Refuted => "refuted",
+            ReachKind::Open => "open",
+        }
+    }
+
+    pub fn of_name(name: &str) -> Option<ReachKind> {
+        ReachKind::ALL.into_iter().find(|k| k.name() == name)
+    }
+}
+
+/// The host rows of the identity tower (T1 draft until the IR freeze; plan section 2's operations). The language
+/// calls the kernel, never the reverse (KN0.7); each is a snapshot read of its own row.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum KernelOp {
+    /// `snapshot<P>()`: the run's state of the puzzle at its revision (KN2.2, LG2.8).
+    Snapshot(Puzzle),
+    /// `project(s, L)`: KN1.9's explicit projection, a `Partial` level value.
+    Project(Level),
+    /// `digest(v)`: a level value's digest (KN1.8).
+    Digest,
+    /// `compare(a, b, L)`: ONE.25's comparison at a level, a `Partial` verdict.
+    Compare(Level),
+    /// `derive(s, w)`: KN2.11's derived state of a literal word.
+    Derive,
+    /// `import(t, r)`: KN2.14's validation of raw pose data with a claim.
+    Import,
+    /// `reachability(s)`: KN2.13's claim of a state (ONE.28).
+    Reachability,
+    /// `check(g, s)`: LG2.10's goal at its own level.
+    Check(Goal),
+}
+
+impl KernelOp {
+    /// The operation's name in source.
+    pub fn name(self) -> &'static str {
+        match self {
+            KernelOp::Snapshot(_) => "snapshot",
+            KernelOp::Project(_) => "project",
+            KernelOp::Digest => "digest",
+            KernelOp::Compare(_) => "compare",
+            KernelOp::Derive => "derive",
+            KernelOp::Import => "import",
+            KernelOp::Reachability => "reachability",
+            KernelOp::Check(_) => "check",
+        }
+    }
+
+    /// The host row the operation reads: its name, and `check:<goal>` for a goal's check.
+    pub fn row(self) -> String {
+        match self {
+            KernelOp::Check(g) => format!("check:{}", g.name()),
+            other => other.name().to_string(),
+        }
+    }
+}
+
+/// A constructor pattern of a `case` arm (T1 draft): the constructor's name and one binder per payload field, `_`
+/// for a field the arm does not bind.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Pattern {
+    pub ctor: String,
+    pub binders: Vec<String>,
 }
 
 /// LB3.2's end tests (LP2 draft): three independently named tests with different premises and conclusions (state
@@ -422,6 +823,65 @@ impl Ty {
     pub fn same_collection(&self, other: &Ty) -> bool {
         matches!((self, other), (Ty::List(_), Ty::List(_)) | (Ty::Set(_), Ty::Set(_)) | (Ty::Map(..), Ty::Map(..)))
     }
+
+    /// The component types of a type constructor that holds other types, in order: a collection's
+    /// [`Ty::elements`] and a `Partial`'s payload (T1 draft). Empty for other types; a record's fields and a
+    /// function's signature are not components here.
+    pub fn parts(&self) -> Vec<&QTy> {
+        match self {
+            Ty::Partial(t) => vec![&**t],
+            other => other.elements(),
+        }
+    }
+
+    /// The type of the same constructor with its [`Ty::parts`] replaced, in order.
+    pub fn with_parts(&self, mut parts: Vec<QTy>) -> Ty {
+        match self {
+            Ty::Partial(_) => Ty::Partial(Box::new(parts.remove(0))),
+            other => other.with_elements(parts),
+        }
+    }
+
+    /// Whether two types are of the same constructor with [`Ty::parts`]: collections of one kind, or two `Partial`s.
+    pub fn same_shape(&self, other: &Ty) -> bool {
+        self.same_collection(other) || matches!((self, other), (Ty::Partial(_), Ty::Partial(_)))
+    }
+
+    /// The record `Missing` of KN0.4's `partial`: `{ off: Nat, uncovered: Nat, collisions: Nat }` (T1 draft).
+    pub fn missing() -> Ty {
+        let nat = || QTy { ty: Ty::Nat, display: false };
+        Ty::Record(vec![("off".into(), nat()), ("uncovered".into(), nat()), ("collisions".into(), nat())])
+    }
+
+    /// The constructors and payload types of a built-in sum type (T1 draft): `Verdict`, `Partial`, `Reachability` and
+    /// `Derivation`. `None` for every other type; a declared sum type's are its [`TypeDecl`]'s.
+    pub fn builtin_ctors(&self) -> Option<Vec<(&'static str, Vec<QTy>)>> {
+        let q = |ty: Ty| QTy { ty, display: false };
+        Some(match self {
+            Ty::Verdict(p, _, goal) => {
+                let yes = match goal {
+                    Some(g) => Ty::Holds(*p, *g),
+                    None => Ty::Evidence,
+                };
+                vec![("yes", vec![q(yes)]), ("no", vec![q(Ty::Evidence)]), ("unknown", vec![q(Ty::Text)])]
+            }
+            Ty::Partial(t) => vec![
+                ("total", vec![(**t).clone()]),
+                ("partial", vec![(**t).clone(), q(Ty::missing())]),
+                ("undefined", vec![q(Ty::Text)]),
+            ],
+            Ty::Reachability(_) => ReachKind::ALL.iter().map(|k| (k.name(), vec![q(Ty::Evidence)])).collect(),
+            Ty::Derivation(p) => {
+                let refused = Ty::Record(vec![
+                    ("prefix".into(), q(Ty::Nat)),
+                    ("outcome".into(), q(Ty::Text)),
+                    ("code".into(), q(Ty::Text)),
+                ]);
+                vec![("derived", vec![q(Ty::State(*p))]), ("refused", vec![q(refused)])]
+            }
+            _ => return None,
+        })
+    }
 }
 
 /// The named order of an ordered collection result (LG4.3): the canonical key order (DET.9) or its reverse. Draft.
@@ -436,6 +896,10 @@ pub struct FnTy {
     pub params: Vec<QTy>,
     pub result: QTy,
     pub effects: EffectBound,
+    /// The callable computes or selects its result under approximate control (LG2.20, LG2.22; T1 draft until the IR
+    /// freeze). A callable known only by its declared type keeps it, so an exact use of its result is
+    /// `LG2:type.exactness_violation`.
+    pub control: bool,
 }
 
 /// Effects, capability requirements and effect variables of a function type (LG3.1, LG3.2).
@@ -627,6 +1091,13 @@ pub enum Prim {
     /// `stream_digest(s)`: the literal digest of a streamed word as 64 lowercase hex digits, the SHA-256 of its
     /// letters as little-endian 32-bit integers, which is the kernel's literal digest of the same letters (KI.13).
     StreamDigest,
+    /// `imply(h, G)`: a certificate `Holds<P, g>` taken to `Holds<P, G>` along LG2.11's edges only ([`Goal::implies`];
+    /// T1 draft). It is pure. To the low-height goal it takes a second argument, the exact `Nat` bound (LG2.20).
+    Imply(Goal),
+    /// `to_cost<P, U>(n)`: an exact `Nat` as a cost of puzzle P in unit U (LG2.6; T1 draft).
+    ToCost(Puzzle, CostUnit),
+    /// `cost_value(c)`: a cost's count as an exact `Nat` (T1 draft).
+    CostValue,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -824,6 +1295,28 @@ pub enum Expr {
         result: QTy,
         body: Box<Expr>,
     },
+    /// A value of the sum type `ty` made by its constructor `ctor` from the payload `args` (LG2.1; T1 draft). A
+    /// program makes `Verdict`, `Partial`, `Reachability` and declared values; `Evidence`, `Holds` and `Derivation`
+    /// come from the host only.
+    Construct {
+        ty: Ty,
+        ctor: String,
+        args: Vec<Expr>,
+    },
+    /// A match on a sum type's constructors (LG2.1, LG2.9; T1 draft). Each arm's pattern binds the constructor's
+    /// payload; without a `default`, the arms account for every constructor.
+    Case {
+        scrutinee: Box<Expr>,
+        arms: Vec<(Pattern, Expr)>,
+        default: Option<Box<Expr>>,
+    },
+    /// A host row of the identity tower ([`KernelOp`]; T1 draft) with its arguments. `ty` is the declared result type,
+    /// which the checker verifies, as a snapshot read's.
+    Kernel {
+        op: KernelOp,
+        args: Vec<Expr>,
+        ty: QTy,
+    },
 }
 
 impl Expr {
@@ -860,7 +1353,16 @@ impl Expr {
             Expr::Closure { body, .. } => vec![&**body],
             Expr::Child { body, otherwise, .. } => vec![&**body, &**otherwise],
             Expr::Repeat { count, init, body, .. } => vec![&**count, &**init, &**body],
-            Expr::Prim { args, .. } | Expr::Collection { items: args, .. } => args.iter().collect(),
+            Expr::Prim { args, .. }
+            | Expr::Collection { items: args, .. }
+            | Expr::Construct { args, .. }
+            | Expr::Kernel { args, .. } => args.iter().collect(),
+            Expr::Case { scrutinee, arms, default } => {
+                let mut out = vec![&**scrutinee];
+                out.extend(arms.iter().map(|(_, arm)| arm));
+                out.extend(default.as_deref());
+                out
+            }
             Expr::Record(fields) => fields.iter().map(|(_, f)| f).collect(),
             Expr::Field { value, .. }
             | Expr::PublishView { value }
@@ -1057,7 +1559,40 @@ pub mod build {
         }
     }
     pub fn fn_ty(params: Vec<QTy>, result: QTy, effects: EffectBound) -> Ty {
-        Ty::Fn(Box::new(FnTy { params, result, effects }))
+        Ty::Fn(Box::new(FnTy { params, result, effects, control: false }))
+    }
+    /// A function type whose callable selects its result under approximate control (LG2.20, LG2.22; T1 draft).
+    pub fn fn_ty_control(params: Vec<QTy>, result: QTy, effects: EffectBound) -> Ty {
+        Ty::Fn(Box::new(FnTy { params, result, effects, control: true }))
+    }
+    /// A declared sum type with constructors `(name, payload)` (T1 draft).
+    pub fn sum_type(name: &str, ctors: Vec<(&str, Vec<QTy>)>) -> TypeDecl {
+        let ctors = ctors.into_iter().map(|(n, payload)| Ctor { name: n.into(), payload }).collect();
+        TypeDecl { name: name.into(), exported: false, ctors }
+    }
+    /// The declared sum type `name` of the module `module` (T1 draft).
+    pub fn named(module: &str, name: &str) -> Ty {
+        Ty::Named { module: module.into(), name: name.into() }
+    }
+    /// A value of the sum type `ty` by its constructor `ctor` (T1 draft).
+    pub fn construct(ty: Ty, ctor: &str, args: Vec<Expr>) -> Expr {
+        Expr::Construct { ty, ctor: ctor.into(), args }
+    }
+    /// A constructor pattern with its binders (T1 draft).
+    pub fn pat(ctor: &str, binders: &[&str]) -> Pattern {
+        Pattern { ctor: ctor.into(), binders: binders.iter().map(|b| b.to_string()).collect() }
+    }
+    /// A match on a sum type's constructors (T1 draft).
+    pub fn case(scrutinee: Expr, arms: Vec<(Pattern, Expr)>, default: Option<Expr>) -> Expr {
+        Expr::Case { scrutinee: Box::new(scrutinee), arms, default: default.map(Box::new) }
+    }
+    /// A host row of the identity tower with its declared result type (T1 draft).
+    pub fn kernel(op: KernelOp, args: Vec<Expr>, ty: QTy) -> Expr {
+        Expr::Kernel { op, args, ty }
+    }
+    /// `imply(h, goal)`, with the bound for the low-height goal (T1 draft).
+    pub fn imply(goal: Goal, args: Vec<Expr>) -> Expr {
+        prim(Prim::Imply(goal), args)
     }
     pub fn function(kind: FnKind, name: &str, params: Vec<Param>, result: QTy, body: Expr) -> Function {
         Function { name: name.into(), kind, exported: false, params, result, effects: None, body }
@@ -1076,12 +1611,24 @@ pub mod build {
         function(FnKind::Contract, name, Vec::new(), result, body)
     }
     pub fn module(name: &str, functions: Vec<Function>) -> Module {
-        Module { name: name.into(), kind: ModuleKind::Program, capabilities: BTreeSet::new(), functions }
+        Module {
+            name: name.into(),
+            kind: ModuleKind::Program,
+            capabilities: BTreeSet::new(),
+            types: Vec::new(),
+            functions,
+        }
     }
     /// A stage module with no array inputs.
     pub fn stage(name: &str, kind: StageKind, ops: u64, overdraw: u64, functions: Vec<Function>) -> Module {
         let decl = StageDecl { kind, ops, overdraw, arrays: Vec::new() };
-        Module { name: name.into(), kind: ModuleKind::Stage(decl), capabilities: BTreeSet::new(), functions }
+        Module {
+            name: name.into(),
+            kind: ModuleKind::Stage(decl),
+            capabilities: BTreeSet::new(),
+            types: Vec::new(),
+            functions,
+        }
     }
     /// A binary32 scalar, `Approx<24>` (RPI.69).
     pub fn f32() -> QTy {

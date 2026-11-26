@@ -171,6 +171,8 @@ fn outside(e: &Expr) -> Option<&'static str> {
         Expr::TextDecodeHex { .. } => "a decoding allocates a text",
         Expr::ReadClock => "frame time is a declared host input, an entry parameter, never an ambient clock read",
         Expr::Child { .. } => "a child scope is a budget scope of a run",
+        Expr::Construct { .. } | Expr::Case { .. } => "a sum type's value is no stage value (T1 draft)",
+        Expr::Kernel { .. } => "a kernel row is an engine call",
         _ => return None,
     })
 }

@@ -206,9 +206,9 @@ fn menu_word_keys_order_by_grip_then_entries_with_a_proper_prefix_first() {
 const KEYS: &str = "export fn same(x: MenuWord, y: MenuWord) -> Bool effects [] {\n    \
     return exact_eq(word_key(x), word_key(y));\n}\n\n\
     export fn kept(x: MenuWord, y: MenuWord) -> Bool effects [] {\n    \
-    return contains(insert(set<WordEqualityKey>(), word_key(x)), word_key(y));\n}\n\n\
+    return contains(insert(set<WordEqualityKey<Jumbling>>(), word_key(x)), word_key(y));\n}\n\n\
     export fn literal() -> Bool effects [] {\n    return exact_eq(word_key(menu[4:3, 4:4]), word_key(menu[4:0]));\n}\n\n\
-    export fn key(x: MenuWord) -> WordEqualityKey effects [] {\n    return word_key(x);\n}\n\n\
+    export fn key(x: MenuWord) -> WordEqualityKey<Jumbling> effects [] {\n    return word_key(x);\n}\n\n\
     export fn full(x: Word) -> Bool effects [] {\n    return exact_eq(word_key(x), word_key(x));\n}\n";
 
 /// `word_key` on menu words through the interpreter: equal keys exactly for equal token sequences, in `exact_eq` and in
@@ -307,8 +307,9 @@ fn a_menu_word_key_needs_the_menu_matrices_and_a_run_keys_one_kind_of_word() {
     assert_eq!(refused.err().map(|e| e.code), Some(INCOMPATIBLE_ALPHABET));
 }
 
-const ARGS: &str = "export fn same(k: WordEqualityKey) -> Bool effects [] {\n    return exact_eq(k, k);\n}\n\n\
-    export fn count(l: List<WordEqualityKey>) -> Nat effects [] {\n    return length(l);\n}\n";
+const ARGS: &str =
+    "export fn same(k: WordEqualityKey<Jumbling>) -> Bool effects [] {\n    return exact_eq(k, k);\n}\n\n\
+    export fn count(l: List<WordEqualityKey<Jumbling>>) -> Nat effects [] {\n    return length(l);\n}\n";
 
 /// A menu word key has no canonical form either, so no argument holds one.
 #[test]
@@ -343,7 +344,7 @@ impl Host for Answering {
 }
 
 const READ: &str = "export fn agrees(w: MenuWord) -> Bool effects [snapshot] {\n    \
-    return exact_eq(read_snapshot<WordEqualityKey>(\"best\"), word_key(w));\n}\n";
+    return exact_eq(read_snapshot<WordEqualityKey<Jumbling>>(\"best\"), word_key(w));\n}\n";
 
 /// A host's answer may hold a menu word key only under the run's alphabet, with its matrices, and in canonical form. A
 /// key under another menu or alphabet size, tokens out of form, a Full word key in a run that keys menu words, or a

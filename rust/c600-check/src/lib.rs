@@ -25,6 +25,14 @@
 //!   end test's row declared `Bool`, and a match whose `_` arm takes `unestablished` together with another outcome are
 //!   `LG2:type.verdict_required`. A read of an end test's row declared as any other type, another test's verdict
 //!   included, is `LG2:type.mismatch`.
+//! - The identity tower (T1 drafts until the IR freeze, PHS.49): an identity of another puzzle, or a pose-table index
+//!   for an identity, is `LG2:type.identity_mismatch`; another level, another goal's certificate or verdict, a partial
+//!   result used as a total value, and an `imply` LG2.11 does not give are `LG2:type.level_mismatch`; costs of another
+//!   puzzle or unit, or a cost and a count, are `LG2:type.cost_unit_mix`; raw pose data, a record or a level value
+//!   where a state is expected, and an `import` without a claim, are `LG2:type.reachability_missing`; a word of the
+//!   other alphabet for `derive` is `LG2:type.mode_mismatch`; and a verdict where a boolean is expected, or the
+//!   reverse, is `LG2:type.verdict_required`. A case accounts for every constructor of a sum type, and a `_` arm of a
+//!   case on a verdict takes `unknown` alone (LG2.1, LG2.9). A fault of a declared sum type is an [`IrError`].
 //! - The flow rule (BND.33) stays off until LQ2 sets it, so the checker never emits `LG3:capability.flow_refused`
 //!   (CT-BND-24, CT-ERR-15). [`separation`] computes how capability separation sees a program (BND.41).
 //! - Static success never replaces the engine's run-time checks (LG3.10).
@@ -36,7 +44,8 @@ use std::fmt;
 
 use c600_ir::{
     Accounting, Callee, Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Expr, Field, FnKind, FnTy,
-    Function, Lit, Prim, Program, QTy, ReceiptField, Ty, EXEC_CONTRACT, FORM2_EXEC_CONTRACT, IR_VERSION,
+    Function, Goal, KernelOp, Lit, Pattern, Prim, Program, Puzzle, QTy, ReceiptField, Ty, TypeDecl, EXEC_CONTRACT,
+    FORM2_EXEC_CONTRACT, IR_VERSION,
 };
 
 /// `LG2:type.mismatch` (LG2.1).
@@ -63,6 +72,20 @@ pub const NOT_GRANTED: &str = "LG3:capability.not_granted";
 pub const AMBIENT_READ: &str = "LG3:capability.ambient_read";
 /// `LG4:input.ir_version_unsupported` (LG4.1).
 pub const IR_VERSION_UNSUPPORTED: &str = "LG4:input.ir_version_unsupported";
+/// `LG2:type.identity_mismatch` (LG2.2; T1 draft rules): an argument, a comparison or a binding of another puzzle's
+/// identity, or a pose-table index where an identity is expected.
+pub const IDENTITY_MISMATCH: &str = "LG2:type.identity_mismatch";
+/// `LG2:type.level_mismatch` (LG2.3, LG2.10; T1 draft rules): another level, a level the puzzle does not hold, a
+/// partial result used as a total value, or a goal's certificate where another goal's is expected.
+pub const LEVEL_MISMATCH: &str = "LG2:type.level_mismatch";
+/// `LG2:type.cost_unit_mix` (LG2.6; T1 draft rules): costs of another puzzle or unit, or a cost mixed with a count
+/// that has no unit.
+pub const COST_UNIT_MIX: &str = "LG2:type.cost_unit_mix";
+/// `LG2:type.reachability_missing` (LG2.7; T1 draft rules): raw pose data, a record or a level value where a state
+/// is expected, or a missing claim.
+pub const REACHABILITY_MISSING: &str = "LG2:type.reachability_missing";
+/// `LG2:type.mode_mismatch` (LG2.8; T1 draft rules): a word of the other alphabet for a state's derivation.
+pub const MODE_MISMATCH: &str = "LG2:type.mode_mismatch";
 
 mod stage;
 
@@ -100,8 +123,8 @@ pub struct Diagnostic {
 ///
 /// Types are base types in source notation, without the display qualifier or a function's effect bound, which a
 /// base-type mismatch never involves. `_` stands for an unknown type or any precision, `..` for further record fields
-/// and `A | B` for the choice an overloaded operation takes. The IR draft has no identity-tower levels, so the types
-/// carry none (LG2.3).
+/// and `A | B` for the choice an overloaded operation takes. The identity tower's indices are part of a type's text,
+/// as in `Piece<Full>` or `Digest<Jumbling, labels>` (T1 draft), and a declared sum type is `module.Name`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mismatch {
     pub expected: String,
@@ -295,6 +318,12 @@ impl Summary {
             s.rows.insert(Row::Unknown);
         }
         s
+    }
+
+    /// What a callable known only by its declared type needs: its bound, and its control bit (LG2.20, LG2.22; T1
+    /// draft).
+    fn of_fn(f: &FnTy) -> Summary {
+        Summary { control: f.control, ..Summary::of_bound(&f.effects) }
     }
 
     /// The summary as a function type's effect bound.
@@ -869,24 +898,13 @@ fn unnamed(body: &Expr, named: &Named) -> Vec<(String, Unnamed)> {
         if let Some(found) = found {
             out.push((path_text(path), found));
         }
-        let (scoped, names): (usize, Vec<String>) = match e {
-            Expr::Let { name, .. } => (1, vec![name.clone()]),
-            Expr::Closure { params, .. } => (0, params.iter().map(|p| p.name.clone()).collect()),
-            Expr::Child { status, .. } => (1, status.iter().cloned().collect()),
-            Expr::Repeat { acc, .. } => (2, vec![acc.clone()]),
-            _ => (usize::MAX, Vec::new()),
-        };
         for (i, child) in e.children().into_iter().enumerate() {
-            let enters = i == scoped;
-            if enters {
-                bound.extend(names.iter().cloned());
-            }
+            let depth = bound.len();
+            bound.extend(child_binders(e, i));
             path.push(i as u32);
             walk(child, named, path, bound, out);
             path.pop();
-            if enters {
-                bound.truncate(bound.len() - names.len());
-            }
+            bound.truncate(depth);
         }
     }
     let mut out = Vec::new();
@@ -919,6 +937,17 @@ fn unnamed_results(body: &Expr, words: &BTreeSet<&str>) -> Vec<String> {
                     path.push(i as u32 + 1);
                     walk(arm, words, path, bound, out);
                     path.pop();
+                }
+            }
+            // A case's arms and its `_` arm, each arm with its binders bound (T1 draft).
+            Expr::Case { .. } => {
+                for (i, arm) in e.children().into_iter().enumerate().skip(1) {
+                    let depth = bound.len();
+                    bound.extend(child_binders(e, i));
+                    path.push(i as u32);
+                    walk(arm, words, path, bound, out);
+                    path.pop();
+                    bound.truncate(depth);
                 }
             }
             Expr::Child { body, status, otherwise, .. } => {
@@ -1151,6 +1180,23 @@ fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, 
                     self.steered -= steers;
                     None
                 }
+                // As a match, with each arm's binders shadowing the names they bind (T1 draft).
+                Expr::Case { scrutinee, arms, default } => {
+                    self.child(0, scrutinee, Place::Other);
+                    let (branch, steers) = self.branch(scrutinee, place);
+                    self.steered += steers;
+                    for (i, (pattern, arm)) in arms.iter().enumerate() {
+                        let depth = self.scope.len();
+                        self.scope.extend(pattern_names(pattern).map(|b| (b, None)));
+                        self.child(i as u32 + 1, arm, branch);
+                        self.scope.truncate(depth);
+                    }
+                    if let Some(default) = default {
+                        self.child(arms.len() as u32 + 1, default, branch);
+                    }
+                    self.steered -= steers;
+                    None
+                }
                 Expr::PublishView { value } => {
                     if self.child(0, value, Place::View).is_some() {
                         self.out.views.insert(path_text(&self.path));
@@ -1282,10 +1328,30 @@ fn deliveries(body: &Expr, params: &BTreeSet<&str>, exceptions: &BTreeMap<&str, 
 /// silent "holds no word".
 fn carries_word(ty: &Ty) -> bool {
     match ty {
-        Ty::Word | Ty::CompressedWord | Ty::WordEqualityKey | Ty::TraceEqualityKey | Ty::MenuWord | Ty::Var(_) => true,
+        Ty::Word | Ty::CompressedWord | Ty::WordEqualityKey(_) | Ty::TraceEqualityKey | Ty::MenuWord | Ty::Var(_) => {
+            true
+        }
+        // A declared sum type's payloads are not in view here, so it may hold a word (T1 draft, conservative).
+        Ty::Named { .. } => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| carries_word(&f.ty)),
         Ty::Fn(f) => carries_word(&f.result.ty) || f.params.iter().any(|p| carries_word(&p.ty)),
-        Ty::List(_) | Ty::Set(_) | Ty::Map(..) => ty.elements().into_iter().any(|e| carries_word(&e.ty)),
+        Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Partial(_) => ty.parts().into_iter().any(|e| carries_word(&e.ty)),
+        // The identity tower's types hold no letters: a derivation holds a state, not its word (T1 drafts).
+        Ty::Piece(_)
+        | Ty::Sticker(_)
+        | Ty::Slot(_)
+        | Ty::Pose
+        | Ty::PoseTableIndex
+        | Ty::Digest(..)
+        | Ty::LevelValue(..)
+        | Ty::State(_)
+        | Ty::PoseTable
+        | Ty::Reachability(_)
+        | Ty::Evidence
+        | Ty::Verdict(..)
+        | Ty::Holds(..)
+        | Ty::Cost(..)
+        | Ty::Derivation(_) => false,
         Ty::Unit
         | Ty::Bool
         | Ty::Nat
@@ -1330,7 +1396,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Receipt => "Receipt".into(),
         Ty::Var(name) => name.clone(),
         Ty::List(_) => "List".into(),
-        Ty::WordEqualityKey => "WordEqualityKey".into(),
+        Ty::WordEqualityKey(_) => "WordEqualityKey".into(),
         Ty::TraceEqualityKey => "TraceEqualityKey".into(),
         Ty::Set(_) => "Set".into(),
         Ty::Map(..) => "Map".into(),
@@ -1341,6 +1407,23 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Field(f) => f.name().into(),
         Ty::Bytes => "Bytes".into(),
         Ty::WordStream => "WordStream".into(),
+        Ty::Piece(_) => "Piece".into(),
+        Ty::Sticker(_) => "Sticker".into(),
+        Ty::Slot(_) => "Slot".into(),
+        Ty::Pose => "Pose".into(),
+        Ty::PoseTableIndex => "PoseTableIndex".into(),
+        Ty::Digest(..) => "Digest".into(),
+        Ty::LevelValue(..) => "LevelValue".into(),
+        Ty::State(_) => "State".into(),
+        Ty::PoseTable => "PoseTable".into(),
+        Ty::Reachability(_) => "Reachability".into(),
+        Ty::Evidence => "Evidence".into(),
+        Ty::Verdict(..) => "Verdict".into(),
+        Ty::Partial(_) => "Partial".into(),
+        Ty::Holds(..) => "Holds".into(),
+        Ty::Cost(..) => "Cost".into(),
+        Ty::Derivation(_) => "Derivation".into(),
+        Ty::Named { name, .. } => name.clone(),
     }
 }
 
@@ -1360,6 +1443,18 @@ fn type_text(ty: &Ty) -> String {
         Ty::List(e) => format!("List<{}>", type_text(&e.ty)),
         Ty::Set(e) => format!("Set<{}>", type_text(&e.ty)),
         Ty::Map(k, v) => format!("Map<{}, {}>", type_text(&k.ty), type_text(&v.ty)),
+        // The identity tower's indices (T1 drafts): puzzle, level, goal and cost unit by their source names.
+        Ty::WordEqualityKey(p) => format!("WordEqualityKey<{}>", p.name()),
+        Ty::Piece(p) | Ty::Sticker(p) | Ty::Slot(p) | Ty::State(p) | Ty::Reachability(p) | Ty::Derivation(p) => {
+            format!("{}<{}>", type_name(ty), p.name())
+        }
+        Ty::Digest(p, l) | Ty::LevelValue(p, l) => format!("{}<{}, {}>", type_name(ty), p.name(), l.name()),
+        Ty::Verdict(p, l, None) => format!("Verdict<{}, {}>", p.name(), l.name()),
+        Ty::Verdict(p, l, Some(g)) => format!("Verdict<{}, {}, {}>", p.name(), l.name(), g.name()),
+        Ty::Partial(t) => format!("Partial<{}>", type_text(&t.ty)),
+        Ty::Holds(p, g) => format!("Holds<{}, {}>", p.name(), g.name()),
+        Ty::Cost(p, u) => format!("Cost<{}, {}>", p.name(), u.name()),
+        Ty::Named { module, name } => format!("{module}.{name}"),
         other => type_name(other),
     }
 }
@@ -1386,8 +1481,11 @@ fn replace_var(ty: &Ty, name: &str, with: &Ty) -> Ty {
             params: f.params.iter().map(q).collect(),
             result: q(&f.result),
             effects: f.effects.clone(),
+            control: f.control,
         })),
-        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => c.with_elements(c.elements().into_iter().map(q).collect()),
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Partial(_)) => {
+            c.with_parts(c.parts().into_iter().map(q).collect())
+        }
         other => other.clone(),
     }
 }
@@ -1403,8 +1501,11 @@ fn one_alphabet(ty: &Ty) -> Ty {
             params: f.params.iter().map(q).collect(),
             result: q(&f.result),
             effects: f.effects.clone(),
+            control: f.control,
         })),
-        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => c.with_elements(c.elements().into_iter().map(q).collect()),
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Partial(_)) => {
+            c.with_parts(c.parts().into_iter().map(q).collect())
+        }
         other => other.clone(),
     }
 }
@@ -1414,24 +1515,137 @@ fn one_alphabet(ty: &Ty) -> Ty {
 fn verdicts_as_bool(ty: &Ty) -> Ty {
     let q = |q: &QTy| QTy { ty: verdicts_as_bool(&q.ty), display: q.display };
     match ty {
-        Ty::EndTest(_) => Ty::Bool,
+        // A verdict of the identity tower is matched on its constructors too (T1 draft).
+        Ty::EndTest(_) | Ty::Verdict(..) => Ty::Bool,
         Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), q(f))).collect()),
         Ty::Fn(f) => Ty::Fn(Box::new(FnTy {
             params: f.params.iter().map(q).collect(),
             result: q(&f.result),
             effects: f.effects.clone(),
+            control: f.control,
         })),
-        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => c.with_elements(c.elements().into_iter().map(q).collect()),
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Partial(_)) => {
+            c.with_parts(c.parts().into_iter().map(q).collect())
+        }
         other => other.clone(),
     }
 }
 
-/// Whether a type is or holds an end test's verdict in a record or a collection (LP2 draft).
+/// Whether a type is or holds an end test's verdict or KN0.5's verdict in a record, a collection or a `Partial` (LP2
+/// and T1 drafts).
 fn holds_verdict(ty: &Ty) -> bool {
     match ty {
-        Ty::EndTest(_) => true,
+        Ty::EndTest(_) | Ty::Verdict(..) => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| holds_verdict(&f.ty)),
-        other => other.elements().into_iter().any(|e| holds_verdict(&e.ty)),
+        other => other.parts().into_iter().any(|e| holds_verdict(&e.ty)),
+    }
+}
+
+/// The note of a partial result used as a total value (LG2.3, LG2.9, KN0.4; T1 draft).
+const PARTIAL_NOTE: &str = "a partial result is used through a case on `total`, `partial` and `undefined`, never as a \
+     total value, and an off-lattice projection is no `unknown` (LG2.3, LG2.9, KN0.4)";
+
+/// The puzzle index of an identity-tower type, if it has one (T1 draft).
+fn puzzle_of(ty: &Ty) -> Option<Puzzle> {
+    match ty {
+        Ty::Piece(p)
+        | Ty::Sticker(p)
+        | Ty::Slot(p)
+        | Ty::State(p)
+        | Ty::Reachability(p)
+        | Ty::Derivation(p)
+        | Ty::WordEqualityKey(p)
+        | Ty::Digest(p, _)
+        | Ty::LevelValue(p, _)
+        | Ty::Verdict(p, ..)
+        | Ty::Holds(p, _)
+        | Ty::Cost(p, _) => Some(*p),
+        _ => None,
+    }
+}
+
+/// The code of a base-type misfit of the identity tower, with its rule (T1 draft; LG2.2, LG2.3, LG2.6, LG2.7, LG2.9,
+/// LG2.10): at the first place, at any depth, where `supplied` does not fit `expected`, another puzzle of the same
+/// type constructor, or a pose-table index for an identity, is `LG2:type.identity_mismatch`; another level of the
+/// same constructor and puzzle, a partial result where something else is expected, and another goal's certificate or
+/// verdict are `LG2:type.level_mismatch`; raw pose data, a record or a level value where a state is expected is
+/// `LG2:type.reachability_missing`; costs of other indices, or a cost and a count without a unit, are
+/// `LG2:type.cost_unit_mix`; a verdict and a boolean in each other's place are `LG2:type.verdict_required`. `None`
+/// when the misfit is a plain `LG2:type.mismatch` (LG2.1).
+fn tower_code(expected: &Ty, supplied: &Ty) -> Option<(&'static str, &'static str)> {
+    if is_unknown(expected) || is_unknown(supplied) {
+        return None;
+    }
+    let number = |t: &Ty| is_exact_number(t) || matches!(t, Ty::Approx(_));
+    match (expected, supplied) {
+        (Ty::Partial(x), Ty::Partial(y)) => tower_code(&x.ty, &y.ty),
+        (_, Ty::Partial(_)) => Some((LEVEL_MISMATCH, PARTIAL_NOTE)),
+        (Ty::Bool | Ty::ApproxBool, Ty::Verdict(..)) | (Ty::Verdict(..), Ty::Bool | Ty::ApproxBool) => Some((
+            VERDICT_REQUIRED,
+            "a verdict is matched on `yes`, `no` and `unknown`, never used as a boolean, and a boolean never stands \
+             for one: unknown never reads as no (LG2.9)",
+        )),
+        (Ty::Cost(..), Ty::Cost(..)) => {
+            Some((COST_UNIT_MIX, "costs of another puzzle or unit are another cost (LG2.6)"))
+        }
+        (Ty::Cost(..), t) | (t, Ty::Cost(..)) if number(t) => {
+            Some((COST_UNIT_MIX, "a count without a puzzle and a unit is no cost, and a cost is no bare count (LG2.6)"))
+        }
+        (Ty::State(_), Ty::PoseTable | Ty::Record(_) | Ty::LevelValue(..)) => Some((
+            REACHABILITY_MISSING,
+            "raw pose data, a record or a level value is no state: a state has its reachability claim, and pose data \
+             enters only through `import` with a claim (LG2.7, KN2.14)",
+        )),
+        (Ty::Piece(_) | Ty::Sticker(_) | Ty::Slot(_) | Ty::Pose, Ty::PoseTableIndex) => {
+            Some((IDENTITY_MISMATCH, "a pose-table index is per revision and never an identity (LG2.2, KN1.5, KN2.9)"))
+        }
+        (a, b) if std::mem::discriminant(a) == std::mem::discriminant(b) && puzzle_of(a) != puzzle_of(b) => Some((
+            IDENTITY_MISMATCH,
+            "an identity of one puzzle never stands for another's, even where their indices agree (LG2.2, LG2.7, \
+             KN1.5)",
+        )),
+        (Ty::Digest(_, l), Ty::Digest(_, m)) | (Ty::LevelValue(_, l), Ty::LevelValue(_, m)) if l != m => Some((
+            LEVEL_MISMATCH,
+            "a value or digest of one level never stands for another level's: a change of level is an explicit \
+             projection, and nothing lifts (LG2.3, KN1.9, KN1.10)",
+        )),
+        (Ty::Verdict(_, l, g), Ty::Verdict(_, m, h)) if (l, g) != (m, h) => Some((
+            LEVEL_MISMATCH,
+            "a verdict keeps the level it was reached at and its goal; a goal is never replaced by one at a weaker \
+             level (LG2.3, LG2.10, KN1.11)",
+        )),
+        (Ty::Holds(_, g), Ty::Holds(_, h)) if g != h => Some((
+            LEVEL_MISMATCH,
+            "a goal's certificate stands for that goal only; `imply` follows LG2.11's edges (LG2.10, LG2.11)",
+        )),
+        (Ty::Record(a), Ty::Record(b)) if a.len() == b.len() => {
+            let (ea, sb) = a.iter().zip(b).find(|((na, qa), (nb, qb))| na != nb || !fits(&qa.ty, &qb.ty))?;
+            (ea.0 == sb.0).then(|| tower_code(&ea.1.ty, &sb.1.ty)).flatten()
+        }
+        (a, b) if a.same_shape(b) => {
+            let (x, y) = a.parts().into_iter().zip(b.parts()).find(|(x, y)| !fits(&x.ty, &y.ty))?;
+            tower_code(&x.ty, &y.ty)
+        }
+        (Ty::Fn(a), Ty::Fn(b)) if a.params.len() == b.params.len() => {
+            if !fits(&a.result.ty, &b.result.ty) {
+                return tower_code(&a.result.ty, &b.result.ty);
+            }
+            let (pa, pb) = a.params.iter().zip(&b.params).find(|(pa, pb)| !fits(&pb.ty, &pa.ty))?;
+            tower_code(&pb.ty, &pa.ty)
+        }
+        _ => None,
+    }
+}
+
+/// The code of a misfit whose expected type is a description, `expected` (T1 draft): a partial result where a total
+/// value of a named type or a record is expected is `LG2:type.level_mismatch`, and a verdict where a boolean is
+/// expected `LG2:type.verdict_required`, as [`tower_code`] says.
+fn tower_misfit(expected: &str, supplied: &Ty) -> Option<(&'static str, &'static str)> {
+    let named = expected.starts_with(|c: char| c.is_ascii_uppercase()) || expected.starts_with("record");
+    match supplied {
+        Ty::Partial(_) if named && !expected.starts_with("Partial") => Some((LEVEL_MISMATCH, PARTIAL_NOTE)),
+        Ty::Verdict(..) if matches!(expected, "Bool" | "ApproxBool") => tower_code(&Ty::Bool, supplied),
+        _ => None,
     }
 }
 
@@ -1499,8 +1713,8 @@ fn declared_qual(q: &QTy) -> Qual {
         Ty::ApproxBool => Qual::Cond,
         _ if q.display => Qual::Display { control: false },
         Ty::Record(fields) => fields.iter().fold(Qual::Exact, |acc, (_, f)| acc.join(declared_qual(f).container())),
-        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => {
-            c.elements().into_iter().fold(Qual::Exact, |acc, e| acc.join(declared_qual(e).container()))
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Partial(_)) => {
+            c.parts().into_iter().fold(Qual::Exact, |acc, e| acc.join(declared_qual(e).container()))
         }
         _ => Qual::Exact,
     }
@@ -1510,7 +1724,9 @@ fn declared_qual(q: &QTy) -> Qual {
 /// at any depth, and without a callable, a receipt, `Unit`, a type variable, a compressed word, a generator or an end
 /// test's verdict, so that its canonical key order (DET.9) is defined and a verdict is only ever matched (LG2.9). An F2
 /// or F5 element may be a key (LP2 draft): its key order is the field, then the residue, and `exact_less` still
-/// refuses it, since a finite field has no order.
+/// refuses it, since a finite field has no order. Of the identity tower (T1 draft), a piece, a sticker, a slot, a pose,
+/// a digest and a cost are keys; a pose-table index (per revision, never an identity), a host value, a sum type and a
+/// certificate are not.
 fn key_type(q: &QTy) -> bool {
     !q.display
         && match &q.ty {
@@ -1525,6 +1741,17 @@ fn key_type(q: &QTy) -> bool {
             | Ty::Bytes
             | Ty::WordStream
             | Ty::EndTest(_) => false,
+            Ty::PoseTableIndex
+            | Ty::LevelValue(..)
+            | Ty::State(_)
+            | Ty::PoseTable
+            | Ty::Reachability(_)
+            | Ty::Evidence
+            | Ty::Verdict(..)
+            | Ty::Partial(_)
+            | Ty::Holds(..)
+            | Ty::Derivation(_)
+            | Ty::Named { .. } => false,
             Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
             other => other.elements().into_iter().all(key_type),
         }
@@ -1549,9 +1776,14 @@ fn holds_callable(ty: &Ty) -> bool {
     match ty {
         Ty::Fn(_) => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| holds_callable(&f.ty)),
-        other => other.elements().into_iter().any(|e| holds_callable(&e.ty)),
+        other => other.parts().into_iter().any(|e| holds_callable(&e.ty)),
     }
 }
+
+/// What a goal or an evidence sink takes, in a mismatch's `expected`, for a value that holds a host value of the
+/// identity tower (T1 draft).
+const HOST_VALUES: &str = "portable data without Pose, PoseTableIndex, State, LevelValue, PoseTable, Reachability, \
+     Evidence, Verdict, Holds, Derivation or a declared sum type";
 
 /// What a goal or an evidence sink takes, in a mismatch's `expected`.
 const PORTABLE: &str =
@@ -1567,13 +1799,54 @@ const PORTABLE: &str =
 fn portable(ty: &Ty) -> bool {
     match ty {
         _ if is_unknown(ty) => true,
-        Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::TraceEqualityKey | Ty::CompressedWord => false,
+        Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey(_) | Ty::TraceEqualityKey | Ty::CompressedWord => {
+            false
+        }
         // Captured bytes have no canonical form either (DET.62; LP2 draft): a program passes the decoded text.
         Ty::Generator | Ty::Field(_) | Ty::Bytes => false,
         // A word stream stays in its run, as a generator does (DET.63; LP2 draft): a program passes its digest.
         Ty::WordStream => false,
+        _ if is_host_value(ty) => false,
         Ty::Record(fields) => fields.iter().all(|(_, f)| portable(&f.ty)),
-        other => other.elements().into_iter().all(|e| portable(&e.ty)),
+        other => other.parts().into_iter().all(|e| portable(&e.ty)),
+    }
+}
+
+/// Whether a type is a host value of the identity tower or a certificate, which [`portable`] refuses (T1 draft): a
+/// pose, a pose-table index, a state, a level value, a pose table, a claim, evidence, a verdict, a certificate, a
+/// derivation, and a declared sum type, whose payloads are not in view here.
+fn is_host_value(ty: &Ty) -> bool {
+    matches!(
+        ty,
+        Ty::Pose
+            | Ty::PoseTableIndex
+            | Ty::State(_)
+            | Ty::LevelValue(..)
+            | Ty::PoseTable
+            | Ty::Reachability(_)
+            | Ty::Evidence
+            | Ty::Verdict(..)
+            | Ty::Holds(..)
+            | Ty::Derivation(_)
+            | Ty::Named { .. }
+    )
+}
+
+/// Whether a type is or holds a host value ([`is_host_value`]) in a record, a collection or a `Partial` (T1 draft).
+fn holds_host_value(ty: &Ty) -> bool {
+    match ty {
+        _ if is_host_value(ty) => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_host_value(&f.ty)),
+        other => other.parts().into_iter().any(|e| holds_host_value(&e.ty)),
+    }
+}
+
+/// What a goal or an evidence sink expects, for a value of type `ty` that it refuses.
+fn portable_expected(ty: &Ty) -> &'static str {
+    if holds_host_value(ty) {
+        HOST_VALUES
+    } else {
+        PORTABLE
     }
 }
 
@@ -1584,7 +1857,7 @@ fn holds_generator(ty: &Ty) -> bool {
     match ty {
         Ty::Generator => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| holds_generator(&f.ty)),
-        other => other.elements().into_iter().any(|e| holds_generator(&e.ty)),
+        other => other.parts().into_iter().any(|e| holds_generator(&e.ty)),
     }
 }
 
@@ -1596,7 +1869,7 @@ fn shares_generator(ty: &Ty, alone: bool) -> bool {
         Ty::Generator => !alone,
         Ty::Fn(f) => f.params.iter().any(|p| shares_generator(&p.ty, true)) || shares_generator(&f.result.ty, true),
         Ty::Record(fields) => fields.iter().any(|(_, f)| shares_generator(&f.ty, false)),
-        other => other.elements().into_iter().any(|e| shares_generator(&e.ty, false)),
+        other => other.parts().into_iter().any(|e| shares_generator(&e.ty, false)),
     }
 }
 
@@ -1605,7 +1878,7 @@ fn holds_compressed(ty: &Ty) -> bool {
     match ty {
         Ty::CompressedWord => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| holds_compressed(&f.ty)),
-        other => other.elements().into_iter().any(|e| holds_compressed(&e.ty)),
+        other => other.parts().into_iter().any(|e| holds_compressed(&e.ty)),
     }
 }
 
@@ -1614,7 +1887,7 @@ fn holds_stream(ty: &Ty) -> bool {
     match ty {
         Ty::WordStream => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| holds_stream(&f.ty)),
-        other => other.elements().into_iter().any(|e| holds_stream(&e.ty)),
+        other => other.parts().into_iter().any(|e| holds_stream(&e.ty)),
     }
 }
 
@@ -1629,7 +1902,9 @@ fn exact_slot(slot: &QTy, own: bool) -> bool {
         Ty::Unit | Ty::Approx(_) | Ty::ApproxBool => false,
         Ty::Var(_) => own,
         Ty::Record(fields) => fields.iter().all(|(_, f)| f.ty == Ty::Unit || exact_slot(f, own)),
-        Ty::List(_) | Ty::Set(_) | Ty::Map(..) => slot.ty.elements().into_iter().all(|e| exact_slot(e, own)),
+        Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Partial(_) => {
+            slot.ty.parts().into_iter().all(|e| exact_slot(e, own))
+        }
         _ => true,
     }
 }
@@ -1642,16 +1917,19 @@ fn admits(slot: &QTy, value: &QTy, own: bool) -> bool {
     match (&slot.ty, &value.ty) {
         (Ty::Fn(s), Ty::Fn(t)) => signature_keeps(s, t, own),
         (Ty::Record(s), Ty::Record(t)) => s.iter().zip(t).all(|((_, sf), (_, tf))| admits(sf, tf, own)),
-        (s, t) if s.same_collection(t) => s.elements().into_iter().zip(t.elements()).all(|(s, t)| admits(s, t, own)),
+        (s, t) if s.same_shape(t) => s.parts().into_iter().zip(t.parts()).all(|(s, t)| admits(s, t, own)),
         _ => true,
     }
 }
 
 /// Whether a callable of type `t` keeps every qualifier in a slot of type `s` (LG2.19): its result is no more
 /// qualified than the slot promises, and each parameter takes what the slot passes. A parameter's type variables
-/// are the callable's own and take anything.
+/// are the callable's own and take anything. A callable that selects its result under approximate control enters only
+/// a slot whose type keeps that control bit (LG2.20, LG2.22; T1 draft).
 fn signature_keeps(s: &FnTy, t: &FnTy, own: bool) -> bool {
-    s.params.iter().zip(&t.params).all(|(sp, tp)| admits(tp, sp, false)) && admits(&s.result, &t.result, own)
+    s.params.iter().zip(&t.params).all(|(sp, tp)| admits(tp, sp, false))
+        && admits(&s.result, &t.result, own)
+        && (s.control || !t.control)
 }
 
 /// A storage read's value `v`, declared as `slot`, of a value the program stores as `stored`: a type variable of the
@@ -1703,7 +1981,7 @@ fn fits(slot: &Ty, value: &Ty) -> bool {
                 && a.params.iter().zip(&b.params).all(|(pa, pb)| matches!(pa.ty, Ty::Var(_)) || fits(&pb.ty, &pa.ty))
                 && fits(&a.result.ty, &b.result.ty)
         }
-        (a, b) if a.same_collection(b) => a.elements().into_iter().zip(b.elements()).all(|(x, y)| fits(&x.ty, &y.ty)),
+        (a, b) if a.same_shape(b) => a.parts().into_iter().zip(b.parts()).all(|(x, y)| fits(&x.ty, &y.ty)),
         (a, b) => a == b,
     }
 }
@@ -1735,11 +2013,12 @@ fn widen(a: &Ty, b: &Ty) -> Option<Ty> {
             effects.capabilities.extend(y.effects.capabilities.iter().copied());
             effects.vars.extend(y.effects.vars.iter().cloned());
             let result = widen_q(&x.result, &y.result)?;
-            Some(Ty::Fn(Box::new(FnTy { params: x.params.clone(), result, effects })))
+            let control = x.control || y.control;
+            Some(Ty::Fn(Box::new(FnTy { params: x.params.clone(), result, effects, control })))
         }
-        (x, y) if x.same_collection(y) => {
-            let parts = x.elements().into_iter().zip(y.elements()).map(|(p, q)| widen_q(p, q));
-            Some(x.with_elements(parts.collect::<Option<Vec<_>>>()?))
+        (x, y) if x.same_shape(y) => {
+            let parts = x.parts().into_iter().zip(y.parts()).map(|(p, q)| widen_q(p, q));
+            Some(x.with_parts(parts.collect::<Option<Vec<_>>>()?))
         }
         _ => None,
     }
@@ -1765,7 +2044,7 @@ fn effect_vars(q: &QTy, out: &mut BTreeSet<String>) {
             }
         }
         other => {
-            for e in other.elements() {
+            for e in other.parts() {
                 effect_vars(e, out);
             }
         }
@@ -1782,11 +2061,12 @@ fn rename_vars(q: &QTy, map: &BTreeMap<String, String>) -> QTy {
                 params: f.params.iter().map(|p| rename_vars(p, map)).collect(),
                 result: rename_vars(&f.result, map),
                 effects,
+                control: f.control,
             }))
         }
         Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), rename_vars(f, map))).collect()),
-        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => {
-            c.with_elements(c.elements().into_iter().map(|e| rename_vars(e, map)).collect())
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Partial(_)) => {
+            c.with_parts(c.parts().into_iter().map(|e| rename_vars(e, map)).collect())
         }
         other => other.clone(),
     };
@@ -1885,6 +2165,18 @@ fn free_names<'a>(e: &'a Expr, bound: &mut Vec<&'a str>, out: &mut BTreeSet<&'a 
             free_names(body, bound, out);
             bound.pop();
         }
+        Expr::Case { scrutinee, arms, default } => {
+            free_names(scrutinee, bound, out);
+            for (pattern, arm) in arms {
+                let depth = bound.len();
+                bound.extend(pattern_names(pattern));
+                free_names(arm, bound, out);
+                bound.truncate(depth);
+            }
+            if let Some(default) = default {
+                free_names(default, bound, out);
+            }
+        }
         other => {
             for child in other.children() {
                 free_names(child, bound, out);
@@ -1900,6 +2192,161 @@ fn writes<'a>(e: &'a Expr, out: &mut BTreeMap<&'a str, Vec<&'a QTy>>) {
     }
     for child in e.children() {
         writes(child, out);
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Declared sum types (LG2.1; T1 draft)
+
+/// The declared sum types of a program, by module and type name, after their well-formedness checks, each refused
+/// with an [`IrError`] as lowering would refuse it at its source text: a type declared twice in a module, a
+/// constructor name used twice in a module, a payload that holds a type variable (a declared type is monomorphic), a
+/// callable or a generator, a `Named` type that no module declares, a type of another module that it does not export,
+/// and an exported function whose signature uses a type its module does not export.
+fn declared_types(program: &Program) -> Result<BTreeMap<(&str, &str), &TypeDecl>, IrError> {
+    let mut types = BTreeMap::new();
+    for module in &program.modules {
+        let mut ctors = BTreeSet::new();
+        for t in &module.types {
+            if types.insert((module.name.as_str(), t.name.as_str()), t).is_some() {
+                return Err(IrError(format!("type `{}.{}` is declared twice", module.name, t.name)));
+            }
+            for c in &t.ctors {
+                if !ctors.insert(c.name.as_str()) {
+                    return Err(IrError(format!(
+                        "constructor `{}` is declared twice in module `{}`; constructor names are unique within a \
+                         module",
+                        c.name, module.name
+                    )));
+                }
+            }
+        }
+    }
+    let lookup = |from: &str, ty: &Ty| -> Result<(), IrError> {
+        let mut named = Vec::new();
+        named_in(ty, &mut named);
+        for (m, n) in named {
+            let Some(decl) = types.get(&(m, n)) else {
+                return Err(IrError(format!("unknown type `{m}.{n}`")));
+            };
+            if m != from && !decl.exported {
+                return Err(IrError(format!("type `{m}.{n}` is not exported")));
+            }
+        }
+        Ok(())
+    };
+    for module in &program.modules {
+        let from = module.name.as_str();
+        for t in &module.types {
+            for c in &t.ctors {
+                for p in &c.payload {
+                    let at = format!("the payload of `{from}.{}`'s constructor `{}`", t.name, c.name);
+                    if has_var(&p.ty) {
+                        return Err(IrError(format!("{at} holds a type variable: a declared type is monomorphic")));
+                    }
+                    if holds_callable(&p.ty) || shares_generator(&p.ty, false) {
+                        return Err(IrError(format!(
+                            "{at} holds a callable or a generator, which a sum type's value does not hold (T1 draft)"
+                        )));
+                    }
+                    lookup(from, &p.ty)?;
+                }
+            }
+        }
+        for f in &module.functions {
+            let signature: Vec<&Ty> = f.params.iter().map(|p| &p.ty.ty).chain([&f.result.ty]).collect();
+            for ty in &signature {
+                lookup(from, ty)?;
+            }
+            if f.exported {
+                let mut named = Vec::new();
+                for ty in &signature {
+                    named_in(ty, &mut named);
+                }
+                if let Some((m, n)) = named.into_iter().find(|&(m, n)| !types[&(m, n)].exported) {
+                    return Err(IrError(format!(
+                        "the exported function `{from}.{}` uses the type `{m}.{n}`, which its module does not export",
+                        f.name
+                    )));
+                }
+            }
+            let mut embedded = Vec::new();
+            expr_types(&f.body, &mut embedded);
+            for ty in embedded {
+                lookup(from, ty)?;
+            }
+        }
+    }
+    Ok(types)
+}
+
+/// The declared sum types a type names at any depth, by module and name.
+fn named_in<'t>(ty: &'t Ty, out: &mut Vec<(&'t str, &'t str)>) {
+    match ty {
+        Ty::Named { module, name } => out.push((module, name)),
+        Ty::Record(fields) => fields.iter().for_each(|(_, f)| named_in(&f.ty, out)),
+        Ty::Fn(f) => {
+            f.params.iter().for_each(|p| named_in(&p.ty, out));
+            named_in(&f.result.ty, out);
+        }
+        other => other.parts().into_iter().for_each(|p| named_in(&p.ty, out)),
+    }
+}
+
+/// Whether a type holds a type variable at any depth.
+fn has_var(ty: &Ty) -> bool {
+    match ty {
+        Ty::Var(_) => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| has_var(&f.ty)),
+        Ty::Fn(f) => f.params.iter().any(|p| has_var(&p.ty)) || has_var(&f.result.ty),
+        other => other.parts().into_iter().any(|p| has_var(&p.ty)),
+    }
+}
+
+/// The types an expression writes at any depth: closures' signatures, collections', reads', writes', constructions',
+/// kernel rows' and unresolved callees' declared types.
+fn expr_types<'e>(e: &'e Expr, out: &mut Vec<&'e Ty>) {
+    match e {
+        Expr::Closure { params, result, .. } => {
+            out.extend(params.iter().map(|p| &p.ty.ty));
+            out.push(&result.ty);
+        }
+        Expr::Collection { ty, .. }
+        | Expr::Declassified { ty, .. }
+        | Expr::FileRead { ty, .. }
+        | Expr::Construct { ty, .. } => out.push(ty),
+        Expr::ReadSnapshot { ty, .. }
+        | Expr::ReadSnapshotWith { ty, .. }
+        | Expr::WriteWorkspace { ty, .. }
+        | Expr::Kernel { ty, .. }
+        | Expr::Child { result: ty, .. }
+        | Expr::Repeat { result: ty, .. } => out.push(&ty.ty),
+        Expr::Call { callee: Callee::Unresolved { result, .. }, .. } => out.push(&result.ty),
+        _ => {}
+    }
+    for child in e.children() {
+        expr_types(child, out);
+    }
+}
+
+/// The names a `case` arm's pattern binds: its binders other than `_`.
+fn pattern_names(p: &Pattern) -> impl Iterator<Item = &str> {
+    p.binders.iter().map(String::as_str).filter(|b| *b != "_")
+}
+
+/// The names that child `i` of `e` sees bound by `e` itself: a `let`'s name in its body, a closure's parameters in its
+/// body, a child scope's status in its stop branch, a loop's value so far in its body and a `case` arm's binders in
+/// that arm.
+fn child_binders(e: &Expr, i: usize) -> Vec<String> {
+    match e {
+        Expr::Let { name, .. } if i == 1 => vec![name.clone()],
+        Expr::Closure { params, .. } if i == 0 => params.iter().map(|p| p.name.clone()).collect(),
+        Expr::Child { status, .. } if i == 1 => status.iter().cloned().collect(),
+        Expr::Repeat { acc, .. } if i == 2 => vec![acc.clone()],
+        Expr::Case { arms, .. } if (1..=arms.len()).contains(&i) => {
+            pattern_names(&arms[i - 1].0).map(str::to_string).collect()
+        }
+        _ => Vec::new(),
     }
 }
 
@@ -1939,15 +2386,16 @@ impl Val {
             return Val::unknown();
         }
         let callable = match &q.ty {
-            Ty::Fn(f) => Some(Summary::of_bound(&f.effects)),
+            Ty::Fn(f) => Some(Summary::of_fn(f)),
             _ => None,
         };
         Val { ty: q.ty.clone(), qual: declared_qual(q), callable, fields: None }
     }
 
-    /// Element type `i` of a collection value ([`Ty::elements`]) under projection's qualifier rule (LG2.19).
+    /// Element type `i` of a collection value, or a `Partial`'s payload ([`Ty::parts`]), under projection's qualifier
+    /// rule (LG2.19).
     fn element(&self, i: usize) -> Val {
-        let Some(declared) = self.ty.elements().get(i).map(|e| (*e).clone()) else {
+        let Some(declared) = self.ty.parts().get(i).map(|e| (*e).clone()) else {
             return Val::unknown();
         };
         let mut v = Val::declared(&declared);
@@ -2022,8 +2470,8 @@ fn bindings(slot: &QTy, v: &Val, out: &mut Vec<(String, Val)>) {
                 bindings(&s.result, &result, out);
             }
         }
-        c if c.same_collection(&v.ty) => {
-            for (i, e) in c.elements().into_iter().enumerate() {
+        c if c.same_shape(&v.ty) => {
+            for (i, e) in c.parts().into_iter().enumerate() {
                 bindings(e, &v.element(i), out);
             }
         }
@@ -2048,8 +2496,8 @@ struct Conflict {
     arg: usize,
     var: String,
     /// The argument's slot with the variable replaced by the earlier binding's type.
-    expected: String,
-    supplied: String,
+    expected: Ty,
+    supplied: Ty,
 }
 
 /// The value of a call. A generic result keeps the qualifier, callable and fields of every argument bound to its
@@ -2072,8 +2520,8 @@ fn result_val(result: &QTy, params: &[QTy], vals: &[Val], callee: Qual, control:
                     let earlier = r.ty.clone();
                     merge(r, b).ok_or_else(|| Conflict {
                         arg,
-                        expected: type_text(&replace_var(&p.ty, &var, &earlier)),
-                        supplied: type_text(&v.ty),
+                        expected: replace_var(&p.ty, &var, &earlier),
+                        supplied: v.ty.clone(),
                         var,
                     })?
                 }
@@ -2099,11 +2547,13 @@ fn result_val(result: &QTy, params: &[QTy], vals: &[Val], callee: Qual, control:
 fn instantiated(q: &QTy, params: &[QTy], vals: &[Val]) -> Val {
     match &q.ty {
         Ty::Fn(f) => {
-            let callable = substitute(&Summary::of_bound(&f.effects), params, vals);
+            let mut callable = substitute(&Summary::of_fn(f), params, vals);
+            callable.control = f.control;
             let ty = Ty::Fn(Box::new(FnTy {
                 params: f.params.clone(),
                 result: f.result.clone(),
                 effects: callable.bound(),
+                control: f.control,
             }));
             Val { ty, qual: declared_qual(q), callable: Some(callable), fields: None }
         }
@@ -2200,6 +2650,8 @@ struct Checker<'p> {
     program: &'p Program,
     modules: BTreeMap<&'p str, usize>,
     functions: Vec<BTreeMap<&'p str, usize>>,
+    /// The declared sum types, by module and type name (LG2.1; T1 draft).
+    types: BTreeMap<(&'p str, &'p str), &'p TypeDecl>,
     table: Vec<Vec<Summary>>,
     /// Whether each function's body computes or selects its result under approximate control (LG2.20, LG2.22).
     controls: Vec<Vec<bool>>,
@@ -2236,6 +2688,7 @@ impl<'p> Checker<'p> {
             }
             functions.push(names);
         }
+        let types = declared_types(program)?;
         let table = program.modules.iter().map(|m| vec![Summary::default(); m.functions.len()]).collect();
         let controls = program.modules.iter().map(|m| vec![false; m.functions.len()]).collect();
         let mut stored = BTreeMap::new();
@@ -2246,6 +2699,7 @@ impl<'p> Checker<'p> {
             program,
             modules,
             functions,
+            types,
             table,
             controls,
             stored,
@@ -2351,9 +2805,10 @@ impl<'p> Checker<'p> {
     /// `LG2:type.mismatch` at the current position (LG2.1).
     fn mismatch(&mut self, expected: String, supplied: String, what: &str) {
         // A word equality key where literal letters are required has a code of its own (LG2.13, CT-LG2-11), and so
-        // has a trace equality key (LB1.10; LP2 draft), for a Full word or a menu word (LG2.18; LP2 draft).
+        // has a trace equality key (LB1.10; LP2 draft), for a Full word or a menu word (LG2.18; LP2 draft). A key of
+        // either puzzle is no word of either alphabet (T1 draft).
         let letters = matches!(expected.as_str(), "Word" | "MenuWord");
-        if (supplied == "WordEqualityKey" || supplied == "TraceEqualityKey") && letters {
+        if (supplied.starts_with("WordEqualityKey") || supplied == "TraceEqualityKey") && letters {
             let note = format!("{what}: a {supplied} is never literal letters (LG2.13, LG2.17, LB1.10)");
             return self.record(WORD_KEY_NOT_EXECUTABLE, None, Some(Mismatch { expected, supplied }), note);
         }
@@ -2385,6 +2840,11 @@ impl<'p> Checker<'p> {
     /// A value at the current position whose base type does not fit its use. Its exactness is not checked: where
     /// both would apply, the base type comes first. The caller goes on with [`Val::unknown`] in its place.
     fn misfit(&mut self, expected: &str, v: &Val, what: &str) {
+        if let Some((code, rule)) = tower_misfit(expected, &v.ty) {
+            let supplied = type_text(&v.ty);
+            let note = format!("{what}: {supplied} where {expected} is expected: {rule}");
+            return self.record(code, None, Some(Mismatch { expected: expected.into(), supplied }), note);
+        }
         self.mismatch(expected.to_string(), type_text(&v.ty), what);
     }
 
@@ -2423,6 +2883,12 @@ impl<'p> Checker<'p> {
             );
             let mismatch = Mismatch { expected: expected_text, supplied: supplied_text };
             return self.record(VERDICT_REQUIRED, None, Some(mismatch), note);
+        }
+        // The identity tower's codes (T1 draft).
+        if let Some((code, rule)) = tower_code(expected, supplied) {
+            let note = format!("{what}: {supplied_text} where {expected_text} is expected: {rule}");
+            let mismatch = Mismatch { expected: expected_text, supplied: supplied_text };
+            return self.record(code, None, Some(mismatch), note);
         }
         self.mismatch(expected_text, supplied_text, what);
     }
@@ -2901,7 +3367,9 @@ impl<'p> Checker<'p> {
                     "argument {arg} of {what} binds the result's type variable {var} to a type that has no common \
                      type with an earlier binding"
                 );
-                self.at(arg, |c| c.mismatch(expected, supplied, &note));
+                // Substitution keeps every index, so a binding of another puzzle, level or unit has the identity
+                // tower's code (LG2.1; T1 draft).
+                self.at(arg, |c| c.mismatch_of(&expected, &supplied, |a, b| widen(a, b).is_some(), &note));
                 Val::unknown()
             }
         };
@@ -3053,6 +3521,7 @@ impl<'p> Checker<'p> {
                     params: f.params.iter().map(|p| p.ty.clone()).collect(),
                     result: f.result.clone(),
                     effects: summary.bound(),
+                    control: summary.control,
                 }));
                 Ok((Val { ty, qual: Qual::Exact, callable: Some(summary), fields: None }, Summary::default()))
             }
@@ -3193,9 +3662,9 @@ impl<'p> Checker<'p> {
                             }
                         };
                         let callable = fv.callable.as_ref();
-                        // A function value of a named function or closure keeps its control bit; a callable known
-                        // only by its declared type has none the checker can see (LG2.20, LG2.22).
-                        let control = callable.is_some_and(|c| c.control);
+                        // A function value of a named function or closure keeps its control bit, and a callable known
+                        // only by its declared type has its type's (LG2.20, LG2.22; T1 draft).
+                        let control = callable.is_some_and(|c| c.control) || fty.control;
                         let (v, needs) = self.call(
                             &fty.params,
                             &fty.result,
@@ -3282,7 +3751,8 @@ impl<'p> Checker<'p> {
                     && bv.qual == (Qual::Display { control: true });
                 // With an exact result slot a display capture was refused above; the value carries no second finding.
                 let qual = if exact_slot(&result, true) { Qual::Exact } else { captured };
-                let ty = Ty::Fn(Box::new(FnTy { params: param_tys, result, effects: bs.bound() }));
+                let control = bs.control;
+                let ty = Ty::Fn(Box::new(FnTy { params: param_tys, result, effects: bs.bound(), control }));
                 Ok((Val { ty, qual, callable: Some(bs), fields: None }, Summary::default()))
             }
             Expr::Prim { op, args } => {
@@ -3425,7 +3895,7 @@ impl<'p> Checker<'p> {
                 if portable(&av.ty) {
                     self.at(0, |c| c.exact_use(Site::Boundary, &av, &what));
                 } else {
-                    self.at(0, |c| c.misfit(PORTABLE, &av, &what));
+                    self.at(0, |c| c.misfit(portable_expected(&av.ty), &av, &what));
                 }
                 let mut own = needs(&[Effect::ReadSnapshot], &[]);
                 own.state_reads.insert(StateRead::Snapshot);
@@ -3511,7 +3981,9 @@ impl<'p> Checker<'p> {
                         is_integer(&v.ty) || matches!(v.ty, Ty::Approx(_)) || is_unknown(&v.ty),
                         "Nat | Int | Budget",
                     ),
-                    ExactRole::Goal | ExactRole::Evidence => (Site::Boundary, portable(&v.ty), PORTABLE),
+                    ExactRole::Goal | ExactRole::Evidence => {
+                        (Site::Boundary, portable(&v.ty), portable_expected(&v.ty))
+                    }
                 };
                 if !fit {
                     self.at(0, |c| c.misfit(expected, &v, &what));
@@ -3657,6 +4129,548 @@ impl<'p> Checker<'p> {
                 s.add(&bs);
                 Ok((Val::declared(result), s))
             }
+            // The identity tower's nodes (T1 drafts) are checked apart from `expr`, so that its frame stays small.
+            Expr::Construct { ty, ctor, args } => self.construct_expr(ty, ctor, args, env),
+            Expr::Case { scrutinee, arms, default } => self.case_expr(scrutinee, arms, default.as_deref(), env),
+            Expr::Kernel { op, args, ty } => self.kernel_expr(*op, args, ty, env),
+        }
+    }
+
+    /// The arguments of an operation, in order, with their needs.
+    #[inline(never)]
+    fn operands(&mut self, args: &'p [Expr], env: &mut Env) -> Result<(Vec<Val>, Summary), IrError> {
+        let mut s = Summary::default();
+        let mut vals = Vec::with_capacity(args.len());
+        for (i, a) in args.iter().enumerate() {
+            let (v, a_s) = self.at(i, |c| c.expr(a, env))?;
+            s.add(&a_s);
+            vals.push(v);
+        }
+        Ok((vals, s))
+    }
+
+    /// A construction of a sum type's value ([`Checker::construct`]; T1 draft).
+    #[inline(never)]
+    fn construct_expr(
+        &mut self,
+        ty: &Ty,
+        ctor: &str,
+        args: &'p [Expr],
+        env: &mut Env,
+    ) -> Result<(Val, Summary), IrError> {
+        self.bare(ty, false, "a constructed value")?;
+        let (vals, s) = self.operands(args, env)?;
+        Ok((self.construct(ty, ctor, &vals), s))
+    }
+
+    /// A case on a sum type's constructors (LG2.1, LG2.9; T1 draft): the scrutinee is exact control, each arm's binders
+    /// take its constructor's payload, and the arms' values join as a match's do.
+    #[inline(never)]
+    fn case_expr(
+        &mut self,
+        scrutinee: &'p Expr,
+        arms: &'p [(Pattern, Expr)],
+        default: Option<&'p Expr>,
+        env: &mut Env,
+    ) -> Result<(Val, Summary), IrError> {
+        let (sv, mut s) = self.at(0, |c| c.expr(scrutinee, env))?;
+        // A case decides which arm runs, so its scrutinee is exact control, as a match's is (LG2.20).
+        self.at(0, |c| c.exact_use(Site::Control, &sv, "a case scrutinee"));
+        let ctors = self.case_ctors(&sv);
+        let mut out: Option<Val> = None;
+        let mut named = BTreeSet::new();
+        for (i, (pattern, arm)) in arms.iter().enumerate() {
+            let binders = self.pattern(&sv, ctors.as_deref(), pattern, i);
+            named.insert(pattern.ctor.as_str());
+            let depth = env.vars.len();
+            for (b, v) in pattern.binders.iter().zip(binders) {
+                if b != "_" {
+                    env.vars.push((b.clone(), v));
+                }
+            }
+            let walked = self.at(i + 1, |c| c.expr(arm, env));
+            env.vars.truncate(depth);
+            let (av, a_s) = walked?;
+            s.add(&a_s);
+            out = Some(match out {
+                None => av,
+                Some(o) => self.join(o, av, i + 1, &format!("arm {i} of a case")),
+            });
+        }
+        if let Some(default) = default {
+            let (dv, ds) = self.at(arms.len() + 1, |c| c.expr(default, env))?;
+            s.add(&ds);
+            out = Some(match out {
+                None => dv,
+                Some(o) => self.join(o, dv, arms.len() + 1, "the `_` arm of a case"),
+            });
+        }
+        if let Some(ctors) = &ctors {
+            self.case_coverage(&sv.ty, ctors, &named, default.is_some());
+        }
+        Ok((out.unwrap_or_else(Val::unknown), s))
+    }
+
+    /// A kernel row of the identity tower ([`Checker::kernel`]; T1 draft): a snapshot read of its own row, whose
+    /// declared type must be the type the row returns for its arguments.
+    #[inline(never)]
+    fn kernel_expr(
+        &mut self,
+        op: KernelOp,
+        args: &'p [Expr],
+        ty: &QTy,
+        env: &mut Env,
+    ) -> Result<(Val, Summary), IrError> {
+        self.bare(&ty.ty, false, "a kernel row")?;
+        let (vals, mut s) = self.operands(args, env)?;
+        // Every row of the identity tower is a snapshot read of its own row, so capability separation and the built-in
+        // column count it (BND.39, BND.57; T1 draft).
+        let mut own = needs(&[Effect::ReadSnapshot], &[]);
+        own.state_reads.insert(StateRead::Snapshot);
+        own.rows.insert(Row::Read(op.row()));
+        self.operation(&mut s, own, &format!("the kernel row `{}`", op.row()));
+        let v = match self.kernel(op, &vals)? {
+            Some(t) if t == ty.ty && !ty.display => Val::exact(t),
+            Some(t) => {
+                let note = format!(
+                    "the kernel row `{}` returns {}, which its declared type {} does not say (KN0.7; T1 draft)",
+                    op.row(),
+                    type_text(&t),
+                    type_text(&ty.ty)
+                );
+                let mismatch = Mismatch { expected: type_text(&t), supplied: type_text(&ty.ty) };
+                self.record(TYPE_MISMATCH, None, Some(mismatch), note);
+                Val::unknown()
+            }
+            None => Val::unknown(),
+        };
+        Ok((v, s))
+    }
+
+    // The identity tower's rules (T1 draft) live apart from `expr`, as the end-test rules do, to keep its frame small.
+
+    /// A value of the sum type `ty` by its constructor `ctor` from the payload `vals` (LG2.1; T1 draft). A program
+    /// constructs a verdict, a partial result, a reachability claim and a declared sum type's value; it can only pass
+    /// on the evidence it was given, so evidence and a certificate have no constructor, and only the host makes a
+    /// derivation. Each refusal is `LG2:type.mismatch`, and the value continues as unknown.
+    fn construct(&mut self, ty: &Ty, ctor: &str, vals: &[Val]) -> Val {
+        let refuse = |c: &mut Self, why: String| {
+            let mismatch = Mismatch { expected: "a sum type a program constructs".into(), supplied: type_text(ty) };
+            c.record(TYPE_MISMATCH, None, Some(mismatch), why);
+            Val::unknown()
+        };
+        let ctors = match ty {
+            Ty::Evidence | Ty::Holds(..) => {
+                let why = format!(
+                    "{} has no constructor, literal or conversion: a program passes on evidence it was given and \
+                     never makes it (KN0.5, LG2.10)",
+                    type_text(ty)
+                );
+                return refuse(self, why);
+            }
+            Ty::Derivation(_) => {
+                let why = "only the host makes a derivation, through `derive` (KN2.11, ONE.20)".to_string();
+                return refuse(self, why);
+            }
+            other => match self.ctors_of(other) {
+                Some(ctors) => ctors,
+                None => {
+                    let why = format!("{} is no sum type, so it has no constructor `{ctor}` (LG2.1)", type_text(ty));
+                    return refuse(self, why);
+                }
+            },
+        };
+        let Some((_, payload)) = ctors.iter().find(|(n, _)| n == ctor) else {
+            let names: Vec<&str> = ctors.iter().map(|(n, _)| n.as_str()).collect();
+            let note = format!("`{ctor}` is no constructor of {} (LG2.1)", type_text(ty));
+            let mismatch = Mismatch { expected: names.join(" | "), supplied: ctor.into() };
+            self.record(TYPE_MISMATCH, None, Some(mismatch), note);
+            return Val::unknown();
+        };
+        if payload.len() != vals.len() {
+            let texts = |tys: Vec<&Ty>| tys.into_iter().map(type_text).collect::<Vec<_>>().join(", ");
+            let expected = format!("{ctor}({})", texts(payload.iter().map(|q| &q.ty).collect()));
+            let supplied = format!("{ctor}({})", texts(vals.iter().map(|v| &v.ty).collect()));
+            let note = format!(
+                "`{ctor}` of {} takes {} payload values, not {} (LG2.1)",
+                type_text(ty),
+                payload.len(),
+                vals.len()
+            );
+            self.record(TYPE_MISMATCH, None, Some(Mismatch { expected, supplied }), note);
+            return Val::unknown();
+        }
+        let mut qual = Qual::Exact;
+        for (i, (slot, v)) in payload.iter().zip(vals).enumerate() {
+            let what = format!("payload {i} of `{ctor}`");
+            if fits(&slot.ty, &v.ty) {
+                self.at(i, |c| c.slot(slot, v, &what, false));
+            } else {
+                self.at(i, |c| c.misfit_slot(&slot.ty, v, &what));
+            }
+            qual = qual.join(v.qual.container());
+        }
+        Val::new(ty.clone(), qual)
+    }
+
+    /// The constructors and payload types of a built-in or declared sum type, or `None` for another type.
+    fn ctors_of(&self, ty: &Ty) -> Option<Vec<(String, Vec<QTy>)>> {
+        match ty {
+            Ty::Named { module, name } => {
+                let decl = self.types.get(&(module.as_str(), name.as_str()))?;
+                Some(decl.ctors.iter().map(|c| (c.name.clone(), c.payload.clone())).collect())
+            }
+            other => Some(other.builtin_ctors()?.into_iter().map(|(n, p)| (n.to_string(), p)).collect()),
+        }
+    }
+
+    /// The constructors of a case's scrutinee: `None`, after a refusal at the scrutinee, for a type that is no sum
+    /// type, and silently for an unknown one (LG2.1; T1 draft). An end test's verdict keeps the literal `match` on its
+    /// outcomes.
+    fn case_ctors(&mut self, sv: &Val) -> Option<Vec<(String, Vec<QTy>)>> {
+        if is_unknown(&sv.ty) {
+            return None;
+        }
+        let ctors = self.ctors_of(&sv.ty);
+        if ctors.is_none() {
+            self.at(0, |c| c.misfit("a sum type", sv, "a case scrutinee"));
+        }
+        ctors
+    }
+
+    /// The values a case arm's pattern binds, one per binder: each constructor's payload under projection's qualifier
+    /// rule (LG2.19). A pattern that names no constructor of the scrutinee's type, or binds another number of payload
+    /// values, is `LG2:type.mismatch` at the case, since a pattern has no path of its own; its binders are unknown.
+    fn pattern(&mut self, sv: &Val, ctors: Option<&[(String, Vec<QTy>)]>, pattern: &Pattern, i: usize) -> Vec<Val> {
+        let unknown = || vec![Val::unknown(); pattern.binders.len()];
+        let Some(ctors) = ctors else { return unknown() };
+        let Some((_, payload)) = ctors.iter().find(|(n, _)| *n == pattern.ctor) else {
+            let names: Vec<&str> = ctors.iter().map(|(n, _)| n.as_str()).collect();
+            let note = format!(
+                "the pattern of arm {i} of a case: `{}` is no constructor of {} (LG2.1)",
+                pattern.ctor,
+                type_text(&sv.ty)
+            );
+            let mismatch = Mismatch { expected: names.join(" | "), supplied: pattern.ctor.clone() };
+            self.record(TYPE_MISMATCH, None, Some(mismatch), note);
+            return unknown();
+        };
+        if payload.len() != pattern.binders.len() {
+            let texts: Vec<String> = payload.iter().map(|q| type_text(&q.ty)).collect();
+            let note = format!(
+                "the pattern of arm {i} of a case binds {} values, and `{}` carries {} (LG2.1)",
+                pattern.binders.len(),
+                pattern.ctor,
+                payload.len()
+            );
+            let mismatch = Mismatch {
+                expected: format!("{}({})", pattern.ctor, texts.join(", ")),
+                supplied: format!("{}({})", pattern.ctor, pattern.binders.join(", ")),
+            };
+            self.record(TYPE_MISMATCH, None, Some(mismatch), note);
+            return unknown();
+        }
+        payload
+            .iter()
+            .map(|q| {
+                let mut v = Val::declared(q);
+                v.qual = project(sv.qual, v.qual);
+                v
+            })
+            .collect()
+    }
+
+    /// A case without a `_` arm accounts for every constructor (LG2.1), or it is `LG2:type.mismatch`; a `_` arm of a
+    /// case on a verdict takes `unknown` alone, never together with another constructor, so unknown never reads as
+    /// no (LG2.9), or it is `LG2:type.verdict_required` (T1 draft).
+    fn case_coverage(&mut self, ty: &Ty, ctors: &[(String, Vec<QTy>)], named: &BTreeSet<&str>, default: bool) {
+        let taken: Vec<&str> = ctors.iter().map(|(n, _)| n.as_str()).filter(|n| !named.contains(n)).collect();
+        if !default && !taken.is_empty() {
+            let note = format!(
+                "the case on {} leaves out `{}`: a match accounts for every constructor (LG2.1)",
+                type_text(ty),
+                taken.join("`, `")
+            );
+            let all: Vec<&str> = ctors.iter().map(|(n, _)| n.as_str()).collect();
+            let given: Vec<&str> = named.iter().copied().collect();
+            let mismatch = Mismatch { expected: all.join(" | "), supplied: given.join(" | ") };
+            self.record(TYPE_MISMATCH, None, Some(mismatch), note);
+        }
+        if default && matches!(ty, Ty::Verdict(..)) && taken.len() > 1 && taken.contains(&"unknown") {
+            let note = format!(
+                "the `_` arm of a case on {} takes `{}` together: name `unknown` in an arm of its own, or both `yes` \
+                 and `no`, so unknown never reads as no (LG2.9)",
+                type_text(ty),
+                taken.join("` and `")
+            );
+            self.record(VERDICT_REQUIRED, None, None, note);
+        }
+    }
+
+    /// Argument `i` of a kernel row, a state: its puzzle when known. Raw pose data, a record or a level value is
+    /// `LG2:type.reachability_missing` (LG2.7); another type is a misfit (T1 draft).
+    fn state_arg(&mut self, i: usize, v: &Val, what: &str) -> Option<Puzzle> {
+        match &v.ty {
+            Ty::State(p) => {
+                self.at(i, |c| c.exact_use(Site::Boundary, v, what));
+                Some(*p)
+            }
+            t if is_unknown(t) => None,
+            t @ (Ty::PoseTable | Ty::Record(_) | Ty::LevelValue(..)) => {
+                let (code, rule) = tower_code(&Ty::State(Puzzle::Jumbling), t).expect("a state's misfit");
+                let supplied = type_text(t);
+                let note = format!("{what}: {supplied} where State<_> is expected: {rule}");
+                let mismatch = Mismatch { expected: "State<_>".into(), supplied };
+                self.at(i, |c| c.record(code, None, Some(mismatch), note));
+                None
+            }
+            _ => {
+                self.at(i, |c| c.misfit("State<_>", v, what));
+                None
+            }
+        }
+    }
+
+    /// A refusal at argument `i` of a kernel row with the identity tower's code `code`.
+    fn tower_refusal(&mut self, i: usize, code: &'static str, expected: String, v: &Val, note: String) {
+        let mismatch = Mismatch { expected, supplied: type_text(&v.ty) };
+        self.at(i, |c| c.record(code, None, Some(mismatch), note));
+    }
+
+    /// The type a kernel row of the identity tower returns for its arguments, after their checks (T1 draft; plan
+    /// section 2): `None` when a refusal leaves it unknown. A wrong number of arguments is an [`IrError`], as for a
+    /// named function, except an `import` without its claim, which is `LG2:type.reachability_missing` (LG2.7, KN2.14).
+    fn kernel(&mut self, op: KernelOp, vals: &[Val]) -> Result<Option<Ty>, IrError> {
+        let arity = match op {
+            KernelOp::Snapshot(_) => 0,
+            KernelOp::Project(_) | KernelOp::Digest | KernelOp::Reachability => 1,
+            KernelOp::Compare(_) | KernelOp::Derive | KernelOp::Import => 2,
+            KernelOp::Check(g) => 1 + usize::from(g.takes_bound()),
+        };
+        let row = op.row();
+        if op == KernelOp::Import && vals.len() == 1 {
+            let note = "`import` takes raw pose data with its reachability claim: form validation does not establish \
+                        reachability, and pose data without a claim stays data (LG2.7, KN2.14)";
+            let mismatch =
+                Mismatch { expected: "import(PoseTable, Reachability<Jumbling>)".into(), supplied: "import(_)".into() };
+            self.record(REACHABILITY_MISSING, None, Some(mismatch), note.into());
+            return Ok(None);
+        }
+        if vals.len() != arity {
+            return Err(self.err(format!("the kernel row `{row}` takes {arity} arguments, not {}", vals.len())));
+        }
+        let what = |i: usize| format!("argument {i} of the kernel row `{row}`");
+        let held = |c: &mut Self, p: Puzzle, level: c600_ir::Level, v: &Val| -> bool {
+            if level.held_by(p) {
+                return true;
+            }
+            let note = format!(
+                "{}: 600-cell-Full holds the labels and the position only, so the level `{}` is not held and nothing \
+                 projects to it (KN1.7, LG2.3)",
+                what(0),
+                level.name()
+            );
+            c.tower_refusal(0, LEVEL_MISMATCH, "State<Jumbling>".into(), v, note);
+            false
+        };
+        Ok(match op {
+            KernelOp::Snapshot(p) => Some(Ty::State(p)),
+            KernelOp::Project(level) => {
+                let p = self.state_arg(0, &vals[0], &what(0));
+                match p {
+                    Some(p) if held(self, p, level, &vals[0]) => {
+                        Some(Ty::Partial(Box::new(QTy { ty: Ty::LevelValue(p, level), display: false })))
+                    }
+                    _ => None,
+                }
+            }
+            KernelOp::Digest => {
+                let v = &vals[0];
+                match v.ty {
+                    Ty::LevelValue(p, level) => {
+                        self.at(0, |c| c.exact_use(Site::Boundary, v, &what(0)));
+                        Some(Ty::Digest(p, level))
+                    }
+                    ref t if is_unknown(t) => None,
+                    _ => {
+                        self.at(0, |c| c.misfit("LevelValue<_, _>", v, &what(0)));
+                        None
+                    }
+                }
+            }
+            KernelOp::Compare(level) => {
+                let a = self.state_arg(0, &vals[0], &what(0));
+                let b = self.state_arg(1, &vals[1], &what(1));
+                match (a, b) {
+                    (Some(a), Some(b)) if a != b => {
+                        let note = format!(
+                            "{}: states of two puzzles never compare, even where their indices agree (LG2.2)",
+                            what(1)
+                        );
+                        self.tower_refusal(1, IDENTITY_MISMATCH, type_text(&Ty::State(a)), &vals[1], note);
+                        None
+                    }
+                    (Some(p), Some(_)) if held(self, p, level, &vals[0]) => {
+                        let verdict = QTy { ty: Ty::Verdict(p, level, None), display: false };
+                        Some(Ty::Partial(Box::new(verdict)))
+                    }
+                    _ => None,
+                }
+            }
+            KernelOp::Derive => {
+                let p = self.state_arg(0, &vals[0], &what(0));
+                let w = &vals[1];
+                let alphabet = |p: Puzzle| if p == Puzzle::Full { Ty::Word } else { Ty::MenuWord };
+                let p = p.or(match w.ty {
+                    Ty::Word => Some(Puzzle::Full),
+                    Ty::MenuWord => Some(Puzzle::Jumbling),
+                    _ => None,
+                });
+                let Some(p) = p else { return Ok(None) };
+                let wanted = alphabet(p);
+                if matches!(w.ty, Ty::Word | Ty::MenuWord) && w.ty != wanted {
+                    let note = format!(
+                        "{}: a {} state derives from a {} with Jumble {}, never from a {} (LG2.8)",
+                        what(1),
+                        p.name(),
+                        type_text(&wanted),
+                        if p == Puzzle::Full { "off" } else { "on" },
+                        type_text(&w.ty)
+                    );
+                    self.tower_refusal(1, MODE_MISMATCH, type_text(&wanted), w, note);
+                    return Ok(None);
+                }
+                if fits(&wanted, &w.ty) {
+                    self.at(1, |c| c.exact_use(Site::Boundary, w, &what(1)));
+                } else {
+                    self.at(1, |c| c.misfit_slot(&wanted, w, &what(1)));
+                }
+                Some(Ty::Derivation(p))
+            }
+            KernelOp::Import => {
+                let (t, r) = (&vals[0], &vals[1]);
+                if fits(&Ty::PoseTable, &t.ty) {
+                    self.at(0, |c| c.exact_use(Site::Boundary, t, &what(0)));
+                } else {
+                    self.at(0, |c| c.misfit_slot(&Ty::PoseTable, t, &what(0)));
+                }
+                let claim = Ty::Reachability(Puzzle::Jumbling);
+                match &r.ty {
+                    Ty::Reachability(_) if fits(&claim, &r.ty) => {
+                        self.at(1, |c| c.exact_use(Site::Boundary, r, &what(1)))
+                    }
+                    Ty::Reachability(_) => self.at(1, |c| c.misfit_slot(&claim, r, &what(1))),
+                    ty if is_unknown(ty) => {}
+                    _ => {
+                        let note = format!(
+                            "{}: the table's reachability claim, which form validation does not establish (LG2.7, \
+                             KN2.14)",
+                            what(1)
+                        );
+                        self.tower_refusal(1, REACHABILITY_MISSING, type_text(&claim), r, note);
+                    }
+                }
+                Some(Ty::State(Puzzle::Jumbling))
+            }
+            KernelOp::Reachability => self.state_arg(0, &vals[0], &what(0)).map(Ty::Reachability),
+            KernelOp::Check(goal) => {
+                if goal.takes_bound() {
+                    let bound = &vals[1];
+                    let what = format!("the exact bound of {}", goal.name());
+                    if fits(&Ty::Nat, &bound.ty) {
+                        self.at(1, |c| c.exact_use(Site::Operand, bound, &what));
+                    } else {
+                        self.at(1, |c| c.misfit_slot(&Ty::Nat, bound, &what));
+                    }
+                }
+                let p = self.state_arg(0, &vals[0], &what(0));
+                match p {
+                    Some(p) if !goal.puzzles().contains(&p) => {
+                        let note = format!(
+                            "{}: the goal `{}` is defined on jumbling states only (LG2.10)",
+                            what(0),
+                            goal.name()
+                        );
+                        self.tower_refusal(0, IDENTITY_MISMATCH, "State<Jumbling>".into(), &vals[0], note);
+                        None
+                    }
+                    Some(p) => Some(Ty::Verdict(p, goal.level(), Some(goal))),
+                    None => None,
+                }
+            }
+        })
+    }
+
+    /// `imply(h, to)` (T1 draft): a certificate of a goal that implies `to` along LG2.11's edges, of a puzzle `to` is
+    /// defined on. A missing or reverse edge is `LG2:type.level_mismatch`, another puzzle `LG2:type.identity_mismatch`.
+    /// To the low-height goal the bound is an exact `Nat` (LG2.20).
+    fn imply(&mut self, to: Goal, vals: &[Val]) -> Val {
+        if to.takes_bound() {
+            let bound = &vals[1];
+            let what = format!("the exact bound of {}", to.name());
+            if fits(&Ty::Nat, &bound.ty) {
+                self.at(1, |c| c.exact_use(Site::Operand, bound, &what));
+            } else {
+                self.at(1, |c| c.misfit_slot(&Ty::Nat, bound, &what));
+            }
+        }
+        let h = &vals[0];
+        let what = format!("the certificate of an implication to {}", to.name());
+        let (p, from) = match h.ty {
+            Ty::Holds(p, g) => (p, g),
+            ref t if is_unknown(t) => return Val::unknown(),
+            _ => {
+                self.at(0, |c| c.misfit("Holds<_, _>", h, &what));
+                return Val::unknown();
+            }
+        };
+        self.at(0, |c| c.exact_use(Site::Operand, h, &what));
+        if !from.implies(to) {
+            let why = match (from, to) {
+                (Goal::LabelCheckpoint, Goal::RetainedCheckpoint) => {
+                    "a label checkpoint supplies no retained word, so it implies no retained checkpoint (LG2.11)"
+                }
+                (Goal::StickerTest, Goal::LabelCheckpoint) => {
+                    "the sticker test implies the label checkpoint only within the reachable-state scope, which needs \
+                     the state's reachability: use check(label_checkpoint, s) (LG2.11, ONE.28)"
+                }
+                _ => {
+                    "LG2.11 gives no such implication, and no goal is replaced by one at a weaker level or lifted \
+                     (LG2.10, LG2.11)"
+                }
+            };
+            let note = format!("{what}: {} implies no {}: {why}", from.name(), to.name());
+            self.tower_refusal(0, LEVEL_MISMATCH, format!("Holds<{}, _>", p.name()), h, note);
+            return Val::unknown();
+        }
+        if !to.puzzles().contains(&p) {
+            let note = format!("{what}: the goal `{}` is defined on jumbling states only (LG2.10)", to.name());
+            self.tower_refusal(0, IDENTITY_MISMATCH, type_text(&Ty::Holds(Puzzle::Jumbling, from)), h, note);
+            return Val::unknown();
+        }
+        Val::exact(Ty::Holds(p, to))
+    }
+
+    /// `exact_add` or `exact_less` of costs (LG2.6; T1 draft): every operand a cost of the first cost's puzzle and
+    /// unit, or `LG2:type.cost_unit_mix`.
+    fn cost_arith(&mut self, op: Prim, vals: &[Val]) -> Val {
+        let expected = vals.iter().find(|v| matches!(v.ty, Ty::Cost(..))).map(|v| v.ty.clone()).expect("a cost");
+        let what = format!("an operand of {op:?}");
+        let mut known = true;
+        for (i, v) in vals.iter().enumerate() {
+            if is_unknown(&v.ty) {
+                known = false;
+            } else if v.ty == expected {
+                self.at(i, |c| c.exact_use(Site::Operand, v, &what));
+            } else {
+                self.at(i, |c| c.misfit_slot(&expected, v, &what));
+                known = false;
+            }
+        }
+        match op {
+            Prim::ExactLess => Val::exact(Ty::Bool),
+            _ if known => Val::exact(expected),
+            _ => Val::unknown(),
         }
     }
 
@@ -3677,6 +4691,8 @@ impl<'p> Checker<'p> {
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
             Prim::ToField(_) | Prim::Residue | Prim::FieldNeg | Prim::FieldInverse | Prim::TextDecode => 1,
             Prim::StreamDigest | Prim::Q5Parts => 1,
+            Prim::ToCost(..) | Prim::CostValue => 1,
+            Prim::Imply(goal) => 1 + usize::from(goal.takes_bound()),
             Prim::InsertEntry | Prim::Expand | Prim::Q5Of => 3,
             _ => 2,
         };
@@ -3713,6 +4729,10 @@ impl<'p> Checker<'p> {
                     }
                 }
                 Ok(Val::exact(Ty::Q5))
+            }
+            // Costs add and compare only with costs of their puzzle and unit (LG2.6; T1 draft).
+            Prim::ExactAdd | Prim::ExactLess if vals.iter().any(|v| matches!(v.ty, Ty::Cost(..))) => {
+                Ok(self.cost_arith(op, vals))
             }
             Prim::ExactAdd | Prim::ExactLess | Prim::ExactMul => {
                 // The result widens along Nat, Int, Rat and Q5; a budget is a cost and mixes with integers only, so an
@@ -3791,6 +4811,16 @@ impl<'p> Checker<'p> {
                     return Ok(Val::exact(Ty::Bool));
                 }
                 if self.verdict_equality(vals) {
+                    return Ok(Val::exact(Ty::Bool));
+                }
+                // A host value, a certificate, a claim, a partial result or a declared sum type has no exact equality:
+                // states compare at a level through `compare`, and a sum type is matched with a case (T1 draft).
+                if let Some(i) = vals.iter().position(|v| holds_unequal(&v.ty)) {
+                    let note =
+                        "an operand of an exact equality, which a state, a level value, a pose table, evidence, a \
+                                certificate, a claim, a derivation, a partial result or a declared sum type does not \
+                                have (compare states at a level with `compare`)";
+                    self.at(i, |c| c.misfit("a type with an exact equality", &vals[i], note));
                     return Ok(Val::exact(Ty::Bool));
                 }
                 self.at(0, |c| c.exact_use(Site::Operand, a, what));
@@ -3980,8 +5010,11 @@ impl<'p> Checker<'p> {
                     }
                     q = q.join(v.qual);
                 }
+                // A word key is indexed by its word's puzzle: a Full word's is Full, a menu word's the jumbling
+                // puzzle's (LG2.13; T1 draft).
                 let ty = match op {
-                    Prim::WordKey => Ty::WordEqualityKey,
+                    Prim::WordKey if domain == Some(Ty::MenuWord) => Ty::WordEqualityKey(Puzzle::Jumbling),
+                    Prim::WordKey => Ty::WordEqualityKey(Puzzle::Full),
                     Prim::TraceKey => Ty::TraceEqualityKey,
                     _ => domain.unwrap_or(Ty::Word),
                 };
@@ -4158,7 +5191,48 @@ impl<'p> Checker<'p> {
                 }
                 Ok(Val::new(Ty::Text, v.qual))
             }
+            Prim::Imply(to) => Ok(self.imply(to, vals)),
+            Prim::ToCost(p, u) => {
+                // An exact count becomes a cost of one puzzle and unit (LG2.6; T1 draft).
+                let v = &vals[0];
+                let what = format!("the count of to_cost<{}, {}>", p.name(), u.name());
+                if fits(&Ty::Nat, &v.ty) {
+                    self.at(0, |c| c.exact_use(Site::Operand, v, &what));
+                } else {
+                    self.at(0, |c| c.misfit_slot(&Ty::Nat, v, &what));
+                }
+                Ok(Val::exact(Ty::Cost(p, u)))
+            }
+            Prim::CostValue => {
+                let v = &vals[0];
+                let what = "the cost of cost_value";
+                if matches!(v.ty, Ty::Cost(..)) {
+                    self.at(0, |c| c.exact_use(Site::Operand, v, what));
+                } else if !is_unknown(&v.ty) {
+                    self.at(0, |c| c.misfit("Cost<_, _>", v, what));
+                }
+                Ok(Val::exact(Ty::Nat))
+            }
             Prim::Stage(_) => unreachable!("refused at the top"),
         }
+    }
+}
+
+/// Whether a type is or holds a value with no exact equality of the identity tower (T1 draft): a state, a level value,
+/// a pose table, evidence, a certificate, a claim, a derivation, a partial result or a declared sum type. A verdict
+/// has none either, which [`holds_verdict`] reports with its own code.
+fn holds_unequal(ty: &Ty) -> bool {
+    match ty {
+        Ty::State(_)
+        | Ty::LevelValue(..)
+        | Ty::PoseTable
+        | Ty::Evidence
+        | Ty::Holds(..)
+        | Ty::Derivation(_)
+        | Ty::Reachability(_)
+        | Ty::Partial(_)
+        | Ty::Named { .. } => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_unequal(&f.ty)),
+        other => other.parts().into_iter().any(|e| holds_unequal(&e.ty)),
     }
 }

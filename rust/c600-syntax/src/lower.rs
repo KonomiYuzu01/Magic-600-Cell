@@ -11,7 +11,7 @@ use std::fmt;
 use c600_ir::Expr as Ir;
 use c600_ir::{
     Accounting, Callee, Capability, ChildCaps, Effect, EffectBound, EndTest, ExactRole, Field, FnKind, FnTy, Function,
-    Lit, Module, ModuleKind, Order, Param, Prim, Program, QTy, ReceiptField, StageDecl, StageKind, StageOp, Ty,
+    Lit, Module, ModuleKind, Order, Param, Prim, Program, Puzzle, QTy, ReceiptField, StageDecl, StageKind, StageOp, Ty,
 };
 
 use crate::ast::*;
@@ -375,7 +375,7 @@ pub fn lower(files: &[ParsedFile]) -> Result<Lowered, LowerError> {
             source.paths.insert(function.name.clone(), body.paths);
             functions.push(function);
         }
-        modules.push(Module { name: scope.name.clone(), kind, capabilities, functions });
+        modules.push(Module { name: scope.name.clone(), kind, capabilities, types: Vec::new(), functions });
         sources.push(source);
     }
     Ok(Lowered { program: Program::new(modules), sources })
@@ -1209,6 +1209,18 @@ impl Body<'_> {
                             .ok_or_else(|| self.err(loc.0, "`Approx` takes one precision: `P24`, `P53` or `P113`"))?;
                         Ok(exact(Ty::Approx(p)))
                     }
+                    // A word equality key names its word's puzzle (LG2.13; T1 draft): `WordEqualityKey` alone is a
+                    // Full word's key, `WordEqualityKey<Jumbling>` a menu word's.
+                    "WordEqualityKey" if !self.is_generic(n) && !args.is_empty() => {
+                        let puzzle = match args.as_slice() {
+                            [TypeExpr::Named { name, args, .. }] if args.is_empty() => Puzzle::of_name(&name.text),
+                            _ => None,
+                        };
+                        let p = puzzle.ok_or_else(|| {
+                            self.err(loc.0, "`WordEqualityKey` takes one puzzle: `Full` or `Jumbling`")
+                        })?;
+                        Ok(exact(Ty::WordEqualityKey(p)))
+                    }
                     _ if BASE_TYPES.contains(&n) || self.is_generic(n) => {
                         if !args.is_empty() {
                             let message = format!(
@@ -1232,7 +1244,7 @@ impl Body<'_> {
                             "Colour" => Ty::Colour,
                             "ApproxBool" => Ty::ApproxBool,
                             "Receipt" => Ty::Receipt,
-                            "WordEqualityKey" => Ty::WordEqualityKey,
+                            "WordEqualityKey" => Ty::WordEqualityKey(Puzzle::Full),
                             "TraceEqualityKey" => Ty::TraceEqualityKey,
                             "CompressedWord" => Ty::CompressedWord,
                             "MenuWord" => Ty::MenuWord,
@@ -1258,7 +1270,7 @@ impl Body<'_> {
             TypeExpr::Fn { params, result, effects, .. } => {
                 let params = params.iter().map(|p| self.ty(p)).collect::<R<Vec<_>>>()?;
                 let (result, effects) = (self.ty(result)?, self.effects(effects)?);
-                Ok(exact(Ty::Fn(Box::new(FnTy { params, result, effects }))))
+                Ok(exact(Ty::Fn(Box::new(FnTy { params, result, effects, control: false }))))
             }
             TypeExpr::Record { fields, .. } => {
                 let mut seen = BTreeSet::new();

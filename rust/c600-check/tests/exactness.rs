@@ -580,7 +580,7 @@ fn phs52_goal_and_evidence_sinks_take_portable_data() {
         for (value, supplied) in [
             (fn_ref("h"), "fn() -> Nat"),
             (receipt(), "Receipt"),
-            (prim(Prim::WordKey, vec![word(&[1])]), "WordEqualityKey"),
+            (prim(Prim::WordKey, vec![word(&[1])]), "WordEqualityKey<Full>"),
             (prim(Prim::TraceKey, vec![word(&[1])]), "TraceEqualityKey"),
             (prim(Prim::Compress, vec![word(&[1])]), "CompressedWord"),
             (record(vec![("f", fn_ref("h"))]), "record { f: fn() -> Nat }"),

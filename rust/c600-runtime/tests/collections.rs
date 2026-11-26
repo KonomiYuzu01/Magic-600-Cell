@@ -12,7 +12,7 @@ mod support;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
-use c600_ir::{QTy, Ty};
+use c600_ir::{Puzzle, QTy, Ty};
 use c600_run::interp::code::NONCANONICAL_VALUE;
 use c600_run::interp::RowTariff;
 use c600_run::meter::Outcome;
@@ -528,11 +528,12 @@ fn collection_types_round_trip_under_the_depth_bound() {
     let q = |ty: Ty| QTy { ty, display: false };
     let types = [
         Ty::List(Box::new(q(Ty::Nat))),
-        Ty::WordEqualityKey,
+        Ty::WordEqualityKey(Puzzle::Full),
+        Ty::WordEqualityKey(Puzzle::Jumbling),
         Ty::Set(Box::new(q(Ty::Rat))),
         Ty::Set(Box::new(QTy { ty: Ty::Rat, display: true })),
-        Ty::Map(Box::new(q(Ty::Text)), Box::new(q(Ty::Set(Box::new(q(Ty::WordEqualityKey)))))),
-        Ty::Map(Box::new(q(Ty::Set(Box::new(q(Ty::WordEqualityKey))))), Box::new(q(Ty::Text))),
+        Ty::Map(Box::new(q(Ty::Text)), Box::new(q(Ty::Set(Box::new(q(Ty::WordEqualityKey(Puzzle::Full))))))),
+        Ty::Map(Box::new(q(Ty::Set(Box::new(q(Ty::WordEqualityKey(Puzzle::Full)))))), Box::new(q(Ty::Text))),
         Ty::CompressedWord,
     ];
     let mut seen = BTreeSet::new();
@@ -561,8 +562,9 @@ fn collection_types_round_trip_under_the_depth_bound() {
     };
     assert_eq!(written(codec::TYPE_DEPTH), Ok(nested(codec::TYPE_DEPTH)));
     assert!(written(codec::TYPE_DEPTH + 1).is_err(), "a set type nested beyond the bound");
-    // The first type tag after a word stream's (LP2 draft, DET.63), which follows captured bytes' (DET.62).
-    assert!(codec::decode_ty(&mut Dec::new(&[30])).is_err());
+    // The first type tag after a menu word key's type (30) and a controlled function type's (31; T1 drafts), which
+    // follow a word stream's (LP2 draft, DET.63).
+    assert!(codec::decode_ty(&mut Dec::new(&[32])).is_err());
 }
 
 const COLLECTIONS: &str = "\

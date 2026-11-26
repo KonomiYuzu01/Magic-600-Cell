@@ -63,7 +63,7 @@ fn lists_and_word_operations_lower_to_the_draft_forms() {
     let lowered = lowered(source).unwrap_or_else(|e| panic!("{e}"));
     let f = &lowered.program.modules[0].functions[0];
     assert_eq!(f.params[0].ty.ty, Ty::List(Box::new(c600_ir::QTy { ty: Ty::Word, display: false })));
-    assert_eq!(f.params[2].ty.ty, Ty::WordEqualityKey);
+    assert_eq!(f.params[2].ty.ty, Ty::WordEqualityKey(c600_ir::Puzzle::Full));
     let all = expressions(&lowered);
     let mut ops: Vec<Prim> = all
         .iter()

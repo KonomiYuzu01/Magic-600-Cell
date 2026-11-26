@@ -27,7 +27,7 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use c600_check::Row as ClassRow;
-use c600_ir::{Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Field, FnTy, QTy, Ty};
+use c600_ir::{Capability, Effect, EffectBound, EndTest, EndTestOutcome, ExactRole, Field, FnTy, Puzzle, QTy, Ty};
 use c600_run::approx::{self, Approx};
 use c600_run::interp::{self, Request, RowTariff, Sink};
 use c600_run::menu::{ItemMatrix, MenuAlphabet, MenuIdentity, MENU_INDEX_LIMIT};
@@ -1154,8 +1154,10 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
                 qty(field, e, depth + 1)?;
             }
         }
+        // A function type whose callable selects its result under approximate control (T1 draft) has a tag of its own,
+        // so the encoding of every other function type stays as it was.
         Ty::Fn(f) => {
-            e.u8(15);
+            e.u8(if f.control { 31 } else { 15 });
             e.count(f.params.len());
             for p in &f.params {
                 qty(p, e, depth + 1)?;
@@ -1184,7 +1186,9 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
             e.u8(18);
             qty(element, e, depth + 1)?;
         }
-        Ty::WordEqualityKey => e.u8(19),
+        // A Full word's key keeps its tag; a menu word's key (T1 draft: `WordEqualityKey<Jumbling>`) has its own.
+        Ty::WordEqualityKey(Puzzle::Full) => e.u8(19),
+        Ty::WordEqualityKey(Puzzle::Jumbling) => e.u8(30),
         Ty::Set(element) => {
             e.u8(20);
             qty(element, e, depth + 1)?;
@@ -1214,6 +1218,26 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
         Ty::Bytes => e.u8(28),
         // LP2's draft word stream (DET.63).
         Ty::WordStream => e.u8(29),
+        // The identity tower's types (T1 drafts) cross to a host with their rows (T1c).
+        Ty::Piece(_)
+        | Ty::Sticker(_)
+        | Ty::Slot(_)
+        | Ty::Pose
+        | Ty::PoseTableIndex
+        | Ty::Digest(..)
+        | Ty::LevelValue(..)
+        | Ty::State(_)
+        | Ty::PoseTable
+        | Ty::Reachability(_)
+        | Ty::Evidence
+        | Ty::Verdict(..)
+        | Ty::Partial(_)
+        | Ty::Holds(..)
+        | Ty::Cost(..)
+        | Ty::Derivation(_)
+        | Ty::Named { .. } => {
+            return Err(Unencodable("an identity-tower type, which crosses with its host rows (T1c)"));
+        }
     }
     Ok(())
 }
@@ -1267,7 +1291,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
             }
             Ty::Record(fields)
         }
-        15 => {
+        tag @ (15 | 31) => {
             let n = d.count(2)?;
             let mut params = Vec::with_capacity(n);
             for _ in 0..n {
@@ -1282,12 +1306,13 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
             let vars = (0..n).map(|_| Ok(d.text()?.to_string())).collect::<Result<Vec<_>, Malformed>>()?;
             let effects =
                 EffectBound { effects: ordered(effects)?, capabilities: ordered(capabilities)?, vars: ordered(vars)? };
-            Ty::Fn(Box::new(FnTy { params, result, effects }))
+            Ty::Fn(Box::new(FnTy { params, result, effects, control: tag == 31 }))
         }
         16 => Ty::Receipt,
         17 => Ty::Var(d.text()?.to_string()),
         18 => Ty::List(Box::new(decode_qty_at(d, depth + 1)?)),
-        19 => Ty::WordEqualityKey,
+        19 => Ty::WordEqualityKey(Puzzle::Full),
+        30 => Ty::WordEqualityKey(Puzzle::Jumbling),
         20 => Ty::Set(Box::new(decode_qty_at(d, depth + 1)?)),
         21 => {
             let key = decode_qty_at(d, depth + 1)?;

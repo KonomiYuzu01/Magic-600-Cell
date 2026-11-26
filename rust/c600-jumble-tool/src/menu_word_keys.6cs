@@ -1,7 +1,7 @@
 edition "6cs-draft-1";
 module menu_word_keys requires [];
 
-export fn key(w: MenuWord) -> WordEqualityKey effects [] {
+export fn key(w: MenuWord) -> WordEqualityKey<Jumbling> effects [] {
     return word_key(w);
 }
 

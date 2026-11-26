@@ -7,7 +7,7 @@ mod support;
 
 use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, TYPE_MISMATCH, WORD_KEY_NOT_EXECUTABLE};
 use c600_ir::build::*;
-use c600_ir::{ExactRole, Expr, Lit, Prim, Program, ReceiptField, Ty};
+use c600_ir::{ExactRole, Expr, Lit, Prim, Program, Puzzle, ReceiptField, Ty};
 use support::{less, mismatch, only, report, tint, tool, xy};
 
 fn boolean(b: bool) -> Expr {
@@ -203,7 +203,7 @@ fn a_field_read_needs_a_record_with_that_field() {
 fn state_and_preview_operations_take_their_types() {
     assert_only(&cmd(Ty::Unit, write_workspace("r", exact(Ty::Word), nat(1))), "f", "0", "Word", "Nat");
     assert_only(&cmd(Ty::Receipt, propose(nat(1), target("t"))), "f", "0", "Word", "Nat");
-    for (op, name) in [(Prim::WordKey, "WordEqualityKey"), (Prim::TraceKey, "TraceEqualityKey")] {
+    for (op, name) in [(Prim::WordKey, "WordEqualityKey<Full>"), (Prim::TraceKey, "TraceEqualityKey")] {
         let key = || prim(op, vec![word(&[1, -1])]);
         let keyed = [
             (cmd(Ty::Receipt, propose(key(), target("t"))), "0"),
@@ -219,15 +219,18 @@ fn state_and_preview_operations_take_their_types() {
     }
     // A trace key and a word key each take a Full word or a menu word (LB1.10: a menu word's trace key is under the
     // run's `jumble-locality/1`; LG2.18: its word key under the run's menu matrices). A word key of a menu word has the
-    // one type `WordEqualityKey`, and it is still no word.
+    // type `WordEqualityKey<Jumbling>` (T1 draft), and it is still no word.
     let menu = || Expr::Lit(Lit::MenuWord(vec![[0, 1]]));
     let keyed = report(&f(Ty::TraceEqualityKey, prim(Prim::TraceKey, vec![menu()])));
     assert!(keyed.diagnostics.is_empty(), "{:#?}", keyed.diagnostics);
-    let keyed = report(&f(Ty::WordEqualityKey, prim(Prim::WordKey, vec![menu()])));
+    let keyed = report(&f(Ty::WordEqualityKey(Puzzle::Jumbling), prim(Prim::WordKey, vec![menu()])));
     assert!(keyed.diagnostics.is_empty(), "{:#?}", keyed.diagnostics);
     let d = only(&f(Ty::MenuWord, prim(Prim::WordKey, vec![menu()])));
     let (code, _, at, expected, supplied) = mismatch(&d);
-    assert_eq!((code, at, expected, supplied), (WORD_KEY_NOT_EXECUTABLE, "root", "MenuWord", "WordEqualityKey"));
+    assert_eq!(
+        (code, at, expected, supplied),
+        (WORD_KEY_NOT_EXECUTABLE, "root", "MenuWord", "WordEqualityKey<Jumbling>")
+    );
     assert_only(&cmd(Ty::Receipt, propose(word(&[1]), nat(2))), "f", "1", "Target", "Nat");
     assert_only(&cmd(Ty::Text, read_receipt(nat(1), ReceiptField::Id)), "f", "0", "Receipt", "Nat");
     assert_only(&cmd(Ty::Unit, use_exact(ExactRole::Budget, word(&[1]))), "f", "0", "Nat | Int | Budget", "Word");

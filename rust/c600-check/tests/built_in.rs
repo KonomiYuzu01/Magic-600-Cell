@@ -11,7 +11,7 @@ use c600_check::{
     admit, admit_built_in, check, Admission, Grant, Policy, Profile, Row, Separation, EFFECT_UNDECLARED, NOT_GRANTED,
 };
 use c600_ir::build::*;
-use c600_ir::{Callee, Effect, EndTest, Expr, Function, Lit, Prim, Program, Ty};
+use c600_ir::{Callee, Effect, EndTest, Expr, Function, Lit, Prim, Program, Puzzle, Ty};
 use support::tool;
 
 /// The row c600-tools' built-in tool lists: proposals to `operation.preview`.
@@ -250,7 +250,7 @@ fn a_workspace_write_of_a_collection_or_compressed_word_may_carry_a_word() {
         (Ty::Map(Box::new(exact(Ty::Nat)), words()), map(exact(Ty::Nat), exact(Ty::Word), vec![(nat(1), var("w"))])),
         (Ty::Map(words(), Box::new(exact(Ty::Nat))), map(exact(Ty::Word), exact(Ty::Nat), vec![(var("w"), nat(1))])),
         (Ty::CompressedWord, prim(Prim::Compress, vec![var("w")])),
-        (Ty::WordEqualityKey, prim(Prim::WordKey, vec![var("w")])),
+        (Ty::WordEqualityKey(Puzzle::Full), prim(Prim::WordKey, vec![var("w")])),
         (Ty::TraceEqualityKey, prim(Prim::TraceKey, vec![var("w")])),
     ];
     for (ty, value) in cases {

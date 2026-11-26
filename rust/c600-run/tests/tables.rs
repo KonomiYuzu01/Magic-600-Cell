@@ -99,6 +99,11 @@ fn row(e: &Expr) -> (&'static str, Kind, &'static [&'static str]) {
         Expr::Repeat { count: _, init: _, acc: _, result: _, body: _ } => {
             ("repeat", Kind::Pure, &["count", "init", "body"])
         }
+        // The identity tower's nodes (T1 drafts): the checker types them and the interpreter refuses them when loaded
+        // until their values and host rows exist (T1c). A kernel row is a snapshot read of its own row.
+        Expr::Construct { ty: _, ctor: _, args: _ } => ("construct", Kind::Pure, &["args"]),
+        Expr::Case { scrutinee: _, arms: _, default: _ } => ("case", Kind::Pure, &["scrutinee", "arms", "default"]),
+        Expr::Kernel { op: _, args: _, ty: _ } => ("kernel", Kind::StateRead, &["args"]),
     }
 }
 
@@ -166,7 +171,9 @@ fn sink(s: &Sink) -> (Kind, Vec<String>) {
     (kind, fields.iter().map(Carries::describe).collect())
 }
 
-/// Every IR type, by what a value of it holds. None holds a state, a revision, a digest, a token or a handle.
+/// Every IR type, by what a value of it holds. None of the types the interpreter loads holds a state, a revision, a
+/// digest, a token or a handle; the identity tower's (T1 drafts) hold host handles and certificates that no operation
+/// adopts, and the interpreter refuses them until T1c.
 fn holds(ty: &Ty) -> &'static str {
     match ty {
         Ty::Unit | Ty::Bool | Ty::ApproxBool => "a truth value or nothing",
@@ -178,7 +185,7 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::Receipt => "a preview receipt, read only through its fields",
         Ty::Var(_) => "a type parameter",
         Ty::List(_) => "values of its element type, in order",
-        Ty::WordEqualityKey => "a word equality key, which is never letters",
+        Ty::WordEqualityKey(_) => "a word equality key, which is never letters",
         Ty::Set(_) => "distinct exact values of its element type, in canonical key order",
         Ty::Map(..) => "exact keys with values of these types, in canonical key order",
         Ty::CompressedWord => "letters as parts of literal letters, with their exact length",
@@ -188,6 +195,20 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::Generator => "a cursor on a stream of the run's seed, kept only inside the interpreter",
         Ty::Bytes => "captured octets, which a program reads only by decoding them into text",
         Ty::WordStream => "a streamed word's covered length and literal digest, which stays in its run",
+        Ty::Piece(_) | Ty::Sticker(_) | Ty::Slot(_) | Ty::Pose | Ty::PoseTableIndex | Ty::Cost(..) => {
+            "an identity-tower ID, index or cost, which the interpreter does not load yet (T1c)"
+        }
+        Ty::Digest(..)
+        | Ty::LevelValue(..)
+        | Ty::State(_)
+        | Ty::PoseTable
+        | Ty::Reachability(_)
+        | Ty::Evidence
+        | Ty::Verdict(..)
+        | Ty::Partial(_)
+        | Ty::Holds(..)
+        | Ty::Derivation(_) => "an identity-tower host value or certificate, which no operation adopts (T1c)",
+        Ty::Named { .. } => "a value of a declared sum type, which the interpreter does not load yet (T1c)",
     }
 }
 
@@ -678,7 +699,12 @@ fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
     let kinds = ["a name", "a type", "letters", "canonical bytes", "an exact role"];
     assert!(carried.iter().all(|c| kinds.iter().any(|k| c.starts_with(k))), "{carried:?}");
     let types = [
-        Ty::Fn(Box::new(c600_ir::FnTy { params: vec![], result: exact(Ty::Unit), effects: Default::default() })),
+        Ty::Fn(Box::new(c600_ir::FnTy {
+            params: vec![],
+            result: exact(Ty::Unit),
+            effects: Default::default(),
+            control: false,
+        })),
         Ty::Generator,
     ];
     assert!(types.iter().all(|t| holds(t).contains("only inside the interpreter")));

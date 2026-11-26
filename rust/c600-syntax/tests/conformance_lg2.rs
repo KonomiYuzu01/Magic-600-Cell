@@ -96,7 +96,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::Approx(_)
         | Ty::ApproxBool
         | Ty::Receipt
-        | Ty::WordEqualityKey
+        | Ty::WordEqualityKey(_)
         | Ty::TraceEqualityKey
         | Ty::CompressedWord
         | Ty::MenuWord
@@ -110,6 +110,25 @@ fn base_types_only(ty: &Ty) -> bool {
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
         Ty::List(e) | Ty::Set(e) => base_types_only(&e.ty),
         Ty::Map(k, v) => base_types_only(&k.ty) && base_types_only(&v.ty),
+        // The identity tower and the domain families (T1 drafts in `c600-ir` and `c600-check`, whose checker tests
+        // are `c600-check/tests/tower.rs`) do not lower yet: their source forms are T1b's.
+        Ty::Piece(_)
+        | Ty::Sticker(_)
+        | Ty::Slot(_)
+        | Ty::Pose
+        | Ty::PoseTableIndex
+        | Ty::Digest(..)
+        | Ty::LevelValue(..)
+        | Ty::State(_)
+        | Ty::PoseTable
+        | Ty::Reachability(_)
+        | Ty::Evidence
+        | Ty::Verdict(..)
+        | Ty::Partial(_)
+        | Ty::Holds(..)
+        | Ty::Cost(..)
+        | Ty::Derivation(_)
+        | Ty::Named { .. } => false,
     }
 }
 
@@ -138,6 +157,9 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::RngDraw => "granted input or output",
         // Captured bytes into text (DET.62; LP2 draft).
         Prim::TextDecode => "decoding",
+        // LG2.11's implications and LG2.6's costs (T1 drafts; they do not lower yet, T1b).
+        Prim::Imply(_) => "goal",
+        Prim::ToCost(..) | Prim::CostValue => "arithmetic",
     }
 }
 
@@ -159,6 +181,11 @@ fn family(e: &Ir) -> &'static str {
         Ir::TextDecodeHex { .. } => "decoding",
         Ir::Propose { .. } | Ir::ReadReceipt { .. } => "preview",
         Ir::UseExact { .. } | Ir::Accounting(_) => "exact sink or accounting",
+        // A sum type's construction and case, and the identity tower's kernel rows (T1 drafts; they do not lower yet,
+        // T1b).
+        Ir::Construct { .. } => "value",
+        Ir::Case { .. } => "control",
+        Ir::Kernel { .. } => "kernel row",
     }
 }
 
@@ -433,7 +460,7 @@ fn ct_lg2_11_a_word_equality_key_is_never_literal_letters() {
     for declaration in &uses {
         let (code, types) = only(declaration);
         assert_eq!(code, WORD_KEY_NOT_EXECUTABLE, "{declaration}");
-        assert_eq!(types, Some(("Word".to_string(), "WordEqualityKey".to_string())), "{declaration}");
+        assert_eq!(types, Some(("Word".to_string(), "WordEqualityKey<Full>".to_string())), "{declaration}");
     }
     admitted("fn f(w: Word) -> WordEqualityKey effects [] {\n    return word_key(inverse(inverse(w)));\n}\n");
     admitted("fn f(a: WordEqualityKey, b: WordEqualityKey) -> Bool effects [] {\n    return exact_eq(a, b);\n}\n");
@@ -524,7 +551,10 @@ fn f() -> Word effects [] {{
 }
 ",
     );
-    assert_eq!((code, types), (WORD_KEY_NOT_EXECUTABLE, Some(("Word".to_string(), "WordEqualityKey".to_string()))));
+    assert_eq!(
+        (code, types),
+        (WORD_KEY_NOT_EXECUTABLE, Some(("Word".to_string(), "WordEqualityKey<Full>".to_string())))
+    );
     for declaration in [
         "fn f(w: Word) -> WordEqualityKey effects [] {
     return trace_key(w);
