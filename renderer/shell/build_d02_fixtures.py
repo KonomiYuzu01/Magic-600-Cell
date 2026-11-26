@@ -17,8 +17,8 @@ Fixtures go to `work/build/d02-fixtures/<state>/` (ignored by Git): the fixture'
 `word.json` beside them. A state whose fixture is there and matches is kept. `index.json` lists each state's letters,
 digests, write time and reopen time (risk R2: a deep fixture replays about 3,300 commits). The writer is the bridge's
 release build (`cargo build --release -p c600-shell-host`, which `build_product.py` runs). The two correction states
-(`nu-c<id>`) are not built here: their words come from the adapter's `correction_lookup`, and B26 builds them. Nothing
-here launches a window or uses a GPU.
+(`nu-c<id>`, B26) are on-zero's empty word plus their correction's letters as the samples' `corrections.json` holds
+them from the adapter's `correction_lookup`. Nothing here launches a window or uses a GPU.
 """
 
 from __future__ import annotations
@@ -46,8 +46,10 @@ S7001 = "research/jumbling/restoration/11-scramble-census/runs/round1/ia-k10-s70
 S7001_WORDS = "research/jumbling/restoration/13-tutorial-runner/runs/depth10-seed7001/words"
 STOP40 = "research/jumbling/theory/results/seams-I_a-40-stop.json"
 MENU = ROOT / WJ
-# Not built here, with the step that builds them.
-NOT_BUILT = {"nu-c0": "B26", "nu-c35": "B26"}
+# Not built here, with the step that builds them (none since B26).
+NOT_BUILT: dict[str, str] = {}
+# B26: the correction states and their correction ids.
+CORRECTION_STATES = {"nu-c0": 0, "nu-c35": 35}
 # make_d02_samples.py's H4_LETTERS (copied from research/jumbling/differential/leads/results/summary.md:497).
 H4_LETTERS = [[64, 15], [185, 14], [357, 12], [471, 12], [263, 14], [407, 13], [523, 12],
               [124, 2], [274, 13], [46, 1], [46, 3], [104, 14]]
@@ -90,6 +92,11 @@ def words() -> dict[str, list[list[int]]]:
     for k in range(9):
         word += [list(m) for m in read_json(f"{S7001_WORDS}/{k:05d}.json")["word"]]
         out[f"s7001-{k + 1}"] = list(word)
+    # B26: on-zero plus the correction's letters, as the samples' catalogue holds them.
+    catalogue = json.loads((SAMPLES / "corrections.json").read_text(encoding="utf-8"))["catalogue"]["corrections"]
+    letters = {row["id"]: row["letters"] for row in catalogue}
+    for state, cid in CORRECTION_STATES.items():
+        out[state] = out["on-zero"] + [list(m) for m in letters[cid]]
     return out
 
 

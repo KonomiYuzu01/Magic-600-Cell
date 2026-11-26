@@ -297,10 +297,13 @@ public sealed class ShellChrome
                 host.SetTotals(ShellJumble.Totals());
                 host.SetStyle(ShellJumble.Style());
                 host.SetCapMap(layout, ShellJumble.CapMap());
+                host.SetNu(ShellJumble.Corrections(), ShellJumble.Bound is { } nuBound ? ShellJumble.StateAfter(nuBound) : null);
             };
             host.SetTotals(ShellJumble.Totals());
             host.SetStyle(ShellJumble.Style());
             host.SetCapMap(layout, ShellJumble.CapMap());
+            // B26: the ν band and the ν-corrections, from the samples' catalogue and the bound state's totals.
+            host.SetNu(ShellJumble.Corrections(), ShellJumble.Bound is { } nuBound ? ShellJumble.StateAfter(nuBound) : null);
             // B9: the 80 meeting caps of a named cap, and its own record where the bound sample has one.
             host.CapRecord = ShellJumble.CapRecord;
             host.SetMeeting(ShellJumble.Meeting());

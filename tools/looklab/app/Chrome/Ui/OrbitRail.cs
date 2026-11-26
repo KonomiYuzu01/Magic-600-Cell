@@ -49,6 +49,13 @@ public sealed partial class OrbitRail : PanelContainer
 
     public void Expand(int? orbit) { Expanded = orbit; Refresh(); }
 
+    // B26 (ADR-D02.28): a band drawn under the cells, in the same column, so its 35 columns align with theirs.
+    public void AddBand(Control band)
+    {
+        band.GetParent()?.RemoveChild(band);
+        column.AddChild(band); column.MoveChild(band, cells.GetIndex() + 1);
+    }
+
     public void Refresh()
     {
         TokenSet t = tokens();

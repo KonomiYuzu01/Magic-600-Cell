@@ -1630,8 +1630,9 @@ class D02Host(unittest.TestCase):
         self.assertEqual(host.count("SetUndefined("), 2)
         # The host adds one panel to the existing bottom dock, and the Focus layer editor to the right dock (owner,
         # 26 November 2026: the 0.4 Piece Filter in the default view), and no layout and no command.
-        # B25 adds the Word panel to the left dock beside the Library.
-        self.assertEqual(host.count("AddDockPanel("), 3)
+        # B25 adds the Word panel to the left dock beside the Library, and B26 the ν-corrections rows.
+        self.assertEqual(host.count("AddDockPanel("), 4)
+        self.assertIn('frame.AddDockPanel(DockSide.Left, NuCorrectionsPanel.PanelId, "ν-corrections", "library.tool", Corrections);', host)
         self.assertIn('frame.AddDockPanel(DockSide.Left, WordPanel.PanelId, "Word", "panel.history", Words);', host)
         self.assertIn('frame.AddDockPanel(DockSide.Right, FocusLayerEditor.PanelId, "Focus layer", "layer.cycle", FilterEditor);', host)
         for word in ("AddLayout", "Commands.", "Invoke("):
@@ -1650,7 +1651,7 @@ class D02Host(unittest.TestCase):
 
     def test_the_host_expectation_sees_each_part(self):
         run = shell_module("d02_run")
-        self.assertEqual(run.IN_SAMPLE_MODE, {"host"})
+        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band"})
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]
@@ -2112,6 +2113,36 @@ class D02Words(unittest.TestCase):
         self.assertTrue(any("before solved" in p for p in run.expect_seed7001(dumps(crossing_early=True), {}, None)))
         self.assertTrue(any("digest" in p for p in run.expect_seed7001(dumps(digest_shift=1), {}, None)))
         self.assertTrue((SHELL / "d02_scripts" / "seed7001.json").is_file())
+
+
+class D02Nu(unittest.TestCase):
+    """B26: the nu-band script runs on nu-c0's fixture in sample mode, and its expectation follows the catalogue."""
+
+    def test_the_nu_band_expectation_follows_the_catalogue(self):
+        run = shell_module("d02_run")
+        self.assertIn("nu-band", run.ON_FIXTURE)
+        self.assertIn("nu-band", run.IN_SAMPLE_MODE)
+        want = run.nu_words("nu-c0")
+        self.assertEqual(want["band"], "ν band: b8 b25 · O17 dial 0 of 5 · O28 dial 0 of 5 · 9 fixed dots")
+        good = {"band": want["band"], "band_visible": True, "band_width": 640.0, "cells": list(range(35)), "rows": "36",
+                "selected": "c35 · card5:MB2-5", "set": "0:1 35:1", "preview": want["preview"], "check": want["check"]}
+        self.assertEqual(run.expect_nu_band([{"do": "wait 1000 ms", "nu": good}], {}, "nu-c0"), [])
+        self.assertTrue(run.expect_nu_band([{"do": "wait 1000 ms", "nu": dict(good, set="0:1")}], {}, "nu-c0"))
+        self.assertTrue(run.expect_nu_band([{"do": "wait 1000 ms", "nu": dict(good, band_visible=False)}], {}, "nu-c0"))
+        self.assertTrue(run.expect_nu_band([{"do": "wait 1000 ms", "nu": good}], {}, "on-zero"))
+        self.assertTrue(want["check"].startswith("ν after this set: b25 · c00×+1 c35×+1, "))
+        self.assertTrue((SHELL / "d02_scripts" / "nu-band.json").is_file())
+
+    def test_the_correction_states_are_on_zero_plus_their_letters(self):
+        fixtures = shell_module("build_d02_fixtures")
+        words = fixtures.words()
+        catalogue = json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / "corrections.json"))
+        letters = {row["id"]: row["letters"] for row in catalogue["catalogue"]["corrections"]}
+        for state, cid in fixtures.CORRECTION_STATES.items():
+            totals = json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / state / "totals.json"))
+            self.assertEqual(words[state], letters[cid], state)
+            self.assertEqual(totals["correction"]["letters"], letters[cid], state)
+        self.assertEqual(fixtures.NOT_BUILT, {})
 
 if __name__ == "__main__":
     unittest.main()

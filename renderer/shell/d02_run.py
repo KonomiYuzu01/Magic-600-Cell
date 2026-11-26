@@ -318,6 +318,60 @@ def expect_seed7001(dumps: list[dict], source: dict, state: str | None) -> list[
     return problems
 
 
+def nu_words(state: str) -> dict:
+    """B26: the ν lines a state and the catalogue give: the band's line, and the check and preview of the script's set."""
+    doc = load(SAMPLES / "corrections.json")
+    k = doc["nu_constants"]
+    names, moduli = k["names"], k["moduli"]
+    rows = {row["id"]: row for row in doc["catalogue"]["corrections"]}
+    nu = load(SAMPLES / state / "totals.json")["nu"]["nu"]
+
+    def nonzero(row):
+        parts = [names[i] if moduli[i] == 2 else f"{names[i]}={row[i]}" for i in range(len(row)) if row[i]]
+        return " ".join(parts) or "zero"
+
+    def plus(*adds):
+        return [(nu[i] + sum(r["row"][i] for r in adds)) % moduli[i] for i in range(len(nu))]
+
+    dials = " · ".join(f"O{o:02d} dial {nu[names.index(f'C5_{o}')]} of 5" for o in k["c5_orbits"])
+    twists = lambda n: f"{n:,} twist" + ("" if n == 1 else "s")
+    after = plus(rows[0], rows[35])
+    return {"band": f"ν band: {nonzero(nu)} · {dials} · {len(k['i_a_fixed'])} fixed dots", "after": after,
+            "check": f"ν after this set: {nonzero(after)} · c00×+1 c35×+1, "
+                     f"{twists(len(rows[0]['letters']) + len(rows[35]['letters']))} · labels not predicted",
+            "preview": f"Preview c35: {twists(len(rows[35]['letters']))} · ν after: {nonzero(plus(rows[35]))} · labels not predicted"}
+
+
+def expect_nu_band(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B26's nu-band script on nu-c0: the band shows under the rail, 35 cells wide, with the state's marks and dials;
+    two marked rows, the last previewed, and one chord's check give nu-c35's ν and say the labels are not predicted."""
+    if state != "nu-c0":
+        return [f"the nu-band script runs on nu-c0, not {state}"]
+    last = dumps[-1].get("nu") if dumps else None
+    if not isinstance(last, dict):
+        return ["the run wrote no ν lines"]
+    want = nu_words(state)
+    problems = []
+    if want["after"] != load(SAMPLES / "nu-c35" / "totals.json")["nu"]["nu"]:
+        problems.append("the set {c00, c35} on nu-c0 is not nu-c35's ν in the samples")
+    if last["band"] != want["band"]:
+        problems.append(f"the band reads {last['band']!r}, not {want['band']!r}")
+    if not last["band_visible"] or not last["band_width"] > 0:
+        problems.append("the band is not on screen under the rail")
+    if len(last["cells"]) != 35 or sorted(last["cells"]) != list(range(35)):
+        problems.append(f"the band has {len(last['cells'])} cells, not the rail's 35")
+    if last["rows"] != "36" or not last["selected"].startswith("c35 · "):
+        problems.append(f"the panel shows {last['rows']} rows with {last['selected']!r} selected")
+    if last["set"] != "0:1 35:1":
+        problems.append(f"the set is {last['set']!r}, not c00 and c35 at +1")
+    if last["preview"] != want["preview"]:
+        problems.append(f"the preview reads {last['preview']!r}, not {want['preview']!r}")
+    if last["check"] != want["check"]:
+        problems.append(f"the check reads {last['check']!r}, not {want['check']!r}")
+    print(f"nu-band: {last['band']}; {last['check']}")
+    return problems
+
+
 # The wheel zoom (owner, 26 November 2026: "我现在没法zoom in"): wheel up zooms in, one notch multiplies the zoom by
 # 1.1, and the zoom stays within 0.5 to 4 times the opening's. The core multiplies the projected picture by the zoom
 # (geometry.hlsl), so a larger zoom sent is a larger picture.
@@ -634,11 +688,11 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
 
 EXPECT = {"smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
           "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
-          "focus-layer": expect_focus_layer, "seed7001": expect_seed7001}
+          "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are.
-ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer"}
-IN_SAMPLE_MODE = {"host"}
+ON_FIXTURE = {"bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band"}
+IN_SAMPLE_MODE = {"host", "nu-band"}
 
 
 # The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.

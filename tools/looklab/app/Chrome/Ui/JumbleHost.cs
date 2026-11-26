@@ -32,7 +32,9 @@ public sealed class JumbleHost
         { "jumble.cap.name", "jumble.cap.unname", "jumble.capmap.threshold.set", "jumble.capmap.threshold.clear", "jumble.seat.hold",
           "jumble.focus.straddlers", "jumble.focus.domain", "jumble.focus.height",
           // The Focus layer, the 0.4 Piece Filter (owner, 26 November 2026), on the bound state's pose rows.
-          "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose" };
+          "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose",
+          // B26: the ν-corrections' set (CR-14's mark row) and its check.
+          "jumble.corrections.mark", "jumble.corrections.check" };
     public static readonly IReadOnlySet<string> FilterRows = new HashSet<string>(StringComparer.Ordinal)
         { "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose" };
     // The Focus layer: its model for the bound state (null while none is bound), and its editor in the right dock.
@@ -40,6 +42,12 @@ public sealed class JumbleHost
     public FocusLayerEditor FilterEditor { get; }
     // B25: a stored word played by part, in the left dock beside the Library.
     public WordPanel Words { get; } = new();
+    // B26: the ν band under the rail at N = 0 (ADR-D02.28) and the ν-corrections rows in the left dock (ADR-D02.39).
+    public NuBandStrip NuStrip { get; }
+    public NuCorrectionsPanel Corrections { get; } = new();
+    public NuBand? Nu { get; private set; }
+    private NuConstants? nuConstants;
+    private WordState? nuState;
     // B11: the named cap's covers with the hover's inspect line, its raw record (the straddlers' count), the bound
     // state's pose rows (the domain and height counts), and the views' focus layers the three predicates join.
     public CapCovers? Covers { get; private set; }
@@ -107,6 +115,8 @@ public sealed class JumbleHost
         frame.AddDockPanel(DockSide.Right, FocusLayerEditor.PanelId, "Focus layer", "layer.cycle", FilterEditor);
         frame.Rebuilt += DressFilter;
         frame.AddDockPanel(DockSide.Left, WordPanel.PanelId, "Word", "panel.history", Words);
+        NuStrip = new NuBandStrip(() => frame.Tokens);
+        frame.AddDockPanel(DockSide.Left, NuCorrectionsPanel.PanelId, "ν-corrections", "library.tool", Corrections);
         DressFilter();
         // The bottom dock is a chrome setting both ways: the entry opens the cap map there, and a panel the researcher
         // opens there is theirs, so Jumble off leaves it.
@@ -340,6 +350,8 @@ public sealed class JumbleHost
         "jumble.focus.domain" or "jumble.focus.height" when Style == null => "no state is bound",
         "jumble.focus.domain" when Whole(argument) is not int d || d >= Style!.Domains.Count => "it needs a domain number, 0 to " + (Style!.Domains.Count - 1) + ", as in > jumble.focus.domain 5",
         "jumble.focus.height" when Whole(argument) == null => "it needs k, as in > jumble.focus.height 4",
+        "jumble.corrections.mark" or "jumble.corrections.check" when Corrections.Model == null => "the build has no ν-correction catalogue",
+        "jumble.corrections.mark" when MarkOf(argument) == null => "it needs a row id and a multiplicity, as in > jumble.corrections.mark 35 +1",
         _ => null,
     };
 
@@ -348,6 +360,8 @@ public sealed class JumbleHost
         switch (command)
         {
             case "filter.open": OpenFilter(); break;
+            case "jumble.corrections.mark": if (MarkOf(argument) is (int id, int by)) Corrections.Model?.Mark(id, by); OpenCorrections(); break;
+            case "jumble.corrections.check": Corrections.CheckSet(); OpenCorrections(); break;
             case "filter.preview": if (argument != null) Filter?.SetText(argument); Filter?.Run(); OpenFilter(); break;
             // The palette's Enter asked for it.
             case "filter.apply": Filter?.Apply(UserEvent.Key("palette Enter")); OpenFilter(); break;
@@ -472,7 +486,37 @@ public sealed class JumbleHost
     public void Solving(RelationStrip? strip, OrbitRail? rail)
     {
         this.strip = strip; this.rail = rail;
+        if (rail != null && GodotObject.IsInstanceValid(rail)) { rail.AddBand(NuStrip); rail.OrderChanged += BandNu; }
+        BandNu();
         Follow(Source.State);
+    }
+
+    // B26: the bound state's ν facts (N, the lattice flag, the ν row) and the correction catalogue, or none.
+    public void SetNu(NuCorrections? catalogue, WordState? state)
+    {
+        nuConstants = catalogue?.Constants; nuState = state;
+        Corrections.Bind(catalogue, () => nuState is { OnLattice: true, Nu: { } nu } ? nu : null);
+        BandNu();
+    }
+
+    // The band in the rail's current order; in orbit-id order where the frame has no rail.
+    private void BandNu()
+    {
+        IReadOnlyList<int> order = rail != null && GodotObject.IsInstanceValid(rail) ? rail.Cells().Select(c => c.Orbit).ToArray() : Enumerable.Range(0, OrbitAtlas.Count).ToArray();
+        Nu = nuConstants == null || nuState is not { } s ? null : NuBand.Of(nuConstants, order, s.Nu, s.OnLattice, s.N);
+        if (GodotObject.IsInstanceValid(NuStrip)) NuStrip.SetBand(Nu);
+    }
+
+    public void OpenCorrections() => frame.Model.ShowDock(DockSide.Left, NuCorrectionsPanel.PanelId);
+
+    // "35 +1", "0 -1" or "7" (+1): a row id and a nonzero signed multiplicity.
+    private static (int Id, int By)? MarkOf(string? argument)
+    {
+        string[] parts = (argument ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length is < 1 or > 2 || !int.TryParse(parts[0], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int id) || id >= NuCorrections.Expected) return null;
+        int by = 1;
+        if (parts.Length == 2 && (!int.TryParse(parts[1], System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out by) || by == 0)) return null;
+        return (id, by);
     }
 
     private void Dock()

@@ -1,0 +1,52 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "nu-band",
+  "note": "B26: on the ν-correction state nu-c0 the ν band stands under the rail with its marks and dials; in the ν-corrections panel two rows are marked (c00 and c35), the last previewed, and one chord checks the set: ν after this set is nu-c35's ν, and the labels are not predicted.",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "focus": "jumble.corrections"
+    },
+    {
+      "wait_ms": 500
+    },
+    {
+      "focus": "jumble.corrections"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "End"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Shift+Enter"
+    },
+    {
+      "wait_ms": 300
+    },
+    {
+      "chord": "Ctrl+Enter"
+    },
+    {
+      "wait_ms": 1000
+    }
+  ]
+}

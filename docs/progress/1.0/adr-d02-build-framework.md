@@ -893,7 +893,9 @@ relative path is from the repository root.
   - `Model/JumbleWords.cs`: `WordTree` (folded in word order, parts checked to chain), `WordPlayback` (by part, twist by twist in an opened part, numerals only above the bound), `LongWordBound` (10,000, labelled as X3's placeholder), the crossing sentence, `WordSignature` and `LogTabMark`.
   - A lattice-to-lattice word's 35 slots are pending until the build ships their data; its ν row shows. A word that leaves the lattice shows the undefined numeral in all 35.
   - Departure: the word plays in a Word panel in the left dock (`Ui/WordPanel.cs`), not in `DraftLine.cs` and `LibraryPanel.cs`. The product shell has no Library panel of its own yet, and K2 wires the real commit bar. The panel shows the commit bar's line (length and alphabet), the folded tree, the counter, the state after each part (N and digest from the samples), the signature, the log tab's mark and the crossing sentence with its reachability.
-  - Checks: the four console tests; `d02_run.py --script seed7001` PASS (each part's digest is its word file's output, N from the sample totals, solved at the end). The ν band and ν-corrections
+  - Checks: the four console tests; `d02_run.py --script seed7001` PASS (each part's digest is its word file's output, N from the sample totals, solved at the end).
+
+### B26. The ν band and ν-corrections
 - **Goal:** the band beside the rail at N = 0, and the Built-in branch.
 - **Items:** .28, .39.
 - **Files:** new `Model/NuBand.cs`, `Ui/NuBand.cs`, `Ui/OrbitRail.cs`, `Model/Library.cs`, `Ui/LibraryPanel.cs`, `tests/D02NuTests.cs`.
@@ -905,6 +907,12 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B6.
+- **As built (26 November 2026):**
+  - `Model/NuBand.cs`: `NuConstants` (read from the catalogue's `nu_constants`: 45 names in row order, moduli 2 and 5, the 8 frame groups, the 2 dials, the 9 always-zero coordinates), `NuBand` (one cell per rail cell in the rail's order; diamond marks, outside the ring family; O17 and O28 as five-position dials; fixed dots; undefined off the lattice; not shown on the lattice above N = 0), `NuCorrections` (36 rows in id order, selection, signed marks, preview, check) and `NuCorrectionCheck` ("ν after this set", "labels not predicted").
+  - `Ui/NuBand.cs`: `NuBandStrip`, which `OrbitRail.AddBand` puts in the rail's own column under its cells, so the 35 columns align and follow the order setting; `NuCorrectionsPanel` in the left dock, headed "Library › Built-in › ν-corrections": Up, Down, Home and End move; Space marks +1 and Shift+Space -1; Delete unmarks; Shift+Enter previews; Ctrl+Enter checks the set. The host carries `jumble.corrections.mark` (CR-14) and `jumble.corrections.check` from the palette too.
+  - Departure: the rows sit in their own dock panel, not in `LibraryPanel.cs`, as B25's Word panel does; the product shell's Library holds the lab's sample records until K2. Shift+Enter previews the row's ν effect in the panel; staging its letters as a commit-bar preview waits for K2's backend.
+  - `build_d02_fixtures.py` now builds the correction states as on-zero plus their catalogue letters. nu-c0 (9 letters) is written; nu-c35 is 5,629 letters; its write ran over ten minutes without finishing and was stopped (risk R2), so it is not written yet. The `nu-band` script needs only nu-c0.
+  - Checks: the five console tests; `d02_run.py --script nu-band --state nu-c0` PASS (the band under the rail, 35 cells, b8 and b25 marked, both dials at 0, 9 fixed dots; c00 and c35 marked, c35 previewed, the set checked: ν after this set is b25, nu-c35's ν). One earlier run failed only its foreground check, when another window took the foreground (`owner_acted`); the rerun passed.
 
 ### B27. Keys, terms and the remaining unavailable states
 - **Goal:** the held seat keys, the glossary check, and a named state for what still waits.

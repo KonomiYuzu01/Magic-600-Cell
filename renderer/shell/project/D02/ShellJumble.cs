@@ -119,6 +119,13 @@ public static class ShellJumble
         }
     }
 
+    /// <summary>B26: the ν-correction catalogue (corrections.json) with the ν constants, or null where the samples lack it.</summary>
+    public static NuCorrections? Corrections()
+    {
+        var path = Path.Combine(JumbleFolder(), "corrections.json");
+        return File.Exists(path) ? NuCorrections.Read(File.ReadAllText(path)) : null;
+    }
+
     /// <summary>B25: the seed 7001 restoration's nine words (seed7001-words.json), or null where the samples lack it.</summary>
     public static WordTree? SeedWord()
     {
@@ -600,6 +607,19 @@ internal sealed partial class D02Driver : Node
                     _doing += " (dock opened)";
                 }
             }
+            // B26: the ν-corrections panel, the same way: the first focus opens the dock, the next takes it.
+            else if (focus.GetString() == NuCorrectionsPanel.PanelId && ShellJumble.Host is { } nuFocus)
+            {
+                if (nuFocus.Corrections.IsVisibleInTree())
+                {
+                    nuFocus.Corrections.GrabFocus();
+                }
+                else
+                {
+                    nuFocus.OpenCorrections();
+                    _doing += " (dock opened)";
+                }
+            }
             else if (ShellJumble.Host?.Surface.FindChild(focus.GetString()!, true, false) is Control target)
             {
                 target.GrabFocus();
@@ -757,6 +777,25 @@ internal sealed partial class D02Driver : Node
                     json.WriteStringValue(FocusLayers.KeyText(layer));
                 }
                 json.WriteEndArray();
+                json.WriteEndObject();
+            }
+            // B26: the ν band's line and cells, and the ν-corrections panel's lines.
+            if (ShellJumble.Host is { } nuHost)
+            {
+                json.WriteStartObject("nu");
+                json.WriteString("band", nuHost.Nu is { } band && nuHost.Corrections.Model is { } nuModel ? band.Line(nuModel.Constants) : "");
+                json.WriteBoolean("band_visible", nuHost.NuStrip.IsVisibleInTree());
+                json.WriteNumber("band_width", nuHost.NuStrip.Size.X);
+                json.WriteStartArray("cells");
+                foreach (var cell in nuHost.Nu?.Cells ?? Array.Empty<NuCell>())
+                {
+                    json.WriteNumberValue(cell.Orbit);
+                }
+                json.WriteEndArray();
+                foreach (var (key, value) in nuHost.Corrections.Lines())
+                {
+                    json.WriteString(key, value);
+                }
                 json.WriteEndObject();
             }
             // B25: the Word panel's lines: the commit bar's length, the counter, the state, the signature, the log tab
