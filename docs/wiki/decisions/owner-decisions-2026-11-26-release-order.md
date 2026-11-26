@@ -88,6 +88,17 @@ translated:
 - **Tools.** Installs follow the reviewed allowlist. New entries, such as Blender and Audacity, are pinned, and the owner
   approves them in one batch.
 
+## The briefing pin
+
+The briefing records these decisions. It is an input of the format packet, so its pin is refreshed under FP.1:
+- `docs/development-guide/AGENT_BRIEFING.md`, SHA-256
+  `46e4e61c033b6a2cb3afb07cd9d133ab7d65767183af3a4d26e0b96c084f857c` to
+  `70ad262a659084372efb5a0d138eefdc27f826be9551a26d122d6b7875d60b86`;
+- `input_commit`, `3bdc30c095b12ffd0133534d005e1e1eaf12a012` to `0a199680dfcc8f48444695af8b3122418d3372d8`, the
+  commit that edits the briefing.
+
+The packet cites none of the edited lines. The candidate files, `candidate_sha256` and every other pin are unchanged.
+
 ## What this does not do
 
 - It moves no bar and edits no frozen text.
