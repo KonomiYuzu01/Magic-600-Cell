@@ -2,7 +2,7 @@
   "format": "magic600-d02-script/1",
   "name": "two-views",
   "resolution": "2000x1200",
-  "note": "B18c's run on wj-ia-300's session fixture, in sample mode at the owner's 2000x1200: before a cap is named Local is not drawn and frames are one-view frames; naming cap 150 draws Local beside Global as the second pane of composite frames (orthographic, only the cap's turning region, pulled apart); two twists (J, the router's KeyJ, which sample mode's twist row must not take) and an undo keep both views on one revision. ADR-D01.41: a drag in Local and one in Global each turn both views (linked); unlinked, each drag turns only its own view; linking again returns Local to the shared rotation.",
+  "note": "B18c's run on wj-ia-300's session fixture. Local is never empty (owner, 26 November 2026): before a cap is named Local draws the default cap 0, the lowest cap id, beside Global as the second pane of composite frames, and its readout says that no cap is named; naming cap 150 re-frames Local on that cap (orthographic, only the cap's turning region, pulled apart); two twists (J, the router's KeyJ) and an undo keep both views on one revision and Local on cap 150. ADR-D01.41: a drag in Local and one in Global each turn both views (linked); unlinked, each drag turns only its own view; linking again returns Local to the shared rotation.",
   "steps": [
     {"wait_ms": 2500},
     {"chord": "F1"},

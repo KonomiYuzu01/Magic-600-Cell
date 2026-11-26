@@ -273,7 +273,11 @@ internal static partial class Program
             ("D02HeldSeatShowsTwelveTwistsWithOrders", D02HeldSeatShowsTwelveTwistsWithOrders),
             ("D02NoDuplicateChordAmongD02Bindings", D02NoDuplicateChordAmongD02Bindings),
             ("D02GlobalNamesItsChain", D02GlobalNamesItsChain),
-            ("D02ExposedFacesUnavailableOnBorderAndTier1", D02ExposedFacesUnavailableOnBorderAndTier1)
+            ("D02ExposedFacesUnavailableOnBorderAndTier1", D02ExposedFacesUnavailableOnBorderAndTier1),
+            ("D02CapPromptListsCapsInIdOrder", D02CapPromptListsCapsInIdOrder),
+            ("D02CapPromptEnterNamesTheChosenCap", D02CapPromptEnterNamesTheChosenCap),
+            ("D02CapMapClickSaysWhy", D02CapMapClickSaysWhy),
+            ("D02LocalCapDrawsTheLowestCapUntilOneIsNamed", D02LocalCapDrawsTheLowestCapUntilOneIsNamed)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

@@ -1671,29 +1671,34 @@ class D02Host(unittest.TestCase):
 
     def test_the_host_expectation_sees_each_part(self):
         run = shell_module("d02_run")
-        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"})
+        self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views",
+                                              "library-branch"})
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]
 
         samples = ROOT / "tools" / "looklab" / "data" / "samples" / "jumble"
 
-        def dumps(cell, undefined, marks=True, state="ia-40", drop=None):
+        def dumps(cell, undefined, marks=True, state="ia-40", drop=None, empty=False):
             # B8: the cap map's head and its class counts; a sample without rim rows leaves every cap pending.
             classes = json.loads(text(samples / state / "totals.json"))["cap_classes"]
             if not (samples / state / "rim.json").is_file():
                 classes = {"blocked": 0, "closed": 0, "at_floor": 0, "above_floor": 0, "pending": 600}
             words = {"blocked": "blocked", "closed": "closed", "at_floor": "at floor (N_c = F_c > 0)",
                      "above_floor": "above floor", "pending": "pending"}
-            lines = [["frame", cell], ["view:Local", "Name a cap: click its cell, or type its number."],
-                     ["panel:jumble.cap_map", "Cap map · 20 rings of 30 caps"],
+            # Local is never empty (owner, 26 November 2026): the default cap 0, its readout saying so; with
+            # empty=True, the old empty Local.
+            lines = [["frame", cell], ["view:Local", run.LOCAL_EMPTY if empty else run.LOCAL_DEFAULT],
+                     ["panel:jumble.cap_map", "no cap named"], ["panel:jumble.cap_map", "Cap map · 20 rings of 30 caps"],
                      ["panel:jumble.cap_map", "contact classes · armed   never hidden · armed"]]
             lines += [["panel:jumble.cap_map", f"{words[key]} · {classes[key]}"] for key in words if key != drop]
             lines += [["view:Local", f"▸ {name} · 0"] for name in ("Named cap", "Twist check", "Cap covers", "Repair list")]
             lines += [["frame", "undefined"]] * undefined
             tips = {"Global": ["jumble: Jumble is on"], "Local": ["jumble: Jumble is on"]} if marks else {}
-            return [{"do": do, "lines": lines, "marks": tips} for do in steps]
+            local = {"cap": -1 if empty else 0, "framed": -1, "opening": False, "words": "" if empty else run.LOCAL_DEFAULT}
+            return [{"do": do, "lines": lines, "marks": tips, "named": -1, "local": local} for do in steps]
         self.assertEqual(run.expect_host(dumps("Jumble · off the lattice", 2), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_host(dumps("Jumble · off the lattice", 2, empty=True), {}, "ia-40")), 3)
         self.assertEqual(run.expect_host(dumps("Jumble · on the lattice", 0, state="on-zero"), {}, "on-zero"), [])
         self.assertEqual(len(run.expect_host(dumps("Jumble · off the lattice", 2, drop="blocked"), {}, "ia-40")), 1)
         self.assertEqual(len(run.expect_host(dumps("Jumble · on the lattice", 0, state="ia-40"), {}, "on-zero")), 5)
@@ -1735,17 +1740,172 @@ class D02NameCap(unittest.TestCase):
         panel = "panel:jumble.cap_map"
         steps = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 30", "chord Enter", "wait 1500 ms", "chord F1",
                  "text > jumble.capmap.threshold.set N_c >= 50", "chord Enter", "wait 3000 ms"]
-        unnamed = [[panel, "no cap named"], ["view:Local", "▸ Named cap · 0"], ["view:Local", "Name a cap: click its cell, or type its number."]]
+        # Local is never empty (owner, 26 November 2026): before the naming it draws the default cap 0 and says so.
+        unnamed = [[panel, "no cap named"], ["view:Local", "▸ Named cap · 0"], ["view:Local", run.LOCAL_DEFAULT]]
         tier1 = [[panel, f"cap 30 · N_c {row['N_c']} · floor {row['F_c']} · u 0 · 80 meeting caps"], ["view:Local", "▸ Named cap · 1"]]
         tier1 += [["view:Local", str(row[key])] for key in ("In_c", "Out_c", "A_c", "N_c")]
 
-        def dumps(count=counts):
-            out = [{"do": do, "lines": unnamed} for do in steps[:5]] + [{"do": do, "lines": tier1} for do in steps[5:9]]
-            return out + [{"do": steps[9], "lines": tier1 + [[panel, count], [panel, "N_c ≥ 50"]]}]
+        def dumps(count=counts, empty=False, kept=30):
+            default = {"named": -1, "local": {"cap": 0, "framed": 0, "opening": True, "words": run.LOCAL_DEFAULT}}
+            if empty:
+                default = {"named": -1, "local": {"cap": -1, "framed": -1, "opening": False, "words": ""}}
+            before = [["view:Local", run.LOCAL_EMPTY] if empty and line[1] == run.LOCAL_DEFAULT else line for line in unnamed]
+            after = {"named": 30, "local": {"cap": 30, "framed": kept, "opening": True, "words": ""}}
+            out = [{"do": do, "lines": before, **default} for do in steps[:5]]
+            out += [{"do": do, "lines": tier1, **after} for do in steps[5:9]]
+            return out + [{"do": steps[9], "lines": tier1 + [[panel, count], [panel, "N_c ≥ 50"]], **after}]
         self.assertEqual(run.expect_name_cap(dumps(), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_name_cap(dumps(empty=True), {}, "ia-40")), 4)
+        self.assertEqual(len(run.expect_name_cap(dumps(kept=0), {}, "ia-40")), 2)
         self.assertEqual(len(run.expect_name_cap(dumps(counts.replace("blocked", "blocked 0 ·", 1)), {}, "ia-40")), 1)
         self.assertTrue(run.expect_name_cap(dumps()[:5], {}, "ia-40"))
         self.assertTrue(run.expect_name_cap(dumps(), {}, "on-zero"))
+
+
+class D02CapPrompt(unittest.TestCase):
+    """The owner's bug report of 26 November 2026: jumble.cap.name without a number opens the cap prompt, its caps in
+    cap-id order with nothing highlighted, and the run's expectation sees each part it checks."""
+
+    def test_the_row_without_a_number_opens_the_prompt(self):
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn('case "jumble.cap.name" when argument == null: Prompt.Open(); break;', host)
+        self.assertNotIn("it needs a cap number", host)
+        self.assertIn("frame.Overlays.AddChild(Prompt);", host)
+        prompt = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "CapPrompt.cs")
+        for word in ("OrderBy", "Sort(", "Highlighted = 0"):
+            self.assertNotIn(word, prompt)
+        self.assertIn("Enumerable.Range(0, CapLayout.Caps)", prompt)
+
+    def test_the_cap_prompt_expectation_sees_each_part(self):
+        run = shell_module("d02_run")
+        self.assertIn("cap-prompt", run.ON_FIXTURE)
+        self.assertNotIn("cap-prompt", run.IN_SAMPLE_MODE)
+        script = json.loads(text(SHELL / "d02_scripts" / "cap-prompt.json"))
+        written = []
+        for step in script["steps"]:
+            (kind, value), = step.items()
+            written.append({"wait_ms": f"wait {value} ms", "chord": f"chord {value}", "text": f"text {value}",
+                            "click_control": f"click {value}"}[kind])
+        self.assertEqual(["start"] + written, run.CAP_PROMPT_STEPS)
+        rows = {row["cap"]: row for row in json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / "ia-40" / "rim.json"))["rows"]}
+        self.assertEqual(run.prompt_label(rows[0]), "cap 0 · blocked · N_c undefined")
+        self.assertEqual(run.prompt_label(rows[1]), "cap 1 · closed · N_c 0")
+        panel = "panel:jumble.cap_map"
+
+        def dumps(first=None, window=None):
+            out = []
+            for index, do in enumerate(run.CAP_PROMPT_STEPS):
+                prompt = {"open": index in (4, 5, 6, 7, 12, 17), "rows": 600, "highlighted": -1, "window": list(range(12))}
+                named, lines = -1, []
+                if index in (4, 12, 17):
+                    lines = [["overlay:CapPrompt", run.prompt_label(rows[cap])] for cap in range(12)]
+                    lines.append(["overlay:CapPrompt", "Name a cap · cap 150 is named now" if index == 12 else "Name a cap"])
+                if index == 4 and first is not None:
+                    prompt["highlighted"] = first
+                if index == 5:
+                    prompt.update(rows=11, window=window or [15] + list(range(150, 160)))
+                if index in (6, 7):
+                    prompt.update(rows=11, window=[15] + list(range(150, 160)), highlighted=15 if index == 6 else 150)
+                if 8 <= index < 13:
+                    named = 150
+                    lines.append([panel, "cap 150 · N_c 0 · floor 0 · u 0 · 80 meeting caps"])
+                if index >= 13:
+                    named = 7
+                out.append({"do": do, "lines": lines, "cap_prompt": prompt, "named": named})
+            return out
+        self.assertEqual(run.expect_cap_prompt(dumps(), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_cap_prompt(dumps(first=0), {}, "ia-40")), 1)
+        self.assertEqual(len(run.expect_cap_prompt(dumps(window=list(range(150, 160)) + [15]), {}, "ia-40")), 1)
+        self.assertTrue(run.expect_cap_prompt(dumps()[:8], {}, "ia-40"))
+        self.assertTrue(run.expect_cap_prompt(dumps(), {}, "on-zero"))
+
+
+class D02CapHover(unittest.TestCase):
+    """The owner's bug report of 26 November 2026: the cap map's cells say on hover that a click names the cap, and a
+    click that names nothing says why; the run's expectation sees each part it checks."""
+
+    def test_the_map_names_through_the_host(self):
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn("CapMap.Map.Picked += cap => Click(cap);", host)
+        self.assertIn("CapMap.Map.Refusal = Refusal;", host)
+        self.assertIn("if (Refusal(cap) is { } why) { frame.Say(why, true); return false; }", host)
+        cells = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "CapMapControl.cs")
+        self.assertIn("MouseDefaultCursorShape = cap == null ? CursorShape.Arrow : CursorShape.PointingHand;", cells)
+        self.assertIn("CapNaming.Tip(Refusal?.Invoke(cap), Describe(cap))", cells)
+
+    def test_the_cap_hover_expectation_sees_each_part(self):
+        run = shell_module("d02_run")
+        self.assertIn("cap-hover", run.ON_FIXTURE)
+        self.assertNotIn("cap-hover", run.IN_SAMPLE_MODE)
+        script = json.loads(text(SHELL / "d02_scripts" / "cap-hover.json"))
+        written = []
+        for step in script["steps"]:
+            (kind, value), = step.items()
+            written.append({"wait_ms": f"wait {value} ms", "cap_hover": f"cap hover {value}", "cap_click": f"cap click {value}"}[kind])
+        self.assertEqual(["start"] + written, run.CAP_HOVER_STEPS)
+        refused = "cap 1 is already named; F1 › jumble.cap.unname un-names it"
+        panel = "panel:jumble.cap_map"
+
+        def dumps(cursor="PointingHand", said=True, tip=run.HINT):
+            out = []
+            for index, do in enumerate(run.CAP_HOVER_STEPS):
+                hovered = {2: 1, 3: 1, 4: 1, 5: 0, 6: 0}.get(index, -1)
+                named = {3: 1, 4: 1, 5: 1, 6: 0}.get(index, -1)
+                first = refused if index == 4 else tip
+                cell = {"hovered": hovered, "cursor": cursor if hovered >= 0 else "Arrow",
+                        "tooltip": f"{first}\ncap {hovered} · ring 1" if hovered >= 0 else ""}
+                lines = [[panel, "no cap named"]] if named < 0 else [[panel, f"cap {named} · N_c 0"]]
+                if index == 4 and said:
+                    lines.append(["frame", refused])
+                out.append({"do": do, "lines": lines, "cap_map": cell, "named": named})
+            return out
+        self.assertEqual(run.expect_cap_hover(dumps(), {}, "ia-40"), [])
+        self.assertEqual(len(run.expect_cap_hover(dumps(cursor="Arrow"), {}, "ia-40")), 2)
+        self.assertEqual(len(run.expect_cap_hover(dumps(said=False), {}, "ia-40")), 1)
+        self.assertEqual(len(run.expect_cap_hover(dumps(tip="cap"), {}, "ia-40")), 2)
+        self.assertTrue(run.expect_cap_hover(dumps()[:5], {}, "ia-40"))
+
+
+class D02LibraryBranch(unittest.TestCase):
+    """The script player's command step runs a row as the palette does; in sample mode library.branch.toggle Built-in
+    opens that Library branch and no error reaches the error lamp; the run's expectation sees each part it checks."""
+
+    def test_the_player_runs_a_row_as_the_palette_does(self):
+        player = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertIn('step.TryGetProperty("command", out var command)', player)
+        self.assertIn("if (ShellChrome.Run is { } run)", player)
+        self.assertIn("Safe.Raise(run, row, argument);", player)
+        self.assertIn("Run = Execute;", text(PROJECT / "ShellChrome.cs"))
+
+    def test_the_library_branch_expectation_sees_each_part(self):
+        run = shell_module("d02_run")
+        self.assertIn("library-branch", run.IN_SAMPLE_MODE)
+        self.assertNotIn("library-branch", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "library-branch.json"))
+        written = []
+        for step in script["steps"]:
+            if "command" in step:
+                written.append(" ".join(["command", step["command"]] + ([step["argument"]] if "argument" in step else [])))
+            else:
+                written.append(f"wait {step['wait_ms']} ms")
+        self.assertEqual(["start"] + written, run.LIBRARY_BRANCH_STEPS)
+
+        def dumps(opens=True, count=0, lamp=True, loop=False):
+            out = []
+            for index, do in enumerate(run.LIBRARY_BRANCH_STEPS):
+                opened = opens and index >= 3
+                library = {"left_dock": "library" if index >= 2 else "", "panel": index >= 2,
+                           "open": ["Built-in"] if opened else [], "rows": list(run.BUILT_IN) if opened else []}
+                errors = {"lamp": lamp, "count": count if index >= 3 else 0, "failures": 0, "last": ""}
+                out.append({"step": index, "do": do, "library": library, "errors": errors,
+                            "rebuilds": 3 + (20 * index if loop else min(index, 3) - 1 if index > 1 else 0)})
+            return out
+        self.assertEqual(run.expect_library_branch(dumps(), {}, None), [])
+        self.assertEqual(len(run.expect_library_branch(dumps(loop=True), {}, None)), 1)
+        self.assertEqual(len(run.expect_library_branch(dumps(opens=False), {}, None)), 4)
+        self.assertEqual(len(run.expect_library_branch(dumps(count=1), {}, None)), 2)
+        self.assertEqual(len(run.expect_library_branch(dumps(lamp=False), {}, None)), 5)
+        self.assertTrue(run.expect_library_branch(dumps()[:4], {}, None))
 
 
 class D02Q3b(unittest.TestCase):

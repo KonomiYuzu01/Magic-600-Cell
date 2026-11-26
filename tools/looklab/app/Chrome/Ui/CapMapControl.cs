@@ -15,7 +15,8 @@ namespace Magic600.Chrome;
 // The columns are cyclic: a dashed wrap mark runs down both sides. Over the patterns (B9): the threshold's members
 // carry the Query set outline, the named cap ADR-D01's selection brackets, and its 80 meeting caps a small square in
 // the cell's corner, which is neither an outline nor a dim. A click on a cell, or a typed number and Enter while the
-// map has focus, names a cap; hovering a cell only inspects it (its tooltip).
+// map has focus, names a cap; hovering a cell only inspects it: the cell is raised and outlined, the pointer is a hand,
+// and the tooltip says that a click names the cap, or why it names nothing now (owner's bug report, 26 November 2026).
 public sealed partial class CapMapControl : Control, IOwnKeys
 {
     // The widest numeral a cell keeps room for: N_c stays below 10,000 (it counts seams at one cap).
@@ -33,6 +34,10 @@ public sealed partial class CapMapControl : Control, IOwnKeys
     public IReadOnlyList<int> Meeting { get; private set; } = Array.Empty<int>();
     // Where hovering goes: it inspects and names nothing.
     public CapNaming? Naming { get; set; }
+    // The cell under the pointer, drawn raised; none while the pointer is off the cells.
+    public int? Hovered { get; private set; }
+    // Why a click on a cap names nothing now, or null (the host's CapNaming.Refusal).
+    public Func<int, string?>? Refusal { get; set; }
     // The digits typed while the map has focus.
     public string Typed { get; private set; } = "";
     // A cell was clicked, or a typed number entered: the host names that cap.
@@ -61,7 +66,7 @@ public sealed partial class CapMapControl : Control, IOwnKeys
         switch (e)
         {
             case InputEventMouseMotion motion:
-                Naming?.Hover(CapAt(motion.Position));
+                Hover(CapAt(motion.Position));
                 break;
             case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } press when CapAt(press.Position) is int cap:
                 GrabFocus(); Picked?.Invoke(cap); AcceptEvent();
@@ -79,6 +84,21 @@ public sealed partial class CapMapControl : Control, IOwnKeys
     }
 
     private void Type(string text) { Typed = text; Safe.Raise(TypedChanged); }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationMouseExit) Hover(null);
+    }
+
+    // The pointer is over a cell, or off the cells: the raised cell, the hand and what hovering inspects follow it.
+    private void Hover(int? cap)
+    {
+        Naming?.Hover(cap);
+        if (cap == Hovered) return;
+        Hovered = cap;
+        MouseDefaultCursorShape = cap == null ? CursorShape.Arrow : CursorShape.PointingHand;
+        QueueRedraw();
+    }
 
     public void Show(CapLayout? layout, CapMapModel map)
     {
@@ -107,8 +127,11 @@ public sealed partial class CapMapControl : Control, IOwnKeys
             {
                 int cap = Layout.At(r, c);
                 var box = new Rect2(gutter + c * cell.X, r * cell.Y, cell.X, cell.Y);
+                bool hovered = Hovered == cap;
+                if (hovered) DrawRect(box, t.C("control.hover"));
                 Cell(this, t, font, size, box, Map.Class(cap), Map.Numeral(cap)?.ToString(CultureInfo.InvariantCulture));
                 Over(this, t, box, members.Contains(cap), meeting.Contains(cap), Named == cap);
+                if (hovered) DrawRect(box, t.C("text"), false, Math.Max(1, t.Px("border.width")));
             }
         float height = CapLayout.Rows * cell.Y, line = Math.Max(1, t.Px("border.width"));
         Color mark = t.C("text.dim");
@@ -186,7 +209,18 @@ public sealed partial class CapMapControl : Control, IOwnKeys
         return r < 0 || r >= CapLayout.Rows || c < 0 || c >= CapLayout.Columns ? null : Layout.At(r, c);
     }
 
-    public override string _GetTooltip(Vector2 atPosition) => CapAt(atPosition) is int cap ? Describe(cap) : "";
+    // A cell's rectangle in the map, for a cap the layout places.
+    public Rect2? CellRect(int cap)
+    {
+        if (Layout == null || cap < 0 || cap >= CapLayout.Caps) return null;
+        (int row, int column) = Layout.Of(cap);
+        return new Rect2(gutter + column * cell.X, row * cell.Y, cell.X, cell.Y);
+    }
+
+    public override string _GetTooltip(Vector2 atPosition) => CapAt(atPosition) is int cap ? TipAt(cap) : "";
+
+    // What hovering a cell says: that a click names the cap, or why it names nothing now, then the cell's facts.
+    public string TipAt(int cap) => CapNaming.Tip(Refusal?.Invoke(cap), Describe(cap));
 
     // What hovering a cell says: the cap, its ring and place, its class and its N_c where it has one.
     public string Describe(int cap)

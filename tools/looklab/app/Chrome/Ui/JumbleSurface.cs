@@ -5,8 +5,9 @@ using Godot;
 
 namespace Magic600.Chrome;
 
-// Local's Jumble content (ADR-D02.6, .12): the empty sentence while no cap is named, then the four sections, one open
-// at a time, each closed one a one-line header with its count. The cut slice (B20) and the raw view (B21) draw later;
+// Local's Jumble content (ADR-D02.6, .12): the empty sentence while Local draws no cap (no state bound; Local is never
+// empty otherwise, owner, 26 November 2026), then the four sections, one open at a time, each closed one a one-line
+// header with its count. The cut slice (B20) and the raw view (B21) draw later;
 // until then Local shows this. Every section is empty until its build step fills it.
 public sealed partial class JumbleSurface : VBoxContainer
 {
@@ -15,10 +16,14 @@ public sealed partial class JumbleSurface : VBoxContainer
     private readonly IReadOnlyDictionary<string, string> names;
     private readonly string emptyBody;
     private readonly Label sentence;
+    // Room above the empty sentence for the view's marks, which the frame draws over the top edge of Local.
+    private readonly Control gap = new() { Name = "LocalTopGap", MouseFilter = MouseFilterEnum.Ignore };
     private readonly VBoxContainer sections = new() { Name = "LocalSections" };
     // The named cap's Tier 2 facts in their fixed order (ADR-D02.19), shown in the Named cap section; none while no
     // cap is named.
     private IReadOnlyList<(string Label, string Fact)>? facts;
+    // Whether Local draws a cap, named or the default (LocalCap).
+    private bool drawn;
     // The named cap's kept twist checks (B10), shown in the Twist check section.
     private KeptChecks? checks;
     // The named cap's covers (B11), shown in the Cap covers section, with its hover's inspect line and the table's fold.
@@ -40,10 +45,13 @@ public sealed partial class JumbleSurface : VBoxContainer
         Name = "JumbleLocal"; SizeFlagsHorizontal = SizeFlags.ExpandFill; SizeFlagsVertical = SizeFlags.ExpandFill;
         sentence = ChromeWidgets.Text(emptySentence, "DimLabel"); sentence.Name = "LocalEmpty";
         sentence.AutowrapMode = TextServer.AutowrapMode.WordSmart; sentence.HorizontalAlignment = HorizontalAlignment.Center;
-        AddChild(sentence); AddChild(sections);
+        AddChild(gap); AddChild(sentence); AddChild(sections);
         accordion.Changed += () => { if (IsInstanceValid(this)) Refresh(); };
         Refresh();
     }
+
+    // The height the view's marks take at the top of Local: their offset and one control's height.
+    public static int MarksRoom(TokenSet t) => t.Px("space.3") + t.Px("control.height");
 
     public void SetChecks(KeptChecks? value)
     {
@@ -63,6 +71,13 @@ public sealed partial class JumbleSurface : VBoxContainer
         if (IsInstanceValid(this)) Refresh();
     }
 
+    public void SetDrawn(bool value)
+    {
+        if (drawn == value) return;
+        drawn = value;
+        if (IsInstanceValid(this)) Refresh();
+    }
+
     public void SetFacts(IReadOnlyList<(string Label, string Fact)>? value)
     {
         facts = value;
@@ -72,7 +87,10 @@ public sealed partial class JumbleSurface : VBoxContainer
     public void Refresh()
     {
         TokenSet t = tokens();
-        sentence.Visible = facts == null;
+        sentence.Visible = facts == null && !drawn;
+        // The marks row sits space.3 below the top edge and is at most a control high (owner, 26 November 2026: the
+        // marks covered the sentence at 2000x1200).
+        gap.Visible = sentence.Visible; gap.CustomMinimumSize = new Vector2(0, MarksRoom(t));
         AddThemeConstantOverride("separation", t.Px("space.2"));
         foreach (Node child in sections.GetChildren()) { sections.RemoveChild(child); child.QueueFree(); }
         foreach (string section in Accordion.Sections)

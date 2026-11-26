@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "name-cap",
-  "note": "B9's run, by keys only, on ia-40's session fixture: F1 and the palette's typed mode name cap 30 (jumble.cap.name), then set the threshold N_c >= 50 (jumble.capmap.threshold.set). The cap map's panel then shows the named cap's Tier 1 line with its 80 meeting caps and the four counts apart; Local shows the cap's readout and its Named cap count. The last wait keeps the window open for the foreground check.",
+  "note": "B9's run, by keys only, on ia-40's session fixture: before the naming Local draws the default cap 0 and its readout says that no cap is named, while the Named cap count and the cap map's line stay at no cap (owner, 26 November 2026: Local is never empty); F1 and the palette's typed mode name cap 30 (jumble.cap.name), then set the threshold N_c >= 50 (jumble.capmap.threshold.set). The cap map's panel then shows the named cap's Tier 1 line with its 80 meeting caps and the four counts apart; Local shows the cap's readout and its Named cap count. The last wait keeps the window open for the foreground check.",
   "steps": [
     {"wait_ms": 2000},
     {"chord": "F1"},
