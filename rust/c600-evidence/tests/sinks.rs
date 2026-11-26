@@ -768,3 +768,47 @@ fn ct_ps1_27_record_sink_keeps_writers_and_dependencies() {
     assert_eq!(word(&copy, &s, &e), word(&g, &s, &e));
     assert_eq!(row(&g, &s, &e), 2);
 }
+
+// --- CT-LG5-07 ------------------------------------------------------------------------------------------------
+
+/// CT-LG5-07 (part: the evidence half of LG5.9: a module whose manifest carries an unknown optional extension, such as
+/// a signature a signing tool adds, supplies no evidence and no capability here: a key that names the extension's
+/// digest reads open, the module's pass offered for it is refused and leaves the graph as it was, a statement that
+/// cites the extension gains no reach, and no check attaches to a key whose only support is the extension; not run:
+/// a module signature and its verification, which no frozen text defines (a reading for the freeze card: 1.0 has no
+/// module signature), and the module crate's own checks, which `c600-module/tests/conformance_lg5.rs` runs as the
+/// other part)
+#[test]
+fn ct_lg5_07_an_optional_manifest_extension_supplies_no_evidence() {
+    let e = ed();
+    let module = DigestRef::of_source_bytes(b"tool m: version 1");
+    let signature =
+        DigestRef::new(DigestRole::Other("x-signature".into()), &c600_digest::sha256_hex(b"a detached signature"));
+    let behaves =
+        |sources: Vec<DigestRef>| Key::new(sid("tool m behaves"), scope(Covers::OneInstance).with_sources(sources));
+    let (plain, signed) = (behaves(vec![module.clone()]), behaves(vec![module.clone(), signature.clone()]));
+    assert_ne!(plain, signed, "the extension's digest is part of the scope, so its claim has its own key");
+    let mut g = Graph::new();
+    g.add_statement(finite("tool m behaves")).unwrap();
+    let pass = Leaf::new(&plain, exact());
+    offer(&mut g, &plain, pass.clone()).unwrap();
+    assert_eq!(row(&g, &plain, &e), 2);
+
+    // No evidence from the extension: the signed key reads open, and the module's pass is refused for it.
+    assert_eq!(row(&g, &signed, &e), 7);
+    let before = g.clone();
+    assert_eq!(offer(&mut g, &signed, pass).unwrap_err().code, SCOPE_MISMATCH);
+    assert_eq!(g, before);
+    assert_eq!(discharge(&g, &signed, &plain, &e).unwrap_err().code, PREMISE_UNMET);
+
+    // A statement that cites the extension is a reference: no edge, no reach, no word beyond open.
+    let cited = Key::new(sid("tool m is signed"), scope(Covers::OneInstance).with_sources(vec![signature]));
+    g.add_statement(finite("tool m is signed").reference(&plain)).unwrap();
+    g.root(&cited);
+    assert_eq!(row(&g, &cited, &e), 7);
+    let plain_root = g.root_of(&plain).unwrap();
+    assert!(!g.reach(&cited).contains(&plain_root));
+    assert!(!g.reach(&signed).contains(&plain_root));
+    let signed_root = g.root_of(&signed);
+    assert!(signed_root.map_or(true, |root| g.leaf(root).is_none()), "no check attaches to the signed key");
+}

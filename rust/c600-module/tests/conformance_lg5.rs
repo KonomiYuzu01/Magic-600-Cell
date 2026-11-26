@@ -635,8 +635,9 @@ fn ct_lg5_06_a_changed_fork_is_a_new_module_that_needs_its_own_grants() {
 /// changed in transit, a lock that fixes other bytes or names another resolver, a manifest edited under its lock and
 /// a session identity the manifest does not list are refused; an imported module gets no grant from the sender, and
 /// the recipient's approval needs the recipient's grant; a signature-shaped optional manifest extension is kept as
-/// data and changes no approval decision, and a required one is refused; not run: a module signature and its
-/// verification, which no crate defines, and the evidence half, since the crate holds no evidence)
+/// data and changes no approval decision, so the module still needs its run grant, and a required one is refused; the
+/// evidence half is `c600-evidence/tests/sinks.rs`'s; not run: a module signature and its verification, which no
+/// frozen text defines (a reading for the freeze card: 1.0 has no module signature))
 #[test]
 fn ct_lg5_07_sharing_through_local_files_keeps_every_check_and_a_signature_grants_nothing() {
     let dep = constant(1);
@@ -700,6 +701,13 @@ fn ct_lg5_07_sharing_through_local_files_keeps_every_check_and_a_signature_grant
     assert_eq!(Manifest::read(&manifest).unwrap(), Manifest::read(&shared.manifest).unwrap());
     let lock = resolve(&manifest, &incoming).unwrap().bytes();
     let closure = verify(&manifest, &lock, &incoming, &full).unwrap();
+    // The extension grants nothing: the module with it still needs its run grant, and the granted approval is the same.
+    assert_eq!(
+        code(approve(&closure, ungranted.clone(), contract(), checker())),
+        AMBIENT_READ,
+        "no grant from a signature"
+    );
+    assert!(approve(&closure, imported.clone(), contract(), checker()).is_ok(), "and the granted run is approved");
     for e in [ungranted, imported] {
         let decide = |c: &Closure| approve(c, e.clone(), contract(), checker()).map(|a| a.admitted).map_err(|r| r.code);
         assert_eq!(decide(&closure), decide(&received));
