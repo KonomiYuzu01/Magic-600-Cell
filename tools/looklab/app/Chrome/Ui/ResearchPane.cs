@@ -10,6 +10,8 @@ namespace Magic600.Chrome;
 // (Command) and the host runs it as the palette does, so the pane is reachable from the keyboard and from scripts.
 // The list builds only the lines in view (VirtualRows, ADR-D01.33) and scrolls by whole lines, since a verdict line
 // wraps and is never cut. Every verdict takes the one body weight and no colour role (ADR-D02.46).
+// B29 (ADR-D02.4, .45): the Runs tab's declaration line (seed, depth and budget fields and Start), and controls that are
+// unavailable (a start before its budget, the two CR-17 rows) drawn disabled with their reason.
 public sealed partial class ResearchPane : VBoxContainer
 {
     public const string PaneId = "research", Title = "Research";
@@ -133,6 +135,17 @@ public sealed partial class ResearchPane : VBoxContainer
         return margin;
     }
 
+    // A control's button: it sends its row, or, with a reason, is drawn unavailable with the reason as its tooltip.
+    private Button Act(ResearchControl control, string tip)
+    {
+        Button button = ChromeWidgets.Tool(control.Label, control.Why is { } why ? $"{control.Label}: {why}" : tip);
+        button.Name = "Research" + string.Concat(control.Label.Split(' ').Select(w => w.Length > 0 ? char.ToUpperInvariant(w[0]) + w[1..] : w));
+        button.SetMeta("research_row", control.Row);
+        button.Disabled = control.Why != null;
+        if (control.Why == null && !control.TakesText) button.Pressed += () => Send(control.Row, control.Argument);
+        return button;
+    }
+
     private Control Line(TokenSet t, ResearchModel model, ResearchLine line)
     {
         IReadOnlyList<ResearchControl> controls = model.Controls(line);
@@ -169,7 +182,7 @@ public sealed partial class ResearchPane : VBoxContainer
             }
             case ResearchLineKind.Actions:
             {
-                var row = new HBoxContainer { Name = "ResearchActions" };
+                var row = new HFlowContainer { Name = "ResearchActions", SizeFlagsHorizontal = SizeFlags.ExpandFill };
                 foreach (ResearchControl control in controls)
                 {
                     if (control.TakesText)
@@ -183,12 +196,32 @@ public sealed partial class ResearchPane : VBoxContainer
                         row.AddChild(box); row.AddChild(set);
                         continue;
                     }
-                    Button button = ChromeWidgets.Tool(control.Label, $"{control.Label} (the row {control.Row}): origin Research; {ResearchWords.CopyNote}");
-                    button.SetMeta("research_row", control.Row);
-                    button.Pressed += () => Send(control.Row, control.Argument);
-                    row.AddChild(button);
+                    row.AddChild(Act(control, control.Row is ResearchRows.Copy or ResearchRows.Save
+                        ? $"{control.Label} (the row {control.Row}): origin Research; {ResearchWords.CopyNote}" : $"{control.Label} (the row {control.Row})"));
                 }
                 return Indent(t, line.Depth, row);
+            }
+            case ResearchLineKind.Declare:
+            {
+                // B29: the next run's declaration: seed, depth and budget fields, each sending research.run.declare,
+                // and Start, unavailable with its reason until the budget (then the seed and the depth) is declared.
+                var column = new VBoxContainer { Name = "ResearchDeclare", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                column.AddChild(Wrapped(line.Text));
+                var fields = new HFlowContainer { Name = "ResearchDeclareFields", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                foreach (ResearchControl control in controls)
+                {
+                    if (!control.TakesText) { fields.AddChild(Act(control, $"Start the declared run (the row {control.Row})")); continue; }
+                    var box = new LineEdit { Name = "ResearchField" + control.Label, PlaceholderText = control.Label == "Seed" ? "7401 to 7499" : control.Label == "Depth" ? "twists" : "steps",
+                        CustomMinimumSize = new Vector2(t.Px("space.4") * 5, 0), TooltipText = $"{control.Label}: declared before the run starts (the row {control.Row})" };
+                    Button set = Act(control, $"Declare the {control.Label.ToLowerInvariant()} (the row {control.Row})");
+                    set.Pressed += () => Send(control.Row, control.Argument + box.Text);
+                    box.TextSubmitted += text => Send(control.Row, control.Argument + text);
+                    fields.AddChild(box); fields.AddChild(set);
+                }
+                column.AddChild(fields);
+                Label state = Wrapped(line.Verdict ?? "", "DimLabel"); state.Name = "ResearchDeclareState";
+                column.AddChild(state);
+                return column;
             }
             case ResearchLineKind.Note: return Wrapped(line.Text, "DimLabel");
             default: return Indent(t, line.Depth, Wrapped(line.Text));

@@ -22,6 +22,7 @@ pass, 1 on a failure, 2 for a usage error.
 """
 from __future__ import annotations
 
+import hashlib
 import sys
 
 sys.dont_write_bytecode = True
@@ -1260,6 +1261,88 @@ def expect_research_pane(dumps: list[dict], source: dict, state: str | None) -> 
 
 EXPECT["research-pane"] = expect_research_pane
 IN_SAMPLE_MODE.add("research-pane")
+
+
+# B29 (ADR-D02.4, .45, .46, .50, .52): the research pane's Runs tab. research.runs brings the pane from Solve; a start
+# before any declaration is refused; budget, seed and depth are declared; the sample's run stops at its budget as cut
+# off and reproduces with bytes equal; both CR-17 rows are refused with their reason; History gains no entry.
+RESEARCH_RUN = "research.run/" + hashlib.sha256(b"magic600-d02-research-sample-run/1 seed=7430 depth=40 budget=4096").hexdigest()
+RESEARCH_STEPS = ["start", "wait 2000 ms", "command research.runs", "wait 1500 ms", "command research.run.start",
+                  "command research.run.declare budget=4096", "command research.run.declare seed=7430",
+                  "command research.run.declare depth=40", "command research.run.start", "wait 1500 ms",
+                  f"command research.run.reproduce {RESEARCH_RUN}", f"command research.run.view {RESEARCH_RUN}",
+                  f"command research.check.trace {RESEARCH_RUN}", "command research.obligations", "wait 1000 ms",
+                  "command research.runs", f"command object.inspect {RESEARCH_RUN}", "wait 3000 ms"]
+CR17 = "row not in the command table yet (CR-17)"
+
+
+def expect_research(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Runs one palette row from Solve; a declared budget before the start; the run cut off at its budget, never a
+    verdict; reproduced with bytes equal; the CR-17 rows refused with their reason; History unchanged."""
+    if [dump["do"] for dump in dumps] != RESEARCH_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    history = dumps[0].get("research", {}).get("history_entries")
+    for index, dump in enumerate(dumps):
+        research = dump.get("research", {})
+        if research.get("evidence") != "synthetic":
+            problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}")
+        if research.get("pane") is not (index >= 2):
+            problems.append(f"step {index}: the research pane is {'shown' if research.get('pane') else 'hidden'}")
+        tab = "Obligations" if index in (13, 14) else "Runs" if index >= 2 else "Claims"
+        if research.get("tab") != tab:
+            problems.append(f"step {index}: the tab is {research.get('tab')!r}, not {tab}")
+        if research.get("history_entries") != history:
+            problems.append(f"step {index}: History holds {research.get('history_entries')} entries, not {history}")
+        started = research.get("started", [])
+        if len(started) != (1 if index >= 8 else 0):
+            problems.append(f"step {index}: {len(started)} runs started")
+        if index >= 8 and started:
+            run = started[0]
+            got = ("research.run/" + run.get("run", ""), run.get("state"), run.get("line"), run.get("seed"), run.get("depth"),
+                   run.get("budget"), run.get("covered"))
+            want = (RESEARCH_RUN, "BudgetStopped", "not found within budget", 7430, 40, 4096, "4096")
+            if got != want:
+                problems.append(f"step {index}: the run is {got}")
+            again = "reproduced: bytes equal" if index >= 10 else ""
+            if run.get("reproduction") != again:
+                problems.append(f"step {index}: the reproduction reads {run.get('reproduction')!r}")
+        if index in (8, 9, 10, 11, 12, 16):
+            if research.get("open") != RESEARCH_RUN:
+                problems.append(f"step {index}: the open object is {research.get('open')!r}")
+            lines = [line for line in research.get("lines", []) if line.get("ref") == RESEARCH_RUN]
+            rows = [line for line in lines if line.get("kind") == "Row"]
+            if len(rows) != 1 or rows[0].get("verdict") != "not found within budget":
+                problems.append(f"step {index}: the run's row reads {[row.get('verdict') for row in rows]}")
+            details = [line["text"] for line in lines if line.get("kind") == "Detail"]
+            if "the run stopped at its budget: no verdict (covered 4096)" not in details:
+                problems.append(f"step {index}: the run's lines are {details}")
+            if research.get("cr17") != {"research.run.view": CR17, "research.check.trace": CR17}:
+                problems.append(f"step {index}: the CR-17 reasons are {research.get('cr17')}")
+    if "declare a budget before the run starts (ADR-D02.4)" not in dumps[4].get("research", {}).get("notice", ""):
+        problems.append(f"step 4: the refused start said {dumps[4].get('research', {}).get('notice')!r}")
+    declared = dumps[7].get("research", {})
+    if (declared.get("declared") != "seed 7430: free exploration (7422 to 7499), not scored · depth 40 · budget 4,096 steps"
+            or declared.get("start") != "ready"):
+        problems.append(f"step 7: declared {declared.get('declared')!r}, start {declared.get('start')!r}")
+    for index in (11, 12):
+        if CR17 not in dumps[index].get("research", {}).get("notice", ""):
+            problems.append(f"step {index}: the CR-17 row said {dumps[index].get('research', {}).get('notice')!r}")
+    obligations = [line for line in dumps[13].get("research", {}).get("lines", []) if line.get("kind") == "Row"]
+    if len(obligations) != 4:
+        problems.append(f"step 13: the Obligations tab shows {len(obligations)} rows")
+    for dump in dumps:
+        errors = dump.get("errors", {})
+        if errors.get("lamp") is not True:
+            problems.append(f"step {dump['step']}: the frame carries no error lamp")
+        if errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {dump['step']}: the error lamp counts {errors.get('count')} "
+                            f"({errors.get('failures')} caught), the last: {errors.get('last')!r}")
+    return problems
+
+
+EXPECT["research"] = expect_research
+IN_SAMPLE_MODE.add("research")
 
 
 # B15 (ADR-D02.20, .21, .23, .24, .30): the tint channel on a state's session fixture. The entry slot's contact classes

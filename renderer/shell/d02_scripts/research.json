@@ -1,0 +1,25 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "research",
+  "resolution": "1280x720",
+  "note": "B29, sample mode at the default 1280x720: the research pane's Runs tab, one palette row (research.runs) away from the opening Solve layout, on the synthetic research sample (evidence: synthetic). A start before any declaration is refused with \"declare a budget before the run starts (ADR-D02.4)\". The budget (4096 steps), seed 7430 (free exploration) and depth 40 are declared through research.run.declare, a draft row; research.run.start, a draft row, starts the sample's run, which reaches its budget and stops as cut off: \"not found within budget\", never a verdict. research.run.reproduce answers \"reproduced: bytes equal\". The two CR-17 rows (research.run.view, research.check.trace) are refused with \"row not in the command table yet (CR-17)\". The Obligations tab shows the sample's four anchors; back on Runs, object.inspect opens the run again. History gains no entry, and the error lamp counts no failure. The run is named by the digest of its declaration (SampleResearchSource.RunId). The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"command": "research.runs"},
+    {"wait_ms": 1500},
+    {"command": "research.run.start"},
+    {"command": "research.run.declare", "argument": "budget=4096"},
+    {"command": "research.run.declare", "argument": "seed=7430"},
+    {"command": "research.run.declare", "argument": "depth=40"},
+    {"command": "research.run.start"},
+    {"wait_ms": 1500},
+    {"command": "research.run.reproduce", "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4"},
+    {"command": "research.run.view", "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4"},
+    {"command": "research.check.trace", "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4"},
+    {"command": "research.obligations"},
+    {"wait_ms": 1000},
+    {"command": "research.runs"},
+    {"command": "object.inspect", "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4"},
+    {"wait_ms": 3000}
+  ]
+}
