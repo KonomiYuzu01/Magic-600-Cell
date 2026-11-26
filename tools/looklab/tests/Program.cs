@@ -192,7 +192,13 @@ internal static partial class Program
             ("D02RolesExistInBothThemes", D02RolesExistInBothThemes),
             ("D02MotionRowsStaticUnderReducedMotion", D02MotionRowsStaticUnderReducedMotion),
             ("D02DraftRowsAbsentFromTable", D02DraftRowsAbsentFromTable),
-            ("D02WordsMatchRecord", D02WordsMatchRecord)
+            ("D02WordsMatchRecord", D02WordsMatchRecord),
+            ("D02SlotLateResultIgnored", D02SlotLateResultIgnored),
+            ("D02SlotCancelLatestRestores", D02SlotCancelLatestRestores),
+            ("D02SlotCancelOlderChangesNothing", D02SlotCancelOlderChangesNothing),
+            ("D02SlotCompletedWithoutCoverageIsError", D02SlotCompletedWithoutCoverageIsError),
+            ("D02SlotWordsCoverSevenStates", D02SlotWordsCoverSevenStates),
+            ("D02NumeralKindsStayApart", D02NumeralKindsStayApart)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

@@ -127,6 +127,13 @@ relative path is from the repository root.
   - `Numeral` with `NumeralKind { Value, Undefined, Pending, Incomplete }`.
   - `JumbleSlots`: the eight slot ids.
 - **Check:** `D02SlotLateResultIgnored`; `D02SlotCancelLatestRestores`; `D02SlotCancelOlderChangesNothing`; `D02SlotCompletedWithoutCoverageIsError`; `D02SlotWordsCoverSevenStates`; `D02NumeralKindsStayApart`.
+- **As built (integrator, 26 November 2026):**
+  - `Request` keeps the state from before the request. A pending request that a newer one supersedes keeps the state from before both, since its result is never taken.
+  - `Finish` takes a result only for the latest open request, with the same digest and parameters, at the revision on screen. A `Cancelled` end acts like `Cancel` of the latest request.
+  - `Invalidate(digest)` makes a shown result, a refusal or an open request stale. When the revision returns to a result's digest, that result shows again: this is the "stale until an undo returns to it" of section 1.
+  - `SlotWords` reads the slot words from `jumble-words.json`; "pending" and "stale" are ADR-D01's state words. `ReleaseRecord.Superseded` says whether it recorded the release, and `IsSuperseded` reads it.
+  - `Numeral` gives each kind its role and its Tier 1 word: pending draws with `state.pending`, incomplete with `slot.tool.budget_stopped`.
+  - `ToolSlotBox` draws seven glyphs, none from the ring family. The console tests do not compile `Ui/`, so `python renderer/shell/build_shell.py` compiles it offline.
 - **Owner sees:** nothing yet.
 - **Machine:** H.
 - **Checkpoint:** no.
