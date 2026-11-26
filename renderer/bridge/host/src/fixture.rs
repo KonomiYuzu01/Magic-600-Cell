@@ -20,6 +20,10 @@
 //! session can open at one of D02's sample states. Its record adds the word and the head's state digests
 //! ([`Turns::state_digests`]), by which `renderer/shell/build_d02_fixtures.py` checks it against the sample and the
 //! shell binds the sample to the session. Nothing here is Windows/DirectX, input or performance evidence.
+//!
+//! ADR-D02 B26 adds [`write_word_with`]: work run on a thread of its own beside the control at the close. A pose move
+//! session costs about the same to write, to check and to reopen (each replays the jumbling journal from solved every
+//! 64 pose moves), so the writer runs its timed reopen there, beside the control's own reopen, not after it.
 
 use std::path::Path;
 use std::sync::Arc;
@@ -149,15 +153,43 @@ pub fn write_word(
     out: &Path,
     letters: &[[u64; 2]],
 ) -> Result<Value, String> {
+    write_word_with(kernel, assets, menu_file, out, letters, |_| ()).map(|(record, ())| record)
+}
+
+/// [`write_word`] with `beside` run on a thread of its own once every letter is committed, while the control at the
+/// close runs on this one (ADR-D02 B26). `beside` gets the fixture that the record will describe (its committed
+/// presses, the head's digest and the revision), and its answer comes back with the record once both are done. The
+/// session's journal is complete when `beside` starts, but the live layer may still hold the session's lock, so
+/// `beside` reads the session folder and never opens it in place.
+pub fn write_word_with<T: Send>(
+    kernel: Arc<Kernel>,
+    assets: &Path,
+    menu_file: &Path,
+    out: &Path,
+    letters: &[[u64; 2]],
+    beside: impl FnOnce(&Fixture) -> T + Send,
+) -> Result<(Value, T), String> {
     let mut turns = start(Puzzle::JumbleOn, kernel, assets, menu_file, out)?;
     for (index, &[cap, item]) in letters.iter().enumerate() {
         let cap = u32::try_from(cap).map_err(|_| format!("letter {index}: {cap} is not a cap"))?;
         turns.twist_letter(cap, item).map_err(|error| format!("letter {index}: {error}"))?;
     }
     let digests = turns.state_digests()?;
+    let committed = turns.committed().to_vec();
+    let shown = Fixture {
+        puzzle: Puzzle::JumbleOn,
+        revision: Puzzle::JumbleOn.opened_at() + committed.len() as u64,
+        committed,
+        digest: turns.head()?.digest(),
+    };
     let word = letters.iter().map(|&[cap, item]| Value::Array(vec![Value::Int(cap as i64), Value::Int(item as i64)]));
     let extra = vec![("word", Value::Array(word.collect())), ("state_digests", digests)];
-    close(turns, Puzzle::JumbleOn, out, Vec::new(), extra)
+    std::thread::scope(|scope| {
+        let side = scope.spawn(|| beside(&shown));
+        let record = close(turns, Puzzle::JumbleOn, out, Vec::new(), extra);
+        let side = side.join().map_err(|_| "the work beside the fixture's control panicked".to_owned());
+        Ok((record?, side?))
+    })
 }
 
 /// A new session of `puzzle` in `out/session`, with `out` made new (it must not exist).
