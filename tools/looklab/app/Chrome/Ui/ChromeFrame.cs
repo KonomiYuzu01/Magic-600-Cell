@@ -367,6 +367,8 @@ public sealed partial class ChromeFrame : Control
     public const float DockShare = .16f;
     // Below these widths the right dock's panel, then the left's, folds to its rail.
     public const float RightDockBelow = 1600, LeftDockBelow = 1440;
+    // Whether the side dock's panel folds to its rail at this window width.
+    public bool Folds(DockSide side) => side != DockSide.Bottom && Window.X > 0 && Window.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
     private Vector2 builtFor;
 
     public override void _Process(double delta)
@@ -488,7 +490,7 @@ public sealed partial class ChromeFrame : Control
         {
             Button button = ChromeWidgets.Tool(panel.Glyph, panel.Title, true); ChromeIcons.Apply(button, panel.Glyph, Tokens.Px("icon.medium"));
             button.SetPressedNoSignal(state.Open == panel.Id); button.SetMeta("dock_panel", panel.Id);
-            button.Pressed += () => Model.ToggleDock(side, panel.Id);
+            button.Pressed += () => Model.PressRail(side, panel.Id, Folds(side));
             buttons.AddChild(button);
             if (badges.ContainsKey(panel.Id)) { Label badge = BadgeLabel(panel.Id); badge.MouseFilter = MouseFilterEnum.Ignore; badge.Position = new Vector2(Tokens.Px("rail.width") * .55f, 0); button.AddChild(badge); }
         }
@@ -496,7 +498,8 @@ public sealed partial class ChromeFrame : Control
         // A narrow window keeps the pair whole: the right dock's panel folds to its rail first, then the left's. The
         // open panel stays open in the model and returns when the window is wide enough.
         Vector2 window = Window;
-        bool squeezed = window.X > 0 && window.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
+        // B31: an explicit open (a rail press, a row that opens the panel) shows the panel over the fold.
+        bool squeezed = Folds(side) && (state.Revealed == null || state.Revealed != state.Open);
         if (!squeezed && dockPanels.FirstOrDefault(p => p.Side == side && p.Id == state.Open) is { } open)
         {
             // A side dock is at most DockShare of the window, so the pair keeps its room in a narrow window.

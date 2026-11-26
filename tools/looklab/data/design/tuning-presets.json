@@ -1,0 +1,38 @@
+{
+  "format": "magic600-tuning-presets",
+  "version": 1,
+  "presets": [
+    {
+      "id": "graphite",
+      "name": "Graphite",
+      "family": "graphite",
+      "look": "solving",
+      "knobs": {},
+      "overrides": {}
+    },
+    {
+      "id": "graphite.inspecting",
+      "name": "Graphite inspecting",
+      "family": "graphite",
+      "look": "inspecting",
+      "knobs": {"gridIntensity": 0.7},
+      "overrides": {}
+    },
+    {
+      "id": "paper",
+      "name": "Paper",
+      "family": "paper",
+      "look": "solving",
+      "knobs": {},
+      "overrides": {}
+    },
+    {
+      "id": "paper.inspecting",
+      "name": "Paper inspecting",
+      "family": "paper",
+      "look": "inspecting",
+      "knobs": {"gridIntensity": 0.7},
+      "overrides": {}
+    }
+  ]
+}

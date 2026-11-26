@@ -963,6 +963,37 @@ internal sealed partial class D02Driver : Node
                 json.WriteString("window", _frame.Tokens.Colours["surface.window"].Value.Hex);
                 json.WriteString("state_digest", ShellJumble.StateDigest);
                 json.WriteNumber("revision", ShellJumble.StateRevision);
+                // B31: the reveal over the fold, the preset in force, Save's issues, the held simulation (the chrome's
+                // filter, the matrix the core's view style was last sent, the window colour through the matrix).
+                json.WriteBoolean("revealed", _frame.Model.Docks[DockSide.Right].Revealed == Magic600.Chrome.Tuning.PanelId);
+                json.WriteString("preset", tuning.Model.Preset ?? "");
+                json.WriteBoolean("preset_shipped", tuning.Model.Current?.Shipped == true);
+                json.WriteString("preset_line", tuning.PresetInfo.Text);
+                json.WriteNumber("presets", tuning.Model.Presets.Count);
+                json.WriteStartArray("issues");
+                foreach (var issue in tuning.Model.Issues)
+                {
+                    json.WriteStringValue(issue);
+                }
+                json.WriteEndArray();
+                json.WriteString("issues_shown", tuning.Issues.Text);
+                json.WriteString("overrides", string.Join(" ", tuning.Model.Look.Overrides.Keys));
+                json.WriteString("simulating", tuning.Model.Simulating ?? "");
+                json.WriteBoolean("filter", tuning.Filter.Visible && tuning.Filter.IsInsideTree());
+                json.WriteString("simulation_line", tuning.SimulationInfo.Text);
+                json.WriteBoolean("core_simulation", ShellStyle.CoreSimulation);
+                json.WriteStartArray("core_matrix");
+                foreach (var entry in ShellStyle.SentMatrix)
+                {
+                    json.WriteNumberValue(entry);
+                }
+                json.WriteEndArray();
+                json.WriteString("window_simulated", tuning.Model.Simulating == null ? ""
+                    : ColourMetric.Apply(_frame.Tokens.Colours["surface.window"].Value, tuning.Model.Matrix).Hex);
+                // A chromatic colour too: a neutral window is a fixed point of every colour-vision matrix.
+                var classOne = _frame.Tokens.Colour(Magic600.Chrome.Tuning.ClassSlots[0]);
+                json.WriteString("class1", classOne.Hex);
+                json.WriteString("class1_simulated", tuning.Model.Simulating == null ? "" : ColourMetric.Apply(classOne, tuning.Model.Matrix).Hex);
                 json.WriteEndObject();
             }
             if (_frame != null && GodotObject.IsInstanceValid(_frame))

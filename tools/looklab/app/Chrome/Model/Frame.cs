@@ -36,6 +36,9 @@ public sealed class DockState
 {
     public List<string> Panels { get; } = new();
     public string? Open { get; set; }
+    // B31: the panel an explicit open showed while the dock was folded to its rail; it shows over the fold until the
+    // dock's open panel changes. The fold rule itself is the frame's.
+    public string? Revealed { get; set; }
 }
 
 // The app-owned dock model (ADR-D01.33, ADR-D01.36): a fixed frame of three docks around a centre pane group.
@@ -73,6 +76,25 @@ public sealed class FrameModel
         if (!dock.Panels.Contains(id)) return Refuse($"{id} is not a panel of the {side.ToString().ToLowerInvariant()} dock");
         dock.Open = dock.Open == id ? null : id;
         return Accept();
+    }
+
+    // An explicit open (a row that opens a panel): when the dock is folded the panel is revealed over the fold.
+    public bool RevealDock(DockSide side, string id, bool folded)
+    {
+        if (!Docks[side].Panels.Contains(id)) return Refuse($"{id} is not a panel of the {side.ToString().ToLowerInvariant()} dock");
+        Docks[side].Revealed = folded ? id : null; Docks[side].Open = id;
+        return Accept();
+    }
+
+    // A press on a rail button: folded, it reveals the panel (the one open in the model included); otherwise, or once
+    // revealed, it toggles the panel as before.
+    public bool PressRail(DockSide side, string id, bool folded)
+    {
+        DockState dock = Docks[side];
+        if (!dock.Panels.Contains(id)) return Refuse($"{id} is not a panel of the {side.ToString().ToLowerInvariant()} dock");
+        if (folded && dock.Revealed != id) { dock.Revealed = id; dock.Open = id; return Accept(); }
+        dock.Revealed = null;
+        return ToggleDock(side, id);
     }
 
     public bool ShowDock(DockSide side, string? id)

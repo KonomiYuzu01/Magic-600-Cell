@@ -101,6 +101,25 @@ public static class ShellStyle
     /// B15 (ADR-D02.20): the tint channel's bytes per piece on the outline and the fill (null where the mode draws
     /// nothing there; another length is dropped) and the palette, 64 floats of which entries 3 to 14 are read.
     /// </summary>
+    /// <summary>
+    /// B31 (ADR-D02.47): the held simulation's row-major 3x3 matrix, or null for none. It reaches the core's view style
+    /// only when <see cref="CoreSimulation"/> is on: the look-cost row G8 measures it first (framework section 8).
+    /// </summary>
+    public static void SetSimulation(double[]? matrix)
+    {
+        Simulation = matrix?.Length == 9 ? matrix : null;
+        Invalidate();
+    }
+
+    /// <summary>B31: the simulation matrix held now (null for none), whether or not the core is sent it.</summary>
+    public static double[]? Simulation { get; private set; }
+
+    /// <summary>B31: the G8 switch: M600_D02_CORE_SIMULATION=1 sends the simulation to the core; off by default.</summary>
+    public static bool CoreSimulation => System.Environment.GetEnvironmentVariable("M600_D02_CORE_SIMULATION") == "1";
+
+    /// <summary>B31: the matrix the last style sent carried (identity without a simulation or with the switch off).</summary>
+    public static float[] SentMatrix { get; private set; } = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
+
     public static void SetTint(byte[]? outline, byte[]? fill, float[]? palette)
     {
         _tintOutline = outline?.Length == PieceCount ? outline : null;
@@ -186,6 +205,16 @@ public static class ShellStyle
             }
         }
         SentPalette = _tintPalette;
+        var view = View(1);
+        var sent = new float[9];
+        unsafe
+        {
+            for (var i = 0; i < 9; i++)
+            {
+                sent[i] = view.Matrix[i];
+            }
+        }
+        SentMatrix = sent;
         _revision = revision;
         _dirty = false;
         return HostLibrary.Ok;
@@ -222,6 +251,14 @@ public static class ShellStyle
             for (var i = 4 * JumbleTint.FirstClass; i < 64; i++)
             {
                 style.Palette[i] = _tintPalette[i];
+            }
+        }
+        // B31: the held simulation's matrix, with the G8 switch on.
+        if (CoreSimulation && Simulation is { } matrix)
+        {
+            for (var i = 0; i < 9; i++)
+            {
+                style.Matrix[i] = (float)matrix[i];
             }
         }
         return style;

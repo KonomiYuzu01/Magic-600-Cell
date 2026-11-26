@@ -301,7 +301,13 @@ internal static partial class Program
             ("D02TuningOpensInRightDockOfCurrentLayout", D02TuningOpensInRightDockOfCurrentLayout),
             ("D02KnobChangeTouchesNoState", D02KnobChangeTouchesNoState),
             ("D02SwapIsAnInvolution", D02SwapIsAnInvolution),
-            ("D02HeldCompareRestoresOnRelease", D02HeldCompareRestoresOnRelease)
+            ("D02HeldCompareRestoresOnRelease", D02HeldCompareRestoresOnRelease),
+            ("D02BothThemesPassSaveAsShipped", D02BothThemesPassSaveAsShipped),
+            ("D02ShippedPresetForksOnEdit", D02ShippedPresetForksOnEdit),
+            ("D02SaveFailsOnNonMonotoneHeightRamp", D02SaveFailsOnNonMonotoneHeightRamp),
+            ("D02SaveFailsOnCollidingClassesUnderSimulation", D02SaveFailsOnCollidingClassesUnderSimulation),
+            ("D02SaveFailsOnContrastRule", D02SaveFailsOnContrastRule),
+            ("D02SimulationAndRevealedDock", D02SimulationAndRevealedDock)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

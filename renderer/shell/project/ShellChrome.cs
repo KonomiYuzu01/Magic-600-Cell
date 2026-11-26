@@ -137,7 +137,13 @@ public sealed class ShellChrome
         // B30: the tuning panel beside History and Appearance; its knobs edit the appearance through the Appearance panel.
         if (ShellJumble.On)
         {
-            Tuning = ShellJumble.TuningHost = new TuningPanel(appearance, frame);
+            // B31: the shipped presets; the held simulation's matrix goes to the core's view style only with the G8
+            // switch on (the look-cost row), and over the chrome always.
+            var presetFile = Path.Combine(folder, "tuning-presets.json");
+            var presets = File.Exists(presetFile) ? TuningPreset.Parse(File.ReadAllText(presetFile), look) : null;
+            Tuning = ShellJumble.TuningHost = new TuningPanel(appearance, frame, presets) { CoreSimulation = ShellStyle.CoreSimulation };
+            var tuning = Tuning;
+            tuning.Simulated += () => ShellStyle.SetSimulation(tuning.Model.Simulating == null ? null : tuning.Model.Matrix);
             frame.AddDockPanel(DockSide.Right, Magic600.Chrome.Tuning.PanelId, Magic600.Chrome.Tuning.Title, Magic600.Chrome.Tuning.Glyph, Tuning);
         }
         var specimen = new TokenSpecimen();
