@@ -114,8 +114,10 @@ and BND.84 treats it as before.
 - **Tests.** CT-BND-26 to CT-BND-28 assert refusal for every program-produced word today, and change with the
   implementation. CT-LG3-06 and CT-LG3-07 also wait for BND.37's class review.
 - **LP6.** Its start conditions are now met (PHS.36). It starts on the owner's word.
-- **Briefing.** The briefing records this decision. The briefing is an input of the frozen migration format packet, so
-  its pin is refreshed under FP.1 in a separate commit. The packet cites none of the edited lines.
+- **Briefing.** The briefing records this decision (`f7ea074d`). The briefing is an input of the frozen migration
+  format packet, so its pin is refreshed under FP.1 in a separate commit: its SHA-256 goes from `f930b089...cee5` to
+  `e15e6622...4405`, and `input_commit` from `1f941e6f` to `f7ea074d`. The packet cites none of the edited lines; the
+  candidate files, `candidate_sha256` and every other pin are unchanged.
 
 ## What this does not do
 
