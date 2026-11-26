@@ -226,9 +226,10 @@ fn ct_one_20_a_job_ending_in_error_leaves_the_pending_preview_committable() {
 /// preview and a snapshot handle, keeps the draft record and the durable commit and workspace receipts, answers
 /// `unknown_outcome` for the lost proposal, refusal and job receipts, and revives no permission: the unused token is
 /// refused in its old envelope, re-addressed to the new epoch, and against a new preview of the same word at the same
-/// revision, which only a token minted after the restart commits; not run: the value-store handles and derived values
-/// of ONE.70, which the session store does not hold). ONE.17's other side, a stored `RevisionRef` that still resolves,
-/// is the next test.
+/// revision, which only a token minted after the restart commits; not run: the value store's handles and derived
+/// values of ONE.70, which the session store does not hold: the command layer's value store holds them, and the hosts'
+/// `tower_rows.rs` tests in `c600-tools` and `c600-jumble-tool` run them). ONE.17's other side, a stored `RevisionRef`
+/// that still resolves, is the next test.
 #[test]
 fn ct_one_21_a_restart_ends_previews_and_handles_and_revives_no_permission() {
     let (session, disk) = session();

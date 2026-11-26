@@ -858,8 +858,9 @@ fn the_runtime_reaches_at_most_a_preview() {
 
 /// CT-ONE-21 (part: a restart ends previews, keeps the durable receipts, answers `unknown_outcome` for the transient
 /// ones and revives no permission: the old epoch's token and envelope are refused; the drafts run in `kn5_stages.rs`
-/// and on the session store in `c600-session/tests/conformance_recovery.rs`; not run: the value-store handles and
-/// derived values of ONE.70, which no crate holds).
+/// and on the session store in `c600-session/tests/conformance_recovery.rs`; not run: the value store's handles
+/// and derived values of ONE.70 (`c600_command::values`), which the hosts' `tower_rows.rs` tests in `c600-tools` and
+/// `c600-jumble-tool` run).
 #[test]
 fn a_restart_ends_previews_keeps_durable_receipts_and_revives_no_permission() {
     let mut f = fixture(&[]);

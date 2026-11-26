@@ -2,7 +2,7 @@
 //! `imply` along LG2.11's edges, cost arithmetic, the tower values' sizes and canonical forms, and the kernel rows as
 //! host requests, run on hand-built IR against a fake kernel host. The checker's half of each row is
 //! `c600-check/tests/tower.rs`; the source forms are T1b's and the kernel host rows over c600-jumble and c600-kernel
-//! are T2's. Synthetic evidence only.
+//! are T2's (`c600-tools/tests/tower_rows.rs` and `c600-jumble-tool/tests/tower_rows.rs`). Synthetic evidence only.
 
 use c600_ir::build::{
     call, case, construct, exact, exact_add, exact_mul, helper, imply, kernel, let_, module, named, nat, param, pat,
@@ -168,13 +168,13 @@ fn completed(run: &Run) {
     assert_eq!(run.summary.live_after_cleanup, 0);
 }
 
-/// CT-LG2-01 (part: the interpreter's half; not run: the source half (T1b) and the kernel host rows over c600-jumble
-/// and c600-kernel (T2)). A case takes every constructor of a declared type to its arm and binds its payloads, `_`
-/// binds nothing, and the default arm takes a constructor no arm names, whether the case borrows its scrutinee through
-/// a parameter or owns a construction. An owned scrutinee's bound payloads are charged in `branch` and released by the
-/// arm's `scope_exit`; a binder returned whole moves out. A constructor no arm and no default takes, and a pattern of
-/// the wrong arity, stop with `LG4:input.ir_rejected`; a construction of the wrong arity, of an unknown constructor or
-/// of a derivation is refused when loaded.
+/// CT-LG2-01 (part: the interpreter's half; the kernel host rows over c600-jumble and c600-kernel run in
+/// `c600-jumble-tool/tests/tower_rows.rs` (T2); not run: the source half (T1b)). A case takes every constructor of a
+/// declared type to its arm and binds its payloads, `_` binds nothing, and the default arm takes a constructor no arm
+/// names, whether the case borrows its scrutinee through a parameter or owns a construction. An owned scrutinee's bound
+/// payloads are charged in `branch` and released by the arm's `scope_exit`; a binder returned whole moves out. A
+/// constructor no arm and no default takes, and a pattern of the wrong arity, stop with `LG4:input.ir_rejected`; a
+/// construction of the wrong arity, of an unknown constructor or of a derivation is refused when loaded.
 #[test]
 fn ct_lg2_01_a_case_takes_every_constructor_its_payloads_and_the_default() {
     let arms = || {
@@ -241,10 +241,11 @@ fn ct_lg2_01_a_case_takes_every_constructor_its_payloads_and_the_default() {
     assert_eq!(r.summary.code, Some(NONCANONICAL_VALUE));
 }
 
-/// CT-LG2-09 (part: the interpreter's half; not run: the source half (T1b) and the kernel host rows over c600-jumble
-/// and c600-kernel (T2)). Unknown never passes as false: a verdict's default arm takes `unknown` alone, after arms for
-/// `yes` and `no`, and a case whose default would take `unknown` together with another constructor stops with
-/// `LG4:input.ir_rejected` before its step.
+/// CT-LG2-09 (part: the interpreter's half; the kernel host rows over c600-jumble and c600-kernel run in
+/// `c600-tools/tests/tower_rows.rs` and `c600-jumble-tool/tests/tower_rows.rs` (T2); not run: the source half (T1b)).
+/// Unknown never passes as false: a verdict's default arm takes `unknown` alone, after arms for `yes` and `no`, and a
+/// case whose default would take `unknown` together with another constructor stops with `LG4:input.ir_rejected` before
+/// its step.
 #[test]
 fn ct_lg2_09_a_verdict_default_takes_unknown_alone() {
     let verdict = || construct(Ty::Verdict(Puzzle::Full, Level::Labels, None), "unknown", vec![text("no witness")]);
@@ -269,13 +270,14 @@ fn certified(puzzle: Puzzle, goal: Goal, bound: Option<Expr>, then: Expr) -> Exp
     case(verdict, vec![(pat("yes", &["h"]), then), (pat("no", &["_"]), nat(0)), (pat("unknown", &["_"]), nat(0))], None)
 }
 
-/// CT-LG2-10 (part: the interpreter's half; not run: the source half (T1b), the goal fixtures and the kernel host rows
-/// over c600-jumble and c600-kernel (T2)). `imply` takes a host's certificate along LG2.11's edges only, as one pure
-/// step whose memory is the new certificate's size: exact pose to sticker test and on to low height, label checkpoint
-/// to lattice placement. No edge enters the retained checkpoint, sticker test to label checkpoint is no edge, and the
-/// lattice placement is not defined on 600-cell-Full: each stops with `LG4:input.ir_rejected` before the step. A
-/// negative bound, and a low-height certificate taken to another bound, stop with `LG4:input.pointwise_failed`. An
-/// `imply` whose bound does not fit its goal is refused when loaded.
+/// CT-LG2-10 (part: the interpreter's half; the kernel host rows over c600-jumble and c600-kernel and their goals run
+/// in `c600-tools/tests/tower_rows.rs` and `c600-jumble-tool/tests/tower_rows.rs` (T2); not run: the source half (T1b)
+/// and a goal fixture of equal labels with unequal poses). `imply` takes a host's certificate along LG2.11's edges
+/// only, as one pure step whose memory is the new certificate's size: exact pose to sticker test and on to low height,
+/// label checkpoint to lattice placement. No edge enters the retained checkpoint, sticker test to label checkpoint is
+/// no edge, and the lattice placement is not defined on 600-cell-Full: each stops with `LG4:input.ir_rejected` before
+/// the step. A negative bound, and a low-height certificate taken to another bound, stop with
+/// `LG4:input.pointwise_failed`. An `imply` whose bound does not fit its goal is refused when loaded.
 #[test]
 fn ct_lg2_10_imply_follows_the_edges_and_keeps_the_bound() {
     use Goal::*;
@@ -499,10 +501,11 @@ impl Host for Replacing {
     }
 }
 
-/// CT-LG2-02 (part: the interpreter's half; not run: the source half (T1b) and the kernel host rows over c600-jumble
-/// and c600-kernel (T2)). An identity of one puzzle never stands for the other's: a comparison of two puzzles' states
-/// and a goal checked on a puzzle it is not defined on stop with `KN1:input.identity_mismatch` after the row's step,
-/// without asking the host, and a host answer of the other puzzle's type is refused.
+/// CT-LG2-02 (part: the interpreter's half; the kernel host rows over c600-jumble and c600-kernel run in
+/// `c600-tools/tests/tower_rows.rs` and `c600-jumble-tool/tests/tower_rows.rs` (T2); not run: the source half (T1b)).
+/// An identity of one puzzle never stands for the other's: a comparison of two puzzles' states and a goal checked on a
+/// puzzle it is not defined on stop with `KN1:input.identity_mismatch` after the row's step, without asking the host,
+/// and a host answer of the other puzzle's type is refused.
 #[test]
 fn ct_lg2_02_states_of_two_puzzles_never_meet() {
     let compare = kernel(
@@ -543,10 +546,10 @@ fn ct_lg2_02_states_of_two_puzzles_never_meet() {
     assert_eq!(r.summary.code, Some(IR_REJECTED));
 }
 
-/// CT-LG2-03 (part: the interpreter's half; not run: the source half (T1b) and the kernel host rows over c600-jumble
-/// and c600-kernel (T2), where a read of labels off the lattice returns `partial` or `undefined`). A projection to a
-/// level its puzzle does not hold stops with `KN1:input.level_not_held` after the row's step, without asking the host:
-/// 600-cell-Full holds the labels and the position only.
+/// CT-LG2-03 (part: the interpreter's half; the kernel host rows over c600-jumble and c600-kernel, where a read of
+/// labels off the lattice returns `partial`, run in `c600-jumble-tool/tests/tower_rows.rs` (T2); not run: the source
+/// half (T1b)). A projection to a level its puzzle does not hold stops with `KN1:input.level_not_held` after the row's
+/// step, without asking the host: 600-cell-Full holds the labels and the position only.
 #[test]
 fn ct_lg2_03_a_projection_needs_a_level_the_puzzle_holds() {
     for level in Level::ALL {
@@ -563,10 +566,11 @@ fn ct_lg2_03_a_projection_needs_a_level_the_puzzle_holds() {
     }
 }
 
-/// CT-LG2-07 (part: the interpreter's half; not run: the source half (T1b) and the kernel host rows over c600-jumble
-/// and c600-kernel (T2)). Raw pose data enters as a state only through `import` with the jumbling puzzle's
-/// reachability claim: a claim about 600-cell-Full stops with `KN1:input.identity_mismatch` without asking the host,
-/// and an import without a claim is refused when loaded.
+/// CT-LG2-07 (part: the interpreter's half; the kernel host rows over c600-jumble and c600-kernel run in
+/// `c600-tools/tests/tower_rows.rs` and `c600-jumble-tool/tests/tower_rows.rs` (T2); not run: the source half (T1b)).
+/// Raw pose data enters as a state only through `import` with the jumbling puzzle's reachability claim: a claim about
+/// 600-cell-Full stops with `KN1:input.identity_mismatch` without asking the host, and an import without a claim is
+/// refused when loaded.
 #[test]
 fn ct_lg2_07_an_import_takes_the_jumbling_claim() {
     let table = || read_snapshot("table", exact(Ty::PoseTable));
@@ -588,10 +592,11 @@ fn ct_lg2_07_an_import_takes_the_jumbling_claim() {
     assert_eq!(load(&prog(Ty::Nat, let_("s", lone, nat(0)), vec![])).err().map(|r| r.code), Some(IR_REJECTED));
 }
 
-/// CT-LG2-11 (part: the interpreter's half; not run: the source half (T1b) and the kernel host rows over c600-jumble
-/// and c600-kernel (T2)). A derivation's request carries literal letters only: the word crosses as the program wrote
-/// it, never as a key. A word equality key in its place stops with `LG4:input.ir_rejected` before the row, and a Full
-/// word for the jumbling puzzle's state with `KN1:input.identity_mismatch`, neither asking the host to derive.
+/// CT-LG2-11 (part: the interpreter's half; the kernel host rows over c600-jumble and c600-kernel run in
+/// `c600-tools/tests/tower_rows.rs` and `c600-jumble-tool/tests/tower_rows.rs` (T2); not run: the source half (T1b)). A
+/// derivation's request carries literal letters only: the word crosses as the program wrote it, never as a key. A word
+/// equality key in its place stops with `LG4:input.ir_rejected` before the row, and a Full word for the jumbling
+/// puzzle's state with `KN1:input.identity_mismatch`, neither asking the host to derive.
 #[test]
 fn ct_lg2_11_a_derivation_carries_literal_letters_only() {
     let derive = |p: Puzzle, w: Expr| kernel(KernelOp::Derive, vec![state(p), w], exact(Ty::Derivation(p)));

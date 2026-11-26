@@ -618,10 +618,11 @@ fn ct_det_07_big_integers_fixed_width_inputs_and_text_pairs() {
 }
 
 /// CT-DET-08 (part: cold and warm loads, repeated runs and arguments shared with other runs; the session's
-/// derived-query cache is in `c600-session/tests/jobs.rs`; not run: a value store and the eviction of its values,
-/// which no crate builds yet): result bytes and every charge row
-/// match whether the program is loaded afresh or reused, and whether an argument's payload is shared with values other
-/// runs keep.
+/// derived-query cache is in `c600-session/tests/jobs.rs`, and the command layer's value store cold, warm, evicted and
+/// held by another run in the hosts' `tower_rows.rs` tests in `c600-tools` and `c600-jumble-tool`; not run: a host
+/// row-answer cache, which 1.0's host does not keep (owner, 20 November 2026, item 1)): result bytes and every charge
+/// row match whether the program is loaded afresh or reused, and whether an argument's payload is shared with values
+/// other runs keep.
 #[test]
 fn ct_det_08_cold_and_warm_loads_and_shared_values_keep_bytes_and_charges() {
     let text = source(

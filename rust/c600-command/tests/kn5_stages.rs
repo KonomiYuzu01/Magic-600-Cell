@@ -239,7 +239,8 @@ fn a_record_write_keeps_its_receipt_across_a_restart_and_a_reopen() {
 /// CT-ONE-21 (part: a restart ends the preview built from a draft, and its prepared commit cannot commit it, while
 /// the draft, a workspace record with its durable receipt, stays across the restart and a reopen and builds a fresh
 /// preview that commits; the receipts, the transient outcomes and the old epoch's permissions run in `layer.rs`; not
-/// run: the value-store handles and derived values of ONE.70, which no crate holds), ONE.35, ONE.43, ONE.70.
+/// run: the value store's handles and derived values of ONE.70, which the hosts' `tower_rows.rs` tests in
+/// `c600-tools` and `c600-jumble-tool` run), ONE.35, ONE.43, ONE.70.
 #[test]
 fn a_restart_ends_a_drafts_preview_and_keeps_the_draft() {
     let mut f = fixture(true);
