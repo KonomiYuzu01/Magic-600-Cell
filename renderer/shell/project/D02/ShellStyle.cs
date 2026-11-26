@@ -139,6 +139,8 @@ public static class ShellStyle
     /// </summary>
     public static int Apply(HostLibrary library, IntPtr host, ulong revision)
     {
+        // B18 (for B20): the certified transform of the twist at the cap Local draws, read once per cap and revision.
+        ShellTurn.Note(library, host, revision);
         if (!_dirty && revision == _revision)
         {
             return HostLibrary.Ok;

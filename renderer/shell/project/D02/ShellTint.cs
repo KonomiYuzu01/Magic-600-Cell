@@ -141,6 +141,7 @@ public static class ShellTint
         }
         json.WriteEndObject();
         Overlay(json, host, frame);
+        ShellTurn.Dump(json);
     }
 
     /// <summary>

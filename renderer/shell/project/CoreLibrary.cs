@@ -44,6 +44,7 @@ public sealed class CoreLibrary : IDisposable
         "sa2_frame_panes",
         "sa2_view_focus_set",
         "sa2_view_layout_set",
+        "sa2_transform_set",
     };
 
     /// <summary>

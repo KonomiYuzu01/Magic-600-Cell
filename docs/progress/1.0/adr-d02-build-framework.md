@@ -663,6 +663,27 @@ relative path is from the repository root.
 - **Checkpoint:** no.
 - **Depends:** B14, B16.
 
+**As built (B18 part, for B20's turn preview; 26 November 2026, branch `claude/d02-drawing`).** Only what B20 needs was built; the sweep itself waits.
+- Built:
+  - Core: `sa2_transform_set(ctx, revision, plane_u, plane_v, angle, moving_mask, phase)`, added to ABI 10 before any release (no new number). Moving pieces draw turned by R((phase - 1) angle) after their pose, in frames, panes and picks. Phase 1 is byte-identical to no transform; phase 0 is the pose before the twist.
+  - The moving bit is bit 16 of the per-piece style word, so the mask shares the style upload. Adoption drops the transform; `sa2_recover` keeps it.
+  - A preview of an uncommitted twist passes the negated angle: its phase 1 - s draws the fraction s of the twist, and phase 0 draws the whole twist.
+  - Bridge and host: `m6h_set_transform` (host 13, no new number) and `m6h_twist_transform(cap, item)`. The latter returns the certified row (`c600_display::jumble::transform`) of the session's twist without committing it, or status 0 when the twist is not admissible or is the identity (menu item 0).
+  - Shell: `HostLibrary.SetTransform` and `TwistTransform`. `D02/ShellTurn.cs` reads item 1's row at the cap Local draws, once per cap and revision, and the dump writes it as `turn`.
+- Readings:
+  - The focus test and the Hopf chart use the unturned centre (a cap twist keeps dot(c, pole)).
+  - "Phase 0 equals the old pose" holds to within 1% of covered pixels on WARP: the turned piece is the new pose rotated back in floating point, not the old revision's bytes. Phase 1 is byte-identical.
+- Checks:
+  - Host test `a_committed_jumble_twist_carries_its_certified_transform`.
+  - `check_core.py --sweep` on WARP: 26,304 covered pixels; phase 0 differs from revision 1 at 4, and phase 0.5 differs from both revisions.
+  - `d02_run.py --script twist-row --state wj-ia-300`: the default cap 0 (blocked) has no row. Cap 150's row has the angle pi and moves exactly its inside set of 1,909 pieces (the sample mask's sha256).
+- Waits:
+  - The timed sweep, with its duration from the row `jumble.sweep` (`Model/Gallery.cs`, `MotionTable`).
+  - The half-turn's cut and outline flash.
+  - Reduced motion and the refused twist.
+  - `d02_run.py --script sweep`.
+- Owner sees: nothing new on screen yet. The run's `turn` dump shows the row that B20's ghost will draw.
+
 **Two drawn views (B18a to B18c), added for the owner's answer of 26 November 2026.** Design: one surface, one present, several panes.
 - The core's surface covers the bounding rectangle of the drawn openings.
 - A composite frame clears once, draws each pane in its own rectangle and presents once.

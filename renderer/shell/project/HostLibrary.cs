@@ -98,6 +98,8 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_pick_poll",
         "m6h_set_view_layout",
         "m6h_set_piece_style",
+        "m6h_set_transform",
+        "m6h_twist_transform",
         "m6h_set_view_style",
         "m6h_open_local",
         "m6h_set_view_camera",
@@ -520,6 +522,45 @@ public sealed unsafe class HostLibrary : IDisposable
             return ((delegate* unmanaged[Cdecl]<IntPtr, uint, byte*, uint, uint, int>)_exports["m6h_set_piece_style"])(
                 host, channel, s, (uint)(styles?.Length ?? 0), byPose ? 1u : 0u);
         }
+    }
+
+    /// <summary>
+    /// ADR-D02 B18 (for B20): sets the adopted revision's twist transform: the plane (u then v, 8 floats), the angle, one
+    /// byte per piece (1 moves) and the phase in 0..1; the moving pieces draw turned by R((phase - 1) angle) after their
+    /// pose, so phase 1 draws the revision as it is. Null clears it. The core drops it at the next adoption.
+    /// </summary>
+    public int SetTransform(IntPtr host, float[]? plane, float angle, byte[]? moving, float phase)
+    {
+        fixed (float* p = plane)
+        fixed (byte* m = moving)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, float*, float, byte*, uint, float, int>)_exports["m6h_set_transform"])(
+                host, p, angle, m, (uint)(moving?.Length ?? 0), phase);
+        }
+    }
+
+    /// <summary>A twist's certified transform: its plane (u then v), its angle in (0, pi] and its moving pieces.</summary>
+    public sealed record TwistRow(float[] Plane, float Angle, byte[] Moving);
+
+    /// <summary>
+    /// ADR-D02 B18: the certified transform of the session's twist at <paramref name="cap"/> with menu item
+    /// <paramref name="item"/>, not committed; null when the twist is not admissible or has no plane (the identity).
+    /// </summary>
+    public int TwistTransform(IntPtr host, uint cap, ulong item, out TwistRow? row)
+    {
+        var plane = new float[8];
+        var moving = new byte[177_120];
+        float angle = 0;
+        uint status = 0;
+        int code;
+        fixed (float* p = plane)
+        fixed (byte* m = moving)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, uint, ulong, float*, float*, byte*, uint*, int>)_exports["m6h_twist_transform"])(
+                host, cap, item, p, &angle, m, &status);
+        }
+        row = code == Ok && status == 1 ? new TwistRow(plane, angle, moving) : null;
+        return code;
     }
 
     /// <summary>Sets style slot 1 to 4 (a one-view frame uses slot 1), or clears it with null (version 10).</summary>
