@@ -104,9 +104,9 @@
         "codex",
         "--version"
       ],
-      "expect": "codex-cli 0\\.159\\.",
-      "version": "0.159.0",
-      "note": "Installed by the owner with `npm install -g @openai/codex@0.159.0`; login with `codex login`. Upgrades need owner approval because they can change model routing."
+      "expect": "(?m)^codex-cli 0\\.171\\.0[ \\t\\r]*$",
+      "version": "0.171.0",
+      "note": "Installed with `npm install -g @openai/codex@0.171.0` on 26 November 2026 at the owner's request, because the server refuses gpt-6.2-sol and gpt-6.2-astra to 0.159.0 on a ChatGPT sign-in (model_not_found); login with `codex login`. Upgrades need owner approval because they can change model routing."
     },
     {
       "id": "uv",

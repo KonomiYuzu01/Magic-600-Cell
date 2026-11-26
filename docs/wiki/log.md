@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-26] update | Codex CLI pinned to 0.171.0
+The server refused gpt-6.2-sol and gpt-6.2-astra to codex-cli 0.159.0 on a ChatGPT sign-in, so the pin moved to 0.171.0 at the owner's request. The [MCP isolation evidence](evidence/codex-mcp-isolation.md) records what was checked on 0.171.0 and that its harness rerun is still owed.
+
 ## [2026-11-26] decision | Context and test tiers
 The owner set how agents use context and how tests are tiered ([decision](decisions/owner-decisions-2026-11-26-context-and-test-tiers.md)): the always-loaded rule files keep only the hard rules, the current state and a map, and the suspended Codex protocol, Claude's hooks and machine cleanup, and the briefing's dated history move unchanged into guides loaded on demand; a commit runs only its area's fast checks, a step its own end-to-end script once, a pull request CI's fast tier, and the full regression runs in CI's full tier and together in stage 3.
 
