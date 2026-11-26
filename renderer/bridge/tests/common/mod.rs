@@ -247,6 +247,34 @@ unsafe extern "C" fn view_style_set(ctx: *mut c_void, slot: u32, style: *const S
     code(unsafe { shim(ctx) }.fake.view_style_set(slot, style), |()| ())
 }
 
+unsafe extern "C" fn frame_submit_panes(
+    ctx: *mut c_void,
+    input: *const Sa2FrameInput,
+    panes: *const Sa2Pane,
+    count: u32,
+    out: *mut u64,
+) -> i32 {
+    if panes.is_null() || count == 0 || count > PANES_MAX {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let panes = unsafe { slice::from_raw_parts(panes, count as usize) };
+    code(unsafe { shim(ctx) }.fake.frame_submit_panes(unsafe { &*input }, panes), |frame| unsafe { *out = frame })
+}
+
+unsafe extern "C" fn frame_panes(
+    ctx: *mut c_void,
+    frame: u64,
+    rows: *mut Sa2PaneRow,
+    capacity: u32,
+    out: *mut u32,
+) -> i32 {
+    let rows = unsafe { slice::from_raw_parts_mut(rows, capacity as usize) };
+    if rows.iter().any(|row| !sized::<Sa2PaneRow>(row.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.frame_panes(frame, rows), |n| unsafe { *out = n as u32 })
+}
+
 /// The shim's function table.
 pub fn functions() -> CoreFunctions {
     CoreFunctions {
@@ -270,6 +298,8 @@ pub fn functions() -> CoreFunctions {
         view_shape_set,
         style_set,
         view_style_set,
+        frame_submit_panes,
+        frame_panes,
     }
 }
 
@@ -352,6 +382,12 @@ impl CoreAbi for Shimmed {
     }
     fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status> {
         self.dll.view_style_set(slot, style)
+    }
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status> {
+        self.dll.frame_submit_panes(input, panes)
+    }
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status> {
+        self.dll.frame_panes(frame_id, rows)
     }
 }
 

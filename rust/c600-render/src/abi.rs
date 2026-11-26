@@ -5,7 +5,7 @@
 use std::mem::size_of;
 
 /// `SA2_ABI_VERSION`. ABI 6 adds a view's shape ([`Sa2ViewShape`]); ABI 7 the piece style and the style slots
-/// ([`Sa2ViewStyle`]); ABI 8 the composite frame (`sa2_frame_submit_panes`; the bridge binds it in ADR-D02 B18b).
+/// ([`Sa2ViewStyle`]); ABI 8 the composite frame ([`Sa2Pane`], [`Sa2PaneRow`]).
 pub const ABI_VERSION: u32 = 8;
 /// `SA2_SLOTS`: the labelled sticker slots of 600-cell-Full.
 pub const SLOTS: usize = 259_800;
@@ -136,6 +136,10 @@ pub const STYLE_DIM_UNMARKED: u32 = 2;
 pub const STYLE_OUTLINE_MAX: f32 = 0.5;
 /// `SA2_STYLE_MATRIX_MAX`.
 pub const STYLE_MATRIX_MAX: f32 = 8.0;
+
+// ABI 8: the composite frame (`sa2_frame_submit_panes`).
+/// `SA2_PANES_MAX`: the panes of one composite frame.
+pub const PANES_MAX: u32 = 4;
 
 /// `sa2_engine_image`. Built only by `c600-render-ffi` (`renderer/bridge`) from checked slices.
 #[repr(C)]
@@ -278,6 +282,15 @@ rows! {
         y: u32,
     }
 
+    /// `sa2_pane_row` (ABI 8): one pane of a produced composite frame.
+    Sa2PaneRow {
+        struct_size: u32,
+        pane: u32,
+        view: u64,
+        view_generation: u64,
+        vertex_evals: u64,
+    }
+
     /// `sa2_view_shape` (ABI 6).
     Sa2ViewShape {
         struct_size: u32,
@@ -299,6 +312,48 @@ rows! {
         frames_reported: u64,
         id_passes: u64,
         reports_dropped: u64,
+    }
+}
+
+/// `sa2_pane` (ABI 8): one pane of a composite frame, its rectangle in target pixels. It has no `struct_size`, so it
+/// is not in `rows!`.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Sa2Pane {
+    pub view: u64,
+    pub view_generation: u64,
+    /// 0: every slot drawn, nothing pickable.
+    pub resource_set: u64,
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    /// Column-major, as [`Sa2FrameInput::camera_matrix`].
+    pub camera_matrix: [f32; 16],
+    /// 0: no style; else a style slot 1 to [`STYLE_SLOTS`].
+    pub style: u32,
+    /// Must be 0.
+    pub flags: u32,
+}
+
+impl Sa2Pane {
+    /// Whether `self` and `other` share a pixel.
+    pub fn overlaps(&self, other: &Sa2Pane) -> bool {
+        let (ax, ay, bx, by) = (i64::from(self.x), i64::from(self.y), i64::from(other.x), i64::from(other.y));
+        ax < bx + i64::from(other.width)
+            && bx < ax + i64::from(self.width)
+            && ay < by + i64::from(other.height)
+            && by < ay + i64::from(self.height)
+    }
+
+    /// Whether the rectangle is not empty and lies inside a target of `size`.
+    pub fn inside(&self, size: (u32, u32)) -> bool {
+        self.width >= 1
+            && self.height >= 1
+            && self.x >= 0
+            && self.y >= 0
+            && i64::from(self.x) + i64::from(self.width) <= i64::from(size.0)
+            && i64::from(self.y) + i64::from(self.height) <= i64::from(size.1)
     }
 }
 

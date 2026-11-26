@@ -1234,13 +1234,15 @@ void run_cpu(Suite& suite, const Options& options) {
         product.activate(readied.second, stamp);
         two[1].resource_set = readied.second;
         expect(wrong_state([&] { product.plan_panes(input, two, 2, 256, 256); }), "a pane of another engine revision was accepted");
-        PreparationArrays current(2, 1, 1);
+        // Another view's set keeps its own publication generation (3 here, the frame's is 1).
+        PreparationArrays current(2, 1, 3);
         current.value.base_revision = 1;
         const auto good = ready_set(product, sa2::preparation(&current.value), 0);
         product.activate(good.second, stamp);
         two[1].resource_set = good.second;
         plan = product.plan_panes(input, two, 2, 256, 256);
-        expect(plan.panes[1].set_ticket == good.first, "a pane's set was not planned");
+        expect(plan.panes[1].set_ticket == good.first && plan.panes[1].publication_generation == 3
+            && plan.panes[0].publication_generation == input.publication_generation, "a pane's set was not planned");
         product.commit(input, plan, 1, 0);
         expect(wrong_state([&] { product.pane_rows(1, nullptr, 0); }), "pane rows were answered before the frame produced");
         product.produced(1, 100, 7);

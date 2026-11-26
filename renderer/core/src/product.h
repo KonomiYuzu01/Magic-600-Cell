@@ -132,6 +132,7 @@ template<class Row> void validate_rows(const Row* rows, uint32_t capacity) {
 struct PanePlan {
     sa2_pane pane{};
     uint64_t set_ticket = 0;
+    uint64_t publication_generation = 0; // the pane's set's (the frame's for the first pane)
     ViewShape shape;
     bool styled = false;
     ViewStyle view_style;
@@ -334,7 +335,7 @@ private:
         bool ended() const { return state == SA2_TICKET_CANCELLED || state == SA2_TICKET_FAILED; }
     };
     struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; uint64_t style = 0; };
-    struct PaneRecord { sa2_pane pane{}; uint64_t set_ticket = 0, evals = 0; ViewShape shape; };
+    struct PaneRecord { sa2_pane pane{}; uint64_t set_ticket = 0, evals = 0, publication_generation = 0; ViewShape shape; };
     struct Frame {
         sa2_frame_input input{};
         std::vector<PaneRecord> panes; // ABI 8: a composite frame's panes

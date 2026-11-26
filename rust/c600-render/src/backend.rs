@@ -20,6 +20,11 @@
 //! - The frame's resource set is the activated set of its view, view generation and publication generation; its
 //!   camera matrix is the one set for its view and camera version ([`RenderBackend::set_camera_matrix`]); its target
 //!   is the one set by [`RenderBackend::set_frame_target`].
+//! - ABI 8 (ADR-D02 B18b, a candidate behind the shell's --d02): while panes are set ([`RenderBackend::set_panes`]),
+//!   the next frame is a composite frame (`sa2_frame_submit_panes`). The host's stamp names the first pane, whose
+//!   view, view generation, publication generation and camera version it must carry; each pane's set and camera
+//!   matrix are found as a one-view frame's are, from its own view's bindings. Its report names the first pane and
+//!   its vertex evaluations are the panes' sum ([`RenderBackend::read_pane_rows`] gives each pane's).
 //! - `cancel` and `retire` cannot return an error through the trait; a failure is kept in [`RenderBackend::fault`].
 //! - Recovery (ABI 5, route B; accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks)
 //!   forgets every resource set of the old device epoch: the core released them, and RM.23 lets no old resource token
@@ -81,6 +86,25 @@ struct FrameRecord {
     id: u64,
     input: FrameInput,
     dependencies: BTreeMap<String, String>,
+}
+
+/// ABI 8 (ADR-D02 B18b): one pane of the next composite frame, in the host's terms. The bridge finds its resource set
+/// and its camera matrix as it finds a one-view frame's.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PaneSpec {
+    pub view: ViewId,
+    pub view_generation: u64,
+    /// The installed publication's generation, or 0 for none (every slot drawn, nothing pickable).
+    pub publication_generation: u64,
+    /// The view's camera version.
+    pub camera: u64,
+    /// The rectangle in target pixels.
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    /// 0: no style; else a style slot 1 to [`STYLE_SLOTS`].
+    pub style: u32,
 }
 
 /// An activated resource set.
@@ -150,6 +174,8 @@ pub struct RenderBackend<C: CoreAbi> {
     /// The revision of the engine image the core holds: the last bundle it accepted, which it keeps across recovery
     /// (RM.16).
     held: Option<RevisionRef>,
+    /// ABI 8: the panes of the next frame ([`RenderBackend::set_panes`]); empty for a one-view frame.
+    panes: Vec<PaneSpec>,
 }
 
 impl<C: CoreAbi> RenderBackend<C> {
@@ -168,7 +194,55 @@ impl<C: CoreAbi> RenderBackend<C> {
             displays: VecDeque::new(),
             fault: None,
             held: None,
+            panes: Vec::new(),
         }
+    }
+
+    /// ABI 8 (ADR-D02 B18b): the panes of the next frames, in order, or none for one-view frames. While panes are set,
+    /// a frame is a composite frame, and the host's stamp must name the first pane's view, view generation,
+    /// publication generation and camera version. 0 or more than [`PANES_MAX`] panes are refused at the frame.
+    pub fn set_panes(&mut self, panes: Vec<PaneSpec>) {
+        self.panes = panes;
+    }
+
+    /// ABI 8: each pane's view, view generation and vertex evaluations of a produced composite frame, in pane order.
+    pub fn read_pane_rows(&mut self, frame: u64) -> Result<Vec<Sa2PaneRow>, Error> {
+        let mut rows = vec![Sa2PaneRow::new(); PANES_MAX as usize];
+        let n = self.core.frame_panes(frame, &mut rows).map_err(|status| self.error(status))?;
+        if n > rows.len() {
+            return Err(contradiction("a composite frame names more panes than SA2_PANES_MAX"));
+        }
+        rows.truncate(n);
+        Ok(rows)
+    }
+
+    /// The camera matrix set for `view` at camera version `camera`.
+    fn camera_matrix(&self, view: ViewId, camera: u64) -> Result<[f32; 16], Error> {
+        self.cameras
+            .get(&view)
+            .and_then(|kept| kept.iter().find(|(version, _)| *version == camera))
+            .map(|(_, matrix)| *matrix)
+            .ok_or_else(|| Error::invalid(format!("view {} has no camera matrix for version {camera}", view.0)))
+    }
+
+    /// The activated set of `view`'s publication at its view and publication generations, with its declared
+    /// dependencies; set 0 for publication generation 0.
+    fn activated(
+        &self,
+        view: ViewId,
+        view_generation: u64,
+        publication_generation: u64,
+    ) -> Result<(u64, BTreeMap<String, String>), Error> {
+        if publication_generation == 0 {
+            return Ok((0, BTreeMap::new()));
+        }
+        self.sets
+            .iter()
+            .find(|(_, r)| {
+                (r.view, r.view_generation, r.publication_generation) == (view, view_generation, publication_generation)
+            })
+            .map(|(set, r)| (*set, r.dependencies.clone()))
+            .ok_or_else(|| Error::unavailable("no activated resource set holds the frame's publication"))
     }
 
     /// The frame target of the next frames: on the Godot-texture route, the registered ring slot; on route B (a
@@ -486,26 +560,29 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
 
     fn submit_frame(&mut self, input: FrameInput) -> Result<u64, Error> {
         let s = &input.stamp;
-        let camera = self
-            .cameras
-            .get(&s.view)
-            .and_then(|kept| kept.iter().find(|(version, _)| *version == s.camera))
-            .map(|(_, matrix)| *matrix)
-            .ok_or_else(|| {
-                Error::invalid(format!("view {} has no camera matrix for version {}", s.view.0, s.camera))
-            })?;
-        let (set, dependencies) = if s.publication_generation == 0 {
-            (0, BTreeMap::new())
-        } else {
-            self.sets
-                .iter()
-                .find(|(_, r)| {
-                    (r.view, r.view_generation, r.publication_generation)
-                        == (s.view, s.view_generation, s.publication_generation)
-                })
-                .map(|(set, r)| (*set, r.dependencies.clone()))
-                .ok_or_else(|| Error::unavailable("no activated resource set holds the frame's publication"))?
-        };
+        let camera = self.camera_matrix(s.view, s.camera)?;
+        let (set, dependencies) = self.activated(s.view, s.view_generation, s.publication_generation)?;
+        // ABI 8: a composite frame's panes, each from its own view's bindings; the stamp names the first.
+        let mut panes = Vec::with_capacity(self.panes.len());
+        for (i, pane) in self.panes.iter().enumerate() {
+            let bindings = (pane.view, pane.view_generation, pane.publication_generation, pane.camera);
+            if i == 0 && bindings != (s.view, s.view_generation, s.publication_generation, s.camera) {
+                return Err(Error::invalid("the frame's stamp does not name the first pane's bindings"));
+            }
+            let (resource_set, _) = self.activated(pane.view, pane.view_generation, pane.publication_generation)?;
+            panes.push(Sa2Pane {
+                view: pane.view.0,
+                view_generation: pane.view_generation,
+                resource_set,
+                x: pane.x,
+                y: pane.y,
+                width: pane.width,
+                height: pane.height,
+                camera_matrix: self.camera_matrix(pane.view, pane.camera)?,
+                style: pane.style,
+                flags: 0,
+            });
+        }
         let mut row = Sa2FrameInput {
             target: self.target,
             device_epoch: s.device_epoch,
@@ -532,7 +609,10 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
             row.preview_base = preview.base;
             row.preview_literal_digest = sha256(preview.literal.as_bytes());
         }
-        let id = self.core.frame_submit(&row).map_err(|status| self.error(status))?;
+        let submitted =
+            if panes.is_empty() { self.core.frame_submit(&row) } else { self.core.frame_submit_panes(&row, &panes) };
+        let id = submitted.map_err(|status| self.error(status))?;
+        // B17's pick on a composite frame will keep the panes in the record to resolve the pane a point lies in.
         self.frames.push_back(FrameRecord { id, input, dependencies });
         while self.frames.len() > FRAME_RECORDS {
             self.frames.pop_front();

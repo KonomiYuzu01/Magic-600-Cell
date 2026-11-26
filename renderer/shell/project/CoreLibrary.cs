@@ -40,6 +40,8 @@ public sealed class CoreLibrary : IDisposable
         "sa2_view_shape_set",
         "sa2_style_set",
         "sa2_view_style_set",
+        "sa2_frame_submit_panes",
+        "sa2_frame_panes",
     };
 
     /// <summary>

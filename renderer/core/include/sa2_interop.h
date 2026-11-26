@@ -1156,9 +1156,10 @@ SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_vi
  * pickable), rectangle in target pixels, camera matrix and style slot (0: no style, else 1 to SA2_STYLE_SLOTS); its
  * shape is its view's (ABI 6). Rectangles lie inside the target and do not overlap; a count of 0 or above
  * SA2_PANES_MAX, an empty rectangle, nonzero flags or a non-finite camera is SA2_E_INVALID_ARGUMENT. Two panes may
- * name one view (a held split with two styles). Every pane's resource set must be active, stamped for its view, view
- * generation and the frame's publication generation, and prepared at the frame's engine revision; otherwise the
- * whole frame is refused (SA2_E_WRONG_STATE) and nothing is drawn.
+ * name one view (a held split with two styles). Every pane's resource set must be active, stamped for its view and
+ * view generation, and prepared at the frame's engine revision; otherwise the whole frame is refused
+ * (SA2_E_WRONG_STATE) and nothing is drawn. Each view keeps its own publication generation: the first pane's set is
+ * the frame input's and carries the frame's, another pane's set may carry another.
  *
  * sa2_frame_panes returns a produced composite frame's panes in order: each one's view, view generation and vertex
  * evaluations; the frame report's view_vertex_evals is their sum. A frame that is not a retained composite frame, or
@@ -1166,7 +1167,8 @@ SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_vi
  *
  * sa2_pick_request on a composite frame takes target coordinates and draws the ID pass with the camera, resource set,
  * shape and viewport of the pane that contains the point; a point in no pane is SA2_E_INVALID_ARGUMENT. The reply
- * names that pane's view and view generation, and only a newer generation of that view makes it stale.
+ * names that pane's view, view generation and its set's publication generation, and only a newer generation of
+ * that view makes it stale.
  */
 #define SA2_PANES_MAX 4u
 

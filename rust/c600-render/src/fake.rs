@@ -1,4 +1,4 @@
-//! A fake core for headless tests: ABI 5's product calls in Rust, following the header's rules for tickets, frames,
+//! A fake core for headless tests: ABI 5's product calls in Rust (and ABI 6 to 8's), following the header's rules for tickets, frames,
 //! reports, picks and device loss. Nothing runs on a GPU: uploads, frames and ID passes stay pending until
 //! [`FakeCore::complete`], and the ID pass reads the instance of the slot a test placed at a pixel
 //! ([`FakeCore::place`]). It does not model resize, trace windows, the 256-ticket and 1024-pick bounds or engine
@@ -18,6 +18,9 @@ use crate::api::{CoreAbi, EngineImage, PoseArrays, PreparationInput};
 
 /// `DXGI_ERROR_DEVICE_REMOVED`, the reason a removed fake device reports.
 pub const DEVICE_REMOVED_REASON: i32 = 0x887A_0005_u32 as i32;
+/// The vertex evaluations the fake reports for each pane of a frame (a one-view frame is one pane): 120 cells of
+/// 600 vertices, a fixed synthetic value.
+pub const PANE_EVALS: u64 = 120 * 600;
 /// The fake display clock's step per confirmed frame, in QPC ticks: one 60 Hz refresh at a 10 MHz counter.
 pub const DISPLAY_TICKS: u64 = 166_667;
 
@@ -26,6 +29,7 @@ struct Ticket {
     row: Sa2PollRow,
     view: u64,
     view_generation: u64,
+    base_revision: u64,
     visibility: Vec<u8>,
     instances: BTreeMap<usize, u32>,
 }
@@ -34,6 +38,7 @@ struct Ticket {
 struct Set {
     view: u64,
     view_generation: u64,
+    base_revision: u64,
     visibility: Vec<u8>,
     instances: BTreeMap<usize, u32>,
     active: bool,
@@ -44,6 +49,8 @@ struct Set {
 struct Frame {
     id: u64,
     input: Sa2FrameInput,
+    /// ABI 8: a composite frame's panes; empty for a one-view frame.
+    panes: Vec<Sa2Pane>,
     completed: bool,
     error: Status,
     reported: bool,
@@ -110,6 +117,11 @@ pub struct FakeCore {
     pub prepared: Vec<(u64, BTreeMap<usize, u32>, Vec<u8>)>,
     /// Every accepted frame input, in submission order.
     pub submitted: Vec<Sa2FrameInput>,
+    /// ABI 8: the panes of every accepted frame, in submission order; empty for a one-view frame.
+    pub submitted_panes: Vec<Vec<Sa2Pane>>,
+    /// A view whose preparations [`FakeCore::complete`] leaves pending, as an upload behind other work: a test of a
+    /// composite frame delays one view's activation with it.
+    pub hold_view: Option<u64>,
     /// Every adopted engine revision with its first label.
     pub adoptions: Vec<(u64, u32)>,
     /// ABI 6: every view's shape that `sa2_view_shape_set` set and did not restore to the defaults.
@@ -151,6 +163,8 @@ impl FakeCore {
             error: String::new(),
             prepared: Vec::new(),
             submitted: Vec::new(),
+            submitted_panes: Vec::new(),
+            hold_view: None,
             adoptions: Vec::new(),
             posed: Vec::new(),
         }
@@ -205,11 +219,11 @@ impl FakeCore {
         self.placed.insert((x, y), slot);
     }
 
-    /// The GPU reaches every fence: uploads become ready (a cancelled one stays cancelled, RM.17), frames complete
-    /// and ID passes answer.
+    /// The GPU reaches every fence: uploads become ready (a cancelled one stays cancelled, RM.17; one of
+    /// [`FakeCore::hold_view`] stays pending), frames complete and ID passes answer.
     pub fn complete(&mut self) {
         for ticket in self.tickets.values_mut() {
-            if ticket.row.state == TICKET_PENDING {
+            if ticket.row.state == TICKET_PENDING && Some(ticket.view) != self.hold_view {
                 ticket.row.state = TICKET_READY;
                 let set = ticket.row.resource_set;
                 self.sets.insert(
@@ -217,6 +231,7 @@ impl FakeCore {
                     Set {
                         view: ticket.view,
                         view_generation: ticket.view_generation,
+                        base_revision: ticket.base_revision,
                         visibility: ticket.visibility.clone(),
                         instances: ticket.instances.clone(),
                         active: false,
@@ -269,6 +284,67 @@ impl FakeCore {
             frame.completed = true;
             frame.error = Status::DEVICE_REMOVED;
         }
+    }
+
+    /// `sa2_frame_submit`'s checks of a frame input, shared by the composite frame.
+    fn admit(&mut self, input: &Sa2FrameInput) -> Result<(), Status> {
+        if input.struct_size as usize != std::mem::size_of::<Sa2FrameInput>() || input.reserved != 0 {
+            return self.fail(Status::INVALID_ARGUMENT, "struct_size or reserved");
+        }
+        if input.flags & !FRAME_PREVIEW != 0 || input.camera_matrix.iter().any(|v| !v.is_finite()) {
+            return self.fail(Status::INVALID_ARGUMENT, "unknown flags or a non-finite camera");
+        }
+        if input.target >= RING_SLOTS && input.target != TARGET_SURFACE {
+            return self.fail(Status::INVALID_ARGUMENT, "target must be a ring slot 0..2 or SA2_TARGET_SURFACE");
+        }
+        if self.surface != (input.target == TARGET_SURFACE) {
+            return self.fail(Status::WRONG_STATE, "the target is not this context's route");
+        }
+        self.alive()?;
+        if input.device_epoch != self.device_epoch || Some(input.engine_revision) != self.adopted {
+            return self.fail(Status::WRONG_STATE, "the frame names another epoch or engine revision");
+        }
+        if (input.viewport_width, input.viewport_height) != self.target_size {
+            return self.fail(Status::WRONG_STATE, "the viewport is not the target's size");
+        }
+        if let Some(&(generation, sequence)) = self.surfaces.get(&input.surface) {
+            if input.surface_generation < generation || input.sequence <= sequence {
+                return self.fail(Status::WRONG_STATE, "the surface generation or sequence goes back");
+            }
+        }
+        if self.views.get(&input.view).is_some_and(|&g| input.view_generation < g) {
+            return self.fail(Status::WRONG_STATE, "the view generation goes back");
+        }
+        if input.resource_set != 0 {
+            let fits = self
+                .sets
+                .get(&input.resource_set)
+                .is_some_and(|s| s.active && s.view == input.view && s.view_generation == input.view_generation);
+            if !fits {
+                return self.fail(Status::WRONG_STATE, "the set is not active for the frame's view generation");
+            }
+        }
+        Ok(())
+    }
+
+    /// Records an admitted frame: its surface and view bindings, its panes, and the next frame ID.
+    fn record(&mut self, input: &Sa2FrameInput, panes: Vec<Sa2Pane>) -> u64 {
+        self.surfaces.insert(input.surface, (input.surface_generation, input.sequence));
+        self.views.insert(input.view, input.view_generation);
+        let id = self.next_frame;
+        self.next_frame += 1;
+        self.frames.push_back(Frame {
+            id,
+            input: *input,
+            panes: panes.clone(),
+            completed: false,
+            error: Status::OK,
+            reported: false,
+        });
+        self.submitted.push(*input);
+        self.submitted_panes.push(panes);
+        self.counters.frames_submitted += 1;
+        id
     }
 
     fn fail<T>(&mut self, status: Status, message: &str) -> Result<T, Status> {
@@ -384,6 +460,7 @@ impl CoreAbi for FakeCore {
                 row: Sa2PollRow { state: TICKET_PENDING, resource_set: 1000 + ticket, ..Sa2PollRow::new() },
                 view: input.view,
                 view_generation: input.view_generation,
+                base_revision: input.base_revision,
                 visibility: input.visibility.to_vec(),
                 instances,
             },
@@ -444,50 +521,73 @@ impl CoreAbi for FakeCore {
     }
 
     fn frame_submit(&mut self, input: &Sa2FrameInput) -> Result<u64, Status> {
-        if input.struct_size as usize != std::mem::size_of::<Sa2FrameInput>() || input.reserved != 0 {
-            return self.fail(Status::INVALID_ARGUMENT, "struct_size or reserved");
+        self.admit(input)?;
+        Ok(self.record(input, Vec::new()))
+    }
+
+    /// ABI 8: the header's pane checks, then the frame's; every pane's set must be active, stamped for its view and
+    /// view generation, and prepared at the frame's engine revision.
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status> {
+        if panes.is_empty() || panes.len() > PANES_MAX as usize {
+            return self.fail(Status::INVALID_ARGUMENT, "a composite frame has 1..SA2_PANES_MAX panes");
         }
-        if input.flags & !FRAME_PREVIEW != 0 || input.camera_matrix.iter().any(|v| !v.is_finite()) {
-            return self.fail(Status::INVALID_ARGUMENT, "unknown flags or a non-finite camera");
+        let first = panes[0];
+        if (input.view, input.view_generation, input.resource_set, input.camera_matrix)
+            != (first.view, first.view_generation, first.resource_set, first.camera_matrix)
+        {
+            return self.fail(Status::INVALID_ARGUMENT, "the frame input is not the first pane's");
         }
-        if input.target >= RING_SLOTS && input.target != TARGET_SURFACE {
-            return self.fail(Status::INVALID_ARGUMENT, "target must be a ring slot 0..2 or SA2_TARGET_SURFACE");
-        }
-        if self.surface != (input.target == TARGET_SURFACE) {
-            return self.fail(Status::WRONG_STATE, "the target is not this context's route");
-        }
-        self.alive()?;
-        if input.device_epoch != self.device_epoch || Some(input.engine_revision) != self.adopted {
-            return self.fail(Status::WRONG_STATE, "the frame names another epoch or engine revision");
-        }
-        if (input.viewport_width, input.viewport_height) != self.target_size {
-            return self.fail(Status::WRONG_STATE, "the viewport is not the target's size");
-        }
-        if let Some(&(generation, sequence)) = self.surfaces.get(&input.surface) {
-            if input.surface_generation < generation || input.sequence <= sequence {
-                return self.fail(Status::WRONG_STATE, "the surface generation or sequence goes back");
+        for (i, pane) in panes.iter().enumerate() {
+            if pane.flags != 0 || pane.style > STYLE_SLOTS || pane.camera_matrix.iter().any(|v| !v.is_finite()) {
+                return self.fail(Status::INVALID_ARGUMENT, "a pane's flags, style or camera");
+            }
+            if !pane.inside(self.target_size) || panes[..i].iter().any(|other| other.overlaps(pane)) {
+                return self.fail(Status::INVALID_ARGUMENT, "a pane lies outside the target or overlaps another");
             }
         }
-        if self.views.get(&input.view).is_some_and(|&g| input.view_generation < g) {
-            return self.fail(Status::WRONG_STATE, "the view generation goes back");
-        }
-        if input.resource_set != 0 {
+        self.admit(input)?;
+        for pane in panes {
+            if self.views.get(&pane.view).is_some_and(|&g| pane.view_generation < g) {
+                return self.fail(Status::WRONG_STATE, "a pane's view generation goes back");
+            }
+            if pane.resource_set == 0 {
+                continue;
+            }
             let fits = self
                 .sets
-                .get(&input.resource_set)
-                .is_some_and(|s| s.active && s.view == input.view && s.view_generation == input.view_generation);
+                .get(&pane.resource_set)
+                .is_some_and(|s| s.active && (s.view, s.view_generation) == (pane.view, pane.view_generation));
             if !fits {
-                return self.fail(Status::WRONG_STATE, "the set is not active for the frame's view generation");
+                return self.fail(Status::WRONG_STATE, "a pane's set is not active for its view generation");
+            }
+            if self.sets[&pane.resource_set].base_revision != input.engine_revision {
+                return self.fail(Status::WRONG_STATE, "a pane's set was prepared at another engine revision");
             }
         }
-        self.surfaces.insert(input.surface, (input.surface_generation, input.sequence));
-        self.views.insert(input.view, input.view_generation);
-        let id = self.next_frame;
-        self.next_frame += 1;
-        self.frames.push_back(Frame { id, input: *input, completed: false, error: Status::OK, reported: false });
-        self.submitted.push(*input);
-        self.counters.frames_submitted += 1;
-        Ok(id)
+        for pane in panes {
+            let generation = self.views.entry(pane.view).or_insert(pane.view_generation);
+            *generation = (*generation).max(pane.view_generation);
+        }
+        Ok(self.record(input, panes.to_vec()))
+    }
+
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status> {
+        let Some(frame) = self.frames.iter().find(|f| f.id == frame_id && !f.panes.is_empty()) else {
+            return self.fail(Status::WRONG_STATE, "the frame is not a retained composite frame");
+        };
+        if !frame.completed || frame.error != Status::OK {
+            return self.fail(Status::WRONG_STATE, "the composite frame has not produced");
+        }
+        for (i, (row, pane)) in rows.iter_mut().zip(&frame.panes).enumerate() {
+            *row = Sa2PaneRow {
+                pane: i as u32,
+                view: pane.view,
+                view_generation: pane.view_generation,
+                vertex_evals: PANE_EVALS,
+                ..Sa2PaneRow::new()
+            };
+        }
+        Ok(frame.panes.len())
     }
 
     fn frame_reports(&mut self, rows: &mut [Sa2FrameReport]) -> Result<usize, Status> {
@@ -498,7 +598,7 @@ impl CoreAbi for FakeCore {
             }
             frame.reported = true;
             let i = frame.input;
-            let evals = if frame.error == Status::OK { 120 * 600 } else { 0 };
+            let evals = if frame.error == Status::OK { PANE_EVALS * frame.panes.len().max(1) as u64 } else { 0 };
             rows[n] = Sa2FrameReport {
                 error: frame.error.0,
                 frame_id: frame.id,

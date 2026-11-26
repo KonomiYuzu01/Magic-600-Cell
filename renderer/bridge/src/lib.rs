@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 20] = [
+pub const SYMBOLS: [&str; 22] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -35,6 +35,8 @@ pub const SYMBOLS: [&str; 20] = [
     "sa2_view_shape_set",
     "sa2_style_set",
     "sa2_view_style_set",
+    "sa2_frame_submit_panes",
+    "sa2_frame_panes",
 ];
 
 /// The ABI 8 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
@@ -65,6 +67,11 @@ pub struct CoreFunctions {
     pub style_set: unsafe extern "C" fn(*mut c_void, u64, *const u8, u32) -> i32,
     /// ABI 7: a style slot.
     pub view_style_set: unsafe extern "C" fn(*mut c_void, u32, *const Sa2ViewStyle) -> i32,
+    /// ABI 8: a composite frame.
+    pub frame_submit_panes:
+        unsafe extern "C" fn(*mut c_void, *const Sa2FrameInput, *const Sa2Pane, u32, *mut u64) -> i32,
+    /// ABI 8: a composite frame's pane rows.
+    pub frame_panes: unsafe extern "C" fn(*mut c_void, u64, *mut Sa2PaneRow, u32, *mut u32) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -294,6 +301,31 @@ impl CoreAbi for DllCore {
         let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewStyle);
         // SAFETY: `pointer` is null or a live, sized row.
         Status(unsafe { (self.functions.view_style_set)(self.context, slot, pointer) }).check()
+    }
+
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status> {
+        if panes.is_empty() || panes.len() > PANES_MAX as usize {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        let mut row = *input;
+        row.struct_size = size_of::<Sa2FrameInput>() as u32;
+        let mut frame = 0u64;
+        // SAFETY: `row` is a live, sized row and `panes` holds the 1 to SA2_PANES_MAX panes the count names.
+        Status(unsafe {
+            (self.functions.frame_submit_panes)(self.context, &row, panes.as_ptr(), panes.len() as u32, &mut frame)
+        })
+        .check()?;
+        Ok(frame)
+    }
+
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status> {
+        rows.iter_mut().for_each(|row| row.struct_size = size_of::<Sa2PaneRow>() as u32);
+        let n = capacity(rows.len());
+        let mut count = 0u32;
+        // SAFETY: `rows` holds `n` sized rows; the core writes at most `n` and names the frame's pane count.
+        Status(unsafe { (self.functions.frame_panes)(self.context, frame_id, rows.as_mut_ptr(), n, &mut count) })
+            .check()?;
+        Ok(count as usize)
     }
 
     fn last_error(&self) -> String {

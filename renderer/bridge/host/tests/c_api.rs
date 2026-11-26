@@ -307,3 +307,148 @@ fn the_host_sets_the_piece_style_and_the_style_slots() {
         drop(Box::from_raw(shim));
     }
 }
+
+/// ADR-D02 B18b: a host on the fake core with its first publication installed, the viewport and the camera set, and,
+/// with `local`, Local opened and installed too.
+fn two_view_host(local: bool) -> (*mut Shim, *mut ShellHost) {
+    let shim = Box::into_raw(Box::new(Shim { fake: FakeCore::on_surface(SIZE), pad: 0 }));
+    let (code, host) = create(&functions(), shim, &assets_path());
+    assert_eq!(code, M6H_OK, "{}", last_error(ptr::null_mut()));
+    // SAFETY: a live handle and 16 readable floats; the shim is used only between the host's calls.
+    unsafe {
+        (*shim).fake.complete();
+        assert_eq!(m6h_pump(host), M6H_OK);
+        assert_eq!(m6h_set_viewport(host, SIZE.0, SIZE.1), M6H_OK);
+        assert_eq!(m6h_set_camera(host, CAMERA.as_ptr()), M6H_OK);
+        if local {
+            assert_eq!(m6h_open_local(host), M6H_OK, "{}", last_error(host));
+            (*shim).fake.complete();
+            assert_eq!(m6h_pump(host), M6H_OK);
+        }
+    }
+    (shim, host)
+}
+
+/// The left and right halves of the surface.
+const LEFT: (i32, i32, u32, u32) = (0, 0, SIZE.0 / 2, SIZE.1);
+const RIGHT: (i32, i32, u32, u32) = ((SIZE.0 / 2) as i32, 0, SIZE.0 / 2, SIZE.1);
+
+fn set_pane(host: *mut ShellHost, pane: u32, view: u64, rect: (i32, i32, u32, u32), style: u32) -> i32 {
+    // SAFETY: a live handle.
+    unsafe { m6h_set_pane(host, pane, view, rect.0, rect.1, rect.2, rect.3, style) }
+}
+
+#[test]
+fn one_view_frames_are_unchanged() {
+    // The same calls on a host without Local and on one with Local open but no pane set give the core the same
+    // frames: no composite frame, and the same inputs.
+    let mut logs = Vec::new();
+    for local in [false, true] {
+        let (shim, host) = two_view_host(local);
+        let frames = [frame(host), frame(host)];
+        assert!(frames.iter().all(|f| (f.panes, f.held) == (0, 0)), "{frames:?}");
+        // SAFETY: the shim is used only between the host's calls; the handle is not used again.
+        unsafe {
+            let fake = &(*shim).fake;
+            assert!(fake.submitted_panes.iter().all(Vec::is_empty), "no composite frame without panes");
+            logs.push(fake.submitted.clone());
+            m6h_destroy(host);
+            drop(Box::from_raw(shim));
+        }
+    }
+    assert_eq!(logs[0], logs[1], "Local open without panes changes no frame");
+}
+
+#[test]
+fn a_fifth_pane_is_refused() {
+    let (shim, host) = two_view_host(false);
+    let local = LOCAL.0;
+    // Local is not open yet: a pane, a camera, a shape or a visibility for it is refused.
+    assert_eq!(set_pane(host, 0, local, LEFT, 0), M6H_E_INVALID_ARGUMENT);
+    // SAFETY: a live handle and 16 readable floats.
+    unsafe {
+        assert_eq!(m6h_set_view_camera(host, local, CAMERA.as_ptr()), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_view_visible(host, local, 0), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_open_local(host), M6H_OK, "{}", last_error(host));
+        assert_eq!(m6h_open_local(host), M6H_E_INVALID_ARGUMENT, "Local is never opened twice");
+        (*shim).fake.complete();
+        assert_eq!(m6h_pump(host), M6H_OK);
+        assert_eq!(m6h_set_view_visible(host, VIEW.0, 0), M6H_E_INVALID_ARGUMENT, "Global is never hidden");
+        assert_eq!(m6h_set_view_visible(host, local, 2), M6H_E_INVALID_ARGUMENT);
+    }
+    // Four panes fill the table; a fifth index, an overlap, an empty or outside rectangle and style 5 are refused.
+    let quarter = |i: i32| (i * (SIZE.0 / 4) as i32, 0, SIZE.0 / 4, SIZE.1);
+    for pane in 0..M6H_PANES_MAX {
+        let view = if pane % 2 == 0 { VIEW.0 } else { local };
+        assert_eq!(set_pane(host, pane, view, quarter(pane as i32), pane), M6H_OK, "{}", last_error(host));
+    }
+    assert_eq!(set_pane(host, M6H_PANES_MAX, VIEW.0, (0, 0, 1, 1), 0), M6H_E_INVALID_ARGUMENT, "a fifth pane");
+    assert_eq!(set_pane(host, 1, local, (150, 0, 100, 10), 0), M6H_E_INVALID_ARGUMENT, "an overlap");
+    assert_eq!(set_pane(host, 1, local, (200, 0, 0, 10), 0), M6H_E_INVALID_ARGUMENT, "an empty rectangle");
+    assert_eq!(set_pane(host, 3, local, (700, 0, 101, 10), 0), M6H_E_INVALID_ARGUMENT, "outside the viewport");
+    assert_eq!(set_pane(host, 1, local, quarter(1), 5), M6H_E_INVALID_ARGUMENT, "style 5");
+    assert_eq!(set_pane(host, 1, 3, quarter(1), 0), M6H_E_INVALID_ARGUMENT, "view 3");
+    // SAFETY: a live handle.
+    unsafe {
+        assert_eq!(m6h_clear_pane(host, M6H_PANES_MAX), M6H_E_INVALID_ARGUMENT);
+    }
+    // The four panes draw as one composite frame of both views.
+    let drawn = frame(host);
+    assert_eq!((drawn.panes, drawn.held), (4, 0), "{drawn:?}");
+    // SAFETY: the shim is used only between the host's calls; the handle is not used again.
+    unsafe {
+        let panes = (*shim).fake.submitted_panes.last().cloned().expect("a frame");
+        assert_eq!(panes.iter().map(|p| (p.view, p.style)).collect::<Vec<_>>(), [(1, 0), (2, 1), (1, 2), (2, 3)]);
+        assert!(panes.iter().all(|p| p.resource_set != 0), "each pane draws its view's installed set");
+        for pane in 0..M6H_PANES_MAX {
+            assert_eq!(m6h_clear_pane(host, pane), M6H_OK);
+        }
+        assert_eq!(frame(host).panes, 0, "with every pane clear, a one-view frame");
+        assert!((*shim).fake.submitted_panes.last().expect("a frame").is_empty());
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}
+
+#[test]
+fn a_hidden_local_adds_no_vertex_evaluations() {
+    use c600_render::fake::PANE_EVALS;
+    use c600_render::CoreAbi;
+    let (shim, host) = two_view_host(true);
+    // SAFETY: the shim is used only between the host's calls.
+    let fake = || unsafe { &mut (*shim).fake };
+    let turned = [1.0f32, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+    // SAFETY: a live handle and 16 readable floats.
+    unsafe {
+        assert_eq!(m6h_set_view_camera(host, LOCAL.0, turned.as_ptr()), M6H_OK, "{}", last_error(host));
+    }
+    assert_eq!(set_pane(host, 0, VIEW.0, LEFT, 0), M6H_OK, "{}", last_error(host));
+    assert_eq!(set_pane(host, 1, LOCAL.0, RIGHT, 0), M6H_OK, "{}", last_error(host));
+    // Each frame reads the reports of the frames before it.
+    let evals = |fake: &mut FakeCore| fake.counters().expect("counters").view_vertex_evals_last;
+    assert_eq!(frame(host).panes, 2);
+    let panes = fake().submitted_panes.last().cloned().expect("a composite frame");
+    assert_eq!((panes[0].camera_matrix, panes[1].camera_matrix), (CAMERA, turned), "each pane has its view's camera");
+    fake().complete();
+    assert_eq!(frame(host).panes, 2);
+    assert_eq!(evals(fake()), 2 * PANE_EVALS, "two panes, two vertex passes");
+    // SAFETY: a live handle.
+    unsafe {
+        assert_eq!(m6h_set_view_visible(host, LOCAL.0, 0), M6H_OK);
+    }
+    fake().complete();
+    assert_eq!(frame(host).panes, 1, "a hidden Local gets no pane");
+    fake().complete();
+    assert_eq!(frame(host).panes, 1);
+    assert_eq!(evals(fake()), PANE_EVALS, "a hidden Local adds no vertex evaluations");
+    let views: Vec<u64> = fake().submitted_panes.last().expect("a frame").iter().map(|p| p.view).collect();
+    assert_eq!(views, [VIEW.0]);
+    // Shown again, its pane is drawn again.
+    // SAFETY: a live handle; the handle is not used again and the shim outlives it.
+    unsafe {
+        assert_eq!(m6h_set_view_visible(host, LOCAL.0, 1), M6H_OK);
+        assert_eq!(frame(host).panes, 2);
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}

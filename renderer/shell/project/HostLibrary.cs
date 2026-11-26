@@ -18,11 +18,14 @@ namespace Magic600.Shell;
 /// head's state digests, by which a D02 sample binds to the session. Version 9 (ADR-D02, over the core's ABI 6) adds
 /// <see cref="SetViewShape"/>, a view's cell gap, sticker shrink, d4 and zoom. Version 10 (ADR-D02 B14, over the core's
 /// ABI 7) adds <see cref="SetPieceStyle"/> and <see cref="SetViewStyle"/>, the per-piece style and the style slots.
+/// Version 11 (ADR-D02 B18b, over the core's ABI 8) adds Local and the composite frame: <see cref="OpenLocal"/>,
+/// <see cref="SetViewCamera"/>, <see cref="SetViewVisible"/>, <see cref="SetPane"/>, <see cref="ClearPane"/>, and
+/// <see cref="Submitted"/>'s pane count and held flag.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 10;
+    public const uint AbiVersion = 11;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -89,6 +92,11 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_view_shape",
         "m6h_set_piece_style",
         "m6h_set_view_style",
+        "m6h_open_local",
+        "m6h_set_view_camera",
+        "m6h_set_view_visible",
+        "m6h_set_pane",
+        "m6h_clear_pane",
         "m6h_pump",
         "m6h_frame",
         "m6h_read_presented",
@@ -127,6 +135,11 @@ public sealed unsafe class HostLibrary : IDisposable
         public ulong EngineRevision;
         /// <summary>The engine revision of the publication the frame draws, or 0 for none.</summary>
         public ulong PublicationRevision;
+        /// <summary>The panes of a composite frame, or 0 for a one-view frame (version 11).</summary>
+        public uint Panes;
+        /// <summary>1 when nothing was submitted because a drawn pane's view did not show the adopted revision yet; the
+        /// other fields then name the last frame (version 11).</summary>
+        public uint Held;
     }
 
     /// <summary>What m6h_key_down did with one key-down (the Rust M6hKey).</summary>
@@ -317,6 +330,45 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>The view number of the host's one view (the Rust source's VIEW).</summary>
     public const ulong View = 1;
+    /// <summary>Local's view number (the Rust source's LOCAL; version 11).</summary>
+    public const ulong Local = 2;
+    /// <summary>The panes of a composite frame (the Rust source's M6H_PANES_MAX).</summary>
+    public const uint PanesMax = 4;
+
+    /// <summary>Opens Local beside the view (version 11); each adoption then publishes both. Local is never closed.
+    /// </summary>
+    public int OpenLocal(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_open_local"])(host);
+
+    /// <summary>Sets a view's 4D rotation, 16 floats column-major (version 11; <see cref="SetCamera"/> for any view).
+    /// </summary>
+    public int SetViewCamera(IntPtr host, ulong view, ReadOnlySpan<float> matrix)
+    {
+        if (matrix.Length != 16)
+        {
+            throw new ArgumentException("a camera is 16 floats", nameof(matrix));
+        }
+        fixed (float* m = matrix)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, int>)_exports["m6h_set_view_camera"])(host, view, m);
+        }
+    }
+
+    /// <summary>Shows or hides an open Local (version 11): a hidden Local gets no pane and no draw.</summary>
+    public int SetViewVisible(IntPtr host, ulong view, bool visible) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, int>)_exports["m6h_set_view_visible"])(host, view, visible ? 1u : 0u);
+
+    /// <summary>
+    /// Sets pane 0 to 3 (version 11): a view drawn into a rectangle of the surface, in surface pixels, with style slot
+    /// 0 (none) to 4. While any pane is set, frames are composite frames; panes lie inside the viewport and never
+    /// overlap.
+    /// </summary>
+    public int SetPane(IntPtr host, uint pane, ulong view, int x, int y, uint width, uint height, uint style) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, ulong, int, int, uint, uint, uint, int>)_exports["m6h_set_pane"])(
+            host, pane, view, x, y, width, height, style);
+
+    /// <summary>Clears pane 0 to 3 (version 11); with every pane clear, frames are one-view frames again.</summary>
+    public int ClearPane(IntPtr host, uint pane) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, int>)_exports["m6h_clear_pane"])(host, pane);
 
     /// <summary>
     /// Sets the shape that a view's frames draw with (version 9): the cell shrink, the sticker shrink, d4 and the zoom,

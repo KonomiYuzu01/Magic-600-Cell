@@ -406,16 +406,19 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
             state(pane.view_generation >= view->second, "a pane's view_generation must not decrease");
         PanePlan made;
         made.pane = pane;
+        made.publication_generation = i == 0 ? input.publication_generation : 0;
         made.shape = shape(pane.view);
         made.styled = pane.style != 0 && styled(pane.style, made.view_style);
         if (pane.resource_set) {
             const Entry* entry = set_entry(pane.resource_set);
             state(entry && entry->active, "a pane's resource_set is not an active set");
+            // Each view keeps its own publication generation; the first pane's set is the frame input's.
             state(entry->stamp.view == pane.view && entry->stamp.view_generation == pane.view_generation
-                && entry->stamp.publication_generation == input.publication_generation,
-                "a pane's resource_set was prepared for another view, view generation or publication generation");
+                && (i != 0 || entry->stamp.publication_generation == input.publication_generation),
+                "a pane's resource_set was prepared for another view or view generation");
             state(entry->stamp.base_revision == input.engine_revision, "a pane's resource_set was prepared at another engine revision");
             made.set_ticket = sets_.at(pane.resource_set);
+            made.publication_generation = entry->stamp.publication_generation;
         }
         out.panes.push_back(made);
     }
@@ -470,7 +473,7 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     record.ring = ring;
     record.copy = plan.copy;
     record.shape = plan.shape;
-    for (const auto& pane : plan.panes) record.panes.push_back(PaneRecord{pane.pane, pane.set_ticket, 0, pane.shape});
+    for (const auto& pane : plan.panes) record.panes.push_back(PaneRecord{pane.pane, pane.set_ticket, 0, pane.publication_generation, pane.shape});
     frames_.push_back(record);
     if (ring < unharvested_.size()) unharvested_[ring] = frame;
     ++counters_.frames_submitted;
@@ -608,6 +611,7 @@ sa2_frame_input Product::pane_binding(const Frame& record, int32_t pane) {
     binding.view = row.view;
     binding.view_generation = row.view_generation;
     binding.resource_set = row.resource_set;
+    binding.publication_generation = record.panes.at(size_t(pane)).publication_generation;
     std::copy(std::begin(row.camera_matrix), std::end(row.camera_matrix), std::begin(binding.camera_matrix));
     return binding;
 }

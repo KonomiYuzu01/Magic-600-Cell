@@ -1482,11 +1482,11 @@ class D02Fixtures(unittest.TestCase):
 
     def test_the_host_gives_the_state_digest_and_the_shell_binds_only_by_it(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 10;", lib)
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 11;", lib)
         self.assertIn('pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32', lib)
-        self.assertIn("public const uint AbiVersion = 10;", text(PROJECT / "HostLibrary.cs"))
-        self.assertIn("refuses another version than its `AbiVersion` (10 since ADR-D02 B14's style; 9 at the view shape, "
-                      "8 at B5)",
+        self.assertIn("public const uint AbiVersion = 11;", text(PROJECT / "HostLibrary.cs"))
+        self.assertIn("refuses another version than its `AbiVersion` (11 since ADR-D02 B18b's two views; 10 at B14's "
+                      "style, 9 at the view shape, 8 at B5)",
                       text(SHELL / "README.md"))
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
         # A sample binds by its two pose-array digests; the asked state only breaks a tie between equal poses.
@@ -1507,7 +1507,7 @@ class D02Shape(unittest.TestCase):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
         self.assertIn('pub unsafe extern "C" fn m6h_set_view_shape(handle: *mut ShellHost, view: u64, '
                       'shape: *const f32) -> i32', lib)
-        self.assertIn("shell.host.backend.set_view_shape(VIEW, shape)", lib)
+        self.assertIn("shell.host.backend.set_view_shape(id, shape)", lib)
         host = text(PROJECT / "HostLibrary.cs")
         self.assertIn("public int SetViewShape(IntPtr host, ulong view, float[]? shape)", host)
         self.assertIn('_exports["m6h_set_view_shape"])(host, view, s)', host)
@@ -1542,6 +1542,33 @@ class D02Shape(unittest.TestCase):
         self.assertEqual((project / "look" / "opening.json").read_bytes(),
                          (ROOT / "tools" / "looklab" / "data" / "opening.json").read_bytes())
         self.assertTrue((project / "D02" / "ShellShape.cs").is_file())
+
+
+
+class D02Panes(unittest.TestCase):
+    """ADR-D02 B18b (host version 11 over the core's ABI 8): Local and the composite frame, the same on both sides of
+    the host library's C interface. Nothing in the shell calls them yet (B18c)."""
+
+    def test_the_frame_row_and_the_view_numbers_match(self):
+        lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        host = text(PROJECT / "HostLibrary.cs")
+        rust_row = re.search(r"#\[repr\(C\)\][^{]*?pub struct M6hFrame \{(.*?)\}", lib, re.S)
+        csharp_row = re.search(r"LayoutKind\.Sequential\)\]\s*public struct Submitted\s*\{(.*?)\}", host, re.S)
+        self.assertTrue(rust_row and csharp_row)
+        self.assertEqual(re.findall(r"pub (\w+): u32,", rust_row.group(1)), ["panes", "held"])
+        self.assertEqual(re.findall(r"public uint (\w+);", csharp_row.group(1)), ["Panes", "Held"])
+        self.assertIn("size_of::<M6hFrame>() == 48", lib)
+        self.assertIn("pub const LOCAL: ViewId = ViewId(2);", lib)
+        self.assertIn("public const ulong Local = 2;", host)
+        self.assertIn("pub const M6H_PANES_MAX: u32 = 4;", lib)
+        self.assertIn("public const uint PanesMax = 4;", host)
+        self.assertIn("const _: () = assert!(M6H_PANES_MAX == PANES_MAX);", lib)
+
+    def test_one_view_frames_stay_the_path_without_panes(self):
+        lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
+        self.assertIn("if shell.panes.iter().all(Option::is_none) { shell.frame_one() } else { shell.frame_panes() }",
+                      lib)
+        self.assertNotIn("OpenLocal(", text(PROJECT / "Shell.cs"))
 
 
 class D02Host(unittest.TestCase):

@@ -232,6 +232,13 @@ fn every_row_has_the_header_layout() {
     });
     assert_eq!(c_struct(&h, "sa2_view_style"), style, "sa2_view_style");
     assert_eq!(Sa2ViewStyle::new().struct_size, 316, "new() sets struct_size");
+    // ABI 8: a composite frame's pane and pane row.
+    let pane =
+        rust_struct!(Sa2Pane { view, view_generation, resource_set, x, y, width, height, camera_matrix, style, flags });
+    assert_eq!(c_struct(&h, "sa2_pane"), pane, "sa2_pane");
+    let row = rust_struct!(Sa2PaneRow { struct_size, pane, view, view_generation, vertex_evals });
+    assert_eq!(c_struct(&h, "sa2_pane_row"), row, "sa2_pane_row");
+    assert_eq!((size_of::<Sa2Pane>(), Sa2PaneRow::new().struct_size), (112, 32), "sizes");
     let sizes = [
         Sa2PollRow::new().struct_size,
         Sa2FrameInput::new().struct_size,
@@ -298,6 +305,7 @@ fn every_constant_has_the_header_value() {
         ("STYLE_DIM_NONE".into(), i64::from(STYLE_DIM_NONE)),
         ("STYLE_DIM_MARKED".into(), i64::from(STYLE_DIM_MARKED)),
         ("STYLE_DIM_UNMARKED".into(), i64::from(STYLE_DIM_UNMARKED)),
+        ("PANES_MAX".into(), i64::from(PANES_MAX)),
     ];
     for code in 0..=10 {
         rust.push((Status(code).name().to_owned(), i64::from(code)));
