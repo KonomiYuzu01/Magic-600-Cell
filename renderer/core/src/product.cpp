@@ -105,8 +105,12 @@ void view_focus(const sa2_view_focus* focus, ViewShape& shape) {
     }
     argument(focus->struct_size == sizeof(*focus), "invalid view_focus struct_size");
     argument(focus->reserved == 0, "view_focus reserved must be 0");
-    argument(focus->projection == SA2_PROJECTION_PERSPECTIVE || focus->projection == SA2_PROJECTION_ORTHOGRAPHIC,
-             "projection must be SA2_PROJECTION_PERSPECTIVE or SA2_PROJECTION_ORTHOGRAPHIC");
+    argument(focus->projection == SA2_PROJECTION_PERSPECTIVE || focus->projection == SA2_PROJECTION_ORTHOGRAPHIC
+             || focus->projection == SA2_PROJECTION_STEREOGRAPHIC,
+             "projection must be SA2_PROJECTION_PERSPECTIVE, SA2_PROJECTION_ORTHOGRAPHIC or SA2_PROJECTION_STEREOGRAPHIC");
+    // ADR-D02 B21: the raw view needs a pole, and its clip goes no further than 90 degrees.
+    argument(focus->projection != SA2_PROJECTION_STEREOGRAPHIC || (focus->focus_cell != SA2_FOCUS_NONE && focus->focus_cos >= 0.0f),
+             "SA2_PROJECTION_STEREOGRAPHIC needs a focus cell and 0 <= focus_cos");
     argument(focus->focus_cell == SA2_FOCUS_NONE || focus->focus_cell < 600, "focus_cell must be a cell 0..599 or SA2_FOCUS_NONE");
     argument(std::isfinite(focus->focus_cos) && focus->focus_cos >= -1.0f && focus->focus_cos <= 1.0f, "focus_cos must be finite and within -1..1");
     argument(std::isfinite(focus->spread) && focus->spread >= 1.0f && focus->spread <= 3.0f, "spread must be finite and within 1..3");
@@ -592,7 +596,7 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         "the frame input's view, view generation, resource set and camera must be the first pane's");
     for (uint32_t i = 0; i < count; ++i) {
         const auto& pane = panes[i];
-        argument(pane.flags == 0, "a pane's flags must be 0");
+        argument((pane.flags & ~SA2_PANE_ANTIPODE) == 0, "a pane's flags must be 0 or SA2_PANE_ANTIPODE");
         argument(pane.style <= SA2_STYLE_SLOTS, "a pane's style is 0 or a style slot 1..SA2_STYLE_SLOTS");
         argument(pane.width >= 1 && pane.height >= 1 && pane.x >= 0 && pane.y >= 0
             && uint64_t(pane.x) + pane.width <= width && uint64_t(pane.y) + pane.height <= height, "a pane's rectangle must lie inside the target");
@@ -622,6 +626,7 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         made.pane = pane;
         made.publication_generation = i == 0 ? input.publication_generation : 0;
         made.shape = shape(pane.view);
+        made.shape.antipode = pane.flags & SA2_PANE_ANTIPODE; // ADR-D02 B21
         // ADR-D02 B18; B20: a frame with a ghost pane turns the pieces only in its ghost panes.
         if (!ghost_frame || ghosts(pane.style)) turn(made.shape);
         made.styled = pane.style != 0 && styled(pane.style, made.view_style);

@@ -106,6 +106,8 @@ pub struct PaneSpec {
     pub height: u32,
     /// 0: no style; else a style slot 1 to [`STYLE_SLOTS`].
     pub style: u32,
+    /// ADR-D02 B21: 0, or [`crate::abi::PANE_ANTIPODE`] for the raw view's antipode chart.
+    pub flags: u32,
 }
 
 /// An activated resource set.
@@ -638,7 +640,7 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
                 height: pane.height,
                 camera_matrix: self.camera_matrix(pane.view, pane.camera)?,
                 style: pane.style,
-                flags: 0,
+                flags: pane.flags,
             });
         }
         let mut row = Sa2FrameInput {

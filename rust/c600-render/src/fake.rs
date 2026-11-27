@@ -550,7 +550,7 @@ impl CoreAbi for FakeCore {
             return self.fail(Status::INVALID_ARGUMENT, "the frame input is not the first pane's");
         }
         for (i, pane) in panes.iter().enumerate() {
-            if pane.flags != 0 || pane.style > STYLE_SLOTS || pane.camera_matrix.iter().any(|v| !v.is_finite()) {
+            if pane.flags & !crate::abi::PANE_ANTIPODE != 0 || pane.style > STYLE_SLOTS || pane.camera_matrix.iter().any(|v| !v.is_finite()) {
                 return self.fail(Status::INVALID_ARGUMENT, "a pane's flags, style or camera");
             }
             if !pane.inside(self.target_size) || panes[..i].iter().any(|other| other.overlaps(pane)) {

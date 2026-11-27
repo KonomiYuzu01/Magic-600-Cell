@@ -1287,7 +1287,7 @@ void product_focus(const Options& options) {
         auto bad = apart;
         switch (field) {
         case 0: bad.struct_size = 20; break;
-        case 1: bad.projection = 2; break;
+        case 1: bad.projection = 3; break; // ADR-D02 B21: 2 is the raw view's stereographic projection
         case 2: bad.focus_cell = 600; break;
         case 3: bad.focus_cos = nan; break;
         case 4: bad.focus_cos = 1.5f; break;
@@ -2307,6 +2307,126 @@ void run_sweep(Suite& suite, const Options& options) {
 void run_slice(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the slice check runs on WARP only");
     suite.check("slice warp", [&] { product_slice(options); });
+}
+
+// ADR-D02 B21's WARP check (--warp --raw): the raw view on view 2 at focus cell 150, each frame one pane. A frame's
+// clipped triangles (the newest harvested frame's pipeline statistics) count its drawn stickers' triangles exactly,
+// since every chart here fits the target and no triangle is cut by the frustum.
+void product_raw(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    using Newest = void (*)(uint64_t*);
+    const auto newest = reinterpret_cast<Newest>(reinterpret_cast<void*>(
+        GetProcAddress(GetModuleHandleW(L"sa2_interop.dll"), "sa2_test_frame_statistics")));
+    expect(newest != nullptr, "sa2_interop.dll has no sa2_test_frame_statistics");
+    const auto reports = [&] {
+        sa2_frame_report rows[16]{};
+        for (auto& row : rows) row.struct_size = sizeof(row);
+        uint32_t count = 0;
+        api(ctx, sa2_frame_reports(ctx, rows, 16, &count));
+    };
+    std::vector<uint32_t> last;
+    const auto triangles = [&](const Rows& camera, uint32_t flags) {
+        sa2_pane pane{};
+        pane.view = 2; pane.view_generation = 1; pane.resource_set = 0;
+        pane.width = harness.width; pane.height = harness.height;
+        for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) pane.camera_matrix[c * 4 + r] = float(camera[r * 4 + c]);
+        pane.flags = flags;
+        reports();
+        last = frames.draw_panes(1, {pane});
+        reports();
+        uint64_t s[4]{};
+        newest(s);
+        expect(s[0] == frames.frame, "the newest harvested frame is not the measured one");
+        return s[2];
+    };
+    const auto focus = [&](uint32_t projection, uint32_t cell, float h) {
+        const sa2_view_focus f{sizeof(sa2_view_focus), projection, cell, h, 1.0f, 0};
+        return sa2_view_focus_set(ctx, 2, &f);
+    };
+    // Zoom 1.6: clip w is 5 - p.z, so even the h = 0 chart (radius about 2) stays inside the frustum.
+    const sa2_view_shape shape{sizeof(sa2_view_shape), 0.76f, 0.82f, 1.18f, 1.6f, 0};
+    api(ctx, sa2_view_shape_set(ctx, 2, &shape));
+    expect(focus(SA2_PROJECTION_STEREOGRAPHIC, SA2_FOCUS_NONE, 0.5f) == SA2_E_INVALID_ARGUMENT
+        && focus(SA2_PROJECTION_STEREOGRAPHIC, 150, -0.01f) == SA2_E_INVALID_ARGUMENT, "a raw view without a pole or past 90 degrees was taken");
+    const Rows I = double_rotation(0, 1, 0, 2, 3, 0);
+    api(ctx, focus(SA2_PROJECTION_ORTHOGRAPHIC, SA2_FOCUS_NONE, -1.0f));
+    const auto whole = triangles(I, 0);
+    expect(triangles(I, SA2_PANE_ANTIPODE) == whole, "the antipode flag changed a frame without the raw view");
+    // At h = 0 every sticker is drawn in exactly one of the two charts.
+    api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, 0.0f));
+    const auto near0 = triangles(I, 0), far0 = triangles(I, SA2_PANE_ANTIPODE);
+    std::cout << "raw: whole " << whole << " triangles; at h = 0 the chart draws " << near0 << " and the antipode chart " << far0 << '\n' << std::flush;
+    expect(near0 > 0 && far0 > 0 && near0 + far0 == whole, "at h = 0 the two charts together do not draw every sticker exactly once");
+    // Nothing draws past the clip: the raw chart draws exactly the stickers the cap test keeps at the same h.
+    for (const float h : {121.0f / 125.0f, 0.5f}) {
+        api(ctx, focus(SA2_PROJECTION_ORTHOGRAPHIC, 150, h));
+        const auto cap = triangles(I, 0);
+        api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, h));
+        const auto raw = triangles(I, 0), antipode = triangles(I, SA2_PANE_ANTIPODE);
+        std::cout << "raw: h " << h << ": the cap test draws " << cap << " triangles, the raw chart " << raw << ", the antipode chart "
+                  << antipode << '\n' << std::flush;
+        expect(cap > 0 && raw == cap, "the raw chart does not draw exactly the stickers inside its clip");
+        // The cells are symmetric under -I but their sticker triangulations are not exactly (at h 0.968: 103,500 and 102,652).
+        expect(antipode > 0 && std::max(antipode, raw) - std::min(antipode, raw) <= raw / 50, "the antipode chart does not draw about as many triangles as the chart");
+    }
+    // A rotation that keeps the pole (a twist of the named cap; here the camera's spin in the screen plane) turns each
+    // chart rigidly about its centre: the turned frame's covered pixels, turned back, land on the first frame's.
+    api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, 0.5f));
+    const Rows spun = double_rotation(0, 1, 0.6, 2, 3, 0);
+    for (const uint32_t flags : {0u, SA2_PANE_ANTIPODE}) {
+        triangles(I, flags);
+        const auto a = last;
+        triangles(spun, flags);
+        const auto b = last;
+        const auto background = a[0];
+        const int w = int(harness.width), h = int(harness.height);
+        uint64_t cover = 0, best = 0;
+        for (const double angle : {0.6, -0.6}) {
+            uint64_t seen = 0, match = 0;
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x) {
+                    if (b[size_t(y) * w + x] == background) continue;
+                    ++seen;
+                    const double dx = x + 0.5 - w / 2.0, dy = y + 0.5 - h / 2.0;
+                    const int ax = int(std::floor(w / 2.0 + dx * std::cos(angle) + dy * std::sin(angle)));
+                    const int ay = int(std::floor(h / 2.0 - dx * std::sin(angle) + dy * std::cos(angle)));
+                    bool hit = false;
+                    for (int oy = -1; oy <= 1 && !hit; ++oy)
+                        for (int ox = -1; ox <= 1 && !hit; ++ox) {
+                            const int px = ax + ox, py = ay + oy;
+                            hit = px >= 0 && py >= 0 && px < w && py < h && a[size_t(py) * w + px] != background;
+                        }
+                    match += hit ? 1 : 0;
+                }
+            cover = seen;
+            best = std::max(best, match);
+        }
+        std::cout << "raw: turned about the centre" << (flags ? " (antipode)" : "") << ": " << best << " of " << cover
+                  << " covered pixels land on covered pixels\n" << std::flush;
+        expect(cover > 1000 && best * 100 >= cover * 98, "a rotation that keeps the pole did not turn the chart rigidly about its centre");
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+// ADR-D02 B21: --warp --raw. Only WARP; parse refuses any other mode.
+void run_raw(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the raw view check runs on WARP only");
+    suite.check("raw view warp", [&] { product_raw(options); });
 }
 
 // ABI 10: --warp --hopf FILE. Only WARP; parse refuses any other mode.

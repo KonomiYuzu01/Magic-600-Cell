@@ -115,6 +115,11 @@ pub const SHAPE_ZOOM_MAX: f32 = 64.0;
 pub const PROJECTION_PERSPECTIVE: u32 = 0;
 /// `SA2_PROJECTION_ORTHOGRAPHIC`.
 pub const PROJECTION_ORTHOGRAPHIC: u32 = 1;
+/// `SA2_PROJECTION_STEREOGRAPHIC` (ADR-D02 B21): the raw view, the stereographic chart centred on the focus pole. It
+/// needs a focus cell and `0 <= focus_cos` (the clip goes no further than 90 degrees).
+pub const PROJECTION_STEREOGRAPHIC: u32 = 2;
+/// `SA2_PANE_ANTIPODE` (ADR-D02 B21): a pane that draws its view's raw chart after -I, the antipode chart.
+pub const PANE_ANTIPODE: u32 = 1;
 /// `SA2_FOCUS_NONE`.
 pub const FOCUS_NONE: u32 = 0xFFFF_FFFF;
 
@@ -562,7 +567,9 @@ impl Sa2ViewFocus {
     /// The header's ranges: a known projection, a cell below 600 or `FOCUS_NONE`, focus_cos in [-1, 1] and spread in
     /// [1, 3], each finite.
     pub fn in_range(&self) -> bool {
-        (self.projection == PROJECTION_PERSPECTIVE || self.projection == PROJECTION_ORTHOGRAPHIC)
+        (self.projection == PROJECTION_PERSPECTIVE
+            || self.projection == PROJECTION_ORTHOGRAPHIC
+            || self.projection == PROJECTION_STEREOGRAPHIC && self.focus_cell != FOCUS_NONE && self.focus_cos >= 0.0)
             && (self.focus_cell == FOCUS_NONE || self.focus_cell < 600)
             && self.focus_cos.is_finite()
             && (-1.0..=1.0).contains(&self.focus_cos)

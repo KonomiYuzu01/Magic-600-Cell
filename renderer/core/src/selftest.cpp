@@ -1044,6 +1044,62 @@ void run_cpu(Suite& suite, const Options& options) {
     });
     // ABI 6: a view's shape. Its checks, its defaults (ABI 5's constants), per view, recorded with each frame for its
     // picks, and kept across a recovery.
+    // ADR-D02 B21: the raw view's focus, and the antipode chart's handedness, checked at build.
+    suite.check("raw view", [] {
+        sa2::ViewShape shape;
+        const sa2_view_focus raw{sizeof(sa2_view_focus), SA2_PROJECTION_STEREOGRAPHIC, 7, 121.0f / 125.0f, 1.0f, 0};
+        sa2::view_focus(&raw, shape);
+        expect(shape.projection == SA2_PROJECTION_STEREOGRAPHIC && shape.focus_cell == 7 && shape.focus_cos == 121.0f / 125.0f,
+            "a raw focus was not copied");
+        const auto refuses = [](sa2_view_focus f) { return rejects([&] { sa2::ViewShape s; sa2::view_focus(&f, s); }); };
+        auto no_pole = raw; no_pole.focus_cell = SA2_FOCUS_NONE;
+        auto past = raw; past.focus_cos = -0.25f;
+        auto unknown = raw; unknown.projection = 3;
+        auto at90 = raw; at90.focus_cos = 0.0f;
+        expect(refuses(no_pole) && refuses(past) && refuses(unknown) && !refuses(at90),
+            "a raw focus without a pole, past 90 degrees or of an unknown projection was taken, or h = 0 was refused");
+        // The antipode chart is the chart after -I (pole +w here): det(-I) = +1 in R4, and on positively oriented frames
+        // at their centres (det[c, t1, t2, t3] > 0) the two charts' Jacobians have the same determinant sign.
+        using M4 = std::array<std::array<double, 4>, 4>;
+        const auto det4 = [](const M4& m) {
+            double sum = 0;
+            int p[4] = {0, 1, 2, 3};
+            do {
+                int inversions = 0;
+                for (int i = 0; i < 4; ++i) for (int j = i + 1; j < 4; ++j) inversions += p[i] > p[j] ? 1 : 0;
+                sum += (inversions % 2 ? -1.0 : 1.0) * m[0][p[0]] * m[1][p[1]] * m[2][p[2]] * m[3][p[3]];
+            } while (std::next_permutation(p, p + 4));
+            return sum;
+        };
+        M4 minus{};
+        for (int i = 0; i < 4; ++i) minus[i][i] = -1;
+        expect(det4(minus) == 1.0, "-I is not a proper rotation of R4");
+        const auto chart = [](std::array<double, 4> x, double sign) {
+            double n = 0;
+            for (auto& v : x) { v *= sign; n += v * v; }
+            n = std::sqrt(n);
+            const double w = x[3] / n;
+            return std::array<double, 3>{2 * x[0] / n / (1 + w), 2 * x[1] / n / (1 + w), 2 * x[2] / n / (1 + w)};
+        };
+        const auto jacobian_sign = [&](double sign) {
+            const std::array<double, 4> centre{0, 0, 0, sign};
+            std::array<std::array<double, 4>, 3> frame{{{sign, 0, 0, 0}, {0, sign, 0, 0}, {0, 0, sign, 0}}};
+            const M4 oriented{centre, frame[0], frame[1], frame[2]};
+            if (det4(oriented) < 0) for (auto& v : frame[0]) v = -v;
+            std::array<std::array<double, 3>, 3> j{};
+            const double e = 1e-6;
+            for (int k = 0; k < 3; ++k) {
+                auto a = centre, b = centre;
+                for (int i = 0; i < 4; ++i) { a[i] += e * frame[k][i]; b[i] -= e * frame[k][i]; }
+                const auto fa = chart(a, sign), fb = chart(b, sign);
+                for (int i = 0; i < 3; ++i) j[i][k] = (fa[i] - fb[i]) / (2 * e);
+            }
+            const double d = j[0][0] * (j[1][1] * j[2][2] - j[1][2] * j[2][1]) - j[0][1] * (j[1][0] * j[2][2] - j[1][2] * j[2][0])
+                + j[0][2] * (j[1][0] * j[2][1] - j[1][1] * j[2][0]);
+            return d > 0 ? 1 : d < 0 ? -1 : 0;
+        };
+        expect(jacobian_sign(1) != 0 && jacobian_sign(1) == jacobian_sign(-1), "the antipode chart does not share the chart's handedness");
+    });
     suite.check("view shape", [] {
         const auto defaults = sa2::view_shape(nullptr);
         expect(defaults.cell_shrink == 0.76f && defaults.sticker_shrink == 0.82f && defaults.d4 == 1.18f && defaults.zoom == 1.15f,
@@ -1253,7 +1309,7 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].x = 127; }), "overlapping panes were accepted");
         expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].x = 200; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[0].y = -1; })
             && refused([](sa2_pane* p, sa2_frame_input&) { p[1].width = 0; }), "a pane outside the target or empty was accepted");
-        expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].flags = 1; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[1].style = 5; })
+        expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].flags = 2; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[1].flags = 1 | 4; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[1].style = 5; })
             && refused([](sa2_pane* p, sa2_frame_input&) { p[1].camera_matrix[3] = std::numeric_limits<float>::infinity(); }),
             "a pane's flags, style or camera was accepted out of range");
         expect(refused([](sa2_pane*, sa2_frame_input& f) { f.view = 2; }) && refused([](sa2_pane*, sa2_frame_input& f) { f.camera_matrix[1] = 0.5f; }),
@@ -1692,6 +1748,7 @@ Options parse(int argc, char** argv) {
         else if (arg == "--focus") options.focus = true;
         else if (arg == "--sweep") options.sweep = true;
         else if (arg == "--slice") options.slice = true;
+        else if (arg == "--raw") options.raw = true;
         else if (arg == "--hopf") options.hopf = value();
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
@@ -1791,6 +1848,7 @@ int main(int argc, char** argv) {
         else if (!options.hopf.empty()) sa2test::run_hopf(suite, options);
         else if (options.sweep) sa2test::run_sweep(suite, options);
         else if (options.slice) sa2test::run_slice(suite, options);
+        else if (options.raw) sa2test::run_raw(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

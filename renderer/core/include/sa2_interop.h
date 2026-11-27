@@ -1274,6 +1274,25 @@ static_assert(sizeof(sa2_view_focus) == 24, "sa2_view_focus requires the x64 ABI
 
 SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus);
 
+/* ADR-D02 B21 (ADR-D02.18, added to ABI 10 before any release): the raw view. Additive: every earlier call, struct and
+ * behaviour is unchanged.
+ *
+ * SA2_PROJECTION_STEREOGRAPHIC in sa2_view_focus draws the view as the stereographic chart that
+ * c600_display::chart::Stereographic declares with the pole -p, p the focus pole: x maps to the stereographic image of
+ * x/|x| from -p, so p is the chart's centre and only -p is singular. The core turns p to +w (T, as the focus does), then
+ * applies the frame's camera (a 3D spin that keeps w), and draws q = camera * T * x/|x| at 2 q.xyz / (1 + q.w), scaled
+ * by 2 so it agrees with the orthographic chain at the centre to first order (90 degrees from p lies at radius 2). It
+ * needs a focus cell, and focus_cos is the clip h: a sticker is drawn when its posed, unshrunk centre c (the anchor) has
+ * dot(c, p) >= h, with 0 <= h <= 1, so the clip goes no further than 90 degrees. The spread is unused. A twist about p
+ * (a rotation that keeps p) is a rigid rotation about the chart's centre.
+ *
+ * A pane with SA2_PANE_ANTIPODE in its flags draws its view's raw chart after -I (a proper rotation of R4, determinant
+ * +1, so the handedness is shared): the antipode chart, centred on -p. Its anchor test is half-open: dot(-c, p) > h. At
+ * h = 0 every sticker is therefore drawn in exactly one of the two panes. Under any other projection the flag changes
+ * nothing. A pick on such a pane draws its ID pass after -I as well. Any other pane flag is refused. */
+#define SA2_PROJECTION_STEREOGRAPHIC 2u
+#define SA2_PANE_ANTIPODE 1u
+
 /* ABI 10: a view's layout (ADR-D02 build step B23, bare; a candidate behind the shell's --d02): Global opens on the
  * Hopf rings, Look Lab's GlobalLayout ring charts. Additive: every ABI 9 call, struct and behaviour is unchanged, and
  * a view whose layout was never set draws byte-identically to ABI 9.

@@ -131,6 +131,8 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_check",
         "m6h_last_error",
         "m6h_destroy",
+        // ADR-D02 B21: the raw view's antipode pane.
+        "m6h_set_pane_flags",
     };
 
     /// <summary>A submitted frame, as m6h_frame writes it (the Rust M6hFrame).</summary>
@@ -379,12 +381,21 @@ public sealed unsafe class HostLibrary : IDisposable
     public int ClearPane(IntPtr host, uint pane) =>
         ((delegate* unmanaged[Cdecl]<IntPtr, uint, int>)_exports["m6h_clear_pane"])(host, pane);
 
+    /// <summary>ADR-D02 B21: a set pane's core flags, 0 or <see cref="PaneAntipode"/>; a later SetPane resets them.</summary>
+    public int SetPaneFlags(IntPtr host, uint pane, uint flags) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, int>)_exports["m6h_set_pane_flags"])(host, pane, flags);
+
+    /// <summary>ADR-D02 B21: the raw view's pane flag, its stereographic chart after -I (SA2_PANE_ANTIPODE).</summary>
+    public const uint PaneAntipode = 1;
+
     /// <summary>The focus's perspective projection (the shape's d4).</summary>
     public const uint ProjectionPerspective = 0;
     /// <summary>The focus's orthographic projection.</summary>
     public const uint ProjectionOrthographic = 1;
     /// <summary>No focus cell: every sticker is drawn.</summary>
     public const uint FocusNone = uint.MaxValue;
+    /// <summary>ADR-D02 B21: the raw view's stereographic chart from the focus pole; it needs a focus cell and 0 &lt;= focus_cos.</summary>
+    public const uint ProjectionStereographic = 2;
 
     /// <summary>
     /// Sets the focus a view's frames draw with (version 12): the projection, the cell whose centre is the pole (turned

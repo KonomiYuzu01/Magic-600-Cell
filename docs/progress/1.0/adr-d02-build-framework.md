@@ -964,6 +964,32 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B20. CR-14. Holes drawn as faces wait for the exposed-face geometry.
+- **As built (27 November 2026):**
+  - Core: `sa2_view_focus` takes `SA2_PROJECTION_STEREOGRAPHIC` (2), which needs a focus cell and 0 ≤ `focus_cos`. A pane takes the flag `SA2_PANE_ANTIPODE` (1). The struct sizes are unchanged.
+    - The chart is `c600_display::chart::Stereographic` with the pole −p, drawn at 2·q.xyz/(1 + q.w). It is a branch of the precompiled geometry shader (`viewFlags` bit 5, the antipode bit 6), not a pipeline of its own.
+    - The clip uses the cap test's anchor; the antipode's test is half-open.
+    - The CPU check `raw view` covers the refusals, det(−I) = +1 and the two charts' Jacobian signs.
+  - `check_core.py --raw` on WARP:
+    - At h = 0 the two charts draw 6,096,000 triangles together, the whole puzzle.
+    - At h = 121/125 and 0.5 the chart draws exactly the cap test's triangles (103,500 and 1,301,456).
+    - The antipode chart draws within 2% of those counts (102,652 and 1,276,842), because the sticker triangulation is not symmetric under −I.
+    - A turn about the pole (the camera's spin in the screen plane, 0.6 rad) lands 15,799 of 15,799 covered pixels, and 15,565 of 15,565 in the antipode chart.
+  - Host and `c600-render`: `PaneSpec.flags`; `m6h_set_pane_flags`, appended, which a later `m6h_set_pane` resets to 0; the test `pane_flags_reach_the_core`.
+  - Chrome model: `Model/RawView.cs`. It is a file of its own, not in `JumbleViews.cs`, because the colour step was editing in parallel. The three console tests are in `tests/D02RawTests.cs`.
+  - Shell: `D02/ShellRaw.cs`, and in `Shell.cs` Local's focus, panes and key routing.
+    - With the raw view on, Local's slot draws no slice (`ShellStyle`).
+    - The dump has a `raw` row (`ShellTint`).
+    - The palette rows and Local's border marks are wired in `ShellChrome` and `JumbleHost`: the caption always, and "antipode" on the antipode chart.
+  - Keys, all placeholders and row requests: `Home` turns the raw view on or off; `End` adds or removes the antipode chart and turns the raw view on with it; `PageUp` and `PageDown` narrow and widen the clip by 0.02.
+    - The palette rows are `view.mode.raw`, `view.mode.raw.antipode` and `view.mode.raw.clip <h | cut | tick>`. F1 › `view.mode.raw` is the row one step away.
+  - The clip runs from 0 (90°) to the cut (121/125). It never goes inside the cut, so Local is never empty.
+  - The static tick is h = φ²/4 = cos 49.12°: there all 80 meeting poles fall inside the clip. They are the first six shells of cell centres about a pole (4, 12, 24, 12, 4 and 24). Local's line reads the tick; there is no detent and no mark in the chart.
+  - Runs at 1280 x 720 on wj-ia-300, build `c9-product-259e21c72c285d91`. The System log had no nvlddmkm or LiveKernelEvent entry after any run.
+    - `raw` passed on its rerun, after a foreground-only failure, with 344 of 1,135 drawn composite frames having three panes.
+    - Then `slice`, `two-views` and `pick` passed.
+    - After text-only fixes for the source-pinning tests (the export order, `JumbleHost`'s delegate call and two `Shell.cs` lines), `raw` passed again on `c9-product-311037360a6485c8`, with 344 of 1,142 drawn composite frames having three panes.
+  - Owner sees: the named cap's region flat beside Global after `Home` (or F1 › `view.mode.raw`); `End` adds the antipode chart next to it, labelled "antipode", with the caption on Local's border and line.
+  - Left: holes drawn as faces (ADR-D02.25), and the tick as a mark on a drawn clip control.
 
 ### B22. Global chart preset: the ring sheet
 - **Goal:** `view.preset.global.ring_sheet`, with no sweep under a chart.

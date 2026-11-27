@@ -105,6 +105,7 @@ struct ViewShape {
     // planned (Product::turn); a view's stored shape never carries one. 0: no piece turns.
     std::array<float, 4> turn_u{}, turn_v{};
     float turn = 0.0f;
+    uint32_t antipode = 0; // ADR-D02 B21: a pane's SA2_PANE_ANTIPODE, written into its shape when it is planned
     bool operator==(const ViewShape&) const = default;
 };
 ViewShape view_shape(const sa2_view_shape* shape); // validates (SA2_E_INVALID_ARGUMENT); NULL gives the defaults

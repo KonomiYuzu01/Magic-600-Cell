@@ -246,7 +246,7 @@ fn the_host_sets_a_view_focus() {
         assert_eq!((focus.projection, focus.focus_cell, focus.focus_cos, focus.spread), (1, 150, cap, 1.7));
         // Out-of-range values change nothing: a projection, a cell, a threshold or a spread outside its range.
         for (projection, cell, cos, spread) in
-            [(2, 150, cap, 1.7), (1, 600, cap, 1.7), (1, 150, f32::NAN, 1.7), (1, 150, 1.5, 1.7), (1, 150, cap, 0.5), (1, 150, cap, 3.5)]
+            [(3, 150, cap, 1.7), (1, 600, cap, 1.7), (1, 150, f32::NAN, 1.7), (1, 150, 1.5, 1.7), (1, 150, cap, 0.5), (1, 150, cap, 3.5)]
         {
             assert_eq!(m6h_set_view_focus(host, local, projection, cell, cos, spread), M6H_E_INVALID_ARGUMENT);
         }
@@ -550,5 +550,37 @@ fn a_hidden_local_adds_no_vertex_evaluations() {
         assert_eq!(frame(host).panes, 2);
         m6h_destroy(host);
         drop(Box::from_raw(shim));
+    }
+}
+
+/// ADR-D02 B21: a pane's flags reach the core's pane (the raw view's antipode chart); an unset pane, a fifth index or
+/// another flag is refused, and a later m6h_set_pane resets them to 0.
+#[test]
+fn pane_flags_reach_the_core() {
+    let (shim, host) = two_view_host(false);
+    // SAFETY: a live handle.
+    unsafe {
+        assert_eq!(m6h_set_pane_flags(host, 0, 1), M6H_E_INVALID_ARGUMENT, "an unset pane");
+    }
+    assert_eq!(set_pane(host, 0, VIEW.0, LEFT, 0), M6H_OK, "{}", last_error(host));
+    assert_eq!(set_pane(host, 1, VIEW.0, RIGHT, 0), M6H_OK, "{}", last_error(host));
+    // SAFETY: a live handle.
+    unsafe {
+        assert_eq!(m6h_set_pane_flags(host, 1, 2), M6H_E_INVALID_ARGUMENT, "an unknown flag");
+        assert_eq!(m6h_set_pane_flags(host, M6H_PANES_MAX, 1), M6H_E_INVALID_ARGUMENT, "a fifth pane");
+        assert_eq!(m6h_set_pane_flags(host, 1, 1), M6H_OK, "{}", last_error(host));
+    }
+    assert_eq!(frame(host).panes, 2);
+    // SAFETY: the shim is used only between the host's calls.
+    unsafe {
+        let panes = (*shim).fake.submitted_panes.last().cloned().expect("a frame");
+        assert_eq!(panes.iter().map(|p| p.flags).collect::<Vec<_>>(), vec![0, 1]);
+    }
+    assert_eq!(set_pane(host, 1, VIEW.0, RIGHT, 0), M6H_OK, "{}", last_error(host));
+    assert_eq!(frame(host).panes, 2);
+    // SAFETY: the shim is used only between the host's calls; the handle is not used again.
+    unsafe {
+        let panes = (*shim).fake.submitted_panes.last().cloned().expect("a frame");
+        assert!(panes.iter().all(|p| p.flags == 0), "a set pane resets its flags");
     }
 }

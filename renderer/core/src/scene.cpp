@@ -847,6 +847,9 @@ struct Scene::Impl {
                 }
             c.q = turned;
         }
+        // ADR-D02 B21: the raw view (bit 5) replaces the chain's projection, its spread included; bit 6 draws the
+        // antipode chart (a pane's SA2_PANE_ANTIPODE).
+        if (view.projection == SA2_PROJECTION_STEREOGRAPHIC) c.viewFlags |= view.antipode ? 32u | 64u : 32u;
         return c;
     }
     // ABI 10: writes the Hopf table once into its upload buffer (the product state refuses a different one).
