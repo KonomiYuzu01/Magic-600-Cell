@@ -380,6 +380,8 @@ public sealed partial class ChromeFrame : Control
     // after the pointer leaves the window (ADR-D01.19's hovered view). The root viewport's mouse position is the system
     // cursor, which a scripted run's pointer steps never move.
     private Vector2? pointer;
+    // The pointer in the frame's own coordinates: an overlay opens where the window's mouse events last put it.
+    public Vector2 LocalPointer => pointer is { } at ? GetGlobalTransform().AffineInverse() * at : GetLocalMousePosition();
 
     public override void _Input(InputEvent input)
     {

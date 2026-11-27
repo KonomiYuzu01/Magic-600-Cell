@@ -56,12 +56,25 @@ public sealed partial class ShortcutSheet : ChromeOverlay
 }
 
 // A radial menu (ADR-D01.21): the entries of one radial command in a ring around the pointer. An entry is
-// chosen by a click or by its number; an unavailable entry stays in its place, dimmed, and says why.
+// chosen by a click or by its number; an unavailable entry stays in its place, dimmed, and says why. Held on the key
+// that opened it (ADR-D01.20), the entry the pointer points at is marked and the hub says what release runs; release
+// runs it, release in the hub runs nothing, and a short tap leaves the menu open.
 public sealed partial class RadialOverlay : ChromeOverlay
 {
     public RadialMenu? Menu { get; private set; }
     public IReadOnlyList<Button> Entries => entries;
     public event Action<RadialEntry>? Chosen;
+    // ADR-D01.20: the entry release runs while the opening key is held (-1: the hub), and a release in the hub.
+    public int Pointed { get; private set; } = -1;
+    public bool Held => heldKey != null;
+    public event Action<RadialMenu>? Let;
+    private string? heldKey;
+    private ulong heldAt;
+    private Vector2 centre;
+    private float dead;
+    private PanelContainer? hub;
+    private Label? hint;
+    private readonly List<(double X, double Y)> directions = new();
     private readonly CommandRegistry registry;
     private readonly Func<string, string?, string?> unavailable;
     private readonly List<Button> entries = new();
@@ -71,13 +84,14 @@ public sealed partial class RadialOverlay : ChromeOverlay
     {
         this.registry = registry; this.unavailable = unavailable; Name = "RadialOverlay";
         Panel.Visible = false; AddChild(ring); ring.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Closed += () => { heldKey = null; Pointed = -1; };
     }
 
     public string Label(RadialEntry entry) => entry.Label ?? registry.Commands[entry.Command].Label;
 
     public void Open(RadialMenu menu, Vector2 at)
     {
-        base.Open(); Menu = menu;
+        base.Open(); Menu = menu; heldKey = null; Pointed = -1; directions.Clear();
         foreach (Node child in ring.GetChildren()) { ring.RemoveChild(child); child.QueueFree(); }
         entries.Clear();
         TokenSet tokens = Tokens();
@@ -86,15 +100,19 @@ public sealed partial class RadialOverlay : ChromeOverlay
         Vector2 area = Size.X > 0 ? Size : GetViewportRect().Size;
         var centre = new Vector2(Math.Clamp(at.X, radius + size.X / 2, Math.Max(radius + size.X / 2, area.X - radius - size.X / 2)),
             Math.Clamp(at.Y, radius + size.Y, Math.Max(radius + size.Y, area.Y - radius - size.Y)));
-        var hub = new PanelContainer { ThemeTypeVariation = "Chip" }; hub.AddChild(ChromeWidgets.Text(menu.Label, "HeadingLabel"));
-        ring.AddChild(hub); hub.Position = centre - hub.GetCombinedMinimumSize() / 2;
+        this.centre = centre; dead = tokens.Px("row.height") * 1.5f;
+        hub = new PanelContainer { ThemeTypeVariation = "Chip", Name = "RadialHub" };
+        var lines = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore }; hub.AddChild(lines);
+        lines.AddChild(ChromeWidgets.Text(menu.Label, "HeadingLabel"));
+        hint = ChromeWidgets.Text("", "DimLabel"); hint.Name = "RadialHint"; hint.Visible = false; lines.AddChild(hint);
+        ring.AddChild(hub); Centre(hub);
         for (int i = 0; i < menu.Entries.Count; i++)
         {
             RadialEntry entry = menu.Entries[i]; int index = i;
-            double angle = Math.PI * 2 * i / menu.Entries.Count;
+            (double dx, double dy) = RadialHold.Direction(i, menu.Entries.Count); directions.Add((dx, dy));
             string? why = unavailable(entry.Command, entry.Argument);
             string icon = ChromeBody.Commands?.Of(entry.Command, entry.Argument) ?? "command.bar";
-            var button = new Button { Text = "       " + Label(entry), Alignment = HorizontalAlignment.Left, ThemeTypeVariation = "RadialButton", CustomMinimumSize = size, ClipText = true, FocusMode = FocusModeEnum.None };
+            var button = new Button { Text = "       " + Label(entry), Alignment = HorizontalAlignment.Left, ThemeTypeVariation = "RadialButton", Name = "RadialEntry" + (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), CustomMinimumSize = size, ClipText = true, FocusMode = FocusModeEnum.None };
             button.TooltipText = why == null ? registry.Commands[entry.Command].Help : "Unavailable: " + why;
             if (why != null) button.AddThemeColorOverride("font_color", tokens.C("text.off"));
             button.SetMeta("entry", index); button.Pressed += () => Choose(index);
@@ -104,7 +122,7 @@ public sealed partial class RadialOverlay : ChromeOverlay
             Label number = ChromeWidgets.Text((i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), "MicroLabel"); number.MouseFilter = MouseFilterEnum.Ignore; button.AddChild(number);
             number.Position = new Vector2(size.X - tokens.Px("space.3") - number.GetCombinedMinimumSize().X, (size.Y - number.GetCombinedMinimumSize().Y) / 2);
             if (why != null) mark.Modulate = mark.Modulate with { A = .4f };
-            button.Position = centre + new Vector2((float)Math.Sin(angle), -(float)Math.Cos(angle) * .8f) * radius - size / 2;
+            button.Position = centre + new Vector2((float)dx, (float)dy) * radius - size / 2;
             entries.Add(button);
         }
     }
@@ -118,4 +136,47 @@ public sealed partial class RadialOverlay : ChromeOverlay
     }
 
     public override bool Key(string key) => key.Length == 1 && key[0] is >= '1' and <= '8' && Choose(key[0] - '1');
+
+    // The key that opened the menu is still down (ADR-D01.20): until it comes up the menu follows the pointer. A key
+    // with modifiers is held by its last part (Shift+V by V).
+    public void Hold(string key)
+    {
+        if (!IsOpen) return;
+        heldKey = key[(key.LastIndexOf('+') + 1)..]; heldAt = Time.GetTicksMsec();
+        Point(-1);
+    }
+
+    public override void _Input(InputEvent input)
+    {
+        if (!IsOpen || heldKey == null) return;
+        if (input is InputEventMouseMotion motion)
+        {
+            Vector2 at = ((InputEventMouseMotion)MakeInputLocal(motion)).Position - centre;
+            Point(RadialHold.Pointed(at.X, at.Y, directions, dead));
+            return;
+        }
+        if (input is not InputEventKey { Pressed: false } key || OS.GetKeycodeString(key.Keycode) != heldKey) return;
+        GetViewport().SetInputAsHandled();
+        RadialRelease release = RadialHold.Release((Time.GetTicksMsec() - heldAt) / 1000.0, Pointed);
+        int pointed = Pointed; heldKey = null; Point(-1);
+        if (release == RadialRelease.Run) Choose(pointed);
+        else if (release == RadialRelease.Nothing && Menu is { } menu) { Close(); Safe.Raise(Let, menu); }
+    }
+
+    private void Point(int index)
+    {
+        Pointed = index;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            if (i == index) entries[i].AddThemeStyleboxOverride("normal", entries[i].GetThemeStylebox("hover"));
+            else entries[i].RemoveThemeStyleboxOverride("normal");
+        }
+        if (hint == null || hub == null || Menu == null) return;
+        RadialEntry? entry = index < 0 ? null : Menu.Entries[index];
+        hint.Visible = heldKey != null;
+        hint.Text = RadialHold.Hint(entry == null ? null : Label(entry), entry == null ? null : unavailable(entry.Command, entry.Argument));
+        Centre(hub);
+    }
+
+    private void Centre(Control box) { box.Size = Vector2.Zero; box.Position = centre - box.GetCombinedMinimumSize() / 2; }
 }

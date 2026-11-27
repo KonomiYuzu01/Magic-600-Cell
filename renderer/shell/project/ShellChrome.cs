@@ -364,7 +364,7 @@ public sealed class ShellChrome
                     else frame.Say("No help topic named " + topic, true);
                     break;
                 case var menu when keymap.Radials.ContainsKey(menu):
-                    radial.Open(sample != null ? sample.WithContext(keymap.Radials[menu]) : keymap.Radials[menu], frame.GetLocalMousePosition());
+                    radial.Open(sample != null ? sample.WithContext(keymap.Radials[menu]) : keymap.Radials[menu], frame.LocalPointer);
                     break;
                 case "transient.close":
                     keyMap?.Shown.Pin(false);
@@ -408,9 +408,15 @@ public sealed class ShellChrome
         palette.Run += row => Execute(row.Command, row.Argument);
         helpCard.Learn += link => { Execute(link.Command, link.Argument); learnPane.Select(link.TopicId); };
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
+        radial.Let += menu => frame.Say(RadialHold.Let(menu.Label));
         if (contextMenu != null) contextMenu.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
-        frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
+        // ADR-D01.20: a radial menu opened by its key follows the pointer while that key stays down.
+        frame.KeyCommand += binding =>
+        {
+            Execute(binding.Command, binding.Argument);
+            if (radial.IsOpen && radial.Menu?.Id == binding.Command) radial.Hold(binding.Key);
+        };
         frame.RowCommand += Execute;
         // Without the sample mount the shell tracks the layout itself (with it, SampleMount does).
         if (sample == null)

@@ -124,6 +124,7 @@ internal static partial class Program
             ("A5SolvingDraftLineGoalAndRoute", A5SolvingDraftLineGoalAndRoute),
             ("A5SolvingKeyMapHeldPinnedAndNamed", A5SolvingKeyMapHeldPinnedAndNamed),
             ("D01KeySetsSayEveryChangedKey", D01KeySetsSayEveryChangedKey),
+            ("D01RadialHeldReleaseRunsThePointedEntry", D01RadialHeldReleaseRunsThePointedEntry),
             ("A5CommitBarInlineParameters", A5CommitBarInlineParameters),
             ("A5ScreenChecksKeyboardAndWords", A5ScreenChecksKeyboardAndWords),
             ("A5HistoryBranchesInFull", A5HistoryBranchesInFull),
