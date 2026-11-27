@@ -282,7 +282,7 @@ class ShellPanes(unittest.TestCase):
         self.assertIn("chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;", body)
 
     def test_the_panes_are_global_then_local_inside_the_surface(self):
-        self.assertIn("var views = new[] { HostLibrary.View, HostLibrary.Local };", self.shell)
+        self.assertIn("var copies = D02.ShellSlice.Panes(layout.Panes[1]);", self.shell)
         self.assertIn('new Magic600.Chrome.PaneSpec("Global",', self.shell)
         self.assertIn('new Magic600.Chrome.PaneSpec("Local",', self.shell)
         # The panes are set after the surface's move and viewport, and only for the rectangle the surface has.
@@ -473,8 +473,10 @@ class Picks(unittest.TestCase):
         self.assertIn("D02.ShellPick.Point(SurfacePoint(move.Position));", shell)
         self.assertIn("if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))", shell)
         self.assertIn("D02.ShellStyle.Apply(library, _host, _adoptedRevision);", shell)
-        # Global's pane draws with style slot 1 and Local's with slot 2, so both views show the outlines.
-        self.assertIn("(uint)r.Width, (uint)r.Height, (uint)i + 1));", shell)
+        # Global's pane draws with style slot 1 and Local's with slot 2 (B20: 3 for the split's inside copy), so both
+        # views show the outlines.
+        self.assertIn("g.X, g.Y, (uint)g.Width, (uint)g.Height, 1));", shell)
+        self.assertIn("r.X, r.Y, (uint)r.Width, (uint)r.Height, slot));", shell)
         pick = text(PROJECT / "D02" / "ShellPick.cs")
         self.assertIn("public static Picked? Selection { get; private set; }", pick)
         self.assertIn("public static Picked? Hover { get; private set; }", pick)

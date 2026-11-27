@@ -103,7 +103,7 @@ use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::{
     piece_style_valid, Sa2Pane, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES,
-    STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_SLOTS, TARGET_SURFACE,
+    STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_CHANNEL_SLICE, STYLE_SLOTS, TARGET_SURFACE,
 };
 use c600_render::backend::PickTicket;
 use c600_render::{DisplayTime, PaneSpec, RenderBackend};
@@ -1471,11 +1471,11 @@ pub unsafe extern "C" fn m6h_set_piece_style(
                 }
             };
             if pieces.as_deref().is_some_and(|bytes| !piece_style_valid(bytes, channel))
-                || (channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE)
+                || (channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE && channel != STYLE_CHANNEL_SLICE)
             {
                 return Err((
                     M6H_E_INVALID_ARGUMENT,
-                    "a channel is 0 or 1, and its bytes use only its bits".to_owned(),
+                    "a channel is 0, 1 or 2 (B20's slice), and its bytes use only its bits".to_owned(),
                 ));
             }
             shell.host.backend.set_piece_style(revision, pieces.as_deref(), channel).map_err(host_error)
@@ -1578,7 +1578,7 @@ pub unsafe extern "C" fn m6h_twist_transform(
 
 /// Sets style slot `slot` (1 to 4; a one-view frame uses slot 1), or clears it with a null `style` (version 10,
 /// ADR-D02 B14; the core's ABI 7 `sa2_view_style_set`): the tint and dim modes, the dim amount, the outline width, a
-/// 16-entry RGBA palette and a row-major 3x3 output colour matrix, laid out as `sa2_view_style` (316 bytes). Unknown
+/// 16-entry RGBA palette and a row-major 3x3 output colour matrix, laid out as `sa2_view_style` (348 bytes; ADR-D02 B20 adds the slice). Unknown
 /// bits or values out of range answer [`M6H_E_INVALID_ARGUMENT`] and change nothing.
 ///
 /// # Safety

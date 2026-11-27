@@ -83,4 +83,9 @@ public:
     // before the first.
     void stage_report(uint64_t completed, sa2_stage_frame& out);
 };
+// ADR-D02 B20: the pipeline statistics of the newest harvested product frame (a composite frame's panes summed): the
+// clipper's output primitives and the pixel-shader invocations, which bound a frame's raster work. The self-test reads
+// it after sa2_frame_reports; nothing on the product path does.
+struct FrameStatistics { uint64_t frame = 0, vertex_evals = 0, primitives = 0, pixels = 0; };
+FrameStatistics& newest_frame_statistics();
 }

@@ -131,7 +131,7 @@ pub struct FakeCore {
     /// ABI 10: every view's layout kind that `sa2_view_layout_set` set and did not restore to the chain.
     pub layouts: BTreeMap<u64, u32>,
     /// ABI 7: the adopted revision's piece style by channel (fill, outline), dropped by an adoption.
-    pub piece_styles: [Option<Vec<u8>>; 2],
+    pub piece_styles: [Option<Vec<u8>>; 3], // fill, outline and (ADR-D02 B20) the slice's inside layer
     /// ABI 7: the style slots 1 to 4 (index 0 is slot 1).
     pub view_styles: [Option<Sa2ViewStyle>; 4],
     /// Every posed adoption: its revision, its pose count and the SHA-256 (hexadecimal) of the little-endian bytes
@@ -163,7 +163,7 @@ impl FakeCore {
             shapes: BTreeMap::new(),
             focuses: BTreeMap::new(),
             layouts: BTreeMap::new(),
-            piece_styles: [None, None],
+            piece_styles: [None, None, None],
             view_styles: [None; 4],
             counters: Sa2CounterValues::new(),
             error: String::new(),
@@ -425,7 +425,7 @@ impl CoreAbi for FakeCore {
         }
         self.adopted = Some(image.revision);
         self.adoptions.push((image.revision, image.labels[0]));
-        self.piece_styles = [None, None]; // ABI 7: a piece style is bound to its revision
+        self.piece_styles = [None, None, None]; // ABI 7: a piece style is bound to its revision
         self.counters.bytes_uploaded += (SLOTS * 4) as u64;
         if let Some(pose) = &image.pose {
             let count = pose.pose_lattice.len();
@@ -809,8 +809,8 @@ impl CoreAbi for FakeCore {
 
     /// The header's checks: the adopted revision only, the channel's bits only.
     fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {
-        if channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE {
-            return self.fail(Status::INVALID_ARGUMENT, "channel must be fill or outline");
+        if !matches!(channel, STYLE_CHANNEL_FILL | STYLE_CHANNEL_OUTLINE | STYLE_CHANNEL_SLICE) {
+            return self.fail(Status::INVALID_ARGUMENT, "channel must be fill, outline or slice");
         }
         if piece_style.is_some_and(|bytes| !piece_style_valid(bytes, channel)) {
             return self.fail(Status::INVALID_ARGUMENT, "a piece style byte sets a bit its channel does not have");

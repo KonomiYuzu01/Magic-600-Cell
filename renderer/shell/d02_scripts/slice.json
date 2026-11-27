@@ -1,0 +1,23 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "slice",
+  "note": "B20 (ADR-D02.17, CR-14), by keys only, on the session fixture: Local draws the cut slice of the default cap 0, which wj-ia-300 blocks, so a held preview key draws no ghost and names nothing. After F1 and the palette's typed mode name cap 150, the held split key draws Local as two linked copies (three panes with Global) and its release returns to one (two panes); the held preview key draws the ghost of the inside layer and names item 1's twist only on release. The keys are placeholders (row requests). The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 3000},
+    {"hold": "Down"},
+    {"wait_ms": 800},
+    {"release": "Down"},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 2500},
+    {"hold": "Backslash"},
+    {"wait_ms": 1500},
+    {"release": "Backslash"},
+    {"wait_ms": 1500},
+    {"hold": "Down"},
+    {"wait_ms": 1500},
+    {"release": "Down"},
+    {"wait_ms": 1500}
+  ]
+}

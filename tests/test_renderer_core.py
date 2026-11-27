@@ -392,8 +392,8 @@ class AbiTests(unittest.TestCase):
                 self.assertEqual(values.get(name), value)
         layout = structs(self.header).get("sa2_view_style", "")
         self.assertTrue(layout.startswith("typedef struct sa2_view_style {\n    uint32_t struct_size;"))
-        self.assertIn('static_assert(sizeof(sa2_view_style) == 316, "sa2_view_style requires the x64 ABI");', self.header)
-        self.assertIn("static_assert(sizeof(sa2_view_style) == 316);", text(CORE / "src" / "product.h"))
+        self.assertIn('static_assert(sizeof(sa2_view_style) == 348, "sa2_view_style requires the x64 ABI");', self.header)
+        self.assertIn("static_assert(sizeof(sa2_view_style) == 348);", text(CORE / "src" / "product.h"))
         # The styled pass is compiled and embedded in the DLL, never shipped beside it: the identity's eight shader
         # files and the acceptance harness's copied set stay as they are, and the product pipelines are untouched.
         cmake = text(CORE / "CMakeLists.txt")

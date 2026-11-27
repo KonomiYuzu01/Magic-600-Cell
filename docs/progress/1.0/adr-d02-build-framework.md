@@ -885,6 +885,13 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B16, B18, B18c. CR-14.
+- **As built (partial, 26 November 2026):**
+  - Landed: the chrome model `CutSlice` in `Model/JumbleViews.cs`: the held split through `ViewPanes.Split`, the shell control, the preview that names the twist on release only, and the blocked cap's refusal. Its three console tests are in `tests/D02ViewTests.cs`.
+  - Held key placeholders, both row requests: `Backslash` for the split and `Down` for the preview. `S` is seat 4 in the keymap and `G` is `view.global`.
+  - Landed (27 November 2026): the core slice (ABI 10's `sa2_view_style` at 348 bytes, `SA2_STYLE_CHANNEL_SLICE`, `styled.hlsl`'s `sliceVs`), the host and `c600-render` rows, and the shell wiring (`D02/ShellSlice.cs`, the `slice` script). A failed slice no longer blocks the other styles: `ShellStyle` sends them and Local's slots go without the slice until its inside layer is sent.
+  - The GPU timeout of 26 November (nvlddmkm 14 and 153, LiveKernelEvent 0x117, 23:15:55 UTC) is not explained. The lead was refuted on WARP with the product's Local (orthographic, zoom 4.507, spread 1.7, cap 0): the cap test draws 105,216 triangles and 0.87 targets of pixel work, the slice's default shell 321,547 and 2.65, the whole shell 4,575,204 and 37.1, the whole shell in perspective at d4 1.02 3,590,931 and 46.3. `check_core.py --slice` asserts these bounds through the newest frame's pipeline statistics (`sa2_test_frame_statistics`, a self-test export outside the ABI header).
+  - `SA2_D3D12_DEBUG=1` (report file `SA2_D3D12_DEBUG_OUT`) turns on the debug layer and DRED for the core's own device; off by default. With it, the slice run passed with no debug-layer message and no device removal; then `slice`, `overlays` and `two-views` passed at 1280 x 720 (two reruns after foreground-only failures), each with no nvlddmkm or LiveKernelEvent entry. Findings: the shared note `d02-gpu-tdr.md`.
+  - Owner sees: Global whole and Local sliced side by side (the slice is on by default in Local); hold `Backslash` (placeholder) and Local parts into two linked copies.
 
 ### B21. The raw view
 - **Goal:** `view.mode.raw` in Local, with the antipode chart side by side.

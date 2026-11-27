@@ -482,7 +482,7 @@ public sealed unsafe class HostLibrary : IDisposable
         }
     }
 
-    /// <summary>A style slot as the core's sa2_view_style lays it out (316 bytes; version 10).</summary>
+    /// <summary>A style slot as the core's sa2_view_style lays it out (348 bytes; version 10, with B20's slice).</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct ViewStyle
     {
@@ -490,6 +490,11 @@ public sealed unsafe class HostLibrary : IDisposable
         public float DimAmount, OutlineWidth;
         public fixed float Palette[64];
         public fixed float Matrix[9];
+        /// <summary>ADR-D02 B20: the cut slice (<see cref="SliceOff"/> to <see cref="SliceInside"/>), its inside layer's
+        /// shrink factor, its radius shell about the focus pole (angles) and the turn preview's ghost colour.</summary>
+        public uint SliceMode;
+        public float SliceShrink, ShellMin, ShellMax;
+        public fixed float Ghost[4];
         public uint Reserved;
 
         /// <summary>A slot that changes nothing: no tint, no dim, an empty palette, the identity matrix.</summary>
@@ -506,6 +511,10 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>ADR-D02 B17 (the core's ABI 10): the dim modes that hide instead; a hidden piece is neither drawn nor picked.</summary>
     public const uint HideMarked = 3, HideUnmarked = 4;
+
+    /// <summary>ADR-D02 B20: the piece style's slice channel (one byte per piece, 1 = the inside layer) and the slice
+    /// modes: off, both layers, the outside layer only (the split's left copy), the inside layer only (its right).</summary>
+    public const uint StyleSlice = 2, SliceOff = 0, SliceBoth = 1, SliceOutside = 2, SliceInside = 3;
 
     /// <summary>A fill byte's dim-set bit (the core's SA2_STYLE_DIM): the pieces a dim or hide mode acts on.</summary>
     public const byte DimSet = 0x80;
