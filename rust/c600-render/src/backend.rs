@@ -106,6 +106,8 @@ pub struct PaneSpec {
     pub height: u32,
     /// 0: no style; else a style slot 1 to [`STYLE_SLOTS`].
     pub style: u32,
+    /// ADR-D02 B21: 0, or [`crate::abi::PANE_ANTIPODE`] for the raw view's antipode chart.
+    pub flags: u32,
 }
 
 /// An activated resource set.
@@ -317,6 +319,16 @@ impl<C: CoreAbi> RenderBackend<C> {
             return Err(Error::invalid("a moving set is PIECES bytes of 0 or 1"));
         }
         self.core.transform_set(revision, plane, angle, moving, phase).map_err(|status| self.error(status))
+    }
+
+    /// The product's home-cell colours, kept by the core across recovery.
+    pub fn set_sticker_colours(&mut self, rgb: Option<&StickerColours>) -> Result<(), Error> {
+        self.core.sticker_colours_set(rgb).map_err(|status| self.error(status))
+    }
+
+    /// The product's background and carried scene values, kept by the core across recovery.
+    pub fn set_scene_look(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Error> {
+        self.core.scene_look_set(look).map_err(|status| self.error(status))
     }
 
     /// ABI 7: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear it. A new
@@ -638,7 +650,7 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
                 height: pane.height,
                 camera_matrix: self.camera_matrix(pane.view, pane.camera)?,
                 style: pane.style,
-                flags: 0,
+                flags: pane.flags,
             });
         }
         let mut row = Sa2FrameInput {

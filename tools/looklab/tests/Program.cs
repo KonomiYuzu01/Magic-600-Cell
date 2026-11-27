@@ -313,6 +313,9 @@ internal static partial class Program
             ("D02SliceNamesTwistOnReleaseOnly", D02SliceNamesTwistOnReleaseOnly),
             ("D02BlockedCapHasNoGhost", D02BlockedCapHasNoGhost),
             ("D02SplitCopiesShareRotationScaleShell", D02SplitCopiesShareRotationScaleShell),
+            ("D02RawCaptionAlwaysShown", D02RawCaptionAlwaysShown),
+            ("D02AntipodeNeverSaysMirrored", D02AntipodeNeverSaysMirrored),
+            ("D02AntipodeSharesClipAndHandedness", D02AntipodeSharesClipAndHandedness),
             ("D02VerdictWordsExact", D02VerdictWordsExact),
             ("D02NotApplicableCountsAsNoCheck", D02NotApplicableCountsAsNoCheck),
             ("D02CutOffIsNeverAVerdict", D02CutOffIsNeverAVerdict),
@@ -362,6 +365,7 @@ internal static partial class Program
             ("D02TuningRevertRowsWired", D02TuningRevertRowsWired),
             ("D02SceneLookBackgrounds", D02SceneLookBackgrounds),
             ("D02StickerPaletteChoice", D02StickerPaletteChoice),
+            ("D02StickerColouring", D02StickerColouring),
             ("D02SceneLookDraftRequests", D02SceneLookDraftRequests)
         };
         int passed = 0, failed = 0, skipped = 0;

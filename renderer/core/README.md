@@ -213,9 +213,11 @@ The default build directory is `work\build\renderer-core`. Build only under the 
 python renderer/core/check_core.py
 ```
 
-This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose checks must all pass (40 with ABI 6's view shape, ABI 7's piece style and ABI 8's pane arguments) (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
+This builds Release in a fresh `work/build/rc-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose checks must all pass (40 with ABI 6's view shape, ABI 7's piece style and ABI 8's pane arguments) (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device by default.
 
 `tests/test_renderer_core.py` checks the provenance digests, the file list, the CMake sources and the ABI pins. It needs only the Python standard library and runs on Linux.
+
+`python renderer/core/check_core.py --style --colours` also runs the WARP style and appearance checks. The colour check compares default frame bytes, class-local recolouring, the clear colour in frames and panes, tint mixing, picks and refusals.
 
 ```sh
 python renderer/core/check_core.py --stages <folder with dxcompiler.dll and dxil.dll>

@@ -76,13 +76,15 @@ class CoreFocus(unittest.TestCase):
         block = re.search(r"pub const SYMBOLS: \[&str; (\d+)\] = \[(.*?)\];", bridge, re.S)
         self.assertTrue(block)
         names = re.findall(r'"(sa2_[a-z_]+)"', block.group(2))
-        # B18's part (for B20) binds sa2_transform_set after B16's two functions.
-        self.assertEqual(names[-3:], ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set"])
+        # B18's part (for B20) binds sa2_transform_set after B16's two functions; ADR-D01.52 and .49/.5 append the
+        # sticker colours and the scene look after it.
+        last = ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set"]
+        self.assertEqual(names[-5:], last)
         self.assertEqual(len(names), int(block.group(1)))
         core = text(PROJECT / "CoreLibrary.cs")
         exports = re.findall(r'"(sa2_[a-z_]+)"', re.search(r"\bSymbols = new\[\]\s*\{(.*?)\};", core, re.S).group(1))
-        self.assertEqual(exports[-3:], ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set"])
-        self.assertIn("view_focus_set,\n        view_layout_set,\n        transform_set,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
+        self.assertEqual(exports[-5:], last)
+        self.assertIn("view_focus_set,\n        view_layout_set,\n        transform_set,\n        sticker_colours_set,\n        scene_look_set,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
 
 
 class HostFocus(unittest.TestCase):
@@ -688,7 +690,8 @@ class LocalOnTheBasePuzzle(unittest.TestCase):
         chrome = text(PROJECT / "ShellChrome.cs")
         self.assertIn("host.SetDrawnWithoutCap(live && !ShellLocal.Plan.Jumble);", chrome)
         self.assertIn('ViewLine.Set(Frame.Local, "LocalPlanLine", words, LocalPlan.Hint, Frame.Tokens.C("text.dim"));', chrome)
-        self.assertIn("_chrome?.LocalLine(D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
+        # ADR-D02 B21: the raw view's line takes Local's line while the raw view is on.
+        self.assertIn("_chrome?.LocalLine(D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
         host = text(CHROME / "Ui" / "JumbleHost.cs")
         self.assertIn("Surface.SetDrawn(LocalCap.Shown != null || drawnWithoutCap);", host)
         self.assertIn('ViewLine.Set(view, "JumbleLocalDefault", LocalWords, hint, frame.Tokens.C("text.dim"));', host)

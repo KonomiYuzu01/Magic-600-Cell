@@ -10,6 +10,7 @@ mod common;
 use std::path::Path;
 use std::ptr;
 
+use c600_render::abi::{Sa2SceneLook, StickerColours, STICKER_CLASSES};
 use c600_render::fake::DISPLAY_TICKS;
 use c600_render::FakeCore;
 use c600_shell_host::*;
@@ -246,7 +247,7 @@ fn the_host_sets_a_view_focus() {
         assert_eq!((focus.projection, focus.focus_cell, focus.focus_cos, focus.spread), (1, 150, cap, 1.7));
         // Out-of-range values change nothing: a projection, a cell, a threshold or a spread outside its range.
         for (projection, cell, cos, spread) in
-            [(2, 150, cap, 1.7), (1, 600, cap, 1.7), (1, 150, f32::NAN, 1.7), (1, 150, 1.5, 1.7), (1, 150, cap, 0.5), (1, 150, cap, 3.5)]
+            [(3, 150, cap, 1.7), (1, 600, cap, 1.7), (1, 150, f32::NAN, 1.7), (1, 150, 1.5, 1.7), (1, 150, cap, 0.5), (1, 150, cap, 3.5)]
         {
             assert_eq!(m6h_set_view_focus(host, local, projection, cell, cos, spread), M6H_E_INVALID_ARGUMENT);
         }
@@ -433,6 +434,36 @@ fn two_view_host(local: bool) -> (*mut Shim, *mut ShellHost) {
 const LEFT: (i32, i32, u32, u32) = (0, 0, SIZE.0 / 2, SIZE.1);
 const RIGHT: (i32, i32, u32, u32) = ((SIZE.0 / 2) as i32, 0, SIZE.0 / 2, SIZE.1);
 
+#[test]
+fn scene_colours_validate_before_calling_the_core() {
+    let (shim, host) = two_view_host(false);
+    let mut colours: StickerColours = [[0.2, 0.4, 0.6]; STICKER_CLASSES];
+    let count = STICKER_CLASSES as u32;
+    let mut look = Sa2SceneLook::default();
+    // SAFETY: the handle, table and look are live; the handle is destroyed before the shim.
+    unsafe {
+        assert_eq!(m6h_set_sticker_colours(host, colours.as_ptr().cast(), count - 1), M6H_E_INVALID_ARGUMENT);
+        colours[STICKER_CLASSES - 1][2] = f32::NAN;
+        assert_eq!(m6h_set_sticker_colours(host, colours.as_ptr().cast(), count), M6H_E_INVALID_ARGUMENT);
+        colours[STICKER_CLASSES - 1][2] = 0.6;
+        assert_eq!(m6h_set_sticker_colours(host, colours.as_ptr().cast(), count), M6H_E_HOST);
+        assert!(last_error(host).contains("the fake core does not draw sticker colours"));
+        assert_eq!(m6h_set_sticker_colours(host, ptr::null(), count), M6H_E_HOST);
+        assert_eq!(m6h_set_sticker_colours(host, colours.as_ptr().cast(), 0), M6H_E_HOST);
+
+        assert_eq!(m6h_set_scene_look(host, &look), M6H_E_HOST);
+        assert!(last_error(host).contains("the fake core does not draw scene looks"));
+        look.fog = 1.5;
+        assert_eq!(m6h_set_scene_look(host, &look), M6H_E_INVALID_ARGUMENT);
+        look.struct_size -= 4;
+        assert_eq!(m6h_set_scene_look(host, &look), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_scene_look(host, ptr::null()), M6H_E_HOST);
+
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}
+
 fn set_pane(host: *mut ShellHost, pane: u32, view: u64, rect: (i32, i32, u32, u32), style: u32) -> i32 {
     // SAFETY: a live handle.
     unsafe { m6h_set_pane(host, pane, view, rect.0, rect.1, rect.2, rect.3, style) }
@@ -550,5 +581,37 @@ fn a_hidden_local_adds_no_vertex_evaluations() {
         assert_eq!(frame(host).panes, 2);
         m6h_destroy(host);
         drop(Box::from_raw(shim));
+    }
+}
+
+/// ADR-D02 B21: a pane's flags reach the core's pane (the raw view's antipode chart); an unset pane, a fifth index or
+/// another flag is refused, and a later m6h_set_pane resets them to 0.
+#[test]
+fn pane_flags_reach_the_core() {
+    let (shim, host) = two_view_host(false);
+    // SAFETY: a live handle.
+    unsafe {
+        assert_eq!(m6h_set_pane_flags(host, 0, 1), M6H_E_INVALID_ARGUMENT, "an unset pane");
+    }
+    assert_eq!(set_pane(host, 0, VIEW.0, LEFT, 0), M6H_OK, "{}", last_error(host));
+    assert_eq!(set_pane(host, 1, VIEW.0, RIGHT, 0), M6H_OK, "{}", last_error(host));
+    // SAFETY: a live handle.
+    unsafe {
+        assert_eq!(m6h_set_pane_flags(host, 1, 2), M6H_E_INVALID_ARGUMENT, "an unknown flag");
+        assert_eq!(m6h_set_pane_flags(host, M6H_PANES_MAX, 1), M6H_E_INVALID_ARGUMENT, "a fifth pane");
+        assert_eq!(m6h_set_pane_flags(host, 1, 1), M6H_OK, "{}", last_error(host));
+    }
+    assert_eq!(frame(host).panes, 2);
+    // SAFETY: the shim is used only between the host's calls.
+    unsafe {
+        let panes = (*shim).fake.submitted_panes.last().cloned().expect("a frame");
+        assert_eq!(panes.iter().map(|p| p.flags).collect::<Vec<_>>(), vec![0, 1]);
+    }
+    assert_eq!(set_pane(host, 1, VIEW.0, RIGHT, 0), M6H_OK, "{}", last_error(host));
+    assert_eq!(frame(host).panes, 2);
+    // SAFETY: the shim is used only between the host's calls; the handle is not used again.
+    unsafe {
+        let panes = (*shim).fake.submitted_panes.last().cloned().expect("a frame");
+        assert!(panes.iter().all(|p| p.flags == 0), "a set pane resets its flags");
     }
 }

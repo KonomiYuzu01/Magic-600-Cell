@@ -550,7 +550,7 @@ impl CoreAbi for FakeCore {
             return self.fail(Status::INVALID_ARGUMENT, "the frame input is not the first pane's");
         }
         for (i, pane) in panes.iter().enumerate() {
-            if pane.flags != 0 || pane.style > STYLE_SLOTS || pane.camera_matrix.iter().any(|v| !v.is_finite()) {
+            if pane.flags & !crate::abi::PANE_ANTIPODE != 0 || pane.style > STYLE_SLOTS || pane.camera_matrix.iter().any(|v| !v.is_finite()) {
                 return self.fail(Status::INVALID_ARGUMENT, "a pane's flags, style or camera");
             }
             if !pane.inside(self.target_size) || panes[..i].iter().any(|other| other.overlaps(pane)) {
@@ -748,6 +748,14 @@ impl CoreAbi for FakeCore {
 
     fn last_error(&self) -> String {
         self.error.clone()
+    }
+
+    fn sticker_colours_set(&mut self, _rgb: Option<&StickerColours>) -> Result<(), Status> {
+        self.fail(Status::UNSUPPORTED, "the fake core does not draw sticker colours")
+    }
+
+    fn scene_look_set(&mut self, _look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        self.fail(Status::UNSUPPORTED, "the fake core does not draw scene looks")
     }
 
     /// The header's checks; device-free, so it works during device loss.

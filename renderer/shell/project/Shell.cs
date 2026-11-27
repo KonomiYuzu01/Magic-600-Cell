@@ -96,6 +96,8 @@ public partial class Shell : Control
     private int? _localCap = -1;
     private (Rect2I Global, Rect2I Local) _paned;
     private bool _panedSplit; // ADR-D02 B20: whether the pane table holds the held split's two copies
+    private (bool On, bool Antipode) _panedRaw; // ADR-D02 B21: the raw view the pane table holds
+    private double? _localRaw; // ADR-D02 B21: the raw view's clip Local's focus was sent with (null: no raw view)
     private Magic600.Chrome.PaneLayout? _layout;
 
     public override void _Ready()
@@ -650,15 +652,19 @@ public partial class Shell : Control
             return;
         }
         int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);
-        _chrome?.LocalLine(D02.ShellLocal.Plan.Words);
-        if (cap == _localCap)
+        _chrome?.LocalLine(D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);
+        if (cap == _localCap && _localRaw == D02.ShellRaw.Focus)
         {
             return;
         }
         _localCap = cap;
+        _localRaw = D02.ShellRaw.Focus;
         var cell = cap is int c and >= 0 and < 600 ? (uint)c : HostLibrary.FocusNone;
-        Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local, shape.Projection, cell,
-            cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos, shape.Spread));
+        // ADR-D02 B21: the raw view draws Local's stereographic chart from the pole, clipped at its h.
+        var (projection, focusCos) = D02.ShellRaw.Focus is double h && cell != HostLibrary.FocusNone
+            ? (HostLibrary.ProjectionStereographic, (float)h)
+            : (shape.Projection, cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos);
+        Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local, projection, cell, focusCos, shape.Spread));
         Require(library, "m6h_set_view_visible", library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone));
         if (_chrome is { } chrome)
         {
@@ -704,12 +710,12 @@ public partial class Shell : Control
     /// </summary>
     // ADR-D02 B20: the cut slice's held keys (the split, the turn preview), after the router gave the key to the
     // session and never while the editor's text field has focus.
-    private bool Sliced(InputEventKey key) => D02.ShellJumble.On && _session && _editor?.TextFocused != true && D02.ShellSlice.Follow(key);
+    private bool Sliced(InputEventKey key) => D02.ShellJumble.On && _session && _editor?.TextFocused != true && (D02.ShellSlice.Follow(key) || D02.ShellRaw.Follow(key));
 
     private void SetPanes(HostLibrary library, Rect2I global, Magic600.Chrome.PaneLayout? layout)
     {
         var local = layout is null ? default : _chrome!.LocalOpening();
-        if (_paned == (layout is null ? default : global, local) && _panedSplit == D02.ShellSlice.Split)
+        if (_paned == (layout is null ? default : global, local) && _panedSplit == D02.ShellSlice.Split && _panedRaw == D02.ShellRaw.PaneKey)
         {
             return;
         }
@@ -723,14 +729,29 @@ public partial class Shell : Control
             // layer (slot 3) side by side (D02.ShellStyle sets the three slots).
             var g = layout.Panes[0].Rect;
             Require(library, "m6h_set_pane", library.SetPane(_host, 0, HostLibrary.View, g.X, g.Y, (uint)g.Width, (uint)g.Height, 1));
+            // ADR-D02 B21: the raw view draws Local's chart with slot 2 and, with the antipode, the antipode chart beside it.
+            var raw = D02.ShellRaw.On ? D02.ShellRaw.Panes(layout.Panes[1]) : null;
             var copies = D02.ShellSlice.Panes(layout.Panes[1]);
+            if (raw is not null)
+            {
+                copies = Array.Empty<Magic600.Chrome.SlicePane>();
+            }
             for (var i = 0; i < copies.Count; i++)
             {
                 var r = copies[i].Pane.Rect;
                 var slot = copies[i].Layer == Magic600.Chrome.SliceLayer.Inside ? 3u : 2u;
                 Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i + 1, HostLibrary.Local, r.X, r.Y, (uint)r.Width, (uint)r.Height, slot));
             }
-            var first = copies[0].Pane.Rect;
+            for (var i = 0; raw is not null && i < raw.Count; i++)
+            {
+                var r = raw[i].Pane.Rect;
+                Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i + 1, HostLibrary.Local, r.X, r.Y, (uint)r.Width, (uint)r.Height, 2));
+                if (raw[i].Antipode)
+                {
+                    Require(library, "m6h_set_pane_flags", library.SetPaneFlags(_host, (uint)i + 1, HostLibrary.PaneAntipode));
+                }
+            }
+            var first = raw is null ? copies[0].Pane.Rect : raw[0].Pane.Rect;
             var aspect = first.Height > 0 ? (double)first.Width / first.Height : 1;
             if (_localShape is { } shape)
             {
@@ -740,6 +761,7 @@ public partial class Shell : Control
         }
         _paned = (layout is null ? default : global, local);
         _panedSplit = D02.ShellSlice.Split;
+        _panedRaw = D02.ShellRaw.PaneKey;
         _layout = layout;
     }
 
@@ -873,6 +895,11 @@ public partial class Shell : Control
         if (D02.ShellJumble.On && _session)
         {
             D02.ShellStyle.Apply(library, _host, _adoptedRevision);
+        }
+        // ADR-D01.52 and .49/.5: the sticker colours and the scene look, sent again until the host takes them.
+        if (D02.ShellJumble.On)
+        {
+            D02.ShellScene.Apply(library, _host);
         }
         _submittedThisFrame = null;
         var submitted = EventLog.Now();

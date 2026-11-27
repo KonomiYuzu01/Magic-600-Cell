@@ -1068,6 +1068,59 @@ def check_slice_events(events: Path) -> list[str]:
     return problems
 
 
+def expect_raw(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B21 (ADR-D02.18, CR-14): with cap 150 named, Home turns Local's raw view on at the cut's clip (one chart), End adds
+    the antipode chart labelled "antipode", PageDown widens the clip one step, the palette's clip row sets the meeting
+    poles' tick, End removes the antipode chart and Home turns the raw view off; the caption is shown whenever the raw
+    view is on, and nothing says "mirror"."""
+    steps = ["start", "wait 3000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 2500 ms", "chord Home",
+             "wait 2000 ms", "chord End", "wait 2000 ms", "chord PageDown", "wait 1000 ms", "chord F1",
+             "text > view.mode.raw.clip tick", "chord Enter", "wait 1500 ms", "chord End", "wait 1500 ms", "chord Home",
+             "wait 1500 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    raws = [dump.get("raw") for dump in dumps]
+    if any(row is None for row in raws):
+        return ["a dump has no raw row"]
+    caption = "No raw view certifies no holes; N = 0 does."
+    cut, tick = round(121 / 125, 6), round((3 + 5 ** 0.5) / 8, 6)
+    problems = []
+    want = {5: (False, False, cut), 7: (True, False, cut), 9: (True, True, cut), 11: (True, True, round(cut - 0.02, 6)),
+            15: (True, True, tick), 17: (True, False, tick), 19: (False, False, tick)}
+    for step, (on, antipode, h) in want.items():
+        row = raws[step]
+        if (row["on"], row["antipode"]) != (on, antipode) or abs(row["h"] - h) > 1e-6:
+            problems.append(f"step {step}: the raw view is {row}, not on {on}, antipode {antipode}, h {h}")
+        if row["charts"] != (2 if antipode else 1 if on else 0) or row["label"] != ("antipode" if antipode else ""):
+            problems.append(f"step {step}: Local's charts are {row['charts']} labelled {row['label']!r}")
+        if (row["caption"] == caption) != on or on and not row["line"].endswith(caption):
+            problems.append(f"step {step}: the caption is {row['caption']!r} and Local's line {row['line']!r}")
+    if not raws[7]["line"].startswith("Raw view at cap 150"):
+        problems.append(f"Local's line at step 7 reads {raws[7]['line']!r}")
+    if "all 80 meeting poles inside" not in raws[15]["line"]:
+        problems.append(f"at the tick Local's line reads {raws[15]['line']!r}")
+    if any("mirror" in (row["line"] + row["label"]).lower() for row in raws):
+        problems.append("the raw view said mirror")
+    return problems
+
+
+def check_raw_events(events: Path) -> list[str]:
+    """B21: three drawn panes (Global, Local's chart and its antipode chart) while the antipode is on, two before and
+    after."""
+    frames = frame_rows(events)
+    drawn = [row for row in frames if row.get("panes") and row.get("held") == 0]
+    three = [row["frame_id"] for row in drawn if row["panes"] == 3]
+    problems = []
+    if not three:
+        problems.append("no drawn frame of three panes with the antipode chart on")
+    elif not any(row["panes"] == 2 for row in drawn if row["frame_id"] > three[-1]):
+        problems.append("no drawn frame of two panes after the antipode chart was removed")
+    if [row["panes"] for row in drawn if row["panes"] not in (2, 3)]:
+        problems.append("a drawn composite frame had neither two nor three panes")
+    print(f"raw: {len(drawn)} drawn composite frames, {len(three)} with three panes")
+    return problems
+
+
 EXPECT["two-views"] = expect_two_views
 ON_FIXTURE.add("two-views")
 # ADR-D01.17, .39 and .51: the context menu, the explore state and the non-standard colours mark.
@@ -1076,6 +1129,10 @@ ON_FIXTURE.add("explore-menu")
 EXPECT["slice"] = expect_slice
 ON_FIXTURE.add("slice")
 EVENT_CHECKS = {"two-views": check_two_views_events, "slice": check_slice_events}
+# ADR-D02.18 (B21): the raw view and its antipode chart.
+EXPECT["raw"] = expect_raw
+ON_FIXTURE.add("raw")
+EVENT_CHECKS["raw"] = check_raw_events
 
 
 # Step C-.40 (ADR-D01.40/.41): Local on the base puzzle (600-cell-Full, Jumble off), with no D02 state. The script
@@ -2420,7 +2477,7 @@ SCENE_LOOK_STEPS = [
 
 
 def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """Check the resolved choices, their notices and the state and style digests on every step."""
+    """Check the exports, their notices and the state and style digests on every step."""
     written = [dump.get("do") for dump in dumps]
     if written != [step for step, _, _ in SCENE_LOOK_STEPS]:
         return [f"the steps written were {written}"]
@@ -2440,6 +2497,7 @@ def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> lis
         problems.append("the opening tint style digests are missing")
 
     backgrounds = {}
+    table_digests = {}
     for dump, (step, look, palette_id) in zip(dumps, SCENE_LOOK_STEPS):
         scene, palette = dump.get("scene_look", {}), dump.get("sticker_palette", {})
         if (scene.get("theme"), scene.get("look")) != (theme, look):
@@ -2453,8 +2511,19 @@ def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> lis
         if not re.fullmatch(r"#[0-9a-f]{6}", str(background)) or backgrounds.setdefault(look, background) != background:
             problems.append(f"after {step!r} the {look} background is invalid or changed")
         for values, export in ((scene, scene_export), (palette, palette_export)):
-            if values.get("sent") is not False or values.get("waits_for") != export:
-                problems.append(f"after {step!r} the dump should report waiting for {export}")
+            if values.get("sent") is not True or values.get("export") != export or type(values.get("status")) is not int or values["status"] != 0:
+                problems.append(f"after {step!r} the dump should report a successful {export}")
+        if scene.get("drawn") != ["background"] or scene.get("held") != ["fog", "glow", "edgeBrightness", "edgeWeight"]:
+            problems.append(f"after {step!r} the dump should show the background drawn and the other scene values held")
+        table = "core default" if palette_id == "graphite.a" else palette_id
+        digest = palette.get("table_sha256")
+        if palette.get("table") != table:
+            problems.append(f"after {step!r} the exported sticker table should be {table}")
+        if table == "core default":
+            if "table_sha256" in palette:
+                problems.append(f"after {step!r} the default sticker colours should have no table digest")
+        elif not re.fullmatch(r"[0-9a-f]{64}", str(digest)) or table_digests.setdefault(table, digest) != digest:
+            problems.append(f"after {step!r} the sticker table digest is invalid or changed")
         if tuple(dump.get("tuning", {}).get(key) for key in head_keys) != head:
             problems.append(f"after {step!r} the state digest or revision changed")
         if tuple(dump.get("tint", {}).get(key) for key in style_keys) != style:
@@ -2465,9 +2534,9 @@ def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> lis
                 problems.append(f"after {step!r} the status line should explain the refusal")
         elif step == "chord Enter" or step.startswith("command look.scene.set "):
             what, export = ("Graphite B sticker palette", palette_export) if step == "chord Enter" else ("Scene look " + look, scene_export)
-            notice = f"{what} chosen; the drawn scene keeps the core's fixed colours until the core takes {export} (requested)"
+            notice = f"{what} sent through {export}"
             if notice not in texts(dump, "frame"):
-                problems.append(f"after {step!r} the status line should show the choice and its pending export")
+                problems.append(f"after {step!r} the status line should show the completed export")
     if len(set(backgrounds.values())) != 3:
         problems.append("the three scene looks should have distinct backgrounds")
     return problems

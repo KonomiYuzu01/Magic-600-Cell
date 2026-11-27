@@ -128,6 +128,31 @@ Projection hopfVertex(float4 world, uint cell, uint slot) {
     return result;
 }
 #endif
+#ifdef SA2_LAYOUT
+// ADR-D02 B21 (ADR-D02.18; viewFlags bit 5): the raw view, the stereographic chart of c600_display::chart::Stereographic
+// with the pole -p (p = focusPole): q = Q x/|x| (Q = camera * T, T taking p to +w) is drawn at 2 q.xyz / (1 + q.w).
+// Bit 6 draws the antipode chart, the same chart after -I. The clip always applies (a slice's shell cannot widen it):
+// the anchor c, the posed unshrunk centre, is drawn when dot(c, p) >= h, or in the antipode chart when dot(-c, p) > h
+// (half-open, so at h = 0 each sticker is drawn in one chart only). h = focusCos >= 0 keeps every drawn sticker far
+// from -p, so 1 + q.w stays well above 0 and the chart stays finite.
+Projection rawVertex(float4 world, uint cell, uint slot, uint local) {
+    const float sign = (viewFlags & 64u) != 0 ? -1.0 : 1.0;
+    const float anchor = sign * dot(posedPoint(slot, framePoint(cell, centers[local] / radius)), focusPole);
+    Projection result;
+    result.slot = 0;
+    result.projected = float3(0, 0, 0);
+    if (sign > 0 ? anchor < focusCos : anchor <= focusCos) {
+        result.clip = float4(0, 0, -1, 1);
+        return result;
+    }
+    const float4 q = mul(Q, sign * world / length(world));
+    const float3 p = 2.0 * q.xyz / max(1.0 + q.w, 1e-4);
+    const float z = 5 - p.z;
+    result.clip = float4(p.x*zoom/aspect, p.y*zoom, 100.0/(100.0-0.05)*(z-0.05), z);
+    result.projected = p;
+    return result;
+}
+#endif
 Projection projectVertexShrunk(uint cell, uint vi, float factor, bool capTest) {
     uint local = stickerIds[vi];
     uint slot = cell * 433 + local;
@@ -146,6 +171,7 @@ Projection projectVertexShrunk(uint cell, uint vi, float factor, bool capTest) {
     }
 #ifdef SA2_LAYOUT
     if ((viewFlags & 8u) != 0) return hopfVertex(world, cell, slot);
+    if ((viewFlags & 32u) != 0) { Projection raw = rawVertex(world, cell, slot, local); raw.slot = slot; return raw; }
 #endif
     Projection result = projectWorld(world);
     if (viewFlags > 1u) result = focusVertex(result, cell, slot, local, capTest);

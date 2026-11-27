@@ -20,6 +20,7 @@ struct Options {
     std::filesystem::path hopf; // ABI 10: --warp --hopf FILE runs only the view layout check (run_hopf)
     bool sweep = false; // ADR-D02 B18: --warp --sweep runs only the transform check (run_sweep)
     bool slice = false; // ADR-D02 B20: --warp --slice runs only the cut slice check (run_slice)
+    bool raw = false; // ADR-D02 B21: --warp --raw runs only the raw view check (run_raw)
     // C9 U5c: --warp --measure-stages DIR [--size WxH] [--frames N] [--traced N] [--turn-ms X] --out FILE measures U
     // for W3 with the stage pair in DIR (run_measure); the default size is the owner's native 2560 x 1600.
     std::filesystem::path measure;
@@ -46,6 +47,7 @@ void run_focus(Suite& suite, const Options& options);
 void run_hopf(Suite& suite, const Options& options);
 void run_sweep(Suite& suite, const Options& options);
 void run_slice(Suite& suite, const Options& options);
+void run_raw(Suite& suite, const Options& options);
 void run_measure(const Options& options);
 void run_measure_prepare(const Options& options);
 int run_child(const Options& options);

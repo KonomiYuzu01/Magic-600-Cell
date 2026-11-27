@@ -82,18 +82,6 @@
       "palette": "not in this build yet",
       "why": "a K2 server row: the D02 shell has no handler for it yet"
     },
-    "view.mode.raw": {
-      "palette": "a draft row: this build does not carry it out yet",
-      "why": "B21, the raw view, is not built yet"
-    },
-    "view.mode.raw.clip": {
-      "palette": "a draft row: this build does not carry it out yet",
-      "why": "B21, the raw view, is not built yet"
-    },
-    "view.mode.raw.antipode": {
-      "palette": "a draft row: this build does not carry it out yet",
-      "why": "B21, the raw view, is not built yet"
-    },
     "view.preset.jumble_entry": {
       "palette": "a draft row: this build does not carry it out yet",
       "why": "the entry slot row has no handler yet"
@@ -632,7 +620,8 @@
         },
         {
           "op": "view.mode.raw.clip",
-          "wait_ms": 200
+          "wait_ms": 200,
+          "argument": "0.5"
         },
         {
           "op": "view.mode.raw.antipode",
@@ -640,29 +629,11 @@
         },
         {
           "op": "view.preset.global.ring_sheet",
-          "wait_ms": 1200
+          "wait_ms": 200
         },
         {
           "op": "view.preset.global.hopf_rings",
-          "wait_ms": 1200
-        },
-        {
-          "op": "view.preset.global.chart",
-          "wait_ms": 1200
-        },
-        {
-          "op": "view.preset.global.chain",
-          "wait_ms": 1200
-        },
-        {
-          "op": "look.sticker_palette.set",
-          "argument": "graphite.a",
-          "wait_ms": 400
-        },
-        {
-          "op": "look.scene.set",
-          "argument": "solving",
-          "wait_ms": 400
+          "wait_ms": 200
         },
         {
           "op": "view.preset.jumble_entry",
@@ -693,6 +664,34 @@
           "op": "research.run.view",
           "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4",
           "wait_ms": 200
+        },
+        {
+          "op": "look.sticker_palette.set",
+          "argument": "graphite.b",
+          "wait_ms": 650
+        },
+        {
+          "op": "look.scene.set",
+          "argument": "inspecting",
+          "wait_ms": 650
+        },
+        {
+          "op": "look.scene.set",
+          "argument": "solving",
+          "wait_ms": 650
+        },
+        {
+          "op": "look.sticker_palette.set",
+          "argument": "graphite.a",
+          "wait_ms": 650
+        },
+        {
+          "op": "view.preset.global.chart",
+          "wait_ms": 1500
+        },
+        {
+          "op": "view.preset.global.chain",
+          "wait_ms": 1000
         },
         {
           "wait_ms": 1000

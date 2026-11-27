@@ -1287,7 +1287,7 @@ void product_focus(const Options& options) {
         auto bad = apart;
         switch (field) {
         case 0: bad.struct_size = 20; break;
-        case 1: bad.projection = 2; break;
+        case 1: bad.projection = 3; break; // ADR-D02 B21: 2 is the raw view's stereographic projection
         case 2: bad.focus_cell = 600; break;
         case 3: bad.focus_cos = nan; break;
         case 4: bad.focus_cos = 1.5f; break;
@@ -2297,6 +2297,152 @@ void product_slice(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ADR-D01.49/.52: the colour and background exports, with the product fixture on WARP.
+void product_colours(const Options& options) {
+    using namespace panes_check;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    load(harness, Side, Side);
+    auto* ctx = harness.ctx;
+    const auto set = pickable_set(harness, 1, 1);
+    const Rows q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    PoseFrames frames{harness};
+    const auto draw = [&] { return frames.draw(1, 1, set, q); };
+
+    constexpr uint32_t default_background = 0xff292521, green_background = 0xff00ff00;
+    const auto original = draw();
+    expect(original[0] == default_background, "the no-call clear colour is not today's RGBA8 value");
+    const auto [x, y] = covered_point(original);
+    const auto ids = [&] {
+        const auto sticker = pick(harness, frames.frame, x, y), background = pick(harness, frames.frame, 0, 0);
+        expect(sticker.state == SA2_PICK_READY && background.state == SA2_PICK_READY, "a colour-check pick was not ready");
+        return std::array{sticker.instance, background.instance};
+    };
+    const auto original_ids = ids();
+    expect(original_ids[0] > 0 && original_ids[0] <= SA2_SLOTS && original_ids[1] == 0, "the fixture needs a sticker and background pick");
+    const uint32_t home = (original_ids[0] - 1) / sb::Stickers;
+
+    const std::vector<uint8_t> fill(SA2_PIECES, 1);
+    sa2_view_style tint{};
+    tint.struct_size = sizeof(tint);
+    tint.tint_mode = SA2_STYLE_TINT_FILL;
+    tint.matrix[0] = tint.matrix[4] = tint.matrix[8] = 1.0f;
+    tint.palette[6] = 1.0f; // index 1 is blue at half strength
+    tint.palette[7] = 0.5f;
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    api(ctx, sa2_view_style_set(ctx, 1, &tint));
+    const auto original_styled = draw();
+    expect(original_styled != original && ids() == original_ids, "the tint fixture did not draw or changed the IDs");
+    api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+
+    api(ctx, sa2_sticker_colours_set(ctx, nullptr, 0));
+    expect(draw() == original, "a NULL table changed the default frame");
+    api(ctx, sa2_scene_look_set(ctx, nullptr));
+    expect(draw() == original, "a NULL scene look changed the default frame");
+    sa2_scene_look look{sizeof(sa2_scene_look), 0, {0.13f, 0.145f, 0.16f, 1.0f}, 0.2f, 0.4f, 0.6f, 0.8f};
+    api(ctx, sa2_scene_look_set(ctx, &look));
+    expect(draw() == original, "today's background with carried values changed the default frame");
+
+    // Isolate the chosen home class in the left pane and put every other class in the right pane. Every changed
+    // pixel then has an independent class/coverage check, including when the two sets would occlude each other.
+    std::vector<uint8_t> chosen(SA2_SLOTS), rest(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) {
+        chosen[slot] = uint8_t(slot / sb::Stickers == home);
+        rest[slot] = uint8_t(!chosen[slot]);
+    }
+    const auto one = pose_set(harness, 2, chosen), other = pose_set(harness, 3, rest);
+    const std::vector<sa2_pane> panes{
+        make(2, one, 0, 0, Side / 2, Side, q), make(3, other, Side / 2, 0, Side / 2, Side, q),
+    };
+    std::array<float, SA2_STICKER_CLASSES * 3> table{};
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    const auto pane_base = frames.draw_panes(1, panes);
+    table[3 * home] = 1.0f;
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    const auto pane_colours = frames.draw_panes(1, panes);
+    size_t recoloured = 0, other_class = 0;
+    for (size_t i = 0; i < pane_base.size(); ++i) {
+        const bool left = i % Side < Side / 2;
+        const bool covered = pane_base[i] != default_background;
+        const bool changed = pane_base[i] != pane_colours[i];
+        expect(changed == (left && covered), "the palette changed a pixel outside its class or missed one inside it");
+        if (changed) expect((pane_colours[i] & 0xffffff) == (pane_colours[i] & 0xff) && (pane_colours[i] & 0xff) > 0,
+                           "a recoloured sticker did not draw red");
+        recoloured += changed;
+        other_class += covered && !left;
+    }
+    expect(recoloured > 0 && other_class > 0, "both panes must show stickers");
+
+    const auto colours = draw();
+    look.background[0] = look.background[2] = 0.0f;
+    look.background[1] = 1.0f;
+    api(ctx, sa2_scene_look_set(ctx, &look));
+    const auto backdrop = draw();
+    expect(ids() == original_ids, "the table and scene look changed the product IDs");
+    const auto compare_background = [&](const auto& from, const auto& to) {
+        size_t changed = 0;
+        for (size_t i = 0; i < from.size(); ++i) {
+            const bool clear = from[i] == default_background;
+            expect(to[i] == (clear ? green_background : from[i]), "only the old background pixels should change to the new clear");
+            changed += clear;
+        }
+        expect(changed > 0 && changed < from.size(), "the fixture needs background and sticker pixels");
+        return changed;
+    };
+    const auto cleared = compare_background(colours, backdrop);
+    const auto pane_cleared = compare_background(pane_colours, frames.draw_panes(1, panes));
+
+    const auto refused = [](int32_t code) { expect(code == SA2_E_INVALID_ARGUMENT, "an invalid colour or scene look was accepted"); };
+    auto bad_table = table;
+    bad_table[3 * home] = 0.25f;
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES - 1));
+    bad_table.back() = std::numeric_limits<float>::quiet_NaN();
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES));
+    bad_table.back() = 1.5f;
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES));
+    auto bad_look = look;
+    bad_look.background[0] = 1.0f;
+    bad_look.struct_size -= uint32_t(sizeof(float));
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    bad_look.struct_size = sizeof(bad_look);
+    bad_look.fog = std::numeric_limits<float>::quiet_NaN();
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    bad_look.fog = 1.5f;
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    expect(draw() == backdrop, "an invalid argument changed the installed table or background");
+
+    api(ctx, sa2_view_style_set(ctx, 1, &tint));
+    const auto styled = draw();
+    expect(ids() == original_ids, "the table and scene look changed the styled IDs");
+    size_t tinted = 0, tinted_red = 0;
+    for (size_t i = 0; i < backdrop.size(); ++i) {
+        if (backdrop[i] == green_background) {
+            expect(styled[i] == green_background, "the tint changed the background");
+            continue;
+        }
+        const int base_red = int(backdrop[i] & 0xff), red = int(styled[i] & 0xff), blue = int(styled[i] >> 16 & 0xff);
+        expect(blue > 0 && !(styled[i] & 0xff00) && std::abs(2 * red - base_red) <= 1,
+               "the half-strength blue tint did not mix with the shaded base colour");
+        if (base_red > 0) expect(std::abs(red - blue) <= 1, "the tint and sticker colour are shaded differently");
+        tinted_red += base_red > 0;
+        tinted += styled[i] != backdrop[i];
+    }
+    expect(tinted > 0 && tinted_red > 0, "the styled frame needs tinted pixels in the recoloured class");
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), 0));
+    api(ctx, sa2_scene_look_set(ctx, nullptr));
+    expect(draw() == original_styled, "clearing both exports did not restore the styled frame bytes");
+    std::cout << "scene colours: " << recoloured << " palette pixels (0 outside class " << home << "), " << cleared
+              << " background pixels, " << pane_cleared << " pane background pixels, " << tinted << " tint pixels ("
+              << tinted_red << " over the recoloured class)" << std::endl;
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+void run_colours(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the scene colours check runs on WARP only");
+    suite.check("scene colours warp", [&] { product_colours(options); });
+}
+
 // ADR-D02 B18: --warp --sweep. Only WARP; parse refuses any other mode.
 void run_sweep(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the transform check runs on WARP only");
@@ -2307,6 +2453,126 @@ void run_sweep(Suite& suite, const Options& options) {
 void run_slice(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the slice check runs on WARP only");
     suite.check("slice warp", [&] { product_slice(options); });
+}
+
+// ADR-D02 B21's WARP check (--warp --raw): the raw view on view 2 at focus cell 150, each frame one pane. A frame's
+// clipped triangles (the newest harvested frame's pipeline statistics) count its drawn stickers' triangles exactly,
+// since every chart here fits the target and no triangle is cut by the frustum.
+void product_raw(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    using Newest = void (*)(uint64_t*);
+    const auto newest = reinterpret_cast<Newest>(reinterpret_cast<void*>(
+        GetProcAddress(GetModuleHandleW(L"sa2_interop.dll"), "sa2_test_frame_statistics")));
+    expect(newest != nullptr, "sa2_interop.dll has no sa2_test_frame_statistics");
+    const auto reports = [&] {
+        sa2_frame_report rows[16]{};
+        for (auto& row : rows) row.struct_size = sizeof(row);
+        uint32_t count = 0;
+        api(ctx, sa2_frame_reports(ctx, rows, 16, &count));
+    };
+    std::vector<uint32_t> last;
+    const auto triangles = [&](const Rows& camera, uint32_t flags) {
+        sa2_pane pane{};
+        pane.view = 2; pane.view_generation = 1; pane.resource_set = 0;
+        pane.width = harness.width; pane.height = harness.height;
+        for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) pane.camera_matrix[c * 4 + r] = float(camera[r * 4 + c]);
+        pane.flags = flags;
+        reports();
+        last = frames.draw_panes(1, {pane});
+        reports();
+        uint64_t s[4]{};
+        newest(s);
+        expect(s[0] == frames.frame, "the newest harvested frame is not the measured one");
+        return s[2];
+    };
+    const auto focus = [&](uint32_t projection, uint32_t cell, float h) {
+        const sa2_view_focus f{sizeof(sa2_view_focus), projection, cell, h, 1.0f, 0};
+        return sa2_view_focus_set(ctx, 2, &f);
+    };
+    // Zoom 1.6: clip w is 5 - p.z, so even the h = 0 chart (radius about 2) stays inside the frustum.
+    const sa2_view_shape shape{sizeof(sa2_view_shape), 0.76f, 0.82f, 1.18f, 1.6f, 0};
+    api(ctx, sa2_view_shape_set(ctx, 2, &shape));
+    expect(focus(SA2_PROJECTION_STEREOGRAPHIC, SA2_FOCUS_NONE, 0.5f) == SA2_E_INVALID_ARGUMENT
+        && focus(SA2_PROJECTION_STEREOGRAPHIC, 150, -0.01f) == SA2_E_INVALID_ARGUMENT, "a raw view without a pole or past 90 degrees was taken");
+    const Rows I = double_rotation(0, 1, 0, 2, 3, 0);
+    api(ctx, focus(SA2_PROJECTION_ORTHOGRAPHIC, SA2_FOCUS_NONE, -1.0f));
+    const auto whole = triangles(I, 0);
+    expect(triangles(I, SA2_PANE_ANTIPODE) == whole, "the antipode flag changed a frame without the raw view");
+    // At h = 0 every sticker is drawn in exactly one of the two charts.
+    api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, 0.0f));
+    const auto near0 = triangles(I, 0), far0 = triangles(I, SA2_PANE_ANTIPODE);
+    std::cout << "raw: whole " << whole << " triangles; at h = 0 the chart draws " << near0 << " and the antipode chart " << far0 << '\n' << std::flush;
+    expect(near0 > 0 && far0 > 0 && near0 + far0 == whole, "at h = 0 the two charts together do not draw every sticker exactly once");
+    // Nothing draws past the clip: the raw chart draws exactly the stickers the cap test keeps at the same h.
+    for (const float h : {121.0f / 125.0f, 0.5f}) {
+        api(ctx, focus(SA2_PROJECTION_ORTHOGRAPHIC, 150, h));
+        const auto cap = triangles(I, 0);
+        api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, h));
+        const auto raw = triangles(I, 0), antipode = triangles(I, SA2_PANE_ANTIPODE);
+        std::cout << "raw: h " << h << ": the cap test draws " << cap << " triangles, the raw chart " << raw << ", the antipode chart "
+                  << antipode << '\n' << std::flush;
+        expect(cap > 0 && raw == cap, "the raw chart does not draw exactly the stickers inside its clip");
+        // The cells are symmetric under -I but their sticker triangulations are not exactly (at h 0.968: 103,500 and 102,652).
+        expect(antipode > 0 && std::max(antipode, raw) - std::min(antipode, raw) <= raw / 50, "the antipode chart does not draw about as many triangles as the chart");
+    }
+    // A rotation that keeps the pole (a twist of the named cap; here the camera's spin in the screen plane) turns each
+    // chart rigidly about its centre: the turned frame's covered pixels, turned back, land on the first frame's.
+    api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, 0.5f));
+    const Rows spun = double_rotation(0, 1, 0.6, 2, 3, 0);
+    for (const uint32_t flags : {0u, SA2_PANE_ANTIPODE}) {
+        triangles(I, flags);
+        const auto a = last;
+        triangles(spun, flags);
+        const auto b = last;
+        const auto background = a[0];
+        const int w = int(harness.width), h = int(harness.height);
+        uint64_t cover = 0, best = 0;
+        for (const double angle : {0.6, -0.6}) {
+            uint64_t seen = 0, match = 0;
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x) {
+                    if (b[size_t(y) * w + x] == background) continue;
+                    ++seen;
+                    const double dx = x + 0.5 - w / 2.0, dy = y + 0.5 - h / 2.0;
+                    const int ax = int(std::floor(w / 2.0 + dx * std::cos(angle) + dy * std::sin(angle)));
+                    const int ay = int(std::floor(h / 2.0 - dx * std::sin(angle) + dy * std::cos(angle)));
+                    bool hit = false;
+                    for (int oy = -1; oy <= 1 && !hit; ++oy)
+                        for (int ox = -1; ox <= 1 && !hit; ++ox) {
+                            const int px = ax + ox, py = ay + oy;
+                            hit = px >= 0 && py >= 0 && px < w && py < h && a[size_t(py) * w + px] != background;
+                        }
+                    match += hit ? 1 : 0;
+                }
+            cover = seen;
+            best = std::max(best, match);
+        }
+        std::cout << "raw: turned about the centre" << (flags ? " (antipode)" : "") << ": " << best << " of " << cover
+                  << " covered pixels land on covered pixels\n" << std::flush;
+        expect(cover > 1000 && best * 100 >= cover * 98, "a rotation that keeps the pole did not turn the chart rigidly about its centre");
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+// ADR-D02 B21: --warp --raw. Only WARP; parse refuses any other mode.
+void run_raw(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the raw view check runs on WARP only");
+    suite.check("raw view warp", [&] { product_raw(options); });
 }
 
 // ABI 10: --warp --hopf FILE. Only WARP; parse refuses any other mode.

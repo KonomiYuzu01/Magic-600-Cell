@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Magic600.Chrome;
 
 namespace Magic600.Shell;
 
@@ -131,6 +132,10 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_check",
         "m6h_last_error",
         "m6h_destroy",
+        // ADR-D02 B21: the raw view's antipode pane.
+        "m6h_set_pane_flags",
+        "m6h_set_sticker_colours",
+        "m6h_set_scene_look",
     };
 
     /// <summary>A submitted frame, as m6h_frame writes it (the Rust M6hFrame).</summary>
@@ -379,12 +384,21 @@ public sealed unsafe class HostLibrary : IDisposable
     public int ClearPane(IntPtr host, uint pane) =>
         ((delegate* unmanaged[Cdecl]<IntPtr, uint, int>)_exports["m6h_clear_pane"])(host, pane);
 
+    /// <summary>ADR-D02 B21: a set pane's core flags, 0 or <see cref="PaneAntipode"/>; a later SetPane resets them.</summary>
+    public int SetPaneFlags(IntPtr host, uint pane, uint flags) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, int>)_exports["m6h_set_pane_flags"])(host, pane, flags);
+
+    /// <summary>ADR-D02 B21: the raw view's pane flag, its stereographic chart after -I (SA2_PANE_ANTIPODE).</summary>
+    public const uint PaneAntipode = 1;
+
     /// <summary>The focus's perspective projection (the shape's d4).</summary>
     public const uint ProjectionPerspective = 0;
     /// <summary>The focus's orthographic projection.</summary>
     public const uint ProjectionOrthographic = 1;
     /// <summary>No focus cell: every sticker is drawn.</summary>
     public const uint FocusNone = uint.MaxValue;
+    /// <summary>ADR-D02 B21: the raw view's stereographic chart from the focus pole; it needs a focus cell and 0 &lt;= focus_cos.</summary>
+    public const uint ProjectionStereographic = 2;
 
     /// <summary>
     /// Sets the focus a view's frames draw with (version 12): the projection, the cell whose centre is the pole (turned
@@ -896,6 +910,47 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>Frees a host. The core's context stays the shell's to detach afterwards.</summary>
     public void Destroy(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, void>)_exports["m6h_destroy"])(host);
+
+    /// <summary>Sets one encoded RGB triple per home cell, or clears the table with null or an empty array.</summary>
+    public int SetStickerColours(IntPtr host, float[]? rgb)
+    {
+        const int count = StickerColouring.CellCount;
+        if (rgb is { Length: > 0 } && rgb.Length != 3 * count)
+        {
+            return InvalidArgument;
+        }
+        fixed (float* p = rgb)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, float*, uint, int>)_exports["m6h_set_sticker_colours"])(
+                host, p, p == null ? 0u : count);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SceneLook
+    {
+        public uint StructSize, Reserved;
+        public float Red, Green, Blue, Alpha;
+        public float Fog, Glow, EdgeBrightness, EdgeWeight;
+    }
+
+    /// <summary>Sets the clear colour and the four carried scene values. Null restores the core's defaults.</summary>
+    public int SetSceneLook(IntPtr host, SceneLookValues? look)
+    {
+        var call = (delegate* unmanaged[Cdecl]<IntPtr, SceneLook*, int>)_exports["m6h_set_scene_look"];
+        if (look is null)
+        {
+            return call(host, null);
+        }
+        var row = new SceneLook
+        {
+            StructSize = (uint)sizeof(SceneLook), Reserved = 0,
+            Red = (float)look.Background.R, Green = (float)look.Background.G, Blue = (float)look.Background.B, Alpha = 1,
+            Fog = (float)look.Fog, Glow = (float)look.Glow,
+            EdgeBrightness = (float)look.EdgeBrightness, EdgeWeight = (float)look.EdgeWeight,
+        };
+        return call(host, &row);
+    }
 
     public void Dispose()
     {

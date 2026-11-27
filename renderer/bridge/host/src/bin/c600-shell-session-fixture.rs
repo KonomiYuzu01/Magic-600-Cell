@@ -14,8 +14,10 @@
 //! fixture's session once, as the shell does at a launch, checks the head, prints `reopen_ms: N` and removes the copy.
 //! `--word` takes no `--puzzle` and no `--runtime`. The timed reopen runs beside the control at the close
 //! ([`c600_shell_host::fixture::write_word_with`], ADR-D02 B26), since each replays the whole journal: the copy is
-//! taken once every letter is committed, with its `lock` file made empty in place of the live session's, which the
-//! layer may still hold. `reopen_ms` is then timed while the control runs on another thread.
+//! taken once every letter is committed and before the control starts, with its `lock` file made empty in place of
+//! the live session's, which the layer may still hold. `reopen_ms` is then timed while the control runs on another
+//! thread; only the copy's reopen runs beside it, since a copy that still read the journal while the control reopened
+//! it failed the control with os error 32 on Windows (B33's replay).
 //!
 //! Exit 0 on success, 1 on a failure, 2 for a usage error. Nothing here launches a window or uses a GPU.
 
@@ -113,16 +115,21 @@ fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Reopens a copy of the fixture's session as the shell does at a launch, checks its head, and answers the time the
-/// reopen took in milliseconds. The copy is removed.
-fn timed_reopen(kernel: Arc<Kernel>, args: &Args, read: &fixture::Fixture) -> Result<u128, String> {
+/// Copies the fixture's session folder beside `out`, for [`timed_reopen`]; it runs before the control at the close.
+fn session_copy(args: &Args) -> Result<PathBuf, String> {
     let copy = args.out.with_extension("reopen-check");
     let _ = std::fs::remove_dir_all(&copy);
     copy_dir(&args.out.join(fixture::SESSION), &copy).map_err(|error| format!("the session's copy: {error}"))?;
+    Ok(copy)
+}
+
+/// Reopens the session's copy as the shell does at a launch, checks its head, and answers the time the reopen took in
+/// milliseconds. The copy is removed.
+fn timed_reopen(kernel: Arc<Kernel>, args: &Args, read: &fixture::Fixture, copy: &Path) -> Result<u128, String> {
     let started = Instant::now();
-    let reopened = Turns::reopen(kernel, &args.assets, &copy, &args.menu, read).map(|mut turns| turns.head());
+    let reopened = Turns::reopen(kernel, &args.assets, copy, &args.menu, read).map(|mut turns| turns.head());
     let elapsed = started.elapsed().as_millis();
-    let _ = std::fs::remove_dir_all(&copy);
+    let _ = std::fs::remove_dir_all(copy);
     let digest = reopened??.digest();
     if digest != read.digest {
         return Err(format!("the copy reopened at {digest}, not the fixture's {}", read.digest));
@@ -135,11 +142,20 @@ fn run(args: &Args) -> Result<(), String> {
     let reopened = match &args.word {
         Some(word) => {
             let side = kernel.clone();
-            let timed = |shown: &fixture::Fixture| {
-                timed_reopen(side, args, shown).map(|elapsed| (elapsed, shown.digest.clone()))
+            let timed = |shown: &fixture::Fixture, copy: Result<PathBuf, String>| {
+                copy.and_then(|copy| timed_reopen(side, args, shown, &copy))
+                    .map(|elapsed| (elapsed, shown.digest.clone()))
             };
-            let (_, reopened) =
-                fixture::write_word_with(kernel.clone(), &args.assets, &args.menu, &args.out, &letters(word)?, timed)?;
+            let copy = |_: &fixture::Fixture| session_copy(args);
+            let (_, reopened) = fixture::write_word_with(
+                kernel.clone(),
+                &args.assets,
+                &args.menu,
+                &args.out,
+                &letters(word)?,
+                copy,
+                timed,
+            )?;
             Some(reopened?)
         }
         None => {

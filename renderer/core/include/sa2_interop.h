@@ -1274,6 +1274,25 @@ static_assert(sizeof(sa2_view_focus) == 24, "sa2_view_focus requires the x64 ABI
 
 SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus);
 
+/* ADR-D02 B21 (ADR-D02.18, added to ABI 10 before any release): the raw view. Additive: every earlier call, struct and
+ * behaviour is unchanged.
+ *
+ * SA2_PROJECTION_STEREOGRAPHIC in sa2_view_focus draws the view as the stereographic chart that
+ * c600_display::chart::Stereographic declares with the pole -p, p the focus pole: x maps to the stereographic image of
+ * x/|x| from -p, so p is the chart's centre and only -p is singular. The core turns p to +w (T, as the focus does), then
+ * applies the frame's camera (a 3D spin that keeps w), and draws q = camera * T * x/|x| at 2 q.xyz / (1 + q.w), scaled
+ * by 2 so it agrees with the orthographic chain at the centre to first order (90 degrees from p lies at radius 2). It
+ * needs a focus cell, and focus_cos is the clip h: a sticker is drawn when its posed, unshrunk centre c (the anchor) has
+ * dot(c, p) >= h, with 0 <= h <= 1, so the clip goes no further than 90 degrees. The spread is unused. A twist about p
+ * (a rotation that keeps p) is a rigid rotation about the chart's centre.
+ *
+ * A pane with SA2_PANE_ANTIPODE in its flags draws its view's raw chart after -I (a proper rotation of R4, determinant
+ * +1, so the handedness is shared): the antipode chart, centred on -p. Its anchor test is half-open: dot(-c, p) > h. At
+ * h = 0 every sticker is therefore drawn in exactly one of the two panes. Under any other projection the flag changes
+ * nothing. A pick on such a pane draws its ID pass after -I as well. Any other pane flag is refused. */
+#define SA2_PROJECTION_STEREOGRAPHIC 2u
+#define SA2_PANE_ANTIPODE 1u
+
 /* ABI 10: a view's layout (ADR-D02 build step B23, bare; a candidate behind the shell's --d02): Global opens on the
  * Hopf rings, Look Lab's GlobalLayout ring charts. Additive: every ABI 9 call, struct and behaviour is unchanged, and
  * a view whose layout was never set draws byte-identically to ABI 9.
@@ -1338,6 +1357,35 @@ SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_v
  */
 #define SA2_TRANSFORM_PLANE_TOLERANCE 1e-3f
 SA2_API int32_t sa2_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle, const uint8_t* moving_mask, float phase);
+
+/* ADR-D01.49/.5/.52 (added to ABI 10 before any release): the scene's sticker colours and look. Both are
+ * device-free product state for a loaded scene outside a trace, kept across recovery and used on the next draw.
+ * rgb is count triples of encoded RGB in home-cell order (labels[slot] / 433). A non-NULL table with a
+ * nonzero count must have SA2_STICKER_CLASSES entries. NULL or count 0 restores the built-in hues.
+ * The unmarked sticker's base colour is shaded before the piece style is applied.
+ */
+#define SA2_STICKER_CLASSES 600u
+SA2_API int32_t sa2_sticker_colours_set(sa2_context* ctx, const float* rgb, uint32_t count);
+
+/* Only background (encoded RGBA) changes the draw. Fog, glow, edge_brightness and edge_weight are
+ * carried, drawn by no pass yet. NULL restores the default background {0.13f, 0.145f, 0.16f, 1}.
+ * Both setters refuse non-finite or out-of-[0,1] components with SA2_E_INVALID_ARGUMENT and change nothing.
+ * The scene look also requires the struct size and a zero reserved field.
+ */
+typedef struct sa2_scene_look {
+    uint32_t struct_size;
+    uint32_t reserved;
+    float background[4];
+    float fog;
+    float glow;
+    float edge_brightness;
+    float edge_weight;
+} sa2_scene_look;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_scene_look) == 40, "sa2_scene_look requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look);
 
 #ifdef __cplusplus
 }

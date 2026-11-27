@@ -102,8 +102,9 @@ use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::{
-    piece_style_valid, Sa2Pane, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, PANES_MAX, PIECES,
-    STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_CHANNEL_SLICE, STYLE_SLOTS, TARGET_SURFACE,
+    piece_style_valid, Sa2Pane, Sa2SceneLook, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, StickerColours,
+    PANES_MAX, PIECES, STICKER_CLASSES, STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_CHANNEL_SLICE, STYLE_SLOTS,
+    TARGET_SURFACE,
 };
 use c600_render::backend::PickTicket;
 use c600_render::{DisplayTime, PaneSpec, RenderBackend};
@@ -425,6 +426,8 @@ struct Pane {
     width: u32,
     height: u32,
     style: u32,
+    /// ADR-D02 B21: the core's pane flags (`m6h_set_pane_flags`); a new pane starts at 0.
+    flags: u32,
 }
 
 impl Pane {
@@ -865,6 +868,7 @@ impl ShellHost {
                     width: pane.width,
                     height: pane.height,
                     style: pane.style,
+                    flags: pane.flags,
                 }),
                 _ => break,
             }
@@ -1796,7 +1800,7 @@ pub unsafe extern "C" fn m6h_set_pane(
             if style > STYLE_SLOTS {
                 return invalid("a pane's style is 0 or a style slot 1..4");
             }
-            let set = Pane { view: id, x, y, width, height, style };
+            let set = Pane { view: id, x, y, width, height, style, flags: 0 };
             let viewport = shell.host.view(VIEW).map_or((0, 0), |v| v.viewport);
             if !set.rect().inside(viewport) {
                 return invalid("a pane's rectangle is empty or lies outside the viewport");
@@ -2663,5 +2667,84 @@ pub unsafe extern "C" fn m6h_destroy(handle: *mut ShellHost) {
     if !handle.is_null() {
         // SAFETY: the contract; a panic in a destructor is not carried across the C boundary.
         let _ = catch_unwind(AssertUnwindSafe(|| drop(unsafe { Box::from_raw(handle) })));
+    }
+}
+
+/// ADR-D02 B21 (ADR-D02.18): sets the core's flags of pane `pane` (0 to 3), which must be set: 0, or
+/// `SA2_PANE_ANTIPODE` (1) for the raw view's antipode chart, the view's stereographic chart after -I. A later
+/// [`m6h_set_pane`] of that pane resets them to 0. An unset pane, another index or another flag answers
+/// [`M6H_E_INVALID_ARGUMENT`] and changes nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_pane_flags(handle: *mut ShellHost, pane: u32, flags: u32) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let invalid = |why: &str| Err((M6H_E_INVALID_ARGUMENT, why.to_owned()));
+            if flags & !c600_render::abi::PANE_ANTIPODE != 0 {
+                return invalid("a pane's flags are 0 or SA2_PANE_ANTIPODE");
+            }
+            match shell.panes.get_mut(pane as usize).and_then(Option::as_mut) {
+                Some(set) => {
+                    set.flags = flags;
+                    Ok(())
+                }
+                None => invalid("pane flags name a set pane 0..3"),
+            }
+        })
+    }
+}
+
+/// Sets the home-cell sticker colours for the next product frame. A null pointer or zero count restores the hues.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using. When non-null and `count` is `STICKER_CLASSES`, `rgb`
+/// points to `count` readable RGB triples.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_sticker_colours(handle: *mut ShellHost, rgb: *const f32, count: u32) -> i32 {
+    // SAFETY: the handle and the table, once its count is checked, satisfy the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let table = if rgb.is_null() || count == 0 {
+                None
+            } else {
+                if count as usize != STICKER_CLASSES {
+                    return Err((M6H_E_INVALID_ARGUMENT, "a sticker colour table needs 600 RGB triples".to_owned()));
+                }
+                let table = &*rgb.cast::<StickerColours>();
+                if !table.iter().flatten().all(|value| (0.0..=1.0).contains(value)) {
+                    return Err((M6H_E_INVALID_ARGUMENT, "sticker RGB must be finite and within 0..1".to_owned()));
+                }
+                Some(table)
+            };
+            shell.host.backend.set_sticker_colours(table).map_err(host_error)
+        })
+    }
+}
+
+/// Sets the scene's background and carried values for the next product frame. A null pointer restores the defaults.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using. `look` is null or points to a readable struct size and,
+/// if the size matches, a readable `Sa2SceneLook`.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_scene_look(handle: *mut ShellHost, look: *const Sa2SceneLook) -> i32 {
+    // SAFETY: the handle and the row, once its size is checked, satisfy the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if !look.is_null() && look.cast::<u32>().read() as usize != std::mem::size_of::<Sa2SceneLook>() {
+                return Err((M6H_E_INVALID_ARGUMENT, "invalid scene look size".to_owned()));
+            }
+            let look = look.as_ref();
+            if look.is_some_and(|row| row.reserved != 0 || !row.in_range()) {
+                return Err((M6H_E_INVALID_ARGUMENT, "invalid scene look reserved field or value".to_owned()));
+            }
+            shell.host.backend.set_scene_look(look).map_err(host_error)
+        })
     }
 }

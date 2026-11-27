@@ -20,6 +20,30 @@ Digest digest(const uint8_t* bytes) {
 bool zero(const uint8_t* bytes, size_t count) {
     return std::all_of(bytes, bytes + count, [](uint8_t b) { return b == 0; });
 }
+bool unit_colour(float value) { return std::isfinite(value) && value >= 0.0f && value <= 1.0f; }
+}
+
+void Product::set_sticker_colours(const float* rgb, uint32_t count) {
+    StickerColours next{};
+    if (rgb && count) {
+        argument(count == SA2_STICKER_CLASSES, "a sticker colour table needs 600 RGB triples");
+        for (uint32_t i = 0; i < count; ++i) {
+            const float* colour = rgb + 3 * i;
+            argument(std::all_of(colour, colour + 3, unit_colour), "sticker RGB must be finite and within 0..1");
+            next[i] = {colour[0], colour[1], colour[2], 1.0f};
+        }
+    }
+    sticker_colours_ = next;
+}
+
+void Product::set_scene_look(const sa2_scene_look* look) {
+    if (look) {
+        argument(look->struct_size == sizeof(*look) && look->reserved == 0, "invalid scene look size or reserved field");
+        argument(std::all_of(look->background, look->background + 4, unit_colour) && unit_colour(look->fog)
+                 && unit_colour(look->glow) && unit_colour(look->edge_brightness) && unit_colour(look->edge_weight),
+                 "scene look values must be finite and within 0..1");
+    }
+    scene_look_ = look ? *look : DefaultSceneLook;
 }
 
 uint64_t EngineImage::bytes() const {
@@ -105,8 +129,12 @@ void view_focus(const sa2_view_focus* focus, ViewShape& shape) {
     }
     argument(focus->struct_size == sizeof(*focus), "invalid view_focus struct_size");
     argument(focus->reserved == 0, "view_focus reserved must be 0");
-    argument(focus->projection == SA2_PROJECTION_PERSPECTIVE || focus->projection == SA2_PROJECTION_ORTHOGRAPHIC,
-             "projection must be SA2_PROJECTION_PERSPECTIVE or SA2_PROJECTION_ORTHOGRAPHIC");
+    argument(focus->projection == SA2_PROJECTION_PERSPECTIVE || focus->projection == SA2_PROJECTION_ORTHOGRAPHIC
+             || focus->projection == SA2_PROJECTION_STEREOGRAPHIC,
+             "projection must be SA2_PROJECTION_PERSPECTIVE, SA2_PROJECTION_ORTHOGRAPHIC or SA2_PROJECTION_STEREOGRAPHIC");
+    // ADR-D02 B21: the raw view needs a pole, and its clip goes no further than 90 degrees.
+    argument(focus->projection != SA2_PROJECTION_STEREOGRAPHIC || (focus->focus_cell != SA2_FOCUS_NONE && focus->focus_cos >= 0.0f),
+             "SA2_PROJECTION_STEREOGRAPHIC needs a focus cell and 0 <= focus_cos");
     argument(focus->focus_cell == SA2_FOCUS_NONE || focus->focus_cell < 600, "focus_cell must be a cell 0..599 or SA2_FOCUS_NONE");
     argument(std::isfinite(focus->focus_cos) && focus->focus_cos >= -1.0f && focus->focus_cos <= 1.0f, "focus_cos must be finite and within -1..1");
     argument(std::isfinite(focus->spread) && focus->spread >= 1.0f && focus->spread <= 3.0f, "spread must be finite and within 1..3");
@@ -592,7 +620,7 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         "the frame input's view, view generation, resource set and camera must be the first pane's");
     for (uint32_t i = 0; i < count; ++i) {
         const auto& pane = panes[i];
-        argument(pane.flags == 0, "a pane's flags must be 0");
+        argument((pane.flags & ~SA2_PANE_ANTIPODE) == 0, "a pane's flags must be 0 or SA2_PANE_ANTIPODE");
         argument(pane.style <= SA2_STYLE_SLOTS, "a pane's style is 0 or a style slot 1..SA2_STYLE_SLOTS");
         argument(pane.width >= 1 && pane.height >= 1 && pane.x >= 0 && pane.y >= 0
             && uint64_t(pane.x) + pane.width <= width && uint64_t(pane.y) + pane.height <= height, "a pane's rectangle must lie inside the target");
@@ -622,6 +650,7 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         made.pane = pane;
         made.publication_generation = i == 0 ? input.publication_generation : 0;
         made.shape = shape(pane.view);
+        made.shape.antipode = pane.flags & SA2_PANE_ANTIPODE; // ADR-D02 B21
         // ADR-D02 B18; B20: a frame with a ghost pane turns the pieces only in its ghost panes.
         if (!ghost_frame || ghosts(pane.style)) turn(made.shape);
         made.styled = pane.style != 0 && styled(pane.style, made.view_style);
