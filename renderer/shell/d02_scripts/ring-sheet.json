@@ -1,13 +1,43 @@
 {
   "format": "magic600-d02-script/1",
   "name": "ring-sheet",
-  "note": "B22, bare: on a data folder whose opening file names the ringSheet projection (a copy of Look Lab's samples), Global opens on the ring sheet, the 20 Hopf rings laid flat as 20 rows of 30 cell charts, at the file's field of view, on wj-ia-300's session fixture; two wheel notches scale the zoom by 1.1 squared.",
+  "note": "B22: on a data folder whose opening file names the ringSheet projection (a copy of Look Lab's samples), Global opens on the ring sheet, the 20 Hopf rings laid flat as 20 rows of 30 cell charts, at the file's field of view, on wj-ia-300's session fixture; two wheel notches scale the zoom by 1.1 squared. B22 rest: Global's border names the ring sheet, its wrap mark and its caption; two clicks select the pieces their charts show (on sticker blocks of the sheet at the run's zoom 2.6735 and 1280x720 window: a 5 x 5 probe over fractions 0.35..0.65 and 0.3..0.7 of the opening hit only these two, 27 November 2026); the palette's chain row returns Global to the projection chain and its chart row applies the ring sheet again.",
   "steps": [
     {
       "wait_ms": 2500
     },
     {
       "wheel": 2
+    },
+    {
+      "wait_ms": 1000
+    },
+    {
+      "click": [
+        0.425,
+        0.5
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.5,
+        0.6
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "command": "view.preset.global.chain"
+    },
+    {
+      "wait_ms": 1000
+    },
+    {
+      "command": "view.preset.global.chart"
     },
     {
       "wait_ms": 1000

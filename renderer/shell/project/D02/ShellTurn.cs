@@ -168,13 +168,27 @@ public static class ShellTurn
         var row = _armed;
         _armed = null;
         End("next twist");
+        _outline = null;
         if (row is null || revision != row.Revision + 1 || MotionRow is null)
         {
             return;
         }
         var half = Math.Abs(row.Angle - MathF.PI) < 1e-4f;
         var (seconds, curve) = MotionRow(half ? "jumble.half_turn" : "jumble.sweep");
-        _motion = new Motion(seconds <= 0 ? "static" : half ? "flash" : "sweep", revision, row, seconds, curve);
+        var kind = seconds <= 0 ? "static" : half ? "flash" : "sweep";
+        // B22 rest (ADR-D02.10): with a chart in Global (whose layout draws no turn, the core's viewFlags bit 3) a sweep
+        // outlines the moved set for the half-turn's fixed time, in Global only; Local carries the motion. With the
+        // slice in Local at another cap than the twisted one, no view sweeps it.
+        if (kind == "sweep" && ShellHopf.Drawn != ShellHopf.Chain)
+        {
+            var (outlineSeconds, _) = MotionRow("jumble.half_turn");
+            _outline = outlineSeconds > 0 ? new Outline(revision, row.Moving, outlineSeconds) : null;
+            if (Cap is int drawn && drawn != GripCap)
+            {
+                kind = "static";
+            }
+        }
+        _motion = new Motion(kind, revision, row, seconds, curve);
         if (_motion.Kind == "static")
         {
             End("static");
@@ -189,7 +203,50 @@ public static class ShellTurn
     }
 
     /// <summary>The flash's moving set while it shows (the outline channel draws it in palette entry 15), else null.</summary>
-    public static byte[]? Flash => _motion is { Kind: "flash", Started: not null } motion ? motion.Row.Moving : null;
+    public static byte[]? Flash => _motion is { Kind: "flash", Started: not null } motion ? motion.Row.Moving
+        : _outline is { Started: not null } outline ? outline.Moving : null;
+
+    /// <summary>B22 rest: the chart's moved-set outline shows and no flash does, so Local's panes leave entry 15 out.</summary>
+    public static bool OutlineOnly => _outline is { Started: not null } && _motion is not { Kind: "flash", Started: not null };
+
+    // B22 rest: the moved set's outline under a chart (ADR-D02.10), its count shown and ended for the dump.
+    private sealed class Outline
+    {
+        public Outline(ulong revision, byte[] moving, double seconds) => (Revision, Moving, Seconds) = (revision, moving, seconds);
+        public ulong Revision { get; }
+        public byte[] Moving { get; }
+        public double Seconds { get; }
+        public long? Started { get; set; }
+    }
+
+    private static Outline? _outline;
+    private static int _outlinesShown, _outlinesEnded;
+    private static double _outlineMs;
+
+    // Starts the outline on its adopted revision and ends it after its time or at a newer revision; true when the
+    // outline bytes must be sent again.
+    private static bool StepOutline(ulong adopted)
+    {
+        if (_outline is not { } outline || adopted < outline.Revision)
+        {
+            return false;
+        }
+        var now = Stopwatch.GetTimestamp();
+        if (adopted > outline.Revision || (outline.Started is long started
+            && (_outlineMs = Stopwatch.GetElapsedTime(started, now).TotalMilliseconds) >= outline.Seconds * 1000))
+        {
+            _outline = null;
+            _outlinesEnded++;
+            return outline.Started is not null;
+        }
+        if (outline.Started is null)
+        {
+            outline.Started = now;
+            _outlinesShown++;
+            return true;
+        }
+        return false;
+    }
 
     /// <summary>
     /// Each step before the frame. A sweep names phase 0 for its revision at once: the host holds it while the revision
@@ -199,7 +256,9 @@ public static class ShellTurn
     /// then it sets the eased phase of its time, and 1 at its end. The next adoption drops it. A flash starts on the adopted revision and ends after its time. A newer
     /// adopted revision ends either. Answers true when the flash's outline must be sent again.
     /// </summary>
-    public static bool Step(HostLibrary library, IntPtr host, ulong adopted)
+    public static bool Step(HostLibrary library, IntPtr host, ulong adopted) => StepOutline(adopted) | StepMotion(library, host, adopted);
+
+    private static bool StepMotion(HostLibrary library, IntPtr host, ulong adopted)
     {
         if (_motion is not { } motion)
         {
@@ -283,6 +342,11 @@ public static class ShellTurn
         json.WriteStartObject("sweep");
         json.WriteNumber("refused", _refused);
         json.WriteBoolean("reduced", MotionRow?.Invoke("jumble.sweep").Seconds is 0);
+        // B22 rest: Global's chart, and its moved-set outlines shown and ended.
+        json.WriteBoolean("chart", ShellHopf.Drawn != ShellHopf.Chain);
+        json.WriteNumber("outlines_shown", _outlinesShown);
+        json.WriteNumber("outlines_ended", _outlinesEnded);
+        json.WriteNumber("outline_ms", Math.Round(_outlineMs, 1));
         if (_motion is { } running) json.WriteString("running", running.Kind); else json.WriteNull("running");
         json.WriteStartArray("motions");
         foreach (var motion in _done)

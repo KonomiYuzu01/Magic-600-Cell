@@ -75,7 +75,7 @@ PLAIN_WORDS = {
     "re-executed", "record", "reference", "refuse", "refused", "release", "replayed", "reproduced", "research", "revert", "reviewed",
     "ring", "rings", "row", "run", "save", "scene", "search", "set", "sheet", "shell", "simulation", "slice", "slot", "slots", "solving",
     "split", "stage", "start", "state", "step", "swap", "the", "this", "tint", "to", "tried", "try", "tuning",
-    "un-name", "unavailable", "unpin", "use", "uses", "whole", "within", "selector",
+    "un-name", "unavailable", "unpin", "use", "uses", "whole", "within", "selector", "columns", "wrap",
 }
 
 TOKEN = re.compile(r"[\w]+(?:[-'’][\w]+)*")

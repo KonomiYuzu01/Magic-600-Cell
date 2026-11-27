@@ -444,6 +444,26 @@
       ],
       "note": "Chooses solving, inspecting or celebrating from the current theme.",
       "request": "ADR-D01.49"
+    },
+    {
+      "id": "view.preset.global.chart",
+      "label": "Global chart",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "The palette's chart row: applies the ring sheet unless the researcher has picked the Hopf rings (ADR-D02.9). Waits for R5's admission and its gate row before it ships.",
+      "request": "CR-14"
+    },
+    {
+      "id": "view.preset.global.chain",
+      "label": "Global: projection chain",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Returns Global from a chart to 600-cell-Full's projection chain, the default until R5 admits a chart (ADR-D02.8).",
+      "request": "CR-14"
     }
   ]
 }
