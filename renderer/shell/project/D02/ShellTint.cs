@@ -26,6 +26,31 @@ public static class ShellTint
     {
         _host = host;
         _frame = frame;
+        if (System.Environment.GetEnvironmentVariable("M600_SESSION_DIR") is { Length: > 0 } session)
+        {
+            var path = Path.Combine(session, "jumble-contact-classes.json");
+            try
+            {
+                if (File.Exists(path)) host.LoadClasses(File.ReadAllText(path));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+            {
+                Safe.Report(error);
+            }
+            host.Settings.Changed += key =>
+            {
+                if (key != JumbleTint.MemoryKey || host.Settings.Get(key) is not { } saved) return;
+                try
+                {
+                    File.WriteAllText(path + ".part", saved);
+                    File.Move(path + ".part", path, overwrite: true);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    Safe.Report(error);
+                }
+            };
+        }
         ShellJumble.BindingChanged += () => ShellJumble.Timed("tint", Bind);
         host.TintChanged += Draw;
         host.OverlayChanged += Draw;

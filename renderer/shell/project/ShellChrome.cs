@@ -602,8 +602,7 @@ public sealed class ShellChrome
             host.SetCapMap(layout, ShellJumble.CapMap());
             // B26: the ν band and the ν-corrections, from the samples' catalogue and the bound state's totals.
             host.SetNu(ShellJumble.Corrections(), ShellJumble.Bound is { } nuBound ? ShellJumble.StateAfter(nuBound) : null);
-            // B9: the 80 meeting caps of a named cap, and its own record where the bound sample has one.
-            host.CapRecord = ShellJumble.CapRecord;
+            // B9: the 80 meeting caps of a named cap.
             host.SetMeeting(ShellJumble.Meeting());
             // B10: the kept twist checks, from the cap record's release checks, on the sample jobs' tick clock.
             host.CheckSource = ShellJumble.TwistChecks;

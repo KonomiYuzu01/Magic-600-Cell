@@ -8,7 +8,7 @@ namespace Magic600.Chrome;
 
 // One twist check's result (ADR-D02.35): the twisted cap's N_c and floor after the twist, ΔN, Δn_h and the named cap's
 // Δu, from a release-check record (`magic600-d02-sample/1` cap-<id>.json, release_checks.rows).
-public sealed record TwistCheck(int Item, int TwistedCap, long? Nc, long? Floor, long? DeltaN, IReadOnlyList<(string Height, long Delta)> DeltaNh, long? DeltaU)
+public sealed record TwistCheck(int Item, int TwistedCap, long? Nc, long? Floor, long? DeltaN, IReadOnlyList<(string Height, long Delta)>? DeltaNh, long? DeltaU)
 {
     public static readonly IReadOnlyList<string> Heights = Array.AsReadOnly(new[] { "n_0", "n_2", "n_4", "n_6", "n_above_6" });
 
@@ -17,7 +17,8 @@ public sealed record TwistCheck(int Item, int TwistedCap, long? Nc, long? Floor,
         long? Number(JsonElement e, string key) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(key, out JsonElement v) && v.ValueKind == JsonValueKind.Number ? v.GetInt64() : null;
         JsonElement after = row.TryGetProperty("rim_after", out JsonElement a) ? a : default;
         JsonElement nh = row.TryGetProperty("delta_n_h", out JsonElement h) ? h : default;
-        var deltas = Heights.Select(k => (k, Number(nh, k) ?? 0)).ToArray();
+        bool refused = row.TryGetProperty("status", out JsonElement status) && status.GetString() != "ok";
+        var deltas = !refused && nh.ValueKind == JsonValueKind.Object ? Heights.Select(k => (k, Number(nh, k) ?? 0)).ToArray() : null;
         int cap = row.TryGetProperty("letter_cap", out JsonElement c) && c.ValueKind == JsonValueKind.Number ? c.GetInt32() : -1;
         return new TwistCheck(item, cap, Number(after, "N_c"), Number(row, "floor"), Number(row, "delta_N"), deltas, Number(row, "delta_u"));
     }
@@ -124,11 +125,11 @@ public sealed class KeptChecks
     {
         string Value(long? v) => v is long n ? n.ToString(CultureInfo.InvariantCulture) : "undefined";
         string Signed(long? v) => v is long n ? (n > 0 ? "+" : "") + n.ToString(CultureInfo.InvariantCulture) : "undefined";
-        var nh = c.Check.DeltaNh.Where(d => d.Delta != 0).Select(d => d.Height.Replace("n_above_6", "above 6").Replace("_", "") + " " + Signed(d.Delta)).ToArray();
+        var nh = c.Check.DeltaNh?.Where(d => d.Delta != 0).Select(d => d.Height.Replace("n_above_6", "above 6").Replace("_", "") + " " + Signed(d.Delta)).ToArray();
         return new[]
         {
             c.Try.ToString(CultureInfo.InvariantCulture), Glyph(c.Check.TwistedCap >= 0 ? c.Check.TwistedCap : c.Cap, c.Item),
-            Value(c.Check.Nc), Value(c.Check.Floor), Signed(c.Check.DeltaN), nh.Length == 0 ? "0" : string.Join(" ", nh), Signed(c.Check.DeltaU),
+            Value(c.Check.Nc), Value(c.Check.Floor), Signed(c.Check.DeltaN), nh == null ? "undefined" : nh.Length == 0 ? "0" : string.Join(" ", nh), Signed(c.Check.DeltaU),
         };
     }
 }

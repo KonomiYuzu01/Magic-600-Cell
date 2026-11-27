@@ -167,11 +167,11 @@ public sealed class PieceFilterModel
         ("Lattice domain", "lattice"), ("Off the lattice", "not lattice"), ("Height ≥ 2", "height >= 2"), ("Lattice, height 0", "lattice and height = 0"),
     });
 
-    private readonly IReadOnlyList<PoseRow> rows;
-    private readonly int lattice, domains;
+    private IReadOnlyList<PoseRow>? rows;
+    private int lattice, domains;
     private readonly Func<long> revision;
     private readonly List<SavedFilter> saved = new();
-    public string Compatibility { get; }
+    public string Compatibility { get; private set; }
     public string Staged { get; private set; } = "";
     public FilterComposition Composition { get; private set; } = FilterComposition.Replace;
     public FilterKind Kind { get; private set; } = FilterKind.LiveQuery;
@@ -179,7 +179,7 @@ public sealed class PieceFilterModel
     public string? Error { get; private set; }
     public AppliedFilter? Applied { get; private set; }
     public IReadOnlyList<SavedFilter> Saved => saved;
-    public long Pieces { get; }
+    public long Pieces { get; private set; }
     public event Action? Changed;
     public event Action? AppliedChanged;
 
@@ -190,7 +190,27 @@ public sealed class PieceFilterModel
         Pieces = rows.Sum(r => r.Count);
     }
 
-    public long Count(FilterExpr expr) => rows.Where(r => expr.Holds(r, lattice)).Sum(r => r.Count);
+    public void Rebind(PoseStyle? style)
+    {
+        rows = style?.Rows;
+        Preview = null;
+        Error = null;
+        if (style != null)
+        {
+            lattice = style.LatticeDomain;
+            domains = style.Domains.Count;
+            Compatibility = style.Digest;
+            Pieces = style.Pieces;
+            if (Applied is { } filter) Applied = filter with
+            {
+                Count = Count(filter.Expr), Of = Pieces,
+                Revision = filter.Kind == FilterKind.LiveQuery ? revision() : filter.Revision,
+            };
+        }
+        Safe.Raise(Changed);
+    }
+
+    public long Count(FilterExpr expr) => rows?.Where(r => expr.Holds(r, lattice)).Sum(r => r.Count) ?? 0;
 
     // Typing changes the staged text only; an earlier preview no longer stands for it. Rejected text stays.
     public void SetText(string text) { if (text == Staged) return; Staged = text; Preview = null; Error = null; Safe.Raise(Changed); }
@@ -201,6 +221,7 @@ public sealed class PieceFilterModel
     public FilterPreview? Run()
     {
         Preview = null;
+        if (rows == null) return null;
         var (expr, error) = FilterParser.Parse(Staged, domains);
         if (expr == null) { Error = error; Safe.Raise(Changed); return null; }
         FilterExpr? combined = Combine(expr, out error);
@@ -302,10 +323,12 @@ public sealed class PieceFilterModel
 
     // The focus layer the applied filter is: its label and exact count, or null with none applied.
     public PredicateLayer? Layer() => Applied is not { } a ? null
-        : new PredicateLayer(LayerId, "= " + a.Expr.Text + (a.Kind == FilterKind.LiveQuery ? "" : " · " + Word(a.Kind) + " at rev " + a.Revision.ToString(CultureInfo.InvariantCulture)), Numeral.Of(a.Count), true);
+        : new PredicateLayer(LayerId, "= " + a.Expr.Text + (a.Kind == FilterKind.LiveQuery ? "" : " · " + Word(a.Kind) + " at rev " + a.Revision.ToString(CultureInfo.InvariantCulture)),
+            rows == null ? Numeral.Pending : Numeral.Of(a.Count), rows != null);
 
     // The preview line: the exact count and its scope, or the rejection.
-    public string PreviewLine() => Error is { } e ? "Not applied: " + e
+    public string PreviewLine() => rows == null ? "No state is bound: the focus layer counts the bound sample state's pieces."
+        : Error is { } e ? "Not applied: " + e
         : Preview is { } p ? (p.Count.ToString("N0", CultureInfo.InvariantCulture) + " of " + p.Of.ToString("N0", CultureInfo.InvariantCulture) + " pieces · "
             + Composition.ToString().ToLowerInvariant() + " · " + Word(p.Kind) + " · rev " + p.Revision.ToString(CultureInfo.InvariantCulture)
             + (p.Count == 0 ? " · it holds no piece" : ""))

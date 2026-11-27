@@ -104,7 +104,7 @@ public sealed partial class JumbleHost
         IReadOnlyList<int> poses = PoseOf!;
         bool[]? rows = id switch
         {
-            JumbleFocus.Domain when domainShown is int d => Enumerable.Range(0, style.RowCount).Select(i => style.RowDomain(i) == d).ToArray(),
+            JumbleFocus.Domain when style.DomainIndex(domainShown) is int d => Enumerable.Range(0, style.RowCount).Select(i => style.RowDomain(i) == d).ToArray(),
             JumbleFocus.Height when heightShown is int k => Enumerable.Range(0, style.RowCount).Select(i => style.RowHeight(i) >= k).ToArray(),
             PieceFilterModel.LayerId when Filter?.Applied is { } applied => style.Rows.Select(r => applied.Expr.Holds(r, style.LatticeDomain)).ToArray(),
             _ => null,

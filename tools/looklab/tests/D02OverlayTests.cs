@@ -17,25 +17,6 @@ internal static partial class Program
         return JumbleTint.Mask(pick(document.RootElement), OverlayPieces);
     }
 
-    private static void D02OverlayTraceAtANamedCapOnly()
-    {
-        string open = Read("data/samples/jumble/wj-ia-300/cap-150.json");
-        Equal(JumbleOverlay.Of(null, open, OverlayPieces), OverlayView.Empty, "an overlay with no cap named");
-        Equal(JumbleOverlay.Words(OverlayView.Empty, 0), "", "the line with no cap named");
-        OverlayView trace = JumbleOverlay.Of(150, open, OverlayPieces);
-        bool[] inside = OverlayMask(open, r => r.GetProperty("masks").GetProperty("inside"));
-        Check(trace.Layer == OverlayLayer.CutTrace && !trace.Blocked && trace.NeverHidden == null, "cap 150's trace layer");
-        Check(trace.Lines!.SequenceEqual(inside), "the trace is not the inside set's outline");
-        Equal(trace.Pieces, inside.LongCount(b => b), "the trace's pieces");
-        Equal(JumbleOverlay.Words(trace, 0), "Cut of cap 150 · inside set outlined · " + trace.Pieces.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) + " pieces", "the trace's line");
-        // The lines go over the tint on the overlay's entry; the rest of the tint stays.
-        var tint = Enumerable.Repeat((byte)3, OverlayPieces).ToArray();
-        byte[] outline = JumbleOverlay.Outline(tint, trace.Lines)!;
-        Check(Enumerable.Range(0, OverlayPieces).All(p => outline[p] == (inside[p] ? JumbleOverlay.Entry : 3)), "the outline bytes");
-        Check(tint.All(b => b == 3), "the outline changed the tint's bytes");
-        Equal(JumbleOverlay.Outline(null, null), (byte[]?)null, "the outline with neither");
-    }
-
     private static void D02OverlayStepMovingSetReplacesTheTrace()
     {
         string open = Read("data/samples/jumble/wj-ia-300/cap-150.json");
@@ -68,24 +49,4 @@ internal static partial class Program
         Equal(JumbleOverlay.Words(view, 0), "Cut of cap 0 · straddlers outlined, never hidden · 231 pieces · 462 certificate points (glyphs wait for their gate row)", "cap 0's line");
     }
 
-    private static void D02OverlayHiddenCountIsExactAndNothingHides()
-    {
-        OverlayView trace = JumbleOverlay.Of(150, Read("data/samples/jumble/wj-ia-300/cap-150.json"), OverlayPieces);
-        var layers = new FocusLayers();
-        layers.AddPredicate(new PredicateLayer("test.even", "even", Numeral.Of(OverlayPieces / 2), true));
-        layers.Focus("test.even");
-        Func<int, bool> member = p => p % 2 == 0;
-        Equal(JumbleOverlay.Hidden(trace.Lines, layers, member), 0L, "a hidden count while the layer does not dim");
-        foreach (InactiveMode mode in new[] { InactiveMode.Dimmed, InactiveMode.Hidden })
-        {
-            layers.Cycle();
-            Equal(layers.Inactive, mode, "the cycle");
-            long odd = Enumerable.Range(0, OverlayPieces).LongCount(p => trace.Lines![p] && p % 2 == 1);
-            Equal(JumbleOverlay.Hidden(trace.Lines, layers, member), odd, "the hidden count under " + mode);
-            Func<int, bool> keep = JumbleOverlay.BreaksThrough(trace)!;
-            Check(Enumerable.Range(0, OverlayPieces).Where(p => trace.Lines![p]).All(p => layers.ShownPiece(member(p), keep(p)) == 1), "an overlay piece hides under " + mode);
-            Check(JumbleOverlay.Words(trace, odd).EndsWith(" · " + odd.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) + " kept from the filter, outlined", StringComparison.Ordinal), "the line's hidden count");
-        }
-        Equal(JumbleOverlay.BreaksThrough(OverlayView.Empty), (Func<int, bool>?)null, "a breakthrough with no overlay");
-    }
 }

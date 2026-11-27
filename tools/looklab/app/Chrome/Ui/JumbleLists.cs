@@ -82,7 +82,8 @@ public sealed partial class CapCoversList : VBoxContainer
         ErrorOverlays.MarkLine(domain, t, DiagnosticState.Ok);
         AddChild(Ids("CoversCoveredBy", covers.CoveredByLine(), t));
         AddChild(Ids("CoversCovers", covers.CoversLine(), t));
-        AddChild(Ids("CoversUndefined", covers.UndefinedLine(), t));
+        foreach (var line in covers.UndefinedLines())
+            AddChild(Ids(line.Direction == "covered by" ? "CoversUndefinedBy" : "CoversUndefined", (line.Head, line.Caps), t, line.Direction));
         inspected = ChromeWidgets.Text("", "ReadoutLabel"); inspected.Name = "CoversInspect";
         AddChild(inspected);
         Button table = ChromeWidgets.Tool((expanded ? "▾ " : "▸ ") + "The " + covers.Rows.Count + " meeting caps, both directions", expanded ? "Fold the table" : "Show the table of every meeting cap's answers", true);
@@ -113,11 +114,11 @@ public sealed partial class CapCoversList : VBoxContainer
         inspected.Text = inspect.Line(map());
     }
 
-    private Control Ids(string name, (string Head, IReadOnlyList<int> Caps) line, TokenSet t)
+    private Control Ids(string name, (string Head, IReadOnlyList<int> Caps) line, TokenSet t, string direction = "")
     {
         var flow = new HFlowContainer { Name = name };
         flow.AddThemeConstantOverride("h_separation", t.Px("space.1"));
-        Label head = ChromeWidgets.Text(line.Head + (line.Caps.Count > 0 ? ":" : ""), "MicroLabel");
+        Label head = ChromeWidgets.Text(CapCovers.SummaryHead(line, direction), "MicroLabel");
         head.AddThemeColorOverride("font_color", t.C("text.dim"));
         flow.AddChild(head);
         foreach (int cap in line.Caps)
@@ -163,6 +164,7 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
     private readonly VBoxContainer rows = new() { Name = "RepairRows" };
     private readonly ScrollContainer scroll = new() { Name = "RepairScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
     private readonly Label step = new() { Name = "RepairStep" };
+    internal RepairListModel Model => list;
     // The solver picked a row: by a digit or Enter, in the list's context, with the key that did it.
     public event Action<RepairRow, UserEvent>? Picked;
 

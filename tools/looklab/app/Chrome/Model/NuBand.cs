@@ -65,10 +65,18 @@ public sealed record NuCell(int Orbit, int? Bit, bool BitFixed, int? Frame, bool
 // ADR-D02.28: the ν band beside the rail at N = 0, aligned with its 35 cells in the rail's order. Its marks use a
 // shape outside the ring family (a diamond); a C5 value is a five-position dial, never a bar. Off the lattice the band
 // shows numeral.undefined; on the lattice above N = 0 it is not shown, since ν is read at N = 0.
-public sealed record NuBand(IReadOnlyList<NuCell> Cells, bool Undefined, bool Shown, long N, IReadOnlyList<int>? Row)
+public sealed record NuBand(IReadOnlyList<NuCell> Cells, bool Undefined, bool Shown, long? N, IReadOnlyList<int>? Row)
 {
     public const string Shape = "diamond";
     public const string DialKind = "dial";
+
+    public static NuBand? ForState(NuConstants? constants, IReadOnlyList<int> order, JumbleState adopted, long? n, IReadOnlyList<int>? nu)
+    {
+        if (!adopted.Mode) return null;
+        if (constants != null && n is long total)
+            return Of(constants, order, nu, adopted.LatticeFlag, total);
+        return JumbleNumerals.Undefined(adopted) ? new NuBand(Array.Empty<NuCell>(), true, false, null, null) : null;
+    }
 
     public static NuBand Of(NuConstants k, IReadOnlyList<int> railOrder, IReadOnlyList<int>? nu, bool onLattice, long n)
     {
@@ -88,12 +96,12 @@ public sealed record NuBand(IReadOnlyList<NuCell> Cells, bool Undefined, bool Sh
     }
 
     // The band as one line, for Tier 1 and a screen reader.
-    public string Line(NuConstants k)
+    public string Line(NuConstants? k)
     {
         if (Undefined) return "ν band: " + Numeral.Undefined.Word + " (pieces off the lattice)";
-        if (!Shown) return "ν band: read at N = 0 (N = " + N.ToString("N0", CultureInfo.InvariantCulture) + ")";
+        if (!Shown) return "ν band: read at N = 0 (N = " + N?.ToString("N0", CultureInfo.InvariantCulture) + ")";
         string dials = string.Join(" · ", Cells.Where(c => c.HasDial).Select(c => OrbitAtlas.Name(c.Orbit) + " dial " + c.Dial!.Value.ToString(CultureInfo.InvariantCulture) + " of " + NuConstants.DialPositions));
-        return "ν band: " + k.Nonzero(Row!) + " · " + dials + " · " + k.Fixed.Count + " fixed dots";
+        return "ν band: " + k!.Nonzero(Row!) + " · " + dials + " · " + k.Fixed.Count + " fixed dots";
     }
 }
 
@@ -173,6 +181,13 @@ public sealed class NuCorrections
 
     public void Unmark(int id) { if (marks.Remove(id)) { Checked = null; Safe.Raise(Changed); } }
     public void ClearSet() { marks.Clear(); Checked = null; Safe.Raise(Changed); }
+
+    public void ClearCheck()
+    {
+        if (Checked == null) return;
+        Checked = null;
+        Safe.Raise(Changed);
+    }
 
     // Shift+Enter: the selected row alone, as its ν effect on the state.
     public void Preview() { Previewed = Current; Safe.Raise(Changed); }

@@ -133,6 +133,8 @@ public sealed partial class JumbleSurface : VBoxContainer
         // marks covered the sentence at 2000x1200).
         gap.Visible = sentence.Visible; gap.CustomMinimumSize = new Vector2(0, MarksRoom(t));
         AddThemeConstantOverride("separation", t.Px("space.2"));
+        bool restoreRepairFocus = sections.GetNodeOrNull<RepairListControl>("LocalBody_repair_list") is { } oldList
+            && oldList.Model == repair && oldList.HasFocus();
         foreach (Node child in sections.GetChildren()) { sections.RemoveChild(child); child.QueueFree(); }
         foreach (string section in Accordion.Sections)
         {
@@ -158,6 +160,7 @@ public sealed partial class JumbleSurface : VBoxContainer
                 var control = new RepairListControl(repair, repairSteps, scrub, repairCoverage, wide => { repairCoverage = wide; Refresh(); }, tokens) { Name = "LocalBody_" + section };
                 control.Picked += (row, asked) => RepairPicked?.Invoke(row, asked);
                 sections.AddChild(control);
+                if (restoreRepairFocus && control.IsVisibleInTree()) control.GrabFocus();
             }
             else if (open && section == "cap_covers" && covers != null && inspect != null)
                 sections.AddChild(new CapCoversList(covers, inspect, map, coversTable, wide => { coversTable = wide; Refresh(); }, tokens) { Name = "LocalBody_" + section });

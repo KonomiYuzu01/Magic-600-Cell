@@ -400,6 +400,18 @@ public sealed partial class ChromeFrame : Control
     public const float RightDockBelow = 1600, LeftDockBelow = 1440;
     // Whether the side dock's panel folds to its rail at this window width.
     public bool Folds(DockSide side) => side != DockSide.Bottom && Window.X > 0 && Window.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
+
+    public void RevealAndFocus(DockSide side, string id, Control target)
+    {
+        if (!Model.RevealDock(side, id, Folds(side))) return;
+        Callable.From(() =>
+        {
+            if (!IsInstanceValid(this) || Model.Docks[side].Open != id) return;
+            Flush();
+            if (IsInstanceValid(target) && target.IsVisibleInTree()) target.GrabFocus();
+        }).CallDeferred();
+    }
+
     private Vector2 builtFor;
     // The pointer as the window's own mouse events give it, in the frame's canvas, or none before the first event and
     // after the pointer leaves the window (ADR-D01.19's hovered view). The root viewport's mouse position is the system

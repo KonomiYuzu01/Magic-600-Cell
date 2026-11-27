@@ -191,18 +191,20 @@ public static class JumbleChrome
 // count.
 public sealed class LocalAccordion
 {
-    private readonly Dictionary<string, int> counts = JumbleChrome.LocalSections.ToDictionary(s => s, _ => 0, StringComparer.Ordinal);
+    public const string Unavailable = "unavailable";
+    private readonly Dictionary<string, (int Count, string? Status)> counts =
+        JumbleChrome.LocalSections.ToDictionary(s => s, _ => (0, (string?)null), StringComparer.Ordinal);
     public string? Open { get; private set; }
     public event Action? Changed;
 
     public IReadOnlyList<string> Sections => JumbleChrome.LocalSections;
-    public int Count(string section) => counts[section];
+    public int Count(string section) => counts[section].Count;
 
-    public void SetCount(string section, int count)
+    public void SetCount(string section, int count, string? status = null)
     {
         if (!counts.ContainsKey(section)) throw new ArgumentException("not a Local section: " + section);
-        if (counts[section] == count) return;
-        counts[section] = count; Safe.Raise(Changed);
+        if (counts[section] == (count, status)) return;
+        counts[section] = (count, status); Safe.Raise(Changed);
     }
 
     // Opens a section and closes the open one; the open section again closes it.
@@ -214,5 +216,5 @@ public sealed class LocalAccordion
     }
 
     public string Header(string section, IReadOnlyDictionary<string, string> names) =>
-        JumbleChrome.SectionName(section, names) + " · " + counts[section].ToString(CultureInfo.InvariantCulture);
+        JumbleChrome.SectionName(section, names) + " · " + (counts[section].Status ?? Count(section).ToString(CultureInfo.InvariantCulture));
 }

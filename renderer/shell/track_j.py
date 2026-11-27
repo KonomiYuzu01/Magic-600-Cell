@@ -278,9 +278,8 @@ def whole_analysis(dumps: list[dict], ops: list[dict], rule: dict, state: str) -
 
 @check("never_hidden")
 def never_hidden(dumps: list[dict], ops: list[dict], rule: dict, state: str) -> list[str]:
-    """Rule 5: the named cap's trace, and at a blocked cap its straddlers with their certificate points counted, are
-    outlined and never hidden by the domain focus: the overlay's counts, its words on both borders and the bytes sent
-    to the core equal the sample's piece by piece (d02_run.overlay_expected)."""
+    """Rule 5: the surface trace keeps the inside pieces' tint and focus. Blocked-cap straddlers remain references.
+    Compare the overlay's counts, both borders and the bytes sent to the core with the sample piece by piece."""
     tables = d02_run.tint_tables(state)
     problems = []
     for ref, cap, focus in rule["at"]:
@@ -291,12 +290,10 @@ def never_hidden(dumps: list[dict], ops: list[dict], rule: dict, state: str) -> 
             continue
         want = d02_run.overlay_expected(tables, state, cap, None, focus, tint.get("hover"), tint.get("selection"))
         line = d02_run.overlay_words(want)
-        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", line)]:
-            said = overlay if key not in ("outline_sha256", "fill_sha256", "focus") else tint
+        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", d02_run.overlay_words(want, local=True))]:
+            said = tint if key in ("outline_sha256", "fill_sha256", "modes") else overlay
             if said.get(key) != value:
                 problems.append(f"{ref}: {key} is {str(said.get(key))[:100]!r}, not {str(value)[:100]!r}")
-        if want["never_hidden"] and overlay.get("kept_dimmed"):
-            problems.append(f"{ref}: {overlay['kept_dimmed']} never-hidden pieces carry the dim bit")
     return problems
 
 
@@ -976,7 +973,7 @@ def j0_delta_n(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> l
 
 @j0_check("never-hidden")
 def j0_never_hidden(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
-    """Rule 5 as J1 reads it (never_hidden), with the bytes composed for the screen's tint mode (style_expected)."""
+    """Rule 5 as J1 reads it (never_hidden), using the screen's tint mode."""
     tables = d02_run.tint_tables(state)
     problems = []
     for ref, cap, focus in entry["at"]:
@@ -985,25 +982,19 @@ def j0_never_hidden(dumps: list[dict], ops: list[dict], entry: dict, state: str)
         if not isinstance(overlay, dict) or not isinstance(tint, dict):
             problems.append(f"{ref}: the screen has no overlay or tint")
             continue
-        want = d02_run.overlay_expected(tables, state, cap, None, focus, tint.get("hover"), tint.get("selection"))
+        want = d02_run.overlay_expected(tables, state, cap, None, focus, tint.get("hover"), tint.get("selection"), tint.get("mode", "contact"))
         line = d02_run.overlay_words(want)
-        want["outline_sha256"], want["fill_sha256"] = style_expected(tables, state, tint.get("mode"), cap, focus,
-                                                                     tint.get("hover"), tint.get("selection"))
-        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", line)]:
-            shown = overlay if key not in ("outline_sha256", "fill_sha256", "focus") else tint
+        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", d02_run.overlay_words(want, local=True))]:
+            shown = tint if key in ("outline_sha256", "fill_sha256", "modes") else overlay
             if shown.get(key) != value:
                 problems.append(f"{ref}: {key} is {str(shown.get(key))[:100]!r}, not {str(value)[:100]!r}")
-        if want["never_hidden"] and overlay.get("kept_dimmed"):
-            problems.append(f"{ref}: {overlay['kept_dimmed']} never-hidden pieces carry the dim bit")
     return problems
 
 
 def style_expected(tables: dict, state: str, mode: str, cap: int | None, focus: str | None = None,
                    hover: int | None = None, selection: int | None = None) -> tuple[str, str]:
-    """The sha256 of the outline and fill bytes sent to the core at a tint screen, tint_expected and overlay_expected
-    composed: the mode's outline (the contact classes, or none for the height ramp) with the named cap's lines as entry
-    15, then the hover's and the selection's outlines; the mode's fill (the height ramp, or none) with the dim bit on
-    every piece outside the focused domain that is neither a line nor never hidden."""
+    """The tint digests preserve the outline tint under the cap trace, with hover and selection on top.
+    The focus bit in the reported fill applies outside the focused domain, except on straddlers."""
     import hashlib
     ids, domain = tables["ids"], tables["domain"]
     pieces, rows = len(ids), range(len(domain))
@@ -1014,23 +1005,20 @@ def style_expected(tables: dict, state: str, mode: str, cap: int | None, focus: 
         fill_row = [d02_run.height_entry(tables["height"][r]) for r in rows]
     elif mode == "off-lattice":
         outline_row = [0 if tables["lattice"][r] else 14 for r in rows]
-    lines = never = None
+    straddlers = None
     if cap is not None:
         masks = sample(state, f"cap-{cap}.json").get("masks", {})
-        never = d02_run.overlay_mask(masks["straddlers"], pieces) if "straddlers" in masks else None
-        lines = never or (d02_run.overlay_mask(masks["inside"], pieces) if "inside" in masks else None)
+        straddlers = d02_run.overlay_mask(masks["straddlers"], pieces) if "straddlers" in masks else None
     outline = bytearray(outline_row[p] for p in ids)
     fill = bytearray(fill_row[p] for p in ids)
     for p in range(pieces):
-        if lines and lines[p]:
-            outline[p] = 15
-        if focus is not None and domain[ids[p]] != d02_run.OVERLAY_DOMAIN and not (lines and lines[p])                 and not (never and never[p]):
+        if focus is not None and domain[ids[p]] != d02_run.OVERLAY_DOMAIN and not (straddlers and straddlers[p]):
             fill[p] |= 0x80
     if hover is not None:
         outline[hover] = 2
     if selection is not None:
         outline[selection] = 1
-    return hashlib.sha256(bytes(outline)).hexdigest(), hashlib.sha256(bytes(fill)).hexdigest() if any(fill) else ""
+    return hashlib.sha256(bytes(outline)).hexdigest(), hashlib.sha256(bytes(fill)).hexdigest() if focus or any(fill) else ""
 
 
 @j0_check("style-bytes")

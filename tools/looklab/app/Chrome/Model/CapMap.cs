@@ -52,25 +52,30 @@ public sealed class CapMapModel
     private readonly CapClass[] classes;
     // The certified rim row's In_c, Out_c, A_c, N_c and F_c, per cap; none at a blocked or pending cap.
     private readonly long?[] inC, outC, aC, nc, fc;
+    private readonly Func<int, CapReadout?>? capRecord;
 
-    private CapMapModel(CapClass[] classes)
+    private CapMapModel(CapClass[] classes, Func<int, CapReadout?>? capRecord)
     {
         this.classes = classes;
         inC = new long?[CapLayout.Caps]; outC = new long?[CapLayout.Caps]; aC = new long?[CapLayout.Caps];
         nc = new long?[CapLayout.Caps]; fc = new long?[CapLayout.Caps];
+        this.capRecord = capRecord;
     }
 
     // Before a state is bound, or for a state with no rim record: every cap pending.
-    public static CapMapModel Pending() => new(Enumerable.Repeat(CapClass.Pending, CapLayout.Caps).ToArray());
+    public static CapMapModel Pending() => Pending(null);
+
+    public static CapMapModel Pending(Func<int, CapReadout?>? capRecord) =>
+        new(Enumerable.Repeat(CapClass.Pending, CapLayout.Caps).ToArray(), capRecord);
 
     // A state's rim record (`magic600-d02-sample/1` rim.json). A row counts only when the record is complete and the
     // row is certified (blocked or admissible); an uncertain or missing row leaves its cap pending.
-    public static CapMapModel Read(string rim)
+    public static CapMapModel Read(string rim, Func<int, CapReadout?>? capRecord = null)
     {
         using JsonDocument document = JsonDocument.Parse(rim);
         JsonElement root = document.RootElement;
         bool complete = root.TryGetProperty("complete", out JsonElement c) && c.ValueKind == JsonValueKind.True;
-        var map = Pending();
+        var map = Pending(capRecord);
         long? Number(JsonElement row, string key) => row.TryGetProperty(key, out JsonElement v) && v.ValueKind == JsonValueKind.Number ? v.GetInt64() : null;
         foreach (JsonElement row in root.GetProperty("rows").EnumerateArray())
         {
@@ -100,14 +105,13 @@ public sealed class CapMapModel
     // The floor F_c of an admissible cap; null at a blocked or pending cap.
     public long? Floor(int cap) => classes[cap] is CapClass.Blocked or CapClass.Pending ? null : fc[cap];
 
-    // The named cap's readout from its rim row (ADR-D02.22): a blocked cap's u needs its straddlers, which the rim
-    // row does not carry, so it is pending until the cap's own record gives it.
-    public CapReadout Readout(int cap) => classes[cap] switch
+    // The cap's own record can give the blocked cap's straddlers; otherwise use the rim row (ADR-D02.22).
+    public CapReadout Readout(int cap) => capRecord?.Invoke(cap) ?? (classes[cap] switch
     {
         CapClass.Blocked => new CapReadout(cap, Num.Undefined, Num.Undefined, Num.Undefined, Num.Undefined, Num.Undefined, Num.Pending),
         CapClass.Pending => new CapReadout(cap, Num.Pending, Num.Pending, Num.Pending, Num.Pending, Num.Pending, Num.Pending),
         _ => new CapReadout(cap, Of(inC[cap]), Of(outC[cap]), Of(aC[cap]), Of(nc[cap]), Of(fc[cap]), Num.Of(0)),
-    };
+    });
 
     private static Num Of(long? value) => value is long v ? Num.Of(v) : Num.Undefined;
 

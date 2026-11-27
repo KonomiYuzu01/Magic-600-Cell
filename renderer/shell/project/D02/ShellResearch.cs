@@ -56,7 +56,7 @@ public static class ShellResearch
         try
         {
             var source = new SampleResearchSource(File.ReadAllText(Path.Combine(ResearchFolder(), "panel.json")));
-            var model = new ResearchModel(source, source.Evidence);
+            var model = new ResearchModel(source, source.Evidence, DisplayServer.ClipboardSet);
             if (model.Claims.FirstOrDefault(c => c.Verdict.Kind == VerdictKind.Fail) is { } failing)
             {
                 model.Toggle(ResearchModel.Ref(failing));

@@ -198,7 +198,12 @@ public static class ResearchWords
     // the checker's reason; NotApplicable its reason; "not checked" its reasons and dependencies word for word.
     public static IReadOnlyList<string> Expanded(ResearchVerdict verdict) => verdict.Kind switch
     {
-        VerdictKind.Fail => new[] { "first claim that does not hold: " + verdict.Claim, "code: " + verdict.Code, "checker's reason: " + verdict.Reason },
+        VerdictKind.Fail => new[]
+        {
+            verdict.Claim is { Length: > 0 } claim ? "first claim that does not hold: " + claim : null,
+            verdict.Code is { Length: > 0 } code ? "code: " + code : null,
+            verdict.Reason is { Length: > 0 } reason ? "checker's reason: " + reason : null,
+        }.OfType<string>().ToArray(),
         VerdictKind.NotApplicable => new[] { "counted as no check", "reason: " + verdict.Reason },
         VerdictKind.NotChecked when verdict.Reasons is { Count: > 0 } reasons =>
             new[] { "reasons: " + string.Join(", ", reasons) }.Concat((verdict.Dependencies ?? Array.Empty<string>()).Select(d => "dependency: " + d)).ToArray(),
@@ -364,7 +369,7 @@ public sealed record ResearchControl(string Label, string Row, string? Argument,
 // of the answers it came from (C5-11: a copy of the synthetic sample says so). A save also names the granted file the
 // research host wrote and that file's sha256.
 public sealed record ResearchTransfer(string Row, string Ref, string Digest, Origin Origin, string Note, string Evidence,
-    string? Destination = null, string? Written = null);
+    string? Destination = null, string? Written = null, string? Text = null);
 
 public sealed class ResearchModel
 {
@@ -398,10 +403,11 @@ public sealed class ResearchModel
     // The session's changes seen, and the change at which each row was last asked (ONE.12's current and stale).
     private long head;
     private readonly Dictionary<string, long> asked = new(StringComparer.Ordinal);
+    private readonly Action<string>? copyText;
 
-    public ResearchModel(IResearchSource source, string evidence)
+    public ResearchModel(IResearchSource source, string evidence, Action<string>? copyText = null)
     {
-        Source = source; Evidence = evidence;
+        Source = source; Evidence = evidence; this.copyText = copyText;
         foreach (var (_, row) in ResearchRows.Tabs) Ask(row);
     }
 
@@ -495,7 +501,7 @@ public sealed class ResearchModel
         if (entry.ValueKind != JsonValueKind.Object) return new ResearchVerdict(VerdictKind.NotChecked);
         return J.Text(entry, "kind") switch
         {
-            "fail" => new ResearchVerdict(VerdictKind.Fail, J.Text(entry, "claim"), J.Text(entry, "code"), J.Text(entry, "reason")),
+            "fail" => new ResearchVerdict(VerdictKind.Fail, Optional(entry, "claim"), Optional(entry, "code"), Optional(entry, "reason")),
             "pass" => new ResearchVerdict(VerdictKind.Pass),
             "not_applicable" => new ResearchVerdict(VerdictKind.NotApplicable, Reason: J.Text(entry, "reason")),
             _ => new ResearchVerdict(VerdictKind.NotChecked),
@@ -740,7 +746,18 @@ public sealed class ResearchModel
     public ResearchTransfer Copy(string reference)
     {
         if (!Known(reference)) throw new ArgumentException("no research object " + reference);
-        return Carry(new ResearchTransfer(ResearchRows.Copy, reference, Digest(reference), Origin.Research, ResearchWords.CopyNote, Evidence));
+        ResearchLine? row = Lines(TabOfRef(reference)).FirstOrDefault(line =>
+            line.Kind is ResearchLineKind.Row or ResearchLineKind.Part && line.Ref == reference);
+        if (row == null)
+        {
+            // A part named from the palette can be under a folded branch.
+            var record = RecordOf(reference)!;
+            int[] path = PathOf(reference);
+            row = PartLine(record, PartAt(record, path)!, path, false);
+        }
+        string text = row.Verdict is { Length: > 0 } verdict ? row.Text + "\n" + verdict : row.Text;
+        copyText?.Invoke(text);
+        return Carry(new ResearchTransfer(ResearchRows.Copy, reference, Digest(reference), Origin.Research, ResearchWords.CopyNote, Evidence, Text: text));
     }
 
     // Saves a record as research.bundle.export does (C5-6): LP5's check bundle of the record, written to a granted file
@@ -960,10 +977,12 @@ public sealed class ResearchModel
 
     // --- the flat list -----------------------------------------------------------------------------------------------
 
-    public IReadOnlyList<ResearchLine> Lines()
+    public IReadOnlyList<ResearchLine> Lines() => Lines(Tab);
+
+    private IReadOnlyList<ResearchLine> Lines(ResearchTab tab)
     {
         var lines = new List<ResearchLine>();
-        switch (Tab)
+        switch (tab)
         {
             case ResearchTab.Claims: ClaimLines(lines); break;
             case ResearchTab.Records: RecordLines(lines); break;
@@ -1014,6 +1033,8 @@ public sealed class ResearchModel
         if (run.State == SlotState.BudgetStopped)
             foreach (string line in ResearchWords.Expanded(new ResearchVerdict(VerdictKind.CutOff, Reason: run.Covered is { } c ? "covered " + c : null)))
                 lines.Add(new ResearchLine(ResearchLineKind.Detail, line, reference, 1));
+        else if (run.Verdict is { Kind: VerdictKind.Fail } failed)
+            foreach (string line in ResearchWords.Expanded(failed)) lines.Add(new ResearchLine(ResearchLineKind.Detail, line, reference, 1));
         if (run.State == SlotState.Ready && ClaimOfRun(run) == null)
             lines.Add(new ResearchLine(ResearchLineKind.Detail, "no claim group: its checks have no scope to be worded in", reference, 1));
         if (run.Code != null) lines.Add(new ResearchLine(ResearchLineKind.Detail, "code: " + run.Code, reference, 1));
@@ -1128,12 +1149,15 @@ public sealed class ResearchModel
             int[] path = at.Append(i).ToArray();
             ResearchPart part = parts[i];
             bool open = unfolded.Length >= path.Length && unfolded.Take(path.Length).SequenceEqual(path);
-            string mark = part.Parts.Count == 0 ? "· " : open ? "▾ " : "▸ ";
-            lines.Add(new ResearchLine(ResearchLineKind.Part, mark + Shown(record, part, path) + " · " + part.Length.ToString("N0", CultureInfo.InvariantCulture) + " twists",
-                PartOf(record, path), path.Length));
+            lines.Add(PartLine(record, part, path, open));
             if (open) PartLines(lines, record, part.Parts, path, unfolded);
         }
     }
+
+    private ResearchLine PartLine(ResearchRecord record, ResearchPart part, int[] path, bool open) =>
+        new(ResearchLineKind.Part,
+            (part.Parts.Count == 0 ? "· " : open ? "▾ " : "▸ ") + Shown(record, part, path) + " · " + part.Length.ToString("N0", CultureInfo.InvariantCulture) + " twists",
+            PartOf(record, path), path.Length);
 
     public static long Length(IReadOnlyList<ResearchPart> parts) => parts.Sum(p => p.Length);
 

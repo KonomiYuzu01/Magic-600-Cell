@@ -32,8 +32,6 @@ public sealed partial class JumbleHost
     private readonly string hint;
     public CapThreshold Threshold { get; private set; } = CapThreshold.None;
     public CapJobs Jobs { get; }
-    // A named cap's own record (u at a blocked cap needs its straddlers), where the source has one.
-    public Func<int, CapReadout?>? CapRecord { get; set; }
     private CapLayout? layout;
     private CapMapModel map = CapMapModel.Pending();
     private MeetingCaps? meeting;
@@ -74,7 +72,8 @@ public sealed partial class JumbleHost
     public static readonly IReadOnlySet<string> FilterRows = new HashSet<string>(StringComparer.Ordinal)
         { "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose" };
     // The Focus layer: its model for the bound state (null while none is bound), and its editor in the right dock.
-    public PieceFilterModel? Filter { get; private set; }
+    private PieceFilterModel? filter;
+    public PieceFilterModel? Filter => Style == null ? null : filter;
     public FocusLayerEditor FilterEditor { get; }
     // B25: a stored word played by part, in the left dock beside the Library.
     public WordPanel Words { get; } = new();
@@ -84,6 +83,7 @@ public sealed partial class JumbleHost
     public NuBand? Nu { get; private set; }
     private NuConstants? nuConstants;
     private WordState? nuState;
+    private long nuRevision;
     // B11: the named cap's covers with the hover's inspect line, its raw record (the straddlers' count), the bound
     // state's pose rows (the domain and height counts), and the views' focus layers the three predicates join.
     public CapCovers? Covers { get; private set; }
@@ -92,7 +92,8 @@ public sealed partial class JumbleHost
     public Func<int, string?>? RecordSource { get; set; }
     public PoseStyle? Style { get; private set; }
     public IReadOnlyList<FocusLayers> Layers { get; set; } = Array.Empty<FocusLayers>();
-    private int? domainShown, heightShown;
+    private string? domainShown;
+    private int? heightShown;
     // B12: the named cap's repair list at the shown revision, its steps and the step focus; the variant names which of
     // the sample's results stands in for the job (completed, cut_off or cancelled).
     public RepairListModel? Repair { get; private set; }
@@ -216,22 +217,14 @@ public sealed partial class JumbleHost
     public void SetStyle(PoseStyle? value)
     {
         Style = value;
-        // The Focus layer counts the bound state's pose rows; saved layers stay, and load only for their own state.
-        var kept = Filter?.Saved ?? Array.Empty<SavedFilter>();
-        if (Filter != null)
+        if (filter == null && value != null)
         {
-            Filter.Changed -= SyncFilter;
-            Filter.AppliedChanged -= FocusAppliedFilter;
+            filter = new PieceFilterModel(value.Rows, value.LatticeDomain, value.Domains.Count, () => Source.State.Revision, value.Digest);
+            filter.Changed += SyncFilter;
+            filter.AppliedChanged += FocusAppliedFilter;
         }
-        Filter = value == null ? null : new PieceFilterModel(value.Rows, value.LatticeDomain, value.Domains.Count, () => Source.State.Revision, value.Digest);
-        if (Filter != null)
-        {
-            foreach (var s in kept) Filter.Keep(s);
-            Filter.Changed += SyncFilter;
-            Filter.AppliedChanged += FocusAppliedFilter;
-        }
+        else filter?.Rebind(value);
         FilterEditor.Bind(Filter);
-        SyncFilter();
         Recount();
         Reclass();
     }
@@ -245,16 +238,12 @@ public sealed partial class JumbleHost
     }
 
     // filter.open: the editor shows in the right dock with the expression focused.
-    public void OpenFilter()
-    {
-        frame.Model.ShowDock(DockSide.Right, FocusLayerEditor.PanelId);
-        Callable.From(() => { if (GodotObject.IsInstanceValid(FilterEditor.Expression) && FilterEditor.Expression.IsInsideTree()) FilterEditor.Expression.GrabFocus(); }).CallDeferred();
-    }
+    public void OpenFilter() => frame.RevealAndFocus(DockSide.Right, FocusLayerEditor.PanelId, FilterEditor.Expression);
 
     // The applied filter is a focus layer in every view, focused when it first applies; cleared, it goes.
     private void SyncFilter()
     {
-        PredicateLayer? layer = Filter?.Layer();
+        PredicateLayer? layer = filter?.Layer();
         foreach (FocusLayers layers in Layers)
         {
             if (layer == null) { layers.RemovePredicate(PieceFilterModel.LayerId); continue; }
@@ -281,7 +270,7 @@ public sealed partial class JumbleHost
                 PredicateLayer next = layer.Id switch
                 {
                     JumbleFocus.Straddlers => JumbleFocus.StraddlersOf(named, named is int n && RecordSource != null ? RecordSource(n) : null),
-                    JumbleFocus.Domain when Style != null && domainShown is int d && d < Style.Domains.Count => JumbleFocus.DomainOf(Style, d),
+                    JumbleFocus.Domain when Style is { } style && style.DomainIndex(domainShown) is int d => JumbleFocus.DomainOf(style, d),
                     JumbleFocus.Height when Style != null && heightShown is int k => JumbleFocus.HeightOf(Style, k),
                     JumbleFocus.Domain or JumbleFocus.Height => layer with { Count = Numeral.Pending, Applies = false },
                     _ => layer,
@@ -335,6 +324,10 @@ public sealed partial class JumbleHost
         }
     }
 
+    private int? FocusDomain(string? argument) => Style is { } style
+        ? style.DomainIndex(argument) ?? (Whole(argument) is int d && d < style.Domains.Count ? d : (int?)null)
+        : null;
+
     private static int? Whole(string? argument) =>
         int.TryParse(argument?.Trim(), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int value) ? value : null;
 
@@ -373,6 +366,8 @@ public sealed partial class JumbleHost
     {
         int? cap = Naming.Named;
         int revision = (int)Source.State.Revision;
+        CapReadout? readout = cap is int c ? map.Readout(c) : null;
+        string? unavailable = readout?.CertificateState == DiagnosticState.Failed ? LocalAccordion.Unavailable : null;
         if (Checks?.Cap != cap || Checks?.Revision != revision)
         {
             // Try numbers restart at each commit: a new cap or revision has its own list.
@@ -380,16 +375,16 @@ public sealed partial class JumbleHost
             seat.Clear();
             if (Checks != null) Checks.Changed += () => { Local.SetCount("twist_check", Checks?.Entries.Count ?? 0); Surface.SetChecks(Checks); };
             if (Checks != null) Checks.Changed += MarkMissingChecks;
-            Local.SetCount("twist_check", 0);
             Surface.SetChecks(Checks);
         }
+        Local.SetCount("twist_check", Checks?.Entries.Count ?? 0, unavailable);
         // The bound state's results for the named cap: a binding that comes after the naming brings them.
         results = cap is int c2 && CheckSource != null ? CheckSource(c2) : new Dictionary<int, TwistCheck>();
         Local.SetCount("named_cap", cap == null ? 0 : 1);
         // Cap covers: a completed answer for the named cap, or none; the inspect line starts empty.
         Covers = cap is int c3 && CoversSource != null ? CoversSource(c3) : null;
         Inspect.Hover(null);
-        Local.SetCount("cap_covers", Covers?.Rows.Count ?? 0);
+        Local.SetCount("cap_covers", Covers?.Rows.Count ?? 0, unavailable);
         Surface.SetCovers(Covers, Inspect, () => map);
         // The straddlers layer stays focused across named caps and counts at the new one (ADR-D02.30).
         Recount();
@@ -399,9 +394,8 @@ public sealed partial class JumbleHost
         if (Repair != null) Repair.Ledger = Ledger;
         RepairSteps = record != null ? RepairSteps.From(record) : new RepairSteps();
         Scrub.Show(null);
-        Local.SetCount("repair_list", Repair?.Rows.Count ?? 0);
+        Local.SetCount("repair_list", Repair?.Rows.Count ?? 0, unavailable ?? Repair?.SectionStatus);
         Surface.SetRepair(Repair, RepairSteps, Scrub);
-        CapReadout? readout = cap is int c ? (CapRecord != null ? CapRecord(c) : null) ?? map.Readout(c) : null;
         SetCap(readout);
         Surface.SetFacts(readout != null && layout != null ? CapFacts.Tier2(map, layout, readout) : null);
         FollowLocal();
@@ -480,7 +474,7 @@ public sealed partial class JumbleHost
         "jumble.seat.hold" when results.Count == 0 => "the samples hold no twist checks at cap " + Checks!.Cap,
         "jumble.focus.straddlers" or "jumble.focus.domain" or "jumble.focus.height" when Layers.Count == 0 => "no view here takes focus layers",
         "jumble.focus.domain" or "jumble.focus.height" when Style == null => "no state is bound",
-        "jumble.focus.domain" when Whole(argument) is not int d || d >= Style!.Domains.Count => "it needs a domain number, 0 to " + (Style!.Domains.Count - 1) + ", as in > jumble.focus.domain 5",
+        "jumble.focus.domain" when FocusDomain(argument) == null => "it needs the domain ID from the inspector or a number from 0 to " + (Style!.Domains.Count - 1),
         "jumble.focus.height" when Whole(argument) == null => "it needs k, as in > jumble.focus.height 4",
         JumbleTint.Row when argument != null && JumbleTint.Parse(argument) == null => "it needs a mode: none, contact, height or off-lattice; without one it steps to the next",
         "jumble.corrections.mark" or "jumble.corrections.check" when Corrections.Model == null => "the build has no ν-correction catalogue",
@@ -522,8 +516,8 @@ public sealed partial class JumbleHost
             case "jumble.focus.straddlers":
                 FocusOn(JumbleFocus.StraddlersOf(Naming.Named, Naming.Named is int n && RecordSource != null ? RecordSource(n) : null));
                 break;
-            case "jumble.focus.domain" when Style != null && Whole(argument) is int d && d < Style.Domains.Count:
-                domainShown = d; FocusOn(JumbleFocus.DomainOf(Style, d)); DimOthers();
+            case "jumble.focus.domain" when Style != null && FocusDomain(argument) is int d:
+                domainShown = Style.Domains[d]; FocusOn(JumbleFocus.DomainOf(Style, d)); DimOthers();
                 break;
             case JumbleTint.Row: SetTint(argument); break;
             case GripFrame.SelectRow or GripFrame.NextRow:
@@ -615,7 +609,7 @@ public sealed partial class JumbleHost
         MarkCertificate();
         DefaultLine(frame.Local);
         Legends();
-        Border(frame.Global, Source.State.Mode && Threshold.IsSet && CapThreshold.OnGlobalBorder(frame.Model.Docks[DockSide.Bottom].Open));
+        Border(frame.Global, Source.State.Mode && CapThreshold.OnGlobalBorder(frame.Model.Docks[DockSide.Bottom].Open));
     }
 
     // Local's readout while it draws a cap that is not named: it says so, with the hint, which its tooltip repeats.
@@ -675,7 +669,8 @@ public sealed partial class JumbleHost
     public void SetNu(NuCorrections? catalogue, WordState? state)
     {
         nuConstants = catalogue?.Constants; nuState = state;
-        Corrections.Bind(catalogue, () => nuState is { OnLattice: true, Nu: { } nu } ? nu : null);
+        catalogue?.ClearCheck();
+        Corrections.Bind(catalogue, () => Source.State.LatticeFlag && nuState is { OnLattice: true, Nu: { } nu } ? nu : null);
         WatchCorrectionCheck();
         BandNu();
     }
@@ -684,11 +679,11 @@ public sealed partial class JumbleHost
     private void BandNu()
     {
         IReadOnlyList<int> order = rail != null && GodotObject.IsInstanceValid(rail) ? rail.Cells().Select(c => c.Orbit).ToArray() : Enumerable.Range(0, OrbitAtlas.Count).ToArray();
-        Nu = nuConstants == null || nuState is not { } s ? null : NuBand.Of(nuConstants, order, s.Nu, s.OnLattice, s.N);
+        Nu = NuBand.ForState(nuConstants, order, Source.State, nuState?.N, nuState?.Nu);
         if (GodotObject.IsInstanceValid(NuStrip)) NuStrip.SetBand(Nu);
     }
 
-    public void OpenCorrections() => frame.Model.ShowDock(DockSide.Left, NuCorrectionsPanel.PanelId);
+    public void OpenCorrections() => frame.RevealAndFocus(DockSide.Left, NuCorrectionsPanel.PanelId, Corrections);
 
     // "35 +1", "0 -1" or "7" (+1): a row id and a nonzero signed multiplicity.
     private static (int Id, int By)? MarkOf(string? argument)
@@ -726,6 +721,12 @@ public sealed partial class JumbleHost
         bool undefined = JumbleNumerals.Undefined(state);
         if (strip != null && GodotObject.IsInstanceValid(strip)) strip.SetUndefined(undefined);
         if (rail != null && GodotObject.IsInstanceValid(rail)) rail.SetUndefined(undefined);
+        if (state.Revision != nuRevision)
+        {
+            nuRevision = state.Revision;
+            Corrections.Model?.ClearCheck();
+        }
+        BandNu();
         Place();
         Safe.Raise(Changed);
     }

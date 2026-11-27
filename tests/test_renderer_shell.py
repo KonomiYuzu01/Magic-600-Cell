@@ -1932,6 +1932,10 @@ class D02CapHover(unittest.TestCase):
                 cell = {"hovered": hovered, "cursor": cursor if hovered >= 0 else "Arrow",
                         "tooltip": f"{first}\ncap {hovered} · ring 1" if hovered >= 0 else ""}
                 lines = [[panel, "no cap named"]] if named < 0 else [[panel, f"cap {named} · N_c 0"]]
+                if index == 6:
+                    lines = [[panel, "cap 0 · N_c undefined · floor undefined · u 231 · 80 meeting caps"],
+                             ["view:Local", "231"]]
+                    lines += [["view:Local", f"▸ {section} · unavailable"] for section in ("Twist check", "Cap covers", "Repair list")]
                 if index == 4 and said:
                     lines.append(["frame", refused])
                 straddlers = 231 if index in (5, 6) else 0
@@ -2131,7 +2135,7 @@ class D02Covers(unittest.TestCase):
         self.assertEqual(lines[0], "The 80 caps that meet cap 150 · at least 10 aligned face pieces a side")
         self.assertTrue(lines[1].startswith("covered by · 36 of 80 answered: 8 10 14 "))
         self.assertEqual(lines[2], "covers · 0 of 3 answered")
-        self.assertTrue(lines[3].startswith("undefined · 77 (blocked): 8 10 14 "))
+        self.assertTrue(lines[3].startswith("undefined · 77 (blocked): covers · 8 10 14 "))
         style = json.loads(text(samples / "style.json"))
         lattice = style["lattice_domain"]
         n4 = sum(r["count"] for r in style["rows"] if r["heights"][0] >= 4)
@@ -2441,7 +2445,8 @@ class D02FocusLayer(unittest.TestCase):
 
         def dumps(first_line=f"{off:,} of {total:,} pieces · replace · live query · rev 300", final=f"= not lattice and height >= 4 · {both:,}"):
             def layer(line="", keys=()):
-                return {"entry": "Focus layer =", "dock": "focus_layer.editor", "line": line, "expression": "", "keys": list(keys)}
+                return {"entry": "Focus layer =", "dock": "focus_layer.editor", "editor_focused": True, "line": line,
+                        "expression": "", "keys": list(keys)}
             palette = [["overlay:CommandPalette", label] for label in ("Open focus layer", "Preview focus layer counts", "Apply focus layer")]
             return [{"do": "start", "lines": []},
                     {"do": "wait 801 ms", "lines": [], "focus_layer": layer(first_line), "tint": {"modes": ["none", "none"]}},
@@ -2456,6 +2461,9 @@ class D02FocusLayer(unittest.TestCase):
         self.assertEqual(len(run.expect_focus_layer(dumps(final="= height >= 4 · 3,128"), {}, "wj-ia-300")), 1)
         wrong = dumps()
         wrong[2]["tint"]["modes"] = ["none", "none"]
+        self.assertEqual(len(run.expect_focus_layer(wrong, {}, "wj-ia-300")), 1)
+        wrong = dumps()
+        wrong[1]["focus_layer"]["editor_focused"] = False
         self.assertEqual(len(run.expect_focus_layer(wrong, {}, "wj-ia-300")), 1)
         self.assertTrue((SHELL / "d02_scripts" / "focus-layer.json").is_file())
 
@@ -2478,7 +2486,7 @@ class D02Words(unittest.TestCase):
                 n = json.loads(text(ROOT / "tools" / "looklab" / "data" / "samples" / "jumble" / parts[k - 1]["after"] / "totals.json"))["N"]
                 solved = i == len(done) - 1
                 out.append({"do": "wait 300 ms", "lines": [], "word": {
-                    "length": "9 twists · alphabet I_a", "counter": c, "state": f"N {n:,} · state x",
+                    "length": "9 twists · alphabet I_a", "counter": c, "state": f"N {n:,} · state x", "panel_focused": True,
                     "signature": "35 slots undefined (the word leaves the lattice) · 9 twists · alphabet I_a",
                     "log": "Log tab: N = 0 · no residual ticks" if solved else f"Log tab: undefined band · N {n:,}",
                     "crossing": "On the lattice, ν = 0: labels pass to 600-cell-Full (reachable)" if solved or (crossing_early and i == 3) else "",
@@ -2500,10 +2508,12 @@ class D02Nu(unittest.TestCase):
         want = run.nu_words("nu-c0")
         self.assertEqual(want["band"], "ν band: b8 b25 · O17 dial 0 of 5 · O28 dial 0 of 5 · 9 fixed dots")
         good = {"band": want["band"], "band_visible": True, "band_width": 640.0, "cells": list(range(35)), "rows": "36",
-                "selected": "c35 · card5:MB2-5", "set": "0:1 35:1", "preview": want["preview"], "check": want["check"]}
+                "selected": "c35 · card5:MB2-5", "set": "0:1 35:1", "preview": want["preview"], "check": want["check"],
+                "panel_focused": True}
         self.assertEqual(run.expect_nu_band([{"do": "wait 1000 ms", "nu": good}], {}, "nu-c0"), [])
         self.assertTrue(run.expect_nu_band([{"do": "wait 1000 ms", "nu": dict(good, set="0:1")}], {}, "nu-c0"))
         self.assertTrue(run.expect_nu_band([{"do": "wait 1000 ms", "nu": dict(good, band_visible=False)}], {}, "nu-c0"))
+        self.assertTrue(run.expect_nu_band([{"do": "wait 1000 ms", "nu": dict(good, panel_focused=False)}], {}, "nu-c0"))
         self.assertTrue(run.expect_nu_band([{"do": "wait 1000 ms", "nu": good}], {}, "on-zero"))
         self.assertTrue(want["check"].startswith("ν after this set: b25 · c00×+1 c35×+1, "))
         self.assertTrue((SHELL / "d02_scripts" / "nu-band.json").is_file())

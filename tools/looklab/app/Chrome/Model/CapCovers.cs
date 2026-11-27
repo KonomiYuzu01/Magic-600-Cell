@@ -10,7 +10,7 @@ namespace Magic600.Chrome;
 public enum CoverAnswer { Yes, No, Undefined }
 
 // A meeting cap d of the named cap c (JI.12): whether d covers c, and whether c covers d.
-public sealed record CoverRow(int Cap, CoverAnswer CoveredBy, CoverAnswer Covers, string? Reason);
+public sealed record CoverRow(int Cap, CoverAnswer CoveredBy, CoverAnswer Covers, string? CoveredByReason, string? CoversReason);
 
 // Cap covers (ADR-D02.38; build step B11): a completed covers answer for the named cap, from J1's `covers` job. The
 // slot shows its domain line, then "covered by", "covers" and "undefined", each in cap-id order; the expanded form is
@@ -51,7 +51,7 @@ public sealed class CapCovers
         {
             (CoverAnswer by, string? byReason) = Read(answer.GetProperty("d_covers_c"));
             (CoverAnswer covering, string? coveringReason) = Read(answer.GetProperty("c_covers_d"));
-            rows.Add(new CoverRow(answer.GetProperty("cap").GetInt32(), by, covering, coveringReason ?? byReason));
+            rows.Add(new CoverRow(answer.GetProperty("cap").GetInt32(), by, covering, byReason, coveringReason));
         }
         if (domain.Length != MeetingCaps.Count || rows.Count != domain.Length || !rows.Select(r => r.Cap).SequenceEqual(domain))
             throw new FormatException("covers: a completed answer lists every one of the 80 meeting caps, in the domain's order");
@@ -85,18 +85,33 @@ public sealed class CapCovers
     public (string Head, IReadOnlyList<int> Caps) CoversLine() =>
         ("covers · " + CoversCaps.Count.ToString(CultureInfo.InvariantCulture) + " of " + Answered(r => r.Covers).ToString(CultureInfo.InvariantCulture) + " answered", CoversCaps);
 
-    public (string Head, IReadOnlyList<int> Caps) UndefinedLine()
+    public IEnumerable<(string Head, IReadOnlyList<int> Caps, string Direction)> UndefinedLines()
     {
-        string[] reasons = Rows.Where(r => Undefined.Contains(r.Cap)).Select(r => r.Reason ?? "undefined").Distinct().OrderBy(r => r, StringComparer.Ordinal).ToArray();
-        return ("undefined · " + Undefined.Count.ToString(CultureInfo.InvariantCulture) + (reasons.Length > 0 ? " (" + string.Join(", ", reasons) + ")" : ""), Undefined);
+        var by = Rows.Where(r => r.CoveredBy == CoverAnswer.Undefined).ToArray();
+        var covers = Rows.Where(r => r.Covers == CoverAnswer.Undefined).ToArray();
+        if (by.Length > 0) yield return Line(by, r => r.CoveredByReason, "covered by");
+        if (covers.Length > 0) yield return Line(covers, r => r.CoversReason, "covers");
+        if (by.Length == 0 && covers.Length == 0) yield return ("undefined · 0", Array.Empty<int>(), "");
+
+        static (string, IReadOnlyList<int>, string) Line(CoverRow[] rows, Func<CoverRow, string?> reason, string direction)
+        {
+            var reasons = rows.Select(r => reason(r) ?? "undefined").Distinct().OrderBy(r => r, StringComparer.Ordinal);
+            return ("undefined · " + rows.Length.ToString(CultureInfo.InvariantCulture) + " (" + string.Join(", ", reasons) + ")",
+                rows.Select(r => r.Cap).ToArray(), direction);
+        }
     }
 
-    // The four lines as text, as the slot reads them.
+    // The summary as text, with each undefined direction on its own line.
     public IReadOnlyList<string> Lines()
     {
-        string Line((string Head, IReadOnlyList<int> Caps) line) => line.Head + (line.Caps.Count > 0 ? ": " + Ids(line.Caps) : "");
-        return new[] { DomainLine(), Line(CoveredByLine()), Line(CoversLine()), Line(UndefinedLine()) };
+        string Line((string Head, IReadOnlyList<int> Caps) line, string direction = "") =>
+            SummaryHead(line, direction) + (line.Caps.Count > 0 ? " " + Ids(line.Caps) : "");
+        return new[] { DomainLine(), Line(CoveredByLine()), Line(CoversLine()) }
+            .Concat(UndefinedLines().Select(u => Line((u.Head, u.Caps), u.Direction))).ToArray();
     }
+
+    public static string SummaryHead((string Head, IReadOnlyList<int> Caps) line, string direction) =>
+        line.Head + (line.Caps.Count > 0 ? ":" : "") + (direction.Length > 0 ? " " + direction + " ·" : "");
 
     // The expanded form: the 80 meeting caps in cap-id order, both directions, each yes, no or undefined.
     public IReadOnlyList<string> Columns() => new[] { "cap", "covers " + Cap.ToString(CultureInfo.InvariantCulture), Cap.ToString(CultureInfo.InvariantCulture) + " covers" };
@@ -178,6 +193,12 @@ public sealed class PoseStyle
     public int RowCount => rows.Length;
     public int RowDomain(int row) => rows[row].Domain;
     public int RowHeight(int row) => rows[row].Height;
+    public (string Domain, int Height) InspectRow(int row) => (Domains[RowDomain(row)], RowHeight(row));
+    public int? DomainIndex(string? id)
+    {
+        for (int i = 0; i < Domains.Count; i++) if (Domains[i] == id) return i;
+        return null;
+    }
     public long RowPieces(int row) => rows[row].Count;
     public bool RowOnLattice(int row) => rows[row].Lattice;
     public long HeightAtLeast(int k) => rows.Where(r => r.Height >= k).Sum(r => r.Count);

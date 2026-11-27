@@ -119,6 +119,9 @@ public sealed class RepairListModel
         ? "Not found within budget (" + c.Tried.ToString(CultureInfo.InvariantCulture) + " of " + c.Total.ToString(CultureInfo.InvariantCulture) + " tried)"
         : null;
 
+    public string? SectionStatus => End == JobEnd.CutOff ? ResearchWords.CutOff
+        : End == JobEnd.Cancelled || Error != null ? LocalAccordion.Unavailable : null;
+
     // A completed result without coverage is an error (ADR-D02.32).
     public string? Error => End == JobEnd.Completed && Coverage == null ? "a completed result without coverage"
         : End == JobEnd.Completed && Coverage!.Tried != Coverage.Total ? "a completed result that tried " + Coverage.Tried + " of " + Coverage.Total

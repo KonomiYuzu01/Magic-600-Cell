@@ -396,6 +396,8 @@ def expect_focus_layer(dumps: list[dict], source: dict, state: str | None) -> li
         problems.append(f"Global's border has no Focus layer entry ({first['entry']!r})")
     if first["dock"] != "focus_layer.editor":
         problems.append(f"the editor is not open in the right dock ({first['dock']!r})")
+    if first.get("editor_focused") is not True:
+        problems.append("the Focus layer expression is not visible and keyboard-focused")
     if not first["line"].startswith(f"{off:,} of {total:,} pieces · replace · live query · rev "):
         problems.append(f"the preview reads {first['line']!r}, not {off:,} of {total:,} pieces")
     if any(key.startswith("= ") for key in first["keys"]):
@@ -431,6 +433,8 @@ def expect_seed7001(dumps: list[dict], source: dict, state: str | None) -> list[
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
     problems = []
     first = played[0]["word"]
+    if first.get("panel_focused") is not True:
+        problems.append("the Word panel is not visible and keyboard-focused")
     if first["length"] != f"{len(parts)} twists · alphabet {words['alphabet']}":
         problems.append(f"the commit bar's line reads {first['length']!r}")
     if not first["signature"].startswith("35 slots undefined"):
@@ -497,6 +501,8 @@ def expect_nu_band(dumps: list[dict], source: dict, state: str | None) -> list[s
         problems.append(f"the band reads {last['band']!r}, not {want['band']!r}")
     if not last["band_visible"] or not last["band_width"] > 0:
         problems.append("the band is not on screen under the rail")
+    if last.get("panel_focused") is not True:
+        problems.append("the ν-corrections panel is not visible and keyboard-focused")
     if len(last["cells"]) != 35 or sorted(last["cells"]) != list(range(35)):
         problems.append(f"the band has {len(last['cells'])} cells, not the rail's 35")
     if last["rows"] != "36" or not last["selected"].startswith("c35 · "):
@@ -676,13 +682,18 @@ def q3b_kept(record: dict) -> list[str]:
             continue
         _, tried, item = value
         row = rows[item]
-        heights = [(k.replace("n_above_6", "above 6").replace("_", ""), row["delta_n_h"].get(k, 0))
+        delta_heights = row.get("delta_n_h") if row.get("status", "ok") == "ok" else None
+        if not isinstance(delta_heights, dict):
+            delta_heights = None
+        heights = [(k.replace("n_above_6", "above 6").replace("_", ""), (delta_heights or {}).get(k, 0))
                    for k in ("n_0", "n_2", "n_4", "n_6", "n_above_6")]
         changed = " ".join(f"{k} {signed(v)}" for k, v in heights if v)
         n_c = (row.get("rim_after") or {}).get("N_c")
-        lines.append(" | ".join([str(tried), f"{row['letter_cap']}·{item}", "undefined" if n_c is None else str(n_c),
-                                 "undefined" if row["floor"] is None else str(row["floor"]), signed(row["delta_N"]),
-                                 changed or "0", signed(row["delta_u"])]))
+        twisted = row.get("letter_cap")
+        floor = row.get("floor")
+        lines.append(" | ".join([str(tried), f"{cap if twisted is None else twisted}·{item}", "undefined" if n_c is None else str(n_c),
+                                  "undefined" if floor is None else str(floor), signed(row.get("delta_N")),
+                                  (changed or "0") if delta_heights is not None else "undefined", signed(row.get("delta_u"))]))
     return lines
 
 
@@ -739,26 +750,27 @@ COVERS_STEPS = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 150
 
 
 def covers_lines(record: dict) -> list[str]:
-    """Cap covers' four lines for a cap record: the domain line, then "covered by", "covers" and "undefined" in cap-id
-    order, each with how many of the 80 it answered."""
+    """Cap covers' summary in cap-id order, with yes counts and the undefined IDs for each direction."""
     covers = record["covers"]
     cap, threshold = covers["parameters"]["cap"], covers["parameters"]["threshold"]
 
     def answer(side: dict) -> str:
         return "undefined" if side.get("status") == "not_applicable" else ("yes" if side["covers"] else "no")
-    rows = [(a["cap"], answer(a["d_covers_c"]), answer(a["c_covers_d"]),
-             a["c_covers_d"].get("reason") or a["d_covers_c"].get("reason")) for a in covers["answers"]]
+    def line(head: str, caps: list[int], direction: str = "") -> str:
+        prefix = f"{direction} · " if direction else ""
+        return head + (": " + prefix + " ".join(map(str, caps)) if caps else "")
 
-    def line(head: str, caps: list[int]) -> str:
-        return head + (": " + " ".join(map(str, caps)) if caps else "")
-    by = [c for c, b, _, _ in rows if b == "yes"]
-    of = [c for c, _, o, _ in rows if o == "yes"]
-    undefined = [(c, r) for c, b, o, r in rows if "undefined" in (b, o)]
-    reasons = sorted({r or "undefined" for _, r in undefined})
-    return [f"The {len(covers['domain'])} caps that meet cap {cap} · at least {threshold} aligned face pieces a side",
-            line(f"covered by · {len(by)} of {sum(1 for _, b, _, _ in rows if b != 'undefined')} answered", by),
-            line(f"covers · {len(of)} of {sum(1 for _, _, o, _ in rows if o != 'undefined')} answered", of),
-            line(f"undefined · {len(undefined)}" + (f" ({', '.join(reasons)})" if reasons else ""), [c for c, _ in undefined])]
+    summary = [f"The {len(covers['domain'])} caps that meet cap {cap} · at least {threshold} aligned face pieces a side"]
+    undefined = []
+    for key, direction in (("d_covers_c", "covered by"), ("c_covers_d", "covers")):
+        sides = [(a["cap"], answer(a[key]), a[key].get("reason")) for a in covers["answers"]]
+        yes = [c for c, word, _ in sides if word == "yes"]
+        missing = [(c, reason) for c, word, reason in sides if word == "undefined"]
+        summary.append(line(f"{direction} · {len(yes)} of {len(sides) - len(missing)} answered", yes))
+        if missing:
+            reasons = ", ".join(sorted({reason or "undefined" for _, reason in missing}))
+            undefined.append(line(f"undefined · {len(missing)} ({reasons})", [c for c, _ in missing], direction))
+    return summary + (undefined or ["undefined · 0"])
 
 
 def expect_covers(dumps: list[dict], source: dict, state: str | None) -> list[str]:
@@ -1457,6 +1469,8 @@ def expect_pick(dumps: list[dict], source: dict, state: str | None, pieces: list
     if not clicks or any("pick" not in dump for dump in dumps):
         return ["the run's dumps carry no click step or no pick context"]
     pieces = pieces if pieces is not None else slot_pieces()
+    style = load(SAMPLES / state / "style.json") if state and (SAMPLES / state / "style.json").is_file() else None
+    poses = tint_tables(state)["ids"] if style is not None else None
     problems = []
     final = dumps[-1]["pick"]
     if final["asked"] != len(clicks) or final["hits"] + final["misses"] != len(clicks) or final["stale"] != 0:
@@ -1477,6 +1491,11 @@ def expect_pick(dumps: list[dict], source: dict, state: str | None, pieces: list
             if selection is not None and (not line.startswith(f"piece {selection['piece']} · ")
                                           or "domain " not in line or "height " not in line):
                 problems.append(f"the inspector did not name the selected piece with its domain and height: {line!r}")
+            elif selection is not None and poses is not None:
+                row = style["rows"][poses[selection["piece"]]]
+                domain = style["domains"][row["domain"]]
+                if not line.endswith(f"sample · domain {domain} · height {row['heights'][0]}"):
+                    problems.append(f"the inspector did not show the exact domain ID {domain}: {line!r}")
     for i, shown in enumerate(dumps[1:], 1):
         if shown["do"] != "chord E":
             continue
@@ -1808,12 +1827,20 @@ def expect_cap_hover(dumps: list[dict], source: dict, state: str | None) -> list
     if refused in texts(dumps[3], "frame"):
         problems.append("step 3: the first click was refused")
     record = SAMPLES / state / "cap-0.json"
-    if record.is_file() and "straddlers" in (masks := load(record).get("masks", {})):
+    cap_record = load(record) if record.is_file() else {}
+    if "straddlers" in (masks := cap_record.get("masks", {})):
         count = masks["straddlers"]["count"]
         for index, expected in ((4, 0), (5, count), (6, count)):
             overlay = dumps[index].get("overlay", {})
             if overlay.get("never_hidden") != expected or overlay.get("kept") != expected:
                 problems.append(f"step {index}: expected {expected} straddlers in the never-hidden set")
+        panel = texts(dumps[6], "panel:jumble.cap_map")
+        local = texts(dumps[6], "view:Local")
+        if not any(line.startswith("cap 0 · ") and f" · u {count}" in line for line in panel) or str(count) not in local:
+            problems.append(f"step 6: the cap map and Local should both show u {count}")
+        for section in ("Twist check", "Cap covers", "Repair list"):
+            if not any(line.endswith(f"{section} · unavailable") for line in local):
+                problems.append(f"step 6: Local's {section} should show unavailable")
     return problems
 
 
@@ -2349,8 +2376,8 @@ def overlay_mask(mask: dict, pieces: int) -> list[bool]:
 
 
 def overlay_expected(tables: dict, state: str, cap: int | None, step: int | None, focus: str | None,
-                     hover: int | None, selection: int | None) -> dict:
-    """Recompute the focus and overlay bytes from the exact sample masks and the original outline tint."""
+                     hover: int | None, selection: int | None, mode: str = "contact") -> dict:
+    """Recompute the focus and overlay bytes from the sample masks and tint mode."""
     import hashlib
     ids, domain = tables["ids"], tables["domain"]
     pieces = len(ids)
@@ -2368,17 +2395,18 @@ def overlay_expected(tables: dict, state: str, cap: int | None, step: int | None
             cut = overlay_mask(masks["inside"], pieces)
         points = record.get("straddlers", {}).get("certificate_points")
         lines = moving or straddlers
-    outline = bytearray(class_entry(tables["classes"][domain[ids[p]]]) for p in range(pieces))
-    if hover is not None:
-        outline[hover] = 2
-    if selection is not None:
-        outline[selection] = 1
+    outline = tint_expected(tables, mode, None, hover, selection)["outline_sha256"]
+    heights = [height_entry(h) for h in tables["height"]] if mode == "height" else []
+    height_mode = any(heights)
     outside = [focus is not None and domain[row] != OVERLAY_DOMAIN for row in ids]
     raw = None
-    if focus or cut is not None or lines is not None:
-        raw = bytes((0x88 if outside[p] else 0) | (2 if lines and lines[p] else 1 if cut and cut[p] else 0)
+    if height_mode or focus or cut is not None or lines is not None:
+        raw = bytes((0x88 if outside[p] else 0) |
+                    ((heights[ids[p]] - 9 if heights[ids[p]] else 0) if height_mode
+                     else 2 if lines and lines[p] else 1 if cut and cut[p] else 0)
                     for p in range(pieces))
-    fill = bytes(0x80 if outside[p] and not (lines and lines[p]) else 0 for p in range(pieces)) if focus else None
+    fill = bytes((heights[ids[p]] if height_mode else 0) | (0x80 if outside[p] and not (lines and lines[p]) else 0)
+                 for p in range(pieces)) if height_mode or focus else None
     count = sum(lines) if lines else 0
     hidden = sum(1 for p in range(pieces) if lines and lines[p] and outside[p]) if focus == "hidden" else 0
     layer = "MovingSet" if step is not None else "CutTrace" if cut is not None or lines is not None else "None"
@@ -2387,7 +2415,7 @@ def overlay_expected(tables: dict, state: str, cap: int | None, step: int | None
              "outline_only": [hidden, 0], "preview_kept": 0,
              "trace_cap": cap if cut is not None else None, "trace_candidates": sum(cut) if cut else 0,
              "fill_bytes_sha256": hashlib.sha256(raw).hexdigest() if raw is not None else "",
-            "outline_sha256": hashlib.sha256(bytes(outline)).hexdigest(),
+              "outline_sha256": outline,
              "fill_sha256": hashlib.sha256(fill).hexdigest() if fill is not None else "",
              "modes": [focus or "none", "dimmed" if focus else "none"]}
 
@@ -3800,6 +3828,10 @@ def expect_preview(dumps: list[dict], source: dict, state: str | None) -> list[s
     check(record.get("letters") == letters and record.get("error") is None
           and committed.get("head", {}).get("digest") == record.get("actual") == record.get("expected") == again.get("after"),
           "the commit's digest differs from the preview's after digest")
+    committed_screen = screens["commit"]
+    if (committed_screen.get("head", {}).get("off_lattice") or 0) > 0:
+        check(committed_screen.get("nu", {}).get("band") == "ν band: undefined (pieces off the lattice)",
+              "the ν band did not retain undefined after the off-lattice commit")
     check(not any(dump.get("stage", {}).get("unasked") for dump in dumps), "the boundary ledger counted an unasked act")
     return problems
 

@@ -56,7 +56,7 @@ public sealed class InspectField
 }
 
 // ADR-D02 B17: the session pick's identity and cell, with domain and height from a bound sample when available.
-public sealed record PieceInspection(uint Id, uint Sticker, int? Cell, bool Jumble, (int Domain, int Height)? Sample)
+public sealed record PieceInspection(uint Id, uint Sticker, int? Cell, bool Jumble, (string Domain, int Height)? Sample)
 {
     public string Line
     {

@@ -169,7 +169,8 @@ public static class ShellJumble
             return CapMapModel.Pending();
         }
         var path = Path.Combine(JumbleFolder(), state, "rim.json");
-        return Kept(path, CapMapModel.Read) ?? CapMapModel.Pending();
+        CapReadout? RecordAt(int cap) => CapRecord(state, cap);
+        return Kept(path, text => CapMapModel.Read(text, RecordAt)) ?? CapMapModel.Pending(RecordAt);
     }
 
     /// <summary>The Jumble host; set by the chrome. B25: setting it binds the seed 7001 restoration to its Word panel.</summary>
@@ -300,14 +301,10 @@ public static class ShellJumble
     /// A named cap's readout from the bound sample's own record of it (cap-&lt;id&gt;.json), which carries a blocked
     /// cap's straddler count; null when the sample has no record of that cap, and the rim row stands in.
     /// </summary>
-    public static CapReadout? CapRecord(int cap)
+    private static CapReadout? CapRecord(string state, int cap)
     {
-        if (Bound is not { } state)
-        {
-            return null;
-        }
         var path = Path.Combine(JumbleFolder(), state, "cap-" + cap + ".json");
-        return File.Exists(path) ? CapReadout.Read(File.ReadAllText(path)) : null;
+        return Kept(path, CapReadout.Read, "readout");
     }
 
     /// <summary>The folder of the D02 jumble samples: under M600_D02_DATA when set, else the build's staged copy.</summary>
@@ -431,14 +428,14 @@ public static class ShellJumble
             inspector.SelectPiece(null);
             return;
         }
-        (int Domain, int Height)? sample = null;
+        (string Domain, int Height)? sample = null;
         try
         {
             if (Style() is { } style && style.Digest == StateDigest && Poses(style.RowCount) is { } poses
                 && poses.Digest == StateDigest && picked.Piece < poses.Poses.Length)
             {
                 int row = poses.Poses[(int)picked.Piece];
-                sample = (style.RowDomain(row), style.RowHeight(row));
+                sample = style.InspectRow(row);
             }
         }
         catch (Exception error) when (error is FormatException or JsonException or IOException or KeyNotFoundException or InvalidOperationException)
@@ -837,18 +834,17 @@ internal sealed partial class D02Driver : Node
             // B25: a control of a dock panel (the Word panel) is found in the frame, opening its dock first.
             if (focus.GetString() == WordPanel.PanelId && ShellJumble.Host is { } wordHost)
             {
-                // The first focus opens the left dock; once the panel is on screen, a focus takes it.
                 if (wordHost.Words.IsVisibleInTree())
                 {
                     wordHost.Words.GrabFocus();
                 }
                 else
                 {
-                    _frame.Model.ShowDock(DockSide.Left, WordPanel.PanelId);
+                    _frame.RevealAndFocus(DockSide.Left, WordPanel.PanelId, wordHost.Words);
                     _doing += " (dock opened)";
                 }
             }
-            // B26: the ν-corrections panel, the same way: the first focus opens the dock, the next takes it.
+            // B26: the ν-corrections panel, the same way.
             else if (focus.GetString() == NuCorrectionsPanel.PanelId && ShellJumble.Host is { } nuFocus)
             {
                 if (nuFocus.Corrections.IsVisibleInTree())
@@ -1188,6 +1184,7 @@ internal sealed partial class D02Driver : Node
                 var entry = _frame.Global is { } g && GodotObject.IsInstanceValid(g) ? g.Tools.GetNodeOrNull<Button>("FocusLayerEntry") : null;
                 json.WriteString("entry", entry?.Text ?? "");
                 json.WriteString("dock", _frame.Model.Docks[DockSide.Right].Open ?? "");
+                json.WriteBoolean("editor_focused", filtered.FilterEditor.Expression.IsVisibleInTree() && filtered.FilterEditor.Expression.HasFocus());
                 json.WriteString("line", filtered.Filter?.PreviewLine() ?? "");
                 json.WriteString("expression", filtered.FilterEditor.Expression.Text);
                 json.WriteStartArray("keys");
@@ -1353,8 +1350,9 @@ internal sealed partial class D02Driver : Node
             if (ShellJumble.Host is { } nuHost)
             {
                 json.WriteStartObject("nu");
-                json.WriteString("band", nuHost.Nu is { } band && nuHost.Corrections.Model is { } nuModel ? band.Line(nuModel.Constants) : "");
+                json.WriteString("band", nuHost.Nu?.Line(nuHost.Corrections.Model?.Constants) ?? "");
                 json.WriteBoolean("band_visible", nuHost.NuStrip.IsVisibleInTree());
+                json.WriteBoolean("panel_focused", nuHost.Corrections.IsVisibleInTree() && nuHost.Corrections.HasFocus());
                 json.WriteNumber("band_width", nuHost.NuStrip.Size.X);
                 json.WriteStartArray("cells");
                 foreach (var cell in nuHost.Nu?.Cells ?? Array.Empty<NuCell>())
@@ -1373,6 +1371,7 @@ internal sealed partial class D02Driver : Node
             if (ShellJumble.Host is { } worded)
             {
                 json.WriteStartObject("word");
+                json.WriteBoolean("panel_focused", worded.Words.IsVisibleInTree() && worded.Words.HasFocus());
                 foreach (var (key, value) in worded.Words.Lines())
                 {
                     json.WriteString(key, value);
