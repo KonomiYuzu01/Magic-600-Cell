@@ -39,6 +39,33 @@ public static class ShellTurn
         _read = Code == HostLibrary.Ok ? (cap, revision) : null;
     }
 
+    /// <summary>
+    /// B20: the cut slice's inside layer, the slice channel of the piece style: the row's moving set (at an admissible
+    /// cap, exactly the cap's inside set, which B18's twist-row run checks by sha256), or cleared without a row.
+    /// </summary>
+    public static int SendInside(HostLibrary library, IntPtr host, out int count)
+    {
+        count = 0;
+        if (Row is { } row)
+        {
+            foreach (var bit in row.Moving) count += bit;
+        }
+        return library.SetPieceStyle(host, HostLibrary.StyleSlice, Row?.Moving, false);
+    }
+
+    /// <summary>
+    /// B20: the turn preview, the one call site of the row's transform. On: the row's eight plane floats with the angle
+    /// negated at phase 0, so the moving pieces draw the twist's result; off (or no row): cleared. Nothing is committed.
+    /// </summary>
+    public static int Preview(HostLibrary library, IntPtr host, bool on)
+    {
+        if (on && Row is { Plane.Length: 8 } row)
+        {
+            return library.SetTransform(host, row.Plane, -row.Angle, row.Moving, 0);
+        }
+        return library.SetTransform(host, null, 0, null, 0);
+    }
+
     /// <summary>The dump's turn row: the cap, the host's code, the status and, for a row, its moving count, the sha256
     /// of its moving set packed one bit per piece (least significant bit first), its angle and its plane.</summary>
     public static void Dump(Utf8JsonWriter json)

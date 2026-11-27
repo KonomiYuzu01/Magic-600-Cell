@@ -561,6 +561,21 @@ internal sealed partial class D02Driver : Node
                 _doing += " (not pressed: " + error.Message + ")";
             }
         }
+        else if (step.TryGetProperty("hold", out var hold) || step.TryGetProperty("release", out hold))
+        {
+            // ADR-D02 B20: a held key, down at "hold" and up at "release", so frames are drawn while it is held.
+            var down = step.TryGetProperty("hold", out _);
+            _doing = (down ? "hold " : "release ") + hold.GetString();
+            var key = OS.FindKeycodeFromString(hold.GetString()!);
+            if (key == Key.None)
+            {
+                _doing += " (not pressed: no key is named " + hold.GetString() + ")";
+            }
+            else
+            {
+                Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = down });
+            }
+        }
         else if (step.TryGetProperty("text", out var text))
         {
             _doing = "text " + text.GetString();

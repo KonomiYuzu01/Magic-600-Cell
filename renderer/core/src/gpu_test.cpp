@@ -2075,10 +2075,185 @@ void product_hopf(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ADR-D02 B20's WARP check (--warp --slice): the cut slice. The even pieces are the inside layer. With shrink 1 and the
+// whole shell, the outside copy draws what a set of the odd pieces draws (at most 1% of the covered pixels differ by
+// more than 2), the inside copy covers only part of what a set of the even pieces covers and nothing else, and the
+// two copies together cover exactly the pixels the unsplit slice covers. A smaller shrink and a narrower shell cover
+// less. A ghost slot claims the transform: in a composite frame its pane turns the inside pieces and the other pane
+// draws exactly as without a transform.
+void product_slice(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    const auto pieces = sa2::scene_slot_pieces();
+    std::vector<uint8_t> all(SA2_SLOTS, 1), even(SA2_SLOTS, 0), odd(SA2_SLOTS, 0), inside(SA2_PIECES, 0);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) { even[slot] = uint8_t(pieces[slot] % 2 == 0); odd[slot] = uint8_t(pieces[slot] % 2 == 1); }
+    for (uint32_t piece = 0; piece < SA2_PIECES; piece += 2) inside[piece] = 1;
+    const auto set_all = pose_set(harness, 1, all), set_even = pose_set(harness, 2, even), set_odd = pose_set(harness, 3, odd);
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const auto plain = frames.draw(1, 1, set_all, Q);
+    const auto only_odd = frames.draw(1, 3, set_odd, Q), only_even = frames.draw(1, 2, set_even, Q);
+    const auto background = plain[0];
+    const auto covered = [&](const std::vector<uint32_t>& image) {
+        return uint64_t(std::count_if(image.begin(), image.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    const auto differing = [](const std::vector<uint32_t>& x, const std::vector<uint32_t>& y) {
+        uint64_t count = 0;
+        for (size_t i = 0; i < x.size(); ++i)
+            for (int shift = 0; shift < 32; shift += 8)
+                if (std::abs(int((x[i] >> shift) & 0xff) - int((y[i] >> shift) & 0xff)) > 2) { ++count; break; }
+        return count;
+    };
+    api(ctx, sa2_style_set(ctx, 1, inside.data(), SA2_STYLE_CHANNEL_SLICE));
+    expect(frames.draw(1, 1, set_all, Q) == plain, "a slice channel without a slice slot changed the frame");
+    sa2_view_style style{};
+    style.struct_size = sizeof(style);
+    const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    std::copy(std::begin(identity), std::end(identity), std::begin(style.matrix));
+    style.slice_mode = SA2_SLICE_BOTH; style.slice_shrink = 1.0f; style.shell_min = 0.0f; style.shell_max = 3.14159265f;
+    const auto drawn = [&](uint32_t mode, float shrink, float shell_max, uint64_t view, uint64_t set) {
+        auto s = style; s.slice_mode = mode; s.slice_shrink = shrink; s.shell_max = shell_max;
+        api(ctx, sa2_view_style_set(ctx, 1, &s));
+        return frames.draw(1, view, set, Q);
+    };
+    const auto both = drawn(SA2_SLICE_BOTH, 1.0f, 3.14159265f, 1, set_all);
+    const auto outside = drawn(SA2_SLICE_OUTSIDE, 1.0f, 3.14159265f, 1, set_all);
+    const auto inner = drawn(SA2_SLICE_INSIDE, 1.0f, 3.14159265f, 1, set_all);
+    const auto shrunk = drawn(SA2_SLICE_BOTH, 0.6f, 3.14159265f, 1, set_all);
+    uint64_t outside_band = 0, union_miss = 0, union_extra = 0;
+    for (size_t i = 0; i < plain.size(); ++i) {
+        const bool b = both[i] != background, o = outside[i] != background, n = inner[i] != background;
+        outside_band += n && only_even[i] == background;
+        union_miss += b && !o && !n;
+        union_extra += !b && (o || n);
+    }
+    const auto c_both = covered(both), c_inner = covered(inner), c_even = covered(only_even), c_shrunk = covered(shrunk);
+    const auto apart = differing(outside, only_odd);
+    std::cout << "slice: covered " << c_both << " (inside outlines " << c_inner << " of " << c_even << ", shrink 0.6 " << c_shrunk
+              << "); outside vs the odd set differ at " << apart << "; union misses " << union_miss << ", extra " << union_extra << '\n' << std::flush;
+    expect(c_both >= uint64_t(harness.width) * harness.height / 20, "a slice-check frame covers less than 5% of the target");
+    expect(apart * 100 <= covered(only_odd), "the outside layer is not drawn filled as the odd set (over 1% differ)");
+    expect(outside_band == 0, "the inside layer covered a pixel the even set does not");
+    // Small stickers keep most of their pixels in the band; what shows through the holes differs from the filled set.
+    const auto holes = differing(inner, only_even);
+    std::cout << "slice: the inside layer differs from the filled even set at " << holes << '\n' << std::flush;
+    expect(c_inner * 10 >= c_even && holes * 10 >= c_even, "the inside layer is not drawn as outlines only (under 10% show through)");
+    expect(union_miss == 0 && union_extra == 0, "the split copies together do not cover what the unsplit slice covers");
+    expect(c_shrunk < c_both, "a smaller inside shrink did not cover less");
+    // The radius shell about a focus pole (cell 150): a narrower shell draws fewer pixels, never none.
+    sa2_view_focus focus{sizeof(sa2_view_focus), SA2_PROJECTION_ORTHOGRAPHIC, 150, -1.0f, 1.0f, 0};
+    api(ctx, sa2_view_focus_set(ctx, 1, &focus));
+    const auto wide = covered(drawn(SA2_SLICE_BOTH, 1.0f, 3.14159265f, 1, set_all));
+    const auto narrow = covered(drawn(SA2_SLICE_BOTH, 1.0f, 0.6f, 1, set_all));
+    std::cout << "slice shell: whole " << wide << ", within 0.6 rad " << narrow << '\n' << std::flush;
+    expect(narrow > 0 && narrow < wide, "a narrower radius shell did not draw less");
+    api(ctx, sa2_view_focus_set(ctx, 1, nullptr));
+    // The hardware timeout's check (26 November 2026): the product's Local on view 2, local-view.json's shape at Local's
+    // zoom for this target (ShellLocal.Zoom: 4.507 at 16:9) with the orthographic focus on the default cap 0 (cos
+    // 121/125, spread 1.7), drawn by the cap test and by the slice's default (0..0.6 rad) and whole shells, then the
+    // whole shell in perspective at the ABI's nearest eye (d4 1.02). Each frame's clipped triangles and pixel-shader
+    // invocations (the newest harvested frame's pipeline statistics) are its raster work.
+    {
+        using Newest = void (*)(uint64_t*);
+        const auto newest = reinterpret_cast<Newest>(reinterpret_cast<void*>(
+            GetProcAddress(GetModuleHandleW(L"sa2_interop.dll"), "sa2_test_frame_statistics")));
+        expect(newest != nullptr, "sa2_interop.dll has no sa2_test_frame_statistics");
+        const auto reports = [&] {
+            sa2_frame_report rows[16]{};
+            for (auto& row : rows) row.struct_size = sizeof(row);
+            uint32_t count = 0;
+            api(ctx, sa2_frame_reports(ctx, rows, 16, &count));
+        };
+        const auto measure = [&](const char* what, const sa2_view_style* slot1) {
+            api(ctx, sa2_view_style_set(ctx, 1, slot1));
+            reports();
+            frames.draw(1, 2, 0, Q); // no resource set: every slot drawn
+            reports();
+            uint64_t s[4]{}; // frame, vertex evaluations, clipped triangles, pixel-shader invocations
+            newest(s);
+            expect(s[0] == frames.frame, "the newest harvested frame is not the measured one");
+            std::cout << "slice raster: " << what << ": " << s[2] << " triangles, " << s[3] << " pixel invocations ("
+                      << double(s[3]) / (double(harness.width) * harness.height) << " targets)\n" << std::flush;
+            return std::pair<uint64_t, uint64_t>{s[2], s[3]};
+        };
+        const sa2_view_shape local{sizeof(sa2_view_shape), 0.7f, 0.6f, 2.0f, 4.507f, 0};
+        api(ctx, sa2_view_shape_set(ctx, 2, &local));
+        const sa2_view_focus cap0{sizeof(sa2_view_focus), SA2_PROJECTION_ORTHOGRAPHIC, 0, 121.0f / 125.0f, 1.7f, 0};
+        api(ctx, sa2_view_focus_set(ctx, 2, &cap0));
+        auto slice = style; slice.slice_shrink = 0.6f; slice.shell_max = 0.6f;
+        auto whole = slice; whole.shell_max = 3.14159265f;
+        const auto by_cap = measure("Local, cap test", nullptr);
+        const auto by_shell = measure("Local, slice 0..0.6 rad", &slice);
+        const auto by_whole = measure("Local, slice whole shell", &whole);
+        const sa2_view_shape near_eye{sizeof(sa2_view_shape), 0.7f, 0.6f, 1.02f, 4.507f, 0};
+        api(ctx, sa2_view_shape_set(ctx, 2, &near_eye));
+        auto perspective = cap0; perspective.projection = SA2_PROJECTION_PERSPECTIVE;
+        api(ctx, sa2_view_focus_set(ctx, 2, &perspective));
+        const auto by_near = measure("Local perspective d4 1.02, slice whole shell", &whole);
+        api(ctx, sa2_view_focus_set(ctx, 2, nullptr));
+        api(ctx, sa2_view_shape_set(ctx, 2, nullptr));
+        api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+        // Measured on WARP on 26 November 2026 at 640 x 360: the cap test 105,216 triangles and 0.87 targets of pixel
+        // work, the default shell 321,547 and 2.65, the whole shell 4,575,204 and 37.1, the near eye 3,590,931 and 46.3.
+        // A slice's raster work is bounded as the whole puzzle's is (the 2-second limit lies orders of magnitude above).
+        const uint64_t target = uint64_t(harness.width) * harness.height;
+        expect(by_cap.first < by_shell.first && by_shell.first < by_whole.first, "a wider shell did not draw more triangles");
+        expect(by_shell.second <= 8 * target, "the default shell's pixel work exceeds 8 targets");
+        expect(by_whole.second <= 64 * target && by_near.second <= 64 * target, "a whole shell's pixel work exceeds 64 targets");
+        expect(by_whole.first <= 5000000 && by_near.first <= 5000000, "a whole shell drew more than 5,000,000 triangles");
+    }
+    // A ghost slot claims the transform: pane 1 (slot 1, no slice) stays unturned; pane 2 (slot 2, a ghost) turns.
+    sa2_view_style none{};
+    none.struct_size = sizeof(none);
+    std::copy(std::begin(identity), std::end(identity), std::begin(none.matrix));
+    api(ctx, sa2_view_style_set(ctx, 1, &none));
+    auto ghost = style; ghost.ghost[0] = 0.9f; ghost.ghost[1] = 0.9f; ghost.ghost[2] = 1.0f; ghost.ghost[3] = 0.5f;
+    api(ctx, sa2_view_style_set(ctx, 2, &ghost));
+    const auto paned = [&] {
+        auto left = panes_check::make(1, set_all, 0, 0, 320, 360, Q), right = panes_check::make(1, set_all, 320, 0, 320, 360, Q);
+        left.style = 1; right.style = 2;
+        return frames.draw_panes(1, {left, right});
+    };
+    const auto still = paned();
+    const float u[4] = {1, 0, 0, 0}, v[4] = {0, 1, 0, 0};
+    api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, inside.data(), 0.0f));
+    const auto turned = paned();
+    api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, nullptr, 1.0f));
+    uint64_t left_moved = 0, right_moved = 0, right_cover = 0;
+    for (uint32_t y = 0; y < 360; ++y)
+        for (uint32_t x = 0; x < 640; ++x) {
+            const size_t i = size_t(y) * harness.width + x;
+            (x < 320 ? left_moved : right_moved) += turned[i] != still[i];
+            right_cover += x >= 320 && still[i] != background;
+        }
+    std::cout << "slice ghost: the plain pane changed at " << left_moved << ", the ghost pane at " << right_moved << " of " << right_cover << '\n' << std::flush;
+    expect(left_moved == 0, "a pane without the ghost turned the moving pieces");
+    expect(right_moved * 20 >= right_cover, "the ghost pane did not turn its inside pieces (under 5% of its covered pixels)");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
 // ADR-D02 B18: --warp --sweep. Only WARP; parse refuses any other mode.
 void run_sweep(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the transform check runs on WARP only");
     suite.check("transform warp", [&] { product_sweep(options); });
+}
+// ADR-D02 B20: --warp --slice. Only WARP; parse refuses any other mode.
+void run_slice(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the slice check runs on WARP only");
+    suite.check("slice warp", [&] { product_slice(options); });
 }
 
 // ABI 10: --warp --hopf FILE. Only WARP; parse refuses any other mode.

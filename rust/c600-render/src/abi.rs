@@ -133,6 +133,16 @@ pub const HOPF_RINGS: u32 = 20;
 pub const STYLE_CHANNEL_FILL: u32 = 0;
 /// `SA2_STYLE_CHANNEL_OUTLINE`.
 pub const STYLE_CHANNEL_OUTLINE: u32 = 1;
+/// `SA2_STYLE_CHANNEL_SLICE` (ADR-D02 B20): one byte per piece, 1 for the cut slice's inside layer.
+pub const STYLE_CHANNEL_SLICE: u32 = 2;
+/// `SA2_SLICE_OFF` (ADR-D02 B20).
+pub const SLICE_OFF: u32 = 0;
+/// `SA2_SLICE_BOTH` (ADR-D02 B20): the outside layer filled, the inside layer as outlines.
+pub const SLICE_BOTH: u32 = 1;
+/// `SA2_SLICE_OUTSIDE` (ADR-D02 B20): the held split's left copy.
+pub const SLICE_OUTSIDE: u32 = 2;
+/// `SA2_SLICE_INSIDE` (ADR-D02 B20): the held split's right copy.
+pub const SLICE_INSIDE: u32 = 3;
 /// `SA2_STYLE_INDEX`: a style byte's palette entry.
 pub const STYLE_INDEX: u8 = 0x0F;
 /// `SA2_STYLE_DIM`: a fill byte's dim-set bit.
@@ -450,6 +460,12 @@ pub struct Sa2ViewStyle {
     pub outline_width: f32,
     pub palette: [f32; 64],
     pub matrix: [f32; 9],
+    /// ADR-D02 B20: `SA2_SLICE_*`, the slice's inside shrink, its radius shell (angles) and its ghost colour.
+    pub slice_mode: u32,
+    pub slice_shrink: f32,
+    pub shell_min: f32,
+    pub shell_max: f32,
+    pub ghost: [f32; 4],
     pub reserved: u32,
 }
 
@@ -470,6 +486,11 @@ impl Sa2ViewStyle {
             outline_width: 0.0,
             palette: [0.0; 64],
             matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+            slice_mode: SLICE_OFF,
+            slice_shrink: 0.0,
+            shell_min: 0.0,
+            shell_max: 0.0,
+            ghost: [0.0; 4],
             reserved: 0,
         }
     }
@@ -483,6 +504,12 @@ impl Sa2ViewStyle {
             && within(self.outline_width, 0.0, STYLE_OUTLINE_MAX)
             && self.palette.iter().all(|&v| within(v, 0.0, 1.0))
             && self.matrix.iter().all(|&v| within(v, -STYLE_MATRIX_MAX, STYLE_MATRIX_MAX))
+            && self.slice_mode <= SLICE_INSIDE
+            && within(self.slice_shrink, 0.0, 1.0)
+            && within(self.shell_min, 0.0, std::f32::consts::PI)
+            && within(self.shell_max, 0.0, std::f32::consts::PI)
+            && self.ghost.iter().all(|&v| within(v, 0.0, 1.0))
+            && (self.slice_mode == SLICE_OFF || (self.slice_shrink > 0.0 && self.shell_min <= self.shell_max))
     }
 }
 
@@ -491,6 +518,7 @@ pub fn piece_style_valid(bytes: &[u8], channel: u32) -> bool {
     let allowed = match channel {
         STYLE_CHANNEL_FILL => STYLE_INDEX | STYLE_DIM,
         STYLE_CHANNEL_OUTLINE => STYLE_INDEX,
+        STYLE_CHANNEL_SLICE => 1,
         _ => return false,
     };
     bytes.len() == PIECES && bytes.iter().all(|&b| b & !allowed == 0)

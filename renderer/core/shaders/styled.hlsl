@@ -12,8 +12,36 @@ cbuffer ViewStyle : register(b1) {
     float4 matrixRows[3]; // xyz: a row of the output colour matrix
     uint tintMode, dimMode;
     float dimAmount, outlineWidth;
-    uint matrixOn;
+    uint matrixOn, sliceMode; // ADR-D02 B20: the cut slice (SA2_SLICE_*), its shrink, its shell as cosines, its ghost
+    float sliceShrink, shellMinCos;
+    float shellMaxCos, slicePad0, slicePad1, slicePad2;
+    float4 ghost;
 };
+static const uint SliceInside = 0x20000u; // the piece style word's bit 17: the slice's inside layer
+static const uint Moving = 0x10000u; // bit 16: a moving piece of the transform (B18)
+// ADR-D02 B20: a slice draws each sticker with the radius shell in place of the view's focus test, the inside layer
+// at the slice's smaller shrink, and only the layers its mode names.
+ProductOut sliceVs(uint vi, uint cell, uint style) {
+    uint local = stickerIds[vi];
+    uint slot = cell * 433 + local;
+    bool inside = (style & SliceInside) != 0;
+    Projection v = projectVertexShrunk(cell, vi, inside ? sliceShrink : 1.0, false);
+    float d = dot(posedPoint(slot, framePoint(cell, centers[local] / radius)), focusPole);
+    bool shell = d >= shellMaxCos - 1e-5 && d <= shellMinCos + 1e-5;
+    bool layer = inside ? sliceMode != 2 : sliceMode != 3;
+    ProductOut result;
+    result.position = slotVisible[slot] != 0 && shell && layer ? v.clip : float4(0, 0, -1, 1);
+    result.projected = v.projected;
+    result.colourClass = labels[slot] / 433;
+    result.marked = overlayMode == 3 ? straddles[slotPieces[slot]] : 0;
+    result.instance = instanceIds[slot];
+    return result;
+}
+// The band an inside piece keeps: its outline, at least SA2_SLICE_BAND wide.
+bool sliceHole(uint style, float3 corner) {
+    if (sliceMode == 0 || (style & SliceInside) == 0) return false;
+    return min(corner.x, min(corner.y, corner.z)) >= max(outlineWidth, 0.08);
+}
 struct StyledOut {
     float4 position : SV_Position;
     float3 projected : TEXCOORD0;
@@ -24,15 +52,17 @@ struct StyledOut {
     nointerpolation uint instance : TEXCOORD5; // ADR-D02 B17: the ID pass's value
 };
 StyledOut styledVs(uint vi : SV_VertexID, uint cell : SV_InstanceID) {
-    ProductOut p = productVs(vi, cell);
     uint slot = cell * 433 + stickerIds[vi];
+    uint style = pieceStyle[slotPieces[slot]];
+    ProductOut p;
+    if (sliceMode != 0) p = sliceVs(vi, cell, style); else p = productVs(vi, cell);
     uint k = vi % 3;
     StyledOut result;
     result.position = p.position;
     result.projected = p.projected;
     result.colourClass = p.colourClass;
     result.marked = p.marked;
-    result.style = pieceStyle[slotPieces[slot]];
+    result.style = style;
     result.corner = float3(k == 0 ? 1 : 0, k == 1 ? 1 : 0, k == 2 ? 1 : 0);
     result.instance = p.instance;
     // ADR-D02 B17: a hidden piece's stickers fall outside the clip volume, in the colour pass and the ID pass alike.
@@ -41,6 +71,7 @@ StyledOut styledVs(uint vi : SV_VertexID, uint cell : SV_InstanceID) {
     return result;
 }
 float4 styledPs(StyledOut input) : SV_Target {
+    if (sliceHole(input.style, input.corner)) discard; // ADR-D02 B20
     VertexOut v;
     v.position = input.position;
     v.projected = input.projected;
@@ -59,6 +90,9 @@ float4 styledPs(StyledOut input) : SV_Target {
         float4 stroke = palette[outline & 15];
         colour.rgb = lerp(colour.rgb, stroke.rgb, stroke.a);
     }
+    // ADR-D02 B20: the turn preview's ghost on the moving inside pieces.
+    if (sliceMode != 0 && ghost.a > 0 && theta != 0 && (input.style & (SliceInside | Moving)) == (SliceInside | Moving))
+        colour.rgb = lerp(colour.rgb, ghost.rgb, ghost.a);
     bool dimSet = (fill & 0x80) != 0;
     if ((dimMode == 1 && dimSet) || (dimMode == 2 && !dimSet)) colour.rgb *= 1 - dimAmount;
     if (matrixOn != 0)
@@ -68,6 +102,7 @@ float4 styledPs(StyledOut input) : SV_Target {
 // ADR-D02 B17 (ADR-D01.46): picking follows visibility. A piece the slot dims answers no instance; a hidden one is not
 // drawn at all (styledVs); a tint, an outline or the matrix leaves the instance as the unstyled ID pass gives it.
 uint styledIdPs(StyledOut input) : SV_Target {
+    if (sliceHole(input.style, input.corner)) discard; // ADR-D02 B20: an inside piece answers only on its band
     bool dimSet = (input.style & 0x80) != 0;
     bool dimmed = dimAmount > 0 && ((dimMode == 1 && dimSet) || (dimMode == 2 && !dimSet));
     return dimmed ? 0 : input.instance;

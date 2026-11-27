@@ -38,12 +38,14 @@ struct Projection {
     float3 projected;
     uint slot;
 };
-float4 homePoint(uint cell, float4 center, float4 vertex) {
+// ADR-D02 B20: `factor` scales the sticker shrink (the slice's inside layer); 1 is the shape's own.
+float4 homePointShrunk(uint cell, float4 center, float4 vertex, float factor) {
     float4 v = (N0 + cellShrink * (center - N0)
-                + cellShrink * stickerShrink * (vertex - center)) / radius;
+                + cellShrink * (stickerShrink * factor) * (vertex - center)) / radius;
     return frames[cell*4] * v.x + frames[cell*4+1] * v.y
                  + frames[cell*4+2] * v.z + frames[cell*4+3] * v.w;
 }
+float4 homePoint(uint cell, float4 center, float4 vertex) { return homePointShrunk(cell, center, vertex, 1.0); }
 float4 posedPoint(uint slot, float4 world) {
     if (poseEnabled == 0) return world;
     uint pid = poseIndex[slotPieces[slot]];
@@ -67,8 +69,9 @@ float4 framePoint(uint cell, float4 v) {
 }
 // ABI 9's focus (sa2_view_focus_set): a sticker whose posed, unshrunk centre lies outside the focus cap is placed
 // outside the clip volume; the spread moves the rest by (spread - 1) times their posed cell centre's projection.
-Projection focusVertex(Projection result, uint cell, uint slot, uint local) {
-    if ((viewFlags & 2u) != 0) {
+// ADR-D02 B20: without `capTest` (the slice's radius shell replaces it) only the spread applies.
+Projection focusVertex(Projection result, uint cell, uint slot, uint local, bool capTest) {
+    if (capTest && (viewFlags & 2u) != 0) {
         float4 centre = posedPoint(slot, framePoint(cell, centers[local] / radius));
         if (dot(centre, focusPole) < focusCos) {
             result.clip = float4(0, 0, -1, 1);
@@ -125,10 +128,10 @@ Projection hopfVertex(float4 world, uint cell, uint slot) {
     return result;
 }
 #endif
-Projection projectVertex(uint cell, uint vi) {
+Projection projectVertexShrunk(uint cell, uint vi, float factor, bool capTest) {
     uint local = stickerIds[vi];
     uint slot = cell * 433 + local;
-    float4 world = posedPoint(slot, homePoint(cell, centers[local], vertices[vi]));
+    float4 world = posedPoint(slot, homePointShrunk(cell, centers[local], vertices[vi], factor));
 #ifdef SA2_LAYOUT
     // ADR-D02 B18: in the product passes a turning frame binds the piece style at t4, whose bit 16 marks a moving piece.
     const bool turns = theta != 0 && (animated[slotPieces[slot]] & 0x10000u) != 0;
@@ -144,7 +147,8 @@ Projection projectVertex(uint cell, uint vi) {
     if ((viewFlags & 8u) != 0) return hopfVertex(world, cell, slot);
 #endif
     Projection result = projectWorld(world);
-    if (viewFlags > 1u) result = focusVertex(result, cell, slot, local);
+    if (viewFlags > 1u) result = focusVertex(result, cell, slot, local, capTest);
     result.slot = slot;
     return result;
 }
+Projection projectVertex(uint cell, uint vi) { return projectVertexShrunk(cell, vi, 1.0, true); }

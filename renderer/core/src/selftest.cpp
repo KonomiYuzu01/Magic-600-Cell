@@ -1136,8 +1136,28 @@ void run_cpu(Suite& suite, const Options& options) {
             auto hide = style; hide.dim_mode = mode;
             expect(sa2::view_style(&hide).dim_mode == mode, "a hide mode was not copied");
         }
+        // ADR-D02 B20: the slice's values, and its channel's bytes (0 or 1).
+        {
+            auto slice = style; slice.slice_mode = SA2_SLICE_BOTH; slice.slice_shrink = 0.6f; slice.shell_min = 0; slice.shell_max = 0.5f;
+            slice.ghost[3] = 0.5f;
+            const auto made = sa2::view_style(&slice);
+            expect(made.slice_mode == SA2_SLICE_BOTH && made.slice_shrink == 0.6f && made.shell_min_cos == 1.0f
+                && std::abs(made.shell_max_cos - std::cos(0.5f)) < 1e-6f && made.ghost[3] == 0.5f, "a slice was not copied");
+            expect(sa2::view_style(&style).slice_mode == SA2_SLICE_OFF && sa2::view_style(&style).shell_max_cos == -1.0f,
+                "a style without a slice changed the slice's defaults");
+            const auto slices = [&](auto change) { auto s = slice; change(s); return rejects([&] { sa2::view_style(&s); }); };
+            expect(slices([](sa2_view_style& s) { s.slice_mode = 4; }) && slices([](sa2_view_style& s) { s.slice_shrink = 0; })
+                && slices([](sa2_view_style& s) { s.slice_shrink = 1.5f; }) && slices([](sa2_view_style& s) { s.shell_min = 0.6f; })
+                && slices([](sa2_view_style& s) { s.shell_max = 4.0f; }) && slices([](sa2_view_style& s) { s.ghost[1] = 2.0f; }),
+                "an invalid slice was accepted");
+        }
         std::vector<uint8_t> bytes(SA2_PIECES, 0);
-        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), 2); }), "a third channel was accepted");
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), 3); }), "a fourth channel was accepted");
+        bytes[5] = 1;
+        sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE);
+        bytes[5] = 2;
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE); }), "a slice byte of 2 was accepted");
+        bytes[5] = 0;
         bytes[5] = 0x10;
         expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_FILL); }), "an unknown fill bit was accepted");
         bytes[5] = 0x80;
@@ -1671,6 +1691,7 @@ Options parse(int argc, char** argv) {
         else if (arg == "--panes") options.panes = true;
         else if (arg == "--focus") options.focus = true;
         else if (arg == "--sweep") options.sweep = true;
+        else if (arg == "--slice") options.slice = true;
         else if (arg == "--hopf") options.hopf = value();
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
@@ -1730,6 +1751,10 @@ Options parse(int argc, char** argv) {
     // ADR-D02 B18: the transform check runs on WARP only, alone.
     expect(!options.sweep || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
         && !options.style && !options.panes && !options.focus && options.hopf.empty() && options.measure.empty()), "--sweep requires --warp, alone");
+    // ADR-D02 B20: the slice check runs on WARP only, alone.
+    expect(!options.slice || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.hopf.empty() && !options.sweep && options.measure.empty()),
+        "--slice requires --warp, alone");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
@@ -1765,6 +1790,7 @@ int main(int argc, char** argv) {
         else if (options.focus) sa2test::run_focus(suite, options);
         else if (!options.hopf.empty()) sa2test::run_hopf(suite, options);
         else if (options.sweep) sa2test::run_sweep(suite, options);
+        else if (options.slice) sa2test::run_slice(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

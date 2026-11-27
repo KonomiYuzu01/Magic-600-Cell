@@ -9,6 +9,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <cstring>
 #include <iomanip>
 #include <memory>
@@ -107,6 +108,111 @@ constexpr UINT SurfaceLatency = 2;
 // statistics are posted and the next vblank is still ahead at 60 to 144 Hz.
 constexpr uint32_t SurfaceSampleMs = 5;
 constexpr GUID ClsidDeviceFactory = {0x114863bf, 0xc386, 0x4aee, {0xb3, 0x9d, 0x8f, 0x0b, 0xbb, 0x06, 0x29, 0x55}};
+// ADR-D02 B20: the hardware diagnosis switch. SA2_D3D12_DEBUG=1 turns on, for the core's own device (route B) only,
+// the D3D12 debug layer and DRED (auto-breadcrumbs, their context and page faults) through the device factory's
+// configuration interfaces, so Godot's device and the process's global state are untouched. SA2_D3D12_DEBUG_OUT names
+// the report file (appended; default stderr). It writes the debug layer's corruption, error and warning messages and,
+// on device removal, each unfinished command list's breadcrumbs around the operation that did not finish and the page
+// fault's allocations. Off by default and never on the correctness path (the self-test's --debug turns on the debug
+// layer for its own device instead, as gpu_test.cpp's Device does). The watch holds the device for the process.
+constexpr GUID ClsidD3D12Debug = {0xf2352aeb, 0xdd84, 0x49fe, {0xb9, 0x7b, 0xa9, 0xdc, 0xfd, 0xcc, 0x1b, 0x4f}};
+constexpr GUID ClsidD3D12Dred = {0x4a75bbc4, 0x9ff4, 0x4ad8, {0x9f, 0x18, 0xab, 0xae, 0x84, 0xdc, 0x5f, 0xf2}};
+bool diagnosis_on() {
+    char value[4]{};
+    return GetEnvironmentVariableA("SA2_D3D12_DEBUG", value, sizeof(value)) == 1 && value[0] == '1';
+}
+std::mutex diagnosis_mutex;
+void diagnosis_write(const std::string& text) noexcept {
+    std::lock_guard<std::mutex> lock(diagnosis_mutex);
+    char path[1024]{};
+    const DWORD n = GetEnvironmentVariableA("SA2_D3D12_DEBUG_OUT", path, sizeof(path));
+    FILE* out = nullptr;
+    if (n > 0 && n < sizeof(path) && fopen_s(&out, path, "ab") != 0) out = nullptr;
+    std::fputs(text.c_str(), out ? out : stderr);
+    if (out) std::fclose(out); else std::fflush(stderr);
+}
+std::string diagnosis_name(const wchar_t* text) {
+    if (!text || !*text) return "(unnamed)";
+    const int n = WideCharToMultiByte(CP_UTF8, 0, text, -1, nullptr, 0, nullptr, nullptr);
+    if (n <= 1) return "(unnamed)";
+    std::string out(size_t(n), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, text, -1, out.data(), n, nullptr, nullptr);
+    out.pop_back();
+    return out;
+}
+void diagnosis_configure(ID3D12DeviceFactory* factory) {
+    ComPtr<ID3D12Debug> debug;
+    if (SUCCEEDED(factory->GetConfigurationInterface(ClsidD3D12Debug, IID_PPV_ARGS(&debug)))) debug->EnableDebugLayer();
+    else diagnosis_write("sa2 diagnosis: no D3D12 debug layer\n");
+    ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> dred;
+    if (SUCCEEDED(factory->GetConfigurationInterface(ClsidD3D12Dred, IID_PPV_ARGS(&dred)))) {
+        dred->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+        dred->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+        dred->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+    } else {
+        diagnosis_write("sa2 diagnosis: no DRED settings\n");
+    }
+    diagnosis_write("sa2 diagnosis: debug layer and DRED requested for the core's device\n");
+}
+// The breadcrumb ops are D3D12_AUTO_BREADCRUMB_OP values (d3d12.h): 3 DrawInstanced, 6 Dispatch, 7 CopyBufferRegion,
+// 9 CopyResource, 12 ResolveSubresource, 13 ClearRenderTargetView, 16 ResourceBarrier, 18 ResolveQueryData.
+std::string diagnosis_removal(ID3D12Device* device) {
+    std::ostringstream out;
+    out << "sa2 diagnosis: device removed, reason 0x" << std::hex << uint32_t(device->GetDeviceRemovedReason()) << std::dec << '\n';
+    ComPtr<ID3D12DeviceRemovedExtendedData1> dred;
+    if (FAILED(device->QueryInterface(IID_PPV_ARGS(&dred)))) return out.str() + "  no DRED data\n";
+    D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 crumbs{};
+    if (SUCCEEDED(dred->GetAutoBreadcrumbsOutput1(&crumbs))) {
+        for (auto* node = crumbs.pHeadAutoBreadcrumbNode; node; node = node->pNext) {
+            const UINT done = node->pLastBreadcrumbValue ? *node->pLastBreadcrumbValue : 0;
+            if (done >= node->BreadcrumbCount) continue;
+            out << "  list " << diagnosis_name(node->pCommandListDebugNameW) << " on " << diagnosis_name(node->pCommandQueueDebugNameW)
+                << ": " << done << " of " << node->BreadcrumbCount << " operations finished\n";
+            for (UINT i = done > 12 ? done - 12 : 0; i < std::min(node->BreadcrumbCount, done + 6); ++i) {
+                out << (i == done ? "    > " : "      ") << i << " op " << int(node->pCommandHistory[i]);
+                for (UINT c = 0; c < node->BreadcrumbContextsCount; ++c)
+                    if (node->pBreadcrumbContexts[c].BreadcrumbIndex == i) out << ' ' << diagnosis_name(node->pBreadcrumbContexts[c].pContextString);
+                out << '\n';
+            }
+        }
+    } else {
+        out << "  no breadcrumbs\n";
+    }
+    D3D12_DRED_PAGE_FAULT_OUTPUT1 fault{};
+    if (SUCCEEDED(dred->GetPageFaultAllocationOutput1(&fault))) {
+        out << "  page fault VA 0x" << std::hex << fault.PageFaultVA << std::dec << '\n';
+        for (auto* a = fault.pHeadExistingAllocationNode; a; a = a->pNext) out << "    existing " << diagnosis_name(a->ObjectNameW) << '\n';
+        for (auto* a = fault.pHeadRecentFreedAllocationNode; a; a = a->pNext) out << "    freed " << diagnosis_name(a->ObjectNameW) << '\n';
+    }
+    return out.str();
+}
+struct DiagnosisWatch { ComPtr<ID3D12Device> device; ComPtr<ID3D12Fence> fence; HANDLE event = nullptr, wait = nullptr; };
+void CALLBACK diagnosis_removed(void* context, BOOLEAN) {
+    diagnosis_write(diagnosis_removal(static_cast<DiagnosisWatch*>(context)->device.Get()));
+}
+void CALLBACK diagnosis_message(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, LPCSTR text, void*) {
+    if (severity > D3D12_MESSAGE_SEVERITY_WARNING) return;
+    std::ostringstream out;
+    out << "sa2 diagnosis: debug layer " << (severity == D3D12_MESSAGE_SEVERITY_WARNING ? "warning" : "error") << ' ' << int(id) << ": "
+        << (text ? text : "") << '\n';
+    diagnosis_write(out.str());
+}
+// A removed device signals every fence with UINT64_MAX; the wait then writes the DRED report.
+void diagnosis_watch(ID3D12Device* device) {
+    auto* watch = new DiagnosisWatch{}; // kept for the process: SA2_D3D12_DEBUG only
+    watch->device = device;
+    watch->event = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    if (!watch->event || FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&watch->fence)))
+        || FAILED(watch->fence->SetEventOnCompletion(UINT64_MAX, watch->event))
+        || !RegisterWaitForSingleObject(&watch->wait, watch->event, diagnosis_removed, watch, INFINITE, WT_EXECUTEONLYONCE))
+        diagnosis_write("sa2 diagnosis: the removal watch did not start\n");
+    ComPtr<ID3D12InfoQueue1> queue;
+    DWORD cookie = 0;
+    if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&queue))))
+        queue->RegisterMessageCallback(diagnosis_message, D3D12_MESSAGE_CALLBACK_FLAG_NONE, nullptr, &cookie);
+    else
+        diagnosis_write("sa2 diagnosis: no ID3D12InfoQueue1 (debug layer off)\n");
+}
 static_assert(SA2_SURFACE_BUFFERS == SA2_RING_SLOTS, "a surface buffer uses its ring slot's RTV and query results");
 // A composition swap chain and its back buffers; each buffer records with an
 // allocator and a list of its own and keeps its last frame's fence value.
@@ -527,6 +633,7 @@ void harvest(sa2_context* ctx, sa2::Scene& scene) {
         const auto [gpu_ns, evals] = scene.product_results(ring);
         scene.product.produced(frame, gpu_ns, evals);
         if (const auto panes = scene.product_pane_evals(ring); !panes.empty()) scene.product.pane_evals(frame, panes); // ABI 8
+        sa2::newest_frame_statistics().frame = frame; // ADR-D02 B20
     }
 }
 // Releases the GPU resources of finished tickets and the staging of completed
@@ -670,7 +777,10 @@ void open_device(sa2_context* ctx, uint64_t luid, int32_t missing) {
     const HRESULT got = get ? get(ClsidDeviceFactory, IID_PPV_ARGS(&factory)) : HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND);
     if (FAILED(got)) throw Failure(SA2_E_UNSUPPORTED, hr_text("D3D12GetInterface(CLSID_D3D12DeviceFactory)", got));
     check_hr(nullptr, factory->SetFlags(D3D12_DEVICE_FACTORY_FLAG_DISALLOW_STORING_NEW_DEVICE_AS_SINGLETON), "ID3D12DeviceFactory::SetFlags");
+    const bool diagnosis = diagnosis_on(); // ADR-D02 B20
+    if (diagnosis) diagnosis_configure(factory.Get());
     check_hr(nullptr, factory->CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&ctx->device)), "ID3D12DeviceFactory::CreateDevice");
+    if (diagnosis) diagnosis_watch(ctx->device.Get());
     D3D12_COMMAND_QUEUE_DESC queue{};
     queue.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
     check_hr(ctx->device.Get(), ctx->device->CreateCommandQueue(&queue, IID_PPV_ARGS(&ctx->godot_queue)), "CreateCommandQueue");
@@ -2087,4 +2197,13 @@ int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style
         return SA2_OK;
     });
 }
+}
+
+// ADR-D02 B20: the self-test's reading of the newest harvested product frame's pipeline statistics: its frame, vertex
+// evaluations, clipped triangles and pixel-shader invocations. Not declared in sa2_interop.h and not part of the ABI;
+// the self-test finds it with GetProcAddress, and nothing on the product path calls it.
+extern "C" __declspec(dllexport) void sa2_test_frame_statistics(uint64_t* out) {
+    if (!out) return;
+    const auto s = sa2::newest_frame_statistics();
+    out[0] = s.frame; out[1] = s.vertex_evals; out[2] = s.primitives; out[3] = s.pixels;
 }
