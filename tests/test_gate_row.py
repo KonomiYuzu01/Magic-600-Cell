@@ -165,10 +165,14 @@ class GateScriptTest(unittest.TestCase):
             self.assertNotIn("quiet", steps[-1], f"{name}: no step may follow the repeat block")
 
     def test_rows_set_the_local_mode_they_name(self):
-        # LF1: G4 names Local's slice and G6 Local's chain carrying the sweeps; each script sets that shell after naming
-        # the cap and before its repeat block, and the sweep cap's move (at_cap) keeps the step.
+        # LF1: G4 names Local's slice and G6 Local's chain carrying the sweeps; LF2: G7 names Local's chain, with no
+        # sweep. Each script sets that shell after naming the cap and before its repeat block, and the cap's move
+        # (at_cap) keeps the step.
         modes = {row: spec["local"] for row, spec in self.gate_d02.ROWS.items() if "local" in spec}
-        self.assertEqual(modes, {"G4": "default", "G6": "3.14"})
+        self.assertEqual(modes, {"G4": "default", "G6": "3.14", "G7": "3.14"})
+        chains = {row for row, spec in self.gate_d02.ROWS.items() if "Local chain" in spec["views"]}
+        self.assertEqual({row: modes.get(row) for row in chains}, dict.fromkeys(chains, "3.14"),
+                         "every row that names Local's chain sets the shell at its limit")
         for row, shell in modes.items():
             script = json.loads((self.d02_run.SCRIPTS / f"gate-{row.lower()}.json").read_text(encoding="utf-8"))
             for steps in (script["steps"], self.gate_d02.at_cap(script, 7)["steps"]):

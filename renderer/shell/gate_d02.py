@@ -59,7 +59,8 @@ VRAM = "gate-vram.jsonl"
 FORMAT = "magic600-d02-gate-v1"
 # Row -> sitting, default state, panes the window must show, and whether its script sweeps (framework B19 and B24).
 # "local" (LF1): the jumble.slice.shell argument the row's script sets before its repeat block, the Local mode the
-# row names: `default` for Local's slice, the shell's limit 3.14 for Local's whole chain carrying the sweeps.
+# row names: `default` for Local's slice, the shell's limit 3.14 for Local's whole chain (G6's carries the sweeps,
+# G7's does not; LF2 set G7's).
 ROWS = {
     "G1": {"sitting": 1, "state": "deep-2", "panes": 1, "sweeps": True,
            "views": "Local hidden, Global with the contact-class tint, twist sweeps repeating: the one-view baseline"},
@@ -73,7 +74,8 @@ ROWS = {
     "G5": {"sitting": 2, "state": "deep-2", "panes": 2, "sweeps": False, "views": "Global chain, Local raw"},
     "G6": {"sitting": 2, "state": "deep-2", "panes": 2, "sweeps": True, "local": "3.14",
            "views": "Global ring sheet, Local chain carrying the sweeps"},
-    "G7": {"sitting": 2, "state": "deep-2", "panes": 2, "sweeps": False, "views": "Global Hopf rings, Local chain"},
+    "G7": {"sitting": 2, "state": "deep-2", "panes": 2, "sweeps": False, "local": "3.14",
+           "views": "Global Hopf rings, Local chain"},
     "G10": {"sitting": 2, "state": "deep-2", "panes": 3, "sweeps": False,
             "views": "Global chain, Local slice with the split held: three panes"},
     "G11": {"sitting": 2, "state": "deep-2", "panes": 3, "sweeps": False,

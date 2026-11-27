@@ -1253,6 +1253,9 @@ relative path is from the repository root.
     block: G4 `jumble.slice.shell default` (Local's slice), G6 `jumble.slice.shell 3.14` (the shell at its limit, so
     Local draws its whole chain and carries the sweeps). `ROWS` holds the argument as `local`;
     `tests/test_gate_row.py` checks both scripts, also after the sweep cap moves. No dry run.
+  - LF2 (27 November 2026): G7, which also names "Local chain", sets `jumble.slice.shell 3.14` after naming the cap
+    and before the repeat block, with `"local": "3.14"` in `ROWS` and the script's note; LF1's test covers G7 too.
+    No dry run.
 
 ### B25. Word flows and signatures
 - **Goal:** the word line, counters, the folded tree, signatures.
