@@ -128,4 +128,10 @@ pub trait CoreAbi {
         let _ = look;
         Err(Status::UNSUPPORTED)
     }
+    /// ADR-D02 B22 item 1's `sa2_charts_set`: the adopted revision's chart channel, one cell id (0..599) per slot, or
+    /// `None` to clear it.
+    fn charts_set(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Status> {
+        let _ = (revision, charts);
+        Err(Status::UNSUPPORTED)
+    }
 }

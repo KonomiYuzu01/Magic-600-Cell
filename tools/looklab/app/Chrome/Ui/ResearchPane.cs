@@ -168,7 +168,7 @@ public sealed partial class ResearchPane : VBoxContainer
                 // The verdict and its scope: one line, wrapping, never cut; one weight, no colour role.
                 Label verdict = Wrapped(line.Verdict ?? "");
                 verdict.Name = "ResearchVerdict";
-                column.AddChild(Indent(t, 1, verdict));
+                column.AddChild(Indent(t, 1, line.Status is { } status ? ErrorOverlays.WithState(verdict, t, status) : verdict));
                 return holder;
             }
             case ResearchLineKind.Part:
@@ -224,6 +224,8 @@ public sealed partial class ResearchPane : VBoxContainer
                 return column;
             }
             case ResearchLineKind.Note: return Wrapped(line.Text, "DimLabel");
+            case ResearchLineKind.Detail when line.Status is { } state:
+                return Indent(t, line.Depth, ErrorOverlays.WithState(Wrapped(line.Text), t, state));
             default: return Indent(t, line.Depth, Wrapped(line.Text));
         }
     }

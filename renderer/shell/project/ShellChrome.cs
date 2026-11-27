@@ -197,6 +197,10 @@ public sealed class ShellChrome
         var learnPane = new LearnPane(new LearnModel(helpCatalog), () => frame.Tokens);
         frame.AddPane("reference", "Learn", learnPane);
         SampleMount? sample = null;
+        // ADR-D01.74: the key map in either mode; outside sample mode the keymaps folder's key sets.
+        KeyMapPanel? keyMap = null;
+        KeySets? keySets = null;
+        Action<Keymap>? keysTaken = null;
         LayoutTracker? layoutTracker = null;
         ShellCards? cards = null;
         Action? pickedTarget = null;
@@ -223,6 +227,8 @@ public sealed class ShellChrome
             _ when cards != null && ShellCards.Handles(command) => cards.Unavailable(command, argument),
             // ADR-D01.68: the setup rows run on the sample's solving surface, D02 on or off.
             _ when sample != null && SetupSearch.Ids.Contains(command) => sample.Unavailable(command, argument),
+            // ADR-D01.74: the key set row runs where key sets are loaded: the sample's presets, or the keymaps folder's.
+            "keymap.preset.set" => KeySets.Unavailable(sample != null ? sample.Scripts.Presets : keySets?.Names, argument),
             _ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,
             _ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),
             _ => NotHere,
@@ -246,16 +252,31 @@ public sealed class ShellChrome
         frame.OverlayCommands.Add("transient.close");
         frame.OverlayCommands.Add("help.open");
         frame.OverlayCommands.Add("command.find");
+        // Every keymap change reaches each reader of the keys; keysTaken adds the readers made later.
+        void TakeKeys(Keymap k) { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; keysTaken?.Invoke(k); }
         if (SampleOn)
         {
             sample = Sample = new SampleMount(frame, registry, keymap, ProjectSettings.GlobalizePath("res://sample-root"),
                 id => motions.Seconds(id, design, look.ReducedMotion), Execute,
-                k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet, layouts);
+                TakeKeys, palette, sheet, layouts);
             sample.Look = appearance;
             // ADR-D01.70: the shell's History draws its entries' effect signatures in the sample rail's order.
             history.RailOrder = sample.Solve.LibraryView.RailOrder;
             sample.Solve.Rail.OrderChanged += history.Refresh;
             history.Refresh();
+        }
+        // ADR-D01.74: outside sample mode the key map's key is the key list's (Shift+/), so F1 keeps ADR-D02.12's
+        // help route; its List button opens the list, and the key sets are the keymaps folder's presets.
+        if (sample == null)
+        {
+            keyMap = new KeyMapPanel(frame, registry) { ShowArgument = HelpCatalog.Keys };
+            keyMap.List += sheet.Open;
+            frame.Overlays.AddChild(keyMap);
+            keySets = KeySets.Load(Path.Combine(folder, "keymaps"), registry, keymap);
+        }
+        else
+        {
+            keyMap = sample.Keys;
         }
         ShellDocuments.Load(frame, registry, sample);
         ShellSession.Load(frame, registry, sample, history, Moves, Execute);
@@ -278,6 +299,23 @@ public sealed class ShellChrome
         }
         void NextDensity() => appearance.Edit(a => a.SetDensity(design.Densities[(design.Densities.ToList().IndexOf(a.Density) + 1) % design.Densities.Count]), true, false);
         void Execute(string command, string? argument) => ExecuteAt(command, argument, null);
+        // ADR-D01.74: a key set change never changes a key's meaning silently: the status line names each key it gave
+        // another meaning, and the key map marks them until it has been shown with them.
+        void UseKeySet(string? name)
+        {
+            if (sample != null)
+            {
+                IReadOnlyList<string> all = sample.Scripts.Presets;
+                sample.Scripts.SetPreset(name ?? all[(all.ToList().IndexOf(sample.Scripts.Preset) + 1) % all.Count]);
+            }
+            else if (keySets != null)
+            {
+                Keymap before = keymap;
+                TakeKeys(keySets.Choose(name));
+                if (keyMap != null) keyMap.KeySet = keySets.Name;
+                frame.Say(KeyMapModel.Said(keySets.Name, KeyMapModel.Changes(before, keymap, registry)));
+            }
+        }
         void ExecuteAt(string command, string? argument, Vector2? pointer)
         {
             if (gated(command, argument) is { } why)
@@ -306,6 +344,7 @@ public sealed class ShellChrome
                 case var explore when ShellExplore.Handles(explore): ShellExplore.Execute(frame, argument); break;
                 case var scene when ShellScene.Handles(scene): ShellScene.Execute(frame, command, argument); break;
                 case "command.find": palette.Open(); break;
+                case "keymap.preset.set": UseKeySet(argument); break;
                 case "menu.context.open" when contextMenu != null && contextMenus != null:
                     Vector2 at = argument switch
                     {
@@ -318,16 +357,17 @@ public sealed class ShellChrome
                 case "target.current.set" when pickedTarget != null && argument == null: pickedTarget(); break;
                 case "help.open":
                     var topic = argument ?? HelpTopics.At(frame.GetViewport());
-                    if (topic == HelpCatalog.Keys) { if (sheet.IsOpen) sheet.Close(); else sheet.Open(); }
+                    // ADR-D01.74: the key list's topic pins the key map, or lets it go; its List button opens the list.
+                    if (topic == HelpCatalog.Keys) { if (keyMap != null) keyMap.Shown.Pin(!keyMap.Shown.Pinned); else if (sheet.IsOpen) sheet.Close(); else sheet.Open(); }
                     else if (topic == null) palette.Open(); // ADR-D02.12's F1 route when the pointer has no help topic.
                     else if (helpCatalog.Resolve(topic) is { } resolved) helpCard.Open(helpCatalog.Card(resolved), frame.GetLocalMousePosition());
                     else frame.Say("No help topic named " + topic, true);
                     break;
                 case var menu when keymap.Radials.ContainsKey(menu):
-                    radial.Open(sample != null ? sample.WithContext(keymap.Radials[menu]) : keymap.Radials[menu], frame.GetLocalMousePosition());
+                    radial.Open(sample != null ? sample.WithContext(keymap.Radials[menu]) : keymap.Radials[menu], frame.LocalPointer);
                     break;
                 case "transient.close":
-                    sample?.Keys.Shown.Pin(false);
+                    keyMap?.Shown.Pin(false);
                     if (frame.OpenOverlay is { } open) open.Close();
                     // ADR-D01.50: Esc reverts the tuning panel's live change and is spent on it; the other transients
                     // close only when no change is pending. An open overlay closes first: it holds the keys.
@@ -368,9 +408,15 @@ public sealed class ShellChrome
         palette.Run += row => Execute(row.Command, row.Argument);
         helpCard.Learn += link => { Execute(link.Command, link.Argument); learnPane.Select(link.TopicId); };
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
+        radial.Let += menu => frame.Say(RadialHold.Let(menu.Label));
         if (contextMenu != null) contextMenu.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
-        frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
+        // ADR-D01.20: a radial menu opened by its key follows the pointer while that key stays down.
+        frame.KeyCommand += binding =>
+        {
+            Execute(binding.Command, binding.Argument);
+            if (radial.IsOpen && radial.Menu?.Id == binding.Command) radial.Hold(binding.Key);
+        };
         frame.RowCommand += Execute;
         // Without the sample mount the shell tracks the layout itself (with it, SampleMount does).
         if (sample == null)
@@ -394,6 +440,7 @@ public sealed class ShellChrome
         // The commit bar is the frame's own; the host stages no preview yet, so it stays empty.
         var bar = new CommitBar(new PreviewModel(), () => frame.Tokens) { CommitKeys = keymap.KeysFor("operation.preview.commit", null) };
         bar.Command += Execute;
+        keysTaken += k => bar.CommitKeys = k.KeysFor("operation.preview.commit", null);
         if (sample == null)
         {
             frame.SetStrip(bar);
@@ -413,9 +460,12 @@ public sealed class ShellChrome
         var find = SessionWidgets.Tool("search", $"Find a command ({keymap.KeysFor("command.find", null)})", frame.Tokens, palette.Open);
         find.Name = "FindButton";
         HelpTopics.Mark(find, "command.find");
-        var help = SessionWidgets.Tool("help.keys", $"Keyboard shortcuts ({keymap.KeysFor("help.open", HelpCatalog.Keys)})", frame.Tokens, sheet.Open);
+        // ADR-D01.74: the shortcuts button pins the key map, or lets it go, as a short press of its key does.
+        string KeysTip() => $"Key map: hold {keyMap?.ShowKey ?? keymap.KeysFor("help.open", HelpCatalog.Keys)} to see it, press it shortly to pin it";
+        var help = SessionWidgets.Tool("help.keys", KeysTip(), frame.Tokens, () => Execute("help.open", HelpCatalog.Keys));
         help.Name = "ShortcutsButton";
         HelpTopics.Mark(help, "help.open");
+        keysTaken += k => { find.TooltipText = $"Find a command ({k.KeysFor("command.find", null)})"; help.TooltipText = KeysTip(); };
         var preset = SessionWidgets.Tool("preset.next", $"Next of the six presets ({keymap.KeysFor("theme.select", "preset.next")})", frame.Tokens, NextPreset);
         preset.Name = "PresetButton";
         HelpTopics.Mark(preset, "theme.select");
@@ -462,13 +512,16 @@ public sealed class ShellChrome
             if (sample != null)
             {
                 host.Layers = sample.Layers.Values.ToArray();
-                // B27: the key map's four held seat entries (ADR-D02.42), from this build's keymap.
-                sample.Keys.Seats = SeatKeys.Read(File.ReadAllText(Path.Combine(folder, "keymap.json")));
             }
             else
             {
                 host.OwnLayers();
+                // ADR-D01.74: the key map names the shell's own keys, as the sample's names its own.
+                if (keyMap != null && frame.HostKeys.ContainsKey("E") && registry.Commands.TryGetValue("target.current.set", out var targetRow)) keyMap.Host["E"] = targetRow.Label;
+                if (keyMap != null && frame.HostKeys.ContainsKey("F10")) keyMap.Host["F10"] = "Inactive cells";
             }
+            // B27: the key map's four held seat entries (ADR-D02.42), from this build's keymap, in either mode.
+            if (keyMap != null) keyMap.Seats = SeatKeys.Read(File.ReadAllText(Path.Combine(folder, "keymap.json")));
             host.CoversSource = ShellJumble.Covers;
             host.RecordSource = ShellJumble.Record;
             ShellJumble.BindingChanged += () =>
@@ -506,6 +559,7 @@ public sealed class ShellChrome
             ShellJumble.Host = host;
             // B15: the tint channel and the focus layers, drawn by the core.
             ShellTint.Attach(host, frame);
+            ShellError.Attach(host, frame);
             cards = new ShellCards(frame, host, sentences["totals.unit"]);
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);

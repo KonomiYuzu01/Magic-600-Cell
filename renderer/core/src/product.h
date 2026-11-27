@@ -145,9 +145,10 @@ ViewStyle view_style(const sa2_view_style* style); // validates (SA2_E_INVALID_A
 struct PieceStyle {
     uint64_t revision = 0, version = 0; // version: the style's upload key, never 0
     std::vector<uint32_t> packed; // SA2_PIECES
-    std::array<bool, 3> any{}; // per channel: a non-zero byte (ADR-D02 B20: channel 2, the slice's inside layer)
+    std::array<bool, 3> any{}; // a nonzero palette index, or a piece in channel 2's slice layer
     bool dim = false; // a fill byte has SA2_STYLE_DIM
     bool moving = false; // ADR-D02 B18: a piece has the moving bit
+    bool error = false; // an outline byte has SA2_STYLE_ERROR
 };
 void validate_piece_style(const uint8_t* bytes, uint32_t channel); // SA2_E_INVALID_ARGUMENT
 void validate_frame_input(const sa2_frame_input* input);
@@ -186,6 +187,9 @@ struct FramePlan {
     bool styled = false;
     ViewStyle view_style;
     std::vector<PanePlan> panes; // ABI 8: a composite frame's panes; empty for a one-view frame
+    // ADR-D02 B22 item 1: the revision's chart channel (null: none; uploaded with the copy, whose key includes it).
+    const std::vector<uint32_t>* charts = nullptr;
+    uint64_t charts_version = 0;
 };
 // An ID pass: the frame's camera, viewport, engine copy, resource set and (ABI 6) shape.
 struct PassInput {
@@ -369,6 +373,9 @@ public:
     void set_scene_look(const sa2_scene_look* look);
     const StickerColours& sticker_colours() const { return sticker_colours_; }
     const sa2_scene_look& scene_look() const { return scene_look_; }
+    // ADR-D02 B22 item 1: the adopted revision's chart channel (sa2_charts_set), packed two slots to a word as
+    // (chart + 1) | (chart + 1) << 16 (0: none), or null to clear it. Device-free; an adoption drops it.
+    void set_charts(uint64_t revision, const uint32_t* charts, uint32_t count);
 
 private:
     struct Entry {
@@ -380,7 +387,8 @@ private:
         bool visible() const { return !retired; }
         bool ended() const { return state == SA2_TICKET_CANCELLED || state == SA2_TICKET_FAILED; }
     };
-    struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; uint64_t style = 0; };
+    struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; uint64_t style = 0;
+                  uint64_t charts = 0; }; // ADR-D02 B22 item 1: the chart channel's version (0: none)
     struct PaneRecord {
         sa2_pane pane{}; uint64_t set_ticket = 0, evals = 0, publication_generation = 0; ViewShape shape;
         bool styled = false; ViewStyle view_style; // ADR-D02 B17 (ABI 10): the style the pane drew with, for its picks
@@ -394,6 +402,7 @@ private:
         // ADR-D02 B17 (ABI 10): the style slot a one-view frame drew with, and the piece style version of its engine copy
         // (0: none), for its picks.
         bool styled = false; ViewStyle view_style; uint64_t style_version = 0;
+        uint64_t charts_version = 0; // ADR-D02 B22 item 1: the chart channel its copy held (0: none), for its picks
         bool produced = false, reported = false;
         int32_t error = SA2_OK;
         uint64_t gpu_ns = 0, evals = 0;
@@ -438,6 +447,8 @@ private:
     Counters counters_;
     StickerColours sticker_colours_{}; // alpha 0 selects the built-in hue
     sa2_scene_look scene_look_ = DefaultSceneLook;
+    struct Charts { uint64_t revision = 0, version = 0; std::vector<uint32_t> packed; }; // ADR-D02 B22 item 1
+    std::optional<Charts> charts_;
 };
 
 // describe_backend's SupportReport and recover's refusal, as JSON. route_b:

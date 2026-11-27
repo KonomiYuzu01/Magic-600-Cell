@@ -202,6 +202,10 @@ public static class ShellStyle
             outline[selection.Piece] = Selected;
             selected = (int)selection.Piece;
         }
+        foreach (int piece in ShellError.Pieces)
+        {
+            outline[piece] |= HostLibrary.StyleError;
+        }
         var code = library.SetPieceStyle(host, HostLibrary.StyleOutline, outline, false);
         if (code != HostLibrary.Ok)
         {
@@ -225,11 +229,13 @@ public static class ShellStyle
         SentFill = fill;
         foreach (var slot in new uint[] { 1, 2, 3 })
         {
-            code = library.SetViewStyle(host, slot, View(slot));
+            var slotStyle = View(slot);
+            code = library.SetViewStyle(host, slot, slotStyle);
             if (code != HostLibrary.Ok)
             {
                 return code;
             }
+            ShellError.Sent(slot, slotStyle);
         }
         SentPalette = _tintPalette;
         var view = View(1);
@@ -312,6 +318,13 @@ public static class ShellStyle
         if (slot is 2 or 3)
         {
             ShellRaw.Style(ref style);
+        }
+        if (slot is 1 or 2 or 3 && ShellError.Colour is { } error)
+        {
+            style.Palette[0] = (float)error.R;
+            style.Palette[1] = (float)error.G;
+            style.Palette[2] = (float)error.B;
+            style.Palette[3] = ShellError.Alpha;
         }
         return style;
     }

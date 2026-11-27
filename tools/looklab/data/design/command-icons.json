@@ -134,6 +134,7 @@
     "keyboard.toggle",
     "keymap.edit",
     "keymap.name",
+    "keymap.preset.set",
     "keymap.save",
     "layout.roll",
     "library.branch.toggle",

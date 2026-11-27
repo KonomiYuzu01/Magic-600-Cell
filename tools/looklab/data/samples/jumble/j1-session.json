@@ -682,6 +682,16 @@
           "wait_ms": 650
         },
         {
+          "op": "keymap.preset.set",
+          "argument": "left-hand",
+          "wait_ms": 400
+        },
+        {
+          "op": "keymap.preset.set",
+          "argument": "default",
+          "wait_ms": 400
+        },
+        {
           "op": "view.preset.global.chart",
           "wait_ms": 1500
         },

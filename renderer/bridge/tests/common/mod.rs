@@ -273,6 +273,14 @@ unsafe extern "C" fn sticker_colours_set(ctx: *mut c_void, rgb: *const f32, coun
     code(unsafe { shim(ctx) }.fake.sticker_colours_set(table), |()| ())
 }
 
+unsafe extern "C" fn charts_set(ctx: *mut c_void, revision: u64, charts: *const u32, count: u32) -> i32 {
+    if charts.is_null() != (count == 0) || (count != 0 && count as usize != SLOTS) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let charts = (!charts.is_null()).then(|| unsafe { std::slice::from_raw_parts(charts, SLOTS) });
+    code(unsafe { shim(ctx) }.fake.charts_set(revision, charts), |()| ())
+}
+
 unsafe extern "C" fn scene_look_set(ctx: *mut c_void, look: *const Sa2SceneLook) -> i32 {
     let look = unsafe { look.as_ref() };
     code(unsafe { shim(ctx) }.fake.scene_look_set(look), |()| ())
@@ -349,6 +357,7 @@ pub fn functions() -> CoreFunctions {
         transform_set,
         sticker_colours_set,
         scene_look_set,
+        charts_set,
     }
 }
 
@@ -449,6 +458,9 @@ impl CoreAbi for Shimmed {
     }
     fn scene_look_set(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Status> {
         self.dll.scene_look_set(look)
+    }
+    fn charts_set(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Status> {
+        self.dll.charts_set(revision, charts)
     }
 }
 

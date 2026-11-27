@@ -1,0 +1,27 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "radial-hold",
+  "resolution": "1280x720",
+  "note": "ADR-D01.20 outside sample mode: W held opens the workspace menu and its hub says release runs nothing; pointed at the third entry the hub names it and release runs it; held again and released in the hub, nothing runs and the status line says so; a tap of W leaves the menu open and 2 runs the second entry; V held over Local opens the view menu and release on its first entry runs that row as the palette would. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 2500},
+    {"hold": "W"},
+    {"wait_ms": 500},
+    {"hover_control": "RadialEntry3"},
+    {"release": "W"},
+    {"wait_ms": 800},
+    {"hold": "W"},
+    {"wait_ms": 500},
+    {"hover_control": "RadialHub"},
+    {"release": "W"},
+    {"chord": "W"},
+    {"chord": "2"},
+    {"wait_ms": 800},
+    {"hover_control": "LocalFrame"},
+    {"hold": "V"},
+    {"wait_ms": 500},
+    {"hover_control": "RadialEntry1"},
+    {"release": "V"},
+    {"wait_ms": 6000}
+  ]
+}

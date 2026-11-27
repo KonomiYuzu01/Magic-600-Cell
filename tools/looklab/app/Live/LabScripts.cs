@@ -501,10 +501,16 @@ internal sealed class LabScripts
     public void SetPreset(string preset)
     {
         if (preset != DefaultPreset && !presets.ContainsKey(preset)) { Fail("No keymap preset is named " + preset); return; }
-        Preset = preset; Apply(); frame.Say("Keymap preset: " + preset);
+        // ADR-D01.74: the line names each key the change gave another meaning.
+        Keymap before = Keys; Preset = preset; Apply();
+        frame.Say(KeyMapModel.Said(preset + (Overrides.Bindings.Count > 0 ? " with your bindings" : ""), KeyMapModel.Changes(before, Keys, registry)));
     }
 
-    public void Defaults() { Overrides.Clear(); Preset = DefaultPreset; Apply(); frame.Say("Default keymap · own bindings dropped"); }
+    public void Defaults()
+    {
+        Keymap before = Keys; Overrides.Clear(); Preset = DefaultPreset; Apply();
+        frame.Say("Own bindings dropped · " + KeyMapModel.Said(DefaultPreset, KeyMapModel.Changes(before, Keys, registry)));
+    }
 
     public void Export()
     {

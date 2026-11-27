@@ -2209,6 +2209,14 @@ int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look) {
         return SA2_OK;
     });
 }
+// ADR-D02 B22 item 1: the adopted revision's chart channel (sa2_interop.h). Device-free product state.
+int32_t sa2_charts_set(sa2_context* ctx, uint64_t revision, const uint32_t* charts, uint32_t count) {
+    return invoke(ctx, "sa2_charts_set", [&] {
+        context(ctx);
+        product_scene(ctx).product.set_charts(revision, charts, count);
+        return SA2_OK;
+    });
+}
 }
 
 // ADR-D02 B20: the self-test's reading of the newest harvested product frame's pipeline statistics: its frame, vertex

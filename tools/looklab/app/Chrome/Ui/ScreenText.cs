@@ -38,6 +38,8 @@ public static class ScreenText
         ViewFrame view => "view:" + view.ViewName,
         PanelStateBox panel => "panel:" + panel.Id,
         ChromeOverlay overlay => "overlay:" + overlay.Name,
+        // ADR-D01.74: the key map is no overlay (it takes no key), but its words are its own.
+        KeyMapPanel => "keymap",
         _ => null,
     };
 }

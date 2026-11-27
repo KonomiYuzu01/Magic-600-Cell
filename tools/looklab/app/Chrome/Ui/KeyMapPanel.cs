@@ -30,12 +30,20 @@ public sealed partial class KeyMapPanel : PanelContainer
         get => seats;
         set
         {
-            seats = value; seen = "";
-            legend.Text = LegendWords + (value == null ? "" : " · a held seat key lights its twelve twist keys with their rotation orders");
+            seats = value; seen = ""; legend.Text = Legend();
             if (Visible) Refresh();
         }
     }
     private const string LegendWords = "whole outline: bound here · double outline: a twist key · broken outline: bound in another place · faint: unbound · filled: held";
+    private string Legend() => LegendWords + (seats == null ? "" : " · a held seat key lights its twelve twist keys with their rotation orders")
+        + (Changed.Count == 0 ? "" : " · corner mark: changed meaning with the last key set change");
+    // ADR-D01.74: a key never changes meaning silently. The keys the last keymap change gave another meaning stay
+    // marked until the map has been shown with them and closed; whoever changes the keymap says the change in words.
+    public IReadOnlyList<KeyChange> Changed { get; private set; } = Array.Empty<KeyChange>();
+    private Keymap? last; private bool marksSeen;
+    // The help row whose key shows the map: null takes the first help key (F1 in the default keymap). The product
+    // outside sample mode gives the key list's topic, so F1 keeps ADR-D02.12's help route.
+    public string? ShowArgument { get; set; }
 
     public KeyMapPanel(ChromeFrame frame, CommandRegistry registry)
     {
@@ -51,12 +59,29 @@ public sealed partial class KeyMapPanel : PanelContainer
         board = new Board(this); column.AddChild(board);
         legend = ChromeWidgets.Text(LegendWords, "MicroLabel", true);
         column.AddChild(legend);
-        Shown.Changed += () => { if (!IsInstanceValid(this)) return; Visible = Shown.Visible; PinButton.SetPressedNoSignal(Shown.Pinned); if (Visible) { MoveToFront(); Refresh(); } };
+        Shown.Changed += () =>
+        {
+            if (!IsInstanceValid(this)) return;
+            Visible = Shown.Visible; PinButton.SetPressedNoSignal(Shown.Pinned);
+            if (Visible) { MoveToFront(); Refresh(); }
+            else if (marksSeen) { Changed = Array.Empty<KeyChange>(); marksSeen = false; seen = ""; legend.Text = Legend(); }
+        };
     }
 
     private static double Now => Time.GetTicksMsec() / 1000.0;
     // The key that shows the map is the one bound to the shortcut help.
-    public string? ShowKey => frame.Keys?.Bindings.FirstOrDefault(b => b.Command == "help.open")?.Key;
+    public string? ShowKey => frame.Keys?.Bindings.FirstOrDefault(b => b.Command == "help.open" && (ShowArgument == null || b.Argument == ShowArgument))?.Key;
+
+    // Marks the keys a new keymap gave another meaning; the first keymap the frame takes marks none.
+    private void Watch()
+    {
+        if (frame.Keys is not { } keys || ReferenceEquals(keys, last)) return;
+        if (last != null && KeyMapModel.Changes(last, keys, registry) is { Count: > 0 } changes)
+        {
+            Changed = changes; marksSeen = false; seen = ""; legend.Text = Legend();
+        }
+        last = keys;
+    }
 
     public override void _Input(InputEvent @event)
     {
@@ -72,10 +97,11 @@ public sealed partial class KeyMapPanel : PanelContainer
         if (Visible) Refresh();
     }
 
-    public override void _Process(double delta) { if (Visible) Refresh(); }
+    public override void _Process(double delta) { Watch(); if (Visible) Refresh(); }
 
     public void Refresh()
     {
+        Watch();
         if (frame.Keys is not { } keys) return;
         IReadOnlyList<string> contexts = ContextsOverride ?? frame.KeyContexts();
         (bool ctrl, bool alt, bool shift) = ModifiersOverride ?? (Input.IsKeyPressed(Key.Ctrl), Input.IsKeyPressed(Key.Alt), Input.IsKeyPressed(Key.Shift) && !Shown.Held);
@@ -83,10 +109,11 @@ public sealed partial class KeyMapPanel : PanelContainer
         Vector2 room = GetParent() is Control parent ? parent.Size : new Vector2(1600, 900);
         if (now != seen || Caps.Count == 0)
         {
-            seen = now; Caps = KeyMapModel.Caps(keys, registry, contexts, ctrl, alt, shift, down, (IReadOnlyDictionary<string, string>)new Dictionary<string, string>(Host), seats);
+            seen = now; Caps = KeyMapModel.Mark(KeyMapModel.Caps(keys, registry, contexts, ctrl, alt, shift, down, (IReadOnlyDictionary<string, string>)new Dictionary<string, string>(Host), seats), Changed, ctrl, alt, shift);
             head.Text = "  " + KeyMapModel.Header(keySet, contexts, ctrl, alt, shift);
             board.Unit = Math.Clamp(room.X * .86f / 13.2f, 46, 96); board.CustomMinimumSize = new Vector2(board.Unit * 13.2f, board.Unit * .82f * KeyMapModel.Rows.Count); board.QueueRedraw();
         }
+        if (Visible && Changed.Count > 0) marksSeen = true;
         Size = GetCombinedMinimumSize(); Position = new Vector2((room.X - Size.X) / 2, Math.Max(0, room.Y - Size.Y - frame.Tokens.Px("bar.height") * 3));
     }
 
@@ -117,6 +144,11 @@ public sealed partial class KeyMapPanel : PanelContainer
                         case KeyCapState.OutOfContext: RouteMark.Draw(this, box, true, colour, 1); break;
                         case KeyCapState.Unbound: DrawRect(box, colour with { A = .45f }, false, 1); break;
                         default: DrawRect(box, colour, false, 1.5f); break;
+                    }
+                    if (cap.Changed)
+                    {
+                        float corner = Math.Min(10, box.Size.Y * .3f);
+                        DrawColoredPolygon(new[] { box.End with { Y = box.Position.Y } - new Vector2(corner, 0), box.End with { Y = box.Position.Y }, box.End with { Y = box.Position.Y + corner } }, t.C("text"));
                     }
                     DrawString(font, box.Position + new Vector2(5, size + 2), cap.Legend, HorizontalAlignment.Left, box.Size.X - 8, size, cap.Label == null ? colour : t.C("text"));
                     if (cap.Label == null) continue;

@@ -93,7 +93,7 @@ internal static partial class Program
     private static readonly Dictionary<string, string> D01ItemRequests = new(StringComparer.Ordinal)
     {
         ["ADR-D01.24"] = "card.", ["ADR-D01.68"] = "setup.",
-        ["ADR-D01.49"] = "look.scene.", ["ADR-D01.52"] = "look.sticker_palette.",
+        ["ADR-D01.49"] = "look.scene.", ["ADR-D01.52"] = "look.sticker_palette.", ["ADR-D01.74"] = "keymap.preset.",
     };
     private static readonly string[] D01MenuRequests = { "ADR-D01.17" };
     // ADR-D01.17's context menu row (its own list, so later design items add theirs beside it).

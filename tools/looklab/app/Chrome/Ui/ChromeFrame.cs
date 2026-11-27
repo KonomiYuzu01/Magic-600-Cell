@@ -376,14 +376,29 @@ public sealed partial class ChromeFrame : Control
     // Whether the side dock's panel folds to its rail at this window width.
     public bool Folds(DockSide side) => side != DockSide.Bottom && Window.X > 0 && Window.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
     private Vector2 builtFor;
+    // The pointer as the window's own mouse events give it, in the frame's canvas, or none before the first event and
+    // after the pointer leaves the window (ADR-D01.19's hovered view). The root viewport's mouse position is the system
+    // cursor, which a scripted run's pointer steps never move.
+    private Vector2? pointer;
+    // The pointer in the frame's own coordinates: an overlay opens where the window's mouse events last put it.
+    public Vector2 LocalPointer => pointer is { } at ? GetGlobalTransform().AffineInverse() * at : GetLocalMousePosition();
+
+    public override void _Input(InputEvent input)
+    {
+        if (input is InputEventMouse mouse) pointer = GetCanvasTransform().AffineInverse() * mouse.Position;
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationWMMouseExit) pointer = null;
+    }
 
     public override void _Process(double delta)
     {
         // A new window size lays the frame out again, so the docks follow it.
         if (GetViewportRect().Size != builtFor) { builtFor = GetViewportRect().Size; dirty = true; }
         Flush();
-        Vector2 mouse = GetGlobalMousePosition();
-        Hover(Global.GetGlobalRect().HasPoint(mouse) ? Global : Local.GetGlobalRect().HasPoint(mouse) ? Local : null);
+        Hover(pointer is not { } mouse ? null : Global.GetGlobalRect().HasPoint(mouse) ? Global : Local.GetGlobalRect().HasPoint(mouse) ? Local : null);
         if (noticeLeft > 0 && (noticeLeft -= delta) <= 0) { Notice.Text = ""; Notice.TooltipText = ""; message = null; }
     }
 
