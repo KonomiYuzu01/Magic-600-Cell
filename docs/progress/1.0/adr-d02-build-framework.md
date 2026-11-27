@@ -1897,6 +1897,18 @@ Each checkpoint is one read of the named diff range against the questions below,
     with its backend, which reports where the benchmark falls short and proposes refinements; the art in one round with
     the refinement design and the new data wired in; solver-agent run 2 at full volume, until the whole benchmark
     passes; the promotion scripts; then freeze 2.5 and stage 2. No solver run starts before ADR-D03 is complete.
+  - The builder's four additions, taken by the owner the same evening ("都加上"):
+    - The benchmark is fixed before run 1. After run 2, at most two fix-and-rerun loops follow; then the owner decides.
+    - Run 1 covers the six flows, Jumble on and off, research and the tool walk-through evaluation.
+    - In the art round: first the delta wiring and its six-flow checks, then the art and refinement landing, then one
+      full frame-rate gate. Each art candidate carries its measured look cost.
+    - The API questions for the solver runs are asked once for both runs.
+  - Added by the owner with them:
+    - Run 2's benchmark must pass, so the wiring (step 3) and the refinement (step 5) get the depth that needs.
+    - Only K2's two solver runs use the API, on Opus at effort max. Every other solver-agent run stays in the
+      subscription.
+    - Fable writes the detailed hand-over packet that the API runs work from.
+    - The budget reservation is still the owner's to confirm before run 1 (`AGENTS.md`, API-team runs).
 
 ## 4. Item map
 
