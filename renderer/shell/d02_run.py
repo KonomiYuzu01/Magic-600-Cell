@@ -1504,6 +1504,11 @@ def expect_sweep(dumps: list[dict], source: dict, state: str | None) -> list[str
                             f"the turn reads {turn.get('cap')}, not the selected sticker's cell {cell}")
     if hits == 0 and state is not None:
         problems.append("no click selected a sticker of a lattice piece")
+    # SF5 (27 Nov 2026): from the last click on, through the twists, the Global opening keeps its size (a readout that
+    # changes at a twist must not change the border's height, which resized the core's surface at each twist).
+    openings = [tuple(dump.get("global_opening") or ()) for dump in dumps[11:]]
+    if any(len(size) != 2 or min(size) <= 0 for size in openings) or len(set(openings)) != 1:
+        problems.append(f"the Global opening was {openings} from step 11 on, not one size")
     sweeps = [dump.get("sweep") for dump in dumps[1:]]
     if any(sweep is None for sweep in sweeps):
         return problems + ["a dump has no sweep row"]

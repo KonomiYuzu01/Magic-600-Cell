@@ -368,6 +368,7 @@ internal static partial class Program
             ("D02ContactColouringIsProper", D02ContactColouringIsProper),
             ("D02FourClassesAtWj300AndDeepExports", D02FourClassesAtWj300AndDeepExports),
             ("D02OneClassAtIa40", D02OneClassAtIa40),
+            ("D02LegendRowKeepsItsHeight", D02LegendRowKeepsItsHeight),
             ("D02ClassStickyAcrossCommitUndoRedoBranchReopen", D02ClassStickyAcrossCommitUndoRedoBranchReopen),
             ("D02OverflowNeverReusesAcrossContact", D02OverflowNeverReusesAcrossContact),
             ("D02OffLatticeFromFlagNotHeights", D02OffLatticeFromFlagNotHeights),

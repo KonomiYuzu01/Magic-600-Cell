@@ -23,6 +23,8 @@ against the renderer selection gate (docs/wiki/decisions/renderer-candidates.md)
 - view_vertex_evals: the core's own pipeline statistics, from the gate fields of the frame rows (`core_frames_reported`,
   `core_view_vertex_evals_total`, written with M600_D02_GATE=1 through `sa2_counters`): the total's growth over the
   window divided by the reported frames' growth, the mean per frame. Without those fields it prints `not_measured`.
+- Surface resizes (SF5): the shell's `surface` rows in the window, one per resize of the core's surface (each costs
+  one long presented interval); the record gives the count, the line does not.
 - VRAM: the peak of `--vram`'s samples in the window, the shell process's dedicated GPU memory (the GPU Process Memory
   counters' Dedicated Usage, the figure Task Manager shows), sampled from outside by gate_d02.py. Without samples it
   prints `vram_gb=not_measured` and `pass` is computed on the rate and the 99th percentile only (the record says so).
@@ -113,6 +115,12 @@ def vertex_evals(frames: list[dict]):
     return round((last["core_view_vertex_evals_total"] - first["core_view_vertex_evals_total"]) / reported)
 
 
+def surface_resizes(rows: list[dict], start: int, end: int) -> int:
+    """SF5: the resizes of the core's surface in the window, the shell's `surface` rows (each costs one long presented
+    interval: DXGI's statistics go disjoint after ResizeBuffers)."""
+    return sum(1 for row in rows if row.get("t") == "surface" and isinstance(row.get("qpc"), int) and start <= row["qpc"] <= end)
+
+
 def vram_peak(samples: list[dict], start: int, end: int):
     inside = [s["dedicated_bytes"] for s in samples
               if isinstance(s.get("qpc"), int) and isinstance(s.get("dedicated_bytes"), int) and start <= s["qpc"] <= end]
@@ -155,7 +163,7 @@ def measure(rows: list[dict], seconds: float = DEFAULT_SECONDS, warmup: float = 
     return {"format": FORMAT, "window_s": seconds, "warmup_s": warmup, "presented_span_s": round(span, 3),
             "window_frames": len(window), "fps_avg": fps, "p99_ms": p99, "max_interval_ms": max(intervals),
             "panes": panes, "pane_counts": counts, "held_frames": held, "view_vertex_evals": evals,
-            "vram_gb": vram_gb, "vram_gb_whole_run": None if whole is None else whole / GIB,
+            "surface_resizes": surface_resizes(rows, start, end), "vram_gb": vram_gb, "vram_gb_whole_run": None if whole is None else whole / GIB,
             "vram_measured": peak is not None, "pass": passed,
             "pass_basis": "fps, p99 and VRAM" if peak is not None else "fps and p99 only: VRAM not measured",
             "limits": {"fps_min": FPS_MIN, "p99_max_ms": P99_MAX_MS, "vram_max_gib": VRAM_MAX_GB}}

@@ -61,12 +61,14 @@ public sealed partial class JumbleHost
         OverlayHidden = source == null ? 0 : JumbleOverlay.Hidden(Overlay.Lines, source, FocusMember(source));
         OverlayLine = JumbleOverlay.Words(Overlay, OverlayHidden);
         if (!GodotObject.IsInstanceValid(frame)) return;
+        // SF5: while a cap stays named the line keeps its place, blank where the bound state has no record.
+        bool named = Source.State.Mode && Naming.Named != null;
         foreach (ViewFrame? view in new[] { frame.Global, frame.Local })
         {
             if (view == null || !GodotObject.IsInstanceValid(view)) continue;
             ViewLine.Set(view, JumbleOverlay.LineName, OverlayLine.Length == 0 ? null : OverlayLine,
                 "Overlays are lines: the named cap's cut, a focused repair step's moving set, the never-hidden set.",
-                frame.Tokens.C(JumbleOverlay.Slot));
+                frame.Tokens.C(JumbleOverlay.Slot), named);
         }
     }
 }

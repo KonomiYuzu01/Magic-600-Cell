@@ -158,6 +158,33 @@ public static class JumbleTint
         return entries;
     }
 
+    // SF5 (27 Nov 2026): the widest numbers a legend entry keeps room for (259,800 slots; 600 caps), so a count that
+    // changes at a twist never widens its entry and never rewraps the row on the view's border.
+    public const string WidestCount = "000,000";
+    public const string WidestDomains = "000";
+
+    // An entry's words on the border as parts: fixed words, and each number with the widest form its slot keeps room for.
+    public static IReadOnlyList<LegendPart> EntryParts(TintLegendEntry entry)
+    {
+        static string N(long n) => n.ToString("N0", CultureInfo.InvariantCulture);
+        return entry.Label == "overflow"
+            ? new[] { new LegendPart("overflow ·", null), new LegendPart(N(entry.Domains), WidestDomains), new LegendPart("domains ·", null), new LegendPart(N(entry.Pieces), WidestCount) }
+            : new[] { new LegendPart(entry.Label + " ·", null), new LegendPart(N(entry.Pieces), WidestCount) };
+    }
+
+    // The row's form with every number at its widest: the row's height follows only this, so two states whose forms
+    // are equal give the border, and the view's opening, the same height.
+    public static string ReservedForm(TintMode mode, IReadOnlyList<TintLegendEntry> entries) =>
+        Title(mode) + " | " + string.Join(" | ", entries.Select(e => string.Join(" ", EntryParts(e).Select(p => p.Widest ?? p.Text))));
+
+    // Whether a shown legend row stays on the border: while a mode is drawn it keeps its place (and its height) even
+    // when no state is bound, as after a twist to a state the samples do not hold; only no mode removes it.
+    public static bool LegendKept(TintMode mode, bool shown, string line) => BorderRowKept(mode != TintMode.None, shown, line);
+
+    // A row on a view's border with words stays; one that is shown keeps its place blank while what it reads is still
+    // asked for (a tint mode on, a cap named); a row asked for nothing goes, so only a choice changes the opening.
+    public static bool BorderRowKept(bool asked, bool shown, string words) => words.Length > 0 || (shown && asked);
+
     // The legend as one line: the mode's name, then each entry with its count of pieces.
     public static string Line(TintMode mode, IReadOnlyList<TintLegendEntry> entries, bool graphed = true)
     {
@@ -220,6 +247,9 @@ public static class JumbleTint
 // One legend entry: its design slot (none for the neutral lattice and the off-lattice outline), its label, the pieces
 // it covers and, for contact classes, the domains that hold it.
 public sealed record TintLegendEntry(string? Slot, string Label, long Pieces, int Domains);
+
+// One part of a legend entry's words: fixed words (no widest form) or a number in a slot as wide as its widest form.
+public sealed record LegendPart(string Text, string? Widest);
 
 // The domain contact graph of a bound state (contact.json; ADR-D02.21): domains by the style's domain index, the
 // lattice domain, and the edges with whether each contact lies on an on-grip cut, an off-grip cut or both.

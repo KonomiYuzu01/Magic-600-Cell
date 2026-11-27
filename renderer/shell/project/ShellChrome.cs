@@ -721,6 +721,34 @@ public sealed class ShellChrome
     public Rect2I Opening() => Pixels(Frame.Opening);
 
     /// <summary>
+    /// SF5: the Global frame's footer rows in order with their heights in pixels (each readout row by name, then the
+    /// name line, the whole footer and the Global frame), for the event log's surface row.
+    /// </summary>
+    public List<(string Name, float Height)> FooterRows()
+    {
+        var rows = new List<(string Name, float Height)>();
+        var view = Frame.Global;
+        if (view is null || !GodotObject.IsInstanceValid(view))
+        {
+            return rows;
+        }
+        foreach (var row in view.Readouts.GetChildren().OfType<Control>())
+        {
+            rows.Add((row.Name, row.Size.Y));
+        }
+        if (view.Status.GetParent() is Control line)
+        {
+            rows.Add(("NameLine", line.Size.Y));
+        }
+        if (view.Readouts.GetParent()?.GetParent() is Control footer)
+        {
+            rows.Add(("Footer", footer.Size.Y));
+        }
+        rows.Add(("GlobalFrame", view.Size.Y));
+        return rows;
+    }
+
+    /// <summary>
     /// The window pixels of Local's drawn opening (ADR-D02 B18c): the top of Local's slot while a cap is named; empty
     /// without --d02, while no cap is named, or while Local is not on screen.
     /// </summary>

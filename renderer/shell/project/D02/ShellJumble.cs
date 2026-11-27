@@ -1093,6 +1093,11 @@ internal sealed partial class D02Driver : Node
             ShellResearch.Dump(json);
             ShellDocuments.Dump(json);
             ShellSession.Dump(json);
+            // SF5: the Global opening's size in pixels; a twist must not change it (the core's surface follows it).
+            json.WriteStartArray("global_opening");
+            json.WriteNumberValue((int)Math.Floor(_frame.Opening.Size.X));
+            json.WriteNumberValue((int)Math.Floor(_frame.Opening.Size.Y));
+            json.WriteEndArray();
             // B11: the covers lines, the inspect line, the cap map's marks and the focus layers' keys.
             if (ShellJumble.Host is { } shown)
             {

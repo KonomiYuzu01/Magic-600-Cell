@@ -991,6 +991,46 @@ relative path is from the repository root.
       interval (11-15 over 33.4 ms in the window), also where the bind is only `state_digest` (2-4 ms); through it the
       frame thread keeps its 16 ms cadence (C# steps under 4 ms, `m6h_frame` about 14 ms) while four submitted
       frames get no `presented` row.
+    - SF4 (27 November 2026), the dropped presentations. A core trace (`core-frames.jsonl` beside `events.jsonl`,
+      written only while the event log is on: each frame's parts and each statistics sample with the present
+      ledger's state) ranks the hypotheses. 1, confirmed: the core's surface is resized at most twists. The Global
+      opening's height alternates between 1093 and 1116 px, so the shell's surface follow (`Shell.cs`, the
+      `surface.Resize` branch of the frame loop) drains and calls `sa2_resize` (`CoreSurface.Resize`), and the core's
+      `resize_surface` (`renderer/core/src/interop.cpp`) calls `ResizeBuffers` and raises the surface generation. In
+      one G1 run every one of the six 83.3 ms gaps in the window begins 23-24 ms before one of the window's six
+      resizes, and the 50 ms gaps (frame-thread holes) have none. 2, a consequence: after the resize DXGI's
+      statistics are disjoint and stay at one present count for five refreshes, then advance five presents in five
+      refreshes, so no present was dropped or repeated; but the present ledger's exact rule (`present_match`,
+      `renderer/core/src/product.cpp`) supersedes the four frames of the old generation, and they get no
+      `presented` row. 3, ruled out: a slow core frame (G1: ready and upload waits 0.00 ms; the frame-latency wait
+      p50 13.0, p99 13.8; recording 0.04 (0.25); present 0.26 (0.39)), and a frame-thread stall longer than the
+      queue. The likely source of the height change is a border readout that rewraps when its numbers change at a
+      twist (`TintLegendRow`'s `N0` counts or a `ReadoutRow`, in `tools/looklab/app/Chrome/Ui/`); not yet pinned.
+      A reading fix was tried and is not committed: a ledger that confirms the frames between two statistics
+      anchors n presents and n refreshes apart at a steady rate (core ABI 11) confirmed 7-14 frames per window but
+      none across a resize, and the dry runs stayed at p99 83.33 (G1 83.33 and 83.33, fps_avg 57.0 and 57.2; G9
+      83.33 and 83.33, 56.6 and 56.7; before it, G1 83.33, fps_avg 56.4); no GPU event in the System log after any
+      run. Left: stop the per-twist resize where the opening's height changes (a readout's changing numbers must
+      not change the opening, which also stops the view from moving 23 px at a twist), then rerun G1 and G9; the
+      trace and the tried reading are kept outside the repository for that step.
+    - SF5 (27 November 2026), the opening's height. A `surface` row in the event log at each resize of the core's
+      surface, with the Global footer's rows and their heights (`Shell.cs`, `ShellChrome.FooterRows`), pinned the
+      rows: at a K twist of G1 the state alternates between a sample state (wj-ia-300's cap-2 powers) and one no
+      sample holds, where nothing is bound, so the tint legend (`JumbleLegend.cs` `Legends`, `TintLine` empty) and
+      the overlay line (`JumbleOverlays.cs` `OverlayWords`, no cap record) were removed and added again, 23 px each:
+      footer 134, 111 or 88 px, opening 1070, 1093 or 1116 px. It was not a rewrap. Now a shown legend row stays,
+      blank at its height, while a mode is on, and the overlay line while a cap is named (`JumbleTint.LegendKept`,
+      `BorderRowKept`, `ViewLine.Set(keep)`); only no mode or no named cap removes them. The legend's counts sit
+      in slots as wide as their widest form (`JumbleTint.EntryParts`, `WidestCount`), so a count never rewraps
+      the row. Tests: `D02LegendRowKeepsItsHeight` (console), `sweep`'s `global_opening` check (d02_run.py), and
+      `gate_row.py`'s `surface_resizes`. Dry runs (10 s, wj-ia-300, not evidence), before and after: G1 p99 83.33
+      and 83.33 ms, fps_avg 55.8 and 56.0, 6 and 6 resizes in the window, then p99 50.00 and 33.33, fps_avg 58.1
+      and 58.5, 0 and 0 resizes; G9 p99 83.33 and 83.33, fps_avg 56.0 and 56.1, 6 and 6 resizes, then p99 33.33
+      and 33.33, fps_avg 58.4 and 58.7, 0 and 0. Left, p99 still over 33.3 ms: 11-14 intervals of 2-3 refreshes
+      per window, two per twist. The first follows the bind's frame-thread hole of 31-32 ms (`bind` 13-19 ms:
+      `state_digest` 2.8-3.5, `feed` 1.8-6.4, `capmap` 2.5-6.7, `tint` 3.0-3.5 at a bound state, `flush` 2.8-6.1);
+      the second follows a hole of 40-55 ms about 50 ms later that no `steps` row covers (the nearest is `shown`,
+      `describe` 2.0-2.8 ms): the next step is to time that frame's parts.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
