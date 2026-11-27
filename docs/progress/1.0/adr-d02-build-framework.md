@@ -1249,6 +1249,10 @@ relative path is from the repository root.
     lies over Global's opening as the shell lays it out (a click step's fractions are of that opening; the default
     region is all of it). The record holds the opening the dumps report (`frame.global_opening`) and checks that every
     click landed in it. Not yet run.
+  - LF1 (27 November 2026): G4 and G6 set the Local mode their rows name, after naming the cap and before the repeat
+    block: G4 `jumble.slice.shell default` (Local's slice), G6 `jumble.slice.shell 3.14` (the shell at its limit, so
+    Local draws its whole chain and carries the sweeps). `ROWS` holds the argument as `local`;
+    `tests/test_gate_row.py` checks both scripts, also after the sweep cap moves. No dry run.
 
 ### B25. Word flows and signatures
 - **Goal:** the word line, counters, the folded tree, signatures.

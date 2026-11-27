@@ -164,6 +164,20 @@ class GateScriptTest(unittest.TestCase):
             self.assertGreaterEqual(sum(s.get("wait_ms", 0) for s in steps if s.get("quiet")), 69_000)
             self.assertNotIn("quiet", steps[-1], f"{name}: no step may follow the repeat block")
 
+    def test_rows_set_the_local_mode_they_name(self):
+        # LF1: G4 names Local's slice and G6 Local's chain carrying the sweeps; each script sets that shell after naming
+        # the cap and before its repeat block, and the sweep cap's move (at_cap) keeps the step.
+        modes = {row: spec["local"] for row, spec in self.gate_d02.ROWS.items() if "local" in spec}
+        self.assertEqual(modes, {"G4": "default", "G6": "3.14"})
+        for row, shell in modes.items():
+            script = json.loads((self.d02_run.SCRIPTS / f"gate-{row.lower()}.json").read_text(encoding="utf-8"))
+            for steps in (script["steps"], self.gate_d02.at_cap(script, 7)["steps"]):
+                sets = [i for i, s in enumerate(steps) if s.get("command") == "jumble.slice.shell"]
+                self.assertEqual([steps[i]["argument"] for i in sets], [shell], row)
+                named = next(i for i, s in enumerate(steps) if str(s.get("text", "")).startswith("> jumble.cap.name "))
+                block = next(i for i, s in enumerate(steps) if "repeat" in s)
+                self.assertTrue(named < sets[0] < block, row)
+
     def test_dedicated_peak_takes_the_busiest_adapter(self):
         items = [("pid_7_luid_0x00000000_0x0000AAAA_phys_0", 100), ("pid_7_luid_0x00000000_0x0000BBBB_phys_0", 900),
                  ("pid_7_luid_0x00000000_0x0000BBBB_phys_1", 50), ("pid_70_luid_0x00000000_0x0000BBBB_phys_0", 5000)]
