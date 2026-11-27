@@ -1036,6 +1036,7 @@ internal sealed partial class D02Driver : Node
                 json.WriteNumber("cap", shown.LocalCap.Shown ?? -1);
                 json.WriteNumber("framed", ShellLocal.Cap ?? -1);
                 json.WriteBoolean("opening", _frame.LocalOpeningShown);
+                json.WriteBoolean("hidden", _frame.LocalHide.Hidden);
                 json.WriteString("words", shown.LocalWords ?? "");
                 json.WriteEndObject();
                 // The cap map's hovered cell, the pointer's shape over it and its tooltip.
@@ -1217,6 +1218,8 @@ internal sealed partial class D02Driver : Node
                     ("top_bar", _frame.FindChild("TopBar", true, false) as Control), ("left_dock", _frame.FindChild("LeftDock", true, false) as Control),
                     ("right_dock", _frame.FindChild("RightDock", true, false) as Control), ("bottom_dock", _frame.FindChild("BottomDock", true, false) as Control),
                     ("global", _frame.Global), ("local", _frame.Local),
+                    // B24: Global's opening, the rectangle a script's click fractions resolve against (the occlusion grid).
+                    ("global_opening", _frame.Global?.Slot),
                 })
                 {
                     if (node == null || !GodotObject.IsInstanceValid(node) || !node.IsVisibleInTree())

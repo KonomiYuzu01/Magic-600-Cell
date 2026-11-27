@@ -161,6 +161,19 @@ def measure(rows: list[dict], seconds: float = DEFAULT_SECONDS, warmup: float = 
             "limits": {"fps_min": FPS_MIN, "p99_max_ms": P99_MAX_MS, "vram_max_gib": VRAM_MAX_GB}}
 
 
+def take_foreground(window: int) -> bool:
+    """gate_d02.py --foreground, for the owner's sitting (owner, 26 November 2026: measurement runs that need the
+    foreground keep their own rules): one SetForegroundWindow of the shell's window at the start, never a topmost
+    style. True when the window then has the foreground; Windows refuses it to a run not started from the desktop."""
+    import ctypes
+    from ctypes import wintypes
+    user32 = ctypes.WinDLL("user32")
+    user32.SetForegroundWindow.argtypes = (wintypes.HWND,)
+    user32.GetForegroundWindow.restype = wintypes.HWND
+    user32.SetForegroundWindow(window)
+    return int(user32.GetForegroundWindow() or 0) == window
+
+
 def line(row_id: str, result: dict) -> str:
     evals = "not_measured" if result["view_vertex_evals"] is None else str(result["view_vertex_evals"])
     vram = "not_measured" if result["vram_gb"] is None else f"{result['vram_gb']:.2f}"

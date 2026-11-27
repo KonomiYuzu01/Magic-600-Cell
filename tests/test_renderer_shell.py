@@ -1406,7 +1406,11 @@ class SampleMode(unittest.TestCase):
         chrome = text(PROJECT / "ShellChrome.cs")
         takes = chrome[chrome.index("    public bool Takes(InputEventKey key)"):chrome.index("    public void Committed(")]
         self.assertIn("var takes = Frame.Claims(name, binding => _unavailable(binding.Command, binding.Argument) == null &&\n"
-                      "            !(_live && KeyMapModel.IsTwist(binding.Command)));", takes)
+                      "            !(_live && KeyMapModel.IsTwist(binding.Command)) &&\n"
+                      "            !(_live && binding.Command == ViewPanes.LocalRow && ShellTurn.ItemOf(PhysicalChord(name)) != null));",
+                      takes)
+        # B19: the Local row's L is the router's KeyL too; the twist keeps it in a live session.
+        self.assertIn('return name.Substring(0, at) + "Key" + name.Substring(at);', chrome)
         frame = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "ChromeFrame.cs")
         claims = frame[frame.index("    public bool Claims(string key"):frame.index("    public bool Press(string key)")]
         self.assertLess(claims.index("HostKeys.ContainsKey(key)) return true;"), claims.index("can(binding)"))
@@ -1704,7 +1708,7 @@ class D02Host(unittest.TestCase):
         run = shell_module("d02_run")
         self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views",
                                               "library-branch", "research-pane", "research", "documents", "timer", "signature",
-                                              "setup", "binding-chip", "rail-locks"})
+                                              "setup", "binding-chip", "rail-locks", "local-hide"})
         self.assertIs(run.EXPECT["signature"], run.expect_signature)  # ADR-D01.70
         self.assertIs(run.EXPECT["binding-chip"], run.expect_binding_chip)  # ADR-D01.42
         self.assertIs(run.EXPECT["rail-locks"], run.expect_rail_locks)  # ADR-D01.65

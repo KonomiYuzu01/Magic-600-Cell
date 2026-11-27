@@ -3038,14 +3038,14 @@ EXPECT["frame-layers"] = expect_frame_layers
 ON_FIXTURE.add("frame-layers")
 
 
-def window_problems(dumps: list[dict]) -> list[str]:
-    """The owner's window rule as the shell itself reports it in every dump."""
+def window_problems(dumps: list[dict], foreground: bool = False) -> list[str]:
+    """The owner's window rule as the shell itself reports it in every dump (a --foreground run: never topmost)."""
     problems = []
     for dump in dumps:
         window = dump.get("window", {})
         if window.get("topmost") is not False:
             problems.append(f"step {dump['step']}: the shell's window is topmost")
-        if window.get("foreground") is not False:
+        if not foreground and window.get("foreground") is not False:
             problems.append(f"step {dump['step']}: the shell's window has the foreground")
     return problems
 
@@ -3098,9 +3098,12 @@ class Desktop:
 
 
 def run(script: str, out: Path, build: Path | None, state: str | None, desktop=None, launcher=launch.main,
-        clock=time.monotonic, sleep=time.sleep, path: Path | None = None) -> tuple[int, dict]:
+        clock=time.monotonic, sleep=time.sleep, path: Path | None = None, foreground=None) -> tuple[int, dict]:
     """Launches the run, watches the foreground, and compares the screens. Returns the exit code and the record.
-    A driver that writes its own script (track_j.py, B32) passes its path; a script of d02_scripts/ is found by name."""
+    A driver that writes its own script (track_j.py, B32) passes its path; a script of d02_scripts/ is found by name.
+    `foreground` (gate_d02.py's --foreground, the owner's sitting only) is the gate's own activation of a window
+    (tools/perf/d02/gate_row.py): the shell is not told to hand the foreground back, its window is activated once at
+    the start, and the foreground checks give way to that; the topmost checks stay. This file activates nothing."""
     path = path or SCRIPTS / f"{script}.json"
     source = data()
     if script not in EXPECT or not path.is_file():
@@ -3119,6 +3122,8 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     lines: list[str] = []
 
     def popen(arguments, cwd, env, **options):
+        if foreground:
+            env = {key: value for key, value in env.items() if key != "M600_D02_FOREGROUND"}
         process = subprocess.Popen(arguments, cwd=cwd, env=env, **options)
         started["process"], started["at"] = process, clock()
         return process
@@ -3142,7 +3147,14 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         sleep(0.1)
     after, topmost, seen = None, None, {}
     describe = getattr(desktop, "describe", lambda window, pid: {})
+    took = None
     if "at" in started:
+        while foreground and took is None and clock() - started["at"] < FOREGROUND_AFTER_S and thread.is_alive():
+            shown = desktop.windows_of(started["process"].pid)
+            if shown:
+                took = bool(foreground(shown[0]))
+            else:
+                sleep(0.1)
         while clock() - started["at"] < FOREGROUND_AFTER_S and thread.is_alive():
             sleep(0.1)
         after = desktop.foreground()
@@ -3159,7 +3171,11 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         thread.join(30)
     if result.get("code") != 0:
         problems.append(f"the launch ended with {result.get('code')}: {' | '.join(lines[-3:])}")
-    if after is None or after != before:
+    if foreground:
+        if not took:
+            problems.append("the shell's window did not take the foreground at the start (--foreground): start the "
+                            "run from a PowerShell in front on the desktop")
+    elif after is None or after != before:
         problems.append("the foreground changed during the first five seconds" if after is not None
                         else "the shell did not start")
     if topmost:
@@ -3171,7 +3187,7 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     else:
         problems.append("the shell wrote no d02-screen.jsonl")
     if dumps:
-        problems += window_problems(dumps)
+        problems += window_problems(dumps, foreground is not None)
         problems += EXPECT[script](dumps, source, state)
     if script in EVENT_CHECKS:
         problems += EVENT_CHECKS[script](out / "events.jsonl")
@@ -3179,6 +3195,7 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         problems += FOLDER_CHECKS[script](out)
     record = {"format": FORMAT, "script": script, "state": state, "steps": len(dumps), "mismatches": problems,
               "foreground_kept": after is not None and after == before, "topmost": bool(topmost), "windows": seen,
+              "foreground_taken": took if foreground is not None else None,
               "gave_back": max((dump.get("window", {}).get("gave_back", 0) for dump in dumps), default=0)}
     if out.is_dir():
         (out / RECORD).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8", newline="\n")
@@ -3212,6 +3229,54 @@ def main(argv: list[str] | None = None) -> int:
 # of steps, so the one step {"repeat": {"steps": [...]}} of a gate script is expanded here before the launch: its steps,
 # copied until their waits add up to the asked seconds, each marked "quiet" (the player writes no screen dump after a
 # quiet step, so the timed frames carry no dump's work); the last copy is not quiet, so the run still ends on a dump.
+# ADR-D01's Local row (view.local): the Local hide that the gate's G1 runs with (B19).
+LOCAL_HIDE_STEPS = ["start", "wait 4000 ms", "command view.local", "wait 1500 ms", "drag 160 0", "wait 701 ms",
+                    "command view.local", "wait 1502 ms"]
+
+
+def expect_local_hide(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The row hides Local (its opening closed, the cap it frames kept), a drag in Global turns the camera while
+    Local is hidden, and the row shows Local again on the same cap, linked and sent the shared spin."""
+    steps = [dump["do"] for dump in dumps]
+    if steps != LOCAL_HIDE_STEPS:
+        return [f"the steps written were {steps}"]
+    before, hidden, dragged, shown = dumps[1], dumps[3], dumps[5], dumps[7]
+    local = [row.get("local") or {} for row in (before, hidden, shown)]
+    problems = []
+    if local[0].get("hidden") is not False or local[0].get("opening") is not True:
+        problems.append(f"Local was not shown with its opening before the row: {local[0]}")
+    if local[1].get("hidden") is not True:
+        problems.append(f"the row did not hide Local: {local[1]}")
+    if local[2].get("hidden") is not False or local[2].get("framed") != local[0].get("framed"):
+        problems.append(f"the row did not show Local again on its cap: {local[0]} then {local[2]}")
+    rotations = [row.get("rotation") for row in (hidden, dragged, shown)]
+    if any(not isinstance(r, dict) for r in rotations):
+        return problems + ["a step's dump has no rotation"]
+    if same(rotations[0]["sent_global"], rotations[1]["sent_global"]):
+        problems.append("the drag in Global while Local was hidden did not turn Global")
+    if not rotations[2]["linked"] or not same(rotations[2]["sent_local"], rotations[2]["global"]["spin"]):
+        problems.append("Local came back unlinked or without the shared spin")
+    print(f"local-hide: hidden {local[1].get('hidden')}, back on cap {local[2].get('framed')}, linked "
+          f"{rotations[2]['linked']}; {len(problems)} problems")
+    return problems
+
+
+def check_local_hide_events(events: Path) -> list[str]:
+    """Two drawn panes, then one-view frames while Local is hidden, then two drawn panes again once it is shown."""
+    frames = frame_rows(events)
+    kinds = [2 if row.get("panes") == 2 and row.get("held") == 0 else 1 if not row.get("panes") else 0 for row in frames]
+    runs = [kind for i, kind in enumerate(kinds) if kind and (i == 0 or kind != kinds[i - 1])]
+    joined = "".join(str(kind) for kind in runs)
+    print(f"local-hide: {len(frames)} frames, pane runs {joined[:40]}")
+    return [] if "212" in joined else [f"no two-pane, one-view, two-pane sequence in the frame rows ({joined[:40]})"]
+
+
+EXPECT["local-hide"] = expect_local_hide
+ON_FIXTURE.add("local-hide")
+IN_SAMPLE_MODE.add("local-hide")
+EVENT_CHECKS["local-hide"] = check_local_hide_events
+
+
 # A hold-for is a repeat of one wait (a held key: "hold" before the block, "release" after it).
 GATE_PREFIX = "gate-"
 GATE_OCCLUSION = "gate-occlusion"

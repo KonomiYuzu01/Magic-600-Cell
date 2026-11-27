@@ -172,6 +172,51 @@ class GateScriptTest(unittest.TestCase):
         script = self.gate_d02.occlusion_script("deep-2", (2, 3), (0.3, 0.25, 0.7, 0.75))
         self.assertEqual(sum(1 for s in script["steps"] if "click" in s), 12)
 
+    def test_sweeping_rows_select_an_admissible_grip_cap(self):
+        # B19: a sweeping row selects its grip cap before the repeat block; G1 hides Local there too.
+        for row, spec in self.gate_d02.ROWS.items():
+            script = json.loads((self.d02_run.SCRIPTS / f"gate-{row.lower()}.json").read_text(encoding="utf-8"))
+            commands = [s.get("command") for s in script["steps"][:-1]]
+            self.assertEqual("grip.select" in commands, spec["sweeps"], row)
+            self.assertEqual("view.local" in commands, row == "G1", row)
+            if spec["sweeps"]:
+                cap = int(next(s["argument"] for s in script["steps"] if s.get("command") == "grip.select"))
+                self.assertIn(cap, self.gate_d02.admissible_caps(spec["state"]), row)
+        self.assertEqual(self.gate_d02.sweep_cap("deep-2", 2), 2)
+        self.assertEqual(self.gate_d02.sweep_cap("wj-ia-end", 2), 2)
+        moved = self.gate_d02.sweep_cap("wj-ia-300", 2)
+        self.assertNotEqual(moved, 2)
+        self.assertIn(moved, self.gate_d02.admissible_caps("wj-ia-300"))
+        self.assertNotIn(0, self.gate_d02.admissible_caps("wj-ia-300"))
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder) / "g1"
+            script, path = self.gate_d02.prepare("gate-g1", out, 3, "2560x1600", "wj-ia-300", True)
+            self.assertTrue(path.is_file())
+            self.assertEqual((script["grip_cap"], script["resolution"]), (moved, "2560x1600"))
+            self.assertIn({"command": "grip.select", "argument": str(moved)}, script["steps"])
+            self.assertIn({"text": f"> jumble.cap.name {moved}"}, script["steps"])
+
+    def test_window_size_and_opening_placement(self):
+        self.assertEqual(self.gate_d02.window_size("1280x720")["source"], "--resolution")
+        native = self.gate_d02.window_size(None, read=lambda: "2560x1600")
+        self.assertEqual(native["resolution"], "2560x1600")
+        self.assertIn("native", native["source"])
+        dumps = [{"frame": {"global_opening": [10, 20, 100, 50]}}, {"frame": {"global_opening": [10, 20, 100, 50]}}]
+        with tempfile.TemporaryDirectory() as folder:
+            events = Path(folder) / "events.jsonl"
+            events.write_text("".join(json.dumps(r) + "\n" for r in (
+                {"t": "click", "x": 15, "y": 25}, {"t": "click", "x": 109, "y": 69}, {"t": "click", "x": 300, "y": 25})))
+            placed = self.gate_d02.opening_clicks(dumps, events)
+        self.assertEqual((placed["global_opening"], placed["clicks"], placed["inside"], placed["moved"]),
+                         ([10, 20, 100, 50], 3, 2, False))
+
+    def test_foreground_runs_drop_only_the_foreground_checks(self):
+        dumps = [{"step": 1, "window": {"topmost": False, "foreground": True}}]
+        self.assertEqual(len(self.d02_run.window_problems(dumps)), 1)
+        self.assertEqual(self.d02_run.window_problems(dumps, foreground=True), [])
+        dumps[0]["window"]["topmost"] = True
+        self.assertEqual(len(self.d02_run.window_problems(dumps, foreground=True)), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -930,6 +930,18 @@ relative path is from the repository root.
     - The never-foreground window presented at a median 33.3 ms in the dry run.
   - The dry run (G1 at `wj-ia-300`, 10 s) printed a well-formed line and was invalid, as expected: two panes and no
     committed twist. It is not gate evidence.
+  - Fixed the same day (gate track):
+    - The sweeping rows select cap 2 with `grip.select` before the repeat block, and the router's twist keys turn the
+      selected cap (`set_grip`, `ShellTurn`'s active grip cap). `gate_d02.py` moves the cap to an admissible one of a
+      dry run's state from its sample `rim.json` (cap 91 at `wj-ia-300`) and records it.
+    - `view.local` hides and shows Local (`ViewPanes.LocalOpen`, `LocalHide`): Local's opening closes, the pane drops,
+      the host stops drawing Local, and Local returns on its cap with the camera shared. The key L stays the router's
+      twist key in a live session. Tests: the console test `D02LocalHideDropsAndRestoresLocalPane` and the product
+      script `local-hide`.
+    - The window is the display's native size read at run time (2560x1600 here); `--resolution` overrides it, and
+      `--foreground` (the owner's sitting only) activates the window once, never topmost. `gate.json` records both.
+    - Dry runs at `wj-ia-300` (10 s, not evidence): G1 was valid with one pane and 7 twists, G9 valid with two panes and
+      7 twists. The System log showed no GPU event after either.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
@@ -1144,6 +1156,10 @@ relative path is from the repository root.
     count.
   - The prerequisites (twist sweeps on `deep-2`, the foreground question) are those of B19. Results go on
     `docs/progress/1.0/adr-d02-gate-results.md`.
+  - Fixed on 27 November 2026 (gate track): G4, G6 and G8 select their grip cap as B19's rows do. The occlusion grid
+    lies over Global's opening as the shell lays it out (a click step's fractions are of that opening; the default
+    region is all of it). The record holds the opening the dumps report (`frame.global_opening`) and checks that every
+    click landed in it. Not yet run.
 
 ### B25. Word flows and signatures
 - **Goal:** the word line, counters, the folded tree, signatures.
