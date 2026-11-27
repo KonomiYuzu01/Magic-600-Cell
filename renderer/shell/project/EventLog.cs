@@ -279,7 +279,7 @@ public sealed class EventLog : IDisposable
 
     /// <summary>
     /// SF (27 Nov 2026): a "steps" row: the frame thread's steps of one <paramref name="what"/> ("key", a committed
-    /// twist key; "bind", the sample binding at a newly adopted revision) that began at <paramref name="qpc"/>, each
+    /// twist key; "bind", the sample binding at a newly adopted revision; SF3: "shown", the chrome at a newly shown revision) that began at <paramref name="qpc"/>, each
     /// step's milliseconds from its two QPC readings. key_to_frame.py lists it among the other rows.
     /// </summary>
     public void Steps(string what, long qpc, params (string Name, long From, long To)[] steps) => Write(json =>

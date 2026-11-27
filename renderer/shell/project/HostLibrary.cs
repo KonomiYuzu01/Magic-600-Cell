@@ -141,6 +141,10 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_status_targets",
         "m6h_grip_report",
         "m6h_grip_set",
+        "m6h_key_post",
+        "m6h_key_poll",
+        "m6h_key_row",
+        "m6h_key_drain",
         "m6h_preview_bind",
         "m6h_preview_build",
         "m6h_preview_scrub",
@@ -148,10 +152,6 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_preview_args",
         "m6h_preview_moved",
         "m6h_preview_report",
-        "m6h_key_post",
-        "m6h_key_poll",
-        "m6h_key_row",
-        "m6h_key_drain",
     };
 
     /// <summary>A submitted frame, as m6h_frame writes it (the Rust M6hFrame).</summary>

@@ -48,29 +48,47 @@ public sealed partial class JumbleSurface : VBoxContainer
         sentence = ChromeWidgets.Text(emptySentence, "DimLabel"); sentence.Name = "LocalEmpty";
         sentence.AutowrapMode = TextServer.AutowrapMode.WordSmart; sentence.HorizontalAlignment = HorizontalAlignment.Center;
         AddChild(gap); AddChild(sentence); AddChild(sections);
-        accordion.Changed += () => { if (IsInstanceValid(this)) Refresh(); };
+        // A section's count changes in a bind too (SF3): it refreshes with the rest, once, at Release.
+        accordion.Changed += () => RefreshOrHold();
         Refresh();
     }
 
     // The height the view's marks take at the top of Local: their offset and one control's height.
     public static int MarksRoom(TokenSet t) => t.Px("space.3") + t.Px("control.height");
 
+    // SF3 (27 Nov 2026): held by the host while a bind updates several sections; they refresh once, at Release.
+    private int holding;
+    private bool refreshDue;
+
+    public void Hold() => holding++;
+
+    public void Release()
+    {
+        if (holding > 0 && --holding == 0 && refreshDue) { refreshDue = false; if (IsInstanceValid(this)) Refresh(); }
+    }
+
+    private void RefreshOrHold()
+    {
+        if (holding > 0) { refreshDue = true; return; }
+        if (IsInstanceValid(this)) Refresh();
+    }
+
     public void SetChecks(KeptChecks? value)
     {
         checks = value;
-        if (IsInstanceValid(this)) Refresh();
+        RefreshOrHold();
     }
 
     public void SetCovers(CapCovers? value, CoversInspect inspect, Func<CapMapModel> map)
     {
         covers = value; this.inspect = inspect; this.map = map;
-        if (IsInstanceValid(this)) Refresh();
+        RefreshOrHold();
     }
 
     public void SetRepair(RepairListModel? value, RepairSteps steps, RepairScrub scrub)
     {
         repair = value; repairSteps = steps; this.scrub = scrub;
-        if (IsInstanceValid(this)) Refresh();
+        RefreshOrHold();
     }
 
     // B32 findings: the repair list's key route gives the open list keyboard focus once it is built (the palette has
@@ -85,7 +103,7 @@ public sealed partial class JumbleSurface : VBoxContainer
     {
         if (drawn == value) return;
         drawn = value;
-        if (IsInstanceValid(this)) Refresh();
+        RefreshOrHold();
     }
 
     // The shell hides the Jumble sections on the base puzzle (Jumble off) and shows them otherwise (B17).
@@ -93,13 +111,13 @@ public sealed partial class JumbleSurface : VBoxContainer
     {
         if (jumbleSections == value) return;
         jumbleSections = value;
-        if (IsInstanceValid(this)) Refresh();
+        RefreshOrHold();
     }
 
     public void SetFacts(IReadOnlyList<(string Label, string Fact)>? value)
     {
         facts = value;
-        if (IsInstanceValid(this)) Refresh();
+        RefreshOrHold();
     }
 
     public void Refresh()

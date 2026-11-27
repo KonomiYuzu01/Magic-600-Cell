@@ -586,10 +586,16 @@ public sealed class ShellChrome
             host.RecordSource = ShellJumble.Record;
             ShellJumble.BindingChanged += () =>
             {
+                // SF3 (27 Nov 2026): each update is one part of the bind's "steps" row.
+                var at = EventLog.Now();
                 host.SetTotals(ShellJumble.Totals());
+                at = ShellJumble.Part("totals", at);
                 host.SetStyle(ShellJumble.Style());
+                at = ShellJumble.Part("style", at);
                 host.SetCapMap(layout, ShellJumble.CapMap());
+                at = ShellJumble.Part("capmap", at);
                 host.SetNu(ShellJumble.Corrections(), ShellJumble.Bound is { } nuBound ? ShellJumble.StateAfter(nuBound) : null);
+                ShellJumble.Part("nu", at);
             };
             host.SetTotals(ShellJumble.Totals());
             host.SetStyle(ShellJumble.Style());
@@ -647,7 +653,14 @@ public sealed class ShellChrome
         frame.Recoloured += Dress;
         ShellExplore.Changed += Describe;
         frame.TreeExiting += () => ShellExplore.Changed -= Describe;
-        Moves.Changed += () => { if (GodotObject.IsInstanceValid(history)) history.Refresh(); Describe(); ShellResearch.Model?.Committed(); };
+        // SF3 (27 Nov 2026): History's own Update has added the row, so this one finds nothing changed (it rebuilt the
+        // whole list a second time); each call is one part of the key's "steps" row.
+        Moves.Changed += () =>
+        {
+            ShellJumble.Timed("history", () => { if (GodotObject.IsInstanceValid(history)) history.Update(); });
+            ShellJumble.Timed("describe", Describe);
+            ShellJumble.Timed("research", () => ShellResearch.Model?.Committed());
+        };
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         frame.MarkBaseline();
         frame.Flush();

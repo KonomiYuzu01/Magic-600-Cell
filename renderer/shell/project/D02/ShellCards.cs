@@ -97,11 +97,11 @@ internal sealed class ShellCards
         return _cards.Cards.Any(c => c.Kind == PinnedCardKind.TrackedPiece && c.Subject == piece);
     }
 
-    private void Bind()
+    private void Bind() => ShellJumble.Timed("cards", () =>
     {
         _current = ReadState();
         _panel.Refresh();
-    }
+    });
 
     private Reader ReadState()
     {

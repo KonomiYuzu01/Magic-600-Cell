@@ -497,7 +497,16 @@ public partial class Shell : Control
             D02.ShellTurn.Armed(answer.RowStatus == 1 ? library.KeyRow(_host, answer.Ticket, answer.RowRevision) : null);
             var rowed = EventLog.Now();
             _log?.Press(qpc, handled, answer.EngineRevision);
-            _chrome?.Committed(chord, answer.EngineRevision);
+            var chromeParts = _log != null ? new List<(string Name, long From, long To)>() : null;
+            D02.ShellJumble.BindParts = chromeParts;
+            try
+            {
+                _chrome?.Committed(chord, answer.EngineRevision);
+            }
+            finally
+            {
+                D02.ShellJumble.BindParts = null;
+            }
             var chromed = EventLog.Now();
             D02.ShellTurn.Committed(answer.EngineRevision, posted.StaticMotion);
             var turned = EventLog.Now();
@@ -505,9 +514,16 @@ public partial class Shell : Control
             // SF (27 Nov 2026), SF2: the steps of a committed key, only while the event log is on. "post" is the frame
             // thread's at the press; "queued" runs on the host's key worker (the commit) while frames go on; the rest
             // are the frame thread's at the answer.
-            _log?.Steps("key", qpc, ("post", posted.Arming, posted.Posted), ("queued", posted.Posted, handled),
-                        ("row", handled, rowed), ("chrome", rowed, chromed), ("turn", chromed, turned),
-                        ("style", turned, EventLog.Now()));
+            if (_log is { } keyLog)
+            {
+                var keySteps = new List<(string Name, long From, long To)> { ("post", posted.Arming, posted.Posted), ("queued", posted.Posted, handled),
+                        ("row", handled, rowed), ("chrome", rowed, chromed), ("turn", chromed, turned), ("style", turned, EventLog.Now()) };
+                foreach (var group in (chromeParts ?? new()).GroupBy(p => p.Name))
+                {
+                    keySteps.Add(("chrome." + group.Key, 0, group.Sum(p => p.To - p.From)));
+                }
+                keyLog.Steps("key", qpc, keySteps.ToArray());
+            }
         }
         else if (answer.Press == HostLibrary.PressRefused)
         {
@@ -1175,7 +1191,13 @@ public partial class Shell : Control
                 }
             }
         } while (count == _presented.Length);
+        // SF3 (27 Nov 2026): the chrome's Describe at a newly shown revision, as a "steps" row when it took over 1 ms.
+        var describing = EventLog.Now();
         _chrome?.Shown(_shownRevision);
+        if (_log is { } shownLog && EventLog.Now() - describing > System.Diagnostics.Stopwatch.Frequency / 1000)
+        {
+            shownLog.Steps("shown", describing, ("describe", describing, EventLog.Now()));
+        }
         // ADR-D02 B5: at each newly adopted revision, the sample state whose digests equal the head's binds. It follows
         // the revision a submitted frame drew, not the one confirmed on screen: a window behind the owner's presents
         // nothing, and the facts must still follow the session (checkpoint C1).
@@ -1185,16 +1207,37 @@ public partial class Shell : Control
             var asking = EventLog.Now();
             var read = library.StateDigest(_host) == HostLibrary.Ok;
             var digested = EventLog.Now();
-            if (read)
+            var parts = _log != null ? new List<(string Name, long From, long To)>() : null;
+            D02.ShellJumble.BindParts = parts;
+            try
             {
-                D02.ShellJumble.Bind(library.Answer(_host), (long)_adoptedRevision);
+                if (read)
+                {
+                    D02.ShellJumble.Bind(library.Answer(_host), (long)_adoptedRevision);
+                }
+                else
+                {
+                    D02.ShellJumble.Unknown((long)_adoptedRevision);
+                }
             }
-            else
+            finally
             {
-                D02.ShellJumble.Unknown((long)_adoptedRevision);
+                D02.ShellJumble.BindParts = null;
             }
-            // SF (27 Nov 2026): the bind's steps at a newly adopted revision, only while the event log is on.
-            _log?.Steps("bind", asking, ("state_digest", asking, digested), ("bind", digested, EventLog.Now()));
+            // SF (27 Nov 2026): the bind's steps at a newly adopted revision, only while the event log is on; SF3: with
+            // its parts (feed, chip, totals, style, capmap, nu, tint, cards, inspect) between the two totals.
+            if (_log is { } log && parts != null)
+            {
+                var bound = EventLog.Now();
+                // A part that ran more than once in the bind is written once, with its summed time.
+                var summed = new List<(string Name, long From, long To)> { ("state_digest", asking, digested) };
+                foreach (var group in parts.GroupBy(p => p.Name))
+                {
+                    summed.Add((group.Key, 0, group.Sum(p => p.To - p.From)));
+                }
+                summed.Add(("bind", digested, bound));
+                log.Steps("bind", asking, summed.ToArray());
+            }
         }
     }
 

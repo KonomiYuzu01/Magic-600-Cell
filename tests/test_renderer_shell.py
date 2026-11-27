@@ -3034,6 +3034,46 @@ class D02TrackJ(unittest.TestCase):
             self.assertEqual(track.boundary([{"stage": {"unasked": 2}}, {"stage": {}}, {}]), (2, 2))
 
 
+class D02TwistStallSF3(unittest.TestCase):
+    """SF3 (27 Nov 2026): a binding change at a twist places the host's border rows and refreshes Local's sections once,
+    a readout row given the same slots changes nothing, and a commit adds one History row instead of rebuilding the
+    list twice; the bind's and the key's steps rows name their parts."""
+
+    def test_the_bind_holds_the_host_and_names_its_parts(self):
+        jumble = text(PROJECT / "D02" / "ShellJumble.cs")
+        bind = jumble[jumble.index("public static void Bind(string digests, long revision)"):jumble.index("private static void Rebind(")]
+        self.assertEqual(bind.count("_host?.Hold();"), 2)
+        self.assertIn('Timed("flush", () => _host?.Release());', bind)
+        self.assertLess(bind.index("_host?.Hold();"), bind.index("Feed.Adopt(JumbleFeed.Read(digests, revision));"))
+        self.assertIn('return Kept(path, text => text, "record");', jumble)
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        place = host[host.index("    private void Place()"):]
+        self.assertTrue(place.splitlines()[2].strip().startswith("if (holding > 0) { placeDue = true; return; }"))
+        self.assertIn("if (holding > 0 && --holding == 0 && placeDue) { placeDue = false; Place(); }", host)
+        surface = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleSurface.cs")
+        self.assertEqual(surface.count("RefreshOrHold();"), 7)  # six setters and the section counts
+        readouts = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleReadouts.cs")
+        self.assertIn("if (ReferenceEquals(t, shownTokens) && SameShape(slots))", readouts)
+        shell = text(PROJECT / "Shell.cs")
+        for part in ("state_digest", "bind"):
+            self.assertIn(f'("{part}", ', shell)
+        self.assertIn('keySteps.Add(("chrome." + group.Key, 0, group.Sum(p => p.To - p.From)));', shell)
+
+    def test_a_commit_adds_one_history_row(self):
+        panels = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "SessionPanels.cs")
+        self.assertIn("moves.Changed += Update; moves.Asked += Refresh;", panels)
+        update = panels[panels.index("    public void Update()"):panels.index("    private Control CompletionRow(")]
+        self.assertIn("if (Moves.Revision == was.Revision) return;", update)
+        self.assertIn('Moves.Actions[^1] == "commit " + entry.Id', update)
+        self.assertIn("List.AddChild(row); List.MoveChild(row, 1);", update)
+        self.assertEqual(update.count("Refresh();"), 2)
+        chrome = text(PROJECT / "ShellChrome.cs")
+        start = chrome.index("Moves.Changed += () =>")
+        handler = chrome[start:chrome.index("};", start)]
+        self.assertIn("history.Update();", handler)
+        self.assertNotIn("history.Refresh();", handler)
+
+
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     unittest.main()

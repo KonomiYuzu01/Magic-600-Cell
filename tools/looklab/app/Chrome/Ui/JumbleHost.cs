@@ -171,6 +171,20 @@ public sealed partial class JumbleHost
         Follow(source.State);
     }
 
+    // SF3 (27 Nov 2026): while the shell binds a state (the feed, the totals, the style, the cap map, the ν band, the
+    // tint), the border rows are placed and Local's sections refreshed once, at Release, as the last update left them;
+    // each update placed and refreshed them itself before, four times in a bind (20-28 ms a bind in G1).
+    private int holding;
+    private bool placeDue;
+
+    public void Hold() { holding++; Surface.Hold(); }
+
+    public void Release()
+    {
+        Surface.Release();
+        if (holding > 0 && --holding == 0 && placeDue) { placeDue = false; Place(); }
+    }
+
     // Global's totals for the bound state, or pending while none is bound (ADR-D02.22).
     public void SetTotals(GlobalTotals value)
     {
@@ -579,6 +593,7 @@ public sealed partial class JumbleHost
     // The readout rows on the two borders, while Jumble is on; a rebuilt frame gets fresh rows.
     private void Place()
     {
+        if (holding > 0) { placeDue = true; return; }
         if (!GodotObject.IsInstanceValid(frame) || frame.Global == null || frame.Local == null) return;
         Row(frame.Global, "JumbleTotals", totals, totalsMarked, Source.State.Mode);
         Row(frame.Local, "JumbleCap", cap ?? Array.Empty<ReadoutSlot>(), capMarked, Source.State.Mode && cap != null);

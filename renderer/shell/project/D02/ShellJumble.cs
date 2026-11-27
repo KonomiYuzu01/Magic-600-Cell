@@ -41,6 +41,33 @@ public static class ShellJumble
     public static long StateRevision { get; private set; } = -1;
     /// <summary>The binding changed.</summary>
     public static event Action? BindingChanged;
+
+    /// <summary>
+    /// SF3 (27 Nov 2026): the bind's parts at a newly adopted revision, each a name and its two QPC readings; the shell
+    /// sets a list while the event log is on and writes the parts in its "steps" row.
+    /// </summary>
+    internal static List<(string Name, long From, long To)>? BindParts { get; set; }
+
+    /// <summary>Ends one part of the bind begun at <paramref name="from"/>, while someone collects them; answers now.</summary>
+    internal static long Part(string name, long from)
+    {
+        var now = EventLog.Now();
+        BindParts?.Add((name, from, now));
+        return now;
+    }
+
+    /// <summary>Runs one part of the bind, timed into <see cref="BindParts"/> while someone collects them.</summary>
+    internal static void Timed(string name, Action part)
+    {
+        if (BindParts is not { } parts)
+        {
+            part();
+            return;
+        }
+        var from = EventLog.Now();
+        part();
+        parts.Add((name, from, EventLog.Now()));
+    }
     /// <summary>The view rotation a drag in the Global opening turns (owner, 26 November 2026).</summary>
     public static ShellCamera Camera { get; } = new();
     /// <summary>The wheel zoom of the view under the pointer (owner, 26 November 2026).</summary>
@@ -201,7 +228,8 @@ public static class ShellJumble
             return null;
         }
         var path = Path.Combine(JumbleFolder(), state, "cap-" + cap + ".json");
-        return File.Exists(path) ? File.ReadAllText(path) : null;
+        // SF3 (27 Nov 2026): read once per state and cap; the bind's cap covers and repair list read it again.
+        return Kept(path, text => text, "record");
     }
 
     /// <summary>A named cap's completed covers answer (B11), from its record; none at a blocked cap or without one.</summary>
@@ -339,9 +367,20 @@ public static class ShellJumble
             Unknown(revision);
             return;
         }
-        Feed.Adopt(JumbleFeed.Read(digests, revision));
-        Rebind(bound);
-        InspectPicked();
+        // SF3 (27 Nov 2026): the host places its border rows and refreshes Local's sections once, at the bind's end.
+        _host?.Hold();
+        try
+        {
+            var fed = EventLog.Now();
+            Feed.Adopt(JumbleFeed.Read(digests, revision));
+            Part("feed", fed);
+            Rebind(bound);
+        }
+        finally
+        {
+            Timed("flush", () => _host?.Release());
+        }
+        Timed("inspect", InspectPicked);
     }
 
     /// <summary>
@@ -350,8 +389,16 @@ public static class ShellJumble
     /// </summary>
     public static void Unknown(long revision)
     {
-        Feed.Adopt(Feed.State with { LatticeFlag = false, Revision = revision });
-        Rebind(null);
+        _host?.Hold();
+        try
+        {
+            Feed.Adopt(Feed.State with { LatticeFlag = false, Revision = revision });
+            Rebind(null);
+        }
+        finally
+        {
+            _host?.Release();
+        }
         InspectPicked();
     }
 
@@ -451,7 +498,7 @@ public static class ShellJumble
         binding.Name = "D02BindChip";
         frame.BarTools.AddChild(binding);
         var words = binding.GetChild<Label>(0);
-        BindingChanged += () =>
+        BindingChanged += () => Timed("chip", () =>
         {
             if (!GodotObject.IsInstanceValid(binding))
             {
@@ -462,7 +509,7 @@ public static class ShellJumble
                 ? $"The session's poses are sample state {named}'s, by their two digests"
                 : "No sample state has this session's pose digests: every D02 slot is stale and its readouts pending";
             // SF (27 Nov 2026): the label and tooltip change in place; a frame rebuild here cost 160-560 ms per twist.
-        };
+        });
         try
         {
             LoadSamples();

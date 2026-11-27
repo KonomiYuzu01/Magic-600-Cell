@@ -973,6 +973,24 @@ relative path is from the repository root.
       `m6h_key_down` was p50 46 ms. G1 steps after: `key.post` p50 0.0, p99 1.1 ms; `key.queued` (the commit, on the worker while frames go on) p50 67, p99 80 ms; still on the frame thread: `bind.bind` p50 62, p99 96 ms, and the History row, `key.chrome` p50 25, p99 42 ms. All ten product runs, J1 and both dry runs: no GPU event in the System log.
     - Dry runs (10 s, not evidence): G1 p99 117 ms before and 100 ms after (fps_avg 48.7, then 49.8); G9 p99 217 ms before and 133 ms after (fps_avg 46.4, then 49.0). The bind's in-place updates and the History row (SF2 items 2
       and 3) are open and are what the slow frames are made of.
+    - SF3 (27 November 2026), the bind's updates and the History row: the bind holds the host (`JumbleHost.Hold`) so
+      its border rows are placed and Local's sections refreshed once, at the bind's end (`flush`), not at each `Set*`;
+      a `ReadoutRow` of the same shape updates its changed slots in place; the cap record's text is kept per state
+      (`Kept`). The History list adds the committed row (`HistoryPanel.Update`: the next history revision, its last
+      action that commit, at the end of an unbranched line, no question open), and anything else rebuilds it as before,
+      once per change instead of twice. The `bind` and `key` steps rows now name their parts; a new `shown` row times
+      the chrome at a newly shown revision. Tests: `tests/test_renderer_shell.py` `D02TwistStallSF3`. Per part, G1
+      and G9, two runs each, p50 (p99), before and after: `bind.bind` 46-48 (78-103) and 16-19 (65-72; the largest is
+      the first bind at startup, which parses the style and tint data, outside the gate window); `capmap` 27-29 and
+      4-6; `feed` 7.6 and 2.2-2.4; `totals` 7.1 and 0.01; `flush` 3.4-3.9; `key.chrome` 18.6-19.1 (32.5-36.3) and
+      3.6-4.0 (8.1-9.5), of which the History row is 0.00 and `describe` 1.7-1.9; `shown.describe` 2.7-3.1. All ten
+      product runs, J1 and the four dry runs: no GPU event in the System log.
+    - Dry runs (10 s, not evidence): G1 p99 83.34 and 83.34 ms before, 83.33 and 83.34 after (fps_avg 52.0 and 51.4,
+      then 54.5 and 54.6); G9 p99 83.34 and 83.34 before, 83.33 and 83.33 after (fps_avg 50.9 and 50.9, then 54.6 and
+      54.9). What is left is in the core's present path, not the frame thread: each twist gives one 83.3 ms presented
+      interval (11-15 over 33.4 ms in the window), also where the bind is only `state_digest` (2-4 ms); through it the
+      frame thread keeps its 16 ms cadence (C# steps under 4 ms, `m6h_frame` about 14 ms) while four submitted
+      frames get no `presented` row.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
