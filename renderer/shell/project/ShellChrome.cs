@@ -185,6 +185,7 @@ public sealed class ShellChrome
         frame.AddPane("reference", "Learn", learnPane);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
+        ShellCards? cards = null;
         var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
         frame.AddPane("gallery", "Gallery", gallery);
         string? Unavailable(string command, string? argument) => command switch
@@ -201,6 +202,7 @@ public sealed class ShellChrome
             // B9: the naming and threshold draft rows work; the other draft rows wait for their steps.
             _ when Tuning != null && Tuning.Handles(command) => Tuning.Unavailable(command, argument),
             _ when Jumble != null && Jumble.Handles(command) => Jumble.Unavailable(command, argument),
+            _ when cards != null && ShellCards.Handles(command) => cards.Unavailable(command, argument),
             _ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,
             _ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),
             _ => NotHere,
@@ -302,6 +304,7 @@ public sealed class ShellChrome
                 case "density.preset.set": NextDensity(); break;
                 case var tuned when Tuning != null && Tuning.Handles(tuned): Tuning.Execute(command, argument); break;
                 case var jumble when Jumble != null && Jumble.Handles(jumble): Jumble.Execute(command, argument); break;
+                case var card when cards != null && ShellCards.Handles(card): cards.Execute(command, argument); break;
                 case var handled when sample != null && sample.Handles(handled): sample.Execute(command, argument); break;
             }
         }
@@ -386,7 +389,7 @@ public sealed class ShellChrome
         }
         if (ShellJumble.On)
         {
-            ShellJumble.Attach(parent, frame, palette);
+            ShellJumble.Attach(parent, frame, palette, () => cards?.ObservePicks());
             // B6: the Jumble host in Solve, fed at each shown revision; Local shows its sections.
             var (names, empty, nothing) = ShellJumble.Words(folder);
             var sentences = ShellJumble.Sentences(folder);
@@ -432,6 +435,7 @@ public sealed class ShellChrome
             ShellJumble.Host = host;
             // B15: the tint channel and the focus layers, drawn by the core.
             ShellTint.Attach(host, frame);
+            cards = new ShellCards(frame, host, sentences["totals.unit"]);
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
             Jumble.Changed += Describe;

@@ -345,7 +345,7 @@ public static class ShellJumble
     }
 
     /// <summary>Marks the draft rows in the palette, shows that D02 is on, and adds the driver.</summary>
-    public static void Attach(Control parent, ChromeFrame frame, CommandPalette palette)
+    public static void Attach(Control parent, ChromeFrame frame, CommandPalette palette, Action observePicks)
     {
         palette.DraftRows.UnionWith(DraftIds);
         var state = System.Environment.GetEnvironmentVariable("M600_D02_STATE") is { Length: > 0 } named ? named : "no state";
@@ -377,7 +377,7 @@ public static class ShellJumble
         {
             frame.Say("D02 samples did not load: " + error.Message, true);
         }
-        parent.AddChild(new D02Driver(frame));
+        parent.AddChild(new D02Driver(frame, observePicks));
     }
 }
 
@@ -410,9 +410,12 @@ internal sealed partial class D02Driver : Node
     // The frame's rebuilds since the driver started: a frame that rebuilds every frame never lays its views out.
     private int _rebuilds;
 
-    public D02Driver(ChromeFrame frame)
+    private readonly Action _observePicks;
+
+    public D02Driver(ChromeFrame frame, Action observePicks)
     {
         _frame = frame;
+        _observePicks = observePicks;
         frame.Rebuilt += () => _rebuilds++;
         Name = "D02Driver";
         _folder = System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } folder && Directory.Exists(folder) ? folder : null;
@@ -442,6 +445,7 @@ internal sealed partial class D02Driver : Node
 
     public override void _Process(double delta)
     {
+        _observePicks();
         _age += delta;
         if (_age < SettleSeconds)
         {

@@ -169,6 +169,33 @@ def texts(dump: dict, prefix: str = "") -> list[str]:
     return [text for group, text in map(tuple, dump["lines"]) if group.startswith(prefix)]
 
 
+def expect_pinned_cards(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.24 on wj-ia-300's session fixture: Follow piece 4021 shows its Tracked piece card with its pose row's
+    values; Pin card 17 shows cap 17's card; no reference column before Set reference state; after it the header names
+    the reference and the later cap card (18) shows a reference column; no row is refused."""
+    steps = ["start", "wait 2500 ms", "command card.track 4021", "command card.pin 17", "command card.reference.set",
+             "command card.pin 18", "wait 6000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    tracked = texts(dumps[2], "panel:cards")
+    if "Tracked piece 4021" not in tracked or "Domain" not in tracked or "On lattice" not in tracked:
+        problems.append("step 2: the Cards dock did not show Tracked piece 4021 with its pose row's fields")
+    if "Cap 17" not in texts(dumps[3], "panel:cards"):
+        problems.append("step 3: the Cards dock did not show cap 17's card")
+    if any(line.startswith("Reference:") for i in (2, 3) for line in texts(dumps[i], "panel:cards")):
+        problems.append("a reference header showed before setting a reference state")
+    for i in (4, 5):
+        if not any(line.startswith("Reference: ") for line in texts(dumps[i], "panel:cards")):
+            problems.append(f"step {i}: the Cards dock did not show the reference header")
+    if "Cap 18" not in texts(dumps[5], "panel:cards"):
+        problems.append("step 5: the Cards dock did not show cap 18's card")
+    for i, label in ((2, "Follow piece"), (3, "Pin card"), (4, "Set reference state"), (5, "Pin card")):
+        problems.extend(f"step {i}: {line}" for line in texts(dumps[i], "frame") if line.startswith(label + ": "))
+    print(f"pinned-cards: {sum(1 for line in texts(dumps[5], 'panel:cards') if line.startswith(('Cap ', 'Tracked piece ')))} cards at the end")
+    return problems
+
+
 def local_problems(dump: dict, step: int, cap: int, named: bool, framed: bool = True) -> list[str]:
     """Local is never empty (owner, 26 November 2026): Local draws `cap`; its empty sentence never shows while it
     does; the default's readout (LOCAL_DEFAULT) shows while no cap is named, and the dump names no cap then; a named
@@ -828,13 +855,14 @@ def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list
 
 
 EXPECT = {"twist-row": expect_twist_row, "smoke": expect_smoke, "help-card": expect_help_card, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
+          "pinned-cards": expect_pinned_cards,
           "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
           "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band,
           "fit-2000": expect_fit, "fit-1280": lambda dumps, source, state: expect_fit(dumps, source, state, vertical=False)}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are. The twist scripts (bind and
 # two-views) run in sample mode as well, so they show that J reaches the session's router there too.
-ON_FIXTURE = {"twist-row", "help-card", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
+ON_FIXTURE = {"twist-row", "help-card", "pinned-cards", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
 IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"}
 
 

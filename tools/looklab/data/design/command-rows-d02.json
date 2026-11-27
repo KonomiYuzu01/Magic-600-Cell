@@ -1,7 +1,7 @@
 {
   "format": "magic600-design-command-rows",
   "version": 1,
-  "note": "ADR-D02's draft command rows: operations of the Jumble and research surfaces that the command table does not hold yet, each with the request (section 15) that asks the top integrator for it, or, for the research pane's own rows, the build step whose row request it is (B28, B29). The shell registers them with D02 on, and the research pane's rows whenever the pane is mounted (ResearchRows.AddDrafts). A row is deleted from this file the day the command table gains its id (D02DraftRowsAbsentFromTable). No key is bound here; the palette can bind each one.",
+  "note": "Draft command rows for Jumble, research and pinned cards. Each names its section 15 request, research build step (B28, B29) or design item (ADR-D01.24). The shell registers them with D02 on, and the research pane's rows whenever the pane is mounted (ResearchRows.AddDrafts). A row is deleted from this file the day the command table gains its id (D02DraftRowsAbsentFromTable). No key is bound here; the palette can bind each one.",
   "commands": [
     {
       "id": "jumble.capmap.threshold.set",
@@ -344,6 +344,56 @@
       ],
       "note": "While held, shows the seat's 12 twist keys with their rotation orders. With CR-19, a held seat key with a twist key routes as one chord (ADR-D02.42). Argument: the seat, 1 to 4.",
       "request": "CR-19"
+    },
+    {
+      "id": "card.pin",
+      "label": "Pin card",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Pins the card of a cap (ADR-D01.24). Argument: an optional cap number; without one, the cap of the cell the selected sticker occupies, else the named cap.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "card.unpin",
+      "label": "Unpin card",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Removes the pinned card with the given id, or the newest pinned card when no id is given.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "card.track",
+      "label": "Follow piece",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Pins the Tracked piece, a card that follows a piece (ADR-D01.24, revision 4). Argument: an optional piece number; without one, the selected piece.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "card.reference.set",
+      "label": "Set reference state",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Saves the current state as the one reference state for pinned cards. An optional argument names it.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "card.reference.clear",
+      "label": "Clear reference state",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Clears the reference state for pinned cards.",
+      "request": "ADR-D01.24"
     }
   ]
 }
