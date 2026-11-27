@@ -112,6 +112,10 @@ struct ProductGpu {
     ComPtr<ID3D12QueryHeap> pane_statistics;
     Buffer pane_read;
     std::array<uint32_t, SA2_RING_SLOTS> pane_count{};
+    // Preview uploads are read only by the frame in this ring slot. Reuse the slot after its frame's fence.
+    struct PreviewCopy { Buffer upload; uint64_t version = 0; };
+    struct PreviewBinding { std::array<D3D12_GPU_VIRTUAL_ADDRESS, 3> pose; D3D12_GPU_VIRTUAL_ADDRESS style; };
+    std::array<PreviewCopy, SA2_RING_SLOTS> previews;
     std::array<EngineCopy, EngineCopies> copies;
     Buffer all_visible, no_instances, statics; // a frame without a resource set: every slot drawn, nothing pickable
     std::array<Buffer, SA2_RING_SLOTS> cb;
@@ -796,6 +800,28 @@ struct Scene::Impl {
         copy_into(list, p.no_instances, p.statics, sb::LabelBytes, sb::LabelBytes);
         p.initialized = true;
     }
+    ProductGpu::PreviewBinding preview_binding(uint32_t ring, const PreviewImage& preview) {
+        auto& copy = product_gpu().previews[ring];
+        const auto& pose = preview.poses;
+        const uint64_t style_at = pose.pose_index.size() * sizeof(int32_t);
+        const uint64_t rows_at = style_at + preview.style.size() * sizeof(uint32_t);
+        const uint64_t lattice_at = rows_at + pose.poses.size() * sizeof(float);
+        const uint64_t size = lattice_at + pose.lattice.size() * sizeof(int32_t);
+        if (copy.upload.size < size)
+            copy.upload = buffer(size, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        if (copy.version != preview.version) {
+            auto* data = map(copy.upload);
+            std::memcpy(data, pose.pose_index.data(), size_t(style_at));
+            std::memcpy(data + style_at, preview.style.data(), size_t(rows_at - style_at));
+            std::memcpy(data + rows_at, pose.poses.data(), size_t(lattice_at - rows_at));
+            std::memcpy(data + lattice_at, pose.lattice.data(), size_t(size - lattice_at));
+            copy.upload.resource->Unmap(0, nullptr);
+            copy.version = preview.version;
+        }
+        const auto base = copy.upload.resource->GetGPUVirtualAddress();
+        return {{base, base + rows_at, base + lattice_at}, base + style_at};
+    }
+
     // Copies only the image's bytes; the shaders read pose rows and lattice entries below pose_count only. ABI 7: a
     // piece style goes after the pose arrays' full capacity in the staging buffer.
     void upload_engine(ID3D12GraphicsCommandList* list, ProductGpu::EngineCopy& copy, const EngineImage& image,
@@ -982,12 +1008,13 @@ struct Scene::Impl {
     void product_draw(ID3D12GraphicsCommandList* list, ID3D12PipelineState* pipeline, Buffer& constants_buffer, ProductGpu::EngineCopy& copy,
                       uint64_t set_ticket, D3D12_CPU_DESCRIPTOR_HANDLE rtv, UINT width, UINT height, const float* colour, const D3D12_RECT* pixel,
                       const Buffer* style = nullptr, const Buffer* style_constants = nullptr, const D3D12_RECT* area = nullptr,
-                      bool clear = true, bool turning = false, const Buffer* sticker_colours = nullptr) {
+                      bool clear = true, bool turning = false, const Buffer* sticker_colours = nullptr,
+                      const ProductGpu::PreviewBinding* preview = nullptr, bool before = false) {
         auto& p = product_gpu();
         const auto [visible, instances] = product_set(set_ticket);
         list->SetPipelineState(pipeline); list->SetGraphicsRootSignature(style ? p.styled_root.Get() : p.root.Get());
         if (style) {
-            list->SetGraphicsRootShaderResourceView(20, style->resource->GetGPUVirtualAddress());
+            list->SetGraphicsRootShaderResourceView(20, preview ? preview->style : style->resource->GetGPUVirtualAddress());
             list->SetGraphicsRootConstantBufferView(21, style_constants->resource->GetGPUVirtualAddress());
         }
         list->SetGraphicsRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress());
@@ -996,13 +1023,16 @@ struct Scene::Impl {
         // ADR-D01.52: the frame's sticker colours, or any live buffer for a pick (the ID passes never read t19).
         list->SetGraphicsRootShaderResourceView(style ? 23 : 21, (sticker_colours ? *sticker_colours : geometry[0]).resource->GetGPUVirtualAddress());
         // ADR-D02 B22 item 1: the copy's chart channel, or the zero buffer (no channel: each chart from Hopf coordinates).
-        list->SetGraphicsRootShaderResourceView(style ? 24 : 22, (copy.has_charts ? copy.charts : p.no_instances).resource->GetGPUVirtualAddress());
+        list->SetGraphicsRootShaderResourceView(style ? 24 : 22, (copy.has_charts && !preview ? copy.charts : p.no_instances).resource->GetGPUVirtualAddress());
         // ADR-D02 B18: a turning frame reads the moving bit from the copy's piece style at t4.
         const Buffer* srv[] = {&geometry[0], &geometry[1], &geometry[2], &geometry[3], turning ? &copy.style : &geometry[4], &copy.labels, &geometry[5]};
-        for (UINT i = 0; i < 7; ++i) list->SetGraphicsRootShaderResourceView(i + 1, srv[i]->resource->GetGPUVirtualAddress());
+        for (UINT i = 0; i < 7; ++i)
+            list->SetGraphicsRootShaderResourceView(i + 1, preview && turning && i == 4 ? preview->style : srv[i]->resource->GetGPUVirtualAddress());
         // t7..t16: slot -> piece, pose index, rows, lattice, destination, overlay points, straddles, offsets, visibility, instance IDs.
         const Buffer* additional[] = {&extra[0], &copy.pose[0], &copy.pose[1], &copy.pose[2], &extra[1], &extra[2], &extra[3], &extra[4], visible, instances};
-        for (UINT i = 0; i < 10; ++i) list->SetGraphicsRootShaderResourceView(i + 10, additional[i]->resource->GetGPUVirtualAddress());
+        for (UINT i = 0; i < 10; ++i)
+            list->SetGraphicsRootShaderResourceView(i + 10, preview && !before && i >= 1 && i <= 3
+                ? preview->pose[i - 1] : additional[i]->resource->GetGPUVirtualAddress());
         // ABI 8: a pane's area sets the viewport and the scissor; a composite frame clears only before its first pane.
         const D3D12_VIEWPORT viewport = area
             ? D3D12_VIEWPORT{float(area->left), float(area->top), float(area->right - area->left), float(area->bottom - area->top), 0, 1}
@@ -1570,11 +1600,15 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
     const float* background = product.scene_look().background;
     std::memcpy(p.sticker_colours_data[ring], &product.sticker_colours(), sizeof(StickerColours));
+    const auto preview = plan.preview ? g.preview_binding(ring, *plan.preview) : ProductGpu::PreviewBinding{};
     for (size_t i = 0; i < plan.panes.size(); ++i) {
         const auto& pane = plan.panes[i];
+        const bool preview_pane = (pane.pane.flags & SA2_PANE_PREVIEW) != 0;
+        const bool before = (pane.pane.flags & SA2_PANE_PREVIEW_BEFORE) != 0;
+        const auto pose_count = preview_pane && !before ? plan.preview->poses.pose_count : plan.pose_count;
         const size_t slot = size_t(ring) * SA2_PANES_MAX + i;
         std::array<float, 16> camera; std::copy(std::begin(pane.pane.camera_matrix), std::end(pane.pane.camera_matrix), camera.begin());
-        const auto c = g.product_constants(camera, pane.pane.width, pane.pane.height, plan.pose_count, pane.shape);
+        const auto c = g.product_constants(camera, pane.pane.width, pane.pane.height, pose_count, pane.shape);
         std::memcpy(p.pane_cb_data[slot], &c, sizeof(c));
         ID3D12PipelineState* pso = surface ? p.surface_pso.Get() : p.draw_pso.Get();
         const Buffer* style = nullptr;
@@ -1586,8 +1620,9 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
         scene_require(pso != nullptr, "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
         const D3D12_RECT area{LONG(pane.pane.x), LONG(pane.pane.y), LONG(pane.pane.x + int64_t(pane.pane.width)), LONG(pane.pane.y + int64_t(pane.pane.height))};
         list->BeginQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
-        g.product_draw(list, pso, p.pane_cb[slot], copy, pane.set_ticket, target, input.viewport_width, input.viewport_height, background, nullptr,
-                       style, style ? &p.pane_style_cb[slot] : nullptr, &area, i == 0, pane.shape.turn != 0.0f, &p.sticker_colours[ring]);
+        g.product_draw(list, pso, p.pane_cb[slot], copy, preview_pane ? 0 : pane.set_ticket, target, input.viewport_width, input.viewport_height, background, nullptr,
+                       style, style ? &p.pane_style_cb[slot] : nullptr, &area, i == 0, pane.shape.turn != 0.0f, &p.sticker_colours[ring],
+                       preview_pane ? &preview : nullptr, before);
         list->EndQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
         list->ResolveQueryData(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot), 1, p.pane_read.resource.Get(),
                                uint64_t(ring) * 512 + i * 128);

@@ -168,6 +168,13 @@ struct PanePlan {
     bool styled = false;
     ViewStyle view_style;
 };
+// The preview has its own pose path and packed outline/moving bytes. The adopted labels still supply the colours.
+struct PreviewImage {
+    EngineImage poses;
+    std::vector<uint32_t> style;
+    uint64_t version = 0;
+    bool outlined = false;
+};
 // What a frame draws: the engine ring copy (uploaded first when upload is
 // set, after a CPU wait for upload_wait, the frame that last read the copy's
 // staging), the pose path and the resource set (0: every slot drawn, no
@@ -190,6 +197,7 @@ struct FramePlan {
     // ADR-D02 B22 item 1: the revision's chart channel (null: none; uploaded with the copy, whose key includes it).
     const std::vector<uint32_t>* charts = nullptr;
     uint64_t charts_version = 0;
+    const PreviewImage* preview = nullptr;
 };
 // An ID pass: the frame's camera, viewport, engine copy, resource set and (ABI 6) shape.
 struct PassInput {
@@ -330,6 +338,10 @@ public:
     // writes its turn into a planned frame's or pane's shape.
     void set_transform(uint64_t revision, const float* u, const float* v, float angle, const uint8_t* mask, float phase);
     void turn(ViewShape& shape) const;
+    void set_preview_poses(uint64_t revision, const int32_t* index, uint32_t pieces, const float* poses,
+                           const int32_t* lattice, uint32_t count, const uint8_t* outlined);
+    void set_preview_transform(uint64_t revision, const float* u, const float* v, float angle,
+                               const uint8_t* mask, uint32_t count, float phase);
 
     void check_prepare(const PreparedData& data) const; // removal, epoch, GPU capacity
     uint64_t reserve_ticket() { return next_ticket_++; }
@@ -442,6 +454,8 @@ private:
     uint64_t style_version_ = 0;
     struct Turn { std::array<float, 4> u{}, v{}; float angle = 0.0f; };
     std::optional<Turn> transform_; // ADR-D02 B18: the plane and the drawn angle (phase - 1) * angle
+    std::optional<PreviewImage> preview_;
+    std::optional<Turn> preview_turn_;
     std::array<std::optional<ViewStyle>, SA2_STYLE_SLOTS> view_styles_; // ABI 7: slots 1..4
     std::map<uint64_t, Pick> picks_;
     Counters counters_;

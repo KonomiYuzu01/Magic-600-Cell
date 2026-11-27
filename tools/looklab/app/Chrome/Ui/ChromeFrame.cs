@@ -118,7 +118,7 @@ public sealed partial class ViewFrame : PanelContainer
 public sealed partial class ChromeFrame : Control
 {
     private sealed record DockPanel(DockSide Side, string Id, string Title, string Glyph, Control Content);
-    private sealed record Pane(string Id, string Title, Control Content, ViewBinding? Binding = null);
+    private sealed record Pane(string Id, string Title, Control Content, ViewBinding? Binding, Func<IEnumerable<Rect2>>? Openings);
 
     public FrameModel Model { get; } = new();
     public TokenSet Tokens { get; private set; }
@@ -258,11 +258,21 @@ public sealed partial class ChromeFrame : Control
 
     // A free view passes its source (ADR-D01.42), named on the binding chip in its head; a pane that is no view of a
     // state (the editor, Learn, the gallery) passes none.
-    public void AddPane(string id, string title, Control content, ViewBinding? binding = null)
+    public void AddPane(string id, string title, Control content, ViewBinding? binding = null, Func<IEnumerable<Rect2>>? openings = null)
     {
         content.SizeFlagsVertical = SizeFlags.ExpandFill; content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        panes[id] = new Pane(id, title, content, binding); dirty = true;
+        panes[id] = new Pane(id, title, content, binding, openings); dirty = true;
     }
+
+    public void RemovePane(string id)
+    {
+        if (!panes.Remove(id, out Pane? pane)) return;
+        ChromeWidgets.Detach(pane.Content);
+        if (Model.IsOpen(id)) Model.Close(id);
+        dirty = true;
+    }
+
+    internal IEnumerable<Rect2> FreeOpenings => panes.Values.SelectMany(p => p.Openings?.Invoke() ?? Array.Empty<Rect2>());
 
     public ViewBinding? BindingOf(string id) => panes.TryGetValue(id, out Pane? pane) ? pane.Binding : null;
 
@@ -673,6 +683,7 @@ public sealed partial class ChromeFrame : Control
         Button close = ChromeWidgets.Tool("", "Close " + active); ChromeIcons.Apply(close, "pane.close", Tokens.Px("icon.small")); close.Pressed += () => Model.Close(active); tabs.AddChild(close);
         var body = new PanelContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
         group.AddChild(body);
+        if (OpenGround && panes.TryGetValue(active, out Pane? drawn) && drawn.Openings != null) body.ThemeTypeVariation = "FrameOpen";
         body.AddChild(panes.TryGetValue(active, out Pane? pane) ? pane.Content : ChromeWidgets.Empty("pane.close", "Pane not available"));
         return group;
     }
@@ -691,12 +702,15 @@ public sealed partial class ChromeFrame : Control
 internal sealed partial class GroundMask : Control
 {
     private readonly ChromeFrame frame; private Rect2 last, lastLocal;
+    private Rect2[] free = Array.Empty<Rect2>();
     public GroundMask(ChromeFrame frame) { this.frame = frame; Name = "GroundMask"; MouseFilter = MouseFilterEnum.Ignore; }
 
     public override void _Process(double delta)
     {
         Rect2 now = frame.Opening, local = frame.LocalOpening;
-        if (now != last || local != lastLocal) { last = now; lastLocal = local; QueueRedraw(); }
+        Rect2[] openings = frame.FreeOpenings.ToArray();
+        if (now != last || local != lastLocal || !free.SequenceEqual(openings))
+        { last = now; lastLocal = local; free = openings; QueueRedraw(); }
     }
 
     // B18c: the ground with both openings cut out, Global's and Local's (ViewPanes.Ground).
@@ -705,12 +719,14 @@ internal sealed partial class GroundMask : Control
         Color ground = frame.Tokens.C("window.background");
         var all = new PaneRect(0, 0, (int)Math.Ceiling(Size.X), (int)Math.Ceiling(Size.Y));
         var holes = new List<PaneRect>();
-        foreach (Rect2 open in new[] { last, lastLocal })
+        void Cut(Rect2 open)
         {
-            if (!open.HasArea()) continue;
+            if (!open.HasArea()) return;
             Vector2 at = open.Position - GlobalPosition;
             holes.Add(new PaneRect((int)Math.Round(at.X), (int)Math.Round(at.Y), (int)Math.Floor(open.Size.X), (int)Math.Floor(open.Size.Y)));
         }
+        foreach (Rect2 open in new[] { last, lastLocal }) Cut(open);
+        foreach (Rect2 open in free) Cut(open);
         foreach (PaneRect piece in ViewPanes.Ground(all, holes)) DrawRect(new Rect2(piece.X, piece.Y, piece.Width, piece.Height), ground);
     }
 }

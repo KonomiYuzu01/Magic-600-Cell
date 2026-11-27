@@ -164,7 +164,7 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
             "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes",
             "sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set",
-            "sa2_charts_set"};
+            "sa2_charts_set", "sa2_preview_poses_set", "sa2_preview_transform_set"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -209,6 +209,8 @@ void run_cpu(Suite& suite, const Options& options) {
         invalid(sa2_device_removed_reason(nullptr, &hr), "sa2_device_removed_reason");
         invalid(sa2_detach(nullptr), "sa2_detach");
         invalid(sa2_last_error(nullptr, nullptr, 0), "sa2_last_error");
+        invalid(sa2_preview_poses_set(nullptr, 1, nullptr, 0, nullptr, nullptr, 0, nullptr), "sa2_preview_poses_set");
+        invalid(sa2_preview_transform_set(nullptr, 1, nullptr, nullptr, 0, nullptr, 0, 0), "sa2_preview_transform_set");
     });
     suite.check("last error truncation", [] {
         invalid(sa2_detach(nullptr), "sa2_detach");
@@ -1376,6 +1378,75 @@ void run_cpu(Suite& suite, const Options& options) {
         product.commit(input, one, 2, 1);
         product.produced(2, 100, 7);
         expect(wrong_state([&] { product.pane_rows(2, rows, 4); }), "a one-view frame answered pane rows");
+    });
+    suite.check("preview poses and panes", [] {
+        sa2::Product product;
+        EngineArrays engine(1, 1), preview(1, 2);
+        product.adopt(sa2::engine_image(&engine.image));
+        auto input = frame_input(1, 1);
+        sa2_pane panes[2]{};
+        for (uint32_t i = 0; i < 2; ++i) {
+            panes[i].view = i + 1; panes[i].view_generation = 1;
+            panes[i].x = int32_t(i * 128); panes[i].width = 128; panes[i].height = 256;
+            std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), std::begin(panes[i].camera_matrix));
+        }
+        panes[1].flags = SA2_PANE_PREVIEW;
+        const auto plan = [&] { return product.plan_panes(input, panes, 2, 256, 256); };
+        expect(rejects(plan), "a preview pane without a pose set was accepted");
+
+        preview.pose_index[0] = 1;
+        preview.poses[16] = preview.poses[21] = -1.0f;
+        std::vector<uint8_t> mask(SA2_PIECES, 0);
+        mask[0] = 1;
+        const auto set = [&](uint64_t revision, uint32_t pieces) {
+            product.set_preview_poses(revision, preview.pose_index.data(), pieces, preview.poses.data(), preview.lattice.data(), 2, mask.data());
+        };
+        expect(rejects([&] { set(2, SA2_PIECES); }) && rejects([&] { set(1, SA2_PIECES - 1); }),
+            "an invalid preview revision or piece count was accepted");
+        const float u[4]{1, 0, 0, 0}, v[4]{0, 1, 0, 0};
+        product.set_transform(1, u, v, 1.0f, mask.data(), 0.5f);
+        product.observe_removal(int32_t(0x887A0005));
+        set(1, SA2_PIECES);
+        product.set_preview_transform(1, u, v, 1.0f, mask.data(), SA2_PIECES, 0.25f);
+        product.recovered(sa2::DeviceEpoch + 1);
+        input.device_epoch = sa2::DeviceEpoch + 1;
+        expect(rejects([&] { product.set_preview_transform(1, u, v, 1.0f, mask.data(), SA2_PIECES, 1.25f); }),
+            "an invalid preview phase was accepted");
+        const auto drawn = plan();
+        expect(drawn.image->pose_index[0] == 0 && drawn.pose_count == 1
+            && drawn.preview && drawn.preview->poses.pose_index[0] == 1 && drawn.preview->poses.pose_count == 2
+            && drawn.panes[0].shape.turn == -0.5f && drawn.panes[1].shape.turn == 0.25f,
+            "the preview or the main pane lost its independent pose and transform across recovery");
+
+        panes[1].flags |= SA2_PANE_PREVIEW_BEFORE;
+        expect(plan().panes[1].shape.turn == 0, "the Before pane applied a transform");
+        panes[1].flags = SA2_PANE_PREVIEW;
+        PreparationArrays arrays(2, 1, 1);
+        arrays.value.device_epoch = input.device_epoch;
+        arrays.value.base_revision = input.engine_revision;
+        const auto prepared = ready_set(product, sa2::preparation(&arrays.value), 0);
+        const uint8_t stamp[32]{};
+        product.activate(prepared.second, stamp);
+        panes[1].resource_set = prepared.second;
+        product.commit(input, plan(), 1, 0);
+        product.produced(1, 100, 1);
+        const auto pick = product.pick_plan(1, 180, 10);
+        expect(!pick.pass && pick.state == SA2_PICK_READY && pick.pane == 1, "the preview pane could be picked");
+
+        input.sequence = 2;
+        panes[1].resource_set = 0;
+        panes[1].flags = 0;
+        const auto plain = plan();
+        expect(!plain.preview && plain.panes[0].shape.turn == -0.5f && plain.panes[1].shape.turn == -0.5f,
+            "a set without a flagged pane affected the frame");
+        panes[1].flags = SA2_PANE_PREVIEW;
+        product.set_preview_poses(1, nullptr, 0, nullptr, nullptr, 0, nullptr);
+        expect(rejects(plan), "clearing left a preview");
+        set(1, SA2_PIECES);
+        EngineArrays next(2, 1);
+        product.adopt(sa2::engine_image(&next.image));
+        input.engine_revision = 2;
+        expect(rejects(plan), "a new adoption kept the old preview");
     });
     // ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending
     // three owner-machine checks): the argument checks, the present ledger's

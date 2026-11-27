@@ -1194,7 +1194,7 @@ SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_vi
  * as a one-view frame's. Each pane names its view, view generation, resource set (0: every slot drawn, nothing
  * pickable), rectangle in target pixels, camera matrix and style slot (0: no style, else 1 to SA2_STYLE_SLOTS); its
  * shape is its view's (ABI 6). Rectangles lie inside the target and do not overlap; a count of 0 or above
- * SA2_PANES_MAX, an empty rectangle, nonzero flags or a non-finite camera is SA2_E_INVALID_ARGUMENT. Two panes may
+ * SA2_PANES_MAX, an empty rectangle, unknown flags or a non-finite camera is SA2_E_INVALID_ARGUMENT. Two panes may
  * name one view (a held split with two styles). Every pane's resource set must be active, stamped for its view and
  * view generation, and prepared at the frame's engine revision; otherwise the whole frame is refused
  * (SA2_E_WRONG_STATE) and nothing is drawn. Each view keeps its own publication generation: the first pane's set is
@@ -1295,9 +1295,11 @@ SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_vi
  * A pane with SA2_PANE_ANTIPODE in its flags draws its view's raw chart after -I (a proper rotation of R4, determinant
  * +1, so the handedness is shared): the antipode chart, centred on -p. Its anchor test is half-open: dot(-c, p) > h. At
  * h = 0 every sticker is therefore drawn in exactly one of the two panes. Under any other projection the flag changes
- * nothing. A pick on such a pane draws its ID pass after -I as well. Any other pane flag is refused. */
+ * nothing. A pick on such a pane draws its ID pass after -I as well. Preview flags are described below. */
 #define SA2_PROJECTION_STEREOGRAPHIC 2u
 #define SA2_PANE_ANTIPODE 1u
+#define SA2_PANE_PREVIEW 2u
+#define SA2_PANE_PREVIEW_BEFORE 4u
 
 /* ABI 10: a view's layout (ADR-D02 build step B23, bare; a candidate behind the shell's --d02): Global opens on the
  * Hopf rings, Look Lab's GlobalLayout ring charts. Additive: every ABI 9 call, struct and behaviour is unchanged, and
@@ -1402,6 +1404,24 @@ SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look)
  * are another count and a cell id past 599. Chain, focus, slice and raw views never read it.
  */
 SA2_API int32_t sa2_charts_set(sa2_context* ctx, uint64_t revision, const uint32_t* charts, uint32_t count);
+
+/* ADR-D01.10 (additive ABI 10). A preview is bound to the adopted revision. The pose arrays have the same layout
+ * and validity rules as sa2_engine_image. piece_count must be SA2_PIECES. outlined is optional, with a 0 or 1
+ * per piece (palette entry 15 in the pane's style slot). A null pose_index clears the preview; the other pointers
+ * and counts must then be null and zero. A new pose set also clears the preview's transform.
+ *
+ * SA2_PANE_PREVIEW draws the set's poses, and SA2_PANE_PREVIEW | SA2_PANE_PREVIEW_BEFORE draws the adopted poses
+ * without either transform. Both draw the complete labelled state in the projection chain, with the preview outline,
+ * and answer no pick.
+ * A preview pane without a set, or the BEFORE modifier without PREVIEW, is refused.
+ *
+ * The optional transform rotates the moving pieces (one 0 or 1 per piece, moving_count == SA2_PIECES) by
+ * phase * angle from the uploaded prefix poses. The plane and angle follow sa2_transform_set. Null mask, null
+ * plane vectors and moving_count 0 clear the transform. Both calls validate the revision and arguments before
+ * changing the device-free state. They work during device loss, survive recovery, and are dropped on adoption or
+ * scene unload. Other panes retain their adopted pose, transform and style bindings. */
+SA2_API int32_t sa2_preview_poses_set(sa2_context* ctx, uint64_t revision, const int32_t* pose_index, uint32_t piece_count, const float* poses, const int32_t* pose_lattice, uint32_t pose_count, const uint8_t* outlined);
+SA2_API int32_t sa2_preview_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle, const uint8_t* moving_mask, uint32_t moving_count, float phase);
 
 #ifdef __cplusplus
 }

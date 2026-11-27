@@ -138,6 +138,13 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_scene_look",
         "m6h_grip_report",
         "m6h_grip_set",
+        "m6h_preview_bind",
+        "m6h_preview_build",
+        "m6h_preview_scrub",
+        "m6h_preview_clear",
+        "m6h_preview_args",
+        "m6h_preview_moved",
+        "m6h_preview_report",
     };
 
     /// <summary>A submitted frame, as m6h_frame writes it (the Rust M6hFrame).</summary>
@@ -392,6 +399,7 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>ADR-D02 B21: the raw view's pane flag, its stereographic chart after -I (SA2_PANE_ANTIPODE).</summary>
     public const uint PaneAntipode = 1;
+    public const uint PanePreview = 2, PanePreviewBefore = 4;
 
     /// <summary>The focus's perspective projection (the shape's d4).</summary>
     public const uint ProjectionPerspective = 0;
@@ -875,6 +883,49 @@ public sealed unsafe class HostLibrary : IDisposable
     /// "pose_lattice_sha256"}, the last two null with Jumble off.
     /// </summary>
     public int StateDigest(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_state_digest"])(host);
+
+    // The existing function table stays fixed. CoreLibrary holds the loaded module for these addresses' lifetime.
+    public int BindPreviewCore(IntPtr host, string corePath)
+    {
+        var core = NativeLibrary.Load(corePath);
+        try
+        {
+            NativeLibrary.TryGetExport(core, "sa2_preview_poses_set", out var poses);
+            NativeLibrary.TryGetExport(core, "sa2_preview_transform_set", out var transform);
+            return ((delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, int>)_exports["m6h_preview_bind"])(host, poses, transform);
+        }
+        finally { NativeLibrary.Free(core); }
+    }
+
+    public int BuildPreview(IntPtr host, IReadOnlyList<Letter> letters)
+    {
+        var pairs = new uint[letters.Count * 2];
+        for (int i = 0; i < letters.Count; i++)
+        {
+            pairs[2 * i] = (uint)letters[i].Cap;
+            pairs[2 * i + 1] = (uint)letters[i].Item;
+        }
+        fixed (uint* data = pairs)
+            return ((delegate* unmanaged[Cdecl]<IntPtr, uint*, uint, int>)_exports["m6h_preview_build"])(host, data, (uint)letters.Count);
+    }
+
+    public int ScrubPreview(IntPtr host, ulong id, int prefix, float phase) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, float, int>)_exports["m6h_preview_scrub"])(host, id, (uint)prefix, phase);
+
+    public int ClearPreview(IntPtr host) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_preview_clear"])(host);
+
+    public int PreviewArgs(IntPtr host, ulong id, int letter) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, int>)_exports["m6h_preview_args"])(host, id, (uint)letter);
+
+    public int PreviewMoved(IntPtr host, ulong id, byte[] moved)
+    {
+        fixed (byte* bytes = moved)
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, byte*, uint, int>)_exports["m6h_preview_moved"])(host, id, bytes, (uint)moved.Length);
+    }
+
+    public int PreviewReport(IntPtr host) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_preview_report"])(host);
 
     /// <summary>D02's exact cap, frames, key items and press summary. The JSON is read through <see cref="Answer"/>.</summary>
     public int GripReport(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_grip_report"])(host);

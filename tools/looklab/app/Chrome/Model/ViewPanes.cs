@@ -28,6 +28,10 @@ public static class ViewPanes
 {
     public const int MaxPanes = 4;
 
+    // A split Local leaves one opening for the preview. The chosen side returns when there is space again.
+    public static PreviewSide Comparison(PreviewSide side, int mainPanes) =>
+        side == PreviewSide.Both && mainPanes + 2 > MaxPanes ? PreviewSide.After : side;
+
     // The surface and the panes for openings given in window pixels. Refused: no opening, a fifth, an empty one, or
     // two that overlap.
     public static PaneLayout Layout(IReadOnlyList<PaneSpec> openings)

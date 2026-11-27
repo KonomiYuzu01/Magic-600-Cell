@@ -53,6 +53,8 @@ CPU_CHECKS = {
     "piece style",
     # ABI 8: the composite frame: its checks, its pane rows and a pick that resolves its pane.
     "pane arguments",
+    # ADR-D01.10: independent preview poses and motion, validation, recovery, and no ID pass.
+    "preview poses and panes",
     # ADR-D02 B21: the raw view's focus and the antipode chart's handedness.
     "raw view",
 }

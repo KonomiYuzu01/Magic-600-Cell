@@ -1494,6 +1494,33 @@ same `GripFrame` as the views.
 - Shell: `D02/ShellGripKeys.cs` hands `ShellGrip.Model` to the key map and dumps its grip caps and stamps (`keycaps`).
   Run: `d02_run.py --script grip-keycaps --state wj-ia-300`.
 
+**As built (ADR-D01.10's preview view, with what ADR-D01.11's commit bar needs; 27 November 2026, branch
+`claude/d02-research`, gpt-6.2-sol call 20261127T084324Z-7bc36885).** A staged repair is a whole-only preview drawn in its
+own pane; the main pair keeps the committed state.
+- Core (ABI 10, no new number, as B18 and B22 added theirs): `sa2_preview_poses_set` binds a preview pose set (pose index,
+  poses, lattice, outline) to the adopted revision and `sa2_preview_transform_set` the current step's motion. A pane with
+  `SA2_PANE_PREVIEW` draws them through the existing shaders by re-binding the pose path's buffers (no shader change);
+  `SA2_PANE_PREVIEW_BEFORE` draws the adopted poses with both transforms off. Preview panes answer no picks; the set survives
+  recovery and is dropped by a newer adoption or a scene unload. Panes without the flags draw as before.
+- Host (version 14, no new number; `renderer/bridge/host/src/preview.rs`): `m6h_preview_bind`, `_build`, `_scrub`, `_clear`,
+  `_args`, `_moved` and `_report`. The build replays each letter on a copy of the head's poses, gives the exact digest at
+  every prefix, and converts each prefix through the adoption's pose path; it commits nothing. Jumble off is refused.
+- Shared chrome: `Model/RepairPreview.cs` builds a fresh preview from `RepairStage`'s staged word under a new id (settle
+  interval, ADR-D01.9); `PreviewModel` gains whole-only (commit writes the whole word wherever the scrub is, rev6 .12),
+  moved counts per step and in total; `PreviewPanel` in `Ui/SessionPanels.cs` draws the witness sequence, the counts, the
+  orbit effects and the protection verdict; the frame's free view carries a binding chip "preview #id" and a close button.
+- Shell: `D02/ShellPreview.cs`. The preview opens as a free view whose opening is a further pane after Global's and Local's;
+  Global and Local show a pending chip only. `view.preview.scrub` steps (Left, Right), `preview.side.*` set the comparison
+  (Both falls back to After when the slice split leaves no fourth pane), and preview steps animate on motion row
+  `twist.preview`. Esc (`operation.preview.cancel`) or the close button clears the preview and the staged word. Ctrl+Enter
+  (`operation.preview.commit`) or the commit bar commits through the existing route: one `m6h_invoke` of
+  `jumble.twist.menu` per letter, in order, with `Turns::twist_letter`'s arguments; the head digest must then equal the
+  preview's after digest. The palette cannot commit. One labelled entry per commit waits for CR-15 and K2.
+- Script option: the draft row `preview.overlay.script.toggle` draws a marked overlay of the preview's moved set over the
+  committed state in both main views; off by default.
+- Run: `d02_run.py --script preview --state wj-ia-300` (row 1 of cap 150: three letters, 4,637 pieces moved; the commit
+  advances the head by three revisions to the preview's after digest).
+
 ## 3. Checkpoints
 
 Each checkpoint is one read of the named diff range against the questions below, about an hour, plus what the owner is shown. Only blockers and majors stop the next block.

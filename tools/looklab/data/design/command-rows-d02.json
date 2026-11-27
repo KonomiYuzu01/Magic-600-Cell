@@ -499,5 +499,15 @@
       "note": "Changes the grip's marks and twist keys together.",
       "request": "ADR-D01.75"
     }
+  ],
+  "preview": [
+    {
+      "id": "preview.overlay.script.toggle",
+      "label": "Preview overlay",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "Draft. Toggles the marked script overlay of the staged preview in Global and Local. Off by default.",
+      "request": "ADR-D01.10"
+    }
   ]
 }

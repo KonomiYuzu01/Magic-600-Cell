@@ -2217,6 +2217,22 @@ int32_t sa2_charts_set(sa2_context* ctx, uint64_t revision, const uint32_t* char
         return SA2_OK;
     });
 }
+int32_t sa2_preview_poses_set(sa2_context* ctx, uint64_t revision, const int32_t* pose_index, uint32_t piece_count,
+                             const float* poses, const int32_t* pose_lattice, uint32_t pose_count, const uint8_t* outlined) {
+    return invoke(ctx, "sa2_preview_poses_set", [&] {
+        context(ctx);
+        product_scene(ctx).product.set_preview_poses(revision, pose_index, piece_count, poses, pose_lattice, pose_count, outlined);
+        return SA2_OK;
+    });
+}
+int32_t sa2_preview_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4],
+                                 float angle, const uint8_t* moving_mask, uint32_t moving_count, float phase) {
+    return invoke(ctx, "sa2_preview_transform_set", [&] {
+        context(ctx);
+        product_scene(ctx).product.set_preview_transform(revision, plane_u, plane_v, angle, moving_mask, moving_count, phase);
+        return SA2_OK;
+    });
+}
 }
 
 // ADR-D02 B20: the self-test's reading of the newest harvested product frame's pipeline statistics: its frame, vertex

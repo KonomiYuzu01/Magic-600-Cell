@@ -63,6 +63,8 @@ public sealed class ShellChrome
     private readonly Readout? _queue;
     private readonly HashSet<Key> _taken = new();
     private readonly Func<string, string?, string?> _unavailable;
+    private readonly ShellPreview? _preview;
+    private readonly HashSet<Key> _previewKeys = new();
     private readonly Action<Vector2>? _openContextMenu;
     private ulong _shown;
 
@@ -160,6 +162,7 @@ public sealed class ShellChrome
         frame.AddDockPanel(DockSide.Left, "tokens", "Tokens", "panel.tokens", specimen);
         foreach (var pane in Panes)
         {
+            if (pane.Id == ShellPreview.Pane && live && ShellJumble.On && !SampleOn) continue;
             // The preview view is a free view bound to the preview (ADR-D01.10, ADR-D01.42), drawn or not.
             frame.AddPane(pane.Id, pane.Title, ChromeBody.PaneState("notdrawn", pane.Title + ": " + NotHere),
                 pane.Id == "preview" ? ViewBinding.Preview : null);
@@ -180,6 +183,7 @@ public sealed class ShellChrome
         // layout roll), so the sample's controls reach a row; the palette marks each one "draft row" (owner's bug list,
         // 26 November 2026: the Library branches would not open).
         string[] sampleDrafts = [];
+        IReadOnlyList<string> previewDrafts = Array.Empty<string>();
         if (SampleOn)
         {
             var draftRows = File.ReadAllText(Path.Combine(folder, "command-rows-draft.json"));
@@ -190,6 +194,10 @@ public sealed class ShellChrome
             // ADR-D01.68: the setup slot under the Target, on the sample's solving surface; its rows are ADR-D02 draft rows.
             sampleDrafts = [.. sampleDrafts, .. SetupRows.AddDrafts(registry, File.ReadAllText(Path.Combine(folder, "command-rows-d02.json")))];
         }
+        else if (live && ShellJumble.On)
+        {
+            previewDrafts = ShellPreview.AddRows(registry, folder);
+        }
         // B28: the research pane, a centre peer of the pair in Analyse; it registers its draft rows in either mode (C5-5),
         // and in sample mode reads the synthetic sample.
         ShellResearch.Load(frame, registry, folder, SampleOn, () => Moves.Entries.Count);
@@ -199,6 +207,7 @@ public sealed class ShellChrome
         var learnPane = new LearnPane(new LearnModel(helpCatalog), () => frame.Tokens);
         frame.AddPane("reference", "Learn", learnPane);
         SampleMount? sample = null;
+        ShellPreview? preview = null;
         // ADR-D01.74: the key map in either mode; outside sample mode the keymaps folder's key sets.
         KeyMapPanel? keyMap = null;
         KeySets? keySets = null;
@@ -217,6 +226,7 @@ public sealed class ShellChrome
             _ when ShellSession.Handles(command) => ShellSession.Unavailable(command),
             _ when ShellExplore.Handles(command) => ShellExplore.Unavailable(argument),
             _ when ShellScene.Handles(command) => null,
+            _ when preview != null && ShellPreview.Handles(command) => preview.Unavailable(command),
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             "menu.context.open" when contextMenus != null => null,
             "target.current.set" when pickedTarget != null && argument == null => null,
@@ -243,6 +253,7 @@ public sealed class ShellChrome
         var commands = new PaletteModel(registry, keymap, gated);
         var palette = new CommandPalette(commands, () => frame.Tokens);
         palette.DraftRows.UnionWith(sampleDrafts);
+        palette.DraftRows.UnionWith(previewDrafts);
         palette.DraftRows.UnionWith(ShellResearch.DraftIds);
         frame.Overlays.AddChild(palette);
         var sheet = new ShortcutSheet(registry, keymap, () => frame.Tokens);
@@ -320,7 +331,7 @@ public sealed class ShellChrome
                 frame.Say(KeyMapModel.Said(keySets.Name, KeyMapModel.Changes(before, keymap, registry)));
             }
         }
-        void ExecuteAt(string command, string? argument, Vector2? pointer)
+        void ExecuteAt(string command, string? argument, Vector2? pointer, UserEvent? asked = null)
         {
             if (ShellJumble.On) ShellGrip.CancelGesture();
             if (gated(command, argument) is { } why)
@@ -331,6 +342,9 @@ public sealed class ShellChrome
             sample?.Echo(command, argument);
             switch (command)
             {
+                case var p when preview != null && ShellPreview.Handles(p):
+                    preview.Execute(command, argument, asked);
+                    break;
                 // B28: the research rows (a rename is workspace.set research.names:<ref>=<name>), before workspace.set.
                 case var research when ShellResearch.Model != null && ResearchModel.Handles(research, argument):
                     ShellResearch.Execute(frame, command, argument);
@@ -411,7 +425,8 @@ public sealed class ShellChrome
         {
             researchPane.Command += Execute;
         }
-        palette.Run += row => Execute(row.Command, row.Argument);
+        palette.Run += row => ExecuteAt(row.Command, row.Argument, null,
+            row.Command == ShellPreview.CommitRow ? null : UserEvent.Click("command palette"));
         helpCard.Learn += link => { Execute(link.Command, link.Argument); learnPane.Select(link.TopicId); };
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         radial.Let += menu => frame.Say(RadialHold.Let(menu.Label));
@@ -420,7 +435,7 @@ public sealed class ShellChrome
         // ADR-D01.20: a radial menu opened by its key follows the pointer while that key stays down.
         frame.KeyCommand += binding =>
         {
-            Execute(binding.Command, binding.Argument);
+            ExecuteAt(binding.Command, binding.Argument, null, UserEvent.Key(binding.Key));
             if (radial.IsOpen && radial.Menu?.Id == binding.Command) radial.Hold(binding.Key);
         };
         frame.RowCommand += Execute;
@@ -443,9 +458,8 @@ public sealed class ShellChrome
         gallery.PaletteChosen += ShellScene.ChoosePalette;
         gallery.MotionChanged += () => appearance.Edit(a => a.ReducedMotion = gallery.Motion.Reduced, true, false);
 
-        // The commit bar is the frame's own; the host stages no preview yet, so it stays empty.
         var bar = new CommitBar(new PreviewModel(), () => frame.Tokens) { CommitKeys = keymap.KeysFor("operation.preview.commit", null) };
-        bar.Command += Execute;
+        bar.Command += (row, argument) => ExecuteAt(row, argument, null, UserEvent.Click("commit bar"));
         keysTaken += k => bar.CommitKeys = k.KeysFor("operation.preview.commit", null);
         if (sample == null)
         {
@@ -520,6 +534,12 @@ public sealed class ShellChrome
             Jumble.PaletteWords = paletteWords;
             // B7: Global's totals follow the bound state, pending while none is bound; B8: so does the cap map.
             var host = Jumble;
+            if (sample == null && parent is Shell shell)
+            {
+                _preview = preview = shell.AttachPreview(frame, host, bar,
+                    () => (motions.Seconds("twist.preview", design, look.ReducedMotion), design.Curves[motions["twist.preview"].Curve]),
+                    CommitPreviewLetter, (row, argument) => ExecuteAt(row, argument, null, UserEvent.Click("preview")));
+            }
             var layout = ShellJumble.Layout();
             // B11: the focus layers of Global and Local take the three predicates; the pose rows count them.
             if (sample != null)
@@ -699,6 +719,26 @@ public sealed class ShellChrome
             _taken.Add(key.PhysicalKeycode);
         }
         return takes;
+    }
+
+    // Preview bindings take precedence over a focused repair list. Text and transients keep their own keys.
+    internal bool TakePreviewKey(InputEventKey key)
+    {
+        if (!key.Pressed) return _previewKeys.Remove(key.PhysicalKeycode);
+        if (_previewKeys.Contains(key.PhysicalKeycode)) return true;
+        if (_preview is not { Pending: true } || Frame.KeyCapture != null || Frame.OpenOverlay != null
+            || Frame.GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return false;
+        var name = Keymap.KeyName(key.CtrlPressed, key.AltPressed, key.ShiftPressed, OS.GetKeycodeString(key.Keycode));
+        if (Frame.Keys?.Resolve(name, Frame.KeyContexts()) is not { } binding || !ShellPreview.Handles(binding.Command)) return false;
+        _previewKeys.Add(key.PhysicalKeycode);
+        if (!key.Echo) Frame.Press(name);
+        return true;
+    }
+
+    private void CommitPreviewLetter(string move, ulong revision)
+    {
+        var name = $"Twist {move}";
+        Moves.Commit("hand", name, DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture), $"{name} at revision {revision}", new[] { move });
     }
 
     /// <summary>A key name of the key map ("L", "Shift+L") as the router's physical chord ("KeyL", "Shift+KeyL").</summary>
