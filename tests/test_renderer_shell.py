@@ -2534,9 +2534,11 @@ class D02TrackJ(unittest.TestCase):
             self.assertTrue(entry["why"], row)
             self.assertIn(row, set(rows) | rules | {track.REPAIR_PART})
             self.assertEqual("palette" in entry, row in rows, row)
-        for row in ("view.mode.raw", "view.mode.raw.clip", "view.mode.raw.antipode", "view.preset.global.ring_sheet",
-                    "view.preset.global.hopf_rings"):
-            self.assertIn(row, session["not_run"], "B21 and B22's rest wait")
+        for row in ("view.mode.raw", "view.mode.raw.clip", "view.mode.raw.antipode"):
+            self.assertIn(row, session["not_run"], "B21 waits")
+        for row in ("view.preset.global.ring_sheet", "view.preset.global.hopf_rings", "view.preset.global.chart",
+                    "view.preset.global.chain", "look.sticker_palette.set", "look.scene.set"):
+            self.assertNotIn(row, session["not_run"], "B22's rest and ADR-D01.52/.49 run")
 
     def test_j1_counts_reach_and_lists_what_it_does_not_run(self):
         track = shell_module("track_j")
@@ -2577,6 +2579,38 @@ class D02TrackJ(unittest.TestCase):
                 track.j1(dict(session(rows, rows[1:]), not_run={"9": {"why": "no such rule"}}), out / "bad", None,
                          player=player)
             self.assertEqual(track.main(["--reduced", "--only", "j1", "--out", str(out / "pass")]), 2)
+
+
+class D02SceneLook(unittest.TestCase):
+    def test_the_scene_look_expectation_checks_changes_without_touching_state_or_style(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["scene-look"], run.expect_scene_look)
+        self.assertIn("scene-look", run.ON_FIXTURE)
+        looks = run.load(run.DESIGN / "themes" / "graphite.json")["sceneLooks"]
+        backgrounds = {"solving": "#04060b", "celebrating": "#040101", "inspecting": "#15161a"}
+        scene_export, palette_export = "m6h_set_scene_look", "m6h_set_sticker_colours"
+        dumps = []
+        for step, look, palette in run.SCENE_LOOK_STEPS:
+            lines = []
+            if step == "chord Enter" or step.startswith("command look.scene.set "):
+                name, export = ("Graphite B sticker palette", palette_export) if step == "chord Enter" else ("Scene look " + look, scene_export)
+                lines.append(["frame", f"{name} chosen; the drawn scene keeps the core's fixed colours until the core takes {export} (requested)"])
+            if step == "command look.sticker_palette.set nosuch":
+                lines.append(["frame", "Unknown sticker palette 'nosuch'. Choose graphite.a, graphite.b."])
+            scene = {key: looks[look][key] for key in ("fog", "glow", "edgeBrightness", "edgeWeight")}
+            dumps.append({"do": step, "lines": lines,
+                          "scene_look": dict(scene, theme="graphite", look=look, background=backgrounds[look],
+                                             sent=False, waits_for=scene_export),
+                          "sticker_palette": {"id": palette, "passes": True, "sent": False, "waits_for": palette_export},
+                          "tuning": {"state_digest": "a" * 64, "revision": 4},
+                          "tint": {"outline_sha256": "b" * 64, "fill_sha256": "", "palette_sha256": "c" * 64}})
+        self.assertEqual(run.expect_scene_look(dumps, {}, None), [])
+        dumps[-1]["tint"]["palette_sha256"] = "d" * 64
+        dumps[-1]["tuning"]["revision"] = 5
+        next(dump for dump in dumps if dump["do"] == "command look.sticker_palette.set nosuch")["lines"] = []
+        problems = run.expect_scene_look(dumps, {}, None)
+        for message in ("tint style bytes changed", "state digest or revision changed", "explain the refusal"):
+            self.assertTrue(any(message in problem for problem in problems), problems)
 
 
 if __name__ == "__main__":

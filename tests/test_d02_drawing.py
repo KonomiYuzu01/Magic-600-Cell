@@ -173,7 +173,9 @@ class HopfRings(unittest.TestCase):
                       text(ROOT / "renderer" / "core" / "src" / "product.cpp"))
         self.assertIn("uint chart = min(asuint(hopfRows[2461 + e / 4][e % 4]), 599u);",
                       text(ROOT / "renderer" / "core" / "shaders" / "geometry.hlsl"))
-        self.assertEqual(shell.count("SetViewLayout("), 1)
+        # The opening's layout, and B22 rest's palette chart rows, which switch Global's layout at a step.
+        self.assertEqual(shell.count("SetViewLayout("), 2)
+        self.assertIn("D02.ShellHopf.TakeRequest() is uint wanted && wanted != D02.ShellHopf.Drawn", shell)
         self.assertIn("var camera = _hopf ? SpinOf(_camera) : _camera.ColumnMajor();", shell)
         self.assertEqual(json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))["params"]["projection"],
                          "hopfRings")
@@ -821,7 +823,37 @@ class HopfRun(unittest.TestCase):
             run.ring_sheet_data(temp / "run")
         fov = opening["params"]["fieldOfView"]
         base = 1 / math.tan(fov / 2)
-        self.assertEqual(run.expect_ring_sheet(self.dumps(base, base * 1.21), {}, None), [])
+        self.assertEqual(run.expect_hopf(self.dumps(base, base * 1.21), {}, None, projection="ringSheet"), [])
+
+    def test_the_ring_sheet_run_reads_its_marks_clicks_and_chart_rows(self):
+        run = shell_module("d02_run")
+        sheet = [["view:Global", words] for words in run.SHEET_MARKS]
+        chain = [["view:Global", run.CHAIN_MARK]]
+        hit = {"selection": {"sticker": 7, "piece": 3, "slot": 7}}
+
+        def dumps(first=sheet, back=chain, again=sheet, pick=hit):
+            rows = [("wait 1000 ms", first, None), ("click 0.507 0.45", first, None), ("wait 600 ms", first, pick),
+                    ("command view.preset.global.chain", first, None), ("wait 1000 ms", back, None),
+                    ("command view.preset.global.chart", back, None), ("wait 1000 ms", again, None)]
+            return [{"do": do, "global_marks": [words for _, words in lines], "pick": p or {"selection": None}}
+                    for do, lines, p in rows]
+        pieces = [0] * 7 + [3]
+        self.assertEqual(run.expect_sheet_chart(dumps(), pieces), [])
+        self.assertEqual(len(run.expect_sheet_chart(dumps(first=chain), pieces)), 1)
+        self.assertEqual(len(run.expect_sheet_chart(dumps(back=sheet), pieces)), 1)
+        self.assertEqual(len(run.expect_sheet_chart(dumps(again=chain), pieces)), 1)
+        self.assertEqual(len(run.expect_sheet_chart(dumps(pick={"selection": None}), pieces)), 1)
+        self.assertEqual(len(run.expect_sheet_chart(dumps(), [0] * 8)), 1)
+
+    def test_under_a_chart_global_draws_no_sweep(self):
+        core = text(CORE / "shaders" / "geometry.hlsl")
+        self.assertIn("const bool turns = theta != 0 && (viewFlags & 8u) == 0 && (animated[slotPieces[slot]] & 0x10000u) != 0;", core)
+        self.assertIn('"the ring sheet drew a sweep"', text(CORE / "src" / "gpu_test.cpp"))
+        turn = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellTurn.cs")
+        self.assertIn('if (kind == "sweep" && ShellHopf.Drawn != ShellHopf.Chain)', turn)
+        self.assertIn("if (Cap is int drawn && drawn != GripCap)", turn)
+        style = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellStyle.cs")
+        self.assertIn("if (slot != 1 && ShellTurn.OutlineOnly)", style)
 
     def test_local_draws_the_default_cap(self):
         run = shell_module("d02_run")

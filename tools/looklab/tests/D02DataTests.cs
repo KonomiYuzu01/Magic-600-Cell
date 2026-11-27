@@ -89,8 +89,12 @@ internal static partial class Program
     private static readonly string[] D02Requests = { "CR-14", "CR-15", "CR-16", "CR-17", "CR-19" };
     // The research pane's own row requests (C5-7): build steps B28 (research.record.read) and B29 (declare, start).
     private static readonly string[] D02StepRequests = { "B28", "B29" };
-    // ADR-D01 items ported into the shell, each with the prefix its rows carry: the cards (.24) and the setup slot (.68).
-    private static readonly Dictionary<string, string> D01ItemRequests = new(StringComparer.Ordinal) { ["ADR-D01.24"] = "card.", ["ADR-D01.68"] = "setup." };
+    // ADR-D01 items ported into the shell and the prefixes their rows carry.
+    private static readonly Dictionary<string, string> D01ItemRequests = new(StringComparer.Ordinal)
+    {
+        ["ADR-D01.24"] = "card.", ["ADR-D01.68"] = "setup.",
+        ["ADR-D01.49"] = "look.scene.", ["ADR-D01.52"] = "look.sticker_palette.",
+    };
     private static readonly string[] D01MenuRequests = { "ADR-D01.17" };
     // ADR-D01.17's context menu row (its own list, so later design items add theirs beside it).
     private static bool D01MenuRequest(string id, string request) => D01MenuRequests.Contains(request) && id == "menu.context.open";

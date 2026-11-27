@@ -1010,6 +1010,23 @@ relative path is from the repository root.
     - With the sheet held back, `d02_run.py --script hopf --state wj-ia-300` passed again: 317 frames. Its first try failed only on the foreground rule, with a browser window in front; the retry passed.
     - With the sheet held back, `--script ring-sheet` drew 316 chain frames with no device removal and stayed red as intended.
     - After the fix, `check_core.py --style --hopf --panes` passed, the sheet-first picture included. `d02_run.py --script ring-sheet --state wj-ia-300` passed on the owner's GPU: 316 frames, all on device epoch 1, with no recovery and no warning.
+- **As built (B22 rest, drawing track, 27 November 2026):**
+  - Built:
+    - The wrap mark and the caption. Global's border names the chart it draws (`JumbleViews.ChartMarks`): "ring sheet", the wrap mark "columns wrap" and the caption "only row neighbours are face neighbours" (sentence `ring_sheet.caption`). The Hopf rings show "Hopf rings". Built words `global.ring_sheet`, `global.hopf_rings` and `global.wrap` sit in `jumble-words.json`, and `test_d02_words.py` reads "columns" and "wrap" as plain words.
+    - The palette's preset rows. `JumbleHost` carries the presets `view.preset.global.ring_sheet` and `view.preset.global.hopf_rings`. Two draft rows are appended to `command-rows-d02.json`, both naming CR-14: `view.preset.global.chart` (the palette's chart row, which applies the ring sheet unless the Hopf rings were picked) and `view.preset.global.chain` (back to the projection chain). The shell switches Global's layout at the next step (`ShellHopf.Request`, `Shell.cs`), and the border follows (`ShellHopf.Applied`). The command table is untouched.
+    - The no-sweep rule. In the core, a view with a Hopf layout (viewFlags bit 3) draws no turn (`geometry.hlsl`): under a chart Global draws each revision's own poses at every phase, while Local's chain sweeps.
+    - The moved-set outline. With a chart in Global, a committed sweep also outlines the moved set for `jumble.half_turn`'s fixed time (`ShellTurn`'s outline, B18 rest's flash path, B16's outline channel, palette entry 15). Local's panes zero entry 15's alpha while only that outline shows. With the slice in Local at a cap other than the grip cap, the twist is static in every view.
+    - A click in a chart selects the piece it shows. This is B17's pick path unchanged: the core's ID pass draws with the view's layout.
+  - Not built yet:
+    - The host's per-revision nearest-cell assignment. The shader's Hopf-coordinate choice still stands in for it. It needs a new per-revision chart channel in the core (one chart index per slot, bound to the revision as the piece style is), which the host fills in Rust at each adoption, with ties going to the lowest cell id. The shader reads that channel under a Hopf layout. Its checks are the host test `the_chart_assignment_is_nearest_cell_lowest_id` and `check_core.py --chart`.
+  - Checks:
+    - `check_core.py --style --hopf --panes` passed on WARP. Its new check sets a transform at phase 0: the ring sheet and the Hopf rings draw exactly as without it, and a chain view turns.
+    - `test_d02_drawing.py` has two new tests: the run's marks, clicks and chart rows, and the no-sweep wiring. `test_d02_words.py`, `test_renderer_core.py`, `test_renderer_shell.py`, `test_shared_chrome.py`, `test_render_ffi.py` and `tools/looklab/check.py` passed.
+    - Product runs on wj-ia-300 at 1280x720 on the owner's GPU, with no nvlddmkm 14 or 153 event and no LiveKernelEvent after any of them:
+      - `ring-sheet` passed: 567 frames. The border showed the three sheet marks, and both clicks selected the piece their sticker belongs to. The chain row showed the chain mark, and the chart row showed the sheet marks again. A 5 x 5 probe over the opening hit stickers only at those two points.
+      - `hopf`, `pick`, `two-views` and `sweep` passed. The first tries of `hopf` and `two-views` failed only on the foreground rule; each passed when rerun alone.
+      - `sweep` without a state also passed. Under the owner's Hopf-ring opening, J flashes. K is static in every view, because Local frames another cell, and Global outlined K's moved set once, for 336 ms. `expect_sweep` reads this chart case; on the chain K still sweeps.
+    - The assignment's time per revision is not recorded, because the assignment is not built.
 
 ### B23. Global chart preset: the Hopf rings
 - **Goal:** `view.preset.global.hopf_rings`.

@@ -290,6 +290,11 @@ public static class ShellStyle
                 style.Palette[4 * JumbleOverlay.Entry + i] = line[i];
             }
         }
+        // B22 rest (ADR-D02.10): the moved set's outline under a chart is Global's; Local's panes carry the motion.
+        if (slot != 1 && ShellTurn.OutlineOnly)
+        {
+            style.Palette[4 * JumbleOverlay.Entry + 3] = 0;
+        }
         // B31: the held simulation's matrix, with the G8 switch on.
         if (CoreSimulation && Simulation is { } matrix)
         {

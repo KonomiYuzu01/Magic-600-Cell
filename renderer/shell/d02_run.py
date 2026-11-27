@@ -1208,9 +1208,50 @@ def ring_sheet_data(out: Path) -> Path:
     return folder
 
 
+SHEET_MARKS = ["ring sheet", "columns wrap", "only row neighbours are face neighbours"]
+CHAIN_MARK = "projection chain (600-cell-Full)"
+
+
+def chart_marks(dump: dict) -> list[str]:
+    """The chart words Global's border shows in a dump, in SHEET_MARKS order, then the chain's."""
+    shown = dump.get("global_marks") or []
+    return [words for words in SHEET_MARKS + [CHAIN_MARK] if any(words in line for line in shown)]
+
+
+def expect_sheet_chart(dumps: list[dict], pieces: list[int]) -> list[str]:
+    """B22 rest, after the opening steps: the sheet's marks (its name, its wrap mark and its caption) show; a click in a
+    chart selects the piece its chart shows; the chain row returns Global to the chain, the chart row applies the sheet."""
+    problems = []
+    if chart_marks(dumps[0]) != SHEET_MARKS:
+        problems.append(f"Global's border showed {chart_marks(dumps[0])}, not the ring sheet's {SHEET_MARKS}")
+    clicks = [i for i, dump in enumerate(dumps) if dump["do"].startswith("click ")]
+    hits = 0
+    for i in clicks:
+        selection = (dumps[i + 1].get("pick") or {}).get("selection") if i + 1 < len(dumps) else None
+        if selection is None:
+            continue
+        hits += 1
+        if pieces[selection["sticker"]] != selection["piece"]:
+            problems.append(f"after '{dumps[i]['do']}' sticker {selection['sticker']} names piece {selection['piece']}, "
+                            f"not the model's {pieces[selection['sticker']]}")
+    if not clicks or hits == 0:
+        problems.append(f"no click of {len(clicks)} in a chart selected a piece")
+    for row, wanted in (("view.preset.global.chain", [CHAIN_MARK]), ("view.preset.global.chart", SHEET_MARKS)):
+        at = [i for i, dump in enumerate(dumps) if dump["do"] == "command " + row]
+        if not at or at[0] + 1 >= len(dumps):
+            problems.append(f"the script ran no '{row}' row with a step after it")
+        elif chart_marks(dumps[at[0] + 1]) != wanted:
+            problems.append(f"after '{row}' Global's border showed {chart_marks(dumps[at[0] + 1])}, not {wanted}")
+    print(f"ring sheet: marks {chart_marks(dumps[0])}; {len(clicks)} clicks, {hits} selected a piece")
+    return problems
+
+
 def expect_ring_sheet(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """The ring-sheet script: the same zoom as the rings', from the data folder's opening file."""
-    return expect_hopf(dumps, source, state, projection="ringSheet")
+    """The ring-sheet script: the same zoom as the rings', from the data folder's opening file; then B22 rest's marks,
+    chart clicks and the palette's chart rows."""
+    opening = len(HOPF_STEPS)
+    return (expect_hopf(dumps[:opening], source, state, projection="ringSheet")
+            + expect_sheet_chart(dumps[opening - 1:], slot_pieces()))
 
 
 EXPECT["ring-sheet"] = expect_ring_sheet
@@ -1334,14 +1375,26 @@ def expect_sweep(dumps: list[dict], source: dict, state: str | None) -> list[str
             problems.append(f"on {state} the presses were refused {final['refused']} times and the motions were "
                             f"{[m['kind'] for m in motions]}, not 4 refusals and none")
         return problems
-    if final["refused"] != 0 or [m["kind"] for m in motions] != ["flash", "sweep", "static", "static"]:
-        return problems + [f"refused {final['refused']}, motions {[m['kind'] for m in motions]}, not flash, sweep, "
-                           "static, static"]
+    # B22 rest (ADR-D02.10): with a chart in Global (the owner's opening names the Hopf rings) and the slice in Local at
+    # another cap than the grip cap, K is swept by no view: it is static, and Global outlines its moved set once, for
+    # jumble.half_turn's time. On the chain K sweeps.
+    chart = final.get("chart") is True
+    kinds = ["flash", "static" if chart else "sweep", "static", "static"]
+    if final["refused"] != 0 or [m["kind"] for m in motions] != kinds:
+        return problems + [f"refused {final['refused']}, motions {[m['kind'] for m in motions]}, not {', '.join(kinds)}"]
     flash, sweep = motions[0], motions[1]
     if abs(flash["angle"] - math.pi) > 1e-5 or flash["moving"] <= 0 or flash["phases"]:
         problems.append(f"the flash turns {flash['angle']} with {flash['moving']} moving and phases {flash['phases']}")
     if flash["duration_ms"] != 320 or flash["ended"] != "done" or not 320 <= flash["shown_ms"] < 900:
         problems.append(f"the flash lasts {flash['duration_ms']} ms, ended {flash['ended']!r} after {flash['shown_ms']} ms")
+    if chart:
+        if (final.get("outlines_shown"), final.get("outlines_ended")) != (1, 1) or not 320 <= final.get("outline_ms", 0) < 900:
+            problems.append(f"under the chart Global outlined {final.get('outlines_shown')} moved sets ({final.get('outlines_ended')} "
+                            f"ended, the last after {final.get('outline_ms')} ms), not K's once for 320 ms")
+        for static in motions[1:]:
+            if static["phases"] or static["shown_ms"] != 0 or static["ended"] != "static":
+                problems.append(f"a twist swept by no view moved: {static}")
+        return problems
     phases, ms = sweep["phases"], sweep["ms"]
     if abs(sweep["angle"] - math.pi) < 1e-3 or sweep["moving"] <= 0 or sweep["duration_ms"] != 220:
         problems.append(f"the sweep turns {sweep['angle']} with {sweep['moving']} moving over {sweep['duration_ms']} ms")
@@ -2346,6 +2399,82 @@ def check_tuning_diff(out: Path) -> list[str]:
 EXPECT["tuning-revert"] = expect_tuning_revert
 ON_FIXTURE.add("tuning-revert")
 FOLDER_CHECKS = {"tuning-revert": check_tuning_diff}
+
+
+SCENE_LOOK_STEPS = [
+    ("start", "solving", "graphite.a"),
+    ("wait 2500 ms", "solving", "graphite.a"),
+    ("chord Space", "solving", "graphite.a"),
+    ("text > look.sticker_palette.set graphite.b", "solving", "graphite.a"),
+    ("chord Enter", "solving", "graphite.b"),
+    ("wait 650 ms", "solving", "graphite.b"),
+    ("command look.scene.set celebrating", "celebrating", "graphite.b"),
+    ("wait 651 ms", "celebrating", "graphite.b"),
+    ("command look.scene.set inspecting", "inspecting", "graphite.b"),
+    ("wait 652 ms", "inspecting", "graphite.b"),
+    ("command look.sticker_palette.set nosuch", "inspecting", "graphite.b"),
+    ("wait 653 ms", "inspecting", "graphite.b"),
+    ("command look.scene.set solving", "solving", "graphite.b"),
+    ("wait 654 ms", "solving", "graphite.b"),
+]
+
+
+def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Check the resolved choices, their notices and the state and style digests on every step."""
+    written = [dump.get("do") for dump in dumps]
+    if written != [step for step, _, _ in SCENE_LOOK_STEPS]:
+        return [f"the steps written were {written}"]
+    theme = dumps[0].get("scene_look", {}).get("theme")
+    if theme not in ("graphite", "paper"):
+        return [f"unknown opening scene theme {theme!r}"]
+    looks = load(DESIGN / "themes" / f"{theme}.json")["sceneLooks"]
+    scene_export, palette_export = "m6h_set_scene_look", "m6h_set_sticker_colours"
+    head_keys = ("state_digest", "revision")
+    style_keys = ("outline_sha256", "fill_sha256", "palette_sha256")
+    head = tuple(dumps[0].get("tuning", {}).get(key) for key in head_keys)
+    style = tuple(dumps[0].get("tint", {}).get(key) for key in style_keys)
+    problems = []
+    if not head[0] or type(head[1]) is not int or head[1] < 0:
+        problems.append("the opening state digest or revision is missing")
+    if not style[0] or style[1] is None or not style[2]:
+        problems.append("the opening tint style digests are missing")
+
+    backgrounds = {}
+    for dump, (step, look, palette_id) in zip(dumps, SCENE_LOOK_STEPS):
+        scene, palette = dump.get("scene_look", {}), dump.get("sticker_palette", {})
+        if (scene.get("theme"), scene.get("look")) != (theme, look):
+            problems.append(f"after {step!r} the scene should show {theme} {look}")
+        if palette.get("id") != palette_id or palette.get("passes") is not True:
+            problems.append(f"after {step!r} the passing palette should be {palette_id}")
+        for key in ("fog", "glow", "edgeBrightness", "edgeWeight"):
+            if scene.get(key) != looks[look][key]:
+                problems.append(f"after {step!r} scene {key} differs from {theme} {look}")
+        background = scene.get("background")
+        if not re.fullmatch(r"#[0-9a-f]{6}", str(background)) or backgrounds.setdefault(look, background) != background:
+            problems.append(f"after {step!r} the {look} background is invalid or changed")
+        for values, export in ((scene, scene_export), (palette, palette_export)):
+            if values.get("sent") is not False or values.get("waits_for") != export:
+                problems.append(f"after {step!r} the dump should report waiting for {export}")
+        if tuple(dump.get("tuning", {}).get(key) for key in head_keys) != head:
+            problems.append(f"after {step!r} the state digest or revision changed")
+        if tuple(dump.get("tint", {}).get(key) for key in style_keys) != style:
+            problems.append(f"after {step!r} the tint style bytes changed")
+
+        if step == "command look.sticker_palette.set nosuch":
+            if not any(line.startswith("Unknown sticker palette 'nosuch'.") for line in texts(dump, "frame")):
+                problems.append(f"after {step!r} the status line should explain the refusal")
+        elif step == "chord Enter" or step.startswith("command look.scene.set "):
+            what, export = ("Graphite B sticker palette", palette_export) if step == "chord Enter" else ("Scene look " + look, scene_export)
+            notice = f"{what} chosen; the drawn scene keeps the core's fixed colours until the core takes {export} (requested)"
+            if notice not in texts(dump, "frame"):
+                problems.append(f"after {step!r} the status line should show the choice and its pending export")
+    if len(set(backgrounds.values())) != 3:
+        problems.append("the three scene looks should have distinct backgrounds")
+    return problems
+
+
+EXPECT["scene-look"] = expect_scene_look
+ON_FIXTURE.add("scene-look")
 
 
 def window_problems(dumps: list[dict]) -> list[str]:

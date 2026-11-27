@@ -94,14 +94,6 @@
       "palette": "a draft row: this build does not carry it out yet",
       "why": "B21, the raw view, is not built yet"
     },
-    "view.preset.global.ring_sheet": {
-      "palette": "a draft row: this build does not carry it out yet",
-      "why": "B22's rest: the chart presets wait for R5's admission and its gate row; the ring sheet opens from the data folder's opening file"
-    },
-    "view.preset.global.hopf_rings": {
-      "palette": "a draft row: this build does not carry it out yet",
-      "why": "B22's rest: the chart presets wait for R5's admission and its gate row"
-    },
     "view.preset.jumble_entry": {
       "palette": "a draft row: this build does not carry it out yet",
       "why": "the entry slot row has no handler yet"
@@ -648,11 +640,29 @@
         },
         {
           "op": "view.preset.global.ring_sheet",
-          "wait_ms": 200
+          "wait_ms": 1200
         },
         {
           "op": "view.preset.global.hopf_rings",
-          "wait_ms": 200
+          "wait_ms": 1200
+        },
+        {
+          "op": "view.preset.global.chart",
+          "wait_ms": 1200
+        },
+        {
+          "op": "view.preset.global.chain",
+          "wait_ms": 1200
+        },
+        {
+          "op": "look.sticker_palette.set",
+          "argument": "graphite.a",
+          "wait_ms": 400
+        },
+        {
+          "op": "look.scene.set",
+          "argument": "solving",
+          "wait_ms": 400
         },
         {
           "op": "view.preset.jumble_entry",

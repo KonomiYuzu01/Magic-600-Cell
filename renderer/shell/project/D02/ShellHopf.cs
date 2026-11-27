@@ -121,4 +121,69 @@ public static class ShellHopf
         Bytes(root.GetProperty("halfStep"), 960);
         return row;
     }
+
+    // ---- B22 rest: the palette's Global chart rows (ADR-D02.9) and what Global draws now (ADR-D02.10). ----
+
+    /// <summary>The layout Global draws now; the shell sets it when the core took the layout.</summary>
+    public static uint Drawn { get; private set; } = Chain;
+
+    /// <summary>Raised after Global's layout changed (the border's chart marks follow it).</summary>
+    public static event Action? Applied;
+
+    /// <summary>Whether the researcher picked the Hopf rings, so the palette's chart row applies them, not the sheet.</summary>
+    public static bool PickedRings { get; private set; }
+
+    private static uint? _request;
+
+    /// <summary>The layout a chart row asks for: the chart row applies the ring sheet unless the Hopf rings were picked.</summary>
+    public static uint? KindOfRow(string row) => row switch
+    {
+        Magic600.Chrome.JumbleViews.SheetRow => Sheet,
+        Magic600.Chrome.JumbleViews.RingsRow => Rings,
+        Magic600.Chrome.JumbleViews.ChartRow => PickedRings ? Rings : Sheet,
+        Magic600.Chrome.JumbleViews.ChainRow => Chain,
+        _ => null,
+    };
+
+    /// <summary>A chart row: Global takes the layout at the next step. Answers why not, or null.</summary>
+    public static string? Request(string row)
+    {
+        if (KindOfRow(row) is not uint kind)
+        {
+            return "no Global chart is named " + row;
+        }
+        if (kind != Chain && !File.Exists(RingsPath()))
+        {
+            return "this build has no Hopf ring file";
+        }
+        if (row is Magic600.Chrome.JumbleViews.SheetRow or Magic600.Chrome.JumbleViews.RingsRow)
+        {
+            PickedRings = kind == Rings;
+        }
+        _request = kind;
+        return null;
+    }
+
+    /// <summary>The layout a row asked for since the last step, once.</summary>
+    public static uint? TakeRequest()
+    {
+        var wanted = _request;
+        _request = null;
+        return wanted;
+    }
+
+    /// <summary>The core took <paramref name="kind"/> for Global.</summary>
+    public static void Took(uint kind)
+    {
+        Drawn = kind;
+        Applied?.Invoke();
+    }
+
+    /// <summary>The chart Global's border names (JumbleViews' words), or null on the chain.</summary>
+    public static string? ChartName() => Drawn switch
+    {
+        Sheet => Magic600.Chrome.JumbleViews.RingSheet,
+        Rings => Magic600.Chrome.JumbleViews.HopfRings,
+        _ => null,
+    };
 }
