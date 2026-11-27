@@ -620,33 +620,18 @@ def plant(defect: dict, folder: Path, source: Path = DATA) -> list[str]:
     return sorted(docs)
 
 
-# The writer's reopen step on Windows sometimes meets a copied journal another process holds for a moment.
-SHARING = "(os error 32)"
-SHARING_TRIES = 3
-
-
 def replay(root: Path, writer: Path | None = None, write=None) -> dict:
     """The seed 7001 replay (section 7): the host's own engine, the fixture writer, executes the start's word and then
     each of the nine words in turn, and the state after each word must bind to the sample the word file names: the
     head's digest equals the word's output digest and all three digests equal that sample's (build_d02_fixtures.write
-    refuses a fixture that differs). The words' letters must extend the start as the research word does. A write the
-    writer fails only on a Windows sharing violation at its reopen step (another process holding the copied journal for
-    a moment) is tried again, at most SHARING_TRIES times in all, and its row counts the extra tries; any other failure
-    is the word's problem at once."""
+    refuses a fixture that differs). The words' letters must extend the start as the research word does; a write that
+    fails is the word's problem."""
     import build_d02_fixtures as fixtures
     write = write or fixtures.write
     writer = writer or fixtures.WRITER
-    retried: dict[str, int] = {}
 
     def bind(state: str, letters: list) -> str:
-        for attempt in range(SHARING_TRIES):
-            try:
-                write(writer, state, fixtures.moving(letters, identity)[0], folder)
-                break
-            except fixtures.FixtureError as error:
-                if SHARING not in str(error) or attempt == SHARING_TRIES - 1:
-                    raise
-                retried[state] = attempt + 1
+        write(writer, state, fixtures.moving(letters, identity)[0], folder)
         return json.loads((folder / state / "fixture.json").read_text(encoding="utf-8"))["digest"]
 
     doc = json.loads(WORDS.read_text(encoding="utf-8"))
@@ -674,11 +659,9 @@ def replay(root: Path, writer: Path | None = None, write=None) -> dict:
             digest = bind(part["after"], word)
         except fixtures.FixtureError as error:
             row["problem"] = str(error)
-            row["retries"] = retried.get(part["after"], 0)
             before = None
             continue
         row["digest"] = digest
-        row["retries"] = retried.get(part["after"], 0)
         if digest != part["output_digest"]:
             row["problem"] = f"the state's digest {digest[:12]} is not the word's output digest {part['output_digest'][:12]}"
         row["bound"] = "problem" not in row
@@ -686,7 +669,7 @@ def replay(root: Path, writer: Path | None = None, write=None) -> dict:
     if doc["parts"] and doc["parts"][-1]["output_digest"] != doc["solved_digest"]:
         problems.append("the last word does not end at the solved digest")
     return {"bound": sum(1 for row in rows if row["bound"]), "words": len(rows), "start": doc["start"],
-            "start_retries": retried.get(doc["start"], 0), "rows": rows, "problems": problems}
+            "rows": rows, "problems": problems}
 
 
 # J0's checks: each takes a run's dumps, the session's ops, the session's check entry and the sample state, and
@@ -1260,13 +1243,11 @@ def write_j0(root: Path, record: dict) -> None:
              "driver or the researcher subagent caught.", "",
              "## Seed 7001 replay", "",
              f"The host's fixture writer executes {replayed['start']}'s word and each word after it; the state after "
-             "each word binds to the sample the word file names (all three digests). Extra tries are writes tried "
-             "again after a Windows sharing violation at the writer's reopen step"
-             + (f" (the start took {replayed['start_retries']})" if replayed.get("start_retries") else "") + ".", "",
-             "| Word | State after | Letters | Bound | Digest | Extra tries | Problem |",
-             "| --- | --- | --- | --- | --- | --- | --- |"]
+             "each word binds to the sample the word file names (all three digests).", "",
+             "| Word | State after | Letters | Bound | Digest | Problem |",
+             "| --- | --- | --- | --- | --- | --- |"]
     lines += [f"| {r['word']} | {r['after']} | {len(r['letters'])} | {'yes' if r['bound'] else 'no'} | "
-              f"{r.get('digest', '')[:12]} | {r.get('retries', 0)} | {cell(r.get('problem', ''))} |"
+              f"{r.get('digest', '')[:12]} | {cell(r.get('problem', ''))} |"
               for r in replayed["rows"]]
     lines += [f"- {cell(problem)}" for problem in replayed["problems"]]
     lines += ["", "## Defects", "",

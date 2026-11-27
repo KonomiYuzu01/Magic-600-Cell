@@ -2510,7 +2510,7 @@ class D02TrackJ0(unittest.TestCase):
         with self.assertRaises(ValueError):
             track.flip_mask(mask, [16])
 
-    def test_the_replay_binds_each_word_and_tries_a_sharing_violation_again(self):
+    def test_the_replay_binds_each_word_and_checks_every_digest(self):
         track = shell_module("track_j")
         fixtures = shell_module("build_d02_fixtures")
         words = json.loads(track.WORDS.read_text(encoding="utf-8"))
@@ -2530,15 +2530,13 @@ class D02TrackJ0(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp:
             done = track.replay(Path(temp) / "a", Path("writer"), writer(lambda state, n: False))
-            self.assertEqual((done["bound"], done["words"], done["problems"], done["start_retries"]), (9, 9, [], 0))
-            done = track.replay(Path(temp) / "b", Path("writer"),
-                                writer(lambda state, n: state in (words["start"], "s7001-4") and n == 1))
-            self.assertEqual((done["bound"], done["start_retries"]), (9, 1))
-            self.assertEqual([row["retries"] for row in done["rows"]], [0, 0, 0, 1, 0, 0, 0, 0, 0])
+            self.assertEqual((done["bound"], done["words"], done["problems"]), (9, 9, []))
             done = track.replay(Path(temp) / "c", Path("writer"), writer(lambda state, n: state == "s7001-4"))
-            self.assertEqual(done["bound"], 8, "word 4 fails every try; word 5's input digest is then not checked")
-            self.assertEqual(done["rows"][3]["retries"], track.SHARING_TRIES - 1)
+            self.assertEqual(done["bound"], 8, "word 4 fails; word 5's input digest is then not checked")
             self.assertIn("os error 32", done["rows"][3]["problem"])
+            done = track.replay(Path(temp) / "b", Path("writer"), writer(lambda state, n: state == words["start"]))
+            self.assertEqual(done["bound"], 9, "every word still binds")
+            self.assertIn("does not bind", done["problems"][0])
             other = writer(lambda state, n: False)
 
             def wrong(path, state, letters, folder):
@@ -2568,7 +2566,7 @@ class D02TrackJ0(unittest.TestCase):
                     {"do": "wait 10", "window": 1}], []
 
         def replayer(root, writer):
-            return {"bound": 9, "words": 9, "start": "s7001-0", "start_retries": 0, "rows": [], "problems": []}
+            return {"bound": 9, "words": 9, "start": "s7001-0", "rows": [], "problems": []}
 
         with tempfile.TemporaryDirectory() as temp, \
                 unittest.mock.patch.dict(track.J0_CHECKS, {"digest": checks("digest"), "covers": checks("covers")}):
