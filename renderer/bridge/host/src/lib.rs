@@ -84,7 +84,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::ptr;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use c600_command::{
     word_draft, Error as LayerError, FrameChain, FrameStamp as LayerStamp, PresentedFrame as LayerFrame, ShownPreview,
@@ -211,8 +211,10 @@ pub const VIEW_DEADLINE: Duration = Duration::from_secs(60);
 /// 19 Nov 2026.
 pub const VIEW_ALLOWANCE: u64 = 1 << 24;
 
-/// How long a frame call waits, after its submission, for a twist's head that the adoption worker is still building
-/// ([`m6h_frame`]): about one build of a head on the owner's machine (10.7 ms on 26 November 2026, real core).
+/// How long a frame call waits in all, for the display and then, after its submission, for a twist's head that the
+/// adoption worker is still building ([`m6h_frame`]): about one build of a head on the owner's machine (10.7 ms on
+/// 26 November 2026, real core). SF6 (27 November 2026): only a call whose submission did not wait for the display
+/// ([`deferred::after_submission`]) waits and adopts after it, until this long after the call began.
 const POST_SUBMIT_WAIT: Duration = Duration::from_millis(12);
 
 const IDENTITY: [f32; 16] = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
@@ -2054,12 +2056,15 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
+            let entered = Instant::now();
             shell.settle(deferred::Wait::No)?;
             shell.poll();
             shell.sync_preview()?;
             // ADR-D02 B18b: with no pane set, today's one-view frame.
+            let submitting = Instant::now();
             let submitted =
                 if shell.panes.iter().all(Option::is_none) { shell.frame_one() } else { shell.frame_panes() }?;
+            let after = deferred::after_submission(entered, submitting, Instant::now(), POST_SUBMIT_WAIT);
             if !out.is_null() {
                 out.write(submitted);
             }
@@ -2067,9 +2072,14 @@ pub unsafe extern "C" fn m6h_frame(handle: *mut ShellHost, out: *mut M6hFrame) -
             // now, so its publication is prepared before the next frame; a failure is answered by the next call. A build
             // still running is waited for a short time, which the next frame's wait for the display would mostly spend
             // anyway: a frame call right after a twist key returns at once, before the build ends, and without this wait
-            // the press would be adopted only after the next frame and shown one frame later.
-            if let Err(failure) = shell.settle(deferred::Wait::at_most(POST_SUBMIT_WAIT)) {
-                shell.failed = Some(failure);
+            // the press would be adopted only after the next frame and shown one frame later. SF6 (27 November 2026): a
+            // submission that waited for the display adopts nothing after it: the next call adopts the build before its
+            // own submission, where the wait for the display takes up the adoption's time, and the same frame draws it.
+            // An adoption after the submission cost the frame thread one refresh at each posted twist (G1: 22-26 ms).
+            if let Some(wait) = after {
+                if let Err(failure) = shell.settle(wait) {
+                    shell.failed = Some(failure);
+                }
             }
             Ok(())
         })

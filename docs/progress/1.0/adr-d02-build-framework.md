@@ -1031,6 +1031,33 @@ relative path is from the repository root.
       `state_digest` 2.8-3.5, `feed` 1.8-6.4, `capmap` 2.5-6.7, `tint` 3.0-3.5 at a bound state, `flush` 2.8-6.1);
       the second follows a hole of 40-55 ms about 50 ms later that no `steps` row covers (the nearest is `shown`,
       `describe` 2.0-2.8 ms): the next step is to time that frame's parts.
+    - SF6 (27 November 2026), the two holes timed. A `hole` steps row (`Shell.cs` `FrameHole`, only while the event
+      log is on) tiles the frame thread's time between two post-draws over 25 ms: idle, tree, early, the shell's parts
+      (keys, openings, apply, `m6h_frame`, presented, shown, bind), late, the deferred calls split at marks the bind
+      queues after each part (`q.<part>`), flush and draw, with the GC's pause and the nodes and objects added. G1 at
+      `wj-ia-300` ranks: 1, confirmed: the 31-32 ms hole is the key's adoption, not the bind: `m6h_frame` 22-24 ms in
+      the frame that polls the key's answer, its display wait plus the host's 12 ms post-submission wait
+      (`POST_SUBMIT_WAIT`, `renderer/bridge/host/src/lib.rs`) for a build that outlasted it, and, where a build had
+      ended, its adoption after the submission (frames of `m6h_frame` 23-28 ms alone). Now a submission that waited
+      for the display adopts nothing after it (`deferred::after_submission`, test
+      `only_a_submission_that_did_not_wait_for_the_display_waits_for_a_build`); the next call adopts before its
+      submission and draws it; a call that came late waits as before. 2, confirmed: the 40-60 ms hole is the bind's
+      frame, `bind` 18-23 ms and 7-20 ms of Godot's deferred calls; the bind rebuilt the tint legend (40 labels, 20
+      groups and 20 swatches at a bound/unbound switch) and the cap map's 12 class rows at every twist. The legend now
+      keeps its title and groups and changes words and colours in place (`TintLegendRow.Show`), the class rows stay
+      while a layout is drawn (`JumbleSurface.Refresh`), and theme overrides are set only when they change. 3, ruled
+      out: a garbage collection (0-1 per hole, at most 2.6 ms), the draw (1.3-3.5 ms), the other nodes (`late` at most
+      0.14 ms). Per part, G1 before and after, p50 (p99): `bind.bind` 14.8 (19.8) and 10.0 (13.4), `capmap` 2.9 (7.3)
+      and 0.9 (5.5), `tint` 0.6 (3.5) and 0.6 (1.2), `feed` 2.0 (6.8) and 2.0 (6.0), `flush` 3.3 (6.1) and 3.4 (3.7),
+      `state_digest` 3.1 (3.5) and 3.7 (4.2); holes per window 15 and 9, the hole p50 (p99) 32.0 (53.7) and 40.7
+      (59.2). Dry runs (10 s, not evidence): G1 before p99 33.33 and 50.00, fps_avg 58.6 and 57.1, 11 and 21
+      intervals over one refresh; after p99 33.33, fps_avg 58.3, 16 intervals (a second run was void: the foreground
+      changed in its first five seconds); G9 after p99 33.33 and 33.33, fps_avg 58.2 and 57.1, 15 and 22 intervals. The gate's p99 did not
+      move: each twist now has one hole of 40-60 ms instead of two. Left, the bind's frame: the deferred calls the cap
+      map's update queues (`q.capmap` 4.7-4.8 ms at a bound state, 18.5-19.3 at an unbound one, where all 600 caps are
+      pending and `CapMapControl.Cell` draws each with an antialiased `DrawArc`, likely, not yet confirmed), and the
+      bind's own 10-14 ms (`state_digest` 3.7-4.0, `feed` 2.0-6.0, `flush` 3.4-3.7), all after the submission. No GPU
+      event in the System log after any run.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.

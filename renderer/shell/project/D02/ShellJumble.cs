@@ -48,11 +48,18 @@ public static class ShellJumble
     /// </summary>
     internal static List<(string Name, long From, long To)>? BindParts { get; set; }
 
+    /// <summary>
+    /// SF6 (27 Nov 2026): called after each part of the bind while the shell collects them; the shell queues a deferred
+    /// mark there, so the deferred calls (layout, redraws) each part queued are timed apart in its "hole" row.
+    /// </summary>
+    internal static Action<string>? PartEnded { get; set; }
+
     /// <summary>Ends one part of the bind begun at <paramref name="from"/>, while someone collects them; answers now.</summary>
     internal static long Part(string name, long from)
     {
         var now = EventLog.Now();
         BindParts?.Add((name, from, now));
+        PartEnded?.Invoke(name);
         return now;
     }
 
@@ -67,6 +74,7 @@ public static class ShellJumble
         var from = EventLog.Now();
         part();
         parts.Add((name, from, EventLog.Now()));
+        PartEnded?.Invoke(name);
     }
     /// <summary>The view rotation a drag in the Global opening turns (owner, 26 November 2026).</summary>
     public static ShellCamera Camera { get; } = new();

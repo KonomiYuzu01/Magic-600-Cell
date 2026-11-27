@@ -159,6 +159,13 @@ public sealed partial class TintLegendRow : HFlowContainer
     public const string NodeName = "JumbleTintLegend";
     private readonly Func<TokenSet> tokens;
     public string Line { get; private set; } = "";
+    // SF6 (27 Nov 2026): the row's title and entry groups stay between shows. A legend of the same shape (entries, each
+    // one's parts and their widest forms, swatch kind and size) changes its words and colours in place, and one with
+    // no entries drawn hides its groups; a bind rebuilt 20-80 of these nodes at each twist before (G1: 7-19 ms of
+    // Godot's layout after the frame's submission).
+    private Label? title;
+    private string shape = "";
+    private readonly List<(HBoxContainer Group, TintSwatch Swatch, List<Label> Labels)> groups = new();
 
     public TintLegendRow(Func<TokenSet> tokens)
     {
@@ -172,32 +179,75 @@ public sealed partial class TintLegendRow : HFlowContainer
         // size at a twist; a row with words lays out again from its parts.
         CustomMinimumSize = new Vector2(0, line.Length == 0 ? Math.Max(CustomMinimumSize.Y, Size.Y) : 0);
         TokenSet t = tokens();
-        AddThemeConstantOverride("h_separation", t.Px("space.2")); AddThemeConstantOverride("v_separation", 0);
-        foreach (Node child in GetChildren()) { RemoveChild(child); child.QueueFree(); }
+        Constant(this, "h_separation", t.Px("space.2")); Constant(this, "v_separation", 0);
         bool drawn = entries.Any(e => e.Slot != null) || (mode == TintMode.OffLattice && entries.Count > 0);
-        Label title = ChromeWidgets.Text(drawn ? JumbleTint.Title(mode) : line, "MicroLabel");
-        title.AddThemeColorOverride("font_color", t.C("text.dim")); AddChild(title);
-        if (!drawn) return;
-        int size = Math.Max(8, t.Px("space.2"));
-        foreach (TintLegendEntry entry in entries)
+        if (title == null || !IsInstanceValid(title))
         {
-            var group = new HBoxContainer { MouseFilter = MouseFilterEnum.Pass };
-            group.AddThemeConstantOverride("separation", t.Px("space.1"));
-            Color colour = entry.Slot != null ? t.C(entry.Slot) : mode == TintMode.OffLattice ? Of(JumbleTint.OffLatticeColour(t)) : t.C("text.dim");
-            group.AddChild(new TintSwatch(colour, mode != TintMode.Height, size));
-            AddChild(group);
-            // Each number sits right-aligned in a slot as wide as its widest form (JumbleTint.EntryParts).
-            foreach (LegendPart part in JumbleTint.EntryParts(entry))
+            foreach (Node child in GetChildren()) { RemoveChild(child); child.QueueFree(); }
+            groups.Clear(); shape = "";
+            title = ChromeWidgets.Text("", "MicroLabel"); AddChild(title);
+        }
+        title.Text = drawn ? JumbleTint.Title(mode) : line;
+        Colour(title, t.C("text.dim"));
+        if (!drawn)
+        {
+            foreach (var (group, _, _) in groups) group.Visible = false;
+            return;
+        }
+        int size = Math.Max(8, t.Px("space.2"));
+        bool outline = mode != TintMode.Height;
+        List<List<LegendPart>> parts = entries.Select(e => JumbleTint.EntryParts(e).ToList()).ToList();
+        string wanted = outline + "/" + size + "/" + t.Px("space.1") + "/"
+            + string.Join("|", parts.Select(p => string.Join(",", p.Select(x => x.Widest ?? "-"))));
+        if (wanted != shape)
+        {
+            foreach (var (group, _, _) in groups) { RemoveChild(group); group.QueueFree(); }
+            groups.Clear(); shape = wanted;
+            foreach (List<LegendPart> entryParts in parts)
             {
-                Label label = ChromeWidgets.Text(part.Text, "MicroLabel");
-                label.AddThemeColorOverride("font_color", t.C("text.primary")); group.AddChild(label);
-                if (part.Widest is { } widest)
+                var group = new HBoxContainer { MouseFilter = MouseFilterEnum.Pass };
+                group.AddThemeConstantOverride("separation", t.Px("space.1"));
+                var swatch = new TintSwatch(t.C("text.dim"), outline, size);
+                group.AddChild(swatch);
+                AddChild(group);
+                var labels = new List<Label>();
+                // Each number sits right-aligned in a slot as wide as its widest form (JumbleTint.EntryParts).
+                foreach (LegendPart part in entryParts)
                 {
-                    label.HorizontalAlignment = HorizontalAlignment.Right;
-                    label.CustomMinimumSize = new Vector2(ReadoutRow.Width(label, widest), 0);
+                    Label label = ChromeWidgets.Text(part.Text, "MicroLabel");
+                    group.AddChild(label); labels.Add(label);
+                    if (part.Widest is { } widest)
+                    {
+                        label.HorizontalAlignment = HorizontalAlignment.Right;
+                        label.CustomMinimumSize = new Vector2(ReadoutRow.Width(label, widest), 0);
+                    }
                 }
+                groups.Add((group, swatch, labels));
             }
         }
+        for (int i = 0; i < groups.Count; i++)
+        {
+            var (group, swatch, labels) = groups[i];
+            TintLegendEntry entry = entries[i];
+            swatch.Colour = entry.Slot != null ? t.C(entry.Slot) : mode == TintMode.OffLattice ? Of(JumbleTint.OffLatticeColour(t)) : t.C("text.dim");
+            for (int j = 0; j < labels.Count; j++)
+            {
+                labels[j].Text = parts[i][j].Text;
+                Colour(labels[j], t.C("text.primary"));
+            }
+            group.Visible = true;
+        }
+    }
+
+    // A theme override set only when it changes: each set notifies the control's theme again, which lays it out again.
+    internal static void Colour(Control control, Color colour)
+    {
+        if (!control.HasThemeColorOverride("font_color") || control.GetThemeColor("font_color") != colour) control.AddThemeColorOverride("font_color", colour);
+    }
+
+    private static void Constant(Control control, string name, int value)
+    {
+        if (!control.HasThemeConstantOverride(name) || control.GetThemeConstant(name) != value) control.AddThemeConstantOverride(name, value);
     }
 
     private static Color Of(Rgb c) => new((float)c.R, (float)c.G, (float)c.B);
@@ -206,8 +256,15 @@ public sealed partial class TintLegendRow : HFlowContainer
 // A legend swatch: an outline square or a filled one.
 public sealed partial class TintSwatch : Control
 {
-    private readonly Color colour;
+    private Color colour;
     private readonly bool outline;
+
+    // SF6: a legend of the same shape recolours its swatches in place.
+    public Color Colour
+    {
+        get => colour;
+        set { if (colour != value) { colour = value; QueueRedraw(); } }
+    }
 
     public TintSwatch(Color colour, bool outline, int size)
     {

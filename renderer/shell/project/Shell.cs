@@ -69,6 +69,30 @@ public partial class Shell : Control
     private ulong? _submittedThisFrame;
     private long _preDrawQpc;
     private bool _uiFrames;
+    // SF6 (27 Nov 2026): the frame thread's marks in one Godot frame, noted only while the event log is on. A frame whose
+    // post-draw follows the last one by over 25 ms writes them as a "hole" steps row (FrameHole): each part runs from
+    // the mark before it to its own, so the parts tile the frame thread's time between the two post-draws.
+    private enum Mark { Tree, First, Shell, Keys, Openings, Apply, Frame, Presented, Shown, Bind, Last, Deferred, Count }
+    private static readonly string[] MarkParts =
+        { "idle", "tree", "early", "keys", "openings", "apply", "m6h_frame", "presented", "shown", "bind", "late",
+          "deferred" };
+    private long _nodesAtShell, _nodesAtBind, _objectsAtShell;
+    // The deferred marks the bind queued (each after the deferred calls of its part), in queue order.
+    private readonly List<(string Name, long At)> _queued = new();
+    private void Queue(string name) => Callable.From(() => _queued.Add((name, EventLog.Now()))).CallDeferred();
+    private static long Count(Performance.Monitor monitor) => (long)Performance.GetMonitor(monitor);
+    private readonly long[] _marks = new long[(int)Mark.Count];
+    private long _lastDrawn;
+    private TimeSpan _gcPause;
+    private int _gcCount;
+    private SceneTree? _markedTree;
+    private void Note(Mark mark)
+    {
+        if (_uiFrames)
+        {
+            _marks[(int)mark] = EventLog.Now();
+        }
+    }
     private readonly List<IShellModule> _modules = new();
     /// <summary>LP4-3's editor panel, one of <see cref="_modules"/> when M600_EDITOR is 1.</summary>
     private Editor.EditorPanel? _editor;
@@ -350,6 +374,23 @@ public partial class Shell : Control
             RenderingServer.FramePreDraw += OnFramePreDraw;
             RenderingServer.FramePostDraw += OnFramePostDraw;
             _uiFrames = true;
+            // SF6: the start of the tree's process step, and the first and the last node's _Process.
+            _markedTree = GetTree();
+            _markedTree.ProcessFrame += OnTreeProcess;
+            AddChild(new FrameMark { ProcessPriority = int.MinValue, At = () => Note(Mark.First) }, false, InternalMode.Front);
+            // The last node also queues a deferred mark: the calls queued while the nodes processed run before it, and
+            // what they queue in turn (a container's sort, a minimum size, a redraw) after it, in "flush".
+            AddChild(new FrameMark
+            {
+                ProcessPriority = int.MaxValue,
+                At = () =>
+                {
+                    Note(Mark.Last);
+                    Callable.From(() => Note(Mark.Deferred)).CallDeferred();
+                },
+            }, false, InternalMode.Back);
+            _gcPause = GC.GetTotalPauseDuration();
+            _gcCount = GC.CollectionCount(0);
             _startup = StartupLog.FromEnvironment();
         }
         if (withSession)
@@ -1033,6 +1074,12 @@ public partial class Shell : Control
 
     public override void _Process(double delta)
     {
+        Note(Mark.Shell);
+        if (_uiFrames)
+        {
+            _nodesAtShell = Count(Performance.Monitor.ObjectNodeCount);
+            _objectsAtShell = Count(Performance.Monitor.ObjectCount);
+        }
         FollowFocus();
         if (_host == IntPtr.Zero || _hostLibrary is not { } library || _surface is not { } surface)
         {
@@ -1043,6 +1090,7 @@ public partial class Shell : Control
         // Local is drawn, the surface covers the bounding box of both openings, and each is a pane of the frame.
         PollKeys(library);
         FollowLocalCap(library);
+        Note(Mark.Keys);
         var global = _chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
         repairPreview?.Tick();
         var (area, layout) = Openings(global);
@@ -1091,6 +1139,7 @@ public partial class Shell : Control
         {
             SetPanes(library, global, layout);
         }
+        Note(Mark.Openings);
         // ADR-D02 B22 rest: a palette chart row switches Global's layout at the next step (ADR-D02.9).
         if (D02.ShellJumble.On && D02.ShellHopf.TakeRequest() is uint wanted && wanted != D02.ShellHopf.Drawn)
         {
@@ -1146,6 +1195,7 @@ public partial class Shell : Control
         {
             D02.ShellScene.Apply(library, _host);
         }
+        Note(Mark.Apply);
         _submittedThisFrame = null;
         var submitted = EventLog.Now();
         var code = library.Frame(_host, out var frame);
@@ -1185,6 +1235,7 @@ public partial class Shell : Control
         {
             GD.PushWarning($"frame: {code}: {library.LastError(_host)}");
         }
+        Note(Mark.Frame);
         int count;
         do
         {
@@ -1211,6 +1262,7 @@ public partial class Shell : Control
                 }
             }
         } while (count == _presented.Length);
+        Note(Mark.Presented);
         // SF3 (27 Nov 2026): the chrome's Describe at a newly shown revision, as a "steps" row when it took over 1 ms.
         var describing = EventLog.Now();
         _chrome?.Shown(_shownRevision);
@@ -1218,6 +1270,7 @@ public partial class Shell : Control
         {
             shownLog.Steps("shown", describing, ("describe", describing, EventLog.Now()));
         }
+        Note(Mark.Shown);
         // ADR-D02 B5: at each newly adopted revision, the sample state whose digests equal the head's binds. It follows
         // the revision a submitted frame drew, not the one confirmed on screen: a window behind the owner's presents
         // nothing, and the facts must still follow the session (checkpoint C1).
@@ -1229,6 +1282,11 @@ public partial class Shell : Control
             var digested = EventLog.Now();
             var parts = _log != null ? new List<(string Name, long From, long To)>() : null;
             D02.ShellJumble.BindParts = parts;
+            if (parts != null)
+            {
+                Queue("before");
+                D02.ShellJumble.PartEnded = Queue;
+            }
             try
             {
                 if (read)
@@ -1243,6 +1301,7 @@ public partial class Shell : Control
             finally
             {
                 D02.ShellJumble.BindParts = null;
+                D02.ShellJumble.PartEnded = null;
             }
             // SF (27 Nov 2026): the bind's steps at a newly adopted revision, only while the event log is on; SF3: with
             // its parts (feed, chip, totals, style, capmap, nu, tint, cards, inspect) between the two totals.
@@ -1259,6 +1318,79 @@ public partial class Shell : Control
                 log.Steps("bind", asking, summed.ToArray());
             }
         }
+        Note(Mark.Bind);
+        if (_uiFrames)
+        {
+            _nodesAtBind = Count(Performance.Monitor.ObjectNodeCount);
+        }
+    }
+
+    private void OnTreeProcess() => Note(Mark.Tree);
+
+    /// <summary>
+    /// SF6: one "hole" steps row for a frame whose post-draw came over 25 ms after the last: its parts from the last
+    /// post-draw (idle: input, physics, the loop's wait; tree: the tree's first message flush, timers and tweens;
+    /// early and late: the nodes that process before and after the shell; the shell's own parts; flush: the deferred
+    /// calls, layout and redraw callbacks before the draw; draw), the garbage collector's pause and its collections.
+    /// A mark this frame did not note merges into the next part.
+    /// </summary>
+    private void FrameHole(EventLog log, long drawn)
+    {
+        var from = _lastDrawn;
+        var parts = new List<(string Name, long From, long To)>();
+        var previous = from;
+        for (var i = 0; i < (int)Mark.Count; i++)
+        {
+            if (_marks[i] > previous && _marks[i] <= drawn)
+            {
+                parts.Add((MarkParts[i], previous, _marks[i]));
+                previous = _marks[i];
+            }
+        }
+        if (_preDrawQpc > previous)
+        {
+            parts.Add(("flush", previous, _preDrawQpc));
+            previous = _preDrawQpc;
+        }
+        parts.Add(("draw", previous, drawn));
+        // The deferred calls queued while the nodes processed, split at the bind's queued marks: "q.before" (queued
+        // before the bind), "q.<part>" (queued by that part of the bind), "q.after" (queued after it).
+        var deferred = parts.FindIndex(p => p.Name == "deferred");
+        var queued = _queued.Where(q => q.At > from && q.At <= drawn).ToList();
+        if (deferred >= 0 && queued.Count > 0)
+        {
+            var (_, start, end) = parts[deferred];
+            var split = new List<(string Name, long From, long To)>();
+            var at = start;
+            foreach (var (mark, time) in queued)
+            {
+                split.Add(("q." + mark, at, time));
+                at = time;
+            }
+            split.Add(("q.after", at, end));
+            parts.RemoveAt(deferred);
+            parts.InsertRange(deferred, split.GroupBy(p => p.Name).Select(g => (g.Key, 0L, g.Sum(p => p.To - p.From))));
+        }
+        _queued.Clear();
+        var pause = GC.GetTotalPauseDuration() - _gcPause;
+        var collections = GC.CollectionCount(0) - _gcCount;
+        log.Append(json =>
+        {
+            json.WriteString("t", "steps");
+            json.WriteString("what", "hole");
+            json.WriteNumber("qpc", from);
+            foreach (var (name, a, b) in parts)
+            {
+                json.WriteNumber(name + "_ms", Math.Round((b - a) * 1000.0 / System.Diagnostics.Stopwatch.Frequency, 3));
+            }
+            json.WriteNumber("gc_ms", Math.Round(pause.TotalMilliseconds, 3));
+            json.WriteNumber("gc_collections", collections);
+            // Nodes the shell's step added (a rebuilt row), and the objects the whole frame added.
+            json.WriteNumber("nodes_shell", _nodesAtBind - _nodesAtShell);
+            json.WriteNumber("nodes_frame", Count(Performance.Monitor.ObjectNodeCount) - _nodesAtShell);
+            json.WriteNumber("objects_frame", Count(Performance.Monitor.ObjectCount) - _objectsAtShell);
+            json.WriteNumber("total_ms", Math.Round((drawn - from) * 1000.0 / System.Diagnostics.Stopwatch.Frequency, 3));
+        });
     }
 
     /// <summary>Before Godot draws and presents its frame (RenderingServer's frame_pre_draw).</summary>
@@ -1275,8 +1407,25 @@ public partial class Shell : Control
         {
             _log?.UiFrame(_preDrawQpc, frameId, drawn);
         }
+        if (_log is { } holes)
+        {
+            if (_lastDrawn != 0 && drawn - _lastDrawn > System.Diagnostics.Stopwatch.Frequency / 40)
+            {
+                FrameHole(holes, drawn);
+            }
+            _lastDrawn = drawn;
+            _gcPause = GC.GetTotalPauseDuration();
+            _gcCount = GC.CollectionCount(0);
+        }
         _submittedThisFrame = null;
         _preDrawQpc = 0;
+    }
+
+    /// <summary>SF6: a node whose _Process notes one mark, the first node to run (lowest priority) or the last.</summary>
+    private sealed partial class FrameMark : Node
+    {
+        public Action? At { get; set; }
+        public override void _Process(double delta) => At?.Invoke();
     }
 
     public override void _ExitTree()
@@ -1336,6 +1485,11 @@ public partial class Shell : Control
             RenderingServer.FramePreDraw -= OnFramePreDraw;
             RenderingServer.FramePostDraw -= OnFramePostDraw;
             _uiFrames = false;
+            if (_markedTree is { } tree)
+            {
+                tree.ProcessFrame -= OnTreeProcess;
+                _markedTree = null;
+            }
         }
         // The modules go before the log closes, so that their last rows reach it.
         WindowHook.Remove();

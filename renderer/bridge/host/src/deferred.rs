@@ -173,10 +173,42 @@ pub(crate) enum Wait {
     Done,
 }
 
-impl Wait {
-    /// A wait of at most `limit` from now.
-    pub(crate) fn at_most(limit: Duration) -> Wait {
-        Wait::Until(Instant::now() + limit)
+/// A submission that took less than this did not wait for the display (SF6): recording and presenting take well under
+/// a millisecond, and the core's wait for the display about one refresh less the caller's own work.
+pub(crate) const DISPLAY_WAITED: Duration = Duration::from_millis(2);
+
+/// SF6 (27 November 2026): whether a frame call that began at `entered` and submitted from `submitting` to `submitted`
+/// waits after its submission for a pending build, and until when. Only a submission that returned at once (the call
+/// came after the display was ready, as after a synchronous key call) waits, until `limit` after the call began; one
+/// that waited for the display adopts nothing after it, so the frame thread keeps its refresh.
+pub(crate) fn after_submission(
+    entered: Instant,
+    submitting: Instant,
+    submitted: Instant,
+    limit: Duration,
+) -> Option<Wait> {
+    (submitted.saturating_duration_since(submitting) < DISPLAY_WAITED).then(|| Wait::Until(entered + limit))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// SF6: a frame call whose submission waited for the display adopts nothing after it; one whose submission
+    /// returned at once waits for a pending build until the limit after the call began.
+    #[test]
+    fn only_a_submission_that_did_not_wait_for_the_display_waits_for_a_build() {
+        let entered = Instant::now();
+        let submitting = entered + Duration::from_millis(3);
+        let limit = Duration::from_millis(12);
+        assert!(after_submission(entered, submitting, submitting + Duration::from_millis(10), limit).is_none());
+        assert!(after_submission(entered, submitting, submitting + DISPLAY_WAITED, limit).is_none());
+        let Some(Wait::Until(until)) =
+            after_submission(entered, submitting, submitting + Duration::from_micros(300), limit)
+        else {
+            panic!("a wait until a deadline");
+        };
+        assert_eq!(until - entered, limit);
     }
 }
 

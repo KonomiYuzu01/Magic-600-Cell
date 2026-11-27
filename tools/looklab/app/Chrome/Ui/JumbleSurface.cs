@@ -239,16 +239,22 @@ public sealed partial class CapMapPanel : VBoxContainer
         status.Text = Map.Named is int cap && Map.Layout != null ? JumbleViews.Tier1(Tier1(cap) + " · " + Map.Meeting.Count + " meeting caps", State)
             : Map.Typed.Length > 0 ? "cap " + Map.Typed + "…  Enter names it" : "no cap named";
         status.AddThemeColorOverride("font_color", t.C(Map.Named != null ? "text" : "text.dim"));
-        foreach (Node child in classes.GetChildren()) { classes.RemoveChild(child); child.QueueFree(); }
-        if (Map.Layout == null) return;
-        classes.AddThemeConstantOverride("h_separation", t.Px("space.3"));
+        // SF6 (27 Nov 2026): the class rows stay while a layout is drawn and change their words in place; a bind rebuilt
+        // them at each twist before.
+        if (Map.Layout == null)
+        {
+            foreach (Node child in classes.GetChildren()) { classes.RemoveChild(child); child.QueueFree(); }
+            return;
+        }
+        if (!classes.HasThemeConstantOverride("h_separation") || classes.GetThemeConstant("h_separation") != t.Px("space.3"))
+            classes.AddThemeConstantOverride("h_separation", t.Px("space.3"));
         IReadOnlyDictionary<CapClass, int> byClass = Map.Map.Counts();
         foreach (CapClass k in new[] { CapClass.Blocked, CapClass.Closed, CapClass.AtFloor, CapClass.AboveFloor, CapClass.Pending })
         {
             string word = k == CapClass.AtFloor ? "at floor (N_c = F_c > 0)" : CapMapModel.Word(k);
-            Entry(new CapSwatch(tokens, k), word + " · " + byClass[k], "CapMapClass_" + k);
+            Entry(() => new CapSwatch(tokens, k), word + " · " + byClass[k], "CapMapClass_" + k);
         }
-        Entry(new CapSwatch(tokens, null), "columns wrap", "CapMapWrap");
+        Entry(() => new CapSwatch(tokens, null), "columns wrap", "CapMapWrap");
         Map.Restyle();
 
         string Tier1(int named)
@@ -257,10 +263,17 @@ public sealed partial class CapMapPanel : VBoxContainer
             return kind + " " + id + string.Concat(numerals.Select(s => " · " + s.Label + " " + (s.Value.Kind == NumeralKind.Value ? s.Value.Text : s.Value.Word)));
         }
 
-        void Entry(Control swatch, string text, string name)
+        void Entry(Func<Control> swatch, string text, string name)
         {
+            if (classes.GetNodeOrNull<HBoxContainer>(name) is { } kept && kept.GetChildCount() == 2 && kept.GetChild(1) is Label words)
+            {
+                words.Text = text;
+                TintLegendRow.Colour(words, t.C("text.dim"));
+                if (kept.GetChild(0) is CanvasItem drawn) drawn.QueueRedraw();
+                return;
+            }
             var row = new HBoxContainer { Name = name }; row.AddThemeConstantOverride("separation", t.Px("space.1"));
-            row.AddChild(swatch);
+            row.AddChild(swatch());
             Label label = ChromeWidgets.Text(text, "MicroLabel"); label.AddThemeColorOverride("font_color", t.C("text.dim")); row.AddChild(label);
             classes.AddChild(row);
         }
