@@ -51,7 +51,14 @@ public sealed partial class JumbleHost
           // B22 rest: Global's chart presets, the palette's chart row and the way back to the chain (CR-14's draft rows).
           JumbleViews.SheetRow, JumbleViews.RingsRow, JumbleViews.ChartRow, JumbleViews.ChainRow,
           // B21: Local's raw view, its antipode chart and its clip (CR-14's draft rows).
-          RawView.Row, RawView.AntipodeRow, RawView.ClipRow };
+          RawView.Row, RawView.AntipodeRow, RawView.ClipRow,
+          // B32 findings: the entry slot, the cut slice's split and shell (B20), and the repair list's key route.
+          EntrySlot.Id, SplitRow, ShellRow, RepairFocusRow, RepairStageRow };
+    public const string SplitRow = "jumble.slice.split", ShellRow = "jumble.slice.shell",
+        RepairFocusRow = "jumble.repair.focus", RepairStageRow = "jumble.repair.stage";
+    // B32 findings: the shell's cut slice rows (answers why not, or null once carried out).
+    public Func<string, string?, string?>? SliceRow { get; set; }
+    public string? SliceRefused { get; private set; }
     // B22 rest: the shell's Global layout switch (answers why not, or null) and the chart Global draws (null: the chain).
     public Func<string, string?>? ChartRow { get; set; }
     public Func<string?>? Chart { get; set; }
@@ -412,6 +419,15 @@ public sealed partial class JumbleHost
         _ when FilterRows.Contains(command) => null,
         _ when !Source.State.Mode => "Jumble is off",
         _ when RawView.Rows.Contains(command) && RawRow == null => "this build draws no raw view",
+        SplitRow or ShellRow when SliceRow == null => "this build draws no cut slice",
+        ShellRow when CutSlice.ParseShell(argument) == null => "it needs the shell's outer radius in radians, 0.05 to 3.14, or default, as in > jumble.slice.shell 0.8",
+        RepairFocusRow or RepairStageRow when Naming.Named == null => "name a cap first",
+        RepairFocusRow or RepairStageRow when Repair == null => "the samples hold no repair list at cap " + Naming.Named,
+        RepairFocusRow or RepairStageRow when Repair!.Error != null || Repair!.End == JobEnd.Cancelled => "the repair list shows no rows to focus or stage",
+        RepairFocusRow when argument != null && RepairPlace(argument) == null => "it needs a row 1 to " + Repair!.Rows.Count + " and, if you like, its step, as in > jumble.repair.focus 2 2",
+        RepairStageRow when Repair!.End != JobEnd.Completed => "only a completed repair list stages a row",
+        RepairStageRow when argument == null && Repair!.Focused == null => "it needs a row 1 to " + Repair!.Rows.Count + ", or a focused row",
+        RepairStageRow when argument != null && RepairPlace(argument) is not (_, 0) => "it needs a row 1 to " + Repair!.Rows.Count + ", as in > jumble.repair.stage 2",
         RawView.ClipRow when RawView.ParseClip(argument) == null => "it needs h from 0 (90°) to 0.968 (the named cap's cut), cut or tick, as in > view.mode.raw.clip 0.5",
         // Without a number the row opens the cap prompt.
         "jumble.cap.name" when argument != null && CapNaming.Typed(argument) == null => "no cap is numbered " + argument + "; caps are 0 to 599",
@@ -437,6 +453,14 @@ public sealed partial class JumbleHost
         {
             case var row when JumbleViews.ChartRows.Contains(row): ChartRefused = ChartRow != null ? ChartRow(row) : null; break;
             case var row when RawView.Rows.Contains(row): RawRefused = RawRow != null ? RawRow(row, argument) : null; break;
+            // B32 findings: the entry slot applies its value again (a key the researcher changed since is set again).
+            case EntrySlot.Id: Entry.Revert(); Entry.Apply(); break;
+            case SplitRow or ShellRow: SliceRefused = SliceRow != null ? SliceRow(command, argument) : null; break;
+            case RepairFocusRow: FocusRepair(argument); break;
+            case RepairStageRow when Repair != null && (argument != null ? RepairPlace(argument) is (int k, 0) ? k : 0 : Repair.Focused ?? 0) is int pick and > 0:
+                // The solver named the row (or focused it) and pressed Enter in the palette: the solver's pick.
+                Pick(Repair.Rows[pick - 1], UserEvent.Key("palette Enter"));
+                break;
             case "filter.open": OpenFilter(); break;
             case "jumble.corrections.mark": if (MarkOf(argument) is (int id, int by)) Corrections.Model?.Mark(id, by); OpenCorrections(); break;
             case "jumble.corrections.check": Corrections.CheckSet(); OpenCorrections(); break;
@@ -465,6 +489,30 @@ public sealed partial class JumbleHost
                 heightShown = k; FocusOn(JumbleFocus.HeightOf(Style, k));
                 break;
         }
+    }
+
+    // B32 findings: `jumble.repair.focus [k [s]]` opens Local's repair list and gives it keyboard focus with no row
+    // focused (ADR-D02.32); with k it focuses row k, and with s it shows step s of k's moving sets (ADR-D02.34). Then the
+    // list's own keys work: arrows to focus, digits 1 to 9 or Enter to pick, Left and Right for the steps.
+    private void FocusRepair(string? argument)
+    {
+        if (Repair == null) return;
+        if (Local.Open != "repair_list") Local.Toggle("repair_list");
+        if (argument != null && RepairPlace(argument) is (int row, int step) && Repair.Focus(row, UserEvent.Key("palette Enter")))
+        {
+            Scrub.Show(Repair.Rows[row - 1]);
+            for (int k = 1; k < step; k++) Scrub.Scrub("forward");
+        }
+        Surface.FocusRepair();
+    }
+
+    // A repair row 1 to m and an optional step 1 to its m (0: none given), or null.
+    private (int Row, int Step)? RepairPlace(string argument)
+    {
+        string[] parts = argument.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (Repair == null || parts.Length is < 1 or > 2 || Whole(parts[0]) is not int row || row < 1 || row > Repair.Rows.Count) return null;
+        if (parts.Length == 1) return (row, 0);
+        return Whole(parts[1]) is int step && step >= 1 && step <= Repair.Rows[row - 1].Steps ? (row, step) : null;
     }
 
     // B10's stand-in for holding seat 1 and pressing its twelve twist keys (CR-19 routes the chords): the twelve

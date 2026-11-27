@@ -56,12 +56,29 @@ def run_folder(now: dt.datetime | None = None) -> Path:
     return WATCH_ROOT / stamp
 
 
-def launch_arguments(build: Path, out: Path, state: str | None, place: dict | None = None) -> list[str]:
+def script_arguments(script: str, state: str | None) -> list[str]:
+    """B32 findings: a d02_scripts/ script played the way d02_run.py --script plays it: its puzzle, the shell's own
+    player (--d02-script, which quits after the last step) and sample mode only for the scripts d02_run runs in it."""
+    import d02_run
+    path = d02_run.SCRIPTS / f"{script}.json"
+    if script not in d02_run.EXPECT or not path.is_file():
+        raise ValueError(f"no D02 script named {script} (renderer/shell/d02_scripts/)")
+    if script in d02_run.ON_FIXTURE and not (state and (FIXTURES / state / "fixture.json").is_file()):
+        raise ValueError(f"the {script} script needs --state with a written session fixture")
+    written = json.loads(path.read_text(encoding="utf-8"))
+    return (["--puzzle", written.get("puzzle", "jumble-on")] + (["--sample"] if script in d02_run.IN_SAMPLE_MODE else [])
+            + ["--d02-script", str(path)])
+
+
+def launch_arguments(build: Path, out: Path, state: str | None, place: dict | None = None,
+                     script: str | None = None) -> list[str]:
     """launch.py's arguments for a watched start: the frame, Jumble on, D02 on with a data-only reload, the state's
-    session fixture when there is one, and the old window's place and size on a restart. Nothing asks for the
-    foreground or for a topmost window."""
+    session fixture when there is one, and the old window's place and size on a restart. With a script, its puzzle,
+    mode and player instead of the sample frame (script_arguments). Nothing asks for the foreground or for a topmost
+    window."""
+    mode = script_arguments(script, state) if script else ["--puzzle", "jumble-on", "--sample"]
     arguments = [sys.executable, "-B", str(HERE / "launch.py"), "--out", str(out), "--build", str(build), "--frame",
-                 "--puzzle", "jumble-on", "--sample", "--d02", "--d02-data", str(DATA)]
+                 *mode, "--d02", "--d02-data", str(DATA)]
     if state:
         arguments += ["--d02-state", state]
         if (FIXTURES / state / "fixture.json").is_file():
@@ -92,9 +109,11 @@ def place_of(out: Path) -> dict | None:
         return None
 
 
-def start(build: Path, out: Path, state: str | None, place: dict | None = None) -> subprocess.Popen:
+def start(build: Path, out: Path, state: str | None, place: dict | None = None,
+          script: str | None = None) -> subprocess.Popen:
+    arguments = launch_arguments(build, out, state, place, script)
     out.parent.mkdir(parents=True, exist_ok=True)
-    return subprocess.Popen(launch_arguments(build, out, state, place), cwd=str(ROOT))
+    return subprocess.Popen(arguments, cwd=str(ROOT))
 
 
 def close(process: subprocess.Popen, out: Path) -> None:
@@ -153,6 +172,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--build", type=Path, help="the product build (default: the newest)")
     parser.add_argument("--follow", action="store_true", help="keep one window across build steps")
     parser.add_argument("--runs", type=Path, help="the folder for the run folders (default: work/d02-watch)")
+    parser.add_argument("--script", help="replay a renderer/shell/d02_scripts/ script, as d02_run.py --script does "
+                                         "(without .json); the window quits after its last step")
     args = parser.parse_args(argv)
     if args.runs is not None:
         global WATCH_ROOT
@@ -167,9 +188,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"watch: no product build under {build_product.BUILD_ROOT}; run renderer/shell/build_product.py")
         return 2
     if args.follow:
+        if args.script:
+            print("watch: --script plays one script and quits; it does not go with --follow")
+            return 2
         return follow(build, args.state)
     out = run_folder()
-    process = start(build, out, args.state)
+    try:
+        process = start(build, out, args.state, script=args.script)
+    except ValueError as error:
+        print(f"watch: {error}")
+        return 2
     print(f"watch: build {build.name}, run folder {out.name}; the window opens behind the one you use")
     try:
         return process.wait()

@@ -65,6 +65,13 @@ public static class ShellJumble
         return (names, Sentence("local.empty"), Sentence("result.not_run"));
     }
 
+    /// <summary>
+    /// Words that send the reader to the palette by <paramref name="taken"/> (a key another surface holds) name the
+    /// palette's own key instead (B32 findings: the sample's key map holds F1).
+    /// </summary>
+    public static string PaletteRoute(string words, string? taken, string paletteKeys) =>
+        taken is { Length: > 0 } && paletteKeys.Split(", ")[0] is { Length: > 0 } key ? words.Replace(taken + " ›", key + " ›") : words;
+
     /// <summary>The binding chip's words for a bound sample state.</summary>
     public static string BoundWords(string state) => "bound · " + state;
 
@@ -516,6 +523,12 @@ internal sealed partial class D02Driver : Node
         {
             D02Window.Settle();
         }
+        else
+        {
+            // B32 findings: past the first seconds the shell reorders nothing, but it keeps noting the owner's acts on
+            // its window for the window's life.
+            D02Window.Watch();
+        }
         if ((_poll += delta) >= PollSeconds)
         {
             _poll = 0;
@@ -935,6 +948,7 @@ internal sealed partial class D02Driver : Node
             json.WriteString("script", _scriptName);
             json.WriteNumber("step", _next);
             json.WriteString("do", _doing);
+            json.WriteBoolean("sample", ShellChrome.SampleOn);
             json.WriteStartObject("window");
             json.WriteBoolean("foreground", D02Window.Foreground());
             json.WriteBoolean("topmost", D02Window.Topmost());
@@ -1018,6 +1032,8 @@ internal sealed partial class D02Driver : Node
                 json.WriteNumber("rows", shown.Repair?.Rows.Count ?? -1);
                 json.WriteNumber("focused", shown.Repair?.Focused ?? 0);
                 json.WriteString("step", shown.Scrub.Label);
+                // B32 findings: which control holds the keys (the repair list's key route gives it the list).
+                json.WriteString("key_focus", GetViewport().GuiGetFocusOwner()?.Name ?? "");
                 json.WriteStartArray("picks");
                 foreach (var pick in shown.Picks)
                 {

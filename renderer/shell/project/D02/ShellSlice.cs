@@ -35,6 +35,33 @@ public static class ShellSlice
     public static IReadOnlyList<SlicePane> Panes(PaneSpec local) => Model.Panes(local);
 
     /// <summary>
+    /// The palette's slice rows (JumbleHost's SliceRow, B32 findings): jumble.slice.split latches the held split on or
+    /// off (a press and release of the held key also ends it), jumble.slice.shell sets the shell's outer radius.
+    /// Answers why not, or null once carried out.
+    /// </summary>
+    public static string? Request(string row, string? argument)
+    {
+        if (ShellTurn.Cap is null)
+        {
+            return "Local draws no cap";
+        }
+        if (row == JumbleHost.ShellRow)
+        {
+            if (CutSlice.ParseShell(argument) is not double max)
+            {
+                return "it needs the shell's outer radius in radians, 0.05 to 3.14, or default";
+            }
+            Model.SetShell(max);
+        }
+        else
+        {
+            Model.ToggleSplit();
+        }
+        Restyle = true;
+        return null;
+    }
+
+    /// <summary>
     /// The held keys, after the one router gave the key to the session (the chrome's keys and text focus come first).
     /// A press with a modifier is not the slice's; a release always is, so a held key never sticks.
     /// </summary>

@@ -1491,6 +1491,14 @@ class D02Fixtures(unittest.TestCase):
         arguments = watch.launch_arguments(build, out, "wj-ia-300")
         self.assertEqual(arguments[arguments.index("--d02-fixture") + 1], str(fixtures / "wj-ia-300"))
         self.assertNotIn("--d02-fixture", watch.launch_arguments(build, out, "wj-ia-420"))
+        # B32 findings: the watch window replays a d02_scripts/ script the way d02_run.py --script plays it.
+        played = watch.launch_arguments(build, out, "wj-ia-300", script="repair-keys")
+        self.assertEqual(played[played.index("--d02-script") + 1], str(run.SCRIPTS / "repair-keys.json"))
+        self.assertNotIn("--sample", played)
+        self.assertIn("--sample", watch.launch_arguments(build, out, "wj-ia-300", script="two-views"))
+        for state, script in (("wj-ia-420", "repair-keys"), ("wj-ia-300", "no-such-script")):
+            with self.assertRaises(ValueError):
+                watch.launch_arguments(build, out, state, script=script)
 
     def test_the_bind_expectation_needs_bound_unbound_bound(self):
         run = shell_module("d02_run")
@@ -2135,6 +2143,28 @@ class D02Repair(unittest.TestCase):
         self.assertEqual(len(run.expect_repair(dumps(unasked=1), {}, "wj-ia-300")), 1)
         self.assertEqual(staged, "[150·1 215·21 150·1]")
 
+    def test_the_repair_key_route_expectation(self):
+        """B32 findings: repair-keys opens the list by its palette row, with the keys and no row focused or staged."""
+        run = shell_module("d02_run")
+        self.assertIn("repair-keys", run.ON_FIXTURE)
+        rows = json.loads(text(run.SAMPLES / "wj-ia-300" / "cap-150.json"))["repair_list"]["completed"]["rows"]
+        script = json.loads(text(SHELL / "d02_scripts" / "repair-keys.json"))
+        self.assertEqual(len(script["steps"]), max(run.REPAIR_KEYS_AT.values()))
+
+        def dumps(key_focus="LocalBody_repair_list", picks_early=()):
+            out = [{"lines": [], "repair": {}, "stage": {"spans": 0, "unasked": 0}} for _ in range(len(script["steps"]) + 1)]
+            at = run.REPAIR_KEYS_AT
+            local = [["view:Local", f"▾ Repair list · {len(rows)}"]] + [["view:Local", f"{r[0]} {r[1]}"] for r in rows]
+            out[at["opened"]].update(lines=local, repair={"rows": len(rows), "focused": 0, "key_focus": key_focus,
+                                                          "picks": list(picks_early)})
+            out[at["arrowed"]]["repair"] = {"rows": len(rows), "focused": 2, "picks": []}
+            out[at["digit"]].update(repair={"picks": [2]}, stage={"spans": 1, "unasked": 0})
+            out[at["staged"]].update(repair={"picks": [2, 1]}, stage={"spans": 2, "unasked": 0})
+            return out
+        self.assertEqual(run.expect_repair_keys(dumps(), {}, "wj-ia-300"), [])
+        self.assertEqual(len(run.expect_repair_keys(dumps(key_focus="Query"), {}, "wj-ia-300")), 1)
+        self.assertEqual(len(run.expect_repair_keys(dumps(picks_early=(1,)), {}, "wj-ia-300")), 1)
+
     def test_only_the_pick_handler_stages(self):
         host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
         self.assertEqual(host.count("Stage.Stage("), 1)
@@ -2148,9 +2178,11 @@ class D02Repair(unittest.TestCase):
         app = ROOT / "tools" / "looklab" / "app"
         makers = sorted(path.name for path in app.rglob("*.cs") if "UserEvent.Key(" in text(path) or "UserEvent.Click(" in text(path))
         self.assertEqual(makers, ["JumbleHost.cs", "JumbleLists.cs", "PieceFilterUi.cs"])
-        # The host makes one, for the palette's Enter on filter.apply; the focus layer editor makes its Apply click.
+        # The host makes them only for the palette's Enter: on filter.apply, and (B32 findings) on the repair list's
+        # focus and stage rows, where the solver names the row; the focus layer editor makes its Apply click.
         host_text = text(app / "Chrome" / "Ui" / "JumbleHost.cs")
-        self.assertEqual(host_text.count("UserEvent."), 1)
+        self.assertEqual(host_text.count("UserEvent."), 3)
+        self.assertEqual(host_text.count('UserEvent.Key("palette Enter")'), 3)
         self.assertIn('case "filter.apply": Filter?.Apply(UserEvent.Key("palette Enter"));', host_text)
 
     def test_every_staging_entry_admits_its_origin(self):
@@ -2570,6 +2602,20 @@ class D02TrackJ(unittest.TestCase):
         for row in ("view.mode.raw", "view.mode.raw.clip", "view.mode.raw.antipode", "view.preset.global.ring_sheet",
                     "view.preset.global.hopf_rings"):
             self.assertNotIn(row, session["not_run"], "B21 and B22's rest run these rows")
+        for row in ("view.preset.jumble_entry", "jumble.slice.split", "jumble.slice.shell", "jumble.repair.focus",
+                    "jumble.repair.stage"):
+            self.assertNotIn(row, session["not_run"], "B32's findings give these draft rows their handlers")
+        self.assertIn("repair-keys", session["not_run"][track.REPAIR_PART]["why"])
+
+    def test_rule_one_admits_only_the_solvers_stage_row(self):
+        """B32 findings: rule 1 counts a staged record against J1 unless the stage row the solver typed staged it."""
+        track = shell_module("track_j")
+
+        def screens(row):
+            dumps = [{"do": "start", "named": -1, "tuning": {"state_digest": "d"}, "stage": {"records": 0}}] +                     [{"do": "x", "named": -1, "tuning": {"state_digest": "d"}, "stage": {"records": 1}} for _ in range(4)]
+            return dumps, [{"row": row, "open": 1, "last": 4}]
+        self.assertEqual(track.state_unchanged(*screens("jumble.repair.stage"), {}, "wj-ia-300"), [])
+        self.assertEqual(track.state_unchanged(*screens("jumble.tint.mode"), {}, "wj-ia-300"), ["1 records were staged"])
 
     def test_j1_counts_reach_and_lists_what_it_does_not_run(self):
         track = shell_module("track_j")

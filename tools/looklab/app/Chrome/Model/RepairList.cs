@@ -141,6 +141,15 @@ public sealed class RepairListModel
 
     public void Unfocus() { if (Focused == null) return; Focused = null; Safe.Raise(Changed); }
 
+    // `jumble.repair.focus k` (B32 findings): the row the solver names, 1 to m, as arrows to it would focus it.
+    public bool Focus(int row, UserEvent? asked)
+    {
+        if (row < 1 || row > Rows.Count) return false;
+        Ledger?.Record("focus", "a repair row at cap " + Cap, asked);
+        if (row != Focused) { Focused = row; Safe.Raise(Changed); }
+        return true;
+    }
+
     // Digits 1 to 9 pick rows 1 to 9, and only in the list's focused context; elsewhere a digit is not the list's.
     // C2-3: a list that shows its error instead of its rows picks nothing.
     public RepairRow? Digit(int digit, IEnumerable<string> contexts) =>

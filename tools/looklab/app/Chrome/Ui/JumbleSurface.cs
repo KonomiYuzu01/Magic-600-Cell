@@ -73,6 +73,14 @@ public sealed partial class JumbleSurface : VBoxContainer
         if (IsInstanceValid(this)) Refresh();
     }
 
+    // B32 findings: the repair list's key route gives the open list keyboard focus once it is built (the palette has
+    // closed by then), as a click on it does.
+    public void FocusRepair() => Callable.From(() =>
+    {
+        if (IsInstanceValid(sections) && sections.FindChild("LocalBody_repair_list", false, false) is Control list && list.IsVisibleInTree())
+            list.GrabFocus();
+    }).CallDeferred();
+
     public void SetDrawn(bool value)
     {
         if (drawn == value) return;
