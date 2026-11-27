@@ -51,6 +51,7 @@ internal static class ShellStatus
         positionsAt = null;
         fixture = activeFixture = null;
         prepared = sent = drawn = null;
+        (preparedHeld, sentHeld, heldKey, heldPositions) = (null, null, null, null);
         sentTokens = drawnTokens = null;
         lastFrame = default;
         moving = null;
@@ -131,6 +132,12 @@ internal static class ShellStatus
     public static void Prepare(HostLibrary bridge, IntPtr handle, ulong revision, bool sliceReady)
     {
         if (table is null) return;
+        PrepareAdopted(bridge, handle, revision, sliceReady);
+        PreparePending(bridge, handle, revision, sliceReady);
+    }
+
+    private static void PrepareAdopted(HostLibrary bridge, IntPtr handle, ulong revision, bool sliceReady)
+    {
         (library, host) = (bridge, handle);
         var preview = sliceReady && ShellSlice.Model.Previewing is { } held && ShellTurn.Cap == held.Cap
             ? ShellTurn.InsideFor(ShellTurn.Row, revision) : null;
@@ -140,13 +147,66 @@ internal static class ShellStatus
         if (Positions.Count != 0 && positionsAt != revision)
         {
             var mask = new byte[Pieces];
-            if (bridge.StatusTargets(handle, revision, StatusPatterns.MarkCode(ProtectionKinds.Position), Positions.ToArray(), mask) != HostLibrary.Ok) return;
+            // LF1: the position marks the pending send already resolved on this revision's head are reused.
+            if (heldPositions is { } early && early.Revision == revision && early.Positions == Positions.Count)
+                mask = early.Mask;
+            else if (bridge.StatusTargets(handle, revision, StatusPatterns.MarkCode(ProtectionKinds.Position), Positions.ToArray(), mask) != HostLibrary.Ok) return;
             Marks[StatusPatterns.MarkCode(ProtectionKinds.Position) - 1].Clear();
             Marks[StatusPatterns.MarkCode(ProtectionKinds.Position) - 1].UnionWith(PieceIds(mask));
             positionsAt = revision;
         }
 
-        var protectedPieces = Marks.SelectMany(set => set).ToHashSet();
+        var (bytes, sources, nextConflicts) = Encode(Marks, preview, sample);
+        if (!conflicts.SetEquals(nextConflicts))
+        {
+            conflicts = nextConflicts;
+            ShellTint.RefreshFocus();
+        }
+
+        prepared = new PieceBytes(revision, bytes, sources);
+        (moving, activeFixture, dirty) = (preview, sample, false);
+        stamp++;
+    }
+
+    // LF1 (checkpoint C3/C4's F1 for this channel): after a committed press, the bytes for the revision handed out too,
+    // with the position marks resolved on that head (m6h_status_targets reads it before its adoption) and the turn
+    // row's preview read there (ShellTurn.PendingRow), so Apply sends them for that revision and the host holds them
+    // for its adoption: the revision's first frame never draws the old revision's statuses on the new poses.
+    private static PieceBytes? preparedHeld, sentHeld;
+    private static (ulong Revision, int Stamp, byte[]? Preview)? heldKey;
+    private static (ulong Revision, int Positions, byte[] Mask)? heldPositions;
+    private static int stamp;
+
+    private static void PreparePending(HostLibrary bridge, IntPtr handle, ulong revision, bool sliceReady)
+    {
+        var pending = ShellStyle.PendingAfter(revision);
+        if (pending == 0 || prepared is null)
+        {
+            (preparedHeld, heldKey) = (null, null);
+            return;
+        }
+        var preview = sliceReady && ShellSlice.Model.Previewing is { } held && ShellTurn.Cap == held.Cap
+            ? ShellTurn.InsideFor(ShellTurn.PendingRow, pending) : null;
+        if (heldKey is { } key && key.Revision == pending && key.Stamp == stamp && key.Preview == preview) return;
+        // Tried once per pending revision, marks and preview: a refusal keeps the adopted-only send, never a retry storm.
+        (heldKey, preparedHeld) = ((pending, stamp, preview), null);
+        var marks = Marks.Select(set => new HashSet<int>(set)).ToArray();
+        if (Positions.Count != 0)
+        {
+            var mask = new byte[Pieces];
+            if (bridge.StatusTargets(handle, pending, StatusPatterns.MarkCode(ProtectionKinds.Position), Positions.ToArray(), mask) != HostLibrary.Ok) return;
+            heldPositions = (pending, Positions.Count, mask);
+            marks[StatusPatterns.MarkCode(ProtectionKinds.Position) - 1] = PieceIds(mask).ToHashSet();
+        }
+        var (bytes, sources, _) = Encode(marks, preview, activeFixture);
+        preparedHeld = new PieceBytes(pending, bytes, sources);
+    }
+
+    // The status bytes of one revision from its marks, the turn row's preview and the sample fixture, with the
+    // conflict set (the protected pieces the preview moves).
+    private static (byte[] Bytes, string[] Sources, HashSet<int> Conflicts) Encode(HashSet<int>[] marks, byte[]? preview, StatusPatterns.Fixture? sample)
+    {
+        var protectedPieces = marks.SelectMany(set => set).ToHashSet();
         var statuses = new int[table.Patterns.Count][];
         var sources = new string[statuses.Length];
         void Use(byte status, int[]? fed, bool hasFeed)
@@ -163,17 +223,11 @@ internal static class ShellStatus
         Use(StatusPatterns.Stale, null, false);
 
         var nextConflicts = statuses[StatusPatterns.Conflict - 1].ToHashSet();
-        if (!conflicts.SetEquals(nextConflicts))
-        {
-            conflicts = nextConflicts;
-            ShellTint.RefreshFocus();
-        }
-
-        prepared = new PieceBytes(revision, table.Encode(Pieces, statuses, Marks.Select(set => set.ToArray()).ToArray()), sources);
-        (moving, activeFixture, dirty) = (preview, sample, false);
+        return (table!.Encode(Pieces, statuses, marks.Select(set => set.ToArray()).ToArray()), sources, nextConflicts);
     }
 
-    // After the other channels, for the adopted revision. Token changes resend the independent table.
+    // After the other channels, for the adopted revision and (LF1) the one a committed press handed out. Token changes
+    // resend the independent table.
     public static void Apply(HostLibrary bridge, IntPtr handle, ulong revision)
     {
         if (table is null || chrome is null) return;
@@ -182,13 +236,16 @@ internal static class ShellStatus
         if (prepared is { } next && next.Revision == revision && next != sent
             && bridge.SetPieceStyle(handle, revision, HostLibrary.StyleStatus, next.Empty ? null : next.Bytes, false) == HostLibrary.Ok)
             sent = next;
+        if (preparedHeld is { } held && held != sentHeld
+            && bridge.SetPieceStyle(handle, held.Revision, HostLibrary.StyleStatus, held.Empty ? null : held.Bytes, false) == HostLibrary.Ok)
+            sentHeld = held;
     }
 
     public static void Framed(HostLibrary.Submitted frame)
     {
         if (table is null || frame.Held != 0) return;
         lastFrame = frame;
-        drawn = sent?.Revision == frame.EngineRevision ? sent : null;
+        drawn = sent?.Revision == frame.EngineRevision ? sent : sentHeld?.Revision == frame.EngineRevision ? sentHeld : null;
         drawnTokens = sentTokens;
     }
 

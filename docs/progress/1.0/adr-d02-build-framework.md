@@ -1716,6 +1716,12 @@ Each checkpoint is one read of the named diff range against the questions below,
     revision and, after a committed press, for the pending one. Left: the slice channel is still sent only for the
     adopted revision (its row is read per adopted revision), and presses committed outside `m6h_key_down` do not
     name a pending revision.
+    - LF1 (27 November 2026), the slice and status channels: both are now also sent for the pending revision.
+      `ShellTurn.NotePending` reads item 1's row at the head a committed press handed out (`Note` reuses that read at
+      the adoption, so a twist still reads its row once); `ShellSlice` sends its inside set and `ShellStatus` its bytes
+      for that revision, and the host holds them. `m6h_status_targets` also reads the handed-out head (ABI 15, no new
+      number: the signature is unchanged). Host test `style_held`'s second case checks the core's slice and status
+      against its adopted revision at every frame of a twist.
   - F2 (major as a checkpoint item, C3.9), confirmed: host test `a_pick_names_the_view_it_hit` failed first (the fake
     core answered the frame's first pane for a pick in Local); the fake now picks per pane, as the core's `pick_pane`
     does. `ShellPick` keeps the clicked view and drops a reply that `ViewPanes.Takes` refuses (the dump's
