@@ -684,6 +684,15 @@ relative path is from the repository root.
   - Reduced motion and the refused twist.
   - `d02_run.py --script sweep`.
 - Owner sees: nothing new on screen yet. The run's `turn` dump shows the row that B20's ghost will draw.
+- Review (gpt-6.2-sol, call 20261126T225307Z-e6ce1514, of `git diff f9eb87a0 8654dbe2`; dispositions, 27 November 2026):
+  - B18-01 (blocker), fixed in 1eec73b4: `HostLibrary.SetTransform` refuses a plane that is not 8 floats before the native call. `m6h_set_transform` has no plane length in its ABI, so it reads the plane only once `moving` holds one byte per piece. Checked by `TwistRowShell` in `tests/test_d02_drawing.py` and the host test `the_host_sets_the_piece_style_and_the_style_slots`.
+  - B18-02 (major), fixed in 1eec73b4: the row protects the pieces that carry the protected orbits, as the command layer does for a pose move (read only). For one twist, Net and Strict give the same verdict. A twist the layer refuses now has status 0. Host test `a_twist_that_moves_a_protected_orbit_has_no_transform_row`; it fails on the old `turns.rs`.
+  - B18-03 (major), fixed in 1eec73b4: a pick on a turning frame, styled or not, checks its copy's style version. A frame whose copy now holds another mask answers `SA2_PICK_STALE_ENGINE` instead of picking through that mask. WARP check `transform picks warp` (four unstyled turning frames, four masks); it fails on the old `product.cpp`.
+  - B18-04 (major), fixed in 1eec73b4: `m6h_twist_transform` returns the row's revision, which is the engine revision handed to the head. `m6h_set_transform` takes that revision and refuses any revision but the adopted one. The host test covers the setter's refusal, not a held adoption in a live session. Still open: B20's `ShellTurn.SendInside` sends the row's moving set through `m6h_set_piece_style`, which carries no revision, so the slice's inside layer can still draw for one frame on the revision before the row's.
+  - B18-05 (major), fixed in 1eec73b4: `ShellTurn` reads `ShellLocal.Plan.Framed`, the result of the shell's one framing call per frame (FollowLocalCap). Only a source check covers it (one `ShellLocal.Frame(` call in the project). The product scenario (name cap 1, then select in another cell) was not scripted.
+  - B18-06 (minor), fixed in 1eec73b4: a refusal is kept for its cap and revision, like a row.
+  - B18-07 (minor), fixed in 1eec73b4: the host checks a moving byte, the plane (finite, unit and orthogonal to the core's 1e-3), the angle and the phase. Each answers `M6H_E_INVALID_ARGUMENT` before the core is asked.
+  - B18-08 (minor), fixed in 1eec73b4: `expect_twist_row` pins cap 0's status to exactly 0 (blocked), cap 150's angle to pi and its plane's sha256 (`c7b19b2e…`), and the head digest before and after the query. The `turn` dump now writes `revision`, `read_at` and `plane_sha256`.
 
 **Two drawn views (B18a to B18c), added for the owner's answer of 26 November 2026.** Design: one surface, one present, several panes.
 - The core's surface covers the bounding rectangle of the drawn openings.

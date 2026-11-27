@@ -807,8 +807,10 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
         return out;
     }
     const Copy& copy = copies_[record->copy];
-    // ADR-D02 B17 (ABI 10): a styled frame's copy must still hold the piece style it drew with.
-    if (!copy.valid || copy.revision != record->input.engine_revision || (record->styled && copy.style != record->style_version)) {
+    // ADR-D02 B17 (ABI 10): a styled frame's copy must still hold the piece style it drew with; so must a turning
+    // frame's, styled or not, since its moving mask lives in the same words (B18 review finding B18-03).
+    const bool bound = record->styled || record->shape.turn != 0.0f;
+    if (!copy.valid || copy.revision != record->input.engine_revision || (bound && copy.style != record->style_version)) {
         out.state = SA2_PICK_STALE;
         out.stale = SA2_PICK_STALE_ENGINE;
         return out;
@@ -863,7 +865,8 @@ PickPlan Product::pick_pane(const Frame& record, PickPlan out) const {
         }
         const Copy& copy = copies_[record.copy];
         const bool styled = record.panes[i].styled; // ADR-D02 B17 (ABI 10)
-        if (!copy.valid || copy.revision != record.input.engine_revision || (styled && copy.style != record.style_version)) {
+        const bool bound = styled || record.panes[i].shape.turn != 0.0f; // B18-03: a turning pane's moving mask
+        if (!copy.valid || copy.revision != record.input.engine_revision || (bound && copy.style != record.style_version)) {
             out.state = SA2_PICK_STALE;
             out.stale = SA2_PICK_STALE_ENGINE;
             return out;
