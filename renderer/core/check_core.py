@@ -93,7 +93,7 @@ def check_result(executable, build, mode, vectors, stages=False, poses=False, wa
         arguments.append("--poses")
     if warp_mode and warp_mode != "poses":
         arguments.append(f"--{warp_mode}")
-    if warp_mode == "hopf":
+    if warp_mode in ("hopf", "chart"):
         arguments.append(str(Path(__file__).resolve().parents[2] / "tools" / "looklab" / "fixtures" / "hopf-rings.json"))
     if mode != "cpu":
         arguments.append("--debug")
@@ -156,6 +156,8 @@ def main():
                         help="also run ABI 7's WARP check of the piece style (sa2_style_set, sa2_view_style_set)")
     parser.add_argument("--hopf", action="store_true",
                         help="also run ABI 10's WARP check of a view's layout (sa2_view_layout_set) on Look Lab's Hopf rings")
+    parser.add_argument("--chart", action="store_true",
+                        help="also run ADR-D02 B22 item 1's WARP check of the chart channel (sa2_charts_set) on the ring sheet")
     parser.add_argument("--focus", action="store_true",
                         help="also run ABI 9's WARP check of a view's focus (sa2_view_focus)")
     parser.add_argument("--sweep", action="store_true",
@@ -217,6 +219,8 @@ def main():
             check_result(executable, build, "warp", vectors, warp_mode="focus")
         if options.hopf:
             check_result(executable, build, "warp", vectors, warp_mode="hopf")
+        if options.chart:
+            check_result(executable, build, "warp", vectors, warp_mode="chart")
         if options.sweep:
             check_result(executable, build, "warp", vectors, warp_mode="sweep")
         if options.slice:
@@ -231,7 +235,7 @@ def main():
                                                    ("panes", options.panes), ("focus", options.focus),
                                                    ("hopf", options.hopf), ("sweep", options.sweep),
                                                    ("slice", options.slice), ("raw", options.raw),
-                                                   ("colours", options.colours)) if run)
+                                                   ("colours", options.colours), ("chart", options.chart)) if run)
         if warp:
             summary = f" (CPU, WARP and hardware; WARP {warp} checks)" if options.gpu else f" (CPU and the WARP {warp} checks; no hardware run)"
         print("check_core: ok" + summary)

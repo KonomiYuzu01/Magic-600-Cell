@@ -79,7 +79,8 @@ template<class F> void refused(F&& body) {
 struct ProductGpu {
     // One GPU copy of an adopted engine image: labels (t5), then the pose
     // index, matrix rows and lattice table (t8..t10), at full capacity.
-    struct EngineCopy { Buffer labels; std::array<Buffer, 3> pose; Buffer style; Buffer staging; uint8_t* data = nullptr; }; // ABI 7: style (t17)
+    struct EngineCopy { Buffer labels; std::array<Buffer, 3> pose; Buffer style; Buffer staging; uint8_t* data = nullptr; // ABI 7: style (t17)
+                        Buffer charts; bool has_charts = false; }; // ADR-D02 B22 item 1: the chart channel (t20)
     // One preparation: per-slot visibility (t15) and instance IDs (t16).
     struct Set {
         ComPtr<ID3D12CommandAllocator> allocator; ComPtr<ID3D12GraphicsCommandList> list;
@@ -325,15 +326,16 @@ struct Scene::Impl {
     // the pose path. ABI 4's product signature appends root SRVs t15 and t16
     // (appended = 2); W1..W4 and W-J keep appended = 0.
     ComPtr<ID3D12RootSignature> signature(UINT appended, const wchar_t* label) {
-        D3D12_ROOT_PARAMETER params[22]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        D3D12_ROOT_PARAMETER params[23]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         params[0].Descriptor.ShaderRegister = 0;
         for (UINT i = 1; i <= 7; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 1; }
         for (UINT i = 8; i <= 9; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV; params[i].Descriptor.ShaderRegister = i - 8; }
         for (UINT i = 10; i < 18 + appended; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 3; }
-        if (appended == 4) {
+        if (appended >= 4) {
             params[20].Descriptor.ShaderRegister = 18; // ABI 10: the Hopf table (t18; t17 is the style's)
             params[21].Descriptor.ShaderRegister = 19;
         }
+        if (appended == 5) params[22].Descriptor.ShaderRegister = 20; // ADR-D02 B22 item 1: the chart channel
         D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 18 + appended; d.pParameters = params;
         d.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> blob, error;
@@ -711,7 +713,7 @@ struct Scene::Impl {
         const auto directory = module_path().parent_path();
         const auto blob = [&](const char* file) { return scene_bytes(directory / file); };
         const auto id_ps = blob("id_ps.dxil"), product_ps = blob("product_ps.dxil"), product_vs = blob("product_vs.dxil");
-        p->root = signature(4, L"SA2 product root signature"); // ABI 10: t15, t16, t18 and t19
+        p->root = signature(5, L"SA2 product root signature"); // ABI 10: t15, t16, t18, t19 and (B22 item 1) t20
         p->draw_pso = graphics(product_vs, product_ps, p->root.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, L"SA2 product pipeline");
         p->id_pso = graphics(product_vs, id_ps, p->root.Get(), DXGI_FORMAT_R32_UINT, L"SA2 ID pass pipeline");
         const uint64_t pose_sizes[] = {uint64_t(SA2_PIECES) * 4, uint64_t(SA2_MAX_POSES) * 64, uint64_t(SA2_MAX_POSES) * 4};
@@ -720,6 +722,7 @@ struct Scene::Impl {
             uint64_t total = copy.labels.size;
             for (size_t j = 0; j < 3; ++j) { copy.pose[j] = buffer(pose_sizes[j], D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON); total += pose_sizes[j]; }
             copy.style = buffer(uint64_t(SA2_PIECES) * 4, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON); total += copy.style.size;
+            copy.charts = buffer(uint64_t(SA2_SLOTS) * 2, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON); total += copy.charts.size;
             copy.staging = buffer(total, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ); copy.data = map(copy.staging);
         }
         p->all_visible = buffer(sb::LabelBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
@@ -796,7 +799,16 @@ struct Scene::Impl {
     // Copies only the image's bytes; the shaders read pose rows and lattice entries below pose_count only. ABI 7: a
     // piece style goes after the pose arrays' full capacity in the staging buffer.
     void upload_engine(ID3D12GraphicsCommandList* list, ProductGpu::EngineCopy& copy, const EngineImage& image,
-                       const std::vector<uint32_t>* style = nullptr) {
+                       const std::vector<uint32_t>* style = nullptr, const std::vector<uint32_t>* charts = nullptr) {
+        // ADR-D02 B22 item 1: the chart channel goes after the style's range in the staging buffer.
+        copy.has_charts = charts != nullptr;
+        if (charts) {
+            const uint64_t at = copy.labels.size + copy.pose[0].size + copy.pose[1].size + copy.pose[2].size + copy.style.size;
+            const uint64_t size = uint64_t(charts->size()) * 4;
+            scene_require(size == copy.charts.size && at + size <= copy.staging.size, "chart upload exceeds its staging range");
+            std::memcpy(copy.data + at, charts->data(), size_t(size));
+            copy_into(list, copy.charts, copy.staging, at, size);
+        }
         if (style) {
             const uint64_t at = copy.labels.size + copy.pose[0].size + copy.pose[1].size + copy.pose[2].size, size = uint64_t(style->size()) * 4;
             scene_require(size == copy.style.size && at + size <= copy.staging.size, "style upload exceeds its staging range");
@@ -887,7 +899,7 @@ struct Scene::Impl {
     // ABI 7: the styled root signature: the product's twenty parameters, then root SRV t17 (the piece style) and
     // root CBV b1 (the style slot), then the Hopf table (t18) and sticker colours (t19).
     ComPtr<ID3D12RootSignature> styled_signature() {
-        D3D12_ROOT_PARAMETER params[24]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        D3D12_ROOT_PARAMETER params[25]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         params[0].Descriptor.ShaderRegister = 0;
         for (UINT i = 1; i <= 7; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 1; }
         for (UINT i = 8; i <= 9; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV; params[i].Descriptor.ShaderRegister = i - 8; }
@@ -895,7 +907,8 @@ struct Scene::Impl {
         params[21].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; params[21].Descriptor.ShaderRegister = 1;
         params[22].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[22].Descriptor.ShaderRegister = 18; // ABI 10
         params[23].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[23].Descriptor.ShaderRegister = 19;
-        D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 24; d.pParameters = params;
+        params[24].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[24].Descriptor.ShaderRegister = 20; // B22 item 1
+        D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 25; d.pParameters = params;
         d.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> blob, error;
         hr(device, D3D12SerializeRootSignature(&d, D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), "D3D12SerializeRootSignature(styled)");
@@ -982,6 +995,8 @@ struct Scene::Impl {
         list->SetGraphicsRootShaderResourceView(style ? 22 : 20, (p.hopf.resource ? p.hopf : geometry[0]).resource->GetGPUVirtualAddress());
         // ADR-D01.52: the frame's sticker colours, or any live buffer for a pick (the ID passes never read t19).
         list->SetGraphicsRootShaderResourceView(style ? 23 : 21, (sticker_colours ? *sticker_colours : geometry[0]).resource->GetGPUVirtualAddress());
+        // ADR-D02 B22 item 1: the copy's chart channel, or the zero buffer (no channel: each chart from Hopf coordinates).
+        list->SetGraphicsRootShaderResourceView(style ? 24 : 22, (copy.has_charts ? copy.charts : p.no_instances).resource->GetGPUVirtualAddress());
         // ADR-D02 B18: a turning frame reads the moving bit from the copy's piece style at t4.
         const Buffer* srv[] = {&geometry[0], &geometry[1], &geometry[2], &geometry[3], turning ? &copy.style : &geometry[4], &copy.labels, &geometry[5]};
         for (UINT i = 0; i < 7; ++i) list->SetGraphicsRootShaderResourceView(i + 1, srv[i]->resource->GetGPUVirtualAddress());
@@ -1473,7 +1488,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     g.initialize(list); g.product_initialize(list);
     g.hopf_sync(product.hopf());
     auto& copy = p.copies[plan.copy];
-    if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style);
+    if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style, plan.charts);
     p.pane_count[ring] = 0; // ABI 8: a one-view frame
     std::array<float, 16> camera; std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), camera.begin());
     const auto c = g.product_constants(camera, input.viewport_width, input.viewport_height, plan.pose_count, plan.shape);
@@ -1551,7 +1566,7 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
     g.initialize(list); g.product_initialize(list);
     g.hopf_sync(product.hopf());
     auto& copy = p.copies[plan.copy];
-    if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style);
+    if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style, plan.charts);
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
     const float* background = product.scene_look().background;
     std::memcpy(p.sticker_colours_data[ring], &product.sticker_colours(), sizeof(StickerColours));

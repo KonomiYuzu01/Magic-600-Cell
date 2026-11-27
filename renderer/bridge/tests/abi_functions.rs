@@ -142,6 +142,7 @@ fn every_function_of_the_table_has_the_header_signature() {
         ty(&f.transform_set),
         ty(&f.sticker_colours_set),
         ty(&f.scene_look_set),
+        ty(&f.charts_set),
     ];
     assert_eq!(fields.len(), SYMBOLS.len());
     // Controls: the comparison sees whole signatures, array parameters as pointers and `void` as no parameters.

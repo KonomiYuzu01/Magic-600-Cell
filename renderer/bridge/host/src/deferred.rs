@@ -16,7 +16,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use c600_display::jumble;
-use c600_display::plan::{Publication, RevisionRef};
+use c600_display::plan::{Primitive, Publication, RevisionRef};
 use c600_display::produce::{self, GeometryInput};
 use c600_display::validate::{CheckedBundle, CheckedPublication, Context};
 
@@ -30,6 +30,8 @@ pub(crate) struct Job {
     pub ctx: Context,
     /// Whether Local is open (ADR-D02 B18b): its publication is checked too.
     pub local: bool,
+    /// ADR-D02 B22 item 1: the chart assignment's model, when it loaded.
+    pub charts: Option<std::sync::Arc<crate::charts::ChartModel>>,
 }
 
 /// A head built and checked at its engine revision: what the host's frame thread adopts (`ShellHost::install`).
@@ -47,6 +49,8 @@ pub(crate) struct Built {
     pub checked: Option<CheckedPublication>,
     /// Local's publication checked as `checked` is, when the job's Local was open (ADR-D02 B18b).
     pub checked_local: Option<CheckedPublication>,
+    /// ADR-D02 B22 item 1: each slot's chart at this revision (its posed sticker's nearest cell, ties to the lowest id).
+    pub charts: Option<Vec<u32>>,
 }
 
 /// The host context for a head under `identity` that is not the current context's block: the puzzle's declared
@@ -65,8 +69,13 @@ pub(crate) fn context_for(geometry: &GeometryInput, head: &Head, base: &Revision
 /// publication and its check against the context it will be published under. A bundle that does not check, and a head
 /// that builds none, answer [`M6H_E_HOST`] as the display host's refusal did.
 pub(crate) fn build(geometry: &GeometryInput, job: Job) -> Result<Built, Failure> {
-    let Job { revision, head, ctx, local } = job;
+    let Job { revision, head, ctx, local, charts } = job;
     let (base, bundle, primitive) = adoption(geometry, &head, revision)?;
+    // ADR-D02 B22 item 1: the revision's chart channel, fixed here, off the frame thread.
+    let charts = charts.as_ref().map(|model| match &primitive {
+        Primitive::Posed(posed) => model.assign(Some((&posed.pose_index.as_i32(), &posed.poses.as_f32()))),
+        _ => model.assign(None),
+    });
     let new_ctx = (base.identity != ctx.identity).then(|| context_for(geometry, &head, &base, &ctx));
     let publication = publication(geometry, primitive, &base);
     let publish_ctx = new_ctx.as_ref().unwrap_or(&ctx);
@@ -90,7 +99,7 @@ pub(crate) fn build(geometry: &GeometryInput, job: Job) -> Result<Built, Failure
         (bundle, checked, checked_local)
     });
     let bundle = bundle.map_err(host_error)?;
-    Ok(Built { revision, digest: head.digest(), ctx: new_ctx, bundle, publication, checked, checked_local })
+    Ok(Built { revision, digest: head.digest(), ctx: new_ctx, bundle, publication, checked, checked_local, charts })
 }
 
 /// One built job: its engine revision and its outcome.

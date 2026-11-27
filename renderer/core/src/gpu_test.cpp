@@ -2576,9 +2576,171 @@ void run_raw(Suite& suite, const Options& options) {
 }
 
 // ABI 10: --warp --hopf FILE. Only WARP; parse refuses any other mode.
+// ADR-D02 B22 item 1 (--warp --chart FILE): the chart channel on the ring sheet. Revision 2 poses every piece one place
+// along its ring (x -> x u, u = cos 12 deg + J sin 12 deg, which takes each cell centre to the next place of its ring).
+// Six sample home cells get their own colours. With the channel naming each slot's next cell, every sample sticker draws
+// inside the box in which the unposed sheet draws that next cell's own stickers (its chart's rectangle); with a wrong
+// channel (each slot's own cell) none stays inside; without a channel the Hopf-coordinate choice draws the same picture;
+// a chain view ignores the channel; an adoption drops it; malformed channels are refused and change nothing.
+void product_chart(const Options& options) {
+    const auto layout = hopf_layout(options.hopf);
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::array<uint32_t, 1200> at{}; // ring * 60 + half step: 20 rings of 60 half steps
+    std::array<uint32_t, 600> next{};
+    for (uint32_t c = 0; c < 600; ++c) at[layout.ring_of[c] * 60u + layout.half_step[c]] = c;
+    for (uint32_t c = 0; c < 600; ++c) next[c] = at[layout.ring_of[c] * 60u + (layout.half_step[c] + 2u) % 60u];
+    const double t = 12.0 * 3.14159265358979323846 / 180.0;
+    const double u[4] = {std::cos(t), std::sin(t) * layout.j[1], std::sin(t) * layout.j[2], std::sin(t) * layout.j[3]};
+    const auto qmul = [](const double* a, const double* b, double* out) {
+        out[0] = a[0]*b[0] - a[1]*b[1] - a[2]*b[2] - a[3]*b[3]; out[1] = a[0]*b[1] + a[1]*b[0] + a[2]*b[3] - a[3]*b[2];
+        out[2] = a[0]*b[2] - a[1]*b[3] + a[2]*b[0] + a[3]*b[1]; out[3] = a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + a[3]*b[0];
+    };
+    std::vector<float> identity(16, 0.0f), turn(16, 0.0f);
+    for (int k = 0; k < 4; ++k) {
+        identity[size_t(k) * 5] = 1.0f;
+        double e[4] = {0, 0, 0, 0}, column[4];
+        e[k] = 1.0;
+        qmul(e, u, column);
+        for (int r = 0; r < 4; ++r) turn[size_t(r) * 4 + k] = float(column[r]); // row-major, x' = M x
+    }
+    // Pose 0 is the identity on the lattice (index 0); revision 2 puts every piece at pose 1, the turn, off it.
+    const std::vector<int32_t> home(SA2_PIECES, 0), index(SA2_PIECES, 1), lattice{0, -1};
+    std::vector<float> both(identity);
+    both.insert(both.end(), turn.begin(), turn.end());
+    adopt_poses(harness, 1, home, identity, {0});
+    auto sheet = layout;
+    sheet.kind = SA2_LAYOUT_RING_SHEET;
+    api(ctx, sa2_view_layout_set(ctx, 1, &sheet));
+    const uint32_t samples[6] = {0, 101, 202, 303, 404, 505};
+    const uint32_t pattern[6] = {1, 2, 4, 3, 6, 5}; // R, G, B bits
+    const auto colours = [&](const std::array<uint32_t, 6>& cells) {
+        std::vector<float> table(size_t(SA2_STICKER_CLASSES) * 3, 0.5f);
+        for (int i = 0; i < 6; ++i)
+            for (int ch = 0; ch < 3; ++ch) table[size_t(cells[size_t(i)]) * 3 + ch] = (pattern[i] >> ch) & 1u ? 1.0f : 0.0f;
+        api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    };
+    std::array<uint32_t, 6> own{}, target{}, beyond{};
+    for (int i = 0; i < 6; ++i) { own[size_t(i)] = samples[i]; target[size_t(i)] = next[samples[i]]; beyond[size_t(i)] = next[next[samples[i]]]; }
+    PoseFrames frames{harness};
+    const Rows I = double_rotation(0, 3, 0, 1, 2, 0);
+    struct Region { uint64_t count = 0; int left = 1 << 30, right = -1, top = 1 << 30, bottom = -1; };
+    const auto regions = [&](const std::vector<uint32_t>& picture) {
+        std::array<Region, 6> out{};
+        for (uint32_t y = 0; y < harness.height; ++y)
+            for (uint32_t x = 0; x < harness.width; ++x) {
+                const uint32_t w = picture[size_t(y) * harness.width + x];
+                uint32_t bits = 0;
+                bool clear = true;
+                for (int ch = 0; ch < 3; ++ch) {
+                    const uint32_t v = (w >> (8 * ch)) & 0xFFu;
+                    if (v > 60) bits |= 1u << ch; else if (v > 10) clear = false;
+                }
+                if (!clear || bits == 0 || bits == 7) continue;
+                for (int i = 0; i < 6; ++i)
+                    if (pattern[i] == bits) {
+                        auto& r = out[size_t(i)];
+                        ++r.count;
+                        r.left = std::min(r.left, int(x)); r.right = std::max(r.right, int(x));
+                        r.top = std::min(r.top, int(y)); r.bottom = std::max(r.bottom, int(y));
+                    }
+            }
+        return out;
+    };
+    // A chart's rectangle on the sheet: one column (two half steps) wide and one ring high, centred on the chart's own
+    // stickers; the pitch is measured from the next chart along the same ring.
+    struct Tile { double cx = 0, cy = 0, half = 0; };
+    std::array<Tile, 6> tiles{};
+    // Outside counts each sample's pixels outside its chart's rectangle, with 2 pixels of slack: the measured centre and
+    // pitch are each good to about half a pixel, and rasterization adds half a pixel.
+    const auto outside = [&](const std::vector<uint32_t>& picture, const std::array<Tile, 6>& boxes, int i) {
+        uint64_t n = 0;
+        for (uint32_t y = 0; y < harness.height; ++y)
+            for (uint32_t x = 0; x < harness.width; ++x) {
+                const uint32_t w = picture[size_t(y) * harness.width + x];
+                uint32_t bits = 0;
+                bool clear = true;
+                for (int ch = 0; ch < 3; ++ch) {
+                    const uint32_t v = (w >> (8 * ch)) & 0xFFu;
+                    if (v > 60) bits |= 1u << ch; else if (v > 10) clear = false;
+                }
+                if (!clear || bits != pattern[i]) continue;
+                const auto& b = boxes[size_t(i)];
+                n += std::fabs(double(x) - b.cx) > b.half + 2.0 || std::fabs(double(y) - b.cy) > b.half + 2.0;
+            }
+        return n;
+    };
+    colours(target);
+    const auto reference = regions(frames.draw(1, 1, 0, I));
+    colours(beyond);
+    const auto further = regions(frames.draw(1, 1, 0, I));
+    for (int i = 0; i < 6; ++i) {
+        const auto& r = reference[size_t(i)];
+        const auto& f = further[size_t(i)];
+        expect(r.count > 0 && f.count > 0, "the unposed sheet drew no sticker of a sample's next cell");
+        auto& tile = tiles[size_t(i)];
+        tile.cx = (r.left + r.right) / 2.0;
+        tile.cy = (r.top + r.bottom) / 2.0;
+        tile.half = std::fabs((f.left + f.right) / 2.0 - tile.cx) / 2.0;
+        expect(tile.half >= 2.0 && r.right - tile.cx <= tile.half + 1.0 && r.bottom - tile.cy <= tile.half + 1.0,
+               "a chart's own stickers do not fit its measured rectangle");
+    }
+    adopt_poses(harness, 2, index, both, lattice);
+    colours(own);
+    const auto unset = frames.draw(2, 1, 0, I);
+    std::vector<uint32_t> right(SA2_SLOTS), wrong(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) { wrong[slot] = slot / 433; right[slot] = next[slot / 433]; }
+    const auto chain_unset = frames.draw(2, 2, 0, I);
+    api(ctx, sa2_charts_set(ctx, 2, wrong.data(), SA2_SLOTS));
+    const auto bad = frames.draw(2, 1, 0, I);
+    expect(frames.draw(2, 2, 0, I) == chain_unset, "a chain view read the chart channel");
+    api(ctx, sa2_charts_set(ctx, 2, right.data(), SA2_SLOTS));
+    const auto good = frames.draw(2, 1, 0, I);
+    const auto drawn = regions(good);
+    uint64_t total_out_good = 0, moved_out = 0;
+    for (int i = 0; i < 6; ++i) {
+        const uint64_t out_good = outside(good, tiles, i), out_bad = outside(bad, tiles, i);
+        std::cout << "chart channel: sample " << samples[i] << " -> chart " << next[samples[i]] << ": " << drawn[size_t(i)].count
+                  << " pixels (unposed next cell " << reference[size_t(i)].count << ", rectangle " << 2 * tiles[size_t(i)].half
+                  << " px), outside its chart's rectangle " << out_good
+                  << "; with each slot's own cell " << out_bad << " outside" << std::endl;
+        expect(drawn[size_t(i)].count > 0, "a sample drew nothing under the chart channel");
+        total_out_good += out_good;
+        moved_out += out_bad > 0 || regions(bad)[size_t(i)].count == 0;
+    }
+    expect(total_out_good == 0, "a sample sticker drew outside its assigned chart's rectangle");
+    expect(moved_out == 6, "the wrong channel left a sample inside its next cell's chart");
+    uint64_t differ = 0;
+    for (size_t k = 0; k < good.size(); ++k) differ += good[k] != unset[k];
+    std::cout << "chart channel: the Hopf-coordinate choice differs from the channel at " << differ << " pixels" << std::endl;
+    expect(differ == 0, "the Hopf-coordinate choice drew another picture than the nearest-cell channel");
+    std::vector<uint32_t> past(right);
+    past[7] = 600;
+    expect(sa2_charts_set(ctx, 2, past.data(), SA2_SLOTS) == SA2_E_INVALID_ARGUMENT, "a cell past 599 was accepted");
+    expect(sa2_charts_set(ctx, 2, right.data(), SA2_SLOTS - 1) == SA2_E_INVALID_ARGUMENT, "a short chart channel was accepted");
+    expect(sa2_charts_set(ctx, 1, right.data(), SA2_SLOTS) == SA2_E_INVALID_ARGUMENT, "a channel for another revision was accepted");
+    expect(sa2_charts_set(ctx, 2, nullptr, 5) == SA2_E_INVALID_ARGUMENT, "a NULL channel with a count was accepted");
+    expect(sa2_charts_set(nullptr, 2, right.data(), SA2_SLOTS) == SA2_E_INVALID_ARGUMENT, "a channel was set without a context");
+    expect(frames.draw(2, 1, 0, I) == good, "a refused chart channel changed the picture");
+    api(ctx, sa2_charts_set(ctx, 2, wrong.data(), SA2_SLOTS));
+    adopt_poses(harness, 3, index, both, lattice);
+    expect(frames.draw(3, 1, 0, I) == unset, "an adoption kept the previous revision's chart channel");
+    api(ctx, sa2_charts_set(ctx, 3, nullptr, 0));
+    std::cout << "chart channel: every sample draws inside its assigned chart's rectangle" << std::endl;
+}
+
 void run_hopf(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the Hopf layout check runs on WARP only");
     suite.check("view layout warp", [&] { product_hopf(options); });
+}
+
+// ADR-D02 B22 item 1: --warp --chart FILE. Only WARP, alone, as the Hopf check.
+void run_chart(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the chart channel check runs on WARP only");
+    suite.check("chart channel warp", [&] { product_chart(options); });
 }
 
 // ABI 9: --warp --focus. Only WARP; parse refuses any other mode.

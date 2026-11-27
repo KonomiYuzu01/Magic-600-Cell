@@ -78,13 +78,15 @@ class CoreFocus(unittest.TestCase):
         names = re.findall(r'"(sa2_[a-z_]+)"', block.group(2))
         # B18's part (for B20) binds sa2_transform_set after B16's two functions; ADR-D01.52 and .49/.5 append the
         # sticker colours and the scene look after it.
-        last = ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set"]
-        self.assertEqual(names[-5:], last)
+        # B22 item 1 appends the chart channel after them.
+        last = ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set",
+                "sa2_charts_set"]
+        self.assertEqual(names[-6:], last)
         self.assertEqual(len(names), int(block.group(1)))
         core = text(PROJECT / "CoreLibrary.cs")
         exports = re.findall(r'"(sa2_[a-z_]+)"', re.search(r"\bSymbols = new\[\]\s*\{(.*?)\};", core, re.S).group(1))
-        self.assertEqual(exports[-5:], last)
-        self.assertIn("view_focus_set,\n        view_layout_set,\n        transform_set,\n        sticker_colours_set,\n        scene_look_set,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
+        self.assertEqual(exports[-6:], last)
+        self.assertIn("view_focus_set,\n        view_layout_set,\n        transform_set,\n        sticker_colours_set,\n        scene_look_set,\n        charts_set,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
 
 
 class HostFocus(unittest.TestCase):
@@ -173,7 +175,7 @@ class HopfRings(unittest.TestCase):
         self.assertIn("if (kind == SA2_LAYOUT_HOPF_RINGS || kind == SA2_LAYOUT_RING_SHEET)", core)
         self.assertIn('argument(shape.layout == SA2_LAYOUT_CHAIN || !hopf_.empty(), "a Hopf layout needs the Hopf table");',
                       text(ROOT / "renderer" / "core" / "src" / "product.cpp"))
-        self.assertIn("uint chart = min(asuint(hopfRows[2461 + e / 4][e % 4]), 599u);",
+        self.assertIn("uint chart = min(fixed != 0 ? fixed - 1 : asuint(hopfRows[2461 + e / 4][e % 4]), 599u);",
                       text(ROOT / "renderer" / "core" / "shaders" / "geometry.hlsl"))
         # The opening's layout, and B22 rest's palette chart rows, which switch Global's layout at a step.
         self.assertEqual(shell.count("SetViewLayout("), 2)
