@@ -32,7 +32,14 @@ internal static partial class Program
     private static ParameterSchema Schema => schema ??= ParameterSchema.Load(FileAt("data/parameters.json"));
     private static CommandCatalogue Commands => commands ??= CommandCatalogue.Load(System.IO.Path.Combine(Root, "docs/progress/1.0/command-table.json"));
     private static string FileAt(string path) => System.IO.Path.Combine(Lab, path.Replace('/', System.IO.Path.DirectorySeparatorChar));
-    private static string Read(string path) => File.ReadAllText(FileAt(path));
+    private static bool d02StatusCommandLabels;
+
+    private static string Read(string path)
+    {
+        string text = File.ReadAllText(FileAt(path));
+        return d02StatusCommandLabels && path == "data/design/command-icons.json"
+            ? Magic600.Chrome.StatusPatterns.AddCommandLabels(text) : text;
+    }
 
     private static int Main(string[] args)
     {
@@ -199,7 +206,7 @@ internal static partial class Program
             ("ReadmeFormatsParametersAndPrivacy", ReadmeContract),
             ("D02RolesExistInBothThemes", D02RolesExistInBothThemes),
             ("D02MotionRowsStaticUnderReducedMotion", D02MotionRowsStaticUnderReducedMotion),
-            ("D02DraftRowsAbsentFromTable", D02DraftRowsAbsentFromTable),
+            ("D02DraftRowsAbsentFromTable", D02DraftRowsWithStatusRequests),
             ("D02WordsMatchRecord", D02WordsMatchRecord),
             ("D02SlotLateResultIgnored", D02SlotLateResultIgnored),
             ("D02SlotCancelLatestRestores", D02SlotCancelLatestRestores),
@@ -374,7 +381,8 @@ internal static partial class Program
             ("D02SceneLookBackgrounds", D02SceneLookBackgrounds),
             ("D02StickerPaletteChoice", D02StickerPaletteChoice),
             ("D02StickerColouring", D02StickerColouring),
-            ("D02SceneLookDraftRequests", D02SceneLookDraftRequests)
+            ("D02SceneLookDraftRequests", D02SceneLookDraftRequests),
+            ("D02StatusPatterns", D02StatusPatterns)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

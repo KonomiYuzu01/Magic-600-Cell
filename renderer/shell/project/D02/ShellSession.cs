@@ -194,6 +194,7 @@ internal static class ShellSession
         json.WriteEndObject();
         ShellExplore.Dump(json);
         ShellScene.Dump(json);
+        ShellStatus.Dump(json);
     }
 
     private static bool InTree(Control? control) => control != null && GodotObject.IsInstanceValid(control) && control.IsInsideTree();

@@ -106,7 +106,8 @@ public sealed class ShellChrome
             .Select(p => ThemeFamily.Load(p, design)).ToArray();
         var motions = MotionTable.Parse(File.ReadAllText(Path.Combine(folder, "motion.json")), design);
         var palettes = StickerPalette.Parse(File.ReadAllText(Path.Combine(folder, "palettes.json")));
-        var commandIcons = CommandIcons.Parse(File.ReadAllText(Path.Combine(folder, "command-icons.json")));
+        string iconRows = File.ReadAllText(Path.Combine(folder, "command-icons.json"));
+        var commandIcons = CommandIcons.Parse(ShellJumble.On ? StatusPatterns.AddCommandLabels(iconRows) : iconRows);
         ChromeBody.Commands = commandIcons;
         var look = new Appearance(design, themes);
         // ADR-D02 B18 rest: the sweep and the half-turn read their rows' seconds (none under reduced motion) and curves.
@@ -217,6 +218,7 @@ public sealed class ShellChrome
             _ when ShellSession.Handles(command) => ShellSession.Unavailable(command),
             _ when ShellExplore.Handles(command) => ShellExplore.Unavailable(argument),
             _ when ShellScene.Handles(command) => null,
+            _ when ShellStatus.Handles(command) => null,
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             "menu.context.open" when contextMenus != null => null,
             "target.current.set" when pickedTarget != null && argument == null => null,
@@ -292,6 +294,7 @@ public sealed class ShellChrome
         ShellScene.Load(frame, palettes, () => (look.Family, look.SceneLook),
             name => appearance.Edit(a => a.SetSceneLook(name), true, true));
         appearance.Changed += (rebuild, scene) => ShellScene.Refresh();
+        if (ShellJumble.On) ShellStatus.Load(frame, folder);
         void NextPreset()
         {
             var all = themes.SelectMany(t => ThemeFamily.SceneLooks.Select(l => (t.Id, Look: l))).ToArray();
@@ -345,6 +348,7 @@ public sealed class ShellChrome
                     break;
                 case var explore when ShellExplore.Handles(explore): ShellExplore.Execute(frame, argument); break;
                 case var scene when ShellScene.Handles(scene): ShellScene.Execute(frame, command, argument); break;
+                case var status when ShellStatus.Handles(status): ShellStatus.Execute(command, argument); break;
                 case "command.find": palette.Open(); break;
                 case "keymap.preset.set": UseKeySet(argument); break;
                 case "menu.context.open" when contextMenu != null && contextMenus != null:

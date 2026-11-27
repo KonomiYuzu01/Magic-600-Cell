@@ -2861,6 +2861,117 @@ EXPECT["rail-locks"] = expect_rail_locks
 IN_SAMPLE_MODE.add("rail-locks")
 
 
+def expect_status_patterns(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Check the status channel's bytes, the table and the rasterized piece masks from the two panes."""
+    import base64
+    import math
+    import zlib
+
+    script = load(SCRIPTS / "status-patterns.json")
+    design = load(DESIGN / "status-patterns.json")
+    fixture = load(SAMPLES / "status-fixture.json")
+    if state != fixture["state"]:
+        return [f"status-patterns needs the {fixture['state']} session fixture"]
+    if len(dumps) != len(script["steps"]) + 1 or dumps[0].get("do") != "start":
+        return ["status-patterns did not write one dump per step"]
+
+    piece_count = 177_120
+    expected = {
+        "statuses": (0, ["protected", "conflict", "unchecked_prefix", "preview", "stale"], "patterns"),
+        "kinds": (3, ["orbit", "position", "identity", "block"], "marks"),
+    }
+    by_step = {}
+    problems = []
+    digest = dumps[0].get("tuning", {}).get("state_digest")
+    for dump in dumps:
+        step = dump.get("do")
+        status = dump.get("status_patterns", {})
+        by_step[step] = (status, dump)
+        if not digest or status.get("state_digest") != digest or dump.get("tuning", {}).get("state_digest") != digest:
+            problems.append(f"{step}: state digest missing or changed")
+        if (not status.get("sent") or status.get("channel") != 3 or status.get("panes") != 2
+                or not dump.get("local", {}).get("opening")):
+            problems.append(f"{step}: status table/bytes or the two panes were not submitted")
+        if status.get("draw_code") != 0:
+            problems.append(f"{step}: no raster coverage readback")
+        try:
+            sent = zlib.decompress(base64.b64decode(status["bytes_zlib"], validate=True))
+        except (KeyError, ValueError, zlib.error):
+            problems.append(f"{step}: the sent bytes are missing or invalid")
+            continue
+        if len(sent) != piece_count or hashlib.sha256(sent).hexdigest() != status.get("bytes_sha256"):
+            problems.append(f"{step}: the sent byte length or digest differs")
+        if any(b & 0xc0 or (b & 7) > 5 or ((b >> 3) & 7) > 4 for b in sent):
+            problems.append(f"{step}: the status channel has reserved bits or codes")
+        for group, (shift, names, table_name) in expected.items():
+            ids_by_code = [[] for _ in range(8)]
+            for piece, byte in enumerate(sent):
+                if byte:
+                    ids_by_code[(byte >> shift) & 7].append(piece)
+            for code, name in enumerate(names, 1):
+                entry = status.get(group, {}).get(name, {})
+                ids = ids_by_code[code]
+                if (entry.get("code"), entry.get("count"), entry.get("pieces")) != (code, len(ids), ids[:32]):
+                    problems.append(f"{step}: {name} piece IDs do not match the bytes sent")
+                if entry.get("source") not in ("fed", "fixture"):
+                    problems.append(f"{step}: {name} has no source")
+                for pane in ("global", "local"):
+                    count = entry.get(pane)
+                    if type(count) is not int or not 0 <= count <= len(ids):
+                        problems.append(f"{step}: invalid {name} coverage in {pane}")
+                sent_pattern = entry.get("pattern", {})
+                wanted = design[table_name][name]
+                if (sent_pattern.get("shape"), sent_pattern.get("token")) != (wanted["shape"], wanted["colour"]):
+                    problems.append(f"{step}: {name} shape or token differs from the design")
+                elif any(not isinstance(sent_pattern.get(k), (int, float)) or
+                         not math.isclose(sent_pattern[k], wanted[k], rel_tol=1e-6, abs_tol=1e-7)
+                         for k in ("spacing", "width", "angle")):
+                    problems.append(f"{step}: {name} geometry differs from the design")
+                rgba = sent_pattern.get("rgba", [])
+                if len(rgba) != 4 or any(not 0 <= c <= 1 for c in rgba):
+                    problems.append(f"{step}: {name} table has no resolved RGBA")
+
+    def both(row):
+        return all(row.get(key, 0) > 0 for key in ("count", "global", "local"))
+
+    for index, kind in enumerate(("orbit", "block", "position", "identity")):
+        step = f"wait {701 + index} ms"
+        status, dump = by_step.get(step, ({}, {}))
+        mark = status.get("kinds", {}).get(kind, {})
+        protected = status.get("statuses", {}).get("protected", {})
+        selection = dump.get("pick", {}).get("selection") or {}
+        if (status.get("command"), status.get("command_code")) != ("protection.pick.set " + kind, 0) or not selection:
+            problems.append(f"{step}: {kind} was not set from a pick")
+        if mark.get("source") != "fed" or not both(mark) or protected.get("source") != "fed" or not both(protected):
+            problems.append(f"{step}: {kind} and its protected pattern need pieces drawn in both panes")
+        if kind in ("position", "identity") and selection.get("piece") not in mark.get("pieces", []):
+            problems.append(f"{step}: {kind} did not mark the picked occupant")
+
+    for elapsed, command, enabled in [(705, "status.sample.show on", True),
+                                      (706, "protection.pick.set clear", True),
+                                      (707, "status.sample.show off", False)]:
+        step = f"wait {elapsed} ms"
+        status, dump = by_step.get(step, ({}, {}))
+        if (status.get("command"), status.get("command_code"), status.get("sample")) != (command, 0, enabled):
+            problems.append(f"{step}: {command} did not complete")
+        if enabled and (status.get("fixture_state") != state or dump.get("local", {}).get("framed") != fixture["cap"]):
+            problems.append(f"{step}: the sample is not in Local's default cap")
+        if elapsed >= 706 and any(mark.get("count") for mark in status.get("kinds", {}).values()):
+            problems.append(f"{step}: a protection mark survived clear")
+        if elapsed == 706:
+            for name, ids in fixture["statuses"].items():
+                row = status.get("statuses", {}).get(name, {})
+                if row.get("source") != "fixture" or row.get("pieces") != sorted(ids) or not both(row):
+                    problems.append(f"{step}: {name} needs its fixture pieces drawn in both panes")
+        if elapsed == 707 and status.get("bytes_sha256") != hashlib.sha256(bytes(piece_count)).hexdigest():
+            problems.append(f"{step}: a status byte survived clear and off")
+    return problems
+
+
+EXPECT["status-patterns"] = expect_status_patterns
+ON_FIXTURE.add("status-patterns")
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

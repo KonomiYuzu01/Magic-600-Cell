@@ -464,6 +464,35 @@ fn scene_colours_validate_before_calling_the_core() {
     }
 }
 
+#[test]
+fn status_patterns_validate_and_use_the_separate_channel() {
+    use c600_render::abi::{Sa2StatusPattern, Sa2StatusStyle, PIECES, STATUS_WORDS, STYLE_CHANNEL_STATUS};
+
+    let (shim, host) = two_view_host(false);
+    let mut style = Sa2StatusStyle::default();
+    style.patterns[1] = Sa2StatusPattern { shape: 1, spacing: 6.0, width: 0.4, angle: 0.0, colour: [1.0; 4] };
+    let mut bytes = vec![0u8; PIECES];
+    bytes[0] = 1 | (4 << 3);
+    let mut drawn = vec![1u32; STATUS_WORDS];
+    // SAFETY: all pointers designate live handles and typed arrays of the lengths given to the calls.
+    unsafe {
+        assert_eq!(m6h_set_status_style(host, &style), M6H_OK);
+        assert_eq!((*shim).fake.status_style, Some(style));
+        style.patterns[7] = style.patterns[1];
+        assert_eq!(m6h_set_status_style(host, &style), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_STATUS, bytes.as_ptr(), PIECES as u32, 0), M6H_OK, "{}", last_error(host));
+        assert_eq!((*shim).fake.piece_styles[STYLE_CHANNEL_STATUS as usize].as_deref(), Some(bytes.as_slice()));
+        bytes[0] = 6;
+        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_STATUS, bytes.as_ptr(), PIECES as u32, 0), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_status_drawn(host, 0, drawn.as_mut_ptr(), STATUS_WORDS as u32), M6H_OK);
+        assert!(drawn.iter().all(|&bits| bits == 0));
+        assert_eq!(m6h_set_status_style(host, ptr::null()), M6H_OK);
+        assert!((*shim).fake.status_style.is_none());
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}
+
 fn set_pane(host: *mut ShellHost, pane: u32, view: u64, rect: (i32, i32, u32, u32), style: u32) -> i32 {
     // SAFETY: a live handle.
     unsafe { m6h_set_pane(host, pane, view, rect.0, rect.1, rect.2, rect.3, style) }

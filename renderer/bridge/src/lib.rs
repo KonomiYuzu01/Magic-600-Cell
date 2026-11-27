@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 28] = [
+pub const SYMBOLS: [&str; 30] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -43,6 +43,8 @@ pub const SYMBOLS: [&str; 28] = [
     "sa2_sticker_colours_set",
     "sa2_scene_look_set",
     "sa2_charts_set",
+    "sa2_status_style_set",
+    "sa2_status_drawn",
 ];
 
 /// The ABI 10 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
@@ -88,6 +90,8 @@ pub struct CoreFunctions {
     pub scene_look_set: unsafe extern "C" fn(*mut c_void, *const Sa2SceneLook) -> i32,
     /// ADR-D02 B22 item 1 (added to ABI 10 before any release): the adopted revision's chart channel.
     pub charts_set: unsafe extern "C" fn(*mut c_void, u64, *const u32, u32) -> i32,
+    pub status_style_set: unsafe extern "C" fn(*mut c_void, *const Sa2StatusStyle) -> i32,
+    pub status_drawn: unsafe extern "C" fn(*mut c_void, u32, *mut u32, u32) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -353,6 +357,17 @@ impl CoreAbi for DllCore {
         let (pointer, count) = charts.map_or((std::ptr::null(), 0), |charts| (charts.as_ptr(), SLOTS as u32));
         // SAFETY: a null pointer with count zero, or exactly SLOTS readable cell ids.
         Status(unsafe { (self.functions.charts_set)(self.context, revision, pointer, count) }).check()
+    }
+
+    fn status_style_set(&mut self, style: Option<&Sa2StatusStyle>) -> Result<(), Status> {
+        Status(unsafe { (self.functions.status_style_set)(self.context, style.map_or(std::ptr::null(), |s| s)) }).check()
+    }
+
+    fn status_drawn(&mut self, pane: u32, words: &mut [u32]) -> Result<(), Status> {
+        if words.len() != STATUS_WORDS {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        Status(unsafe { (self.functions.status_drawn)(self.context, pane, words.as_mut_ptr(), words.len() as u32) }).check()
     }
 
     fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {

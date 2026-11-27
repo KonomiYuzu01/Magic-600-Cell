@@ -15,8 +15,8 @@ import math
 import re
 import shutil
 import sys
-import tempfile
 import unittest
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +37,18 @@ def shell_module(name: str):
         return importlib.import_module(name)
     finally:
         sys.path.remove(str(SHELL))
+
+
+def fixture_folder(test, prefix):
+    # Inherit the workspace's ACL. The 0o700 mode of mkdtemp restricts the Windows sandbox's test subprocesses.
+    work = ROOT / "work"
+    work.mkdir(exist_ok=True)
+    folder = work / (prefix + uuid.uuid4().hex[:12])
+    folder.mkdir()
+    if folder.resolve().parent != work.resolve():
+        raise RuntimeError("test fixture escaped work/")
+    test.addCleanup(shutil.rmtree, folder)
+    return folder
 
 
 class CoreFocus(unittest.TestCase):
@@ -76,17 +88,15 @@ class CoreFocus(unittest.TestCase):
         block = re.search(r"pub const SYMBOLS: \[&str; (\d+)\] = \[(.*?)\];", bridge, re.S)
         self.assertTrue(block)
         names = re.findall(r'"(sa2_[a-z_]+)"', block.group(2))
-        # B18's part (for B20) binds sa2_transform_set after B16's two functions; ADR-D01.52 and .49/.5 append the
-        # sticker colours and the scene look after it.
-        # B22 item 1 appends the chart channel after them.
-        last = ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set",
-                "sa2_charts_set"]
-        self.assertEqual(names[-6:], last)
+        # Each feature appends its exports after the previous ABI 10 rows.
+        last = ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set",
+                "sa2_scene_look_set", "sa2_charts_set", "sa2_status_style_set", "sa2_status_drawn"]
+        self.assertEqual(names[-len(last):], last)
         self.assertEqual(len(names), int(block.group(1)))
         core = text(PROJECT / "CoreLibrary.cs")
         exports = re.findall(r'"(sa2_[a-z_]+)"', re.search(r"\bSymbols = new\[\]\s*\{(.*?)\};", core, re.S).group(1))
-        self.assertEqual(exports[-6:], last)
-        self.assertIn("view_focus_set,\n        view_layout_set,\n        transform_set,\n        sticker_colours_set,\n        scene_look_set,\n        charts_set,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
+        self.assertEqual(exports[-len(last):], last)
+        self.assertIn("view_focus_set,\n        view_layout_set,\n        transform_set,\n        sticker_colours_set,\n        scene_look_set,\n        charts_set,\n        status_style_set,\n        status_drawn,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
 
 
 class HostFocus(unittest.TestCase):
@@ -203,13 +213,15 @@ class HopfRings(unittest.TestCase):
 
     def test_the_build_stages_the_ring_file(self):
         build_shell = shell_module("build_shell")
-        temp = Path(tempfile.mkdtemp(prefix="d02-hopf-"))
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-hopf-")
         project = temp / "staged"
         build_shell.stage(project)
         self.assertEqual((project / "look" / "hopf-rings.json").read_bytes(),
                          (ROOT / "tools" / "looklab" / "fixtures" / "hopf-rings.json").read_bytes())
         self.assertTrue((project / "D02" / "ShellHopf.cs").is_file())
+        data = ROOT / "tools" / "looklab" / "data"
+        for path in ("design/status-patterns.json", "samples/jumble/status-fixture.json"):
+            self.assertEqual((project / path).read_bytes(), (data / path).read_bytes())
 
 
 class LocalShape(unittest.TestCase):
@@ -254,8 +266,7 @@ class LocalShape(unittest.TestCase):
 
     def test_the_build_stages_the_shape_file(self):
         build_shell = shell_module("build_shell")
-        temp = Path(tempfile.mkdtemp(prefix="d02-local-"))
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-local-")
         project = temp / "staged"
         build_shell.stage(project)
         self.assertEqual((project / "look" / "local-view.json").read_bytes(), LOCAL_VIEW.read_bytes())
@@ -487,8 +498,7 @@ class TwoViewsRun(unittest.TestCase):
 
     def check(self, rows):
         run = shell_module("d02_run")
-        temp = Path(tempfile.mkdtemp(prefix="d02-two-views-"))
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-two-views-")
         events = temp / "events.jsonl"
         events.write_text("".join(json.dumps({"t": "frame", **row}) + "\n" for row in rows), encoding="utf-8")
         return run.check_two_views_events(events)
@@ -632,7 +642,7 @@ class FocusLayersInTheCore(unittest.TestCase):
         self.assertIn("#define SA2_STYLE_HIDE_UNMARKED 4u", header)
         self.assertIn("Picking follows visibility", header)
         styled = text(CORE / "shaders" / "styled.hlsl")
-        self.assertIn("if ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet)) result.position = float4(0, 0, -1, 1);", styled)
+        self.assertIn("if (!statusConflict(style) && ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet))) result.position = float4(0, 0, -1, 1);", styled)
         self.assertIn("uint styledIdPs(StyledOut input) : SV_Target {", styled)
         scene = text(CORE / "src" / "scene.cpp")
         self.assertIn("auto* pipeline = input.styled ? g.styled_id_pipeline() : p.id_pso.Get();", scene)
@@ -641,7 +651,7 @@ class FocusLayersInTheCore(unittest.TestCase):
         product = text(CORE / "src" / "product.cpp")
         # B18-03: a turning frame's moving mask lives in the same style words, so its pick checks the version too.
         self.assertIn("const bool bound = record->styled || record->shape.turn != 0.0f;", product)
-        self.assertIn("(bound && copy.style != record->style_version)", product)
+        self.assertIn("(bound && copy.pick_style != record->style_version)", product)
         self.assertIn('suite.check("focus layers warp", [&] { product_focus_layers(options); });', text(CORE / "src" / "gpu_test.cpp"))
         abi = text(ROOT / "rust" / "c600-render" / "src" / "abi.rs")
         self.assertIn("pub const STYLE_HIDE_MARKED: u32 = 3;", abi)
@@ -815,8 +825,7 @@ class HopfRun(unittest.TestCase):
         self.assertIs(run.EXPECT["ring-sheet"], run.expect_ring_sheet)
         self.assertIn("ring-sheet", run.ON_FIXTURE)
         self.assertIs(run.DATA_FOR["ring-sheet"], run.ring_sheet_data)
-        temp = Path(tempfile.mkdtemp(prefix="d02-ring-sheet-"))
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-ring-sheet-")
         folder = run.ring_sheet_data(temp / "run")
         self.assertEqual(folder, temp / "run-data")
         opening = json.loads(text(folder / "opening.json"))
@@ -862,8 +871,7 @@ class HopfRun(unittest.TestCase):
 
     def test_local_draws_the_default_cap(self):
         run = shell_module("d02_run")
-        temp = Path(tempfile.mkdtemp(prefix="d02-hopf-run-"))
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-hopf-run-")
         events = temp / "events.jsonl"
 
         def check(rows):
@@ -927,7 +935,8 @@ class OverlaysRun(unittest.TestCase):
         self.assertEqual(waits, [mark for mark, _, _, _ in run.OVERLAY_STEPS])
         tint = text(PROJECT / "D02" / "ShellTint.cs")
         self.assertIn("host.OverlayChanged += Draw;", tint)
-        self.assertIn("ShellStyle.SetFocusViews(global, local, host.FocusMember, JumbleOverlay.BreaksThrough(host.Overlay));", tint)
+        self.assertIn("var overlay = JumbleOverlay.BreaksThrough(host.Overlay);", tint)
+        self.assertIn("piece => (overlay?.Invoke(piece) ?? false) || ShellStatus.Conflict(piece)", tint)
 
     def test_a_good_run_passes_and_a_dimmed_never_hidden_piece_is_named(self):
         run = shell_module("d02_run")

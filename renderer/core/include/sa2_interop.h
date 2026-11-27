@@ -1095,7 +1095,7 @@ SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_vi
  *
  * sa2_style_set sets one channel of the adopted engine revision's piece style: SA2_PIECES bytes, one per piece, bound
  * to that revision as its pose arrays are. A revision other than the adopted one is refused (SA2_E_INVALID_ARGUMENT),
- * and adopting a newer revision drops both channels. A NULL piece_style clears the channel. A fill byte holds a
+ * and adopting a newer revision drops the channels. A NULL piece_style clears the channel. A fill byte holds a
  * palette entry in SA2_STYLE_INDEX (0: the piece keeps its label colour) and may set SA2_STYLE_DIM; an outline byte
  * holds a palette entry (0: no regular outline). The flags below are channel-specific; any other bit is refused.
  *
@@ -1108,7 +1108,7 @@ SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_vi
  * colour (a colour-vision or contrast simulation); with the identity it is skipped. Out-of-range values, non-finite
  * values or unknown mode bits are refused and change nothing.
  *
- * A frame draws styled only when its slot is set and the style changes something: a non-zero piece byte in a drawn
+ * A frame draws styled with the host status overlay below, or when its slot is set and the style changes something: a non-zero piece byte in a drawn
  * channel, a dim that applies, or a matrix other than the identity. Otherwise it draws exactly as ABI 6. Both calls are
  * device-free product state: they need a loaded scene outside a trace (SA2_E_WRONG_STATE), work during device loss,
  * are kept by sa2_recover and are forgotten by sa2_scene_unload. Until ADR-D02 B17 the ID pass (sa2_pick_request)
@@ -1402,6 +1402,53 @@ SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look)
  * are another count and a cell id past 599. Chain, focus, slice and raw views never read it.
  */
 SA2_API int32_t sa2_charts_set(sa2_context* ctx, uint64_t revision, const uint32_t* charts, uint32_t count);
+/* ADR-D01.65 (ABI 10 before release): one byte per piece on channel 3, packed into bits 24..31 of the
+ * style word. Bits 0..2 select none, protected, conflict, unchecked prefix, preview or stale (0..5);
+ * bits 3..5 select none, orbit, position, identity or block (0..4). Other values and bits 6..7 are
+ * refused. Like the other channels this byte is dropped on a new adoption. The table applies in all
+ * panes after tint, outline, ghost and dim, before the colour matrix. Conflict bypasses focus dim
+ * and hide in the colour pass. The ID pass uses the original focus and ignores the status channel.
+ * A NULL table clears it. Like sa2_view_style_set, this is device-free, survives recovery and is
+ * forgotten on scene unload. A missing table or zero status bytes leave drawing unchanged. */
+#define SA2_STYLE_CHANNEL_STATUS 3u
+#define SA2_STATUS_CONFLICT 2u
+#define SA2_STATUS_ENTRIES 8u
+#define SA2_STATUS_HATCH 1u
+#define SA2_STATUS_CROSS_HATCH 2u
+#define SA2_STATUS_DOTS 3u
+#define SA2_STATUS_DASHED_EDGE 4u
+#define SA2_STATUS_STRIPES 5u
+#define SA2_MARK_RING 1u
+#define SA2_MARK_DOT 2u
+#define SA2_MARK_CROSS 3u
+#define SA2_MARK_CORNER_TICKS 4u
+
+typedef struct sa2_status_pattern {
+    uint32_t shape; /* 0: none; otherwise SA2_STATUS_* for patterns and SA2_MARK_* for marks */
+    float spacing; /* patterns: period in pixels (2..64); marks: radius in triangle coordinates (0.05..0.45) */
+    float width; /* fraction of spacing (0.05..0.95) */
+    float angle; /* rotation in radians (-pi..pi) */
+    float colour[4]; /* RGBA, 0..1 */
+} sa2_status_pattern;
+#define SA2_STATUS_CAPTURE 1u /* collect the product script's per-pane rasterized piece mask */
+typedef struct sa2_status_style {
+    uint32_t struct_size;
+    uint32_t flags; /* 0 or SA2_STATUS_CAPTURE */
+    sa2_status_pattern patterns[SA2_STATUS_ENTRIES]; /* entry 0 and entries 6..7 have shape 0 */
+    sa2_status_pattern marks[SA2_STATUS_ENTRIES]; /* entry 0 and entries 5..7 have shape 0 */
+} sa2_status_style;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_status_pattern) == 32, "status pattern ABI");
+static_assert(sizeof(sa2_status_style) == 520, "status style ABI");
+#endif
+
+SA2_API int32_t sa2_status_style_set(sa2_context* ctx, const sa2_status_style* style);
+/* With SA2_STATUS_CAPTURE, reads the last product frame's rasterized status-bearing pieces for pane
+ * 0..SA2_PANES_MAX-1 (0 for a one-view frame). The caller provides SA2_STATUS_WORDS u32s, with piece p
+ * at bit p%32 of word p/32. A frame without capture or status returns zero bits. This waits for the
+ * frame's copy to complete. The mask describes fragment coverage before depth occlusion. */
+#define SA2_STATUS_WORDS ((SA2_PIECES + 31u) / 32u)
+SA2_API int32_t sa2_status_drawn(sa2_context* ctx, uint32_t pane, uint32_t* words, uint32_t count);
 
 #ifdef __cplusplus
 }

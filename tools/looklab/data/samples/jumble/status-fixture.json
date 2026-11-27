@@ -1,0 +1,13 @@
+{
+  "format": "magic600-status-fixture/1",
+  "state": "wj-ia-300",
+  "cap": 0,
+  "note": "Cell 0 stickers carried by pieces at the identity pose in the wj-ia-300 sample. Each status has its own pieces. The protection kinds use the shell's picks.",
+  "statuses": {
+    "protected": [11, 119, 377, 382],
+    "conflict": [54, 123, 280, 386],
+    "unchecked_prefix": [118, 138, 262, 374],
+    "preview": [122, 190, 273, 369],
+    "stale": [130, 134, 286, 421]
+  }
+}

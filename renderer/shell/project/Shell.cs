@@ -895,6 +895,7 @@ public partial class Shell : Control
         if (D02.ShellJumble.On && _session)
         {
             D02.ShellStyle.Apply(library, _host, _adoptedRevision);
+            D02.ShellStatus.Apply(library, _host, _adoptedRevision);
         }
         // ADR-D01.52 and .49/.5: the sticker colours and the scene look, sent again until the host takes them.
         if (D02.ShellJumble.On)
@@ -911,6 +912,7 @@ public partial class Shell : Control
             _submittedThisFrame = frame.Sequence;
             _adoptedRevision = frame.EngineRevision;
             D02.ShellTurn.Framed(frame.EngineRevision);
+            D02.ShellStatus.Framed(frame);
             // ADR-D02 B17: the clicks and hovers of this step ask the ID pass on the frame just submitted.
             if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))
             {

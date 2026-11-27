@@ -2823,10 +2823,122 @@ void run_panes(Suite& suite, const Options& options) {
     suite.check("panes warp", [&] { product_panes(options); });
 }
 
+// ADR-D01.65: compare ink masks in one RGBA8 frame at a time, with a separate piece-only coverage reference.
+void product_status_patterns(const Options& options) {
+    using namespace panes_check;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    load(harness, Side, Side);
+    auto* ctx = harness.ctx;
+    const auto set = pickable_set(harness, 1, 1);
+    const Rows q = double_rotation(0, 3, 0, 1, 2, 0);
+    const sa2_view_shape shape{sizeof(sa2_view_shape), 0.7f, 0.9f, 2.0f, 5.0f, 0};
+    const sa2_view_focus focus{sizeof(sa2_view_focus), SA2_PROJECTION_ORTHOGRAPHIC, 0, 121.0f / 125.0f, 1.2f, 0};
+    for (uint32_t view : {1u, 2u}) {
+        api(ctx, sa2_view_shape_set(ctx, view, &shape));
+        api(ctx, sa2_view_focus_set(ctx, view, &focus));
+    }
+    PoseFrames frames{harness};
+    const auto draw = [&] { return frames.draw(1, 1, set, q); };
+    const auto base = draw();
+    const auto [x, y] = covered_point(base);
+    const auto initial = pick(harness, frames.frame, x, y);
+    expect(initial.state == SA2_PICK_READY && initial.instance != 0, "the status fixture needs a pickable sticker");
+    const auto pieces = sa2::scene_slot_pieces();
+    const uint32_t piece = pieces[initial.instance - 1];
+    const auto slot = initial.instance - 1;
+    std::vector<uint8_t> mask(SA2_SLOTS);
+    for (uint32_t s = 0; s < SA2_SLOTS; ++s) mask[s] = pieces[s] == piece;
+    const auto only = pose_set(harness, 2, mask);
+    const auto covered = frames.draw(1, 2, only, q);
+
+    sa2_status_style table{};
+    table.struct_size = sizeof(table);
+    table.flags = SA2_STATUS_CAPTURE;
+    for (uint32_t i = 1; i <= 5; ++i) table.patterns[i] = {i, 5.0f, 0.44f, 0.65f, {1, 1, 1, 1}};
+    for (uint32_t i = 1; i <= 4; ++i) table.marks[i] = {i, 0.34f, 0.36f, 0.0f, {1, 1, 1, 1}};
+    auto invalid = table;
+    invalid.patterns[1].spacing = 0;
+    expect(sa2_status_style_set(ctx, &invalid) == SA2_E_INVALID_ARGUMENT, "status geometry outside the range was accepted");
+    api(ctx, sa2_status_style_set(ctx, &table));
+    expect(draw() == base, "a status table changed a frame without status bytes");
+    std::vector<uint8_t> bytes(SA2_PIECES);
+    bytes[piece] = 1;
+    api(ctx, sa2_style_set(ctx, 1, bytes.data(), SA2_STYLE_CHANNEL_STATUS));
+    api(ctx, sa2_status_style_set(ctx, nullptr));
+    expect(draw() == base, "status bytes without their table changed the frame");
+    api(ctx, sa2_status_style_set(ctx, &table));
+
+    std::vector<std::vector<uint8_t>> inks;
+    std::vector<uint32_t> coverage(SA2_STATUS_WORDS);
+    const auto capture = [&](uint32_t pane) {
+        api(ctx, sa2_status_drawn(ctx, pane, coverage.data(), uint32_t(coverage.size())));
+        expect(coverage[piece / 32] == (1u << (piece % 32))
+            && size_t(std::count(coverage.begin(), coverage.end(), 0u)) + 1 == coverage.size(), "capture did not name just the styled piece");
+    };
+    std::cout << "status patterns: piece " << piece << " (slot " << slot << "); changed pixels" << std::endl;
+    for (uint32_t i = 1; i <= 9; ++i) {
+        bytes[piece] = uint8_t(i <= 5 ? i : (i - 5) << 3);
+        api(ctx, sa2_style_set(ctx, 1, bytes.data(), SA2_STYLE_CHANNEL_STATUS));
+        const auto picture = draw();
+        std::vector<uint8_t> ink(picture.size());
+        for (size_t p = 0; p < picture.size(); ++p) {
+            ink[p] = picture[p] != base[p];
+            expect(!ink[p] || covered[p] != covered[0], "status changed a pixel outside its piece");
+        }
+        const auto count = std::count(ink.begin(), ink.end(), 1);
+        std::cout << (i <= 5 ? "pattern " : "mark ") << (i <= 5 ? i : i - 5) << ": " << count << std::endl;
+        expect(count > 0 && std::find(inks.begin(), inks.end(), ink) == inks.end(), "status ink is empty or repeats another shape");
+        inks.push_back(std::move(ink));
+        capture(0);
+        const auto id = pick(harness, frames.frame, x, y);
+        expect(id.state == SA2_PICK_READY && id.instance == initial.instance, "status changed the ID pass");
+    }
+
+    const std::vector<sa2_pane> panes{
+        make(1, set, 0, 0, Side / 2, Side, q), make(2, only, Side / 2, 0, Side / 2, Side, q),
+    };
+    frames.draw_panes(1, panes);
+    capture(0);
+    capture(1);
+
+    // Use the same resource set with focus, so the ID comparison also checks colour's conflict exception is local
+    // to the colour pass. Other drawn pieces keep the usual focus treatment.
+    std::vector<uint8_t> fill(SA2_PIECES, 0);
+    fill[piece] = SA2_STYLE_DIM;
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    sa2_view_style view{};
+    view.struct_size = sizeof(view);
+    view.matrix[0] = view.matrix[4] = view.matrix[8] = 1;
+    for (const uint32_t mode : {SA2_STYLE_HIDE_MARKED, SA2_STYLE_DIM_MARKED}) {
+        view.dim_mode = mode;
+        view.dim_amount = 1.0f;
+        api(ctx, sa2_view_style_set(ctx, 1, &view));
+        bytes[piece] = 0;
+        api(ctx, sa2_style_set(ctx, 1, bytes.data(), SA2_STYLE_CHANNEL_STATUS));
+        const auto focused = draw();
+        const auto before = pick(harness, frames.frame, x, y);
+        expect(before.state == SA2_PICK_READY && before.instance != initial.instance, "the focus did not suppress the test piece");
+        bytes[piece] = SA2_STATUS_CONFLICT;
+        api(ctx, sa2_style_set(ctx, 1, bytes.data(), SA2_STYLE_CHANNEL_STATUS));
+        const auto conflict = draw();
+        const auto after = pick(harness, frames.frame, x, y);
+        size_t changes = 0;
+        for (size_t p = 0; p < conflict.size(); ++p) changes += conflict[p] != focused[p];
+        std::cout << "conflict through " << (mode == SA2_STYLE_HIDE_MARKED ? "hide: " : "dim: ") << changes << std::endl;
+        expect(changes > 0 && conflict[size_t(y) * Side + x] != focused[size_t(y) * Side + x], "focus hid or dimmed the conflict");
+        expect(after.state == SA2_PICK_READY && after.instance == before.instance, "conflict changed a focus pick");
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_status_style_set(ctx, &table) == SA2_E_WRONG_STATE, "a status style was set without a scene");
+    harness.finish(options.debug);
+}
+
 // ABI 7: --warp --style. Only WARP; parse refuses any other mode.
 void run_style(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the style check runs on WARP only");
     suite.check("piece style warp", [&] { product_style(options); });
+    suite.check("status patterns warp", [&] { product_status_patterns(options); });
     suite.check("focus layers warp", [&] { product_focus_layers(options); }); // ADR-D02 B17 (ABI 10)
 }
 

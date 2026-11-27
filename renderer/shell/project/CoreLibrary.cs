@@ -49,6 +49,8 @@ public sealed class CoreLibrary : IDisposable
         "sa2_scene_look_set",
         // ADR-D02 B22 item 1: the chart channel.
         "sa2_charts_set",
+        "sa2_status_style_set",
+        "sa2_status_drawn",
     };
 
     /// <summary>

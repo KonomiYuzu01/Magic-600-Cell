@@ -171,6 +171,7 @@ public static class ShellStyle
         // B20: the slice's inside layer and the turn preview's transform. A failed slice never blocks the other styles:
         // they are sent as usual, Local's slots go without the slice while it fails, and its code is returned last.
         var sliced = ShellSlice.Apply(library, host, revision);
+        ShellStatus.Prepare(library, host, revision, sliced == HostLibrary.Ok);
         if ((sliced == HostLibrary.Ok) != _sliceSent)
         {
             _sliceSent = sliced == HostLibrary.Ok;

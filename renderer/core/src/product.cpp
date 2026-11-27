@@ -297,8 +297,14 @@ ViewStyle view_style(const sa2_view_style* style) {
 }
 
 void validate_piece_style(const uint8_t* bytes, uint32_t channel) {
-    argument(channel <= SA2_STYLE_CHANNEL_SLICE, "channel must be SA2_STYLE_CHANNEL_FILL, _OUTLINE or _SLICE");
+    argument(channel <= SA2_STYLE_CHANNEL_STATUS, "unknown piece style channel");
     if (!bytes) return;
+    if (channel == SA2_STYLE_CHANNEL_STATUS) {
+        argument(std::all_of(bytes, bytes + SA2_PIECES, [](uint8_t b) {
+            return (b & 0xc0u) == 0 && (b & 7u) <= 5 && ((b >> 3) & 7u) <= 4;
+        }), "a status byte names a reserved pattern, mark or bit");
+        return;
+    }
     const uint8_t allowed = uint8_t(channel == SA2_STYLE_CHANNEL_FILL ? (SA2_STYLE_INDEX | SA2_STYLE_DIM)
         : channel == SA2_STYLE_CHANNEL_SLICE ? 1u : (SA2_STYLE_INDEX | SA2_STYLE_ERROR)); // B20: a slice byte is 0 or 1
     argument(std::all_of(bytes, bytes + SA2_PIECES, [&](uint8_t b) { return (b & ~allowed) == 0; }),
@@ -365,23 +371,24 @@ void Product::set_style(uint64_t revision, const uint8_t* bytes, uint32_t channe
     argument(revision == image_->revision, "a piece style names a revision other than the adopted one");
     if (!bytes && !style_) return;
     if (!style_) style_ = PieceStyle{revision, 0, std::vector<uint32_t>(SA2_PIECES, 0u), {}, false};
-    const uint32_t shift = channel == SA2_STYLE_CHANNEL_FILL ? 0 : channel == SA2_STYLE_CHANNEL_OUTLINE ? 8 : 17; // B20: bit 17
+    constexpr uint32_t shifts[] = {0, 8, 17, 24}; // fill, outline, slice, status
+    const uint32_t shift = shifts[channel];
+    const uint32_t mask = (channel == SA2_STYLE_CHANNEL_SLICE ? 1u : 0xffu) << shift;
     bool any = false, dim = false, error = false;
     for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
         const uint32_t value = bytes ? bytes[piece] : 0u;
         auto& packed = style_->packed[piece];
-        packed = (packed & ~(0xFFu << shift)) | (value << shift);
-        any = any || (value & SA2_STYLE_INDEX) != 0;
+        packed = (packed & ~mask) | (value << shift);
+        any = any || (value & (channel == SA2_STYLE_CHANNEL_STATUS ? 0x3fu : SA2_STYLE_INDEX)) != 0;
         dim = dim || (value & SA2_STYLE_DIM) != 0;
         error = error || (value & SA2_STYLE_ERROR) != 0;
     }
     style_->any[channel] = any;
     if (channel == SA2_STYLE_CHANNEL_FILL) style_->dim = dim;
     if (channel == SA2_STYLE_CHANNEL_OUTLINE) style_->error = error;
-    if (!style_->any[0] && !style_->any[1] && !style_->any[2] && !style_->dim && !style_->moving && !style_->error) {
-        style_.reset(); return;
-    }
+    if (!style_->original() && !style_->any[SA2_STYLE_CHANNEL_STATUS]) { style_.reset(); return; }
     style_->version = ++style_version_;
+    if (channel != SA2_STYLE_CHANNEL_STATUS) style_->pick_version = style_->original() ? style_->version : 0;
 }
 // ADR-D02 B18 (ABI 10): device-free, as the piece style. The moving bit shares the style's word per piece (bit 16), so
 // a new moving set uploads with the copy; a changed phase, plane or angle changes only the frame's constants.
@@ -424,10 +431,11 @@ void Product::set_transform(uint64_t revision, const float* u, const float* v, f
     } else {
         transform_.reset();
     }
-    if (!style_->any[0] && !style_->any[1] && !style_->any[2] && !style_->dim && !style_->moving && !style_->error) {
-        style_.reset(); return;
+    if (!style_->original() && !style_->any[SA2_STYLE_CHANNEL_STATUS]) { style_.reset(); return; }
+    if (changed || style_->version == 0) {
+        style_->version = ++style_version_;
+        style_->pick_version = style_->original() ? style_->version : 0;
     }
-    if (changed || style_->version == 0) style_->version = ++style_version_;
 }
 void Product::turn(ViewShape& shape) const {
     if (!transform_ || transform_->angle == 0.0f) return;
@@ -451,6 +459,27 @@ void Product::set_view_style(uint32_t slot, const sa2_view_style* style) {
     argument(slot >= 1 && slot <= SA2_STYLE_SLOTS, "a style slot is 1..SA2_STYLE_SLOTS");
     if (!style) { view_styles_[slot - 1].reset(); return; }
     view_styles_[slot - 1] = view_style(style);
+}
+void Product::set_status_style(const sa2_status_style* style) {
+    if (!style) { status_style_.reset(); return; }
+    argument(style->struct_size == sizeof(*style), "invalid status style struct_size");
+    argument(style->flags <= SA2_STATUS_CAPTURE, "unknown status style flags");
+    const auto within = [](float v, float low, float high) { return std::isfinite(v) && v >= low && v <= high; };
+    for (bool marks : {false, true}) {
+        const auto& entries = marks ? style->marks : style->patterns;
+        const uint32_t last = marks ? SA2_MARK_CORNER_TICKS : SA2_STATUS_STRIPES;
+        for (uint32_t i = 0; i < SA2_STATUS_ENTRIES; ++i) {
+            const auto& entry = entries[i];
+            argument(entry.shape <= (i == 0 || i > last ? 0u : last), "unknown or reserved status shape");
+            argument(std::all_of(std::begin(entry.colour), std::end(entry.colour),
+                [&](float v) { return within(v, 0, 1); }), "status RGBA must be finite and within 0..1");
+            const float min_spacing = entry.shape == 0 ? 0.0f : marks ? 0.05f : 2.0f;
+            argument(within(entry.spacing, min_spacing, marks ? 0.45f : 64.0f)
+                && within(entry.width, entry.shape == 0 ? 0.0f : 0.05f, 0.95f)
+                && within(entry.angle, -3.14159274f, 3.14159274f), "status geometry is out of range");
+        }
+    }
+    status_style_ = *style;
 }
 bool Product::styled(uint32_t slot, ViewStyle& out) const {
     if (slot < 1 || slot > SA2_STYLE_SLOTS || !view_styles_[slot - 1]) return false;
@@ -607,7 +636,12 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
     out.pose_count = image_->pose_count;
     out.shape = shape(input.view);
     turn(out.shape); // ADR-D02 B18
-    if (style_) { out.style = &style_->packed; out.style_version = style_->version; }
+    if (style_) {
+        out.style = &style_->packed;
+        out.style_version = style_->version;
+        out.pick_style_version = style_->pick_version;
+        if (style_->any[SA2_STYLE_CHANNEL_STATUS] && status_style_) out.status = &*status_style_;
+    }
     out.styled = styled(1, out.view_style); // ABI 7: a one-view frame uses style slot 1
     if (charts_) { out.charts = &charts_->packed; out.charts_version = charts_->version; } // ADR-D02 B22 item 1
     if (input.resource_set) {
@@ -727,7 +761,7 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     }
     if (plan.upload) {
         copies_[plan.copy] = {plan.image->revision, frame, ++copy_sequence_, plan.image->pose_count, true, plan.style_version,
-                              plan.charts_version};
+                              plan.pick_style_version, plan.charts_version};
         counters_.bytes_uploaded += plan.image->bytes() + (plan.style ? uint64_t(SA2_PIECES) * 4 : 0)
                                   + (plan.charts ? uint64_t(SA2_SLOTS) * 2 : 0);
     }
@@ -746,7 +780,7 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     record.shape = plan.shape;
     record.styled = plan.styled; // ADR-D02 B17 (ABI 10): its picks follow the style it drew with
     record.view_style = plan.view_style;
-    record.style_version = plan.style_version;
+    record.style_version = plan.pick_style_version;
     record.charts_version = plan.charts_version; // ADR-D02 B22 item 1
     for (const auto& pane : plan.panes)
         record.panes.push_back(PaneRecord{pane.pane, pane.set_ticket, 0, pane.publication_generation, pane.shape, pane.styled, pane.view_style});
@@ -866,7 +900,7 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
     // ADR-D02 B17 (ABI 10): a styled frame's copy must still hold the piece style it drew with; so must a turning
     // frame's, styled or not, since its moving mask lives in the same words (B18 review finding B18-03).
     const bool bound = record->styled || record->shape.turn != 0.0f;
-    if (!copy.valid || copy.revision != record->input.engine_revision || (bound && copy.style != record->style_version)
+    if (!copy.valid || copy.revision != record->input.engine_revision || (bound && copy.pick_style != record->style_version)
         || copy.charts != record->charts_version) { // ADR-D02 B22 item 1: a chart view's pick reads the copy's charts
         out.state = SA2_PICK_STALE;
         out.stale = SA2_PICK_STALE_ENGINE;
@@ -923,7 +957,7 @@ PickPlan Product::pick_pane(const Frame& record, PickPlan out) const {
         const Copy& copy = copies_[record.copy];
         const bool styled = record.panes[i].styled; // ADR-D02 B17 (ABI 10)
         const bool bound = styled || record.panes[i].shape.turn != 0.0f; // B18-03: a turning pane's moving mask
-        if (!copy.valid || copy.revision != record.input.engine_revision || (bound && copy.style != record.style_version)) {
+        if (!copy.valid || copy.revision != record.input.engine_revision || (bound && copy.pick_style != record.style_version)) {
             out.state = SA2_PICK_STALE;
             out.stale = SA2_PICK_STALE_ENGINE;
             return out;

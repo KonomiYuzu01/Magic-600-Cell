@@ -57,6 +57,8 @@ public:
     void product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame_input& input, const FramePlan& plan,
                              D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format);
     std::vector<uint64_t> product_pane_evals(uint32_t ring);
+    bool has_status_capture(uint32_t pane) const;
+    void read_status_capture(uint32_t pane, uint32_t* words); // after the frame's ready fence
     // Records an ID pass and the texel copy with its own list and signals the product fence.
     uint64_t product_pick(uint64_t ticket, const PassInput& input, ID3D12CommandQueue* queue, const std::function<void()>& submitting);
     uint32_t product_pick_value(uint64_t ticket); // after the pick's fence completed

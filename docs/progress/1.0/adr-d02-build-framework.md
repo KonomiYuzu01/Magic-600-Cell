@@ -1387,6 +1387,18 @@ relative path is from the repository root.
 - **Checkpoint:** yes, C6.
 - **Depends:** B32. The ten sealed defects from C5.
 
+### ADR-D01 ports
+
+ADR-D01 clauses ported into the D02 product shell outside the B steps. Each entry is its As-built note.
+
+- **As built, ADR-D01.65's scene part (status track, 27 November 2026; Codex call 20261127T053634Z-672d825e):**
+  - Core (ABI 10, no new number): style channel 3 (`SA2_STYLE_CHANNEL_STATUS`) carries one status byte per piece: bits 0 to 2 the status (1 protected, 2 conflict, 3 unchecked prefix, 4 preview, 5 stale), bits 3 to 5 the protection-kind mark (1 orbit, 2 position, 3 identity, 4 block), bits 6 and 7 reserved. `sa2_status_style_set` takes a 520-byte table: eight patterns and eight marks of shape, spacing, width, angle and RGBA. `sa2_status_drawn` reads back each pane's covered pieces. The shader draws the status after the user stages and the .25 error hatch, before the colour matrix; a conflict is never dimmed and breaks through focus, dim and hide. The host adds `m6h_set_status_style` and the status targets (orbit ids, slot occupants, a cell's 433 slots).
+  - Design data: `tools/looklab/data/design/status-patterns.json` keeps the five statuses and four marks as separate tunable entries. Each status reads by shape as well as colour: protected a 45-degree hatch, conflict a cross-hatch, unchecked prefix dots, preview a dashed edge, stale horizontal stripes (moved off the diagonal the .25 error hatch uses). Marks: ring (orbit), dot (position), cross (identity), corner ticks (block).
+  - Fed: protected and the four marks, from a B17 pick and the draft row `protection.pick.set orbit|position|identity|block|clear`. The marks name `ProtectionKinds` from the rail (`StatusPatterns.MarkCode` and `KindOf`); there is no second enum. Conflict and preview are fed from the held turn's moving set. With the sample on, a fed status with nothing to show (no protection, no held turn) draws the fixture's pieces instead.
+  - Drawn, not yet fed: unchecked prefix and stale come only from `tools/looklab/data/samples/jumble/status-fixture.json`, shown by the draft row `status.sample.show on|off`.
+  - Product script `status-patterns` (1280x720, wj-ia-300) checks the bytes sent, the table and both panes' coverage for each kind and the sample, and that clear and off leave no status byte. It picks sweep.json's first lattice hit, since pick.json's hits are off-lattice pieces with no slot.
+  - Left over: setting `OrbitResidual.Protection` from the scene's protection so the rail's locks show it. The rail's orbits are sample data with no piece-to-rail-orbit mapping yet, so this is not a small step.
+
 ## 3. Checkpoints
 
 Each checkpoint is one read of the named diff range against the questions below, about an hour, plus what the owner is shown. Only blockers and majors stop the next block.

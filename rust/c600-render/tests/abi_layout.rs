@@ -40,7 +40,10 @@ fn declaration(text: &str) -> (String, String, Option<usize>) {
     let (ty, name) = (text[..split].trim(), text[split..].trim());
     match name.split_once('[') {
         Some((name, count)) => {
-            let count = count.trim_end_matches(']').parse().expect("an array length");
+            let count = match count.trim_end_matches(']') {
+                "SA2_STATUS_ENTRIES" => 8,
+                count => count.parse().expect("an array length"),
+            };
             (ty.to_owned(), name.to_owned(), Some(count))
         }
         None => (ty.to_owned(), name.to_owned(), None),
@@ -55,9 +58,16 @@ fn c_struct(header: &str, name: &str) -> (usize, Vec<(String, usize)>) {
     let (mut offset, mut align, mut fields) = (0usize, 1usize, Vec::new());
     for field in header[start..end].split(';').map(str::trim).filter(|f| !f.is_empty()) {
         let (ty, field, count) = declaration(field);
-        let size = if ty.ends_with('*') { 8 } else { scalar(&ty) };
-        offset = offset.next_multiple_of(size);
-        align = align.max(size);
+        let (size, alignment) = if ty.ends_with('*') {
+            (8, 8)
+        } else if ty == "sa2_status_pattern" {
+            (c_struct(header, &ty).0, 4)
+        } else {
+            let size = scalar(&ty);
+            (size, size)
+        };
+        offset = offset.next_multiple_of(alignment);
+        align = align.max(alignment);
         fields.push((field, offset));
         offset += size * count.unwrap_or(1);
     }
@@ -255,6 +265,11 @@ fn every_row_has_the_header_layout() {
     let look = rust_struct!(Sa2SceneLook { struct_size, reserved, background, fog, glow, edge_brightness, edge_weight });
     assert_eq!(c_struct(&h, "sa2_scene_look"), look, "sa2_scene_look");
     assert_eq!(Sa2SceneLook::default().struct_size, 40, "default() sets struct_size");
+    let pattern = rust_struct!(Sa2StatusPattern { shape, spacing, width, angle, colour });
+    assert_eq!(c_struct(&h, "sa2_status_pattern"), pattern, "sa2_status_pattern");
+    let table = rust_struct!(Sa2StatusStyle { struct_size, flags, patterns, marks });
+    assert_eq!(c_struct(&h, "sa2_status_style"), table, "sa2_status_style");
+    assert_eq!(Sa2StatusStyle::default().struct_size, 520, "default() sets struct_size");
     let sizes = [
         Sa2PollRow::new().struct_size,
         Sa2FrameInput::new().struct_size,
@@ -313,6 +328,8 @@ fn every_constant_has_the_header_value() {
         ("RING_SLOTS".into(), i64::from(RING_SLOTS)),
         ("STYLE_CHANNEL_FILL".into(), i64::from(STYLE_CHANNEL_FILL)),
         ("STYLE_CHANNEL_OUTLINE".into(), i64::from(STYLE_CHANNEL_OUTLINE)),
+        ("STYLE_CHANNEL_STATUS".into(), i64::from(STYLE_CHANNEL_STATUS)),
+        ("STATUS_CAPTURE".into(), i64::from(STATUS_CAPTURE)),
         ("STYLE_INDEX".into(), i64::from(STYLE_INDEX)),
         ("STYLE_DIM".into(), i64::from(STYLE_DIM)),
         ("STYLE_ERROR".into(), i64::from(STYLE_ERROR)),

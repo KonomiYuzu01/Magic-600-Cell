@@ -328,6 +328,19 @@ unsafe extern "C" fn frame_panes(
 }
 
 /// The shim's function table.
+unsafe extern "C" fn status_style_set(ctx: *mut c_void, style: *const Sa2StatusStyle) -> i32 {
+    let style = unsafe { style.as_ref() };
+    code(unsafe { shim(ctx) }.fake.status_style_set(style), |()| ())
+}
+
+unsafe extern "C" fn status_drawn(ctx: *mut c_void, pane: u32, words: *mut u32, count: u32) -> i32 {
+    if words.is_null() || count as usize != STATUS_WORDS {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let words = unsafe { std::slice::from_raw_parts_mut(words, count as usize) };
+    code(unsafe { shim(ctx) }.fake.status_drawn(pane, words), |()| ())
+}
+
 pub fn functions() -> CoreFunctions {
     CoreFunctions {
         abi_version,
@@ -358,6 +371,8 @@ pub fn functions() -> CoreFunctions {
         sticker_colours_set,
         scene_look_set,
         charts_set,
+        status_style_set,
+        status_drawn,
     }
 }
 
