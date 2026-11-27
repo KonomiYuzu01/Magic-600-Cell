@@ -131,6 +131,7 @@ public sealed partial class MotionStage : Control
     public MotionStage(Func<TokenSet> tokens) { this.tokens = tokens; Name = "MotionStage"; CustomMinimumSize = new Vector2(0, tokens().Px("control.height") * 1.5f); SetProcess(false); }
 
     public static string KindOf(MotionEntry entry) =>
+        MotionSettings.IsReward(entry.Id) ? "mark" :
         entry.Id.Contains("preview", StringComparison.Ordinal) || entry.Id.Contains("pending", StringComparison.Ordinal) ? "return" :
         entry.Duration is "flash" or "settle" ? "fade" : "move";
 
@@ -151,6 +152,11 @@ public sealed partial class MotionStage : Control
         TokenSet t = tokens(); float pad = t.Px("space.3"), r = t.Px("icon.small") / 2f, y = Size.Y / 2;
         double share = began < 0 ? 1 : MotionTable.Ease(curve, (Time.GetTicksMsec() / 1000.0 - began) / seconds);
         DrawLine(new Vector2(pad, y), new Vector2(Size.X - pad, y), t.C("separator"), t.Px("border.width"));
+        if (kind == "mark")
+        {
+            DrawCircle(new Vector2(pad + r, y), r, t.C("rail.cell.solved", (float)share));
+            return;
+        }
         // The static equivalent is the picture at rest: the mark at its end, back at its start, or the lasting bar.
         if (kind == "fade")
         {
@@ -504,9 +510,10 @@ public sealed partial class ComponentGallery : VBoxContainer
     public void Play(MotionEntry entry)
     {
         TokenSet t = tokens();
-        if (entry.Id == "reward.mark" && !Motion.Rewards) { Say("reward.mark is switched off"); return; }
+        if (!MotionSettings.Shows(entry.Id, Motion.Rewards)) { Say(entry.Id + " is switched off"); return; }
         Stage?.Play(entry, motions.Seconds(entry.Id, t.System, Motion.Reduced), t.System.Curves[entry.Curve]);
-        Say(entry.Id + (Motion.Reduced ? " · still: " + entry.Static : " · " + entry.Meaning) + (entry.Cue != null && !Motion.Muted ? " · " + entry.Cue + " would sound here" : ""));
+        Say(entry.Id + (Motion.Reduced || entry.Off ? " · still: " + entry.Static : " · " + entry.Meaning)
+            + (entry.Cue != null && !entry.Off && !Motion.Muted ? " · " + entry.Cue + " would sound here" : ""));
     }
 
     private void PalettePage(TokenSet t)

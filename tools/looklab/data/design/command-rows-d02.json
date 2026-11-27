@@ -474,6 +474,26 @@
       ],
       "note": "Takes a keymap preset's name (default, or a file under keymaps/), or none for the next one; the status line names every key that changed meaning, and the key map marks them. Key sets per orbit are such presets, not a mode.",
       "request": "ADR-D01.74"
+    },
+    {
+      "id": "protection.pick.set",
+      "label": "Set protection on piece",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Marks the current pick as protected. Argument: orbit, position, identity or block. Use clear to remove every protection set here.",
+      "request": "ADR-D01.65"
+    },
+    {
+      "id": "status.sample.show",
+      "label": "Set sticker state",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Draws the sample sticker statuses in Global and Local. Argument: on or off.",
+      "request": "ADR-D01.65"
     }
   ],
   "grip": [

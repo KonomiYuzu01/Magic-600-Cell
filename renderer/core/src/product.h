@@ -126,7 +126,7 @@ uint32_t view_layout_kind(const sa2_view_layout* layout);
 HopfTable hopf_table(const sa2_view_layout& layout, const std::function<std::array<float, 4>(uint32_t)>& centre);
 // ABI 7: a style slot (sa2_view_style_set), as the styled pass reads it (register b1): 16 palette entries, the three
 // matrix rows (xyz), then the modes; ADR-D02 B20: the slice's mode, shrink and shell (as cosines), then the ghost.
-// 368 bytes, inside one 512-byte constant buffer.
+// 368 bytes. The colour pass appends its status tables; the ID pass needs only these constants.
 struct ViewStyle {
     std::array<float, 64> palette{};
     std::array<float, 12> rows{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
@@ -134,7 +134,8 @@ struct ViewStyle {
     float dim_amount = 0, outline_width = 0;
     uint32_t matrix_on = 0, slice_mode = 0;
     float slice_shrink = 1, shell_min_cos = 1;
-    float shell_max_cos = -1, pad[3]{};
+    float shell_max_cos = -1;
+    uint32_t status_on = 0, pad[2]{}; // set in colour constants only
     std::array<float, 4> ghost{};
     bool operator==(const ViewStyle&) const = default;
 };
@@ -145,10 +146,12 @@ ViewStyle view_style(const sa2_view_style* style); // validates (SA2_E_INVALID_A
 struct PieceStyle {
     uint64_t revision = 0, version = 0; // version: the style's upload key, never 0
     std::vector<uint32_t> packed; // SA2_PIECES
-    std::array<bool, 3> any{}; // a nonzero palette index, or a piece in channel 2's slice layer
+    std::array<bool, 4> any{}; // per channel: tint, outline, slice and status
     bool dim = false; // a fill byte has SA2_STYLE_DIM
     bool moving = false; // ADR-D02 B18: a piece has the moving bit
     bool error = false; // an outline byte has SA2_STYLE_ERROR
+    uint64_t pick_version = 0; // upload key of the original channels, ignoring status-only writes
+    bool original() const { return any[0] || any[1] || any[2] || dim || moving || error; }
 };
 void validate_piece_style(const uint8_t* bytes, uint32_t channel); // SA2_E_INVALID_ARGUMENT
 void validate_frame_input(const sa2_frame_input* input);
@@ -190,6 +193,8 @@ struct FramePlan {
     // ADR-D02 B22 item 1: the revision's chart channel (null: none; uploaded with the copy, whose key includes it).
     const std::vector<uint32_t>* charts = nullptr;
     uint64_t charts_version = 0;
+    const sa2_status_style* status = nullptr;
+    uint64_t pick_style_version = 0;
 };
 // An ID pass: the frame's camera, viewport, engine copy, resource set and (ABI 6) shape.
 struct PassInput {
@@ -377,6 +382,8 @@ public:
     // (chart + 1) | (chart + 1) << 16 (0: none), or null to clear it. Device-free; an adoption drops it.
     void set_charts(uint64_t revision, const uint32_t* charts, uint32_t count);
 
+    void set_status_style(const sa2_status_style* style);
+
 private:
     struct Entry {
         PublicationStamp stamp;
@@ -387,7 +394,7 @@ private:
         bool visible() const { return !retired; }
         bool ended() const { return state == SA2_TICKET_CANCELLED || state == SA2_TICKET_FAILED; }
     };
-    struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; uint64_t style = 0;
+    struct Copy { uint64_t revision = 0, upload_frame = 0, sequence = 0; uint32_t pose_count = 0; bool valid = false; uint64_t style = 0, pick_style = 0;
                   uint64_t charts = 0; }; // ADR-D02 B22 item 1: the chart channel's version (0: none)
     struct PaneRecord {
         sa2_pane pane{}; uint64_t set_ticket = 0, evals = 0, publication_generation = 0; ViewShape shape;
@@ -449,6 +456,7 @@ private:
     sa2_scene_look scene_look_ = DefaultSceneLook;
     struct Charts { uint64_t revision = 0, version = 0; std::vector<uint32_t> packed; }; // ADR-D02 B22 item 1
     std::optional<Charts> charts_;
+    std::optional<sa2_status_style> status_style_;
 };
 
 // describe_backend's SupportReport and recover's refusal, as JSON. route_b:

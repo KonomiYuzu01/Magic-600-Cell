@@ -322,6 +322,14 @@ impl<C: CoreAbi> RenderBackend<C> {
     }
 
     /// The product's home-cell colours, kept by the core across recovery.
+    pub fn set_status_style(&mut self, style: Option<&Sa2StatusStyle>) -> Result<(), Error> {
+        self.core.status_style_set(style).map_err(|status| self.error(status))
+    }
+
+    pub fn status_drawn(&mut self, pane: u32, words: &mut [u32]) -> Result<(), Error> {
+        self.core.status_drawn(pane, words).map_err(|status| self.error(status))
+    }
+
     pub fn set_sticker_colours(&mut self, rgb: Option<&StickerColours>) -> Result<(), Error> {
         self.core.sticker_colours_set(rgb).map_err(|status| self.error(status))
     }
@@ -342,7 +350,7 @@ impl<C: CoreAbi> RenderBackend<C> {
     /// channel's are refused before the core is asked.
     pub fn set_piece_style(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Error> {
         if piece_style.is_some_and(|bytes| !piece_style_valid(bytes, channel))
-            || !matches!(channel, STYLE_CHANNEL_FILL | STYLE_CHANNEL_OUTLINE | STYLE_CHANNEL_SLICE)
+            || !matches!(channel, STYLE_CHANNEL_FILL | STYLE_CHANNEL_OUTLINE | STYLE_CHANNEL_SLICE | STYLE_CHANNEL_STATUS)
         {
             return Err(Error::invalid("a piece style is PIECES bytes with only its channel's bits"));
         }

@@ -102,9 +102,8 @@ use c600_display::{Error, Status as CommandStatus};
 use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::{
-    piece_style_valid, Sa2Pane, Sa2SceneLook, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, StickerColours,
-    PANES_MAX, PIECES, STICKER_CLASSES, STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_CHANNEL_SLICE, STYLE_SLOTS,
-    TARGET_SURFACE,
+    piece_style_valid, Sa2Pane, Sa2SceneLook, Sa2StatusStyle, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle,
+    StickerColours, PANES_MAX, PIECES, SLOTS, STATUS_WORDS, STICKER_CLASSES, STYLE_CHANNEL_STATUS, STYLE_SLOTS, TARGET_SURFACE,
 };
 use c600_render::backend::PickTicket;
 use c600_render::{DisplayTime, PaneSpec, RenderBackend};
@@ -382,8 +381,9 @@ pub struct ShellHost {
     /// with that revision's adoption ([`m6h_set_transform`]).
     pending_transform: Option<PendingTransform>,
     /// Checkpoint C3.2 (finding F1, 27 November 2026): a piece style named for a revision handed out but not adopted
-    /// yet, by channel (fill, outline, slice), set with that revision's adoption ([`m6h_set_piece_style`]).
-    pending_styles: [Option<(u64, Option<Vec<u8>>)>; 3],
+    /// yet, by channel (fill, outline, slice, ADR-D01.65's status), set with that revision's adoption
+    /// ([`m6h_set_piece_style`]).
+    pending_styles: [Option<(u64, Option<Vec<u8>>)>; 4],
     /// The thread that builds twist adoptions off the frame thread ([`deferred`]), from the first twist on.
     adoptions: Option<deferred::Worker>,
     /// An adoption that failed after a frame was submitted, which the next call that adopts answers.
@@ -574,7 +574,7 @@ impl ShellHost {
             assigned: ENGINE_REVISION,
             awaited: None,
             pending_transform: None,
-            pending_styles: [None, None, None],
+            pending_styles: [None, None, None, None],
             adoptions: None,
             failed: None,
             turns: None,
@@ -1545,11 +1545,11 @@ pub unsafe extern "C" fn m6h_set_piece_style(
                 }
             };
             if pieces.as_deref().is_some_and(|bytes| !piece_style_valid(bytes, channel))
-                || (channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE && channel != STYLE_CHANNEL_SLICE)
+                || channel > STYLE_CHANNEL_STATUS
             {
                 return Err((
                     M6H_E_INVALID_ARGUMENT,
-                    "a channel is 0, 1 or 2 (B20's slice), and its bytes use only its bits".to_owned(),
+                    "a piece style channel or its bytes are invalid".to_owned(),
                 ));
             }
             if held {
@@ -2793,6 +2793,139 @@ pub unsafe extern "C" fn m6h_set_scene_look(handle: *mut ShellHost, look: *const
             }
             shell.host.backend.set_scene_look(look).map_err(host_error)
         })
+    }
+}
+
+/// ADR-D01.65: replace the display-only status table; a null pointer clears it.
+///
+/// # Safety
+///
+/// The handle is live on this thread. A non-null table points to a readable size and, if that size matches,
+/// to a readable `Sa2StatusStyle`.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_status_style(handle: *mut ShellHost, style: *const Sa2StatusStyle) -> i32 {
+    unsafe {
+        with_host(handle, |shell| {
+            if !style.is_null() && style.cast::<u32>().read() as usize != std::mem::size_of::<Sa2StatusStyle>() {
+                return Err((M6H_E_INVALID_ARGUMENT, "invalid status style size".to_owned()));
+            }
+            let style = style.as_ref();
+            if style.is_some_and(|row| !row.in_range()) {
+                return Err((M6H_E_INVALID_ARGUMENT, "invalid status style value".to_owned()));
+            }
+            shell.host.backend.set_status_style(style).map_err(host_error)
+        })
+    }
+}
+
+/// ADR-D01.65: the requested pane's rasterized status-bearing pieces from the last submitted frame.
+///
+/// # Safety
+///
+/// The handle is live on this thread. `words` points to `count` writable, aligned u32s.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_status_drawn(handle: *mut ShellHost, pane: u32, words: *mut u32, count: u32) -> i32 {
+    unsafe {
+        with_host(handle, |shell| {
+            if words.is_null() || count as usize != STATUS_WORDS || pane >= PANES_MAX {
+                return Err((M6H_E_INVALID_ARGUMENT, "invalid status coverage output".to_owned()));
+            }
+            shell.host.backend.status_drawn(pane, std::slice::from_raw_parts_mut(words, STATUS_WORDS)).map_err(host_error)
+        })
+    }
+}
+
+/// ADR-D01.65: read the piece mask of the given protection targets on the adopted revision. Kind 1 names pieces'
+/// orbits (the exact model's `orbit_id`), kind 2 names occupied lattice slots, and kind 4 names cells (the verified
+/// home slot-to-piece map for their 433 slots). Identity, kind 3, already has its piece ID from the pick.
+///
+/// # Safety
+///
+/// The handle is live on this thread. `targets` points to `count` readable u32s and `out` to `PIECES` writable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_status_targets(
+    handle: *mut ShellHost,
+    revision: u64,
+    kind: u32,
+    targets: *const u32,
+    count: u32,
+    out: *mut u8,
+) -> i32 {
+    unsafe {
+        with_host(handle, |shell| {
+            let limit = match kind { 1 => PIECES, 2 => SLOTS, 4 => 600, _ => 0 };
+            if targets.is_null() || out.is_null() || count == 0 || count as usize > limit {
+                return Err((M6H_E_INVALID_ARGUMENT, "invalid protection target list".to_owned()));
+            }
+            if revision != shell.revision || revision != shell.assigned {
+                return Err((M6H_E_UNAVAILABLE, "the requested revision is not the adopted head".to_owned()));
+            }
+            let targets = std::slice::from_raw_parts(targets, count as usize);
+            if targets.iter().any(|&t| t as usize >= limit) {
+                return Err((M6H_E_INVALID_ARGUMENT, "a protection target is out of range".to_owned()));
+            }
+            let found = shell.status_targets(kind, targets)?;
+            std::slice::from_raw_parts_mut(out, PIECES).copy_from_slice(&found);
+            Ok(())
+        })
+    }
+}
+
+impl ShellHost {
+    fn status_targets(&mut self, kind: u32, targets: &[u32]) -> Result<Vec<u8>, Failure> {
+        let mut mask = vec![0; PIECES];
+        let pieces = self.geometry.slot_piece.bytes.as_chunks::<4>().0;
+        if kind == 4 {
+            for &cell in targets {
+                let start = cell as usize * 433;
+                for piece in &pieces[start..start + 433] {
+                    mask[u32::from_le_bytes(*piece) as usize] = 1;
+                }
+            }
+            return Ok(mask);
+        }
+        let head = match self.turns.as_mut() {
+            Some(turns) => turns.head().map_err(|e| (M6H_E_SESSION, e))?,
+            None => Head::Retained(self.kernel.solved()),
+        };
+        if kind == 1 {
+            let loaded;
+            let orbits = match &head {
+                Head::Jumbled(exact, _) => &exact.model.orbit_id,
+                Head::Retained(_) => {
+                    loaded = c600_jumble::model::Model::load(&self.assets).map_err(|e| (M6H_E_MODEL, e.0))?;
+                    &loaded.orbit_id
+                }
+            };
+            let selected: std::collections::BTreeSet<_> =
+                targets.iter().map(|&p| orbits[p as usize]).filter(|&o| o >= 0).collect();
+            for (marked, orbit) in mask.iter_mut().zip(orbits) {
+                *marked = u8::from(selected.contains(orbit));
+            }
+            return Ok(mask);
+        }
+        match head {
+            Head::Retained(state) => {
+                for &slot in targets {
+                    let home = state.labels()[slot as usize] as usize;
+                    mask[u32::from_le_bytes(pieces[home]) as usize] = 1;
+                }
+            }
+            Head::Jumbled(exact, state) => {
+                let projection = jumble::PoseProjection::new(&exact, &state)
+                    .map_err(|missing| (M6H_E_HOST, format!("the pose projection lacks data: {missing:?}")))?;
+                let subject = StateRef::Snapshot(jumble::revision(&exact, &state, self.revision));
+                let selected: std::collections::BTreeSet<_> = targets.iter().copied().collect();
+                for (home, &piece) in exact.model.slot_piece.iter().enumerate() {
+                    if let Partial::Total(slot) = projection.slot(&subject, &ObjectId::Sticker(home as u32)) {
+                        if selected.contains(&slot) {
+                            mask[piece as usize] = 1;
+                        }
+                    }
+                }
+            }
+        }
+        Ok(mask)
     }
 }
 

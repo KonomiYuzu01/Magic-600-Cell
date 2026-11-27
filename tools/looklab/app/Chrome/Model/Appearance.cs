@@ -16,6 +16,7 @@ public sealed class Appearance
     public bool HighContrast { get; set; }
     public bool OtherCharacter { get; set; }
     public bool ReducedMotion { get; set; }
+    public bool Rewards { get; set; } = true;
     // The scale of the display the window is on, set by the host and not stored: the user's display scale
     // multiplies it, so the same stored appearance reads the same on a dense and on a plain screen.
     public double SystemScale { get; private set; } = 1;
@@ -83,6 +84,7 @@ public sealed class Appearance
         var lines = new List<string> { "theme=" + Theme, "density=" + Density, "scale=" + N(DisplayScale), "contrast=" + (HighContrast ? "high" : "standard"), "scene=" + SceneLook };
         if (OtherCharacter) lines.Add("character=other");
         if (ReducedMotion) lines.Add("motion=reduced");
+        if (!Rewards) lines.Add("rewards=off");
         foreach (var family in knobs) foreach (var knob in family.Value) lines.Add($"knob.{family.Key}.{knob.Key}={N(knob.Value)}");
         foreach (var family in overrides) foreach (var o in family.Value) lines.Add($"override.{family.Key}.{o.Key}={N(o.Value.L)} {N(o.Value.C)} {N(o.Value.H)}");
         return string.Join("\n", lines);
@@ -94,7 +96,7 @@ public sealed class Appearance
     {
         Appearance kept = Parse(stored, system, themes);
         Theme = kept.Theme; Density = kept.Density; DisplayScale = kept.DisplayScale; HighContrast = kept.HighContrast; SceneLook = kept.SceneLook;
-        OtherCharacter = kept.OtherCharacter; ReducedMotion = kept.ReducedMotion;
+        OtherCharacter = kept.OtherCharacter; ReducedMotion = kept.ReducedMotion; Rewards = kept.Rewards;
         knobs.Clear();
         foreach (var family in kept.knobs) knobs[family.Key] = new SortedDictionary<string, double>(family.Value, StringComparer.Ordinal);
         overrides.Clear();
@@ -121,6 +123,7 @@ public sealed class Appearance
             else if (name == "scene") result.SetSceneLook(value);
             else if (name == "character" && value == "other") result.OtherCharacter = true;
             else if (name == "motion" && value == "reduced") result.ReducedMotion = true;
+            else if (name == "rewards" && value == "off") result.Rewards = false;
             else if (parts.Length == 3 && parts[0] == "knob" && themes.FirstOrDefault(t => t.Id == parts[1]) is { } family) result.SetKnob(family, parts[2], Number());
             // A role name has dots of its own: override.<family>.<role>=L C h.
             else if (parts.Length >= 3 && parts[0] == "override" && themes.FirstOrDefault(t => t.Id == parts[1]) is { } tuned)

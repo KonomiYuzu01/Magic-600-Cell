@@ -250,6 +250,7 @@ public sealed partial class HistoryPanel : VBoxContainer
     public VBoxContainer List { get; } = new() { Name = "HistoryRows", SizeFlagsHorizontal = SizeFlags.ExpandFill };
     // ADR-D01.70: the rail order of the entries' effect signatures (the Library's), or null where no rail is shown.
     public Func<IReadOnlyList<int>?>? RailOrder { get; set; }
+    public bool Rewards { get; set; } = true;
     public event Action<string, string?>? Command;
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer head = new();
@@ -389,16 +390,18 @@ public sealed partial class HistoryPanel : VBoxContainer
         read.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         read.Pressed += () => Send("session.completion", entry.Name);
         line.AddChild(read);
-        if (entry.Moment)
+        if (entry.Moment && MotionSettings.Shows(MotionUses.OrbitComplete, Rewards))
         {
-            var moment = new Control
+            var moment = new Label
             {
                 Name = "MomentSlot",
                 CustomMinimumSize = new Vector2(t.Px("icon.small"), 0),
                 TooltipText = "The first-completed-orbit moment",
                 MouseFilter = MouseFilterEnum.Pass,
             };
-            moment.SetMeta("moment", "orbit.complete");
+            ChromeIcons.Apply(moment, "task.ok", t.Px("icon.small"));
+            moment.AddThemeColorOverride("font_color", t.C("rail.cell.solved"));
+            moment.SetMeta("moment", MotionUses.OrbitComplete);
             moment.SetMeta("cue", "cue.orbit");
             line.AddChild(moment);
         }

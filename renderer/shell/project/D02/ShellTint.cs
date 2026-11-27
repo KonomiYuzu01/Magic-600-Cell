@@ -73,9 +73,16 @@ public static class ShellTint
         host.OverlayWords();
         ShellStyle.SetTint(JumbleOverlay.Outline(outline, host.Overlay.Lines), fill,
                            _frame is { } frame && GodotObject.IsInstanceValid(frame) ? Palette(frame.Tokens) : null);
+        RefreshFocus();
+    }
+
+    public static void RefreshFocus()
+    {
+        if (_host is not { } host) return;
         var global = host.Layers.Count > 0 ? host.Layers[0] : null;
         var local = host.Layers.Count > 1 ? host.Layers[1] : null;
-        ShellStyle.SetFocusViews(global, local, host.FocusMember, JumbleOverlay.BreaksThrough(host.Overlay));
+        var overlay = JumbleOverlay.BreaksThrough(host.Overlay);
+        ShellStyle.SetFocusViews(global, local, host.FocusMember, piece => (overlay?.Invoke(piece) ?? false) || ShellStatus.Conflict(piece));
     }
 
     /// <summary>The core's 16-entry palette with the tint's entries 3 to 14 in the theme's colours.</summary>

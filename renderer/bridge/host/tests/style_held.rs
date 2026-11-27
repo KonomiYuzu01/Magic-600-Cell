@@ -8,7 +8,7 @@ mod common;
 use std::path::{Path, PathBuf};
 use std::ptr;
 
-use c600_render::abi::{STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE};
+use c600_render::abi::{STYLE_CHANNEL_FILL, STYLE_CHANNEL_OUTLINE, STYLE_CHANNEL_STATUS};
 use c600_render::FakeCore;
 use c600_shell_host::*;
 use common::support::SIZE;
@@ -63,6 +63,10 @@ fn the_first_frame_of_a_new_revision_draws_the_style_set_for_it() {
         assert_eq!(set(at, STYLE_CHANNEL_FILL, &fill, 0), M6H_OK);
         assert_eq!(set(at + 1, STYLE_CHANNEL_FILL, &fill, 0), M6H_OK, "a pending revision's fill is held");
         assert_eq!(set(at + 1, STYLE_CHANNEL_OUTLINE, &outline, 0), M6H_OK, "a pending revision's outline is held");
+        // ADR-D01.65's status channel (the last one) is held the same way.
+        let mut status = vec![0u8; PIECES];
+        status[5] = 1;
+        assert_eq!(set(at + 1, STYLE_CHANNEL_STATUS, &status, 0), M6H_OK, "a pending revision's status is held");
         assert_eq!(set(at + 2, STYLE_CHANNEL_FILL, &fill, 0), M6H_E_INVALID_ARGUMENT, "a revision not handed out");
         assert_eq!(set(at + 1, STYLE_CHANNEL_FILL, &fill[..4], 1), M6H_E_UNAVAILABLE, "a per-pose style for a pending one");
         assert_eq!(set(at + 1, STYLE_CHANNEL_OUTLINE, &fill, 0), M6H_E_INVALID_ARGUMENT, "the dim bit in an outline");
@@ -77,6 +81,10 @@ fn the_first_frame_of_a_new_revision_draws_the_style_set_for_it() {
         assert_eq!(frame.engine_revision, at + 1);
         assert!(fake().piece_styles[0].as_deref() == Some(&fill[..]), "the fill set for the new revision is drawn");
         assert!(fake().piece_styles[1].as_deref() == Some(&outline[..]), "the outline set for the new revision is drawn");
+        assert!(
+            fake().piece_styles[STYLE_CHANNEL_STATUS as usize].as_deref() == Some(&status[..]),
+            "the status set for the new revision is drawn"
+        );
         // The old revision's style no longer attaches to the new one: refused as stale, and the drawn style stays.
         assert_eq!(set(at, STYLE_CHANNEL_OUTLINE, &vec![0u8; PIECES], 0), M6H_E_UNAVAILABLE, "a stale revision");
         assert!(fake().piece_styles[1].as_deref() == Some(&outline[..]), "a stale style changes nothing");

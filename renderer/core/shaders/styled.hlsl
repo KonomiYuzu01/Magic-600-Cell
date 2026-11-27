@@ -6,7 +6,13 @@
 // ADR-D02 B17 (ADR-D01.46, ABI 10): dimMode 3 and 4 hide the pieces that 1 and 2 dim (styledVs places their stickers
 // outside the clip volume), and styledIdPs is the ID pass of a styled frame: a dimmed piece answers no instance.
 #include "product.hlsl"
-StructuredBuffer<uint> pieceStyle : register(t17); // per piece: the fill byte, then the outline byte << 8
+StructuredBuffer<uint> pieceStyle : register(t17); // fill, outline, moving/slice, then the status byte << 24
+RWByteAddressBuffer statusDrawn : register(u0); // optional product-script capture
+struct StatusPattern {
+    uint shape;
+    float spacing, width, angle;
+    float4 colour;
+};
 cbuffer ViewStyle : register(b1) {
     float4 palette[16];
     float4 matrixRows[3]; // xyz: a row of the output colour matrix
@@ -14,8 +20,11 @@ cbuffer ViewStyle : register(b1) {
     float dimAmount, outlineWidth;
     uint matrixOn, sliceMode; // ADR-D02 B20: the cut slice (SA2_SLICE_*), its shrink, its shell as cosines, its ghost
     float sliceShrink, shellMinCos;
-    float shellMaxCos, slicePad0, slicePad1, slicePad2;
+    float shellMaxCos;
+    uint statusOn, slicePad1, slicePad2;
     float4 ghost;
+    StatusPattern patterns[8];
+    StatusPattern marks[8];
 };
 static const uint SliceInside = 0x20000u; // the piece style word's bit 17: the slice's inside layer
 static const uint Moving = 0x10000u; // bit 16: a moving piece of the transform (B18)
@@ -50,7 +59,11 @@ struct StyledOut {
     nointerpolation uint style : TEXCOORD3;
     float3 corner : TEXCOORD4;
     nointerpolation uint instance : TEXCOORD5; // ADR-D02 B17: the ID pass's value
+    nointerpolation uint piece : TEXCOORD6;
 };
+bool statusConflict(uint style) {
+    return statusOn != 0 && ((style >> 24) & 7u) == 2u;
+}
 StyledOut styledVs(uint vi : SV_VertexID, uint cell : SV_InstanceID) {
     uint slot = cell * 433 + stickerIds[vi];
     uint style = pieceStyle[slotPieces[slot]];
@@ -65,13 +78,45 @@ StyledOut styledVs(uint vi : SV_VertexID, uint cell : SV_InstanceID) {
     result.style = style;
     result.corner = float3(k == 0 ? 1 : 0, k == 1 ? 1 : 0, k == 2 ? 1 : 0);
     result.instance = p.instance;
+    result.piece = slotPieces[slot];
     // ADR-D02 B17: a hidden piece's stickers fall outside the clip volume, in the colour pass and the ID pass alike.
     bool dimSet = (result.style & 0x80) != 0;
-    if ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet)) result.position = float4(0, 0, -1, 1);
+    if (!statusConflict(style) && ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet))) result.position = float4(0, 0, -1, 1);
     return result;
 }
+float2 patternRotate(float2 p, float angle) {
+    float s, c;
+    sincos(angle, s, c);
+    return float2(p.x * c - p.y * s, p.x * s + p.y * c);
+}
+bool patternInk(StatusPattern entry, float2 pixel, float edge) {
+    if (entry.shape == 0) return false;
+    float2 grid = frac(patternRotate(pixel, entry.angle) / entry.spacing) - 0.5;
+    float2 distance = abs(grid);
+    float w = entry.width * 0.5;
+    if (entry.shape == 1) return distance.x < w;                           // hatch
+    if (entry.shape == 2) return min(distance.x, distance.y) < w;               // cross-hatch
+    if (entry.shape == 3) return length(grid) < w;                     // dot screen
+    if (entry.shape == 4) return edge < 0.16 && distance.x < w;             // dashed edge
+    return distance.x < w || abs(distance.x - 0.28) < w * 0.3;                // paired stripes
+}
+bool markInk(StatusPattern entry, float3 corner) {
+    if (entry.shape == 0) return false;
+    // An equilateral triangle in barycentric coordinates, centred at its centroid.
+    float2 p = patternRotate(float2(corner.y - corner.z, (3 * corner.x - 1) * 0.577350269), entry.angle);
+    float r = entry.spacing, w = r * entry.width;
+    if (entry.shape == 1) return abs(length(p) - r) < w;               // ring
+    if (entry.shape == 2) return length(p) < r;                        // dot
+    if (entry.shape == 3) return max(abs(p.x), abs(p.y)) < r && min(abs(p.x), abs(p.y)) < w;
+    // Three short ticks toward the corners, separated from the triangle edges.
+    if (length(p) < r * 0.65 || length(p) >= r * 1.5) return false;
+    return (abs(p.x) < w && p.y > 0) || abs(abs(p.x) + 1.732050808 * p.y) < w;
+}
 float4 styledPs(StyledOut input) : SV_Target {
-    if (sliceHole(input.style, input.corner)) discard; // ADR-D02 B20
+    uint status = statusOn != 0 ? (input.style >> 24) & 0x3fu : 0;
+    uint markIndex = status >> 3;
+    bool marked = markIndex != 0 && markInk(marks[markIndex], input.corner);
+    if (sliceHole(input.style, input.corner) && !marked) discard; // a protection mark can occupy the centre of a cut band
     VertexOut v;
     v.position = input.position;
     v.projected = input.projected;
@@ -93,12 +138,22 @@ float4 styledPs(StyledOut input) : SV_Target {
     if (sliceMode != 0 && ghost.a > 0 && theta != 0 && (input.style & (SliceInside | Moving)) == (SliceInside | Moving))
         colour.rgb = lerp(colour.rgb, ghost.rgb, ghost.a);
     bool dimSet = (fill & 0x80) != 0;
-    if ((dimMode == 1 && dimSet) || (dimMode == 2 && !dimSet)) colour.rgb *= 1 - dimAmount;
+    if (!statusConflict(input.style) && ((dimMode == 1 && dimSet) || (dimMode == 2 && !dimSet))) colour.rgb *= 1 - dimAmount;
     // ADR-D01.25: the hatch repeats about every 6 pixels across the diagonal; a regular band keeps its own colour.
     if ((tintMode & 2) != 0 && (outline & 0x10u) != 0 && palette[0].a > 0) {
         bool hatch = frac((input.position.x + input.position.y) / 8.0) < 0.5;
         if (edge < outlineWidth ? (outline & 15) == 0 : hatch)
             colour.rgb = lerp(colour.rgb, palette[0].rgb, palette[0].a);
+    }
+    // ADR-D01.65: host statuses after the user stages, before the matrix; a conflict is never dimmed.
+    if (status != 0) {
+        if ((statusOn & 2u) != 0) statusDrawn.InterlockedOr((input.piece >> 5) * 4, 1u << (input.piece & 31u));
+        StatusPattern pattern = patterns[status & 7u];
+        if (patternInk(pattern, input.position.xy, edge)) colour.rgb = lerp(colour.rgb, pattern.colour.rgb, pattern.colour.a);
+        if (marked) {
+            float4 markColour = marks[markIndex].colour;
+            colour.rgb = lerp(colour.rgb, markColour.rgb, markColour.a);
+        }
     }
     if (matrixOn != 0)
         colour.rgb = float3(dot(matrixRows[0].xyz, colour.rgb), dot(matrixRows[1].xyz, colour.rgb), dot(matrixRows[2].xyz, colour.rgb));

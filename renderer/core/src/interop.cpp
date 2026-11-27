@@ -1831,7 +1831,7 @@ int32_t sa2_frame_submit(sa2_context* ctx, const sa2_frame_input* input, uint64_
         scene.require_healthy();
         live(ctx);
         scene.wait_geometry(ctx->config.wait_timeout_ms);
-        scene.product_ready(ctx->producer(), target.format(), plan.styled);
+        scene.product_ready(ctx->producer(), target.format(), plan.styled || plan.status);
         if (plan.upload) target.wait(plan.upload_wait); // the copy's staging was last read by that frame
         auto* list = target.open();
         try {
@@ -1872,7 +1872,7 @@ int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* input, c
         require(ctx->last_frame < UINT64_MAX - 1, "frame IDs are exhausted", SA2_E_WRONG_STATE);
         const uint64_t frame = ctx->last_frame + 1;
         const auto plan = scene.product.plan_panes(*input, panes, count, target.width(), target.height());
-        const bool styled = std::any_of(plan.panes.begin(), plan.panes.end(), [](const sa2::PanePlan& pane) { return pane.styled; });
+        const bool styled = plan.status || std::any_of(plan.panes.begin(), plan.panes.end(), [](const sa2::PanePlan& pane) { return pane.styled; });
         scene.require_healthy();
         live(ctx);
         scene.wait_geometry(ctx->config.wait_timeout_ms);
@@ -2226,4 +2226,25 @@ extern "C" __declspec(dllexport) void sa2_test_frame_statistics(uint64_t* out) {
     if (!out) return;
     const auto s = sa2::newest_frame_statistics();
     out[0] = s.frame; out[1] = s.vertex_evals; out[2] = s.primitives; out[3] = s.pixels;
+}
+
+int32_t sa2_status_style_set(sa2_context* ctx, const sa2_status_style* style) {
+    return invoke(ctx, "sa2_status_style_set", [&] {
+        product_scene(ctx).product.set_status_style(style);
+        return SA2_OK;
+    });
+}
+
+int32_t sa2_status_drawn(sa2_context* ctx, uint32_t pane, uint32_t* words, uint32_t count) {
+    return invoke(ctx, "sa2_status_drawn", [&] {
+        auto& scene = product_scene(ctx);
+        require(words != nullptr && count == SA2_STATUS_WORDS && pane < SA2_PANES_MAX, "invalid status coverage output");
+        if (scene.has_status_capture(pane)) {
+            wait_fence(ctx, ctx->ready.Get(), ctx->last_ready, deadline(ctx->config.wait_timeout_ms));
+            scene.read_status_capture(pane, words);
+        } else {
+            std::fill_n(words, count, 0u);
+        }
+        return SA2_OK;
+    });
 }

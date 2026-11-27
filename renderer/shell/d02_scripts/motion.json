@@ -1,0 +1,27 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "motion",
+  "note": "On the solved Jumble session, frame cap 0, make a short drag and a burst of three turns, then zoom twice. Invert the turns before repeating them with reduced motion.",
+  "steps": [
+    { "wait_ms": 3000 },
+    { "command": "jumble.cap.name", "argument": "0" },
+    { "drag": [4.25, 0] },
+    { "chord": "K", "quick": true },
+    { "chord": "L", "quick": true },
+    { "chord": "K", "quick": true },
+    { "wait_ms": 1500 },
+    { "wheel": 1, "quick": true },
+    { "wheel": 1, "quick": true },
+    { "wait_ms": 800 },
+    { "chord": "Shift+K", "quick": true },
+    { "chord": "Shift+L", "quick": true },
+    { "chord": "Shift+K", "quick": true },
+    { "wait_ms": 1500 },
+    { "command": "motion.reduced.set", "argument": "on" },
+    { "chord": "K", "quick": true },
+    { "chord": "L", "quick": true },
+    { "chord": "K", "quick": true },
+    { "wait_ms": 800 },
+    { "command": "motion.reduced.set", "argument": "off" }
+  ]
+}

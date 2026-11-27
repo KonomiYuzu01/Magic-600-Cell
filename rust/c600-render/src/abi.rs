@@ -140,6 +140,8 @@ pub const STYLE_CHANNEL_FILL: u32 = 0;
 pub const STYLE_CHANNEL_OUTLINE: u32 = 1;
 /// `SA2_STYLE_CHANNEL_SLICE` (ADR-D02 B20): one byte per piece, 1 for the cut slice's inside layer.
 pub const STYLE_CHANNEL_SLICE: u32 = 2;
+/// ADR-D01.65: the pattern index in bits 0..2 and the protection mark in bits 3..5.
+pub const STYLE_CHANNEL_STATUS: u32 = 3;
 /// `SA2_SLICE_OFF` (ADR-D02 B20).
 pub const SLICE_OFF: u32 = 0;
 /// `SA2_SLICE_BOTH` (ADR-D02 B20): the outside layer filled, the inside layer as outlines.
@@ -522,6 +524,9 @@ impl Sa2ViewStyle {
 
 /// Whether every byte of a piece style channel uses only that channel's bits (ABI 7).
 pub fn piece_style_valid(bytes: &[u8], channel: u32) -> bool {
+    if channel == STYLE_CHANNEL_STATUS {
+        return bytes.len() == PIECES && bytes.iter().all(|&b| b & 0xc0 == 0 && b & 7 <= 5 && (b >> 3) & 7 <= 4);
+    }
     let allowed = match channel {
         STYLE_CHANNEL_FILL => STYLE_INDEX | STYLE_DIM,
         STYLE_CHANNEL_OUTLINE => STYLE_INDEX | STYLE_ERROR,
@@ -615,5 +620,56 @@ impl Sa2SceneLook {
     pub fn in_range(&self) -> bool {
         self.background.iter().chain([&self.fog, &self.glow, &self.edge_brightness, &self.edge_weight])
             .all(|value| (0.0..=1.0).contains(value))
+    }
+}
+
+/// ADR-D01.65's two-register table entry, shared by patterns and protection marks.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Sa2StatusPattern {
+    pub shape: u32,
+    pub spacing: f32,
+    pub width: f32,
+    pub angle: f32,
+    pub colour: [f32; 4],
+}
+
+pub const STATUS_WORDS: usize = PIECES.div_ceil(32);
+pub const STATUS_CAPTURE: u32 = 1;
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Sa2StatusStyle {
+    pub struct_size: u32,
+    pub flags: u32,
+    pub patterns: [Sa2StatusPattern; 8],
+    pub marks: [Sa2StatusPattern; 8],
+}
+
+impl Default for Sa2StatusStyle {
+    fn default() -> Self {
+        Self { struct_size: size_of::<Self>() as u32, flags: 0, patterns: Default::default(), marks: Default::default() }
+    }
+}
+
+impl Sa2StatusStyle {
+    pub fn in_range(&self) -> bool {
+        if self.struct_size as usize != size_of::<Self>() || self.flags > STATUS_CAPTURE {
+            return false;
+        }
+        for (entries, last, lo, hi) in [(&self.patterns, 5, 2.0, 64.0), (&self.marks, 4, 0.05, 0.45)] {
+            for (i, e) in entries.iter().enumerate() {
+                let max_shape = if i == 0 || i > last { 0 } else { last as u32 };
+                if e.shape > max_shape
+                    || !(if e.shape == 0 { 0.0 } else { lo }..=hi).contains(&e.spacing)
+                    || !(if e.shape == 0 { 0.0 } else { 0.05 }..=0.95).contains(&e.width)
+                    || !(-std::f32::consts::PI..=std::f32::consts::PI).contains(&e.angle)
+                    || !e.colour.iter().all(|c| (0.0..=1.0).contains(c))
+                {
+                    return false;
+                }
+            }
+        }
+        true
     }
 }

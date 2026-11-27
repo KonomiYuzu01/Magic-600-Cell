@@ -897,8 +897,11 @@ internal sealed partial class D02Driver : Node
             throw new FormatException("Unknown D02 script step: " + step);
         }
         // ADR-D02 B19/B24: a step marked "quiet" writes no screen dump, so a gate row's repeated motion is timed
-        // without the dump's work in its frames (d02_run.py expand_repeat marks them).
-        _wait = step.TryGetProperty("quiet", out var quietStep) && quietStep.ValueKind == JsonValueKind.True ? -1 : StepFrames;
+        // without the dump's work in its frames (d02_run.py expand_repeat marks them). A "quick" step (ADR-D01.55)
+        // dumps at once and flushes the buffered input.
+        _wait = step.TryGetProperty("quiet", out var quietStep) && quietStep.ValueKind == JsonValueKind.True ? -1
+            : step.TryGetProperty("quick", out var quick) && quick.GetBoolean() ? 0 : StepFrames;
+        if (_wait == 0) Input.FlushBufferedEvents();
     }
 
     private static string GripPointer(string action, string pane)
@@ -984,6 +987,7 @@ internal sealed partial class D02Driver : Node
         {
             at += by / 10;
             Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at, Relative = by / 10, ButtonMask = MouseButtonMask.Left });
+            Input.FlushBufferedEvents();
         }
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
     }
@@ -1383,10 +1387,23 @@ internal sealed partial class D02Driver : Node
                 json.WriteEndArray();
             }
             json.WriteEndObject();
+            DumpMotion(json);
             json.WriteEndObject();
         }
         using var stream = new FileStream(path, FileMode.Append, System.IO.FileAccess.Write);
         stream.Write(buffer.ToArray());
         stream.WriteByte((byte)'\n');
+    }
+
+    private void DumpMotion(Utf8JsonWriter json)
+    {
+        json.WriteStartObject("motion");
+        json.WriteBoolean("reduced", _frame.Tokens.ReducedMotion);
+        json.WriteNumber("state_revision", ShellJumble.StateRevision);
+        json.WriteString("state_digest", ShellJumble.StateDigest);
+        ShellTurn.DumpMotion(json);
+        ShellJumble.Zoom.DumpMotion(json, HostLibrary.View);
+        ShellMotion.DumpRawClip(json);
+        json.WriteEndObject();
     }
 }

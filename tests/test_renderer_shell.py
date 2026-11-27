@@ -16,13 +16,14 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import unittest
 import unittest.mock
 import xml.etree.ElementTree as ET
 from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
+
+from test_d02_drawing import fixture_folder, workspace_fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 SHELL = ROOT / "renderer" / "shell"
@@ -543,8 +544,7 @@ class ProductBuild(unittest.TestCase):
     def setUp(self):
         self.build_product = shell_module("build_product")
         self.launch = shell_module("launch")
-        self.temp = fresh_test_folder("c9-product-")
-        self.addCleanup(shutil.rmtree, self.temp, True)
+        self.temp = fixture_folder(self, "c9-product-")
         self.build = self.temp / "20261118T000000Z"
         files = {"native/sa2_interop.dll": b"core", "native/draw_vs.dxil": b"vs", "native/build.ninja": b"rules",
                  "host/c600_shell_host.dll": b"host", "lx4/c600_shell_lx4.dll": b"lx4",
@@ -1433,8 +1433,7 @@ class D02Fixtures(unittest.TestCase):
 
     def setUp(self):
         self.fixtures = shell_module("build_d02_fixtures")
-        self.temp = fresh_test_folder("d02-fixtures-")
-        self.addCleanup(shutil.rmtree, self.temp, True)
+        self.temp = fixture_folder(self, "d02-fixtures-")
 
     def test_the_words_rebuild_each_sample_from_its_records(self):
         words = self.fixtures.words()
@@ -1606,8 +1605,7 @@ class D02Shape(unittest.TestCase):
 
     def test_the_build_stages_the_opening_file(self):
         build_shell = shell_module("build_shell")
-        temp = fresh_test_folder("c9-shape-")
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "c9-shape-")
         project = temp / "staged"
         build_shell.stage(project)
         self.assertEqual((project / "look" / "opening.json").read_bytes(),
@@ -1722,7 +1720,7 @@ class D02Host(unittest.TestCase):
         revert = json.loads(text(SHELL / "d02_scripts" / "tuning-revert.json"))
         self.assertEqual((revert["name"], revert["resolution"]), ("tuning-revert", "1280x720"))
         self.assertEqual(revert["steps"].count({"chord": "Escape"}), 2)
-        with temporary_test_folder() as folder:
+        with workspace_fixture("d02-tuning-diff-") as folder:
             self.assertEqual(run.check_tuning_diff(Path(folder)), ["tuning.diff.export wrote no tuning-diff.txt into the run folder"])
             (Path(folder) / "tuning-diff.txt").write_bytes(
                 b"format=magic600-tuning-diff/1\npreset=graphite\ntheme=graphite\nscene=solving\nknob.graphite.tone=0.05\n")
@@ -2356,9 +2354,12 @@ class D02Zoom(unittest.TestCase):
         notches = [0, 0, 3, 3, 8, 8, 25, 25]
 
         def dumps(direction=1, factors=factors):
-            return [{"do": do, "camera_turns": 0, "lines": [],
-                     "zoom": {"notches": n, "factor": f ** direction, "sent": 1.15 * f ** direction}}
-                    for do, f, n in zip(run.ZOOM_STEPS, factors, notches)]
+            drawn = [f ** direction for f in factors]
+            for k in (2, 4, 6):
+                drawn[k] = (drawn[k - 1] + drawn[k]) / 2
+            return [{"do": do, "camera_turns": 0, "lines": [], "motion": {"zoom": {"target": target ** direction}},
+                     "zoom": {"notches": n, "factor": f, "sent": 1.15 * f}}
+                    for do, f, target, n in zip(run.ZOOM_STEPS, drawn, factors, notches)]
         self.assertEqual(run.expect_zoom(dumps(), {}, None), [])
         # A build whose wheel up zoomed out fails on the direction.
         reversed_wheel = run.expect_zoom(dumps(direction=-1), {}, None)
@@ -2547,7 +2548,7 @@ class D02TrackJ0(unittest.TestCase):
         self.assertLessEqual(set(track.NOT_PLANTABLE), set(track.CLASSES))
         self.assertTrue(all(track.NOT_PLANTABLE.values()), "each class J0 cannot plant names why")
         self.assertFalse({d["class"] for d in defects} & set(track.NOT_PLANTABLE))
-        with temporary_test_folder() as temp:
+        with workspace_fixture("d02-defects-") as temp:
             for defect in defects:
                 folder = Path(temp) / defect["id"]
                 files = track.plant(defect, folder)
@@ -2602,7 +2603,7 @@ class D02TrackJ0(unittest.TestCase):
                 (folder / state / "fixture.json").write_text(json.dumps({"digest": digest[state]}), encoding="utf-8")
             return write
 
-        with temporary_test_folder() as temp:
+        with workspace_fixture("d02-replay-") as temp:
             done = track.replay(Path(temp) / "a", Path("writer"), writer(lambda state, n: False))
             self.assertEqual((done["bound"], done["words"], done["problems"]), (9, 9, []))
             done = track.replay(Path(temp) / "c", Path("writer"), writer(lambda state, n: state == "s7001-4"))
@@ -2664,7 +2665,7 @@ class D02TrackJ0(unittest.TestCase):
         def replayer(root, writer):
             return {"bound": 9, "words": 9, "start": "s7001-0", "rows": [], "problems": []}
 
-        with temporary_test_folder() as temp, \
+        with workspace_fixture("d02-j0-") as temp, \
                 unittest.mock.patch.dict(track.J0_CHECKS, {"digest": checks("digest"), "covers": checks("covers")}):
             out = Path(temp)
             code, record = track.j0(session, defects, out / "a", None, player=player, replayer=replayer, nonce="n1")
@@ -2987,7 +2988,7 @@ class D02TrackJ(unittest.TestCase):
             dumps[-1]["stage"] = {"unasked": unasked}
             return dumps, ops, []
 
-        with temporary_test_folder() as temp:
+        with workspace_fixture("d02-j1-") as temp:
             out = Path(temp)
             code, record = track.j1(session(rows, rows[1:]), out / "pass", None, player=player)
             self.assertEqual((code, record["operations"], record["reached"], record["boundary"], record["problems"]),

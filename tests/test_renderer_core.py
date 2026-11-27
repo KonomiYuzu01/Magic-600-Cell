@@ -281,10 +281,13 @@ ABI10 = {
     "SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look);",
     # ADR-D02 B22 item 1: the per-revision chart channel, appended inside ABI 10.
     "SA2_API int32_t sa2_charts_set(sa2_context* ctx, uint64_t revision, const uint32_t* charts, uint32_t count);",
+    "SA2_API int32_t sa2_status_style_set(sa2_context* ctx, const sa2_status_style* style);",
+    "SA2_API int32_t sa2_status_drawn(sa2_context* ctx, uint32_t pane, uint32_t* words, uint32_t count);",
 }
 ABI10_DEFINES = {"SA2_LAYOUT_CHAIN": "0u", "SA2_LAYOUT_HOPF_RINGS": "1u", "SA2_LAYOUT_RING_SHEET": "2u", "SA2_HOPF_RINGS": "20u",
                  "SA2_STYLE_HIDE_MARKED": "3u", "SA2_STYLE_HIDE_UNMARKED": "4u", "SA2_STYLE_ERROR": "0x10u",
-                 "SA2_STICKER_CLASSES": "600u"}
+                 "SA2_STICKER_CLASSES": "600u",
+                 "SA2_STYLE_CHANNEL_STATUS": "3u"}
 
 
 class AbiTests(unittest.TestCase):

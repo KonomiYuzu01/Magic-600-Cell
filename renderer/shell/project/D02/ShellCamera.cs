@@ -35,6 +35,7 @@ public sealed class ShellCamera
 
     private bool _pressed;
     private Vector2 _from;
+    private Vector2 _pending;
 
     public static double[] Identity() => new double[] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
 
@@ -52,6 +53,7 @@ public sealed class ShellCamera
                 {
                     _pressed = inOpening(button.Position);
                     _from = button.Position;
+                    _pending = Vector2.Zero;
                     Dragging = false;
                     return false;
                 }
@@ -60,12 +62,14 @@ public sealed class ShellCamera
                 Dragging = false;
                 return dragged;
             case InputEventMouseMotion motion when _pressed && (motion.ButtonMask & MouseButtonMask.Left) != 0:
+                _pending += motion.Relative;
                 if (!Dragging && motion.Position.DistanceTo(_from) < DragThreshold)
                 {
                     return false;
                 }
                 Dragging = true;
-                Turn(motion.Relative.X * RadiansPerPixel, motion.Relative.Y * RadiansPerPixel);
+                Turn(_pending.X * RadiansPerPixel, _pending.Y * RadiansPerPixel);
+                _pending = Vector2.Zero;
                 return true;
             default:
                 return false;
