@@ -94,7 +94,9 @@ internal static class ShellDocuments
             Bodies.Add(pane, body);
         }
         body.Show(document, set.Problems());
-        frame.AddPane(pane, document.Name, body);
+        // A verified log opens as a free view bound to its saved state (ADR-D01.42, rev5); a log whose compile fails
+        // carries no chip (rev6), and a script is an editor pane, no view of a state.
+        frame.AddPane(pane, document.Name, body, ViewBinding.Of(document.Binding));
         if (!frame.Model.IsOpen(pane)) frame.Model.Drop(pane, FrameModel.Pair, DropZone.Right);
         else frame.Model.Activate(pane);
     }

@@ -236,11 +236,7 @@ public sealed partial class DocumentBody : VBoxContainer
         foreach (Node child in details.GetChildren()) { details.RemoveChild(child); child.QueueFree(); }
         var head = new HBoxContainer(); details.AddChild(head);
         head.AddChild(ChromeWidgets.Text(document.Kind.ToString(), "MicroLabel"));
-        if (document.Binding is { } binding)
-        {
-            var chip = new PanelContainer { ThemeTypeVariation = "Chip" };
-            chip.AddChild(ChromeWidgets.Text(binding, "MicroLabel")); head.AddChild(chip);
-        }
+        // A verified log's "saved" chip sits on the pane's head (ADR-D01.42), not in the body.
         if (document.ReadOnly) Line("read-only: " + document.Reason, "DimLabel");
         foreach (DocumentProblem problem in problems.Where(problem => problem.DocumentId == document.Id))
             Line(problem.Text, problem.Dimmed ? "DimLabel" : "");

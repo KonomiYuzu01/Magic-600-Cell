@@ -128,7 +128,7 @@ public sealed partial class OrbitRail : PanelContainer
     public string Tip(int orbit)
     {
         SolvingState s = Demo.State; OrbitFacts f = s.Atlas.Orbits[orbit]; OrbitResidual r = s.Residuals[orbit];
-        return $"{OrbitAtlas.Name(orbit)} · {f.Orientation} · {f.Pieces} pieces\nNot at Home: {OrbitResidual.Numeral(r.NotHome)} ({SolvingDemo.Mark})\nLock: {r.Lock.ToString().ToLowerInvariant()}\nIts seed touches: {Names(f.Touches)}\nTouched by the seeds of: {Names(s.Atlas.TouchedBy(orbit))}";
+        return $"{OrbitAtlas.Name(orbit)} · {f.Orientation} · {f.Pieces} pieces\nNot at Home: {OrbitResidual.Numeral(r.NotHome)} ({SolvingDemo.Mark})\nLock: {Protections.Words(r.Protection)}\nIts seed touches: {Names(f.Touches)}\nTouched by the seeds of: {Names(s.Atlas.TouchedBy(orbit))}";
     }
 }
 
@@ -177,7 +177,7 @@ internal sealed partial class RailCells : Control
             // Three separate marks in three fixed places: solved, lock, Next.
             float my = line + 27, third = (step - 4) / 3;
             if (cell.Solved) { Vector2 c = new(x + 2 + third * .5f, my); DrawPolyline(new[] { c + new Vector2(-3, 0), c + new Vector2(-1, 2.5f), c + new Vector2(3.5f, -3) }, t.C("rail.cell.solved"), 1.6f, true); }
-            if (cell.Lock != OrbitLock.None) Lock(new Vector2(x + 2 + third * 1.5f, my), cell.Lock == OrbitLock.Whole, t.C(cell.Lock == OrbitLock.Whole ? "rail.lock.whole" : "rail.lock.partial"));
+            if (cell.Lock != OrbitLock.None) Lock(new Vector2(x + 2 + third * 1.5f, my), cell.Protection, t);
             if (cell.Next) StripGlyphs.Draw(this, "next", new Vector2(x + 2 + third * 2.5f, my), 7, t.C("rail.cell.next"), 1.2f);
             if (cell.Working) { DrawRect(box, t.C("rail.cell.working"), false, 1); DrawRect(new Rect2(x + 1, h - 3, step - 2, 2), t.C("rail.cell.working")); }
             if (rail.Expanded == cell.Orbit) DrawLine(new Vector2(mid - 3, h - 5), new Vector2(mid + 3, h - 5), t.C("rail.cell.id"), 1);
@@ -201,10 +201,27 @@ internal sealed partial class RailCells : Control
         }
     }
 
-    private void Lock(Vector2 c, bool whole, Color colour)
+    // ADR-D01.65: a whole-orbit lock is a closed, filled padlock. A partial lock is open, a little wider, with each kind's
+    // mark in its own place in the body: positions a dot on the left, identities a bar in the middle, a block a square
+    // on the right. Place and shape both tell the kinds apart.
+    private void Lock(Vector2 c, ProtectionKinds kinds, TokenSet t)
     {
-        var body = new Rect2(c + new Vector2(-3, -.5f), new Vector2(6, 4.5f));
-        if (whole) { DrawRect(body, colour); DrawArc(c + new Vector2(0, -.5f), 2.2f, Mathf.Pi, Mathf.Tau, 8, colour, 1.2f, true); }
-        else { DrawRect(body, colour, false, 1); DrawArc(c + new Vector2(2.2f, -.5f), 2.2f, Mathf.Pi, Mathf.Tau, 8, colour, 1.2f, true); }
+        if (kinds.HasFlag(ProtectionKinds.Orbit))
+        {
+            Color whole = t.C("rail.lock.whole");
+            DrawRect(new Rect2(c + new Vector2(-3, -.5f), new Vector2(6, 4.5f)), whole); DrawArc(c + new Vector2(0, -.5f), 2.2f, Mathf.Pi, Mathf.Tau, 8, whole, 1.2f, true);
+            return;
+        }
+        Color colour = t.C("rail.lock.partial");
+        var body = new Rect2(c + new Vector2(-4, -.5f), new Vector2(8, 5));
+        DrawRect(body, colour, false, 1); DrawArc(c + new Vector2(2.6f, -.5f), 2.2f, Mathf.Pi, Mathf.Tau, 8, colour, 1.2f, true);
+        float y = body.Position.Y + body.Size.Y / 2;
+        if (kinds.HasFlag(ProtectionKinds.Position)) DrawCircle(new Vector2(c.X - 2.1f, y), .9f, colour);
+        if (kinds.HasFlag(ProtectionKinds.Identity)) DrawLine(new Vector2(c.X, y - 1.4f), new Vector2(c.X, y + 1.4f), colour, 1);
+        if (kinds.HasFlag(ProtectionKinds.Block)) DrawRect(new Rect2(c.X + 1.3f, y - .9f, 1.8f, 1.8f), colour);
     }
+
+    // The locks in words, cell by cell (ADR-D01.65), for the screen text: drawn marks are spelled as their tooltips are.
+    public string LockWords => string.Join("\n", rail.Cells().Where(cell => cell.Protection != ProtectionKinds.None)
+        .Select(cell => $"{cell.Id} lock: {Protections.Words(cell.Protection)}"));
 }

@@ -118,7 +118,7 @@ public sealed partial class ViewFrame : PanelContainer
 public sealed partial class ChromeFrame : Control
 {
     private sealed record DockPanel(DockSide Side, string Id, string Title, string Glyph, Control Content);
-    private sealed record Pane(string Id, string Title, Control Content);
+    private sealed record Pane(string Id, string Title, Control Content, ViewBinding? Binding = null);
 
     public FrameModel Model { get; } = new();
     public TokenSet Tokens { get; private set; }
@@ -256,10 +256,22 @@ public sealed partial class ChromeFrame : Control
 
     public IReadOnlyList<string> PaneIds => panes.Keys.ToArray();
 
-    public void AddPane(string id, string title, Control content)
+    // A free view passes its source (ADR-D01.42), named on the binding chip in its head; a pane that is no view of a
+    // state (the editor, Learn, the gallery) passes none.
+    public void AddPane(string id, string title, Control content, ViewBinding? binding = null)
     {
         content.SizeFlagsVertical = SizeFlags.ExpandFill; content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        panes[id] = new Pane(id, title, content); dirty = true;
+        panes[id] = new Pane(id, title, content, binding); dirty = true;
+    }
+
+    public ViewBinding? BindingOf(string id) => panes.TryGetValue(id, out Pane? pane) ? pane.Binding : null;
+
+    // A free view's source changes (a preview becomes a history position, a log verifies): its chip follows.
+    public void Bind(string id, ViewBinding? binding)
+    {
+        if (!panes.TryGetValue(id, out Pane? pane)) throw new ArgumentException("no pane is named " + id);
+        if (pane.Binding == binding) return;
+        panes[id] = pane with { Binding = binding }; dirty = true;
     }
 
     // A new token set. Sizes and faces need the frame rebuilt; a colour change only needs the theme, so a knob
@@ -652,6 +664,8 @@ public sealed partial class ChromeFrame : Control
             tabs.AddChild(tab);
         }
         tabs.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        // ADR-D01.42: the shown free view names its source beside the close button.
+        if (panes.TryGetValue(active, out Pane? bound) && bound.Binding is { } binding) tabs.AddChild(new BindingChip(active, binding));
         Button close = ChromeWidgets.Tool("", "Close " + active); ChromeIcons.Apply(close, "pane.close", Tokens.Px("icon.small")); close.Pressed += () => Model.Close(active); tabs.AddChild(close);
         var body = new PanelContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
         group.AddChild(body);

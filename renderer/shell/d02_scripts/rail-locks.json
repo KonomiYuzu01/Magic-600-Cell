@@ -1,0 +1,13 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "rail-locks",
+  "resolution": "1280x720",
+  "note": "ADR-D01.65 in sample mode: the rail carries the locks, and each lock names its kind (whole orbit, positions, identities, a block); none reads partial or safe. The commit bar's check-mode chip shows Net or Strict with passed, failed or unchecked, and a click on it changes the mode through protection.policy.set.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"click_control": "CheckChip"},
+    {"wait_ms": 800},
+    {"click_control": "CheckChip"},
+    {"wait_ms": 3000}
+  ]
+}

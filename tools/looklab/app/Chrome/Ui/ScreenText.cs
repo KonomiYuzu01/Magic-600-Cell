@@ -27,6 +27,8 @@ public static class ScreenText
             RichTextLabel rich => rich.GetParsedText(),
             // ADR-D01.70: an effect signature is drawn, not spelled; its words are its tooltip, as a view mark's are.
             SignatureMarks marks => marks.TooltipText,
+            // ADR-D01.65: the rail's locks are drawn; their words are the cells' lock lines.
+            RailCells cells => cells.LockWords,
             _ => null,
         };
         if (!string.IsNullOrWhiteSpace(text)) lines.Add((group, text.Trim()));
@@ -40,6 +42,9 @@ public static class ScreenText
         ChromeOverlay overlay => "overlay:" + overlay.Name,
         // ADR-D01.74: the key map is no overlay (it takes no key), but its words are its own.
         KeyMapPanel => "keymap",
+        RailCells => "rail",
+        // ADR-D01.42: a free view's binding chip, apart from the pane's own words.
+        BindingChip chip => "binding:" + chip.PaneId,
         _ => null,
     };
 }

@@ -1,0 +1,22 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "frame-layers",
+  "resolution": "1280x720",
+  "note": "ADR-D01.77 on a state's session fixture (wj-ia-300): the frame is a canvas in two layers. tuning.open opens the tuning panel; recolouring an instrument (rail.lock.whole, the rail's whole-orbit lock) marks both views as non-standard and lists the role under the Instruments heading of the panel's Advanced list; its reset clears the mark. Recolouring two surfaces, the shell (surface.window) and the completion moment (rail.moment.complete), repaints the frame's window colour, lists both under the Surfaces heading and leaves the views unmarked; their resets bring the opening token digest back. The head's state digest never moves.",
+  "steps": [
+    {"wait_ms": 5001},
+    {"command": "tuning.open"},
+    {"wait_ms": 701},
+    {"command": "token.override.set", "argument": "rail.lock.whole=0.62 0.16 40"},
+    {"wait_ms": 702},
+    {"command": "token.override.reset", "argument": "rail.lock.whole=reset"},
+    {"wait_ms": 703},
+    {"command": "token.override.set", "argument": "surface.window=0.2 0.01 250"},
+    {"wait_ms": 704},
+    {"command": "token.override.set", "argument": "rail.moment.complete=0.6 0.15 140"},
+    {"wait_ms": 705},
+    {"command": "token.override.reset", "argument": "surface.window=reset"},
+    {"command": "token.override.reset", "argument": "rail.moment.complete=reset"},
+    {"wait_ms": 3000}
+  ]
+}

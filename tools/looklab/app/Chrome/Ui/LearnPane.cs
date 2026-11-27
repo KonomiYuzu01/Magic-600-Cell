@@ -5,7 +5,7 @@ using Godot;
 
 namespace Magic600.Chrome;
 
-public sealed partial class LearnPane : HBoxContainer
+public sealed partial class LearnPane : PanelContainer
 {
     private readonly LearnModel model;
     private readonly Dictionary<string, Button> terms = new(StringComparer.Ordinal);
@@ -15,11 +15,13 @@ public sealed partial class LearnPane : HBoxContainer
     private readonly VBoxContainer links = new();
     private readonly ScrollContainer reading;
     private readonly HelpFigurePlate figure;
+    // ADR-D01.77: the Learn layout is a surface the art line paints; its ground has a style of its own.
+    private readonly HBoxContainer layout = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
 
     public LearnPane(LearnModel model, Func<TokenSet> tokens)
     {
-        Name = "LearnPane"; this.model = model;
-        var directory = Scroll(1); AddChild(directory);
+        Name = "LearnPane"; this.model = model; ThemeTypeVariation = "LearnGround"; AddChild(layout);
+        var directory = Scroll(1); layout.AddChild(directory);
         var list = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; directory.AddChild(list);
         foreach (HelpLevel level in model.Levels)
         {
@@ -31,8 +33,8 @@ public sealed partial class LearnPane : HBoxContainer
                 list.AddChild(button); terms.Add(term.Id, button);
             }
         }
-        AddChild(new VSeparator());
-        reading = Scroll(2); AddChild(reading);
+        layout.AddChild(new VSeparator());
+        reading = Scroll(2); layout.AddChild(reading);
         var content = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; reading.AddChild(content);
         content.AddChild(title); content.AddChild(levelName); content.AddChild(definition);
         figure = new HelpFigurePlate(tokens); content.AddChild(figure); content.AddChild(links);
