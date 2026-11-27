@@ -162,6 +162,13 @@ public static class ShellTurn
         }
     }
 
+    /// <summary>Brief SF2: the grip cap and menu item a posted twist key arms (its row is read by the host just before
+    /// the key, at the head the key will twist), or null for a key that is not a twist key.</summary>
+    public static (uint Cap, ulong Item)? ArmFor(string chord) => ItemOf(chord) is ulong item ? (ActiveGripCap, item) : null;
+
+    /// <summary>Brief SF2: the row the host read for the answered key (null: none, or not admissible).</summary>
+    public static void Armed(HostLibrary.TwistRow? row) => _armed = row;
+
     /// <summary>
     /// A committed press at engine revision <paramref name="revision"/>. The armed row is that twist's when the press
     /// entered the revision after the row's (the head the row was read at); then a half-turn (angle pi) flashes for

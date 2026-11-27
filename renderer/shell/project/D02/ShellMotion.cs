@@ -12,6 +12,10 @@ internal static class ShellMotion
     internal static double Now => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
     internal static Action? ApplyRawClip { get; set; }
     private static Action<MotionKey, bool>? _send;
+    /// <summary>Brief SF2: the keys posted to the host that have no answer yet (the script driver's dumps wait for
+    /// them).</summary>
+    internal static int Posted { get; private set; }
+    internal static bool Sweeps => (ShellTurn.MotionRow?.Invoke(MotionUses.JumbleSweep).Seconds ?? 0) > 0;
     private static (int Cap, ViewEase Ease)? _clip;
 
     internal static bool TryQueue(MotionKey key, Action<MotionKey, bool> send)
@@ -19,6 +23,21 @@ internal static class ShellMotion
         if (!ShellTurn.Queue(key)) return false;
         _send ??= send;
         return true;
+    }
+
+    /// <summary>Brief SF2: after the frame's answers, a key still waiting for its answer holds the queue; with none, a
+    /// queue that no sweep runs (a refused, static or other answer) sends its next keys, as a synchronous key did.</summary>
+    internal static void KeysAnswered(int posted, bool waiting)
+    {
+        Posted = posted;
+        Keys.Waiting = waiting;
+        if (!waiting && Keys.Active is null && Keys.Count > 0) Callable.From(Drain).CallDeferred();
+    }
+
+    internal static void KeyPosted(bool staticMotion)
+    {
+        Posted++;
+        if (!staticMotion) Keys.Waiting = true;
     }
 
     internal static void SweepEnded()

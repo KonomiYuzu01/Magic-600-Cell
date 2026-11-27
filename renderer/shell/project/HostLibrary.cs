@@ -29,7 +29,7 @@ namespace Magic600.Shell;
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 14;
+    public const uint AbiVersion = 15;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -141,6 +141,10 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_status_targets",
         "m6h_grip_report",
         "m6h_grip_set",
+        "m6h_key_post",
+        "m6h_key_poll",
+        "m6h_key_row",
+        "m6h_key_drain",
     };
 
     /// <summary>A submitted frame, as m6h_frame writes it (the Rust M6hFrame).</summary>
@@ -169,6 +173,22 @@ public sealed unsafe class HostLibrary : IDisposable
         public uint Reserved;
         /// <summary>The adopted engine revision after the key; for a committed press, the one that shows it.</summary>
         public ulong EngineRevision;
+    }
+
+    /// <summary>Brief SF2 (version 15): what m6h_key_poll answers for one posted key (the Rust M6hKeyAnswer); Ticket 0
+    /// when none is ready.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KeyAnswer
+    {
+        public ulong Ticket;
+        /// <summary>What the synchronous m6h_key_down would have answered; LastError holds its text after the poll.</summary>
+        public int Code;
+        public uint Press;
+        public ulong EngineRevision;
+        /// <summary>1 when the key was armed and its row turns a plane: KeyRow reads it until the next poll.</summary>
+        public uint RowStatus;
+        public uint Reserved;
+        public ulong RowRevision;
     }
 
     /// <summary>One confirmed presentation, as m6h_read_presented writes it (the Rust M6hPresented).</summary>
@@ -757,6 +777,51 @@ public sealed unsafe class HostLibrary : IDisposable
         key = k;
         return code;
     }
+
+    /// <summary>Brief SF2: posts one key-down to the host's ordered key queue and returns at once with its ticket; with
+    /// <paramref name="arm"/> the host first reads the twist row (<paramref name="cap"/>, <paramref name="item"/>) at the
+    /// head the key will twist.</summary>
+    public int KeyPost(IntPtr host, string chord, bool repeat, bool arm, uint cap, ulong item, out ulong ticket)
+    {
+        var c = Encoding.UTF8.GetBytes(chord);
+        ulong t = 0;
+        int code;
+        fixed (byte* cb = c)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, uint, uint, uint, ulong, ulong*, int>)_exports["m6h_key_post"])(
+                host, cb, (nuint)c.Length, repeat ? 1u : 0u, arm ? 1u : 0u, cap, item, &t);
+        }
+        ticket = t;
+        return code;
+    }
+
+    /// <summary>Brief SF2: the oldest posted key whose commit answer is ready, in press order (Ticket 0: none).</summary>
+    public int KeyPoll(IntPtr host, out KeyAnswer answer)
+    {
+        KeyAnswer a = default;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, KeyAnswer*, int>)_exports["m6h_key_poll"])(host, &a);
+        answer = a;
+        return code;
+    }
+
+    /// <summary>Brief SF2: the armed row of the key the newest poll answered, or null.</summary>
+    public TwistRow? KeyRow(IntPtr host, ulong ticket, ulong revision)
+    {
+        var plane = new float[8];
+        var moving = new byte[177_120];
+        float angle = 0;
+        int code;
+        fixed (float* p = plane)
+        fixed (byte* m = moving)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, float*, byte*, int>)_exports["m6h_key_row"])(
+                host, ticket, p, &angle, m);
+        }
+        return code == Ok ? new TwistRow(plane, angle, moving, revision) : null;
+    }
+
+    /// <summary>Brief SF2: routes and answers every posted key before it returns (before a close).</summary>
+    public int KeyDrain(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_key_drain"])(host);
 
     /// <summary>Routes a key-up of <paramref name="chord"/>; its modifiers are ignored.</summary>
     public int KeyUp(IntPtr host, string chord)

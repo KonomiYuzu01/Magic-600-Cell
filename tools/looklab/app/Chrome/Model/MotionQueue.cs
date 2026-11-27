@@ -29,6 +29,9 @@ public sealed class MotionQueue
     public int PendingPresses => pending.Count(key => key.Pressed && !key.Echo);
     public long Enqueued { get; private set; }
     public SweepTiming? Active { get; private set; }
+    /// <summary>A sent head key awaits its commit answer (brief SF2): later head keys queue behind it as behind a
+    /// running sweep, and the queue sends nothing until the answer arrives.</summary>
+    public bool Waiting { get; set; }
 
     public static bool ChangesHead(string chord) => chord is
         "KeyJ" or "KeyK" or "KeyL" or "Shift+KeyJ" or "Shift+KeyK" or "Shift+KeyL" or
@@ -40,7 +43,7 @@ public sealed class MotionQueue
         bool headKey = ChangesHead(key.Chord) || held.Contains(key.Code);
         if (!key.Pressed) held.Remove(key.Code);
         else if (headKey) held.Add(key.Code);
-        if (!headKey || (Active is null && Count == 0)) return false;
+        if (!headKey || (Active is null && !Waiting && Count == 0)) return false;
 
         pending.Enqueue(key);
         Enqueued++;
@@ -77,8 +80,8 @@ public sealed class MotionQueue
 
     public void Drain(Action<MotionKey> send)
     {
-        while (Active is null && pending.TryDequeue(out var key)) send(key);
-        if (Active is null) lastQueuedSeconds = null;
+        while (Active is null && !Waiting && pending.TryDequeue(out var key)) send(key);
+        if (Active is null && !Waiting) lastQueuedSeconds = null;
     }
 
     public void Flush(Action<MotionKey> sendStatic)

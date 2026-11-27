@@ -103,7 +103,8 @@ use c600_kernel::json::{self, Value};
 use c600_kernel::{Kernel, LoadError, Snapshot};
 use c600_render::abi::{
     piece_style_valid, Sa2Pane, Sa2SceneLook, Sa2StatusStyle, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle,
-    StickerColours, PANES_MAX, PIECES, SLOTS, STATUS_WORDS, STICKER_CLASSES, STYLE_CHANNEL_STATUS, STYLE_SLOTS, TARGET_SURFACE,
+    StickerColours, PANES_MAX, PIECES, SLOTS, STATUS_WORDS, STICKER_CLASSES, STYLE_CHANNEL_STATUS, STYLE_SLOTS,
+    TARGET_SURFACE,
 };
 use c600_render::backend::PickTicket;
 use c600_render::{DisplayTime, PaneSpec, RenderBackend};
@@ -114,6 +115,7 @@ pub mod charts;
 mod deferred;
 pub mod fixture;
 mod grip;
+mod keys;
 pub mod preload;
 pub mod turns;
 pub mod view;
@@ -132,8 +134,10 @@ use turns::{Head, Pending, Press, Puzzle, Turns};
 /// [`m6h_set_view_camera`], [`m6h_set_view_visible`], [`m6h_set_pane`], [`m6h_clear_pane`] and [`M6hFrame`]'s pane
 /// count and held flag, ADR-D02 B18b, over the core's ABI 8); version 12 a view's focus ([`m6h_set_view_focus`],
 /// ADR-D02 B18c, over the core's ABI 9); version 13 a view's layout ([`m6h_set_view_layout`], ADR-D02 B23, over the
-/// core's ABI 10); version 14 picks in Jumble ([`m6h_pick_request`] and [`m6h_pick_poll`], ADR-D02 B17).
-pub const M6H_ABI_VERSION: u32 = 14;
+/// core's ABI 10); version 14 picks in Jumble ([`m6h_pick_request`] and [`m6h_pick_poll`], ADR-D02 B17); version 15
+/// the key queue off the frame thread ([`m6h_key_post`], [`m6h_key_poll`], [`m6h_key_row`] and [`m6h_key_drain`],
+/// brief SF2).
+pub const M6H_ABI_VERSION: u32 = 15;
 
 pub const M6H_OK: i32 = 0;
 /// A null or malformed argument.
@@ -389,6 +393,8 @@ pub struct ShellHost {
     /// An adoption that failed after a frame was submitted, which the next call that adopts answers.
     failed: Option<Failure>,
     turns: Option<Turns>,
+    /// Brief SF2: the posted keys, the batch in flight (which holds `turns` meanwhile) and the answers to poll.
+    keys: keys::Keys,
     /// The correctness control's record, once [`m6h_close_session`] made it.
     check: String,
     /// The language runtime's process and its program, once [`m6h_load_runtime`] started it and until the first
@@ -578,6 +584,7 @@ impl ShellHost {
             adoptions: None,
             failed: None,
             turns: None,
+            keys: keys::Keys::default(),
             check: String::new(),
             runtime: None,
             reference: None,
@@ -601,7 +608,13 @@ impl ShellHost {
     /// Adopts `head` at engine revision `revision`, which must follow the adopted one, on the calling thread: builds
     /// and checks it as the adoption worker does ([`deferred::build`]), then installs it ([`ShellHost::install`]).
     fn adopt(&mut self, head: &Head, revision: u64) -> Result<u64, Failure> {
-        let job = deferred::Job { revision, head: head.clone(), ctx: self.host.ctx.clone(), local: self.local_open, charts: self.charts.clone() };
+        let job = deferred::Job {
+            revision,
+            head: head.clone(),
+            ctx: self.host.ctx.clone(),
+            local: self.local_open,
+            charts: self.charts.clone(),
+        };
         let built = deferred::build(&self.geometry, job)?;
         self.install(built)
     }
@@ -684,7 +697,13 @@ impl ShellHost {
     /// this thread. Without a worker (its thread did not start or has ended) the head is built and installed here.
     fn defer(&mut self, head: Head) -> Result<u64, Failure> {
         let revision = self.assigned + 1;
-        let job = deferred::Job { revision, head, ctx: self.host.ctx.clone(), local: self.local_open, charts: self.charts.clone() };
+        let job = deferred::Job {
+            revision,
+            head,
+            ctx: self.host.ctx.clone(),
+            local: self.local_open,
+            charts: self.charts.clone(),
+        };
         if self.adoptions.is_none() {
             self.adoptions = deferred::Worker::start(&self.geometry);
         }
@@ -747,8 +766,107 @@ impl ShellHost {
         }
     }
 
+    /// The session's `Turns` for a call that writes the session: every posted key is routed first, in press order.
     fn turns(&mut self) -> Result<&mut Turns, Failure> {
+        self.drain_keys()?;
         self.turns.as_mut().ok_or_else(|| (M6H_E_SESSION, "no session is open".to_owned()))
+    }
+
+    /// Brief SF2: the session's `Turns` for a call that only reads it, once the batch in flight is back; keys still
+    /// waiting stay queued (the frame thread reads the head its answers showed).
+    fn turns_read(&mut self) -> Result<&mut Turns, Failure> {
+        self.settle_keys(true)?;
+        self.turns.as_mut().ok_or_else(|| (M6H_E_SESSION, "no session is open".to_owned()))
+    }
+
+    /// Brief SF2: lands the key batch in flight (waiting for it when `wait`) and applies its outcomes in press order,
+    /// then delivers the presentation reports made meanwhile; false while the batch still runs.
+    fn settle_keys(&mut self, wait: bool) -> Result<bool, Failure> {
+        let back = match self.keys.land(wait) {
+            Ok(back) => back,
+            Err(error) => {
+                self.turns = None;
+                return Err((M6H_E_SESSION, error));
+            }
+        };
+        let Some((turns, done)) = back else { return Ok(!self.keys.flying()) };
+        self.turns = Some(turns);
+        for outcome in done {
+            self.apply_key(outcome)?;
+        }
+        if let Some(turns) = self.turns.as_mut() {
+            for report in self.keys.reports.drain(..) {
+                let _ = turns.present(&report);
+            }
+        }
+        self.sync_preview()?;
+        Ok(true)
+    }
+
+    /// Brief SF2: lands the batch in flight and routes every waiting input on this thread, in order: the session then
+    /// holds every posted key, and each one's answer waits for the poll.
+    fn drain_keys(&mut self) -> Result<(), Failure> {
+        self.settle_keys(true)?;
+        if self.keys.waiting.is_empty() {
+            return Ok(());
+        }
+        while let Some(posted) = self.keys.waiting.pop_front() {
+            let turns = self.turns.as_mut().ok_or_else(|| (M6H_E_SESSION, "no session is open".to_owned()))?;
+            let outcome = keys::route(turns, posted);
+            self.apply_key(outcome)?;
+        }
+        self.sync_preview()
+    }
+
+    /// Brief SF2: hands the waiting inputs and `Turns` to the key worker, unless a batch is in flight.
+    fn launch_keys(&mut self) -> Result<(), Failure> {
+        if self.keys.flying() || self.keys.waiting.is_empty() {
+            return Ok(());
+        }
+        let turns = self.turns.take().ok_or_else(|| (M6H_E_SESSION, "no session is open".to_owned()))?;
+        if let Err(turns) = self.keys.launch(turns) {
+            // No worker thread: route here, as the synchronous call does.
+            self.turns = Some(turns);
+            self.drain_keys()?;
+        }
+        Ok(())
+    }
+
+    /// Brief SF2: one routed input's outcome, as [`m6h_key_down`] applies it: a committed press or another head change
+    /// defers the head's adoption; the answer names the revision handed to that head, and an armed row the revision
+    /// handed to the head it was read at (the one before the key).
+    fn apply_key(&mut self, outcome: keys::Done) -> Result<(), Failure> {
+        let row_revision = self.assigned;
+        let row = match outcome.row {
+            Some(Ok(Some(row))) if row.plane.is_some() => Some((row, row_revision)),
+            _ => None,
+        };
+        let ok = |press| (M6H_OK, String::new(), press);
+        let (code, error, press) = match outcome.press {
+            Err(error) => (M6H_E_INVALID_ARGUMENT, error, M6H_PRESS_NONE),
+            Ok(Press::None) => ok(M6H_PRESS_NONE),
+            Ok(Press::Refused) => ok(M6H_PRESS_REFUSED),
+            Ok(press) => match outcome.head {
+                Some(Ok(head)) => {
+                    self.defer(head)?;
+                    ok(if press == Press::Committed { M6H_PRESS_COMMITTED } else { M6H_PRESS_OTHER })
+                }
+                Some(Err(error)) => (M6H_E_SESSION, error, M6H_PRESS_NONE),
+                None => (M6H_E_HOST, "a head change came without its head".to_owned(), M6H_PRESS_NONE),
+            },
+        };
+        if outcome.down || code != M6H_OK {
+            let engine_revision = self.assigned;
+            self.keys.ready.push_back(keys::Answer {
+                ticket: outcome.ticket,
+                code,
+                error,
+                press,
+                engine_revision,
+                row,
+            });
+        }
+        Ok(())
     }
 
     /// Publishes the view's publication under a new command and starts its preparation.
@@ -809,6 +927,10 @@ impl ShellHost {
     /// never from a program, and holds no primitive yet, so the frames name the preview while the view draws the
     /// adopted state.
     fn sync_preview(&mut self) -> Result<(), Failure> {
+        // Brief SF2: while a key batch holds the session, its landing syncs the preview.
+        if self.keys.flying() {
+            return Ok(());
+        }
         let want = match self.turns.as_mut() {
             Some(turns) => {
                 turns.run_jobs();
@@ -933,6 +1055,7 @@ impl ShellHost {
     /// ADR-D02 B17: resolves a hit on home slot `sticker` with the head the frame drew: its piece, the slot it
     /// occupies (none for a piece off the lattice) and whether the piece is on the lattice.
     fn resolve_sticker(&mut self, sticker: u32) -> Result<(u32, u32, bool), Failure> {
+        self.settle_keys(true)?;
         let head = match self.turns.as_mut() {
             Some(turns) => turns.head().map_err(|e| (M6H_E_SESSION, e))?,
             None => Head::Retained(self.kernel.solved()),
@@ -1513,7 +1636,10 @@ pub unsafe extern "C" fn m6h_set_piece_style(
             let held = revision > adopted && revision <= shell.assigned;
             if revision != adopted && !held {
                 let code = if revision < adopted { M6H_E_UNAVAILABLE } else { M6H_E_INVALID_ARGUMENT };
-                return Err((code, format!("the style's revision {revision} is neither the adopted {adopted} nor handed out")));
+                return Err((
+                    code,
+                    format!("the style's revision {revision} is neither the adopted {adopted} nor handed out"),
+                ));
             }
             let pieces = match (bytes, by_pose) {
                 (None, 0 | 1) if count == 0 => None,
@@ -1523,7 +1649,7 @@ pub unsafe extern "C" fn m6h_set_piece_style(
                 }
                 (Some(bytes), 1) => {
                     let adopted = shell.digests.get(&adopted).cloned().unwrap_or_default();
-                    let (digest, index) = shell.turns()?.pose_index().map_err(|e| (M6H_E_SESSION, e))?;
+                    let (digest, index) = shell.turns_read()?.pose_index().map_err(|e| (M6H_E_SESSION, e))?;
                     let (ids, poses) = index
                         .ok_or_else(|| (M6H_E_SESSION, "a per-pose style needs a session with Jumble on".to_owned()))?;
                     if digest != adopted {
@@ -1547,10 +1673,7 @@ pub unsafe extern "C" fn m6h_set_piece_style(
             if pieces.as_deref().is_some_and(|bytes| !piece_style_valid(bytes, channel))
                 || channel > STYLE_CHANNEL_STATUS
             {
-                return Err((
-                    M6H_E_INVALID_ARGUMENT,
-                    "a piece style channel or its bytes are invalid".to_owned(),
-                ));
+                return Err((M6H_E_INVALID_ARGUMENT, "a piece style channel or its bytes are invalid".to_owned()));
             }
             if held {
                 shell.pending_styles[channel as usize] = Some((revision, pieces));
@@ -1608,7 +1731,10 @@ pub unsafe extern "C" fn m6h_set_transform(
             let held = bytes.is_some() && revision > shell.revision && revision <= shell.assigned;
             if let Some(bytes) = bytes {
                 if revision != shell.revision && !held {
-                    let detail = format!("the row's revision {revision} is neither the adopted {} nor handed out", shell.revision);
+                    let detail = format!(
+                        "the row's revision {revision} is neither the adopted {} nor handed out",
+                        shell.revision
+                    );
                     return Err((M6H_E_INVALID_ARGUMENT, detail));
                 }
                 if bytes.iter().any(|&byte| byte > 1) {
@@ -1685,7 +1811,7 @@ pub unsafe extern "C" fn m6h_twist_transform(
             if outputs.contains(&true) || out_revision.is_null() {
                 return Err((M6H_E_INVALID_ARGUMENT, "an output is null".to_owned()));
             }
-            let row = shell.turns()?.twist_transform(cap, item).map_err(|e| (M6H_E_SESSION, e))?;
+            let row = shell.turns_read()?.twist_transform(cap, item).map_err(|e| (M6H_E_SESSION, e))?;
             out_revision.write(shell.assigned);
             let Some((row, plane)) = row.and_then(|row| row.plane.as_ref().map(|p| p.as_f32()).map(|p| (row, p)))
             else {
@@ -1977,9 +2103,12 @@ pub unsafe extern "C" fn m6h_read_presented(
             // LP4-3: every confirmed frame goes to the session's layer through the shell, in order (RM.26, ONE.41); a
             // frame that does not present the pending preview ends its presentation, which is no failure here.
             let reports: Vec<LayerFrame> = frames.iter().map(|frame| shell.layer_frame(frame)).collect();
-            if let Some(turns) = shell.turns.as_mut() {
-                for report in &reports {
-                    let _ = turns.present(report);
+            // Brief SF2: while a key batch holds the session, the reports wait for it, in order.
+            if shell.keys.flying() {
+                shell.keys.reports.extend(reports);
+            } else if let Some(turns) = shell.turns.as_mut() {
+                for report in shell.keys.reports.drain(..).chain(reports) {
+                    let _ = turns.present(&report);
                 }
             }
             let n = shell.presented.len().min(capacity as usize);
@@ -2083,7 +2212,11 @@ pub unsafe extern "C" fn m6h_open_session(
                 (true, 0) => None,
                 _ => Some(Path::new(utf8(fixture, fixture_len, "session fixture path")?)),
             };
-            if shell.turns.is_some() || !shell.check.is_empty() || shell.revision != ENGINE_REVISION {
+            if shell.turns.is_some()
+                || shell.keys.busy()
+                || !shell.check.is_empty()
+                || shell.revision != ENGINE_REVISION
+            {
                 return Err((M6H_E_SESSION, "this handle has opened its session already".to_owned()));
             }
             // The preload's exact model, joined where the open would load it; without one (or on a second attempt
@@ -2320,6 +2453,11 @@ pub unsafe extern "C" fn m6h_key_up(handle: *mut ShellHost, chord: *const u8, ch
     unsafe {
         with_host(handle, |shell| {
             let chord = utf8(chord, chord_len, "chord")?;
+            // Brief SF2: behind posted keys, a key-up waits its turn.
+            if shell.keys.busy() {
+                shell.keys.post(keys::Input::Up(chord.to_owned()));
+                return Ok(());
+            }
             shell.turns()?.key_up(chord).map_err(|e| (M6H_E_INVALID_ARGUMENT, e))
         })
     }
@@ -2333,7 +2471,16 @@ pub unsafe extern "C" fn m6h_key_up(handle: *mut ShellHost, chord: *const u8, ch
 #[no_mangle]
 pub unsafe extern "C" fn m6h_focus_lost(handle: *mut ShellHost) -> i32 {
     // SAFETY: the contract.
-    unsafe { with_host(handle, |shell| shell.turns()?.focus_lost().map_err(|e| (M6H_E_SESSION, e))) }
+    unsafe {
+        with_host(handle, |shell| {
+            // Brief SF2: behind posted keys, the focus loss waits its turn.
+            if shell.keys.busy() {
+                shell.keys.post(keys::Input::FocusLost);
+                return Ok(());
+            }
+            shell.turns()?.focus_lost().map_err(|e| (M6H_E_SESSION, e))
+        })
+    }
 }
 
 /// Tells the session's input router what has the keyboard focus inside the window (LP4-3): [`M6H_FOCUS_TEXT`] while a
@@ -2579,7 +2726,7 @@ pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32 {
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            let digests = shell.turns()?.state_digests().map_err(|e| (M6H_E_SESSION, e))?;
+            let digests = shell.turns_read()?.state_digests().map_err(|e| (M6H_E_SESSION, e))?;
             shell.answer = digests.canonical();
             Ok(())
         })
@@ -2624,6 +2771,8 @@ pub unsafe extern "C" fn m6h_close_session(handle: *mut ShellHost, shown_revisio
         with_host(handle, |shell| {
             // A head whose adoption is still pending is not waited for: the control reads only revisions that frames
             // showed, and those were adopted.
+            // Brief SF2: every posted key is routed and answered before the session closes.
+            shell.drain_keys()?;
             let mut turns = shell.turns.take().ok_or_else(|| (M6H_E_SESSION, "no session is open".to_owned()))?;
             let shown = (shown_revision != 0)
                 .then(|| (shown_revision, shell.digests.get(&shown_revision).cloned().unwrap_or_default()));
@@ -2830,7 +2979,11 @@ pub unsafe extern "C" fn m6h_status_drawn(handle: *mut ShellHost, pane: u32, wor
             if words.is_null() || count as usize != STATUS_WORDS || pane >= PANES_MAX {
                 return Err((M6H_E_INVALID_ARGUMENT, "invalid status coverage output".to_owned()));
             }
-            shell.host.backend.status_drawn(pane, std::slice::from_raw_parts_mut(words, STATUS_WORDS)).map_err(host_error)
+            shell
+                .host
+                .backend
+                .status_drawn(pane, std::slice::from_raw_parts_mut(words, STATUS_WORDS))
+                .map_err(host_error)
         })
     }
 }
@@ -2853,7 +3006,12 @@ pub unsafe extern "C" fn m6h_status_targets(
 ) -> i32 {
     unsafe {
         with_host(handle, |shell| {
-            let limit = match kind { 1 => PIECES, 2 => SLOTS, 4 => 600, _ => 0 };
+            let limit = match kind {
+                1 => PIECES,
+                2 => SLOTS,
+                4 => 600,
+                _ => 0,
+            };
             if targets.is_null() || out.is_null() || count == 0 || count as usize > limit {
                 return Err((M6H_E_INVALID_ARGUMENT, "invalid protection target list".to_owned()));
             }
@@ -2873,6 +3031,8 @@ pub unsafe extern "C" fn m6h_status_targets(
 
 impl ShellHost {
     fn status_targets(&mut self, kind: u32, targets: &[u32]) -> Result<Vec<u8>, Failure> {
+        // Brief SF2: the head is read once the key batch in flight is back.
+        self.settle_keys(true)?;
         let mut mask = vec![0; PIECES];
         let pieces = self.geometry.slot_piece.bytes.as_chunks::<4>().0;
         if kind == 4 {
@@ -2966,4 +3126,169 @@ pub unsafe extern "C" fn m6h_grip_set(handle: *mut ShellHost, cap: u32, frame: u
             answer_grip(shell)
         })
     }
+}
+
+/// What [`m6h_key_poll`] answers for one posted key (version 15, brief SF2).
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct M6hKeyAnswer {
+    /// The ticket [`m6h_key_post`] gave the key, or 0 when no answer is ready.
+    pub ticket: u64,
+    /// What the synchronous [`m6h_key_down`] would have answered: [`M6H_OK`], or an error whose text
+    /// [`m6h_last_error`] holds after this poll.
+    pub code: i32,
+    /// As [`M6hKey::press`].
+    pub press: u32,
+    /// As [`M6hKey::engine_revision`].
+    pub engine_revision: u64,
+    /// 1 when the key was armed and its row turns a plane: [`m6h_key_row`] writes it until the next poll; else 0.
+    pub row_status: u32,
+    pub reserved: u32,
+    /// The armed row's revision, as [`m6h_twist_transform`]'s `out_revision`: the one handed to the head before the key.
+    pub row_revision: u64,
+}
+
+const _: () = assert!(std::mem::size_of::<M6hKeyAnswer>() == 40);
+
+/// Posts one key-down (version 15, brief SF2): the key joins the host's queue in press order and the call returns at
+/// once with its ticket. When no batch is in flight, the host's key worker takes the session and every waiting key and
+/// routes each exactly as [`m6h_key_down`] does; with `arm` nonzero it first reads the twist row `(cap, item)` at the
+/// head the key will twist (after the keys before it), as [`m6h_twist_transform`] does. Nothing the frames show moves
+/// until [`m6h_key_poll`] answers the key: its adoption is deferred when the answer is applied. While a batch holds
+/// the session, a call that reads the session waits for it, and one that writes the session (a sync key-down, a row,
+/// a job, a close) first routes every key still waiting, so what the session writes and its order are the
+/// synchronous path's. A key-up or a focus loss behind posted keys waits its turn. No open session answers
+/// [`M6H_E_SESSION`]; a chord the router does not know is answered by the poll.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `chord` points to its readable bytes; `out_ticket` is
+/// writable.
+#[allow(clippy::too_many_arguments)]
+#[no_mangle]
+pub unsafe extern "C" fn m6h_key_post(
+    handle: *mut ShellHost,
+    chord: *const u8,
+    chord_len: usize,
+    repeat: u32,
+    arm: u32,
+    cap: u32,
+    item: u64,
+    out_ticket: *mut u64,
+) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if out_ticket.is_null() {
+                return Err((M6H_E_INVALID_ARGUMENT, "the ticket output is null".to_owned()));
+            }
+            let chord = utf8(chord, chord_len, "chord")?.to_owned();
+            if shell.turns.is_none() && !shell.keys.flying() {
+                return Err((M6H_E_SESSION, "no session is open".to_owned()));
+            }
+            let arm = (arm != 0).then_some((cap, item));
+            let ticket = shell.keys.post(keys::Input::Down { chord, repeat: repeat != 0, arm });
+            if shell.keys.ready.is_empty() {
+                shell.launch_keys()?;
+            }
+            out_ticket.write(ticket);
+            Ok(())
+        })
+    }
+}
+
+/// Answers the oldest posted key whose routing is done (version 15, brief SF2), in press order, and applies it as
+/// [`m6h_key_down`] does; `out.ticket` is 0 when none is ready. It never waits: a batch still running answers 0. With
+/// nothing left to answer it hands the keys still waiting to the worker, so a frame that polls until 0 has handled
+/// every answer before the next batch takes the session.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `out` is writable.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_key_poll(handle: *mut ShellHost, out: *mut M6hKeyAnswer) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if out.is_null() {
+                return Err((M6H_E_INVALID_ARGUMENT, "the answer output is null".to_owned()));
+            }
+            shell.settle_keys(false)?;
+            let Some(answer) = shell.keys.ready.pop_front() else {
+                shell.launch_keys()?;
+                out.write(M6hKeyAnswer::default());
+                return Ok(());
+            };
+            let row_revision = answer.row.as_ref().map_or(0, |(_, revision)| *revision);
+            out.write(M6hKeyAnswer {
+                ticket: answer.ticket,
+                code: answer.code,
+                press: answer.press,
+                engine_revision: answer.engine_revision,
+                row_status: u32::from(answer.row.is_some()),
+                reserved: 0,
+                row_revision,
+            });
+            shell.keys.row = answer.row.map(|(row, _)| (answer.ticket, row));
+            if answer.code != M6H_OK {
+                shell.error = answer.error;
+            }
+            Ok(())
+        })
+    }
+}
+
+/// Writes the armed row of the key that the newest [`m6h_key_poll`] answered with `ticket` and `row_status` 1
+/// (version 15, brief SF2), in [`m6h_twist_transform`]'s form: `out_plane` (8 floats), `out_angle` and `out_moving`
+/// (177,120 bytes). Another ticket answers [`M6H_E_INVALID_ARGUMENT`].
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using; `out_plane` points to 8 writable floats, `out_angle` to
+/// one and `out_moving` to 177,120 writable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_key_row(
+    handle: *mut ShellHost,
+    ticket: u64,
+    out_plane: *mut f32,
+    out_angle: *mut f32,
+    out_moving: *mut u8,
+) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            if out_plane.is_null() || out_angle.is_null() || out_moving.is_null() {
+                return Err((M6H_E_INVALID_ARGUMENT, "an output is null".to_owned()));
+            }
+            let Some((_, row)) = shell.keys.row.as_ref().filter(|(at, _)| *at == ticket) else {
+                return Err((M6H_E_INVALID_ARGUMENT, format!("the newest poll kept no row for ticket {ticket}")));
+            };
+            let plane = row
+                .plane
+                .as_ref()
+                .map(|p| p.as_f32())
+                .ok_or_else(|| (M6H_E_HOST, "a kept row without a plane".to_owned()))?;
+            let mut moving = vec![0u8; PIECES];
+            for piece in row.moving.as_u32() {
+                moving[piece as usize] = 1;
+            }
+            std::ptr::copy_nonoverlapping(plane.as_ptr(), out_plane, 8);
+            std::ptr::copy_nonoverlapping(moving.as_ptr(), out_moving, PIECES);
+            out_angle.write(row.angle);
+            Ok(())
+        })
+    }
+}
+
+/// Routes and answers every posted key before it returns (version 15, brief SF2): the batch in flight is waited for and
+/// the keys still waiting are routed on the calling thread, in order; their answers wait for [`m6h_key_poll`]. The
+/// shell calls it before a close, a reset or an import; [`m6h_close_session`] drains as well.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_key_drain(handle: *mut ShellHost) -> i32 {
+    // SAFETY: the contract.
+    unsafe { with_host(handle, |shell| shell.drain_keys()) }
 }
