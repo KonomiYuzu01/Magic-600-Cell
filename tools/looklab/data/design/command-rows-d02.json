@@ -464,6 +464,16 @@
       ],
       "note": "Returns Global from a chart to 600-cell-Full's projection chain, the default until R5 admits a chart (ADR-D02.8).",
       "request": "CR-14"
+    },
+    {
+      "id": "keymap.preset.set",
+      "label": "Key set",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Takes a keymap preset's name (default, or a file under keymaps/), or none for the next one; the status line names every key that changed meaning, and the key map marks them. Key sets per orbit are such presets, not a mode.",
+      "request": "ADR-D01.74"
     }
   ]
 }

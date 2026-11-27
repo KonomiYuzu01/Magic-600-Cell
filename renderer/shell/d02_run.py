@@ -2648,6 +2648,140 @@ EXPECT["scene-look"] = expect_scene_look
 ON_FIXTURE.add("scene-look")
 
 
+def key_set_changes(preset: str) -> int:
+    """How many keys a keymap preset gives another meaning: a preset binding replaces the default's first binding on
+    its key and context (Keymap.Parse), and the same command with the same argument is the same meaning."""
+    first: dict[tuple[str, str], dict] = {}
+    for binding in json.loads((DESIGN / "keymap.json").read_text(encoding="utf-8"))["bindings"]:
+        first.setdefault((binding["key"], binding["context"]), binding)
+    changed = 0
+    for binding in json.loads((DESIGN / "keymaps" / f"{preset}.json").read_text(encoding="utf-8"))["bindings"]:
+        was = first.get((binding["key"], binding["context"]))
+        now = None if binding.get("command") == "" else binding
+        meaning = [None if b is None else (b["command"], b.get("argument")) for b in (was, now)]
+        changed += meaning[0] != meaning[1]
+    return changed
+
+
+def expect_key_map(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.74 outside sample mode: F1 keeps ADR-D02.12's route (the palette) and leaves the key map hidden; Shift+/
+    over Local pins the key map, whose header names the key set and the place; the Key set row says how many keys it
+    gave another meaning, as many as the keymap files say, and the map marks them until it has been closed; an unknown
+    set is refused with every set's name; no name takes the next set; Escape lets the map go."""
+    steps = ["start", "wait 2500 ms", "chord F1", "chord Escape", "hover LocalFrame", "chord Shift+Slash",
+             "command keymap.preset.set left-hand", "chord Escape", "chord Shift+Slash", "command keymap.preset.set default",
+             "command keymap.preset.set right-hand", "command keymap.preset.set", "chord Escape", "wait 6000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    presets = sorted(path.stem for path in (DESIGN / "keymaps").glob("*.json"))
+    changed = key_set_changes("left-hand")
+    label = {row["id"]: row["label"] for row in source["table"] + source["rows"]}["keymap.preset.set"]
+    mark = "corner mark: changed meaning with the last key set change"
+
+    def shown(i: int) -> list[str]:
+        return texts(dumps[i], "keymap")
+
+    def header(i: int) -> str:
+        return next((line for line in shown(i) if line.startswith("Key set: ")), "")
+
+    for i in (0, 1, 2, 3, 4, 7, 12):
+        if shown(i):
+            problems.append(f"step {i}: the key map shows")
+    if not overlay(dumps[2]):
+        problems.append("step 2: F1 did not open the palette")
+    if overlay(dumps[3]):
+        problems.append("step 3: Escape left an overlay open")
+    if not header(5).startswith("Key set: default · ") or "pointer over Local" not in header(5):
+        problems.append(f"step 5: the pinned key map's header reads {header(5)!r}")
+    for i, key_set in ((6, "left-hand"), (9, "default"), (11, "left-hand")):
+        said = f"Key set: {key_set} · {changed} {'key changed' if changed == 1 else 'keys changed'} meaning: "
+        if not any(line.startswith(said) for line in texts(dumps[i], "frame")):
+            problems.append(f"step {i}: the status line does not begin {said!r}")
+        if not header(i).startswith(f"Key set: {key_set} · "):
+            problems.append(f"step {i}: the key map's header reads {header(i)!r}")
+        if not any(mark in line for line in shown(i)):
+            problems.append(f"step {i}: the key map's legend does not name the changed keys' mark")
+    if not header(8).startswith("Key set: left-hand · ") or any(mark in line for line in shown(8)):
+        problems.append("step 8: the key map shown again should name left-hand and mark no key")
+    refusal = f"{label}: no key set is named right-hand; the key sets are {', '.join(['default'] + presets)}"
+    if refusal not in texts(dumps[10], "frame"):
+        problems.append(f"step 10: the status line does not read {refusal!r}")
+    print(f"key-map: left-hand changes {changed} keys; sets {['default'] + presets}")
+    return problems
+
+
+EXPECT["key-map"] = expect_key_map
+
+
+def expect_radial_hold(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.20 outside sample mode: W held opens the workspace menu, whose hub says release runs nothing; pointed at
+    its third entry the hub names it, and release runs it (the layout changes); held again and released in the hub,
+    nothing runs and the status line says so; a tap of W leaves the menu open and 2 runs the second entry; V held over
+    Local opens the view menu, and release on its first entry runs that row as the palette would, refusal included."""
+    steps = ["start", "wait 2500 ms", "hold W", "wait 500 ms", "hover RadialEntry3", "release W", "wait 800 ms",
+             "hold W", "wait 500 ms", "hover RadialHub", "release W", "chord W", "chord 2", "wait 800 ms",
+             "hover LocalFrame", "hold V", "wait 500 ms", "hover RadialEntry1", "release V", "wait 6000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    keymap = json.loads((DESIGN / "keymap.json").read_text(encoding="utf-8"))
+    labels = {row["id"]: row["label"] for row in source["table"] + source["rows"]}
+    workspaces = keymap["radials"]["radial.workspace"]["entries"]
+    views = keymap["radials"]["radial.view"]["entries"]
+
+    def entry_label(entry: dict) -> str:
+        return entry.get("label") or labels[entry["command"]]
+
+    def radial(i: int) -> list[str]:
+        return texts(dumps[i], "overlay:RadialOverlay")
+
+    def hint(i: int) -> str:
+        return next((line for line in radial(i) if line.startswith("Release ")), "")
+
+    def layout(i: int) -> str:
+        return json.dumps({key: value for key, value in dumps[i]["frame"].items() if key != "min"}, sort_keys=True)
+
+    for i in (2, 3, 7, 8):
+        if hint(i) != "Release here: nothing runs":
+            problems.append(f"step {i}: the held menu's hub reads {hint(i)!r}")
+    if keymap["radials"]["radial.workspace"]["label"] not in radial(2):
+        problems.append(f"step 2: the workspace menu is not open: {radial(2)}")
+    third = entry_label(workspaces[2])
+    if hint(4) != f"Release runs {third}":
+        problems.append(f"step 4: the hub over the third entry reads {hint(4)!r}")
+    for i in (5, 10, 12, 18):
+        if radial(i):
+            problems.append(f"step {i}: the radial menu is still open")
+    if layout(5) == layout(1):
+        problems.append("step 5: releasing on the third entry left the layout as it was")
+    if hint(9) != "Release here: nothing runs":
+        problems.append(f"step 9: the hub under the pointer reads {hint(9)!r}")
+    let = f"{keymap['radials']['radial.workspace']['label']}: released in the middle, nothing ran"
+    if let not in texts(dumps[10], "frame"):
+        problems.append(f"step 10: the status line does not read {let!r}")
+    if layout(10) != layout(5):
+        problems.append("step 10: a release in the hub changed the layout")
+    if not radial(11) or hint(11):
+        problems.append(f"step 11: a tap should leave the menu open with no release line: {radial(11)}")
+    if layout(12) == layout(10):
+        problems.append("step 12: 2 on the open menu left the layout as it was")
+    first = entry_label(views[0])
+    said = hint(17)
+    if not said.startswith(f"Release runs {first}"):
+        problems.append(f"step 17: the view menu's hub over its first entry reads {said!r}")
+    if " (unavailable: " in said:
+        reason = said.split(" (unavailable: ", 1)[1].rstrip(")")
+        refusal = f"{first}: {reason}"
+        if refusal not in texts(dumps[18], "frame"):
+            problems.append(f"step 18: the status line does not read {refusal!r}, as the palette row would")
+    print(f"radial-hold: third workspace {third!r}; view entry {said!r}")
+    return problems
+
+
+EXPECT["radial-hold"] = expect_radial_hold
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []
