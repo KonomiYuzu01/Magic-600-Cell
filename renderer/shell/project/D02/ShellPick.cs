@@ -37,6 +37,9 @@ public static class ShellPick
     /// <summary>Raised when the selection or the hover changes.</summary>
     public static event Action? Changed;
 
+    /// <summary>ADR-D02 B17: raised when a click sets a different inspector selection.</summary>
+    public static event Action? SelectionChanged;
+
     /// <summary>Clicks asked, answered with a hit, answered with none, and dropped as stale (for the run's dump).</summary>
     public static (int Asked, int Hits, int Misses, int Stale) Counts => (_asked, _hits, _misses, _stale);
 
@@ -66,6 +69,7 @@ public static class ShellPick
         if (Selection is not null)
         {
             Selection = null;
+            SelectionChanged?.Invoke();
             Changed?.Invoke();
         }
     }
@@ -77,12 +81,20 @@ public static class ShellPick
     public static bool Step(HostLibrary library, IntPtr host)
     {
         var changed = false;
-        if (_click is { } click && library.PickRequest(host, click.X, click.Y, out var ticket) == HostLibrary.Ok)
+        if (_click is { } click)
         {
-            Pending.Add((ticket, true));
-            _asked++;
+            var code = library.PickRequest(host, click.X, click.Y, out var ticket);
+            if (code == HostLibrary.Ok)
+            {
+                Pending.Add((ticket, true));
+                _asked++;
+            }
+            // ADR-D02 B17: keep the click until a current frame's ID resources are ready.
+            if (code != HostLibrary.Unavailable)
+            {
+                _click = null;
+            }
         }
-        _click = null;
         var now = DateTime.UtcNow;
         if (_hover is { } hover && now - _hoverAt >= HoverEvery && !Pending.Exists(p => !p.Click)
             && library.PickRequest(host, hover.X, hover.Y, out var hoverTicket) == HostLibrary.Ok)
@@ -125,11 +137,12 @@ public static class ShellPick
                 {
                     _hits++;
                 }
-                if (Selection?.Piece != picked?.Piece || (Selection is null) != (picked is null))
+                if (Selection != picked)
                 {
+                    Selection = picked;
+                    SelectionChanged?.Invoke();
                     changed = true;
                 }
-                Selection = picked;
             }
             else if (Hover?.Piece != picked?.Piece || (Hover is null) != (picked is null))
             {

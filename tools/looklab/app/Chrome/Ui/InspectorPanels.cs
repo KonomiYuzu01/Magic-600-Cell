@@ -178,8 +178,9 @@ public sealed partial class InspectorStrip : PanelContainer
         CustomMinimumSize = new Vector2(0, t.Px("status.height"));
         row.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
         Label icon = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(icon, "panel.inspector", t.Px("icon.small")); row.AddChild(icon);
-        Selection = ChromeWidgets.Text(Model.SelectionCount == 0 ? "nothing selected" : $"{Model.SelectionCount} {Model.SelectionKind}", "DimLabel");
-        Selection.TooltipText = "What is selected"; Selection.MouseFilter = MouseFilterEnum.Pass; row.AddChild(Selection);
+        string? piece = Model.Piece?.Line;
+        Selection = ChromeWidgets.Text(piece ?? (Model.SelectionCount == 0 ? "nothing selected" : $"{Model.SelectionCount} {Model.SelectionKind}"), "DimLabel", piece != null);
+        Selection.TooltipText = piece ?? "What is selected"; Selection.MouseFilter = MouseFilterEnum.Pass; row.AddChild(Selection);
         foreach (InspectField field in Model.Essentials)
         {
             row.AddChild(new VSeparator());
@@ -191,7 +192,7 @@ public sealed partial class InspectorStrip : PanelContainer
             Button more = ChromeWidgets.Tool($"+{Model.Beyond}", $"{Model.Beyond} more fields in the Inspector dock: show or hide it"); more.Name = "InspectorMore";
             more.Pressed += () => Safe.Raise(More); row.AddChild(more);
         }
-        row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        if (piece == null) row.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         row.AddChild(Tools);
         row.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
     }

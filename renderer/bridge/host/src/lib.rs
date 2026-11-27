@@ -93,7 +93,7 @@ use c600_display::array::Array;
 use c600_display::codes;
 use c600_display::host::{Backend, Host};
 use c600_display::jumble;
-use c600_display::pick::{Presented, PresentedFrame};
+use c600_display::pick::{LabelProjection, Partial, Presented, PresentedFrame, Projection};
 use c600_display::plan::*;
 use c600_display::produce::{self, full_set, GeometryInput};
 use c600_display::receipt::Receipt as HostReceipt;
@@ -241,8 +241,8 @@ pub const M6H_PICK_STALE: u32 = 2;
 /// [`M6hPick::slot`] when there is none: no hit, or a piece off the lattice.
 pub const M6H_NONE: u32 = u32::MAX;
 
-/// What [`m6h_pick_poll`] answers (version 14, ADR-D02 B17): in Jumble the sticker under the point, its piece and the
-/// slot it occupies at the revision the frame drew, through c600-display's `jumble::PoseProjection` (J13).
+/// What [`m6h_pick_poll`] answers (version 14, ADR-D02 B17): the sticker under the point, its piece and the
+/// slot it occupies at the revision the frame drew, through the base or posed projection.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct M6hPick {
@@ -537,7 +537,7 @@ impl ShellHost {
         let head = Head::Retained(kernel.solved());
         let (base, bundle, primitive) = adoption(&geometry, &head, ENGINE_REVISION)?;
         let limits = LimitProfile::uniform(LIMITS, 1 << 40);
-        let mut backend = RenderBackend::new(core, limits.clone());
+        let mut backend = RenderBackend::new(core, limits.clone()).with_retained_sticker_ids();
         backend.adopt_engine(&bundle).map_err(host_error)?;
         let support = backend.describe_backend().map_err(host_error)?;
         backend.set_frame_target(TARGET_SURFACE);
@@ -885,28 +885,37 @@ impl ShellHost {
     /// ADR-D02 B17: resolves a hit on home slot `sticker` with the head the frame drew: its piece, the slot it
     /// occupies (none for a piece off the lattice) and whether the piece is on the lattice.
     fn resolve_sticker(&mut self, sticker: u32) -> Result<(u32, u32, bool), Failure> {
-        let head = self.turns()?.head().map_err(|e| (M6H_E_SESSION, e))?;
-        let Head::Jumbled(exact, state) = head else {
-            return Err((
-                M6H_E_HOST,
-                "a hit on a sticker without Jumble: the retained view stamps no sticker".to_owned(),
-            ));
+        let head = match self.turns.as_mut() {
+            Some(turns) => turns.head().map_err(|e| (M6H_E_SESSION, e))?,
+            None => Head::Retained(self.kernel.solved()),
         };
-        let piece = *exact
-            .model
-            .slot_piece
-            .get(sticker as usize)
-            .ok_or_else(|| (M6H_E_HOST, format!("the ID pass named sticker {sticker}, which does not exist")))?;
-        let projection = jumble::PoseProjection::new(&exact, &state)
-            .map_err(|missing| (M6H_E_HOST, format!("the pose projection lacks data: {missing:?}")))?;
-        let subject = StateRef::Snapshot(jumble::revision(&exact, &state, self.assigned));
-        use c600_display::pick::{Partial, Projection};
-        let slot = match projection.slot(&subject, &ObjectId::Sticker(sticker)) {
-            Partial::Total(slot) => slot,
-            _ => M6H_NONE,
-        };
-        let lattice = state.pose_of(piece as usize).kidx().is_some();
-        Ok((piece, slot, lattice))
+        let missing_sticker = || (M6H_E_HOST, format!("the ID pass named sticker {sticker}, which does not exist"));
+        let subject = StateRef::Snapshot(self.publication.base.clone());
+        let object = ObjectId::Sticker(sticker);
+        match head {
+            Head::Retained(state) => {
+                let pieces = self.geometry.slot_piece.bytes.as_chunks::<4>().0;
+                let piece = u32::from_le_bytes(*pieces.get(sticker as usize).ok_or_else(missing_sticker)?);
+                let projection = LabelProjection::new(state.labels(), state.digest());
+                let Partial::Total(slot) = projection.slot(&subject, &object) else {
+                    return Err(missing_sticker());
+                };
+                Ok((piece, slot, true))
+            }
+            Head::Jumbled(exact, state) => {
+                let piece = *exact.model.slot_piece.get(sticker as usize).ok_or_else(missing_sticker)?;
+                let projection = jumble::PoseProjection::new(&exact, &state)
+                    .map_err(|missing| (M6H_E_HOST, format!("the pose projection lacks data: {missing:?}")))?;
+                // The revision the frame drew, named as part 2 named it.
+                let subject = StateRef::Snapshot(jumble::revision(&exact, &state, self.assigned));
+                let slot = match projection.slot(&subject, &object) {
+                    Partial::Total(slot) => slot,
+                    _ => M6H_NONE,
+                };
+                let lattice = state.pose_of(piece as usize).kidx().is_some();
+                Ok((piece, slot, lattice))
+            }
+        }
     }
 
     /// Whether `view` is a view of this host that a call may name: the view, or Local once it is open.
@@ -1312,8 +1321,8 @@ pub unsafe extern "C" fn m6h_set_view_focus(
 }
 
 /// Asks the core's ID pass at target pixel `(x, y)` of the newest frame (version 14, ADR-D02 B17): in a composite frame
-/// the pane that holds the point answers. Writes the ticket that [`m6h_pick_poll`] answers. With no frame yet, or a
-/// point outside the frame, the call is refused and nothing is asked.
+/// the pane that holds the point answers. Writes the ticket that [`m6h_pick_poll`] answers. Until a frame draws its
+/// revision's publication, or for a point outside the frame, the call is refused and nothing is asked.
 ///
 /// # Safety
 ///
@@ -1331,6 +1340,9 @@ pub unsafe extern "C" fn m6h_pick_request(handle: *mut ShellHost, x: u32, y: u32
                 .backend
                 .newest_frame()
                 .ok_or_else(|| (M6H_E_UNAVAILABLE, "no frame was submitted yet".to_owned()))?;
+            if shell.last_frame.publication_revision != shell.last_frame.engine_revision {
+                return Err((M6H_E_UNAVAILABLE, "the frame's pick resources are not ready".to_owned()));
+            }
             let ticket = shell.host.backend.request_pick(frame, x, y).map_err(host_error)?;
             shell.picks.insert(ticket.0, shell.last_frame.engine_revision);
             out_ticket.write(ticket.0);

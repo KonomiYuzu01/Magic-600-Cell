@@ -1035,8 +1035,8 @@ EVENT_CHECKS = {"two-views": check_two_views_events, "slice": check_slice_events
 
 # Step C-.40 (ADR-D01.40/.41): Local on the base puzzle (600-cell-Full, Jumble off), with no D02 state. The script
 # names its puzzle; the run uses the build's own base-puzzle session fixture.
-BASE_LOCAL_STEPS = ["start", "wait 2500 ms", "click 0.5 0.5", "wait 800 ms", "click 0.42 0.38", "wait 800 ms",
-                    "click 0.58 0.62", "wait 800 ms", "click 0.02 0.02", "wait 800 ms", "chord J", "wait 700 ms",
+BASE_LOCAL_STEPS = ["start", "wait 2500 ms", "click 0.02 0.02", "wait 800 ms", "click 0.42 0.38", "wait 800 ms",
+                    "click 0.58 0.62", "wait 800 ms", "click 0.5 0.5", "wait 800 ms", "chord J", "wait 700 ms",
                     "chord Ctrl+Z", "wait 3000 ms"]
 BASE_LOCAL_DEFAULT = "Local shows cell 0's turning region by default. Select a sticker to frame its cell."
 STICKERS_PER_CELL = 433  # 259,800 sticker slots over 600 cells (ShellPick.Picked.Cell)
@@ -1051,9 +1051,9 @@ def base_local_problems(dumps: list[dict]) -> list[str]:
     """Local is drawn on the base puzzle from the opening state on: its plan is Jumble off, its opening is shown and
     it frames a cell at every step. With nothing selected it frames cell 0 and its readout says that this is the
     default; at the wait after each click it frames the selected sticker's cell (ADR-D01.41), or cell 0 after a miss;
-    the corner click clears the selection; the twist and the undo keep Local on cell 0. A hit is not required: the
-    host picks only in Jumble (its retained view of the base puzzle stamps no sticker), so on the base puzzle every
-    click is a miss until the host picks there; the count is printed."""
+    the last click, at the opening's centre where the base view draws no sticker, clears the selection; the twist and
+    the undo keep Local on cell 0. Since B17 the host picks on the base puzzle (its retained view stamps each slot's
+    sticker): the corner click lands on a sticker, and the count of hits is printed."""
     steps = [dump["do"] for dump in dumps]
     if steps[:len(BASE_LOCAL_STEPS)] != BASE_LOCAL_STEPS:
         return [f"the steps written were {steps}"]
@@ -1081,8 +1081,8 @@ def base_local_problems(dumps: list[dict]) -> list[str]:
         if plan.get("words") != words or words not in texts(dump, "view:Local"):
             problems.append(f"step {index}: Local's readout reads {plan.get('words')!r}, expected {words!r} on its frame")
     if (dumps[9].get("pick") or {}).get("selection") is not None:
-        problems.append("the click in the opening's corner did not clear the selection")
-    print(f"base-local: {hits} of 3 clicks hit (the host picks only in Jumble); Local framed cells "
+        problems.append("the click at the opening's centre did not clear the selection")
+    print(f"base-local: {hits} of 3 clicks hit; Local framed cells "
           f"{sorted({(dump.get('local_plan') or {}).get('framed', -1) for dump in dumps[1:len(BASE_LOCAL_STEPS)]})}")
     return problems
 
@@ -1190,8 +1190,7 @@ def slot_pieces() -> list[int]:
 
 
 def expect_pick(dumps: list[dict], source: dict, state: str | None, pieces: list[int] | None = None) -> list[str]:
-    """The pick script: every click asked once and answered, none stale; each hit names its sticker's piece; at least
-    one click hits; the corner click clears the selection."""
+    """B17: clicks answer current stickers and inspect their pieces, E follows the selected cell, and a miss clears."""
     clicks = [i for i, dump in enumerate(dumps) if dump["do"].startswith("click ")]
     if not clicks or any("pick" not in dump for dump in dumps):
         return ["the run's dumps carry no click step or no pick context"]
@@ -1204,10 +1203,33 @@ def expect_pick(dumps: list[dict], source: dict, state: str | None, pieces: list
     for i in clicks:
         if i + 1 >= len(dumps):
             break
-        selection = dumps[i + 1]["pick"]["selection"]
+        shown = dumps[i + 1]
+        selection = shown["pick"]["selection"]
         if selection is not None and pieces[selection["sticker"]] != selection["piece"]:
             problems.append(f"after '{dumps[i]['do']}' sticker {selection['sticker']} names piece {selection['piece']}, "
                             f"not the model's {pieces[selection['sticker']]}")
+        if state is not None or "piece_inspect" in shown:
+            line = shown.get("piece_inspect", "")
+            if selection is None and line:
+                problems.append("the inspector kept a piece after a miss")
+            if selection is not None and (not line.startswith(f"piece {selection['piece']} · ")
+                                          or "domain " not in line or "height " not in line):
+                problems.append(f"the inspector did not name the selected piece with its domain and height: {line!r}")
+    for i, shown in enumerate(dumps[1:], 1):
+        if shown["do"] != "chord E":
+            continue
+        previous = dumps[i - 1]
+        selection = previous["pick"]["selection"]
+        slot = selection["slot"] if selection is not None else None
+        if slot is not None:
+            cell = slot // STICKERS_PER_CELL
+            if shown["named"] != cell:
+                problems.append(f"E named {shown['named']}, expected the selected cell {cell}")
+        else:
+            reason = ("The picked piece is off the lattice and has no cell." if selection is not None
+                      else "Pick a sticker at the current revision to name the Target.")
+            if shown["named"] != previous["named"] or reason not in texts(shown, "frame"):
+                problems.append(f"E without a selected cell must keep the Target and say {reason!r}")
     if final["hits"] == 0:
         problems.append("no click hit a sticker")
     if final["selection"] is not None:

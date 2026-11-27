@@ -24,6 +24,8 @@ public sealed partial class JumbleSurface : VBoxContainer
     private IReadOnlyList<(string Label, string Fact)>? facts;
     // Whether Local draws a cap, named or the default (LocalCap).
     private bool drawn;
+    // Whether the Jumble sections show: not on the base puzzle, where they have nothing to show (B17).
+    private bool jumbleSections = true;
     // The named cap's kept twist checks (B10), shown in the Twist check section.
     private KeptChecks? checks;
     // The named cap's covers (B11), shown in the Cap covers section, with its hover's inspect line and the table's fold.
@@ -78,6 +80,14 @@ public sealed partial class JumbleSurface : VBoxContainer
         if (IsInstanceValid(this)) Refresh();
     }
 
+    // The shell hides the Jumble sections on the base puzzle (Jumble off) and shows them otherwise (B17).
+    public void SetJumbleSections(bool value)
+    {
+        if (jumbleSections == value) return;
+        jumbleSections = value;
+        if (IsInstanceValid(this)) Refresh();
+    }
+
     public void SetFacts(IReadOnlyList<(string Label, string Fact)>? value)
     {
         facts = value;
@@ -88,6 +98,7 @@ public sealed partial class JumbleSurface : VBoxContainer
     {
         TokenSet t = tokens();
         sentence.Visible = facts == null && !drawn;
+        sections.Visible = jumbleSections;
         // The marks row sits space.3 below the top edge and is at most a control high (owner, 26 November 2026: the
         // marks covered the sentence at 2000x1200).
         gap.Visible = sentence.Visible; gap.CustomMinimumSize = new Vector2(0, MarksRoom(t));

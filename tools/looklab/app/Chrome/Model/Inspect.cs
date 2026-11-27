@@ -55,6 +55,23 @@ public sealed class InspectField
     internal double Snap(double value) => Math.Clamp(Min + Math.Round((value - Min) / Step) * Step, Min, Max);
 }
 
+// ADR-D02 B17: the session pick's identity and cell, with domain and height from a bound sample when available.
+public sealed record PieceInspection(uint Id, uint Sticker, int? Cell, bool Jumble, (int Domain, int Height)? Sample)
+{
+    public string Line
+    {
+        get
+        {
+            string line = FormattableString.Invariant($"piece {Id} · sticker {Sticker}")
+                + (Cell is int cell ? FormattableString.Invariant($" · cell {cell}") : " · off lattice");
+            if (!Jumble) return line;
+            return line + (Sample is { } sample
+                ? FormattableString.Invariant($" · sample · domain {sample.Domain} · height {sample.Height}")
+                : " · draft · domain pending · height pending");
+        }
+    }
+}
+
 // The two inspector tiers read this one model (ADR-D01.22): the strip shows the selection and the Essential
 // preview parameters, the docked inspector shows every field in three fixed sections. Neither tier commits.
 public sealed class InspectorModel
@@ -64,6 +81,7 @@ public sealed class InspectorModel
     public const int EssentialCap = 6;
     public int SelectionCount { get; private set; }
     public string SelectionKind { get; private set; } = "nothing";
+    public PieceInspection? Piece { get; private set; }
     public IReadOnlyList<InspectField> Fields => fields;
     public IEnumerable<InspectField> Essentials => fields.Where(f => f.Essential).Take(EssentialCap);
     // The list of fields changed; a field's value changed in place; the solver edited a field.
@@ -100,7 +118,15 @@ public sealed class InspectorModel
 
     public InspectField this[string id] => fields.FirstOrDefault(f => f.Id == id) ?? throw J.Error(id, "unknown field");
 
-    public void Select(int count, string kind) { SelectionCount = count; SelectionKind = kind; Safe.Raise(Changed); }
+    public void Select(int count, string kind) { Piece = null; SelectionCount = count; SelectionKind = kind; Safe.Raise(Changed); }
+
+    // ADR-D02 B17: a live click replaces or clears Tier 1's read-only piece line.
+    public void SelectPiece(PieceInspection? piece)
+    {
+        if (piece == Piece) return;
+        Piece = piece; SelectionCount = piece == null ? 0 : 1; SelectionKind = piece == null ? "nothing" : "piece";
+        Safe.Raise(Changed);
+    }
 
     public void AddFact(string id, string label, string fact) => Add(new InspectField(id, Selection, label, fact));
 

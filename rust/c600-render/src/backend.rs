@@ -177,6 +177,8 @@ pub struct RenderBackend<C: CoreAbi> {
     held: Option<RevisionRef>,
     /// ABI 8: the panes of the next frame ([`RenderBackend::set_panes`]); empty for a one-view frame.
     panes: Vec<PaneSpec>,
+    /// ADR-D02 B17: the shell resolves sticker IDs from its retained reference plans.
+    retained_sticker_ids: bool,
 }
 
 impl<C: CoreAbi> RenderBackend<C> {
@@ -196,7 +198,14 @@ impl<C: CoreAbi> RenderBackend<C> {
             fault: None,
             held: None,
             panes: Vec::new(),
+            retained_sticker_ids: false,
         }
+    }
+
+    /// ADR-D02 B17: stamp stickers in retained plans without explicit instances for the shell's raw pick API.
+    pub fn with_retained_sticker_ids(mut self) -> Self {
+        self.retained_sticker_ids = true;
+        self
     }
 
     /// ABI 8 (ADR-D02 B18b): the panes of the next frames, in order, or none for one-view frames. While panes are set,
@@ -533,7 +542,7 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
     }
 
     fn prepare(&mut self, request: Preparation<'_>) -> Result<Ticket, Error> {
-        let rows = slot_rows(request.payload)?;
+        let rows = slot_rows(request.payload, self.retained_sticker_ids)?;
         let stamp = request.stamp;
         let input_digest = hex32(&stamp.input_digest)
             .ok_or_else(|| Error::invalid("the input digest is not a SHA-256 in hexadecimal"))?;
@@ -787,7 +796,7 @@ struct SlotRows {
     instances: Vec<u32>,
 }
 
-fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
+fn slot_rows(publication: &Publication, retained_sticker_ids: bool) -> Result<SlotRows, Error> {
     let mut rows = SlotRows { visibility: vec![0; SLOTS], interaction: vec![0; SLOTS], instances: vec![0; SLOTS] };
     let mut stickers = None;
     for plan in &publication.plans {
@@ -820,7 +829,9 @@ fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
         if !plan.instances.is_empty() {
             return Err(Error::unsupported("J13", "the core's ID pass stamps no plan instance of a posed primitive"));
         }
+        // Every slot drawn and interactive: the core writes no instance for a slot that is not both (F02).
         rows.visibility.fill(1);
+        rows.interaction.fill(1);
         rows.instances.iter_mut().zip(1u32..).for_each(|(instance, id)| *instance = id);
         return Ok(rows);
     };
@@ -837,6 +848,12 @@ fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
             return Err(Error::invalid("the labels repeat a sticker, so a sticker has no single slot"));
         }
         *entry = slot as u32;
+    }
+    if retained_sticker_ids && plan.instances.is_empty() {
+        // ADR-D02 B17: each occupied slot stamps its sticker's home ID + 1, as in a posed row.
+        for (instance, label) in rows.instances.iter_mut().zip(labels) {
+            *instance = label + 1;
+        }
     }
     for instance in &plan.instances {
         let id = u32::try_from(instance.instance.0)

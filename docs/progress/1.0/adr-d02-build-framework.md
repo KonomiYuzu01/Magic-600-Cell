@@ -649,6 +649,25 @@ relative path is from the repository root.
     - `tests/test_d02_drawing.py` passed 40 of 40, `test_renderer_core.py` 26 of 26 and `test_renderer_shell.py` 84 of 84.
     - `d02_run.py --script hopf` (316 frames) and `--script two-views` (633 two-pane frames) passed on `wj-ia-300`.
 
+- **As built, part 3 (drawing track, 27 November 2026):** the pick script hits its pieces, the base puzzle picks, and the inspector and the Target follow the pick (ADR-D01.67).
+  - The second cause of the pick misses was pixel choice, not the ID pass:
+    - A temporary core trace, removed before commit, showed every click of `--script pick` running the ID pass on Global's pane: pane 0, view 1, resource set 3, style slot 1, no dimming, no slice hole.
+    - A full-pane ID mask showed that Global's opening layout, the Hopf rings, covers 7,110 of the pane's 118,146 pixels (about 6%). The script's fixed click fractions mostly fall between stickers.
+    - The one hit named the piece the model gives (sticker 233857, piece 137602). The note in part 2's work that pixel choice was ruled out was wrong. The first cause, the core dropping a posed row's instances (F02), was fixed in f620475f.
+  - Codex call `20261127T005255Z-8c7e2986` (gpt-6.2-sol, effort max; wrapper exit 0, acceptance 293 of 293) was reviewed and applied with one change:
+    - A pick is refused as unavailable until the frame of the engine's current revision has its pick resources, and `ShellPick` keeps the click until then. This closes a startup gap in the one-view path.
+    - The base puzzle picks. `RenderBackend::with_retained_sticker_ids()` stamps each base slot with its sticker's label + 1, and `resolve_sticker` reads it at the publication's base state. The fake core applies F02 as the real one does.
+    - The inspector's tier-1 line, `PieceInspection`, gives the selection's piece, sticker, cell, sample, domain and height.
+    - E names the selected cell as the Target (ADR-D01.67). E already maps to `target.current.set`, so no draft row was needed.
+    - Changed: the patch named the publication's base state for both puzzles. The Jumble arm keeps part 2's subject, the snapshot of the revision the frame drew.
+  - Scripts:
+    - `pick.json` adds three clicks on sticker blocks of the Hopf rings at the run's 582x203 opening, the last on a lattice piece, and then E.
+    - `base-local.json` and `d02_run.py` click the corner first, which now hits a sticker of the base view. The clearing click moves to the opening's centre, where the opening state draws no sticker.
+  - Item 6 landed in 34b58afd. The inspector's Focus layer editor stays, since ADR-D01.46's focus layers serve both puzzles.
+  - Runs (build 20261127T012852Z; no nvlddmkm event or LiveKernelEvent in the System log after any run):
+    - `--script pick` passed: 11 clicks, 4 hits, none stale. E named cell 106, and the inspector read "piece 33859 · sticker 46015 · cell 106 · sample · domain 22 · height 0".
+    - `--script slice` passed (947 composite frames, 109 with three panes). `--script base-local` passed (1 of 3 clicks hit; Local framed cells 0 and 402).
+    - `--script two-views` failed: after F1 and `> jumble.cap.name 150`, no cap was named and no revision changed while Local was drawn. Builds of f620475f and 34b58afd fail the same way, so the failure predates this part. It is left open.
 ### B18. The sweep and the half-turn
 - **Goal:** a committed jumble twist is swept; a half-turn cuts and outlines.
 - **Items:** none new (applies .37; row J03).

@@ -19,7 +19,7 @@ use std::ptr;
 use std::sync::Arc;
 
 use c600_display::jumble;
-use c600_display::pick::{Partial, Projection};
+use c600_display::pick::{LabelProjection, Partial, Projection};
 use c600_display::plan::{ObjectId, StateRef};
 use c600_display::produce::{self, GeometryInput};
 use c600_display::validate::{validate, validate_engine_bundle, EngineBundle, LimitProfile};
@@ -897,6 +897,73 @@ fn pick(run: &Run, x: u32, y: u32) -> M6hPick {
     // SAFETY: as above; an answered pick is forgotten.
     assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut M6hPick::default()) }, M6H_E_INVALID_ARGUMENT);
     out
+}
+
+/// ADR-D02 B17: a base sticker has its model piece and the occupied slot in the label projection after a turn.
+#[test]
+fn a_base_pick_resolves_to_its_slot() {
+    let run = Run::new();
+    let folder = fresh("base-pick");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    run.settle();
+    run.fake().complete();
+    let frame = run.frame();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (2, 2));
+
+    let layer = fresh("base-pick-layer");
+    let mut turns = Turns::open(kernel(), &assets(), Path::new(&layer), Path::new(&menu()), Puzzle::JumbleOff)
+        .expect("the base session opens");
+    assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
+    let state = turns.state().expect("the labels");
+    let (slot, &label) = state.labels().iter().enumerate().find(|&(slot, &label)| slot != label as usize)
+        .expect("the twist moved a sticker");
+    let sticker = label as u32;
+    let geometry = GeometryInput::load(&assets()).expect("the geometry");
+    let subject = StateRef::Snapshot(produce::revision(&geometry.identity, 2, &state));
+    let projection = LabelProjection::new(state.labels(), state.digest());
+    run.fake().place(10, 20, slot);
+    let hit = pick(&run, 10, 20);
+    assert_eq!((hit.state, hit.hit, hit.engine_revision, hit.lattice), (M6H_PICK_READY, 1, 2, 1));
+    assert_eq!((hit.sticker, hit.piece), (sticker, geometry.slot_piece.as_u32()[sticker as usize]));
+    assert_eq!(projection.slot(&subject, &ObjectId::Sticker(sticker)), Partial::Total(hit.slot));
+    assert_ne!(hit.slot, hit.sticker, "a turned sticker sits in another slot");
+    drop(turns);
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+    let _ = std::fs::remove_dir_all(&layer);
+}
+
+/// ADR-D02 B17: a fixture pick waits for the opened head's ID resources, then hits without a committed key.
+#[test]
+fn a_jumble_fixture_is_pickable_as_soon_as_its_publication_installs() {
+    let fixture = PathBuf::from(fresh("jumble-pick-fixture"));
+    let record = fixture::write_for(Puzzle::JumbleOn, kernel(), &assets(), Path::new(&menu()), &fixture, &["KeyJ"])
+        .expect("the fixture");
+    let revision = int(&record, "revision").expect("the fixture revision") as u64;
+    let folder = fresh("jumble-pick-reopen");
+    copy_dir(&fixture.join("session"), Path::new(&folder));
+    let run = Run::new();
+    let path = text(fixture.join(fixture::RECORD));
+    assert_eq!(run.reopen_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu(), &path), (M6H_OK, revision));
+
+    let before = run.frame();
+    assert_eq!((before.engine_revision, before.publication_revision), (revision, 1));
+    let mut ticket = 0;
+    // SAFETY: B17's request has a live handle and a writable ticket.
+    assert_eq!(unsafe { m6h_pick_request(run.host, 10, 20, &mut ticket) }, M6H_E_UNAVAILABLE);
+    assert_eq!(ticket, 0);
+
+    run.fake().complete();
+    let current = run.frame();
+    assert_eq!((current.engine_revision, current.publication_revision), (revision, revision));
+    assert_ne!(run.fake().submitted.last().expect("the frame").resource_set, 0);
+    run.fake().place(10, 20, 5);
+    let hit = pick(&run, 10, 20);
+    assert_eq!((hit.state, hit.hit, hit.sticker, hit.engine_revision), (M6H_PICK_READY, 1, 5, revision));
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+    let _ = std::fs::remove_dir_all(&fixture);
 }
 
 /// ADR-D02 B17: in a jumble-on session a pick resolves the sticker under the point to its piece and the slot it
