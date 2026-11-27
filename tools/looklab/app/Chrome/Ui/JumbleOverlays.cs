@@ -41,6 +41,7 @@ public sealed partial class JumbleHost
             OverlayWords();
             return;
         }
+        var previous = drawnOverlay;
         drawnOverlay = now;
         try
         {
@@ -51,6 +52,8 @@ public sealed partial class JumbleHost
             Safe.Report(error);
             Overlay = OverlayView.Empty;
         }
+        if ((cap, row, step, record, PoseOf) != (previous.Cap, previous.Row, previous.Step, previous.Record, previous.Poses))
+            Filter?.RefreshFields();
         OverlayWords();
         Safe.Raise(OverlayChanged);
     }

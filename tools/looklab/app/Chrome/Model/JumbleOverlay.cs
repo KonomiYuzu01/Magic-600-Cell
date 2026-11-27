@@ -11,7 +11,7 @@ namespace Magic600.Chrome;
 public enum OverlayLayer { None, CutTrace, MovingSet }
 
 public sealed record OverlayView(OverlayLayer Layer, int? Cap, bool Blocked, string Step, bool[]? Lines, bool[]? NeverHidden,
-    long Pieces, long NeverHiddenCount, long? CertificatePoints, bool[]? CutCandidates = null)
+    long Pieces, long NeverHiddenCount, long? CertificatePoints, bool[]? CutCandidates = null, bool[]? Moving = null)
 {
     public static readonly OverlayView Empty = new(OverlayLayer.None, null, false, "", null, null, 0, 0, null);
 }
@@ -56,10 +56,10 @@ public static class JumbleOverlay
         var layer = moving != null ? OverlayLayer.MovingSet
             : row == 0 && (straddlers != null || cut != null) ? OverlayLayer.CutTrace : OverlayLayer.None;
         return new OverlayView(layer, c, straddlers != null, row > 0 ? stepLabel : "", lines, lines,
-            Count(lines), Count(lines), points, cut);
+            Count(lines), Count(lines), points, cut, moving);
     }
 
-    private static bool[]? Mask(JsonElement root, string set, int pieces) =>
+    internal static bool[]? Mask(JsonElement root, string set, int pieces) =>
         root.TryGetProperty("masks", out var masks) && masks.TryGetProperty(set, out var mask)
             ? JumbleTint.Mask(mask, pieces) : null;
 

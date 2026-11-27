@@ -790,6 +790,7 @@ public partial class Shell : Control
         // ADR-D01's view.local: a hidden Local keeps its cap and the shared camera; the host stops drawing it.
         var hidden = _chrome?.Frame.LocalHide.Hidden == true;
         _chrome?.LocalLine(hidden ? HiddenLocalWords : D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);
+        _chrome?.SliceLine(!hidden && _session && D02.ShellLocal.Plan.Jumble && !D02.ShellRaw.On ? D02.ShellSlice.Line(cap) : null);
         if (cap == _localCap && _localRaw == D02.ShellRaw.Focus && hidden == _localHidden)
         {
             return;
@@ -848,7 +849,10 @@ public partial class Shell : Control
     /// </summary>
     // ADR-D02 B20: the cut slice's held keys (the split, the turn preview), after the router gave the key to the
     // session and never while the editor's text field has focus.
-    private bool Sliced(InputEventKey key) => D02.ShellJumble.On && _session && _editor?.TextFocused != true && (D02.ShellSlice.Follow(key) || D02.ShellRaw.Follow(key));
+    private bool Sliced(InputEventKey key) => D02.ShellJumble.On && _session && _hostLibrary is { } library
+        && (!key.Pressed || (_editor?.TextFocused != true && _chrome?.Frame.OpenOverlay == null
+            && GetViewport().GuiGetFocusOwner() is not (LineEdit or TextEdit)))
+        && (D02.ShellSlice.Follow(key, library, _host, _adoptedRevision) || D02.ShellRaw.Follow(key));
 
     private void SetPanes(HostLibrary library, Rect2I global, Magic600.Chrome.PaneLayout? layout)
     {
@@ -899,7 +903,7 @@ public partial class Shell : Control
             var aspect = first.Height > 0 ? (double)first.Width / first.Height : 1;
             if (_localShape is { } shape)
             {
-                Require(library, "m6h_set_view_shape", D02.ShellShape.Set(library, _host, HostLibrary.Local, D02.ShellLocal.ViewShape(shape, aspect)));
+                Require(library, "m6h_set_view_shape", D02.ShellShape.Set(library, _host, HostLibrary.Local, D02.ShellLocal.ViewShape(shape, aspect, raw != null)));
                 Require(library, "m6h_set_view_shape", D02.ShellShape.ApplyZoom(library, _host, HostLibrary.Local, D02.ShellJumble.Zoom.Factor(HostLibrary.Local)));
             }
         }
@@ -965,6 +969,7 @@ public partial class Shell : Control
         }
         if (!D02.ShellJumble.On || !_session) return;
         if (what == NotificationWMWindowFocusOut) D02.ShellGrip.FocusLost();
+        if (what == NotificationWMWindowFocusOut) D02.ShellSlice.FocusLost();
         if (what == NotificationWMMouseExit)
         {
             D02.ShellPick.Point(null);
@@ -1016,7 +1021,8 @@ public partial class Shell : Control
     {
         if (_localShape is not { } shape || _localCap is not int cap || cap is < 0 or >= 600) return null;
         // Local's column-major spin is transposed for the row-major anchor path.
-        return new(Transposed(D02.ShellLocal.Camera(_camera).Spin), 1 - shape.Gap, shape.StickerShrink, shape.D4,
+        var (cell, sticker) = Magic600.Chrome.RawView.Shrinks(D02.ShellRaw.On, shape.Gap, shape.StickerShrink);
+        return new(Transposed(D02.ShellLocal.Camera(_camera).Spin), cell, sticker, shape.D4,
             D02.ShellShape.SentZoom(HostLibrary.Local) ?? 1, aspect, shape.Projection == HostLibrary.ProjectionOrthographic,
             places.CellCentre(cap), D02.ShellLocal.FocusCos, shape.Spread);
     }
@@ -1179,6 +1185,10 @@ public partial class Shell : Control
         }
         if (D02.ShellJumble.On)
         {
+            var globalSize = _paned.Global.Size.X > 0 ? _paned.Global.Size : _size;
+            if (globalSize.X > 0 && globalSize.Y > 0)
+                Require(library, "m6h_set_view_shape", D02.ShellShape.RefitGlobal(library, _host,
+                    (double)globalSize.X / globalSize.Y, D02.ShellJumble.Zoom.Factor(HostLibrary.View)));
             foreach (var view in D02.ShellJumble.Zoom.TakeDirty())
             {
                 Require(library, "m6h_set_view_shape", D02.ShellShape.ApplyZoom(library, _host, view, D02.ShellJumble.Zoom.Factor(view)));

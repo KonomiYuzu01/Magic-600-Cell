@@ -355,6 +355,7 @@
       "text": "mirrored"
     }
   ],
+  "filter_fields": ["inside-a-cap", "straddler", "moved", "class", "rim", "seam", "set"],
   "built": [
     {
       "id": "global.chain",

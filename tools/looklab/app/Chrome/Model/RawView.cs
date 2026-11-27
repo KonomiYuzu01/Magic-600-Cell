@@ -14,6 +14,9 @@ public sealed record RawPane(PaneSpec Pane, bool Antipode, double H, string Labe
 // anchor, half-open. The core draws both charts (SA2_PROJECTION_STEREOGRAPHIC, SA2_PANE_ANTIPODE); this is the model.
 public sealed class RawView
 {
+    public static (float Cell, float Sticker) Shrinks(bool raw, float gap, float sticker) =>
+        raw ? (1, 1) : (1 - gap, sticker);
+
     public const double DefaultH = 121.0 / 125.0, ClipStep = 0.02;
     // The static tick (no detent): at h ≤ φ²/4 = cos 49.12° all 80 meeting poles of the named cap lie inside the clip.
     // The 80 meeting caps are the first six shells of cell centres about a pole (4, 12, 24, 12, 4 and 24 cells), and the

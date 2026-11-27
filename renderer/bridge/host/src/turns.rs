@@ -697,6 +697,18 @@ impl Turns {
         }
     }
 
+    /// An exact release check of the selected menu letter on a copy of the current state.
+    pub(crate) fn release_check(&mut self, cap: u32, item: u64) -> Result<Value, String> {
+        let args = self.twist_args(cap, item)?;
+        let Head::Jumbled(exact, state) = self.head()? else {
+            return Err("a twist check needs Jumble on".to_owned());
+        };
+        let resolved = rotation::resolve(&exact, state.menu(), &binding(&args, "letter")?)
+            .map_err(|error| format!("the letter [{cap}, {item}] does not resolve: {error:?}"))?;
+        let letter = ([i64::from(cap), item as i64], resolved.twist);
+        c600_jumble::observe::cuts::release_check(&exact, &state, &letter, Some(i64::from(cap)), None)
+    }
+
     /// ADR-D02 B18 (row J03): the certified transform row of item `item` of the pinned menu at cap `cap` at the head,
     /// without committing it: `c600_display::jumble::transform` of the outcome the jumbling engine gives that twist on
     /// a copy of the head's poses, the letter resolved as [`Turns::twist_letter`] sends it and as the control's replay

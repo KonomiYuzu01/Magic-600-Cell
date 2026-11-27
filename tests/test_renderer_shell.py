@@ -148,9 +148,10 @@ class ShellProject(unittest.TestCase):
         preview = text(ROOT / "renderer" / "bridge" / "host" / "src" / "preview.rs")
         preview_exports = re.findall(r'#\[no_mangle\]\s*pub unsafe extern "C" fn (m6h_preview_[a-z_]+)\(', preview)
         self.assertEqual(preview_exports, ["m6h_preview_bind", "m6h_preview_build", "m6h_preview_scrub", "m6h_preview_clear",
-                                           "m6h_preview_args", "m6h_preview_moved", "m6h_preview_report"])
+                                           "m6h_preview_args", "m6h_preview_moved", "m6h_preview_prefix_moved", "m6h_preview_report"])
         exports.extend(preview_exports)
         self.assertIn("m6h_create", exports)
+        self.assertIn("m6h_slice_check", exports)
         self.assertTrue({"m6h_grip_report", "m6h_grip_set"}.issubset(exports))
         self.assertEqual(csharp_list("Exports", "HostLibrary.cs"), exports)
         rust_version = re.search(r"pub const M6H_ABI_VERSION: u32 = (\d+);", source)
@@ -1602,10 +1603,11 @@ class D02Shape(unittest.TestCase):
         self.assertIn('GetProperty("gap")', shape)
         self.assertIn('GetProperty("stickerShrink")', shape)
         self.assertIn('ProjectSettings.GlobalizePath("res://look/opening.json")', shape)
-        # The chain projection keeps the core's zoom until the Hopf-ring layout exists; the file's field of view
-        # belongs to that layout.
+        # The chain keeps the core's opening zoom. The chart layouts read the field of view as the base shape.
+        # Only the ring sheet overrides that zoom at submission, using the current pane.
         self.assertIn("public const float Zoom = 1.15f;", shape)
-        self.assertIn("Hopf-ring layout", shape)
+        self.assertIn("ShellHopf.Opens(ShellHopf.KindOf(projection.GetString()))", shape)
+        self.assertIn("ShellHopf.Drawn == ShellHopf.Sheet ? aspect : null", shape)
         # No opening value is a constant in code.
         self.assertNotRegex(shape, r"0\.3f?\b|0\.55f?\b|0\.7f?\b")
         opening = json.loads(text(ROOT / "tools" / "looklab" / "data" / "opening.json"))
@@ -2197,8 +2199,12 @@ class D02Repair(unittest.TestCase):
             out[16]["repair"] = {"rows": len(rows), "focused": 2, "step": "Repair 2 of 3", "picks": list(picks)}
             out[16]["stage"] = {"word": staged, "bar": "Whole repair only", "spans": 1, "records": 1, "asked": 3, "unasked": unasked}
             out[16]["lines"] = [["view:Local", "Whole repair only"], ["view:Local", "Staged: " + staged]]
-            out[-1].update(repair={"focused": 10, "step": "Repair 2 of 3"}, overlay={"layer": "None", "outline_entries": 0},
-                           lines=[["view:Local", "Repair 2 of 3 · moving set unavailable"]])
+            out[16]["status_patterns"] = {"sample": False, "statuses": {"preview": {"source": "fed", "count": moving}}}
+            out[run.REPAIR_STEPS.index("wait 801 ms")].update(
+                repair={"focused": 10, "step": "Repair 2 of 3"}, overlay={"layer": "None", "outline_entries": 0},
+                lines=[["view:Local", "Repair 2 of 3 · moving set unavailable"]])
+            out[run.REPAIR_STEPS.index("wait 802 ms")]["focus_layer"] = {"line": "moved unavailable for this sample"}
+            out[-1]["focus_layer"] = {"line": f"{moving:,} of 177,120 pieces"}
             return out
         self.assertEqual(run.expect_repair(dumps(), {}, "wj-ia-300"), [])
         self.assertEqual(len(run.expect_repair(dumps(opened_focus=1), {}, "wj-ia-300")), 1)
@@ -2206,7 +2212,7 @@ class D02Repair(unittest.TestCase):
         # B13: an unasked act on the boundary ledger fails the run.
         self.assertEqual(len(run.expect_repair(dumps(unasked=1), {}, "wj-ia-300")), 1)
         wrong = dumps()
-        wrong[-1]["overlay"]["trace_cap"] = 150
+        wrong[run.REPAIR_STEPS.index("wait 801 ms")]["overlay"]["trace_cap"] = 150
         self.assertEqual(len(run.expect_repair(wrong, {}, "wj-ia-300")), 1)
         self.assertEqual(staged, "[150·1 215·21 150·1]")
 
@@ -2226,6 +2232,7 @@ class D02Repair(unittest.TestCase):
                                                           "picks": list(picks_early)})
             out[at["arrowed"]]["repair"] = {"rows": len(rows), "focused": 2, "picks": []}
             out[at["digit"]].update(repair={"picks": [2]}, stage={"spans": 1, "unasked": 0})
+            out[at["digit"]]["status_patterns"] = {"sample": False, "statuses": {"preview": {"source": "fed", "count": 1}}}
             out[at["staged"]].update(repair={"picks": [2, 1]}, stage={"spans": 2, "unasked": 0})
             for key in ("folded", "reopened"):
                 out[at[key]].update(repair={"focused": 0, "step": ""}, overlay={"layer": "CutTrace"})
@@ -2375,7 +2382,8 @@ class D02Zoom(unittest.TestCase):
         self.assertIn('ViewPanes.Hit(layout, (int)point.X, (int)point.Y) is { View: "Local" }', shell)
         self.assertIn("D02.ShellShape.ApplyZoom(library, _host, view, D02.ShellJumble.Zoom.Factor(view))", shell)
         shape = text(PROJECT / "D02" / "ShellShape.cs")
-        self.assertIn("shape[3] = (float)(opening[3] * factor);", shape)
+        self.assertIn("JumbleViews.OpeningZoom(opening[3], view == HostLibrary.View ? _sheetAspect : null)", shape)
+        self.assertIn("shape[3] = (float)(zoom * factor);", shape)
         # The opening shape goes through Set, so the zoom scales the view's own opening zoom.
         self.assertIn("ShellJumble.On ? Set(library, host, HostLibrary.View, Read(OpeningPath())) : HostLibrary.Ok;", shape)
 
@@ -2441,6 +2449,7 @@ class D02FocusLayer(unittest.TestCase):
         self.assertIn("focus-layer", run.ON_FIXTURE)
         off, total = run.pose_count("wj-ia-300", lambda d, h, lattice: d != lattice)
         both, _ = run.pose_count("wj-ia-300", lambda d, h, lattice: d != lattice and h >= 4)
+        inside = run.load(run.SAMPLES / "wj-ia-300" / "cap-150.json")["masks"]["inside"]["count"]
         self.assertEqual((off, total, both), (120343, 177120, 3128))
 
         def dumps(first_line=f"{off:,} of {total:,} pieces · replace · live query · rev 300", final=f"= not lattice and height >= 4 · {both:,}"):
@@ -2455,7 +2464,10 @@ class D02FocusLayer(unittest.TestCase):
                     {"do": "wait 503 ms", "lines": [], "focus_layer": layer(keys=[f"= not lattice · {off:,}"])},
                     {"do": "wait 804 ms", "lines": [], "focus_layer": layer(f"{both:,} of {total:,} pieces · intersect · live query · rev 300")},
                     {"do": "wait 805 ms", "lines": [], "focus_layer": layer(keys=[final]), "tint": {"modes": ["dimmed", "none"]}},
-                    {"do": "wait 806 ms", "lines": palette, "focus_layer": layer()}]
+                    {"do": "wait 806 ms", "lines": palette, "focus_layer": layer()},
+                    {"do": "wait 807 ms", "focus_layer": layer(f"{inside:,} of {total:,} pieces")},
+                    {"do": "wait 808 ms", "focus_layer": layer(f"{inside:,} of {total:,} pieces")},
+                    {"do": "wait 809 ms", "focus_layer": layer("rim 150 unavailable for this sample")}]
         self.assertEqual(run.expect_focus_layer(dumps(), {}, "wj-ia-300"), [])
         self.assertEqual(len(run.expect_focus_layer(dumps(first_line="120,000 of 177,120 pieces"), {}, "wj-ia-300")), 1)
         self.assertEqual(len(run.expect_focus_layer(dumps(final="= height >= 4 · 3,128"), {}, "wj-ia-300")), 1)

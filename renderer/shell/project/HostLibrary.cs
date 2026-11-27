@@ -101,6 +101,7 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_piece_style",
         "m6h_set_transform",
         "m6h_twist_transform",
+        "m6h_slice_check",
         "m6h_set_view_style",
         "m6h_open_local",
         "m6h_set_view_camera",
@@ -151,6 +152,7 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_preview_clear",
         "m6h_preview_args",
         "m6h_preview_moved",
+        "m6h_preview_prefix_moved",
         "m6h_preview_report",
     };
 
@@ -992,8 +994,18 @@ public sealed unsafe class HostLibrary : IDisposable
             return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, byte*, uint, int>)_exports["m6h_preview_moved"])(host, id, bytes, (uint)moved.Length);
     }
 
+    public int PreviewPrefixMoved(IntPtr host, ulong id, int prefix, byte[] moved)
+    {
+        fixed (byte* bytes = moved)
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, byte*, uint, int>)_exports["m6h_preview_prefix_moved"])(
+                host, id, (uint)prefix, bytes, (uint)moved.Length);
+    }
+
     public int PreviewReport(IntPtr host) =>
         ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_preview_report"])(host);
+
+    public int SliceCheck(IntPtr host, ulong revision, int cap, int item) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, ulong, int>)_exports["m6h_slice_check"])(host, revision, (uint)cap, (ulong)item);
 
     /// <summary>D02's exact cap, frames, key items and press summary. The JSON is read through <see cref="Answer"/>.</summary>
     public int GripReport(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_grip_report"])(host);

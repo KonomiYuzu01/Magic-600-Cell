@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Godot;
+using Magic600.Chrome;
 
 namespace Magic600.Shell.D02;
 
@@ -18,9 +19,8 @@ public static class ShellShape
     public const float D4 = 1.18f;
 
     /// <summary>
-    /// The core's zoom for the chain projection (ABI 5's constant). With the Hopf-ring layout (B23) or the ring sheet
-    /// (B22) the opening file's field of view gives the zoom as Look Lab's does, zoom = 1/tan(fov/2); the chain keeps
-    /// this one.
+    /// The core's zoom for the chain projection (ABI 5's constant). The Hopf rings take their zoom from the
+    /// opening file's field of view. The ring sheet fits the current pane.
     /// </summary>
     public const float Zoom = 1.15f;
 
@@ -69,7 +69,8 @@ public static class ShellShape
 
     // Each view's opening shape, the one the wheel zoom scales, and the zoom last sent to the core.
     private static readonly System.Collections.Generic.Dictionary<ulong, float[]> Openings = new();
-    private static readonly System.Collections.Generic.Dictionary<ulong, float> Sent = new();
+    private static readonly System.Collections.Generic.Dictionary<ulong, float[]> Sent = new();
+    private static double? _sheetAspect;
 
     /// <summary>
     /// Sets a view's opening shape and remembers it as the shape the wheel zoom scales (Local's shape goes through
@@ -77,11 +78,14 @@ public static class ShellShape
     /// </summary>
     public static int Set(HostLibrary library, IntPtr host, ulong view, float[] shape)
     {
+        var opening = (float[])shape.Clone();
+        if (view == HostLibrary.View && _sheetAspect is double aspect)
+            shape = new[] { shape[0], shape[1], shape[2], (float)JumbleViews.RingSheetFit(aspect) };
         var code = library.SetViewShape(host, view, shape);
         if (code == HostLibrary.Ok)
         {
-            Openings[view] = (float[])shape.Clone();
-            Sent[view] = shape[3];
+            Openings[view] = opening;
+            Sent[view] = shape;
         }
         return code;
     }
@@ -97,15 +101,29 @@ public static class ShellShape
             return HostLibrary.Ok;
         }
         var shape = (float[])opening.Clone();
-        shape[3] = (float)(opening[3] * factor);
+        var zoom = JumbleViews.OpeningZoom(opening[3], view == HostLibrary.View ? _sheetAspect : null);
+        shape[3] = (float)(zoom * factor);
         var code = library.SetViewShape(host, view, shape);
         if (code == HostLibrary.Ok)
         {
-            Sent[view] = shape[3];
+            Sent[view] = shape;
         }
         return code;
     }
 
     /// <summary>The zoom last sent to the core for a view, or null before any.</summary>
-    public static float? SentZoom(ulong view) => Sent.TryGetValue(view, out var zoom) ? zoom : null;
+    public static float? SentZoom(ulong view) => Sent.TryGetValue(view, out var shape) ? shape[3] : null;
+
+    public static (float Cell, float Sticker)? SentShrinks(ulong view) =>
+        Sent.TryGetValue(view, out var shape) ? (shape[0], shape[1]) : null;
+
+    public static double? SheetAspect => _sheetAspect;
+
+    public static int RefitGlobal(HostLibrary library, IntPtr host, double aspect, double factor)
+    {
+        double? sheet = ShellHopf.Drawn == ShellHopf.Sheet ? aspect : null;
+        if (sheet == _sheetAspect) return HostLibrary.Ok;
+        _sheetAspect = sheet;
+        return ApplyZoom(library, host, HostLibrary.View, factor);
+    }
 }

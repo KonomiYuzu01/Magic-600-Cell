@@ -374,6 +374,13 @@ def pose_count(state: str, keep) -> tuple[int, int]:
     return sum(n for d, h, n in rows if keep(d, h, lattice)), sum(n for _, _, n in rows)
 
 
+def live_preview_status(dump: dict, kind: str, count: int | None = None) -> bool:
+    status = dump.get("status_patterns", {})
+    cue = status.get("statuses", {}).get(kind, {})
+    return (status.get("sample") is False and cue.get("source") == "fed"
+            and (cue.get("count") == count if count is not None else cue.get("count", 0) > 0))
+
+
 def expect_focus_layer(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """The Focus layer script (owner, 26 November 2026): the entry reads "Focus layer =" on Global's border; a preview
     shows its exact count of the bound state's pieces before anything applies; the apply adds the layer to Global's
@@ -382,7 +389,8 @@ def expect_focus_layer(dumps: list[dict], source: dict, state: str | None) -> li
     if state is None or not (SAMPLES / state / "style.json").is_file():
         return ["the focus-layer script needs a sample state with pose rows"]
     by_step = {dump["do"]: dump for dump in dumps}
-    marks = ["wait 801 ms", "wait 802 ms", "wait 503 ms", "wait 804 ms", "wait 805 ms", "wait 806 ms"]
+    marks = ["wait 801 ms", "wait 802 ms", "wait 503 ms", "wait 804 ms", "wait 805 ms", "wait 806 ms",
+             "wait 807 ms", "wait 808 ms", "wait 809 ms"]
     if any(mark not in by_step for mark in marks):
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
     layers = [by_step[mark].get("focus_layer") for mark in marks]
@@ -391,7 +399,7 @@ def expect_focus_layer(dumps: list[dict], source: dict, state: str | None) -> li
     off, total = pose_count(state, lambda d, h, lattice: d != lattice)
     both, _ = pose_count(state, lambda d, h, lattice: d != lattice and h >= 4)
     problems = []
-    first, applied, _, second, again, _ = layers
+    first, applied, _, second, again, _, cap, saved, missing = layers
     if first["entry"] != "Focus layer =":
         problems.append(f"Global's border has no Focus layer entry ({first['entry']!r})")
     if first["dock"] != "focus_layer.editor":
@@ -417,6 +425,12 @@ def expect_focus_layer(dumps: list[dict], source: dict, state: str | None) -> li
     for label in ("Open focus layer", "Preview focus layer counts", "Apply focus layer"):
         if label not in palette:
             problems.append(f"the palette did not find {label!r} by the alias 'piece filter'")
+    inside = load(SAMPLES / state / "cap-150.json")["masks"]["inside"]["count"]
+    for title, layer in (("inside a cap", cap), ("saved set", saved)):
+        if not layer["line"].startswith(f"{inside:,} of {total:,} pieces"):
+            problems.append(f"{title} did not read the cap's exact inside set")
+    if "rim 150 unavailable" not in missing["line"]:
+        problems.append("the focus layer did not refuse a missing rim mask")
     print(f"focus layer: not lattice {off:,} of {total:,}; and height >= 4 {both:,}; keys {again['keys']}")
     return problems
 
@@ -824,7 +838,9 @@ def expect_covers(dumps: list[dict], source: dict, state: str | None) -> list[st
 REPAIR_STEPS = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 1500 ms",
                 "open repair_list", "wait 1000 ms", "focus LocalBody_repair_list", "wait 500 ms", "chord Down", "chord Down",
                 "wait 500 ms", "chord Right", "wait 800 ms", "text 2", "wait 2000 ms",
-                "command operation.preview.cancel", "command jumble.repair.focus 10 2", "wait 801 ms"]
+                "command operation.preview.cancel", "command jumble.repair.focus 10 2", "wait 801 ms",
+                "command filter.preview moved", "wait 802 ms", "command jumble.repair.focus 2 2",
+                "command filter.preview moved", "wait 803 ms"]
 
 
 def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[str]:
@@ -856,13 +872,19 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
     label = f"Repair 2 of 3 · moving {moving:,}"
     if (stepped.get("repair") or {}).get("step") != "Repair 2 of 3" or label not in texts(stepped, "view:Local"):
         problems.append(f"step 14: the step label is {(stepped.get('repair') or {}).get('step')!r}, not {label!r} on screen")
-    unavailable = dumps[-1]
+    unavailable = dumps[REPAIR_STEPS.index("wait 801 ms")]
     overlay = unavailable.get("overlay", {})
     if (unavailable.get("repair", {}).get("focused") != 10
             or "Repair 2 of 3 · moving set unavailable" not in texts(unavailable, "view:Local")
             or overlay.get("layer") != "None" or overlay.get("trace_cap") is not None
             or overlay.get("outline_entries") != 0):
         problems.append("row 10 step 2 must show an unavailable moving set without an overlay")
+    if "moved unavailable" not in dumps[REPAIR_STEPS.index("wait 802 ms")].get("focus_layer", {}).get("line", ""):
+        problems.append("the moved field accepted a repair step without a mask")
+    if not dumps[-1].get("focus_layer", {}).get("line", "").startswith(f"{moving:,} of 177,120 pieces"):
+        problems.append("the moved field did not read the focused repair step's mask")
+    if not live_preview_status(picked, "preview"):
+        problems.append("the staged repair did not feed the Preview pattern")
     if (picked.get("repair") or {}).get("picks") != [2]:
         problems.append(f"step 16: the picks are {(picked.get('repair') or {}).get('picks')}, not [2]")
     # B13: the pick staged row 2 as one sealed span with the whole-only bar, wrote one repair-pair record, and every
@@ -1067,15 +1089,16 @@ def check_two_views_events(events: Path) -> list[str]:
 def expect_slice(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """B20 (ADR-D02.17, CR-14): at the default cap 0 (blocked in wj-ia-300) the held preview key draws no ghost and
     names nothing; at cap 150 the held split key splits Local and its release joins it, and the held preview key draws
-    the ghost of the inside layer (cap 150's inside set) and names item 1's twist only on release."""
+    the ghost of the chosen menu item and names and checks it only on release."""
     steps = ["start", "wait 3000 ms", "hold Down", "wait 800 ms", "release Down", "chord F1", "text > jumble.cap.name 150",
              "chord Enter", "wait 2500 ms", "hold Backslash", "wait 1500 ms", "release Backslash", "wait 1500 ms",
-             "hold Down", "wait 1500 ms", "release Down", "wait 1500 ms"]
+             "chord Shift+Up", "hold Down", "wait 1500 ms", "release Down", "wait 1500 ms"]
     if [dump["do"] for dump in dumps] != steps:
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
     if state is None or not (SAMPLES / state / "cap-150.json").is_file():
         return ["the slice script needs a sample state with cap 150's record"]
-    inside = sum(overlay_mask(load(SAMPLES / state / "cap-150.json")["masks"]["inside"], 177_120))
+    record = load(SAMPLES / state / "cap-150.json")
+    inside = sum(overlay_mask(record["masks"]["inside"], 177_120))
     slices = [dump.get("slice") for dump in dumps]
     if any(row is None for row in slices):
         return ["a dump has no slice row"]
@@ -1089,12 +1112,23 @@ def expect_slice(dumps: list[dict], source: dict, state: str | None) -> list[str
         problems.append(f"step 8: the slice at cap 150 is {slices[8]}, not its inside set of {inside} unsplit")
     if not slices[10]["split"] or slices[12]["split"]:
         problems.append(f"the split read {slices[10]['split']} while held and {slices[12]['split']} after")
-    held, after = slices[14], slices[16]
-    if not held["ghost"] or held["named"] is not None:
-        problems.append(f"step 14: while the preview key is held the slice is {held}")
+    held, after = slices[15], slices[17]
+    if not held["ghost"] or held.get("ghost_item") != 2 or held["named"] is not None or dumps[15].get("kept"):
+        problems.append(f"step 15: item 2 should be held as a ghost before its check, got {held}")
     named = after["named"] or {}
-    if after["ghost"] or named.get("cap") != 150 or named.get("item") != 1:
-        problems.append(f"step 16: after the release the slice is {after}")
+    if after["ghost"] or (named.get("cap"), named.get("item"), named.get("angle")) != (150, 2, held.get("ghost_angle")):
+        problems.append(f"step 17: after the release the slice is {after}")
+    checked = record["release_checks"]
+    check = checked["rows"][checked["items"].index(2)]
+    prefix = f"1 | 150·2 | {check['rim_after']['N_c']} | {check['floor']} |"
+    if not any(line.startswith(prefix) for line in dumps[17].get("kept", [])):
+        problems.append("the released item 2 has no matching kept twist check")
+    if dumps[8].get("bound") != dumps[17].get("bound") or not dumps[17].get("bound", {}).get("digest"):
+        problems.append("checking the selected twist changed the head")
+    for step in (3, 8, 17):
+        if ("cut-cell states unavailable" not in slices[step]["line"]
+                or not any("cut-cell states unavailable" in line for line in texts(dumps[step], "view:Local"))):
+            problems.append(f"step {step}: Local's cut slice should report unavailable cut cells")
     if after["shell_min"] != 0 or not 0 < after["shell_max"] <= 3.1416:
         problems.append(f"the shell {after['shell_min']}..{after['shell_max']} is not about the pole")
     return problems
@@ -1132,6 +1166,7 @@ def expect_raw(dumps: list[dict], source: dict, state: str | None) -> list[str]:
         return ["a dump has no raw row"]
     caption = "No raw view certifies no holes; N = 0 does."
     cut, tick = round(121 / 125, 6), round((3 + 5 ** 0.5) / 8, 6)
+    shape = load(OPENING.with_name("local-view.json"))
     problems = []
     want = {5: (False, False, cut), 7: (True, False, cut), 9: (True, True, cut), 11: (True, True, round(cut - 0.02, 6)),
             15: (True, True, tick), 17: (True, False, tick), 19: (False, False, tick)}
@@ -1141,6 +1176,9 @@ def expect_raw(dumps: list[dict], source: dict, state: str | None) -> list[str]:
             problems.append(f"step {step}: the raw view is {row}, not on {on}, antipode {antipode}, h {h}")
         if row["charts"] != (2 if antipode else 1 if on else 0) or row["label"] != ("antipode" if antipode else ""):
             problems.append(f"step {step}: Local's charts are {row['charts']} labelled {row['label']!r}")
+        want_cell, want_sticker = (1, 1) if on else (1 - shape["gap"], shape["stickerShrink"])
+        if abs(row.get("cell_shrink", -1) - want_cell) > 1e-6 or abs(row.get("sticker_shrink", -1) - want_sticker) > 1e-6:
+            problems.append(f"step {step}: Local should submit shrinks {want_cell}, {want_sticker}")
         if (row["caption"] == caption) != on or on and not row["line"].endswith(caption):
             problems.append(f"step {step}: the caption is {row['caption']!r} and Local's line {row['line']!r}")
         # C3/C4 finding F6: the caption as drawn on Local's border, not the model's constant.
@@ -1211,6 +1249,8 @@ def expect_repair_keys(dumps: list[dict], source: dict, state: str | None) -> li
         problems.append(f"two arrows down gave {repair(arrowed)} and {stage(arrowed)}, not row 2 focused and nothing staged")
     if repair(digit).get("picks") != [2] or stage(digit).get("spans") != 1:
         problems.append(f"the digit 2 gave picks {repair(digit).get('picks')} and {stage(digit).get('spans')} spans")
+    if not live_preview_status(digit, "preview"):
+        problems.append("staging by digit did not feed the Preview pattern")
     if repair(staged).get("picks") != [2, 1] or stage(staged).get("spans") != 2:
         problems.append(f"jumble.repair.stage 1 gave picks {repair(staged).get('picks')} and {stage(staged).get('spans')} spans")
     for name in ("folded", "reopened"):
@@ -1248,6 +1288,7 @@ def expect_raw_off(dumps: list[dict], source: dict, state: str | None) -> list[s
     if [dump["do"] for dump in dumps] != RAW_OFF_STEPS:
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
     caption = "No raw view certifies no holes; N = 0 does."
+    shape = load(OPENING.with_name("local-view.json"))
     problems = []
     for step, on in {1: False, 3: True, 5: False}.items():
         row, marks = dumps[step].get("raw"), dumps[step].get("local_marks")
@@ -1256,6 +1297,9 @@ def expect_raw_off(dumps: list[dict], source: dict, state: str | None) -> list[s
             continue
         if row["on"] != on:
             problems.append(f"step {step}: the raw view is {row}, not on {on}")
+        want = (1, 1) if on else (1 - shape["gap"], shape["stickerShrink"])
+        if any(abs(row.get(k, -1) - v) > 1e-6 for k, v in zip(("cell_shrink", "sticker_shrink"), want)):
+            problems.append(f"step {step}: Local should submit shrinks {want}")
         if any("Jumble is on" in mark for mark in marks):
             problems.append(f"step {step}: Local's border shows the Jumble mark {marks!r}; this run needs Jumble's mode off")
         if any(caption in mark for mark in marks) != on:
@@ -1337,6 +1381,12 @@ HOPF_STEPS = ["start", "wait 2500 ms", "wheel 2", "wait 1000 ms"]
 HOPF_FRAMES = 30
 
 
+def ring_sheet_fit(aspect: float) -> float:
+    import math
+    radius = .6 * math.sqrt((96 - 32 * math.sqrt(5)) / (12 + 4 * math.sqrt(5)))
+    return .98 * (5 - radius) * min(aspect / (14.75 * .68 * .6 + radius), 1 / (9.5 * .57 * .6 + radius))
+
+
 def expect_hopf(dumps: list[dict], source: dict, state: str | None, projection: str = "hopfRings") -> list[str]:
     """The hopf script: Global is sent the opening file's Hopf zoom, 1/tan(fov/2), and two wheel notches scale it."""
     import math
@@ -1348,13 +1398,21 @@ def expect_hopf(dumps: list[dict], source: dict, state: str | None, projection: 
     zooms = [dump.get("zoom") for dump in dumps]
     if any(not isinstance(zoom, dict) or "sent" not in zoom for zoom in zooms[1:]):
         return ["a step's dump has no zoom sent to the core"]
-    opening = 1 / math.tan(params["fieldOfView"] / 2)
+    if projection == "ringSheet":
+        aspects = [zooms[i].get("aspect", 0) for i in (1, 3)]
+        if min(aspects) <= 0:
+            return ["the ring sheet's pane aspect was not recorded"]
+        opening, wheel_base = map(ring_sheet_fit, aspects)
+        layout = "ring sheet"
+    else:
+        opening = wheel_base = 1 / math.tan(params["fieldOfView"] / 2)
+        layout = "Hopf rings"
     problems = []
     if abs(zooms[1]["sent"] - opening) > 1e-4:
-        problems.append(f"Global opened at zoom {zooms[1]['sent']:.4f}, not the Hopf rings' {opening:.4f}")
-    if abs(zooms[3]["sent"] - opening * ZOOM_STEP ** 2) > 1e-4:
-        problems.append(f"two notches sent zoom {zooms[3]['sent']:.4f}, not {opening * ZOOM_STEP ** 2:.4f}")
-    print(f"{projection}: opening zoom {zooms[1]['sent']:.4f} (1/tan(fov/2) = {opening:.4f}); +2 notches {zooms[3]['sent']:.4f}")
+        problems.append(f"Global opened at zoom {zooms[1]['sent']:.4f}, not the {layout}' {opening:.4f}")
+    if abs(zooms[3]["sent"] - wheel_base * ZOOM_STEP ** 2) > 1e-4:
+        problems.append(f"two notches sent zoom {zooms[3]['sent']:.4f}, not {wheel_base * ZOOM_STEP ** 2:.4f}")
+    print(f"{projection}: opening zoom {zooms[1]['sent']:.4f} (expected {opening:.4f}), +2 notches {zooms[3]['sent']:.4f}")
     return problems
 
 
@@ -1435,11 +1493,17 @@ def expect_sheet_chart(dumps: list[dict], pieces: list[int]) -> list[str]:
 
 
 def expect_ring_sheet(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """The ring-sheet script: the same zoom as the rings', from the data folder's opening file; then B22 rest's marks,
-    chart clicks and the palette's chart rows."""
+    """The ring sheet fits its current pane, follows wheel zoom, and restores the fit when switched back on."""
     opening = len(HOPF_STEPS)
-    return (expect_hopf(dumps[:opening], source, state, projection="ringSheet")
-            + expect_sheet_chart(dumps[opening - 1:], slot_pieces()))
+    problems = expect_hopf(dumps[:opening], source, state, projection="ringSheet")
+    if problems:
+        return problems
+    problems += expect_sheet_chart(dumps[opening - 1:], slot_pieces())
+    if len(dumps) > opening:
+        back = dumps[-1].get("zoom", {})
+        if back.get("aspect", 0) <= 0 or abs(back.get("sent", 0) - ring_sheet_fit(back["aspect"]) * ZOOM_STEP ** 2) > 1e-4:
+            problems.append("returning to the sheet did not restore its fitted opening and wheel scale")
+    return problems
 
 
 EXPECT["ring-sheet"] = expect_ring_sheet
@@ -3247,15 +3311,18 @@ def expect_status_patterns(dumps: list[dict], source: dict, state: str | None) -
     by_step = {}
     problems = []
     digest = dumps[0].get("tuning", {}).get("state_digest")
+    undo = False
     for dump in dumps:
         step = dump.get("do")
         status = dump.get("status_patterns", {})
         by_step[step] = (status, dump)
-        if not digest or status.get("state_digest") != digest or dump.get("tuning", {}).get("state_digest") != digest:
+        undo |= step == "chord Ctrl+Z"
+        if not undo and (not digest or status.get("state_digest") != digest or dump.get("tuning", {}).get("state_digest") != digest):
             problems.append(f"{step}: state digest missing or changed")
-        if (not status.get("sent") or status.get("channel") != 3 or status.get("panes") != 2
+        wanted_panes = (2, 3, 4) if dump.get("preview", {}).get("id") else (2,)
+        if (not status.get("sent") or status.get("channel") != 3 or status.get("panes") not in wanted_panes
                 or not dump.get("local", {}).get("opening")):
-            problems.append(f"{step}: status table/bytes or the two panes were not submitted")
+            problems.append(f"{step}: status table/bytes or the main panes were not submitted")
         if status.get("draw_code") != 0:
             problems.append(f"{step}: no raster coverage readback")
         try:
@@ -3329,6 +3396,20 @@ def expect_status_patterns(dumps: list[dict], source: dict, state: str | None) -
                     problems.append(f"{step}: {name} needs its fixture pieces drawn in both panes")
         if elapsed == 707 and status.get("bytes_sha256") != hashlib.sha256(bytes(piece_count)).hexdigest():
             problems.append(f"{step}: a status byte survived clear and off")
+    status, ready = by_step.get("wait 709 ms", ({}, {}))
+    conflict = status.get("statuses", {}).get("conflict", {})
+    if (ready.get("tint", {}).get("modes", [None])[0] != "hidden"
+            or not live_preview_status(ready, "conflict") or conflict.get("global", 0) <= 0
+            or not live_preview_status(ready, "preview")):
+        problems.append("the live repair's protected movers did not break through Global's hiding focus layer")
+    _, prefix = by_step.get("wait 710 ms", ({}, {}))
+    if not live_preview_status(prefix, "unchecked_prefix"):
+        problems.append("the selected repair prefix had no live unchecked pattern")
+    _, stale = by_step.get("wait 2500 ms", ({}, {}))
+    if (stale.get("preview", {}).get("status") != "stale"
+            or stale.get("tuning", {}).get("state_digest") in (None, digest)
+            or not live_preview_status(stale, "stale") or not live_preview_status(stale, "conflict", 0)):
+        problems.append("undo did not mark the old repair's moving set stale")
     return problems
 
 
@@ -3786,6 +3867,8 @@ def expect_preview(dumps: list[dict], source: dict, state: str | None) -> list[s
               f"{name}: the hiding filter must retain all {moved} collateral pieces as outlines")
         check(overlay.get("outline_entries") == (moved if name == "overlay" else 0),
               f"{name}: the explicit preview outline is inconsistent with its toggle")
+        check(isinstance(moved, int) and moved > 0 and live_preview_status(screens[name], "preview", moved),
+              f"{name}: the live Preview pattern does not match the repair's moving set")
     letters = staged.get("letters") or 0
     check(letters == 3 and staged.get("whole_only") and screens["staged"].get("stage", {}).get("spans") == 1,
           "digit 2 did not stage one whole repair with three letters")
@@ -3817,6 +3900,10 @@ def expect_preview(dumps: list[dict], source: dict, state: str | None) -> list[s
               and drawing(preview).get("preview_id") == preview.get("host_id"), f"{name}: the preview pane was not drawn")
         check(preview.get("scrub") == step and drawing(preview).get("prefix") == step,
               f"{name}: the scrub did not draw prefix {step}")
+    for name in ("back", "partial"):
+        check(live_preview_status(screens[name], "unchecked_prefix"),
+              f"{name}: the prefix did not feed the Unchecked prefix pattern")
+    check(live_preview_status(screens["cancel"], "preview", 0), "a Preview pattern survived cancel")
     for name in ("cancel", "commit"):
         preview = previews[name]
         check(not preview.get("pane") and not preview.get("id") and not screens[name].get("stage", {}).get("spans")

@@ -12,6 +12,17 @@ public sealed record ViewMark(string Glyph, string Words, string Colour, string 
 // code (ADR-D02.25).
 public static class JumbleViews
 {
+    public static double OpeningZoom(double zoom, double? sheetAspect) =>
+        sheetAspect is double aspect ? RingSheetFit(aspect) : zoom;
+
+    // The core's sheet centres span 30 columns and 20 rows. Bound each projected chart by the
+    // 600-cell circumradius in inradius units, scaled by the core's sheet scale, plus a 2% margin.
+    public static double RingSheetFit(double aspect)
+    {
+        const double scale = 0.6, halfWidth = 14.75 * 0.68 * scale, halfHeight = 9.5 * 0.57 * scale;
+        double chart = scale * Math.Sqrt((96 - 32 * Math.Sqrt(5)) / (12 + 4 * Math.Sqrt(5)));
+        return 0.98 * (5 - chart) * Math.Min(aspect / (halfWidth + chart), 1 / (halfHeight + chart));
+    }
     public const string Puzzle = "600-cell-Full";
     public const string ProjectionChain = "projection chain (" + Puzzle + ")";
     public const string ChainGlyph = "mark.link";
@@ -92,9 +103,12 @@ public sealed class CutSlice
     // The held keys, placeholders free in the keymap (row requests: CR-14's held split and the turn preview; S is
     // seat 4 and G view.global there).
     public const string SplitKey = "Backslash", PreviewKey = "Down";
+    public const string CutCellsUnavailable = "cut-cell states unavailable";
+    public const int MenuItems = 60;
 
     public bool Split { get; private set; }
     public SliceShell Shell { get; private set; } = DefaultShell;
+    public int Item { get; private set; } = 1;
     public NamedTwist? Previewing { get; private set; }
     public NamedTwist? Named { get; private set; }
     public string? Refusal { get; private set; }
@@ -127,16 +141,21 @@ public sealed class CutSlice
 
     // Pressing the preview key at the cap Local draws: a twist row (an admissible cap) starts the ghost; a blocked cap
     // (no row) has none and says why. Nothing is named while the key is held.
-    public bool Press(int cap, double? angle)
+    public void StepItem(int step)
+    {
+        if (Previewing == null) Item = (Item + step + MenuItems) % MenuItems;
+    }
+
+    public bool Press(int cap, double? angle, string? unavailable = null)
     {
         Refusal = null;
         if (angle is not double a)
         {
             Previewing = null;
-            Refusal = $"Cap {cap} is blocked: no turn preview, only its straddlers.";
+            Refusal = unavailable ?? $"Cap {cap} is blocked: no turn preview, only its straddlers.";
             return false;
         }
-        Previewing = new NamedTwist(cap, 1, a);
+        Previewing = new NamedTwist(cap, Item, a);
         return true;
     }
 
@@ -148,6 +167,9 @@ public sealed class CutSlice
         if (named is not null) Named = named;
         return named;
     }
+
+    public void Cancel() => Previewing = null;
+    public void Refuse(string reason) => Refusal = reason;
 
     // The ghost is drawn only while a preview is held at an admissible cap.
     public bool Ghost => Previewing is not null;
@@ -169,9 +191,10 @@ public sealed class CutSlice
     {
         var shell = $"shell {Shell.Min:0.00}–{Shell.Max:0.00} rad";
         if (cap is not int c) return "";
-        if (blocked) return $"Cut slice at cap {c} (blocked): straddlers only, no ghost · {shell}";
-        var keys = Split ? "outside | inside (release " + SplitKey + " to join)" : "hold " + SplitKey + " to split, " + PreviewKey + " to preview the twist";
-        var named = Named is { } n ? $" · named: cap {n.Cap} twist {n.Item}" : "";
-        return $"Cut slice at cap {c}: outside filled, inside outlined · {shell} · {keys}{named}";
+        if (blocked) return $"Cut slice at cap {c} (blocked): straddlers only, no ghost · {shell} · {CutCellsUnavailable}";
+        var keys = Split ? "outside | inside (release " + SplitKey + " to join)" : "hold " + SplitKey + " to split";
+        var named = Named is { } n && n.Cap == c ? $" · named: cap {n.Cap} twist {n.Item}" : "";
+        return $"Cut slice at cap {c}: outside filled, inside outlined · {CutCellsUnavailable} · {shell} · {keys}"
+            + $" · Menu item {Item} (Shift+↑/↓) · hold {PreviewKey} to preview{named}";
     }
 }

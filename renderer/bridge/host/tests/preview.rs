@@ -152,6 +152,37 @@ fn fresh() -> PathBuf {
 }
 
 #[test]
+fn a_slice_checks_the_selected_item_without_committing() {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let assets = repo.join("assets");
+    let menu = repo.join("research/jumbling/fixtures/wj-I_a.json");
+    let folder = fresh();
+    let (run, revision) = Run::new(&assets, &menu, &folder.join("slice"), M6H_PUZZLE_JUMBLE_ON);
+    let head = run.head();
+    let (cap, item) = (150, 13);
+    // SAFETY: the live handle is exclusively used by this test.
+    unsafe {
+        assert_eq!(m6h_slice_check(run.host, revision + 1, cap, item), M6H_E_UNAVAILABLE);
+        run.ok(m6h_slice_check(run.host, revision, cap, item));
+        let checked = run.answer();
+        assert_eq!(checked.get("letter_cap"), Some(&Value::Int(i64::from(cap))));
+        assert_eq!(checked.get("applied_letters"), Some(&Value::Int(1)));
+        assert!(checked.get("rim_after").and_then(|r| r.get("N_c")).and_then(Value::as_i64).is_some());
+        assert_eq!(run.head(), head);
+        let kernel = Arc::new(Kernel::load(&assets).unwrap());
+        let mut control = Turns::open(kernel, &assets, &folder.join("control"), &menu, Puzzle::JumbleOn).unwrap();
+        control.twist_letter(cap, item).unwrap();
+        let Head::Jumbled(exact, state) = control.head().unwrap() else { panic!("Jumble on") };
+        assert_eq!(checked.get("end_digest").and_then(Value::as_str), Some(state.digest(&exact).as_str()));
+        let menu = state.menu().unwrap().for_cap(&exact, cap as usize).unwrap();
+        assert_eq!(menu.len(), 60);
+        for (item, twist) in menu.iter().enumerate() {
+            assert_eq!(jumble::swept_plane(twist).unwrap().is_some(), item != 0, "item {item}");
+        }
+    }
+}
+
+#[test]
 fn three_letters_preview_the_same_prefixes_as_the_menu_row() {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
     let assets = repo.join("assets");
@@ -173,7 +204,15 @@ fn three_letters_preview_the_same_prefixes_as_the_menu_row() {
 
         let kernel = Arc::new(Kernel::load(&assets).expect("the shipped model"));
         let mut control = Turns::open(kernel, &assets, &folder.join("control"), &menu, Puzzle::JumbleOn).unwrap();
+        let mut prefix = vec![0u8; 177_120];
+        let mut actual = prefix.clone();
         for (n, ([cap, item], step)) in letters.into_iter().zip(steps).enumerate() {
+            let transform = control.twist_transform(cap, u64::from(item)).unwrap().unwrap();
+            for piece in transform.moving.as_u32() {
+                prefix[piece as usize] = 1;
+            }
+            run.ok(m6h_preview_prefix_moved(run.host, id, (n + 1) as u32, actual.as_mut_ptr(), actual.len() as u32));
+            assert_eq!(actual, prefix, "the prefix must cover the union of its exact steps");
             control.twist_letter(cap, u64::from(item)).unwrap();
             let Head::Jumbled(exact, state) = control.head().unwrap() else { panic!("Jumble on") };
             assert_eq!(step.get("digest").and_then(Value::as_str), Some(state.digest(&exact).as_str()));
@@ -204,6 +243,7 @@ fn three_letters_preview_the_same_prefixes_as_the_menu_row() {
         let second = run.answer().get("id").and_then(Value::as_i64).unwrap() as u64;
         assert!(second > id);
         assert_ne!(m6h_preview_args(run.host, id, 0), M6H_OK, "opening a new preview left the old one eligible");
+        assert_ne!(m6h_preview_prefix_moved(run.host, id, 1, actual.as_mut_ptr(), actual.len() as u32), M6H_OK);
         let row = b"jumble.twist.menu";
         for (step, expected) in control.committed().iter().enumerate() {
             run.ok(m6h_preview_args(run.host, second, step as u32));

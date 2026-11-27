@@ -35,7 +35,8 @@ namespace Magic600.Shell.D02
         private (int Prefix, bool AtEnd, double Started)? turn;
         private PreviewSide comparison = PreviewSide.After;
         private byte[]? moved;
-        private byte[]? overlay => preview.Overlay ? moved : null;
+        private byte[]? uncheckedPrefix;
+        private byte[]? overlay => preview.Overlay && Model.Pending is { Status: PreviewStatus.Ready } ? moved : null;
         private CommitResult? lastCommit;
         private sealed record CommitResult(int Letters, string Expected, string Actual, string? Error);
 
@@ -45,6 +46,9 @@ namespace Magic600.Shell.D02
         internal static byte[]? MovingAt(ulong revision) =>
             active is { } current && current.Model.Pending is { Status: PreviewStatus.Ready } pending &&
             (ulong)pending.Head == revision ? current.moved : null;
+        internal static StatusPatterns.PreviewFeed StatusAt(ulong revision) =>
+            active is { } current
+                ? StatusPatterns.RepairFeed(current.Model.Pending, (long)revision, current.moved, current.uncheckedPrefix) : default;
         internal static Rgb? OverlayColour => active?.frame.Tokens.Colour("pattern.preview");
         internal static Rgb? PreviewColour => active is { Pending: true } current ? current.frame.Tokens.Colour("state.preview") : null;
         private static double Now() => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
@@ -106,7 +110,7 @@ namespace Magic600.Shell.D02
                 case "preview.side.before": Model.SetSide(PreviewSide.Before); break;
                 case "preview.side.after": Model.SetSide(PreviewSide.After); break;
                 case "preview.side.next": Model.CycleSide(); break;
-                case OverlayRow: preview.ToggleOverlay(); SetOverlay(); Dress(); break;
+                case OverlayRow: preview.ToggleOverlay(); SetOverlay(false); Dress(); break;
             }
         }
 
@@ -154,6 +158,7 @@ namespace Magic600.Shell.D02
             if (pending == null)
             {
                 shownId = 0; turn = null;
+                moved = uncheckedPrefix = null;
                 library.ClearPreview(host);
                 frame.RemovePane(Pane);
                 SetOverlay(); Dress();
@@ -162,6 +167,12 @@ namespace Magic600.Shell.D02
             if (shownId != pending.Id)
             {
                 shownId = pending.Id; requested = Model.Scrub; sent = (requested, 0); turn = null;
+                moved = uncheckedPrefix = null;
+                if (pending.Status == PreviewStatus.Ready && preview.Facts is { } facts)
+                {
+                    var mask = new byte[ShellStyle.PieceCount];
+                    if (library.PreviewMoved(host, facts.Id, mask) == HostLibrary.Ok) moved = mask;
+                }
                 if (frame.Model.IsOpen(Pane)) frame.Bind(Pane, ViewBinding.PreviewOf(pending.Id));
                 else frame.AddPane(Pane, "Preview", panel, ViewBinding.PreviewOf(pending.Id), () => panel.DrawnOpenings().Select(p => p.Rect));
                 Open();
@@ -178,6 +189,12 @@ namespace Magic600.Shell.D02
                 turn = Math.Abs(to - requested) == 1 && sweeps[prefix] && comparison != PreviewSide.Before
                     && panel.IsVisibleInTree() ? (prefix, to > requested, Now()) : null;
                 requested = to;
+                uncheckedPrefix = null;
+                if (to > 0 && to < pending.Moves.Count && preview.Facts is { } facts)
+                {
+                    var mask = new byte[ShellStyle.PieceCount];
+                    if (library.PreviewPrefixMoved(host, facts.Id, to, mask) == HostLibrary.Ok) uncheckedPrefix = mask;
+                }
             }
         }
 
@@ -216,14 +233,9 @@ namespace Magic600.Shell.D02
             }
         }
 
-        private void SetOverlay()
+        private void SetOverlay(bool movementChanged = true)
         {
-            moved = null;
-            if (Model.Pending is { Status: PreviewStatus.Ready } && preview.Facts is { } facts)
-            {
-                var mask = new byte[ShellStyle.PieceCount];
-                if (library.PreviewMoved(host, facts.Id, mask) == HostLibrary.Ok) moved = mask;
-            }
+            if (movementChanged) ShellJumble.Host?.Filter?.RefreshFields();
             ShellTint.RefreshFocus();
             ShellStyle.Invalidate();
         }

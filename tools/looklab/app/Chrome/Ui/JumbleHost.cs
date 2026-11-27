@@ -563,6 +563,23 @@ public sealed partial class JumbleHost
         if (Local.Open != "twist_check") Local.Toggle("twist_check");
     }
 
+    // The slice's release joins the same list as the seat releases, at the named cap and its current revision.
+    public string? CheckSliceTwist(NamedTwist twist, ulong revision, Func<TwistCheck?> check)
+    {
+        if (Naming.Named != twist.Cap) return "Name the slice's cap for its twist check.";
+        if (Checks is not { } kept || (ulong)kept.Revision != revision) return "Twist check unavailable at this revision.";
+        long release = kept.Release(twist.Item);
+        if (Local.Open != "twist_check") Local.Toggle("twist_check");
+        var result = results.GetValueOrDefault(twist.Item) ?? check();
+        if (result?.TwistedCap == twist.Cap && result.Item == twist.Item)
+        {
+            kept.Complete(release, result);
+            return null;
+        }
+        kept.Cancel(release);
+        return "Twist check unavailable.";
+    }
+
     // The jobs' clock stands still while Paused: the shell's Q3.b check holds it between its two reads of the screen,
     // so that no check completes in between (C2-1).
     public bool Paused { get; set; }

@@ -20,7 +20,9 @@ public static class ShellSlice
     private static (int Cap, ulong Revision, bool Row)? _inside;
     // LF1: the cap and pending revision whose inside layer the host holds.
     private static (int Cap, ulong Revision, bool Row)? _early;
-    private static (int Cap, ulong Revision)? _ghost;
+    private static (int Cap, int Item, ulong Revision)? _ghost;
+    private static HostLibrary.TwistRow? _previewRow;
+    private static ulong _previewAt;
     private static int _insideCount;
     private static int _code = HostLibrary.Ok;
 
@@ -65,16 +67,24 @@ public static class ShellSlice
 
     /// <summary>
     /// The held keys, after the one router gave the key to the session (the chrome's keys and text focus come first).
-    /// A press with a modifier is not the slice's; a release always is, so a held key never sticks.
+    /// Shift with an arrow selects an item. Unmodified Down holds its preview through release.
     /// </summary>
-    public static bool Follow(InputEventKey key)
+    public static bool Follow(InputEventKey key, HostLibrary library, IntPtr host, ulong revision)
     {
         var split = key.PhysicalKeycode == Key.Backslash;
         var preview = key.PhysicalKeycode == Key.Down;
-        if (!split && !preview || ShellTurn.Cap is not int cap)
+        if (ShellRaw.On || ShellLocal.Plan.Framed is not int cap)
         {
             return false;
         }
+        if (key.ShiftPressed && !key.CtrlPressed && !key.AltPressed && !key.MetaPressed
+            && key.PhysicalKeycode is Key.Up or Key.Down)
+        {
+            if (key.Pressed) Model.StepItem(key.PhysicalKeycode == Key.Up ? 1 : -1);
+            else if (preview && Model.Previewing != null) Finish(library, host, cap, revision);
+            return true;
+        }
+        if (!split && !preview) return false;
         if (key.Pressed && (key.CtrlPressed || key.AltPressed || key.ShiftPressed || key.MetaPressed))
         {
             return false;
@@ -89,15 +99,51 @@ public static class ShellSlice
         }
         else if (key.Pressed)
         {
-            Model.Press(cap, ShellTurn.Row is { } row ? row.Angle : null);
+            _previewRow = null;
+            _previewAt = revision;
+            if (ShellTurn.Cap != cap || ShellTurn.RowRevision != revision)
+                Model.Press(cap, null, "Turn preview unavailable at this revision.");
+            else if (ShellTurn.Row is not { } inside)
+                Model.Press(cap, null);
+            else if (Model.Item == 0)
+                Model.Press(cap, 0); // I_a's identity has no sweep.
+            else
+            {
+                if (Model.Item == 1) _previewRow = inside;
+                else library.TwistTransform(host, (uint)cap, (ulong)Model.Item, out _previewRow, out _);
+                var angle = ShellTurn.InsideFor(_previewRow, revision) != null ? _previewRow?.Angle : null;
+                Model.Press(cap, angle, "Turn preview unavailable for this item.");
+            }
         }
         else
         {
-            Model.Release();
+            Finish(library, host, cap, revision);
         }
         Restyle = true;
         return true;
     }
+
+    private static void Finish(HostLibrary library, IntPtr host, int cap, ulong revision)
+    {
+        if (Model.Previewing?.Cap != cap || _previewAt != revision) Model.Cancel();
+        if (Model.Release() is not { } twist || ShellJumble.Host is not { } chrome) return;
+        if (chrome.CheckSliceTwist(twist, revision, () =>
+        {
+            if (library.SliceCheck(host, revision, cap, twist.Item) != HostLibrary.Ok) return null;
+            using var answer = JsonDocument.Parse(library.Answer(host));
+            return TwistCheck.Read(answer.RootElement, twist.Item);
+        }) is { } reason) Model.Refuse(reason);
+    }
+
+    public static void FocusLost()
+    {
+        Model.ReleaseSplit();
+        Model.Cancel();
+        Restyle = true;
+    }
+
+    public static byte[]? MovingAt(ulong revision) =>
+        _ghost?.Revision == revision ? ShellTurn.InsideFor(_previewRow, revision) : null;
 
     /// <summary>
     /// Sends the inside layer (the slice channel) once per cap and revision, and the preview's transform while the
@@ -133,20 +179,27 @@ public static class ShellSlice
         {
             _early = early;
         }
-        (int, ulong)? ghost = Model.Previewing is { } held && ShellTurn.Cap == held.Cap && ShellTurn.Row is not null
-            ? (held.Cap, revision) : null;
+        if (Model.Previewing is { } held && (ShellRaw.On || ShellTurn.Cap != held.Cap || _previewAt != revision))
+            Model.Cancel();
+        (int, int, ulong)? ghost = Model.Previewing is { } shown && _previewRow is not null ? (shown.Cap, shown.Item, revision) : null;
         if (ghost != _ghost)
         {
-            var code = ShellTurn.Preview(library, host, ghost is not null);
+            var code = ghost != null || _ghost?.Revision == revision
+                ? ShellTurn.Preview(library, host, ghost != null ? _previewRow : null) : HostLibrary.Ok;
             if (code != HostLibrary.Ok)
             {
                 return _code = code;
             }
             _ghost = ghost;
             Restyle = true;
+            ShellJumble.Host?.Filter?.RefreshFields();
+            ShellTint.RefreshFocus();
         }
         return _code = HostLibrary.Ok;
     }
+
+    public static string? Line(int? cap) => cap == null ? null
+        : Model.Line(cap, ShellTurn.Cap == cap && ShellTurn.Row is null);
 
     /// <summary>Local's slots: 2 draws both layers (or the outside copy while split), 3 the inside copy.</summary>
     public static unsafe void Style(ref HostLibrary.ViewStyle style, uint slot, float[]? palette)
@@ -175,6 +228,11 @@ public static class ShellSlice
         json.WriteStartObject("slice");
         json.WriteBoolean("split", Split);
         json.WriteBoolean("ghost", _ghost is not null);
+        if (_ghost is { } ghost && _previewRow is { } row)
+        {
+            json.WriteNumber("ghost_item", ghost.Item);
+            json.WriteNumber("ghost_angle", row.Angle);
+        }
         json.WriteNumber("shell_min", Model.Shell.Min);
         json.WriteNumber("shell_max", Model.Shell.Max);
         json.WriteNumber("shrink", CutSlice.Shrink);
@@ -193,7 +251,7 @@ public static class ShellSlice
             json.WriteNull("named");
         }
         if (Model.Refusal is { } refusal) json.WriteString("refusal", refusal); else json.WriteNull("refusal");
-        json.WriteString("line", Model.Line(ShellTurn.Cap, ShellTurn.Cap is not null && ShellTurn.Row is null));
+        json.WriteString("line", Line(ShellTurn.Cap));
         json.WriteEndObject();
     }
 }

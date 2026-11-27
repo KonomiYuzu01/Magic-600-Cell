@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 
 namespace Magic600.Chrome;
 
@@ -23,15 +24,25 @@ public abstract record FilterExpr
 {
     public abstract bool Holds(PoseRow row, int lattice);
     public abstract string Text { get; }
+    public virtual bool NeedsPieces => false;
 
     public sealed record Compare(string Field, string Op, int Value) : FilterExpr
     {
         public override bool Holds(PoseRow row, int lattice)
         {
-            int v = Field == "domain" ? row.Domain : row.Height;
-            return Op switch { "=" => v == Value, "!=" => v != Value, ">=" => v >= Value, "<=" => v <= Value, ">" => v > Value, _ => v < Value };
+            return Matches(Field == "domain" ? row.Domain : row.Height);
         }
+        public bool Matches(int value) =>
+            Op switch { "=" => value == Value, "!=" => value != Value, ">=" => value >= Value, "<=" => value <= Value, ">" => value > Value, _ => value < Value };
         public override string Text => Field + " " + Op + " " + Value.ToString(CultureInfo.InvariantCulture);
+    }
+
+    public sealed record PieceField(string Name, int? Cap = null, Compare? Comparison = null, string? SetName = null) : FilterExpr
+    {
+        public override bool NeedsPieces => true;
+        public override bool Holds(PoseRow row, int lattice) => throw new InvalidOperationException("This field needs a piece set.");
+        public override string Text => Comparison?.Text ?? (SetName != null ? Name + " " + JsonSerializer.Serialize(SetName)
+            : Cap is int cap ? Name + " " + cap.ToString(CultureInfo.InvariantCulture) : Name);
     }
 
     public sealed record Lattice : FilterExpr
@@ -42,18 +53,21 @@ public abstract record FilterExpr
 
     public sealed record Not(FilterExpr Inner) : FilterExpr
     {
+        public override bool NeedsPieces => Inner.NeedsPieces;
         public override bool Holds(PoseRow row, int lattice) => !Inner.Holds(row, lattice);
         public override string Text => "not " + Wrap(Inner);
     }
 
     public sealed record And(FilterExpr Left, FilterExpr Right) : FilterExpr
     {
+        public override bool NeedsPieces => Left.NeedsPieces || Right.NeedsPieces;
         public override bool Holds(PoseRow row, int lattice) => Left.Holds(row, lattice) && Right.Holds(row, lattice);
         public override string Text => Wrap(Left) + " and " + Wrap(Right);
     }
 
     public sealed record Or(FilterExpr Left, FilterExpr Right) : FilterExpr
     {
+        public override bool NeedsPieces => Left.NeedsPieces || Right.NeedsPieces;
         public override bool Holds(PoseRow row, int lattice) => Left.Holds(row, lattice) || Right.Holds(row, lattice);
         public override string Text => Wrap(Left) + " or " + Wrap(Right);
     }
@@ -64,7 +78,8 @@ public abstract record FilterExpr
 // Reads a whole expression before anything applies (U6-022): an error names the place and the words it takes.
 public static class FilterParser
 {
-    public const string Words = "the words are domain, height, lattice, and, or, not, brackets and = != >= <= > <";
+    public const string Fields = "domain, height, lattice, inside-a-cap, straddler, moved, class, rim, seam, set";
+    public const string Words = "the words are " + Fields + ", and, or, not, brackets and = != >= <= > <";
 
     public static (FilterExpr? Expr, string? Error) Parse(string text, int domains)
     {
@@ -74,6 +89,13 @@ public static class FilterParser
             char c = text[i];
             if (char.IsWhiteSpace(c)) { i++; continue; }
             if (c is '(' or ')') { tokens.Add((c.ToString(), i)); i++; continue; }
+            if (c == '"')
+            {
+                int end = i + 1;
+                while (end < text.Length && text[end] != '"') end += text[end] == '\\' ? 2 : 1;
+                if (end >= text.Length) return (null, "a quote is missing at " + (i + 1));
+                tokens.Add((text[i..(end + 1)], i)); i = end + 1; continue;
+            }
             if (c is '≥' or '≤' or '≠') { tokens.Add((c == '≥' ? ">=" : c == '≤' ? "<=" : "!=", i)); i++; continue; }
             if (c is '=' or '!' or '<' or '>')
             {
@@ -82,14 +104,14 @@ public static class FilterParser
                 tokens.Add((raw == "==" ? "=" : raw, i)); i += raw.Length; continue;
             }
             int start = i;
-            while (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == '_')) i++;
+            while (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] is '_' or '-')) i++;
             if (i == start) return (null, "'" + c + "' at " + (i + 1) + " is not a word: " + Words);
-            tokens.Add((text[start..i].ToLowerInvariant(), start));
+            tokens.Add((text[start..i], start));
         }
         if (tokens.Count == 0) return (null, "the expression is empty: " + Words);
         int at = 0;
         string? error = null;
-        (string Text, int At) Peek() => at < tokens.Count ? tokens[at] : ("", text.Length);
+        (string Text, int At) Peek() => at < tokens.Count ? (tokens[at].Text.ToLowerInvariant(), tokens[at].At) : ("", text.Length);
         bool Next(string word) { if (Peek().Text == word) { at++; return true; } return false; }
         string Where() => " at " + (Peek().At + 1);
 
@@ -116,7 +138,34 @@ public static class FilterParser
                 return inner;
             }
             if (Next("lattice")) return new FilterExpr.Lattice();
-            if (word is "domain" or "height")
+            if (word is "moved" or "seam")
+            {
+                at++;
+                return new FilterExpr.PieceField(word);
+            }
+            if (word is "inside-a-cap" or "straddler" or "rim")
+            {
+                at++;
+                if (!int.TryParse(Peek().Text, NumberStyles.None, CultureInfo.InvariantCulture, out int cap))
+                    return new FilterExpr.PieceField(word);
+                if (cap >= CorePlaces.Cells) { error = "cap " + cap + " is unavailable" + Where(); return null; }
+                at++;
+                return new FilterExpr.PieceField(word, cap);
+            }
+            if (Next("set"))
+            {
+                string name = at < tokens.Count ? tokens[at].Text : "";
+                if (name.StartsWith('"'))
+                {
+                    try { name = JsonSerializer.Deserialize<string>(name) ?? ""; }
+                    catch (JsonException) { error = "the saved set name is invalid" + Where(); return null; }
+                }
+                else if (!name.All(c => char.IsLetterOrDigit(c) || c is '_' or '-')) name = "";
+                if (string.IsNullOrWhiteSpace(name)) { error = "set needs a saved name" + Where(); return null; }
+                at++;
+                return new FilterExpr.PieceField(word, SetName: name);
+            }
+            if (word is "domain" or "height" or "class")
             {
                 at++;
                 var (op, _) = Peek();
@@ -126,12 +175,14 @@ public static class FilterParser
                 if (!int.TryParse(number, NumberStyles.None, CultureInfo.InvariantCulture, out int value)) { error = "'" + word + " " + op + "' needs a whole number" + Where(); return null; }
                 at++;
                 if (word == "domain" && value >= domains) { error = "there is no domain " + value + "; the bound state's domains are 0 to " + (domains - 1); return null; }
-                return new FilterExpr.Compare(word, op, value);
+                var comparison = new FilterExpr.Compare(word, op, value);
+                return word == "class" ? new FilterExpr.PieceField(word, Comparison: comparison) : comparison;
             }
             error = (word.Length == 0 ? "the expression ends too soon" : "'" + word + "' is not a word here") + Where() + ": " + Words;
             return null;
         }
 
+        Next("=");
         FilterExpr? expr = Or();
         if (expr != null && at < tokens.Count) { error = "'" + tokens[at].Text + "' is left over" + Where() + ": " + Words; expr = null; }
         return expr == null ? (null, error ?? "the expression is not complete") : (expr, null);
@@ -153,7 +204,10 @@ public sealed record FilterPreview(string Staged, FilterExpr Combined, FilterCom
 public sealed record AppliedFilter(FilterExpr Expr, FilterKind Kind, long Revision, long Count, long Of);
 
 // A saved filter: its name, the exact expression saved and its kind, and the state it was made for (U5-051).
-public sealed record SavedFilter(string Name, string Expression, FilterKind Kind, string Compatibility);
+public sealed record SavedFilter(string Name, string Expression, FilterKind Kind, string Compatibility)
+{
+    public IReadOnlyList<bool>? Members { get; init; }
+}
 
 // What a piece is to the solver's work under the applied focus layer (U5-048): a member is work; the rest are
 // references, visible while dimmed and never picked; a hidden non-member is neither drawn nor picked.
@@ -168,6 +222,10 @@ public sealed class PieceFilterModel
     });
 
     private IReadOnlyList<PoseRow>? rows;
+    private IReadOnlyList<int>? poses;
+    private Func<FilterExpr.PieceField, Func<int, bool>?>? readField;
+    private bool[]? previewMask, appliedMask;
+    private string? appliedUnavailable;
     private int lattice, domains;
     private readonly Func<long> revision;
     private readonly List<SavedFilter> saved = new();
@@ -192,6 +250,7 @@ public sealed class PieceFilterModel
 
     public void Rebind(PoseStyle? style)
     {
+        if (style?.Digest != Compatibility) poses = null;
         rows = style?.Rows;
         Preview = null;
         Error = null;
@@ -201,16 +260,102 @@ public sealed class PieceFilterModel
             domains = style.Domains.Count;
             Compatibility = style.Digest;
             Pieces = style.Pieces;
-            if (Applied is { } filter) Applied = filter with
-            {
-                Count = Count(filter.Expr), Of = Pieces,
-                Revision = filter.Kind == FilterKind.LiveQuery ? revision() : filter.Revision,
-            };
         }
+        UpdateApplied();
         Safe.Raise(Changed);
     }
 
-    public long Count(FilterExpr expr) => rows?.Where(r => expr.Holds(r, lattice)).Sum(r => r.Count) ?? 0;
+    public void BindPieces(IReadOnlyList<int>? poseIds, Func<FilterExpr.PieceField, Func<int, bool>?> fields)
+    {
+        poses = poseIds;
+        readField = fields;
+        RefreshFields();
+    }
+
+    // Cap naming, focused repair step and preview changes can change a field without changing the state revision.
+    public void RefreshFields()
+    {
+        if (Preview?.Combined.NeedsPieces == true)
+        {
+            Preview = null;
+            Error = "the filter fields changed after the preview; preview it again";
+        }
+        else if (Applied?.Expr.NeedsPieces != true) return;
+        UpdateApplied();
+        Safe.Raise(Changed);
+    }
+
+    private void UpdateApplied()
+    {
+        appliedMask = null;
+        appliedUnavailable = null;
+        if (rows == null || Applied is not { } filter) return;
+        appliedUnavailable = Read(filter.Expr, out appliedMask, out long count);
+        Applied = filter with
+        {
+            Count = count, Of = Pieces,
+            Revision = filter.Kind == FilterKind.LiveQuery ? revision() : filter.Revision,
+        };
+    }
+
+    private string? Read(FilterExpr expr, out bool[]? mask, out long count)
+    {
+        mask = null;
+        count = 0;
+        if (!expr.NeedsPieces)
+        {
+            if (rows != null) count = rows.Where(r => expr.Holds(r, lattice)).Sum(r => r.Count);
+            return null;
+        }
+        string? error = null;
+        var test = Resolve(expr);
+        if (error != null) return error;
+        mask = new bool[poses!.Count];
+        for (int piece = 0; piece < mask.Length; piece++)
+            if (mask[piece] = test(piece)) count++;
+        return null;
+
+        Func<int, bool> Resolve(FilterExpr node)
+        {
+            switch (node)
+            {
+                case FilterExpr.And and:
+                    var left = Resolve(and.Left);
+                    var right = Resolve(and.Right);
+                    return p => left(p) && right(p);
+                case FilterExpr.Or or:
+                    var either = Resolve(or.Left);
+                    var other = Resolve(or.Right);
+                    return p => either(p) || other(p);
+                case FilterExpr.Not not:
+                    var inner = Resolve(not.Inner);
+                    return p => !inner(p);
+                case FilterExpr.PieceField field:
+                    if (poses != null && poses.Count == Pieces)
+                    {
+                        if (field.SetName is string name)
+                        {
+                            if (saved.Find(s => s.Name == name && s.Compatibility == Compatibility)?.Members is { } set
+                                && set.Count == poses.Count) return p => set[p];
+                        }
+                        else if (readField?.Invoke(field) is { } predicate) return predicate;
+                    }
+                    error ??= field.Text + " unavailable for this sample";
+                    return _ => false;
+                default:
+                    var matches = rows!.Select(row => node.Holds(row, lattice)).ToArray();
+                    return p => matches[poses![p]];
+            }
+        }
+    }
+
+    public Func<int, bool>? Member()
+    {
+        if (rows == null || poses is not { } poseIds || Applied is not { } filter || appliedUnavailable != null) return null;
+        if (appliedMask is { } mask) return p => mask[p];
+        var poseMatches = rows.Select(row => filter.Expr.Holds(row, lattice)).ToArray();
+        return p => poseMatches[poseIds[p]];
+    }
 
     // Typing changes the staged text only; an earlier preview no longer stands for it. Rejected text stays.
     public void SetText(string text) { if (text == Staged) return; Staged = text; Preview = null; Error = null; Safe.Raise(Changed); }
@@ -226,8 +371,8 @@ public sealed class PieceFilterModel
         if (expr == null) { Error = error; Safe.Raise(Changed); return null; }
         FilterExpr? combined = Combine(expr, out error);
         if (combined == null) { Error = error; Safe.Raise(Changed); return null; }
-        Error = null;
-        Preview = new FilterPreview(Staged, combined, Composition, Kind, revision(), Count(combined), Pieces);
+        Error = Read(combined, out previewMask, out long count);
+        if (Error == null) Preview = new FilterPreview(Staged, combined, Composition, Kind, revision(), count, Pieces);
         Safe.Raise(Changed);
         return Preview;
     }
@@ -267,7 +412,15 @@ public sealed class PieceFilterModel
         var (expr, _) = FilterParser.Parse(p.Staged, domains);
         FilterExpr? again = expr == null ? null : Combine(expr, out _);
         if (again == null || again != p.Combined) { Preview = null; Safe.Raise(Changed); return "the applied filter changed after the preview; preview it again"; }
+        if (again.NeedsPieces && (Read(again, out var mask, out _) != null ||
+            mask == null || previewMask == null || !mask.AsSpan().SequenceEqual(previewMask)))
+        {
+            Preview = null;
+            return "the filter fields changed after the preview; preview it again";
+        }
         Applied = new AppliedFilter(p.Combined, p.Kind, p.Revision, p.Count, p.Of);
+        appliedMask = previewMask;
+        appliedUnavailable = null;
         Preview = null;
         Safe.Raise(Changed);
         Safe.Raise(AppliedChanged);
@@ -302,14 +455,17 @@ public sealed class PieceFilterModel
         string clean = name.Trim();
         if (clean.Length == 0) return "a saved filter needs a name";
         if (Applied == null) return "apply a filter first: Save keeps the filter the view shows";
+        if (appliedUnavailable is { } reason) return reason;
+        var members = Member() is { } member ? Enumerable.Range(0, poses!.Count).Select(member).ToArray() : null;
         saved.RemoveAll(s => s.Name == clean);
-        saved.Add(new SavedFilter(clean, Applied.Expr.Text, Applied.Kind, Compatibility));
-        Safe.Raise(Changed);
+        saved.Add(new SavedFilter(clean, Applied.Expr.Text, Applied.Kind, Compatibility) { Members = members });
+        if (Preview?.Combined.NeedsPieces == true || Applied.Expr.NeedsPieces) RefreshFields();
+        else Safe.Raise(Changed);
         return null;
     }
 
     // Keeps a saved filter from elsewhere (an earlier binding); Load checks its state.
-    public void Keep(SavedFilter filter) { saved.RemoveAll(s => s.Name == filter.Name); saved.Add(filter); }
+    public void Keep(SavedFilter filter) { saved.RemoveAll(s => s.Name == filter.Name); saved.Add(filter); RefreshFields(); }
 
     // filter.load: a saved filter comes back for review, staged with its kind; it applies nothing. One saved for another
     // state is refused.
@@ -324,7 +480,7 @@ public sealed class PieceFilterModel
     // The focus layer the applied filter is: its label and exact count, or null with none applied.
     public PredicateLayer? Layer() => Applied is not { } a ? null
         : new PredicateLayer(LayerId, "= " + a.Expr.Text + (a.Kind == FilterKind.LiveQuery ? "" : " · " + Word(a.Kind) + " at rev " + a.Revision.ToString(CultureInfo.InvariantCulture)),
-            rows == null ? Numeral.Pending : Numeral.Of(a.Count), rows != null);
+            rows == null || appliedUnavailable != null ? Numeral.Pending : Numeral.Of(a.Count), rows != null && appliedUnavailable == null);
 
     // The preview line: the exact count and its scope, or the rejection.
     public string PreviewLine() => rows == null ? "No state is bound: the focus layer counts the bound sample state's pieces."
@@ -332,6 +488,7 @@ public sealed class PieceFilterModel
         : Preview is { } p ? (p.Count.ToString("N0", CultureInfo.InvariantCulture) + " of " + p.Of.ToString("N0", CultureInfo.InvariantCulture) + " pieces · "
             + Composition.ToString().ToLowerInvariant() + " · " + Word(p.Kind) + " · rev " + p.Revision.ToString(CultureInfo.InvariantCulture)
             + (p.Count == 0 ? " · it holds no piece" : ""))
+        : appliedUnavailable is { } missing ? missing
         : Applied is { } a ? "Applied: = " + a.Expr.Text + " · " + a.Count.ToString("N0", CultureInfo.InvariantCulture) + " pieces"
         : "Type an = expression and preview its count";
 

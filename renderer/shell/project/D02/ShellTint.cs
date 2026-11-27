@@ -55,6 +55,7 @@ public static class ShellTint
         host.TintChanged += Draw;
         host.OverlayChanged += Draw;
         host.PreviewMoving = () => ShellPreview.MovingAt((ulong)host.Source.State.Revision);
+        host.FilterMoving = () => ShellSlice.MovingAt((ulong)host.Source.State.Revision) ?? ShellPreview.MovingAt((ulong)host.Source.State.Revision);
         host.FocusConflict = ShellStatus.Conflict;
         foreach (var layers in host.Layers)
         {

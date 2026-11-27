@@ -12,6 +12,7 @@ public sealed class StatusPatterns
 {
     public sealed record Entry(string Id, byte Code, string Shape, uint ShapeCode, string Colour, float Spacing, float Width, float Angle);
     public sealed record Fixture(string State, int Cap, IReadOnlyList<int[]> Statuses);
+    public readonly record struct PreviewFeed(byte[]? Moving, byte[]? Unchecked, byte[]? Stale);
 
     private static readonly string[] PatternIds = { "protected", "conflict", "unchecked_prefix", "preview", "stale" };
     private static readonly string[] MarkIds = { "orbit", "position", "identity", "block" };
@@ -21,6 +22,29 @@ public sealed class StatusPatterns
     private static readonly int[] MarkOrder = { 0, 3, 1, 2 };
     public const string ProtectionRow = "protection.pick.set", SampleRow = "status.sample.show";
     public const byte Protected = 1, Conflict = 2, UncheckedPrefix = 3, Preview = 4, Stale = 5;
+
+    public static PreviewFeed RepairFeed(Preview? preview, long revision, byte[]? moving, byte[]? prefix)
+    {
+        if (preview == null || moving == null) return default;
+        if (preview.Status == PreviewStatus.Stale || (preview.Status == PreviewStatus.Ready && preview.Head != revision))
+            return new(null, null, moving);
+        return preview.Status == PreviewStatus.Ready ? new(moving, prefix, null) : default;
+    }
+
+    public static int[]?[] PreviewStatuses(int pieces, IEnumerable<int> protectedPieces, byte[]? slice, PreviewFeed repair)
+    {
+        bool Moves(int p) => slice?[p] > 0 || repair.Moving?[p] > 0;
+        int[]?[] statuses = new int[PatternIds.Length][];
+        statuses[Conflict - 1] = slice == null && repair.Moving == null ? null : protectedPieces.Where(Moves).ToArray();
+        statuses[UncheckedPrefix - 1] = Indices(repair.Unchecked);
+        var preview = repair.Unchecked == null ? repair.Moving : null;
+        statuses[Preview - 1] = slice == null && preview == null ? null
+            : Enumerable.Range(0, pieces).Where(p => slice?[p] > 0 || preview?[p] > 0).ToArray();
+        statuses[Stale - 1] = Indices(repair.Stale);
+        return statuses;
+
+        int[]? Indices(byte[]? mask) => mask == null ? null : Enumerable.Range(0, pieces).Where(p => mask[p] > 0).ToArray();
+    }
     // The marks are the rail's ProtectionKinds (Solving.cs): one type names the four kinds for the rail's locks and the
     // stickers. MarkCode gives a kind's code in channel 3's bits 3..5 (and the host's target kind); KindOf reads it back.
     public static byte MarkCode(ProtectionKinds kind) => kind switch

@@ -1841,6 +1841,24 @@ pub unsafe extern "C" fn m6h_twist_transform(
     }
 }
 
+/// Returns the selected menu item's exact release check in the answer, at the adopted head only.
+///
+/// # Safety
+/// The handle is live and exclusively owned.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_slice_check(handle: *mut ShellHost, revision: u64, cap: u32, item: u64) -> i32 {
+    unsafe {
+        with_host(handle, |shell| {
+            shell.settle_keys(true)?;
+            if revision != shell.revision || revision != shell.assigned {
+                return Err((M6H_E_UNAVAILABLE, "the slice preview's revision is no longer current".to_owned()));
+            }
+            shell.answer = shell.turns_read()?.release_check(cap, item).map_err(|e| (M6H_E_SESSION, e))?.canonical();
+            Ok(())
+        })
+    }
+}
+
 /// Sets style slot `slot` (1 to 4; a one-view frame uses slot 1), or clears it with a null `style` (version 10,
 /// ADR-D02 B14; the core's ABI 7 `sa2_view_style_set`): the tint and dim modes, the dim amount, the outline width, a
 /// 16-entry RGBA palette and a row-major 3x3 output colour matrix, laid out as `sa2_view_style` (348 bytes; ADR-D02 B20 adds the slice). Unknown

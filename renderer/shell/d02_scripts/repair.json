@@ -21,6 +21,11 @@
     {"wait_ms": 2000},
     {"command": "operation.preview.cancel"},
     {"command": "jumble.repair.focus", "argument": "10 2"},
-    {"wait_ms": 801}
+    {"wait_ms": 801},
+    {"command": "filter.preview", "argument": "moved"},
+    {"wait_ms": 802},
+    {"command": "jumble.repair.focus", "argument": "2 2"},
+    {"command": "filter.preview", "argument": "moved"},
+    {"wait_ms": 803}
   ]
 }

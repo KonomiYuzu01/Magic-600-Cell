@@ -8,9 +8,8 @@ using Magic600.Chrome;
 namespace Magic600.Shell.D02;
 
 /// <summary>
-/// ADR-D02 B18, the part B20 needs: the certified transform of menu item 1's twist at the cap Local draws, read from the
-/// host once per cap and revision and never committed. B20's turn preview sends it with
-/// <see cref="HostLibrary.SetTransform"/>; a blocked cap has no row, so no ghost is drawn there.
+/// ADR-D02 B18 and B20: the inside layer is read once per cap and revision. A held slice preview sends its own
+/// selected turn's transform. A blocked cap has no row.
 /// </summary>
 public static class ShellTurn
 {
@@ -123,9 +122,9 @@ public static class ShellTurn
     /// B20: the turn preview, the one call site of the row's transform. On: the row's eight plane floats with the angle
     /// negated at phase 0, so the moving pieces draw the twist's result; off (or no row): cleared. Nothing is committed.
     /// </summary>
-    public static int Preview(HostLibrary library, IntPtr host, bool on)
+    public static int Preview(HostLibrary library, IntPtr host, HostLibrary.TwistRow? row)
     {
-        if (on && Row is { Plane.Length: 8 } row)
+        if (row is { Plane.Length: 8 })
         {
             // B18-04: the row names the revision it was read at; the host refuses it on any other adopted revision,
             // and the slice sends it again at the next step.

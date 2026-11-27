@@ -9,5 +9,6 @@
     "reference": 200,
     "gallery": 215
   },
-  "pointer_only": []
+  "pointer_only": [],
+  "filter_fields": ["domain", "height", "lattice", "inside-a-cap", "straddler", "moved", "class", "rim", "seam", "set"]
 }

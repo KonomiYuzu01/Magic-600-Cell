@@ -124,6 +124,11 @@ public static class ShellRaw
         json.WriteString("label", Model.On && Model.Antipode ? RawView.AntipodeLabel : "");
         json.WriteString("caption", Model.On ? RawView.Caption : "");
         json.WriteString("line", Model.Line(ShellTurn.Cap));
+        if (ShellShape.SentShrinks(HostLibrary.Local) is { } shrink)
+        {
+            json.WriteNumber("cell_shrink", shrink.Cell);
+            json.WriteNumber("sticker_shrink", shrink.Sticker);
+        }
         json.WriteEndObject();
     }
 }

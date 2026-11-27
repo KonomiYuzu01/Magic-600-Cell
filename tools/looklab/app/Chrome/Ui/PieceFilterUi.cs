@@ -51,7 +51,9 @@ public sealed partial class FocusLayerEditor : VBoxContainer
     public FocusLayerEditor(Func<TokenSet> tokens)
     {
         Name = "FocusLayerEditor";
-        AddChild(ChromeWidgets.Text("An = expression over the bound state's pieces: domain, height, lattice, and, or, not.", "MicroLabel", true));
+        AddChild(ChromeWidgets.Text(FilterParser.Fields + " · and, or, not", "MicroLabel", true));
+        Expression.TooltipText = "Examples\ninside-a-cap 150 and height >= 2\nclass = 2 or set \"my pieces\"\n"
+            + "Cap fields use the named cap when you omit its number. Moved uses the focused repair step or preview.";
         AddChild(Expression);
         Expression.TextChanged += text => Model?.SetText(text);
         Expression.TextSubmitted += _ => Model?.Run();
@@ -118,7 +120,7 @@ public sealed partial class FocusLayerEditor : VBoxContainer
         };
         foreach (Control c in new Control[] { name, save, saved, load }) saveRow.AddChild(c);
         AddChild(saveRow);
-        AddChild(ChromeWidgets.Text("Sample: exact counts of the bound sample state's pose rows. The engine's filter is not reached through the host yet.", "MicroLabel", true));
+        AddChild(ChromeWidgets.Text("Counts come from the bound sample. Save keeps the shown piece set.", "MicroLabel", true));
         TreeEntered += () => { if (Model != null) Model.Changed += Refresh; Refresh(); };
         TreeExiting += () => { if (Model != null) Model.Changed -= Refresh; };
     }

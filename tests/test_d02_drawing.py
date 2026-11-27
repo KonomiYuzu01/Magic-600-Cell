@@ -252,7 +252,10 @@ class LocalShape(unittest.TestCase):
         for name in ("d4", "gap", "stickerShrink", "margin", "fill", "spread"):
             self.assertIn(f'Number("{name}")', local)
         self.assertNotRegex(local, r"\b(0\.3|0\.6|0\.86|1\.7)f?\b", "a local-view.json value is a constant in code")
-        self.assertIn("new[] { 1 - shape.Gap, shape.StickerShrink, shape.D4, (float)Zoom(shape, aspect) };", local)
+        self.assertIn("RawView.Shrinks(raw, shape.Gap, shape.StickerShrink)", local)
+        self.assertIn("new[] { cell, sticker, shape.D4, (float)Zoom(shape, aspect) };", local)
+        raw = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "RawView.cs")
+        self.assertIn("raw ? (1, 1) : (1 - gap, sticker)", raw)
 
     def test_the_cap_threshold_is_the_jumbled_puzzles(self):
         local = text(PROJECT / "D02" / "ShellLocal.cs")
@@ -550,8 +553,14 @@ class D01MotionShell(unittest.TestCase):
 
     def test_only_key_release_names_a_slice_twist(self):
         slice_shell = text(PROJECT / "D02" / "ShellSlice.cs")
-        self.assertRegex(slice_shell, r"else if \(key.Pressed\)\s*\{\s*Model.Press\(cap, ShellTurn.Row is \{ \} row \? row.Angle : null\);"
-                                      r"\s*\}\s*else\s*\{\s*Model.Release\(\);")
+        follow = slice_shell[slice_shell.index("public static bool Follow"):slice_shell.index("private static void Finish")]
+        self.assertIn("library.TwistTransform(host, (uint)cap, (ulong)Model.Item", follow)
+        self.assertRegex(follow, r"else\s*\{\s*Finish\(library, host, cap, revision\);")
+        self.assertNotIn("Model.Release()", follow)
+        finish = slice_shell[slice_shell.index("private static void Finish"):slice_shell.index("public static void FocusLost")]
+        self.assertLess(finish.index("_previewAt != revision"), finish.index("Model.Release()"))
+        self.assertIn("chrome.CheckSliceTwist(twist, revision", finish)
+        self.assertEqual(slice_shell.count("Model.Release()"), 1)
         self.assertNotIn("InputEventMouse", slice_shell)
         self.assertIn("Model.SetShell(max);", slice_shell)
         camera = text(PROJECT / "D02" / "ShellCamera.cs")
@@ -948,9 +957,14 @@ class HopfRun(unittest.TestCase):
         self.assertTrue((folder / "samples" / "jumble" / "states.json").is_file())
         with self.assertRaises(ValueError):
             run.ring_sheet_data(temp / "run")
-        fov = opening["params"]["fieldOfView"]
-        base = 1 / math.tan(fov / 2)
-        self.assertEqual(run.expect_hopf(self.dumps(base, base * 1.21), {}, None, projection="ringSheet"), [])
+        aspect = 582 / 196
+        base = run.ring_sheet_fit(aspect)
+        screens = self.dumps(base, base * 1.21)
+        for row in screens[1:]:
+            row["zoom"]["aspect"] = aspect
+        self.assertEqual(run.expect_hopf(screens, {}, None, projection="ringSheet"), [])
+        screens[1]["zoom"]["sent"] = 1 / math.tan(opening["params"]["fieldOfView"] / 2)
+        self.assertIn("not the ring sheet", " ".join(run.expect_hopf(screens, {}, None, projection="ringSheet")))
 
     def test_the_ring_sheet_run_reads_its_marks_clicks_and_chart_rows(self):
         run = shell_module("d02_run")

@@ -1086,6 +1086,8 @@ internal sealed partial class D02Driver : Node
             json.WriteStartObject("zoom");
             json.WriteNumber("notches", ShellJumble.Zoom.Notches);
             json.WriteNumber("factor", ShellJumble.Zoom.Factor(HostLibrary.View));
+            if (ShellShape.SheetAspect is double aspect)
+                json.WriteNumber("aspect", aspect);
             if (ShellShape.SentZoom(HostLibrary.View) is float sent)
             {
                 json.WriteNumber("sent", sent);

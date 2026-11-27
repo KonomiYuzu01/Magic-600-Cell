@@ -76,8 +76,11 @@ public static class ShellLocal
     }
 
     /// <summary>The four floats of Local's view shape: cell shrink (1 − gap), sticker shrink, d4 and zoom.</summary>
-    public static float[] ViewShape(Shape shape, double aspect) =>
-        new[] { 1 - shape.Gap, shape.StickerShrink, shape.D4, (float)Zoom(shape, aspect) };
+    public static float[] ViewShape(Shape shape, double aspect, bool raw = false)
+    {
+        var (cell, sticker) = Magic600.Chrome.RawView.Shrinks(raw, shape.Gap, shape.StickerShrink);
+        return new[] { cell, sticker, shape.D4, (float)Zoom(shape, aspect) };
+    }
 
     /// <summary>
     /// ADR-D01.40/.41 for both puzzles (step C-.40): what Local frames and its readout, the shared library's

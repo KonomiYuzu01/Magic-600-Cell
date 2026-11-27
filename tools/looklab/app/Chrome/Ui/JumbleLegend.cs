@@ -25,7 +25,8 @@ public sealed partial class JumbleHost
     // The mode, the classes or the pose ids changed: the renderer sends the bytes again.
     public event Action? TintChanged;
     private (TintMode, PoseStyle?, IReadOnlyList<int>?, IReadOnlyList<int>?) drawnTint;
-    private (int Cap, bool[] Set)? straddlerSet;
+    private readonly Dictionary<(int Cap, string Field), bool[]?> pieceMasks = new();
+    public Func<byte[]?>? FilterMoving { private get; set; }
 
     // The mode drawn: the researcher's, else the entry slot's armed contact classes, and none while Jumble is off.
     public TintMode Tint => Source.State.Mode ? JumbleTint.Mode(Settings) : TintMode.None;
@@ -37,14 +38,14 @@ public sealed partial class JumbleHost
     {
         Settings.Changed += key => { if (key is JumbleTint.ModeKey or EntrySlot.ContactClasses) Retint(); };
         Source.Changed += _ => Retint();
-        Naming.Changed += _ => { straddlerSet = null; Safe.Raise(TintChanged); };
+        Naming.Changed += _ => Safe.Raise(TintChanged);
     }
 
     // The bound state's contact graph and pose ids (the shell reads them at each binding).
     public void SetContact(ContactGraph? contact, IReadOnlyList<int>? poses, string posesDigest)
     {
         Contact = contact; PoseOf = poses; poseDigest = posesDigest;
-        straddlerSet = null;
+        pieceMasks.Clear();
         Reclass();
         Reoverlay();
     }
@@ -70,6 +71,7 @@ public sealed partial class JumbleHost
             Classes = ClassMemory.Assign(Contact, Style.Domains);
             Settings.Set(JumbleTint.MemoryKey, ClassMemory.Save());
         }
+        Filter?.BindPieces(PosesFit ? PoseOf : null, ReadFilterField);
         Retint();
     }
 
@@ -101,30 +103,53 @@ public sealed partial class JumbleHost
     public Func<int, bool>? FocusMember(FocusLayers layers)
     {
         if (layers.Focused is not string id || Style is not { } style || !PosesFit) return null;
+        if (id == PieceFilterModel.LayerId) return Filter?.Member();
         IReadOnlyList<int> poses = PoseOf!;
         bool[]? rows = id switch
         {
             JumbleFocus.Domain when style.DomainIndex(domainShown) is int d => Enumerable.Range(0, style.RowCount).Select(i => style.RowDomain(i) == d).ToArray(),
             JumbleFocus.Height when heightShown is int k => Enumerable.Range(0, style.RowCount).Select(i => style.RowHeight(i) >= k).ToArray(),
-            PieceFilterModel.LayerId when Filter?.Applied is { } applied => style.Rows.Select(r => applied.Expr.Holds(r, style.LatticeDomain)).ToArray(),
             _ => null,
         };
         if (rows != null) return piece => rows[poses[piece]];
-        if (id == JumbleFocus.Straddlers && StraddlerSet() is { } set) return piece => set[piece];
+        if (id == JumbleFocus.Straddlers && PieceMask(Naming.Named, "straddlers") is { } set) return piece => set[piece];
         return null;
     }
 
-    // The named cap's straddlers from its record's mask (ADR-D02.30: the layer applies only at a blocked cap).
-    private bool[]? StraddlerSet()
+    // Certified per-piece masks for the bound sample. An absent mask differs from a known empty set.
+    private bool[]? PieceMask(int? cap, string field)
     {
-        if (Naming.Named is not int cap || !PosesFit) return null;
-        if (straddlerSet is { } kept && kept.Cap == cap) return kept.Set;
-        if (RecordSource?.Invoke(cap) is not { } record) return null;
-        using JsonDocument document = JsonDocument.Parse(record);
-        if (!document.RootElement.TryGetProperty("masks", out JsonElement masks) || !masks.TryGetProperty("straddlers", out JsonElement mask)) return null;
-        bool[] set = JumbleTint.Mask(mask, PoseOf!.Count);
-        straddlerSet = (cap, set);
-        return set;
+        if (cap is not int id || !PosesFit) return null;
+        if (pieceMasks.TryGetValue((id, field), out var mask)) return mask;
+        if (RecordSource?.Invoke(id) is { } record)
+        {
+            using JsonDocument document = JsonDocument.Parse(record);
+            mask = JumbleOverlay.Mask(document.RootElement, field, PoseOf!.Count);
+        }
+        return pieceMasks[(id, field)] = mask;
+    }
+
+    private Func<int, bool>? ReadFilterField(FilterExpr.PieceField field)
+    {
+        int? cap = field.Cap ?? Naming.Named;
+        switch (field.Name)
+        {
+            case "class" when Classes is { } classes && Style is { } style && PoseOf is { } poses:
+                return p => field.Comparison!.Matches(classes[style.RowDomain(poses[p])]);
+            case "moved":
+                if (Scrub.Row != null) return Overlay.Moving is { } step ? p => step[p] : null;
+                if (FilterMoving?.Invoke() is { } preview) return p => preview[p] != 0;
+                return null;
+            case "straddler":
+                if (PieceMask(cap, "straddlers") is { } straddlers) return p => straddlers[p];
+                return PieceMask(cap, "inside") != null ? _ => false : null;
+            case "inside-a-cap":
+            case "rim":
+                return PieceMask(cap, field.Name == "rim" ? "rim" : "inside") is { } mask ? p => mask[p] : null;
+            default:
+                // The samples hold off-grip seam counts, without per-piece ownership.
+                return null;
+        }
     }
 
     // CR-14's domain row: one domain at full colour, the others dimmed. A view whose cycle shows everything dims.

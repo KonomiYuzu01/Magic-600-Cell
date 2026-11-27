@@ -716,6 +716,12 @@ public sealed class ShellChrome
         ViewLine.Set(Frame.Local, "LocalPlanLine", words, LocalPlan.Hint, Frame.Tokens.C("text.dim"));
     }
 
+    internal void SliceLine(string? words)
+    {
+        if (Frame.Local.Readouts.GetNodeOrNull<Label>("CutSliceLine")?.Text == words) return;
+        ViewLine.Set(Frame.Local, "CutSliceLine", words, null, Frame.Tokens.C("text.dim"));
+    }
+
     /// <summary>The window pixels of the Global view's opening; empty while the view is not on screen.</summary>
     public Rect2I Opening() => Pixels(Frame.Opening);
 

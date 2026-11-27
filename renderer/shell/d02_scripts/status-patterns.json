@@ -2,7 +2,7 @@
   "format": "magic600-d02-script/1",
   "name": "status-patterns",
   "resolution": "1280x720",
-  "note": "ADR-D01.65 on the wj-ia-300 session fixture. Pick sweep.json's first lattice hit of the Hopf rings opening at 1280x720 (pick.json's hits are off-lattice pieces, which have no cell or slot), so Local follows the sticker's cell. Inspect each keyed mark, then clear the selection so the sample draws in the default cap. Clear protection and turn the sample off. No step commits.",
+  "note": "Check the four protection kinds and all fixture patterns. With the fixture off, protect a picked orbit, hide the ordinary pieces and stage repair 2 at cap 150. Check its conflict and preview, scrub to an unchecked prefix, then undo the head to test the stale cue.",
   "steps": [
     {"wait_ms": 4000},
     {"click": [0.3789, 0.14]},
@@ -42,6 +42,20 @@
     {"chord": "Space"},
     {"text": "> status.sample.show off"},
     {"chord": "Enter"},
-    {"wait_ms": 707}
+    {"wait_ms": 707},
+    {"click": [0.3789, 0.14]},
+    {"wait_ms": 600},
+    {"command": "protection.pick.set", "argument": "orbit"},
+    {"command": "jumble.cap.name", "argument": "150"},
+    {"wait_ms": 708},
+    {"command": "filter.preview", "argument": "height >= 1000"},
+    {"command": "filter.apply"},
+    {"chord": "F10"},
+    {"command": "jumble.repair.stage", "argument": "2"},
+    {"wait_ms": 709},
+    {"command": "view.preview.scrub", "argument": "back"},
+    {"wait_ms": 710},
+    {"chord": "Ctrl+Z"},
+    {"wait_ms": 2500}
   ]
 }

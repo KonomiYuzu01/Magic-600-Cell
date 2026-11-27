@@ -23,7 +23,8 @@ struct Step {
     letter: Letter,
     digest: String,
     moved: usize,
-    sweep: Option<(SweptPlane, Vec<u8>)>,
+    moving: Vec<u8>,
+    sweep: Option<SweptPlane>,
 }
 
 struct Preview {
@@ -85,17 +86,14 @@ impl Preview {
                 Ok(plane) => plane,
                 Err(_) => None, // The exact state is available even if J03 supplies no display plane.
             };
+            let mut moving = vec![0u8; PIECES];
             for &piece in &outcome.inside {
                 moved[piece as usize] = 1;
+                moving[piece as usize] = 1;
             }
-            let sweep = plane.map(|plane| {
-                let mut mask = vec![0u8; PIECES];
-                for &piece in &outcome.inside {
-                    mask[piece as usize] = 1;
-                }
-                (plane, mask)
+            steps.push(Step {
+                letter: (cap, item), digest: state.digest(&exact), moved: outcome.inside.len(), moving, sweep: plane,
             });
-            steps.push(Step { letter: (cap, item), digest: state.digest(&exact), moved: outcome.inside.len(), sweep });
             prefixes.push(posed(&state)?);
         }
         let mut counts = std::collections::BTreeMap::<_, (i64, i64, i64)>::new();
@@ -261,7 +259,7 @@ impl PreviewDrawing {
     }
 
     fn transform(&self, preview: &Preview, step: usize, phase: f32) -> Result<(), Failure> {
-        let sweep = preview.steps.get(step).and_then(|letter| letter.sweep.as_ref());
+        let sweep = preview.steps.get(step).and_then(|letter| letter.sweep.as_ref().map(|plane| (plane, &letter.moving)));
         let (u, v, angle, mask, count) = match sweep.filter(|_| phase != 0.0) {
             Some((plane, mask)) => {
                 (plane.plane[0].as_ptr(), plane.plane[1].as_ptr(), plane.angle, mask.as_ptr(), mask.len() as u32)
@@ -440,6 +438,34 @@ pub unsafe extern "C" fn m6h_preview_moved(handle: *mut ShellHost, id: u64, out:
                 .filter(|p| p.id == id)
                 .ok_or_else(|| invalid("the preview ID has changed"))?;
             std::ptr::copy_nonoverlapping(preview.moved.as_ptr(), out, PIECES);
+            Ok(())
+        })
+    }
+}
+
+/// Copies the union of exact moving sets through the selected prefix of the current preview.
+///
+/// # Safety
+/// The handle is live and exclusively owned. `out` is null or points to `count` writable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_preview_prefix_moved(handle: *mut ShellHost, id: u64, step: u32, out: *mut u8, count: u32) -> i32 {
+    unsafe {
+        with_host(handle, |shell| {
+            if out.is_null() || count as usize != PIECES {
+                return Err(invalid("a moved set output holds one byte per piece"));
+            }
+            if !shell.preview.current(shell.revision, shell.assigned) {
+                return Err(invalid("the preview is absent or stale"));
+            }
+            let steps = shell.preview.pending.as_ref().filter(|p| p.id == id)
+                .and_then(|p| p.steps.get(..step as usize)).ok_or_else(|| invalid("the preview ID or repair prefix has changed"))?;
+            let mask = std::slice::from_raw_parts_mut(out, PIECES);
+            mask.fill(0);
+            for letter in steps {
+                for (out, &moved) in mask.iter_mut().zip(&letter.moving) {
+                    *out |= moved;
+                }
+            }
             Ok(())
         })
     }

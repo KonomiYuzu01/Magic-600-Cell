@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "slice",
-  "note": "B20 (ADR-D02.17, CR-14), by keys only, on the session fixture: Local draws the cut slice of the default cap 0, which wj-ia-300 blocks, so a held preview key draws no ghost and names nothing. After F1 and the palette's typed mode name cap 150, the held split key draws Local as two linked copies (three panes with Global) and its release returns to one (two panes); the held preview key draws the ghost of the inside layer and names item 1's twist only on release. The keys are placeholders (row requests). The last wait keeps the window open for the foreground check.",
+  "note": "At blocked cap 0 the held preview draws no ghost. Name cap 150 and split and rejoin the slice. Shift+Up picks item 2. Hold Down for its ghost, then release to name and check it at the same revision. The slice reports unavailable cut cells.",
   "steps": [
     {"wait_ms": 3000},
     {"hold": "Down"},
@@ -15,6 +15,7 @@
     {"wait_ms": 1500},
     {"release": "Backslash"},
     {"wait_ms": 1500},
+    {"chord": "Shift+Up"},
     {"hold": "Down"},
     {"wait_ms": 1500},
     {"release": "Down"},

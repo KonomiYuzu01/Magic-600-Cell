@@ -35,6 +35,7 @@ internal static class ShellStatus
     private static PieceBytes? prepared, sent, drawn;
     private static TokenSet? sentTokens, drawnTokens;
     private static byte[]? moving;
+    private static StatusPatterns.PreviewFeed repair;
     private static bool collect, sampleOn, dirty;
     private static ulong? positionsAt;
     private static int commandCode;
@@ -55,6 +56,7 @@ internal static class ShellStatus
         sentTokens = drawnTokens = null;
         lastFrame = default;
         moving = null;
+        repair = default;
         library = null;
         command = "";
         sampleOn = false;
@@ -133,16 +135,16 @@ internal static class ShellStatus
     {
         if (table is null) return;
         PrepareAdopted(bridge, handle, revision, sliceReady);
-        PreparePending(bridge, handle, revision, sliceReady);
+        PreparePending(bridge, handle, revision);
     }
 
     private static void PrepareAdopted(HostLibrary bridge, IntPtr handle, ulong revision, bool sliceReady)
     {
         (library, host) = (bridge, handle);
-        var preview = sliceReady && ShellSlice.Model.Previewing is { } held && ShellTurn.Cap == held.Cap
-            ? ShellTurn.InsideFor(ShellTurn.Row, revision) : null;
+        var preview = sliceReady ? ShellSlice.MovingAt(revision) : null;
+        var repairPreview = ShellPreview.StatusAt(revision);
         var sample = sampleOn && fixture is { } f && f.State == ShellJumble.Bound ? f : null;
-        if (!dirty && prepared?.Revision == revision && moving == preview && activeFixture == sample) return;
+        if (!dirty && prepared?.Revision == revision && moving == preview && repair == repairPreview && activeFixture == sample) return;
 
         if (Positions.Count != 0 && positionsAt != revision)
         {
@@ -156,7 +158,7 @@ internal static class ShellStatus
             positionsAt = revision;
         }
 
-        var (bytes, sources, nextConflicts) = Encode(Marks, preview, sample);
+        var (bytes, sources, nextConflicts) = Encode(Marks, preview, repairPreview, sample);
         if (!conflicts.SetEquals(nextConflicts))
         {
             conflicts = nextConflicts;
@@ -164,20 +166,20 @@ internal static class ShellStatus
         }
 
         prepared = new PieceBytes(revision, bytes, sources);
-        (moving, activeFixture, dirty) = (preview, sample, false);
+        (moving, repair, activeFixture, dirty) = (preview, repairPreview, sample, false);
         stamp++;
     }
 
     // LF1 (checkpoint C3/C4's F1 for this channel): after a committed press, the bytes for the revision handed out too,
-    // with the position marks resolved on that head (m6h_status_targets reads it before its adoption) and the turn
-    // row's preview read there (ShellTurn.PendingRow), so Apply sends them for that revision and the host holds them
+    // with the position marks resolved on that head (m6h_status_targets reads it before its adoption), so Apply sends
+    // them for that revision and the host holds them
     // for its adoption: the revision's first frame never draws the old revision's statuses on the new poses.
     private static PieceBytes? preparedHeld, sentHeld;
-    private static (ulong Revision, int Stamp, byte[]? Preview)? heldKey;
+    private static (ulong Revision, int Stamp, StatusPatterns.PreviewFeed Repair)? heldKey;
     private static (ulong Revision, int Positions, byte[] Mask)? heldPositions;
     private static int stamp;
 
-    private static void PreparePending(HostLibrary bridge, IntPtr handle, ulong revision, bool sliceReady)
+    private static void PreparePending(HostLibrary bridge, IntPtr handle, ulong revision)
     {
         var pending = ShellStyle.PendingAfter(revision);
         if (pending == 0 || prepared is null)
@@ -185,11 +187,10 @@ internal static class ShellStatus
             (preparedHeld, heldKey) = (null, null);
             return;
         }
-        var preview = sliceReady && ShellSlice.Model.Previewing is { } held && ShellTurn.Cap == held.Cap
-            ? ShellTurn.InsideFor(ShellTurn.PendingRow, pending) : null;
-        if (heldKey is { } key && key.Revision == pending && key.Stamp == stamp && key.Preview == preview) return;
+        var repairPreview = ShellPreview.StatusAt(pending);
+        if (heldKey is { } key && key.Revision == pending && key.Stamp == stamp && key.Repair == repairPreview) return;
         // Tried once per pending revision, marks and preview: a refusal keeps the adopted-only send, never a retry storm.
-        (heldKey, preparedHeld) = ((pending, stamp, preview), null);
+        (heldKey, preparedHeld) = ((pending, stamp, repairPreview), null);
         var marks = Marks.Select(set => new HashSet<int>(set)).ToArray();
         if (Positions.Count != 0)
         {
@@ -198,29 +199,25 @@ internal static class ShellStatus
             heldPositions = (pending, Positions.Count, mask);
             marks[StatusPatterns.MarkCode(ProtectionKinds.Position) - 1] = PieceIds(mask).ToHashSet();
         }
-        var (bytes, sources, _) = Encode(marks, preview, activeFixture);
+        var (bytes, sources, _) = Encode(marks, null, repairPreview, activeFixture);
         preparedHeld = new PieceBytes(pending, bytes, sources);
     }
 
     // The status bytes of one revision from its marks, the turn row's preview and the sample fixture, with the
     // conflict set (the protected pieces the preview moves).
-    private static (byte[] Bytes, string[] Sources, HashSet<int> Conflicts) Encode(HashSet<int>[] marks, byte[]? preview, StatusPatterns.Fixture? sample)
+    private static (byte[] Bytes, string[] Sources, HashSet<int> Conflicts) Encode(HashSet<int>[] marks, byte[]? preview,
+        StatusPatterns.PreviewFeed repairPreview, StatusPatterns.Fixture? sample)
     {
         var protectedPieces = marks.SelectMany(set => set).ToHashSet();
-        var statuses = new int[table.Patterns.Count][];
+        var fed = StatusPatterns.PreviewStatuses(Pieces, protectedPieces, preview, repairPreview);
+        fed[StatusPatterns.Protected - 1] = protectedPieces.Count > 0 ? protectedPieces.ToArray() : null;
+        var statuses = new int[fed.Length][];
         var sources = new string[statuses.Length];
-        void Use(byte status, int[]? fed, bool hasFeed)
+        for (int i = 0; i < statuses.Length; i++)
         {
-            bool fromFixture = fed is null && (sample is not null || !hasFeed);
-            int i = status - 1;
-            statuses[i] = fed ?? sample?.Statuses[i] ?? Array.Empty<int>();
-            sources[i] = fromFixture ? "fixture" : "fed";
+            statuses[i] = fed[i] ?? sample?.Statuses[i] ?? Array.Empty<int>();
+            sources[i] = fed[i] is null && sample is not null ? "fixture" : "fed";
         }
-        Use(StatusPatterns.Protected, protectedPieces.Count > 0 ? protectedPieces.ToArray() : null, true);
-        Use(StatusPatterns.Conflict, preview is null ? null : protectedPieces.Where(p => preview[p] != 0).ToArray(), true);
-        Use(StatusPatterns.UncheckedPrefix, null, false);
-        Use(StatusPatterns.Preview, preview is null ? null : PieceIds(preview).ToArray(), true);
-        Use(StatusPatterns.Stale, null, false);
 
         var nextConflicts = statuses[StatusPatterns.Conflict - 1].ToHashSet();
         return (table!.Encode(Pieces, statuses, marks.Select(set => set.ToArray()).ToArray()), sources, nextConflicts);
@@ -295,8 +292,7 @@ internal static class ShellStatus
             {
                 var ids = Enumerable.Range(0, Pieces).Where(p => ((bytes[p] >> shift) & 7) == entry.Code).ToArray();
                 json.WriteStartObject(entry.Id);
-                json.WriteString("source", sources?[entry.Code - 1]
-                    ?? (shift == 0 && (entry.Code is StatusPatterns.UncheckedPrefix or StatusPatterns.Stale) ? "fixture" : "fed"));
+                json.WriteString("source", sources?[entry.Code - 1] ?? "fed");
                 json.WriteNumber("code", entry.Code);
                 json.WriteNumber("count", ids.Length);
                 json.WriteNumber("global", ids.Count(p => (global[p / 32] & (1u << (p % 32))) != 0));

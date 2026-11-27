@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "focus-layer",
-  "note": "On wj-ia-300, preview a Focus layer's exact count, apply it with Global focused, and check that Global dims. Intersect the applied layer and check the palette alias \"piece filter\".",
+  "note": "Preview, apply and intersect the pose filters. Check the palette alias, the exact inside mask, a saved set and an unavailable rim.",
   "steps": [
     {
       "wait_ms": 25000
@@ -80,6 +80,15 @@
     },
     {
       "wait_ms": 307
-    }
+    },
+    {"command": "structure.filter.compose", "argument": "replace"},
+    {"command": "filter.preview", "argument": "inside-a-cap 150"},
+    {"wait_ms": 807},
+    {"command": "filter.apply"},
+    {"command": "filter.save", "argument": "cap set"},
+    {"command": "filter.preview", "argument": "set \"cap set\" and inside-a-cap 150"},
+    {"wait_ms": 808},
+    {"command": "filter.preview", "argument": "not rim 150 or lattice"},
+    {"wait_ms": 809}
   ]
 }
