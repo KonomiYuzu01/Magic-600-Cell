@@ -628,6 +628,8 @@ internal sealed partial class D02Driver : Node
         }
         if (_wait == 0)
         {
+            // Brief SF2: a dump records committed state, so it waits for the answers of the keys posted before it.
+            if (ShellMotion.Posted > 0) return;
             Dump();
             _wait = -1;
             if (_screenBefore != null)

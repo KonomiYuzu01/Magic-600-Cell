@@ -958,6 +958,21 @@ relative path is from the repository root.
     - The shell writes these steps as `steps` rows while the event log is on (`EventLog.Steps`).
     - Dry runs (10 s, not evidence): G1 p99 433 ms before and 117 ms after (fps_avg 39.4, then 48.7); G9 p99 300 ms
       before and 217 ms after (fps_avg 39.0, then 46.4). The System log showed no GPU event after either.
+    - SF2 (27 November 2026), `m6h_key_down` off the frame thread: the shell posts each key to the host's ordered key
+      queue (`m6h_key_post`, host ABI 15) and keeps drawing. The host's one key worker takes the session's `Turns` and
+      routes the waiting keys in press order as the synchronous call does (the armed row first, at the head the key will
+      twist); the frame thread applies each answer at its next frame (`m6h_key_poll`: the deferred adoption, the row,
+      the History row, the style), so nothing of a key shows before its commit. A call that reads the session waits for
+      the batch; one that writes it (a row, a job, a grip change, a close) routes the waiting keys first; `m6h_key_drain`
+      and `m6h_close_session` drain the queue (the shell has no reset or import yet). A sent twist key holds the
+      motion queue as a running sweep does (`MotionQueue.Waiting`, none under reduced motion), and a script's dump
+      waits for the posted keys' answers. Test: `key_timing.rs`
+      `posted_keys_end_where_synchronous_keys_end_at_the_wj_ia_300_head`: posted keys with a refused key in the middle
+      give the synchronous answers, head digests, objects and journal records (the session's random command epoch and
+      the request digests that hash it apart); a close drains. The post call: max 0.07 ms on the caller's thread, where
+      `m6h_key_down` was p50 46 ms. G1 steps after: `key.post` p50 0.0, p99 1.1 ms; `key.queued` (the commit, on the worker while frames go on) p50 67, p99 80 ms; still on the frame thread: `bind.bind` p50 62, p99 96 ms, and the History row, `key.chrome` p50 25, p99 42 ms. All ten product runs, J1 and both dry runs: no GPU event in the System log.
+    - Dry runs (10 s, not evidence): G1 p99 117 ms before and 100 ms after (fps_avg 48.7, then 49.8); G9 p99 217 ms before and 133 ms after (fps_avg 46.4, then 49.0). The bind's in-place updates and the History row (SF2 items 2
+      and 3) are open and are what the slow frames are made of.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.

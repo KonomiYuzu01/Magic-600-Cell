@@ -112,12 +112,12 @@ class CoreFocus(unittest.TestCase):
 class HostFocus(unittest.TestCase):
     """The host library's version 12: m6h_set_view_focus, the same on the Rust and C# sides."""
 
-    def test_the_host_and_the_shell_speak_version_14(self):
+    def test_the_host_and_the_shell_speak_version_15(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
         host = text(PROJECT / "HostLibrary.cs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 14;", lib)
-        self.assertIn("public const uint AbiVersion = 14;", host)
-        self.assertIn("assert_eq!(m6h_abi_version(), 14);", text(ROOT / "renderer" / "bridge" / "host" / "tests" / "turns.rs"))
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 15;", lib)
+        self.assertIn("public const uint AbiVersion = 15;", host)
+        self.assertIn("assert_eq!(m6h_abi_version(), 15);", text(ROOT / "renderer" / "bridge" / "host" / "tests" / "turns.rs"))
         self.assertRegex(lib, r'pub unsafe extern "C" fn m6h_set_view_focus\(\s*handle: \*mut ShellHost,\s*view: u64,\s*'
                               r'projection: u32,\s*focus_cell: u32,\s*focus_cos: f32,\s*spread: f32,\s*\) -> i32')
         self.assertIn("public int SetViewFocus(IntPtr host, ulong view, uint projection, uint focusCell, float focusCos, float spread)",
@@ -410,10 +410,13 @@ class SweepShell(unittest.TestCase):
     def test_the_shell_arms_before_the_press_and_reports_its_answer(self):
         shell = text(PROJECT / "Shell.cs")
         self.assertIn("ShellMotion.TryQueue(input, SendTurn)", shell)
-        arm = shell.index("D02.ShellTurn.Arm(library, _host, chord);")
-        key_down = shell.index("library.KeyDown(_host, chord")
-        committed = shell.index("D02.ShellTurn.Committed(result.EngineRevision, staticMotion);")
-        self.assertTrue(arm < key_down < committed)
+        # Brief SF2: the key is posted with its arming; the row and every visible change wait for its commit answer.
+        arm = shell.index("arm = D02.ShellTurn.ArmFor(chord);")
+        key_post = shell.index("library.KeyPost(_host, chord, key.Echo, arm is not null")
+        armed = shell.index("D02.ShellTurn.Armed(answer.RowStatus == 1 ? library.KeyRow(_host, answer.Ticket, answer.RowRevision) : null);")
+        committed = shell.index("D02.ShellTurn.Committed(answer.EngineRevision, posted.StaticMotion);")
+        self.assertTrue(arm < key_post < armed < committed)
+        self.assertIn("PollKeys(library);\n        FollowLocalCap(library);", shell)
         self.assertIn("D02.ShellTurn.Refused();", shell)
         self.assertIn("D02.ShellTurn.Framed(frame.EngineRevision);", shell)
         self.assertIn("if (row is null || revision != row.Revision + 1 || MotionRow is null)", self.turn)

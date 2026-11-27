@@ -54,6 +54,10 @@ public partial class Shell : Control
     private bool _hadFocus;
     private bool _focused;
     private bool _session;
+    /// <summary>Brief SF2: posted keys waiting for their commit answer, by ticket.</summary>
+    private readonly Dictionary<ulong, PostedKey> _posted = new();
+
+    private sealed record PostedKey(string Chord, long Qpc, bool StaticMotion, long Arming, long Posted);
     /// <summary>The engine revision of the newest presentation the core confirmed.</summary>
     private ulong _shownRevision;
     /// <summary>The shown revision at which ADR-D02 last bound a sample state to the session (B5).</summary>
@@ -431,40 +435,87 @@ public partial class Shell : Control
             }
             return;
         }
-        // ADR-D02 B18 rest: a twist key's certified row, read at the head it would twist, for its sweep or flash.
+        // Brief SF2: the key goes to the host's ordered key queue and the frame thread keeps drawing; its commit, the
+        // journal write and the digests run on the host's key worker. A twist key arms its certified row (ADR-D02 B18
+        // rest), which the worker reads just before the key, at the head the key will twist. Nothing of the key shows
+        // until its answer arrives (PollKeys).
         var arming = EventLog.Now();
+        (uint Cap, ulong Item)? arm = null;
         if (D02.ShellJumble.On && !key.Echo)
         {
             D02.ShellGrip.CancelGesture();
-            D02.ShellTurn.Arm(library, _host, chord);
+            arm = D02.ShellTurn.ArmFor(chord);
         }
-        var armed = EventLog.Now();
-        var answer = library.KeyDown(_host, chord, key.Echo, out var result);
-        var handled = EventLog.Now();
-        if (answer != HostLibrary.Ok)
+        var code = library.KeyPost(_host, chord, key.Echo, arm is not null, arm?.Cap ?? 0, arm?.Item ?? 0, out var ticket);
+        if (code != HostLibrary.Ok)
         {
-            GD.PushWarning($"m6h_key_down {chord}: {answer}: {library.LastError(_host)}");
+            GD.PushWarning($"m6h_key_post {chord}: {code}: {library.LastError(_host)}");
             return;
         }
-        if (result.Press == HostLibrary.PressCommitted)
+        // Under reduced motion no twist sweeps (its rows are 0 s), so the key is static and holds no queue.
+        staticMotion |= !D02.ShellMotion.Sweeps;
+        _posted[ticket] = new PostedKey(chord, qpc, staticMotion, arming, EventLog.Now());
+        D02.ShellMotion.KeyPosted(staticMotion);
+    }
+
+    /// <summary>Brief SF2: applies every commit answer that is ready, in press order; then the host hands the keys still
+    /// waiting to its worker.</summary>
+    private void PollKeys(HostLibrary library)
+    {
+        while (_session)
         {
-            _log?.Press(qpc, handled, result.EngineRevision);
-            _chrome?.Committed(chord, result.EngineRevision);
-            var chromed = EventLog.Now();
-            D02.ShellTurn.Committed(result.EngineRevision, staticMotion);
-            var turned = EventLog.Now();
-            D02.ShellStyle.Committed(result.EngineRevision);
-            // SF (27 Nov 2026): the frame thread's steps of a committed key, only while the event log is on.
-            _log?.Steps("key", qpc, ("arm", arming, armed), ("key_down", armed, handled), ("chrome", handled, chromed),
-                        ("turn", chromed, turned), ("style", turned, EventLog.Now()));
+            if (library.KeyPoll(_host, out var answer) != HostLibrary.Ok)
+            {
+                GD.PushWarning($"m6h_key_poll: {library.LastError(_host)}");
+                return;
+            }
+            if (answer.Ticket == 0) break;
+            Answered(library, answer);
         }
-        else if (result.Press == HostLibrary.PressRefused)
+        var waiting = false;
+        foreach (var posted in _posted.Values) waiting |= !posted.StaticMotion;
+        D02.ShellMotion.KeysAnswered(_posted.Count, waiting);
+    }
+
+    private void Answered(HostLibrary library, HostLibrary.KeyAnswer answer)
+    {
+        if (!_posted.Remove(answer.Ticket, out var posted))
+        {
+            // A queued key-up or focus loss is answered only when it failed.
+            if (answer.Code != HostLibrary.Ok) GD.PushWarning($"m6h_key_up {answer.Ticket}: {answer.Code}: {library.LastError(_host)}");
+            return;
+        }
+        var (chord, qpc) = (posted.Chord, posted.Qpc);
+        var handled = EventLog.Now();
+        if (answer.Code != HostLibrary.Ok)
+        {
+            GD.PushWarning($"m6h_key_down {chord}: {answer.Code}: {library.LastError(_host)}");
+            return;
+        }
+        if (answer.Press == HostLibrary.PressCommitted)
+        {
+            D02.ShellTurn.Armed(answer.RowStatus == 1 ? library.KeyRow(_host, answer.Ticket, answer.RowRevision) : null);
+            var rowed = EventLog.Now();
+            _log?.Press(qpc, handled, answer.EngineRevision);
+            _chrome?.Committed(chord, answer.EngineRevision);
+            var chromed = EventLog.Now();
+            D02.ShellTurn.Committed(answer.EngineRevision, posted.StaticMotion);
+            var turned = EventLog.Now();
+            D02.ShellStyle.Committed(answer.EngineRevision);
+            // SF (27 Nov 2026), SF2: the steps of a committed key, only while the event log is on. "post" is the frame
+            // thread's at the press; "queued" runs on the host's key worker (the commit) while frames go on; the rest
+            // are the frame thread's at the answer.
+            _log?.Steps("key", qpc, ("post", posted.Arming, posted.Posted), ("queued", posted.Posted, handled),
+                        ("row", handled, rowed), ("chrome", rowed, chromed), ("turn", chromed, turned),
+                        ("style", turned, EventLog.Now()));
+        }
+        else if (answer.Press == HostLibrary.PressRefused)
         {
             _log?.Press(qpc, handled, 0);
             _chrome?.Refused(chord);
             D02.ShellTurn.Refused();
         }
-        else if (result.Press == HostLibrary.PressOther)
+        else if (answer.Press == HostLibrary.PressOther)
         {
             _chrome?.Stepped(chord);
         }
@@ -974,6 +1025,7 @@ public partial class Shell : Control
         // With the frame (A5) the core's surface lies under the Global view's opening and follows it once the opening
         // has kept one place for a few steps; without the frame it lies under the whole window. ADR-D02 B18c: while
         // Local is drawn, the surface covers the bounding box of both openings, and each is a pane of the frame.
+        PollKeys(library);
         FollowLocalCap(library);
         var global = _chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
         repairPreview?.Tick();
@@ -1192,6 +1244,9 @@ public partial class Shell : Control
         {
             return;
         }
+        // Brief SF2: every posted key is committed and answered before the session closes.
+        if (library.KeyDrain(_host) != HostLibrary.Ok) GD.PushWarning($"m6h_key_drain: {library.LastError(_host)}");
+        PollKeys(library);
         _session = false;
         var code = library.CloseSession(_host, _shownRevision, out var pass);
         if (code != HostLibrary.Ok)

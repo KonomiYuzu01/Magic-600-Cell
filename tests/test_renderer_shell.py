@@ -345,13 +345,13 @@ class ShellProject(unittest.TestCase):
         # A press waits for a frame that draws its revision over a publication of it; the rest close without one.
         self.assertIn("f.EngineRevision >= press.Revision && f.PublicationRevision >= press.Revision", log)
         self.assertIn("WriteKey(press.Qpc, press.Handled, null);", log)
-        # handled_qpc and returned_qpc are read as m6h_key_down and m6h_frame return, before anything else, so a slow
-        # core call shows in the log apart from a slow present.
+        # handled_qpc is read as the key's commit answer arrives (m6h_key_poll, brief SF2) and returned_qpc as m6h_frame
+        # returns, before anything else, so a slow core call shows in the log apart from a slow present.
         shell = text(PROJECT / "Shell.cs")
         turn = shell[shell.index("private void Turn("):shell.index("private void CreateEcho()")]
-        self.assertLess(turn.index("library.KeyDown(_host, chord, key.Echo, out var result);"),
+        self.assertLess(turn.index("if (library.KeyPoll(_host, out var answer) != HostLibrary.Ok)"),
                         turn.index("var handled = EventLog.Now();"))
-        self.assertLess(turn.index("var handled = EventLog.Now();"), turn.index("if (answer != HostLibrary.Ok)"))
+        self.assertLess(turn.index("var handled = EventLog.Now();"), turn.index('GD.PushWarning($"m6h_key_down {chord}: {answer.Code}'))
         self.assertEqual(turn.count("_log?.Press(qpc, handled, "), 2)
         process = shell[shell.index("public override void _Process"):shell.index("private void OnFramePreDraw")]
         self.assertLess(process.index("library.Frame(_host, out var frame);"),
@@ -468,7 +468,7 @@ class ShellProject(unittest.TestCase):
                       '"Alt+" : "")', source)
         shell = text(PROJECT / "Shell.cs")
         self.assertIn("KeyChord.Code(key.PhysicalKeycode)", shell)
-        self.assertIn("library.KeyDown(_host, chord, key.Echo, out var result)", shell)
+        self.assertIn("library.KeyPost(_host, chord, key.Echo, arm is not null, arm?.Cap ?? 0, arm?.Item ?? 0, out var ticket)", shell)
         self.assertIn("library.FocusLost(_host);", shell)
         close = shell[shell.index("private void Close()"):shell.index("private void CloseSession()")]
         self.assertLess(close.index("CloseSession();"), close.index("CloseCore();"),
@@ -1550,10 +1550,11 @@ class D02Fixtures(unittest.TestCase):
 
     def test_the_host_gives_the_state_digest_and_the_shell_binds_only_by_it(self):
         lib = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
-        self.assertIn("pub const M6H_ABI_VERSION: u32 = 14;", lib)
+        self.assertIn("pub const M6H_ABI_VERSION: u32 = 15;", lib)
         self.assertIn('pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32', lib)
-        self.assertIn("public const uint AbiVersion = 14;", text(PROJECT / "HostLibrary.cs"))
-        self.assertIn("refuses another version than its `AbiVersion` (14 since ADR-D02 B17's picks; 13 at B23's Hopf "
+        self.assertIn("public const uint AbiVersion = 15;", text(PROJECT / "HostLibrary.cs"))
+        self.assertIn("refuses another version than its `AbiVersion` (15 since brief SF2's key queue; 14 at ADR-D02 B17's "
+                      "picks; 13 at B23's Hopf "
                       "rings; 12 at B18c's view focus; 11 at B18b's two views; 10 at B14's style, 9 at the view shape, 8 at B5)",
                       text(SHELL / "README.md"))
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
