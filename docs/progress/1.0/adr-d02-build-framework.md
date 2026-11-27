@@ -1396,6 +1396,25 @@ relative path is from the repository root.
 - **Machine:** W.
 - **Checkpoint:** yes, C6.
 - **Depends:** B32. The ten sealed defects from C5.
+- **As built (C6 findings, 27 November 2026):**
+  - No fault switch was built: `Model/Jumble.cs` has no `M600_D02_FAULT`, which Files above and section 7 name. J0
+    plants each defect as data in its own copy of Look Lab's samples (`plant()` in `track_j.py`, read through
+    `launch.py --d02-data`), so the product's code is unchanged. Six of section 7's classes cannot be planted that way (`NOT_PLANTABLE` gives each
+    reason), and the result line says so: `not_planted=6`.
+  - A defect may name a rule outside the driver's seventeen. It counts as planted, and only the researcher subagent
+    can catch it, so the planted set can show the driver's blind spots. The same change under two ids, and an id whose
+    prefix is not its writer (`by`), are refused.
+  - The subagent catches a faulted run only when it says broken and names the defect's rule (for a rule outside the
+    driver's, in its own words, which the record keeps for the integrator). Its false alarms on the clean runs fail J0
+    like the driver's; an answer whose `broken` is not true or false is refused.
+  - The packet's draw is seeded by the defects' sha256 and a nonce that only the sealed key keeps. The leak test also
+    matches the out folder's path JSON-escaped and in any case.
+  - Scoring takes Opus's count of the subagent's effort (`--effort`: scripts, dumps, minutes, words) and checks
+    section 7's cap; each scoring keeps the answers' sha256, and earlier scorings stay in the record's history. The
+    subagent's reach half has no driver function yet, and the line prints `reach=not_run`.
+  - A check that throws is a run problem, not a catch. J1 counts the rules it observed, not the session's entries
+    (`observation=6/6`, was 9/9), names exposed faces under `not_run`, and treats a screen with no BoundaryLedger
+    count as a problem.
 
 ## 3. Checkpoints
 
