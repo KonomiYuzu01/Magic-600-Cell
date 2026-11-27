@@ -36,7 +36,7 @@ public sealed class ShellChrome
     };
     private static readonly (string Id, string Title)[] Panes =
     {
-        ("editor", "Editor"), ("preview", "Preview"), ("canvas", "Canvas"), ("reference", "Learn"),("scriptview", "Script view"), ("greybox", "Greybox"),
+        ("editor", "Editor"), ("preview", "Preview"), ("canvas", "Canvas"), ("scriptview", "Script view"), ("greybox", "Greybox"),
     };
     public const string NotHere = "not in this build yet";
 
@@ -180,6 +180,9 @@ public sealed class ShellChrome
         // and in sample mode reads the synthetic sample.
         ShellResearch.Load(frame, registry, folder, SampleOn, () => Moves.Entries.Count);
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
+        var helpCatalog = HelpCatalog.Load(Path.Combine(folder, "glossary-terms.json"), Path.Combine(folder, "help-figures.json"), registry);
+        var learnPane = new LearnPane(new LearnModel(helpCatalog), () => frame.Tokens);
+        frame.AddPane("reference", "Learn", learnPane);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
         var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
@@ -209,6 +212,8 @@ public sealed class ShellChrome
         frame.Overlays.AddChild(palette);
         var sheet = new ShortcutSheet(registry, keymap, () => frame.Tokens);
         frame.Overlays.AddChild(sheet);
+        var helpCard = new HelpCard(() => frame.Tokens);
+        frame.Overlays.AddChild(helpCard);
         var radial = new RadialOverlay(registry, Unavailable, () => frame.Tokens);
         frame.Overlays.AddChild(radial);
         frame.OverlayCommands.Add("transient.close");
@@ -259,7 +264,13 @@ public sealed class ShellChrome
                     ShellDocuments.Execute(frame, command, argument);
                     break;
                 case "command.find": palette.Open(); break;
-                case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
+                case "help.open":
+                    var topic = argument ?? HelpTopics.At(frame.GetViewport());
+                    if (topic == HelpCatalog.Keys) { if (sheet.IsOpen) sheet.Close(); else sheet.Open(); }
+                    else if (topic == null) palette.Open(); // ADR-D02.12's F1 route when the pointer has no help topic.
+                    else if (helpCatalog.Resolve(topic) is { } resolved) helpCard.Open(helpCatalog.Card(resolved), frame.GetLocalMousePosition());
+                    else frame.Say("No help topic named " + topic, true);
+                    break;
                 case var menu when keymap.Radials.ContainsKey(menu):
                     radial.Open(sample != null ? sample.WithContext(keymap.Radials[menu]) : keymap.Radials[menu], frame.GetLocalMousePosition());
                     break;
@@ -295,6 +306,7 @@ public sealed class ShellChrome
             researchPane.Command += Execute;
         }
         palette.Run += row => Execute(row.Command, row.Argument);
+        helpCard.Learn += link => { Execute(link.Command, link.Argument); learnPane.Select(link.TopicId); };
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
         frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
@@ -329,10 +341,13 @@ public sealed class ShellChrome
 
         var find = SessionWidgets.Tool("search", $"Find a command ({keymap.KeysFor("command.find", null)})", frame.Tokens, palette.Open);
         find.Name = "FindButton";
-        var help = SessionWidgets.Tool("help.keys", $"Keyboard shortcuts ({keymap.KeysFor("help.open", null)})", frame.Tokens, sheet.Open);
+        HelpTopics.Mark(find, "command.find");
+        var help = SessionWidgets.Tool("help.keys", $"Keyboard shortcuts ({keymap.KeysFor("help.open", HelpCatalog.Keys)})", frame.Tokens, sheet.Open);
         help.Name = "ShortcutsButton";
+        HelpTopics.Mark(help, "help.open");
         var preset = SessionWidgets.Tool("preset.next", $"Next of the six presets ({keymap.KeysFor("theme.select", "preset.next")})", frame.Tokens, NextPreset);
         preset.Name = "PresetButton";
+        HelpTopics.Mark(preset, "theme.select");
         _revision = new Readout("RevisionReadout", "readout.revision", "Engine revision the core last showed", () => frame.Tokens);
         _position = new Readout("PositionReadout", "readout.position", "History position: the entry in view, of the entries of this run", () => frame.Tokens);
         foreach (Control tool in new Control[] { _revision, _position, preset, find, help })

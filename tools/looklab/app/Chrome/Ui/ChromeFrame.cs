@@ -213,7 +213,11 @@ public sealed partial class ChromeFrame : Control
     // One slim strip under the views and above the bottom dock: the commit bar (ADR-D01.11).
     public void SetStrip(Control control) { strip = control; dirty = true; }
     // One control on the shared edge of the locked pair: the relationship strip (ADR-D01.62). It adds no dock.
-    public void SetSeam(Control? control) { seam = control; dirty = true; }
+    public void SetSeam(Control? control)
+    {
+        if (control is RelationStrip) HelpTopics.Mark(control, "relationship-strip");
+        seam = control; dirty = true;
+    }
     private Control? seam;
     // One control along the head of the locked pair, over both views: the orbit rail (ADR-D01.64). It adds no dock.
     public void SetPairHead(Control? control) { pairHead = control; dirty = true; }

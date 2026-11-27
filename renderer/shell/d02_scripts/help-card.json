@@ -1,0 +1,15 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "help-card",
+  "resolution": "1280x720",
+  "note": "On the wj-ia-300 session fixture, F1 over the cap map opens Cap help, Escape closes it, and Cell help leads to Cell in Learn. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"hover_control": "CapMapCells"},
+    {"chord": "F1"},
+    {"chord": "Escape"},
+    {"command": "help.open", "argument": "cell"},
+    {"click_control": "HelpCardLearn"},
+    {"wait_ms": 6000}
+  ]
+}
