@@ -540,6 +540,10 @@ internal sealed partial class D02Driver : Node
         {
             Dump();
             _doing = "";
+            // A run never inherits the real pointer: it starts with the pointer parked outside the window, so F1's
+            // help topic (ADR-D01.73's interim route) and the hover pick read only the script's own pointer steps.
+            var parked = new Vector2(-8, -8);
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = parked, GlobalPosition = parked });
         }
         if (_next >= _steps.Count)
         {
@@ -713,6 +717,27 @@ internal sealed partial class D02Driver : Node
             // A left click on a cap map cell, through the shell's input.
             _doing = "cap click " + capClick.GetInt32().ToString(CultureInfo.InvariantCulture) + CapPointer(capClick.GetInt32(), true);
         }
+        else if (step.TryGetProperty("hover_control", out var hovered))
+        {
+            var name = hovered.GetString()!;
+            _doing = "hover " + name;
+            if (_frame.FindChild(name, true, false) is Control control && control.IsVisibleInTree())
+            {
+                // The cap map extends below the dock's scroll area on a short window.
+                var bounds = control.GetGlobalRect();
+                var visible = bounds.Intersection(control.GetViewportRect());
+                for (Node? parent = control.GetParent(); parent != null; parent = parent.GetParent())
+                    if (parent is Control { ClipContents: true } clip) visible = visible.Intersection(clip.GetGlobalRect());
+                if (visible.HasArea())
+                {
+                    var centre = bounds.GetCenter();
+                    var at = visible.HasPoint(centre) ? centre : visible.GetCenter();
+                    Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+                }
+                else _doing += " (clipped)";
+            }
+            else _doing += " (not found)";
+        }
         else if (step.TryGetProperty("click_control", out var clicked))
         {
             // A left click at the centre of a control of the frame, found by its name (the cap prompt's rows), through
@@ -751,7 +776,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a click_control, a command or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a hover_control, a click_control, a command or a wait_ms");
         }
         _wait = StepFrames;
     }
@@ -867,6 +892,7 @@ internal sealed partial class D02Driver : Node
             ShellPick.Dump(json);
             ShellLocal.Dump(json);
             ShellResearch.Dump(json);
+            ShellDocuments.Dump(json);
             // B11: the covers lines, the inspect line, the cap map's marks and the focus layers' keys.
             if (ShellJumble.Host is { } shown)
             {
@@ -978,6 +1004,37 @@ internal sealed partial class D02Driver : Node
                 json.WriteString("window", _frame.Tokens.Colours["surface.window"].Value.Hex);
                 json.WriteString("state_digest", ShellJumble.StateDigest);
                 json.WriteNumber("revision", ShellJumble.StateRevision);
+                // B31: the reveal over the fold, the preset in force, Save's issues, the held simulation (the chrome's
+                // filter, the matrix the core's view style was last sent, the window colour through the matrix).
+                json.WriteBoolean("revealed", _frame.Model.Docks[DockSide.Right].Revealed == Magic600.Chrome.Tuning.PanelId);
+                json.WriteString("preset", tuning.Model.Preset ?? "");
+                json.WriteBoolean("preset_shipped", tuning.Model.Current?.Shipped == true);
+                json.WriteString("preset_line", tuning.PresetInfo.Text);
+                json.WriteNumber("presets", tuning.Model.Presets.Count);
+                json.WriteStartArray("issues");
+                foreach (var issue in tuning.Model.Issues)
+                {
+                    json.WriteStringValue(issue);
+                }
+                json.WriteEndArray();
+                json.WriteString("issues_shown", tuning.Issues.Text);
+                json.WriteString("overrides", string.Join(" ", tuning.Model.Look.Overrides.Keys));
+                json.WriteString("simulating", tuning.Model.Simulating ?? "");
+                json.WriteBoolean("filter", tuning.Filter.Visible && tuning.Filter.IsInsideTree());
+                json.WriteString("simulation_line", tuning.SimulationInfo.Text);
+                json.WriteBoolean("core_simulation", ShellStyle.CoreSimulation);
+                json.WriteStartArray("core_matrix");
+                foreach (var entry in ShellStyle.SentMatrix)
+                {
+                    json.WriteNumberValue(entry);
+                }
+                json.WriteEndArray();
+                json.WriteString("window_simulated", tuning.Model.Simulating == null ? ""
+                    : ColourMetric.Apply(_frame.Tokens.Colours["surface.window"].Value, tuning.Model.Matrix).Hex);
+                // A chromatic colour too: a neutral window is a fixed point of every colour-vision matrix.
+                var classOne = _frame.Tokens.Colour(Magic600.Chrome.Tuning.ClassSlots[0]);
+                json.WriteString("class1", classOne.Hex);
+                json.WriteString("class1_simulated", tuning.Model.Simulating == null ? "" : ColourMetric.Apply(classOne, tuning.Model.Matrix).Hex);
                 json.WriteEndObject();
             }
             if (_frame != null && GodotObject.IsInstanceValid(_frame))

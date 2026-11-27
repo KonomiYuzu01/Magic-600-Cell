@@ -1672,7 +1672,7 @@ class D02Host(unittest.TestCase):
     def test_the_host_expectation_sees_each_part(self):
         run = shell_module("d02_run")
         self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views",
-                                              "library-branch", "research-pane", "research"})
+                                              "library-branch", "research-pane", "research", "documents"})
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]
@@ -1906,6 +1906,36 @@ class D02LibraryBranch(unittest.TestCase):
         self.assertEqual(len(run.expect_library_branch(dumps(count=1), {}, None)), 2)
         self.assertEqual(len(run.expect_library_branch(dumps(lamp=False), {}, None)), 5)
         self.assertTrue(run.expect_library_branch(dumps()[:4], {}, None))
+
+
+class D02Documents(unittest.TestCase):
+    def test_the_shell_mounts_and_routes_documents(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        mount = chrome.index("ShellDocuments.Load(frame, registry, sample);")
+        self.assertLess(chrome.index("ShellResearch.Load(frame, registry"), mount)
+        self.assertLess(mount, chrome.index("ChromeErrors.Mount(frame"))
+        self.assertIn("ShellDocuments.Unavailable(command, argument)", chrome)
+        self.assertIn("ShellDocuments.Execute(frame, command, argument);", chrome)
+        documents = text(PROJECT / "D02" / "ShellDocuments.cs")
+        self.assertIn("frame.SetDocumentRow(tabs);", documents)
+        self.assertIn("frame.Model.Drop(pane, FrameModel.Pair, DropZone.Right)", documents)
+        self.assertIn("ShellDocuments.Dump(json);", text(PROJECT / "D02" / "ShellJumble.cs"))
+
+    def test_the_run_uses_sample_mode_and_the_document_expectation(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["documents"], run.expect_documents)
+        self.assertIn("documents", run.IN_SAMPLE_MODE)
+        script = json.loads(text(SHELL / "d02_scripts" / "documents.json"))
+        self.assertEqual(script["resolution"], "1280x720")
+        written = ["start"]
+        for step in script["steps"]:
+            if "command" in step:
+                written.append(" ".join(["command", step["command"]] + ([step["argument"]] if "argument" in step else [])))
+            elif "click_control" in step:
+                written.append(f"click {step['click_control']}")
+            else:
+                written.append(f"wait {step['wait_ms']} ms")
+        self.assertEqual(written, run.DOCUMENT_STEPS)
 
 
 class D02Q3b(unittest.TestCase):

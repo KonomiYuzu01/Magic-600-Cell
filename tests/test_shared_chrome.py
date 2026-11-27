@@ -52,7 +52,8 @@ class Staged(unittest.TestCase):
 
     def test_the_ported_files_are_staged_as_they_are(self):
         for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs", "Model/CorePlaces.cs", "Model/LayoutTracker.cs", "Ui/FrameLayout.cs",
-                         "Model/ViewFields.cs", "Model/Inspect.cs", "Ui/InspectorPanels.cs", "Model/ViewLink.cs", "Ui/ViewLinkMarks.cs"):
+                         "Model/ViewFields.cs", "Model/Inspect.cs", "Ui/InspectorPanels.cs", "Model/ViewLink.cs", "Ui/ViewLinkMarks.cs",
+                         "Model/Documents.cs", "Ui/DocumentTabs.cs"):
             self.assertEqual(self.staged(relative), (CHROME / relative).read_bytes(), relative)
 
 
@@ -212,6 +213,28 @@ class LinkMark(unittest.TestCase):
         self.assertIn("ViewLink.Mark(view, Linked);", lab)
         for path in sorted(LIVE.glob("*.cs")):
             self.assertNotIn('"mark.link"', text(path), path.name)
+
+
+class DocumentTabs(unittest.TestCase):
+    def test_one_copy_in_the_shared_library(self):
+        ui = CHROME / "Ui" / "DocumentTabs.cs"
+        slots = ("document.tab", "document.tab.signature", "document.tab.lamp", "document.tab.dirty",
+                 "document.tab.pin", "document.overflow")
+        for slot in slots:
+            self.assertIn(f'"{slot}"', text(ui))
+        for declaration in ("class DocumentRow", "class DocumentBody"):
+            self.assertEqual([path for path in CHROME.rglob("*.cs") if declaration in text(path)], [ui])
+        for path in LIVE.rglob("*.cs"):
+            for word in (*slots, "DocumentRow", "DocumentBody"):
+                self.assertNotIn(word, text(path), path.name)
+
+    def test_the_row_sits_above_the_pane_group(self):
+        frame = text(CHROME / "Ui" / "ChromeFrame.cs")
+        self.assertIn("SetDocumentRow(Control? control)", frame)
+        row = frame.index("if (documentRow != null && !focus) centre.AddChild(documentRow);")
+        self.assertLess(frame.index("centre.AddChild(topStrip);"), row)
+        self.assertLess(row, frame.index("centre.AddChild(Model.OnlyPairShown"))
+        self.assertIn("ChromeWidgets.Detach(documentRow);", frame[frame.index("public override void _ExitTree()"):])
 
 
 if __name__ == "__main__":

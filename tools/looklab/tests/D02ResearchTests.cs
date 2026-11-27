@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Magic600.Chrome;
 
 // B28 (ADR-D02.3, .44 to .46, .49) and B29 (ADR-D02.4, .50, .52): the research pane's model on the synthetic sample (data/samples/research/panel.json):
@@ -95,18 +97,38 @@ internal static partial class Program
         Check(model.Rename(reference, " ") && model.Shown(reference) == record.Name[(record.Name.LastIndexOf('/') + 1)..], "an empty name does not restore the record's own");
     }
 
+    // The registry the product shell builds (ShellChrome.Build, C5-5): the command table; with D02 on, the whole of
+    // command-rows-d02.json and the owner's labels (ShellJumble.AddRows); in sample mode, Look Lab's draft rows; then the
+    // research pane, mounted in either mode, registers its draft rows (ResearchRows.AddDrafts).
+    private static CommandRegistry ShellRegistry(bool d02)
+    {
+        CommandRegistry registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json")));
+        string d02Rows = Read("data/design/command-rows-d02.json");
+        if (d02) { registry.AddRows(d02Rows); registry.Relabel(Read("data/design/command-labels.json")); }
+        registry.AddRows(Read("data/design/command-rows-draft.json"));
+        Sequence(ResearchRows.AddDrafts(registry, d02Rows), ResearchRows.Drafts, "the pane's draft rows");
+        return registry;
+    }
+
     private static void D02EveryResearchControlInvokesARow()
     {
         var sample = new SampleResearchSource(Read("data/samples/research/panel.json"));
-        CommandRegistry registry = LabRegistry();
-        var drafts = new CommandRegistry();
-        drafts.AddRows(sample.DraftRows);
-        registry.AddRows(sample.DraftRows);
-        registry.AddRows(Read("data/design/command-rows-d02.json"));
-        Sequence(drafts.Order, ResearchRows.Drafts, "the sample's draft rows");
         string table = File.ReadAllText(Path.Combine(Root, "docs/progress/1.0/command-table.json"));
-        foreach (string row in ResearchRows.Drafts) Check(!table.Contains("\"" + row + "\""), row + " is in the command table; it is no draft");
-        foreach (string row in ResearchRows.All) Check(registry.Commands.ContainsKey(row), row + " is no row");
+        string d02Rows = Read("data/design/command-rows-d02.json");
+        var d02 = new CommandRegistry();
+        d02.AddRows(d02Rows);
+        foreach (string row in ResearchRows.Drafts)
+            Check(!table.Contains("\"" + row + "\"") && d02.Commands.ContainsKey(row), row + " is in the command table or not in command-rows-d02.json");
+        foreach (bool on in new[] { false, true })
+        {
+            CommandRegistry registry = ShellRegistry(on);
+            foreach (string row in ResearchRows.All) Check(registry.Commands.ContainsKey(row), row + " is no row with D02 " + (on ? "on" : "off"));
+            ControlsInvokeRows(sample, registry, on, table, d02);
+        }
+    }
+
+    private static void ControlsInvokeRows(SampleResearchSource sample, CommandRegistry registry, bool on, string table, CommandRegistry d02)
+    {
         var model = new ResearchModel(sample, sample.Evidence);
         var controls = new List<ResearchControl>(ResearchModel.TabControls());
         // Every line of every tab, with each claim group, record and part opened in turn.
@@ -129,7 +151,9 @@ internal static partial class Program
             Check(controls.Any(c => c.Row == row), "no control invokes " + row);
         foreach (ResearchControl control in controls)
         {
-            Check(registry.Commands.ContainsKey(control.Row), control.Label + " invokes " + control.Row + ", which is no row");
+            Check(registry.Commands.ContainsKey(control.Row), control.Label + " invokes " + control.Row + ", which is no row with D02 " + (on ? "on" : "off"));
+            // C5-7: a research control's row is the command table's or ADR-D02's draft row, never only the sample's.
+            Check(table.Contains("\"" + control.Row + "\"") || d02.Commands.ContainsKey(control.Row), control.Row + " is neither a table row nor in command-rows-d02.json");
             string? argument = control.TakesText ? control.Argument + "a name" : control.Argument;
             Check(ResearchModel.Handles(control.Row, argument), control.Label + ": the pane does not handle " + control.Row + " " + argument);
         }
@@ -222,9 +246,7 @@ internal static partial class Program
         model.Execute(ResearchRows.Reproduce, ResearchModel.Ref(run));
         Check(history.Entries.Count == 0 && history.Revision == revision, "a research run reached History");
         Check(!MoveHistory.Origins.Contains("research"), "History has a research origin");
-        var sample = new SampleResearchSource(Read("data/samples/research/panel.json"));
-        CommandRegistry registry = LabRegistry();
-        registry.AddRows(sample.DraftRows);
+        CommandRegistry registry = ShellRegistry(false);
         foreach (string row in new[] { ResearchRows.Declare, ResearchRows.Start, ResearchRows.Reproduce })
             Equal(registry.Commands[row].Kind, "workspace", row + "'s kind");
         // No commit happened, so the answers stay current.
@@ -261,5 +283,135 @@ internal static partial class Program
         ResearchObligation missing = model.Obligations.First(o => o.Missing.Count > 0);
         Check(model.Toggle(ResearchModel.Ref(missing)), "an obligation does not open");
         Check(model.Lines().Any(l => l.Text == "missing: " + missing.Missing[0]), "the obligation's missing input is not shown");
+    }
+
+    // --- C5 (Fable's read after B29): the fixes ------------------------------------------------------------------------
+
+    // The sample with one edit to its answers, for a case the sample does not hold.
+    private static ResearchModel EditedSample(Action<JsonNode> edit)
+    {
+        JsonNode root = JsonNode.Parse(Read("data/samples/research/panel.json"))!;
+        edit(root["answers"]!);
+        return ResearchModel.FromSample(root.ToJsonString());
+    }
+
+    private static JsonNode RowOf(JsonNode answers, string row, Func<JsonNode, bool> which) =>
+        answers[row]!["answer"]!["rows"]!.AsArray().First(r => which(r!))!;
+
+    // C5-1: LP5 gives a check with no report a null verdict; [pass, null] is no pass, and the holds count stays.
+    private static void D02NullVerdictIsNeverAPass()
+    {
+        using var row = JsonDocument.Parse("{\"latest_check\":{\"run\":\"r\",\"outcome\":\"completed\",\"reading\":{\"kind\":\"complete\"},\"verdicts\":[{\"kind\":\"pass\"},null]}}");
+        Equal(ResearchModel.VerdictOf(row.RootElement).Kind, VerdictKind.NotChecked, "[pass, null]'s verdict");
+        ResearchModel before = ResearchSample();
+        ResearchClaim fresh = before.Claims.First(c => c.Run == null);
+        ResearchModel after = EditedSample(answers => RowOf(answers, ResearchRows.Claims, r => (string)r["group"]! == fresh.Group)["latest_check"] =
+            JsonNode.Parse("{\"run\":\"" + before.Runs[0].Run + "\",\"outcome\":\"completed\",\"reading\":{\"kind\":\"complete\"},\"verdicts\":[{\"kind\":\"pass\"},null]}"));
+        ResearchClaim edited = after.Claims.Single(c => c.Group == fresh.Group);
+        Check(edited.Run != null && edited.Verdict.Kind == VerdictKind.NotChecked && !edited.Verdict.CountsAsCheck, "[pass, null] reads " + edited.Verdict.Kind);
+        Equal(ResearchWords.VerdictLine(edited.Verdict, edited.Scope), "not checked", "[pass, null]'s line");
+        Equal(after.Counts().Holds, before.Counts().Holds, "a null verdict changed the holds count");
+        // A run whose checks are [pass, null] is not checked either.
+        ResearchRun passed = before.Runs.First(r => before.RunLine(r).StartsWith("holds", StringComparison.Ordinal));
+        ResearchModel runs = EditedSample(answers => RowOf(answers, ResearchRows.Runs, r => (string)r["run"]! == passed.Run)["checks"]!.AsArray()
+            .Add(JsonNode.Parse("{\"verdict\":null}")));
+        Equal(runs.RunLine(runs.Runs.Single(r => r.Run == passed.Run)), "not checked", "a run's [pass, null]");
+    }
+
+    // C5-2: a completed run reads as its claim group's row on Claims; a run with no group invents no scope.
+    private static void D02RunLineIsTheClaimsLine()
+    {
+        ResearchModel model = ResearchSample();
+        Check(model.Runs.Count(r => r.Group != null) >= 4, "the sample's grouped runs");
+        foreach (ResearchRun run in model.Runs.Where(r => r.Group != null))
+        {
+            ResearchClaim claim = model.Claims.Single(c => c.Group == run.Group);
+            Equal(model.RunLine(run), ResearchWords.VerdictLine(claim.Verdict, claim.Scope), "run " + run.Run[..12] + "'s line");
+        }
+        Check(model.Runs.Any(r => model.RunLine(r) == ResearchWords.NotApplicable), "no run reads not applicable");
+        ResearchRun first = model.Runs[0];
+        ResearchModel lone = EditedSample(answers => RowOf(answers, ResearchRows.Runs, r => (string)r["run"]! == first.Run)["group"] = null);
+        ResearchRun ungrouped = lone.Runs.Single(r => r.Run == first.Run);
+        Check(ungrouped.Group == null && lone.RunLine(ungrouped) == ResearchWords.NotChecked, "a run with no group reads " + lone.RunLine(ungrouped));
+        Check(lone.Toggle(ResearchModel.Ref(ungrouped)) && !lone.Lines().Any(l => l.Text.Contains("its run") || (l.Verdict ?? "").Contains("its run")), "a scope was invented");
+    }
+
+    // C5-3: a run the researcher cancelled (outcome `cancelled`, reading `cut_off`) is never a Pass or a Fail.
+    private static void D02CancelledRunIsNeverAVerdict()
+    {
+        ResearchModel model = ResearchSample();
+        foreach (ResearchRun run in model.Runs.Where(r => r.Group != null && r.Reading == "complete"))
+        {
+            const string cut = "{\"kind\":\"cut_off\",\"covered\":\"17\"}";
+            ResearchModel cancelled = EditedSample(answers =>
+            {
+                JsonNode row = RowOf(answers, ResearchRows.Runs, r => (string)r["run"]! == run.Run);
+                row["outcome"] = "cancelled"; row["reading"] = JsonNode.Parse(cut);
+                JsonNode latest = RowOf(answers, ResearchRows.Claims, r => (string)r["group"]! == run.Group)["latest_check"]!;
+                latest["outcome"] = "cancelled"; latest["reading"] = JsonNode.Parse(cut);
+            });
+            ResearchRun stopped = cancelled.Runs.Single(r => r.Run == run.Run);
+            ResearchClaim claim = cancelled.Claims.Single(c => c.Group == run.Group);
+            Check(stopped.State == SlotState.BudgetStopped && cancelled.RunLine(stopped) == ResearchWords.CutOff, "a cancelled run reads " + cancelled.RunLine(stopped));
+            Check(claim.Verdict.Kind is not (VerdictKind.Pass or VerdictKind.Fail) && !claim.Verdict.IsVerdict, "a cancelled check reads " + claim.Verdict.Kind);
+        }
+    }
+
+    // C5-4b: a dependency word for word: a missing input's source and cites, an input's sha256.
+    private static void D02DependenciesWordForWord()
+    {
+        ResearchModel model = ResearchSample();
+        string[] lines = model.Claims.SelectMany(c => ResearchWords.Expanded(c.Verdict)).ToArray();
+        Check(lines.Any(l => l.StartsWith("dependency: missing_input: ", StringComparison.Ordinal) && l.Contains(" · source sample/stage-15/") && l.EndsWith(" · cites none", StringComparison.Ordinal)),
+            "a missing input's source and cites are not shown");
+        Check(lines.Any(l => l == "dependency: input: sample/stage-18/d1-tail.json (missing) · sha256 6f250d5f19a71daddeaeb92477d2f2c95845ec01e16f04959fdcbee24daca6d6"),
+            "an input's sha256 is not shown");
+    }
+
+    // A source that writes a bundle as the research host would: it records the call and answers with the file it wrote.
+    private sealed class BundleSource(SampleResearchSource inner) : IResearchSource
+    {
+        public List<(IReadOnlyList<string> Records, string Destination)> Calls { get; } = new();
+        public string Inventory(string? manifest = null, int? stage = null) => inner.Inventory(manifest, stage);
+        public string Claims(string? group = null, int? stage = null) => inner.Claims(group, stage);
+        public string CheckReport(string run, int check) => inner.CheckReport(run, check);
+        public string Runs(string? group = null) => inner.Runs(group);
+        public string Obligations(string? group = null) => inner.Obligations(group);
+        public string Import(string manifest, IReadOnlyList<string> members) => inner.Import(manifest, members);
+        public string CheckRun(string? group, string checker, string certificate, IReadOnlyDictionary<string, string> inputs, string level, string digest, string puzzle) =>
+            inner.CheckRun(group, checker, certificate, inputs, level, digest, puzzle);
+        public string Reproduce(string run) => inner.Reproduce(run);
+        public string ExportObligation(string statement, string destination) => inner.ExportObligation(statement, destination);
+        public string RecordText(string? name = null) => inner.RecordText(name);
+        public string StartRun(int seed, int depth, long budget) => inner.StartRun(seed, depth, budget);
+        public string ExportBundle(IReadOnlyList<string> records, string destination)
+        {
+            Calls.Add((records, destination));
+            JsonNode envelope = JsonNode.Parse(inner.Inventory())!;
+            envelope["row"] = ResearchRows.Save;
+            envelope["answer"] = new JsonObject { ["destination"] = destination, ["sha256"] = new string('b', 64), ["bytes"] = 512 };
+            return envelope.ToJsonString();
+        }
+    }
+
+    // C5-6: Save invokes research.bundle.export through the source; on the sample nothing is saved, and the words say why.
+    // C5-11: a copy carries the evidence class and names it.
+    private static void D02SaveOnTheSampleSavesNothing()
+    {
+        var sample = new SampleResearchSource(Read("data/samples/research/panel.json"));
+        var model = new ResearchModel(sample, sample.Evidence);
+        ResearchRecord record = model.Records[0];
+        string reference = ResearchModel.Ref(record);
+        var (done, words) = model.Execute(ResearchRows.Save, reference);
+        Check(!done && words == "not saved: " + SampleResearchSource.Refusal, "Save on the sample said " + words);
+        Check(!words.Contains("saved ") && model.Transfer == null && model.TransferLine() == "", "the sample's Save says saved: " + model.TransferLine());
+        var (copied, line) = model.Execute(ResearchRows.Copy, reference);
+        Check(copied && model.Transfer!.Evidence == SampleResearchSource.Synthetic && line.Contains(" · evidence synthetic · "), "the copy's line: " + line);
+        var host = new BundleSource(sample);
+        var written = new ResearchModel(host, "source");
+        var (saved, said) = written.Execute(ResearchRows.Save, reference);
+        Check(saved && host.Calls.Count == 1 && host.Calls[0].Records.SequenceEqual(new[] { record.Name }) && host.Calls[0].Destination == ResearchModel.BundleFile(record),
+            "Save did not call research.bundle.export with the record and its file");
+        Equal(said, $"saved {written.Shown(reference)} to {ResearchModel.BundleFile(record)} · sha256 {new string('b', 64)} · origin Research · evidence source · {ResearchWords.CopyNote}", "the saved line");
     }
 }

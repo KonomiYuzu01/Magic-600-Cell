@@ -49,6 +49,7 @@ public sealed partial class CapMapControl : Control, IOwnKeys
     public CapMapControl(Func<TokenSet> tokens)
     {
         this.tokens = tokens; Name = "CapMapCells"; MouseFilter = MouseFilterEnum.Stop; FocusMode = FocusModeEnum.All;
+        HelpTopics.Mark(this, "cap");
         TooltipText = "Cap map"; SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
         Restyle();
     }

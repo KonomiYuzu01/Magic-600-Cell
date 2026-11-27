@@ -36,7 +36,7 @@ public sealed class ShellChrome
     };
     private static readonly (string Id, string Title)[] Panes =
     {
-        ("editor", "Editor"), ("preview", "Preview"), ("canvas", "Canvas"), ("reference", "Learn"),("scriptview", "Script view"), ("greybox", "Greybox"),
+        ("editor", "Editor"), ("preview", "Preview"), ("canvas", "Canvas"), ("scriptview", "Script view"), ("greybox", "Greybox"),
     };
     public const string NotHere = "not in this build yet";
 
@@ -55,7 +55,7 @@ public sealed class ShellChrome
     internal TuningPanel? Tuning { get; }
     /// <summary>Whether sample mode is on: launch.py --sample sets M600_SAMPLE=1.</summary>
     public static bool SampleOn => System.Environment.GetEnvironmentVariable("M600_SAMPLE") == "1";
-    public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts and History (sample) hold sample data. The views, History, the revision and the history position are this session's.";
+    public const string SampleWords = "Sample mode: the strip, the rail, the draft line, the Library, the inspector, Problems, Console, Tasks, the scripts, History (sample) and Research hold sample data. The views, History, the revision and the history position are this session's.";
     private readonly bool _live;
     // ADR-D01.41: the rotation link's state from the host: null with no Local view, true linked, false unlinked.
     private readonly Func<bool?> _rotationLink;
@@ -137,7 +137,13 @@ public sealed class ShellChrome
         // B30: the tuning panel beside History and Appearance; its knobs edit the appearance through the Appearance panel.
         if (ShellJumble.On)
         {
-            Tuning = ShellJumble.TuningHost = new TuningPanel(appearance, frame);
+            // B31: the shipped presets; the held simulation's matrix goes to the core's view style only with the G8
+            // switch on (the look-cost row), and over the chrome always.
+            var presetFile = Path.Combine(folder, "tuning-presets.json");
+            var presets = File.Exists(presetFile) ? TuningPreset.Parse(File.ReadAllText(presetFile), look) : null;
+            Tuning = ShellJumble.TuningHost = new TuningPanel(appearance, frame, presets) { CoreSimulation = ShellStyle.CoreSimulation };
+            var tuning = Tuning;
+            tuning.Simulated += () => ShellStyle.SetSimulation(tuning.Model.Simulating == null ? null : tuning.Model.Matrix);
             frame.AddDockPanel(DockSide.Right, Magic600.Chrome.Tuning.PanelId, Magic600.Chrome.Tuning.Title, Magic600.Chrome.Tuning.Glyph, Tuning);
         }
         var specimen = new TokenSpecimen();
@@ -170,10 +176,13 @@ public sealed class ShellChrome
             registry.AddRows(draftRows);
             sampleDrafts = drafts.Order.ToArray();
         }
-        // B28: the research pane, a centre peer of the pair in Analyse; in sample mode it reads the synthetic sample and
-        // registers its draft row.
-        ShellResearch.Load(frame, registry, SampleOn, () => Moves.Entries.Count);
+        // B28: the research pane, a centre peer of the pair in Analyse; it registers its draft rows in either mode (C5-5),
+        // and in sample mode reads the synthetic sample.
+        ShellResearch.Load(frame, registry, folder, SampleOn, () => Moves.Entries.Count);
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
+        var helpCatalog = HelpCatalog.Load(Path.Combine(folder, "glossary-terms.json"), Path.Combine(folder, "help-figures.json"), registry);
+        var learnPane = new LearnPane(new LearnModel(helpCatalog), () => frame.Tokens);
+        frame.AddPane("reference", "Learn", learnPane);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
         var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
@@ -183,6 +192,7 @@ public sealed class ShellChrome
             // B28: a research row naming a research object (or a tab row) is the research pane's. B29: the pane says
             // why one is unavailable (a start before its budget, the two CR-17 rows).
             _ when ShellResearch.Model is { } research && ResearchModel.Handles(command, argument) => research.Unavailable(command, argument),
+            _ when ShellDocuments.Handles(command) => ShellDocuments.Unavailable(command, argument),
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
@@ -202,6 +212,8 @@ public sealed class ShellChrome
         frame.Overlays.AddChild(palette);
         var sheet = new ShortcutSheet(registry, keymap, () => frame.Tokens);
         frame.Overlays.AddChild(sheet);
+        var helpCard = new HelpCard(() => frame.Tokens);
+        frame.Overlays.AddChild(helpCard);
         var radial = new RadialOverlay(registry, Unavailable, () => frame.Tokens);
         frame.Overlays.AddChild(radial);
         frame.OverlayCommands.Add("transient.close");
@@ -214,6 +226,7 @@ public sealed class ShellChrome
                 k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet, layouts);
             sample.Look = appearance;
         }
+        ShellDocuments.Load(frame, registry, sample);
         // Failures show in Problems with the error lamp, in every mode, and go to the run's errors.log.
         ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
             System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } events ? Path.Combine(events, "errors.log") : null);
@@ -247,8 +260,17 @@ public sealed class ShellChrome
                         Execute("workspace.set", "layout:analyse");
                     }
                     break;
+                case var document when ShellDocuments.Handles(document):
+                    ShellDocuments.Execute(frame, command, argument);
+                    break;
                 case "command.find": palette.Open(); break;
-                case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
+                case "help.open":
+                    var topic = argument ?? HelpTopics.At(frame.GetViewport());
+                    if (topic == HelpCatalog.Keys) { if (sheet.IsOpen) sheet.Close(); else sheet.Open(); }
+                    else if (topic == null) palette.Open(); // ADR-D02.12's F1 route when the pointer has no help topic.
+                    else if (helpCatalog.Resolve(topic) is { } resolved) helpCard.Open(helpCatalog.Card(resolved), frame.GetLocalMousePosition());
+                    else frame.Say("No help topic named " + topic, true);
+                    break;
                 case var menu when keymap.Radials.ContainsKey(menu):
                     radial.Open(sample != null ? sample.WithContext(keymap.Radials[menu]) : keymap.Radials[menu], frame.GetLocalMousePosition());
                     break;
@@ -284,6 +306,7 @@ public sealed class ShellChrome
             researchPane.Command += Execute;
         }
         palette.Run += row => Execute(row.Command, row.Argument);
+        helpCard.Learn += link => { Execute(link.Command, link.Argument); learnPane.Select(link.TopicId); };
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
         frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
@@ -318,10 +341,13 @@ public sealed class ShellChrome
 
         var find = SessionWidgets.Tool("search", $"Find a command ({keymap.KeysFor("command.find", null)})", frame.Tokens, palette.Open);
         find.Name = "FindButton";
-        var help = SessionWidgets.Tool("help.keys", $"Keyboard shortcuts ({keymap.KeysFor("help.open", null)})", frame.Tokens, sheet.Open);
+        HelpTopics.Mark(find, "command.find");
+        var help = SessionWidgets.Tool("help.keys", $"Keyboard shortcuts ({keymap.KeysFor("help.open", HelpCatalog.Keys)})", frame.Tokens, sheet.Open);
         help.Name = "ShortcutsButton";
+        HelpTopics.Mark(help, "help.open");
         var preset = SessionWidgets.Tool("preset.next", $"Next of the six presets ({keymap.KeysFor("theme.select", "preset.next")})", frame.Tokens, NextPreset);
         preset.Name = "PresetButton";
+        HelpTopics.Mark(preset, "theme.select");
         _revision = new Readout("RevisionReadout", "readout.revision", "Engine revision the core last showed", () => frame.Tokens);
         _position = new Readout("PositionReadout", "readout.position", "History position: the entry in view, of the entries of this run", () => frame.Tokens);
         foreach (Control tool in new Control[] { _revision, _position, preset, find, help })

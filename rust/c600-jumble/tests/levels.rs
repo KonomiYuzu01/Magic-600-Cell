@@ -936,6 +936,104 @@ fn a_derived_value_keeps_its_identity_lineage_and_claim() {
     assert_eq!(record.get("lineage").and_then(|l| l.get("revision")), Some(&Value::Null));
 }
 
+/// `derive_flat` with no engine error and no refusal of the request.
+fn flat_derivation(
+    ctx: &Context,
+    base: Base,
+    identity: &IdentityBlock,
+    twists: &[Twist],
+    mode: ProtectionMode,
+    protect: &[u32],
+) -> Derivation {
+    levels::derive_flat(ctx, base, identity, twists, mode, protect)
+        .expect("no engine error")
+        .expect("the request is not refused")
+}
+
+/// A flat derivation (draft, 26 November 2026): a chain of `derive_flat` steps, one letter or several at a time and
+/// from a solved snapshot, a value replayed from solved or a snapshot its journal witnesses, reaches the state and the
+/// claim of one derivation of its whole word from solved: the claim stays flat, of fixed size, and retained exactly
+/// while every letter is. It judges protection as `derive` does, with the same refusals, certificates and reports, and
+/// the same derivation and lineage; a base whose claim is nested is an engine error.
+#[test]
+fn a_flat_derivation_keeps_the_claim_of_the_whole_word_from_solved() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let ia = ctx.identity(Some(&*s.menu));
+    let base = Snapshot::solved(ctx, Some(s.menu.clone()));
+    let fixture = fixture_snapshot(s);
+    let records = {
+        let fixture = std::fs::read(repository().join("research/jumbling/fixtures/wj-I_a.json")).expect("the fixture");
+        let fixture = json::parse(&fixture).expect("the I_a fixture is JSON");
+        let records =
+            fixture.get("journal").and_then(|j| j.get("records")).and_then(Value::as_array).map(<[Value]>::to_vec);
+        records.expect("records")
+    };
+    let journal: Vec<Twist> =
+        records[..8].iter().map(|r| Twist::from_record(ctx, r).expect("a record the candidate reads")).collect();
+    let mut word = primitives(ctx, &[2, -4]);
+    word.extend(journal.iter().cloned());
+    word.extend(primitives(ctx, &[1]));
+    let whole = |word: &[Twist]| derived(derivation(ctx, Base::Snapshot(&base), &ia, word, ProtectionMode::Net, &[]));
+
+    // One letter at a time from the solved snapshot, then from the values it derives.
+    let mut chain = derived(flat_derivation(ctx, Base::Snapshot(&base), &ia, &word[..1], ProtectionMode::Net, &[]));
+    for k in 1..word.len() {
+        let step = &word[k..=k];
+        chain = derived(flat_derivation(ctx, Base::Derived(&chain), &ia, step, ProtectionMode::Net, &[]));
+        let flat = whole(&word[..=k]);
+        assert_eq!(chain.digest(ctx), flat.digest(ctx), "prefix {}", k + 1);
+        assert_eq!(chain.reachability(), flat.reachability(), "prefix {}", k + 1);
+        assert_eq!(chain.reachability().retained(), word[..=k].iter().all(|t| t.kidx.is_some()), "prefix {}", k + 1);
+        assert_eq!(chain.lineage(), &Lineage::Snapshot(base.state().digest(ctx)));
+        let from = chain.derivation().expect("a derivation");
+        assert_eq!((from.word.as_str(), from.letters), (levels::word_digest(step).as_str(), 1));
+    }
+    assert!(!chain.reachability().retained(), "the journal's jumble twists are not retained");
+    let size = |value: &Derived| value.reachability().to_json().canonical().len();
+    assert!(size(&chain) <= size(&whole(&word[..1])) + 2, "the claim keeps its size but for its count and flag");
+
+    // Several letters at a time from a value that a plain derivation replayed from solved, which is flat.
+    let replayed = whole(&word[..3]);
+    let rest = derived(flat_derivation(ctx, Base::Derived(&replayed), &ia, &word[3..], ProtectionMode::Net, &[]));
+    assert_eq!(rest.reachability(), whole(&word).reachability());
+    // From the snapshot that the fixture's journal witnesses, which is flat too.
+    let tail = primitives(ctx, &[1]);
+    let on = derived(flat_derivation(ctx, Base::Snapshot(&fixture), &ia, &tail, ProtectionMode::Net, &[]));
+    assert_eq!(on.reachability(), whole(&[journal.clone(), tail].concat()).reachability());
+
+    // A nested claim does not extend flat.
+    let nested = derived(derivation(ctx, Base::Derived(&replayed), &ia, &word[3..4], ProtectionMode::Net, &[]));
+    assert!(levels::derive_flat(ctx, Base::Derived(&nested), &ia, &word[4..5], ProtectionMode::Net, &[]).is_err());
+
+    // Protection: a flat derivation refuses and derives exactly as `derive` does, in both modes.
+    let letters = primitives(ctx, &[1, 3, -3, -1]);
+    let (_, steps) = run(ctx, base.state(), &letters);
+    let p = *steps[1].1.iter().find(|q| !steps[0].1.contains(q)).expect("a piece the second letter moves alone");
+    let first = whole(&letters[..1]);
+    for mode in [ProtectionMode::Strict, ProtectionMode::Net] {
+        for (word, protect) in [(&letters[1..], &[p][..]), (&letters[1..3], &[p][..]), (&letters[1..], &[][..])] {
+            let plain = derivation(ctx, Base::Derived(&first), &ia, word, mode, protect);
+            let flat = flat_derivation(ctx, Base::Derived(&first), &ia, word, mode, protect);
+            match (plain, flat) {
+                (Derivation::Refused(plain), Derivation::Refused(flat)) => assert_eq!(plain, flat),
+                (Derivation::Derived(plain), Derivation::Derived(flat)) => {
+                    assert_eq!(plain.digest(ctx), flat.digest(ctx));
+                    assert_eq!(plain.protection(), flat.protection());
+                    assert_eq!(plain.derivation(), flat.derivation());
+                    assert_eq!(plain.lineage(), flat.lineage());
+                    let all = [&letters[..1], word].concat();
+                    assert_eq!(flat.reachability(), whole(&all).reachability());
+                    assert_ne!(plain.reachability(), flat.reachability(), "a plain derivation nests the claim");
+                }
+                (plain, flat) => panic!("{mode:?} {protect:?}: {plain:?} against {flat:?}"),
+            }
+        }
+    }
+    let refusal = levels::derive_flat(ctx, Base::Derived(&first), &ia, &letters, ProtectionMode::Net, &[NP as u32]);
+    assert!(matches!(refusal, Ok(Err(refusal)) if refusal.code == codes::NAMED_OBJECT_INVALID));
+}
+
 /// CT-KN1-01 (part: the jumbling half; an import with another identity block is refused with
 /// `KN1:input.identity_mismatch`; the retained half is `c600-kernel`'s `tests/kernel.rs` and `tests/load.rs`).
 /// CT-ONE-09 (part: KN2.14's import in c600-jumble, which takes a raw pose table only with an open or promised claim,

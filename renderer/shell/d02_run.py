@@ -113,6 +113,30 @@ def expect_smoke(dumps: list[dict], source: dict, state: str | None) -> list[str
     return problems
 
 
+def expect_help_card(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    steps = ["start", "wait 2000 ms", "hover CapMapCells", "chord F1", "chord Escape",
+             "command help.open cell", "click HelpCardLearn", "wait 6000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    cap = overlay(dumps[3])
+    if "Cap" not in cap or "Open in Learn" not in cap:
+        problems.append("step 3: F1 over the cap map did not open Cap help with its Learn link")
+    words = sum(len(line.split()) for line in cap)
+    if words > 50:
+        problems.append(f"step 3: the Cap card shows {words} words")
+    if overlay(dumps[4]):
+        problems.append("step 4: Escape left an overlay open")
+    caption = "One of the 600 cells (bold) and its four neighbours."
+    cell = overlay(dumps[5])
+    if "Cell" not in cell or caption not in cell:
+        problems.append("step 5: help.open cell did not show Cell and its figure caption")
+    learn = texts(dumps[6], "frame")
+    if "Cell" not in learn or caption not in learn or overlay(dumps[6]):
+        problems.append("step 6: the link did not show Cell and its figure in Learn")
+    return problems
+
+
 def bind_chip(dump: dict) -> str | None:
     """The binding chip's words in a dump (B5): `bound · <state>` or `unbound · stale`."""
     for group, text in map(tuple, dump["lines"]):
@@ -802,19 +826,19 @@ def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list
     return problems
 
 
-EXPECT = {"twist-row": expect_twist_row, "smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
+EXPECT = {"twist-row": expect_twist_row, "smoke": expect_smoke, "help-card": expect_help_card, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
           "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
           "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band,
           "fit-2000": expect_fit, "fit-1280": lambda dumps, source, state: expect_fit(dumps, source, state, vertical=False)}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are. The twist scripts (bind and
 # two-views) run in sample mode as well, so they show that J reaches the session's router there too.
-ON_FIXTURE = {"twist-row", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
+ON_FIXTURE = {"twist-row", "help-card", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
 IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"}
 
 
 # The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.
-TWO_VIEWS_STEPS = ["start", "wait 2500 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 4000 ms",
+TWO_VIEWS_STEPS = ["start", "wait 4000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 4000 ms",
                    "chord J", "wait 700 ms", "chord J", "wait 700 ms", "chord Ctrl+Z", "wait 4000 ms"]
 
 
@@ -1331,6 +1355,14 @@ RESEARCH_PANE_STEPS = ["start", "wait 2000 ms", "command workspace.set layout:an
 RESEARCH_FAIL_LINES = ["first claim that does not hold: cycle.closes", "code: KN6:evidence.certificate_rejected"]
 
 
+def research_chip(index: int, research: dict) -> list[str]:
+    """C5-9: the sample chip's words name Research among the parts that hold sample data."""
+    chip = research.get("chip", "")
+    if not chip.startswith("Sample mode:") or "Research hold sample data" not in chip:
+        return [f"step {index}: the sample chip says {chip!r}"]
+    return []
+
+
 def expect_research_pane(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """Solve shows no research pane; Analyse shows it with the Fail row open on its first failing claim and the code;
     the first object.inspect folds the row and the second opens it again; the head says the evidence is synthetic."""
@@ -1343,6 +1375,7 @@ def expect_research_pane(dumps: list[dict], source: dict, state: str | None) -> 
         if research.get("evidence") != "synthetic" or "evidence: synthetic" not in research.get("head", ""):
             problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}, head "
                             f"{research.get('head')!r}")
+        problems += research_chip(index, research)
         if shown is not None and research.get("pane") is not shown:
             problems.append(f"step {index}: the research pane is {'hidden' if shown else 'shown'}")
         if (research.get("open") == RESEARCH_FAIL) != opened:
@@ -1368,6 +1401,60 @@ EXPECT["research-pane"] = expect_research_pane
 IN_SAMPLE_MODE.add("research-pane")
 
 
+DOCUMENT_STEPS = ["start", "wait 2000 ms", "command file.document.open census.6cs", "command file.document.compile",
+                  "command file.document.new script", "click SessionDocumentTab", "command file.document.close",
+                  "wait 3000 ms"]
+
+
+def expect_documents(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    if [dump["do"] for dump in dumps] != DOCUMENT_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    initial = dumps[0].get("documents", {})
+    tabs = initial.get("tabs", [])
+    signatures = [(tab.get("id"), tab.get("kind"), tab.get("ticks"), tab.get("lamp"), tab.get("binding"),
+                   tab.get("readOnly"), tab.get("recording")) for tab in tabs]
+    if signatures != [
+        ("session", "Session", 35, None, None, False, True),
+        ("mid.sample-log", "Log", 35, None, "saved", False, False),
+        ("endgame.sample-log", "Log", 35, None, "saved", False, False),
+        ("bad-hash.sample-log", "Log", 0, "Problems", None, True, False),
+        ("census.6cs", "Script", 0, "NotCompiled", None, False, False),
+        ("sweep.6cs", "Script", 0, "NotCompiled", None, False, False),
+    ]:
+        problems.append(f"opening document signatures are {signatures!r}")
+    if "final hash does not match" not in initial.get("problems", []):
+        problems.append(f"opening document problems are {initial.get('problems')!r}")
+    # The session is never in the overflow list; at 1280x720 the six sample tabs may all fit.
+    if not isinstance(initial.get("overflow"), int) or not 0 <= initial["overflow"] < len(tabs):
+        problems.append(f"at 1280x720, document overflow is {initial.get('overflow')!r}")
+
+    opened_ids = [tab.get("id") for tab in tabs]
+    for i, active in enumerate(("session", "session", "census.6cs", "census.6cs", "untitled-1", "session", "session", "session")):
+        docs = dumps[i].get("documents", {})
+        if docs.get("row") is not True or docs.get("active") != active:
+            problems.append(f"step {i}: row is {docs.get('row')!r} and active document is {docs.get('active')!r}")
+        current = {tab.get("id"): tab for tab in docs.get("tabs", [])}
+        expected_ids = opened_ids + (["untitled-1"] if i >= 4 else [])
+        if list(current) != expected_ids:
+            problems.append(f"step {i}: open documents are {list(current)!r}")
+        census_lamp = current.get("census.6cs", {}).get("lamp")
+        if census_lamp not in (("NotCompiled",) if i < 3 else ("Clean", "Problems")):
+            problems.append(f"step {i}: census.6cs lamp is {census_lamp!r}")
+        if i >= 4 and current.get("untitled-1", {}).get("kind") != "Script":
+            problems.append(f"step {i}: the untitled document's kind is {current.get('untitled-1', {}).get('kind')!r}")
+        errors = dumps[i].get("errors", {})
+        if errors.get("lamp") is not True or errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {i}: error lamp is {errors!r}")
+    if ["frame", "Close document: the session stays open"] not in dumps[6].get("lines", []):
+        problems.append("the frame did not give the session close refusal")
+    return problems
+
+
+EXPECT["documents"] = expect_documents
+IN_SAMPLE_MODE.add("documents")
+
+
 # B29 (ADR-D02.4, .45, .46, .50, .52): the research pane's Runs tab. research.runs brings the pane from Solve; a start
 # before any declaration is refused; budget, seed and depth are declared; the sample's run stops at its budget as cut
 # off and reproduces with bytes equal; both CR-17 rows are refused with their reason; History gains no entry.
@@ -1390,8 +1477,10 @@ def expect_research(dumps: list[dict], source: dict, state: str | None) -> list[
     history = dumps[0].get("research", {}).get("history_entries")
     for index, dump in enumerate(dumps):
         research = dump.get("research", {})
-        if research.get("evidence") != "synthetic":
-            problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}")
+        if research.get("evidence") != "synthetic" or "evidence: synthetic" not in research.get("head", ""):
+            problems.append(f"step {index}: the pane's evidence is {research.get('evidence')!r}, head "
+                            f"{research.get('head')!r}")
+        problems += research_chip(index, research)
         if research.get("pane") is not (index >= 2):
             problems.append(f"step {index}: the research pane is {'shown' if research.get('pane') else 'hidden'}")
         tab = "Obligations" if index in (13, 14) else "Runs" if index >= 2 else "Claims"
@@ -1726,12 +1815,12 @@ def expect_tuning(dumps: list[dict], source: dict, state: str | None) -> list[st
     if any(not isinstance(t, dict) for t in tuning.values()):
         return ["a step's dump has no tuning (is D02 on and the panel built?)"]
     first = tuning["wait 701 ms"]
-    # Below 1600 px the right dock's panel folds to its rail (owner, 26 November 2026): the row opens it in the
-    # model and the rail, and the panel shows once the window is wide enough.
+    # Below 1600 px the right dock's panel folds to its rail (owner, 26 November 2026); an explicit open shows what
+    # it opens, so the row reveals the panel over the fold (B31).
     folded = first.get("folded") is True
-    if first.get("right_dock") != "tuning" or first.get("shown") is not (not folded):
+    if first.get("right_dock") != "tuning" or first.get("shown") is not True or first.get("revealed") is not folded:
         problems.append(f"after tuning.open the right dock shows {first.get('right_dock')!r}, shown {first.get('shown')}, "
-                        f"folded {first.get('folded')} at {first.get('window_width')} px")
+                        f"folded {first.get('folded')}, revealed {first.get('revealed')} at {first.get('window_width')} px")
     if not first.get("state_digest"):
         problems.append("the head's state digest is not read")
     if not tint["wait 701 ms"].get("palette_sha256"):
@@ -1758,11 +1847,7 @@ def expect_tuning(dumps: list[dict], source: dict, state: str | None) -> list[st
     if tuning["wait 702 ms"].get("window") == first.get("window"):
         problems.append("tone did not move the frame's window colour")
     tone = tuning_knob(tuning["wait 707 ms"].get("live", ""), "tone")
-    if folded:
-        # The folded panel has no knob to click: the click finds nothing and changes nothing.
-        if tone is None or abs(tone - 0.05) > 1e-6:
-            problems.append(f"with the panel folded the click moved tone to {tone}")
-    elif tone is None or abs(tone) > 0.01 or tint["wait 707 ms"].get("palette_sha256") == tint["wait 706 ms"].get("palette_sha256"):
+    if tone is None or abs(tone) > 0.01 or tint["wait 707 ms"].get("palette_sha256") == tint["wait 706 ms"].get("palette_sha256"):
         problems.append(f"the click on the panel's tone knob left tone at {tone} or sent no new palette")
     tuned, opening = tuning["wait 707 ms"].get("live"), first.get("live")
     for mark, slot, live, holding in (("wait 708 ms", "B", opening, False), ("wait 709 ms", "A", tuned, False),
@@ -1773,7 +1858,7 @@ def expect_tuning(dumps: list[dict], source: dict, state: str | None) -> list[st
                             f"expected slot {slot}, holding {holding}, live {live!r}")
     if not problems:
         print(f"tuning: {len(marks)} steps; the panel opened in the right dock "
-              f"({'folded to its rail' if folded else 'shown'} at {first.get('window_width')} px); the state digest "
+              f"({'revealed over the fold' if folded else 'shown'} at {first.get('window_width')} px); the state digest "
               f"{str(first.get('state_digest'))[:16]} held; tone, contrast and black level sent new palettes; "
               "two swaps and the held compare came back")
     return problems
@@ -1783,6 +1868,81 @@ EXPECT["tuning"] = expect_tuning
 EXPECT["tuning-wide"] = expect_tuning
 ON_FIXTURE.add("tuning")
 ON_FIXTURE.add("tuning-wide")
+
+
+def expect_tuning_save(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B31's tuning-save script: the open reveals the panel over the fold; the shipped Graphite preset is applied; a
+    knob forks it and Save fills the fork; the held simulation draws over the chrome (the core gets the identity with
+    the G8 switch off) and goes on release; an Advanced override that breaks the height ramp recolours the pieces and
+    Save refuses it in place naming the pair; after the reset Save passes; the shipped preset comes back as shipped.
+    The state digest and the tint bytes never move."""
+    marks = [f"wait {n} ms" for n in range(701, 712)]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(mark not in by_step for mark in marks):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    t = {mark: by_step[mark].get("tuning") for mark in marks}
+    tint = {mark: by_step[mark].get("tint") or {} for mark in marks}
+    if any(not isinstance(v, dict) for v in t.values()):
+        return ["a step's dump has no tuning (is D02 on and the panel built?)"]
+    problems = []
+    first, identity = t["wait 701 ms"], [1, 0, 0, 0, 1, 0, 0, 0, 1]
+
+    def want(mark, ok, text):
+        if not ok:
+            problems.append(f"after '{mark}': {text}")
+
+    for mark in marks:
+        want(mark, t[mark].get("state_digest") == first.get("state_digest"), "the state digest moved")
+        want(mark, t[mark].get("shown") is True, "the panel is not shown")
+        for key in ("outline_sha256", "fill_sha256"):
+            want(mark, tint[mark].get(key) == tint["wait 701 ms"].get(key), f"the tint's {key} moved")
+        if mark != "wait 708 ms":
+            want(mark, not t[mark].get("status"), f"the panel refused: {t[mark].get('status')!r}")
+    want("wait 701 ms", first.get("revealed") is (first.get("folded") is True) and first.get("preset_shipped") is True,
+         f"open: revealed {first.get('revealed')}, preset {first.get('preset')!r}")
+    shipped = t["wait 702 ms"]
+    want("wait 702 ms", shipped.get("preset") == "graphite" and shipped.get("preset_shipped") is True,
+         f"the shipped preset: {shipped.get('preset')!r}")
+    fork = t["wait 703 ms"]
+    want("wait 703 ms", fork.get("preset") not in ("", "graphite") and fork.get("preset_shipped") is False
+         and fork.get("presets") == shipped.get("presets", 0) + 1 and "edited" in fork.get("preset_line", ""),
+         f"the knob did not fork the shipped preset: {fork.get('preset')!r}, {fork.get('preset_line')!r}")
+    saved = t["wait 704 ms"]
+    want("wait 704 ms", saved.get("preset") == fork.get("preset") and not saved.get("issues")
+         and "edited" not in saved.get("preset_line", ""),
+         f"Save did not fill the fork: {saved.get('preset_line')!r} {saved.get('issues')}")
+    held, gone = t["wait 705 ms"], t["wait 706 ms"]
+    want("wait 705 ms", held.get("simulating") == "deutan" and held.get("filter") is True
+         and held.get("class1_simulated") not in ("", held.get("class1")) and "chrome only" in held.get("simulation_line", "")
+         and held.get("core_matrix") == identity and held.get("core_simulation") is False,
+         f"the held simulation: {held.get('simulating')!r}, filter {held.get('filter')}, class 1 {held.get('class1')} -> "
+         f"{held.get('class1_simulated')}, core {held.get('core_matrix')}, {held.get('simulation_line')!r}")
+    want("wait 706 ms", gone.get("simulating") == "" and gone.get("filter") is False and gone.get("live") == held.get("live"),
+         "the release left the simulation or changed the tuning")
+    bad, refused = t["wait 707 ms"], t["wait 708 ms"]
+    want("wait 707 ms", "tint.jumble.height.6" in bad.get("overrides", "")
+         and tint["wait 707 ms"].get("palette_sha256") != tint["wait 706 ms"].get("palette_sha256"),
+         "the override did not reach the pieces' tint palette")
+    status = refused.get("status", "")
+    want("wait 708 ms", status.startswith("not saved: height ramp tint.jumble.height.") and "tint.jumble.height.6" in status
+         and "not monotone" in status and bool(refused.get("issues_shown")) and refused.get("preset") == bad.get("preset")
+         and refused.get("presets") == bad.get("presets"), f"Save was not refused in place with its pair: {status!r}")
+    after = t["wait 710 ms"]
+    want("wait 710 ms", not after.get("issues") and "edited" not in after.get("preset_line", ""),
+         f"Save after the reset: {after.get('issues')}")
+    back = t["wait 711 ms"]
+    want("wait 711 ms", back.get("preset") == "graphite" and back.get("live") == shipped.get("live"),
+         f"the shipped preset did not come back as shipped: {back.get('live')!r}")
+    if not problems:
+        print(f"tuning-save: {len(marks)} steps at {first.get('window_width')} px; the panel "
+              f"{'revealed over the fold' if first.get('revealed') else 'shown'}; Graphite forked to {fork.get('preset')} "
+              f"and saved; deutan held over the chrome (class 1 {held.get('class1')} -> {held.get('class1_simulated')}), "
+              f"core identity (G8 off); refused: {status}; the state digest {str(first.get('state_digest'))[:16]} held")
+    return problems
+
+
+EXPECT["tuning-save"] = expect_tuning_save
+ON_FIXTURE.add("tuning-save")
 
 
 def window_problems(dumps: list[dict]) -> list[str]:

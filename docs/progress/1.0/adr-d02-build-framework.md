@@ -216,6 +216,7 @@ relative path is from the repository root.
   - Host ABI 8: `m6h_state_digest(handle)`, read through `m6h_answer`. `HostLibrary.cs` pins 8 and lists the export; `renderer/shell/README.md` no longer says version 2 (F11).
   - `build_d02_fixtures.py` rebuilds each state's word from the records its sample was made from. A W-J journal record is a menu letter: its grip and the base index of its label (`I_a[17]` is item 17). A replay of all 841 records as letters through the adapter reached `wj-ia-300`, `wj-ia-420` and `wj-ia-end` with the samples' digests before any fixture was written. Letters of the menu's identity item (item 0) are left out: they move no piece, and the command layer refuses them (`KN2:input.recipe_shape`); the stop-40 restorer has four, so `ia-40`'s word has 98 letters. The fixture's three digests must equal the sample's `state.json`, or it is removed. The two `nu-c` states wait for B26, whose correction words come from the adapter.
   - Written and matching on the integrator's machine (release build, write time and reopen time): `on-zero` (0 letters; 1.1 s, 0.4 s), `s7001-0` to `s7001-9` (10 to 19 letters; about 1.3 s, 0.3 s each), `ia-40` (98; 19.5 s, 5.3 s), `wj-ia-300` (300; 70.5 s, 17.5 s), `wj-ia-420` (420; 182 s, 37.8 s), `wj-ia-end` (841; 447 s, 139 s). The reopen time grows faster than the commit count (risk R2), so `deep-1` and `deep-2`, at about 3,300 commits, are not written at B5; they are written for the gate sittings, or once a faster reopen exists.
+  - Written on 26 November 2026 after PR 454 made the command layer's jumbling replay linear (main d18b908a), at below-normal priority beside other work: `deep-1` (3,000 letters; 596 s, 233 s) and `deep-2` (3,321 letters, four identity letters left out; 701 s, 255 s), both matching their samples. On the old command layer `nu-c35` (5,629 letters) took 2,035 s to write and 1,244 s to reopen; the top integrator measured 156 s and 56.5 s for it on the linear one. A launch at a deep state still waits about four minutes to reopen.
   - `ShellJumble.Bind`: at each newly shown revision `Shell.cs` reads `m6h_state_digest` and binds the sample state whose two pose-array digests equal the head's, never by name; several states with equal poses (`on-zero` and `s7001-9`) bind the asked one. A chip says `bound · <state>` or `unbound · stale`. `watch_d02.py --state ID` and `d02_run.py` open the state's fixture when it is written.
   - Amended at checkpoint C1:
     - The key also takes the state digest (the answer's `digest` against the sample's `digests.adapter`). A pose id is a rank in a table compacted per state, so two states can share both pose-array digests.
@@ -1222,6 +1223,21 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B30. CR-16.
+- **As built (B31 agent, 26 November 2026):**
+  - B30's gap: below 1600 px the right dock folds to its rail, so `tuning.open` opened a panel nobody saw. `FrameModel.RevealDock` and `PressRail` now open a folded dock the way a click on its rail does: the panel is drawn over the fold until the rail is pressed again, and the fold rule (`ChromeFrame.Folds`) is unchanged. `d02_run.py --script tuning` passes at 1280x720 with the tone knob found and clicked.
+  - `Model/Tuning.cs`:
+    - `TuningValue` gains the Advanced role overrides (OkLCH, per family), stored in `Appearance` beside the knobs and passed to `TokenSet` as overrides.
+    - `TuningPreset` reads the new `tools/looklab/data/design/tuning-presets.json` (Graphite and Paper, each with an Inspecting variant), checking each preset against a scratch appearance. Shipped presets are read-only: the first edit forks one into `<id>.copy` ("<Name> copy"), and Save fills the fork. Presets live in memory; nothing is written to disk.
+    - `Save()` runs `SaveIssues(TokenSet)` first and refuses in place with the first failing pair: the token set's contrast rules; the height ramp (`tint.jumble.height.2/.4/.6/.above`) not strictly monotone in OKLab L; or two contact classes (1 to 6 and the overflow) closer than G4's bars (`StickerPalette.Needed`, `NeededSimulated`) under normal vision, protan, deutan or tritan.
+    - Advanced: `AdvancedRoles(query)` searches the family's roles; `Override("role=L C h")` and `"role=reset"` set and clear an override.
+    - The held simulation: `HoldSimulation`, `ReleaseSimulation` and `Matrix`, one row-major 3×3 matrix in linear RGB from `ColourMetric.SimulationMatrix` (Machado protan, deutan and tritan; `contrast` is the luminance matrix).
+  - `Ui/TuningPanel.cs`: a Presets section (choice, Save, the preset line and the refusal list), a Simulation section (choice and a hold button), and Advanced behind a switch with a search field and up to twelve role rows (swatch, L C h field, Reset). A held simulation draws `SimulationFilter`, a screen-texture shader over the frame that applies the matrix and keeps alpha, and raises `Simulated`.
+  - The core half: `ShellStyle.SetSimulation` puts the same matrix into the view style's matrix field, but only with `M600_D02_CORE_SIMULATION=1`. It is off by default, following the look-cost note (the core half waits for G8), so a held simulation changes the chrome and the panel says the pieces wait for G8.
+  - Rows: the command table's `token.override.set` and `token.override.reset` (ADR-D01.50, .51), and CR-16's drafts `tuning.preset.apply`, `tuning.preset.save` and `tuning.simulate.hold`. No new row.
+  - Both themes failed G4's simulated bar as shipped (graphite deutan classes 2 and 5 at 0.017). `tint.jumble.contact_class.1` moves from blue.8 to blue.7 and `.2` from teal.8 to teal.9 in `graphite.json` and `paper.json`; both now pass `Save()` (lowest ratio to the bar 1.23 and 1.15).
+  - Tests: `D02BothThemesPassSaveAsShipped`, `D02ShippedPresetForksOnEdit`, `D02SaveFailsOnNonMonotoneHeightRamp`, `D02SaveFailsOnCollidingClassesUnderSimulation`, `D02SaveFailsOnContrastRule` and `D02SimulationAndRevealedDock`.
+  - Run: `d02_run.py --script tuning-save --state wj-ia-300` at 1280x720. It reveals the panel over the fold, applies Graphite, forks it with a knob and saves, holds deutan over the chrome (the core gets the identity), darkens `tint.jumble.height.6` through Advanced, and sees Save refused with the pair `tint.jumble.height.4` and `.6`. It then resets, saves and gets the shipped preset back. The state digest and the tint's outline and fill bytes never move.
+  - Owner sees, in `watch_d02.py --state wj-ia-300`: the palette row `tuning.open`, then the hold button under Simulation; the chrome changes, and the pieces do not until G8 turns the core half on. Advanced, `tint.jumble.height.6` set to `0.2 0 0`, then Save, is refused with its pair.
 
 ### B32. The reduced Track J driver: J1
 - **Goal:** a model-free run in the product shell, through keys and the palette only.
@@ -1342,6 +1358,21 @@ Each checkpoint is one read of the named diff range against the questions below,
   - the synthetic sample is labelled.
 - Fable also writes ten planted defects, sealed, added to `defects.json` only after B32's driver is committed.
 - Owner is shown: the research pane.
+- C5 findings (26 November 2026), Fable's read of B28 and B29; each fix has its test:
+  - C5-1 (major): a null check verdict read as a pass; fixed in 099ee050 (`D02NullVerdictIsNeverAPass`).
+  - C5-2: Runs and Claims worded a not-applicable run differently, and a run with no group got the scope "its run";
+    fixed in 099ee050 (`D02RunLineIsTheClaimsLine`).
+  - C5-3: a run its researcher cancelled says "the run stopped at its budget"; ADR-D02.45 and .46 have no words for
+    it, so the words stay: freeze card. Never a Pass or a Fail (`D02CancelledRunIsNeverAVerdict`, 099ee050).
+  - C5-4a: a Fail recorded before a cut-off needs an owner reading: freeze card.
+  - C5-4b: dependencies dropped a missing input's source and cites and an input's sha256; fixed in 099ee050.
+  - C5-5: the research rows were registered only with D02 on; fixed in 099ee050 (`ResearchRows.AddDrafts`).
+  - C5-6: Save said "saved" without calling `research.bundle.export`; fixed in 099ee050.
+  - C5-7: three research draft rows lived only in the sample; moved to `command-rows-d02.json` in 099ee050.
+  - C5-8: keyboard reach of the pane: B32.
+  - C5-9: the sample chip omitted Research and the run expectations did not assert it; fixed in 099ee050.
+  - C5-10: sample record file names shared with real archive records; renamed in 099ee050.
+  - C5-11: a carried copy or save did not name its evidence class; fixed in 099ee050.
 
 **C6, after B33.**
 - Fable checks:

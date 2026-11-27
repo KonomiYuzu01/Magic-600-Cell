@@ -13,8 +13,8 @@
 //! reopen replays the witness again.
 //!
 //! With Jumble on, `jumble.twist.menu` ([`JUMBLE_TWIST_ROW`]) moves the poses (JI.35, FP.31; draft). The layer derives
-//! each pose move from the head's value, and replays the jumbling journal flat from solved ([`replay_poses`]) when the
-//! chain of derivations grows long or an undo's exact inverse is not an item of the menu.
+//! each pose move from the head's value with the value's flat claim kept flat (`levels::derive_flat`), and replays the
+//! jumbling journal from solved ([`replay_poses`]) only when an undo's exact inverse is not an item of the menu.
 //!
 //! An exit ([`exit`]) is allowed exactly at A5's label checkpoint (ONE.54): every piece on the lattice, every centre in
 //! its own chamber, ν = 0 and the head's poses witnessed from solved by the jumbling journal. The exit's labels become
@@ -195,13 +195,13 @@ pub(crate) fn replay_from_solved(twists: &Twists, letters: &[i32], labels: &str)
 }
 
 /// Replays `suffix`, the retained suffix's signed primitive letters, from `root`, the active exit's own poses, in the
-/// jumbling engine under the pinned menu (`levels::derive` with no protected piece, as for [`replay_from_solved`]), and
-/// checks that the replay's labels have the digest `labels`, the current labels' (JI.25 to JI.27, FP.32). An empty
-/// suffix keeps the exit's poses and their digest. Poses made under another menu are `KN1:input.identity_mismatch`. A
-/// suffix that does not replay, or whose labels are not total or are not the current ones, is not a valid witness, and
-/// with an active exit the solved witness does not apply: `KN5:input.jumble_on_labels_only`. `exit` is the exit's
-/// record and `crossing` its event, which the entry's record names ([`exit_root_record`]). An engine fault is
-/// `KN5:consistency.state_hash_mismatch`.
+/// jumbling engine under the pinned menu (`levels::derive_flat` with no protected piece, as for [`replay_from_solved`]:
+/// the root's flat claim stays flat), and checks that the replay's labels have the digest `labels`, the current labels'
+/// (JI.25 to JI.27, FP.32). An empty suffix keeps the exit's poses and their digest. Poses made under another menu are
+/// `KN1:input.identity_mismatch`. A suffix that does not replay, or whose labels are not total or are not the current
+/// ones, is not a valid witness, and with an active exit the solved witness does not apply:
+/// `KN5:input.jumble_on_labels_only`. `exit` is the exit's record and `crossing` its event, which the entry's record
+/// names ([`exit_root_record`]). An engine fault is `KN5:consistency.state_hash_mismatch`.
 pub(crate) fn replay_from_exit(
     twists: &Twists,
     root: &Derived,
@@ -222,7 +222,7 @@ pub(crate) fn replay_from_exit(
     } else {
         let word = suffix.iter().map(|&letter| levels::primitive(ctx, i64::from(letter)));
         let word = word.collect::<Result<Vec<_>, _>>().map_err(engine)?;
-        let derivation = levels::derive(ctx, Base::Derived(root), &identity, &word, ProtectionMode::Net, &[]);
+        let derivation = levels::derive_flat(ctx, Base::Derived(root), &identity, &word, ProtectionMode::Net, &[]);
         match derivation.map_err(engine)? {
             Err(refusal) => return Err(refusal.into()),
             Ok(Derivation::Refused(refused)) => {
@@ -252,10 +252,10 @@ fn reaches_labels(twists: &Twists, derived: &Derived, labels: &str, what: &str) 
     }
 }
 
-/// Replays `word`, the jumbling engine's journal from solved to a pose move (draft), flat from solved under the pinned
-/// menu with no protected piece, and returns the value at its end with that value's pose digest. The word is the
-/// layer's own journal of moves it admitted already, each judged under the protection in force when it was made, so a
-/// refusal or an engine fault is `KN5:consistency.state_hash_mismatch`.
+/// Replays `word`, the jumbling engine's journal from solved to a pose move (draft), from solved under the pinned menu
+/// with no protected piece, and returns the value at its end, whose claim is flat, with that value's pose digest. The
+/// word is the layer's own journal of moves it admitted already, each judged under the protection in force when it was
+/// made, so a refusal or an engine fault is `KN5:consistency.state_hash_mismatch`.
 pub(crate) fn replay_poses(twists: &Twists, word: &[Twist]) -> Result<(Derived, String), Error> {
     let ctx = &*twists.context;
     let mismatch = |detail: String| Error::new(code::STATE_HASH_MISMATCH, detail);

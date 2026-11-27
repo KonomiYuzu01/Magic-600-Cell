@@ -200,6 +200,8 @@ public sealed partial class ChromeFrame : Control
     // The error lamp of the top bar: how many failures the host has counted, and what the first one was.
     public void SetAlert(int count, string tooltip) { if (count == alerts && tooltip == alertTip) return; alerts = count; alertTip = tooltip; dirty = true; }
     public void SetTopStrip(Control control) { topStrip = control; dirty = true; }
+    private Control? documentRow;
+    public void SetDocumentRow(Control? control) { ChromeWidgets.Detach(documentRow); documentRow = control; dirty = true; }
     // A host-drawn cell in the top bar naming the session's mode with its glyph (ADR-D02.6), or none.
     public void SetModeCell(string? text, string tooltip, string glyph = "mark.jumble")
     {
@@ -211,7 +213,11 @@ public sealed partial class ChromeFrame : Control
     // One slim strip under the views and above the bottom dock: the commit bar (ADR-D01.11).
     public void SetStrip(Control control) { strip = control; dirty = true; }
     // One control on the shared edge of the locked pair: the relationship strip (ADR-D01.62). It adds no dock.
-    public void SetSeam(Control? control) { seam = control; dirty = true; }
+    public void SetSeam(Control? control)
+    {
+        if (control is RelationStrip) HelpTopics.Mark(control, "relationship-strip");
+        seam = control; dirty = true;
+    }
     private Control? seam;
     // One control along the head of the locked pair, over both views: the orbit rail (ADR-D01.64). It adds no dock.
     public void SetPairHead(Control? control) { pairHead = control; dirty = true; }
@@ -367,6 +373,8 @@ public sealed partial class ChromeFrame : Control
     public const float DockShare = .16f;
     // Below these widths the right dock's panel, then the left's, folds to its rail.
     public const float RightDockBelow = 1600, LeftDockBelow = 1440;
+    // Whether the side dock's panel folds to its rail at this window width.
+    public bool Folds(DockSide side) => side != DockSide.Bottom && Window.X > 0 && Window.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
     private Vector2 builtFor;
 
     public override void _Process(double delta)
@@ -391,6 +399,7 @@ public sealed partial class ChromeFrame : Control
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip); ChromeWidgets.Detach(seam); ChromeWidgets.Detach(pairHead);
+        ChromeWidgets.Detach(documentRow);
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
@@ -409,6 +418,7 @@ public sealed partial class ChromeFrame : Control
         if (!focus) middle.AddChild(SideDock(DockSide.Left));
         var centre = (VBoxContainer)Tight(new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }); middle.AddChild(centre);
         if (topStrip != null && !focus) centre.AddChild(topStrip);
+        if (documentRow != null && !focus) centre.AddChild(documentRow);
         bool localDrawn = OpenGround && LocalDrawn;
         Global = View("Global", globalContent); Local = View("Local", localDrawn ? LocalWrap(localContent) : localContent);
         if (OpenGround) { Global.Open = true; Global.SetFocused(false); }
@@ -488,7 +498,7 @@ public sealed partial class ChromeFrame : Control
         {
             Button button = ChromeWidgets.Tool(panel.Glyph, panel.Title, true); ChromeIcons.Apply(button, panel.Glyph, Tokens.Px("icon.medium"));
             button.SetPressedNoSignal(state.Open == panel.Id); button.SetMeta("dock_panel", panel.Id);
-            button.Pressed += () => Model.ToggleDock(side, panel.Id);
+            button.Pressed += () => Model.PressRail(side, panel.Id, Folds(side));
             buttons.AddChild(button);
             if (badges.ContainsKey(panel.Id)) { Label badge = BadgeLabel(panel.Id); badge.MouseFilter = MouseFilterEnum.Ignore; badge.Position = new Vector2(Tokens.Px("rail.width") * .55f, 0); button.AddChild(badge); }
         }
@@ -496,7 +506,8 @@ public sealed partial class ChromeFrame : Control
         // A narrow window keeps the pair whole: the right dock's panel folds to its rail first, then the left's. The
         // open panel stays open in the model and returns when the window is wide enough.
         Vector2 window = Window;
-        bool squeezed = window.X > 0 && window.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
+        // B31: an explicit open (a rail press, a row that opens the panel) shows the panel over the fold.
+        bool squeezed = Folds(side) && (state.Revealed == null || state.Revealed != state.Open);
         if (!squeezed && dockPanels.FirstOrDefault(p => p.Side == side && p.Id == state.Open) is { } open)
         {
             // A side dock is at most DockShare of the window, so the pair keeps its room in a narrow window.
@@ -638,6 +649,7 @@ public sealed partial class ChromeFrame : Control
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent);
+        ChromeWidgets.Detach(documentRow);
     }
 }
 

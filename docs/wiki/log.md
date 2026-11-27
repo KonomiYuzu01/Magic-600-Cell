@@ -11,6 +11,9 @@ Watching the product window, the owner asked that it turn with the mouse, open o
 ## [2026-11-26] decision | ADR-D01's frame in the product on sample data; B5 and B6 without a stop
 The owner asked for ADR-D01's whole frame in the product shell while ADR-D02 is built, and for B5 and B6 to follow without a stop for the owner's check ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), section 7). This pulls the frame on sample data, part of ADR-D03's scope, into ADR-D02's pull request; [the framework](../progress/1.0/adr-d02-build-framework.md) records it as step B4a.
 
+## [2026-11-26] update | Codex CLI pinned to 0.171.0
+The server refused gpt-6.2-sol and gpt-6.2-astra to codex-cli 0.159.0 on a ChatGPT sign-in, so the pin moved to 0.171.0 at the owner's request. The [MCP isolation evidence](evidence/codex-mcp-isolation.md) records what was checked on 0.171.0 and that its harness rerun is still owed.
+
 ## [2026-11-26] decision | Context and test tiers
 The owner set how agents use context and how tests are tiered ([decision](decisions/owner-decisions-2026-11-26-context-and-test-tiers.md)): the always-loaded rule files keep only the hard rules, the current state and a map, and the suspended Codex protocol, Claude's hooks and machine cleanup, and the briefing's dated history move unchanged into guides loaded on demand; a commit runs only its area's fast checks, a step its own end-to-end script once, a pull request CI's fast tier, and the full regression runs in CI's full tier and together in stage 3.
 

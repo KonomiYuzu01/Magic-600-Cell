@@ -1,0 +1,11 @@
+{
+  "format": "magic600-design-help-figures",
+  "version": 1,
+  "note": "Geometry figures by glossary term id for contextual help and Learn.",
+  "figures": {
+    "cell": "cell",
+    "grip": "grip",
+    "cap": "grip",
+    "twist-full": "grip"
+  }
+}

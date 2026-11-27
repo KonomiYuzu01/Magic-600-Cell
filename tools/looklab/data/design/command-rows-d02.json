@@ -1,7 +1,7 @@
 {
   "format": "magic600-design-command-rows",
   "version": 1,
-  "note": "ADR-D02's draft command rows: operations of the Jumble and research surfaces that the command table does not hold yet, each with the request (section 15) that asks the top integrator for it. The shell registers them only with D02 on. A row is deleted from this file the day the command table gains its id (D02DraftRowsAbsentFromTable). No key is bound here; the palette can bind each one.",
+  "note": "ADR-D02's draft command rows: operations of the Jumble and research surfaces that the command table does not hold yet, each with the request (section 15) that asks the top integrator for it, or, for the research pane's own rows, the build step whose row request it is (B28, B29). The shell registers them with D02 on, and the research pane's rows whenever the pane is mounted (ResearchRows.AddDrafts). A row is deleted from this file the day the command table gains its id (D02DraftRowsAbsentFromTable). No key is bound here; the palette can bind each one.",
   "commands": [
     {
       "id": "jumble.capmap.threshold.set",
@@ -303,6 +303,36 @@
       ],
       "note": "Opens a run's derived state in a free view with its own binding source, captioned \"derived; reachability open\"; refused past the four-view envelope (ADR-D02.45).",
       "request": "CR-17"
+    },
+    {
+      "id": "research.record.read",
+      "label": "Read research record",
+      "kind": "query",
+      "contexts": [
+        "global"
+      ],
+      "note": "Reads a research record's one-paragraph finding and its tree of named parts with their lengths (ADR-D02.44, ADR-D02.49), and opens it in place in the research pane. Argument: the record.",
+      "request": "B28"
+    },
+    {
+      "id": "research.run.declare",
+      "label": "Declare research run",
+      "kind": "workspace",
+      "contexts": [
+        "global"
+      ],
+      "note": "Declares one field of the next research run before it starts (ADR-D02.4, ADR-D02.52): seed=<7401 to 7499> (its words name the scored block), depth=<twists> or budget=<steps>. A seed outside the pool is refused.",
+      "request": "B29"
+    },
+    {
+      "id": "research.run.start",
+      "label": "Start research run",
+      "kind": "workspace",
+      "contexts": [
+        "global"
+      ],
+      "note": "Starts the declared research run (ADR-D02.4, ADR-D02.50): refused until its budget, seed and depth are declared. The run records its budget; a run that reaches it stops as cut off, never a verdict. It commits nothing, so History shows no research run.",
+      "request": "B29"
     },
     {
       "id": "jumble.seat.hold",
