@@ -540,6 +540,10 @@ internal sealed partial class D02Driver : Node
         {
             Dump();
             _doing = "";
+            // A run never inherits the real pointer: it starts with the pointer parked outside the window, so F1's
+            // help topic (ADR-D01.73's interim route) and the hover pick read only the script's own pointer steps.
+            var parked = new Vector2(-8, -8);
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = parked, GlobalPosition = parked });
         }
         if (_next >= _steps.Count)
         {

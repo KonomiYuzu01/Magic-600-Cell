@@ -824,7 +824,7 @@ IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"
 
 
 # The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.
-TWO_VIEWS_STEPS = ["start", "wait 2500 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 4000 ms",
+TWO_VIEWS_STEPS = ["start", "wait 4000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 4000 ms",
                    "chord J", "wait 700 ms", "chord J", "wait 700 ms", "chord Ctrl+Z", "wait 4000 ms"]
 
 
