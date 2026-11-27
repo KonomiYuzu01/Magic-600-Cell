@@ -1309,6 +1309,60 @@ EXPECT["research-pane"] = expect_research_pane
 IN_SAMPLE_MODE.add("research-pane")
 
 
+DOCUMENT_STEPS = ["start", "wait 2000 ms", "command file.document.open census.6cs", "command file.document.compile",
+                  "command file.document.new script", "click SessionDocumentTab", "command file.document.close",
+                  "wait 3000 ms"]
+
+
+def expect_documents(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    if [dump["do"] for dump in dumps] != DOCUMENT_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    initial = dumps[0].get("documents", {})
+    tabs = initial.get("tabs", [])
+    signatures = [(tab.get("id"), tab.get("kind"), tab.get("ticks"), tab.get("lamp"), tab.get("binding"),
+                   tab.get("readOnly"), tab.get("recording")) for tab in tabs]
+    if signatures != [
+        ("session", "Session", 35, None, None, False, True),
+        ("mid.sample-log", "Log", 35, None, "saved", False, False),
+        ("endgame.sample-log", "Log", 35, None, "saved", False, False),
+        ("bad-hash.sample-log", "Log", 0, "Problems", None, True, False),
+        ("census.6cs", "Script", 0, "NotCompiled", None, False, False),
+        ("sweep.6cs", "Script", 0, "NotCompiled", None, False, False),
+    ]:
+        problems.append(f"opening document signatures are {signatures!r}")
+    if "final hash does not match" not in initial.get("problems", []):
+        problems.append(f"opening document problems are {initial.get('problems')!r}")
+    # The session is never in the overflow list; at 1280x720 the six sample tabs may all fit.
+    if not isinstance(initial.get("overflow"), int) or not 0 <= initial["overflow"] < len(tabs):
+        problems.append(f"at 1280x720, document overflow is {initial.get('overflow')!r}")
+
+    opened_ids = [tab.get("id") for tab in tabs]
+    for i, active in enumerate(("session", "session", "census.6cs", "census.6cs", "untitled-1", "session", "session", "session")):
+        docs = dumps[i].get("documents", {})
+        if docs.get("row") is not True or docs.get("active") != active:
+            problems.append(f"step {i}: row is {docs.get('row')!r} and active document is {docs.get('active')!r}")
+        current = {tab.get("id"): tab for tab in docs.get("tabs", [])}
+        expected_ids = opened_ids + (["untitled-1"] if i >= 4 else [])
+        if list(current) != expected_ids:
+            problems.append(f"step {i}: open documents are {list(current)!r}")
+        census_lamp = current.get("census.6cs", {}).get("lamp")
+        if census_lamp not in (("NotCompiled",) if i < 3 else ("Clean", "Problems")):
+            problems.append(f"step {i}: census.6cs lamp is {census_lamp!r}")
+        if i >= 4 and current.get("untitled-1", {}).get("kind") != "Script":
+            problems.append(f"step {i}: the untitled document's kind is {current.get('untitled-1', {}).get('kind')!r}")
+        errors = dumps[i].get("errors", {})
+        if errors.get("lamp") is not True or errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {i}: error lamp is {errors!r}")
+    if ["frame", "Close document: the session stays open"] not in dumps[6].get("lines", []):
+        problems.append("the frame did not give the session close refusal")
+    return problems
+
+
+EXPECT["documents"] = expect_documents
+IN_SAMPLE_MODE.add("documents")
+
+
 # B29 (ADR-D02.4, .45, .46, .50, .52): the research pane's Runs tab. research.runs brings the pane from Solve; a start
 # before any declaration is refused; budget, seed and depth are declared; the sample's run stops at its budget as cut
 # off and reproduces with bytes equal; both CR-17 rows are refused with their reason; History gains no entry.

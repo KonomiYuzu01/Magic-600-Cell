@@ -200,6 +200,8 @@ public sealed partial class ChromeFrame : Control
     // The error lamp of the top bar: how many failures the host has counted, and what the first one was.
     public void SetAlert(int count, string tooltip) { if (count == alerts && tooltip == alertTip) return; alerts = count; alertTip = tooltip; dirty = true; }
     public void SetTopStrip(Control control) { topStrip = control; dirty = true; }
+    private Control? documentRow;
+    public void SetDocumentRow(Control? control) { ChromeWidgets.Detach(documentRow); documentRow = control; dirty = true; }
     // A host-drawn cell in the top bar naming the session's mode with its glyph (ADR-D02.6), or none.
     public void SetModeCell(string? text, string tooltip, string glyph = "mark.jumble")
     {
@@ -393,6 +395,7 @@ public sealed partial class ChromeFrame : Control
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip); ChromeWidgets.Detach(seam); ChromeWidgets.Detach(pairHead);
+        ChromeWidgets.Detach(documentRow);
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
@@ -411,6 +414,7 @@ public sealed partial class ChromeFrame : Control
         if (!focus) middle.AddChild(SideDock(DockSide.Left));
         var centre = (VBoxContainer)Tight(new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }); middle.AddChild(centre);
         if (topStrip != null && !focus) centre.AddChild(topStrip);
+        if (documentRow != null && !focus) centre.AddChild(documentRow);
         bool localDrawn = OpenGround && LocalDrawn;
         Global = View("Global", globalContent); Local = View("Local", localDrawn ? LocalWrap(localContent) : localContent);
         if (OpenGround) { Global.Open = true; Global.SetFocused(false); }
@@ -641,6 +645,7 @@ public sealed partial class ChromeFrame : Control
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent);
+        ChromeWidgets.Detach(documentRow);
     }
 }
 

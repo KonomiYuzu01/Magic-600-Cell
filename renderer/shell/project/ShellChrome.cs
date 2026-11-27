@@ -189,6 +189,7 @@ public sealed class ShellChrome
             // B28: a research row naming a research object (or a tab row) is the research pane's. B29: the pane says
             // why one is unavailable (a start before its budget, the two CR-17 rows).
             _ when ShellResearch.Model is { } research && ResearchModel.Handles(command, argument) => research.Unavailable(command, argument),
+            _ when ShellDocuments.Handles(command) => ShellDocuments.Unavailable(command, argument),
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
@@ -220,6 +221,7 @@ public sealed class ShellChrome
                 k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet, layouts);
             sample.Look = appearance;
         }
+        ShellDocuments.Load(frame, registry, sample);
         // Failures show in Problems with the error lamp, in every mode, and go to the run's errors.log.
         ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
             System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } events ? Path.Combine(events, "errors.log") : null);
@@ -252,6 +254,9 @@ public sealed class ShellChrome
                     {
                         Execute("workspace.set", "layout:analyse");
                     }
+                    break;
+                case var document when ShellDocuments.Handles(document):
+                    ShellDocuments.Execute(frame, command, argument);
                     break;
                 case "command.find": palette.Open(); break;
                 case "help.open": if (sheet.IsOpen) sheet.Close(); else sheet.Open(); break;
