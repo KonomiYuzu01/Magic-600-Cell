@@ -9,6 +9,11 @@ an average of at least 30 fps, a 99th-percentile frame time of at most 33.3 ms a
 sitting ran them back to back (section "The sitting of 27 November 2026"). The occlusion run's first record called it
 invalid through a checker fault, and the fixed checker scored the same run again (its row, below).
 
+**Under review since 27 November 2026, 22:13 UTC.** Astra review round 1 (`docs/progress/1.0/adr-d02-astra-round-1.md`)
+found checker gaps that question what these records establish: D02-12 to D02-18, D02-23 and D02-24. The result above
+is recorded but not final until the checkers are fixed and the affected rows are rescored from their saved observations
+or rerun.
+
 ## How a row runs
 
 - `renderer/shell/gate_d02.py --row <id>` launches the product through `d02_run.py`'s launcher and player on the row's
