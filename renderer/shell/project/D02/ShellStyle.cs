@@ -163,6 +163,11 @@ public static class ShellStyle
     {
         // B18 (for B20): the certified transform of the twist at the cap Local draws, read once per cap and revision.
         ShellTurn.Note(library, host, revision);
+        // B18 rest: a committed twist's sweep advances its phase; a half-turn's flash starts or ends its outline.
+        if (ShellTurn.Step(library, host, revision))
+        {
+            _dirty = true;
+        }
         // B20: the slice's inside layer and the turn preview's transform. A failed slice never blocks the other styles:
         // they are sent as usual, Local's slots go without the slice while it fails, and its code is returned last.
         var sliced = ShellSlice.Apply(library, host, revision);
@@ -177,6 +182,15 @@ public static class ShellStyle
         }
         // B15: the tint's outline bytes under the selection's and the hover's outlines.
         var outline = _tintOutline is null ? new byte[PieceCount] : (byte[])_tintOutline.Clone();
+        // B18 rest: a half-turn's flash outlines the moved set in palette entry 15 (B16's overlay line) for
+        // jumble.half_turn's fixed time, under the selection's and the hover's outlines.
+        if (ShellTurn.Flash is { } flash)
+        {
+            for (var piece = 0; piece < PieceCount; piece++)
+            {
+                if (flash[piece] != 0) outline[piece] = JumbleOverlay.Entry;
+            }
+        }
         int? hovered = null, selected = null;
         if (ShellPick.Hover is { } hover && hover.Piece < PieceCount)
         {
@@ -265,6 +279,15 @@ public static class ShellStyle
             for (var i = 4 * JumbleTint.FirstClass; i < 64; i++)
             {
                 style.Palette[i] = _tintPalette[i];
+            }
+        }
+        else
+        {
+            // B18 rest: without a tint palette, the flash's entry 15 still draws (state.preview's fallback colour).
+            ReadOnlySpan<float> line = stackalloc float[] { 0.55f, 0.8f, 1.0f, 1.0f };
+            for (var i = 0; i < 4; i++)
+            {
+                style.Palette[4 * JumbleOverlay.Entry + i] = line[i];
             }
         }
         // B31: the held simulation's matrix, with the G8 switch on.

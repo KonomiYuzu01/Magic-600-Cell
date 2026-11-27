@@ -406,6 +406,11 @@ public partial class Shell : Control
             return;
         }
         var chord = KeyChord.Chord(key, code);
+        // ADR-D02 B18 rest: a twist key's certified row, read at the head it would twist, for its sweep or flash.
+        if (D02.ShellJumble.On && !key.Echo)
+        {
+            D02.ShellTurn.Arm(library, _host, chord);
+        }
         var answer = library.KeyDown(_host, chord, key.Echo, out var result);
         var handled = EventLog.Now();
         if (answer != HostLibrary.Ok)
@@ -417,11 +422,13 @@ public partial class Shell : Control
         {
             _log?.Press(qpc, handled, result.EngineRevision);
             _chrome?.Committed(chord, result.EngineRevision);
+            D02.ShellTurn.Committed(result.EngineRevision);
         }
         else if (result.Press == HostLibrary.PressRefused)
         {
             _log?.Press(qpc, handled, 0);
             _chrome?.Refused(chord);
+            D02.ShellTurn.Refused();
         }
         else if (result.Press == HostLibrary.PressOther)
         {
@@ -826,6 +833,7 @@ public partial class Shell : Control
             _log?.Frame(frame, submitted, returned);
             _submittedThisFrame = frame.Sequence;
             _adoptedRevision = frame.EngineRevision;
+            D02.ShellTurn.Framed(frame.EngineRevision);
             // ADR-D02 B17: the clicks and hovers of this step ask the ID pass on the frame just submitted.
             if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))
             {

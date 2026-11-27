@@ -352,6 +352,103 @@ class TwistRowShell(unittest.TestCase):
         self.assertNotIn("_read = Code == HostLibrary.Ok", self.turn)
 
 
+    def test_the_inside_set_is_bound_to_the_rows_revision(self):
+        # B18-04's leftover: m6h_set_piece_style carries no revision, so the shell sends the row's moving set only
+        # while the row's revision is the adopted one, and otherwise sends nothing and tries again at the next step.
+        body = self.turn[self.turn.index("public static int SendInside(HostLibrary library, IntPtr host, ulong adopted"):]
+        body = body[:body.index("\n    }\n")]
+        self.assertLess(body.index("if (Row is { } row && row.Revision != adopted)"), body.index("library.SetPieceStyle("))
+        self.assertIn("return HostLibrary.Unavailable;", body)
+        self.assertNotIn("Row?.Moving", body)
+        self.assertIn("r.Revision == adopted ? r.Moving : null", self.turn)
+        slice_ = text(PROJECT / "D02" / "ShellSlice.cs")
+        self.assertIn("ShellTurn.SendInside(library, host, revision, out var count);", slice_)
+        self.assertIn("if (code == HostLibrary.Unavailable)", slice_)
+
+
+class SweepShell(unittest.TestCase):
+    """B18 rest: the timed sweep, the half-turn flash, reduced motion and the refused twist."""
+
+    def setUp(self):
+        self.turn = text(PROJECT / "D02" / "ShellTurn.cs")
+
+    def test_the_twist_keys_are_the_routers(self):
+        keymap = text(ROOT / "rust" / "c600-command" / "src" / "keys" / "keymap.rs")
+        rust = re.search(r"pub const TWIST_KEYS: \[\(&str, u64, u64\); 3\] = \[(.*?)\];", keymap).group(1)
+        shell = re.search(r"TwistKeys = \{ (.*?) \};", self.turn).group(1)
+        self.assertEqual(re.findall(r'"(Key\w)", (\d+), (\d+)', rust), re.findall(r'"(Key\w)", (\d+), (\d+)', shell))
+        self.assertIn("public const uint GripCap = 0;", self.turn)
+        self.assertIn('specs.push(BindingSpec::new(\n            &[*key],\n            Global,\n            "grip.select"', keymap)
+
+    def test_the_shell_arms_before_the_press_and_reports_its_answer(self):
+        shell = text(PROJECT / "Shell.cs")
+        self.assertLess(shell.index("D02.ShellTurn.Arm(library, _host, chord);"), shell.index("library.KeyDown(_host, chord"))
+        self.assertIn("D02.ShellTurn.Committed(result.EngineRevision);", shell)
+        self.assertIn("D02.ShellTurn.Refused();", shell)
+        self.assertIn("D02.ShellTurn.Framed(frame.EngineRevision);", shell)
+        self.assertIn("if (row is null || revision != row.Revision + 1 || MotionRow is null)", self.turn)
+
+    def test_the_rows_and_reduced_motion_come_from_the_motion_table(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        self.assertIn("D02.ShellTurn.MotionRow = id => (motions.Seconds(id, design, look.ReducedMotion), "
+                      "design.Curves[motions[id].Curve]);", chrome)
+        self.assertIn('MotionRow(half ? "jumble.half_turn" : "jumble.sweep")', self.turn)
+        self.assertIn('seconds <= 0 ? "static" : half ? "flash" : "sweep"', self.turn)
+        motion = json.loads(text(CHROME.parent.parent / "data" / "design" / "motion.json"))
+        rows = {row["id"]: row for row in motion["motions"]}
+        self.assertEqual((rows["jumble.sweep"]["duration"], rows["jumble.half_turn"]["duration"]), ("twist", "flash"))
+
+    def test_the_flash_draws_on_the_overlay_entry_and_the_sweep_on_the_row(self):
+        style = text(PROJECT / "D02" / "ShellStyle.cs")
+        self.assertIn("if (flash[piece] != 0) outline[piece] = JumbleOverlay.Entry;", style)
+        self.assertLess(style.index("ShellTurn.Flash is { } flash"), style.index("outline[hover.Piece] = Hovered;"))
+        self.assertIn("library.SetTransform(host, motion.Revision, row.Plane, row.Angle, row.Moving, phase)", self.turn)
+        self.assertIn("var phase = t >= 1 ? 1f : (float)MotionTable.Ease(motion.Curve, t);", self.turn)
+
+    def run_dumps(self, kinds, refused, reduced_from=18, popped=False):
+        motions = []
+        for revision, kind in enumerate(kinds, 3):
+            motion = {"kind": kind, "revision": revision, "angle": math.pi if kind == "flash" else 1.2566, "moving": 1909,
+                      "duration_ms": {"flash": 320, "sweep": 220}.get(kind, 0), "ended": "static", "popped": False,
+                      "shown_ms": 0, "ms": [], "phases": []}
+            if kind == "flash":
+                motion.update(ended="done", shown_ms=336.4)
+            if kind == "sweep":
+                motion.update(ended="done", popped=popped, ms=[0, 16.7, 120.1, 233.3], phases=[0, 0.08, 0.6, 1])
+            motions.append(motion)
+        dos = ["start", "wait 3000 ms", "chord Space", "text > jumble.cap.name 1", "chord Enter", "wait 1500 ms",
+               "click 0.3033 0.3227", "wait 600 ms", "click 0.6813 0.3719", "wait 600 ms", "click 0.5696 0.7217",
+               "wait 800 ms", "chord J", "wait 900 ms", "chord K", "wait 900 ms", "chord Space",
+               "text > motion.reduced.set on", "chord Enter", "wait 800 ms", "chord K", "wait 900 ms", "chord J",
+               "wait 900 ms"]
+        dumps = []
+        for step, do in enumerate(dos):
+            framed = 1 if step < 9 else 7
+            dumps.append({"step": step, "do": do, "local_plan": {"framed": framed, "by_selection": step >= 9},
+                          "turn": {"cap": framed}, "pick": {"selection": {"slot": 7 * 433 + 5} if step >= 9 else None},
+                          "sweep": {"refused": refused, "reduced": step >= reduced_from, "running": None,
+                                    "motions": motions if step == len(dos) - 1 else []}})
+        return dumps
+
+    def test_the_sweep_run_passes_and_the_failures_are_named(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["sweep"], run.expect_sweep)
+        self.assertNotIn("sweep", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "sweep.json"))
+        self.assertEqual(script["steps"][1], {"chord": "Space"})
+        self.assertEqual(run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0), {}, None), [])
+        self.assertEqual(run.expect_sweep(self.run_dumps([], 4), {}, "wj-ia-300"), [])
+        popped = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, popped=True), {}, None)
+        self.assertEqual(len(popped), 1)
+        self.assertIn("end pose", popped[0])
+        swept = run.expect_sweep(self.run_dumps(["sweep"], 4), {}, "wj-ia-300")
+        self.assertIn("not 4 refusals and none", swept[0])
+        moved = run.expect_sweep(self.run_dumps(["flash", "sweep", "sweep", "static"], 0), {}, None)
+        self.assertIn("not flash, sweep, static, static", moved[0])
+        late = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, reduced_from=3), {}, None)
+        self.assertIn("not off then on", late[0])
+
+
 class ChromeOpening(unittest.TestCase):
     """The chrome opens the top of Local's slot (a square of its width, at most 60% of its height), scrolls Local's
     content below it, keeps the empty sentence while no cap is named, and cuts both openings out of its ground."""
