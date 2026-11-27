@@ -52,13 +52,15 @@
 //!
 //! Nothing here is Windows/DirectX, input or performance evidence.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use c600_command::{
     CommandLayer, Error as LayerError, Kind, Overlay, PresentedFrame, PreviewState, ProgramJob, Receipt, Registration,
     Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, TWIST_ROW,
 };
+use c600_command::receipt::Revision;
 use c600_digest::sha256_hex;
 use c600_display::jumble::transform as certified_transform;
 use c600_display::plan::TransformInput;
@@ -191,6 +193,12 @@ pub struct Turns {
     specs: Vec<BindingSpec>,
     /// D02's view-only grip frame, built on first use.
     grip: Option<Grip>,
+    /// The pinned menu, shared ([`Turns::pinned_menu`]): built once per open session, never per call.
+    menu: Option<Arc<Menu>>,
+    /// [`Turns::twist_transform`]'s rows at the head, kept and read ahead ([`Rows`]).
+    rows: Arc<Mutex<Rows>>,
+    /// How often the shell asked for each `(cap, item)` row: the rows read ahead after a commit are the most asked.
+    asked: HashMap<(u32, u64), u64>,
     /// The arguments of every committed press, in order.
     committed: Vec<Value>,
     refused: u64,
@@ -295,6 +303,85 @@ fn head_digest(layer: &CommandLayer<JournalStore>) -> String {
         Some(_) => layer.revision().digest.clone(),
         None => layer.snapshot().digest().to_owned(),
     }
+}
+
+/// How many of the most asked rows a commit reads ahead ([`Turns::read_ahead`]): the twist keys' and the cut slice's.
+const READ_AHEAD: usize = 8;
+
+/// The head a twist row is read at: its revision and the protected orbits, on which a row depends besides
+/// `(cap, item)`.
+type RowHead = (Revision, Vec<usize>);
+
+/// SF (27 Nov 2026): [`Turns::twist_transform`]'s rows at one head, by `(cap, item)`. A row is a function of the head's
+/// poses, its protected orbits and `(cap, item)`, so a kept row is the row a fresh read gives. The admissibility check
+/// in a row's `State::apply` costs 7-12 ms, and the shell asks twice per twist on its frame thread.
+#[derive(Default)]
+struct Rows {
+    head: Option<RowHead>,
+    rows: HashMap<(u32, u64), Option<TransformInput>>,
+}
+
+impl Rows {
+    fn get(&self, head: &RowHead, key: (u32, u64)) -> Option<Option<TransformInput>> {
+        if self.head.as_ref() == Some(head) {
+            self.rows.get(&key).cloned()
+        } else {
+            None
+        }
+    }
+
+    /// Starts `head` as the kept head, unless it is already.
+    fn start(&mut self, head: &RowHead) {
+        if self.head.as_ref() != Some(head) {
+            self.head = Some(head.clone());
+            self.rows.clear();
+        }
+    }
+}
+
+fn kept(rows: &Mutex<Rows>) -> MutexGuard<'_, Rows> {
+    rows.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// The pieces that carry the protected `orbits`, as the command layer judges a pose move (review finding B18-02).
+fn protected_pieces(exact: &Exact, orbits: &[usize]) -> Vec<u32> {
+    let orbit_id = &exact.model.orbit_id;
+    (0..orbit_id.len() as u32)
+        .filter(|&piece| usize::try_from(orbit_id[piece as usize]).is_ok_and(|orbit| orbits.contains(&orbit)))
+        .collect()
+}
+
+/// The certified transform row of item `item` of `menu` at cap `cap` on `state`, a copy of the head's poses at
+/// `revision` ([`Turns::twist_transform`]).
+#[allow(clippy::too_many_arguments)]
+fn twist_row(
+    exact: &Exact,
+    menu: &Menu,
+    pin: &MenuPin,
+    field: &str,
+    revision: Value,
+    mut state: State,
+    protect: &[u32],
+    (cap, item): (u32, u64),
+) -> Result<Option<TransformInput>, String> {
+    let text = |s: &str| Value::String(s.to_owned());
+    let request = String::from_utf8_lossy(&menu_request(&pin.set, &pin.order, item)).into_owned();
+    let letter = json::object([
+        ("request", Value::String(request)),
+        ("operation", json::object([("kind", text("menu_direct"))])),
+        ("menu", json::object([("set", text(&pin.set)), ("order", text(&pin.order))])),
+    ]);
+    let args = json::object([("cap", Value::Int(i64::from(cap))), ("letter", letter), ("revision", revision)]);
+    let resolution = rotation::resolve(exact, Some(menu), &binding(&args, field)?)
+        .map_err(|refusal| format!("the letter [{cap}, {item}] does not resolve: {refusal:?}"))?;
+    // Review finding B18-02: the pieces that carry the protected orbits are pose-protected, as the command layer
+    // judges a pose move (`jumble::protected_pieces`, read only: the jumbling model's `orbit_id`, a centre piece in
+    // no orbit). For one twist Net and Strict agree (KN2.7): the word's only letter changes a protected piece's
+    // pose exactly when its end pose differs from the base's, which is `State::apply`'s test.
+    let outcome = state
+        .apply(exact, &resolution.twist, None, protect)
+        .map_err(|error| format!("the jumbling engine failed: {error:?}"))?;
+    certified_transform(&outcome, &resolution.twist, (0, 0)).map_err(|missing| format!("{missing:?}"))
 }
 
 impl Turns {
@@ -418,6 +505,9 @@ impl Turns {
             pin,
             specs: specs(puzzle),
             grip: None,
+            menu: None,
+            rows: Arc::default(),
+            asked: HashMap::new(),
             committed,
             refused: 0,
             others: 0,
@@ -474,7 +564,8 @@ impl Turns {
         match press {
             Press::Refused => self.refused += 1,
             Press::Other => self.others += 1,
-            Press::None | Press::Committed => {}
+            Press::None => {}
+            Press::Committed => self.read_ahead(),
         }
         Ok(press)
     }
@@ -619,40 +710,110 @@ impl Turns {
     /// resolves a press. `None` when the outcome is not admissible (blocked, uncertain, refused, or moving a piece that
     /// carries a protected orbit, which the command layer refuses with `KN2:protection.piece_would_move`): no moving
     /// set is guessed. The row's endpoints are left 0. Jumble on only.
+    /// SF (27 Nov 2026): rows are kept per head and `(cap, item)` ([`Rows`]) and read ahead after a commit
+    /// ([`Turns::read_ahead`]); a kept row is the row this call reads.
     pub fn twist_transform(&mut self, cap: u32, item: u64) -> Result<Option<TransformInput>, String> {
         if self.puzzle != Puzzle::JumbleOn {
             return Err("a twist's transform needs the jumbled puzzle".to_owned());
         }
-        let text = |s: &str| Value::String(s.to_owned());
-        let request = String::from_utf8_lossy(&menu_request(&self.pin.set, &self.pin.order, item)).into_owned();
-        let letter = json::object([
-            ("request", Value::String(request)),
-            ("operation", json::object([("kind", text("menu_direct"))])),
-            ("menu", json::object([("set", text(&self.pin.set)), ("order", text(&self.pin.order))])),
-        ]);
-        let revision = self.layer()?.revision().to_json();
-        let args = json::object([("cap", Value::Int(i64::from(cap))), ("letter", letter), ("revision", revision)]);
-        let pinned = menu(&self.exact, &self.record)?;
-        let resolution = rotation::resolve(&self.exact, Some(&pinned), &binding(&args, self.puzzle.binding_field())?)
-            .map_err(|refusal| format!("the letter [{cap}, {item}] does not resolve: {refusal:?}"))?;
-        // Review finding B18-02: the pieces that carry the protected orbits are pose-protected, as the command layer
-        // judges a pose move (`jumble::protected_pieces`, read only: the jumbling model's `orbit_id`, a centre piece in
-        // no orbit). For one twist Net and Strict agree (KN2.7): the word's only letter changes a protected piece's
-        // pose exactly when its end pose differs from the base's, which is `State::apply`'s test.
-        let (mut state, orbits) = {
-            let layer = self.layer()?;
-            let orbits = layer.protected().orbits().to_vec();
-            let jumbled = layer.jumbled().ok_or_else(|| "the head has no poses".to_owned())?;
-            (jumbled.state().clone(), orbits)
+        *self.asked.entry((cap, item)).or_default() += 1;
+        let menu = self.pinned_menu()?;
+        let (head, state) = self.row_head()?;
+        if let Some(row) = kept(&self.rows).get(&head, (cap, item)) {
+            return Ok(row);
+        }
+        let protect = protected_pieces(&self.exact, &head.1);
+        let field = self.puzzle.binding_field();
+        let row = twist_row(&self.exact, &menu, &self.pin, field, head.0.to_json(), state, &protect, (cap, item))?;
+        let mut rows = kept(&self.rows);
+        rows.start(&head);
+        rows.rows.insert((cap, item), row.clone());
+        Ok(row)
+    }
+
+    /// [`Turns::twist_transform`]'s row read afresh at the head, past the kept rows and with a menu built again from
+    /// the record: the check that a kept row, one read ahead included, is the row a fresh read gives.
+    pub fn fresh_twist_transform(&mut self, cap: u32, item: u64) -> Result<Option<TransformInput>, String> {
+        if self.puzzle != Puzzle::JumbleOn {
+            return Err("a twist's transform needs the jumbled puzzle".to_owned());
+        }
+        let menu = menu(&self.exact, &self.record)?;
+        let (head, state) = self.row_head()?;
+        let protect = protected_pieces(&self.exact, &head.1);
+        let field = self.puzzle.binding_field();
+        twist_row(&self.exact, &menu, &self.pin, field, head.0.to_json(), state, &protect, (cap, item))
+    }
+
+    /// Whether the row `(cap, item)` is kept at the head (read by a call or ahead by the worker).
+    pub fn twist_row_kept(&mut self, cap: u32, item: u64) -> bool {
+        match self.row_head() {
+            Ok((head, _)) => kept(&self.rows).get(&head, (cap, item)).is_some(),
+            Err(_) => false,
+        }
+    }
+
+    /// The head a twist row is read at, and a copy of its poses.
+    fn row_head(&mut self) -> Result<(RowHead, State), String> {
+        let layer = self.layer()?;
+        let orbits = layer.protected().orbits().to_vec();
+        let jumbled = layer.jumbled().ok_or_else(|| "the head has no poses".to_owned())?;
+        Ok(((layer.revision().clone(), orbits), jumbled.state().clone()))
+    }
+
+    /// SF (27 Nov 2026): after a commit, a worker thread reads the most asked rows ([`READ_AHEAD`]) at the new head,
+    /// so that the frame thread's next reads (the cut slice's row and the next press's) find them kept. It reads rows
+    /// only, on a copy of the head's poses, and stops when the head moves on. Nothing here touches the session.
+    fn read_ahead(&mut self) {
+        if self.puzzle != Puzzle::JumbleOn || self.asked.is_empty() {
+            return;
+        }
+        let (Ok(menu), Ok((head, state))) = (self.pinned_menu(), self.row_head()) else { return };
+        let mut wanted: Vec<_> = self.asked.iter().map(|(&key, &count)| (count, key)).collect();
+        wanted.sort_unstable_by(|a, b| b.cmp(a));
+        let wanted: Vec<(u32, u64)> = wanted.into_iter().take(READ_AHEAD).map(|(_, key)| key).collect();
+        kept(&self.rows).start(&head);
+        let (rows, exact, pin) = (self.rows.clone(), self.exact.clone(), self.pin.clone());
+        let field = self.puzzle.binding_field();
+        let worker = move || {
+            let protect = protected_pieces(&exact, &head.1);
+            for key in wanted {
+                {
+                    let current = kept(&rows);
+                    if current.head.as_ref() != Some(&head) {
+                        return;
+                    }
+                    if current.rows.contains_key(&key) {
+                        continue;
+                    }
+                }
+                let read = twist_row(&exact, &menu, &pin, field, head.0.to_json(), state.clone(), &protect, key);
+                let Ok(row) = read else { continue };
+                let mut current = kept(&rows);
+                if current.head.as_ref() != Some(&head) {
+                    return;
+                }
+                current.rows.entry(key).or_insert(row);
+            }
         };
-        let orbit_id = &self.exact.model.orbit_id;
-        let protect: Vec<u32> = (0..orbit_id.len() as u32)
-            .filter(|&piece| usize::try_from(orbit_id[piece as usize]).is_ok_and(|orbit| orbits.contains(&orbit)))
-            .collect();
-        let outcome = state
-            .apply(&self.exact, &resolution.twist, None, &protect)
-            .map_err(|error| format!("the jumbling engine failed: {error:?}"))?;
-        certified_transform(&outcome, &resolution.twist, (0, 0)).map_err(|missing| format!("{missing:?}"))
+        let _ = std::thread::Builder::new().name("twist-rows".to_owned()).spawn(worker);
+    }
+
+    /// The session's pinned menu, shared: the command layer's pin, which the open built once from the record and every
+    /// jumbled head carries (`State::menu_arc`), when its two digests are the router's pin; otherwise built once from the
+    /// record. Kept for the session: building a menu (`Menu::from_record`) took 58-64 ms of a 66-72 ms
+    /// [`Turns::twist_transform`], which the shell calls twice per twist (SF, 27 Nov 2026), and a shared menu also keeps
+    /// its caps' twists (`Menu::for_cap`). The correctness control's replays still read the record again.
+    pub fn pinned_menu(&mut self) -> Result<Arc<Menu>, String> {
+        if let Some(menu) = &self.menu {
+            return Ok(menu.clone());
+        }
+        let held = self.layer.as_ref().and_then(CommandLayer::jumbled).and_then(|jumbled| jumbled.state().menu_arc());
+        let menu = match held {
+            Some(menu) if menu.identity == self.pin.set && menu.order == self.pin.order => menu,
+            _ => Arc::new(menu(&self.exact, &self.record)?),
+        };
+        self.menu = Some(menu.clone());
+        Ok(menu)
     }
 
     /// The head's digests as ADR-D02's sample states name them (B5), by which a sample binds to the session: KN0.2's
