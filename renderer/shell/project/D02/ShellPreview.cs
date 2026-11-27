@@ -321,6 +321,14 @@ namespace Magic600.Shell.D02
                 json.WriteNumber("id", pending.Id);
                 json.WriteString("status", pending.Status.ToString().ToLowerInvariant());
                 json.WriteString("reason", current.Model.CommitRefusal(Now()));
+                // ADR-D01.9/.66: the settle interval and what the commit bar shows of it.
+                json.WriteBoolean("settling", current.Model.Settling(Now()));
+                json.WriteStartObject("bar");
+                json.WriteString("status", GodotObject.IsInstanceValid(current.bar.State) ? current.bar.State.Text : "");
+                json.WriteBoolean("lamp", current.bar.Settling);
+                json.WriteBoolean("commit", GodotObject.IsInstanceValid(current.bar.Commit) && !current.bar.Commit.Disabled);
+                json.WriteString("commit_tip", GodotObject.IsInstanceValid(current.bar.Commit) ? current.bar.Commit.TooltipText : "");
+                json.WriteEndObject();
                 json.WriteBoolean("whole_only", pending.WholeOnly);
                 json.WriteNumber("letters", pending.Moves.Count);
                 if (current.preview.Facts is { } facts)

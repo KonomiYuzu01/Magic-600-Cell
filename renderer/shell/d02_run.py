@@ -3672,12 +3672,18 @@ EXPECT[GATE_OCCLUSION] = expect_gate
 ON_FIXTURE.add(GATE_OCCLUSION)
 
 
+# The restage writes no screen ("quiet"), so the Ctrl+Enter pressed one frame later lands inside the settle interval;
+# its screen is written at once ("quick").
 PREVIEW_AT = {"base": 9, "staged": 11, "back": 13, "forward": 15, "overlay": 19, "overlay_off": 23,
-              "start": 27, "cancel": 29, "again": 35, "partial": 37, "commit": 39}
+              "start": 27, "cancel": 29, "refused": 34, "again": 35, "partial": 37, "commit": 39}
+SETTLE_REFUSAL = "the preview has just changed"
 
 
 def expect_preview(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """A stage and a scrub draw a separate pose set. Cancelling keeps the head, and committing takes the whole word."""
+    """A stage and a scrub draw a separate pose set. Cancelling keeps the head, and committing takes the whole word.
+    Ctrl+Enter on a fresh preview is refused inside the settle interval (ADR-D01.9) with its reason said, while the
+    commit bar reads settling with its lamp lit and Commit off (ADR-D01.66, rev4's ADR-D01.11); after the interval the
+    bar reads ready again."""
     if len(dumps) <= max(PREVIEW_AT.values()):
         return [f"the preview script wrote {len(dumps)} screens"]
     if state != "wj-ia-300":
@@ -3723,6 +3729,21 @@ def expect_preview(dumps: list[dict], source: dict, state: str | None) -> list[s
           and (staged.get("prefix_digests") or [None])[-1] == staged.get("after"), "the preview has no distinct after-state")
     check(bool(staged.get("id")) and bool(again.get("id")) and again.get("id") != staged.get("id")
           and again.get("after") == staged.get("after"), "restaging did not build a fresh preview of the same repair")
+    refused = previews["refused"]
+    check(refused.get("id") == again.get("id") and refused.get("status") == "ready" and refused.get("settling") is True
+          and refused.get("reason") == SETTLE_REFUSAL, f"Ctrl+Enter on the fresh preview did not meet the settle interval: "
+          f"id {refused.get('id')}, settling {refused.get('settling')}, reason {refused.get('reason')!r}")
+    check(any(line == SETTLE_REFUSAL or line.endswith(": " + SETTLE_REFUSAL) for line in texts(screens["refused"], "frame")),
+          "the refused Ctrl+Enter did not say its reason")
+    bar = refused.get("bar") or {}
+    check(bar.get("status") == "settling" and bar.get("lamp") is True and bar.get("commit") is False
+          and bar.get("commit_tip") == "Commit is off: " + SETTLE_REFUSAL,
+          f"the commit bar did not show the settle interval: {bar}")
+    for name in ("staged", "again", "partial"):
+        bar = previews[name].get("bar") or {}
+        check(previews[name].get("settling") is False and previews[name].get("reason") is None
+              and bar.get("status") == "ready" and bar.get("lamp") is False and bar.get("commit") is True,
+              f"{name}: the commit bar did not read ready after the settle interval: {bar}")
     for name, step in (("staged", letters), ("back", letters - 1), ("forward", letters), ("start", 0),
                        ("again", letters), ("partial", letters - 1)):
         preview = previews[name]

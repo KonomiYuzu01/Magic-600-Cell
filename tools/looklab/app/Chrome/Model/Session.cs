@@ -49,6 +49,8 @@ public sealed record PreviewCheck(PreviewStatus Status, string? Reason, IReadOnl
 public sealed class PreviewModel
 {
     public const double Settle = .4;
+    // The refusal while the settle interval runs; the commit bar shows it as the status settling (rev4's ADR-D01.11).
+    public const string JustChanged = "the preview has just changed";
     public Preview? Pending { get; private set; }
     public int Scrub { get; private set; }
     public bool Replaced { get; private set; }
@@ -125,6 +127,9 @@ public sealed class PreviewModel
         if (Pending is { Status: PreviewStatus.Ready } p && Head != null && p.Head != Now) MarkStale(HeadMoved);
     }
 
+    // The settle interval after the shown preview changed (ADR-D01.9) runs: a commit asked now is ignored.
+    public bool Settling(double now) => Pending != null && now - shownAt < Settle;
+
     // Why the pending preview cannot be committed now, or null when it can.
     public string? CommitRefusal(double now)
     {
@@ -132,7 +137,7 @@ public sealed class PreviewModel
         if (Pending.Status != PreviewStatus.Ready) return Pending.Reason;
         if (Head != null && Pending.Head != Now) return HeadMoved;
         if (Scrub == 0 && !Pending.WholeOnly) return "the scrub is at the start; nothing would be committed";
-        if (now - shownAt < Settle) return "the preview has just changed";
+        if (Settling(now)) return JustChanged;
         return null;
     }
 

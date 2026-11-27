@@ -1632,6 +1632,13 @@ own pane; the main pair keeps the committed state.
   preview's after digest. The palette cannot commit. One labelled entry per commit waits for CR-15 and K2.
 - Script option: the draft row `preview.overlay.script.toggle` draws a marked overlay of the preview's moved set over the
   committed state in both main views; off by default.
+- Settle interval (ADR-D01.9, ADR-D01.66, rev4's ADR-D01.11): a fresh whole-only preview starts the settle interval
+  (`PreviewModel.Settle`, 0.4 s) as a replacement does, so a key-down never commits a preview the solver has not seen.
+  While it runs, Ctrl+Enter is refused and the status line says why ("the preview has just changed"), and the commit
+  bar shows the interval: its status reads settling, its settling lamp is lit (token `commit.status.settling`; the
+  draft line and the commit bar share `SessionWidgets.SettlingLamp`) and Commit is off with its reason. A click on the
+  bar's Commit does nothing then. All three go back to ready when the interval ends. The preview script restages the
+  repair and presses Ctrl+Enter one frame later; the dump's `preview.settling` and `preview.bar` carry the check.
 - Run: `d02_run.py --script preview --state wj-ia-300` (row 1 of cap 150: three letters, 4,637 pieces moved; the commit
   advances the head by three revisions to the preview's after digest).
 

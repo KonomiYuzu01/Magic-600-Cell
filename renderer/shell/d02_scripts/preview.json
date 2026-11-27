@@ -2,7 +2,7 @@
   "format": "magic600-d02-script/1",
   "name": "preview",
   "state": "wj-ia-300",
-  "note": "Stage row 2 at cap 150, step and scrub its preview, cancel, then commit the whole repair from a partial scrub.",
+  "note": "Stage row 2 at cap 150, step and scrub its preview, cancel, restage it and press Ctrl+Enter inside the settle interval (refused), then commit the whole repair from a partial scrub.",
   "steps": [
     {"wait_ms": 2000},
     {"chord": "F1"},
@@ -37,7 +37,8 @@
     {"text": "> jumble.repair.focus"},
     {"chord": "Enter"},
     {"wait_ms": 1000},
-    {"text": "2"},
+    {"text": "2", "quiet": true},
+    {"chord": "Ctrl+Enter", "quick": true},
     {"wait_ms": 1800},
     {"chord": "Left"},
     {"wait_ms": 1000},

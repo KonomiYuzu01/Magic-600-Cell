@@ -72,13 +72,7 @@ public sealed partial class DraftLine : PanelContainer
         CheckChip.AddThemeColorOverride("font_color", t.C(check == CheckResult.Failed ? "state.invalid" : check == CheckResult.Unchecked ? "text.dim" : "chip.check_mode." + mode.ToLowerInvariant()));
         // The chip sets the policy through the command table's row (protection.policy.set), like a key would.
         CheckChip.Pressed += () => Safe.Raise(Command, "protection.policy.set", Draft.Mode == CheckMode.Net ? "strict" : "net"); row.AddChild(CheckChip);
-        lamp = new Control { Name = "SettlingLamp", CustomMinimumSize = new Vector2(t.Px("icon.small"), 0), TooltipText = "Settling lamp: lit while the settle interval runs after a change" };
-        Control mine = lamp;
-        mine.Draw += () =>
-        {
-            Vector2 c = mine.Size / 2; float r = Math.Min(mine.Size.X, mine.Size.Y) * .22f;
-            if (Settling) mine.DrawCircle(c, r, tokens().C("commit.status.settling")); else mine.DrawArc(c, r, 0, Mathf.Tau, 16, tokens().C("panel.border"), 1, true);
-        };
+        lamp = SessionWidgets.SettlingLamp(tokens, () => Settling, "Settling lamp: lit while the settle interval runs after a change");
         row.AddChild(lamp); row.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
     }
 }

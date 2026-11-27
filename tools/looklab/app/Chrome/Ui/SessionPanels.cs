@@ -32,6 +32,19 @@ internal static class SessionWidgets
 
     public static void Clear(Node node) { foreach (Node child in node.GetChildren()) { node.RemoveChild(child); child.QueueFree(); } }
 
+    // The settling lamp (ADR-D01.66, token commit.status.settling): lit while the settle interval of ADR-D01.9 runs, an
+    // unlit ring otherwise. The draft line and the commit bar draw the same lamp.
+    public static Control SettlingLamp(Func<TokenSet> tokens, Func<bool> lit, string tooltip)
+    {
+        var lamp = new Control { Name = "SettlingLamp", CustomMinimumSize = new Vector2(tokens().Px("icon.small"), 0), TooltipText = tooltip };
+        lamp.Draw += () =>
+        {
+            Vector2 c = lamp.Size / 2; float r = Math.Min(lamp.Size.X, lamp.Size.Y) * .22f;
+            if (lit()) lamp.DrawCircle(c, r, tokens().C("commit.status.settling")); else lamp.DrawArc(c, r, 0, Mathf.Tau, 16, tokens().C("panel.border"), 1, true);
+        };
+        return lamp;
+    }
+
     // ADR-D01.70: one effect signature, drawn with the Library rows' marks and its facts in the tooltip; `owner`
     // names whose signature it is (the preview, or a History entry's id).
     public static SignatureMarks Signature(TokenSet tokens, EffectSignature signature, string owner)
@@ -65,6 +78,10 @@ public sealed partial class CommitBar : PanelContainer
     private readonly HBoxContainer row = new();
     private Preview? painted;
     private Label? position;
+    // What the bar shows of the settle interval (ADR-D01.9): null until FollowSettle has read it for the painted bar.
+    private bool? shownSettling;
+    private Control? lamp;
+    public bool Settling => shownSettling == true;
 
     public CommitBar(PreviewModel model, Func<TokenSet> tokens)
     {
@@ -89,12 +106,28 @@ public sealed partial class CommitBar : PanelContainer
         Scrub?.SetValueNoSignal(Model.Scrub);
     }
 
+    // ADR-D01.9, ADR-D01.66 and rev4's ADR-D01.11: while the settle interval after a new preview runs, the commit is
+    // ignored, and the bar says so: the status reads settling, the lamp is lit and Commit is off with its reason. All
+    // three go back when the interval ends.
     public void FollowSettle()
     {
-        if (Clock == null || Model.Pending is not { WholeOnly: true } || !IsInstanceValid(Commit)) return;
+        if (Clock == null || Model.Pending is not { WholeOnly: true } p || !IsInstanceValid(Commit)) return;
         string? refusal = Model.CommitRefusal(Clock());
         Commit.Disabled = refusal != null;
-        Commit.TooltipText = refusal ?? $"Commit whole repair ({CommitKeys})";
+        Commit.TooltipText = refusal == null ? $"Commit whole repair ({CommitKeys})" : "Commit is off: " + refusal;
+        bool settling = refusal == PreviewModel.JustChanged;
+        if (shownSettling == settling) return;
+        shownSettling = settling;
+        TokenSet t = tokens();
+        (string text, string colour) = settling ? ("settling", "text.dim") : SessionWidgets.Status[p.Status];
+        if (IsInstanceValid(State))
+        {
+            State.Text = text; State.AddThemeColorOverride("font_color", t.C(colour));
+            if (State.GetParent() is Control chip)
+                chip.TooltipText = settling ? "Settling: the preview has just changed, and the commit key is ignored until the lamp goes out" : p.Reason ?? "The preview can be committed.";
+        }
+        if (Commit.Disabled) Commit.RemoveThemeColorOverride("font_color"); else Commit.AddThemeColorOverride("font_color", t.C("accent.strong"));
+        lamp?.QueueRedraw();
     }
 
     public void Refresh()
@@ -105,7 +138,7 @@ public sealed partial class CommitBar : PanelContainer
         CustomMinimumSize = new Vector2(0, t.Px("bar.height"));
         row.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
         Preview? p = painted = Model.Pending;
-        position = null;
+        position = null; lamp = null; shownSettling = null;
         State = ChromeWidgets.Text("", "MicroLabel"); Reason = ChromeWidgets.Text("", "DimLabel", true);
         if (p == null)
         {
@@ -115,6 +148,11 @@ public sealed partial class CommitBar : PanelContainer
         }
         else
         {
+            if (Clock != null)
+            {
+                lamp = SessionWidgets.SettlingLamp(tokens, () => Settling, "Settling lamp: lit while the settle interval runs after the preview changed");
+                row.AddChild(lamp);
+            }
             (string text, string colour) = SessionWidgets.Status[p.Status];
             PanelContainer chip = SessionWidgets.Chip(text, t.C(colour), p.Reason ?? "The preview can be committed."); row.AddChild(chip);
             State = (Label)chip.GetChild(0);
