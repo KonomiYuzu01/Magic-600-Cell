@@ -2197,6 +2197,18 @@ int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style
         return SA2_OK;
     });
 }
+int32_t sa2_sticker_colours_set(sa2_context* ctx, const float* rgb, uint32_t count) {
+    return invoke(ctx, "sa2_sticker_colours_set", [&] {
+        product_scene(ctx).product.set_sticker_colours(rgb, count);
+        return SA2_OK;
+    });
+}
+int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look) {
+    return invoke(ctx, "sa2_scene_look_set", [&] {
+        product_scene(ctx).product.set_scene_look(look);
+        return SA2_OK;
+    });
+}
 }
 
 // ADR-D02 B20: the self-test's reading of the newest harvested product frame's pipeline statistics: its frame, vertex

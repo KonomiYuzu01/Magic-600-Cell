@@ -265,6 +265,19 @@ unsafe extern "C" fn transform_set(
     code(unsafe { shim(ctx) }.fake.transform_set(revision, &plane, angle, moving, phase), |()| ())
 }
 
+unsafe extern "C" fn sticker_colours_set(ctx: *mut c_void, rgb: *const f32, count: u32) -> i32 {
+    if !rgb.is_null() && count != 0 && count as usize != STICKER_CLASSES {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let table = if count == 0 { None } else { unsafe { rgb.cast::<StickerColours>().as_ref() } };
+    code(unsafe { shim(ctx) }.fake.sticker_colours_set(table), |()| ())
+}
+
+unsafe extern "C" fn scene_look_set(ctx: *mut c_void, look: *const Sa2SceneLook) -> i32 {
+    let look = unsafe { look.as_ref() };
+    code(unsafe { shim(ctx) }.fake.scene_look_set(look), |()| ())
+}
+
 unsafe extern "C" fn style_set(ctx: *mut c_void, revision: u64, bytes: *const u8, channel: u32) -> i32 {
     let bytes = (!bytes.is_null()).then(|| unsafe { std::slice::from_raw_parts(bytes, PIECES) });
     code(unsafe { shim(ctx) }.fake.style_set(revision, bytes, channel), |()| ())
@@ -334,6 +347,8 @@ pub fn functions() -> CoreFunctions {
         view_focus_set,
         view_layout_set,
         transform_set,
+        sticker_colours_set,
+        scene_look_set,
     }
 }
 
@@ -428,6 +443,12 @@ impl CoreAbi for Shimmed {
     }
     fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
         self.dll.view_layout_set(view, layout)
+    }
+    fn sticker_colours_set(&mut self, rgb: Option<&StickerColours>) -> Result<(), Status> {
+        self.dll.sticker_colours_set(rgb)
+    }
+    fn scene_look_set(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        self.dll.scene_look_set(look)
     }
 }
 

@@ -321,6 +321,16 @@ impl<C: CoreAbi> RenderBackend<C> {
         self.core.transform_set(revision, plane, angle, moving, phase).map_err(|status| self.error(status))
     }
 
+    /// The product's home-cell colours, kept by the core across recovery.
+    pub fn set_sticker_colours(&mut self, rgb: Option<&StickerColours>) -> Result<(), Error> {
+        self.core.sticker_colours_set(rgb).map_err(|status| self.error(status))
+    }
+
+    /// The product's background and carried scene values, kept by the core across recovery.
+    pub fn set_scene_look(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Error> {
+        self.core.scene_look_set(look).map_err(|status| self.error(status))
+    }
+
     /// ABI 7: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear it. A new
     /// adoption drops it in the core, so the caller sets it again for each revision. Bytes with bits outside the
     /// channel's are refused before the core is asked.

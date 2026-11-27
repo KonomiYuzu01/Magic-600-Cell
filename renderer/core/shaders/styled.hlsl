@@ -77,9 +77,8 @@ float4 styledPs(StyledOut input) : SV_Target {
     v.projected = input.projected;
     v.colourClass = input.colourClass;
     v.marked = input.marked;
-    float4 colour = psMain(v);
-    float3 n = normalize(cross(ddx(input.projected), ddy(input.projected)));
-    float shade = 0.5 + 0.5*abs(dot(n, normalize(float3(0.3,0.5,1))));
+    float shade = stickerShade(v.projected);
+    float4 colour = stickerColour(v, shade);
     uint fill = input.style & 0xFF, outline = (input.style >> 8) & 0xFF;
     if ((tintMode & 1) != 0 && (fill & 15) != 0) {
         float4 tint = palette[fill & 15];

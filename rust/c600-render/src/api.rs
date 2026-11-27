@@ -4,7 +4,7 @@
 
 use crate::abi::{
     Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2Pane, Sa2PaneRow, Sa2PickRow, Sa2PollRow, Sa2PresentedRow,
-    Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, Status,
+    Sa2SceneLook, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, Status, StickerColours,
 };
 
 /// The pose path arrays of a posed engine state.
@@ -118,4 +118,14 @@ pub trait CoreAbi {
     /// ABI 8's `sa2_frame_panes`: a produced composite frame's panes, the first `rows.len()` of them written; the
     /// frame's pane count.
     fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status>;
+    /// ABI 10's `sa2_sticker_colours_set`: home-cell RGB triples, or `None` for the core's hues.
+    fn sticker_colours_set(&mut self, rgb: Option<&StickerColours>) -> Result<(), Status> {
+        let _ = rgb;
+        Err(Status::UNSUPPORTED)
+    }
+    /// ABI 10's `sa2_scene_look_set`: the scene's look, or `None` for the core's defaults.
+    fn scene_look_set(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        let _ = look;
+        Err(Status::UNSUPPORTED)
+    }
 }

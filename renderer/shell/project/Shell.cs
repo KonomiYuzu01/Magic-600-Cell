@@ -896,6 +896,11 @@ public partial class Shell : Control
         {
             D02.ShellStyle.Apply(library, _host, _adoptedRevision);
         }
+        // ADR-D01.52 and .49/.5: the sticker colours and the scene look, sent again until the host takes them.
+        if (D02.ShellJumble.On)
+        {
+            D02.ShellScene.Apply(library, _host);
+        }
         _submittedThisFrame = null;
         var submitted = EventLog.Now();
         var code = library.Frame(_host, out var frame);

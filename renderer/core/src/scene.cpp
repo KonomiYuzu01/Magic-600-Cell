@@ -132,6 +132,9 @@ struct ProductGpu {
     ComPtr<ID3D12Resource> id_target; // R32_UINT at the scene's size, created on the first pick
     ComPtr<ID3D12DescriptorHeap> id_heap;
     bool initialized = false;
+    // t19 is shared by a frame's panes. Like its constants, the upload is reused only after that ring slot completes.
+    std::array<Buffer, SA2_RING_SLOTS> sticker_colours;
+    std::array<uint8_t*, SA2_RING_SLOTS> sticker_colours_data{};
     ~ProductGpu() {
         for (auto& copy : copies) if (copy.data) copy.staging.resource->Unmap(0, nullptr);
         for (size_t i = 0; i < cb.size(); ++i) if (cb_data[i]) cb[i].resource->Unmap(0, nullptr);
@@ -140,6 +143,8 @@ struct ProductGpu {
             if (pane_cb_data[i]) pane_cb[i].resource->Unmap(0, nullptr);
             if (pane_style_cb_data[i]) pane_style_cb[i].resource->Unmap(0, nullptr);
         }
+        for (size_t i = 0; i < sticker_colours.size(); ++i)
+            if (sticker_colours_data[i]) sticker_colours[i].resource->Unmap(0, nullptr);
     }
 };
 constexpr uint64_t QueryStride = 256, StatisticsOffset = 16;
@@ -320,12 +325,15 @@ struct Scene::Impl {
     // the pose path. ABI 4's product signature appends root SRVs t15 and t16
     // (appended = 2); W1..W4 and W-J keep appended = 0.
     ComPtr<ID3D12RootSignature> signature(UINT appended, const wchar_t* label) {
-        D3D12_ROOT_PARAMETER params[21]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        D3D12_ROOT_PARAMETER params[22]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         params[0].Descriptor.ShaderRegister = 0;
         for (UINT i = 1; i <= 7; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 1; }
         for (UINT i = 8; i <= 9; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV; params[i].Descriptor.ShaderRegister = i - 8; }
         for (UINT i = 10; i < 18 + appended; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 3; }
-        if (appended == 3) params[20].Descriptor.ShaderRegister = 18; // ABI 10: the Hopf table (t18; t17 is the style's)
+        if (appended == 4) {
+            params[20].Descriptor.ShaderRegister = 18; // ABI 10: the Hopf table (t18; t17 is the style's)
+            params[21].Descriptor.ShaderRegister = 19;
+        }
         D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 18 + appended; d.pParameters = params;
         d.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> blob, error;
@@ -481,7 +489,7 @@ struct Scene::Impl {
     }
     void draw(ID3D12GraphicsCommandList* list, const Constants& c, Buffer& constants_buffer, uint8_t* data,
               Buffer& label, std::array<Buffer, 3>& pose, ID3D12PipelineState* pipeline, D3D12_CPU_DESCRIPTOR_HANDLE rtv,
-              UINT width, UINT height, bool count) {
+              UINT width, UINT height, bool count, const float* background = DefaultSceneLook.background) {
         list->SetPipelineState(pipeline); bind(list, c, constants_buffer, data, label, pose, false);
         if (count) list->SetGraphicsRootUnorderedAccessView(8, counter.resource->GetGPUVirtualAddress());
         D3D12_VIEWPORT viewport{0, 0, float(width), float(height), 0, 1}; D3D12_RECT rect{0, 0, LONG(width), LONG(height)};
@@ -489,7 +497,7 @@ struct Scene::Impl {
         auto dsv = dsv_heap->GetCPUDescriptorHandleForHeapStart();
         if (count) dsv.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
         list->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
-        const float colour[4] = {0.13f, 0.145f, 0.16f, 1}; list->ClearRenderTargetView(rtv, colour, 0, nullptr);
+        list->ClearRenderTargetView(rtv, background, 0, nullptr);
         list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
         list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); list->DrawInstanced(sb::Vertices, sb::Cells, 0, 0);
     }
@@ -604,7 +612,7 @@ struct Scene::Impl {
     // RPI.72 steps 1 to 4 and the predicated draws of one frame with the attached chain (C9 U5).
     void draw_user(ID3D12GraphicsCommandList* list, const Constants& c, uint32_t slot, Buffer& label, std::array<Buffer, 3>& pose,
                    ID3D12PipelineState* builtin, D3D12_CPU_DESCRIPTOR_HANDLE rtv, DXGI_FORMAT format, int64_t now,
-                   int64_t ticks_per_second, UINT width, UINT height) {
+                   int64_t ticks_per_second, UINT width, UINT height, const float* background) {
         scene_require(slot < SA2_RING_SLOTS, "the stage report row needs a ring index below SA2_RING_SLOTS");
         auto& s = *user;
         user_read(slot, false); // the slot's previous frame completed before its list was reset
@@ -672,8 +680,7 @@ struct Scene::Impl {
         list->RSSetScissorRects(1, &rect);
         const auto dsv = dsv_heap->GetCPUDescriptorHandleForHeapStart();
         list->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
-        const float colour[4] = {0.13f, 0.145f, 0.16f, 1};
-        list->ClearRenderTargetView(rtv, colour, 0, nullptr);
+        list->ClearRenderTargetView(rtv, background, 0, nullptr);
         list->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
         list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         list->BeginQuery(s.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, 2 * slot);
@@ -704,7 +711,7 @@ struct Scene::Impl {
         const auto directory = module_path().parent_path();
         const auto blob = [&](const char* file) { return scene_bytes(directory / file); };
         const auto id_ps = blob("id_ps.dxil"), product_ps = blob("product_ps.dxil"), product_vs = blob("product_vs.dxil");
-        p->root = signature(3, L"SA2 product root signature"); // ABI 10: t15, t16 and t18
+        p->root = signature(4, L"SA2 product root signature"); // ABI 10: t15, t16, t18 and t19
         p->draw_pso = graphics(product_vs, product_ps, p->root.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, L"SA2 product pipeline");
         p->id_pso = graphics(product_vs, id_ps, p->root.Get(), DXGI_FORMAT_R32_UINT, L"SA2 ID pass pipeline");
         const uint64_t pose_sizes[] = {uint64_t(SA2_PIECES) * 4, uint64_t(SA2_MAX_POSES) * 64, uint64_t(SA2_MAX_POSES) * 4};
@@ -726,6 +733,8 @@ struct Scene::Impl {
         }
         for (size_t i = 0; i < p->cb.size(); ++i) {
             p->cb[i] = buffer(256, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ); p->cb_data[i] = map(p->cb[i]);
+            p->sticker_colours[i] = buffer(sizeof(StickerColours), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+            p->sticker_colours_data[i] = map(p->sticker_colours[i]);
         }
         D3D12_QUERY_HEAP_DESC query{}; query.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP; query.Count = 2 * SA2_RING_SLOTS;
         hr(device, device->CreateQueryHeap(&query, IID_PPV_ARGS(&p->timestamps)), "CreateQueryHeap(product timestamps)");
@@ -876,16 +885,17 @@ struct Scene::Impl {
         return {float(centre[0] / length), float(centre[1] / length), float(centre[2] / length), float(centre[3] / length)};
     }
     // ABI 7: the styled root signature: the product's twenty parameters, then root SRV t17 (the piece style) and
-    // root CBV b1 (the style slot).
+    // root CBV b1 (the style slot), then the Hopf table (t18) and sticker colours (t19).
     ComPtr<ID3D12RootSignature> styled_signature() {
-        D3D12_ROOT_PARAMETER params[23]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        D3D12_ROOT_PARAMETER params[24]{}; params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         params[0].Descriptor.ShaderRegister = 0;
         for (UINT i = 1; i <= 7; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 1; }
         for (UINT i = 8; i <= 9; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV; params[i].Descriptor.ShaderRegister = i - 8; }
         for (UINT i = 10; i < 21; ++i) { params[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[i].Descriptor.ShaderRegister = i - 3; }
         params[21].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; params[21].Descriptor.ShaderRegister = 1;
         params[22].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[22].Descriptor.ShaderRegister = 18; // ABI 10
-        D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 23; d.pParameters = params;
+        params[23].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV; params[23].Descriptor.ShaderRegister = 19;
+        D3D12_ROOT_SIGNATURE_DESC d{}; d.NumParameters = 24; d.pParameters = params;
         d.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> blob, error;
         hr(device, D3D12SerializeRootSignature(&d, D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), "D3D12SerializeRootSignature(styled)");
@@ -959,7 +969,7 @@ struct Scene::Impl {
     void product_draw(ID3D12GraphicsCommandList* list, ID3D12PipelineState* pipeline, Buffer& constants_buffer, ProductGpu::EngineCopy& copy,
                       uint64_t set_ticket, D3D12_CPU_DESCRIPTOR_HANDLE rtv, UINT width, UINT height, const float* colour, const D3D12_RECT* pixel,
                       const Buffer* style = nullptr, const Buffer* style_constants = nullptr, const D3D12_RECT* area = nullptr,
-                      bool clear = true, bool turning = false) {
+                      bool clear = true, bool turning = false, const Buffer* sticker_colours = nullptr) {
         auto& p = product_gpu();
         const auto [visible, instances] = product_set(set_ticket);
         list->SetPipelineState(pipeline); list->SetGraphicsRootSignature(style ? p.styled_root.Get() : p.root.Get());
@@ -970,6 +980,8 @@ struct Scene::Impl {
         list->SetGraphicsRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress());
         // ABI 10: the Hopf table, or any live buffer while no view names the rings (the shaders read it only then).
         list->SetGraphicsRootShaderResourceView(style ? 22 : 20, (p.hopf.resource ? p.hopf : geometry[0]).resource->GetGPUVirtualAddress());
+        // ADR-D01.52: the frame's sticker colours, or any live buffer for a pick (the ID passes never read t19).
+        list->SetGraphicsRootShaderResourceView(style ? 23 : 21, (sticker_colours ? *sticker_colours : geometry[0]).resource->GetGPUVirtualAddress());
         // ADR-D02 B18: a turning frame reads the moving bit from the copy's piece style at t4.
         const Buffer* srv[] = {&geometry[0], &geometry[1], &geometry[2], &geometry[3], turning ? &copy.style : &geometry[4], &copy.labels, &geometry[5]};
         for (UINT i = 0; i < 7; ++i) list->SetGraphicsRootShaderResourceView(i + 1, srv[i]->resource->GetGPUVirtualAddress());
@@ -1049,7 +1061,7 @@ struct Scene::Impl {
     }
     // One frame of W-J's runGpu (renderer-wj/gpu.cpp) on the host's frame and trace window.
     void record_jumbling(SceneRecord& record, ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t now,
-                         ID3D12PipelineState* pipeline) {
+                         ID3D12PipelineState* pipeline, const float* background) {
         const auto& a = *jumble;
         const bool timed = record.tracing();
         const auto frame = uint64_t(record.trace.size()); wj::Turn turn{0, 0, 0}; WjStep step;
@@ -1070,7 +1082,7 @@ struct Scene::Impl {
         sb::rotate(q, 0, 3, 0.002); ++camera;
         const auto c = constants(shape, q, float(record.width) / float(record.height), timed ? float(turn.theta) : 0);
         const auto b = protocol.bound;
-        draw(list, c, cb[slot], cb_data[slot], label_buffers[b], pose_buffers[b], pipeline, target, record.width, record.height, false);
+        draw(list, c, cb[slot], cb_data[slot], label_buffers[b], pose_buffers[b], pipeline, target, record.width, record.height, false, background);
         if (step.copy) {
             const auto index = uint64_t(protocol.records.copies.size());
             scene_require(index < readback_capacity, "preserved bundle readback capacity exceeded; end the trace within trace_ms");
@@ -1228,7 +1240,8 @@ void Scene::wait_geometry(uint32_t timeout) { gpu->wait(timeout); }
 void Scene::surface_ready() { gpu->surface_create(); }
 void Scene::record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE target, int64_t now, DXGI_FORMAT format) {
     auto& g = *gpu; auto* const pipeline = g.draw_pipeline(format); g.initialize(list);
-    if (g.jumble) { g.record_jumbling(record, list, slot, target, now, pipeline); return; }
+    const float* background = product.scene_look().background;
+    if (g.jumble) { g.record_jumbling(record, list, slot, target, now, pipeline, background); return; }
     const bool timed = record.tracing(), label_scene = record.config.scene >= 3;
     const auto frame = uint64_t(record.trace.size()); sb::Turn turn{0, 0, 0};
     if (timed) turn = sb::turnAt(now, record.start, sb::turnTicks(record.config.scene == 3 ? record.config.turn_ms : 190, record.frequency), g.assets->angle);
@@ -1258,10 +1271,10 @@ void Scene::record_draw(ID3D12GraphicsCommandList* list, uint32_t slot, D3D12_CP
     // traced ones; the chain cannot change inside a trace); a frame without a chain takes the built-in path.
     if (g.user && g.user->attached)
         g.draw_user(list, c, slot, g.label_buffers[g.bound], g.pose_buffers[g.bound], pipeline, target, format, now, record.frequency,
-                    record.width, record.height);
+                    record.width, record.height, background);
     else {
         if (g.user && slot < SA2_RING_SLOTS) g.user_read(slot, false);
-        g.draw(list, c, g.cb[slot], g.cb_data[slot], g.label_buffers[g.bound], g.pose_buffers[g.bound], pipeline, target, record.width, record.height, false);
+        g.draw(list, c, g.cb[slot], g.cb_data[slot], g.label_buffers[g.bound], g.pose_buffers[g.bound], pipeline, target, record.width, record.height, false, background);
     }
     if (copy) {
         const auto index = uint64_t(g.records.copies.size());
@@ -1467,14 +1480,15 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     std::memcpy(p.cb_data[ring], &c, sizeof(c));
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
     list->BeginQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
-    const float colour[4] = {0.13f, 0.145f, 0.16f, 1};
+    const float* background = product.scene_look().background;
+    std::memcpy(p.sticker_colours_data[ring], &product.sticker_colours(), sizeof(StickerColours));
     const Buffer* style = nullptr;
     if (plan.styled) { // ABI 7: the slot's style, and the copy's piece style or the zero buffer
         std::memcpy(p.style_cb_data[ring], &plan.view_style, sizeof(plan.view_style));
         style = plan.style ? &copy.style : &p.no_instances;
     }
-    g.product_draw(list, pso, p.cb[ring], copy, plan.set_ticket, target, input.viewport_width, input.viewport_height, colour, nullptr,
-                   style, style ? &p.style_cb[ring] : nullptr, nullptr, true, plan.shape.turn != 0.0f);
+    g.product_draw(list, pso, p.cb[ring], copy, plan.set_ticket, target, input.viewport_width, input.viewport_height, background, nullptr,
+                   style, style ? &p.style_cb[ring] : nullptr, nullptr, true, plan.shape.turn != 0.0f, &p.sticker_colours[ring]);
     list->EndQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring + 1);
     list->ResolveQueryData(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring, 2, p.query_read.resource.Get(), ring * QueryStride);
@@ -1539,7 +1553,8 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
     auto& copy = p.copies[plan.copy];
     if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style);
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring);
-    const float colour[4] = {0.13f, 0.145f, 0.16f, 1};
+    const float* background = product.scene_look().background;
+    std::memcpy(p.sticker_colours_data[ring], &product.sticker_colours(), sizeof(StickerColours));
     for (size_t i = 0; i < plan.panes.size(); ++i) {
         const auto& pane = plan.panes[i];
         const size_t slot = size_t(ring) * SA2_PANES_MAX + i;
@@ -1556,8 +1571,8 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
         scene_require(pso != nullptr, "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
         const D3D12_RECT area{LONG(pane.pane.x), LONG(pane.pane.y), LONG(pane.pane.x + int64_t(pane.pane.width)), LONG(pane.pane.y + int64_t(pane.pane.height))};
         list->BeginQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
-        g.product_draw(list, pso, p.pane_cb[slot], copy, pane.set_ticket, target, input.viewport_width, input.viewport_height, colour, nullptr,
-                       style, style ? &p.pane_style_cb[slot] : nullptr, &area, i == 0, pane.shape.turn != 0.0f);
+        g.product_draw(list, pso, p.pane_cb[slot], copy, pane.set_ticket, target, input.viewport_width, input.viewport_height, background, nullptr,
+                       style, style ? &p.pane_style_cb[slot] : nullptr, &area, i == 0, pane.shape.turn != 0.0f, &p.sticker_colours[ring]);
         list->EndQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
         list->ResolveQueryData(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot), 1, p.pane_read.resource.Get(),
                                uint64_t(ring) * 512 + i * 128);

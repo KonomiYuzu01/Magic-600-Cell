@@ -20,6 +20,30 @@ Digest digest(const uint8_t* bytes) {
 bool zero(const uint8_t* bytes, size_t count) {
     return std::all_of(bytes, bytes + count, [](uint8_t b) { return b == 0; });
 }
+bool unit_colour(float value) { return std::isfinite(value) && value >= 0.0f && value <= 1.0f; }
+}
+
+void Product::set_sticker_colours(const float* rgb, uint32_t count) {
+    StickerColours next{};
+    if (rgb && count) {
+        argument(count == SA2_STICKER_CLASSES, "a sticker colour table needs 600 RGB triples");
+        for (uint32_t i = 0; i < count; ++i) {
+            const float* colour = rgb + 3 * i;
+            argument(std::all_of(colour, colour + 3, unit_colour), "sticker RGB must be finite and within 0..1");
+            next[i] = {colour[0], colour[1], colour[2], 1.0f};
+        }
+    }
+    sticker_colours_ = next;
+}
+
+void Product::set_scene_look(const sa2_scene_look* look) {
+    if (look) {
+        argument(look->struct_size == sizeof(*look) && look->reserved == 0, "invalid scene look size or reserved field");
+        argument(std::all_of(look->background, look->background + 4, unit_colour) && unit_colour(look->fog)
+                 && unit_colour(look->glow) && unit_colour(look->edge_brightness) && unit_colour(look->edge_weight),
+                 "scene look values must be finite and within 0..1");
+    }
+    scene_look_ = look ? *look : DefaultSceneLook;
 }
 
 uint64_t EngineImage::bytes() const {

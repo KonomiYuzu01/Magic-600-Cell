@@ -365,6 +365,7 @@ internal static partial class Program
             ("D02TuningRevertRowsWired", D02TuningRevertRowsWired),
             ("D02SceneLookBackgrounds", D02SceneLookBackgrounds),
             ("D02StickerPaletteChoice", D02StickerPaletteChoice),
+            ("D02StickerColouring", D02StickerColouring),
             ("D02SceneLookDraftRequests", D02SceneLookDraftRequests)
         };
         int passed = 0, failed = 0, skipped = 0;

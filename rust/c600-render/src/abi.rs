@@ -577,3 +577,41 @@ impl Sa2ViewFocus {
             && (1.0..=3.0).contains(&self.spread)
     }
 }
+
+/// `SA2_STICKER_CLASSES`: one RGB triple per home cell (`label / 433`).
+pub const STICKER_CLASSES: usize = 600;
+pub type StickerColours = [[f32; 3]; STICKER_CLASSES];
+
+/// `sa2_scene_look` (ABI 10): the clear colour and the four carried scene values.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct Sa2SceneLook {
+    pub struct_size: u32,
+    pub reserved: u32,
+    pub background: [f32; 4],
+    pub fog: f32,
+    pub glow: f32,
+    pub edge_brightness: f32,
+    pub edge_weight: f32,
+}
+
+impl Default for Sa2SceneLook {
+    fn default() -> Self {
+        Self {
+            struct_size: size_of::<Self>() as u32,
+            reserved: 0,
+            background: [0.13, 0.145, 0.16, 1.0],
+            fog: 0.0,
+            glow: 0.0,
+            edge_brightness: 0.0,
+            edge_weight: 0.0,
+        }
+    }
+}
+
+impl Sa2SceneLook {
+    pub fn in_range(&self) -> bool {
+        self.background.iter().chain([&self.fog, &self.glow, &self.edge_brightness, &self.edge_weight])
+            .all(|value| (0.0..=1.0).contains(value))
+    }
+}

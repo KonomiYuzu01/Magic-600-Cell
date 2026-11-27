@@ -26,14 +26,9 @@ public sealed class StickerPaletteChoice
         this.settings = settings;
     }
 
-    public StickerPalette Current
-    {
-        get
-        {
-            string? id = settings.Get(SettingKey);
-            return palettes.FirstOrDefault(p => p.Id == id && p.Passes) ?? palettes.First(p => p.Passes);
-        }
-    }
+    public StickerPalette? Selected => palettes.FirstOrDefault(p => p.Id == settings.Get(SettingKey) && p.Passes);
+
+    public StickerPalette Current => Selected ?? palettes.First(p => p.Passes);
 
     public string? Choose(string id)
     {
@@ -52,5 +47,5 @@ public static class SceneExports
     public const string StickerColours = "m6h_set_sticker_colours";
 
     public static string Chosen(string what, string export) =>
-        $"{what} chosen; the drawn scene keeps the core's fixed colours until the core takes {export} (requested)";
+        $"{what} sent through {export}";
 }

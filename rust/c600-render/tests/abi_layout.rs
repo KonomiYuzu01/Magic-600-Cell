@@ -252,6 +252,9 @@ fn every_row_has_the_header_layout() {
     let layout = rust_struct!(Sa2ViewLayout { struct_size, kind, j, k, origins, ring_of, half_step });
     assert_eq!(c_struct(&h, "sa2_view_layout"), layout, "sa2_view_layout");
     assert_eq!(Sa2ViewLayout::new().struct_size, 1560, "new() sets struct_size");
+    let look = rust_struct!(Sa2SceneLook { struct_size, reserved, background, fog, glow, edge_brightness, edge_weight });
+    assert_eq!(c_struct(&h, "sa2_scene_look"), look, "sa2_scene_look");
+    assert_eq!(Sa2SceneLook::default().struct_size, 40, "default() sets struct_size");
     let sizes = [
         Sa2PollRow::new().struct_size,
         Sa2FrameInput::new().struct_size,
@@ -282,6 +285,7 @@ fn every_constant_has_the_header_value() {
     let mut rust: Vec<(String, i64)> = vec![
         ("ABI_VERSION".into(), i64::from(ABI_VERSION)),
         ("SLOTS".into(), SLOTS as i64),
+        ("STICKER_CLASSES".into(), STICKER_CLASSES as i64),
         ("PIECES".into(), PIECES as i64),
         ("MAX_POSES".into(), MAX_POSES as i64),
         ("POSE_GROUP_ORDER".into(), i64::from(POSE_GROUP_ORDER)),

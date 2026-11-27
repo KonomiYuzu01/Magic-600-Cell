@@ -7,6 +7,7 @@
 #include "draw.hlsl"
 StructuredBuffer<uint> slotVisible : register(t15); // 1 = drawn
 StructuredBuffer<uint> instanceIds : register(t16); // the ID pass value; 0 = no instance
+StructuredBuffer<float4> stickerColours : register(t19); // a = 0 uses the built-in hue
 struct ProductOut {
     float4 position : SV_Position;
     float3 projected : TEXCOORD0;
@@ -25,13 +26,25 @@ ProductOut productVs(uint vi : SV_VertexID, uint cell : SV_InstanceID) {
     result.instance = instanceIds[slot];
     return result;
 }
+float stickerShade(float3 projected) {
+    float3 n = normalize(cross(ddx(projected), ddy(projected)));
+    return 0.5 + 0.5*abs(dot(n, normalize(float3(0.3,0.5,1))));
+}
+float4 stickerColour(VertexOut input, float shade) {
+    float4 colour = psMain(input);
+    if (input.marked == 0) {
+        float4 entry = stickerColours[input.colourClass];
+        if (entry.a > 0) colour.rgb = entry.rgb * shade;
+    }
+    return colour;
+}
 float4 productPs(ProductOut input) : SV_Target {
     VertexOut v;
     v.position = input.position;
     v.projected = input.projected;
     v.colourClass = input.colourClass;
     v.marked = input.marked;
-    return psMain(v);
+    return stickerColour(v, stickerShade(v.projected));
 }
 uint idPs(ProductOut input) : SV_Target {
     return input.instance;
