@@ -1188,7 +1188,7 @@ class D02Launch(unittest.TestCase):
         rows_at = chrome.index("ShellJumble.AddRows(registry, folder);")
         self.assertLess(table_at, rows_at)
         self.assertLess(rows_at, chrome.index("Keymap.Load("))
-        self.assertLess(chrome.index("new CommandPalette("), chrome.index("ShellJumble.Attach(parent, frame, palette);"))
+        self.assertLess(chrome.index("new CommandPalette("), chrome.index("ShellJumble.Attach(parent, frame, palette, () => cards?.ObservePicks());"))
         self.assertIn("_ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,", chrome)
         jumble = text(PROJECT / "D02" / "ShellJumble.cs")
         self.assertIn('System.Environment.GetEnvironmentVariable("M600_D02") == "1"', jumble)
@@ -1620,7 +1620,7 @@ class D02Host(unittest.TestCase):
 
     def test_the_jumble_host_is_built_only_with_d02_on(self):
         chrome = text(PROJECT / "ShellChrome.cs")
-        start = chrome.index("        if (ShellJumble.On)\n        {\n            ShellJumble.Attach(parent, frame, palette);")
+        start = chrome.index("        if (ShellJumble.On)\n        {\n            ShellJumble.Attach(parent, frame, palette, () => cards?.ObservePicks());")
         block = chrome[start:chrome.index("\n        }\n", start)]
         self.assertEqual(chrome.count("new JumbleHost("), 1)
         self.assertIn('Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing, sentences["totals.unit"], '

@@ -1,0 +1,29 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "pinned-cards",
+  "resolution": "1280x720",
+  "note": "On the wj-ia-300 session fixture: follow piece 4021 (its Tracked piece card), pin cap 17's card, set the reference state, and pin one more cap card after it. A number names each subject, so the run does not depend on where a click lands. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {
+      "wait_ms": 2500
+    },
+    {
+      "command": "card.track",
+      "argument": "4021"
+    },
+    {
+      "command": "card.pin",
+      "argument": "17"
+    },
+    {
+      "command": "card.reference.set"
+    },
+    {
+      "command": "card.pin",
+      "argument": "18"
+    },
+    {
+      "wait_ms": 6000
+    }
+  ]
+}
