@@ -414,6 +414,16 @@
       ],
       "note": "Fills Prepare and Cleanup around the macro the solver placed in Core with the picked setup row and its inverse, as one draft change; never a whole placement (ADR-D01.68). Argument: the row. The row alone is previewed with operation.preview setup:<row>.",
       "request": "ADR-D01.68"
+    },
+    {
+      "id": "menu.context.open",
+      "label": "Open context menu",
+      "kind": "view",
+      "contexts": [
+        "any"
+      ],
+      "note": "Opens the context menu of the view under the pointer, or of the view named by the argument global or local, for the current selection.",
+      "request": "ADR-D01.17"
     }
   ]
 }
