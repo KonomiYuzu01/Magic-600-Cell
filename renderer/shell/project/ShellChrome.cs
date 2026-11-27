@@ -571,6 +571,8 @@ public sealed class ShellChrome
             ShellTint.Attach(host, frame);
             ShellError.Attach(host, frame);
             ShellGrip.Attach(host, frame);
+            // ADR-D01.74: the key map's twist keycaps read the same grip.
+            ShellGripKeys.Attach(keyMap);
             cards = new ShellCards(frame, host, sentences["totals.unit"]);
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);

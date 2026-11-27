@@ -1004,5 +1004,48 @@ class GripFrameRun(unittest.TestCase):
         self.assertTrue(any("Ctrl+click committed the wrong cap or item" in p for p in problems))
 
 
+class GripKeycapsRun(unittest.TestCase):
+    def test_the_keycaps_script_uses_the_real_fixture_and_registered_check(self):
+        run = shell_module("d02_run")
+        script = json.loads(text(SHELL / "d02_scripts" / "grip-keycaps.json"))
+        self.assertEqual((script["format"], script["resolution"], script["state"]),
+                         ("magic600-d02-script/1", "1280x720", "wj-ia-300"))
+        self.assertIn("grip-keycaps", run.ON_FIXTURE)
+        self.assertIs(run.EXPECT["grip-keycaps"], run.expect_grip_keycaps)
+        self.assertIn({"command": "grip.frame.next"}, script["steps"])
+        self.assertIn({"chord": "Shift+Slash"}, script["steps"])
+
+    def test_the_check_reads_the_caps_stamps_and_marks(self):
+        def dump(step, frame, items, changed=(), shown=True):
+            chords = ("KeyJ", "Shift+KeyJ", "KeyK", "Shift+KeyK", "KeyL", "Shift+KeyL")
+            meanings = ("(14)(23)", "(14)(23)", "(123)", "(132)", "(134)", "(143)")
+            keys = [dict(chord=c, item=i, meaning=m) for c, i, m in zip(chords, items, meanings)]
+            carried = [dict(key=c[3:], chord=c, item=i, meaning=m, label=m, context="grip", changed=c[3:] in changed)
+                       for c, i, m in zip(chords, items, meanings) if "+" not in c]
+            stamps = [dict(key=cap["key"], label=cap["meaning"], x=40 + 80 * n, y=30, box=[80 * n, 0, 80, 60])
+                      for n, cap in enumerate(carried)]
+            legend = "whole outline: bound here" + (" · corner mark: changed meaning since the grip frame changed"
+                                                    if changed else "")
+            keycaps = dict(shown=shown, header=f"Key set: default · pointer over Local · no modifier held · grip: cap 150, "
+                           f"frame {frame}", legend=legend, grip=carried, stamps=stamps)
+            return {"do": step, "grip": dict(cap=150, frame=frame, keys=keys), "keycaps": keycaps}
+
+        p, q = [1, 1, 2, 5, 3, 9], [1, 1, 4, 7, 6, 8]
+        dumps = [dump("wait 700 ms", 0, p), dump("command grip.frame.next", 2, q, "KL"), dump("wait 701 ms", 2, q, "KL"),
+                 dump("chord Escape", 2, q, shown=False), dump("wait 702 ms", 2, q)]
+        check = shell_module("d02_run").expect_grip_keycaps
+        self.assertEqual(check(dumps, {}, "wj-ia-300"), [])
+        dumps[2]["keycaps"]["grip"][0]["changed"] = True
+        dumps[2]["keycaps"]["stamps"][1]["x"] = 500
+        dumps[4]["keycaps"]["header"] = "Key set: default · pointer over Local · no modifier held"
+        dumps[3]["keycaps"]["shown"] = True
+        problems = check(dumps, {}, "wj-ia-300")
+        self.assertTrue(any("marks ['J', 'K', 'L'], not the re-bound keys ['K', 'L']" in p for p in problems))
+        self.assertTrue(any("K's stamp differs or lies outside its cap" in p for p in problems))
+        self.assertTrue(any("the map shown again's header reads" in p for p in problems))
+        self.assertTrue(any("Escape left the key map shown" in p for p in problems))
+        self.assertEqual(check(dumps[:2], {}, "wj-ia-300"), ["the grip keycaps script is missing a grip or keycaps checkpoint"])
+
+
 if __name__ == "__main__":
     unittest.main()
