@@ -500,11 +500,18 @@ public sealed class ShellChrome
             var (names, empty, nothing) = ShellJumble.Words(folder);
             // B32 findings: in sample mode the key map holds the help key (ADR-D01.74), so Local's hint names the key
             // that opens the palette there; outside sample mode F1 with no help topic opens the palette (PR 446's reading).
+            // The cap map's refusal ("F1 › jumble.cap.unname") is routed the same way.
+            Func<string, string>? paletteWords = null;
             if (sample != null)
-                empty = ShellJumble.PaletteRoute(empty, sample.Keys.ShowKey ?? keymap.Bindings.FirstOrDefault(b => b.Command == "help.open")?.Key,
-                    keymap.KeysFor("command.find", null));
+            {
+                string? taken = sample.Keys.ShowKey ?? keymap.Bindings.FirstOrDefault(b => b.Command == "help.open")?.Key;
+                string paletteKeys = keymap.KeysFor("command.find", null);
+                paletteWords = words => ShellJumble.PaletteRoute(words, taken, paletteKeys);
+                empty = paletteWords(empty);
+            }
             var sentences = ShellJumble.Sentences(folder);
             Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing, sentences["totals.unit"], sentences["totals.above"]);
+            Jumble.PaletteWords = paletteWords;
             // B7: Global's totals follow the bound state, pending while none is bound; B8: so does the cap map.
             var host = Jumble;
             var layout = ShellJumble.Layout();

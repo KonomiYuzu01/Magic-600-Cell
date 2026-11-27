@@ -23,7 +23,8 @@ namespace Magic600.Shell.D02;
 /// C1, 26 November 2026). From then on the owner's clicks and switches stand. Keys alone do not stop them, since keys
 /// typed elsewhere land in the shell while Godot holds the foreground. The shell never activates itself, never raises its own window,
 /// never asks for the foreground for itself and never sets a topmost flag; it stops the taskbar flash a refused
-/// activation starts.
+/// activation starts. Those checks are <see cref="Settle"/>; after the first seconds <see cref="Watch"/> takes over for
+/// the window's life (B32 findings): it notes the owner's acts on the window and moves no window.
 /// </summary>
 internal static class D02Window
 {

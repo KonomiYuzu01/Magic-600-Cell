@@ -307,8 +307,13 @@ public sealed partial class JumbleHost
 
     public bool Name(int cap) => Naming.Name(cap);
 
-    // Why a click on a cap names nothing now, or null.
-    public string? Refusal(int cap) => CapNaming.Refusal(cap, Source.State.Mode, Naming.Named);
+    // Words that send the reader to the palette by a key another surface holds, rerouted to the palette's own key; the
+    // shell sets it in sample mode, where the key map holds F1 (B32 findings, ShellJumble.PaletteRoute). Null keeps them.
+    public Func<string, string>? PaletteWords { get; set; }
+
+    // Why a click on a cap names nothing now, or null; the cap map's tooltip, the prompt's rows and the status line read it.
+    public string? Refusal(int cap) =>
+        CapNaming.Refusal(cap, Source.State.Mode, Naming.Named) is not { } why ? null : PaletteWords is { } route ? route(why) : why;
 
     // A click on a cap map cell, a typed number and Enter there, or the prompt's choice: it names the cap, or says why
     // it names nothing in the status line (owner's bug report, 26 November 2026: a click did nothing visible).

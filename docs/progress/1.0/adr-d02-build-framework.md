@@ -1364,7 +1364,17 @@ relative path is from the repository root.
   - F1 and Local's hint: in sample mode the key map holds F1 (ADR-D01.74), so the hint there names the palette's key,
     "Space › jumble.cap.name <id>"; outside sample mode F1 with no help topic opens the palette and the hint keeps
     ADR-D02.12's words. The open F1 question is not decided. The dump says `sample`; `d02_run.local_problems` reads the
-    words of the mode. The cap prompt's "F1 › jumble.cap.unname" refusal is unchanged (left open).
+    words of the mode. The cap map's refusal "F1 › jumble.cap.unname" (its tooltip, the cap prompt's rows and the
+    status line) is routed the same way in sample mode (`JumbleHost.PaletteWords`, set by the shell to
+    `ShellJumble.PaletteRoute`); outside sample mode it keeps F1, so `cap-hover`'s expectation stands.
+  - ADR-D01.52 and .49/.5 (as built, 27 November 2026): the colour step's open lead, that the sticker palette and the
+    scene look "are not resent after a host session reopen", is settled by a test: they are kept, and nothing resends
+    them. Every new head the shell adopts (a twist, a fixture load, `jumble.on`/`off`, a state switch) reaches the core
+    as `sa2_engine_adopt`, which drops only the revision-bound piece style, transform and chart channel; the table and
+    the look are scene state, and the deferred worker's new host context (`Built.ctx`) holds neither. The WARP check
+    `check_core.py --colours` now adopts a second revision with the same labels after setting both and finds the
+    revision's frame byte-identical to the one before ("scene colours: kept across an adoption"); a lost table or look
+    would draw the core's hues or the default background there.
   - J1: the five rows leave `not_run`; the session names cap 150 again, types `jumble.repair.focus`, Down and
     `jumble.repair.stage`, and latches the split off again. `repair-boundary` stays under `not_run`: J1 reads no list
     screens; the new `repair-keys` script checks the boundary by keys.
