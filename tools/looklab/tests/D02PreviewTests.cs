@@ -49,6 +49,8 @@ internal static partial class Program
         void Stage() => stage.Stage(list, list.Rows[1], steps, UserEvent.Key("2"), Origin.Solver);
         Stage();
         Equal(preview.CommitRefusal(asked), "the preview has just changed");
+        Check(model.Settling(clock) && preview.CommitRefusal(asked) == PreviewModel.JustChanged,
+            "a fresh whole-only preview did not start the settle interval");
         preview.Scrub("forward", UserEvent.Key("Right"));
         Equal(model.Scrub, 3);
         preview.Scrub("back", UserEvent.Key("Left"));
@@ -57,6 +59,7 @@ internal static partial class Program
         preview.Scrub("back", UserEvent.Key("Left"));
         Equal(model.Scrub, 0);
         clock = PreviewModel.Settle + 0.1;
+        Check(!model.Settling(clock), "the settle interval did not end");
         Check(preview.CommitRefusal(asked) == null && !model.AtPrefix, "whole-only was refused at the start");
         Check(model.Take(clock)?.Moves.Count == 3, "a scrub at the start did not take the full repair");
         preview.Cancel();
