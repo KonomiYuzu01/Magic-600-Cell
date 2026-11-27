@@ -23,7 +23,9 @@
 //!
 //! ADR-D02 B26 adds [`write_word_with`]: work run on a thread of its own beside the control at the close. A pose move
 //! session costs about the same to write, to check and to reopen (each replays the jumbling journal from solved every
-//! 64 pose moves), so the writer runs its timed reopen there, beside the control's own reopen, not after it.
+//! 64 pose moves), so the writer runs its timed reopen there, beside the control's own reopen, not after it. Whatever
+//! reads the live session's folder runs before the control starts (`prepare`): on Windows a copy that still holds the
+//! journal open while the control closes the layer and reopens it fails the reopen with os error 32 (B33's replay).
 
 use std::path::Path;
 use std::sync::Arc;
@@ -153,21 +155,24 @@ pub fn write_word(
     out: &Path,
     letters: &[[u64; 2]],
 ) -> Result<Value, String> {
-    write_word_with(kernel, assets, menu_file, out, letters, |_| ()).map(|(record, ())| record)
+    write_word_with(kernel, assets, menu_file, out, letters, |_| (), |_, ()| ()).map(|(record, ())| record)
 }
 
-/// [`write_word`] with `beside` run on a thread of its own once every letter is committed, while the control at the
-/// close runs on this one (ADR-D02 B26). `beside` gets the fixture that the record will describe (its committed
-/// presses, the head's digest and the revision), and its answer comes back with the record once both are done. The
-/// session's journal is complete when `beside` starts, but the live layer may still hold the session's lock, so
-/// `beside` reads the session folder and never opens it in place.
-pub fn write_word_with<T: Send>(
+/// [`write_word`] with `prepare` run on this thread once every letter is committed and before the control at the
+/// close starts, then `beside` run on a thread of its own with what `prepare` answered, while the control runs on this
+/// one (ADR-D02 B26). Both get the fixture that the record will describe (its committed presses, the head's digest and
+/// the revision), and `beside`'s answer comes back with the record once both are done. The session's journal is
+/// complete when `prepare` starts, but the live layer may still hold the session's lock, so `prepare` reads the session
+/// folder and never opens it in place; `beside` must not read the live session's folder at all, since the control
+/// closes the layer and reopens that journal while it runs.
+pub fn write_word_with<P: Send, T: Send>(
     kernel: Arc<Kernel>,
     assets: &Path,
     menu_file: &Path,
     out: &Path,
     letters: &[[u64; 2]],
-    beside: impl FnOnce(&Fixture) -> T + Send,
+    prepare: impl FnOnce(&Fixture) -> P,
+    beside: impl FnOnce(&Fixture, P) -> T + Send,
 ) -> Result<(Value, T), String> {
     let mut turns = start(Puzzle::JumbleOn, kernel, assets, menu_file, out)?;
     for (index, &[cap, item]) in letters.iter().enumerate() {
@@ -184,8 +189,9 @@ pub fn write_word_with<T: Send>(
     };
     let word = letters.iter().map(|&[cap, item]| Value::Array(vec![Value::Int(cap as i64), Value::Int(item as i64)]));
     let extra = vec![("word", Value::Array(word.collect())), ("state_digests", digests)];
+    let prepared = prepare(&shown);
     std::thread::scope(|scope| {
-        let side = scope.spawn(|| beside(&shown));
+        let side = scope.spawn(|| beside(&shown, prepared));
         let record = close(turns, Puzzle::JumbleOn, out, Vec::new(), extra);
         let side = side.join().map_err(|_| "the work beside the fixture's control panicked".to_owned());
         Ok((record?, side?))
