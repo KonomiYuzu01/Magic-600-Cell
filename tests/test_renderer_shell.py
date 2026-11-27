@@ -2564,9 +2564,10 @@ class D02TrackJ(unittest.TestCase):
             self.assertTrue(entry["why"], row)
             self.assertIn(row, set(rows) | rules | {track.REPAIR_PART})
             self.assertEqual("palette" in entry, row in rows, row)
-        for row in ("view.mode.raw", "view.mode.raw.clip", "view.mode.raw.antipode", "view.preset.global.ring_sheet",
-                    "view.preset.global.hopf_rings"):
-            self.assertIn(row, session["not_run"], "B21 and B22's rest wait")
+        for row in ("view.mode.raw", "view.mode.raw.clip", "view.mode.raw.antipode"):
+            self.assertIn(row, session["not_run"], "B21 waits")
+        for row in ("view.preset.global.ring_sheet", "view.preset.global.hopf_rings"):
+            self.assertNotIn(row, session["not_run"], "B22 rest runs the chart presets")
 
     def test_j1_counts_reach_and_lists_what_it_does_not_run(self):
         track = shell_module("track_j")
