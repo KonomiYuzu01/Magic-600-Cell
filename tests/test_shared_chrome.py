@@ -9,6 +9,7 @@ Lab. A pass is source evidence only; the builds, the console tests and the windo
 from __future__ import annotations
 
 import importlib
+import re
 import shutil
 import sys
 import tempfile
@@ -235,6 +236,21 @@ class DocumentTabs(unittest.TestCase):
         self.assertLess(frame.index("centre.AddChild(topStrip);"), row)
         self.assertLess(row, frame.index("centre.AddChild(Model.OnlyPairShown"))
         self.assertIn("ChromeWidgets.Detach(documentRow);", frame[frame.index("public override void _ExitTree()"):])
+
+
+class SessionCells(unittest.TestCase):
+    def test_one_copy_in_the_shared_library(self):
+        ui = CHROME / "Ui" / "SessionCells.cs"
+        model = CHROME / "Model" / "SessionCells.cs"
+        sources = {path: text(path) for folder in (CHROME, SHELL / "project") for path in folder.rglob("*.cs")}
+        for name, source in (("TimerCell", ui), ("SessionCell", ui), ("SessionTimer", model),
+                             ("SessionCellModel", model), ("CompletionLog", model), ("PracticeMark", model)):
+            self.assertEqual([path for path, code in sources.items() if re.search(rf"\bclass {name}\b", code)], [source])
+        self.assertIn("public CompletionLog? Completions", text(CHROME / "Ui" / "SessionPanels.cs"))
+        for path in LIVE.rglob("*.cs"):
+            code = text(path)
+            for word in ("TimerCell", "SessionCell", "CompletionLog", "cell.timer", "cell.session"):
+                self.assertNotIn(word, code, path.name)
 
 
 if __name__ == "__main__":

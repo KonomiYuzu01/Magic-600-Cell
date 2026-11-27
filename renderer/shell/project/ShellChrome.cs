@@ -193,6 +193,7 @@ public sealed class ShellChrome
             // why one is unavailable (a start before its budget, the two CR-17 rows).
             _ when ShellResearch.Model is { } research && ResearchModel.Handles(command, argument) => research.Unavailable(command, argument),
             _ when ShellDocuments.Handles(command) => ShellDocuments.Unavailable(command, argument),
+            _ when ShellSession.Handles(command) => ShellSession.Unavailable(command),
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
@@ -227,6 +228,7 @@ public sealed class ShellChrome
             sample.Look = appearance;
         }
         ShellDocuments.Load(frame, registry, sample);
+        ShellSession.Load(frame, registry, sample, history, Moves, Execute);
         // Failures show in Problems with the error lamp, in every mode, and go to the run's errors.log.
         ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
             System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } events ? Path.Combine(events, "errors.log") : null);
@@ -262,6 +264,9 @@ public sealed class ShellChrome
                     break;
                 case var document when ShellDocuments.Handles(document):
                     ShellDocuments.Execute(frame, command, argument);
+                    break;
+                case var session when ShellSession.Handles(session):
+                    ShellSession.Execute(frame, command, argument);
                     break;
                 case "command.find": palette.Open(); break;
                 case "help.open":
@@ -337,7 +342,17 @@ public sealed class ShellChrome
         {
             frame.SetStrip(bar);
         }
-        history.Command += (command, argument) => frame.Say(registry.Commands.TryGetValue(command, out var named) ? named.Label + ": " + NotHere : NotHere, true);
+        history.Command += (command, argument) =>
+        {
+            if (command == "session.completion")
+            {
+                Execute(command, argument);
+            }
+            else
+            {
+                frame.Say(registry.Commands.TryGetValue(command, out var named) ? named.Label + ": " + NotHere : NotHere, true);
+            }
+        };
 
         var find = SessionWidgets.Tool("search", $"Find a command ({keymap.KeysFor("command.find", null)})", frame.Tokens, palette.Open);
         find.Name = "FindButton";
@@ -453,6 +468,7 @@ public sealed class ShellChrome
         }
         _revision.Set("r " + _shown.ToString("0000", CultureInfo.InvariantCulture));
         _position.Show(HistoryReadouts.Position(Moves));
+        ShellSession.Describe(_live && _shown <= int.MaxValue ? (int)_shown : null);
         Frame.Global.ClearMarks();
         if (_live)
         {
@@ -470,6 +486,8 @@ public sealed class ShellChrome
         Jumble?.Marks(Frame.Local);
         Sample?.Marks(Frame.Global);
         Sample?.Marks(Frame.Local);
+        ShellSession.Marks(Frame.Global);
+        ShellSession.Marks(Frame.Local);
     }
 
     private string? _localWords;
