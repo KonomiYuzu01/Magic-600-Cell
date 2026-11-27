@@ -1,0 +1,26 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "raw",
+  "note": "B21 (ADR-D02.18, CR-14), by keys only, on the session fixture: after F1 and the palette's typed mode name cap 150, Home turns Local's raw view on (the stereographic chart from cap 150's pole, clipped at the cut; two panes with Global), End adds the antipode chart beside it (three panes, labelled antipode), PageDown widens the clip one step, the palette's view.mode.raw.clip tick sets it at the meeting poles' tick, End removes the antipode chart and Home turns the raw view off. The keys are placeholders (row requests). The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 3000},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 2500},
+    {"chord": "Home"},
+    {"wait_ms": 2000},
+    {"chord": "End"},
+    {"wait_ms": 2000},
+    {"chord": "PageDown"},
+    {"wait_ms": 1000},
+    {"chord": "F1"},
+    {"text": "> view.mode.raw.clip tick"},
+    {"chord": "Enter"},
+    {"wait_ms": 1500},
+    {"chord": "End"},
+    {"wait_ms": 1500},
+    {"chord": "Home"},
+    {"wait_ms": 1500}
+  ]
+}

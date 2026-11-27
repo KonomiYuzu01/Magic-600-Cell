@@ -1,6 +1,6 @@
 {
   "format": "magic600-design-motion",
-  "version": 1,
+  "version": 2,
   "motions": [
     {
       "id": "twist.committed",
@@ -129,6 +129,71 @@
       "curve": "standard",
       "static": "The mark on its new side.",
       "cue": "cue.route"
+    },
+    {
+      "id": "slice.turn",
+      "meaning": "The cut slice turns with its cap; silent.",
+      "duration": "twist",
+      "curve": "standard",
+      "static": "The slice at its new pose.",
+      "cue": null
+    },
+    {
+      "id": "jumble.sweep",
+      "meaning": "A jumble twist sweeps its moving set about the cap's pole.",
+      "duration": "twist",
+      "curve": "standard",
+      "static": "The pieces at their new poses, the moved set outlined.",
+      "cue": "cue.jumble_twist"
+    },
+    {
+      "id": "jumble.half_turn",
+      "meaning": "A half-turn cuts to its end pose and outlines its moving set for one fixed time.",
+      "duration": "flash",
+      "curve": "exit",
+      "static": "The pieces at their end poses, the moved set outlined.",
+      "cue": "cue.jumble_twist"
+    },
+    {
+      "id": "jumble.enter",
+      "meaning": "Jumble on: the chrome takes its Jumble marks; no sticker moves.",
+      "duration": "fast",
+      "curve": "enter",
+      "static": "The Jumble mark on every view border.",
+      "cue": "cue.jumble"
+    },
+    {
+      "id": "jumble.leave",
+      "meaning": "Jumble off: the chrome drops its Jumble marks; no sticker moves.",
+      "duration": "fast",
+      "curve": "exit",
+      "static": "No Jumble mark on the view borders.",
+      "cue": "cue.jumble"
+    },
+    {
+      "id": "repair.step",
+      "meaning": "A repair row's next step draws its moving set.",
+      "duration": "fast",
+      "curve": "standard",
+      "static": "Repair k of m, with step k's moving set outlined.",
+      "cue": "cue.step"
+    },
+    {
+      "id": "cap.name",
+      "meaning": "Naming a cap shows its 80 meeting caps.",
+      "duration": "fast",
+      "curve": "enter",
+      "static": "The named-cap cell and the meeting caps in their static form.",
+      "cue": "cue.cap"
+    },
+    {
+      "id": "slot.fill",
+      "meaning": "Reserved and off: a result appears in place with no motion and no cue.",
+      "duration": "instant",
+      "curve": "linear",
+      "static": "The result in place.",
+      "cue": "cue.check",
+      "off": true
     }
   ]
 }

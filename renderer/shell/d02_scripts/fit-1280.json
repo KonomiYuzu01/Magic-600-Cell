@@ -1,0 +1,14 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "fit-1280",
+  "resolution": "1280x720",
+  "note": "The frame fits a small 1280x720 window across (owner, 26 November 2026: \"看不到\"): nothing lies past the right edge, the docks fold to their rails, and Local is at least 0.2 of the pair. The frame may run below the window's lower edge at this height.",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "wait_ms": 1000
+    }
+  ]
+}

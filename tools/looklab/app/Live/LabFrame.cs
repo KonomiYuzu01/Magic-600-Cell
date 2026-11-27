@@ -18,8 +18,8 @@ internal static class LabFrame
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabKit> Kits = new();
     public static LabKit KitOf(ChromeFrame frame) => Kits.TryGetValue(frame, out LabKit? kit) ? kit : throw new InvalidOperationException("the frame has no lab kit");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabDemo> Demos = new();
-    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabInspect> Inspects = new();
-    public static LabInspect InspectOf(ChromeFrame frame) => Inspects.TryGetValue(frame, out LabInspect? inspect) ? inspect : throw new InvalidOperationException("the frame has no lab inspector");
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, SampleInspect> Inspects = new();
+    public static SampleInspect InspectOf(ChromeFrame frame) => Inspects.TryGetValue(frame, out SampleInspect? inspect) ? inspect : throw new InvalidOperationException("the frame has no lab inspector");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabScripts> AllScripts = new();
     public static LabScripts ScriptsOf(ChromeFrame frame) => AllScripts.TryGetValue(frame, out LabScripts? scripts) ? scripts : throw new InvalidOperationException("the frame has no lab scripts");
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ChromeFrame, LabSolve> Solves = new();
@@ -119,6 +119,8 @@ internal static class LabFrame
         var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(root, "docs/progress/1.0/command-table.json")));
         // The record's draft rows (replay a kept branch, the preview's sides) join the table at its freeze.
         registry.AddRows(File.ReadAllText(Path.Combine(folder, "command-rows-draft.json")));
+        // The setup slot's draft rows (ADR-D01.68), from ADR-D02's draft file.
+        SetupRows.AddDrafts(registry, File.ReadAllText(Path.Combine(folder, "command-rows-d02.json")));
         // The lab shows the solving commands in the owner's words; the table's ids and labels are not edited.
         registry.Relabel(File.ReadAllText(Path.Combine(folder, "command-labels.json")));
         Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
@@ -179,7 +181,7 @@ internal static class LabFrame
         find.Pressed += palette.Open; help.Pressed += () => keys.Shown.Pin(!keys.Shown.Pinned);
         frame.BarTools.AddChild(find); frame.BarTools.AddChild(help);
         string Next(System.Collections.Generic.IReadOnlyList<string> ids, string current) => ids[(ids.ToList().IndexOf(current) + 1) % ids.Count];
-        LabDemo demo = null!; LabInspect inspect = null!; LabSolve solve = null!;
+        LabDemo demo = null!; SampleInspect inspect = null!; LabSolve solve = null!;
         void Execute(string command, string? argument)
         {
             if (Unavailable(command, argument) is { } why) { frame.Say($"{registry.Commands[command].Label}: {why}", true); return; }
@@ -213,6 +215,7 @@ internal static class LabFrame
                 case "theme.select": appearance.Edit(a => a.SetTheme(Next(themes.Select(t => t.Id).ToArray(), a.Theme)), true, true); break;
                 case "density.preset.set": appearance.Edit(a => a.SetDensity(Next(design.Densities, a.Density)), true, false); break;
                 case "operation.preview" when argument != null && argument.StartsWith(LabSolve.MacroPreview, StringComparison.Ordinal): solve.PreviewMacro(argument.Substring(LabSolve.MacroPreview.Length)); break;
+                case "operation.preview" when argument != null && argument.StartsWith(SetupSearch.PreviewArgument, StringComparison.Ordinal): solve.PreviewSetup(argument.Substring(SetupSearch.PreviewArgument.Length)); break;
                 case var sample when LabDemo.Handles(sample): demo.Execute(command, argument); break;
                 case var solving when LabSolve.Handles(solving): solve.Execute(command, argument, registry.Commands[command].Label); break;
                 default: frame.Say(registry.Commands[command].Label + ": nothing to do for " + argument, true); break;
@@ -241,7 +244,9 @@ internal static class LabFrame
         // The sample session: commit bar under the views, the preview view and the History dock.
         demo = new LabDemo(frame, keymap, Execute); Demos.Add(frame, demo);
         frame.SetContent("history", demo.History); frame.SetContent(LabDemo.PreviewPane, demo.PreviewView); frame.SetStrip(demo.Bar);
-        inspect = new LabInspect(app, frame, demo); Inspects.Add(frame, inspect);
+        inspect = LabInspect.Create(app, frame, demo); Inspects.Add(frame, inspect);
+        // Failures show: the shared error lamp lists them in Problems (ChromeErrors).
+        ChromeErrors.Mount(frame, inspect.Feedback, "look-lab");
         // The solving surface on the pair's body: the relationship strip on the seam, anchors in both views.
         // The anchors sit where each view's own projection puts the sample slot of their position (B-10 of A6).
         var places = new ScenePlaces(root, app.View.Geometry);
@@ -323,7 +328,6 @@ internal static class LabFrame
         foreach (var layer in FocusLayers.Layers) { string id = layer.Id; frame.HostKeys[LayerKey(id)] = () => Aimed().SetPick(id); }
         frame.HostKeys["F10"] = () => Aimed().Cycle();
         app.ViewParts["frame.layers"] = (() => layers["global"].Store() + "|" + layers["local"].Store(), v => { string[] kept = v.Split('|'); if (kept.Length == 2) { layers["global"].Restore(kept[0]); layers["local"].Restore(kept[1]); } });
-        frame.AlertPressed += () => frame.Model.ShowDock(DockSide.Bottom, "problems");
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         // Every default comes from the workspace; the right dock starts collapsed (ADR-D01.22).
         frame.MarkBaseline();
@@ -335,7 +339,10 @@ internal static class LabFrame
         }
         app.Greybox.Toggle.Toggled += ShowGreybox;
         frame.Rebuilt += () => { if (app.Greybox.Toggle.ButtonPressed != frame.Model.IsOpen(Greybox)) app.Greybox.Toggle.ButtonPressed = frame.Model.IsOpen(Greybox); };
-        // Status lines and frame marks. Both main views show the committed state; the 4D rotation link is named on both.
+        // Status lines and frame marks. Both main views show the committed state; the rotation link is named on both
+        // (ADR-D01.41, the shared mark): Look Lab draws both views and Local takes Global's camera at every step
+        // (LinkedViews.Step), so its rotation is always linked.
+        static bool? Linked() => true;
         void Describe()
         {
             var p = app.State.Preset.Params;
@@ -345,7 +352,7 @@ internal static class LabFrame
                 view.ClearMarks();
                 view.AddMark("mark.committed", "committed", "state.committed", "This view shows the committed state.");
                 if (demo.Preview.Pending != null) view.AddMark("mark.pending", "preview pending", "state.pending", "A preview waits in the preview view; this view still shows the committed state.");
-                view.AddMark("mark.link", "rotation", "accent.strong", "4D rotation linked: Global ⇄ Local");
+                ViewLink.Mark(view, Linked);
                 foreach (var mark in scripts.ViewMarks()) view.AddMark(mark.Glyph, mark.Text, mark.Colour, mark.Tip);
                 FocusLayers own = layers[view == frame.Global ? "global" : "local"]; var picked = FocusLayers.Layers.First(l => l.Id == own.Pick);
                 view.AddMark(picked.Icon, picked.Name.ToLowerInvariant(), "text.dim", $"A click picks {picked.Name.ToLowerInvariant()} in this view.");
@@ -427,8 +434,9 @@ internal static class LabFrame
             seen = Showing; ApplyScene(); Home(); Describe();
         }).CallDeferred();
         frame.Flush();
-        string[] kept = { "frame.appearance", "frame.workspace", "frame.zlayout", "frame.labels", "frame.keymap" };
-        demo.TrackLayout(() => kept.Select(k => app.ViewParts[k].Get()).ToArray(), parts => { for (int i = 0; i < kept.Length; i++) app.ViewParts[kept[i]].Set(parts[i]); });
+        // The layout history keeps the shared arrangement parts (FrameLayout); the lab gives its appearance and key bindings.
+        demo.TrackLayout(FrameLayout.State(frame, () => app.ViewParts["frame.appearance"].Get(), () => app.ViewParts["frame.keymap"].Get()),
+            FrameLayout.Apply(frame, v => app.ViewParts["frame.appearance"].Set(v), v => app.ViewParts["frame.keymap"].Set(v)));
         return frame;
     }
 }

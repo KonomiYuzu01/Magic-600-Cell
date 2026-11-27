@@ -14,12 +14,16 @@ public sealed partial class OrbitRail : PanelContainer
     public bool ByOrbitId { get; private set; }
     public int? Expanded { get; private set; }
     public int? Hovered => cells.Hover;
+    // ADR-D02.6: with Jumble on and pieces off the lattice the rail shows numeral.undefined as a whole.
+    public bool Undefined { get; private set; }
+    public void SetUndefined(bool on) { if (Undefined == on) return; Undefined = on; Refresh(); }
     private readonly Func<TokenSet> tokens; private readonly RailCells cells; private readonly Label head, typed; private readonly Button order; private readonly VBoxContainer column; private Control? expansion;
     public event Action<string, string?>? Command;
 
     public OrbitRail(SolvingDemo demo, Func<TokenSet> tokens)
     {
         Demo = demo; this.tokens = tokens; Name = "OrbitRail"; ThemeTypeVariation = "RailGround";
+        HelpTopics.Mark(this, "orbit");
         column = new VBoxContainer(); column.AddThemeConstantOverride("separation", 0); AddChild(column);
         var top = new HBoxContainer(); column.AddChild(top);
         head = ChromeWidgets.Text("", "MicroLabel", true); head.SizeFlagsHorizontal = SizeFlags.ExpandFill; top.AddChild(head);
@@ -46,13 +50,21 @@ public sealed partial class OrbitRail : PanelContainer
 
     public void Expand(int? orbit) { Expanded = orbit; Refresh(); }
 
+    // B26 (ADR-D02.28): a band drawn under the cells, in the same column, so its 35 columns align with theirs.
+    public void AddBand(Control band)
+    {
+        band.GetParent()?.RemoveChild(band);
+        column.AddChild(band); column.MoveChild(band, cells.GetIndex() + 1);
+    }
+
     public void Refresh()
     {
         TokenSet t = tokens();
         head.Text = $" Orbits · {(ByOrbitId ? "orbit-id order" : "seed stage order")}: {OrbitRailModel.OrderLabel} · {SolvingDemo.Mark}";
         head.AddThemeColorOverride("font_color", t.C("text.dim"));
         order.Text = ByOrbitId ? "by id" : "by stage";
-        typed.Text = Jump.Held ? "O" + Jump.Typed.PadRight(2, '_') : ""; typed.AddThemeColorOverride("font_color", t.C("rail.cell.working"));
+        typed.Text = Jump.Held ? "O" + Jump.Typed.PadRight(2, '_') : Undefined ? Numeral.Undefined.Word : "";
+        typed.AddThemeColorOverride("font_color", t.C(Jump.Held || !Undefined ? "rail.cell.working" : Numeral.Undefined.Role));
         cells.CustomMinimumSize = new Vector2(0, t.Px("rail.height")); cells.QueueRedraw();
         if (expansion != null) { column.RemoveChild(expansion); expansion.QueueFree(); expansion = null; }
         if (Expanded is { } open) { expansion = Expansion(open, t); column.AddChild(expansion); }
@@ -72,7 +84,8 @@ public sealed partial class OrbitRail : PanelContainer
         foreach ((string name, string numeral) in s.Classes(orbit))
         {
             var line = new HBoxContainer(); Label words = ChromeWidgets.Text(name, "MicroLabel"); words.SizeFlagsHorizontal = SizeFlags.ExpandFill; line.AddChild(words);
-            Label number = ChromeWidgets.Text(numeral, "ReadoutLabel"); number.AddThemeColorOverride("font_color", t.C(numeral == "unknown" ? "text.dim" : "text.primary")); line.AddChild(number);
+            Label number = ChromeWidgets.Text(Undefined ? Numeral.Undefined.Word : numeral, "ReadoutLabel");
+            number.AddThemeColorOverride("font_color", t.C(Undefined ? Numeral.Undefined.Role : numeral == "unknown" ? "text.dim" : "text.primary")); line.AddChild(number);
             left.AddChild(line);
         }
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; right.AddThemeConstantOverride("separation", 0); row.AddChild(right);
@@ -115,7 +128,7 @@ public sealed partial class OrbitRail : PanelContainer
     public string Tip(int orbit)
     {
         SolvingState s = Demo.State; OrbitFacts f = s.Atlas.Orbits[orbit]; OrbitResidual r = s.Residuals[orbit];
-        return $"{OrbitAtlas.Name(orbit)} · {f.Orientation} · {f.Pieces} pieces\nNot at Home: {OrbitResidual.Numeral(r.NotHome)} ({SolvingDemo.Mark})\nLock: {r.Lock.ToString().ToLowerInvariant()}\nIts seed touches: {Names(f.Touches)}\nTouched by the seeds of: {Names(s.Atlas.TouchedBy(orbit))}";
+        return $"{OrbitAtlas.Name(orbit)} · {f.Orientation} · {f.Pieces} pieces\nNot at Home: {OrbitResidual.Numeral(r.NotHome)} ({SolvingDemo.Mark})\nLock: {Protections.Words(r.Protection)}\nIts seed touches: {Names(f.Touches)}\nTouched by the seeds of: {Names(s.Atlas.TouchedBy(orbit))}";
     }
 }
 
@@ -159,12 +172,12 @@ internal sealed partial class RailCells : Control
             // The residual level: length carries quantity. Unknown is hatched, apart from an empty track.
             var track = new Rect2(x + 3, line + 15, step - 6, 4);
             DrawRect(track, t.C("panel.border"), false, 1);
-            if (cell.Level is { } level) { if (level > 0) DrawRect(new Rect2(track.Position, new Vector2(Math.Max(2, track.Size.X * (float)level), track.Size.Y)), t.C("rail.status." + (cell.Status == "permitted_residual" ? "permitted_residual" : "open"))); }
-            else for (float hx = track.Position.X; hx < track.End.X - 1; hx += 4) DrawLine(new Vector2(hx, track.End.Y), new Vector2(Math.Min(hx + 4, track.End.X), track.Position.Y), t.C("rail.status.unknown_frame"), 1);
+            if (cell.Level is { } level && !rail.Undefined) { if (level > 0) DrawRect(new Rect2(track.Position, new Vector2(Math.Max(2, track.Size.X * (float)level), track.Size.Y)), t.C("rail.status." + (cell.Status == "permitted_residual" ? "permitted_residual" : "open"))); }
+            else for (float hx = track.Position.X; hx < track.End.X - 1; hx += 4) DrawLine(new Vector2(hx, track.End.Y), new Vector2(Math.Min(hx + 4, track.End.X), track.Position.Y), t.C(rail.Undefined ? Numeral.Undefined.Role : "rail.status.unknown_frame"), 1);
             // Three separate marks in three fixed places: solved, lock, Next.
             float my = line + 27, third = (step - 4) / 3;
             if (cell.Solved) { Vector2 c = new(x + 2 + third * .5f, my); DrawPolyline(new[] { c + new Vector2(-3, 0), c + new Vector2(-1, 2.5f), c + new Vector2(3.5f, -3) }, t.C("rail.cell.solved"), 1.6f, true); }
-            if (cell.Lock != OrbitLock.None) Lock(new Vector2(x + 2 + third * 1.5f, my), cell.Lock == OrbitLock.Whole, t.C(cell.Lock == OrbitLock.Whole ? "rail.lock.whole" : "rail.lock.partial"));
+            if (cell.Lock != OrbitLock.None) Lock(new Vector2(x + 2 + third * 1.5f, my), cell.Protection, t);
             if (cell.Next) StripGlyphs.Draw(this, "next", new Vector2(x + 2 + third * 2.5f, my), 7, t.C("rail.cell.next"), 1.2f);
             if (cell.Working) { DrawRect(box, t.C("rail.cell.working"), false, 1); DrawRect(new Rect2(x + 1, h - 3, step - 2, 2), t.C("rail.cell.working")); }
             if (rail.Expanded == cell.Orbit) DrawLine(new Vector2(mid - 3, h - 5), new Vector2(mid + 3, h - 5), t.C("rail.cell.id"), 1);
@@ -188,10 +201,27 @@ internal sealed partial class RailCells : Control
         }
     }
 
-    private void Lock(Vector2 c, bool whole, Color colour)
+    // ADR-D01.65: a whole-orbit lock is a closed, filled padlock. A partial lock is open, a little wider, with each kind's
+    // mark in its own place in the body: positions a dot on the left, identities a bar in the middle, a block a square
+    // on the right. Place and shape both tell the kinds apart.
+    private void Lock(Vector2 c, ProtectionKinds kinds, TokenSet t)
     {
-        var body = new Rect2(c + new Vector2(-3, -.5f), new Vector2(6, 4.5f));
-        if (whole) { DrawRect(body, colour); DrawArc(c + new Vector2(0, -.5f), 2.2f, Mathf.Pi, Mathf.Tau, 8, colour, 1.2f, true); }
-        else { DrawRect(body, colour, false, 1); DrawArc(c + new Vector2(2.2f, -.5f), 2.2f, Mathf.Pi, Mathf.Tau, 8, colour, 1.2f, true); }
+        if (kinds.HasFlag(ProtectionKinds.Orbit))
+        {
+            Color whole = t.C("rail.lock.whole");
+            DrawRect(new Rect2(c + new Vector2(-3, -.5f), new Vector2(6, 4.5f)), whole); DrawArc(c + new Vector2(0, -.5f), 2.2f, Mathf.Pi, Mathf.Tau, 8, whole, 1.2f, true);
+            return;
+        }
+        Color colour = t.C("rail.lock.partial");
+        var body = new Rect2(c + new Vector2(-4, -.5f), new Vector2(8, 5));
+        DrawRect(body, colour, false, 1); DrawArc(c + new Vector2(2.6f, -.5f), 2.2f, Mathf.Pi, Mathf.Tau, 8, colour, 1.2f, true);
+        float y = body.Position.Y + body.Size.Y / 2;
+        if (kinds.HasFlag(ProtectionKinds.Position)) DrawCircle(new Vector2(c.X - 2.1f, y), .9f, colour);
+        if (kinds.HasFlag(ProtectionKinds.Identity)) DrawLine(new Vector2(c.X, y - 1.4f), new Vector2(c.X, y + 1.4f), colour, 1);
+        if (kinds.HasFlag(ProtectionKinds.Block)) DrawRect(new Rect2(c.X + 1.3f, y - .9f, 1.8f, 1.8f), colour);
     }
+
+    // The locks in words, cell by cell (ADR-D01.65), for the screen text: drawn marks are spelled as their tooltips are.
+    public string LockWords => string.Join("\n", rail.Cells().Where(cell => cell.Protection != ProtectionKinds.None)
+        .Select(cell => $"{cell.Id} lock: {Protections.Words(cell.Protection)}"));
 }

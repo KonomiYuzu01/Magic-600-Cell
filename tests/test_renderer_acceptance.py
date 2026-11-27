@@ -4,7 +4,7 @@ The harness runs only on Windows with Godot, PresentMon and a Direct3D 12 device
 the Python standard library, start no process, and run anywhere. They check that:
 - every source digest in renderer/acceptance/PROVENANCE.md still matches the selection evidence under
   work/experiments/, every "verbatim" file equals its source, and the table lists exactly the harness files;
-- the Godot project's interop layer (project/Native.cs) matches the core's ABI 5 header
+- the Godot project's interop layer (project/Native.cs) matches the core's ABI 8 header
   renderer/core/include/sa2_interop.h: the x64 layout of every struct it declares, its constants, and the
   signature of every entry point it imports; it declares every ABI 1 to 3 struct and imports every ABI 1 to 3
   call (the texture routes use no ABI 4 or ABI 5 call; route B, C9 U4, imports ABI 5's sa2_create and three
@@ -162,9 +162,11 @@ class DataTests(unittest.TestCase):
 
 # --- The interop layer against the header ---------------------------------------------------------
 
-C_SCALARS = {"uint32_t": (4, 4), "int32_t": (4, 4), "uint64_t": (8, 8), "double": (8, 8)}
+C_SCALARS = {"uint32_t": (4, 4), "int32_t": (4, 4), "uint64_t": (8, 8), "double": (8, 8), "float": (4, 4),
+             "uint8_t": (1, 1)}
 CS_FIELD_TYPES = {"uint": "uint32_t", "int": "int32_t", "ulong": "uint64_t", "double": "double", "byte*": "pointer"}
-CS_SCALARS = {"uint32_t": "uint", "int32_t": "int", "uint64_t": "ulong", "double": "double", "uint8_t": "byte"}
+CS_SCALARS = {"uint32_t": "uint", "int32_t": "int", "uint64_t": "ulong", "double": "double", "uint8_t": "byte",
+              "float": "float"}
 ABI4_SECTION = "\n/* ABI 4 product API"
 
 
@@ -180,7 +182,10 @@ def camel(name: str) -> str:
 
 
 def header_structs(header: str) -> dict[str, list[tuple[str, str, int]]]:
-    """Each struct's fields as (name, C type or "pointer", element count)."""
+    """Each struct's fields as (name, C type, struct name or "pointer", element count).
+
+    An array's count is a number or one of the header's SA2_ defines; a struct-typed field names a struct declared before it."""
+    defines = {name: int(value) for name, value in re.findall(r"^#define (SA2_\w+) (\d+)u?\b", header, re.M)}
     result = {}
     for match in re.finditer(r"typedef struct (\w+) \{(.*?)\} \1;", header, re.S):
         fields = []
@@ -188,21 +193,37 @@ def header_structs(header: str) -> dict[str, list[tuple[str, str, int]]]:
             declaration = " ".join(declaration.split())
             if not declaration:
                 continue
-            parsed = re.fullmatch(r"(?:const )?(\w+)(\*?) (\w+)(?:\[(\d+)\])?", declaration)
+            parsed = re.fullmatch(r"(?:const )?(\w+)(\*?) (\w+)(?:\[(\d+|SA2_\w+)\])?", declaration)
             if not parsed:
                 raise AssertionError(f"unparsed field {declaration!r} in {match.group(1)}")
             base, pointer, name, count = parsed.groups()
+            if count and not count.isdigit():
+                if count not in defines:
+                    raise AssertionError(f"field {name} of {match.group(1)} counts {count}, which the header does not define")
+                count = defines[count]
+            if not pointer and base.startswith("sa2_") and base not in result:
+                raise AssertionError(f"field {name} of {match.group(1)} has the undeclared struct type {base}")
             fields.append((name, "pointer" if pointer else base, int(count or 1)))
         result[match.group(1)] = fields
     return result
 
 
-def x64_layout(fields) -> tuple[list[int], int]:
-    """Field offsets and the struct size under the x64 C ABI."""
+def x64_type(kind: str, structs: dict) -> tuple[int, int]:
+    """A field type's size and alignment under the x64 C ABI: a pointer, a C scalar or a struct of `structs`."""
+    if kind == "pointer":
+        return 8, 8
+    if kind in C_SCALARS:
+        return C_SCALARS[kind]
+    fields = structs[kind]
+    return x64_layout(fields, structs)[1], max(x64_type(element, structs)[1] for _, element, _ in fields)
+
+
+def x64_layout(fields, structs: dict | None = None) -> tuple[list[int], int]:
+    """Field offsets and the struct size under the x64 C ABI; a struct-typed field takes its layout from `structs`."""
     offset = largest = 0
     offsets = []
     for _, kind, count in fields:
-        size, align = (8, 8) if kind == "pointer" else C_SCALARS[kind]
+        size, align = x64_type(kind, structs or {})
         offset = -(-offset // align) * align
         offsets.append(offset)
         offset += size * count
@@ -292,6 +313,14 @@ class InteropTests(unittest.TestCase):
         self.assertIn("Sa2StageFrame", native)
         self.assertEqual(x64_layout(header["sa2_stage_frame"]), ([0, 4, 8, 16, 24, 32, 40, 48, 56], 64))
         self.assertIn("public const int StageFrameSize = 64;", self.native)
+        # Every struct the header size-asserts has that size on x64, struct-typed arrays included
+        # (ADR-D01.65's status style holds two arrays of SA2_STATUS_ENTRIES status patterns).
+        self.assertIn("sa2_status_style", asserted)
+        for name, size in sorted(asserted.items()):
+            with self.subTest(asserted=name):
+                self.assertEqual(x64_layout(header[name], header)[1], int(size))
+        self.assertEqual(x64_type("sa2_status_pattern", header), (32, 4))
+        self.assertEqual(x64_layout(header["sa2_status_style"], header), ([0, 4, 8, 264], 520))
 
     def test_constants_match_the_header(self):
         defines = dict(re.findall(r"^#define (SA2_\w+) (\S+)", self.header, re.M))
@@ -306,9 +335,9 @@ class InteropTests(unittest.TestCase):
                   if re.fullmatch(r"SA2_(ABI_VERSION|OK|E_\w+|QUEUE_\w+|BARRIERS_\w+|STATE_\w+|SCENE_NO_VRAM)", name)}
         self.assertEqual(sorted(wanted - {name for _, name, _ in constants}), [])
 
-    def test_abi_version_5_is_required(self):
-        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["5u"])
-        self.assertIn("public const uint SA2_ABI_VERSION = 5;", self.native)
+    def test_abi_version_10_is_required(self):
+        self.assertEqual(re.findall(r"^#define SA2_ABI_VERSION (\S+)$", self.header, re.M), ["10u"])
+        self.assertIn("public const uint SA2_ABI_VERSION = 10;", self.native)
         self.assertIn("if (sa2_abi_version() != SA2_ABI_VERSION)", self.native)
         loads = re.findall(r'Export\("(\w+)"\)', self.native)
         self.assertEqual(loads[0], "sa2_abi_version", "the version is checked before any other export")

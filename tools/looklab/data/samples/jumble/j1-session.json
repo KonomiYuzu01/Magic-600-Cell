@@ -1,0 +1,766 @@
+{
+  "format": "magic600-d02-j1-session/1",
+  "note": "J1, the reduced Track J's model-free run (ADR-D02 build step B32): every jumble., research. and evidence. row and every D02 draft row typed in the palette from a fresh product shell in sample mode, on two sample states' session fixtures. Rows and rules this build cannot carry out are under not_run with the palette's reason or J1's.",
+  "not_run": {
+    "jumble.on": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.off": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.twist.menu": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.twist.append": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.survey": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.observe": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.straddlers": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.certificate.inspect": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.release.check": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.covers": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.repair.list": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.nu": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.correction.lookup": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.scramble": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "evidence.word": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "research.archive.import": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "research.check.run": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "research.obligation.export": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "jumble.checkpoint.check": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "research.check.report": {
+      "palette": "not in this build yet",
+      "why": "a K2 server row: the D02 shell has no handler for it yet"
+    },
+    "research.check.trace": {
+      "palette": "row not in the command table yet (CR-17)",
+      "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4",
+      "why": "CR-17 (C5-7): the command table does not hold the row yet; the research pane refuses it for a run named by its reference"
+    },
+    "research.run.view": {
+      "palette": "row not in the command table yet (CR-17)",
+      "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4",
+      "why": "CR-17 (C5-7): the command table does not hold the row yet; the research pane refuses it for a run named by its reference"
+    },
+    "3": {
+      "why": "J1 makes no commit (jumble.twist.menu is a K2 row), so no revision changes under a shown result"
+    },
+    "7": {
+      "why": "jumble.scramble is a K2 row: no scramble is staged, so there is no journal to keep off the screen"
+    },
+    "8": {
+      "why": "J1 is keys only; hover is checked by the pick and cap-hover runs"
+    },
+    "exposed-faces": {
+      "why": "jumbling-observation.md section 4, requirement 1: holes drawn as exposed faces in the raw view need the exposed-face geometry, which this build lacks (ADR-D02.25 waits for it); both borders and Tier 1 say \"exposed faces unavailable\" (B27), so there is no face to check"
+    },
+    "repair-boundary": {
+      "why": "Local's Repair list has a key route since B32's findings: J1 types it (jumble.repair.focus opens the list and gives it the keys, Down focuses row 1, jumble.repair.stage stages the focused row), but J1 reads no list screens; d02_run.py --script repair-keys checks the boundary by keys (the record's rows in order, no row focused on open, nothing staged before a digit or Enter)"
+    }
+  },
+  "observation": [
+    {
+      "rule": "1",
+      "part": "wj-ia-300",
+      "check": "state_unchanged"
+    },
+    {
+      "rule": "1",
+      "part": "wj-ia-end",
+      "check": "state_unchanged"
+    },
+    {
+      "rule": "2",
+      "part": "wj-ia-300",
+      "check": "tint_bytes",
+      "at": [
+        [
+          "start",
+          "contact"
+        ],
+        [
+          "jumble.tint.mode height",
+          "height"
+        ],
+        [
+          "jumble.tint.mode contact",
+          "contact"
+        ]
+      ]
+    },
+    {
+      "rule": "2",
+      "part": "wj-ia-end",
+      "check": "tint_bytes",
+      "at": [
+        [
+          "start",
+          "contact"
+        ]
+      ]
+    },
+    {
+      "rule": "3"
+    },
+    {
+      "rule": "4",
+      "part": "wj-ia-300",
+      "check": "whole_analysis",
+      "at": [
+        "jumble.focus.domain 5",
+        "jumble.cap.name 0"
+      ]
+    },
+    {
+      "rule": "5",
+      "part": "wj-ia-300",
+      "check": "never_hidden",
+      "at": [
+        [
+          "jumble.cap.name 150",
+          150,
+          null
+        ],
+        [
+          "jumble.focus.domain 5",
+          150,
+          "dimmed"
+        ],
+        [
+          "step 45",
+          150,
+          "hidden"
+        ],
+        [
+          "jumble.cap.name 0",
+          0,
+          "hidden"
+        ]
+      ]
+    },
+    {
+      "rule": "5",
+      "part": "wj-ia-end",
+      "check": "never_hidden",
+      "at": [
+        [
+          "start",
+          null,
+          null
+        ],
+        [
+          "jumble.cap.name 2",
+          2,
+          null
+        ],
+        [
+          "jumble.cap.name 0",
+          0,
+          null
+        ]
+      ]
+    },
+    {
+      "rule": "6",
+      "part": "wj-ia-300",
+      "check": "neutral_order",
+      "at": "setup.search"
+    },
+    {
+      "rule": "7"
+    },
+    {
+      "rule": "8"
+    },
+    {
+      "rule": "exposed-faces"
+    },
+    {
+      "rule": "cut-trace",
+      "part": "wj-ia-300",
+      "check": "cut_trace",
+      "blocked": "step 23",
+      "blocked_cap": 0,
+      "cap": 150,
+      "named": "jumble.cap.name 150",
+      "held": "step 37",
+      "released": "step 39"
+    }
+  ],
+  "parts": [
+    {
+      "name": "wj-ia-300",
+      "state": "wj-ia-300",
+      "resolution": "2000x1200",
+      "note": "J1 on wj-ia-300's session fixture",
+      "steps": [
+        {
+          "wait_ms": 3000
+        },
+        {
+          "op": "jumble.cap.unname",
+          "wait_ms": 300,
+          "refused": "no cap is named"
+        },
+        {
+          "op": "jumble.seat.hold",
+          "argument": "1",
+          "wait_ms": 300,
+          "refused": "name a cap first"
+        },
+        {
+          "op": "jumble.tint.mode",
+          "argument": "height",
+          "wait_ms": 1000
+        },
+        {
+          "op": "jumble.tint.mode",
+          "argument": "contact",
+          "wait_ms": 1000
+        },
+        {
+          "hold": "Down"
+        },
+        {
+          "wait_ms": 800
+        },
+        {
+          "release": "Down"
+        },
+        {
+          "wait_ms": 500
+        },
+        {
+          "op": "jumble.capmap.threshold.set",
+          "argument": "N_c >= 50",
+          "wait_ms": 500
+        },
+        {
+          "op": "jumble.capmap.threshold.clear",
+          "wait_ms": 500
+        },
+        {
+          "op": "jumble.cap.name",
+          "argument": "150",
+          "wait_ms": 2500
+        },
+        {
+          "hold": "Backslash"
+        },
+        {
+          "wait_ms": 1500
+        },
+        {
+          "release": "Backslash"
+        },
+        {
+          "wait_ms": 1000
+        },
+        {
+          "op": "jumble.focus.domain",
+          "argument": "5",
+          "wait_ms": 1500
+        },
+        {
+          "chord": "F10"
+        },
+        {
+          "wait_ms": 1500
+        },
+        {
+          "op": "jumble.seat.hold",
+          "argument": "1",
+          "wait_ms": 600
+        },
+        {
+          "op": "jumble.cap.name",
+          "argument": "0",
+          "wait_ms": 2500
+        },
+        {
+          "op": "jumble.focus.straddlers",
+          "wait_ms": 800
+        },
+        {
+          "op": "jumble.focus.height",
+          "argument": "4",
+          "wait_ms": 800
+        },
+        {
+          "op": "jumble.corrections.mark",
+          "argument": "3 1",
+          "wait_ms": 400
+        },
+        {
+          "op": "jumble.corrections.check",
+          "wait_ms": 400
+        },
+        {
+          "op": "jumble.tint.mode",
+          "argument": "off-lattice",
+          "wait_ms": 600
+        },
+        {
+          "op": "jumble.tint.mode",
+          "argument": "none",
+          "wait_ms": 600
+        },
+        {
+          "op": "card.pin",
+          "argument": "17",
+          "wait_ms": 300
+        },
+        {
+          "op": "card.unpin",
+          "wait_ms": 300
+        },
+        {
+          "op": "card.track",
+          "argument": "4021",
+          "wait_ms": 300
+        },
+        {
+          "op": "card.reference.set",
+          "wait_ms": 300
+        },
+        {
+          "op": "card.reference.clear",
+          "wait_ms": 300
+        },
+        {
+          "op": "menu.context.open",
+          "argument": "global",
+          "wait_ms": 600,
+          "close": true
+        },
+        {
+          "op": "setup.search",
+          "wait_ms": 1000
+        },
+        {
+          "op": "operation.phase.append_twist",
+          "wait_ms": 300
+        },
+        {
+          "op": "setup.row.use",
+          "argument": "1",
+          "wait_ms": 600
+        },
+        {
+          "op": "tuning.open",
+          "wait_ms": 800
+        },
+        {
+          "op": "tuning.preset.apply",
+          "argument": "graphite",
+          "wait_ms": 500
+        },
+        {
+          "op": "tuning.slot.set",
+          "argument": "A",
+          "wait_ms": 300
+        },
+        {
+          "op": "theme.tune",
+          "argument": "tone=0.05",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.slot.set",
+          "argument": "B",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.slot.swap",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.compare.hold",
+          "argument": "on",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.compare.hold",
+          "argument": "off",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.simulate.hold",
+          "argument": "deutan",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.simulate.hold",
+          "argument": "off",
+          "wait_ms": 300
+        },
+        {
+          "op": "theme.tune",
+          "argument": "contrast=1.1",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.selector.revert",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.diff.export",
+          "wait_ms": 300
+        },
+        {
+          "op": "tuning.preset.save",
+          "wait_ms": 300
+        },
+        {
+          "op": "research.runs",
+          "wait_ms": 1000
+        },
+        {
+          "op": "research.run.start",
+          "wait_ms": 300,
+          "refused": "declare a budget"
+        },
+        {
+          "op": "research.run.declare",
+          "argument": "budget=4096",
+          "wait_ms": 200
+        },
+        {
+          "op": "research.run.declare",
+          "argument": "seed=7430",
+          "wait_ms": 200
+        },
+        {
+          "op": "research.run.declare",
+          "argument": "depth=40",
+          "wait_ms": 200
+        },
+        {
+          "op": "research.run.start",
+          "wait_ms": 1500
+        },
+        {
+          "op": "research.run.reproduce",
+          "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4",
+          "wait_ms": 1000
+        },
+        {
+          "op": "research.obligations",
+          "wait_ms": 500
+        },
+        {
+          "op": "research.claims",
+          "wait_ms": 500
+        },
+        {
+          "op": "research.archive.inventory",
+          "wait_ms": 500
+        },
+        {
+          "op": "research.record.read",
+          "argument": "research.record/sample/stage-15/macro-r01.json",
+          "wait_ms": 600
+        },
+        {
+          "op": "research.bundle.export",
+          "argument": "research.record/sample/stage-15/macro-r01.json",
+          "wait_ms": 500
+        },
+        {
+          "op": "jumble.cap.unname",
+          "wait_ms": 800
+        },
+        {
+          "op": "jumble.on",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.off",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.twist.menu",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.twist.append",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.survey",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.observe",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.straddlers",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.certificate.inspect",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.release.check",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.covers",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.repair.list",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.nu",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.correction.lookup",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.scramble",
+          "wait_ms": 200
+        },
+        {
+          "op": "evidence.word",
+          "wait_ms": 200
+        },
+        {
+          "op": "research.archive.import",
+          "wait_ms": 200
+        },
+        {
+          "op": "research.check.run",
+          "wait_ms": 200
+        },
+        {
+          "op": "research.obligation.export",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.checkpoint.check",
+          "wait_ms": 200
+        },
+        {
+          "op": "research.check.report",
+          "wait_ms": 200
+        },
+        {
+          "op": "view.mode.raw",
+          "wait_ms": 200
+        },
+        {
+          "op": "view.mode.raw.clip",
+          "wait_ms": 200,
+          "argument": "0.5"
+        },
+        {
+          "op": "view.mode.raw.antipode",
+          "wait_ms": 200
+        },
+        {
+          "op": "view.preset.global.ring_sheet",
+          "wait_ms": 200
+        },
+        {
+          "op": "view.preset.global.hopf_rings",
+          "wait_ms": 200
+        },
+        {
+          "op": "view.preset.jumble_entry",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.slice.split",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.slice.shell",
+          "wait_ms": 200,
+          "argument": "0.8"
+        },
+        {
+          "op": "jumble.slice.split",
+          "wait_ms": 200
+        },
+        {
+          "op": "jumble.cap.name",
+          "argument": "150",
+          "wait_ms": 1500
+        },
+        {
+          "op": "jumble.repair.focus",
+          "wait_ms": 600
+        },
+        {
+          "chord": "Down"
+        },
+        {
+          "wait_ms": 300
+        },
+        {
+          "op": "jumble.repair.stage",
+          "wait_ms": 600
+        },
+        {
+          "op": "research.check.trace",
+          "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4",
+          "wait_ms": 200
+        },
+        {
+          "op": "research.run.view",
+          "argument": "research.run/4001c870575b3f9a74c6331dcc13fbbfd0689e2f6cc30c414732b1a0c5d78ec4",
+          "wait_ms": 200
+        },
+        {
+          "op": "look.sticker_palette.set",
+          "argument": "graphite.b",
+          "wait_ms": 650
+        },
+        {
+          "op": "look.scene.set",
+          "argument": "inspecting",
+          "wait_ms": 650
+        },
+        {
+          "op": "look.scene.set",
+          "argument": "solving",
+          "wait_ms": 650
+        },
+        {
+          "op": "look.sticker_palette.set",
+          "argument": "graphite.a",
+          "wait_ms": 650
+        },
+        {
+          "op": "keymap.preset.set",
+          "argument": "left-hand",
+          "wait_ms": 400
+        },
+        {
+          "op": "keymap.preset.set",
+          "argument": "default",
+          "wait_ms": 400
+        },
+        {
+          "op": "status.sample.show",
+          "argument": "on",
+          "wait_ms": 650
+        },
+        {
+          "op": "status.sample.show",
+          "argument": "off",
+          "wait_ms": 650
+        },
+        {
+          "op": "protection.pick.set",
+          "argument": "clear",
+          "wait_ms": 400
+        },
+        {
+          "op": "view.preset.global.chart",
+          "wait_ms": 1500
+        },
+        {
+          "op": "view.preset.global.chain",
+          "wait_ms": 1000
+        },
+        {
+          "op": "grip.select",
+          "argument": "150",
+          "wait_ms": 300
+        },
+        {
+          "op": "grip.frame.next",
+          "wait_ms": 300
+        },
+        {
+          "wait_ms": 1000
+        }
+      ]
+    },
+    {
+      "name": "wj-ia-end",
+      "state": "wj-ia-end",
+      "resolution": "2000x1200",
+      "note": "J1 on wj-ia-end's session fixture",
+      "steps": [
+        {
+          "wait_ms": 3000
+        },
+        {
+          "op": "jumble.cap.name",
+          "argument": "2",
+          "wait_ms": 2500
+        },
+        {
+          "op": "jumble.cap.name",
+          "argument": "0",
+          "wait_ms": 2500
+        },
+        {
+          "op": "jumble.focus.straddlers",
+          "wait_ms": 800
+        },
+        {
+          "wait_ms": 500
+        }
+      ]
+    }
+  ]
+}

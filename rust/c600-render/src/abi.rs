@@ -1,11 +1,13 @@
-//! ABI 5's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
+//! ABI 9's product API as Rust declarations: the constants and the `#[repr(C)]` rows of
 //! `renderer/core/include/sa2_interop.h`, x64 layout. `tests/abi_layout.rs` checks every name, offset, size and
 //! constant against the header.
 
 use std::mem::size_of;
 
-/// `SA2_ABI_VERSION`.
-pub const ABI_VERSION: u32 = 5;
+/// `SA2_ABI_VERSION`. ABI 6 adds a view's shape ([`Sa2ViewShape`]); ABI 7 the piece style and the style slots
+/// ([`Sa2ViewStyle`]); ABI 8 the composite frame ([`Sa2Pane`], [`Sa2PaneRow`]); ABI 9 a view's focus
+/// ([`Sa2ViewFocus`]); ABI 10 a view's layout ([`Sa2ViewLayout`]).
+pub const ABI_VERSION: u32 = 10;
 /// `SA2_SLOTS`: the labelled sticker slots of 600-cell-Full.
 pub const SLOTS: usize = 259_800;
 /// `SA2_PIECES`: the length of a pose index.
@@ -93,6 +95,95 @@ pub const SURFACE_BUFFERS: u32 = 3;
 pub const SURFACE_MAX_PX: u32 = 16384;
 /// `SA2_RING_SLOTS`: the ring-slot frame targets of the Godot-texture route are 0 to 2.
 pub const RING_SLOTS: u32 = 3;
+
+// ABI 6: a view's shape (`sa2_view_shape`); the defaults are ABI 5's constants.
+/// `SA2_SHAPE_DEFAULT_CELL_SHRINK`.
+pub const SHAPE_DEFAULT_CELL_SHRINK: f32 = 0.76;
+/// `SA2_SHAPE_DEFAULT_STICKER_SHRINK`.
+pub const SHAPE_DEFAULT_STICKER_SHRINK: f32 = 0.82;
+/// `SA2_SHAPE_DEFAULT_D4`.
+pub const SHAPE_DEFAULT_D4: f32 = 1.18;
+/// `SA2_SHAPE_DEFAULT_ZOOM`.
+pub const SHAPE_DEFAULT_ZOOM: f32 = 1.15;
+/// `SA2_SHAPE_D4_MAX`.
+pub const SHAPE_D4_MAX: f32 = 64.0;
+/// `SA2_SHAPE_ZOOM_MAX`.
+pub const SHAPE_ZOOM_MAX: f32 = 64.0;
+
+// ABI 9: a view's focus (`sa2_view_focus`).
+/// `SA2_PROJECTION_PERSPECTIVE`.
+pub const PROJECTION_PERSPECTIVE: u32 = 0;
+/// `SA2_PROJECTION_ORTHOGRAPHIC`.
+pub const PROJECTION_ORTHOGRAPHIC: u32 = 1;
+/// `SA2_PROJECTION_STEREOGRAPHIC` (ADR-D02 B21): the raw view, the stereographic chart centred on the focus pole. It
+/// needs a focus cell and `0 <= focus_cos` (the clip goes no further than 90 degrees).
+pub const PROJECTION_STEREOGRAPHIC: u32 = 2;
+/// `SA2_PANE_ANTIPODE` (ADR-D02 B21): a pane that draws its view's raw chart after -I, the antipode chart.
+pub const PANE_ANTIPODE: u32 = 1;
+pub const PANE_PREVIEW: u32 = 2;
+pub const PANE_PREVIEW_BEFORE: u32 = 4;
+/// `SA2_FOCUS_NONE`.
+pub const FOCUS_NONE: u32 = 0xFFFF_FFFF;
+
+// ABI 10: a view's layout (`sa2_view_layout`).
+/// `SA2_LAYOUT_CHAIN`.
+pub const LAYOUT_CHAIN: u32 = 0;
+/// `SA2_LAYOUT_HOPF_RINGS`.
+pub const LAYOUT_HOPF_RINGS: u32 = 1;
+/// `SA2_LAYOUT_RING_SHEET` (ADR-D02 B22).
+pub const LAYOUT_RING_SHEET: u32 = 2;
+/// `SA2_HOPF_RINGS`.
+pub const HOPF_RINGS: u32 = 20;
+
+// ABI 7: the piece style (`sa2_style_set`) and the style slots (`sa2_view_style`).
+/// `SA2_STYLE_CHANNEL_FILL`.
+pub const STYLE_CHANNEL_FILL: u32 = 0;
+/// `SA2_STYLE_CHANNEL_OUTLINE`.
+pub const STYLE_CHANNEL_OUTLINE: u32 = 1;
+/// `SA2_STYLE_CHANNEL_SLICE` (ADR-D02 B20): one byte per piece, 1 for the cut slice's inside layer.
+pub const STYLE_CHANNEL_SLICE: u32 = 2;
+/// ADR-D01.65: the pattern index in bits 0..2 and the protection mark in bits 3..5.
+pub const STYLE_CHANNEL_STATUS: u32 = 3;
+/// `SA2_SLICE_OFF` (ADR-D02 B20).
+pub const SLICE_OFF: u32 = 0;
+/// `SA2_SLICE_BOTH` (ADR-D02 B20): the outside layer filled, the inside layer as outlines.
+pub const SLICE_BOTH: u32 = 1;
+/// `SA2_SLICE_OUTSIDE` (ADR-D02 B20): the held split's left copy.
+pub const SLICE_OUTSIDE: u32 = 2;
+/// `SA2_SLICE_INSIDE` (ADR-D02 B20): the held split's right copy.
+pub const SLICE_INSIDE: u32 = 3;
+/// `SA2_STYLE_INDEX`: a style byte's palette entry.
+pub const STYLE_INDEX: u8 = 0x0F;
+/// `SA2_STYLE_DIM`: a fill byte's dim-set bit.
+pub const STYLE_DIM: u8 = 0x80;
+/// `SA2_STYLE_ERROR`: an outline byte's view-only error overlay bit.
+pub const STYLE_ERROR: u8 = 0x10;
+/// `SA2_STYLE_SLOTS`: style slots 1 to 4.
+pub const STYLE_SLOTS: u32 = 4;
+/// `SA2_STYLE_PALETTE`.
+pub const STYLE_PALETTE: u32 = 16;
+/// `SA2_STYLE_TINT_FILL`.
+pub const STYLE_TINT_FILL: u32 = 1;
+/// `SA2_STYLE_TINT_OUTLINE`.
+pub const STYLE_TINT_OUTLINE: u32 = 2;
+/// `SA2_STYLE_DIM_NONE`.
+pub const STYLE_DIM_NONE: u32 = 0;
+/// `SA2_STYLE_DIM_MARKED`.
+pub const STYLE_DIM_MARKED: u32 = 1;
+/// `SA2_STYLE_DIM_UNMARKED`.
+pub const STYLE_DIM_UNMARKED: u32 = 2;
+/// `SA2_STYLE_HIDE_MARKED` (ADR-D02 B17, ABI 10): the marked pieces are not drawn and not picked.
+pub const STYLE_HIDE_MARKED: u32 = 3;
+/// `SA2_STYLE_HIDE_UNMARKED` (ADR-D02 B17, ABI 10).
+pub const STYLE_HIDE_UNMARKED: u32 = 4;
+/// `SA2_STYLE_OUTLINE_MAX`.
+pub const STYLE_OUTLINE_MAX: f32 = 0.5;
+/// `SA2_STYLE_MATRIX_MAX`.
+pub const STYLE_MATRIX_MAX: f32 = 8.0;
+
+// ABI 8: the composite frame (`sa2_frame_submit_panes`).
+/// `SA2_PANES_MAX`: the panes of one composite frame.
+pub const PANES_MAX: u32 = 4;
 
 /// `sa2_engine_image`. Built only by `c600-render-ffi` (`renderer/bridge`) from checked slices.
 #[repr(C)]
@@ -235,6 +326,35 @@ rows! {
         y: u32,
     }
 
+    /// `sa2_pane_row` (ABI 8): one pane of a produced composite frame.
+    Sa2PaneRow {
+        struct_size: u32,
+        pane: u32,
+        view: u64,
+        view_generation: u64,
+        vertex_evals: u64,
+    }
+
+    /// `sa2_view_shape` (ABI 6).
+    Sa2ViewShape {
+        struct_size: u32,
+        cell_shrink: f32,
+        sticker_shrink: f32,
+        d4: f32,
+        zoom: f32,
+        reserved: u32,
+    }
+
+    /// `sa2_view_focus` (ABI 9).
+    Sa2ViewFocus {
+        struct_size: u32,
+        projection: u32,
+        focus_cell: u32,
+        focus_cos: f32,
+        spread: f32,
+        reserved: u32,
+    }
+
     /// `sa2_counter_values`.
     Sa2CounterValues {
         struct_size: u32,
@@ -246,5 +366,312 @@ rows! {
         frames_reported: u64,
         id_passes: u64,
         reports_dropped: u64,
+    }
+}
+
+/// `sa2_pane` (ABI 8): one pane of a composite frame, its rectangle in target pixels. It has no `struct_size`, so it
+/// is not in `rows!`.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Sa2Pane {
+    pub view: u64,
+    pub view_generation: u64,
+    /// 0: every slot drawn, nothing pickable.
+    pub resource_set: u64,
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    /// Column-major, as [`Sa2FrameInput::camera_matrix`].
+    pub camera_matrix: [f32; 16],
+    /// 0: no style; else a style slot 1 to [`STYLE_SLOTS`].
+    pub style: u32,
+    /// Must be 0.
+    pub flags: u32,
+}
+
+impl Sa2Pane {
+    /// Whether `self` and `other` share a pixel.
+    pub fn overlaps(&self, other: &Sa2Pane) -> bool {
+        let (ax, ay, bx, by) = (i64::from(self.x), i64::from(self.y), i64::from(other.x), i64::from(other.y));
+        ax < bx + i64::from(other.width)
+            && bx < ax + i64::from(self.width)
+            && ay < by + i64::from(other.height)
+            && by < ay + i64::from(self.height)
+    }
+
+    /// Whether the rectangle is not empty and lies inside a target of `size`.
+    pub fn inside(&self, size: (u32, u32)) -> bool {
+        self.width >= 1
+            && self.height >= 1
+            && self.x >= 0
+            && self.y >= 0
+            && i64::from(self.x) + i64::from(self.width) <= i64::from(size.0)
+            && i64::from(self.y) + i64::from(self.height) <= i64::from(size.1)
+    }
+}
+
+/// `sa2_view_layout` (ABI 10): a view's layout, the projection chain or the Hopf rings with Look Lab's ring data. Not
+/// in `rows!`, whose `Default` derive stops at 32-element arrays.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Sa2ViewLayout {
+    pub struct_size: u32,
+    pub kind: u32,
+    pub j: [f32; 4],
+    pub k: [f32; 4],
+    pub origins: [f32; 80],
+    pub ring_of: [u8; 600],
+    pub half_step: [u8; 600],
+}
+
+impl Default for Sa2ViewLayout {
+    fn default() -> Sa2ViewLayout {
+        Sa2ViewLayout::new()
+    }
+}
+
+impl Sa2ViewLayout {
+    /// `struct_size` set and the chain: a layout that changes nothing.
+    pub fn new() -> Sa2ViewLayout {
+        Sa2ViewLayout {
+            struct_size: size_of::<Sa2ViewLayout>() as u32,
+            kind: LAYOUT_CHAIN,
+            j: [0.0; 4],
+            k: [0.0; 4],
+            origins: [0.0; 80],
+            ring_of: [0; 600],
+            half_step: [0; 600],
+        }
+    }
+
+    /// The checks a caller can make without the core's cells: a known kind and, for the Hopf rings and the ring sheet, finite values,
+    /// rings below 20 and half-steps below 60. Whether the rings fit the cells only the core can tell.
+    pub fn in_range(&self) -> bool {
+        match self.kind {
+            LAYOUT_CHAIN => true,
+            LAYOUT_HOPF_RINGS | LAYOUT_RING_SHEET => {
+                self.j.iter().chain(&self.k).chain(&self.origins).all(|v| v.is_finite())
+                    && self.ring_of.iter().all(|&r| u32::from(r) < HOPF_RINGS)
+                    && self.half_step.iter().all(|&h| h < 60)
+            }
+            _ => false,
+        }
+    }
+}
+
+/// `sa2_view_style` (ABI 7): a style slot. Not in `rows!`, whose `Default` derive stops at 32-element arrays.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Sa2ViewStyle {
+    pub struct_size: u32,
+    pub tint_mode: u32,
+    pub dim_mode: u32,
+    pub dim_amount: f32,
+    pub outline_width: f32,
+    pub palette: [f32; 64],
+    pub matrix: [f32; 9],
+    /// ADR-D02 B20: `SA2_SLICE_*`, the slice's inside shrink, its radius shell (angles) and its ghost colour.
+    pub slice_mode: u32,
+    pub slice_shrink: f32,
+    pub shell_min: f32,
+    pub shell_max: f32,
+    pub ghost: [f32; 4],
+    pub reserved: u32,
+}
+
+impl Default for Sa2ViewStyle {
+    fn default() -> Sa2ViewStyle {
+        Sa2ViewStyle::new()
+    }
+}
+
+impl Sa2ViewStyle {
+    /// `struct_size` set, no tint, no dim, an empty palette and the identity matrix: a slot that changes nothing.
+    pub fn new() -> Sa2ViewStyle {
+        Sa2ViewStyle {
+            struct_size: size_of::<Sa2ViewStyle>() as u32,
+            tint_mode: 0,
+            dim_mode: STYLE_DIM_NONE,
+            dim_amount: 0.0,
+            outline_width: 0.0,
+            palette: [0.0; 64],
+            matrix: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+            slice_mode: SLICE_OFF,
+            slice_shrink: 0.0,
+            shell_min: 0.0,
+            shell_max: 0.0,
+            ghost: [0.0; 4],
+            reserved: 0,
+        }
+    }
+
+    /// The header's checks: known mode bits, every value finite and inside its range.
+    pub fn in_range(&self) -> bool {
+        let within = |v: f32, low: f32, high: f32| v.is_finite() && v >= low && v <= high;
+        self.tint_mode & !(STYLE_TINT_FILL | STYLE_TINT_OUTLINE) == 0
+            && self.dim_mode <= STYLE_HIDE_UNMARKED
+            && within(self.dim_amount, 0.0, 1.0)
+            && within(self.outline_width, 0.0, STYLE_OUTLINE_MAX)
+            && self.palette.iter().all(|&v| within(v, 0.0, 1.0))
+            && self.matrix.iter().all(|&v| within(v, -STYLE_MATRIX_MAX, STYLE_MATRIX_MAX))
+            && self.slice_mode <= SLICE_INSIDE
+            && within(self.slice_shrink, 0.0, 1.0)
+            && within(self.shell_min, 0.0, std::f32::consts::PI)
+            && within(self.shell_max, 0.0, std::f32::consts::PI)
+            && self.ghost.iter().all(|&v| within(v, 0.0, 1.0))
+            && (self.slice_mode == SLICE_OFF || (self.slice_shrink > 0.0 && self.shell_min <= self.shell_max))
+    }
+}
+
+/// Whether every byte of a piece style channel uses only that channel's bits (ABI 7).
+pub fn piece_style_valid(bytes: &[u8], channel: u32) -> bool {
+    if channel == STYLE_CHANNEL_STATUS {
+        return bytes.len() == PIECES && bytes.iter().all(|&b| b & 0xc0 == 0 && b & 7 <= 5 && (b >> 3) & 7 <= 4);
+    }
+    let allowed = match channel {
+        STYLE_CHANNEL_FILL => STYLE_INDEX | STYLE_DIM,
+        STYLE_CHANNEL_OUTLINE => STYLE_INDEX | STYLE_ERROR,
+        STYLE_CHANNEL_SLICE => 1,
+        _ => return false,
+    };
+    bytes.len() == PIECES && bytes.iter().all(|&b| b & !allowed == 0)
+}
+
+impl Sa2ViewShape {
+    /// The shape ABI 5 draws every view with, as `sa2_view_shape` takes it.
+    pub fn defaults() -> Sa2ViewShape {
+        Sa2ViewShape {
+            cell_shrink: SHAPE_DEFAULT_CELL_SHRINK,
+            sticker_shrink: SHAPE_DEFAULT_STICKER_SHRINK,
+            d4: SHAPE_DEFAULT_D4,
+            zoom: SHAPE_DEFAULT_ZOOM,
+            ..Sa2ViewShape::new()
+        }
+    }
+
+    /// The header's ranges: each value finite, cell and sticker shrink in (0, 1], d4 in (1, `SHAPE_D4_MAX`] and zoom
+    /// in (0, `SHAPE_ZOOM_MAX`].
+    pub fn in_range(&self) -> bool {
+        let within = |v: f32, low: f32, high: f32| v.is_finite() && v > low && v <= high;
+        within(self.cell_shrink, 0.0, 1.0)
+            && within(self.sticker_shrink, 0.0, 1.0)
+            && within(self.d4, 1.0, SHAPE_D4_MAX)
+            && within(self.zoom, 0.0, SHAPE_ZOOM_MAX)
+    }
+}
+
+impl Sa2ViewFocus {
+    /// The focus every view draws with until one is set: perspective, no pole, spread 1.
+    pub fn defaults() -> Sa2ViewFocus {
+        Sa2ViewFocus {
+            projection: PROJECTION_PERSPECTIVE,
+            focus_cell: FOCUS_NONE,
+            focus_cos: -1.0,
+            spread: 1.0,
+            ..Sa2ViewFocus::new()
+        }
+    }
+
+    /// The header's ranges: a known projection, a cell below 600 or `FOCUS_NONE`, focus_cos in [-1, 1] and spread in
+    /// [1, 3], each finite.
+    pub fn in_range(&self) -> bool {
+        (self.projection == PROJECTION_PERSPECTIVE
+            || self.projection == PROJECTION_ORTHOGRAPHIC
+            || self.projection == PROJECTION_STEREOGRAPHIC && self.focus_cell != FOCUS_NONE && self.focus_cos >= 0.0)
+            && (self.focus_cell == FOCUS_NONE || self.focus_cell < 600)
+            && self.focus_cos.is_finite()
+            && (-1.0..=1.0).contains(&self.focus_cos)
+            && self.spread.is_finite()
+            && (1.0..=3.0).contains(&self.spread)
+    }
+}
+
+/// `SA2_STICKER_CLASSES`: one RGB triple per home cell (`label / 433`).
+pub const STICKER_CLASSES: usize = 600;
+pub type StickerColours = [[f32; 3]; STICKER_CLASSES];
+
+/// `sa2_scene_look` (ABI 10): the clear colour and the four carried scene values.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct Sa2SceneLook {
+    pub struct_size: u32,
+    pub reserved: u32,
+    pub background: [f32; 4],
+    pub fog: f32,
+    pub glow: f32,
+    pub edge_brightness: f32,
+    pub edge_weight: f32,
+}
+
+impl Default for Sa2SceneLook {
+    fn default() -> Self {
+        Self {
+            struct_size: size_of::<Self>() as u32,
+            reserved: 0,
+            background: [0.13, 0.145, 0.16, 1.0],
+            fog: 0.0,
+            glow: 0.0,
+            edge_brightness: 0.0,
+            edge_weight: 0.0,
+        }
+    }
+}
+
+impl Sa2SceneLook {
+    pub fn in_range(&self) -> bool {
+        self.background.iter().chain([&self.fog, &self.glow, &self.edge_brightness, &self.edge_weight])
+            .all(|value| (0.0..=1.0).contains(value))
+    }
+}
+
+/// ADR-D01.65's two-register table entry, shared by patterns and protection marks.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Sa2StatusPattern {
+    pub shape: u32,
+    pub spacing: f32,
+    pub width: f32,
+    pub angle: f32,
+    pub colour: [f32; 4],
+}
+
+pub const STATUS_WORDS: usize = PIECES.div_ceil(32);
+pub const STATUS_CAPTURE: u32 = 1;
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Sa2StatusStyle {
+    pub struct_size: u32,
+    pub flags: u32,
+    pub patterns: [Sa2StatusPattern; 8],
+    pub marks: [Sa2StatusPattern; 8],
+}
+
+impl Default for Sa2StatusStyle {
+    fn default() -> Self {
+        Self { struct_size: size_of::<Self>() as u32, flags: 0, patterns: Default::default(), marks: Default::default() }
+    }
+}
+
+impl Sa2StatusStyle {
+    pub fn in_range(&self) -> bool {
+        if self.struct_size as usize != size_of::<Self>() || self.flags > STATUS_CAPTURE {
+            return false;
+        }
+        for (entries, last, lo, hi) in [(&self.patterns, 5, 2.0, 64.0), (&self.marks, 4, 0.05, 0.45)] {
+            for (i, e) in entries.iter().enumerate() {
+                let max_shape = if i == 0 || i > last { 0 } else { last as u32 };
+                if e.shape > max_shape
+                    || !(if e.shape == 0 { 0.0 } else { lo }..=hi).contains(&e.spacing)
+                    || !(if e.shape == 0 { 0.0 } else { 0.05 }..=0.95).contains(&e.width)
+                    || !(-std::f32::consts::PI..=std::f32::consts::PI).contains(&e.angle)
+                    || !e.colour.iter().all(|c| (0.0..=1.0).contains(c))
+                {
+                    return false;
+                }
+            }
+        }
+        true
     }
 }

@@ -60,6 +60,28 @@ public sealed class OrbitAtlas
 public enum TargetFrameKind { Home, Captured }
 public enum OrbitLock { None, Partial, Whole }
 
+// What a lock protects (ADR-D01.65): the whole orbit, positions, piece identities or a block. The kinds are distinct
+// marks on the rail's lock, and its tooltip names them; a whole-orbit lock covers the others.
+[Flags] public enum ProtectionKinds { None = 0, Orbit = 1, Position = 2, Identity = 4, Block = 8 }
+
+public static class Protections
+{
+    public static readonly ProtectionKinds[] PartialKinds = { ProtectionKinds.Position, ProtectionKinds.Identity, ProtectionKinds.Block };
+
+    public static OrbitLock Lock(ProtectionKinds kinds) =>
+        kinds.HasFlag(ProtectionKinds.Orbit) ? OrbitLock.Whole : kinds != ProtectionKinds.None ? OrbitLock.Partial : OrbitLock.None;
+
+    public static string Words(ProtectionKinds kinds) =>
+        kinds.HasFlag(ProtectionKinds.Orbit) ? "whole orbit"
+        : kinds == ProtectionKinds.None ? "none"
+        : string.Join(", ", PartialKinds.Where(kind => kinds.HasFlag(kind)).Select(kind => kind switch
+        {
+            ProtectionKinds.Position => "positions",
+            ProtectionKinds.Identity => "identities",
+            _ => "a block",
+        }));
+}
+
 // The exact residual classes of one orbit. Null is "unknown", which is never zero.
 public sealed class OrbitResidual
 {
@@ -67,7 +89,9 @@ public sealed class OrbitResidual
     public int? WrongBuffer { get; set; }
     public int? Orientation { get; set; }
     public int? UnknownFrames { get; set; }
-    public OrbitLock Lock { get; set; }
+    // What is protected in this orbit (ADR-D01.65); the rail's lock is drawn from it.
+    public ProtectionKinds Protection { get; set; }
+    public OrbitLock Lock => Protections.Lock(Protection);
     // In the endgame: the last buffer as identity, permitted or impossible. Null outside the endgame.
     public string? LastBuffer { get; set; }
     public bool Known => NotHome != null && WrongBuffer != null && Orientation != null && UnknownFrames != null;
@@ -232,6 +256,8 @@ public sealed class SolvingDemo
     // The operation draft of the working orbit. Each orbit owns its draft (ADR-D01.63): leaving an orbit, by a
     // switch or by activating Next, saves the draft and its settings, and the orbit entered gets its own back.
     public OperationDraft? Draft { get; set; }
+    // The setup slot under the Target (ADR-D01.68), when the host mounts the built-in setup search.
+    public SetupSearch? Setup { get; set; }
     private readonly Dictionary<(string State, int Orbit), DraftSnapshot> drafts = new();
 
     public SolvingDemo(OrbitAtlas atlas) { Atlas = atlas; Reset(); }
@@ -254,8 +280,8 @@ public sealed class SolvingDemo
         for (int i = 0; i < order.Count; i++)
         {
             OrbitFacts o = atlas.Orbits[order[i]]; OrbitResidual r = s.Residuals[o.Id];
-            if (i < working) { (r.NotHome, r.WrongBuffer, r.Orientation, r.UnknownFrames) = (0, 0, 0, 0); r.Lock = i == 3 ? OrbitLock.None : i == 4 ? OrbitLock.Partial : OrbitLock.Whole; }
-            else if (i == working) (r.NotHome, r.WrongBuffer, r.Orientation, r.UnknownFrames, r.Lock) = (14, 1, o.Orientation == "trivial" ? 0 : 3, 0, OrbitLock.Partial);
+            if (i < working) { (r.NotHome, r.WrongBuffer, r.Orientation, r.UnknownFrames) = (0, 0, 0, 0); r.Protection = i == 3 ? ProtectionKinds.None : i == 4 ? ProtectionKinds.Position : i == 5 ? ProtectionKinds.Identity : i == 6 ? ProtectionKinds.Block : ProtectionKinds.Orbit; }
+            else if (i == working) (r.NotHome, r.WrongBuffer, r.Orientation, r.UnknownFrames, r.Protection) = (14, 1, o.Orientation == "trivial" ? 0 : 3, 0, ProtectionKinds.Position | ProtectionKinds.Block);
             else if (i == 20) (r.NotHome, r.WrongBuffer, r.Orientation, r.UnknownFrames) = (null, null, null, null);
             else (r.NotHome, r.WrongBuffer, r.Orientation, r.UnknownFrames) = (o.Pieces - o.Pieces / (5 + i % 7), 2, o.Orientation == "trivial" ? 0 : o.Pieces / 3, i % 5 == 0 ? 12 : 0);
         }
@@ -271,9 +297,9 @@ public sealed class SolvingDemo
         var s = new SolvingState("endgame", "endgame, last buffer", atlas, order[^1], 5) { Revision = 48211 };
         foreach (int id in order)
         {
-            OrbitResidual r = s.Residuals[id]; (r.NotHome, r.WrongBuffer, r.Orientation, r.UnknownFrames, r.Lock) = (0, 0, 0, 0, OrbitLock.Whole);
+            OrbitResidual r = s.Residuals[id]; (r.NotHome, r.WrongBuffer, r.Orientation, r.UnknownFrames, r.Protection) = (0, 0, 0, 0, ProtectionKinds.Orbit);
         }
-        OrbitResidual last = s.Residual; (last.NotHome, last.WrongBuffer, last.Lock, last.LastBuffer) = (2, 1, OrbitLock.Partial, "permitted");
+        OrbitResidual last = s.Residual; (last.NotHome, last.WrongBuffer, last.Protection, last.LastBuffer) = (2, 1, ProtectionKinds.Position, "permitted");
         IReadOnlyList<int> open = s.Unfinished();
         s.Target = open[0]; s.BufferA = open[1]; s.BufferB = (open[1] + 1) % s.Facts.Pieces == open[0] ? (open[1] + 2) % s.Facts.Pieces : (open[1] + 1) % s.Facts.Pieces;
         return s;
@@ -371,7 +397,8 @@ public sealed class SolvingDemo
 }
 
 // One cell of the orbit rail (ADR-D01.64). Solved, lock and working are three separate marks.
-public sealed record RailCell(int Orbit, string Id, string Group, double? Level, bool Solved, OrbitLock Lock, bool Working, bool Next, string Status);
+public sealed record RailCell(int Orbit, string Id, string Group, double? Level, bool Solved, OrbitLock Lock, bool Working, bool Next, string Status,
+    ProtectionKinds Protection = ProtectionKinds.None);
 
 public static class OrbitRailModel
 {
@@ -384,7 +411,7 @@ public static class OrbitRailModel
     {
         OrbitFacts facts = state.Atlas.Orbits[id]; OrbitResidual r = state.Residuals[id];
         string status = !r.Known || r.UnknownFrames > 0 ? "unknown_frame" : r.ExactlySolved ? "solved" : r.LastBuffer == "permitted" ? "permitted_residual" : "open";
-        return new RailCell(id, OrbitAtlas.Name(id), facts.Orientation, r.Level(facts.Pieces), r.ExactlySolved, r.Lock, id == state.Orbit, state.Next is { } n && n.Orbit == id, status);
+        return new RailCell(id, OrbitAtlas.Name(id), facts.Orientation, r.Level(facts.Pieces), r.ExactlySolved, r.Lock, id == state.Orbit, state.Next is { } n && n.Orbit == id, status, r.Protection);
     }).ToArray();
 }
 
@@ -555,6 +582,16 @@ public sealed class OperationDraft
         if (phase < 0) return "it needs a phase and its twists, such as core: twist; twist";
         twists[phase].Clear(); twists[phase].AddRange(argument.Substring(cut + 1).Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         Safe.Raise(Changed); return null;
+    }
+
+    // A setup row around the macro in Core (ADR-D01.68): Prepare and Cleanup are set as one change, so the draft stages
+    // once; Core is never touched, and an empty Core or Direct is refused (never a whole placement).
+    public bool Surround(IReadOnlyList<string> prepare, IReadOnlyList<string> cleanup)
+    {
+        if (Route == InputRoute.Direct || twists[1].Count == 0 || prepare.Concat(cleanup).Any(string.IsNullOrWhiteSpace)) return false;
+        twists[0].Clear(); twists[0].AddRange(prepare.Select(w => w.Trim()));
+        twists[2].Clear(); twists[2].AddRange(cleanup.Select(w => w.Trim()));
+        Safe.Raise(Changed); return true;
     }
 
     public const string SampleGoal = "Wanted in Target";

@@ -1,5 +1,6 @@
 #include "test.h"
 #include "scene_record.h"
+#include "product.h"
 #include "stage_rules.h"
 #include "stage_sources.h"
 #include <d3d12sdklayers.h>
@@ -12,7 +13,11 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include <limits>
+#include <map>
+#include <set>
 #include <sstream>
+#include <thread>
 #include <utility>
 
 namespace sa2test {
@@ -930,8 +935,34 @@ struct PoseFrames {
         uint64_t id = 0;
         api(ctx, sa2_frame_submit(ctx, &input, &id));
         expect(id == expected, "a pose-check frame did not get the next frame ID");
+        return read(id, slot);
+    }
+    // ABI 8: a composite frame of the panes at the engine revision; the frame input names the first pane.
+    std::vector<uint32_t> draw_panes(uint64_t revision, const std::vector<sa2_pane>& panes) {
+        auto* ctx = harness.ctx;
+        const uint64_t expected = ++frame;
+        const auto slot = uint32_t(expected % SA2_RING_SLOTS);
+        sa2_frame_input input{};
+        input.struct_size = sizeof(input);
+        input.target = slot;
+        input.device_epoch = 1;
+        input.surface = 1; input.surface_generation = 1; input.sequence = ++sequence;
+        input.engine_revision = revision;
+        input.view = panes[0].view; input.view_generation = panes[0].view_generation; input.publication_generation = 1;
+        input.camera = sequence;
+        input.viewport_width = harness.width; input.viewport_height = harness.height;
+        input.visibility = 1; input.interaction = 1; input.resource_set = panes[0].resource_set;
+        std::copy(std::begin(panes[0].camera_matrix), std::end(panes[0].camera_matrix), std::begin(input.camera_matrix));
+        api(ctx, sa2_signal_godot_free(ctx, expected - 1));
+        uint64_t id = 0;
+        api(ctx, sa2_frame_submit_panes(ctx, &input, panes.data(), uint32_t(panes.size()), &id));
+        expect(id == expected, "a composite frame did not get the next frame ID");
+        return read(id, slot);
+    }
+    std::vector<uint32_t> read(uint64_t id, uint32_t slot) {
+        auto* ctx = harness.ctx;
         api(ctx, sa2_godot_wait_ready(ctx, id));
-        harness.consume(id, 0, false);
+        harness.consume(uint32_t(id), 0, false);
         std::vector<uint32_t> pixels(size_t(harness.width) * harness.height);
         void* bytes = nullptr;
         const D3D12_RANGE read_range{static_cast<SIZE_T>(harness.footprint.Offset), static_cast<SIZE_T>(harness.readback_bytes)};
@@ -1051,6 +1082,713 @@ void product_poses(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ADR-D02 B18's WARP check (--warp --sweep): a committed twist's transform. Revision 1 has every piece at the identity;
+// revision 2 is entered by a twist that turns the even pieces by R, a rotation of the plane (e0, e1). With the
+// transform of that twist on revision 2, phase 1 draws revision 2 byte-identically, phase 0 draws revision 1 (within
+// rounding), a half phase draws neither, a cleared transform draws revision 2 again, and refused calls change nothing.
+void product_sweep(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    const auto all = pose_set(harness, 1, std::vector<uint8_t>(SA2_SLOTS, 1));
+    const double angle = 0.9;
+    const Rows R = double_rotation(0, 1, angle, 2, 3, 0), Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    std::vector<float> table(32, 0.0f);
+    for (int i = 0; i < 4; ++i) table[i * 5] = 1.0f;
+    for (int i = 0; i < 16; ++i) table[16 + i] = float(R[i]);
+    std::vector<int32_t> posed(SA2_PIECES);
+    std::vector<uint8_t> moving(SA2_PIECES);
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) { posed[piece] = int32_t(piece % 2 == 0); moving[piece] = uint8_t(piece % 2 == 0); }
+    PoseFrames frames{harness};
+    adopt_poses(harness, 1, std::vector<int32_t>(SA2_PIECES, 0), std::vector<float>(table.begin(), table.begin() + 16), {0});
+    const auto before = frames.draw(1, 1, all, Q);
+    adopt_poses(harness, 2, posed, table, {0, -1});
+    const auto after = frames.draw(2, 1, all, Q);
+    const float u[4] = {1, 0, 0, 0}, v[4] = {0, 1, 0, 0};
+    auto* ctx = harness.ctx;
+    const auto refused = [&](int32_t status, const char* what) { expect(status == SA2_E_INVALID_ARGUMENT, what); };
+    refused(sa2_transform_set(ctx, 1, u, v, float(angle), moving.data(), 0.0f), "a transform of another revision was not refused");
+    refused(sa2_transform_set(ctx, 2, u, u, float(angle), moving.data(), 0.0f), "a degenerate plane was not refused");
+    refused(sa2_transform_set(ctx, 2, u, v, float(angle), moving.data(), 1.5f), "a phase above 1 was not refused");
+    refused(sa2_transform_set(ctx, 2, u, v, 4.0f, moving.data(), 0.0f), "an angle above pi was not refused");
+    std::vector<uint8_t> bad(moving); bad[3] = 2;
+    refused(sa2_transform_set(ctx, 2, u, v, float(angle), bad.data(), 0.0f), "a moving byte of 2 was not refused");
+    expect(frames.draw(2, 1, all, Q) == after, "a refused transform changed the frame");
+    api(ctx, sa2_transform_set(ctx, 2, u, v, float(angle), moving.data(), 1.0f));
+    const auto one = frames.draw(2, 1, all, Q);
+    api(ctx, sa2_transform_set(ctx, 2, u, v, float(angle), moving.data(), 0.0f));
+    const auto zero = frames.draw(2, 1, all, Q);
+    api(ctx, sa2_transform_set(ctx, 2, u, v, float(angle), moving.data(), 0.5f));
+    const auto half = frames.draw(2, 1, all, Q);
+    api(ctx, sa2_transform_set(ctx, 2, u, v, float(angle), nullptr, 0.0f));
+    const auto cleared = frames.draw(2, 1, all, Q);
+    const auto background = before[0];
+    const auto covered = [&](const std::vector<uint32_t>& image) {
+        return uint64_t(std::count_if(image.begin(), image.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    const auto differing = [](const std::vector<uint32_t>& x, const std::vector<uint32_t>& y) {
+        uint64_t count = 0;
+        for (size_t i = 0; i < x.size(); ++i)
+            for (int shift = 0; shift < 32; shift += 8)
+                if (std::abs(int((x[i] >> shift) & 0xff) - int((y[i] >> shift) & 0xff)) > 2) { ++count; break; }
+        return count;
+    };
+    const auto cover = covered(before), apart = differing(before, after), back = differing(zero, before);
+    const auto half_before = differing(half, before), half_after = differing(half, after);
+    std::cout << "transform: covered " << cover << "; revisions differ at " << apart << ", phase 0 vs revision 1 at " << back
+              << ", phase 0.5 vs revision 1 at " << half_before << " and vs revision 2 at " << half_after << '\n' << std::flush;
+    expect(cover >= uint64_t(harness.width) * harness.height / 20, "a transform-check frame covers less than 5% of the target");
+    expect(apart * 5 >= cover, "the twist moved too little to check (under 20% of the covered pixels differ)");
+    expect(one == after, "phase 1 does not draw the revision byte-identically");
+    expect(back * 100 <= cover, "phase 0 does not draw the revision before the twist (over 1% differ)");
+    expect(half_before * 10 >= cover && half_after * 10 >= cover, "phase 0.5 draws like an endpoint (under 10% differ)");
+    expect(cleared == after, "a cleared transform does not draw the revision byte-identically");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+// ABI 6's WARP check (--warp --shape): a view's shape. The default shape draws byte-identically to no call, a
+// smaller sticker shrink covers fewer pixels, the owner's opening values draw, and a refused shape changes nothing.
+void product_shape(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    expect(sa2_view_shape_set(nullptr, 1, nullptr) == SA2_E_INVALID_ARGUMENT, "a shape was set without a context");
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const auto unset = frames.draw(1, 1, 0, Q);
+    const sa2_view_shape defaults{sizeof(sa2_view_shape), SA2_SHAPE_DEFAULT_CELL_SHRINK, SA2_SHAPE_DEFAULT_STICKER_SHRINK,
+                                  SA2_SHAPE_DEFAULT_D4, SA2_SHAPE_DEFAULT_ZOOM, 0};
+    api(ctx, sa2_view_shape_set(ctx, 1, &defaults));
+    expect(frames.draw(1, 1, 0, Q) == unset, "the default shape does not draw byte-identically to no call");
+    const auto background = unset[0];
+    const auto covered = [&](const std::vector<uint32_t>& image) {
+        return uint64_t(std::count_if(image.begin(), image.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    auto smaller = defaults;
+    smaller.sticker_shrink = 0.55f;
+    api(ctx, sa2_view_shape_set(ctx, 1, &smaller));
+    const auto reduced = frames.draw(1, 1, 0, Q);
+    expect(frames.draw(1, 2, 0, Q) == unset, "another view drew with view 1's shape");
+    auto opening = defaults; // the owner's opening values: gap 0.3, sticker shrink 0.55
+    opening.cell_shrink = 1.0f - 0.3f;
+    opening.sticker_shrink = 0.55f;
+    api(ctx, sa2_view_shape_set(ctx, 2, &opening));
+    const auto open = frames.draw(1, 2, 0, Q);
+    const auto cover_unset = covered(unset), cover_small = covered(reduced), cover_open = covered(open);
+    std::cout << "view shape: " << uint64_t(harness.width) * harness.height << " pixels; covered by default " << cover_unset
+              << ", sticker shrink 0.55 " << cover_small << ", opening values " << cover_open << std::endl;
+    expect(cover_unset >= uint64_t(harness.width) * harness.height / 20, "the default frame covers less than 5% of the target");
+    expect(cover_small > 0 && cover_small < cover_unset, "a smaller sticker shrink does not cover fewer pixels");
+    expect(cover_open > 0 && cover_open < cover_unset, "the opening values do not cover fewer pixels than the defaults");
+    // Refusals change nothing.
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    for (int field = 0; field < 8; ++field) {
+        auto bad = smaller;
+        switch (field) {
+        case 0: bad.cell_shrink = nan; break;
+        case 1: bad.sticker_shrink = std::numeric_limits<float>::infinity(); break;
+        case 2: bad.d4 = nan; break;
+        case 3: bad.zoom = nan; break;
+        case 4: bad.sticker_shrink = 0; break;
+        case 5: bad.d4 = 1.0f; break;
+        case 6: bad.zoom = SA2_SHAPE_ZOOM_MAX * 2; break;
+        default: bad.struct_size = 20; break;
+        }
+        expect(sa2_view_shape_set(ctx, 1, &bad) == SA2_E_INVALID_ARGUMENT, "a non-finite or out-of-range shape was accepted");
+    }
+    expect(frames.draw(1, 1, 0, Q) == reduced, "a refused shape changed the view's frames");
+    api(ctx, sa2_view_shape_set(ctx, 1, nullptr));
+    expect(frames.draw(1, 1, 0, Q) == unset, "a NULL shape did not restore the defaults");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_view_shape_set(ctx, 1, &smaller) == SA2_E_WRONG_STATE, "a shape was set without a loaded scene");
+    harness.finish(options.debug);
+}
+
+// ABI 9's WARP check (--warp --focus): a view's focus (ADR-D02 B18c, Local's own shape). The default focus draws
+// byte-identically to no call; Local's shape with the pole of cell 150 turned to +w draws the whole view, the cap test
+// (121/125) draws fewer pixels around the target's centre, the spread changes the picture, a later shape keeps the
+// focus, a refused focus changes nothing and NULL restores the default. The three pictures go beside the report.
+void product_focus(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    expect(sa2_view_focus_set(nullptr, 1, nullptr) == SA2_E_INVALID_ARGUMENT, "a focus was set without a context");
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2), I = double_rotation(0, 3, 0, 1, 2, 0);
+    const auto unset = frames.draw(1, 1, 0, Q);
+    const sa2_view_focus defaults{sizeof(sa2_view_focus), SA2_PROJECTION_PERSPECTIVE, SA2_FOCUS_NONE, -1.0f, 1.0f, 0};
+    api(ctx, sa2_view_focus_set(ctx, 1, &defaults));
+    expect(frames.draw(1, 1, 0, Q) == unset, "the default focus does not draw byte-identically to no call");
+    const auto background = unset[0];
+    const auto covered = [&](const std::vector<uint32_t>& picture) {
+        return uint64_t(std::count_if(picture.begin(), picture.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    // Local's shape from local-view.json (gap 0.3, sticker shrink 0.6, d4 2) on view 2, zoomed to the cap.
+    const sa2_view_shape local{sizeof(sa2_view_shape), 0.7f, 0.6f, 2.0f, 4.5f, 0};
+    api(ctx, sa2_view_shape_set(ctx, 2, &local));
+    const auto shaped = frames.draw(1, 2, 0, I);
+    sa2_view_focus whole{sizeof(sa2_view_focus), SA2_PROJECTION_ORTHOGRAPHIC, 150, -1.0f, 1.0f, 0};
+    api(ctx, sa2_view_focus_set(ctx, 2, &whole));
+    const auto centred = frames.draw(1, 2, 0, I);
+    auto cap = whole;
+    cap.focus_cos = 121.0f / 125.0f;
+    api(ctx, sa2_view_focus_set(ctx, 2, &cap));
+    const auto only = frames.draw(1, 2, 0, I);
+    auto apart = cap;
+    apart.spread = 1.7f;
+    api(ctx, sa2_view_focus_set(ctx, 2, &apart));
+    const auto spread = frames.draw(1, 2, 0, I);
+    expect(frames.draw(1, 1, 0, Q) == unset, "another view drew with view 2's focus");
+    const auto cover_whole = covered(centred), cover_cap = covered(only), cover_spread = covered(spread);
+    // The cap's covered pixels lie around the target's centre: their bounding box holds it.
+    int left = int(harness.width), right = -1, top = int(harness.height), bottom = -1;
+    for (uint32_t y = 0; y < harness.height; ++y)
+        for (uint32_t x = 0; x < harness.width; ++x)
+            if (only[size_t(y) * harness.width + x] != background) {
+                left = std::min(left, int(x)); right = std::max(right, int(x)); top = std::min(top, int(y)); bottom = std::max(bottom, int(y));
+            }
+    std::cout << "view focus: " << uint64_t(harness.width) * harness.height << " pixels; covered whole " << cover_whole << ", cap "
+              << cover_cap << ", cap spread " << cover_spread << "; the cap spans x " << left << ".." << right << ", y " << top
+              << ".." << bottom << std::endl;
+    expect(centred != shaped, "the pole turned to +w and the orthographic projection changed nothing");
+    expect(cover_cap > 0 && cover_cap < cover_whole, "the cap test does not draw fewer pixels than the whole view");
+    expect(left < int(harness.width) / 2 && right > int(harness.width) / 2 && top < int(harness.height) / 2 && bottom > int(harness.height) / 2,
+           "the cap is not centred on the target");
+    expect(cover_spread > 0 && spread != only, "the spread changed nothing");
+    // A shape set later keeps the focus; a refused focus changes nothing; NULL restores the default and keeps the shape.
+    api(ctx, sa2_view_shape_set(ctx, 2, &local));
+    expect(frames.draw(1, 2, 0, I) == spread, "a shape set dropped the view's focus");
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    for (int field = 0; field < 8; ++field) {
+        auto bad = apart;
+        switch (field) {
+        case 0: bad.struct_size = 20; break;
+        case 1: bad.projection = 3; break; // ADR-D02 B21: 2 is the raw view's stereographic projection
+        case 2: bad.focus_cell = 600; break;
+        case 3: bad.focus_cos = nan; break;
+        case 4: bad.focus_cos = 1.5f; break;
+        case 5: bad.spread = 0.5f; break;
+        case 6: bad.spread = 3.5f; break;
+        default: bad.reserved = 1; break;
+        }
+        expect(sa2_view_focus_set(ctx, 2, &bad) == SA2_E_INVALID_ARGUMENT, "a malformed or out-of-range focus was accepted");
+    }
+    expect(frames.draw(1, 2, 0, I) == spread, "a refused focus changed the view's frames");
+    api(ctx, sa2_view_focus_set(ctx, 2, nullptr));
+    expect(frames.draw(1, 2, 0, I) == shaped, "a NULL focus did not restore the default");
+    if (!options.out.empty()) {
+        const auto write = [&](const std::vector<uint32_t>& picture, const char* name) {
+            std::ofstream file(options.out.parent_path() / name, std::ios::binary);
+            file << "P6\n" << harness.width << " " << harness.height << "\n255\n";
+            for (uint32_t pixel : picture) {
+                const char rgb[3] = {char(pixel & 0xff), char((pixel >> 8) & 0xff), char((pixel >> 16) & 0xff)};
+                file.write(rgb, 3);
+            }
+        };
+        write(centred, "warp-focus-whole.ppm"); write(only, "warp-focus-cap.ppm"); write(spread, "warp-focus-spread.ppm");
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_view_focus_set(ctx, 2, &apart) == SA2_E_WRONG_STATE, "a focus was set without a loaded scene");
+    harness.finish(options.debug);
+}
+
+// ABI 7 (ADR-D02 B14): --warp --style. Over the unposed home labels at the scene's size: a fill tint and an outline on
+// a quarter of the pieces change only pixels those pieces cover (a frame of only those pieces bounds them); an empty
+// mask, and a slot whose style changes nothing, draw byte-identically to no style; a style for another revision is
+// refused; a focus dim and a colour matrix change frames without a piece style; clearing restores the unstyled frame.
+void product_style(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    const auto pieces = sa2::scene_slot_pieces();
+    std::vector<uint8_t> masked(SA2_SLOTS, 0), all(SA2_SLOTS, 1);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) masked[slot] = uint8_t(pieces[slot] % 4 == 1);
+    const auto set_all = pose_set(harness, 1, all), set_masked = pose_set(harness, 2, masked);
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const auto unstyled = frames.draw(1, 1, set_all, Q);
+    const auto only = frames.draw(1, 2, set_masked, Q);
+    const auto background = unstyled[0];
+    const uint64_t total = uint64_t(harness.width) * harness.height;
+    uint64_t cover_only = 0;
+    for (const auto pixel : only) cover_only += pixel != background;
+    expect(cover_only >= total / 100, "the masked pieces cover less than 1% of the target");
+    // A slot whose style changes nothing, and an empty mask, keep the unstyled frame byte for byte.
+    sa2_view_style style{};
+    style.struct_size = sizeof(style);
+    style.tint_mode = SA2_STYLE_TINT_FILL | SA2_STYLE_TINT_OUTLINE;
+    style.outline_width = 0.12f;
+    const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    std::copy(std::begin(identity), std::end(identity), std::begin(style.matrix));
+    const float red[4] = {0.95f, 0.1f, 0.1f, 1}, black[4] = {0, 0, 0, 1};
+    std::copy(std::begin(red), std::end(red), style.palette + 4 * 3);
+    std::copy(std::begin(black), std::end(black), style.palette + 4 * 5);
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    expect(frames.draw(1, 1, set_all, Q) == unstyled, "a slot that changes nothing does not draw byte-identically");
+    std::vector<uint8_t> fill(SA2_PIECES, 0), outline(SA2_PIECES, 0);
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    expect(frames.draw(1, 1, set_all, Q) == unstyled, "an empty mask does not draw byte-identically to no style");
+    expect(sa2_style_set(ctx, 2, fill.data(), SA2_STYLE_CHANNEL_FILL) == SA2_E_INVALID_ARGUMENT, "a style for another revision was accepted");
+    // The fill tint and the outline on every piece = 1 (mod 4).
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        if (piece % 4 != 1) continue;
+        fill[piece] = 3;
+        outline[piece] = 5;
+    }
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    const auto tinted = frames.draw(1, 1, set_all, Q);
+    api(ctx, sa2_style_set(ctx, 1, outline.data(), SA2_STYLE_CHANNEL_OUTLINE));
+    const auto outlined = frames.draw(1, 1, set_all, Q);
+    uint64_t changed = 0, stray = 0, lined = 0;
+    for (size_t i = 0; i < unstyled.size(); ++i) {
+        const bool differs = tinted[i] != unstyled[i];
+        changed += differs;
+        stray += (differs || outlined[i] != unstyled[i]) && only[i] == background;
+        lined += outlined[i] != tinted[i];
+    }
+    std::cout << "piece style: " << total << " pixels; masked pieces cover " << cover_only << ", the tint changed " << changed
+              << ", the outline changed " << lined << ", outside the masked pieces " << stray << std::endl;
+    expect(changed * 8 >= cover_only, "the fill tint changed under an eighth of the masked pieces' pixels");
+    expect(lined > 0, "the outline changed no pixel");
+    expect(stray == 0, "a styled frame changed a pixel no masked piece covers");
+    // Another revision's style is gone after an adoption: the frame draws unstyled again.
+    image.revision = 2; // the same labels, a new revision
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    expect(frames.draw(2, 1, set_all, Q) == unstyled, "an adoption kept the previous revision's style");
+    expect(sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL) == SA2_E_INVALID_ARGUMENT, "a style for a replaced revision was accepted");
+    // Without a piece style, a focus dim and a colour matrix still change the frame; clearing the slot restores it.
+    style.dim_mode = SA2_STYLE_DIM_UNMARKED;
+    style.dim_amount = 0.5f;
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    expect(frames.draw(2, 1, set_all, Q) != unstyled, "a focus dim did not change the frame");
+    style.dim_mode = SA2_STYLE_DIM_NONE;
+    style.dim_amount = 0;
+    const float swap[9] = {0, 1, 0, 1, 0, 0, 0, 0, 1};
+    std::copy(std::begin(swap), std::end(swap), std::begin(style.matrix));
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    expect(frames.draw(2, 1, set_all, Q) != unstyled, "a colour matrix did not change the frame");
+    style.matrix[0] = 9.0f;
+    expect(sa2_view_style_set(ctx, 1, &style) == SA2_E_INVALID_ARGUMENT, "a matrix entry out of range was accepted");
+    expect(sa2_view_style_set(ctx, 5, nullptr) == SA2_E_INVALID_ARGUMENT, "a fifth style slot was accepted");
+    api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+    expect(frames.draw(2, 1, set_all, Q) == unstyled, "a cleared slot did not restore the unstyled frame");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_view_style_set(ctx, 1, nullptr) == SA2_E_WRONG_STATE, "a style was set without a loaded scene");
+    harness.finish(options.debug);
+}
+
+// ABI 8 (ADR-D02 B18a): --warp --panes. Two one-view frames at 300 x 300 (harness A), then composite frames of the
+// same two views at 640 x 360 (harness B): a single pane covering the target draws byte-identically to
+// sa2_frame_submit; each of two panes matches its one-view frame (at most 1% of covered pixels differ by more than 2
+// in a channel); pixels outside every pane hold the clear colour; overlap, a fifth pane and a mixed revision are
+// refused; a pick in each pane names its view and the instance the one-view pick returns; the composite frame's
+// vertex evaluations are the sum of the two one-view frames'.
+namespace panes_check {
+constexpr uint32_t Side = 300;
+uint64_t pickable_set(Harness& harness, uint64_t view, uint64_t revision) {
+    auto* ctx = harness.ctx;
+    const std::vector<uint8_t> visible(SA2_SLOTS, 1), interaction(SA2_SLOTS, 1);
+    std::vector<uint32_t> instances(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) instances[slot] = slot + 1;
+    sa2_preparation preparation{};
+    preparation.struct_size = sizeof(preparation);
+    preparation.command = view; preparation.view = view;
+    preparation.view_generation = 1; preparation.publication_generation = 1;
+    preparation.device_epoch = 1; preparation.base_revision = revision;
+    preparation.visibility = visible.data(); preparation.interaction = interaction.data(); preparation.instances = instances.data();
+    uint64_t ticket = 0;
+    api(ctx, sa2_prepare(ctx, &preparation, &ticket));
+    const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(harness.wait);
+    for (;;) {
+        sa2_poll_row row{sizeof(sa2_poll_row)};
+        api(ctx, sa2_poll(ctx, ticket, &row));
+        if (row.state == SA2_TICKET_READY) {
+            const uint8_t digest[32]{};
+            api(ctx, sa2_activate(ctx, row.resource_set, digest));
+            return row.resource_set;
+        }
+        expect(row.state == SA2_TICKET_PENDING, "a pane-check preparation was cancelled or failed");
+        expect(std::chrono::steady_clock::now() < until, "a pane-check preparation timed out");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+sa2_pick_row pick(Harness& harness, uint64_t frame, uint32_t x, uint32_t y) {
+    auto* ctx = harness.ctx;
+    uint64_t ticket = 0;
+    api(ctx, sa2_pick_request(ctx, frame, x, y, &ticket));
+    const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(harness.wait);
+    for (;;) {
+        sa2_pick_row row{};
+        row.struct_size = sizeof(row);
+        api(ctx, sa2_pick_poll(ctx, ticket, &row));
+        if (row.state != SA2_PICK_PENDING) return row;
+        expect(std::chrono::steady_clock::now() < until, "a pane-check pick timed out");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+std::map<uint64_t, uint64_t> evals(Harness& harness) {
+    std::map<uint64_t, uint64_t> out;
+    sa2_frame_report rows[16]{};
+    for (auto& row : rows) row.struct_size = sizeof(row);
+    uint32_t count = 0;
+    api(harness.ctx, sa2_frame_reports(harness.ctx, rows, 16, &count));
+    for (uint32_t i = 0; i < count; ++i) out[rows[i].frame_id] = rows[i].view_vertex_evals;
+    return out;
+}
+void load(Harness& harness, uint32_t width, uint32_t height) {
+    harness.make_ring(width, height);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(harness.ctx, sa2_engine_adopt(harness.ctx, &image, &adopted));
+}
+// The covered pixel of a one-view frame nearest its centre.
+std::pair<uint32_t, uint32_t> covered_point(const std::vector<uint32_t>& image) {
+    std::pair<uint32_t, uint32_t> best{Side / 2, Side / 2};
+    uint64_t nearest = UINT64_MAX;
+    for (uint32_t y = 0; y < Side; ++y)
+        for (uint32_t x = 0; x < Side; ++x) {
+            if (image[size_t(y) * Side + x] == image[0]) continue;
+            const int64_t dx = int64_t(x) - Side / 2, dy = int64_t(y) - Side / 2;
+            if (uint64_t(dx * dx + dy * dy) < nearest) { nearest = uint64_t(dx * dx + dy * dy); best = {x, y}; }
+        }
+    return best;
+}
+sa2_pane make(uint64_t view, uint64_t set, int32_t x, int32_t y, uint32_t w, uint32_t h, const Rows& camera) {
+    sa2_pane pane{};
+    pane.view = view; pane.view_generation = 1; pane.resource_set = set;
+    pane.x = x; pane.y = y; pane.width = w; pane.height = h;
+    for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) pane.camera_matrix[c * 4 + r] = float(camera[r * 4 + c]);
+    return pane;
+}
+}
+
+// ADR-D02 B17 (ADR-D01.46, added to ABI 10): --warp --style also checks the focus layers drawn in the core. The pieces
+// = 1 (mod 4) are marked (SA2_STYLE_DIM in their fill byte). Hiding them draws what a set without them draws (at most
+// 1% of the covered pixels differ by more than 2 in a channel). A pick follows the style its frame drew with: where the
+// unstyled frame shows a marked piece, the hiding frame's pick names an unmarked piece or none (at least once the one
+// behind) and the dimming frame's names none; where it shows an unmarked piece, both answer as the unstyled pick does,
+// as an outline-only style does everywhere. A single styled pane covering the target picks as the one-view frame, and
+// a styled frame whose engine copy has taken another piece style answers SA2_PICK_STALE_ENGINE.
+void product_focus_layers(const Options& options) {
+    using panes_check::pick;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    const auto pieces = sa2::scene_slot_pieces();
+    const auto marked = [&](uint32_t instance) { return instance != 0 && pieces[instance - 1] % 4 == 1; };
+    std::vector<uint8_t> rest(SA2_SLOTS, 0);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) rest[slot] = uint8_t(pieces[slot] % 4 != 1);
+    const auto set_pick = panes_check::pickable_set(harness, 1, 1), set_rest = pose_set(harness, 2, rest);
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const auto unstyled = frames.draw(1, 1, set_pick, Q);
+    const uint64_t unstyled_frame = frames.frame;
+    const auto rest_only = frames.draw(1, 2, set_rest, Q); // drawn before any style, through the unchanged pipeline
+    const auto background = unstyled[0];
+    // Up to eight sample points where the unstyled pick names a marked piece and eight where it names another.
+    std::vector<std::pair<uint32_t, uint32_t>> points;
+    std::vector<uint32_t> answers;
+    uint32_t on_marked = 0, on_rest = 0, drawn = 0, empty = 0;
+    for (uint32_t y = 3; y < harness.height && (on_marked < 8 || on_rest < 8); y += 7)
+        for (uint32_t x = 5; x < harness.width && (on_marked < 8 || on_rest < 8); x += 11) {
+            if (unstyled[size_t(y) * harness.width + x] == background) continue;
+            ++drawn;
+            const auto row = pick(harness, unstyled_frame, x, y);
+            expect(row.state == SA2_PICK_READY, "an unstyled pick was not ready");
+            if (row.instance == 0) { ++empty; continue; }
+            uint32_t& count = marked(row.instance) ? on_marked : on_rest;
+            if (count >= 8) continue;
+            ++count;
+            points.push_back({x, y});
+            answers.push_back(row.instance);
+        }
+    std::cout << "focus layers: " << drawn << " drawn sample points, " << empty << " without an instance; " << on_marked
+              << " on marked pieces, " << on_rest << " on others" << std::endl;
+    expect(on_marked == 8 && on_rest == 8, "the unstyled frame offers too few sample points");
+    const auto picks = [&](uint64_t frame) {
+        std::vector<uint32_t> out;
+        for (const auto& [x, y] : points) {
+            const auto row = pick(harness, frame, x, y);
+            expect(row.state == SA2_PICK_READY, "a pick on a styled frame was not ready");
+            out.push_back(row.instance);
+        }
+        return out;
+    };
+    std::vector<uint8_t> fill(SA2_PIECES, 0), outline(SA2_PIECES, 0);
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        if (piece % 4 != 1) continue;
+        fill[piece] = SA2_STYLE_DIM;
+        outline[piece] = 5;
+    }
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    sa2_view_style style{};
+    style.struct_size = sizeof(style);
+    const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1}, black[4] = {0, 0, 0, 1};
+    std::copy(std::begin(identity), std::end(identity), std::begin(style.matrix));
+    std::copy(std::begin(black), std::end(black), style.palette + 4 * 5);
+    style.dim_mode = 5;
+    expect(sa2_view_style_set(ctx, 1, &style) == SA2_E_INVALID_ARGUMENT, "an unknown dim mode was accepted");
+    // Hidden: the picture of the set without the marked pieces, and no pick names one.
+    style.dim_mode = SA2_STYLE_HIDE_MARKED;
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    const auto hidden = frames.draw(1, 1, set_pick, Q);
+    const uint64_t hidden_frame = frames.frame;
+    const auto hidden_picks = picks(hidden_frame);
+    uint64_t covered = 0, apart = 0;
+    for (size_t i = 0; i < hidden.size(); ++i) {
+        covered += rest_only[i] != background || hidden[i] != background;
+        bool distant = false; // (windows.h defines far)
+        for (int shift = 0; shift < 32; shift += 8) {
+            const int a = int((hidden[i] >> shift) & 0xFF), b = int((rest_only[i] >> shift) & 0xFF);
+            distant = distant || std::abs(a - b) > 2;
+        }
+        apart += distant;
+    }
+    uint32_t revealed = 0;
+    for (size_t i = 0; i < points.size(); ++i) {
+        expect(!marked(hidden_picks[i]), "a hidden piece was picked");
+        if (!marked(answers[i])) expect(hidden_picks[i] == answers[i], "hiding changed the pick of a piece in front");
+        else revealed += hidden_picks[i] != 0;
+    }
+    std::cout << "focus layers: hiding the marked pieces covers " << covered << " pixels, " << apart
+              << " apart from the set without them; " << revealed << " of 8 hidden points pick the piece behind" << std::endl;
+    expect(covered > 0 && apart * 100 <= covered, "hiding the marked pieces does not draw the set without them");
+    expect(revealed > 0, "no hidden point picked the piece behind it");
+    // A single styled pane covering the target picks as the one-view frame.
+    auto pane = panes_check::make(1, set_pick, 0, 0, harness.width, harness.height, Q);
+    pane.style = 1;
+    frames.draw_panes(1, {pane});
+    expect(picks(frames.frame) == hidden_picks, "a styled pane does not pick as its one-view frame");
+    // Dimmed: drawn, and no pick names a marked piece in front.
+    style.dim_mode = SA2_STYLE_DIM_MARKED;
+    style.dim_amount = 0.75f;
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    expect(frames.draw(1, 1, set_pick, Q) != unstyled, "the dim did not change the frame");
+    const auto dimmed_picks = picks(frames.frame);
+    for (size_t i = 0; i < points.size(); ++i)
+        expect(dimmed_picks[i] == (marked(answers[i]) ? 0u : answers[i]), "a dimmed piece was picked or a shown one was not");
+    // An outline alone leaves every pick as it was.
+    style.dim_mode = SA2_STYLE_DIM_NONE;
+    style.dim_amount = 0;
+    style.tint_mode = SA2_STYLE_TINT_OUTLINE;
+    style.outline_width = 0.12f;
+    api(ctx, sa2_view_style_set(ctx, 1, &style));
+    api(ctx, sa2_style_set(ctx, 1, outline.data(), SA2_STYLE_CHANNEL_OUTLINE));
+    expect(frames.draw(1, 1, set_pick, Q) != unstyled, "the outline did not change the frame");
+    expect(picks(frames.frame) == answers, "an outline changed a pick");
+    // Three more piece styles take every engine copy; the hiding frame's copy no longer holds its style.
+    for (uint8_t entry = 6; entry <= 8; ++entry) {
+        outline[1] = entry;
+        api(ctx, sa2_style_set(ctx, 1, outline.data(), SA2_STYLE_CHANNEL_OUTLINE));
+        frames.draw(1, 1, set_pick, Q);
+    }
+    const auto stale = pick(harness, hidden_frame, points[0].first, points[0].second);
+    expect(stale.state == SA2_PICK_STALE && stale.stale == SA2_PICK_STALE_ENGINE, "a pick on a styled frame whose copy changed style was not stale");
+    expect(pick(harness, unstyled_frame, points[0].first, points[0].second).instance == answers[0], "an unstyled frame's pick changed");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+// B18 review finding B18-03 (--warp --sweep): an unstyled turning frame's pick follows the moving mask it drew with.
+// Four unstyled frames of one revision, each turning a different mask, take every engine copy, so the first frame's
+// copy holds another frame's mask: a pick on it answers SA2_PICK_STALE_ENGINE instead of picking through that mask,
+// and a pick on the newest frame is not stale.
+void product_sweep_picks(const Options& options) {
+    using panes_check::pick;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<float> identity(16, 0.0f);
+    for (int i = 0; i < 4; ++i) identity[i * 5] = 1.0f;
+    adopt_poses(harness, 1, std::vector<int32_t>(SA2_PIECES, 0), identity, {0});
+    const auto set = panes_check::pickable_set(harness, 1, 1);
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const float u[4] = {1, 0, 0, 0}, v[4] = {0, 1, 0, 0};
+    std::vector<uint64_t> ids;
+    for (uint32_t k = 0; k < 4; ++k) {
+        std::vector<uint8_t> mask(SA2_PIECES);
+        for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) mask[piece] = uint8_t(piece % 4 == k);
+        api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, mask.data(), 0.0f));
+        frames.draw(1, 1, set, Q);
+        ids.push_back(frames.frame);
+    }
+    const uint32_t x = harness.width / 2, y = harness.height / 2;
+    const auto first = pick(harness, ids[0], x, y), last = pick(harness, ids[3], x, y);
+    std::cout << "transform picks: the first turning frame's pick state " << first.state << " (stale " << first.stale
+              << "), the newest's " << last.state << std::endl;
+    expect(first.state == SA2_PICK_STALE && first.stale == SA2_PICK_STALE_ENGINE,
+           "a pick on an unstyled turning frame whose copy took another moving mask was not stale");
+    expect(last.state != SA2_PICK_STALE, "a pick on the newest turning frame was stale");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+void product_panes(const Options& options) {
+    using namespace panes_check;
+    const Rows Q1 = double_rotation(0, 3, 0.35, 1, 2, 0.2), Q2 = double_rotation(0, 2, 0.9, 1, 3, 0.4);
+    // Harness A: the two views as one-view frames at the pane size, their picks and their evaluations.
+    std::vector<uint32_t> a1, a2;
+    sa2_pick_row a1_pick{}, a2_pick{};
+    std::pair<uint32_t, uint32_t> p1, p2;
+    uint64_t a1_evals = 0, a2_evals = 0;
+    {
+        Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+        load(harness, Side, Side);
+        const auto set1 = pickable_set(harness, 1, 1), set2 = pickable_set(harness, 2, 1);
+        PoseFrames frames{harness};
+        a1 = frames.draw(1, 1, set1, Q1);
+        const auto f1 = frames.frame;
+        a2 = frames.draw(1, 2, set2, Q2);
+        const auto f2 = frames.frame;
+        p1 = covered_point(a1); p2 = covered_point(a2);
+        a1_pick = pick(harness, f1, p1.first, p1.second);
+        a2_pick = pick(harness, f2, p2.first, p2.second);
+        const auto reported = evals(harness);
+        expect(reported.count(f1) && reported.count(f2), "the one-view frames were not reported");
+        a1_evals = reported.at(f1); a2_evals = reported.at(f2);
+        api(harness.ctx, sa2_drain(harness.ctx, harness.wait));
+        api(harness.ctx, sa2_scene_unload(harness.ctx));
+        harness.finish(options.debug);
+    }
+    expect(a1_pick.state == SA2_PICK_READY && a1_pick.instance != 0 && a2_pick.state == SA2_PICK_READY && a2_pick.instance != 0,
+        "a one-view pick on a covered pixel found no instance");
+    // Harness B: composite frames at 640 x 360.
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    load(harness, 640, 360);
+    auto* ctx = harness.ctx;
+    const auto set1 = pickable_set(harness, 1, 1), set2 = pickable_set(harness, 2, 1);
+    PoseFrames frames{harness};
+    // One pane covering the target draws byte-identically to sa2_frame_submit.
+    const auto single = frames.draw(1, 1, set1, Q1);
+    const auto whole = frames.draw_panes(1, {make(1, set1, 0, 0, 640, 360, Q1)});
+    expect(whole == single, "one pane covering the target does not draw byte-identically to sa2_frame_submit");
+    // Two panes, each matching its one-view frame; outside them the clear colour.
+    const auto two = frames.draw_panes(1, {make(1, set1, 10, 30, Side, Side, Q1), make(2, set2, 330, 30, Side, Side, Q2)});
+    const auto composite = frames.frame;
+    const auto background = a1[0];
+    uint64_t covered = 0, differing = 0, outside = 0;
+    const auto compare = [&](const std::vector<uint32_t>& one, uint32_t ox, uint32_t oy) {
+        for (uint32_t y = 0; y < Side; ++y)
+            for (uint32_t x = 0; x < Side; ++x) {
+                const auto a = one[size_t(y) * Side + x], b = two[size_t(y + oy) * 640 + x + ox];
+                if (a == background && b == background) continue;
+                ++covered;
+                for (int shift = 0; shift < 32; shift += 8)
+                    if (std::abs(int((a >> shift) & 255) - int((b >> shift) & 255)) > 2) { ++differing; break; }
+            }
+    };
+    compare(a1, 10, 30);
+    compare(a2, 330, 30);
+    for (uint32_t y = 0; y < 360; ++y)
+        for (uint32_t x = 0; x < 640; ++x) {
+            const bool in = y >= 30 && y < 30 + Side && ((x >= 10 && x < 10 + Side) || (x >= 330 && x < 330 + Side));
+            if (!in && two[size_t(y) * 640 + x] != background) ++outside;
+        }
+    std::cout << "panes: covered " << covered << ", differing from the one-view frames " << differing << ", outside the panes "
+              << outside << std::endl;
+    expect(covered >= uint64_t(Side) * Side / 20, "the panes cover less than 5% of their area");
+    expect(differing * 100 <= covered, "a pane differs from its one-view frame (over 1% of covered pixels)");
+    expect(outside == 0, "a pixel outside every pane is not the clear colour");
+    // Refusals: overlap, a fifth pane, a mixed revision.
+    const auto refused = [&](const std::vector<sa2_pane>& panes, int32_t status) {
+        sa2_frame_input input{};
+        input.struct_size = sizeof(input);
+        input.target = uint32_t((frames.frame + 1) % SA2_RING_SLOTS);
+        input.device_epoch = 1; input.surface = 1; input.surface_generation = 1; input.sequence = frames.sequence + 1;
+        input.engine_revision = 1; input.view = panes[0].view; input.view_generation = 1; input.publication_generation = 1;
+        input.viewport_width = 640; input.viewport_height = 360; input.resource_set = panes[0].resource_set;
+        std::copy(std::begin(panes[0].camera_matrix), std::end(panes[0].camera_matrix), std::begin(input.camera_matrix));
+        uint64_t id = 0;
+        return sa2_frame_submit_panes(ctx, &input, panes.data(), uint32_t(panes.size()), &id) == status && id == 0;
+    };
+    expect(refused({make(1, set1, 10, 30, Side, Side, Q1), make(2, set2, 300, 30, Side, Side, Q2)}, SA2_E_INVALID_ARGUMENT),
+        "overlapping panes were accepted");
+    expect(refused({make(1, 0, 0, 0, 64, 64, Q1), make(2, 0, 64, 0, 64, 64, Q1), make(3, 0, 128, 0, 64, 64, Q1),
+                    make(4, 0, 192, 0, 64, 64, Q1), make(5, 0, 256, 0, 64, 64, Q1)}, SA2_E_INVALID_ARGUMENT), "a fifth pane was accepted");
+    const auto stale = pickable_set(harness, 3, 2);
+    expect(refused({make(1, set1, 10, 30, Side, Side, Q1), make(3, stale, 330, 30, Side, Side, Q2)}, SA2_E_WRONG_STATE),
+        "a pane of another engine revision was accepted");
+    // A pick in each pane names its view and the one-view pick's instance; a point in no pane is refused.
+    const auto left = pick(harness, composite, 10 + p1.first, 30 + p1.second), right = pick(harness, composite, 330 + p2.first, 30 + p2.second);
+    expect(left.state == SA2_PICK_READY && left.view == 1 && left.instance == a1_pick.instance, "a pick in the left pane is not the one-view pick");
+    expect(right.state == SA2_PICK_READY && right.view == 2 && right.instance == a2_pick.instance, "a pick in the right pane is not the one-view pick");
+    uint64_t ticket = 0;
+    expect(sa2_pick_request(ctx, composite, 5, 5, &ticket) == SA2_E_INVALID_ARGUMENT, "a pick in no pane was accepted");
+    // The vertex evaluations: the frame's sum, and each pane's own.
+    const auto reported = evals(harness);
+    expect(reported.count(composite) != 0, "the composite frame was not reported");
+    sa2_pane_row rows[4]{};
+    for (auto& row : rows) row.struct_size = sizeof(row);
+    uint32_t count = 0;
+    api(ctx, sa2_frame_panes(ctx, composite, rows, 4, &count));
+    std::cout << "panes: one-view evaluations " << a1_evals << " + " << a2_evals << ", composite " << reported.at(composite)
+              << " (panes " << rows[0].vertex_evals << ", " << rows[1].vertex_evals << ")" << std::endl;
+    expect(count == 2 && rows[0].view == 1 && rows[1].view == 2, "the pane rows do not name the two views");
+    expect(reported.at(composite) == a1_evals + a2_evals && rows[0].vertex_evals == a1_evals && rows[1].vertex_evals == a2_evals,
+        "the composite frame's vertex evaluations are not the sum of the one-view frames'");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
 struct ChildResult { DWORD code = 0; std::string output, error; };
 std::string read_pipe(HANDLE pipe) {
     std::string text;
@@ -1159,6 +1897,1096 @@ void run_stages(Suite& suite, const Options& options) {
 void run_poses(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the pose check runs on WARP only");
     suite.check("product poses warp", [&] { product_poses(options); });
+}
+
+// ABI 6: --warp --shape. Only WARP; parse refuses any other mode.
+void run_shape(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the shape check runs on WARP only");
+    suite.check("view shape warp", [&] { product_shape(options); });
+}
+
+// ABI 10's WARP check (--warp --hopf FILE): a view's layout, the Hopf-ring opening (ADR-D02 B23, bare). FILE is Look
+// Lab's tools/looklab/fixtures/hopf-rings.json. The chain layout and NULL draw byte-identically to no call; malformed
+// rings and rings that do not fit the core's cells are refused and change nothing; the Hopf rings change the picture
+// and cover pixels around its centre; another view keeps the chain; the same rings on a third view draw the same
+// picture; NULL restores the chain. On the CPU, the table built from the rings' own centres puts the 20 rings' centres
+// at a dodecahedron's vertices (Look Lab's base angle multiset). The picture goes beside the report.
+sa2_view_layout hopf_layout(const std::filesystem::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    expect(bool(in), "the Hopf ring file cannot be read");
+    std::stringstream text; text << in.rdbuf();
+    const auto json = Json::parse(text.str());
+    sa2_view_layout layout{};
+    layout.struct_size = sizeof(layout);
+    layout.kind = SA2_LAYOUT_HOPF_RINGS;
+    for (size_t i = 0; i < 4; ++i) {
+        layout.j[i] = float(json.at("J").array()[i].number());
+        layout.k[i] = float(json.at("K").array()[i].number());
+    }
+    const auto& rings = json.at("rings").array();
+    expect(rings.size() == SA2_HOPF_RINGS, "the Hopf ring file does not hold 20 rings");
+    for (size_t r = 0; r < rings.size(); ++r)
+        for (size_t i = 0; i < 4; ++i) layout.origins[4 * r + i] = float(rings[r].at("origin").array()[i].number());
+    const auto& ring_of = json.at("ringOf").array();
+    const auto& half_step = json.at("halfStep").array();
+    expect(ring_of.size() == 600 && half_step.size() == 600, "the Hopf ring file does not cover 600 cells");
+    for (size_t c = 0; c < 600; ++c) {
+        layout.ring_of[c] = uint8_t(ring_of[c].integer());
+        layout.half_step[c] = uint8_t(half_step[c].integer());
+    }
+    return layout;
+}
+
+void hopf_dodecahedron(const sa2_view_layout& layout) {
+    // The rings' own centres: cos(6h) O + sin(6h) O J, so the table is Look Lab's for the fixture's cells.
+    const auto centre = [&](uint32_t cell) {
+        const float* o = layout.origins + 4 * layout.ring_of[cell];
+        const double t = layout.half_step[cell] * 3.14159265358979323846 / 30, c = std::cos(t), s = std::sin(t);
+        const double oj[4] = {o[0] * 0 - o[1] * layout.j[1] - o[2] * layout.j[2] - o[3] * layout.j[3],
+                              o[0] * layout.j[1] + o[2] * layout.j[3] - o[3] * layout.j[2],
+                              o[0] * layout.j[2] - o[1] * layout.j[3] + o[3] * layout.j[1],
+                              o[0] * layout.j[3] + o[1] * layout.j[2] - o[2] * layout.j[1]};
+        return std::array<float, 4>{float(c * o[0] + s * oj[0]), float(c * o[1] + s * oj[1]), float(c * o[2] + s * oj[2]), float(c * o[3] + s * oj[3])};
+    };
+    const auto table = sa2::hopf_table(layout, centre);
+    std::array<std::array<double, 3>, SA2_HOPF_RINGS> mean{};
+    for (uint32_t cell = 0; cell < 600; ++cell)
+        for (int i = 0; i < 3; ++i) mean[layout.ring_of[cell]][i] += table[cell * 4 + 3][i] / 30.0;
+    const auto length = [](const std::array<double, 3>& a) { return std::sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); };
+    const std::multiset<double> expected = {0, 41.81, 41.81, 41.81, 70.53, 70.53, 70.53, 70.53, 70.53, 70.53, 109.47, 109.47, 109.47,
+                                            109.47, 109.47, 109.47, 138.19, 138.19, 138.19, 180};
+    for (size_t a = 0; a < SA2_HOPF_RINGS; ++a) {
+        expect(std::abs(length(mean[a]) - 0.28 * 8.063) < 1e-3, "a ring's centre is not at the base radius");
+        std::multiset<double> angles;
+        for (size_t b = 0; b < SA2_HOPF_RINGS; ++b) {
+            const double cosine = (mean[a][0] * mean[b][0] + mean[a][1] * mean[b][1] + mean[a][2] * mean[b][2]) / (length(mean[a]) * length(mean[b]));
+            angles.insert(std::round(std::acos(std::clamp(cosine, -1.0, 1.0)) * 180 / 3.14159265358979323846 * 100) / 100);
+        }
+        expect(angles == expected, "the ring centres are not a dodecahedron's vertices");
+    }
+    // B22: the ring sheet puts each cell's own centre at its row and column, 20 rows of 30 distinct places.
+    std::set<std::pair<long, long>> places;
+    for (uint32_t cell = 0; cell < 600; ++cell) {
+        const auto c = centre(cell);
+        const size_t at = sa2::HopfSheetRow + cell * 4;
+        double placed[3];
+        for (int row = 0; row < 3; ++row)
+            placed[row] = table[at + row][0] * c[0] + table[at + row][1] * c[1] + table[at + row][2] * c[2] + table[at + row][3] * c[3] + table[at + 3][row];
+        const double column = layout.half_step[cell] / 2.0 - 14.75, row = double(layout.ring_of[cell]) - 9.5;
+        expect(std::abs(placed[0] - 0.6 * 0.68 * column) < 1e-4 && std::abs(placed[1] + 0.6 * 0.57 * row) < 1e-4 && std::abs(placed[2]) < 1e-4,
+               "a cell's centre is not at its place on the ring sheet");
+        places.insert({std::lround(placed[0] * 1000), std::lround(placed[1] * 1000)});
+    }
+    expect(places.size() == 600, "two cells share a place on the ring sheet");
+}
+
+// B22: the ring sheet named before any rings, on a fresh context: the core builds the Hopf table for the sheet too.
+// It once did not, and the shaders read t18 past another buffer (DXGI_ERROR_DEVICE_HUNG on the owner's GPU).
+std::vector<uint32_t> product_sheet_first(const Options& options, const sa2_view_layout& layout) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    auto sheet = layout;
+    sheet.kind = SA2_LAYOUT_RING_SHEET;
+    api(ctx, sa2_view_layout_set(ctx, 1, &sheet));
+    PoseFrames frames{harness};
+    const auto flat = frames.draw(1, 1, 0, double_rotation(0, 3, 0, 1, 2, 0));
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+    return flat;
+}
+
+void product_hopf(const Options& options) {
+    const auto layout = hopf_layout(options.hopf);
+    const auto sheet_first = product_sheet_first(options, layout);
+    hopf_dodecahedron(layout);
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    expect(sa2_view_layout_set(nullptr, 1, nullptr) == SA2_E_INVALID_ARGUMENT, "a layout was set without a context");
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    const Rows I = double_rotation(0, 3, 0, 1, 2, 0), turned = double_rotation(0, 2, 0.6, 1, 3, 0);
+    const auto unset = frames.draw(1, 1, 0, I);
+    sa2_view_layout chain{};
+    chain.struct_size = sizeof(chain);
+    chain.kind = SA2_LAYOUT_CHAIN;
+    api(ctx, sa2_view_layout_set(ctx, 1, &chain));
+    expect(frames.draw(1, 1, 0, I) == unset, "the chain layout does not draw byte-identically to no call");
+    for (int field = 0; field < 7; ++field) {
+        auto bad = layout;
+        switch (field) {
+        case 0: bad.struct_size = 1500; break;
+        case 1: bad.kind = 3; break;
+        case 2: bad.ring_of[0] = 20; break;
+        case 3: bad.half_step[0] = uint8_t((bad.half_step[0] + 1) % 60); break;
+        case 4: for (int i = 0; i < 4; ++i) std::swap(bad.origins[i], bad.origins[4 + i]); break;
+        case 5: bad.j[1] += 0.5f; break;
+        default: bad.k[0] = std::numeric_limits<float>::quiet_NaN(); break;
+        }
+        expect(sa2_view_layout_set(ctx, 1, &bad) == SA2_E_INVALID_ARGUMENT, "malformed or unfitting Hopf rings were accepted");
+    }
+    expect(frames.draw(1, 1, 0, I) == unset, "a refused layout changed the frames");
+    api(ctx, sa2_view_layout_set(ctx, 1, &layout));
+    const auto rings = frames.draw(1, 1, 0, I);
+    const auto background = unset[0];
+    uint64_t covered = 0;
+    int left = int(harness.width), right = -1, top = int(harness.height), bottom = -1;
+    for (uint32_t y = 0; y < harness.height; ++y)
+        for (uint32_t x = 0; x < harness.width; ++x)
+            if (rings[size_t(y) * harness.width + x] != background) {
+                ++covered;
+                left = std::min(left, int(x)); right = std::max(right, int(x)); top = std::min(top, int(y)); bottom = std::max(bottom, int(y));
+            }
+    std::cout << "hopf rings: " << uint64_t(harness.width) * harness.height << " pixels; covered " << covered << "; x " << left << ".."
+              << right << ", y " << top << ".." << bottom << std::endl;
+    expect(rings != unset && covered > 0, "the Hopf rings changed nothing");
+    expect(left < int(harness.width) / 2 && right > int(harness.width) / 2 && top < int(harness.height) / 2 && bottom > int(harness.height) / 2,
+           "the Hopf rings are not around the picture's centre");
+    expect(frames.draw(1, 1, 0, turned) != rings, "the camera did not turn the Hopf rings");
+    expect(frames.draw(1, 2, 0, I) == unset, "another view drew with view 1's layout");
+    api(ctx, sa2_view_layout_set(ctx, 3, &layout));
+    expect(frames.draw(1, 3, 0, I) == rings, "the same rings on another view drew another picture");
+    // B22: the ring sheet draws another picture, around the centre, which the camera does not turn.
+    auto sheet = layout;
+    sheet.kind = SA2_LAYOUT_RING_SHEET;
+    api(ctx, sa2_view_layout_set(ctx, 1, &sheet));
+    const auto flat = frames.draw(1, 1, 0, I);
+    uint64_t sheet_covered = 0;
+    int sheet_left = int(harness.width), sheet_right = -1, sheet_top = int(harness.height), sheet_bottom = -1;
+    for (uint32_t y = 0; y < harness.height; ++y)
+        for (uint32_t x = 0; x < harness.width; ++x)
+            if (flat[size_t(y) * harness.width + x] != background) {
+                ++sheet_covered;
+                sheet_left = std::min(sheet_left, int(x)); sheet_right = std::max(sheet_right, int(x));
+                sheet_top = std::min(sheet_top, int(y)); sheet_bottom = std::max(sheet_bottom, int(y));
+            }
+    std::cout << "ring sheet: covered " << sheet_covered << "; x " << sheet_left << ".." << sheet_right << ", y " << sheet_top << ".."
+              << sheet_bottom << std::endl;
+    expect(flat != rings && flat != unset && sheet_covered > 0, "the ring sheet drew the rings or nothing");
+    expect(sheet_left < int(harness.width) / 2 && sheet_right > int(harness.width) / 2 && sheet_top < int(harness.height) / 2
+               && sheet_bottom > int(harness.height) / 2, "the ring sheet is not around the picture's centre");
+    expect(frames.draw(1, 1, 0, turned) == flat, "the camera turned the ring sheet");
+    expect(frames.draw(1, 3, 0, I) == rings, "the ring sheet on view 1 changed view 3's rings");
+    expect(flat == sheet_first, "the ring sheet named before any rings drew another picture");
+    // B22 rest (ADR-D02.10): under a chart Global draws no sweep. A transform at phase 0 turns the chain's moving
+    // pieces (view 2) but leaves the sheet (view 1) and the rings (view 3) as they were.
+    {
+        const float u[4] = {1, 0, 0, 0}, v[4] = {0, 1, 0, 0};
+        std::vector<uint8_t> mask(SA2_PIECES);
+        for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) mask[piece] = uint8_t(piece % 2 == 0);
+        api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, mask.data(), 0.0f));
+        expect(frames.draw(1, 1, 0, I) == flat, "the ring sheet drew a sweep");
+        expect(frames.draw(1, 3, 0, I) == rings, "the Hopf rings drew a sweep");
+        expect(frames.draw(1, 2, 0, I) != unset, "the chain did not draw the sweep");
+        api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, nullptr, 0.0f));
+        expect(frames.draw(1, 2, 0, I) == unset, "a cleared transform still turned the chain");
+        std::cout << "ring sheet and rings: no sweep under a transform; the chain turned" << std::endl;
+    }
+    if (!options.out.empty()) {
+        std::ofstream file(options.out.parent_path() / "warp-sheet.ppm", std::ios::binary);
+        file << "P6\n" << harness.width << " " << harness.height << "\n255\n";
+        for (uint32_t pixel : flat) {
+            const char rgb[3] = {char(pixel & 0xff), char((pixel >> 8) & 0xff), char((pixel >> 16) & 0xff)};
+            file.write(rgb, 3);
+        }
+    }
+    api(ctx, sa2_view_layout_set(ctx, 1, nullptr));
+    expect(frames.draw(1, 1, 0, I) == unset, "a NULL layout did not restore the chain");
+    if (!options.out.empty()) {
+        std::ofstream file(options.out.parent_path() / "warp-hopf.ppm", std::ios::binary);
+        file << "P6\n" << harness.width << " " << harness.height << "\n255\n";
+        for (uint32_t pixel : rings) {
+            const char rgb[3] = {char(pixel & 0xff), char((pixel >> 8) & 0xff), char((pixel >> 16) & 0xff)};
+            file.write(rgb, 3);
+        }
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_view_layout_set(ctx, 1, &layout) == SA2_E_WRONG_STATE, "a layout was set without a loaded scene");
+    harness.finish(options.debug);
+}
+
+// ADR-D02 B20's WARP check (--warp --slice): the cut slice. The even pieces are the inside layer. With shrink 1 and the
+// whole shell, the outside copy draws what a set of the odd pieces draws (at most 1% of the covered pixels differ by
+// more than 2), the inside copy covers only part of what a set of the even pieces covers and nothing else, and the
+// two copies together cover exactly the pixels the unsplit slice covers. A smaller shrink and a narrower shell cover
+// less. A ghost slot claims the transform: in a composite frame its pane turns the inside pieces and the other pane
+// draws exactly as without a transform.
+void product_slice(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    const auto pieces = sa2::scene_slot_pieces();
+    std::vector<uint8_t> all(SA2_SLOTS, 1), even(SA2_SLOTS, 0), odd(SA2_SLOTS, 0), inside(SA2_PIECES, 0);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) { even[slot] = uint8_t(pieces[slot] % 2 == 0); odd[slot] = uint8_t(pieces[slot] % 2 == 1); }
+    for (uint32_t piece = 0; piece < SA2_PIECES; piece += 2) inside[piece] = 1;
+    const auto set_all = pose_set(harness, 1, all), set_even = pose_set(harness, 2, even), set_odd = pose_set(harness, 3, odd);
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const auto plain = frames.draw(1, 1, set_all, Q);
+    const auto only_odd = frames.draw(1, 3, set_odd, Q), only_even = frames.draw(1, 2, set_even, Q);
+    const auto background = plain[0];
+    const auto covered = [&](const std::vector<uint32_t>& image) {
+        return uint64_t(std::count_if(image.begin(), image.end(), [&](uint32_t pixel) { return pixel != background; }));
+    };
+    const auto differing = [](const std::vector<uint32_t>& x, const std::vector<uint32_t>& y) {
+        uint64_t count = 0;
+        for (size_t i = 0; i < x.size(); ++i)
+            for (int shift = 0; shift < 32; shift += 8)
+                if (std::abs(int((x[i] >> shift) & 0xff) - int((y[i] >> shift) & 0xff)) > 2) { ++count; break; }
+        return count;
+    };
+    api(ctx, sa2_style_set(ctx, 1, inside.data(), SA2_STYLE_CHANNEL_SLICE));
+    expect(frames.draw(1, 1, set_all, Q) == plain, "a slice channel without a slice slot changed the frame");
+    sa2_view_style style{};
+    style.struct_size = sizeof(style);
+    const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    std::copy(std::begin(identity), std::end(identity), std::begin(style.matrix));
+    style.slice_mode = SA2_SLICE_BOTH; style.slice_shrink = 1.0f; style.shell_min = 0.0f; style.shell_max = 3.14159265f;
+    const auto drawn = [&](uint32_t mode, float shrink, float shell_max, uint64_t view, uint64_t set) {
+        auto s = style; s.slice_mode = mode; s.slice_shrink = shrink; s.shell_max = shell_max;
+        api(ctx, sa2_view_style_set(ctx, 1, &s));
+        return frames.draw(1, view, set, Q);
+    };
+    const auto both = drawn(SA2_SLICE_BOTH, 1.0f, 3.14159265f, 1, set_all);
+    const auto outside = drawn(SA2_SLICE_OUTSIDE, 1.0f, 3.14159265f, 1, set_all);
+    const auto inner = drawn(SA2_SLICE_INSIDE, 1.0f, 3.14159265f, 1, set_all);
+    const auto shrunk = drawn(SA2_SLICE_BOTH, 0.6f, 3.14159265f, 1, set_all);
+    uint64_t outside_band = 0, union_miss = 0, union_extra = 0;
+    for (size_t i = 0; i < plain.size(); ++i) {
+        const bool b = both[i] != background, o = outside[i] != background, n = inner[i] != background;
+        outside_band += n && only_even[i] == background;
+        union_miss += b && !o && !n;
+        union_extra += !b && (o || n);
+    }
+    const auto c_both = covered(both), c_inner = covered(inner), c_even = covered(only_even), c_shrunk = covered(shrunk);
+    const auto apart = differing(outside, only_odd);
+    std::cout << "slice: covered " << c_both << " (inside outlines " << c_inner << " of " << c_even << ", shrink 0.6 " << c_shrunk
+              << "); outside vs the odd set differ at " << apart << "; union misses " << union_miss << ", extra " << union_extra << '\n' << std::flush;
+    expect(c_both >= uint64_t(harness.width) * harness.height / 20, "a slice-check frame covers less than 5% of the target");
+    expect(apart * 100 <= covered(only_odd), "the outside layer is not drawn filled as the odd set (over 1% differ)");
+    expect(outside_band == 0, "the inside layer covered a pixel the even set does not");
+    // Small stickers keep most of their pixels in the band; what shows through the holes differs from the filled set.
+    const auto holes = differing(inner, only_even);
+    std::cout << "slice: the inside layer differs from the filled even set at " << holes << '\n' << std::flush;
+    expect(c_inner * 10 >= c_even && holes * 10 >= c_even, "the inside layer is not drawn as outlines only (under 10% show through)");
+    expect(union_miss == 0 && union_extra == 0, "the split copies together do not cover what the unsplit slice covers");
+    expect(c_shrunk < c_both, "a smaller inside shrink did not cover less");
+    // The radius shell about a focus pole (cell 150): a narrower shell draws fewer pixels, never none.
+    sa2_view_focus focus{sizeof(sa2_view_focus), SA2_PROJECTION_ORTHOGRAPHIC, 150, -1.0f, 1.0f, 0};
+    api(ctx, sa2_view_focus_set(ctx, 1, &focus));
+    const auto wide = covered(drawn(SA2_SLICE_BOTH, 1.0f, 3.14159265f, 1, set_all));
+    const auto narrow = covered(drawn(SA2_SLICE_BOTH, 1.0f, 0.6f, 1, set_all));
+    std::cout << "slice shell: whole " << wide << ", within 0.6 rad " << narrow << '\n' << std::flush;
+    expect(narrow > 0 && narrow < wide, "a narrower radius shell did not draw less");
+    api(ctx, sa2_view_focus_set(ctx, 1, nullptr));
+    // The hardware timeout's check (26 November 2026): the product's Local on view 2, local-view.json's shape at Local's
+    // zoom for this target (ShellLocal.Zoom: 4.507 at 16:9) with the orthographic focus on the default cap 0 (cos
+    // 121/125, spread 1.7), drawn by the cap test and by the slice's default (0..0.6 rad) and whole shells, then the
+    // whole shell in perspective at the ABI's nearest eye (d4 1.02). Each frame's clipped triangles and pixel-shader
+    // invocations (the newest harvested frame's pipeline statistics) are its raster work.
+    {
+        using Newest = void (*)(uint64_t*);
+        const auto newest = reinterpret_cast<Newest>(reinterpret_cast<void*>(
+            GetProcAddress(GetModuleHandleW(L"sa2_interop.dll"), "sa2_test_frame_statistics")));
+        expect(newest != nullptr, "sa2_interop.dll has no sa2_test_frame_statistics");
+        const auto reports = [&] {
+            sa2_frame_report rows[16]{};
+            for (auto& row : rows) row.struct_size = sizeof(row);
+            uint32_t count = 0;
+            api(ctx, sa2_frame_reports(ctx, rows, 16, &count));
+        };
+        const auto measure = [&](const char* what, const sa2_view_style* slot1) {
+            api(ctx, sa2_view_style_set(ctx, 1, slot1));
+            reports();
+            frames.draw(1, 2, 0, Q); // no resource set: every slot drawn
+            reports();
+            uint64_t s[4]{}; // frame, vertex evaluations, clipped triangles, pixel-shader invocations
+            newest(s);
+            expect(s[0] == frames.frame, "the newest harvested frame is not the measured one");
+            std::cout << "slice raster: " << what << ": " << s[2] << " triangles, " << s[3] << " pixel invocations ("
+                      << double(s[3]) / (double(harness.width) * harness.height) << " targets)\n" << std::flush;
+            return std::pair<uint64_t, uint64_t>{s[2], s[3]};
+        };
+        const sa2_view_shape local{sizeof(sa2_view_shape), 0.7f, 0.6f, 2.0f, 4.507f, 0};
+        api(ctx, sa2_view_shape_set(ctx, 2, &local));
+        const sa2_view_focus cap0{sizeof(sa2_view_focus), SA2_PROJECTION_ORTHOGRAPHIC, 0, 121.0f / 125.0f, 1.7f, 0};
+        api(ctx, sa2_view_focus_set(ctx, 2, &cap0));
+        auto slice = style; slice.slice_shrink = 0.6f; slice.shell_max = 0.6f;
+        auto whole = slice; whole.shell_max = 3.14159265f;
+        const auto by_cap = measure("Local, cap test", nullptr);
+        const auto by_shell = measure("Local, slice 0..0.6 rad", &slice);
+        const auto by_whole = measure("Local, slice whole shell", &whole);
+        const sa2_view_shape near_eye{sizeof(sa2_view_shape), 0.7f, 0.6f, 1.02f, 4.507f, 0};
+        api(ctx, sa2_view_shape_set(ctx, 2, &near_eye));
+        auto perspective = cap0; perspective.projection = SA2_PROJECTION_PERSPECTIVE;
+        api(ctx, sa2_view_focus_set(ctx, 2, &perspective));
+        const auto by_near = measure("Local perspective d4 1.02, slice whole shell", &whole);
+        api(ctx, sa2_view_focus_set(ctx, 2, nullptr));
+        api(ctx, sa2_view_shape_set(ctx, 2, nullptr));
+        api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+        // Measured on WARP on 26 November 2026 at 640 x 360: the cap test 105,216 triangles and 0.87 targets of pixel
+        // work, the default shell 321,547 and 2.65, the whole shell 4,575,204 and 37.1, the near eye 3,590,931 and 46.3.
+        // A slice's raster work is bounded as the whole puzzle's is (the 2-second limit lies orders of magnitude above).
+        const uint64_t target = uint64_t(harness.width) * harness.height;
+        expect(by_cap.first < by_shell.first && by_shell.first < by_whole.first, "a wider shell did not draw more triangles");
+        expect(by_shell.second <= 8 * target, "the default shell's pixel work exceeds 8 targets");
+        expect(by_whole.second <= 64 * target && by_near.second <= 64 * target, "a whole shell's pixel work exceeds 64 targets");
+        expect(by_whole.first <= 5000000 && by_near.first <= 5000000, "a whole shell drew more than 5,000,000 triangles");
+    }
+    // A ghost slot claims the transform: pane 1 (slot 1, no slice) stays unturned; pane 2 (slot 2, a ghost) turns.
+    sa2_view_style none{};
+    none.struct_size = sizeof(none);
+    std::copy(std::begin(identity), std::end(identity), std::begin(none.matrix));
+    api(ctx, sa2_view_style_set(ctx, 1, &none));
+    auto ghost = style; ghost.ghost[0] = 0.9f; ghost.ghost[1] = 0.9f; ghost.ghost[2] = 1.0f; ghost.ghost[3] = 0.5f;
+    api(ctx, sa2_view_style_set(ctx, 2, &ghost));
+    const auto paned = [&] {
+        auto left = panes_check::make(1, set_all, 0, 0, 320, 360, Q), right = panes_check::make(1, set_all, 320, 0, 320, 360, Q);
+        left.style = 1; right.style = 2;
+        return frames.draw_panes(1, {left, right});
+    };
+    const auto still = paned();
+    const float u[4] = {1, 0, 0, 0}, v[4] = {0, 1, 0, 0};
+    api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, inside.data(), 0.0f));
+    const auto turned = paned();
+    api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, nullptr, 1.0f));
+    uint64_t left_moved = 0, right_moved = 0, right_cover = 0;
+    for (uint32_t y = 0; y < 360; ++y)
+        for (uint32_t x = 0; x < 640; ++x) {
+            const size_t i = size_t(y) * harness.width + x;
+            (x < 320 ? left_moved : right_moved) += turned[i] != still[i];
+            right_cover += x >= 320 && still[i] != background;
+        }
+    std::cout << "slice ghost: the plain pane changed at " << left_moved << ", the ghost pane at " << right_moved << " of " << right_cover << '\n' << std::flush;
+    expect(left_moved == 0, "a pane without the ghost turned the moving pieces");
+    expect(right_moved * 20 >= right_cover, "the ghost pane did not turn its inside pieces (under 5% of its covered pixels)");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+// ADR-D01.49/.52: the colour and background exports, with the product fixture on WARP.
+void product_colours(const Options& options) {
+    using namespace panes_check;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    load(harness, Side, Side);
+    auto* ctx = harness.ctx;
+    const auto set = pickable_set(harness, 1, 1);
+    const Rows q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    PoseFrames frames{harness};
+    const auto draw = [&] { return frames.draw(1, 1, set, q); };
+
+    constexpr uint32_t default_background = 0xff292521, green_background = 0xff00ff00;
+    const auto original = draw();
+    expect(original[0] == default_background, "the no-call clear colour is not today's RGBA8 value");
+    const auto [x, y] = covered_point(original);
+    const auto ids = [&] {
+        const auto sticker = pick(harness, frames.frame, x, y), background = pick(harness, frames.frame, 0, 0);
+        expect(sticker.state == SA2_PICK_READY && background.state == SA2_PICK_READY, "a colour-check pick was not ready");
+        return std::array{sticker.instance, background.instance};
+    };
+    const auto original_ids = ids();
+    expect(original_ids[0] > 0 && original_ids[0] <= SA2_SLOTS && original_ids[1] == 0, "the fixture needs a sticker and background pick");
+    const uint32_t home = (original_ids[0] - 1) / sb::Stickers;
+
+    const std::vector<uint8_t> fill(SA2_PIECES, 1);
+    sa2_view_style tint{};
+    tint.struct_size = sizeof(tint);
+    tint.tint_mode = SA2_STYLE_TINT_FILL;
+    tint.matrix[0] = tint.matrix[4] = tint.matrix[8] = 1.0f;
+    tint.palette[6] = 1.0f; // index 1 is blue at half strength
+    tint.palette[7] = 0.5f;
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    api(ctx, sa2_view_style_set(ctx, 1, &tint));
+    const auto original_styled = draw();
+    expect(original_styled != original && ids() == original_ids, "the tint fixture did not draw or changed the IDs");
+    api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+
+    api(ctx, sa2_sticker_colours_set(ctx, nullptr, 0));
+    expect(draw() == original, "a NULL table changed the default frame");
+    api(ctx, sa2_scene_look_set(ctx, nullptr));
+    expect(draw() == original, "a NULL scene look changed the default frame");
+    sa2_scene_look look{sizeof(sa2_scene_look), 0, {0.13f, 0.145f, 0.16f, 1.0f}, 0.2f, 0.4f, 0.6f, 0.8f};
+    api(ctx, sa2_scene_look_set(ctx, &look));
+    expect(draw() == original, "today's background with carried values changed the default frame");
+
+    // Isolate the chosen home class in the left pane and put every other class in the right pane. Every changed
+    // pixel then has an independent class/coverage check, including when the two sets would occlude each other.
+    std::vector<uint8_t> chosen(SA2_SLOTS), rest(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) {
+        chosen[slot] = uint8_t(slot / sb::Stickers == home);
+        rest[slot] = uint8_t(!chosen[slot]);
+    }
+    const auto one = pose_set(harness, 2, chosen), other = pose_set(harness, 3, rest);
+    const std::vector<sa2_pane> panes{
+        make(2, one, 0, 0, Side / 2, Side, q), make(3, other, Side / 2, 0, Side / 2, Side, q),
+    };
+    std::array<float, SA2_STICKER_CLASSES * 3> table{};
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    const auto pane_base = frames.draw_panes(1, panes);
+    table[3 * home] = 1.0f;
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    const auto pane_colours = frames.draw_panes(1, panes);
+    size_t recoloured = 0, other_class = 0;
+    for (size_t i = 0; i < pane_base.size(); ++i) {
+        const bool left = i % Side < Side / 2;
+        const bool covered = pane_base[i] != default_background;
+        const bool changed = pane_base[i] != pane_colours[i];
+        expect(changed == (left && covered), "the palette changed a pixel outside its class or missed one inside it");
+        if (changed) expect((pane_colours[i] & 0xffffff) == (pane_colours[i] & 0xff) && (pane_colours[i] & 0xff) > 0,
+                           "a recoloured sticker did not draw red");
+        recoloured += changed;
+        other_class += covered && !left;
+    }
+    expect(recoloured > 0 && other_class > 0, "both panes must show stickers");
+
+    const auto colours = draw();
+    look.background[0] = look.background[2] = 0.0f;
+    look.background[1] = 1.0f;
+    api(ctx, sa2_scene_look_set(ctx, &look));
+    const auto backdrop = draw();
+    expect(ids() == original_ids, "the table and scene look changed the product IDs");
+    const auto compare_background = [&](const auto& from, const auto& to) {
+        size_t changed = 0;
+        for (size_t i = 0; i < from.size(); ++i) {
+            const bool clear = from[i] == default_background;
+            expect(to[i] == (clear ? green_background : from[i]), "only the old background pixels should change to the new clear");
+            changed += clear;
+        }
+        expect(changed > 0 && changed < from.size(), "the fixture needs background and sticker pixels");
+        return changed;
+    };
+    const auto cleared = compare_background(colours, backdrop);
+    const auto pane_cleared = compare_background(pane_colours, frames.draw_panes(1, panes));
+
+    const auto refused = [](int32_t code) { expect(code == SA2_E_INVALID_ARGUMENT, "an invalid colour or scene look was accepted"); };
+    auto bad_table = table;
+    bad_table[3 * home] = 0.25f;
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES - 1));
+    bad_table.back() = std::numeric_limits<float>::quiet_NaN();
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES));
+    bad_table.back() = 1.5f;
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES));
+    auto bad_look = look;
+    bad_look.background[0] = 1.0f;
+    bad_look.struct_size -= uint32_t(sizeof(float));
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    bad_look.struct_size = sizeof(bad_look);
+    bad_look.fog = std::numeric_limits<float>::quiet_NaN();
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    bad_look.fog = 1.5f;
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    expect(draw() == backdrop, "an invalid argument changed the installed table or background");
+
+    api(ctx, sa2_view_style_set(ctx, 1, &tint));
+    const auto styled = draw();
+    expect(ids() == original_ids, "the table and scene look changed the styled IDs");
+    size_t tinted = 0, tinted_red = 0;
+    for (size_t i = 0; i < backdrop.size(); ++i) {
+        if (backdrop[i] == green_background) {
+            expect(styled[i] == green_background, "the tint changed the background");
+            continue;
+        }
+        const int base_red = int(backdrop[i] & 0xff), red = int(styled[i] & 0xff), blue = int(styled[i] >> 16 & 0xff);
+        expect(blue > 0 && !(styled[i] & 0xff00) && std::abs(2 * red - base_red) <= 1,
+               "the half-strength blue tint did not mix with the shaded base colour");
+        if (base_red > 0) expect(std::abs(red - blue) <= 1, "the tint and sticker colour are shaded differently");
+        tinted_red += base_red > 0;
+        tinted += styled[i] != backdrop[i];
+    }
+    expect(tinted > 0 && tinted_red > 0, "the styled frame needs tinted pixels in the recoloured class");
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), 0));
+    api(ctx, sa2_scene_look_set(ctx, nullptr));
+    expect(draw() == original_styled, "clearing both exports did not restore the styled frame bytes");
+
+    // ADR-D02 B33: the table and the scene look are scene state, not revision state. Every new head the shell adopts (a
+    // twist, a fixture load, jumble.on/off, a state switch) reaches the core as sa2_engine_adopt, which drops only the
+    // revision-bound piece style, transform and chart channel, so the next revision draws the same recoloured bytes on
+    // the same background without a resend. The tint and its piece style are cleared first: those are revision-bound.
+    api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+    api(ctx, sa2_style_set(ctx, 1, nullptr, SA2_STYLE_CHANNEL_FILL));
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    api(ctx, sa2_scene_look_set(ctx, &look));
+    const auto before = draw();
+    expect(before[0] == green_background && before != original, "the table and scene look did not draw before the adoption");
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image next{};
+    next.struct_size = sizeof(next);
+    next.revision = 2; // the same labels, a new revision
+    next.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &next, &adopted));
+    expect(adopted == 2, "the next revision was not adopted");
+    expect(frames.draw(2, 1, set, q) == before, "an adoption dropped the sticker table or the scene look");
+    std::cout << "scene colours: kept across an adoption (revision 2 draws revision 1's recoloured, green-backed bytes)" << std::endl;
+    std::cout << "scene colours: " << recoloured << " palette pixels (0 outside class " << home << "), " << cleared
+              << " background pixels, " << pane_cleared << " pane background pixels, " << tinted << " tint pixels ("
+              << tinted_red << " over the recoloured class)" << std::endl;
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+void run_error(Suite& suite, const Options& options) {
+    suite.check("error overlay warp", [&] {
+        using namespace panes_check;
+        Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+        constexpr uint32_t side = SA2_MIN_TEXTURE_PX;
+        load(harness, side, side);
+        auto* ctx = harness.ctx;
+        const auto set = pickable_set(harness, 1, 1);
+        const auto pieces = sa2::scene_slot_pieces();
+        const auto q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+        PoseFrames frames{harness};
+        const auto draw = [&] { return frames.draw(1, 1, set, q); };
+        const auto base = draw();
+        const auto base_frame = frames.frame;
+        const auto instance = [&](uint64_t frame, size_t i) {
+            const auto row = pick(harness, frame, uint32_t(i % side), uint32_t(i / side));
+            expect(row.state == SA2_PICK_READY && row.instance <= SA2_SLOTS, "the error overlay pick did not answer");
+            return row.instance;
+        };
+        // SV_Position is at the pixel centre: (x + 0.5) + (y + 0.5).
+        const auto hatch = [](size_t i) { return ((i % side + i / side + 1) % 8) < 4; };
+        std::vector<uint8_t> outline(SA2_PIECES, 0);
+        std::array<size_t, 2> sample{base.size(), base.size()};
+        size_t named = 0;
+        for (size_t i = 0; i < base.size() && named < sample.size(); ++i) {
+            const size_t phase = hatch(i);
+            if (base[i] == base[0] || base[i] == 0xffffffff || sample[phase] != base.size()) continue;
+            const auto id = instance(base_frame, i);
+            if (id == 0 || outline[pieces[id - 1]] != 0) continue;
+            outline[pieces[id - 1]] = SA2_STYLE_ERROR;
+            sample[phase] = i;
+            ++named;
+        }
+        expect(named == sample.size(), "the fixture needs distinct visible pieces on both hatch phases");
+
+        sa2_view_style style{};
+        style.struct_size = sizeof(style);
+        style.tint_mode = SA2_STYLE_TINT_OUTLINE; // zero band width isolates the hatch
+        style.matrix[0] = style.matrix[4] = style.matrix[8] = 1;
+        style.palette[0] = style.palette[1] = style.palette[2] = style.palette[3] = 1;
+        api(ctx, sa2_view_style_set(ctx, 1, &style));
+        expect(draw() == base, "entry 0 changed the frame with no error bit");
+        style.palette[3] = 0;
+        api(ctx, sa2_view_style_set(ctx, 1, &style));
+        api(ctx, sa2_style_set(ctx, 1, outline.data(), SA2_STYLE_CHANNEL_OUTLINE));
+        expect(draw() == base, "an error bit with entry 0's alpha zero changed the frame");
+        style.palette[3] = 1;
+        api(ctx, sa2_view_style_set(ctx, 1, &style));
+        const auto painted = draw();
+        const auto painted_frame = frames.frame;
+        expect(painted[sample[0]] == base[sample[0]] && painted[sample[1]] == 0xffffffff,
+            "the named pieces did not have both hatch-on and hatch-off pixels");
+        size_t changed = 0;
+        for (size_t i = 0; i < base.size(); ++i) {
+            if (painted[i] == base[i]) continue;
+            ++changed;
+            const auto id = instance(painted_frame, i);
+            expect(id != 0 && outline[pieces[id - 1]] != 0, "the hatch changed a pixel outside its named pieces");
+            expect(id == instance(base_frame, i), "the hatch changed a pixel's ID");
+            expect(hatch(i), "the hatch painted a pixel in the gap between stripes");
+        }
+        std::cout << "error overlay: " << changed << " changed pixels on " << named << " named pieces" << std::endl;
+        api(ctx, sa2_drain(ctx, harness.wait));
+        api(ctx, sa2_scene_unload(ctx));
+        harness.finish(options.debug);
+    });
+}
+
+void run_colours(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the scene colours check runs on WARP only");
+    suite.check("scene colours warp", [&] { product_colours(options); });
+}
+
+// ADR-D02 B18: --warp --sweep. Only WARP; parse refuses any other mode.
+void run_sweep(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the transform check runs on WARP only");
+    suite.check("transform warp", [&] { product_sweep(options); });
+    suite.check("transform picks warp", [&] { product_sweep_picks(options); });
+}
+// ADR-D02 B20: --warp --slice. Only WARP; parse refuses any other mode.
+void run_slice(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the slice check runs on WARP only");
+    suite.check("slice warp", [&] { product_slice(options); });
+}
+
+// ADR-D02 B21's WARP check (--warp --raw): the raw view on view 2 at focus cell 150, each frame one pane. A frame's
+// clipped triangles (the newest harvested frame's pipeline statistics) count its drawn stickers' triangles exactly,
+// since every chart here fits the target and no triangle is cut by the frustum.
+void product_raw(const Options& options) {
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image image{};
+    image.struct_size = sizeof(image);
+    image.revision = 1;
+    image.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &image, &adopted));
+    PoseFrames frames{harness};
+    using Newest = void (*)(uint64_t*);
+    const auto newest = reinterpret_cast<Newest>(reinterpret_cast<void*>(
+        GetProcAddress(GetModuleHandleW(L"sa2_interop.dll"), "sa2_test_frame_statistics")));
+    expect(newest != nullptr, "sa2_interop.dll has no sa2_test_frame_statistics");
+    const auto reports = [&] {
+        sa2_frame_report rows[16]{};
+        for (auto& row : rows) row.struct_size = sizeof(row);
+        uint32_t count = 0;
+        api(ctx, sa2_frame_reports(ctx, rows, 16, &count));
+    };
+    std::vector<uint32_t> last;
+    const auto triangles = [&](const Rows& camera, uint32_t flags) {
+        sa2_pane pane{};
+        pane.view = 2; pane.view_generation = 1; pane.resource_set = 0;
+        pane.width = harness.width; pane.height = harness.height;
+        for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) pane.camera_matrix[c * 4 + r] = float(camera[r * 4 + c]);
+        pane.flags = flags;
+        reports();
+        last = frames.draw_panes(1, {pane});
+        reports();
+        uint64_t s[4]{};
+        newest(s);
+        expect(s[0] == frames.frame, "the newest harvested frame is not the measured one");
+        return s[2];
+    };
+    const auto focus = [&](uint32_t projection, uint32_t cell, float h) {
+        const sa2_view_focus f{sizeof(sa2_view_focus), projection, cell, h, 1.0f, 0};
+        return sa2_view_focus_set(ctx, 2, &f);
+    };
+    // Zoom 1.6: clip w is 5 - p.z, so even the h = 0 chart (radius about 2) stays inside the frustum.
+    const sa2_view_shape shape{sizeof(sa2_view_shape), 0.76f, 0.82f, 1.18f, 1.6f, 0};
+    api(ctx, sa2_view_shape_set(ctx, 2, &shape));
+    expect(focus(SA2_PROJECTION_STEREOGRAPHIC, SA2_FOCUS_NONE, 0.5f) == SA2_E_INVALID_ARGUMENT
+        && focus(SA2_PROJECTION_STEREOGRAPHIC, 150, -0.01f) == SA2_E_INVALID_ARGUMENT, "a raw view without a pole or past 90 degrees was taken");
+    const Rows I = double_rotation(0, 1, 0, 2, 3, 0);
+    api(ctx, focus(SA2_PROJECTION_ORTHOGRAPHIC, SA2_FOCUS_NONE, -1.0f));
+    const auto whole = triangles(I, 0);
+    expect(triangles(I, SA2_PANE_ANTIPODE) == whole, "the antipode flag changed a frame without the raw view");
+    // At h = 0 every sticker is drawn in exactly one of the two charts.
+    api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, 0.0f));
+    const auto near0 = triangles(I, 0), far0 = triangles(I, SA2_PANE_ANTIPODE);
+    std::cout << "raw: whole " << whole << " triangles; at h = 0 the chart draws " << near0 << " and the antipode chart " << far0 << '\n' << std::flush;
+    expect(near0 > 0 && far0 > 0 && near0 + far0 == whole, "at h = 0 the two charts together do not draw every sticker exactly once");
+    // Nothing draws past the clip: the raw chart draws exactly the stickers the cap test keeps at the same h.
+    for (const float h : {121.0f / 125.0f, 0.5f}) {
+        api(ctx, focus(SA2_PROJECTION_ORTHOGRAPHIC, 150, h));
+        const auto cap = triangles(I, 0);
+        api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, h));
+        const auto raw = triangles(I, 0), antipode = triangles(I, SA2_PANE_ANTIPODE);
+        std::cout << "raw: h " << h << ": the cap test draws " << cap << " triangles, the raw chart " << raw << ", the antipode chart "
+                  << antipode << '\n' << std::flush;
+        expect(cap > 0 && raw == cap, "the raw chart does not draw exactly the stickers inside its clip");
+        // The cells are symmetric under -I but their sticker triangulations are not exactly (at h 0.968: 103,500 and 102,652).
+        expect(antipode > 0 && std::max(antipode, raw) - std::min(antipode, raw) <= raw / 50, "the antipode chart does not draw about as many triangles as the chart");
+    }
+    // A rotation that keeps the pole (a twist of the named cap; here the camera's spin in the screen plane) turns each
+    // chart rigidly about its centre: the turned frame's covered pixels, turned back, land on the first frame's.
+    api(ctx, focus(SA2_PROJECTION_STEREOGRAPHIC, 150, 0.5f));
+    const Rows spun = double_rotation(0, 1, 0.6, 2, 3, 0);
+    for (const uint32_t flags : {0u, SA2_PANE_ANTIPODE}) {
+        triangles(I, flags);
+        const auto a = last;
+        triangles(spun, flags);
+        const auto b = last;
+        const auto background = a[0];
+        const int w = int(harness.width), h = int(harness.height);
+        uint64_t cover = 0, best = 0;
+        for (const double angle : {0.6, -0.6}) {
+            uint64_t seen = 0, match = 0;
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x) {
+                    if (b[size_t(y) * w + x] == background) continue;
+                    ++seen;
+                    const double dx = x + 0.5 - w / 2.0, dy = y + 0.5 - h / 2.0;
+                    const int ax = int(std::floor(w / 2.0 + dx * std::cos(angle) + dy * std::sin(angle)));
+                    const int ay = int(std::floor(h / 2.0 - dx * std::sin(angle) + dy * std::cos(angle)));
+                    bool hit = false;
+                    for (int oy = -1; oy <= 1 && !hit; ++oy)
+                        for (int ox = -1; ox <= 1 && !hit; ++ox) {
+                            const int px = ax + ox, py = ay + oy;
+                            hit = px >= 0 && py >= 0 && px < w && py < h && a[size_t(py) * w + px] != background;
+                        }
+                    match += hit ? 1 : 0;
+                }
+            cover = seen;
+            best = std::max(best, match);
+        }
+        std::cout << "raw: turned about the centre" << (flags ? " (antipode)" : "") << ": " << best << " of " << cover
+                  << " covered pixels land on covered pixels\n" << std::flush;
+        expect(cover > 1000 && best * 100 >= cover * 98, "a rotation that keeps the pole did not turn the chart rigidly about its centre");
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+// ADR-D02 B21: --warp --raw. Only WARP; parse refuses any other mode.
+void run_raw(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the raw view check runs on WARP only");
+    suite.check("raw view warp", [&] { product_raw(options); });
+}
+
+// ABI 10: --warp --hopf FILE. Only WARP; parse refuses any other mode.
+// ADR-D02 B22 item 1 (--warp --chart FILE): the chart channel on the ring sheet. Revision 2 poses every piece one place
+// along its ring (x -> x u, u = cos 12 deg + J sin 12 deg, which takes each cell centre to the next place of its ring).
+// Six sample home cells get their own colours. With the channel naming each slot's next cell, every sample sticker draws
+// inside the box in which the unposed sheet draws that next cell's own stickers (its chart's rectangle); with a wrong
+// channel (each slot's own cell) none stays inside; without a channel the Hopf-coordinate choice draws the same picture;
+// a chain view ignores the channel; an adoption drops it; malformed channels are refused and change nothing.
+void product_chart(const Options& options) {
+    const auto layout = hopf_layout(options.hopf);
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::array<uint32_t, 1200> at{}; // ring * 60 + half step: 20 rings of 60 half steps
+    std::array<uint32_t, 600> next{};
+    for (uint32_t c = 0; c < 600; ++c) at[layout.ring_of[c] * 60u + layout.half_step[c]] = c;
+    for (uint32_t c = 0; c < 600; ++c) next[c] = at[layout.ring_of[c] * 60u + (layout.half_step[c] + 2u) % 60u];
+    const double t = 12.0 * 3.14159265358979323846 / 180.0;
+    const double u[4] = {std::cos(t), std::sin(t) * layout.j[1], std::sin(t) * layout.j[2], std::sin(t) * layout.j[3]};
+    const auto qmul = [](const double* a, const double* b, double* out) {
+        out[0] = a[0]*b[0] - a[1]*b[1] - a[2]*b[2] - a[3]*b[3]; out[1] = a[0]*b[1] + a[1]*b[0] + a[2]*b[3] - a[3]*b[2];
+        out[2] = a[0]*b[2] - a[1]*b[3] + a[2]*b[0] + a[3]*b[1]; out[3] = a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + a[3]*b[0];
+    };
+    std::vector<float> identity(16, 0.0f), turn(16, 0.0f);
+    for (int k = 0; k < 4; ++k) {
+        identity[size_t(k) * 5] = 1.0f;
+        double e[4] = {0, 0, 0, 0}, column[4];
+        e[k] = 1.0;
+        qmul(e, u, column);
+        for (int r = 0; r < 4; ++r) turn[size_t(r) * 4 + k] = float(column[r]); // row-major, x' = M x
+    }
+    // Pose 0 is the identity on the lattice (index 0); revision 2 puts every piece at pose 1, the turn, off it.
+    const std::vector<int32_t> home(SA2_PIECES, 0), index(SA2_PIECES, 1), lattice{0, -1};
+    std::vector<float> both(identity);
+    both.insert(both.end(), turn.begin(), turn.end());
+    adopt_poses(harness, 1, home, identity, {0});
+    auto sheet = layout;
+    sheet.kind = SA2_LAYOUT_RING_SHEET;
+    api(ctx, sa2_view_layout_set(ctx, 1, &sheet));
+    const uint32_t samples[6] = {0, 101, 202, 303, 404, 505};
+    const uint32_t pattern[6] = {1, 2, 4, 3, 6, 5}; // R, G, B bits
+    const auto colours = [&](const std::array<uint32_t, 6>& cells) {
+        std::vector<float> table(size_t(SA2_STICKER_CLASSES) * 3, 0.5f);
+        for (int i = 0; i < 6; ++i)
+            for (int ch = 0; ch < 3; ++ch) table[size_t(cells[size_t(i)]) * 3 + ch] = (pattern[i] >> ch) & 1u ? 1.0f : 0.0f;
+        api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    };
+    std::array<uint32_t, 6> own{}, target{}, beyond{};
+    for (int i = 0; i < 6; ++i) { own[size_t(i)] = samples[i]; target[size_t(i)] = next[samples[i]]; beyond[size_t(i)] = next[next[samples[i]]]; }
+    PoseFrames frames{harness};
+    const Rows I = double_rotation(0, 3, 0, 1, 2, 0);
+    struct Region { uint64_t count = 0; int left = 1 << 30, right = -1, top = 1 << 30, bottom = -1; };
+    const auto regions = [&](const std::vector<uint32_t>& picture) {
+        std::array<Region, 6> out{};
+        for (uint32_t y = 0; y < harness.height; ++y)
+            for (uint32_t x = 0; x < harness.width; ++x) {
+                const uint32_t w = picture[size_t(y) * harness.width + x];
+                uint32_t bits = 0;
+                bool clear = true;
+                for (int ch = 0; ch < 3; ++ch) {
+                    const uint32_t v = (w >> (8 * ch)) & 0xFFu;
+                    if (v > 60) bits |= 1u << ch; else if (v > 10) clear = false;
+                }
+                if (!clear || bits == 0 || bits == 7) continue;
+                for (int i = 0; i < 6; ++i)
+                    if (pattern[i] == bits) {
+                        auto& r = out[size_t(i)];
+                        ++r.count;
+                        r.left = std::min(r.left, int(x)); r.right = std::max(r.right, int(x));
+                        r.top = std::min(r.top, int(y)); r.bottom = std::max(r.bottom, int(y));
+                    }
+            }
+        return out;
+    };
+    // A chart's rectangle on the sheet: one column (two half steps) wide and one ring high, centred on the chart's own
+    // stickers; the pitch is measured from the next chart along the same ring.
+    struct Tile { double cx = 0, cy = 0, half = 0; };
+    std::array<Tile, 6> tiles{};
+    // Outside counts each sample's pixels outside its chart's rectangle, with 2 pixels of slack: the measured centre and
+    // pitch are each good to about half a pixel, and rasterization adds half a pixel.
+    const auto outside = [&](const std::vector<uint32_t>& picture, const std::array<Tile, 6>& boxes, int i) {
+        uint64_t n = 0;
+        for (uint32_t y = 0; y < harness.height; ++y)
+            for (uint32_t x = 0; x < harness.width; ++x) {
+                const uint32_t w = picture[size_t(y) * harness.width + x];
+                uint32_t bits = 0;
+                bool clear = true;
+                for (int ch = 0; ch < 3; ++ch) {
+                    const uint32_t v = (w >> (8 * ch)) & 0xFFu;
+                    if (v > 60) bits |= 1u << ch; else if (v > 10) clear = false;
+                }
+                if (!clear || bits != pattern[i]) continue;
+                const auto& b = boxes[size_t(i)];
+                n += std::fabs(double(x) - b.cx) > b.half + 2.0 || std::fabs(double(y) - b.cy) > b.half + 2.0;
+            }
+        return n;
+    };
+    colours(target);
+    const auto reference = regions(frames.draw(1, 1, 0, I));
+    colours(beyond);
+    const auto further = regions(frames.draw(1, 1, 0, I));
+    for (int i = 0; i < 6; ++i) {
+        const auto& r = reference[size_t(i)];
+        const auto& f = further[size_t(i)];
+        expect(r.count > 0 && f.count > 0, "the unposed sheet drew no sticker of a sample's next cell");
+        auto& tile = tiles[size_t(i)];
+        tile.cx = (r.left + r.right) / 2.0;
+        tile.cy = (r.top + r.bottom) / 2.0;
+        tile.half = std::fabs((f.left + f.right) / 2.0 - tile.cx) / 2.0;
+        expect(tile.half >= 2.0 && r.right - tile.cx <= tile.half + 1.0 && r.bottom - tile.cy <= tile.half + 1.0,
+               "a chart's own stickers do not fit its measured rectangle");
+    }
+    adopt_poses(harness, 2, index, both, lattice);
+    colours(own);
+    const auto unset = frames.draw(2, 1, 0, I);
+    std::vector<uint32_t> right(SA2_SLOTS), wrong(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) { wrong[slot] = slot / 433; right[slot] = next[slot / 433]; }
+    const auto chain_unset = frames.draw(2, 2, 0, I);
+    api(ctx, sa2_charts_set(ctx, 2, wrong.data(), SA2_SLOTS));
+    const auto bad = frames.draw(2, 1, 0, I);
+    expect(frames.draw(2, 2, 0, I) == chain_unset, "a chain view read the chart channel");
+    api(ctx, sa2_charts_set(ctx, 2, right.data(), SA2_SLOTS));
+    const auto good = frames.draw(2, 1, 0, I);
+    const auto drawn = regions(good);
+    uint64_t total_out_good = 0, moved_out = 0;
+    for (int i = 0; i < 6; ++i) {
+        const uint64_t out_good = outside(good, tiles, i), out_bad = outside(bad, tiles, i);
+        std::cout << "chart channel: sample " << samples[i] << " -> chart " << next[samples[i]] << ": " << drawn[size_t(i)].count
+                  << " pixels (unposed next cell " << reference[size_t(i)].count << ", rectangle " << 2 * tiles[size_t(i)].half
+                  << " px), outside its chart's rectangle " << out_good
+                  << "; with each slot's own cell " << out_bad << " outside" << std::endl;
+        expect(drawn[size_t(i)].count > 0, "a sample drew nothing under the chart channel");
+        total_out_good += out_good;
+        moved_out += out_bad > 0 || regions(bad)[size_t(i)].count == 0;
+    }
+    expect(total_out_good == 0, "a sample sticker drew outside its assigned chart's rectangle");
+    expect(moved_out == 6, "the wrong channel left a sample inside its next cell's chart");
+    uint64_t differ = 0;
+    for (size_t k = 0; k < good.size(); ++k) differ += good[k] != unset[k];
+    std::cout << "chart channel: the Hopf-coordinate choice differs from the channel at " << differ << " pixels" << std::endl;
+    expect(differ == 0, "the Hopf-coordinate choice drew another picture than the nearest-cell channel");
+    std::vector<uint32_t> past(right);
+    past[7] = 600;
+    expect(sa2_charts_set(ctx, 2, past.data(), SA2_SLOTS) == SA2_E_INVALID_ARGUMENT, "a cell past 599 was accepted");
+    expect(sa2_charts_set(ctx, 2, right.data(), SA2_SLOTS - 1) == SA2_E_INVALID_ARGUMENT, "a short chart channel was accepted");
+    expect(sa2_charts_set(ctx, 1, right.data(), SA2_SLOTS) == SA2_E_INVALID_ARGUMENT, "a channel for another revision was accepted");
+    expect(sa2_charts_set(ctx, 2, nullptr, 5) == SA2_E_INVALID_ARGUMENT, "a NULL channel with a count was accepted");
+    expect(sa2_charts_set(nullptr, 2, right.data(), SA2_SLOTS) == SA2_E_INVALID_ARGUMENT, "a channel was set without a context");
+    expect(frames.draw(2, 1, 0, I) == good, "a refused chart channel changed the picture");
+    // C3/C4 finding F4 (27 November 2026): a pick on a composite frame reads the chart channel its pane drew with, as a
+    // one-view pick does (pick_plan): once the channel changes, a pane's pick on the older frame is stale.
+    {
+        const auto set = panes_check::pickable_set(harness, 1, 2);
+        sa2_pane pane{};
+        pane.view = 1; pane.view_generation = 1; pane.resource_set = set;
+        pane.width = 640; pane.height = 360;
+        for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) pane.camera_matrix[c * 4 + r] = float(I[r * 4 + c]);
+        frames.draw(2, 1, set, I);
+        const auto one_view = frames.frame;
+        frames.draw_panes(2, {pane});
+        const auto composite = frames.frame;
+        const auto before = panes_check::pick(harness, composite, 320, 180);
+        expect(before.state == SA2_PICK_READY, "a pane pick under an unchanged chart channel was not ready");
+        // Each changed channel gets a fresh copy of the revision (EngineCopies = 3), so three changes, each drawn,
+        // overwrite the copy both older frames drew with: their picks must then be stale, never read the new channel.
+        for (int k = 0; k < 3; ++k) {
+            api(ctx, sa2_charts_set(ctx, 2, (k % 2 ? right : wrong).data(), SA2_SLOTS));
+            frames.draw(2, 1, 0, I);
+        }
+        const auto one = panes_check::pick(harness, one_view, 320, 180), panes = panes_check::pick(harness, composite, 320, 180);
+        std::cout << "chart channel: after a change the one-view pick is " << one.state << "/" << one.stale
+                  << " and the pane pick " << panes.state << "/" << panes.stale << " (state/stale)" << std::endl;
+        expect(one.state == SA2_PICK_STALE && one.stale == SA2_PICK_STALE_ENGINE, "a one-view pick read a changed chart channel");
+        expect(panes.state == SA2_PICK_STALE && panes.stale == SA2_PICK_STALE_ENGINE, "a pane pick read a changed chart channel");
+    }
+    adopt_poses(harness, 3, index, both, lattice);
+    expect(frames.draw(3, 1, 0, I) == unset, "an adoption kept the previous revision's chart channel");
+    api(ctx, sa2_charts_set(ctx, 3, nullptr, 0));
+    std::cout << "chart channel: every sample draws inside its assigned chart's rectangle" << std::endl;
+}
+
+void run_hopf(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the Hopf layout check runs on WARP only");
+    suite.check("view layout warp", [&] { product_hopf(options); });
+}
+
+// ADR-D02 B22 item 1: --warp --chart FILE. Only WARP, alone, as the Hopf check.
+void run_chart(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the chart channel check runs on WARP only");
+    suite.check("chart channel warp", [&] { product_chart(options); });
+}
+
+// ABI 9: --warp --focus. Only WARP; parse refuses any other mode.
+void run_focus(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the focus check runs on WARP only");
+    suite.check("view focus warp", [&] { product_focus(options); });
+}
+
+// ABI 8: --warp --panes. Only WARP; parse refuses any other mode.
+void run_panes(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the composite frame check runs on WARP only");
+    suite.check("panes warp", [&] { product_panes(options); });
+}
+
+// ADR-D01.65: compare ink masks in one RGBA8 frame at a time, with a separate piece-only coverage reference.
+void product_status_patterns(const Options& options) {
+    using namespace panes_check;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    load(harness, Side, Side);
+    auto* ctx = harness.ctx;
+    const auto set = pickable_set(harness, 1, 1);
+    const Rows q = double_rotation(0, 3, 0, 1, 2, 0);
+    const sa2_view_shape shape{sizeof(sa2_view_shape), 0.7f, 0.9f, 2.0f, 5.0f, 0};
+    const sa2_view_focus focus{sizeof(sa2_view_focus), SA2_PROJECTION_ORTHOGRAPHIC, 0, 121.0f / 125.0f, 1.2f, 0};
+    for (uint32_t view : {1u, 2u}) {
+        api(ctx, sa2_view_shape_set(ctx, view, &shape));
+        api(ctx, sa2_view_focus_set(ctx, view, &focus));
+    }
+    PoseFrames frames{harness};
+    const auto draw = [&] { return frames.draw(1, 1, set, q); };
+    const auto base = draw();
+    const auto [x, y] = covered_point(base);
+    const auto initial = pick(harness, frames.frame, x, y);
+    expect(initial.state == SA2_PICK_READY && initial.instance != 0, "the status fixture needs a pickable sticker");
+    const auto pieces = sa2::scene_slot_pieces();
+    const uint32_t piece = pieces[initial.instance - 1];
+    const auto slot = initial.instance - 1;
+    std::vector<uint8_t> mask(SA2_SLOTS);
+    for (uint32_t s = 0; s < SA2_SLOTS; ++s) mask[s] = pieces[s] == piece;
+    const auto only = pose_set(harness, 2, mask);
+    const auto covered = frames.draw(1, 2, only, q);
+
+    sa2_status_style table{};
+    table.struct_size = sizeof(table);
+    table.flags = SA2_STATUS_CAPTURE;
+    for (uint32_t i = 1; i <= 5; ++i) table.patterns[i] = {i, 5.0f, 0.44f, 0.65f, {1, 1, 1, 1}};
+    for (uint32_t i = 1; i <= 4; ++i) table.marks[i] = {i, 0.34f, 0.36f, 0.0f, {1, 1, 1, 1}};
+    auto invalid = table;
+    invalid.patterns[1].spacing = 0;
+    expect(sa2_status_style_set(ctx, &invalid) == SA2_E_INVALID_ARGUMENT, "status geometry outside the range was accepted");
+    api(ctx, sa2_status_style_set(ctx, &table));
+    expect(draw() == base, "a status table changed a frame without status bytes");
+    std::vector<uint8_t> bytes(SA2_PIECES);
+    bytes[piece] = 1;
+    api(ctx, sa2_style_set(ctx, 1, bytes.data(), SA2_STYLE_CHANNEL_STATUS));
+    api(ctx, sa2_status_style_set(ctx, nullptr));
+    expect(draw() == base, "status bytes without their table changed the frame");
+    api(ctx, sa2_status_style_set(ctx, &table));
+
+    std::vector<std::vector<uint8_t>> inks;
+    std::vector<uint32_t> coverage(SA2_STATUS_WORDS);
+    const auto capture = [&](uint32_t pane) {
+        api(ctx, sa2_status_drawn(ctx, pane, coverage.data(), uint32_t(coverage.size())));
+        expect(coverage[piece / 32] == (1u << (piece % 32))
+            && size_t(std::count(coverage.begin(), coverage.end(), 0u)) + 1 == coverage.size(), "capture did not name just the styled piece");
+    };
+    std::cout << "status patterns: piece " << piece << " (slot " << slot << "); changed pixels" << std::endl;
+    for (uint32_t i = 1; i <= 9; ++i) {
+        bytes[piece] = uint8_t(i <= 5 ? i : (i - 5) << 3);
+        api(ctx, sa2_style_set(ctx, 1, bytes.data(), SA2_STYLE_CHANNEL_STATUS));
+        const auto picture = draw();
+        std::vector<uint8_t> ink(picture.size());
+        for (size_t p = 0; p < picture.size(); ++p) {
+            ink[p] = picture[p] != base[p];
+            expect(!ink[p] || covered[p] != covered[0], "status changed a pixel outside its piece");
+        }
+        const auto count = std::count(ink.begin(), ink.end(), 1);
+        std::cout << (i <= 5 ? "pattern " : "mark ") << (i <= 5 ? i : i - 5) << ": " << count << std::endl;
+        expect(count > 0 && std::find(inks.begin(), inks.end(), ink) == inks.end(), "status ink is empty or repeats another shape");
+        inks.push_back(std::move(ink));
+        capture(0);
+        const auto id = pick(harness, frames.frame, x, y);
+        expect(id.state == SA2_PICK_READY && id.instance == initial.instance, "status changed the ID pass");
+    }
+
+    const std::vector<sa2_pane> panes{
+        make(1, set, 0, 0, Side / 2, Side, q), make(2, only, Side / 2, 0, Side / 2, Side, q),
+    };
+    frames.draw_panes(1, panes);
+    capture(0);
+    capture(1);
+
+    // Use the same resource set with focus, so the ID comparison also checks colour's conflict exception is local
+    // to the colour pass. Other drawn pieces keep the usual focus treatment.
+    std::vector<uint8_t> fill(SA2_PIECES, 0);
+    fill[piece] = SA2_STYLE_DIM;
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    sa2_view_style view{};
+    view.struct_size = sizeof(view);
+    view.matrix[0] = view.matrix[4] = view.matrix[8] = 1;
+    for (const uint32_t mode : {SA2_STYLE_HIDE_MARKED, SA2_STYLE_DIM_MARKED}) {
+        view.dim_mode = mode;
+        view.dim_amount = 1.0f;
+        api(ctx, sa2_view_style_set(ctx, 1, &view));
+        bytes[piece] = 0;
+        api(ctx, sa2_style_set(ctx, 1, bytes.data(), SA2_STYLE_CHANNEL_STATUS));
+        const auto focused = draw();
+        const auto before = pick(harness, frames.frame, x, y);
+        expect(before.state == SA2_PICK_READY && before.instance != initial.instance, "the focus did not suppress the test piece");
+        bytes[piece] = SA2_STATUS_CONFLICT;
+        api(ctx, sa2_style_set(ctx, 1, bytes.data(), SA2_STYLE_CHANNEL_STATUS));
+        const auto conflict = draw();
+        const auto after = pick(harness, frames.frame, x, y);
+        size_t changes = 0;
+        for (size_t p = 0; p < conflict.size(); ++p) changes += conflict[p] != focused[p];
+        std::cout << "conflict through " << (mode == SA2_STYLE_HIDE_MARKED ? "hide: " : "dim: ") << changes << std::endl;
+        expect(changes > 0 && conflict[size_t(y) * Side + x] != focused[size_t(y) * Side + x], "focus hid or dimmed the conflict");
+        expect(after.state == SA2_PICK_READY && after.instance == before.instance, "conflict changed a focus pick");
+    }
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    expect(sa2_status_style_set(ctx, &table) == SA2_E_WRONG_STATE, "a status style was set without a scene");
+    harness.finish(options.debug);
+}
+
+// ABI 7: --warp --style. Only WARP; parse refuses any other mode.
+void run_style(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the style check runs on WARP only");
+    suite.check("piece style warp", [&] { product_style(options); });
+    suite.check("status patterns warp", [&] { product_status_patterns(options); });
+    suite.check("focus layers warp", [&] { product_focus_layers(options); }); // ADR-D02 B17 (ABI 10)
 }
 
 // C9 U5c: --warp --measure-stages DIR. Only WARP; parse refuses any other mode.

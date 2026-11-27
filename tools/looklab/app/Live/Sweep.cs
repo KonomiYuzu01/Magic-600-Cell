@@ -24,7 +24,7 @@ internal static class Sweep
     public static async Task Look(Node host, string root, string scratch, string keys)
     {
         string folder = Path.Combine(scratch, LookMode);
-        LabErrors.Install(Path.Combine(folder, "errors.log")); LabErrors.Reset();
+        ChromeErrors.Install(Path.Combine(folder, "errors.log")); ChromeErrors.Reset();
         var session = new LiveSession(root, folder); host.AddChild(session);
         SceneTree tree = host.GetTree();
         for (int i = 0; i < 90; i++) await host.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
@@ -36,7 +36,7 @@ internal static class Sweep
         Image picture = session.GetViewport().GetTexture().GetImage();
         if (picture.GetWidth() > 1300) picture.Resize(1200, picture.GetHeight() * 1200 / picture.GetWidth(), Image.Interpolation.Lanczos);
         picture.SavePng(Path.Combine(folder, "look.png"));
-        GD.Print($"LOOKLAB_A5_LOOK errors={LabErrors.Count}" + (LabErrors.Count > 0 ? " first=" + LabErrors.All[0].Split('\n')[0] : ""));
+        GD.Print($"LOOKLAB_A5_LOOK errors={ChromeErrors.Count}" + (ChromeErrors.Count > 0 ? " first=" + ChromeErrors.All[0].Split('\n')[0] : ""));
     }
 
     public static async Task Run(Node host, string root, string scratch, string fault)
@@ -47,18 +47,18 @@ internal static class Sweep
         void Trace(string text) { if (trace) File.AppendAllText(tracePath, (System.Environment.TickCount64 - began) + " " + text + System.Environment.NewLine); }
         Trace("start");
         if (Directory.Exists(folder)) Directory.Delete(folder, true);
-        LabErrors.Install(Path.Combine(folder, "errors.log")); LabErrors.Reset(); Trace("errors installed");
+        ChromeErrors.Install(Path.Combine(folder, "errors.log")); ChromeErrors.Reset(); Trace("errors installed");
         var session = new LiveSession(root, folder); host.AddChild(session);
         SceneTree tree = host.GetTree();
         async Task Frames(int count = 1) { for (int i = 0; i < count; i++) await host.ToSignal(tree, SceneTree.SignalName.ProcessFrame); }
         void Clean(string step)
         {
             Trace("step " + step);
-            if (LabErrors.Count > 0) throw new Exception((fault.Length > 0 ? fault : Mode) + $": {LabErrors.Count} error(s) after {step}; the first: {LabErrors.All[0].Split('\n')[0]}");
+            if (ChromeErrors.Count > 0) throw new Exception((fault.Length > 0 ? fault : Mode) + $": {ChromeErrors.Count} error(s) after {step}; the first: {ChromeErrors.All[0].Split('\n')[0]}");
         }
         tree.Root.Size = new Vector2I(1600, 900); await Frames(3);
         Trace("window " + session.GetViewport().GetVisibleRect() + " frame " + session.Frame.GetGlobalRect());
-        ChromeFrame frame = session.Frame; LabKit kit = LabFrame.KitOf(frame); LabInspect inspect = LabFrame.InspectOf(frame);
+        ChromeFrame frame = session.Frame; LabKit kit = LabFrame.KitOf(frame); SampleInspect inspect = LabFrame.InspectOf(frame);
         if (fault == "a5-missing-token") frame.Tokens.C("no.such.token");
         if (fault == "a5-listener-throws") inspect.Feedback.Changed += () => throw new InvalidOperationException("injected listener failure");
         // The ten-second sample task ends; a command must still run after it.

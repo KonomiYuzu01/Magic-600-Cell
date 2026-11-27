@@ -17,7 +17,7 @@ internal static partial class Program
             Check(c.Status == PreviewStatus.Refused && c.Reason!.Contains(named + ", which does not exist", StringComparison.Ordinal) && c.Effects.Count == 0 && SampleCheck.Parse(twist) == null,
                 twist + " was checked as a witness");
             var history = new MoveHistory(); var preview = new PreviewModel { Head = () => history.Revision };
-            preview.Show("preview " + twist, "typed twist", new[] { twist }, c.Status, c.Reason, c.Effects, c.Protection, 0);
+            preview.Show(Origin.Solver, "preview " + twist, "typed twist", new[] { twist }, c.Status, c.Reason, c.Effects, c.Protection, 0);
             Check(preview.CommitRefusal(5) == c.Reason && preview.Take(5) == null && history.Entries.Count == 0 && history.Revision == 0, twist + " was committed");
             var draft = new OperationDraft(); draft.Edit("core: " + twist);
             Check(draft.StagedCheck() is { Status: PreviewStatus.Refused } d && d.Reason == c.Reason, twist + " passed in a draft");
@@ -35,7 +35,7 @@ internal static partial class Program
     {
         PreviewSample typed = PreviewSamples.All.Single(s => s.Source == "typed twist");
         var history = new MoveHistory(); var preview = new PreviewModel { Head = () => history.Revision };
-        Preview Staged(IReadOnlyList<string> moves, PreviewCheck c) => preview.Show("preview " + moves[0], "test", moves, c.Status, c.Reason, c.Effects, c.Protection, 0);
+        Preview Staged(IReadOnlyList<string> moves, PreviewCheck c) => preview.Show(Origin.Solver, "preview " + moves[0], "test", moves, c.Status, c.Reason, c.Effects, c.Protection, 0);
         Preview fromSample = Staged(typed.Moves, typed.Check()); AffectedRange? sampleRange = preview.Range();
         string[] same = { Twist(402, 1, 1) }; Preview fromTyped = Staged(same, SampleCheck.Check(same)); AffectedRange? typedRange = preview.Range();
         history.Commit("hand", same[0], "10:00", "commit " + same[0], same); history.Undo(); history.Commit("hand", "other", "10:01", "commit other", new[] { Twist(7, 1, 1) });
@@ -156,11 +156,11 @@ internal static partial class Program
             SampleCheck.Check(first.Word).Status == PreviewStatus.Ready, "the Template did not bind to the strip's roles");
         var draft = new OperationDraft(); Check(library.Insert(draft, template.Name, s) == null && draft.Twists(1).SequenceEqual(first.Word), "a bound Template did not join Core");
         var history = new MoveHistory(); var preview = new PreviewModel { Head = () => history.Revision };
-        PreviewCheck c1 = SampleCheck.Check(first.Word); Preview p1 = preview.Show("preview " + first.Name, "library", first.Word, c1.Status, c1.Reason, c1.Effects, c1.Protection, 0);
+        PreviewCheck c1 = SampleCheck.Check(first.Word); Preview p1 = preview.Show(Origin.Solver, "preview " + first.Name, "library", first.Word, c1.Status, c1.Reason, c1.Effects, c1.Protection, 0);
         int other = s.Unfinished().First(p => p != s.Target && p != s.BufferA && p != s.BufferB);
         Check(demo.SetTarget(OrbitAtlas.Position(other)) == null && s.Target == other && s.Problems().Count == 0, "the second Target");
         var (second, why2) = library.Macro(template.Name, s);
-        PreviewCheck c2 = SampleCheck.Check(second!.Word); Preview p2 = preview.Show("preview " + second.Name, "library", second.Word, c2.Status, c2.Reason, c2.Effects, c2.Protection, 1);
+        PreviewCheck c2 = SampleCheck.Check(second!.Word); Preview p2 = preview.Show(Origin.Solver, "preview " + second.Name, "library", second.Word, c2.Status, c2.Reason, c2.Effects, c2.Protection, 1);
         Check(why2 == null && !second.Word.SequenceEqual(first.Word) && second.Name != first.Name && p2.Id != p1.Id && p2.Status == PreviewStatus.Ready && p2.Effects.SequenceEqual(c2.Effects) &&
             p2.Statement.Contains(OrbitAtlas.Position(other), StringComparison.Ordinal), "another Target reused the first binding");
         s.BufferB = null; Check(library.Macro(template.Name, s).Why!.Contains("Buffer B", StringComparison.Ordinal), "an unset role was bound");

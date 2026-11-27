@@ -1,0 +1,24 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "slice",
+  "note": "At blocked cap 0 the held preview draws no ghost. Name cap 150 and split and rejoin the slice. Shift+Up picks item 2. Hold Down for its ghost, then release to name and check it at the same revision. The slice reports unavailable cut cells.",
+  "steps": [
+    {"wait_ms": 3000},
+    {"hold": "Down"},
+    {"wait_ms": 800},
+    {"release": "Down"},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 2500},
+    {"hold": "Backslash"},
+    {"wait_ms": 1500},
+    {"release": "Backslash"},
+    {"wait_ms": 1500},
+    {"chord": "Shift+Up"},
+    {"hold": "Down"},
+    {"wait_ms": 1500},
+    {"release": "Down"},
+    {"wait_ms": 1500}
+  ]
+}

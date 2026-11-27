@@ -14,7 +14,9 @@ public sealed partial class PanelStateBox : VBoxContainer
     private readonly PanelStates states; private readonly Func<TokenSet> tokens;
     private readonly PanelContainer banner = new() { Name = "PanelStateBanner", ThemeTypeVariation = "BarBottom", Visible = false };
     private readonly HBoxContainer row = new(); private readonly Control glyph; private readonly Label word, text; private readonly Button act;
-    private readonly CenterContainer place = new() { Name = "PanelStatePlace", Visible = false, SizeFlagsVertical = SizeFlags.ExpandFill };
+    // ADR-D01.77: an empty state is a surface the art line paints, with a style of its own.
+    private readonly PanelContainer place = new() { Name = "PanelStatePlace", ThemeTypeVariation = "EmptyState", Visible = false, SizeFlagsVertical = SizeFlags.ExpandFill };
+    private readonly CenterContainer centre = new();
     private readonly Label placeText = new() { ThemeTypeVariation = "DimLabel", HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
 
     public PanelStateBox(string id, Control content, PanelStates states, Func<TokenSet> tokens)
@@ -26,7 +28,7 @@ public sealed partial class PanelStateBox : VBoxContainer
         act = new Button { ThemeTypeVariation = "ToolButton", FocusMode = FocusModeEnum.None, Name = "PanelStateAction", Visible = false };
         act.Pressed += () => { if (PanelStates.Action(Condition) is { } action) states.Ask(Id, action); };
         banner.AddChild(row); row.AddChild(glyph); row.AddChild(word); row.AddChild(text); row.AddChild(act);
-        placeText.CustomMinimumSize = new Vector2(160, 0); place.AddChild(placeText);
+        placeText.CustomMinimumSize = new Vector2(160, 0); place.AddChild(centre); centre.AddChild(placeText);
         ChromeWidgets.Detach(content); AddChild(banner); AddChild(place); AddChild(content);
         states.Register(id); states.Changed += () => { if (IsInstanceValid(this)) Refresh(); };
         Refresh();

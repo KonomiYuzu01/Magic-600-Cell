@@ -1,0 +1,31 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "tuning-wide",
+  "resolution": "1920x1080",
+  "note": "B30's run on a state's session fixture (wj-ia-300): the palette's tuning.open opens the tuning panel in the right dock (below 1600 px wide the right dock folds to its rail, owner 26 November 2026, and the explicit open reveals the panel over the fold, B31; tuning-wide runs the same steps at 1920x1080 with the dock unfolded); theme.tune moves each of the five seed knobs, then a click on the panel's tone knob moves it by hand; two swaps show slot B (the opening tuning) and come back; the held compare draws slot B and the release puts slot A back. After every step the head's state digest and the tint bytes are as they were, and tone, contrast and black level send the core a new palette.",
+  "steps": [
+    {"wait_ms": 5001},
+    {"command": "tuning.open"},
+    {"wait_ms": 701},
+    {"command": "theme.tune", "argument": "tone=0.05"},
+    {"wait_ms": 702},
+    {"command": "theme.tune", "argument": "contrast=1.15"},
+    {"wait_ms": 703},
+    {"command": "theme.tune", "argument": "blackLevel=0.08"},
+    {"wait_ms": 704},
+    {"command": "theme.tune", "argument": "accentHue=40"},
+    {"wait_ms": 705},
+    {"command": "theme.tune", "argument": "gridIntensity=0.9"},
+    {"wait_ms": 706},
+    {"click_control": "TuningKnob_tone"},
+    {"wait_ms": 707},
+    {"command": "tuning.slot.swap"},
+    {"wait_ms": 708},
+    {"command": "tuning.slot.swap"},
+    {"wait_ms": 709},
+    {"command": "tuning.compare.hold", "argument": "on"},
+    {"wait_ms": 710},
+    {"command": "tuning.compare.hold", "argument": "off"},
+    {"wait_ms": 711}
+  ]
+}

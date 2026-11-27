@@ -5,6 +5,10 @@ using Godot;
 
 namespace Magic600.Chrome;
 
+// A control that takes its own keys while it has focus (ADR-D02's cap map digits and the repair list's focused-list
+// context): the chrome claims them, so no key both acts there and reaches the session.
+public interface IOwnKeys { }
+
 public static class ChromeWidgets
 {
     public static Label Text(string text, string variation = "", bool clip = false)
@@ -48,8 +52,11 @@ public sealed partial class ViewFrame : PanelContainer
     public string ViewName { get; }
     public Control Slot { get; } = new() { ClipContents = true, SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Pass };
     public HBoxContainer Marks { get; } = new() { MouseFilter = MouseFilterEnum.Ignore };
+    // A view's readout rows: the footer's full width, above its name line, each row wrapping by whole readouts.
+    public VBoxContainer Readouts { get; } = new() { Name = "Readouts", SizeFlagsHorizontal = SizeFlags.ExpandFill };
     public Label Status { get; } = ChromeWidgets.Text("", "DimLabel", true);
-    public HBoxContainer Tools { get; } = new();
+    // The footer's tools and readouts wrap onto a second line rather than widen the frame past the window.
+    public HFlowContainer Tools { get; } = new() { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 4, Alignment = FlowContainer.AlignmentMode.End };
     public bool Focused { get; private set; }
     // With labels off a mark is its glyph alone; its words stay in the tooltip.
     public bool ShowLabels { get; set; } = true;
@@ -66,8 +73,11 @@ public sealed partial class ViewFrame : PanelContainer
         column.AddChild(Slot);
         var line = new PanelContainer { ThemeTypeVariation = "BarBottom", CustomMinimumSize = new Vector2(0, tokens.Px("status.height")) };
         column.AddChild(line);
-        var row = new HBoxContainer(); line.AddChild(row);
+        var lines = new VBoxContainer(); lines.AddThemeConstantOverride("separation", 0); line.AddChild(lines);
+        Readouts.AddThemeConstantOverride("separation", 0); lines.AddChild(Readouts);
+        var row = new HBoxContainer(); lines.AddChild(row);
         var pad = new Control { CustomMinimumSize = new Vector2(tokens.Px("space.2"), 0) }; row.AddChild(pad);
+        Status.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         row.AddChild(ChromeWidgets.Text(name, "AccentLabel")); row.AddChild(Status); row.AddChild(Tools);
         Marks.Position = new Vector2(tokens.Px("space.3"), tokens.Px("space.3")); Marks.AddThemeConstantOverride("separation", tokens.Px("space.2"));
     }
@@ -108,7 +118,7 @@ public sealed partial class ViewFrame : PanelContainer
 public sealed partial class ChromeFrame : Control
 {
     private sealed record DockPanel(DockSide Side, string Id, string Title, string Glyph, Control Content);
-    private sealed record Pane(string Id, string Title, Control Content);
+    private sealed record Pane(string Id, string Title, Control Content, ViewBinding? Binding, Func<IEnumerable<Rect2>>? Openings);
 
     public FrameModel Model { get; } = new();
     public TokenSet Tokens { get; private set; }
@@ -143,6 +153,9 @@ public sealed partial class ChromeFrame : Control
     private string Hint(string tooltip, string command, string? argument) =>
         keys?.KeysFor(command, argument) is { Length: > 0 } bound ? $"{tooltip} ({bound})" : tooltip;
     public event Action<Binding>? KeyCommand;
+    // A row the frame's own controls carry out through the host's registry (the layout reset: workspace.reset), so the
+    // row's unavailable reason and echo apply; with no listener the frame carries it out itself.
+    public event Action<string, string?>? RowCommand;
     // Contexts the host adds in front of the view contexts, such as "preview" while a preview waits.
     public Func<IEnumerable<string>>? Contexts { get; set; }
     private Control? strip, topStrip;
@@ -154,15 +167,30 @@ public sealed partial class ChromeFrame : Control
     // A count on a dock panel's button, shown while the panel is collapsed too (ADR-D01.27).
     public void SetBadge(string panel, string? text, string colourToken = "text.dim", string tooltip = "")
     {
-        if (text == null ? !badges.Remove(panel) : badges.TryGetValue(panel, out var old) && old == (text, colourToken, tooltip)) return;
+        bool had = badges.ContainsKey(panel);
+        if (text == null ? !badges.Remove(panel) : had && badges[panel] == (text, colourToken, tooltip)) return;
         if (text != null) badges[panel] = (text, colourToken, tooltip);
+        // A badge that only changes its words is written in place: a count that changes often (the error lamp's
+        // Problems count) must not lay the frame out again, or each failure that the new layout causes feeds the next.
+        if (text != null && had && !dirty)
+        {
+            var live = badgeLabels.Where(label => IsInstanceValid(label) && label.IsInsideTree() && label.GetMeta("badge").AsString() == panel).ToList();
+            if (live.Count > 0)
+            {
+                foreach (Label label in live) { label.Text = text; label.AddThemeColorOverride("font_color", Tokens.C(colourToken)); label.TooltipText = tooltip; }
+                return;
+            }
+        }
         dirty = true;
     }
     public string? Badge(string panel) => badges.TryGetValue(panel, out var badge) ? badge.Text : null;
+    // The badge labels of the current build, so a badge's words change in place.
+    private readonly List<Label> badgeLabels = new();
     private Label BadgeLabel(string panel)
     {
         (string text, string colour, string tip) = badges[panel];
         Label label = ChromeWidgets.Text(text, "MicroLabel"); label.AddThemeColorOverride("font_color", Tokens.C(colour)); label.TooltipText = tip; label.SetMeta("badge", panel);
+        badgeLabels.Add(label);
         return label;
     }
     // One thin strip at the top edge of the views: the inspector's first tier (ADR-D01.22).
@@ -172,10 +200,24 @@ public sealed partial class ChromeFrame : Control
     // The error lamp of the top bar: how many failures the host has counted, and what the first one was.
     public void SetAlert(int count, string tooltip) { if (count == alerts && tooltip == alertTip) return; alerts = count; alertTip = tooltip; dirty = true; }
     public void SetTopStrip(Control control) { topStrip = control; dirty = true; }
+    private Control? documentRow;
+    public void SetDocumentRow(Control? control) { ChromeWidgets.Detach(documentRow); documentRow = control; dirty = true; }
+    // A host-drawn cell in the top bar naming the session's mode with its glyph (ADR-D02.6), or none.
+    public void SetModeCell(string? text, string tooltip, string glyph = "mark.jumble")
+    {
+        if (text == modeCell && tooltip == modeTip && glyph == modeGlyph) return;
+        modeCell = text; modeTip = tooltip; modeGlyph = glyph; dirty = true;
+    }
+    public string? ModeCell => modeCell;
+    private string? modeCell; private string modeTip = "", modeGlyph = "mark.jumble";
     // One slim strip under the views and above the bottom dock: the commit bar (ADR-D01.11).
     public void SetStrip(Control control) { strip = control; dirty = true; }
     // One control on the shared edge of the locked pair: the relationship strip (ADR-D01.62). It adds no dock.
-    public void SetSeam(Control? control) { seam = control; dirty = true; }
+    public void SetSeam(Control? control)
+    {
+        if (control is RelationStrip) HelpTopics.Mark(control, "relationship-strip");
+        seam = control; dirty = true;
+    }
     private Control? seam;
     // One control along the head of the locked pair, over both views: the orbit rail (ADR-D01.64). It adds no dock.
     public void SetPairHead(Control? control) { pairHead = control; dirty = true; }
@@ -214,10 +256,32 @@ public sealed partial class ChromeFrame : Control
 
     public IReadOnlyList<string> PaneIds => panes.Keys.ToArray();
 
-    public void AddPane(string id, string title, Control content)
+    // A free view passes its source (ADR-D01.42), named on the binding chip in its head; a pane that is no view of a
+    // state (the editor, Learn, the gallery) passes none.
+    public void AddPane(string id, string title, Control content, ViewBinding? binding = null, Func<IEnumerable<Rect2>>? openings = null)
     {
         content.SizeFlagsVertical = SizeFlags.ExpandFill; content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        panes[id] = new Pane(id, title, content); dirty = true;
+        panes[id] = new Pane(id, title, content, binding, openings); dirty = true;
+    }
+
+    public void RemovePane(string id)
+    {
+        if (!panes.Remove(id, out Pane? pane)) return;
+        ChromeWidgets.Detach(pane.Content);
+        if (Model.IsOpen(id)) Model.Close(id);
+        dirty = true;
+    }
+
+    internal IEnumerable<Rect2> FreeOpenings => panes.Values.SelectMany(p => p.Openings?.Invoke() ?? Array.Empty<Rect2>());
+
+    public ViewBinding? BindingOf(string id) => panes.TryGetValue(id, out Pane? pane) ? pane.Binding : null;
+
+    // A free view's source changes (a preview becomes a history position, a log verifies): its chip follows.
+    public void Bind(string id, ViewBinding? binding)
+    {
+        if (!panes.TryGetValue(id, out Pane? pane)) throw new ArgumentException("no pane is named " + id);
+        if (pane.Binding == binding) return;
+        panes[id] = pane with { Binding = binding }; dirty = true;
     }
 
     // A new token set. Sizes and faces need the frame rebuilt; a colour change only needs the theme, so a knob
@@ -284,12 +348,28 @@ public sealed partial class ChromeFrame : Control
     // the Global view: every other region stays opaque chrome.
     public bool OpenGround { get; set; }
     public Rect2 Opening => OpenGround && Global != null && IsInstanceValid(Global) && Global.Slot.IsVisibleInTree() ? Global.Slot.GetGlobalRect() : default;
+    // ADR-D02 B18c: a host that draws Local as well opens the top of Local's slot, a square of the slot's width capped at
+    // 60% of its height; Local's content scrolls below it. While LocalOpeningShown is false (no cap named) the opening
+    // collapses and Local's content, its empty sentence first, takes its place.
+    public bool LocalDrawn { get; set; }
+    private bool localOpeningShown;
+    public bool LocalOpeningShown
+    {
+        get => localOpeningShown;
+        set { if (value == localOpeningShown) return; localOpeningShown = value; if (localLayout != null && IsInstanceValid(localLayout)) localLayout.QueueSort(); }
+    }
+    // ADR-D01's view.local: while Local is hidden its opening stays closed whatever cap it frames (ViewPanes.LocalOpen).
+    public LocalHide LocalHide { get; } = new();
+    public bool LocalOpen => ViewPanes.LocalOpen(localOpeningShown, LocalHide.Hidden);
+    private LocalOpeningLayout? localLayout;
+    public Rect2 LocalOpening => OpenGround && LocalDrawn && LocalOpen && localLayout != null && IsInstanceValid(localLayout) && localLayout.IsVisibleInTree()
+        ? localLayout.Opening.GetGlobalRect() : default;
 
     // Whether the chrome takes this key. A host that also routes keys elsewhere asks first, so that no key does both.
     public bool Claims(string key, Func<Binding, bool>? can = null)
     {
         if (KeyCapture != null || OpenOverlay != null || HostKeys.ContainsKey(key)) return true;
-        if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit) return true;
+        if (GetViewport()?.GuiGetFocusOwner() is LineEdit or TextEdit or IOwnKeys) return true;
         return Keys?.Resolve(key, KeyContexts()) is { } binding && (can == null || can(binding));
     }
 
@@ -314,22 +394,66 @@ public sealed partial class ChromeFrame : Control
     public void Invalidate() => dirty = true;
     public void Flush() { if (dirty) Build(); }
 
+    // The most of the window's width one side dock's panel takes (owner, 26 November 2026: the pair always fits).
+    public const float DockShare = .16f;
+    // Below these widths the right dock's panel, then the left's, folds to its rail.
+    public const float RightDockBelow = 1600, LeftDockBelow = 1440;
+    // Whether the side dock's panel folds to its rail at this window width.
+    public bool Folds(DockSide side) => side != DockSide.Bottom && Window.X > 0 && Window.X < (side == DockSide.Right ? RightDockBelow : LeftDockBelow);
+
+    public void RevealAndFocus(DockSide side, string id, Control target)
+    {
+        if (!Model.RevealDock(side, id, Folds(side))) return;
+        Callable.From(() =>
+        {
+            if (!IsInstanceValid(this) || Model.Docks[side].Open != id) return;
+            Flush();
+            if (IsInstanceValid(target) && target.IsVisibleInTree()) target.GrabFocus();
+        }).CallDeferred();
+    }
+
+    private Vector2 builtFor;
+    // The pointer as the window's own mouse events give it, in the frame's canvas, or none before the first event and
+    // after the pointer leaves the window (ADR-D01.19's hovered view). The root viewport's mouse position is the system
+    // cursor, which a scripted run's pointer steps never move.
+    private Vector2? pointer;
+    // The pointer in the frame's own coordinates: an overlay opens where the window's mouse events last put it.
+    public Vector2 LocalPointer => pointer is { } at ? GetGlobalTransform().AffineInverse() * at : GetLocalMousePosition();
+
+    public override void _Input(InputEvent input)
+    {
+        if (input is InputEventMouse mouse) pointer = GetCanvasTransform().AffineInverse() * mouse.Position;
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationWMMouseExit) pointer = null;
+    }
+
     public override void _Process(double delta)
     {
+        // A new window size lays the frame out again, so the docks follow it.
+        if (GetViewportRect().Size != builtFor) { builtFor = GetViewportRect().Size; dirty = true; }
         Flush();
-        Vector2 mouse = GetGlobalMousePosition();
-        Hover(Global.GetGlobalRect().HasPoint(mouse) ? Global : Local.GetGlobalRect().HasPoint(mouse) ? Local : null);
+        Hover(pointer is not { } mouse ? null : Global.GetGlobalRect().HasPoint(mouse) ? Global : Local.GetGlobalRect().HasPoint(mouse) ? Local : null);
         if (noticeLeft > 0 && (noticeLeft -= delta) <= 0) { Notice.Text = ""; Notice.TooltipText = ""; message = null; }
     }
 
     private Container Tight(Container container) { container.AddThemeConstantOverride("separation", 0); return container; }
 
+    // The window's size, or zero before the frame is in the tree (a build from the constructor): then no dock folds and
+    // the docks take their token sizes, and _Process builds again once the real size is known.
+    private Vector2 Window => IsInsideTree() ? GetViewportRect().Size : Vector2.Zero;
+
     private void Build()
     {
-        dirty = false; HoveredView = null;
+        var focusOwner = IsInsideTree() ? GetViewport().GuiGetFocusOwner() : null;
+        if (focusOwner != null && !dockPanels.Any(panel => panel.Content.IsAncestorOf(focusOwner))) focusOwner = null;
+        dirty = false; HoveredView = null; builtFor = Window; badgeLabels.Clear();
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent); ChromeWidgets.Detach(BarTools); ChromeWidgets.Detach(Health); ChromeWidgets.Detach(strip); ChromeWidgets.Detach(topStrip); ChromeWidgets.Detach(seam); ChromeWidgets.Detach(pairHead);
+        ChromeWidgets.Detach(documentRow);
         if (root != null) { RemoveChild(root); root.QueueFree(); }
         Theme = ChromeTheme.Build(Tokens);
         bool focus = Model.FocusMode;
@@ -348,18 +472,33 @@ public sealed partial class ChromeFrame : Control
         if (!focus) middle.AddChild(SideDock(DockSide.Left));
         var centre = (VBoxContainer)Tight(new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }); middle.AddChild(centre);
         if (topStrip != null && !focus) centre.AddChild(topStrip);
-        Global = View("Global", globalContent); Local = View("Local", localContent);
+        if (documentRow != null && !focus) centre.AddChild(documentRow);
+        bool localDrawn = OpenGround && LocalDrawn;
+        Global = View("Global", globalContent); Local = View("Local", localDrawn ? LocalWrap(localContent) : localContent);
         if (OpenGround) { Global.Open = true; Global.SetFocused(false); }
+        if (localDrawn) { Local.Open = true; Local.SetFocused(false); }
         centre.AddChild(Model.OnlyPairShown ? PairControl() : Node(Model.Centre));
+        if (OpenGround && panes.Values.Any(pane => pane.Openings != null && pane.Content.IsInsideTree()))
+        {
+            // A drawn free pane narrows the pair. Reserve room for both openings when the readouts wrap.
+            var minimum = new Vector2(0, ViewPanes.MainSlotMinHeight);
+            Global.Slot.CustomMinimumSize = minimum;
+            if (localDrawn) Local.Slot.CustomMinimumSize = minimum;
+        }
         if (strip != null) centre.AddChild(strip);
         if (!focus) { centre.AddChild(BottomDock()); middle.AddChild(SideDock(DockSide.Right)); }
         Safe.Raise(Rebuilt);
+        if (focusOwner != null && IsInstanceValid(focusOwner) && focusOwner.IsVisibleInTree() && GetViewport().GuiGetFocusOwner() == null)
+            focusOwner.GrabFocus();
     }
 
     private Control TopBar()
     {
         var bar = new PanelContainer { Name = "TopBar", ThemeTypeVariation = "BarTop", CustomMinimumSize = new Vector2(0, Tokens.Px("bar.height")) };
-        var row = new HBoxContainer(); bar.AddChild(row);
+        // The bar clips at the window's edge instead of widening the frame (owner, 26 November 2026).
+        var clip = new ScrollContainer { Name = "TopBarClip", HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever, VerticalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        bar.AddChild(clip);
+        var row = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; clip.AddChild(row);
         row.AddChild(new Control { CustomMinimumSize = new Vector2(Tokens.Px("space.3"), 0) });
         row.AddChild(ChromeWidgets.Text("600", "AccentLabel"));
         row.AddChild(new VSeparator());
@@ -375,7 +514,8 @@ public sealed partial class ChromeFrame : Control
         if (WorkspaceModified)
         {
             Button reset = ChromeWidgets.Tool("", "Reset " + Workspaces.Names[Workspace] + " to its preset"); reset.Name = "WorkspaceReset"; ChromeIcons.Apply(reset, "workspace.reset", Tokens.Px("icon.small"));
-            reset.Pressed += () => SelectWorkspace(Workspace); row.AddChild(reset);
+            reset.Pressed += () => { if (RowCommand != null) RowCommand("workspace.reset", null); else SelectWorkspace(Workspace); };
+            row.AddChild(reset);
         }
         row.AddChild(Notice);
         if (alerts > 0)
@@ -388,6 +528,15 @@ public sealed partial class ChromeFrame : Control
         }
         Button words = ChromeWidgets.Tool("", Labels ? "Labels are on: click for icons alone" : "Labels are off: click to show them", true); words.Name = "LabelsToggle";
         ChromeIcons.Apply(words, "labels", Tokens.Px("icon.small")); words.SetPressedNoSignal(Labels); words.Pressed += () => Labels = !Labels; row.AddChild(words);
+        if (modeCell != null)
+        {
+            var cell = new PanelContainer { Name = "ModeCell", ThemeTypeVariation = "Chip", TooltipText = modeTip };
+            var line = new HBoxContainer(); cell.AddChild(line);
+            Label glyph = ChromeWidgets.Text(modeGlyph, "MicroLabel"); ChromeIcons.Apply(glyph, modeGlyph, Tokens.Px("icon.small"));
+            glyph.AddThemeColorOverride("font_color", Tokens.C("accent.strong")); line.AddChild(glyph);
+            Label mode = ChromeWidgets.Text(modeCell, "MicroLabel"); mode.AddThemeColorOverride("font_color", Tokens.C("accent.strong")); line.AddChild(mode);
+            row.AddChild(cell);
+        }
         row.AddChild(BarTools); if (Health.Text.Length > 0) { row.AddChild(new VSeparator()); row.AddChild(Health); }
         row.AddChild(new Control { CustomMinimumSize = new Vector2(Tokens.Px("space.3"), 0) });
         return bar;
@@ -412,15 +561,25 @@ public sealed partial class ChromeFrame : Control
         {
             Button button = ChromeWidgets.Tool(panel.Glyph, panel.Title, true); ChromeIcons.Apply(button, panel.Glyph, Tokens.Px("icon.medium"));
             button.SetPressedNoSignal(state.Open == panel.Id); button.SetMeta("dock_panel", panel.Id);
-            button.Pressed += () => Model.ToggleDock(side, panel.Id);
+            button.Name = "DockRail_" + panel.Id.Replace('.', '_'); // a script's click_control finds the rail button by name
+            button.Pressed += () => Model.PressRail(side, panel.Id, Folds(side));
             buttons.AddChild(button);
             if (badges.ContainsKey(panel.Id)) { Label badge = BadgeLabel(panel.Id); badge.MouseFilter = MouseFilterEnum.Ignore; badge.Position = new Vector2(Tokens.Px("rail.width") * .55f, 0); button.AddChild(badge); }
         }
         Control? content = null;
-        if (dockPanels.FirstOrDefault(p => p.Side == side && p.Id == state.Open) is { } open)
+        // A narrow window keeps the pair whole: the right dock's panel folds to its rail first, then the left's. The
+        // open panel stays open in the model and returns when the window is wide enough.
+        Vector2 window = Window;
+        // B31: an explicit open (a rail press, a row that opens the panel) shows the panel over the fold.
+        bool squeezed = Folds(side) && (state.Revealed == null || state.Revealed != state.Open);
+        if (!squeezed && dockPanels.FirstOrDefault(p => p.Side == side && p.Id == state.Open) is { } open)
         {
-            var holder = new PanelContainer { ThemeTypeVariation = side == DockSide.Left ? "DockLeft" : "DockRight", CustomMinimumSize = new Vector2(Tokens.Px("dock.width"), 0) };
-            holder.AddChild(PanelBody(open)); content = holder;
+            // A side dock is at most DockShare of the window, so the pair keeps its room in a narrow window.
+            var holder = new PanelContainer { ThemeTypeVariation = side == DockSide.Left ? "DockLeft" : "DockRight", CustomMinimumSize = new Vector2(window.X > 0 ? Math.Min(Tokens.Px("dock.width"), window.X * DockShare) : Tokens.Px("dock.width"), 0) };
+            // A panel wider or taller than the dock scrolls in it; it never pushes the frame past the window.
+            var scroll = new ScrollContainer { Name = "DockScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
+            Control panelBody = PanelBody(open); panelBody.SizeFlagsHorizontal = SizeFlags.ExpandFill; scroll.AddChild(panelBody);
+            holder.AddChild(scroll); content = holder;
         }
         if (side == DockSide.Left) { row.AddChild(rail); if (content != null) row.AddChild(content); }
         else { if (content != null) row.AddChild(content); row.AddChild(rail); }
@@ -444,10 +603,24 @@ public sealed partial class ChromeFrame : Control
         }
         if (dockPanels.FirstOrDefault(p => p.Side == DockSide.Bottom && p.Id == state.Open) is { } open)
         {
-            var body = new MarginContainer { CustomMinimumSize = new Vector2(0, Tokens.Px("dock.height")) };
-            body.AddChild(open.Content); column.AddChild(new HSeparator()); column.AddChild(body);
+            // At most a quarter of the window's height, so the pair keeps its room in a low window.
+            var body = new MarginContainer { CustomMinimumSize = new Vector2(0, Window.Y > 0 ? Math.Min(Tokens.Px("dock.height"), Window.Y * .25f) : Tokens.Px("dock.height")) };
+            var scroll = new ScrollContainer { Name = "DockScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Auto, VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
+            open.Content.SizeFlagsHorizontal = SizeFlags.ExpandFill; open.Content.SizeFlagsVertical = SizeFlags.ExpandFill; scroll.AddChild(open.Content);
+            body.AddChild(scroll); column.AddChild(new HSeparator()); column.AddChild(body);
         }
         return holder;
+    }
+
+    // B18c: Local's opening on top and its content in a scroll below, so an open section never covers the opening.
+    private Control LocalWrap(Control? content)
+    {
+        var layout = localLayout = new LocalOpeningLayout(this) { Name = "LocalDrawn" };
+        LocalHide.Changed += () => { if (IsInstanceValid(layout)) layout.QueueSort(); };
+        var scroll = new ScrollContainer { Name = "LocalScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        layout.AddChild(layout.Opening); layout.AddChild(scroll);
+        if (content != null) { content.SizeFlagsHorizontal = SizeFlags.ExpandFill; scroll.AddChild(content); }
+        return layout;
     }
 
     private ViewFrame View(string name, Control? content)
@@ -477,7 +650,15 @@ public sealed partial class ChromeFrame : Control
         {
             BoxContainer edge = (BoxContainer)Tight(side ? new HBoxContainer() : new VBoxContainer()); edge.Name = "PairSeam";
             edge.SizeFlagsHorizontal = SizeFlags.ExpandFill; edge.SizeFlagsVertical = SizeFlags.ExpandFill; edge.SizeFlagsStretchRatio = (float)(1 - Model.PairRatio);
-            (seam as IPairSeam)?.Arrange(side); edge.AddChild(seam); edge.AddChild(Local); split.AddChild(edge);
+            (seam as IPairSeam)?.Arrange(side);
+            // Side by side, the seam's column scrolls when the window is lower than its readouts.
+            if (side)
+            {
+                var seamScroll = new ScrollContainer { Name = "SeamScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.Auto };
+                seam.SizeFlagsVertical = SizeFlags.ExpandFill; seamScroll.AddChild(seam); edge.AddChild(seamScroll);
+            }
+            else edge.AddChild(seam);
+            edge.AddChild(Local); split.AddChild(edge);
         }
         else split.AddChild(Local);
         split.DragEnded += () => { if (!Model.SetPairArrangement(Model.PairArrangement, Math.Clamp(Ratio(split), .2, .8))) dirty = true; };
@@ -520,9 +701,12 @@ public sealed partial class ChromeFrame : Control
             tabs.AddChild(tab);
         }
         tabs.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+        // ADR-D01.42: the shown free view names its source beside the close button.
+        if (panes.TryGetValue(active, out Pane? bound) && bound.Binding is { } binding) tabs.AddChild(new BindingChip(active, binding));
         Button close = ChromeWidgets.Tool("", "Close " + active); ChromeIcons.Apply(close, "pane.close", Tokens.Px("icon.small")); close.Pressed += () => Model.Close(active); tabs.AddChild(close);
         var body = new PanelContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
         group.AddChild(body);
+        if (OpenGround && panes.TryGetValue(active, out Pane? drawn) && drawn.Openings != null) body.ThemeTypeVariation = "FrameOpen";
         body.AddChild(panes.TryGetValue(active, out Pane? pane) ? pane.Content : ChromeWidgets.Empty("pane.close", "Pane not available"));
         return group;
     }
@@ -533,30 +717,55 @@ public sealed partial class ChromeFrame : Control
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
         ChromeWidgets.Detach(globalContent); ChromeWidgets.Detach(localContent);
+        ChromeWidgets.Detach(documentRow);
     }
 }
 
 // The ground of a frame over a transparent window: the window colour everywhere but the opening.
 internal sealed partial class GroundMask : Control
 {
-    private readonly ChromeFrame frame; private Rect2 last;
+    private readonly ChromeFrame frame; private Rect2 last, lastLocal;
+    private Rect2[] free = Array.Empty<Rect2>();
     public GroundMask(ChromeFrame frame) { this.frame = frame; Name = "GroundMask"; MouseFilter = MouseFilterEnum.Ignore; }
 
     public override void _Process(double delta)
     {
-        Rect2 now = frame.Opening;
-        if (now != last) { last = now; QueueRedraw(); }
+        Rect2 now = frame.Opening, local = frame.LocalOpening;
+        Rect2[] openings = frame.FreeOpenings.ToArray();
+        if (now != last || local != lastLocal || !free.SequenceEqual(openings))
+        { last = now; lastLocal = local; free = openings; QueueRedraw(); }
     }
 
+    // B18c: the ground with both openings cut out, Global's and Local's (ViewPanes.Ground).
     public override void _Draw()
     {
         Color ground = frame.Tokens.C("window.background");
-        var all = new Rect2(Vector2.Zero, Size);
-        Rect2 open = new Rect2(last.Position - GlobalPosition, last.Size).Intersection(all);
-        if (!open.HasArea()) { DrawRect(all, ground); return; }
-        DrawRect(new Rect2(0, 0, Size.X, open.Position.Y), ground);
-        DrawRect(new Rect2(0, open.End.Y, Size.X, Size.Y - open.End.Y), ground);
-        DrawRect(new Rect2(0, open.Position.Y, open.Position.X, open.Size.Y), ground);
-        DrawRect(new Rect2(open.End.X, open.Position.Y, Size.X - open.End.X, open.Size.Y), ground);
+        var all = new PaneRect(0, 0, (int)Math.Ceiling(Size.X), (int)Math.Ceiling(Size.Y));
+        var holes = new List<PaneRect>();
+        void Cut(Rect2 open)
+        {
+            if (!open.HasArea()) return;
+            Vector2 at = open.Position - GlobalPosition;
+            holes.Add(new PaneRect((int)Math.Round(at.X), (int)Math.Round(at.Y), (int)Math.Floor(open.Size.X), (int)Math.Floor(open.Size.Y)));
+        }
+        foreach (Rect2 open in new[] { last, lastLocal }) Cut(open);
+        foreach (Rect2 open in free) Cut(open);
+        foreach (PaneRect piece in ViewPanes.Ground(all, holes)) DrawRect(new Rect2(piece.X, piece.Y, piece.Width, piece.Height), ground);
+    }
+}
+
+// B18c: Local's slot with the host's drawing on top (the opening) and Local's content below it.
+internal sealed partial class LocalOpeningLayout : Container
+{
+    private readonly ChromeFrame frame;
+    public Control Opening { get; } = new() { Name = "LocalOpening", MouseFilter = MouseFilterEnum.Pass };
+    public LocalOpeningLayout(ChromeFrame frame) { this.frame = frame; MouseFilter = MouseFilterEnum.Pass; }
+
+    public override void _Notification(int what)
+    {
+        if (what != NotificationSortChildren || GetChildCount() < 2) return;
+        int height = ViewPanes.OpeningHeight((int)Size.X, (int)Size.Y, frame.LocalOpen);
+        FitChildInRect(GetChild<Control>(0), new Rect2(0, 0, Size.X, height));
+        FitChildInRect(GetChild<Control>(1), new Rect2(0, height, Size.X, Math.Max(0, Size.Y - height)));
     }
 }

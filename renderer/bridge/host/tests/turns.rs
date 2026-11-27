@@ -19,6 +19,8 @@ use std::ptr;
 use std::sync::Arc;
 
 use c600_display::jumble;
+use c600_display::pick::{LabelProjection, Partial, Projection};
+use c600_display::plan::{ObjectId, StateRef};
 use c600_display::produce::{self, GeometryInput};
 use c600_display::validate::{validate, validate_engine_bundle, EngineBundle, LimitProfile};
 use c600_kernel::json::{self, Value};
@@ -242,7 +244,7 @@ fn int(record: &Value, key: &str) -> Option<i64> {
 
 #[test]
 fn twist_keys_commit_through_the_command_layer_and_the_control_passes() {
-    assert_eq!(m6h_abi_version(), 7);
+    assert_eq!(m6h_abi_version(), 15);
     let run = Run::new();
     let folder = fresh("pass");
 
@@ -709,6 +711,66 @@ fn jumble_on(name: &str) -> (Turns, String) {
     (turns, folder)
 }
 
+/// ADR-D02 B18: a committed jumble twist carries its certified transform. Before the commit the letter's row names an
+/// engine plane and an angle in (0, pi], and its moving set is exactly the pieces whose pose the commit changes.
+#[test]
+fn a_committed_jumble_twist_carries_its_certified_transform() {
+    let (mut turns, _folder) = jumble_on("jumble-transform");
+    let pose_ids = |turns: &mut Turns| turns.pose_index().expect("the head").1.expect("Jumble on").0;
+    let before = pose_ids(&mut turns);
+    // Menu item 0 is the identity, which turns no plane and has no swept preview; item 1 is a turn.
+    let identity = turns.twist_transform(0, 0).expect("a row").expect("the identity is admissible");
+    assert!(identity.plane.is_none() && identity.angle == 0.0, "the identity turns no plane");
+    let row = turns.twist_transform(0, 1).expect("a row").expect("an admissible twist at the solved poses");
+    assert!(row.plane.is_some(), "the engine names the twist's plane");
+    assert!(row.angle > 0.0 && row.angle <= std::f32::consts::PI, "the angle {} lies in (0, pi]", row.angle);
+    turns.twist_letter(0, 1).expect("the letter commits");
+    let after = pose_ids(&mut turns);
+    let changed: Vec<u32> = (0..before.len()).filter(|&p| before[p] != after[p]).map(|p| p as u32).collect();
+    assert!(!changed.is_empty(), "the twist moved pieces");
+    assert_eq!(row.moving.as_u32(), changed, "the certified moving set is the pieces the commit turned");
+}
+
+#[test]
+fn a_twist_keeps_the_certified_rows_at_its_own_cut() {
+    let (mut turns, folder) = jumble_on("keep-cut-rows");
+    turns.set_grip(2, 0).expect("the grip");
+    let Head::Jumbled(exact, state) = turns.head().expect("the head") else { panic!("Jumble on has poses") };
+    let items = state.menu().expect("the menu").for_cap(&exact, 2).expect("cap 2's menu");
+    let item = items.iter().position(|twist| twist.kidx.is_none()).expect("an off-lattice twist");
+    turns.twist_letter(2, item as u64).expect("a pose move");
+    assert!(matches!(turns.head().expect("the head"), Head::Jumbled(_, poses) if poses.off_lattice_count() > 0));
+    let row = turns.twist_transform(2, 1).expect("the slice row").expect("cap 2 is admissible");
+    turns.twist_transform(0, 1).expect("another cap's row");
+    // These eight rows rank ahead of the slice and other cap. Neither of those can be warmed by read-ahead.
+    for item in 2..=9 {
+        turns.twist_transform(2, item).expect("a row at the twisted cap");
+    }
+    assert_eq!(turns.key_down("KeyK", false), Ok(Press::Committed));
+    assert!(turns.twist_row_kept(2, 1), "the new head has the slice row before the shell reads it");
+    assert!(!turns.twist_row_kept(0, 1), "another cut needs its own certification");
+    assert_eq!(turns.twist_transform(2, 1).expect("the kept row"), Some(row.clone()));
+    assert_eq!(turns.fresh_twist_transform(2, 1).expect("an exact read of the new head"), Some(row));
+    drop(turns);
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+/// Review finding B18-02: the row judges protection as the command layer judges a press. From solved with Jumble on and
+/// orbit 0 protected, item 1 at cap 0 moves pieces that carry orbit 0, so the layer refuses the press
+/// (`KN2:protection.piece_would_move`) and the row is the refused one (`None`, the C interface's status 0).
+#[test]
+fn a_twist_that_moves_a_protected_orbit_has_no_transform_row() {
+    let (mut turns, _folder) = jumble_on("jumble-transform-protected");
+    assert!(turns.twist_transform(0, 1).expect("a row").is_some(), "unprotected, item 1 is admissible");
+    let orbits = json::object([("orbits", Value::Array(vec![Value::Int(0)]))]);
+    let receipt = turns.invoke("protection.orbit.set", orbits).expect("the row is sent");
+    assert!(matches!(receipt.status.name(), "completed" | "committed"), "protecting orbit 0: {}", receipt.status.name());
+    assert!(turns.twist_transform(0, 1).expect("a row").is_none(), "a protected orbit's pieces would move: no row");
+    let refused = turns.twist_letter(0, 1).expect_err("the command layer refuses the press");
+    assert!(refused.contains("piece_would_move"), "{refused}");
+    assert!(turns.twist_transform(0, 0).expect("a row").is_some(), "the identity moves no piece and stays admissible");
+}
+
 /// LX-4, jumble-on half (a draft): a new jumble-on session commits `jumble.on` at once; the router's twist keys then
 /// commit `jumble.twist.menu` with the same menu item as the row's `letter`, its cap and the layer's revision; a
 /// repeat is no press; the retained state stays the one the crossing entered from; and the control at the close
@@ -813,7 +875,8 @@ fn posed_record(bundle: &EngineBundle) -> (u64, u32, [String; 3]) {
 /// LX-4, jumble-on half, at the C interface (a draft): a jumble-on session commits `jumble.on`, and the core adopts
 /// the posed bundle of the solved poses at revision 2 over the home labels: the pose arrays it received are those of
 /// the layer's head (render/1 section 7). A twist key adopts the next poses at revision 3, and the view's publication
-/// for it draws every slot with no pickable instance (J13 stays unsupported).
+/// for it draws every slot, each stamped in the ID pass as its home slot + 1 (ADR-D02 B17; the plan still carries no
+/// instance, J13).
 #[test]
 fn a_jumble_on_session_commits_jumble_on_and_the_core_adopts_its_posed_row() {
     let geometry = GeometryInput::load(&assets()).expect("the geometry");
@@ -835,10 +898,181 @@ fn a_jumble_on_session_commits_jumble_on_and_the_core_adopts_its_posed_row() {
     assert_ne!(run.fake().posed[0].2[0], run.fake().posed[1].2[0], "the press moved pieces to new poses");
     assert_eq!(run.fake().prepared.len(), prepared + 1, "the view is published again");
     let (_, instances, visibility) = run.fake().prepared.last().expect("a preparation").clone();
-    assert!(instances.is_empty() && visibility.iter().all(|&v| v == 1), "every slot drawn, none pickable");
+    assert!(visibility.iter().all(|&v| v == 1), "every slot drawn");
+    assert_eq!(instances.len(), visibility.len(), "every slot pickable");
+    assert!(instances.iter().all(|(&slot, &id)| id as usize == slot + 1), "each slot stamped as its home slot + 1");
     turns.check(None);
     let _ = std::fs::remove_dir_all(&folder);
     let _ = std::fs::remove_dir_all(&layer);
+}
+
+/// A pick at target pixel `(x, y)` of the newest frame, answered by the fake's ID pass.
+fn pick(run: &Run, x: u32, y: u32) -> M6hPick {
+    let mut ticket = 0u64;
+    // SAFETY: a live handle and a writable ticket.
+    assert_eq!(unsafe { m6h_pick_request(run.host, x, y, &mut ticket) }, M6H_OK, "{}", last_error(run.host));
+    let mut out = M6hPick::default();
+    // SAFETY: a live handle and a writable row.
+    assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut out) }, M6H_OK, "{}", last_error(run.host));
+    assert_eq!(out.state, M6H_PICK_PENDING, "the ID pass has not run yet");
+    run.fake().complete();
+    // SAFETY: as above.
+    assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut out) }, M6H_OK, "{}", last_error(run.host));
+    // SAFETY: as above; an answered pick is forgotten.
+    assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut M6hPick::default()) }, M6H_E_INVALID_ARGUMENT);
+    out
+}
+
+/// ADR-D02 B17: a base sticker has its model piece and the occupied slot in the label projection after a turn.
+#[test]
+fn a_base_pick_resolves_to_its_slot() {
+    let run = Run::new();
+    let folder = fresh("base-pick");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    run.settle();
+    run.fake().complete();
+    let frame = run.frame();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (2, 2));
+
+    let layer = fresh("base-pick-layer");
+    let mut turns = Turns::open(kernel(), &assets(), Path::new(&layer), Path::new(&menu()), Puzzle::JumbleOff)
+        .expect("the base session opens");
+    assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
+    let state = turns.state().expect("the labels");
+    let (slot, &label) = state.labels().iter().enumerate().find(|&(slot, &label)| slot != label as usize)
+        .expect("the twist moved a sticker");
+    let sticker = label as u32;
+    let geometry = GeometryInput::load(&assets()).expect("the geometry");
+    let subject = StateRef::Snapshot(produce::revision(&geometry.identity, 2, &state));
+    let projection = LabelProjection::new(state.labels(), state.digest());
+    run.fake().place(10, 20, slot);
+    let hit = pick(&run, 10, 20);
+    assert_eq!((hit.state, hit.hit, hit.engine_revision, hit.lattice), (M6H_PICK_READY, 1, 2, 1));
+    assert_eq!((hit.sticker, hit.piece), (sticker, geometry.slot_piece.as_u32()[sticker as usize]));
+    assert_eq!(projection.slot(&subject, &ObjectId::Sticker(sticker)), Partial::Total(hit.slot));
+    assert_ne!(hit.slot, hit.sticker, "a turned sticker sits in another slot");
+    drop(turns);
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+    let _ = std::fs::remove_dir_all(&layer);
+}
+
+/// ADR-D02 B17: a fixture pick waits for the opened head's ID resources, then hits without a committed key.
+#[test]
+fn a_jumble_fixture_is_pickable_as_soon_as_its_publication_installs() {
+    let fixture = PathBuf::from(fresh("jumble-pick-fixture"));
+    let record = fixture::write_for(Puzzle::JumbleOn, kernel(), &assets(), Path::new(&menu()), &fixture, &["KeyJ"])
+        .expect("the fixture");
+    let revision = int(&record, "revision").expect("the fixture revision") as u64;
+    let folder = fresh("jumble-pick-reopen");
+    copy_dir(&fixture.join("session"), Path::new(&folder));
+    let run = Run::new();
+    let path = text(fixture.join(fixture::RECORD));
+    assert_eq!(run.reopen_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu(), &path), (M6H_OK, revision));
+
+    let before = run.frame();
+    assert_eq!((before.engine_revision, before.publication_revision), (revision, 1));
+    let mut ticket = 0;
+    // SAFETY: B17's request has a live handle and a writable ticket.
+    assert_eq!(unsafe { m6h_pick_request(run.host, 10, 20, &mut ticket) }, M6H_E_UNAVAILABLE);
+    assert_eq!(ticket, 0);
+
+    run.fake().complete();
+    let current = run.frame();
+    assert_eq!((current.engine_revision, current.publication_revision), (revision, revision));
+    assert_ne!(run.fake().submitted.last().expect("the frame").resource_set, 0);
+    run.fake().place(10, 20, 5);
+    let hit = pick(&run, 10, 20);
+    assert_eq!((hit.state, hit.hit, hit.sticker, hit.engine_revision), (M6H_PICK_READY, 1, 5, revision));
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+    let _ = std::fs::remove_dir_all(&fixture);
+}
+
+/// ADR-D02 B17: in a jumble-on session a pick resolves the sticker under the point to its piece and the slot it
+/// occupies, through the pose projection, at the revision the frame drew. A point with no sticker is no hit.
+#[test]
+fn a_jumble_pick_resolves_to_its_piece() {
+    let run = Run::new();
+    let folder = fresh("jumble-pick");
+    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let (mut turns, layer) = jumble_on("jumble-pick-layer");
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 3));
+    run.settle();
+    assert_eq!(turns.key_down("KeyJ", false), Ok(Press::Committed));
+    let Head::Jumbled(exact, state) = turns.head().expect("the head") else { panic!("a jumbled head") };
+    // The posed publication of revision 3 becomes ready and the view installs it.
+    run.fake().complete();
+    run.settle();
+    let frame = run.frame();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (3, 3));
+    // The slots c600-display's pose projection gives (J13), which the host must answer.
+    let projection = jumble::PoseProjection::new(&exact, &state).expect("the pose projection");
+    let subject = StateRef::Snapshot(jumble::revision(&exact, &state, 3));
+    let slot_of = |s: u32| match projection.slot(&subject, &ObjectId::Sticker(s)) {
+        Partial::Total(slot) => slot,
+        _ => M6H_NONE,
+    };
+    // A sticker of a piece the twist moved to another slot, and one it left at home.
+    let moved = (0..exact.model.slot_piece.len() as u32)
+        .find(|&s| {
+            state.pose_of(exact.model.slot_piece[s as usize] as usize).kidx().is_some_and(|k| k != 0) && slot_of(s) != s
+        })
+        .expect("the twist moved a sticker to another slot");
+    let still = (0..exact.model.slot_piece.len() as u32)
+        .find(|&s| state.pose_of(exact.model.slot_piece[s as usize] as usize).kidx() == Some(0))
+        .expect("the twist left a piece at home");
+    run.fake().place(10, 20, moved as usize);
+    run.fake().place(11, 20, still as usize);
+    let hit = pick(&run, 10, 20);
+    assert_eq!((hit.state, hit.hit, hit.engine_revision), (M6H_PICK_READY, 1, 3));
+    assert_eq!((hit.sticker, hit.piece), (moved, exact.model.slot_piece[moved as usize]));
+    assert_eq!(hit.lattice, 1);
+    assert_eq!(hit.slot, slot_of(moved), "the pose projection's slot");
+    assert_ne!(hit.slot, moved, "a turned piece's sticker sits in another slot");
+    let home = pick(&run, 11, 20);
+    assert_eq!((home.hit, home.sticker, home.slot), (1, still, still), "a piece at home occupies its home slots");
+    let empty = pick(&run, 12, 20);
+    assert_eq!((empty.state, empty.hit, empty.sticker, empty.piece), (M6H_PICK_READY, 0, M6H_NONE, M6H_NONE));
+    let _ = std::fs::remove_dir_all(&folder);
+    let _ = std::fs::remove_dir_all(&layer);
+}
+
+/// ADR-D02 B17: a pick whose frame drew a revision the head has since moved past is dropped as stale, never resolved
+/// against the newer state; so is one the core finds stale. Without a frame there is nothing to pick.
+#[test]
+fn a_stale_jumble_pick_is_dropped() {
+    let run = Run::new();
+    let folder = fresh("jumble-pick-stale");
+    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let mut ticket = 0u64;
+    // SAFETY: a live handle and a writable ticket.
+    assert_eq!(unsafe { m6h_pick_request(run.host, 1, 1, &mut ticket) }, M6H_E_UNAVAILABLE, "no frame yet");
+    run.fake().complete();
+    run.settle();
+    let frame = run.frame();
+    assert_eq!((frame.engine_revision, frame.publication_revision), (2, 2));
+    run.fake().place(10, 20, 5);
+    // SAFETY: as above.
+    assert_eq!(unsafe { m6h_pick_request(run.host, 10, 20, &mut ticket) }, M6H_OK, "{}", last_error(run.host));
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 3));
+    run.settle();
+    run.fake().complete();
+    let mut out = M6hPick::default();
+    // SAFETY: a live handle and a writable row.
+    assert_eq!(unsafe { m6h_pick_poll(run.host, ticket, &mut out) }, M6H_OK, "{}", last_error(run.host));
+    assert_eq!(
+        (out.state, out.hit, out.piece),
+        (M6H_PICK_STALE, 0, M6H_NONE),
+        "the twist moved the head past the frame"
+    );
+    // A point outside the frame is refused before the core is asked; a null ticket is refused.
+    // SAFETY: as above.
+    assert_ne!(unsafe { m6h_pick_request(run.host, 1 << 20, 0, &mut ticket) }, M6H_OK);
+    // SAFETY: as above.
+    assert_eq!(unsafe { m6h_pick_request(run.host, 1, 1, ptr::null_mut()) }, M6H_E_INVALID_ARGUMENT);
+    let _ = std::fs::remove_dir_all(&folder);
 }
 
 /// LX-4's jumble-on fixture (a draft): the product's fixture keys all commit `jumble.twist.menu` after `jumble.on`,
@@ -886,4 +1120,185 @@ fn a_jumble_on_fixture_records_its_puzzle_and_reopens_with_its_head() {
     assert_eq!(run.fake().posed, [posed_record(&bundle)], "the fixture head's poses at revision 26");
     let _ = std::fs::remove_dir_all(&copy);
     let _ = std::fs::remove_dir_all(&out);
+}
+
+/// The answer of the last call that gives one ([`m6h_answer`]).
+fn answer_of(handle: *mut ShellHost) -> Value {
+    let mut size = 0u32;
+    // SAFETY: a null buffer only asks for the size.
+    assert_eq!(unsafe { m6h_answer(handle, ptr::null_mut(), 0, &mut size) }, M6H_E_INVALID_ARGUMENT);
+    let mut buffer = vec![0u8; size as usize];
+    // SAFETY: the buffer holds `size` bytes.
+    assert_eq!(unsafe { m6h_answer(handle, buffer.as_mut_ptr(), size, &mut size) }, M6H_OK);
+    assert_eq!(buffer.pop(), Some(0));
+    json::parse(&buffer).expect("the answer is JSON")
+}
+
+/// The head's state digests through the C interface ([`m6h_state_digest`]).
+fn state_digest(run: &Run) -> Value {
+    // SAFETY: a live handle.
+    assert_eq!(unsafe { m6h_state_digest(run.host) }, M6H_OK, "{}", last_error(run.host));
+    answer_of(run.host)
+}
+
+/// ADR-D02 B5: a word fixture commits each menu letter `[cap, item]` as `jumble.twist.menu` through the shell's route,
+/// at any cap. Its record names the word and the head's state digests; a copy reopens with that head and those
+/// digests, and the control replays the letters. The empty word's digests are the D02 sample `on-zero`'s, by which the
+/// shell binds that sample. A letter outside the menu fails the writer.
+#[test]
+fn a_word_fixture_reopens_at_its_digest() {
+    let letters = [[57u64, 17], [388, 44], [62, 46]];
+    let out = PathBuf::from(fresh("word-fixture"));
+    let record = fixture::write_word(kernel(), &assets(), Path::new(&menu()), &out, &letters).expect("the fixture");
+    assert_eq!(record.get("puzzle").and_then(Value::as_str), Some("jumble-on"));
+    assert_eq!(int(&record, "revision"), Some(2 + 3));
+    assert_eq!(record.get("control").and_then(|c| c.get("pass")), Some(&Value::Bool(true)));
+    let word = letters.iter().map(|&[cap, item]| Value::Array(vec![Value::Int(cap as i64), Value::Int(item as i64)]));
+    assert_eq!(record.get("word"), Some(&Value::Array(word.collect())));
+    let read = fixture::read(&out.join(fixture::RECORD)).expect("the record reads");
+    let caps: Vec<_> = read.committed.iter().map(|args| args.get("cap").and_then(Value::as_i64)).collect();
+    assert_eq!(caps, [Some(57), Some(388), Some(62)]);
+
+    let copy = fresh("word-fixture-copy");
+    copy_dir(&out.join("session"), Path::new(&copy));
+    let mut turns =
+        Turns::reopen(kernel(), &assets(), Path::new(&copy), Path::new(&menu()), &read).expect("the copy reopens");
+    let digests = turns.state_digests().expect("the digests");
+    assert_eq!(digests.get("digest").and_then(Value::as_str), Some(read.digest.as_str()));
+    assert_eq!(Some(&digests), record.get("state_digests"));
+    let control = turns.check(Some((5, read.digest.clone())));
+    assert_eq!(control.get("pass"), Some(&Value::Bool(true)), "{}", control.canonical());
+    let _ = std::fs::remove_dir_all(&copy);
+    let _ = std::fs::remove_dir_all(&out);
+
+    // The empty word: the solved poses, with the digests of the sample `on-zero`.
+    let out = PathBuf::from(fresh("word-fixture-empty"));
+    let record = fixture::write_word(kernel(), &assets(), Path::new(&menu()), &out, &[]).expect("the empty word");
+    let sample =
+        std::fs::read(checkout().join("tools/looklab/data/samples/jumble/on-zero/state.json")).expect("a file");
+    let sample = json::parse(&sample).expect("the sample is JSON");
+    let (sample, digests) = (sample.get("digests").expect("its digests"), record.get("state_digests").expect("ours"));
+    assert_eq!(digests.get("digest"), sample.get("adapter"));
+    for key in ["pose_ids_sha256", "pose_lattice_sha256"] {
+        assert_eq!(digests.get(key), sample.get(key), "{key}");
+    }
+    let _ = std::fs::remove_dir_all(&out);
+
+    // A letter outside the menu's 60 items does not commit, and the writer fails.
+    let out = PathBuf::from(fresh("word-fixture-refused"));
+    let error = fixture::write_word(kernel(), &assets(), Path::new(&menu()), &out, &[[0, 60]]).expect_err("refused");
+    assert!(error.starts_with("letter 0: "), "{error}");
+    let _ = std::fs::remove_dir_all(&out);
+}
+
+/// ADR-D02 B5: the head's state digests at the C interface follow the session: a twist changes them, an undo brings
+/// back the earlier ones and a redo the later. With Jumble off the two pose digests are null; with no session the call
+/// is refused.
+#[test]
+fn the_state_digest_follows_undo_and_redo() {
+    let run = Run::new();
+    // SAFETY: a live handle.
+    assert_eq!(unsafe { m6h_state_digest(run.host) }, M6H_E_SESSION);
+    let folder = fresh("state-digest");
+    assert_eq!(run.open_as(M6H_PUZZLE_JUMBLE_ON, &folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let entered = state_digest(&run);
+    assert!(entered.get("pose_ids_sha256").and_then(Value::as_str).is_some(), "{}", entered.canonical());
+    assert_eq!(int(&entered, "off_lattice"), Some(0), "the solved poses are all on the lattice");
+    assert_eq!(run.press("KeyJ").0, M6H_PRESS_COMMITTED);
+    let twisted = state_digest(&run);
+    assert_ne!(twisted.get("digest"), entered.get("digest"));
+    assert_ne!(twisted.get("pose_ids_sha256"), entered.get("pose_ids_sha256"));
+    assert!(int(&twisted, "off_lattice").is_some(), "{}", twisted.canonical());
+    assert_eq!(run.press("Ctrl+KeyZ").0, M6H_PRESS_OTHER);
+    assert_eq!(state_digest(&run), entered, "the undo");
+    assert_eq!(run.press("Ctrl+KeyY").0, M6H_PRESS_OTHER);
+    assert_eq!(state_digest(&run), twisted, "the redo");
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+
+    let run = Run::new();
+    let folder = fresh("state-digest-off");
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    let off = state_digest(&run);
+    assert!(off.get("digest").and_then(Value::as_str).is_some());
+    for key in ["pose_ids_sha256", "pose_lattice_sha256", "off_lattice"] {
+        assert_eq!(off.get(key), Some(&Value::Null), "{key}");
+    }
+    drop(run);
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+/// ADR-D02 B18b: a session's host with Local open and installed, Global on the left half and Local on the right.
+fn two_views(name: &str) -> (Run, String) {
+    let run = Run::new();
+    let folder = fresh(name);
+    assert_eq!(run.open(&folder, &menu()), M6H_OK, "{}", last_error(run.host));
+    // SAFETY: a live handle.
+    unsafe {
+        assert_eq!(m6h_open_local(run.host), M6H_OK, "{}", last_error(run.host));
+        run.fake().complete();
+        assert_eq!(m6h_pump(run.host), M6H_OK);
+        let (w, h) = (SIZE.0 / 2, SIZE.1);
+        assert_eq!(m6h_set_pane(run.host, 0, VIEW.0, 0, 0, w, h, 0), M6H_OK, "{}", last_error(run.host));
+        assert_eq!(m6h_set_pane(run.host, 1, LOCAL.0, w as i32, 0, w, h, 0), M6H_OK, "{}", last_error(run.host));
+    }
+    (run, folder)
+}
+
+#[test]
+fn two_views_publish_one_revision() {
+    let (run, folder) = two_views("two-views");
+    let first = run.frame();
+    assert_eq!((first.panes, first.held, first.engine_revision, first.publication_revision), (2, 0, 1, 1));
+    let before = run.fake().prepared.len();
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    run.settle();
+    // One adoption publishes both views: one preparation each, from the same bundle.
+    let views: Vec<u64> = run.fake().prepared[before..].iter().map(|(view, _, _)| *view).collect();
+    assert_eq!(views, [VIEW.0, LOCAL.0]);
+    assert_eq!(run.fake().adoptions.last().map(|a| a.0), Some(2));
+    run.fake().complete();
+    let shown = run.frame();
+    assert_eq!((shown.panes, shown.held, shown.engine_revision, shown.publication_revision), (2, 0, 2, 2));
+    let input = *run.fake().submitted.last().expect("a frame");
+    let panes = run.fake().submitted_panes.last().cloned().expect("a frame");
+    assert_eq!(input.engine_revision, 2);
+    assert_eq!(panes.iter().map(|p| p.view).collect::<Vec<_>>(), [VIEW.0, LOCAL.0]);
+    assert!(panes.iter().all(|p| p.resource_set != 0), "both panes draw their installed sets of revision 2");
+    let rows = run.present();
+    assert_eq!(rows.last().map(|row| (row.sequence, row.engine_revision)), Some((shown.sequence, 2)));
+    assert_eq!(run.close(2), (M6H_OK, 1), "{}", last_error(run.host));
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
+#[test]
+fn a_frame_never_mixes_revisions() {
+    let (run, folder) = two_views("never-mixes");
+    let first = run.frame();
+    assert_eq!((first.panes, first.held, first.engine_revision), (2, 0, 1));
+    // The fake core delays Local's activation: its preparation for the next revision stays pending.
+    run.fake().hold_view = Some(LOCAL.0);
+    assert_eq!(run.press("KeyJ"), (M6H_PRESS_COMMITTED, 2));
+    run.settle();
+    let submitted = run.fake().submitted.len();
+    for _ in 0..3 {
+        run.fake().complete();
+        let held = run.frame();
+        assert_eq!(held.held, 1, "Global shows revision 2 and Local revision 1: no frame");
+        assert_eq!((held.sequence, held.engine_revision, held.panes), (first.sequence, 1, 2), "{held:?}");
+    }
+    assert_eq!(run.fake().submitted.len(), submitted, "a held frame submits nothing");
+    // Local's preparation lands: the next frame draws both views at revision 2.
+    run.fake().hold_view = None;
+    run.fake().complete();
+    let shown = run.frame();
+    assert_eq!((shown.held, shown.engine_revision, shown.publication_revision), (0, 2, 2), "{shown:?}");
+    assert!(shown.sequence > first.sequence);
+    // Every composite frame the core took drew one revision: the fake core refuses a pane of another.
+    let revisions: Vec<u64> = run.fake().submitted.iter().map(|input| input.engine_revision).collect();
+    assert!(revisions.windows(2).all(|pair| pair[0] <= pair[1]), "{revisions:?}");
+    let rows = run.present();
+    assert_eq!(rows.last().map(|row| (row.sequence, row.engine_revision)), Some((shown.sequence, 2)));
+    assert_eq!(run.close(2), (M6H_OK, 1), "{}", last_error(run.host));
+    let _ = std::fs::remove_dir_all(&folder);
 }

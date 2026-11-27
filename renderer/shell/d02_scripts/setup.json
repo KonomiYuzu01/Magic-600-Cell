@@ -1,0 +1,34 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "setup",
+  "resolution": "1280x720",
+  "note": "ADR-D01.68 in sample mode at 1280x720: the setup slot under the Target cell of the relation strip. Before any run it says not run and shows the tool's declaration. setup.search runs the built-in setup search for the Target the solver named (the mid demo state's p0334): the slot lists its rows in the neutral order with their lengths, says which length is minimal within the guarded alphabet and shows the coverage (every word of the family tried). A twist goes into Core; setup.row.use 1 fills Prepare and Cleanup around it with row 1 and its inverse; operation.preview setup:1 stages row 1's setup alone as the preview. The error lamp counts no failure.",
+  "steps": [
+    {
+      "wait_ms": 2000
+    },
+    {
+      "command": "setup.search"
+    },
+    {
+      "wait_ms": 1000
+    },
+    {
+      "command": "operation.phase.append_twist"
+    },
+    {
+      "command": "setup.row.use",
+      "argument": "1"
+    },
+    {
+      "wait_ms": 1000
+    },
+    {
+      "command": "operation.preview",
+      "argument": "setup:1"
+    },
+    {
+      "wait_ms": 2500
+    }
+  ]
+}

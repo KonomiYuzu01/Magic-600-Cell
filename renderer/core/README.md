@@ -1,4 +1,4 @@
-# Renderer core (S-A2, ABI 5)
+# Renderer core (S-A2, ABI 10)
 
 `renderer/core/` is the product copy of the selected S-A2 renderer core. It is a native Direct3D 12 producer DLL, `sa2_interop.dll`, that a Godot 4.7.2 .NET host loads. It draws into textures that Godot shares with it, on Godot's device and queue. W-J's per-piece pose path is added as ABI 3, so W-J item 5 (S4, I_a, I_b) and the W3 re-acceptance can run on the S-A2 host with unchanged bars. ABI 4 adds the product API that the Rust display host calls, one C call per RM.14 operation. ABI 5 adds route B: the core's own device presenting in a DirectComposition layer. Route B is accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks. `PROVENANCE.md` lists every file's source under `work/experiments/` and how it changed. The build compiles nothing from there.
 
@@ -86,7 +86,7 @@ SA2_API int32_t sa2_surface_detach(sa2_context* ctx);
 
 ## C9 U5: user shader stages (additive in ABI 5)
 
-The U5 design names ABI 6; these calls are added to ABI 5 instead, `SA2_ABI_VERSION` stays 5 and no earlier call changes. The header comment before the declarations gives the contract.
+The U5 design names ABI 6; these calls are added to ABI 5 instead, `SA2_ABI_VERSION` stayed 5 and no earlier call changes. (ABI 6 is ADR-D02's view shape, below.) The header comment before the declarations gives the contract.
 
 ```c
 #define SA2_STAGE_VERTEX 1u
@@ -106,6 +106,99 @@ SA2_API int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle);
 - `sa2_stage_report` returns the oldest completed chain frame not yet returned (U, the allowance, the stop decision and the pixel-shader invocations of both draws), so a caller that reports after each frame and again while the frame number rises sees every chain frame once, in order; with none waiting it returns the last row again. At most 4096 rows wait (C9 U5c; U5b returned only the newest).
 - A stage compile that cannot load DXC, compose a pass or build a pipeline returns its status with the compile record; no exception crosses the ABI (C9 U5c).
 
+## ABI 6: a view's shape (ADR-D02, a candidate behind --d02)
+
+On 26 November 2026 the owner asked for smaller stickers at Look Lab's opening values. ABI 6 adds one call; every ABI 5 call, struct and behaviour is unchanged, and a view whose shape was never set draws byte-identically to ABI 5. The header comment before the declaration gives the contract.
+
+```c
+#define SA2_SHAPE_DEFAULT_CELL_SHRINK 0.76f /* ABI 5's constants */
+#define SA2_SHAPE_DEFAULT_STICKER_SHRINK 0.82f
+#define SA2_SHAPE_DEFAULT_D4 1.18f
+#define SA2_SHAPE_DEFAULT_ZOOM 1.15f
+SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape* shape); /* sa2_view_shape: 24 bytes on x64 */
+```
+
+- The shape is the cell shrink (Look Lab's 1 - gap), the sticker shrink, d4 and the zoom (Look Lab's 1 / tan(fov / 2)), per view. A NULL shape restores the defaults; a value that is not finite or lies outside its range is refused and changes nothing.
+- The shape is device-free product state: it is set outside a trace with a scene loaded, kept by `sa2_recover`, forgotten by `sa2_scene_unload`. A frame keeps its shape, so a pick on it draws its ID pass with that shape. The shaders do not change: the values go into the constants that `geometry.hlsl` already reads.
+- `python renderer/core/check_core.py --shape` runs `sa2_selftest.exe --warp --shape --debug` on WARP only: the default shape draws byte-identically to no call, a smaller sticker shrink and the opening values cover fewer pixels, another view keeps its shape, every non-finite or out-of-range value is refused without changing a frame, NULL restores the defaults and an unloaded scene refuses the call.
+
+## ABI 7: per-piece style (ADR-D02 B14, a candidate behind --d02)
+
+ABI 7 adds the piece style and four style slots; every ABI 6 call, struct and behaviour is unchanged. The header comment before the declarations gives the contract.
+
+```c
+SA2_API int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_style, uint32_t channel);
+SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style* style); /* sa2_view_style: 316 bytes on x64 */
+```
+
+- A piece style is one byte per piece and channel (fill: a palette entry and the dim-set bit; outline: a palette entry), bound to the adopted revision; an adoption drops it. A style slot holds the tint and dim modes, the dim amount, the outline width, 16 RGBA palette entries and a 3x3 output colour matrix. A one-view frame uses slot 1; a composite frame's pane names its slot.
+- A frame draws styled only when its slot changes something (a drawn non-zero piece byte, a dim that applies, a matrix other than the identity); otherwise it draws through the unchanged product pipeline. The styled pass (`shaders/styled.hlsl`) reuses `product.hlsl`'s vertex stage and `draw.hlsl`'s colour, and runs under its own root signature (the product's twenty parameters, then t17 and b1). Its DXIL is embedded in the DLL (`embed_dxil.cmake`), so the build identity's eight shader files and the acceptance harness's copied set are unchanged. The piece style is uploaded with the engine ring copy, whose key includes the style's version.
+- `python renderer/core/check_core.py --style` runs `sa2_selftest.exe --warp --style --debug` on WARP only: a slot that changes nothing and an empty mask draw byte-identically to no style; a fill tint and an outline on a quarter of the pieces change only pixels those pieces cover; a style for another or a replaced revision is refused; a focus dim and a colour matrix change the frame without a piece style; clearing the slot restores the unstyled frame.
+
+## ABI 8: the composite frame (ADR-D02 B18a, a candidate behind --d02)
+
+ABI 8 draws up to four panes of one engine revision into one target as one frame, so Global and Local are drawn at once with one present and one `presented` row. Every ABI 7 call, struct and behaviour is unchanged.
+
+```c
+#define SA2_PANES_MAX 4u
+SA2_API int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* frame, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id); /* sa2_pane: 112 bytes */
+SA2_API int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_row* rows, uint32_t capacity, uint32_t* out_count); /* sa2_pane_row: 32 bytes */
+```
+
+- One clear of the whole target, one draw per pane with viewport and scissor at its rectangle, each with its own constants (its camera, its view's shape), resource set and style slot, then one present and one frame ID. The frame input names the first pane. Rectangles lie inside the target and do not overlap; 0 or more than four panes, a pane's set prepared at another engine revision, and the other checks refuse the whole frame.
+- Each pane draws inside its own pipeline-statistics query; `sa2_frame_panes` answers each pane's vertex evaluations and the report's `view_vertex_evals` is their sum. A pick on a composite frame draws the ID pass with the pane that holds the point (its camera, set, shape and viewport), and its reply names that pane's view, view generation and publication generation. Each view keeps its own publication generation: only the first pane's set must carry the frame input's.
+- `python renderer/core/check_core.py --panes` runs `sa2_selftest.exe --warp --panes --debug` on WARP only: one pane covering the target is byte-identical to `sa2_frame_submit`; each of two 300 x 300 panes matches its one-view frame drawn at 300 x 300 (at most 1% of covered pixels differ by more than 2); pixels outside every pane hold the clear colour; overlap, a fifth pane and a mixed revision are refused; a pick in each pane names its view and the one-view pick's instance; the composite frame's vertex evaluations equal the two one-view frames' sum.
+
+## ABI 9: a view's focus (ADR-D02 B18c, a candidate behind --d02)
+
+ABI 9 gives a view a focus: Local's own projection, the cap it draws and the spread that pulls its cells apart. Every ABI 8 call, struct and behaviour is unchanged, and the default focus draws byte-identically to ABI 8.
+
+```c
+#define SA2_PROJECTION_PERSPECTIVE 0u
+#define SA2_PROJECTION_ORTHOGRAPHIC 1u
+#define SA2_FOCUS_NONE 0xFFFFFFFFu
+SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus); /* sa2_view_focus: 24 bytes */
+```
+
+- A focus is a projection (perspective or orthographic), a focus cell (0 to 599, or `SA2_FOCUS_NONE`), a threshold `focus_cos` (-1 to 1) and a spread (1 to 3). NULL restores the default (perspective, none, -1, 1). A shape set later keeps the focus, and a frame keeps the focus it was drawn with, so a pick on it uses the same one.
+- With a focus cell the core turns the cell's unit centre (the pole) to +w before the view's camera, as Look Lab's `LocalShape.Frame` does, so the cap faces the viewer. A sticker whose posed, unshrunk centre has a dot product with the pole below `focus_cos` is placed outside the clip volume. The spread moves each drawn sticker by (spread - 1) times its posed cell centre's projection. The orthographic projection drops d4's divide.
+- `python renderer/core/check_core.py --focus` runs `sa2_selftest.exe --warp --focus --debug` on WARP only: the default focus draws byte-identically to no call; with cell 150's pole turned to +w and orthographic, the whole view changes the picture; the cap test (121/125) draws fewer pixels, around the target's centre; the spread changes the picture; another view keeps its frames; a later shape keeps the focus; a refused focus changes nothing, and NULL restores the default. It writes three pictures beside its report.
+
+## ABI 10: a view's layout (ADR-D02 B23, bare; a candidate behind --d02)
+
+ABI 10 lets a view draw as Look Lab's Hopf rings instead of the projection chain. Every ABI 9 call, struct and behaviour is unchanged, and a view whose layout was never set draws byte-identically to ABI 9.
+
+```c
+#define SA2_LAYOUT_CHAIN 0u
+#define SA2_LAYOUT_HOPF_RINGS 1u
+#define SA2_HOPF_RINGS 20u
+SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layout* layout); /* sa2_view_layout: 1560 bytes */
+```
+
+- The row carries Look Lab's `tools/looklab/fixtures/hopf-rings.json`: J, K, the 20 rings' origins and each cell's ring and half-step. The core checks them against its own cells: each centre must project onto its ring's plane at the phase of its half-step. It then builds Look Lab's `GlobalLayout` ring charts (RingRadius 2.62, BaseRadius 8.063, RingScale 0.28) into one table that the product passes read at t18. Every view that names the rings shares the table; a different set is refused.
+- `SA2_LAYOUT_RING_SHEET` (2u, ADR-D02 B22, added before any release) lays the same charts flat as Look Lab's ring sheet: 20 rows of 30 cell charts, each cell's centre at (0.408 (h/2 - 14.75), -0.342 (r - 9.5)). The camera does not turn the sheet. A view takes either Hopf layout only once the Hopf table exists, and both kinds build it. (The table was first built for the rings alone, so a sheet named first drew from an empty root SRV and hung the owner's GPU, DXGI_ERROR_DEVICE_HUNG. The shader now also clamps the chart index it reads.)
+- A sticker is placed by the chart of the cell nearest the posed centre of its own cell, in Hopf coordinates: the ring of the nearest base point, then the place of the nearest phase along it. So a sticker whose piece is not posed uses its own cell's chart. The placed point turns by the camera's upper 3 x 3 (the shell sends the linked 3D spin) and is drawn at the view's zoom; d4 and the focus are unused.
+- Under a Hopf layout a view draws no turn (ADR-D02 B22 rest, ADR-D02.10): `sa2_transform_set` turns the moving pieces of chain views only, so under a chart Global draws no sweep while Local sweeps.
+- `python renderer/core/check_core.py --hopf` runs `sa2_selftest.exe --warp --hopf <hopf-rings.json> --debug` on WARP only. It checks that:
+  - on the CPU, the table built from the rings' own centres puts the 20 ring centres at a dodecahedron's vertices;
+  - the chain layout and NULL draw byte-identically to no call;
+  - malformed or unfitting rings are refused and change nothing;
+  - the rings change the picture around its centre, and the camera turns them;
+  - each cell's centre lies at its own place on the ring sheet, and the sheet draws another picture around the centre, which the camera does not turn;
+  - the ring sheet named on a fresh context, before any rings, draws the same picture;
+  - another view keeps the chain, and the same rings on a third view draw the same picture.
+
+### Focus layers in the core (ADR-D02 B17, ADR-D01.46; added to ABI 10 before any release)
+
+```c
+#define SA2_STYLE_HIDE_MARKED 3u
+#define SA2_STYLE_HIDE_UNMARKED 4u
+```
+
+- A style slot's `dim_mode` may hide the pieces that the dim modes would dim: their stickers are not drawn, so what lies behind them shows. ADR-D01.46's focus layer marks the pieces its focused predicate leaves out (`SA2_STYLE_DIM` in the fill byte) and chooses dimmed or hidden per slot.
+- Picking follows visibility: the ID pass of a frame, or of the pane under the point, draws with the style that frame or pane drew with (the embedded `styledVs` and `styledIdPs`), and a piece the slot hides or dims answers no instance. A tint, an outline or the matrix leaves the answer unchanged; a frame drawn without a style picks as before. A pick on a styled frame whose engine copy has since taken another piece style is `SA2_PICK_STALE_ENGINE`.
+- `python renderer/core/check_core.py --style` also runs the WARP focus-layer check: hiding the marked pieces draws what a set without them draws (at most 1% of covered pixels differ by more than 2 in a channel); at sample points the hiding frame's picks never name a hidden piece and name the piece behind where there is one, the dimming frame's never name a dimmed one, and an outline alone changes no pick; one styled pane covering the target picks as the one-view frame; the stale rule holds.
+
 ## Build and CPU check
 
 These need Windows, MSVC x64, the Windows SDK's `dxc` and the pinned `renderer-spike` CMake and Ninja. A worktree without `tools/.venv/renderer-spike` can set `M600_RENDERER_SPIKE_SCRIPTS` to another checkout's `Scripts` folder.
@@ -120,9 +213,11 @@ The default build directory is `work\build\renderer-core`. Build only under the 
 python renderer/core/check_core.py
 ```
 
-This builds Release in a fresh `work/build/renderer-core-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose 35 checks must all pass (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device.
+This builds Release in a fresh `work/build/rc-<pid>` folder. It checks that no generated build file names `work/experiments` and runs `sa2_selftest.exe --cpu`, whose checks must all pass (40 with ABI 6's view shape, ABI 7's piece style and ABI 8's pane arguments) (17 ABI 2 checks, 5 W-J checks, 8 product checks, 3 route B checks: route b arguments, present matching (with `TracePresents`) and recovery bookkeeping, and 2 C9 U5 checks: stage arguments and raster bound, the latter against vectors that include raster.rs's unit-test cases). It then recomputes the DLL and the eight shader SHA-256 values in the identity and removes the folder. It starts no D3D12 device by default.
 
 `tests/test_renderer_core.py` checks the provenance digests, the file list, the CMake sources and the ABI pins. It needs only the Python standard library and runs on Linux.
+
+`python renderer/core/check_core.py --style --colours` also runs the WARP style and appearance checks. The colour check compares default frame bytes, class-local recolouring, the clear colour in frames and panes, tint mixing, picks and refusals.
 
 ```sh
 python renderer/core/check_core.py --stages <folder with dxcompiler.dll and dxil.dll>
@@ -150,4 +245,4 @@ None of these has been run for this copy. Each starts a D3D12 device:
 - The ABI 4 GPU paths: the engine and preparation uploads, a product frame with its timestamp and pipeline-statistics queries, the ID pass and its readback, `sa2_resize`, and device loss during product work. They compile, but no self-test mode exercises them yet.
 - The ABI 5 route B paths: `sa2_create`, the surface calls in a real window, surface frames and their presentation, `sa2_presented` and a traced run's `presented.jsonl` against real frame statistics, `sa2_resize` of the swap chain, and `sa2_recover` after `sa2_remove_device`. They compile, but no self-test mode exercises them; route B's three owner-machine checks are still open.
 
-The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 5 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 5 and uses only ABI 1 to 3 calls.
+The S-A2 host project under `work/experiments/renderer-sa2/project/` pins ABI 2 in `Native.cs`. A host that loads this DLL must expect ABI 10 and bind the new functions; the acceptance harness `renderer/acceptance/` pins ABI 10 and uses only ABI 1 to 3 calls.

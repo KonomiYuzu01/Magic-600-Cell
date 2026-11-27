@@ -1,0 +1,533 @@
+{
+  "format": "magic600-design-command-rows",
+  "version": 1,
+  "note": "Draft command rows for Jumble, research and pinned cards. Each names its section 15 request, research build step (B28, B29) or design item (ADR-D01.24). The shell registers them with D02 on, and the research pane's rows whenever the pane is mounted (ResearchRows.AddDrafts). A row is deleted from this file the day the command table gains its id (D02DraftRowsAbsentFromTable). No key is bound here; the palette can bind each one.",
+  "commands": [
+    {
+      "id": "jumble.capmap.threshold.set",
+      "label": "Cap map: set threshold",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Sets the cap map's threshold, a set of predicates written as formulas (N_c ≥ k, N_c ≤ k, N_c = F_c), drawn as the Query set outline with members, non-members and blocked caps counted apart; no default threshold and no sort (ADR-D02.15). Argument: the formulas.",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.capmap.threshold.clear",
+      "label": "Cap map: clear threshold",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Clears the cap map's threshold (ADR-D02.15).",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.cap.name",
+      "label": "Name a cap",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Names a cap: its 80 meeting caps show in their static form, and its jobs may start; no job starts before a cap is named (ADR-D02.16, ADR-D02.19). Argument: the cap id.",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.cap.unname",
+      "label": "Un-name the cap",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Un-names the named cap; Local returns to its empty state (ADR-D02.12, ADR-D02.16).",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.slice.split",
+      "label": "Cut slice: hold the split",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "While held, splits the slice's layers into two linked copies with the same rotation, scale and shell (ADR-D02.17).",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.slice.shell",
+      "label": "Cut slice: set the radius shell",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Sets the slice's radius shell about the named cap's pole (ADR-D02.17). Argument: the shell.",
+      "request": "CR-14"
+    },
+    {
+      "id": "view.mode.raw",
+      "label": "Raw view",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Local's cap-centred stereographic mode (ADR-D02.18).",
+      "request": "CR-14"
+    },
+    {
+      "id": "view.mode.raw.clip",
+      "label": "Raw view: set the clip",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Sets the raw view's clip, a half-space parallel to the cut's hyperplane, no further than 90 degrees; the default is exactly the named cap's cut (ADR-D02.18). Argument: h.",
+      "request": "CR-14"
+    },
+    {
+      "id": "view.mode.raw.antipode",
+      "label": "Raw view: antipode chart beside",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Adds or removes the antipode chart side by side, sharing the clip and the handedness (ADR-D02.18).",
+      "request": "CR-14"
+    },
+    {
+      "id": "view.preset.jumble_entry",
+      "label": "Jumble entry slot",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "The entry slot keyed to the mode: Jumble on applies it, Jumble off reverts what it set that the researcher has not changed since; chrome only (ADR-D02.11, ADR-D02.12).",
+      "request": "CR-14"
+    },
+    {
+      "id": "view.preset.global.ring_sheet",
+      "label": "Global chart: ring sheet",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "The 20 Hopf rings as 20 rows of 30 rigid cell charts; the default chart (ADR-D02.9). Waits for R5's admission and its gate row before it ships.",
+      "request": "CR-14"
+    },
+    {
+      "id": "view.preset.global.hopf_rings",
+      "label": "Global chart: Hopf rings",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "20 circles of 30 cells around a dodecahedron's vertices, turning with the camera (ADR-D02.9). Waits for R5's admission and its gate row before it ships.",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.focus.straddlers",
+      "label": "Focus: the named cap's straddlers",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "The highlight-and-dim focus layer of the named blocked cap's straddlers; never a default, dims only at a blocked cap and never the cap map (ADR-D02.30).",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.repair.focus",
+      "label": "Repair list: focus a row's step",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Draws one step's moving set of the focused repair row, labelled \"Repair k of m\" (ADR-D02.34). Argument: the row and the step.",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.tint.mode",
+      "label": "Tint mode",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Switches the one per-pose tint channel: none, contact class, height or off-lattice; modes are never stacked (ADR-D02.20). Argument: the mode.",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.focus.domain",
+      "label": "Focus: one alignment domain",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "One domain at full colour, the others dimmed, with a count (ADR-D02.21). Argument: the domain id.",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.focus.height",
+      "label": "Focus: height at least k",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "The pieces of height at least k, with their count (ADR-D02.23). Argument: k.",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.corrections.mark",
+      "label": "ν-corrections: mark into the set",
+      "kind": "view",
+      "contexts": [
+        "puzzle",
+        "operation"
+      ],
+      "note": "Marks a ν-correction into the set with a signed multiplicity, for one chord to check the set (ADR-D02.39). Argument: the id and the multiplicity.",
+      "request": "CR-14"
+    },
+    {
+      "id": "jumble.repair.stage",
+      "label": "Stage a repair row",
+      "kind": "workspace",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Stages a picked repair row as a sealed, whole-only fresh preview that writes the repair-pair record. The solver picks the row; the program never picks, orders or stages one by itself (ADR-D02.33). Argument: the row.",
+      "request": "CR-15"
+    },
+    {
+      "id": "tuning.open",
+      "label": "Tuning: open the panel",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Opens the tuning panel as a tab in the current layout's right dock, beside History in Solve, so the views being judged stay visible (ADR-D02.47).",
+      "request": "CR-16"
+    },
+    {
+      "id": "tuning.preset.save",
+      "label": "Tuning: save preset",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Saves the tuning as a preset after the Save checks pass; a shipped preset is forked on edit (ADR-D02.47). Argument: the name.",
+      "request": "CR-16"
+    },
+    {
+      "id": "tuning.preset.apply",
+      "label": "Tuning: apply preset",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Applies a tuning preset (ADR-D02.47). Argument: the preset.",
+      "request": "CR-16"
+    },
+    {
+      "id": "tuning.slot.set",
+      "label": "Tuning: set compare slot",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Stores the current tuning in one of the two tuning slots (ADR-D02.47). Argument: A or B.",
+      "request": "CR-16"
+    },
+    {
+      "id": "tuning.slot.swap",
+      "label": "Tuning: swap compare slots",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Swaps the two tuning slots (ADR-D02.47).",
+      "request": "CR-16"
+    },
+    {
+      "id": "tuning.compare.hold",
+      "label": "Tuning: hold to compare",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "While held, shows the other tuning slot (ADR-D02.47).",
+      "request": "CR-16"
+    },
+    {
+      "id": "tuning.simulate.hold",
+      "label": "Tuning: hold a simulation",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "While held, runs a colour-vision or high-contrast simulation; until a core simulation stage exists it covers the chrome only and says so (ADR-D02.47). Argument: protan, deutan, tritan or contrast.",
+      "request": "CR-16"
+    },
+    {
+      "id": "tuning.selector.revert",
+      "label": "Tuning: revert the live selector",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Reverts the live selector's change (ADR-D02.47).",
+      "request": "CR-16"
+    },
+    {
+      "id": "tuning.diff.export",
+      "label": "Tuning: export a difference file",
+      "kind": "file",
+      "contexts": [
+        "any"
+      ],
+      "note": "Exports the tuning's difference from its preset as a file (ADR-D02.47).",
+      "request": "CR-16"
+    },
+    {
+      "id": "research.check.trace",
+      "label": "Research: step the checker",
+      "kind": "view",
+      "contexts": [
+        "any"
+      ],
+      "note": "Opens a check report's per-claim trace in LP4's debugger pane (ADR-D02.45).",
+      "request": "CR-17"
+    },
+    {
+      "id": "research.run.view",
+      "label": "Research: open derived state in a free view",
+      "kind": "view",
+      "contexts": [
+        "any"
+      ],
+      "note": "Opens a run's derived state in a free view with its own binding source, captioned \"derived; reachability open\"; refused past the four-view envelope (ADR-D02.45).",
+      "request": "CR-17"
+    },
+    {
+      "id": "research.record.read",
+      "label": "Read research record",
+      "kind": "query",
+      "contexts": [
+        "global"
+      ],
+      "note": "Reads a research record's one-paragraph finding and its tree of named parts with their lengths (ADR-D02.44, ADR-D02.49), and opens it in place in the research pane. Argument: the record.",
+      "request": "B28"
+    },
+    {
+      "id": "research.run.declare",
+      "label": "Declare research run",
+      "kind": "workspace",
+      "contexts": [
+        "global"
+      ],
+      "note": "Declares one field of the next research run before it starts (ADR-D02.4, ADR-D02.52): seed=<7401 to 7499> (its words name the scored block), depth=<twists> or budget=<steps>. A seed outside the pool is refused.",
+      "request": "B29"
+    },
+    {
+      "id": "research.run.start",
+      "label": "Start research run",
+      "kind": "workspace",
+      "contexts": [
+        "global"
+      ],
+      "note": "Starts the declared research run (ADR-D02.4, ADR-D02.50): refused until its budget, seed and depth are declared. The run records its budget; a run that reaches it stops as cut off, never a verdict. It commits nothing, so History shows no research run.",
+      "request": "B29"
+    },
+    {
+      "id": "jumble.seat.hold",
+      "label": "Hold a seat key",
+      "kind": "view",
+      "contexts": [
+        "puzzle",
+        "keyboard"
+      ],
+      "note": "While held, shows the seat's 12 twist keys with their rotation orders. With CR-19, a held seat key with a twist key routes as one chord (ADR-D02.42). Argument: the seat, 1 to 4.",
+      "request": "CR-19"
+    },
+    {
+      "id": "card.pin",
+      "label": "Pin card",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Pins the card of a cap (ADR-D01.24). Argument: an optional cap number; without one, the cap of the cell the selected sticker occupies, else the named cap.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "card.unpin",
+      "label": "Unpin card",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Removes the pinned card with the given id, or the newest pinned card when no id is given.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "card.track",
+      "label": "Follow piece",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Pins the Tracked piece, a card that follows a piece (ADR-D01.24, revision 4). Argument: an optional piece number; without one, the selected piece.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "card.reference.set",
+      "label": "Set reference state",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Saves the current state as the one reference state for pinned cards. An optional argument names it.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "card.reference.clear",
+      "label": "Clear reference state",
+      "kind": "view",
+      "contexts": [
+        "global"
+      ],
+      "note": "Clears the reference state for pinned cards.",
+      "request": "ADR-D01.24"
+    },
+    {
+      "id": "setup.search",
+      "label": "Setup search",
+      "kind": "query",
+      "contexts": [
+        "solve"
+      ],
+      "note": "Runs the built-in setup search for a target the solver names (ADR-D01.68; LB1.5's one solving-side exception): the Target, or with the argument wanted the Wanted piece's present place. The alphabet excludes the caps that move the buffers. Rows come in a neutral order with their lengths; a completed result carries its coverage (revision 6, J-7). The tool ships only with its BoundaryClass and PrincipleRecord.",
+      "request": "ADR-D01.68"
+    },
+    {
+      "id": "setup.row.use",
+      "label": "Use setup row",
+      "kind": "workspace",
+      "contexts": [
+        "solve"
+      ],
+      "note": "Fills Prepare and Cleanup around the macro the solver placed in Core with the picked setup row and its inverse, as one draft change; never a whole placement (ADR-D01.68). Argument: the row. The row alone is previewed with operation.preview setup:<row>.",
+      "request": "ADR-D01.68"
+    },
+    {
+      "id": "menu.context.open",
+      "label": "Open context menu",
+      "kind": "view",
+      "contexts": [
+        "any"
+      ],
+      "note": "Opens the context menu of the view under the pointer, or of the view named by the argument global or local, for the current selection.",
+      "request": "ADR-D01.17"
+    },
+    {
+      "id": "look.sticker_palette.set",
+      "label": "Set sticker palette",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Takes the ID of a sticker palette that passes the G4 checks.",
+      "request": "ADR-D01.52"
+    },
+    {
+      "id": "look.scene.set",
+      "label": "Set scene look",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Chooses solving, inspecting or celebrating from the current theme.",
+      "request": "ADR-D01.49"
+    },
+    {
+      "id": "view.preset.global.chart",
+      "label": "Global chart",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "The palette's chart row: applies the ring sheet unless the researcher has picked the Hopf rings (ADR-D02.9). Waits for R5's admission and its gate row before it ships.",
+      "request": "CR-14"
+    },
+    {
+      "id": "view.preset.global.chain",
+      "label": "Global: projection chain",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Returns Global from a chart to 600-cell-Full's projection chain, the default until R5 admits a chart (ADR-D02.8).",
+      "request": "CR-14"
+    },
+    {
+      "id": "keymap.preset.set",
+      "label": "Key set",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Takes a keymap preset's name (default, or a file under keymaps/), or none for the next one; the status line names every key that changed meaning, and the key map marks them. Key sets per orbit are such presets, not a mode.",
+      "request": "ADR-D01.74"
+    },
+    {
+      "id": "protection.pick.set",
+      "label": "Set protection on piece",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Marks the current pick as protected. Argument: orbit, position, identity or block. Use clear to remove every protection set here.",
+      "request": "ADR-D01.65"
+    },
+    {
+      "id": "status.sample.show",
+      "label": "Set sticker state",
+      "kind": "view",
+      "contexts": [
+        "puzzle"
+      ],
+      "note": "Draws the sample sticker statuses in Global and Local. Argument: on or off.",
+      "request": "ADR-D01.65"
+    }
+  ],
+  "grip": [
+    {
+      "id": "grip.select",
+      "label": "Grip (cap and frame)",
+      "kind": "workspace",
+      "contexts": [
+        "puzzle",
+        "keyboard"
+      ],
+      "note": "Uses the picked cell or a named cap. Hold Ctrl for the direct twist preview (ADR-D01.13).",
+      "request": "ADR-D01.75"
+    },
+    {
+      "id": "grip.frame.next",
+      "label": "Next grip frame",
+      "kind": "workspace",
+      "contexts": [
+        "puzzle",
+        "keyboard"
+      ],
+      "note": "Changes the grip's marks and twist keys together.",
+      "request": "ADR-D01.75"
+    }
+  ],
+  "preview": [
+    {
+      "id": "preview.overlay.script.toggle",
+      "label": "Preview overlay",
+      "kind": "view",
+      "contexts": ["any"],
+      "note": "Draft. Toggles the marked script overlay of the staged preview in Global and Local. Off by default.",
+      "request": "ADR-D01.10"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "focus-layer",
+  "note": "Preview, apply and intersect the pose filters. Check the palette alias, the exact inside mask, a saved set and an unavailable rim.",
+  "steps": [
+    {
+      "wait_ms": 25000
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> filter.preview not lattice"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 801
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> filter.apply"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 802
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> structure.filter.compose intersect"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 503
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> filter.preview height >= 4"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 804
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "> filter.apply"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 805
+    },
+    {
+      "chord": "F1"
+    },
+    {
+      "text": "piece filter"
+    },
+    {
+      "wait_ms": 806
+    },
+    {
+      "chord": "Escape"
+    },
+    {
+      "wait_ms": 307
+    },
+    {"command": "structure.filter.compose", "argument": "replace"},
+    {"command": "filter.preview", "argument": "inside-a-cap 150"},
+    {"wait_ms": 807},
+    {"command": "filter.apply"},
+    {"command": "filter.save", "argument": "cap set"},
+    {"command": "filter.preview", "argument": "set \"cap set\" and inside-a-cap 150"},
+    {"wait_ms": 808},
+    {"command": "filter.preview", "argument": "not rim 150 or lattice"},
+    {"wait_ms": 809}
+  ]
+}

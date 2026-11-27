@@ -1,0 +1,16 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "timer",
+  "resolution": "1280x720",
+  "note": "Start and pause the Timer in sample mode, mark the session as practice, expand the Session cell and read the first recorded completion.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"click_control": "TimerKey"},
+    {"wait_ms": 2500},
+    {"click_control": "TimerKey"},
+    {"command": "session.practice"},
+    {"click_control": "SessionCell"},
+    {"command": "session.completion", "argument": "O06"},
+    {"wait_ms": 2000}
+  ]
+}

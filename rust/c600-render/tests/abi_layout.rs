@@ -1,4 +1,4 @@
-//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 5 row's field names, offsets and
+//! The Rust declarations against `renderer/core/include/sa2_interop.h`: every ABI 10 row's field names, offsets and
 //! size under the C rules of x64 (each against the header's static_assert too) and every constant. The header is
 //! read, not copied, so a header change fails here. The function table's signatures are checked in `renderer/bridge`.
 
@@ -40,7 +40,10 @@ fn declaration(text: &str) -> (String, String, Option<usize>) {
     let (ty, name) = (text[..split].trim(), text[split..].trim());
     match name.split_once('[') {
         Some((name, count)) => {
-            let count = count.trim_end_matches(']').parse().expect("an array length");
+            let count = match count.trim_end_matches(']') {
+                "SA2_STATUS_ENTRIES" => 8,
+                count => count.parse().expect("an array length"),
+            };
             (ty.to_owned(), name.to_owned(), Some(count))
         }
         None => (ty.to_owned(), name.to_owned(), None),
@@ -55,9 +58,16 @@ fn c_struct(header: &str, name: &str) -> (usize, Vec<(String, usize)>) {
     let (mut offset, mut align, mut fields) = (0usize, 1usize, Vec::new());
     for field in header[start..end].split(';').map(str::trim).filter(|f| !f.is_empty()) {
         let (ty, field, count) = declaration(field);
-        let size = if ty.ends_with('*') { 8 } else { scalar(&ty) };
-        offset = offset.next_multiple_of(size);
-        align = align.max(size);
+        let (size, alignment) = if ty.ends_with('*') {
+            (8, 8)
+        } else if ty == "sa2_status_pattern" {
+            (c_struct(header, &ty).0, 4)
+        } else {
+            let size = scalar(&ty);
+            (size, size)
+        };
+        offset = offset.next_multiple_of(alignment);
+        align = align.max(alignment);
         fields.push((field, offset));
         offset += size * count.unwrap_or(1);
     }
@@ -215,6 +225,51 @@ fn every_row_has_the_header_layout() {
     for (name, rust) in rows {
         assert_eq!(c_struct(&h, name), rust, "{name}");
     }
+    // ABI 6: a view's shape.
+    let shape = rust_struct!(Sa2ViewShape { struct_size, cell_shrink, sticker_shrink, d4, zoom, reserved });
+    assert_eq!(c_struct(&h, "sa2_view_shape"), shape, "sa2_view_shape");
+    assert_eq!(Sa2ViewShape::new().struct_size, 24, "new() sets struct_size");
+    // ABI 7: a style slot.
+    let style = rust_struct!(Sa2ViewStyle {
+        struct_size,
+        tint_mode,
+        dim_mode,
+        dim_amount,
+        outline_width,
+        palette,
+        matrix,
+        slice_mode,
+        slice_shrink,
+        shell_min,
+        shell_max,
+        ghost,
+        reserved
+    });
+    assert_eq!(c_struct(&h, "sa2_view_style"), style, "sa2_view_style");
+    assert_eq!(Sa2ViewStyle::new().struct_size, 348, "new() sets struct_size");
+    // ABI 8: a composite frame's pane and pane row.
+    let pane =
+        rust_struct!(Sa2Pane { view, view_generation, resource_set, x, y, width, height, camera_matrix, style, flags });
+    assert_eq!(c_struct(&h, "sa2_pane"), pane, "sa2_pane");
+    let row = rust_struct!(Sa2PaneRow { struct_size, pane, view, view_generation, vertex_evals });
+    assert_eq!(c_struct(&h, "sa2_pane_row"), row, "sa2_pane_row");
+    assert_eq!((size_of::<Sa2Pane>(), Sa2PaneRow::new().struct_size), (112, 32), "sizes");
+    // ABI 9: a view's focus.
+    let focus = rust_struct!(Sa2ViewFocus { struct_size, projection, focus_cell, focus_cos, spread, reserved });
+    assert_eq!(c_struct(&h, "sa2_view_focus"), focus, "sa2_view_focus");
+    assert_eq!(Sa2ViewFocus::new().struct_size, 24, "new() sets struct_size");
+    // ABI 10: a view's layout.
+    let layout = rust_struct!(Sa2ViewLayout { struct_size, kind, j, k, origins, ring_of, half_step });
+    assert_eq!(c_struct(&h, "sa2_view_layout"), layout, "sa2_view_layout");
+    assert_eq!(Sa2ViewLayout::new().struct_size, 1560, "new() sets struct_size");
+    let look = rust_struct!(Sa2SceneLook { struct_size, reserved, background, fog, glow, edge_brightness, edge_weight });
+    assert_eq!(c_struct(&h, "sa2_scene_look"), look, "sa2_scene_look");
+    assert_eq!(Sa2SceneLook::default().struct_size, 40, "default() sets struct_size");
+    let pattern = rust_struct!(Sa2StatusPattern { shape, spacing, width, angle, colour });
+    assert_eq!(c_struct(&h, "sa2_status_pattern"), pattern, "sa2_status_pattern");
+    let table = rust_struct!(Sa2StatusStyle { struct_size, flags, patterns, marks });
+    assert_eq!(c_struct(&h, "sa2_status_style"), table, "sa2_status_style");
+    assert_eq!(Sa2StatusStyle::default().struct_size, 520, "default() sets struct_size");
     let sizes = [
         Sa2PollRow::new().struct_size,
         Sa2FrameInput::new().struct_size,
@@ -245,6 +300,7 @@ fn every_constant_has_the_header_value() {
     let mut rust: Vec<(String, i64)> = vec![
         ("ABI_VERSION".into(), i64::from(ABI_VERSION)),
         ("SLOTS".into(), SLOTS as i64),
+        ("STICKER_CLASSES".into(), STICKER_CLASSES as i64),
         ("PIECES".into(), PIECES as i64),
         ("MAX_POSES".into(), MAX_POSES as i64),
         ("POSE_GROUP_ORDER".into(), i64::from(POSE_GROUP_ORDER)),
@@ -270,6 +326,30 @@ fn every_constant_has_the_header_value() {
         ("SURFACE_BUFFERS".into(), i64::from(SURFACE_BUFFERS)),
         ("SURFACE_MAX_PX".into(), i64::from(SURFACE_MAX_PX)),
         ("RING_SLOTS".into(), i64::from(RING_SLOTS)),
+        ("STYLE_CHANNEL_FILL".into(), i64::from(STYLE_CHANNEL_FILL)),
+        ("STYLE_CHANNEL_OUTLINE".into(), i64::from(STYLE_CHANNEL_OUTLINE)),
+        ("STYLE_CHANNEL_STATUS".into(), i64::from(STYLE_CHANNEL_STATUS)),
+        ("STATUS_CAPTURE".into(), i64::from(STATUS_CAPTURE)),
+        ("STYLE_INDEX".into(), i64::from(STYLE_INDEX)),
+        ("STYLE_DIM".into(), i64::from(STYLE_DIM)),
+        ("STYLE_ERROR".into(), i64::from(STYLE_ERROR)),
+        ("STYLE_SLOTS".into(), i64::from(STYLE_SLOTS)),
+        ("STYLE_PALETTE".into(), i64::from(STYLE_PALETTE)),
+        ("STYLE_TINT_FILL".into(), i64::from(STYLE_TINT_FILL)),
+        ("STYLE_TINT_OUTLINE".into(), i64::from(STYLE_TINT_OUTLINE)),
+        ("STYLE_DIM_NONE".into(), i64::from(STYLE_DIM_NONE)),
+        ("STYLE_DIM_MARKED".into(), i64::from(STYLE_DIM_MARKED)),
+        ("STYLE_DIM_UNMARKED".into(), i64::from(STYLE_DIM_UNMARKED)),
+        ("STYLE_HIDE_MARKED".into(), i64::from(STYLE_HIDE_MARKED)),
+        ("STYLE_HIDE_UNMARKED".into(), i64::from(STYLE_HIDE_UNMARKED)),
+        ("PANES_MAX".into(), i64::from(PANES_MAX)),
+        ("PROJECTION_PERSPECTIVE".into(), i64::from(PROJECTION_PERSPECTIVE)),
+        ("PROJECTION_ORTHOGRAPHIC".into(), i64::from(PROJECTION_ORTHOGRAPHIC)),
+        ("FOCUS_NONE".into(), i64::from(FOCUS_NONE)),
+        ("LAYOUT_CHAIN".into(), i64::from(LAYOUT_CHAIN)),
+        ("LAYOUT_HOPF_RINGS".into(), i64::from(LAYOUT_HOPF_RINGS)),
+        ("LAYOUT_RING_SHEET".into(), i64::from(LAYOUT_RING_SHEET)),
+        ("HOPF_RINGS".into(), i64::from(HOPF_RINGS)),
     ];
     for code in 0..=10 {
         rust.push((Status(code).name().to_owned(), i64::from(code)));
@@ -278,4 +358,23 @@ fn every_constant_has_the_header_value() {
         assert_eq!(defines.get(&name), Some(&value), "SA2_{name}");
     }
     assert_eq!(Status(11).name(), "unknown");
+    // ABI 6's shape constants are floats, written as the header writes them.
+    let h = header();
+    for (name, value) in [
+        ("SHAPE_DEFAULT_CELL_SHRINK", SHAPE_DEFAULT_CELL_SHRINK),
+        ("SHAPE_DEFAULT_STICKER_SHRINK", SHAPE_DEFAULT_STICKER_SHRINK),
+        ("SHAPE_DEFAULT_D4", SHAPE_DEFAULT_D4),
+        ("SHAPE_DEFAULT_ZOOM", SHAPE_DEFAULT_ZOOM),
+        ("SHAPE_D4_MAX", SHAPE_D4_MAX),
+        ("SHAPE_ZOOM_MAX", SHAPE_ZOOM_MAX),
+        ("STYLE_OUTLINE_MAX", STYLE_OUTLINE_MAX),
+        ("STYLE_MATRIX_MAX", STYLE_MATRIX_MAX),
+    ] {
+        let line = h
+            .lines()
+            .find_map(|line| line.trim().strip_prefix(&format!("#define SA2_{name} ")))
+            .unwrap_or_else(|| panic!("SA2_{name} is in the header"));
+        let text = line.split_whitespace().next().unwrap().trim_end_matches('f');
+        assert_eq!(text.parse::<f32>().expect("a float"), value, "SA2_{name}");
+    }
 }

@@ -1,5 +1,7 @@
 #include "product.h"
 #include <algorithm>
+#include <bit>
+#include <string>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -18,12 +20,52 @@ Digest digest(const uint8_t* bytes) {
 bool zero(const uint8_t* bytes, size_t count) {
     return std::all_of(bytes, bytes + count, [](uint8_t b) { return b == 0; });
 }
+bool unit_colour(float value) { return std::isfinite(value) && value >= 0.0f && value <= 1.0f; }
+}
+
+void Product::set_sticker_colours(const float* rgb, uint32_t count) {
+    StickerColours next{};
+    if (rgb && count) {
+        argument(count == SA2_STICKER_CLASSES, "a sticker colour table needs 600 RGB triples");
+        for (uint32_t i = 0; i < count; ++i) {
+            const float* colour = rgb + 3 * i;
+            argument(std::all_of(colour, colour + 3, unit_colour), "sticker RGB must be finite and within 0..1");
+            next[i] = {colour[0], colour[1], colour[2], 1.0f};
+        }
+    }
+    sticker_colours_ = next;
+}
+
+void Product::set_scene_look(const sa2_scene_look* look) {
+    if (look) {
+        argument(look->struct_size == sizeof(*look) && look->reserved == 0, "invalid scene look size or reserved field");
+        argument(std::all_of(look->background, look->background + 4, unit_colour) && unit_colour(look->fog)
+                 && unit_colour(look->glow) && unit_colour(look->edge_brightness) && unit_colour(look->edge_weight),
+                 "scene look values must be finite and within 0..1");
+    }
+    scene_look_ = look ? *look : DefaultSceneLook;
 }
 
 uint64_t EngineImage::bytes() const {
     uint64_t total = uint64_t(labels.size()) * 4;
     if (posed()) total += uint64_t(SA2_PIECES) * 4 + uint64_t(pose_count) * (64 + 4);
     return total;
+}
+
+static void copy_poses(EngineImage& out, const int32_t* index, const float* poses, const int32_t* lattice, uint32_t count) {
+    out.pose_count = count;
+    out.pose_index.assign(index, index + SA2_PIECES);
+    argument(std::all_of(out.pose_index.begin(), out.pose_index.end(),
+        [count](int32_t pose) { return pose >= 0 && uint32_t(pose) < count; }), "a pose index is not below pose_count");
+    out.poses.assign(poses, poses + size_t(count) * 16);
+    argument(std::all_of(out.poses.begin(), out.poses.end(), [](float value) { return std::isfinite(value); }),
+        "a pose entry is not finite");
+    for (size_t i = 0; i < 16; ++i)
+        argument(out.poses[i] == (i % 5 == 0 ? 1.0f : 0.0f), "pose 0 is not the identity");
+    out.lattice.assign(lattice, lattice + count);
+    argument(std::all_of(out.lattice.begin(), out.lattice.end(),
+        [](int32_t entry) { return entry >= -1 && entry < SA2_POSE_GROUP_ORDER; }), "a pose_lattice entry is not -1 or below SA2_POSE_GROUP_ORDER");
+    argument(out.lattice[0] == 0, "pose_lattice entry 0 is not 0");
 }
 
 EngineImage engine_image(const sa2_engine_image* image) {
@@ -39,25 +81,10 @@ EngineImage engine_image(const sa2_engine_image* image) {
     }
     EngineImage out;
     out.revision = image->revision;
-    out.pose_count = image->pose_count;
     out.labels.assign(image->labels, image->labels + SA2_SLOTS);
     argument(std::all_of(out.labels.begin(), out.labels.end(), [](uint32_t label) { return label < SA2_SLOTS; }),
         "a label is not below SA2_SLOTS");
-    if (posed) {
-        const uint32_t count = image->pose_count;
-        out.pose_index.assign(image->pose_index, image->pose_index + SA2_PIECES);
-        argument(std::all_of(out.pose_index.begin(), out.pose_index.end(),
-            [count](int32_t pose) { return pose >= 0 && uint32_t(pose) < count; }), "a pose index is not below pose_count");
-        out.poses.assign(image->poses, image->poses + size_t(count) * 16);
-        argument(std::all_of(out.poses.begin(), out.poses.end(), [](float value) { return std::isfinite(value); }),
-            "a pose entry is not finite");
-        for (size_t i = 0; i < 16; ++i)
-            argument(out.poses[i] == (i % 5 == 0 ? 1.0f : 0.0f), "pose 0 is not the identity");
-        out.lattice.assign(image->pose_lattice, image->pose_lattice + count);
-        argument(std::all_of(out.lattice.begin(), out.lattice.end(),
-            [](int32_t entry) { return entry >= -1 && entry < SA2_POSE_GROUP_ORDER; }), "a pose_lattice entry is not -1 or below SA2_POSE_GROUP_ORDER");
-        argument(out.lattice[0] == 0, "pose_lattice entry 0 is not 0");
-    }
+    if (posed) copy_poses(out, image->pose_index, image->poses, image->pose_lattice, image->pose_count);
     out.digest = digest(image->digest);
     return out;
 }
@@ -79,6 +106,210 @@ PreparedData preparation(const sa2_preparation* value) {
         out.instances[slot] = visible && interactive ? value->instances[slot] : 0;
     }
     return out;
+}
+
+ViewShape view_shape(const sa2_view_shape* shape) {
+    if (!shape) return ViewShape{};
+    argument(shape->struct_size == sizeof(*shape), "invalid view_shape struct_size");
+    argument(shape->reserved == 0, "view_shape reserved must be 0");
+    const auto within = [](float value, float low, float high) { return std::isfinite(value) && value > low && value <= high; };
+    argument(within(shape->cell_shrink, 0.0f, 1.0f), "cell_shrink must be finite, above 0 and at most 1");
+    argument(within(shape->sticker_shrink, 0.0f, 1.0f), "sticker_shrink must be finite, above 0 and at most 1");
+    argument(within(shape->d4, 1.0f, SA2_SHAPE_D4_MAX), "d4 must be finite, above 1 and at most SA2_SHAPE_D4_MAX");
+    argument(within(shape->zoom, 0.0f, SA2_SHAPE_ZOOM_MAX), "zoom must be finite, above 0 and at most SA2_SHAPE_ZOOM_MAX");
+    return ViewShape{shape->cell_shrink, shape->sticker_shrink, shape->d4, shape->zoom};
+}
+
+// ABI 9.
+void view_focus(const sa2_view_focus* focus, ViewShape& shape) {
+    const ViewShape defaults;
+    if (!focus) {
+        shape.projection = defaults.projection; shape.focus_cell = defaults.focus_cell;
+        shape.focus_cos = defaults.focus_cos; shape.spread = defaults.spread;
+        return;
+    }
+    argument(focus->struct_size == sizeof(*focus), "invalid view_focus struct_size");
+    argument(focus->reserved == 0, "view_focus reserved must be 0");
+    argument(focus->projection == SA2_PROJECTION_PERSPECTIVE || focus->projection == SA2_PROJECTION_ORTHOGRAPHIC
+             || focus->projection == SA2_PROJECTION_STEREOGRAPHIC,
+             "projection must be SA2_PROJECTION_PERSPECTIVE, SA2_PROJECTION_ORTHOGRAPHIC or SA2_PROJECTION_STEREOGRAPHIC");
+    // ADR-D02 B21: the raw view needs a pole, and its clip goes no further than 90 degrees.
+    argument(focus->projection != SA2_PROJECTION_STEREOGRAPHIC || (focus->focus_cell != SA2_FOCUS_NONE && focus->focus_cos >= 0.0f),
+             "SA2_PROJECTION_STEREOGRAPHIC needs a focus cell and 0 <= focus_cos");
+    argument(focus->focus_cell == SA2_FOCUS_NONE || focus->focus_cell < 600, "focus_cell must be a cell 0..599 or SA2_FOCUS_NONE");
+    argument(std::isfinite(focus->focus_cos) && focus->focus_cos >= -1.0f && focus->focus_cos <= 1.0f, "focus_cos must be finite and within -1..1");
+    argument(std::isfinite(focus->spread) && focus->spread >= 1.0f && focus->spread <= 3.0f, "spread must be finite and within 1..3");
+    shape.projection = focus->projection; shape.focus_cell = focus->focus_cell;
+    shape.focus_cos = focus->focus_cell == SA2_FOCUS_NONE ? defaults.focus_cos : focus->focus_cos; shape.spread = focus->spread;
+}
+
+// ABI 10.
+uint32_t view_layout_kind(const sa2_view_layout* layout) {
+    if (!layout) return SA2_LAYOUT_CHAIN;
+    argument(layout->struct_size == sizeof(*layout), "invalid view_layout struct_size");
+    argument(layout->kind == SA2_LAYOUT_CHAIN || layout->kind == SA2_LAYOUT_HOPF_RINGS || layout->kind == SA2_LAYOUT_RING_SHEET,
+             "kind must be SA2_LAYOUT_CHAIN, SA2_LAYOUT_HOPF_RINGS or SA2_LAYOUT_RING_SHEET");
+    return layout->kind;
+}
+
+namespace {
+using Q4 = std::array<double, 4>;
+Q4 qmul(const Q4& a, const Q4& b) {
+    return {a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3], a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
+            a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1], a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]};
+}
+Q4 conj(const Q4& a) { return {a[0], -a[1], -a[2], -a[3]}; }
+double dot4(const Q4& a, const Q4& b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3]; }
+double dot3(const std::array<double, 3>& a, const std::array<double, 3>& b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+std::array<double, 3> im(const Q4& a) { return {a[1], a[2], a[3]}; }
+// Im(o x o*), the image of the pure quaternion x under conjugation by o.
+std::array<double, 3> turn(const Q4& o, const Q4& x) { return im(qmul(qmul(o, x), conj(o))); }
+Q4 load(const float* v) { return {v[0], v[1], v[2], v[3]}; }
+}
+
+HopfTable hopf_table(const sa2_view_layout& layout, const std::function<std::array<float, 4>(uint32_t)>& centre) {
+    constexpr double RingRadius = 2.62, BaseRadius = 8.063, RingScale = 0.28, Pi = 3.14159265358979323846;
+    constexpr double SheetDx = 0.68, SheetDy = 0.57, SheetScale = 0.6; // GlobalLayout's ring sheet (B22)
+    const auto finite = [](const float* v, size_t n) { for (size_t i = 0; i < n; ++i) if (!std::isfinite(v[i])) return false; return true; };
+    argument(finite(layout.j, 4) && finite(layout.k, 4) && finite(layout.origins, 80), "a Hopf ring value is not finite");
+    const Q4 j = load(layout.j), k = load(layout.k);
+    argument(std::abs(j[0]) < 1e-4 && std::abs(dot4(j, j) - 1) < 1e-4, "J must be a unit pure quaternion");
+    argument(std::abs(k[0]) < 1e-4 && std::abs(dot4(k, k) - 1) < 1e-4 && std::abs(dot4(j, k)) < 1e-4, "K must be a unit pure quaternion orthogonal to J");
+    const Q4 jk = qmul(j, k);
+    std::array<Q4, 20> origin{};
+    std::array<std::array<double, 3>, 20> base{}, e1{}, e2{};
+    for (size_t r = 0; r < 20; ++r) {
+        origin[r] = load(layout.origins + 4 * r);
+        argument(std::abs(dot4(origin[r], origin[r]) - 1) < 1e-4, "a ring origin is not a unit point");
+        base[r] = turn(origin[r], j); e1[r] = turn(origin[r], k); e2[r] = turn(origin[r], jk);
+    }
+    // Each ring holds 30 cells with distinct half-steps of one parity; its cells in half-step order.
+    std::array<std::array<int, 60>, 20> at{};
+    for (auto& ring : at) ring.fill(-1);
+    for (uint32_t cell = 0; cell < 600; ++cell) {
+        argument(layout.ring_of[cell] < 20 && layout.half_step[cell] < 60, "a cell's ring or half-step is out of range");
+        auto& slot = at[layout.ring_of[cell]][layout.half_step[cell]];
+        argument(slot < 0, "two cells share a ring and a half-step");
+        slot = int(cell);
+    }
+    std::array<uint32_t, 20> parity{};
+    std::array<uint32_t, 600> cells{};
+    for (size_t r = 0; r < 20; ++r) {
+        int count[2] = {0, 0};
+        for (int h = 0; h < 60; ++h) if (at[r][h] >= 0) ++count[h % 2];
+        argument((count[0] == 30 && count[1] == 0) || (count[0] == 0 && count[1] == 30), "a ring does not hold 30 cells of one parity");
+        parity[r] = count[1] ? 1u : 0u;
+        for (int i = 0; i < 30; ++i) cells[r * 30 + i] = uint32_t(at[r][2 * i + parity[r]]);
+    }
+    HopfTable table(HopfTableRows, std::array<float, 4>{});
+    const std::array<std::array<double, 3>, 3> orientation = {e1[0], e2[0], base[0]};
+    for (uint32_t cell = 0; cell < 600; ++cell) {
+        const auto raw = centre(cell);
+        const Q4 c = {raw[0], raw[1], raw[2], raw[3]};
+        const size_t r = layout.ring_of[cell];
+        const int h = layout.half_step[cell];
+        // The core's centre projects onto its ring's plane (origin, origin J) at the phase of its half-step, 6h degrees,
+        // and lies near that plane (a ring's cells wind around its great circle at one distance): the rings fit the
+        // core's cells.
+        const Q4 oj = qmul(origin[r], j);
+        const double along = dot4(c, origin[r]), across = dot4(c, oj);
+        const double off = std::fmod(std::fmod(std::atan2(across, along) * 30 / Pi - h, 60.0) + 90.0, 60.0) - 30.0;
+        argument(std::abs(off) < 0.01 && std::hypot(along, across) > 0.99,
+                 ("the Hopf rings do not fit the core's cell centres (cell " + std::to_string(cell) + ")").c_str());
+        // Look Lab's HopfRings.Chart: the frame (c, cJ, eK, eJK) with e = c (cos a + sin a J), a = 18 - 72h degrees.
+        const double a = (18.0 - 72.0 * h) * Pi / 180;
+        const Q4 e = qmul(c, Q4{std::cos(a), std::sin(a) * j[1], std::sin(a) * j[2], std::sin(a) * j[3]});
+        const std::array<Q4, 3> frame = {qmul(c, j), qmul(e, k), qmul(e, jk)};
+        // GlobalLayout: the cell's place on its ring and the chart turned into the ring's frame, all scaled.
+        const double t = h * Pi / 30;
+        std::array<double, 3> n{}, tangent{}, position{}, back{};
+        for (int i = 0; i < 3; ++i) {
+            n[i] = std::cos(t) * e1[r][i] + std::sin(t) * e2[r][i];
+            tangent[i] = -std::sin(t) * e1[r][i] + std::cos(t) * e2[r][i];
+            position[i] = BaseRadius * base[r][i] + RingRadius * n[i];
+            back[i] = -base[r][i];
+        }
+        const std::array<std::array<double, 3>, 3> columns = {tangent, n, back};
+        for (int row = 0; row < 3; ++row) {
+            for (int col = 0; col < 4; ++col) {
+                double value = 0;
+                for (int m = 0; m < 3; ++m) value += RingScale * dot3(orientation[row], columns[m]) * frame[m][col];
+                table[cell * 4 + row][col] = float(value);
+            }
+            table[cell * 4 + 3][row] = float(RingScale * dot3(orientation[row], position));
+            // B22: the ring sheet lays the chart flat at its row and column.
+            for (int col = 0; col < 4; ++col) table[HopfSheetRow + cell * 4 + row][col] = float(SheetScale * frame[row][col]);
+        }
+        table[HopfSheetRow + cell * 4 + 3] = {float(SheetScale * SheetDx * (h / 2.0 - 14.75)), float(-SheetScale * SheetDy * (double(r) - 9.5)), 0, 0};
+    }
+    for (size_t r = 0; r < 20; ++r) {
+        const Q4 oj = qmul(origin[r], j);
+        for (int i = 0; i < 4; ++i) { table[2400 + r][i] = float(origin[r][i]); table[2420 + r][i] = float(oj[i]); }
+        table[2440 + r] = {float(base[r][0]), float(base[r][1]), float(base[r][2]), std::bit_cast<float>(parity[r])};
+    }
+    table[2460] = {float(j[0]), float(j[1]), float(j[2]), float(j[3])};
+    for (size_t e = 0; e < 600; ++e) table[2461 + e / 4][e % 4] = std::bit_cast<float>(cells[e]);
+    return table;
+}
+
+void Product::set_hopf(HopfTable table) {
+    argument(table.size() == HopfTableRows, "a Hopf table has the wrong size");
+    argument(hopf_.empty() || hopf_ == table, "the core keeps one set of Hopf rings; a different set is refused");
+    hopf_ = std::move(table);
+}
+
+// ABI 7.
+ViewStyle view_style(const sa2_view_style* style) {
+    argument(style != nullptr, "view_style is NULL");
+    argument(style->struct_size == sizeof(*style), "invalid view_style struct_size");
+    argument(style->reserved == 0, "view_style reserved must be 0");
+    argument(!(style->tint_mode & ~(SA2_STYLE_TINT_FILL | SA2_STYLE_TINT_OUTLINE)), "unknown view_style tint_mode bits");
+    argument(style->dim_mode <= SA2_STYLE_HIDE_UNMARKED, "view_style dim_mode must be a SA2_STYLE_DIM_* or SA2_STYLE_HIDE_* value");
+    const auto within = [](float value, float low, float high) { return std::isfinite(value) && value >= low && value <= high; };
+    argument(within(style->dim_amount, 0.0f, 1.0f), "dim_amount must be finite and within 0..1");
+    argument(within(style->outline_width, 0.0f, SA2_STYLE_OUTLINE_MAX), "outline_width must be finite and within 0..SA2_STYLE_OUTLINE_MAX");
+    argument(std::all_of(std::begin(style->palette), std::end(style->palette), [&](float v) { return within(v, 0.0f, 1.0f); }),
+        "every palette channel must be finite and within 0..1");
+    argument(std::all_of(std::begin(style->matrix), std::end(style->matrix),
+        [&](float v) { return within(v, -SA2_STYLE_MATRIX_MAX, SA2_STYLE_MATRIX_MAX); }), "every matrix entry must be finite and within the bound");
+    // ADR-D02 B20: the slice.
+    constexpr float pi = 3.14159265f;
+    argument(style->slice_mode <= SA2_SLICE_INSIDE, "view_style slice_mode must be a SA2_SLICE_* value");
+    argument(within(style->slice_shrink, 0.0f, 1.0f), "slice_shrink must be finite and within 0..1");
+    argument(within(style->shell_min, 0.0f, pi) && within(style->shell_max, 0.0f, pi), "the shell's angles must be finite and within 0..pi");
+    argument(std::all_of(std::begin(style->ghost), std::end(style->ghost), [&](float v) { return within(v, 0.0f, 1.0f); }),
+        "every ghost channel must be finite and within 0..1");
+    argument(style->slice_mode == SA2_SLICE_OFF || (style->slice_shrink > 0.0f && style->shell_min <= style->shell_max),
+        "a slice needs slice_shrink above 0 and shell_min <= shell_max");
+    ViewStyle out;
+    std::copy(std::begin(style->palette), std::end(style->palette), out.palette.begin());
+    for (int r = 0; r < 3; ++r) for (int c = 0; c < 3; ++c) out.rows[size_t(r) * 4 + c] = style->matrix[r * 3 + c];
+    out.tint_mode = style->tint_mode; out.dim_mode = style->dim_mode;
+    out.dim_amount = style->dim_amount; out.outline_width = style->outline_width;
+    const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    out.matrix_on = std::equal(std::begin(style->matrix), std::end(style->matrix), std::begin(identity)) ? 0u : 1u;
+    out.slice_mode = style->slice_mode;
+    if (out.slice_mode != SA2_SLICE_OFF) {
+        out.slice_shrink = style->slice_shrink;
+        out.shell_min_cos = std::cos(style->shell_min); out.shell_max_cos = std::cos(style->shell_max);
+        std::copy(std::begin(style->ghost), std::end(style->ghost), out.ghost.begin());
+    }
+    return out;
+}
+
+void validate_piece_style(const uint8_t* bytes, uint32_t channel) {
+    argument(channel <= SA2_STYLE_CHANNEL_STATUS, "unknown piece style channel");
+    if (!bytes) return;
+    if (channel == SA2_STYLE_CHANNEL_STATUS) {
+        argument(std::all_of(bytes, bytes + SA2_PIECES, [](uint8_t b) {
+            return (b & 0xc0u) == 0 && (b & 7u) <= 5 && ((b >> 3) & 7u) <= 4;
+        }), "a status byte names a reserved pattern, mark or bit");
+        return;
+    }
+    const uint8_t allowed = uint8_t(channel == SA2_STYLE_CHANNEL_FILL ? (SA2_STYLE_INDEX | SA2_STYLE_DIM)
+        : channel == SA2_STYLE_CHANNEL_SLICE ? 1u : (SA2_STYLE_INDEX | SA2_STYLE_ERROR)); // B20: a slice byte is 0 or 1
+    argument(std::all_of(bytes, bytes + SA2_PIECES, [&](uint8_t b) { return (b & ~allowed) == 0; }),
+        "a piece style byte sets a bit its channel does not have");
 }
 
 void validate_frame_input(const sa2_frame_input* input) {
@@ -116,7 +347,215 @@ void Product::require_live() const {
 uint64_t Product::adopt(EngineImage image) {
     state(!image_ || image.revision > image_->revision, "engine revision must increase");
     image_ = std::move(image);
+    style_.reset(); // ABI 7: a piece style is bound to its revision
+    transform_.reset(); // ADR-D02 B18: so is a transform
+    preview_.reset();
+    preview_turn_.reset();
+    charts_.reset(); // ADR-D02 B22 item 1: and the chart channel
     return image_->revision;
+}
+
+// ABI 6: device-free, so it works during device loss; only views off the defaults are kept.
+void Product::set_shape(uint64_t view, const ViewShape& shape) {
+    // B22: a Hopf layout draws from the Hopf table, so no view takes one before the table exists.
+    argument(shape.layout == SA2_LAYOUT_CHAIN || !hopf_.empty(), "a Hopf layout needs the Hopf table");
+    if (shape == ViewShape{}) shapes_.erase(view);
+    else shapes_[view] = shape;
+}
+ViewShape Product::shape(uint64_t view) const {
+    const auto it = shapes_.find(view);
+    return it == shapes_.end() ? ViewShape{} : it->second;
+}
+
+// ABI 7: device-free, so both work during device loss.
+void Product::set_style(uint64_t revision, const uint8_t* bytes, uint32_t channel) {
+    validate_piece_style(bytes, channel);
+    state(image_.has_value(), "no engine image adopted");
+    argument(revision == image_->revision, "a piece style names a revision other than the adopted one");
+    if (!bytes && !style_) return;
+    if (!style_) style_ = PieceStyle{revision, 0, std::vector<uint32_t>(SA2_PIECES, 0u), {}, false};
+    constexpr uint32_t shifts[] = {0, 8, 17, 24}; // fill, outline, slice, status
+    const uint32_t shift = shifts[channel];
+    const uint32_t mask = (channel == SA2_STYLE_CHANNEL_SLICE ? 1u : 0xffu) << shift;
+    bool any = false, dim = false, error = false;
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        const uint32_t value = bytes ? bytes[piece] : 0u;
+        auto& packed = style_->packed[piece];
+        packed = (packed & ~mask) | (value << shift);
+        any = any || (value & (channel == SA2_STYLE_CHANNEL_STATUS ? 0x3fu : SA2_STYLE_INDEX)) != 0;
+        dim = dim || (value & SA2_STYLE_DIM) != 0;
+        error = error || (value & SA2_STYLE_ERROR) != 0;
+    }
+    style_->any[channel] = any;
+    if (channel == SA2_STYLE_CHANNEL_FILL) style_->dim = dim;
+    if (channel == SA2_STYLE_CHANNEL_OUTLINE) style_->error = error;
+    if (!style_->original() && !style_->any[SA2_STYLE_CHANNEL_STATUS]) { style_.reset(); return; }
+    style_->version = ++style_version_;
+    if (channel != SA2_STYLE_CHANNEL_STATUS) style_->pick_version = style_->original() ? style_->version : 0;
+}
+static void validate_transform(const float* u, const float* v, float angle, const uint8_t* mask, float phase) {
+    argument(u != nullptr && v != nullptr, "a transform's plane is NULL");
+    double uu = 0, vv = 0, uv = 0;
+    for (int i = 0; i < 4; ++i) {
+        argument(std::isfinite(u[i]) && std::isfinite(v[i]), "a transform's plane is not finite");
+        uu += double(u[i]) * u[i]; vv += double(v[i]) * v[i]; uv += double(u[i]) * v[i];
+    }
+    const double tolerance = SA2_TRANSFORM_PLANE_TOLERANCE;
+    argument(std::abs(uu - 1) <= tolerance && std::abs(vv - 1) <= tolerance && std::abs(uv) <= tolerance,
+             "a transform's plane is not two orthogonal unit vectors");
+    const auto within = [](float value, float low, float high) { return std::isfinite(value) && value >= low && value <= high; };
+    argument(within(angle, -3.14159274f, 3.14159274f), "a transform's angle must be finite and within -pi..pi");
+    argument(within(phase, 0.0f, 1.0f), "a transform's phase must be finite and within 0..1");
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) argument(mask[piece] <= 1, "a moving byte is not 0 or 1");
+}
+
+// ADR-D02 B18 (ABI 10): device-free, as the piece style. The moving bit shares the style's word per piece (bit 16), so
+// a new moving set uploads with the copy; a changed phase, plane or angle changes only the frame's constants.
+void Product::set_transform(uint64_t revision, const float* u, const float* v, float angle, const uint8_t* mask, float phase) {
+    if (mask) validate_transform(u, v, angle, mask, phase);
+    state(image_.has_value(), "no engine image adopted");
+    argument(revision == image_->revision, "a transform names a revision other than the adopted one");
+    if (!mask) {
+        transform_.reset();
+        if (!style_ || !style_->moving) return;
+    } else if (!style_) {
+        style_ = PieceStyle{revision, 0, std::vector<uint32_t>(SA2_PIECES, 0u), {}, false};
+    }
+    bool any = false, changed = false;
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        const uint32_t bit = mask && mask[piece] ? 0x10000u : 0u;
+        auto& packed = style_->packed[piece];
+        changed = changed || (packed & 0x10000u) != bit;
+        packed = (packed & ~0x10000u) | bit;
+        any = any || bit != 0;
+    }
+    style_->moving = any;
+    if (any) {
+        Turn t; std::copy(u, u + 4, t.u.begin()); std::copy(v, v + 4, t.v.begin()); t.angle = (phase - 1.0f) * angle;
+        transform_ = t;
+    } else {
+        transform_.reset();
+    }
+    if (!style_->original() && !style_->any[SA2_STYLE_CHANNEL_STATUS]) { style_.reset(); return; }
+    if (changed || style_->version == 0) {
+        style_->version = ++style_version_;
+        style_->pick_version = style_->original() ? style_->version : 0;
+    }
+}
+void Product::turn(ViewShape& shape) const {
+    if (!transform_ || transform_->angle == 0.0f) return;
+    shape.turn_u = transform_->u; shape.turn_v = transform_->v; shape.turn = transform_->angle;
+}
+
+void Product::set_preview_poses(uint64_t revision, const int32_t* index, uint32_t pieces, const float* poses,
+                                const int32_t* lattice, uint32_t count, const uint8_t* outlined) {
+    state(image_.has_value(), "no engine image adopted");
+    argument(revision == image_->revision, "a preview names a revision other than the adopted one");
+    if (!index) {
+        argument(pieces == 0 && !poses && !lattice && count == 0 && !outlined, "clearing the preview requires null arrays and zero counts");
+        preview_.reset();
+        preview_turn_.reset();
+        return;
+    }
+    argument(pieces == SA2_PIECES, "a preview has one index per piece (SA2_PIECES)");
+    argument(poses && lattice && count >= 1 && count <= SA2_MAX_POSES, "a preview needs matrices and lattice entries for 1..SA2_MAX_POSES poses");
+    PreviewImage next;
+    copy_poses(next.poses, index, poses, lattice, count);
+    next.style.resize(SA2_PIECES);
+    if (outlined) {
+        for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+            argument(outlined[piece] <= 1, "an outline byte is not 0 or 1");
+            if (outlined[piece]) {
+                next.style[piece] = 15u << 8;
+                next.outlined = true;
+            }
+        }
+    }
+    next.version = ++style_version_;
+    preview_ = std::move(next);
+    preview_turn_.reset();
+}
+
+void Product::set_preview_transform(uint64_t revision, const float* u, const float* v, float angle,
+                                    const uint8_t* mask, uint32_t count, float phase) {
+    state(image_.has_value(), "no engine image adopted");
+    argument(revision == image_->revision, "a preview transform names a revision other than the adopted one");
+    state(preview_.has_value(), "no preview pose set");
+    if (mask) {
+        argument(count == SA2_PIECES, "a preview transform has one moving byte per piece (SA2_PIECES)");
+        validate_transform(u, v, angle, mask, phase);
+    } else {
+        argument(!u && !v && count == 0, "clearing the preview transform requires null arrays and zero counts");
+        if (!preview_turn_) return;
+    }
+    bool changed = false;
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        const uint32_t bit = mask && mask[piece] ? 0x10000u : 0u;
+        auto& packed = preview_->style[piece];
+        changed = changed || (packed & 0x10000u) != bit;
+        packed = (packed & ~0x10000u) | bit;
+    }
+    if (changed) preview_->version = ++style_version_;
+    if (mask) {
+        Turn t; std::copy(u, u + 4, t.u.begin()); std::copy(v, v + 4, t.v.begin()); t.angle = phase * angle;
+        preview_turn_ = t;
+    } else {
+        preview_turn_.reset();
+    }
+}
+// ADR-D02 B22 item 1 (ADR-D02.9): device-free, as the piece style; bound to the adopted revision.
+void Product::set_charts(uint64_t revision, const uint32_t* charts, uint32_t count) {
+    argument((charts == nullptr) == (count == 0), "charts is NULL with a nonzero count, or a table with count 0");
+    argument(charts == nullptr || count == SA2_SLOTS, "a chart channel has one cell id per slot (SA2_SLOTS)");
+    state(image_.has_value(), "no engine revision has been adopted");
+    argument(revision == image_->revision, "a chart channel names a revision other than the adopted one");
+    if (!charts) { charts_.reset(); return; }
+    std::vector<uint32_t> packed(SA2_SLOTS / 2, 0u);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) {
+        argument(charts[slot] < 600u, "a chart channel names a cell past 599");
+        packed[slot / 2] |= (charts[slot] + 1u) << ((slot & 1u) * 16u);
+    }
+    charts_ = Charts{revision, ++style_version_, std::move(packed)};
+}
+void Product::set_view_style(uint32_t slot, const sa2_view_style* style) {
+    argument(slot >= 1 && slot <= SA2_STYLE_SLOTS, "a style slot is 1..SA2_STYLE_SLOTS");
+    if (!style) { view_styles_[slot - 1].reset(); return; }
+    view_styles_[slot - 1] = view_style(style);
+}
+void Product::set_status_style(const sa2_status_style* style) {
+    if (!style) { status_style_.reset(); return; }
+    argument(style->struct_size == sizeof(*style), "invalid status style struct_size");
+    argument(style->flags <= SA2_STATUS_CAPTURE, "unknown status style flags");
+    const auto within = [](float v, float low, float high) { return std::isfinite(v) && v >= low && v <= high; };
+    for (bool marks : {false, true}) {
+        const auto& entries = marks ? style->marks : style->patterns;
+        const uint32_t last = marks ? SA2_MARK_CORNER_TICKS : SA2_STATUS_STRIPES;
+        for (uint32_t i = 0; i < SA2_STATUS_ENTRIES; ++i) {
+            const auto& entry = entries[i];
+            argument(entry.shape <= (i == 0 || i > last ? 0u : last), "unknown or reserved status shape");
+            argument(std::all_of(std::begin(entry.colour), std::end(entry.colour),
+                [&](float v) { return within(v, 0, 1); }), "status RGBA must be finite and within 0..1");
+            const float min_spacing = entry.shape == 0 ? 0.0f : marks ? 0.05f : 2.0f;
+            argument(within(entry.spacing, min_spacing, marks ? 0.45f : 64.0f)
+                && within(entry.width, entry.shape == 0 ? 0.0f : 0.05f, 0.95f)
+                && within(entry.angle, -3.14159274f, 3.14159274f), "status geometry is out of range");
+        }
+    }
+    status_style_ = *style;
+}
+bool Product::styled(uint32_t slot, ViewStyle& out) const {
+    if (slot < 1 || slot > SA2_STYLE_SLOTS || !view_styles_[slot - 1]) return false;
+    const auto& view = *view_styles_[slot - 1];
+    const bool fill = (view.tint_mode & SA2_STYLE_TINT_FILL) && style_ && style_->any[0];
+    const bool outline = (view.tint_mode & SA2_STYLE_TINT_OUTLINE) && style_ && style_->any[1] && view.outline_width > 0;
+    const bool error = (view.tint_mode & SA2_STYLE_TINT_OUTLINE) && style_ && style_->error && view.palette[3] > 0;
+    const bool dim = view.dim_amount > 0
+        && ((view.dim_mode == SA2_STYLE_DIM_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_DIM_UNMARKED);
+    // ADR-D02 B17 (ABI 10): a hide that applies.
+    const bool hide = (view.dim_mode == SA2_STYLE_HIDE_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_HIDE_UNMARKED;
+    if (!fill && !outline && !error && !dim && !hide && !view.matrix_on && view.slice_mode == SA2_SLICE_OFF) return false;
+    out = view;
+    return true;
 }
 
 void Product::check_prepare(const PreparedData& data) const {
@@ -257,6 +696,16 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
     FramePlan out;
     out.image = &*image_;
     out.pose_count = image_->pose_count;
+    out.shape = shape(input.view);
+    turn(out.shape); // ADR-D02 B18
+    if (style_) {
+        out.style = &style_->packed;
+        out.style_version = style_->version;
+        out.pick_style_version = style_->pick_version;
+        if (style_->any[SA2_STYLE_CHANNEL_STATUS] && status_style_) out.status = &*status_style_;
+    }
+    out.styled = styled(1, out.view_style); // ABI 7: a one-view frame uses style slot 1
+    if (charts_) { out.charts = &charts_->packed; out.charts_version = charts_->version; } // ADR-D02 B22 item 1
     if (input.resource_set) {
         const Entry* entry = set_entry(input.resource_set);
         state(entry && entry->active, "resource_set is not an active set");
@@ -266,7 +715,8 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
         out.set_ticket = sets_.at(input.resource_set);
     }
     for (uint32_t copy = 0; copy < EngineCopies; ++copy) {
-        if (copies_[copy].valid && copies_[copy].revision == image_->revision) {
+        if (copies_[copy].valid && copies_[copy].revision == image_->revision && copies_[copy].style == out.style_version
+            && copies_[copy].charts == out.charts_version) {
             out.copy = copy;
             return out;
         }
@@ -280,15 +730,121 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
     return out;
 }
 
+// ABI 8. The frame input is planned as a one-view frame (its view, generation, set and camera are the first pane's),
+// then every pane is checked; any refusal refuses the whole frame.
+FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* panes, uint32_t count, uint32_t width, uint32_t height) const {
+    argument(panes != nullptr && count >= 1 && count <= SA2_PANES_MAX, "a composite frame has 1..SA2_PANES_MAX panes");
+    const auto& first = panes[0];
+    argument(input.view == first.view && input.view_generation == first.view_generation && input.resource_set == first.resource_set
+        && std::equal(std::begin(input.camera_matrix), std::end(input.camera_matrix), std::begin(first.camera_matrix)),
+        "the frame input's view, view generation, resource set and camera must be the first pane's");
+    for (uint32_t i = 0; i < count; ++i) {
+        const auto& pane = panes[i];
+        argument((pane.flags & ~(SA2_PANE_ANTIPODE | SA2_PANE_PREVIEW | SA2_PANE_PREVIEW_BEFORE)) == 0, "unknown pane flags");
+        argument(!(pane.flags & SA2_PANE_PREVIEW_BEFORE) || (pane.flags & SA2_PANE_PREVIEW), "the before flag needs a preview pane");
+        argument(!(pane.flags & SA2_PANE_PREVIEW) || preview_.has_value(), "a preview pane needs a preview pose set");
+        argument(pane.style <= SA2_STYLE_SLOTS, "a pane's style is 0 or a style slot 1..SA2_STYLE_SLOTS");
+        argument(pane.width >= 1 && pane.height >= 1 && pane.x >= 0 && pane.y >= 0
+            && uint64_t(pane.x) + pane.width <= width && uint64_t(pane.y) + pane.height <= height, "a pane's rectangle must lie inside the target");
+        argument(std::all_of(std::begin(pane.camera_matrix), std::end(pane.camera_matrix), [](float v) { return std::isfinite(v); }),
+            "a pane's camera must be finite");
+        for (uint32_t j = 0; j < i; ++j) {
+            const auto& other = panes[j];
+            const bool apart = uint64_t(pane.x) + pane.width <= uint64_t(other.x) || uint64_t(other.x) + other.width <= uint64_t(pane.x)
+                || uint64_t(pane.y) + pane.height <= uint64_t(other.y) || uint64_t(other.y) + other.height <= uint64_t(pane.y);
+            argument(apart, "pane rectangles must not overlap");
+        }
+    }
+    FramePlan out = plan(input, width, height);
+    // ADR-D02 B20: a slot with a slice and a ghost claims the transform for its panes.
+    const auto ghosts = [&](uint32_t slot) {
+        if (slot < 1 || slot > SA2_STYLE_SLOTS || !view_styles_[slot - 1]) return false;
+        const auto& view = *view_styles_[slot - 1];
+        return view.slice_mode != SA2_SLICE_OFF && view.ghost[3] > 0.0f;
+    };
+    bool ghost_frame = false;
+    for (uint32_t i = 0; i < count; ++i)
+        ghost_frame = ghost_frame || (!(panes[i].flags & SA2_PANE_PREVIEW) && ghosts(panes[i].style));
+    for (uint32_t i = 0; i < count; ++i) {
+        const auto& pane = panes[i];
+        if (auto view = views_.find(pane.view); view != views_.end())
+            state(pane.view_generation >= view->second, "a pane's view_generation must not decrease");
+        PanePlan made;
+        made.pane = pane;
+        made.publication_generation = i == 0 ? input.publication_generation : 0;
+        made.shape = shape(pane.view);
+        made.shape.antipode = pane.flags & SA2_PANE_ANTIPODE; // ADR-D02 B21
+        if (pane.flags & SA2_PANE_PREVIEW) {
+            out.preview = &*preview_;
+            // The preview shows the whole state in the projection chain, including when Global uses a Hopf chart.
+            made.shape.layout = SA2_LAYOUT_CHAIN;
+            made.shape.focus_cell = SA2_FOCUS_NONE;
+            made.shape.spread = 1.0f;
+            if (made.shape.projection == SA2_PROJECTION_STEREOGRAPHIC) made.shape.projection = SA2_PROJECTION_PERSPECTIVE;
+            if (!(pane.flags & SA2_PANE_PREVIEW_BEFORE) && preview_turn_ && preview_turn_->angle != 0.0f) {
+                made.shape.turn_u = preview_turn_->u; made.shape.turn_v = preview_turn_->v; made.shape.turn = preview_turn_->angle;
+            }
+            if (preview_->outlined && pane.style && view_styles_[pane.style - 1]) {
+                made.view_style = *view_styles_[pane.style - 1];
+                made.styled = (made.view_style.tint_mode & SA2_STYLE_TINT_OUTLINE) != 0;
+            }
+        } else {
+            // ADR-D02 B18; B20: a frame with a ghost pane turns the pieces only in its ghost panes.
+            if (!ghost_frame || ghosts(pane.style)) turn(made.shape);
+            made.styled = pane.style != 0 && styled(pane.style, made.view_style);
+        }
+        if (pane.resource_set) {
+            const Entry* entry = set_entry(pane.resource_set);
+            state(entry && entry->active, "a pane's resource_set is not an active set");
+            // Each view keeps its own publication generation; the first pane's set is the frame input's.
+            state(entry->stamp.view == pane.view && entry->stamp.view_generation == pane.view_generation
+                && (i != 0 || entry->stamp.publication_generation == input.publication_generation),
+                "a pane's resource_set was prepared for another view or view generation");
+            state(entry->stamp.base_revision == input.engine_revision, "a pane's resource_set was prepared at another engine revision");
+            made.set_ticket = sets_.at(pane.resource_set);
+            made.publication_generation = entry->stamp.publication_generation;
+        }
+        out.panes.push_back(made);
+    }
+    return out;
+}
+
+void Product::pane_evals(uint64_t frame, const std::vector<uint64_t>& evals) {
+    for (auto& record : frames_) {
+        if (record.id != frame) continue;
+        for (size_t i = 0; i < record.panes.size() && i < evals.size(); ++i) record.panes[i].evals = evals[i];
+        return;
+    }
+}
+
+uint32_t Product::pane_rows(uint64_t id, sa2_pane_row* rows, uint32_t capacity) const {
+    validate_rows(rows, capacity);
+    const Frame* record = frame(id);
+    state(record != nullptr && !record->panes.empty(), "the frame is not a retained composite frame");
+    state(record->produced && record->error == SA2_OK, "the composite frame has not produced");
+    const auto count = uint32_t(record->panes.size());
+    for (uint32_t i = 0; i < count && i < capacity; ++i) {
+        rows[i] = sa2_pane_row{sizeof(sa2_pane_row), i, record->panes[i].pane.view, record->panes[i].pane.view_generation, record->panes[i].evals};
+    }
+    return count;
+}
+
 void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64_t frame, uint32_t ring) {
     auto& surface = surfaces_[input.surface];
     surface.first = input.sequence;
     surface.second = std::max(surface.second, input.surface_generation);
     auto& view = views_[input.view];
     view = std::max(view, input.view_generation);
+    for (const auto& pane : plan.panes) { // ABI 8
+        auto& generation = views_[pane.pane.view];
+        generation = std::max(generation, pane.pane.view_generation);
+        if (pane.set_ticket) entries_.at(pane.set_ticket).last_frame = frame;
+    }
     if (plan.upload) {
-        copies_[plan.copy] = {plan.image->revision, frame, ++copy_sequence_, plan.image->pose_count, true};
-        counters_.bytes_uploaded += plan.image->bytes();
+        copies_[plan.copy] = {plan.image->revision, frame, ++copy_sequence_, plan.image->pose_count, true, plan.style_version,
+                              plan.pick_style_version, plan.charts_version};
+        counters_.bytes_uploaded += plan.image->bytes() + (plan.style ? uint64_t(SA2_PIECES) * 4 : 0)
+                                  + (plan.charts ? uint64_t(SA2_SLOTS) * 2 : 0);
     }
     if (plan.set_ticket) entries_.at(plan.set_ticket).last_frame = frame;
     // The target's previous frame completed before this one was recorded, so
@@ -302,6 +858,13 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     record.set_ticket = plan.set_ticket;
     record.ring = ring;
     record.copy = plan.copy;
+    record.shape = plan.shape;
+    record.styled = plan.styled; // ADR-D02 B17 (ABI 10): its picks follow the style it drew with
+    record.view_style = plan.view_style;
+    record.style_version = plan.pick_style_version;
+    record.charts_version = plan.charts_version; // ADR-D02 B22 item 1
+    for (const auto& pane : plan.panes)
+        record.panes.push_back(PaneRecord{pane.pane, pane.set_ticket, 0, pane.publication_generation, pane.shape, pane.styled, pane.view_style});
     frames_.push_back(record);
     if (ring < unharvested_.size()) unharvested_[ring] = frame;
     ++counters_.frames_submitted;
@@ -398,6 +961,7 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
     out.frame = id;
     out.input.x = x;
     out.input.y = y;
+    if (!record->panes.empty()) return pick_pane(*record, out);
     if (const uint32_t reason = stale(record->input, record->target_generation)) {
         out.state = SA2_PICK_STALE;
         out.stale = reason;
@@ -414,18 +978,94 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
         return out;
     }
     const Copy& copy = copies_[record->copy];
-    if (!copy.valid || copy.revision != record->input.engine_revision) {
+    // ADR-D02 B17 (ABI 10): a styled frame's copy must still hold the piece style it drew with; so must a turning
+    // frame's, styled or not, since its moving mask lives in the same words (B18 review finding B18-03).
+    const bool bound = record->styled || record->shape.turn != 0.0f;
+    if (!copy.valid || copy.revision != record->input.engine_revision || (bound && copy.pick_style != record->style_version)
+        || copy.charts != record->charts_version) { // ADR-D02 B22 item 1: a chart view's pick reads the copy's charts
         out.state = SA2_PICK_STALE;
         out.stale = SA2_PICK_STALE_ENGINE;
         return out;
     }
     out.pass = true;
+    out.input.styled = record->styled;
+    out.input.view_style = record->view_style;
+    out.input.piece_style = record->style_version != 0;
     std::copy(std::begin(record->input.camera_matrix), std::end(record->input.camera_matrix), out.input.camera.begin());
     out.input.width = record->input.viewport_width;
     out.input.height = record->input.viewport_height;
     out.input.copy = record->copy;
     out.input.pose_count = copy.pose_count;
     out.input.set_ticket = record->set_ticket;
+    out.input.shape = record->shape;
+    return out;
+}
+
+// ABI 8: a pick on a composite frame: the pane that holds the point, bound to that pane's view and generation.
+sa2_frame_input Product::pane_binding(const Frame& record, int32_t pane) {
+    auto binding = record.input;
+    if (pane < 0) return binding;
+    const auto& row = record.panes.at(size_t(pane)).pane;
+    binding.view = row.view;
+    binding.view_generation = row.view_generation;
+    binding.resource_set = row.resource_set;
+    binding.publication_generation = record.panes.at(size_t(pane)).publication_generation;
+    std::copy(std::begin(row.camera_matrix), std::end(row.camera_matrix), std::begin(binding.camera_matrix));
+    return binding;
+}
+PickPlan Product::pick_pane(const Frame& record, PickPlan out) const {
+    const auto x = out.input.x, y = out.input.y;
+    for (size_t i = 0; i < record.panes.size(); ++i) {
+        const auto& pane = record.panes[i].pane;
+        if (x < uint32_t(pane.x) || y < uint32_t(pane.y) || x >= uint32_t(pane.x) + pane.width || y >= uint32_t(pane.y) + pane.height) continue;
+        out.pane = int32_t(i);
+        if (pane.flags & SA2_PANE_PREVIEW) {
+            out.state = SA2_PICK_READY;
+            return out;
+        }
+        const auto binding = pane_binding(record, out.pane);
+        if (const uint32_t reason = stale(binding, record.target_generation)) {
+            out.state = SA2_PICK_STALE;
+            out.stale = reason;
+            return out;
+        }
+        if (!pane.resource_set) {
+            out.state = SA2_PICK_READY; // nothing was pickable in this pane
+            return out;
+        }
+        const auto mapped = sets_.find(pane.resource_set);
+        if (mapped == sets_.end() || mapped->second != record.panes[i].set_ticket) {
+            out.state = SA2_PICK_STALE;
+            out.stale = SA2_PICK_STALE_PUBLICATION;
+            return out;
+        }
+        const Copy& copy = copies_[record.copy];
+        const bool styled = record.panes[i].styled; // ADR-D02 B17 (ABI 10)
+        const bool bound = styled || record.panes[i].shape.turn != 0.0f; // B18-03: a turning pane's moving mask
+        if (!copy.valid || copy.revision != record.input.engine_revision || (bound && copy.pick_style != record.style_version)
+            || copy.charts != record.charts_version) { // C3/C4 F4: a chart pane's pick reads the copy's charts, as pick_plan's
+            out.state = SA2_PICK_STALE;
+            out.stale = SA2_PICK_STALE_ENGINE;
+            return out;
+        }
+        out.pass = true;
+        out.input.styled = styled;
+        out.input.view_style = record.panes[i].view_style;
+        out.input.piece_style = record.style_version != 0;
+        std::copy(std::begin(pane.camera_matrix), std::end(pane.camera_matrix), out.input.camera.begin());
+        out.input.width = record.input.viewport_width;
+        out.input.height = record.input.viewport_height;
+        out.input.origin_x = pane.x;
+        out.input.origin_y = pane.y;
+        out.input.view_width = pane.width;
+        out.input.view_height = pane.height;
+        out.input.copy = record.copy;
+        out.input.pose_count = copy.pose_count;
+        out.input.set_ticket = record.panes[i].set_ticket;
+        out.input.shape = record.panes[i].shape;
+        return out;
+    }
+    argument(false, "the point lies in no pane of the composite frame");
     return out;
 }
 
@@ -433,7 +1073,7 @@ void Product::pick_commit(uint64_t ticket, const PickPlan& plan, uint64_t fence)
     const Frame* record = frame(plan.frame);
     state(record != nullptr, "frame is not retained");
     Pick pick;
-    pick.binding = record->input;
+    pick.binding = pane_binding(*record, plan.pane);
     pick.frame = plan.frame;
     pick.fence = fence;
     pick.target_generation = record->target_generation;

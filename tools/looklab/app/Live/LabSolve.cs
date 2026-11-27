@@ -20,6 +20,8 @@ internal sealed class LabSolve
     public LibraryModel Library { get; } = new();
     public LibraryPanel LibraryView { get; }
     public const string MacroPreview = LibraryModel.PreviewArgument;
+    // The setup slot under the Target (ADR-D01.68): the built-in setup search on demo data.
+    public SetupSearch Setup { get; } = new();
     private readonly LabDemo session; private int sample; private bool staged;
     public AnchorLayer? GlobalAnchors { get; private set; }
     public AnchorLayer? LocalAnchors { get; private set; }
@@ -27,7 +29,8 @@ internal sealed class LabSolve
 
     public static bool Handles(string command) => command is "target.current.set" or "target.next.set" or "target.next.activate" or "target.next.clear" or
         "buffer.assign" or "target.frame.set" or "orbit.switch" or "input.destination.set" or "intent.set" or "operation.phase.select" or "operation.phase.edit" or "operation.phase.append_twist" or
-        "macro.add" or "macro.select" or "macro.filter" or "macro.base.open" or "library.branch.toggle" or "protection.policy.set";
+        "macro.add" or "macro.select" or "macro.filter" or "macro.base.open" or "library.branch.toggle" or "protection.policy.set" or
+        SetupSearch.Search or SetupSearch.Use;
 
     // The two views' projections of a position of an orbit, for the anchors (LabFrame reads them from the views).
     private readonly Func<int, int, (double X, double Y)?>? globalPlace, localPlace;
@@ -67,11 +70,17 @@ internal sealed class LabSolve
         Draft.HeldCleared += () => { Rail!.Jump.Release(); Rail.Refresh(); };
         Draft.Changed += () => { LocalAnchors?.QueueRedraw(); };
         Demo = new SolvingDemo(OrbitAtlas.Parse(File.ReadAllText(Path.Combine(root, "assets/seed_atlas.json")))) { Draft = Draft };
+        Demo.Setup = Setup;
+        // The setup rows answer one revision: when the state on screen changes they go stale (rev 6 J-7).
+        Demo.Changed += () => Setup.Follow(Demo.State);
         Strip = new RelationStrip(Demo, () => frame.Tokens, seconds);
         Strip.Command += run; Strip.DemoNext += Demo.NextState;
         Rail = new OrbitRail(Demo, () => frame.Tokens); Rail.Command += run;
         // The Library's signatures are laid out in the rail's order and follow its setting.
         LibraryView.RailOrder = () => OrbitRailModel.Order(Demo.Atlas, Rail.ByOrbitId); Rail.OrderChanged += LibraryView.Refresh; LibraryView.Refresh();
+        // ADR-D01.70: the preview view and History draw the same signature in the same order.
+        session.PreviewView.RailOrder = session.History.RailOrder = LibraryView.RailOrder;
+        Rail.OrderChanged += session.PreviewView.Refresh; Rail.OrderChanged += session.History.Refresh; session.PreviewView.Refresh(); session.History.Refresh();
         frame.SetSeam(Strip); frame.SetPairHead(Rail); frame.HostKeys["F11"] = Demo.NextState;
         frame.Rebuilt += Attach; frame.Recoloured += () => { Strip.Recolour(); Rail.Recolour(); };
     }
@@ -119,6 +128,16 @@ internal sealed class LabSolve
             case "macro.base.open": OpenLibrary(); said = "Library"; break;
             case "library.branch.toggle": why = Library.Toggle(argument); said = "Library: " + argument; break;
             case "protection.policy.set": why = Draft.SetPolicy(argument); said = $"Check mode: {Draft.Mode}, {Draft.Checked.ToString().ToLowerInvariant()} (demo rule)"; break;
+            // ADR-D01.68: the solver names the target; the search lists rows, and the solver picks one.
+            case SetupSearch.Search:
+                why = Setup.Run(Demo.State, argument);
+                said = Setup.Current is { } found
+                    ? found.Rows.Count == 0 ? "Setup search: " + Setup.EmptyLine() : $"Setup search: {found.Rows.Count} rows for {OrbitAtlas.Position(found.Place)} ({SolvingDemo.Mark})"
+                    : "Setup search";
+                break;
+            case SetupSearch.Use:
+                why = Setup.Fill(argument, Draft, new UserEvent("command", command + " " + argument));
+                said = $"Setup row {argument}: Prepare and Cleanup set around Core ({Draft.Count} twists in the draft)"; break;
             case "operation.phase.append_twist":
                 string twist = argument ?? SampleTwists[sample++ % SampleTwists.Length];
                 // In Direct a twist key commits its twist; a typed line only stages it (ADR-D01.58).
@@ -142,6 +161,15 @@ internal sealed class LabSolve
         (LibraryRecord? macro, string? why) = Library.Macro(name, Demo.State);
         if (why != null) { frame.Say("Preview: " + why, true); return; }
         session.StageMacro(macro!.Name, macro.Word);
+    }
+
+    // operation.preview setup:<row>: the picked setup row alone as the preview; the draft keeps its twists. The host
+    // submits the row's word; the program never picks or stages a row by itself (ADR-D01.68).
+    public void PreviewSetup(string row)
+    {
+        string? why = Setup.Alone(row, new UserEvent("command", "operation.preview " + SetupSearch.PreviewArgument + row), out SetupRow? found);
+        if (why != null) { frame.Say("Preview: " + why, true); return; }
+        session.StageSetup(found!.Number, found.Word);
     }
 
     public void Execute(string command, string? argument, string label)

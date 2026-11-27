@@ -1,0 +1,31 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "repair",
+  "note": "At cap 150, open the Repair list with no row focused. Focus row 2 and check its second step's count before picking it. Cancel the preview and focus row 10 step 2, whose moving set is unavailable.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 1500},
+    {"open": "repair_list"},
+    {"wait_ms": 1000},
+    {"focus": "LocalBody_repair_list"},
+    {"wait_ms": 500},
+    {"chord": "Down"},
+    {"chord": "Down"},
+    {"wait_ms": 500},
+    {"chord": "Right"},
+    {"wait_ms": 800},
+    {"text": "2"},
+    {"wait_ms": 2000},
+    {"command": "operation.preview.cancel"},
+    {"command": "jumble.repair.focus", "argument": "10 2"},
+    {"wait_ms": 801},
+    {"command": "filter.preview", "argument": "moved"},
+    {"wait_ms": 802},
+    {"command": "jumble.repair.focus", "argument": "2 2"},
+    {"command": "filter.preview", "argument": "moved"},
+    {"wait_ms": 803}
+  ]
+}

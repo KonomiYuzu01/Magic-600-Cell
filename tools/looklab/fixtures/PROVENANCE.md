@@ -102,3 +102,27 @@ Fixture SHA-256: `702e667319e5cbd463baaa823e43d5c16660abbb9019964efa43cd8e5c297c
 Solved-label SHA-256: `88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6`.
 Turned-label SHA-256: `9ca93cc22eb14ab832639c9f589a1255051f54b611a81fff819c283ccd8e16b6`.
 Label digests cover all 259,800 labels encoded as u32 little-endian, like W3.
+
+## ADR-D02 jumbled samples
+
+`tools/looklab/data/samples/jumble/` holds ADR-D02's sample data (build framework B1): 19 jumbled states of the I_a
+menu, rebuilt only through the Rust jumbling adapter (`rust/c600-jumble`, `c600-jumble-adapter`), each checked
+against the digest its research record names. `states.json` lists every state with its source, digest and files,
+and what B1 left to later steps. The simulator only reads finished states, loaded from the adapter's own record, to
+list the pieces a twist moves for the masks. Evidence kind: exact research model through the Rust candidate engine;
+nothing here is product engine, renderer, Windows, input or performance evidence.
+
+Production commands, from the repository root:
+
+```text
+cargo build --release --locked --offline -p c600-jumble --bin c600-jumble-adapter --manifest-path rust/Cargo.toml --target-dir rust/target
+python tools/looklab/fixtures/make_d02_samples.py --write
+python tools/looklab/fixtures/make_d02_samples.py --verify
+python tests/test_d02_samples.py
+```
+
+Inputs: `research/jumbling/fixtures/wj-I_a.json`; the census records
+`research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json` and
+`research/jumbling/restoration/11-scramble-census/runs/round1/ia-k10-s7001.json`; the seed 7001 word files in
+`research/jumbling/restoration/13-tutorial-runner/runs/depth10-seed7001/words/`; the 12 letters at
+`research/jumbling/differential/leads/results/summary.md:497`; and `obs_refs.stop40_reference()`.

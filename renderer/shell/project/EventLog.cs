@@ -173,6 +173,14 @@ public sealed class EventLog : IDisposable
             json.WriteNumber("engine_revision", frame.EngineRevision);
             json.WriteNumber("publication_revision", frame.PublicationRevision);
             json.WriteNumber("returned_qpc", returned);
+            // ADR-D02 B18c: a composite frame names its pane count and whether it was held (one-view rows are unchanged).
+            if (frame.Panes > 0)
+            {
+                json.WriteNumber("panes", frame.Panes);
+                json.WriteNumber("held", frame.Held);
+            }
+            // ADR-D02 B19/B24: the core's counters on a gate run (M600_D02_GATE=1); nothing otherwise.
+            CoreSurface.GateFields(json);
         });
         Drain(frame);
     }
@@ -268,6 +276,22 @@ public sealed class EventLog : IDisposable
     /// beginning with its "t"; key_to_frame.py skips only the row kinds it lists as other rows.
     /// </summary>
     public void Append(Action<Utf8JsonWriter> fields) => Write(fields);
+
+    /// <summary>
+    /// SF (27 Nov 2026): a "steps" row: the frame thread's steps of one <paramref name="what"/> ("key", a committed
+    /// twist key; "bind", the sample binding at a newly adopted revision; SF3: "shown", the chrome at a newly shown revision) that began at <paramref name="qpc"/>, each
+    /// step's milliseconds from its two QPC readings. key_to_frame.py lists it among the other rows.
+    /// </summary>
+    public void Steps(string what, long qpc, params (string Name, long From, long To)[] steps) => Write(json =>
+    {
+        json.WriteString("t", "steps");
+        json.WriteString("what", what);
+        json.WriteNumber("qpc", qpc);
+        foreach (var (name, from, to) in steps)
+        {
+            json.WriteNumber(name + "_ms", Math.Round((to - from) * 1000.0 / Stopwatch.Frequency, 3));
+        }
+    });
 
     private void Write(Action<Utf8JsonWriter> fields)
     {

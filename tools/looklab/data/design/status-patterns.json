@@ -1,0 +1,17 @@
+{
+  "format": "magic600-status-patterns/1",
+  "priority": ["conflict", "protected", "preview", "unchecked_prefix", "stale"],
+  "patterns": {
+    "protected": {"shape": "hatch", "colour": "state.protected", "spacing": 6, "width": 0.38, "angle": 0.7854},
+    "conflict": {"shape": "cross_hatch", "colour": "state.invalid", "spacing": 5, "width": 0.43, "angle": 0.7854},
+    "unchecked_prefix": {"shape": "dots", "colour": "state.pending", "spacing": 4, "width": 0.73, "angle": 0},
+    "preview": {"shape": "dashed_edge", "colour": "state.preview", "spacing": 6, "width": 0.64, "angle": 0.5236},
+    "stale": {"shape": "stripes", "colour": "state.stale", "spacing": 7, "width": 0.35, "angle": 1.5708}
+  },
+  "marks": {
+    "orbit": {"shape": "ring", "colour": "text.primary", "spacing": 0.32, "width": 0.29, "angle": 0},
+    "position": {"shape": "dot", "colour": "text.primary", "spacing": 0.23, "width": 0.4, "angle": 0},
+    "identity": {"shape": "cross", "colour": "text.primary", "spacing": 0.32, "width": 0.31, "angle": 0.7854},
+    "block": {"shape": "corner_ticks", "colour": "text.primary", "spacing": 0.37, "width": 0.27, "angle": 0}
+  }
+}

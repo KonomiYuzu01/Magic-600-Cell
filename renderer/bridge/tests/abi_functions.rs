@@ -132,6 +132,19 @@ fn every_function_of_the_table_has_the_header_signature() {
         ty(&f.recover),
         ty(&f.counters),
         ty(&f.device_status),
+        ty(&f.view_shape_set),
+        ty(&f.style_set),
+        ty(&f.view_style_set),
+        ty(&f.frame_submit_panes),
+        ty(&f.frame_panes),
+        ty(&f.view_focus_set),
+        ty(&f.view_layout_set),
+        ty(&f.transform_set),
+        ty(&f.sticker_colours_set),
+        ty(&f.scene_look_set),
+        ty(&f.charts_set),
+        ty(&f.status_style_set),
+        ty(&f.status_drawn),
     ];
     assert_eq!(fields.len(), SYMBOLS.len());
     // Controls: the comparison sees whole signatures, array parameters as pointers and `void` as no parameters.

@@ -15,8 +15,8 @@
 //! - Keys go through `c600_input::Router` on its draft default map (US QWERTY): `KeyJ`, `KeyK` and `KeyL`, with Shift
 //!   for the inverse, are its twist keys. With Jumble on the same keys bind `jumble.twist.menu` instead of
 //!   `twist.apply` ([`keymap`]): the same item of the pinned menu as the row's `letter`, with the grip's cap and the
-//!   layer's revision. c600-input binds no key to that row yet, so this map is the host's draft. The router's grip is
-//!   slot 0, cap 0 (draft: `grip.rebind` and `grip.select` are not built, so the cap never changes). Every other key
+//!   layer's revision. c600-input binds no key to that row yet, so this map is the host's draft. The default grip is
+//!   slot 0, cap 0. D02 can select a cap and a proper frame in the host's live twist bindings. Every other key
 //!   reaches the router too; the rows it names that the layer does not build are refused there and change nothing. A
 //!   key whose row the layer builds and that changes the head (`session.undo` and `session.redo` on Ctrl+KeyZ and
 //!   Ctrl+KeyY) is [`Press::Other`]: the host shows the new head, and the control fails, since its replay knows only
@@ -45,15 +45,25 @@
 //!   shell mints from the press, and undoes it with `session.undo` (Ctrl+KeyZ). A text field's focus
 //!   ([`Turns::set_focus`]) keeps the keys it takes, a commit chord among them (DT-M1 C4).
 //!
+//! - ADR-D02 B5 (a draft): [`Turns::twist_letter`] commits any item of the pinned menu at any cap as
+//!   `jumble.twist.menu` through the shell's route, with the arguments a twist key gives, so that a session fixture's
+//!   word can reach a D02 sample state; [`Turns::state_digests`] gives the head's digest and the two pose-array
+//!   digests by which the shell binds that sample to the session.
+//!
 //! Nothing here is Windows/DirectX, input or performance evidence.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use c600_command::{
     CommandLayer, Error as LayerError, Kind, Overlay, PresentedFrame, PreviewState, ProgramJob, Receipt, Registration,
     Secret, Shell, Status, Table, JUMBLE_ON_ROW, JUMBLE_TWIST_ROW, TWIST_ROW,
 };
+use c600_command::receipt::Revision;
+use c600_digest::sha256_hex;
+use c600_display::jumble::transform as certified_transform;
+use c600_display::plan::TransformInput;
 use c600_input::{
     default_specs, Arg, BindingSpec, Chord, ChordIntent, Context as Keys, Focus, KeyEvent, KeyMap, Layout, Routed,
     Router, RoutingClass, Slot,
@@ -63,12 +73,13 @@ use c600_jumble::state::{State, Status as Admissibility};
 use c600_jumble::twist::Menu;
 use c600_jumble::Context as Exact;
 use c600_kernel::json::{self, Value};
-use c600_kernel::request::{Binding, MenuPin};
+use c600_kernel::request::{menu_request, Binding, MenuPin};
 use c600_kernel::{Derivation, Kernel, ProtectedSet, Snapshot};
 use c600_session::disk::FsDisk;
 use c600_session::JournalStore;
 
 use crate::fixture::Fixture;
+use crate::grip::Grip;
 use crate::preload::load_exact;
 use crate::ENGINE_REVISION;
 
@@ -78,7 +89,7 @@ const SECRET: [u8; 32] = [7; 32];
 const SESSION: &str = "c9-shell";
 /// The active keyboard layout of the router's draft default map.
 const LAYOUT: &str = "us-qwerty";
-/// The cap of the router's one grip slot.
+/// The default cap of the router's grip slot.
 const CAP: i64 = 0;
 /// The correctness control's name in the run row.
 pub const CONTROL: &str = "journal-reopen-and-kernel-replay";
@@ -176,8 +187,18 @@ pub struct Turns {
     layer: Option<CommandLayer<JournalStore>>,
     shell: Shell,
     router: Router,
+    /// The pinned menu's two digests, which a menu letter names ([`Turns::twist_letter`]).
+    pin: MenuPin,
     /// The router's specs: the puzzle's draft defaults and the keys of the rows registered since ([`specs`]).
     specs: Vec<BindingSpec>,
+    /// D02's view-only grip frame, built on first use.
+    grip: Option<Grip>,
+    /// The pinned menu, shared ([`Turns::pinned_menu`]): built once per open session, never per call.
+    menu: Option<Arc<Menu>>,
+    /// [`Turns::twist_transform`]'s rows at the head, kept and read ahead ([`Rows`]).
+    rows: Arc<Mutex<Rows>>,
+    /// How often the shell asked for each `(cap, item)` row: the rows read ahead after a commit are the most asked.
+    asked: HashMap<(u32, u64), u64>,
     /// The arguments of every committed press, in order.
     committed: Vec<Value>,
     refused: u64,
@@ -236,6 +257,8 @@ struct Pinned {
     record: Value,
     menu: Menu,
     router: Router,
+    /// The menu's two digests, which a menu letter names ([`Turns::twist_letter`]).
+    pin: MenuPin,
 }
 
 impl Pinned {
@@ -252,18 +275,26 @@ impl Pinned {
         let menu = menu(&exact, &record)?;
         let pin = MenuPin { set: menu.identity.clone(), order: menu.order.clone() };
         let mut keys = Keys::new(vec![Slot { cap: Value::Int(CAP), frame: Value::Null }]);
-        keys.menu = Some(pin);
+        keys.menu = Some(pin.clone());
         keys.grip = Some(0);
-        Ok(Pinned { exact, record, menu, router: Router::new(keymap(puzzle)?, keys) })
+        Ok(Pinned { exact, record, menu, router: Router::new(keymap(puzzle)?, keys), pin })
     }
 }
 
 /// KN3.7's binding from a committed press's arguments: the fields of `field` (`twist.apply`'s `rotation`,
 /// `jumble.twist.menu`'s `letter`) and the row's `cap`, as the layer reads them.
-fn binding(args: &Value, field: &str) -> Result<Binding, String> {
+pub(crate) fn binding(args: &Value, field: &str) -> Result<Binding, String> {
     let mut fields = args.get(field).and_then(Value::as_object).cloned().ok_or("a press without its binding")?;
     fields.insert("cap".to_owned(), args.get("cap").cloned().unwrap_or(Value::Null));
     Binding::from_json(&Value::Object(fields)).map_err(|refusal| format!("the press's binding: {refusal:?}"))
+}
+
+// The last committed press already carries the absolute cap and the canonical menu request.
+fn last_twist(args: &Value) -> Option<Value> {
+    let cap = args.get("cap")?.clone();
+    let request = args.get("letter")?.get("request")?.as_str()?.strip_suffix('\n')?;
+    let item = request.rsplit_once('|')?.1.parse().ok()?;
+    Some(json::object([("cap", cap), ("item", Value::Int(item))]))
 }
 
 /// The layer's head digest (KN0.2): the pose digest its revision names with Jumble on, the labels' with Jumble off.
@@ -272,6 +303,91 @@ fn head_digest(layer: &CommandLayer<JournalStore>) -> String {
         Some(_) => layer.revision().digest.clone(),
         None => layer.snapshot().digest().to_owned(),
     }
+}
+
+/// How many of the most asked rows a commit reads ahead ([`Turns::read_ahead`]): the twist keys' and the cut slice's.
+const READ_AHEAD: usize = 8;
+
+/// The head a twist row is read at: its revision and the protected orbits, on which a row depends besides
+/// `(cap, item)`.
+type RowHead = (Revision, Vec<usize>);
+
+/// SF (27 Nov 2026): [`Turns::twist_transform`]'s rows at one head, by `(cap, item)`. A row is a function of the head's
+/// poses, its protected orbits and `(cap, item)`, so a kept row is the row a fresh read gives. The admissibility check
+/// in a row's `State::apply` costs 7-12 ms, and the shell asks twice per twist on its frame thread.
+#[derive(Default)]
+struct Rows {
+    head: Option<RowHead>,
+    rows: HashMap<(u32, u64), Option<TransformInput>>,
+}
+
+impl Rows {
+    fn get(&self, head: &RowHead, key: (u32, u64)) -> Option<Option<TransformInput>> {
+        if self.head.as_ref() == Some(head) {
+            self.rows.get(&key).cloned()
+        } else {
+            None
+        }
+    }
+
+    /// Starts `head` as the kept head, unless it is already.
+    fn start(&mut self, head: &RowHead) {
+        if self.head.as_ref() != Some(head) {
+            self.head = Some(head.clone());
+            self.rows.clear();
+        }
+    }
+}
+
+fn kept(rows: &Mutex<Rows>) -> MutexGuard<'_, Rows> {
+    rows.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// The pieces that carry the protected `orbits`, as the command layer judges a pose move (review finding B18-02).
+fn protected_pieces(exact: &Exact, orbits: &[usize]) -> Vec<u32> {
+    let orbit_id = &exact.model.orbit_id;
+    (0..orbit_id.len() as u32)
+        .filter(|&piece| usize::try_from(orbit_id[piece as usize]).is_ok_and(|orbit| orbits.contains(&orbit)))
+        .collect()
+}
+
+/// The absolute menu arguments of item `item` at cap `cap` at `revision`: the one builder the fixture's letters, a
+/// read-only preview, its explicit commit and the twist rows (read on the frame thread or ahead) all use.
+fn menu_args(pin: &MenuPin, cap: u32, item: u64, revision: Value) -> Value {
+    let text = |s: &str| Value::String(s.to_owned());
+    let request = String::from_utf8_lossy(&menu_request(&pin.set, &pin.order, item)).into_owned();
+    let letter = json::object([
+        ("request", Value::String(request)),
+        ("operation", json::object([("kind", text("menu_direct"))])),
+        ("menu", json::object([("set", text(&pin.set)), ("order", text(&pin.order))])),
+    ]);
+    json::object([("cap", Value::Int(i64::from(cap))), ("letter", letter), ("revision", revision)])
+}
+
+/// The certified transform row of item `item` of `menu` at cap `cap` on `state`, a copy of the head's poses at
+/// `revision` ([`Turns::twist_transform`]).
+#[allow(clippy::too_many_arguments)]
+fn twist_row(
+    exact: &Exact,
+    menu: &Menu,
+    pin: &MenuPin,
+    field: &str,
+    revision: Value,
+    mut state: State,
+    protect: &[u32],
+    (cap, item): (u32, u64),
+) -> Result<Option<TransformInput>, String> {
+    let args = menu_args(pin, cap, item, revision);
+    let resolution = rotation::resolve(exact, Some(menu), &binding(&args, field)?)
+        .map_err(|refusal| format!("the letter [{cap}, {item}] does not resolve: {refusal:?}"))?;
+    // Review finding B18-02: the pieces that carry the protected orbits are pose-protected, as the command layer
+    // judges a pose move (`jumble::protected_pieces`, read only: the jumbling model's `orbit_id`, a centre piece in
+    // no orbit). For one twist Net and Strict agree (KN2.7): the word's only letter changes a protected piece's
+    // pose exactly when its end pose differs from the base's, which is `State::apply`'s test.
+    let outcome = state
+        .apply(exact, &resolution.twist, None, protect)
+        .map_err(|error| format!("the jumbling engine failed: {error:?}"))?;
+    certified_transform(&outcome, &resolution.twist, (0, 0)).map_err(|missing| format!("{missing:?}"))
 }
 
 impl Turns {
@@ -300,7 +416,7 @@ impl Turns {
         if std::fs::read_dir(folder).is_ok_and(|mut entries| entries.next().is_some()) {
             return Err("the session folder is not empty; a run never reuses a session".to_owned());
         }
-        let Pinned { exact, record, menu, router } = Pinned::read(exact, menu_file, puzzle)?;
+        let Pinned { exact, record, menu, router, pin } = Pinned::read(exact, menu_file, puzzle)?;
         let disk = FsDisk::new(folder).map_err(|error| format!("the session folder: {error}"))?;
         let store = JournalStore::create(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
         let mut layer = CommandLayer::new(
@@ -313,7 +429,7 @@ impl Turns {
             ProtectedSet::none(),
         );
         layer.pin_menu(exact.clone(), menu).map_err(|error| format!("the menu pin: {error:?}"))?;
-        let mut turns = Turns::with(kernel, exact, puzzle, record, folder, layer, router, Vec::new());
+        let mut turns = Turns::with(kernel, exact, puzzle, record, folder, layer, router, pin, Vec::new());
         if puzzle == Puzzle::JumbleOn {
             turns.enter()?;
         }
@@ -346,7 +462,7 @@ impl Turns {
             return Err("the session folder does not exist; a reopen needs a copy of the fixture's session".to_owned());
         }
         let puzzle = fixture.puzzle;
-        let Pinned { exact, record, menu, router } = Pinned::read(exact, menu_file, puzzle)?;
+        let Pinned { exact, record, menu, router, pin } = Pinned::read(exact, menu_file, puzzle)?;
         let disk = FsDisk::new(folder).map_err(|error| format!("the session folder: {error}"))?;
         let store = JournalStore::open(Box::new(disk)).map_err(|error| format!("the journal: {error:?}"))?;
         let layer = CommandLayer::open_with_menu(
@@ -365,7 +481,7 @@ impl Turns {
         if digest != fixture.digest {
             return Err(format!("the reopened session's state {digest} is not the fixture's {}", fixture.digest));
         }
-        Ok(Turns::with(kernel, exact, puzzle, record, folder, layer, router, fixture.committed.clone()))
+        Ok(Turns::with(kernel, exact, puzzle, record, folder, layer, router, pin, fixture.committed.clone()))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -377,6 +493,7 @@ impl Turns {
         folder: &Path,
         layer: CommandLayer<JournalStore>,
         router: Router,
+        pin: MenuPin,
         committed: Vec<Value>,
     ) -> Turns {
         // One key map: the shell's palette names the keys the router binds (LP4-8).
@@ -391,7 +508,12 @@ impl Turns {
             layer: Some(layer),
             shell,
             router,
+            pin,
             specs: specs(puzzle),
+            grip: None,
+            menu: None,
+            rows: Arc::default(),
+            asked: HashMap::new(),
             committed,
             refused: 0,
             others: 0,
@@ -430,6 +552,7 @@ impl Turns {
         let twist_row = self.puzzle.twist_row();
         let layer = self.layer.as_mut().ok_or("the session is closed")?;
         let before = head_digest(layer);
+        let previous = layer.revision().clone();
         let routed = self.router.key(&mut self.shell, layer, KeyEvent::Down { chord, repeat, text: None });
         let changed = head_digest(layer) != before;
         let press = match &routed {
@@ -448,7 +571,8 @@ impl Turns {
         match press {
             Press::Refused => self.refused += 1,
             Press::Other => self.others += 1,
-            Press::None | Press::Committed => {}
+            Press::None => {}
+            Press::Committed => self.read_ahead(&previous),
         }
         Ok(press)
     }
@@ -491,6 +615,266 @@ impl Turns {
     /// The arguments of every committed press, in order, a reopened fixture's first.
     pub fn committed(&self) -> &[Value] {
         &self.committed
+    }
+
+    fn build_grip(&self, cap: usize) -> Result<Grip, String> {
+        let menu = self.layer.as_ref().and_then(CommandLayer::jumbled)
+            .and_then(|jumbled| jumbled.state().menu()).ok_or("Grip frames need Jumble")?;
+        Grip::build(&self.exact, menu, cap)
+    }
+
+    /// Sets D02's grip and frame together. The default slot map and the journal are independent of this choice.
+    pub fn set_grip(&mut self, cap: usize, frame: usize) -> Result<(), String> {
+        let candidate = if self.grip.as_ref().is_some_and(|grip| grip.cap == cap) {
+            None
+        } else {
+            Some(self.build_grip(cap)?)
+        };
+        let grip = candidate.as_ref().or(self.grip.as_ref()).expect("a grip candidate");
+        let keys = &grip.at(frame)?.keys;
+        if candidate.is_none() && grip.selected == frame {
+            return Ok(());
+        }
+        let mut specs = self.specs.clone();
+        for spec in specs.iter_mut().filter(|spec| spec.command == JUMBLE_TWIST_ROW) {
+            let [ChordIntent::Physical(chord)] = spec.sequence.as_slice() else { continue };
+            let chord = chord.to_string();
+            if let Some(key) = keys.iter().find(|key| key.chord == chord) {
+                for (name, arg) in &mut spec.args {
+                    match name.as_str() {
+                        "cap" if cap == CAP as usize && frame == 0 => *arg = Arg::GripCap,
+                        "cap" => *arg = Arg::Fixed(Value::Int(cap as i64)),
+                        "letter" => *arg = Arg::MenuItem(key.item),
+                        _ => {}
+                    }
+                }
+            }
+        }
+        self.router.apply(&specs, &DECLARED, LAYOUT).map_err(|_| "The grip key map was refused")?;
+        self.shell.apply_keymap(self.router.keymap().clone());
+        self.specs = specs;
+        if let Some(grip) = candidate {
+            self.grip = Some(grip);
+        }
+        self.grip.as_mut().expect("a grip").selected = frame;
+        Ok(())
+    }
+
+    /// The exact mapping and the press summary shared with the product shell.
+    pub fn grip_report(&mut self) -> Result<Value, String> {
+        let layer = self.layer.as_ref().ok_or("The session is closed")?;
+        if self.grip.is_none() {
+            let grip = self.build_grip(CAP as usize)?;
+            grip.at(0)?;
+            self.grip = Some(grip);
+        }
+        let grip = self.grip.as_ref().expect("a grip");
+        let (committed, refused) = self.presses();
+        Ok(json::object([
+            ("cap", Value::Int(grip.cap as i64)),
+            ("frame", Value::Int(grip.selected as i64)),
+            ("frames", grip.frames_json()),
+            ("committed", Value::Int(committed as i64)),
+            ("refused", Value::Int(refused as i64)),
+            ("last", self.committed.last().and_then(last_twist).unwrap_or(Value::Null)),
+            ("state_digest", Value::String(head_digest(layer))),
+        ]))
+    }
+
+    /// Commits item `item` of the pinned menu at cap `cap` as `jumble.twist.menu` through the shell's route
+    /// ([`Turns::invoke`]), the arguments a twist key gives (the router's `menu_item` letter, the cap and the layer's
+    /// revision) at any cap and item: a letter of a session fixture's word (ADR-D02 B5). It must commit; its
+    /// arguments join the committed presses, so the control replays it. Jumble on only.
+    pub fn twist_letter(&mut self, cap: u32, item: u64) -> Result<(), String> {
+        let args = self.twist_args(cap, item)?;
+        let receipt = self.invoke(JUMBLE_TWIST_ROW, args)?;
+        match &receipt.status {
+            Status::Committed(_) => Ok(()),
+            Status::Refused(error) | Status::Failed(error) => {
+                Err(format!("the letter [{cap}, {item}] did not commit: {}: {}", error.code, error.detail))
+            }
+            status => Err(format!("the letter [{cap}, {item}] did not commit: the layer answered {}", status.name())),
+        }
+    }
+
+    /// An exact release check of the selected menu letter on a copy of the current state.
+    pub(crate) fn release_check(&mut self, cap: u32, item: u64) -> Result<Value, String> {
+        let args = self.twist_args(cap, item)?;
+        let Head::Jumbled(exact, state) = self.head()? else {
+            return Err("a twist check needs Jumble on".to_owned());
+        };
+        let resolved = rotation::resolve(&exact, state.menu(), &binding(&args, "letter")?)
+            .map_err(|error| format!("the letter [{cap}, {item}] does not resolve: {error:?}"))?;
+        let letter = ([i64::from(cap), item as i64], resolved.twist);
+        c600_jumble::observe::cuts::release_check(&exact, &state, &letter, Some(i64::from(cap)), None)
+    }
+
+    /// ADR-D02 B18 (row J03): the certified transform row of item `item` of the pinned menu at cap `cap` at the head,
+    /// without committing it: `c600_display::jumble::transform` of the outcome the jumbling engine gives that twist on
+    /// a copy of the head's poses, the letter resolved as [`Turns::twist_letter`] sends it and as the control's replay
+    /// resolves a press. `None` when the outcome is not admissible (blocked, uncertain, refused, or moving a piece that
+    /// carries a protected orbit, which the command layer refuses with `KN2:protection.piece_would_move`): no moving
+    /// set is guessed. The row's endpoints are left 0. Jumble on only.
+    /// SF (27 Nov 2026): rows are kept per head and `(cap, item)` ([`Rows`]) and read ahead after a commit
+    /// ([`Turns::read_ahead`]); a kept row is the row this call reads.
+    pub fn twist_transform(&mut self, cap: u32, item: u64) -> Result<Option<TransformInput>, String> {
+        if self.puzzle != Puzzle::JumbleOn {
+            return Err("a twist's transform needs the jumbled puzzle".to_owned());
+        }
+        *self.asked.entry((cap, item)).or_default() += 1;
+        let menu = self.pinned_menu()?;
+        let (head, state) = self.row_head()?;
+        if let Some(row) = kept(&self.rows).get(&head, (cap, item)) {
+            return Ok(row);
+        }
+        let protect = protected_pieces(&self.exact, &head.1);
+        let field = self.puzzle.binding_field();
+        let row = twist_row(&self.exact, &menu, &self.pin, field, head.0.to_json(), state.clone(), &protect, (cap, item))?;
+        let mut rows = kept(&self.rows);
+        rows.start(&head);
+        rows.rows.insert((cap, item), row.clone());
+        Ok(row)
+    }
+
+    /// [`Turns::twist_transform`]'s row read afresh at the head, past the kept rows and with a menu built again from
+    /// the record: the check that a kept row, one read ahead included, is the row a fresh read gives.
+    pub fn fresh_twist_transform(&mut self, cap: u32, item: u64) -> Result<Option<TransformInput>, String> {
+        if self.puzzle != Puzzle::JumbleOn {
+            return Err("a twist's transform needs the jumbled puzzle".to_owned());
+        }
+        let menu = menu(&self.exact, &self.record)?;
+        let (head, state) = self.row_head()?;
+        let protect = protected_pieces(&self.exact, &head.1);
+        let field = self.puzzle.binding_field();
+        twist_row(&self.exact, &menu, &self.pin, field, head.0.to_json(), state.clone(), &protect, (cap, item))
+    }
+
+    /// Whether the row `(cap, item)` is kept at the head (read by a call or ahead by the worker).
+    pub fn twist_row_kept(&mut self, cap: u32, item: u64) -> bool {
+        match self.row_head() {
+            Ok((head, _)) => kept(&self.rows).get(&head, (cap, item)).is_some(),
+            Err(_) => false,
+        }
+    }
+
+    /// The head a twist row is read at. Copy its poses only when a row actually needs to be built.
+    fn row_head(&self) -> Result<(RowHead, &State), String> {
+        let layer = self.layer.as_ref().ok_or("the session is closed")?;
+        let orbits = layer.protected().orbits().to_vec();
+        let jumbled = layer.jumbled().ok_or_else(|| "the head has no poses".to_owned())?;
+        Ok(((layer.revision().clone(), orbits), jumbled.state()))
+    }
+
+    /// After a commit, keep certified rows at the twisted cap and read the most asked missing rows ahead on a copy of
+    /// the new head. The worker stops when the head moves on and never touches the session.
+    fn read_ahead(&mut self, previous: &Revision) {
+        if self.puzzle != Puzzle::JumbleOn || self.asked.is_empty() {
+            return;
+        }
+        let (Ok(menu), Ok((head, state))) = (self.pinned_menu(), self.row_head()) else { return };
+        let mut wanted: Vec<_> = self.asked.iter().map(|(&key, &count)| (count, key)).collect();
+        wanted.sort_unstable_by(|a, b| b.cmp(a));
+        let wanted = {
+            let mut rows = kept(&self.rows);
+            if rows.head.as_ref().is_some_and(|(revision, orbits)| revision == previous && *orbits == head.1) {
+                // A legal twist fixes its cap's pole and rotates only the pieces inside its cut. No piece crosses
+                // that cut, so the same menu row has the same plane, moving set and protection verdict at this head.
+                let cap = self.committed.last().and_then(|args| args.get("cap")).and_then(Value::as_i64);
+                rows.rows.retain(|&(at, _), row| Some(i64::from(at)) == cap && row.is_some());
+                rows.head = Some(head.clone());
+            } else {
+                rows.start(&head);
+            }
+            wanted.into_iter().take(READ_AHEAD).map(|(_, key)| key)
+                .filter(|key| !rows.rows.contains_key(key))
+                .collect::<Vec<_>>()
+        };
+        if wanted.is_empty() {
+            return;
+        }
+        let state = state.clone();
+        let (rows, exact, pin) = (self.rows.clone(), self.exact.clone(), self.pin.clone());
+        let field = self.puzzle.binding_field();
+        let worker = move || {
+            let protect = protected_pieces(&exact, &head.1);
+            for key in wanted {
+                {
+                    let current = kept(&rows);
+                    if current.head.as_ref() != Some(&head) {
+                        return;
+                    }
+                    if current.rows.contains_key(&key) {
+                        continue;
+                    }
+                }
+                let read = twist_row(&exact, &menu, &pin, field, head.0.to_json(), state.clone(), &protect, key);
+                let Ok(row) = read else { continue };
+                let mut current = kept(&rows);
+                if current.head.as_ref() != Some(&head) {
+                    return;
+                }
+                current.rows.entry(key).or_insert(row);
+            }
+        };
+        let _ = std::thread::Builder::new().name("twist-rows".to_owned()).spawn(worker);
+    }
+
+    /// The session's pinned menu, shared: the command layer's pin, which the open built once from the record and every
+    /// jumbled head carries (`State::menu_arc`), when its two digests are the router's pin; otherwise built once from the
+    /// record. Kept for the session: building a menu (`Menu::from_record`) took 58-64 ms of a 66-72 ms
+    /// [`Turns::twist_transform`], which the shell calls twice per twist (SF, 27 Nov 2026), and a shared menu also keeps
+    /// its caps' twists (`Menu::for_cap`). The correctness control's replays still read the record again.
+    pub fn pinned_menu(&mut self) -> Result<Arc<Menu>, String> {
+        if let Some(menu) = &self.menu {
+            return Ok(menu.clone());
+        }
+        let held = self.layer.as_ref().and_then(CommandLayer::jumbled).and_then(|jumbled| jumbled.state().menu_arc());
+        let menu = match held {
+            Some(menu) if menu.identity == self.pin.set && menu.order == self.pin.order => menu,
+            _ => Arc::new(menu(&self.exact, &self.record)?),
+        };
+        self.menu = Some(menu.clone());
+        Ok(menu)
+    }
+
+    /// The head's digests as ADR-D02's sample states name them (B5), by which a sample binds to the session: KN0.2's
+    /// digest, and with Jumble on the SHA-256 of the pose ids (u32 little-endian per piece, the jumbling engine's
+    /// record) and of the lattice flags (one byte per piece, 1 when its pose is in K⁺), and the count of pieces whose
+    /// pose is not in K⁺, from which the shell reads the exact lattice flag (B6). With Jumble off the three are `null`.
+    /// The answer is `{"digest", "pose_ids_sha256", "pose_lattice_sha256", "off_lattice"}`.
+    /// ADR-D02 B14: the head's KN0.2 digest and, with Jumble on, its pose id per piece (the session's own pose index)
+    /// and its pose count, by which the host expands a per-pose style to pieces. `None` with Jumble off.
+    pub fn pose_index(&mut self) -> Result<(String, Option<(Vec<u32>, usize)>), String> {
+        let layer = self.layer()?;
+        let digest = head_digest(layer);
+        let index = layer.jumbled().map(|jumbled| {
+            let state = jumbled.state();
+            (state.pose_ids().to_vec(), state.poses().len())
+        });
+        Ok((digest, index))
+    }
+
+    pub fn state_digests(&mut self) -> Result<Value, String> {
+        let layer = self.layer()?;
+        let digest = head_digest(layer);
+        let (ids, lattice, off) = match layer.jumbled() {
+            Some(jumbled) => {
+                let state = jumbled.state();
+                let raw: Vec<u8> = state.pose_ids().iter().flat_map(|id| id.to_le_bytes()).collect();
+                let poses = state.poses();
+                let flags: Vec<u8> =
+                    state.pose_ids().iter().map(|&id| u8::from(poses[id as usize].kidx().is_some())).collect();
+                let off = flags.iter().filter(|&&flag| flag == 0).count() as i64;
+                (Value::String(sha256_hex(&raw)), Value::String(sha256_hex(&flags)), Value::Int(off))
+            }
+            None => (Value::Null, Value::Null, Value::Null),
+        };
+        Ok(json::object([
+            ("digest", Value::String(digest)),
+            ("pose_ids_sha256", ids),
+            ("pose_lattice_sha256", lattice),
+            ("off_lattice", off),
+        ]))
     }
 
     // ----- LP4-3's write-check-run flow (a draft)
@@ -572,7 +956,28 @@ impl Turns {
     /// ([`Turns::take_job`]).
     pub fn invoke(&mut self, row: &str, args: Value) -> Result<Receipt, String> {
         let layer = self.layer.as_mut().ok_or("the session is closed")?;
-        self.shell.invoke(layer, row, args).map_err(|error| format!("{}: {}", error.code, error.detail))
+        let press = (row == JUMBLE_TWIST_ROW).then(|| args.clone());
+        let receipt = self.shell.invoke(layer, row, args).map_err(|error| format!("{}: {}", error.code, error.detail))?;
+        if matches!(receipt.status, Status::Committed(_)) {
+            if let Some(press) = press {
+                self.committed.push(press);
+            }
+        }
+        Ok(receipt)
+    }
+
+    /// The fixture, a read-only preview and its explicit commit all use the same absolute menu arguments.
+    pub(crate) fn twist_args(&mut self, cap: u32, item: u64) -> Result<Value, String> {
+        if self.puzzle != Puzzle::JumbleOn {
+            return Err("a menu letter needs the jumbled puzzle".to_owned());
+        }
+        let revision = self.layer()?.revision().to_json();
+        Ok(menu_args(&self.pin, cap, item, revision))
+    }
+
+    pub(crate) fn preview_basis(&mut self) -> Result<(String, Vec<usize>), String> {
+        let layer = self.layer()?;
+        Ok((head_digest(layer), layer.protected().orbits().to_vec()))
     }
 
     /// Takes the next program job the layer admitted (a language row's), as the host takes it before it runs the job's

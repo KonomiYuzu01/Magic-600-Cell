@@ -1,0 +1,15 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "documents",
+  "resolution": "1280x720",
+  "note": "ADR-D01.83 in sample mode. The session, sample logs and scripts are open. Open and compile census.6cs, create an untitled script, then click the session tab and try to close it. The session stays open and the error lamp counts no failure.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"command": "file.document.open", "argument": "census.6cs"},
+    {"command": "file.document.compile"},
+    {"command": "file.document.new", "argument": "script"},
+    {"click_control": "SessionDocumentTab"},
+    {"command": "file.document.close"},
+    {"wait_ms": 3000}
+  ]
+}

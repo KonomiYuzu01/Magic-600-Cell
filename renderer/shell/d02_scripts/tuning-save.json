@@ -1,0 +1,30 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "tuning-save",
+  "note": "B31's run on a state's session fixture (wj-ia-300) at 1280x720: tuning.open reveals the panel over the folded right dock; the shipped Graphite preset is applied (the product follows the system theme at open); a knob forks the shipped Graphite preset and Save fills the fork; the held deutan simulation draws over the chrome (the core is sent the identity until the look-cost row G8 passes) and its release takes it away; an Advanced override that darkens the height ramp's third step recolours the pieces and Save refuses it in place, naming the pair; the reset saves; the shipped preset comes back as shipped. After every step the head's state digest and the tint bytes are as they were.",
+  "steps": [
+    {"wait_ms": 5001},
+    {"command": "tuning.open"},
+    {"wait_ms": 701},
+    {"command": "tuning.preset.apply", "argument": "graphite"},
+    {"wait_ms": 702},
+    {"command": "theme.tune", "argument": "tone=0.03"},
+    {"wait_ms": 703},
+    {"command": "tuning.preset.save"},
+    {"wait_ms": 704},
+    {"command": "tuning.simulate.hold", "argument": "deutan"},
+    {"wait_ms": 705},
+    {"command": "tuning.simulate.hold", "argument": "off"},
+    {"wait_ms": 706},
+    {"command": "token.override.set", "argument": "tint.jumble.height.6=0.2 0 0"},
+    {"wait_ms": 707},
+    {"command": "tuning.preset.save"},
+    {"wait_ms": 708},
+    {"command": "token.override.reset", "argument": "tint.jumble.height.6"},
+    {"wait_ms": 709},
+    {"command": "tuning.preset.save"},
+    {"wait_ms": 710},
+    {"command": "tuning.preset.apply", "argument": "graphite"},
+    {"wait_ms": 711}
+  ]
+}

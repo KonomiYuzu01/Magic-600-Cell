@@ -1,0 +1,22 @@
+{
+  "format": "magic600-context-menus/1",
+  "menus": {
+    "view": {
+      "label": "View",
+      "entries": [
+        { "command": "explore.set" },
+        { "command": "command.find" },
+        { "command": "help.open", "argument": "keys", "label": "Keyboard shortcuts" }
+      ]
+    },
+    "pick": {
+      "label": "Selection",
+      "entries": [
+        { "command": "target.current.set" },
+        { "command": "card.track" },
+        { "command": "card.pin" },
+        { "command": "jumble.cap.name" }
+      ]
+    }
+  }
+}

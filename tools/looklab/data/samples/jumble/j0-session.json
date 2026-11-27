@@ -1,0 +1,215 @@
+{
+ "format": "magic600-d02-j0-session/1",
+ "state": "wj-ia-300",
+ "resolution": "2000x1200",
+ "note": "B33's fixed session for J0 (section 7 of docs/progress/1.0/adr-d02-build-framework.md), played in a fresh product shell on wj-ia-300's session fixture, in sample mode, once per planted defect and twice clean, each time from its own copy of Look Lab's samples (launch.py --d02-data). It names cap 150, opens Local's Cap covers and Repair list, sets a threshold, shows the contact and height tints and the contact tint again, names the blocked cap 0, focuses domain 5 and reads the research pane's Claims. The checks read the screens against the repository's samples, never against the planted copy.",
+ "steps": [
+  {
+   "wait_ms": 2500
+  },
+  {
+   "op": "jumble.cap.name",
+   "argument": "150",
+   "wait_ms": 1500
+  },
+  {
+   "open": "cap_covers"
+  },
+  {
+   "wait_ms": 1000
+  },
+  {
+   "open": "repair_list"
+  },
+  {
+   "wait_ms": 1000
+  },
+  {
+   "op": "jumble.capmap.threshold.set",
+   "argument": "N_c >= 50",
+   "wait_ms": 800
+  },
+  {
+   "op": "jumble.tint.mode",
+   "argument": "contact",
+   "wait_ms": 1000
+  },
+  {
+   "op": "jumble.tint.mode",
+   "argument": "height",
+   "wait_ms": 1000
+  },
+  {
+   "op": "jumble.tint.mode",
+   "argument": "contact",
+   "wait_ms": 1000
+  },
+  {
+   "op": "jumble.cap.name",
+   "argument": "0",
+   "wait_ms": 1500
+  },
+  {
+   "op": "jumble.focus.domain",
+   "argument": "5",
+   "wait_ms": 1200
+  },
+  {
+   "op": "workspace.set",
+   "argument": "layout:analyse",
+   "wait_ms": 1500
+  },
+  {
+   "op": "research.claims",
+   "wait_ms": 1000
+  },
+  {
+   "wait_ms": 800
+  }
+ ],
+ "checks": [
+  {
+   "rule": "digest"
+  },
+  {
+   "rule": "state"
+  },
+  {
+   "rule": "boundary"
+  },
+  {
+   "rule": "lattice",
+   "at": [
+    "start",
+    "research.claims"
+   ]
+  },
+  {
+   "rule": "cap-readouts",
+   "at": [
+    [
+     "jumble.cap.name 150",
+     150
+    ]
+   ]
+  },
+  {
+   "rule": "cap-map",
+   "at": [
+    "jumble.cap.name 150"
+   ]
+  },
+  {
+   "rule": "threshold",
+   "at": "jumble.capmap.threshold.set",
+   "n_c": 50
+  },
+  {
+   "rule": "blocked-undefined",
+   "at": [
+    [
+     "jumble.cap.name 0",
+     0
+    ]
+   ]
+  },
+  {
+   "rule": "covers",
+   "at": [
+    [
+     "step 7",
+     150
+    ]
+   ]
+  },
+  {
+   "rule": "repair-rows",
+   "at": [
+    [
+     "step 9",
+     150
+    ]
+   ]
+  },
+  {
+   "rule": "repair-order",
+   "at": [
+    [
+     "step 9",
+     150
+    ]
+   ]
+  },
+  {
+   "rule": "delta-n",
+   "at": [
+    [
+     "step 9",
+     150
+    ]
+   ]
+  },
+  {
+   "rule": "never-hidden",
+   "at": [
+    [
+     "jumble.cap.name 150",
+     150,
+     null
+    ],
+    [
+     "jumble.cap.name 0",
+     0,
+     null
+    ],
+    [
+     "jumble.focus.domain 5",
+     0,
+     "dimmed"
+    ]
+   ]
+  },
+  {
+   "rule": "style-bytes",
+   "at": [
+    [
+     "jumble.tint.mode contact",
+     "contact",
+     150
+    ],
+    [
+     "jumble.tint.mode height",
+     "height",
+     150
+    ],
+    [
+     "jumble.tint.mode contact#2",
+     "contact",
+     150
+    ]
+   ]
+  },
+  {
+   "rule": "contact-classes",
+   "at": [
+    "jumble.tint.mode contact",
+    "jumble.focus.domain 5"
+   ]
+  },
+  {
+   "rule": "verdict",
+   "at": "research.claims"
+  },
+  {
+   "rule": "cut-off",
+   "at": "research.claims"
+  },
+  {
+   "rule": "total-n",
+   "at": [
+    "start",
+    "jumble.cap.name 150"
+   ]
+  }
+ ]
+}

@@ -130,12 +130,14 @@ public sealed class DesignSystem
     public IReadOnlyDictionary<string, ColourRole> Roles { get; }
     public IReadOnlyDictionary<string, string> Components { get; }
     public IReadOnlyList<ContrastRule> Contrast { get; }
+    // The frame's two layers, surfaces and instruments (ADR-D01.77).
+    public FrameLayers Layers { get; }
 
     public static DesignSystem Load(string path) => Parse(File.ReadAllText(path));
     public static DesignSystem Parse(string text)
     {
         using JsonDocument d = J.Parse(text);
-        return new DesignSystem(J.Root(d, "magic600-design-system", "density", "type", "motion", "roles", "components", "contrast"));
+        return new DesignSystem(J.Root(d, "magic600-design-system", "density", "type", "motion", "roles", "components", "contrast", "layers"));
     }
 
     private DesignSystem(JsonElement root)
@@ -230,6 +232,7 @@ public sealed class DesignSystem
             contrast.Add(item);
         }
         Contrast = contrast.AsReadOnly();
+        Layers = FrameLayers.Parse(root.GetProperty("layers"), roles);
     }
 
     // One density table from one unit times the display scale (ADR-D01.45). A nonzero size never falls below one pixel.
@@ -363,8 +366,8 @@ public sealed class TokenSet
     public IReadOnlyDictionary<string, ResolvedColour> Colours { get; }
     public IReadOnlyDictionary<string, double> Sizes { get; }
     public IReadOnlyDictionary<string, double> Knobs { get; }
-    // True when a state or encoding role differs from its shipped colour: the view frame then shows the
-    // "non-standard colours" mark (ADR-D01.51).
+    // True when an instrument's colour (ADR-D01.77) differs from its shipped colour: the view frame then shows the
+    // "non-standard colours" mark (ADR-D01.51). A surface may be repainted freely.
     public bool NonStandardColours { get; }
     public bool HighContrast { get; }
     // The comparison character: the family drawn in the other family's way.
@@ -413,7 +416,7 @@ public sealed class TokenSet
             Oklch c = entry.Value;
             if (!(c.L >= 0 && c.L <= 1 && c.C >= 0 && c.C <= .4 && c.H >= 0 && c.H <= 360)) throw J.Error(entry.Key, "override colour outside OkLCH ranges");
             Rgb value = c.ToSrgb();
-            if (value != colours[entry.Key].Value && role.Group is "state" or "encoding") NonStandardColours = true;
+            if (value != colours[entry.Key].Value && system.Layers.Layer(role.Id) == FrameLayer.Instrument) NonStandardColours = true;
             colours[entry.Key] = new ResolvedColour(value, true);
         }
         Colours = colours;

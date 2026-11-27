@@ -2,13 +2,16 @@
  * sa2_interop.h: the C ABI between the Godot C# host and the native Direct3D
  * 12 producer DLL sa2_interop.dll (renderer/core/, the product copy of the
  * selected S-A2 core).
- * ABI version 5; the ABI 1 to ABI 4 declarations, layouts and behaviour are
+ * ABI version 8; the ABI 1 to ABI 7 declarations, layouts and behaviour are
  * retained, except that ABI 5 extends sa2_presented_row with display_qpc (no
  * ABI 4 core wrote that row: without a surface sa2_presented answers
  * SA2_E_UNAVAILABLE). ABI 3 adds W-J's per-piece pose path (sa2_scene_load_wj and
  * sa2_scene_lattice_check). ABI 4 adds the product API, one call per RM.14
  * operation. ABI 5 adds route B: the core's own device, a DirectComposition
- * layer and a composition swap chain (both at the end of this file).
+ * layer and a composition swap chain (both at the end of this file). ABI 6
+ * adds a view's shape (sa2_view_shape_set), ABI 7 per-piece style
+ * (sa2_style_set, sa2_view_style_set) and ABI 8 the composite frame
+ * (sa2_frame_submit_panes, sa2_frame_panes), all at the end of this file.
  *
  * The integrator owns this file. An implementation must not change it; if a
  * change is unavoidable, stop and report the reason instead.
@@ -43,7 +46,7 @@ extern "C" {
 #define SA2_API __declspec(dllimport)
 #endif
 
-#define SA2_ABI_VERSION 5u
+#define SA2_ABI_VERSION 10u
 
 /* Code layout; must match code_layout.json and the host's CodeLayout.cs. */
 #define SA2_CODE_BLOCK_PX 8
@@ -670,7 +673,7 @@ static_assert(sizeof(sa2_counter_values) == 64, "sa2_counter_values requires the
 #endif
 
 /* describe_backend. Writes the SupportReport as NUL-terminated JSON:
- * {interface_version: 5, backend_build: SHA-256 of the sa2_identity JSON,
+ * {interface_version: SA2_ABI_VERSION, backend_build: SHA-256 of the sa2_identity JSON,
  * device_epoch, device_removed: null or the removal HRESULT as "0x%08x",
  * features: {row: {status: "supported", layout_version} or {status:
  * "unsupported", reason}}, evidence: []}. Supported rows: F01 full-detail
@@ -1052,6 +1055,420 @@ SA2_API int32_t sa2_stage_compile(sa2_context* ctx, uint32_t kind, const char* h
 SA2_API int32_t sa2_scene_stages(sa2_context* ctx, uint64_t vertex_stage, uint64_t fragment_stage, uint32_t overdraw, const uint32_t* vertex_arrays, uint32_t vertex_count, const uint32_t* fragment_arrays, uint32_t fragment_count);
 SA2_API int32_t sa2_stage_report(sa2_context* ctx, sa2_stage_frame* out);
 SA2_API int32_t sa2_stage_release(sa2_context* ctx, uint64_t handle);
+
+/* ABI 6: a view's shape (ADR-D02's build, a candidate behind the shell's --d02; on 26 November 2026 the owner asked
+ * for smaller stickers at Look Lab's opening values). Additive: every ABI 5 call, struct and behaviour is unchanged,
+ * and a view whose shape was never set draws byte-identically to ABI 5.
+ *
+ * sa2_view_shape_set sets the shape that the product frames of `view` (sa2_frame_input.view) and their ID passes draw
+ * with: the cell shrink (Look Lab's 1 - gap), the sticker shrink, the 4D eye distance d4 and the zoom (Look Lab's
+ * 1 / tan(field of view / 2)). ABI 5 hard-codes them as the SA2_SHAPE_DEFAULT_* values; a NULL shape restores those.
+ * Each value must be finite and inside its range below, struct_size must be sizeof(sa2_view_shape) and reserved 0,
+ * else SA2_E_INVALID_ARGUMENT and nothing changes. The shape is device-free product state: it needs a loaded scene
+ * outside a trace (SA2_E_WRONG_STATE), works during device loss, is kept by sa2_recover and is forgotten by
+ * sa2_scene_unload. A frame keeps the shape it was drawn with, so a pick on it draws its ID pass with that shape.
+ */
+#define SA2_SHAPE_DEFAULT_CELL_SHRINK 0.76f /* ABI 5's constants: every view's shape until one is set */
+#define SA2_SHAPE_DEFAULT_STICKER_SHRINK 0.82f
+#define SA2_SHAPE_DEFAULT_D4 1.18f
+#define SA2_SHAPE_DEFAULT_ZOOM 1.15f
+#define SA2_SHAPE_D4_MAX 64.0f
+#define SA2_SHAPE_ZOOM_MAX 64.0f
+
+typedef struct sa2_view_shape {
+    uint32_t struct_size; /* sizeof(sa2_view_shape); 24 on x64 */
+    float cell_shrink; /* 0 < cell_shrink <= 1 */
+    float sticker_shrink; /* 0 < sticker_shrink <= 1 */
+    float d4; /* 1 < d4 <= SA2_SHAPE_D4_MAX: every drawn point lies in the unit ball, so w < d4 */
+    float zoom; /* 0 < zoom <= SA2_SHAPE_ZOOM_MAX */
+    uint32_t reserved; /* must be 0 */
+} sa2_view_shape;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_view_shape) == 24, "sa2_view_shape requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_view_shape* shape);
+
+/* ABI 7: per-piece style (ADR-D02 build step B14, a candidate behind the shell's --d02; rows J07 and J09 of the
+ * feature matrix). Additive: every ABI 6 call, struct and behaviour is unchanged, and a frame with no style draws
+ * through the unchanged product pipeline, byte-identically to ABI 6.
+ *
+ * sa2_style_set sets one channel of the adopted engine revision's piece style: SA2_PIECES bytes, one per piece, bound
+ * to that revision as its pose arrays are. A revision other than the adopted one is refused (SA2_E_INVALID_ARGUMENT),
+ * and adopting a newer revision drops the channels. A NULL piece_style clears the channel. A fill byte holds a
+ * palette entry in SA2_STYLE_INDEX (0: the piece keeps its label colour) and may set SA2_STYLE_DIM; an outline byte
+ * holds a palette entry (0: no regular outline). The flags below are channel-specific; any other bit is refused.
+ *
+ * sa2_view_style_set sets a style slot (1 to SA2_STYLE_SLOTS). A product frame drawn by sa2_frame_submit uses slot 1;
+ * a composite frame's pane names its slot. A NULL style clears the slot. tint_mode says which channels draw;
+ * dim_mode which pieces dim (SA2_STYLE_DIM_MARKED: those whose fill byte has SA2_STYLE_DIM; SA2_STYLE_DIM_UNMARKED:
+ * every other piece, a focus); a dimmed colour is multiplied by 1 - dim_amount. A tint mixes the palette entry
+ * (shaded as the label colour is) over the label colour by its alpha; an outline mixes the entry over the band of each
+ * sticker triangle within outline_width of an edge (barycentric units). The row-major 3x3 matrix then maps every drawn
+ * colour (a colour-vision or contrast simulation); with the identity it is skipped. Out-of-range values, non-finite
+ * values or unknown mode bits are refused and change nothing.
+ *
+ * A frame draws styled with the host status overlay below, or when its slot is set and the style changes something: a non-zero piece byte in a drawn
+ * channel, a dim that applies, or a matrix other than the identity. Otherwise it draws exactly as ABI 6. Both calls are
+ * device-free product state: they need a loaded scene outside a trace (SA2_E_WRONG_STATE), work during device loss,
+ * are kept by sa2_recover and are forgotten by sa2_scene_unload. Until ADR-D02 B17 the ID pass (sa2_pick_request)
+ * ignored the style.
+ *
+ * ADR-D02 B17 (ADR-D01.46's focus layers, added to ABI 10 before any release): dim_mode SA2_STYLE_HIDE_MARKED and
+ * SA2_STYLE_HIDE_UNMARKED hide the same pieces that SA2_STYLE_DIM_MARKED and SA2_STYLE_DIM_UNMARKED dim: their stickers
+ * are not drawn (dim_amount is unused), so what lies behind them shows. A hide that applies makes the frame draw
+ * styled. Picking follows visibility: the ID pass of a frame, or of the pane under the point, uses the style slot that
+ * frame or pane drew with, and a piece that slot hides or dims (dim_amount > 0) answers no instance; a tint, an
+ * outline or a matrix leaves the answer as it was. A pick on a styled frame whose engine copy has since taken another
+ * piece style answers SA2_PICK_STALE_ENGINE. A frame drawn without a style picks exactly as before.
+ *
+ * ADR-D01.25 (added to ABI 10 before any release): an outline byte may set SA2_STYLE_ERROR. A slot drawing outlines
+ * mixes palette entry 0 by its alpha on a screen-space diagonal hatch, and on the outline band where the byte's
+ * palette index is 0. The regular outline band keeps its colour. This overlay follows the dim and precedes the
+ * output matrix, respects visibility and leaves ID values unchanged. Zero alpha disables it.
+ */
+#define SA2_STYLE_CHANNEL_FILL 0u
+#define SA2_STYLE_CHANNEL_OUTLINE 1u
+#define SA2_STYLE_INDEX 0x0Fu /* a byte's palette entry */
+#define SA2_STYLE_DIM 0x80u /* fill bytes only: the piece belongs to the dim set */
+#define SA2_STYLE_ERROR 0x10u /* outline bytes only: the ADR-D01.25 error overlay */
+#define SA2_STYLE_SLOTS 4u
+#define SA2_STYLE_PALETTE 16u
+#define SA2_STYLE_TINT_FILL 1u
+#define SA2_STYLE_TINT_OUTLINE 2u
+#define SA2_STYLE_DIM_NONE 0u
+#define SA2_STYLE_DIM_MARKED 1u
+#define SA2_STYLE_DIM_UNMARKED 2u
+#define SA2_STYLE_HIDE_MARKED 3u /* ADR-D02 B17 (ABI 10) */
+#define SA2_STYLE_HIDE_UNMARKED 4u /* ADR-D02 B17 (ABI 10) */
+#define SA2_STYLE_OUTLINE_MAX 0.5f
+#define SA2_STYLE_MATRIX_MAX 8.0f
+/* ADR-D02 B20 (ADR-D02.17, added to ABI 10 before any release): the cut slice in a style slot. Channel
+ * SA2_STYLE_CHANNEL_SLICE holds one byte per piece, 1 for the inside layer (the named cap's inside set) and 0 for the
+ * outside layer. A slot whose slice_mode is not SA2_SLICE_OFF draws styled even with no piece style. Its vertex stage
+ * replaces the view's focus test by the radius shell: a sticker is drawn when the dot of its posed, unshrunk centre and
+ * the focus pole lies between cos(shell_max) and cos(shell_min). SA2_SLICE_BOTH draws the outside layer filled and the
+ * inside layer as outlines at slice_shrink times the sticker shrink; SA2_SLICE_OUTSIDE only the outside layer and
+ * SA2_SLICE_INSIDE only the inside layer (the held split's two copies). An inside piece covers only its outline band
+ * (at least SA2_SLICE_BAND barycentric units) in the colour and the ID pass. With a ghost (alpha > 0) and a transform,
+ * the moving inside pieces draw their band in the ghost colour, mixed by its alpha. In a composite frame whose panes
+ * name a slot with a ghost, the transform turns the pieces only in those panes; the other panes draw them unturned.
+ * With slice_mode 0 nothing changes, so every earlier caller draws byte-identically. */
+#define SA2_STYLE_CHANNEL_SLICE 2u
+#define SA2_SLICE_OFF 0u
+#define SA2_SLICE_BOTH 1u
+#define SA2_SLICE_OUTSIDE 2u
+#define SA2_SLICE_INSIDE 3u
+#define SA2_SLICE_BAND 0.08f
+
+typedef struct sa2_view_style {
+    uint32_t struct_size; /* sizeof(sa2_view_style); 316 on x64 */
+    uint32_t tint_mode; /* SA2_STYLE_TINT_* flags */
+    uint32_t dim_mode; /* SA2_STYLE_DIM_* or SA2_STYLE_HIDE_* */
+    float dim_amount; /* 0 <= dim_amount <= 1 */
+    float outline_width; /* 0 <= outline_width <= SA2_STYLE_OUTLINE_MAX */
+    float palette[64]; /* SA2_STYLE_PALETTE RGBA entries, each channel 0..1; entry 0 is reserved for SA2_STYLE_ERROR */
+    float matrix[9]; /* row-major 3x3 output colour matrix; |entry| <= SA2_STYLE_MATRIX_MAX */
+    uint32_t slice_mode; /* ADR-D02 B20: SA2_SLICE_* (0: no slice) */
+    float slice_shrink; /* ADR-D02 B20: the inside layer's sticker shrink factor; 0 < slice_shrink <= 1 with a slice */
+    float shell_min; /* ADR-D02 B20: the radius shell about the focus pole, angles; 0 <= min <= max <= pi */
+    float shell_max;
+    float ghost[4]; /* ADR-D02 B20: the turn preview's ghost RGBA, each 0..1; alpha 0: no ghost */
+    uint32_t reserved; /* must be 0 */
+} sa2_view_style;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_view_style) == 348, "sa2_view_style requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_style, uint32_t channel);
+SA2_API int32_t sa2_view_style_set(sa2_context* ctx, uint32_t slot, const sa2_view_style* style);
+
+/* ABI 8: the composite frame (ADR-D02 build step B18a, a candidate behind the shell's --d02; row F27 of the feature
+ * matrix). Additive: every ABI 7 call, struct and behaviour is unchanged.
+ *
+ * sa2_frame_submit_panes draws up to SA2_PANES_MAX panes of one engine revision into one target as one frame: one
+ * clear of the whole target, one draw per pane with its viewport and scissor at the pane's rectangle, one present on
+ * a surface, one frame ID, one report and one presented row. `frame` is validated as sa2_frame_submit validates it
+ * and names the target, surface, sequence, engine revision, publication generation and stamps; its view,
+ * view_generation, resource_set and camera_matrix must equal the first pane's, so its report and presented row read
+ * as a one-view frame's. Each pane names its view, view generation, resource set (0: every slot drawn, nothing
+ * pickable), rectangle in target pixels, camera matrix and style slot (0: no style, else 1 to SA2_STYLE_SLOTS); its
+ * shape is its view's (ABI 6). Rectangles lie inside the target and do not overlap; a count of 0 or above
+ * SA2_PANES_MAX, an empty rectangle, unknown flags or a non-finite camera is SA2_E_INVALID_ARGUMENT. Two panes may
+ * name one view (a held split with two styles). Every pane's resource set must be active, stamped for its view and
+ * view generation, and prepared at the frame's engine revision; otherwise the whole frame is refused
+ * (SA2_E_WRONG_STATE) and nothing is drawn. Each view keeps its own publication generation: the first pane's set is
+ * the frame input's and carries the frame's, another pane's set may carry another.
+ *
+ * sa2_frame_panes returns a produced composite frame's panes in order: each one's view, view generation and vertex
+ * evaluations; the frame report's view_vertex_evals is their sum. A frame that is not a retained composite frame, or
+ * that has not produced yet, answers SA2_E_WRONG_STATE.
+ *
+ * sa2_pick_request on a composite frame takes target coordinates and draws the ID pass with the camera, resource set,
+ * shape and viewport of the pane that contains the point; a point in no pane is SA2_E_INVALID_ARGUMENT. The reply
+ * names that pane's view, view generation and its set's publication generation, and only a newer generation of
+ * that view makes it stale.
+ */
+#define SA2_PANES_MAX 4u
+
+typedef struct sa2_pane {
+    uint64_t view;
+    uint64_t view_generation;
+    uint64_t resource_set;
+    int32_t x; /* the rectangle's left edge, in target pixels */
+    int32_t y; /* its top edge */
+    uint32_t width;
+    uint32_t height;
+    float camera_matrix[16]; /* column-major, as sa2_frame_input's */
+    uint32_t style; /* 0: no style; else a style slot 1..SA2_STYLE_SLOTS (ABI 7) */
+    uint32_t flags; /* must be 0 */
+} sa2_pane;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_pane) == 112, "sa2_pane requires the x64 ABI");
+#endif
+
+typedef struct sa2_pane_row {
+    uint32_t struct_size; /* sizeof(sa2_pane_row); 32 on x64 */
+    uint32_t pane; /* the pane's index in the frame */
+    uint64_t view;
+    uint64_t view_generation;
+    uint64_t vertex_evals;
+} sa2_pane_row;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_pane_row) == 32, "sa2_pane_row requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_frame_submit_panes(sa2_context* ctx, const sa2_frame_input* frame, const sa2_pane* panes, uint32_t count, uint64_t* out_frame_id);
+SA2_API int32_t sa2_frame_panes(sa2_context* ctx, uint64_t frame_id, sa2_pane_row* rows, uint32_t capacity, uint32_t* out_count);
+
+/* ABI 9: a view's focus (ADR-D02 build step B18c, a candidate behind the shell's --d02): Local's own shape from Look
+ * Lab's local-view.json, which draws only the named cap's turning region, centred, pulled apart and orthographic.
+ * Additive: every ABI 8 call, struct and behaviour is unchanged, and a view whose focus was never set draws
+ * byte-identically to ABI 8.
+ *
+ * sa2_view_focus_set sets the focus that the product frames of `view`, their panes and their ID passes draw with:
+ * - projection: SA2_PROJECTION_PERSPECTIVE (the view shape's d4) or SA2_PROJECTION_ORTHOGRAPHIC (d4 unused);
+ * - focus_cell: a cell 0..599 whose centre is the focus pole, or SA2_FOCUS_NONE. With a pole, the core turns the
+ *   pole to +w before the frame's camera (world' = camera * T * world, T the rotation taking the pole to +w, as Look
+ *   Lab's LocalShape.Frame builds it), and draws only the stickers whose posed, unshrunk centre c has
+ *   dot(c, pole) >= focus_cos, where the world's unit is the cell inradius (cell centres have length 1). Every other
+ *   sticker is placed outside the clip volume, as an invisible slot is, so it enters neither the frame nor the ID pass;
+ * - focus_cos: -1 <= focus_cos <= 1, read only with a pole;
+ * - spread: 1 <= spread <= 3. Above 1 each sticker moves by (spread - 1) times its posed cell centre's projected
+ *   position, so the cells are pulled apart (Look Lab's focus_spread); 1 draws them in place.
+ * A NULL focus restores the default (perspective, no pole, spread 1). struct_size must be sizeof(sa2_view_focus) and
+ * reserved 0; a value outside its range is SA2_E_INVALID_ARGUMENT and changes nothing. Like the shape (ABI 6) the
+ * focus is device-free product state: it needs a loaded scene outside a trace (SA2_E_WRONG_STATE), is kept by
+ * sa2_recover and forgotten by sa2_scene_unload. A frame keeps the focus it was drawn with, so a pick on it draws its
+ * ID pass with that focus.
+ */
+#define SA2_PROJECTION_PERSPECTIVE 0u
+#define SA2_PROJECTION_ORTHOGRAPHIC 1u
+#define SA2_FOCUS_NONE 0xFFFFFFFFu
+
+typedef struct sa2_view_focus {
+    uint32_t struct_size; /* sizeof(sa2_view_focus); 24 on x64 */
+    uint32_t projection; /* SA2_PROJECTION_PERSPECTIVE or SA2_PROJECTION_ORTHOGRAPHIC */
+    uint32_t focus_cell; /* 0..599, or SA2_FOCUS_NONE */
+    float focus_cos; /* -1..1: the drawn stickers' least dot product with the pole */
+    float spread; /* 1..3 */
+    uint32_t reserved; /* must be 0 */
+} sa2_view_focus;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_view_focus) == 24, "sa2_view_focus requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_view_focus_set(sa2_context* ctx, uint64_t view, const sa2_view_focus* focus);
+
+/* ADR-D02 B21 (ADR-D02.18, added to ABI 10 before any release): the raw view. Additive: every earlier call, struct and
+ * behaviour is unchanged.
+ *
+ * SA2_PROJECTION_STEREOGRAPHIC in sa2_view_focus draws the view as the stereographic chart that
+ * c600_display::chart::Stereographic declares with the pole -p, p the focus pole: x maps to the stereographic image of
+ * x/|x| from -p, so p is the chart's centre and only -p is singular. The core turns p to +w (T, as the focus does), then
+ * applies the frame's camera (a 3D spin that keeps w), and draws q = camera * T * x/|x| at 2 q.xyz / (1 + q.w), scaled
+ * by 2 so it agrees with the orthographic chain at the centre to first order (90 degrees from p lies at radius 2). It
+ * needs a focus cell, and focus_cos is the clip h: a sticker is drawn when its posed, unshrunk centre c (the anchor) has
+ * dot(c, p) >= h, with 0 <= h <= 1, so the clip goes no further than 90 degrees. The spread is unused. A twist about p
+ * (a rotation that keeps p) is a rigid rotation about the chart's centre.
+ *
+ * A pane with SA2_PANE_ANTIPODE in its flags draws its view's raw chart after -I (a proper rotation of R4, determinant
+ * +1, so the handedness is shared): the antipode chart, centred on -p. Its anchor test is half-open: dot(-c, p) > h. At
+ * h = 0 every sticker is therefore drawn in exactly one of the two panes. Under any other projection the flag changes
+ * nothing. A pick on such a pane draws its ID pass after -I as well. Preview flags are described below. */
+#define SA2_PROJECTION_STEREOGRAPHIC 2u
+#define SA2_PANE_ANTIPODE 1u
+#define SA2_PANE_PREVIEW 2u
+#define SA2_PANE_PREVIEW_BEFORE 4u
+
+/* ABI 10: a view's layout (ADR-D02 build step B23, bare; a candidate behind the shell's --d02): Global opens on the
+ * Hopf rings, Look Lab's GlobalLayout ring charts. Additive: every ABI 9 call, struct and behaviour is unchanged, and
+ * a view whose layout was never set draws byte-identically to ABI 9.
+ *
+ * sa2_view_layout_set sets the layout that the product frames of `view`, their panes and their ID passes draw with.
+ * SA2_LAYOUT_CHAIN (or a NULL layout) is the projection chain of ABI 6 and 9. SA2_LAYOUT_HOPF_RINGS places each
+ * sticker by a rigid chart of one cell (Look Lab's tools/looklab/core/GlobalLayout.cs, RingRadius 2.62, BaseRadius
+ * 8.063, RingScale 0.28): 20 rings of 30 cells around a dodecahedron's vertices. The chart is the cell nearest the
+ * posed centre of the sticker's own cell in Hopf coordinates (its ring by the nearest base point, its place by the
+ * phase along that ring), so a sticker whose piece is not posed uses its own cell's chart. The placed point turns
+ * by the upper 3 x 3 of the frame's camera (the shell sends the linked 3D spin) and is drawn at the view's zoom, as
+ * the chain's projected point is; d4 and the focus are unused. SA2_LAYOUT_RING_SHEET (ADR-D02 B22, added to ABI 10
+ * before any release) lays the same cells flat as GlobalLayout's ring sheet: 20 rows of 30 cell charts (SheetDx 0.68,
+ * SheetDy 0.57, SheetScale 0.6), the chart of the cell with ring r and half-step h centred at
+ * (0.408 (h/2 - 14.75), -0.342 (r - 9.5), 0); it is chosen as for the rings and does not turn with the camera.
+ * The rings come from Look Lab's tools/looklab/fixtures/hopf-rings.json: J and K (unit pure quaternions, the real
+ * part first, as the world's x), each ring's origin and each cell's ring and half-step. The core checks them against
+ * its own cell centres (each centre must project onto its ring's plane, spanned by origin and origin * J, at the
+ * phase 6h degrees of its half-step h, and lie near that plane) and builds the charts; every view that names the Hopf rings shares them, and a second, different set
+ * is refused. struct_size must be sizeof(sa2_view_layout); a value outside its range or rings that do not fit the
+ * cells are SA2_E_INVALID_ARGUMENT and change nothing. Like the shape (ABI 6) the layout is device-free product state
+ * kept by sa2_recover and forgotten by sa2_scene_unload; a frame keeps the layout it was drawn with.
+ */
+#define SA2_LAYOUT_CHAIN 0u
+#define SA2_LAYOUT_HOPF_RINGS 1u
+#define SA2_LAYOUT_RING_SHEET 2u
+#define SA2_HOPF_RINGS 20u
+
+typedef struct sa2_view_layout {
+    uint32_t struct_size; /* sizeof(sa2_view_layout); 1560 on x64 */
+    uint32_t kind; /* SA2_LAYOUT_CHAIN, SA2_LAYOUT_HOPF_RINGS or SA2_LAYOUT_RING_SHEET; with the chain the rest is unused */
+    float j[4]; /* J, a unit pure quaternion (j[0] = 0) */
+    float k[4]; /* K, a unit pure quaternion orthogonal to J */
+    float origins[80]; /* ring r's origin at 4r: a unit point of its fibre at half-step 0 */
+    uint8_t ring_of[600]; /* each cell's ring, 0..19 */
+    uint8_t half_step[600]; /* each cell's half-step along its ring, 0..59; a ring's 30 cells are distinct, of one parity */
+} sa2_view_layout;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_view_layout) == 1560, "sa2_view_layout requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layout* layout);
+
+/* ADR-D02 build step B18 (added to ABI 10 before any release; a candidate behind the shell's --d02; row J03 of the
+ * feature matrix): the transform of a jumble twist, for its sweep and for a turn preview. Additive: every other ABI 10
+ * call, struct and behaviour is unchanged, and a frame with no transform draws exactly as before.
+ *
+ * sa2_transform_set binds a transform to the adopted engine revision, as sa2_style_set binds a piece style: the
+ * engine-named plane (plane_u and plane_v, unit and orthogonal within SA2_TRANSFORM_PLANE_TOLERANCE), the twist's angle
+ * (finite, |angle| <= pi; R(angle) turns plane_u toward plane_v and is the twist, c600_display::jumble::swept_plane),
+ * the moving set as SA2_PIECES bytes (1: the piece turns, 0: it stays; any other value is refused) and a phase 0..1.
+ * Every product frame, pane and ID pass of that revision draws each moving piece turned by R((phase - 1) * angle) after
+ * its pose: phase 1 draws the revision's own poses, byte-identically to no transform, and phase 0 the poses before the
+ * twist that entered the revision. A turn preview of a twist not yet committed passes the negated angle at phase 0.
+ * ADR-D02 B22 rest (ADR-D02.10): a view whose layout is the Hopf rings or the ring sheet draws no turn; it draws the
+ * revision's own poses at every phase, so under a chart Global draws no sweep while a chain view sweeps. A
+ * NULL moving_mask clears the transform (the other arguments are then unused). A revision other than the adopted one
+ * or a value out of range is SA2_E_INVALID_ARGUMENT and changes nothing; adopting a newer revision drops the transform.
+ * The moving set shares the piece style's upload, so a new moving set uploads once and a changed phase, plane or angle
+ * uploads nothing. Like the piece style it is device-free product state: it needs a loaded scene outside a trace
+ * (SA2_E_WRONG_STATE), works during device loss, is kept by sa2_recover and is forgotten by sa2_scene_unload.
+ */
+#define SA2_TRANSFORM_PLANE_TOLERANCE 1e-3f
+SA2_API int32_t sa2_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle, const uint8_t* moving_mask, float phase);
+
+/* ADR-D01.49/.5/.52 (added to ABI 10 before any release): the scene's sticker colours and look. Both are
+ * device-free product state for a loaded scene outside a trace, kept across recovery and used on the next draw.
+ * rgb is count triples of encoded RGB in home-cell order (labels[slot] / 433). A non-NULL table with a
+ * nonzero count must have SA2_STICKER_CLASSES entries. NULL or count 0 restores the built-in hues.
+ * The unmarked sticker's base colour is shaded before the piece style is applied.
+ */
+#define SA2_STICKER_CLASSES 600u
+SA2_API int32_t sa2_sticker_colours_set(sa2_context* ctx, const float* rgb, uint32_t count);
+
+/* Only background (encoded RGBA) changes the draw. Fog, glow, edge_brightness and edge_weight are
+ * carried, drawn by no pass yet. NULL restores the default background {0.13f, 0.145f, 0.16f, 1}.
+ * Both setters refuse non-finite or out-of-[0,1] components with SA2_E_INVALID_ARGUMENT and change nothing.
+ * The scene look also requires the struct size and a zero reserved field.
+ */
+typedef struct sa2_scene_look {
+    uint32_t struct_size;
+    uint32_t reserved;
+    float background[4];
+    float fog;
+    float glow;
+    float edge_brightness;
+    float edge_weight;
+} sa2_scene_look;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_scene_look) == 40, "sa2_scene_look requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look);
+
+/* ADR-D02 B22 item 1 (ADR-D02.9; added to ABI 10 before any release): the adopted revision's chart channel. charts
+ * holds one cell id (0..599) per slot (count SA2_SLOTS): the chart in which a view with a Hopf layout (the ring sheet
+ * or the Hopf rings) draws that slot's sticker. The host fixes it once per revision on the CPU (each posed sticker's
+ * nearest cell, ties to the lowest cell id). NULL with count 0 clears it; without a channel such a view chooses each
+ * sticker's chart from its Hopf coordinates, as before. Device-free product state, bound to its revision as the piece
+ * style is: a new adoption drops it, and a revision other than the adopted one is refused (SA2_E_INVALID_ARGUMENT), as
+ * are another count and a cell id past 599. Chain, focus, slice and raw views never read it.
+ */
+SA2_API int32_t sa2_charts_set(sa2_context* ctx, uint64_t revision, const uint32_t* charts, uint32_t count);
+/* ADR-D01.65 (ABI 10 before release): one byte per piece on channel 3, packed into bits 24..31 of the
+ * style word. Bits 0..2 select none, protected, conflict, unchecked prefix, preview or stale (0..5);
+ * bits 3..5 select none, orbit, position, identity or block (0..4). Other values and bits 6..7 are
+ * refused. Like the other channels this byte is dropped on a new adoption. The table applies in all
+ * panes after tint, outline, ghost and dim, before the colour matrix. Conflict bypasses focus dim
+ * and hide in the colour pass. The ID pass uses the original focus and ignores the status channel.
+ * A NULL table clears it. Like sa2_view_style_set, this is device-free, survives recovery and is
+ * forgotten on scene unload. A missing table or zero status bytes leave drawing unchanged. */
+#define SA2_STYLE_CHANNEL_STATUS 3u
+#define SA2_STATUS_CONFLICT 2u
+#define SA2_STATUS_ENTRIES 8u
+#define SA2_STATUS_HATCH 1u
+#define SA2_STATUS_CROSS_HATCH 2u
+#define SA2_STATUS_DOTS 3u
+#define SA2_STATUS_DASHED_EDGE 4u
+#define SA2_STATUS_STRIPES 5u
+#define SA2_MARK_RING 1u
+#define SA2_MARK_DOT 2u
+#define SA2_MARK_CROSS 3u
+#define SA2_MARK_CORNER_TICKS 4u
+
+typedef struct sa2_status_pattern {
+    uint32_t shape; /* 0: none; otherwise SA2_STATUS_* for patterns and SA2_MARK_* for marks */
+    float spacing; /* patterns: period in pixels (2..64); marks: radius in triangle coordinates (0.05..0.45) */
+    float width; /* fraction of spacing (0.05..0.95) */
+    float angle; /* rotation in radians (-pi..pi) */
+    float colour[4]; /* RGBA, 0..1 */
+} sa2_status_pattern;
+#define SA2_STATUS_CAPTURE 1u /* collect the product script's per-pane rasterized piece mask */
+typedef struct sa2_status_style {
+    uint32_t struct_size;
+    uint32_t flags; /* 0 or SA2_STATUS_CAPTURE */
+    sa2_status_pattern patterns[SA2_STATUS_ENTRIES]; /* entry 0 and entries 6..7 have shape 0 */
+    sa2_status_pattern marks[SA2_STATUS_ENTRIES]; /* entry 0 and entries 5..7 have shape 0 */
+} sa2_status_style;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_status_pattern) == 32, "status pattern ABI");
+static_assert(sizeof(sa2_status_style) == 520, "status style ABI");
+#endif
+
+SA2_API int32_t sa2_status_style_set(sa2_context* ctx, const sa2_status_style* style);
+/* With SA2_STATUS_CAPTURE, reads the last product frame's rasterized status-bearing pieces for pane
+ * 0..SA2_PANES_MAX-1 (0 for a one-view frame). The caller provides SA2_STATUS_WORDS u32s, with piece p
+ * at bit p%32 of word p/32. A frame without capture or status returns zero bits. This waits for the
+ * frame's copy to complete. The mask describes fragment coverage before depth occlusion. */
+#define SA2_STATUS_WORDS ((SA2_PIECES + 31u) / 32u)
+SA2_API int32_t sa2_status_drawn(sa2_context* ctx, uint32_t pane, uint32_t* words, uint32_t count);
+
+/* ADR-D01.10 (additive ABI 10). A preview is bound to the adopted revision. The pose arrays have the same layout
+ * and validity rules as sa2_engine_image. piece_count must be SA2_PIECES. outlined is optional, with a 0 or 1
+ * per piece (palette entry 15 in the pane's style slot). A null pose_index clears the preview; the other pointers
+ * and counts must then be null and zero. A new pose set also clears the preview's transform.
+ *
+ * SA2_PANE_PREVIEW draws the set's poses, and SA2_PANE_PREVIEW | SA2_PANE_PREVIEW_BEFORE draws the adopted poses
+ * without either transform. Both draw the complete labelled state in the projection chain, with the preview outline,
+ * and answer no pick.
+ * A preview pane without a set, or the BEFORE modifier without PREVIEW, is refused.
+ *
+ * The optional transform rotates the moving pieces (one 0 or 1 per piece, moving_count == SA2_PIECES) by
+ * phase * angle from the uploaded prefix poses. The plane and angle follow sa2_transform_set. Null mask, null
+ * plane vectors and moving_count 0 clear the transform. Both calls validate the revision and arguments before
+ * changing the device-free state. They work during device loss, survive recovery, and are dropped on adoption or
+ * scene unload. Other panes retain their adopted pose, transform and style bindings. */
+SA2_API int32_t sa2_preview_poses_set(sa2_context* ctx, uint64_t revision, const int32_t* pose_index, uint32_t piece_count, const float* poses, const int32_t* pose_lattice, uint32_t pose_count, const uint8_t* outlined);
+SA2_API int32_t sa2_preview_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle, const uint8_t* moving_mask, uint32_t moving_count, float phase);
 
 #ifdef __cplusplus
 }

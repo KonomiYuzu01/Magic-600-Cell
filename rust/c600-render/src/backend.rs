@@ -5,9 +5,10 @@
 //! What the bridge decides, because the core's interface and the host's types differ:
 //! - A publication becomes per-slot rows: the one retained primitive's visibility and interaction sets, and each
 //!   instance on the slot its sticker occupies under the primitive's labels (or the slot it names); or the one posed
-//!   primitive (J02), every slot drawn and none pickable. Other primitives, a second sticker primitive, an instance
-//!   of a posed primitive, two instances on one slot and instance IDs that do not fit the ID pass's u32 (or are 0)
-//!   are refused.
+//!   primitive (J02), every slot drawn and each stamped in the ID pass as its home slot + 1 (ADR-D02 B17), which the
+//!   shell host resolves to the sticker's piece. Other primitives, a second sticker primitive, a plan instance of a
+//!   posed primitive, two instances on one slot and instance IDs that do not fit the ID pass's u32 (or are 0) are
+//!   refused.
 //! - A jumbling engine bundle (render/1 section 7) is adopted as the core's pose path over the home labels: every
 //!   sticker keeps its own colour and moves with its piece's pose, as W-J draws it.
 //! - The core reports no limit profile and no stages: every supported row carries the profile the bridge was given.
@@ -20,6 +21,11 @@
 //! - The frame's resource set is the activated set of its view, view generation and publication generation; its
 //!   camera matrix is the one set for its view and camera version ([`RenderBackend::set_camera_matrix`]); its target
 //!   is the one set by [`RenderBackend::set_frame_target`].
+//! - ABI 8 (ADR-D02 B18b, a candidate behind the shell's --d02): while panes are set ([`RenderBackend::set_panes`]),
+//!   the next frame is a composite frame (`sa2_frame_submit_panes`). The host's stamp names the first pane, whose
+//!   view, view generation, publication generation and camera version it must carry; each pane's set and camera
+//!   matrix are found as a one-view frame's are, from its own view's bindings. Its report names the first pane and
+//!   its vertex evaluations are the panes' sum ([`RenderBackend::read_pane_rows`] gives each pane's).
 //! - `cancel` and `retire` cannot return an error through the trait; a failure is kept in [`RenderBackend::fault`].
 //! - Recovery (ABI 5, route B; accepted for now by the owner on 18 Nov 2026, pending three owner-machine checks)
 //!   forgets every resource set of the old device epoch: the core released them, and RM.23 lets no old resource token
@@ -81,6 +87,27 @@ struct FrameRecord {
     id: u64,
     input: FrameInput,
     dependencies: BTreeMap<String, String>,
+}
+
+/// ABI 8 (ADR-D02 B18b): one pane of the next composite frame, in the host's terms. The bridge finds its resource set
+/// and its camera matrix as it finds a one-view frame's.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PaneSpec {
+    pub view: ViewId,
+    pub view_generation: u64,
+    /// The installed publication's generation, or 0 for none (every slot drawn, nothing pickable).
+    pub publication_generation: u64,
+    /// The view's camera version.
+    pub camera: u64,
+    /// The rectangle in target pixels.
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    /// 0: no style; else a style slot 1 to [`STYLE_SLOTS`].
+    pub style: u32,
+    /// ADR-D02 B21: 0, or [`crate::abi::PANE_ANTIPODE`] for the raw view's antipode chart.
+    pub flags: u32,
 }
 
 /// An activated resource set.
@@ -150,6 +177,10 @@ pub struct RenderBackend<C: CoreAbi> {
     /// The revision of the engine image the core holds: the last bundle it accepted, which it keeps across recovery
     /// (RM.16).
     held: Option<RevisionRef>,
+    /// ABI 8: the panes of the next frame ([`RenderBackend::set_panes`]); empty for a one-view frame.
+    panes: Vec<PaneSpec>,
+    /// ADR-D02 B17: the shell resolves sticker IDs from its retained reference plans.
+    retained_sticker_ids: bool,
 }
 
 impl<C: CoreAbi> RenderBackend<C> {
@@ -168,7 +199,69 @@ impl<C: CoreAbi> RenderBackend<C> {
             displays: VecDeque::new(),
             fault: None,
             held: None,
+            panes: Vec::new(),
+            retained_sticker_ids: false,
         }
+    }
+
+    /// ADR-D02 B17: stamp stickers in retained plans without explicit instances for the shell's raw pick API.
+    pub fn with_retained_sticker_ids(mut self) -> Self {
+        self.retained_sticker_ids = true;
+        self
+    }
+
+    /// ABI 8 (ADR-D02 B18b): the panes of the next frames, in order, or none for one-view frames. While panes are set,
+    /// a frame is a composite frame, and the host's stamp must name the first pane's view, view generation,
+    /// publication generation and camera version. 0 or more than [`PANES_MAX`] panes are refused at the frame.
+    pub fn set_panes(&mut self, panes: Vec<PaneSpec>) {
+        self.panes = panes;
+    }
+
+    /// ABI 8: each pane's view, view generation and vertex evaluations of a produced composite frame, in pane order.
+    pub fn read_pane_rows(&mut self, frame: u64) -> Result<Vec<Sa2PaneRow>, Error> {
+        let mut rows = vec![Sa2PaneRow::new(); PANES_MAX as usize];
+        let n = self.core.frame_panes(frame, &mut rows).map_err(|status| self.error(status))?;
+        if n > rows.len() {
+            return Err(contradiction("a composite frame names more panes than SA2_PANES_MAX"));
+        }
+        rows.truncate(n);
+        Ok(rows)
+    }
+
+    /// The host names frames by its sequence; the core's frame ID is recorded at submission.
+    pub fn read_sequence_pane_rows(&mut self, sequence: u64) -> Result<Vec<Sa2PaneRow>, Error> {
+        let frame = self.frames.iter().rev().find(|record| record.input.stamp.sequence == sequence)
+            .map(|record| record.id).ok_or_else(|| Error::invalid("the frame sequence is no longer retained"))?;
+        self.read_pane_rows(frame)
+    }
+
+    /// The camera matrix set for `view` at camera version `camera`.
+    fn camera_matrix(&self, view: ViewId, camera: u64) -> Result<[f32; 16], Error> {
+        self.cameras
+            .get(&view)
+            .and_then(|kept| kept.iter().find(|(version, _)| *version == camera))
+            .map(|(_, matrix)| *matrix)
+            .ok_or_else(|| Error::invalid(format!("view {} has no camera matrix for version {camera}", view.0)))
+    }
+
+    /// The activated set of `view`'s publication at its view and publication generations, with its declared
+    /// dependencies; set 0 for publication generation 0.
+    fn activated(
+        &self,
+        view: ViewId,
+        view_generation: u64,
+        publication_generation: u64,
+    ) -> Result<(u64, BTreeMap<String, String>), Error> {
+        if publication_generation == 0 {
+            return Ok((0, BTreeMap::new()));
+        }
+        self.sets
+            .iter()
+            .find(|(_, r)| {
+                (r.view, r.view_generation, r.publication_generation) == (view, view_generation, publication_generation)
+            })
+            .map(|(set, r)| (*set, r.dependencies.clone()))
+            .ok_or_else(|| Error::unavailable("no activated resource set holds the frame's publication"))
     }
 
     /// The frame target of the next frames: on the Godot-texture route, the registered ring slot; on route B (a
@@ -186,6 +279,99 @@ impl<C: CoreAbi> RenderBackend<C> {
         while kept.len() > CAMERAS {
             kept.pop_front();
         }
+    }
+
+    /// ABI 6: the shape `view`'s frames and their ID passes draw with, or `None` for the defaults (ABI 5's constants).
+    /// The core keeps it across a recovery. A value out of the header's range is refused before the core is asked.
+    pub fn set_view_shape(&mut self, view: ViewId, shape: Option<Sa2ViewShape>) -> Result<(), Error> {
+        let shape = shape.map(|s| Sa2ViewShape { struct_size: Sa2ViewShape::new().struct_size, reserved: 0, ..s });
+        if shape.is_some_and(|s| !s.in_range()) {
+            return Err(Error::invalid("a view shape value is not finite or lies outside its range"));
+        }
+        self.core.view_shape_set(view.0, shape.as_ref()).map_err(|status| self.error(status))
+    }
+
+    /// ABI 10: the layout `view`'s frames and their ID passes draw with, or `None` for the chain. The core checks the
+    /// Hopf rings against its own cells and keeps the layout across a recovery.
+    pub fn set_view_layout(&mut self, view: ViewId, layout: Option<&Sa2ViewLayout>) -> Result<(), Error> {
+        if layout.is_some_and(|l| !l.in_range()) {
+            return Err(Error::invalid("a view layout value is not finite or lies outside its range"));
+        }
+        let row = layout.map(|l| Sa2ViewLayout { struct_size: Sa2ViewLayout::new().struct_size, ..*l });
+        self.core.view_layout_set(view.0, row.as_ref()).map_err(|status| self.error(status))
+    }
+
+    /// ABI 9: the focus `view`'s frames and their ID passes draw with, or `None` for the defaults. The core keeps it
+    /// across a recovery. A value out of the header's range is refused before the core is asked.
+    pub fn set_view_focus(&mut self, view: ViewId, focus: Option<Sa2ViewFocus>) -> Result<(), Error> {
+        let focus = focus.map(|f| Sa2ViewFocus { struct_size: Sa2ViewFocus::new().struct_size, reserved: 0, ..f });
+        if focus.is_some_and(|f| !f.in_range()) {
+            return Err(Error::invalid("a view focus value is not finite or lies outside its range"));
+        }
+        self.core.view_focus_set(view.0, focus.as_ref()).map_err(|status| self.error(status))
+    }
+
+    /// ADR-D02 B18: the adopted revision's transform (the core's `sa2_transform_set`): its moving pieces draw turned
+    /// by R((phase - 1) * angle) in the plane (u, v) after their poses, or `None` clears it. A new adoption drops it
+    /// in the core. A moving set that is not `PIECES` bytes of 0 or 1 is refused before the core is asked.
+    pub fn set_transform(
+        &mut self,
+        revision: u64,
+        plane: &[[f32; 4]; 2],
+        angle: f32,
+        moving: Option<&[u8]>,
+        phase: f32,
+    ) -> Result<(), Error> {
+        if moving.is_some_and(|bytes| bytes.len() != crate::abi::PIECES || bytes.iter().any(|&b| b > 1)) {
+            return Err(Error::invalid("a moving set is PIECES bytes of 0 or 1"));
+        }
+        self.core.transform_set(revision, plane, angle, moving, phase).map_err(|status| self.error(status))
+    }
+
+    /// The product's home-cell colours, kept by the core across recovery.
+    pub fn set_status_style(&mut self, style: Option<&Sa2StatusStyle>) -> Result<(), Error> {
+        self.core.status_style_set(style).map_err(|status| self.error(status))
+    }
+
+    pub fn status_drawn(&mut self, pane: u32, words: &mut [u32]) -> Result<(), Error> {
+        self.core.status_drawn(pane, words).map_err(|status| self.error(status))
+    }
+
+    pub fn set_sticker_colours(&mut self, rgb: Option<&StickerColours>) -> Result<(), Error> {
+        self.core.sticker_colours_set(rgb).map_err(|status| self.error(status))
+    }
+
+    /// The product's background and carried scene values, kept by the core across recovery.
+    pub fn set_scene_look(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Error> {
+        self.core.scene_look_set(look).map_err(|status| self.error(status))
+    }
+
+    /// ADR-D02 B22 item 1 (ADR-D02.9): the adopted revision's chart channel, one cell id (0..599) per slot (`SLOTS`),
+    /// or `None` to clear it. A new adoption drops it in the core, so the caller sets it again for each revision.
+    pub fn set_charts(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Error> {
+        self.core.charts_set(revision, charts).map_err(|status| self.error(status))
+    }
+
+    /// ABI 7: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear it. A new
+    /// adoption drops it in the core, so the caller sets it again for each revision. Bytes with bits outside the
+    /// channel's are refused before the core is asked.
+    pub fn set_piece_style(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Error> {
+        if piece_style.is_some_and(|bytes| !piece_style_valid(bytes, channel))
+            || !matches!(channel, STYLE_CHANNEL_FILL | STYLE_CHANNEL_OUTLINE | STYLE_CHANNEL_SLICE | STYLE_CHANNEL_STATUS)
+        {
+            return Err(Error::invalid("a piece style is PIECES bytes with only its channel's bits"));
+        }
+        self.core.style_set(revision, piece_style, channel).map_err(|status| self.error(status))
+    }
+
+    /// ABI 7: style slot 1 to 4 (a one-view frame uses slot 1), or `None` to clear it. Out-of-range values are
+    /// refused before the core is asked.
+    pub fn set_view_style(&mut self, slot: u32, style: Option<Sa2ViewStyle>) -> Result<(), Error> {
+        let style = style.map(|s| Sa2ViewStyle { struct_size: Sa2ViewStyle::new().struct_size, reserved: 0, ..s });
+        if !(1..=STYLE_SLOTS).contains(&slot) || style.is_some_and(|s| !s.in_range()) {
+            return Err(Error::invalid("a style slot is 1..4 and its values lie inside their ranges"));
+        }
+        self.core.view_style_set(slot, style.as_ref()).map_err(|status| self.error(status))
     }
 
     /// RM.16's adoption into the core: a validated bundle at its revision. A Full bundle gives its labels. A jumbling
@@ -276,6 +462,17 @@ impl<C: CoreAbi> RenderBackend<C> {
                 return Ok(reports);
             }
         }
+    }
+
+    /// The core's ID of the newest submitted frame, if any (ADR-D02 B17: the shell host picks on it).
+    pub fn newest_frame(&self) -> Option<u64> {
+        self.frames.back().map(|record| record.id)
+    }
+
+    /// A pick's raw row, as the core answers it (ADR-D02 B17). Unlike [`RenderBackend::poll_pick`] it does not hold
+    /// the reply to the frame's first view, so a pick in a composite frame's other pane names that pane's view.
+    pub fn poll_pick_row(&mut self, ticket: PickTicket) -> Result<crate::abi::Sa2PickRow, Error> {
+        self.core.pick_poll(ticket.0).map_err(|status| self.error(status))
     }
 
     /// RPI.22's ID pass at pixel `(x, y)` of a submitted frame.
@@ -378,7 +575,7 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
     }
 
     fn prepare(&mut self, request: Preparation<'_>) -> Result<Ticket, Error> {
-        let rows = slot_rows(request.payload)?;
+        let rows = slot_rows(request.payload, self.retained_sticker_ids)?;
         let stamp = request.stamp;
         let input_digest = hex32(&stamp.input_digest)
             .ok_or_else(|| Error::invalid("the input digest is not a SHA-256 in hexadecimal"))?;
@@ -454,26 +651,29 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
 
     fn submit_frame(&mut self, input: FrameInput) -> Result<u64, Error> {
         let s = &input.stamp;
-        let camera = self
-            .cameras
-            .get(&s.view)
-            .and_then(|kept| kept.iter().find(|(version, _)| *version == s.camera))
-            .map(|(_, matrix)| *matrix)
-            .ok_or_else(|| {
-                Error::invalid(format!("view {} has no camera matrix for version {}", s.view.0, s.camera))
-            })?;
-        let (set, dependencies) = if s.publication_generation == 0 {
-            (0, BTreeMap::new())
-        } else {
-            self.sets
-                .iter()
-                .find(|(_, r)| {
-                    (r.view, r.view_generation, r.publication_generation)
-                        == (s.view, s.view_generation, s.publication_generation)
-                })
-                .map(|(set, r)| (*set, r.dependencies.clone()))
-                .ok_or_else(|| Error::unavailable("no activated resource set holds the frame's publication"))?
-        };
+        let camera = self.camera_matrix(s.view, s.camera)?;
+        let (set, dependencies) = self.activated(s.view, s.view_generation, s.publication_generation)?;
+        // ABI 8: a composite frame's panes, each from its own view's bindings; the stamp names the first.
+        let mut panes = Vec::with_capacity(self.panes.len());
+        for (i, pane) in self.panes.iter().enumerate() {
+            let bindings = (pane.view, pane.view_generation, pane.publication_generation, pane.camera);
+            if i == 0 && bindings != (s.view, s.view_generation, s.publication_generation, s.camera) {
+                return Err(Error::invalid("the frame's stamp does not name the first pane's bindings"));
+            }
+            let (resource_set, _) = self.activated(pane.view, pane.view_generation, pane.publication_generation)?;
+            panes.push(Sa2Pane {
+                view: pane.view.0,
+                view_generation: pane.view_generation,
+                resource_set,
+                x: pane.x,
+                y: pane.y,
+                width: pane.width,
+                height: pane.height,
+                camera_matrix: self.camera_matrix(pane.view, pane.camera)?,
+                style: pane.style,
+                flags: pane.flags,
+            });
+        }
         let mut row = Sa2FrameInput {
             target: self.target,
             device_epoch: s.device_epoch,
@@ -500,7 +700,10 @@ impl<C: CoreAbi> Backend for RenderBackend<C> {
             row.preview_base = preview.base;
             row.preview_literal_digest = sha256(preview.literal.as_bytes());
         }
-        let id = self.core.frame_submit(&row).map_err(|status| self.error(status))?;
+        let submitted =
+            if panes.is_empty() { self.core.frame_submit(&row) } else { self.core.frame_submit_panes(&row, &panes) };
+        let id = submitted.map_err(|status| self.error(status))?;
+        // B17's pick on a composite frame will keep the panes in the record to resolve the pane a point lies in.
         self.frames.push_back(FrameRecord { id, input, dependencies });
         while self.frames.len() > FRAME_RECORDS {
             self.frames.pop_front();
@@ -626,7 +829,7 @@ struct SlotRows {
     instances: Vec<u32>,
 }
 
-fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
+fn slot_rows(publication: &Publication, retained_sticker_ids: bool) -> Result<SlotRows, Error> {
     let mut rows = SlotRows { visibility: vec![0; SLOTS], interaction: vec![0; SLOTS], instances: vec![0; SLOTS] };
     let mut stickers = None;
     for plan in &publication.plans {
@@ -653,11 +856,16 @@ fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
     }
     let Some((plan, index, primitive)) = stickers else { return Ok(rows) };
     let Primitive::Retained(input) = primitive else {
-        // J02's posed row: every sticker is drawn where its piece's pose puts it, and none is pickable.
+        // J02's posed row: every sticker is drawn where its piece's pose puts it. ADR-D02 B17: the ID pass stamps each
+        // drawn sticker as its home slot + 1, so a hit names the sticker, which the shell host resolves to its piece;
+        // the plan still carries no instance of a posed primitive (J13).
         if !plan.instances.is_empty() {
-            return Err(Error::unsupported("J13", "the core's ID pass stamps no instance of a posed primitive"));
+            return Err(Error::unsupported("J13", "the core's ID pass stamps no plan instance of a posed primitive"));
         }
+        // Every slot drawn and interactive: the core writes no instance for a slot that is not both (F02).
         rows.visibility.fill(1);
+        rows.interaction.fill(1);
+        rows.instances.iter_mut().zip(1u32..).for_each(|(instance, id)| *instance = id);
         return Ok(rows);
     };
     let labels = input.labels.as_u32();
@@ -673,6 +881,12 @@ fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
             return Err(Error::invalid("the labels repeat a sticker, so a sticker has no single slot"));
         }
         *entry = slot as u32;
+    }
+    if retained_sticker_ids && plan.instances.is_empty() {
+        // ADR-D02 B17: each occupied slot stamps its sticker's home ID + 1, as in a posed row.
+        for (instance, label) in rows.instances.iter_mut().zip(labels) {
+            *instance = label + 1;
+        }
     }
     for instance in &plan.instances {
         let id = u32::try_from(instance.instance.0)

@@ -29,6 +29,21 @@ BUILD_ROOT = ROOT / "work" / "build" / "c9-shell"
 # The repository holds no second copy of them.
 CHROME = ROOT / "tools" / "looklab" / "app" / "Chrome"
 DESIGN = ROOT / "tools" / "looklab" / "data" / "design"
+# ADR-D02's sample data (B1), which the D02 surfaces read behind M600_D02=1; staged as samples/.
+SAMPLES = ROOT / "tools" / "looklab" / "data" / "samples"
+# The owner's opening look values, which the D02 view shape reads behind M600_D02=1; staged as look/opening.json.
+OPENING = ROOT / "tools" / "looklab" / "data" / "opening.json"
+# Local's own shape (B18c), which the D02 Local view reads behind M600_D02=1; staged as look/local-view.json.
+LOCAL_VIEW = ROOT / "tools" / "looklab" / "data" / "local-view.json"
+# Look Lab's Hopf rings (B23), which the D02 Global view opens on behind M600_D02=1; staged as look/hopf-rings.json.
+HOPF_RINGS = ROOT / "tools" / "looklab" / "fixtures" / "hopf-rings.json"
+# Sample mode (B4a, launch.py --sample): ADR-D01's frame on sample data. Look Lab's sample wiring is staged as Live/,
+# one copy shared with Look Lab, and the files it reads as sample-root/ at their repository paths.
+LIVE = ROOT / "tools" / "looklab" / "app" / "Live"
+LIVE_FILES = ("LabDemo.cs", "LabSolve.cs", "LabScripts.cs", "SampleInspect.cs", "SampleMount.cs")
+SAMPLE_ROOT_FILES = ("assets/seed_atlas.json",)
+SAMPLE_ROOT_GLOBS = ("tools/looklab/data/samples/*.6cs", "tools/looklab/data/samples/packages/*.json",
+                     "tools/looklab/data/design/keymaps/*.json")
 COMMANDS = ROOT / "docs" / "progress" / "1.0" / "command-table.json"
 CSPROJ = "Magic600Shell.csproj"
 ASSEMBLY = ".godot/mono/temp/bin/Debug/Magic600Shell.dll"
@@ -46,6 +61,33 @@ def dotnet_version() -> str:
     return completed.stdout.strip() if completed.returncode == 0 else f"unavailable (exit {completed.returncode})"
 
 
+def stage(project: Path) -> None:
+    """Copy the shell project and the frame's sources into `project` (a new folder): the chrome library as Chrome/,
+    the design data with the command table as design/, ADR-D02's samples as samples/, the opening look values as
+    look/opening.json, and sample mode's wiring as Live/ with the files it reads under sample-root/."""
+    shutil.copytree(PROJECT, project, ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
+    shutil.copytree(CHROME, project / "Chrome", ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
+    shutil.copytree(DESIGN, project / "design")
+    shutil.copy2(COMMANDS, project / "design" / "command-table.json")
+    shutil.copy2(COMMANDS.parent / "glossary" / "terms.json", project / "design" / "glossary-terms.json")
+    shutil.copytree(SAMPLES, project / "samples")
+    (project / "look").mkdir()
+    shutil.copy2(OPENING, project / "look" / "opening.json")
+    shutil.copy2(LOCAL_VIEW, project / "look" / "local-view.json")
+    shutil.copy2(HOPF_RINGS, project / "look" / "hopf-rings.json")
+    (project / "Live").mkdir()
+    for name in LIVE_FILES:
+        shutil.copy2(LIVE / name, project / "Live" / name)
+    sample_root = project / "sample-root"
+    files = [ROOT / name for name in SAMPLE_ROOT_FILES]
+    for pattern in SAMPLE_ROOT_GLOBS:
+        files += sorted(ROOT.glob(pattern))
+    for path in files:
+        target = sample_root / path.relative_to(ROOT)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, target)
+
+
 def build(executable: str | None, out: Path | None = None) -> Path:
     """Build into `out` (a new folder; default work/build/c9-shell/<stamp>/) and return it."""
     executable, nupkgs = prepare_host.locate_without_launch(executable)
@@ -58,10 +100,7 @@ def build(executable: str | None, out: Path | None = None) -> Path:
     out.mkdir(parents=True)
     logs.mkdir()
     private.mkdir()
-    shutil.copytree(PROJECT, project, ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
-    shutil.copytree(CHROME, project / "Chrome", ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
-    shutil.copytree(DESIGN, project / "design")
-    shutil.copy2(COMMANDS, project / "design" / "command-table.json")
+    stage(project)
     env = prepare_host.offline_environment(private, nupkgs)
     print(f"dotnet build: {project}", flush=True)
     prepare_host.run_logged(build_command(), project, env, 900, logs / "dotnet-build")

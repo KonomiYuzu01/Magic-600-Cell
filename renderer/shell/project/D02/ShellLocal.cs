@@ -1,0 +1,221 @@
+using System;
+using System.IO;
+using System.Text.Json;
+using Godot;
+
+namespace Magic600.Shell.D02;
+
+/// <summary>
+/// Local's own shape behind M600_D02=1 (ADR-D02 build step B18c, host version 12 over the core's ABI 9): Look Lab's
+/// tools/looklab/data/local-view.json, staged as look/local-view.json. Local draws only the named cap's turning region,
+/// centred on the cap's pole, pulled apart and orthographic, as Look Lab's LocalShape draws its focus cells. The values
+/// live in that file, never in this code; only the cap's geometry is fixed, because it is the jumbled puzzle's.
+/// </summary>
+public static class ShellLocal
+{
+    /// <summary>
+    /// Cap c of the jumbled puzzle is the half-space n_c·x ≥ κ with κ = (121/125)|n|² (rust/c600-jumble locality.rs),
+    /// and the pole n_c is cell c's centre, so in the core's world, whose unit is the cell inradius, the cap is
+    /// dot(x, pole) ≥ 121/125. The core draws a sticker in Local when its posed centre lies in the cap.
+    /// </summary>
+    public const float FocusCos = 121f / 125f;
+
+    /// <summary>The 600-cell's circumradius in units of its inradius: √((96 − 32√5) / (12 + 4√5)).</summary>
+    public static readonly double Circumradius = Math.Sqrt((96 - 32 * Math.Sqrt(5)) / (12 + 4 * Math.Sqrt(5)));
+
+    /// <summary>Local's shape as local-view.json gives it.</summary>
+    public sealed record Shape(uint Projection, float D4, float Gap, float StickerShrink, float Margin, float Fill, float Spread);
+
+    /// <summary>The shape file: under M600_D02_DATA when it holds one, else the build's staged copy.</summary>
+    public static string ShapePath()
+    {
+        if (System.Environment.GetEnvironmentVariable("M600_D02_DATA") is { Length: > 0 } data)
+        {
+            var root = data.EndsWith("samples", StringComparison.Ordinal) ? Path.GetDirectoryName(data)! : data;
+            var file = Path.Combine(root, "local-view.json");
+            if (File.Exists(file))
+            {
+                return file;
+            }
+        }
+        return ProjectSettings.GlobalizePath("res://look/local-view.json");
+    }
+
+    /// <summary>Reads a local-view.json; the projection is perspective or orthographic, as the core draws.</summary>
+    public static Shape Read(string path)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var root = document.RootElement;
+        if (root.GetProperty("format").GetString() != "magic600-look-local-view")
+        {
+            throw new InvalidDataException($"{path} is not a Look Lab local view file");
+        }
+        var projection = root.GetProperty("projection").GetString() switch
+        {
+            "orthographic" => HostLibrary.ProjectionOrthographic,
+            "perspective" => HostLibrary.ProjectionPerspective,
+            var other => throw new InvalidDataException($"{path}: the core draws no {other} projection"),
+        };
+        float Number(string name) => root.GetProperty(name).GetSingle();
+        return new Shape(projection, Number("d4"), Number("gap"), Number("stickerShrink"), Number("margin"), Number("fill"), Number("spread"));
+    }
+
+    /// <summary>
+    /// Look Lab's LocalShape.Frame zoom for the cap: the cap's widest angle (plus the margin) gives its edge in the
+    /// projection, the spread widens it, and the fill keeps it inside the pane.
+    /// </summary>
+    public static double Zoom(Shape shape, double aspect)
+    {
+        double cap = Math.Min(Math.Acos(FocusCos / Circumradius) + shape.Margin, 1.45);
+        double r = Circumradius;
+        bool orthographic = shape.Projection == HostLibrary.ProjectionOrthographic;
+        double edge = orthographic ? r * Math.Sin(cap) : shape.D4 * r * Math.Sin(cap) / (shape.D4 - r * Math.Cos(cap));
+        double centre = orthographic ? 1 : shape.D4 / (shape.D4 - 1);
+        double radius = Math.Min(edge * shape.Spread + .12 * centre, 4);
+        return shape.Fill * Math.Sqrt(25 - radius * radius) / radius * Math.Min(1, aspect);
+    }
+
+    /// <summary>The four floats of Local's view shape: cell shrink (1 − gap), sticker shrink, d4 and zoom.</summary>
+    public static float[] ViewShape(Shape shape, double aspect, bool raw = false)
+    {
+        var (cell, sticker) = Magic600.Chrome.RawView.Shrinks(raw, shape.Gap, shape.StickerShrink);
+        return new[] { cell, sticker, shape.D4, (float)Zoom(shape, aspect) };
+    }
+
+    /// <summary>
+    /// ADR-D01.40/.41 for both puzzles (step C-.40): what Local frames and its readout, the shared library's
+    /// <see cref="Magic600.Chrome.LocalPlan"/>. The base puzzle (M600_PUZZLE jumble-off) draws cell 0's turning region
+    /// with no D02 state; the jumbled puzzle follows the named cap or the Jumble host's.
+    /// </summary>
+    public static Magic600.Chrome.LocalPlan Plan { get; } =
+        new(System.Environment.GetEnvironmentVariable("M600_PUZZLE") == EventLog.Puzzles[1]);
+
+    /// <summary>
+    /// ADR-D01.41: Local re-frames on a selection change by default. Auto-framing can be turned off for Local (a
+    /// script turns it off through the same switch); then Local follows only the cap.
+    /// </summary>
+    public static bool AutoFrame { get => Plan.AutoFrame; set => Plan.AutoFrame = value; }
+
+    /// <summary>
+    /// ADR-D01.41: the 4D rotation of Global and Local is linked by default and can be unlinked. While linked both
+    /// views draw from the one camera (<see cref="ShellJumble.Camera"/>), which a drag starting in either view turns,
+    /// so both turn together. Unlinked, Local draws from <see cref="Own"/>, which starts where the shared rotation was
+    /// and only a drag in Local turns; linking again returns Local to the shared rotation. No command row switches the
+    /// link yet (row request <c>camera.link</c>); a D02 run's <c>link</c> step sets it.
+    /// </summary>
+    public static bool Linked
+    {
+        get => _linked;
+        set
+        {
+            if (value == _linked)
+            {
+                return;
+            }
+            _linked = value;
+            if (!value)
+            {
+                Array.Copy(ShellJumble.Camera.Q, Own.Q, 16);
+                Array.Copy(ShellJumble.Camera.Spin, Own.Spin, 16);
+            }
+            // Both views are sent again: Local takes its new rotation, Global keeps its own.
+            ShellJumble.Camera.Dirty = true;
+            Own.Dirty = true;
+        }
+    }
+
+    private static bool _linked = true;
+
+    /// <summary>Local's own rotation while unlinked.</summary>
+    public static ShellCamera Own { get; } = new();
+
+    /// <summary>The rotation Local draws from: the shared one while linked, else its own.</summary>
+    public static ShellCamera Camera(ShellCamera shared) => _linked ? shared : Own;
+
+    private static float[]? _sentGlobal, _sentLocal;
+
+    /// <summary>Records the camera the shell last sent for a view (for a D02 run's dump).</summary>
+    public static void Sent(ulong view, float[] camera)
+    {
+        if (view == HostLibrary.Local)
+        {
+            _sentLocal = camera;
+        }
+        else
+        {
+            _sentGlobal = camera;
+        }
+    }
+
+    /// <summary>
+    /// Writes the rotation context into a D02 run's screen dump: the link, both views' rotations (Q and the layout
+    /// spin, row-major) and the cameras the core was last sent for each view.
+    /// </summary>
+    public static void Dump(Utf8JsonWriter json)
+    {
+        var shared = ShellJumble.Camera;
+        json.WriteStartObject("rotation");
+        json.WriteBoolean("linked", _linked);
+        json.WriteBoolean("auto_frame", AutoFrame);
+        Write(json, "global", shared);
+        Write(json, "local", Camera(shared));
+        Write(json, "sent_global", _sentGlobal);
+        Write(json, "sent_local", _sentLocal);
+        json.WriteEndObject();
+        // Step C-.40: the plan's puzzle, the cap Local follows, the cell it frames (-1: none) and its readout.
+        json.WriteStartObject("local_plan");
+        json.WriteBoolean("jumble", Plan.Jumble);
+        json.WriteNumber("cap", Plan.Cap ?? -1);
+        json.WriteNumber("framed", Plan.Framed ?? -1);
+        json.WriteBoolean("by_selection", Plan.BySelection);
+        json.WriteString("words", Plan.Words ?? "");
+        json.WriteEndObject();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, ShellCamera camera)
+    {
+        json.WriteStartObject(name);
+        json.WriteNumber("turns", camera.Turns);
+        Write(json, "q", camera.Q);
+        Write(json, "spin", camera.Spin);
+        json.WriteEndObject();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, double[] values)
+    {
+        json.WriteStartArray(name);
+        foreach (var value in values)
+        {
+            json.WriteNumberValue(value);
+        }
+        json.WriteEndArray();
+    }
+
+    private static void Write(Utf8JsonWriter json, string name, float[]? values)
+    {
+        if (values is null)
+        {
+            json.WriteNull(name);
+            return;
+        }
+        json.WriteStartArray(name);
+        foreach (var value in values)
+        {
+            json.WriteNumberValue((double)value);
+        }
+        json.WriteEndArray();
+    }
+
+    /// <summary>The cap Local follows: the named cap, else the Jumble host's default, or cell 0 on the base puzzle.</summary>
+    public static int? Cap => Plan.Cap;
+
+    /// <summary>
+    /// ADR-D02 B17 (ADR-D01.41): the cell Local frames, the newer of two sources (<see cref="Plan"/>). Naming a cap
+    /// frames that cap; a later selection, while auto-framing is on, frames the cell its sticker occupies (none off the
+    /// lattice). Clearing the selection, or naming another cap, returns Local to the cap. Local is never empty (owner,
+    /// 26 November 2026): with no cap named it follows the host's LocalCap while a state is bound, the cap named last
+    /// in the session or, before any naming, the lowest-numbered cap; the default is drawn, never named. On the base
+    /// puzzle the cap is cell 0 (step C-.40).
+    /// </summary>
+    public static int? Frame(int? namedCap) => Plan.Follow(namedCap, ShellJumble.Host?.LocalCap.Shown, ShellPick.Selection?.Cell);
+}

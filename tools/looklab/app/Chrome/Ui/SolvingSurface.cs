@@ -54,6 +54,7 @@ internal sealed partial class StripCellView : PanelContainer
     public StripCell Cell { get; private set; }
     private readonly Func<TokenSet> tokens; private readonly Control glyph; private readonly Label word, value, detail;
     private float flash; private bool hovered;
+    private Tween? flashTween;
     public event Action<string, bool>? Hover;
     public event Action<string>? Chosen;
 
@@ -81,23 +82,33 @@ internal sealed partial class StripCellView : PanelContainer
 
     private Color Colour() => tokens().C(Cell.State == "invalid" ? "state.invalid" : StripGlyphs.Token(Cell.Slot), Cell.State == "unset" ? .45f : 1);
 
-    public void Set(StripCell cell)
+    // With `undefined` (ADR-D02.6) the cell's numeral is numeral.undefined, said in its word, whatever the value.
+    public void Set(StripCell cell, bool undefined = false)
     {
         Cell = cell; TokenSet t = tokens();
         // The state is said in words too, never by colour alone.
         string mark = cell.State switch { "derived" => "derived", "match" => "is Wanted", "mismatch" => "not Wanted", "invalid" => "invalid", "other_orbit" => "other orbit", _ => "" };
         word.Text = cell.Word + (mark.Length > 0 ? " · " + mark : "");
         word.AddThemeColorOverride("font_color", t.C(cell.State == "invalid" ? "state.invalid" : "text.dim"));
-        value.Text = cell.Value; value.AddThemeColorOverride("font_color", t.C(cell.State == "unset" ? "text.dim" : "text.primary"));
-        detail.Text = cell.Detail;
+        value.Text = undefined ? Numeral.Undefined.Word : cell.Value;
+        value.AddThemeColorOverride("font_color", t.C(undefined ? Numeral.Undefined.Role : cell.State == "unset" ? "text.dim" : "text.primary"));
+        detail.Text = undefined ? "" : cell.Detail;
         glyph.QueueRedraw(); QueueRedraw();
     }
 
     // A strip change (motion row strip.change): the cell's edge shows once and settles. No motion when reduced.
-    public void Flash(double seconds)
+    public void Flash(double seconds, double[] curve)
     {
         if (seconds <= 0) return;
-        flash = 1; Tween tween = CreateTween(); tween.TweenMethod(Callable.From<float>(v => { flash = v; QueueRedraw(); }), 1f, 0f, seconds);
+        flashTween?.Kill();
+        flash = 1;
+        QueueRedraw();
+        flashTween = CreateTween();
+        flashTween.TweenMethod(Callable.From<float>(phase =>
+        {
+            flash = phase >= 1 || tokens().ReducedMotion ? 0 : (float)(1 - MotionTable.Ease(curve, phase));
+            QueueRedraw();
+        }), 0f, 1f, seconds);
     }
 
     public override void _Draw()
@@ -119,6 +130,7 @@ internal sealed partial class StripCellView : PanelContainer
 public sealed partial class RelationStrip : PanelContainer, IPairSeam
 {
     public SolvingDemo Demo { get; }
+    public MotionTable? Motions { get; set; }
     private readonly Func<TokenSet> tokens; private readonly Func<string, double> seconds;
     private readonly Dictionary<string, StripCellView> cells = new(StringComparer.Ordinal);
     private BoxContainer box = new VBoxContainer(); private bool vertical = true; private bool expanded; private string built = "";
@@ -132,6 +144,10 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
     public IReadOnlyList<string> Slots => cells.Keys.ToArray();
     public string Said(string slot) => cells[slot].Cell.Word + " " + cells[slot].Cell.Value + " " + cells[slot].Cell.Detail + " " + cells[slot].Cell.State;
     public bool Expanded => expanded;
+    // ADR-D02.6: with Jumble on and pieces off the lattice the strip shows numeral.undefined as a whole; the host
+    // switches it on the exact lattice flag (JumbleNumerals), never on N.
+    public bool Undefined { get; private set; }
+    public void SetUndefined(bool on) { if (Undefined == on) return; Undefined = on; Refresh(false); }
 
     public RelationStrip(SolvingDemo demo, Func<TokenSet> tokens, Func<string, double> seconds)
     {
@@ -151,8 +167,9 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
         built = key;
         foreach (StripCell cell in now)
         {
-            cells[cell.Slot].Set(cell);
-            if (changed && Demo.LastChanged.Contains(cell.Slot)) cells[cell.Slot].Flash(seconds("strip.change"));
+            cells[cell.Slot].Set(cell, Undefined);
+            if (changed && Demo.LastChanged.Contains(cell.Slot))
+                cells[cell.Slot].Flash(seconds(MotionUses.StripChange), t.System.Curves[Motions?[MotionUses.StripChange].Curve ?? "linear"]);
         }
         demoChip!.Text = vertical ? state.Name : SolvingDemo.Mark + " · " + state.Name;
         var bad = state.Problems();
@@ -163,7 +180,8 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
             foreach ((string name, string numeral) in state.Classes(state.Orbit))
             {
                 var row = new HBoxContainer(); Label words = ChromeWidgets.Text(name, "MicroLabel"); words.SizeFlagsHorizontal = SizeFlags.ExpandFill; row.AddChild(words);
-                Label number = ChromeWidgets.Text(numeral, "ReadoutLabel"); number.AddThemeColorOverride("font_color", t.C(numeral == "unknown" ? "text.dim" : "text.primary")); row.AddChild(number);
+                Label number = ChromeWidgets.Text(Undefined ? Numeral.Undefined.Word : numeral, "ReadoutLabel");
+                number.AddThemeColorOverride("font_color", t.C(Undefined ? Numeral.Undefined.Role : numeral == "unknown" ? "text.dim" : "text.primary")); row.AddChild(number);
                 classes.AddChild(row);
             }
         }
@@ -204,6 +222,13 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
             view.Hover += (slot, on) => { string? to = on ? slot : Linked == slot ? null : Linked; if (to != Linked) { Linked = to; Safe.Raise(LinkChanged); } };
             view.Chosen += Choose;
             cells[cell.Slot] = view; box.AddChild(view);
+            // ADR-D01.68: the setup slot sits under the Target cell; its buttons ask for their commands like the cells.
+            if (cell.Slot == "target" && Demo.Setup is { } setup)
+            {
+                var slot = new SetupSlotView(setup, tokens);
+                slot.Command += (command, argument) => Safe.Raise(Command, command, argument);
+                box.AddChild(slot);
+            }
             if (cell.Slot == "residual" && expanded)
             {
                 classes = new VBoxContainer { Name = "ResidualClasses" }; var inset = new MarginContainer();

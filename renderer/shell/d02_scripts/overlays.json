@@ -1,0 +1,30 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "overlays",
+  "note": "On wj-ia-300, naming cap 150 draws a surface trace and preserves the tint and focus of its inside pieces. Domain 5 dims both panes. F10 switches Global to Hide while Local stays Dimmed. A repair step and a blocked cap supply exact references, with outline-only counts in Global.",
+  "steps": [
+    {"wait_ms": 5001},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 1501},
+    {"chord": "F1"},
+    {"text": "> jumble.focus.domain 5"},
+    {"chord": "Enter"},
+    {"wait_ms": 1502},
+    {"chord": "F10"},
+    {"wait_ms": 1503},
+    {"open": "repair_list"},
+    {"wait_ms": 1000},
+    {"focus": "LocalBody_repair_list"},
+    {"wait_ms": 500},
+    {"chord": "Down"},
+    {"wait_ms": 500},
+    {"chord": "Right"},
+    {"wait_ms": 1504},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 0"},
+    {"chord": "Enter"},
+    {"wait_ms": 1505}
+  ]
+}

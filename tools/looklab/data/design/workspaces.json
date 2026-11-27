@@ -71,18 +71,28 @@
         },
         "focus": false,
         "centre": {
-          "split": "vertical",
-          "ratio": 0.74,
+          "split": "horizontal",
+          "ratio": 0.58,
           "a": {
-            "tabs": [
-              "pair"
-            ],
-            "active": 0
+            "split": "vertical",
+            "ratio": 0.74,
+            "a": {
+              "tabs": [
+                "pair"
+              ],
+              "active": 0
+            },
+            "b": {
+              "tabs": [
+                "preview",
+                "canvas"
+              ],
+              "active": 0
+            }
           },
           "b": {
             "tabs": [
-              "preview",
-              "canvas"
+              "research"
             ],
             "active": 0
           }
@@ -91,7 +101,7 @@
     },
     {
       "id": "reference",
-      "name": "Reference",
+      "name": "Learn",
       "arrangement": {
         "docks": {
           "left": null,

@@ -1,0 +1,12 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "twist-row",
+  "note": "B18's part for B20, by keys only, on the session fixture: before any naming Local draws the default cap 0, which wj-ia-300 blocks, so the host gives no twist row (no ghost); after F1 and the palette's typed mode name cap 150 (jumble.cap.name), the host gives item 1's certified transform, uncommitted: a unit orthogonal plane, an angle in (0, pi] and a moving set equal to cap 150's inside set. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 3000},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 2500}
+  ]
+}

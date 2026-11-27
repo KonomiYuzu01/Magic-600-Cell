@@ -10,25 +10,33 @@ namespace Magic600.Chrome;
 // The motion table (ADR-D01.55, ADR-D01.56): every motion of the frame with its meaning, a duration token, a
 // curve token and the static picture that says the same without moving. A sound cue is a slot only: an id with
 // its visual equivalent; no audio is played. No entry differs with whether a check result is good or bad.
-public sealed record MotionEntry(string Id, string Meaning, string Duration, string Curve, string Static, string? Cue);
+// Version 2 (ADR-D02.37) adds the Jumble rows and a reserved row that is off: it is listed, never played.
+public sealed record MotionEntry(string Id, string Meaning, string Duration, string Curve, string Static, string? Cue, bool Off = false);
 
 public sealed class MotionTable
 {
+    public int Version { get; }
     public IReadOnlyList<MotionEntry> Entries { get; }
     public MotionEntry this[string id] => Entries.First(e => e.Id == id);
 
-    private MotionTable(IReadOnlyList<MotionEntry> entries) { Entries = entries; }
+    private MotionTable(int version, IReadOnlyList<MotionEntry> entries) { Version = version; Entries = entries; }
 
     public static MotionTable Parse(string text, DesignSystem system)
     {
-        using JsonDocument d = J.Parse(text); JsonElement root = J.Root(d, "magic600-design-motion", "motions");
+        using JsonDocument d = J.Parse(text); JsonElement root = d.RootElement;
+        J.Keys(root, "document", "format", "version", "motions");
+        if (J.Text(root, "format") != "magic600-design-motion") throw J.Error("format", "expected magic600-design-motion");
+        if (!root.GetProperty("version").TryGetInt32(out int version) || version is not (1 or 2)) throw J.Error("version", "only versions 1 and 2 are supported");
         var entries = new List<MotionEntry>();
         foreach (JsonElement m in root.GetProperty("motions").EnumerateArray())
         {
-            J.Keys(m, "motion", "id", "meaning", "duration", "curve", "static", "cue");
+            JsonElement o = default;
+            bool off = m.ValueKind == JsonValueKind.Object && m.TryGetProperty("off", out o);
+            if (off && (version < 2 || o.ValueKind != JsonValueKind.True)) throw J.Error("off", "a reserved row is a version 2 key and only true");
+            J.Keys(m, "motion", off ? new[] { "id", "meaning", "duration", "curve", "static", "cue", "off" } : new[] { "id", "meaning", "duration", "curve", "static", "cue" });
             string id = J.Text(m, "id");
             var entry = new MotionEntry(id, J.Text(m, "meaning"), J.Text(m, "duration"), J.Text(m, "curve"), J.Text(m, "static"),
-                m.GetProperty("cue").ValueKind == JsonValueKind.Null ? null : J.Text(m, "cue"));
+                m.GetProperty("cue").ValueKind == JsonValueKind.Null ? null : J.Text(m, "cue"), off);
             if (entries.Any(e => e.Id == id)) throw J.Error(id, "repeated motion");
             if (!system.Durations.ContainsKey(entry.Duration)) throw J.Error(id, "unknown duration token " + entry.Duration);
             if (!system.Curves.ContainsKey(entry.Curve)) throw J.Error(id, "unknown curve token " + entry.Curve);
@@ -37,11 +45,12 @@ public sealed class MotionTable
             entries.Add(entry);
         }
         if (entries.Count == 0) throw J.Error("motions", "empty");
-        return new MotionTable(entries);
+        return new MotionTable(version, entries);
     }
 
-    // Seconds a motion takes: none under reduced motion, where its static equivalent shows at once.
-    public double Seconds(string id, DesignSystem system, bool reduced) => reduced ? 0 : system.Durations[this[id].Duration] / 1000;
+    // Seconds a motion takes: none under reduced motion, where its static equivalent shows at once, and none for
+    // a reserved row that is off.
+    public double Seconds(string id, DesignSystem system, bool reduced) => reduced || this[id].Off ? 0 : system.Durations[this[id].Duration] / 1000;
 
     // The eased share of the way at a share of the time, for a curve token (a cubic Bezier through 0,0 and 1,1).
     public static double Ease(double[] curve, double time)
@@ -60,6 +69,8 @@ public sealed class MotionSettings
     public bool Reduced { get; set; }
     public bool Muted { get; set; } = true;
     public bool Rewards { get; set; } = true;
+    public static bool IsReward(string id) => id is MotionUses.RewardMark or MotionUses.OrbitComplete;
+    public static bool Shows(string id, bool rewards) => rewards || !IsReward(id);
     public string Store() => $"{(Reduced ? "reduced" : "full")},{(Muted ? "muted" : "cues")},{(Rewards ? "rewards" : "plain")}";
     public void Restore(string stored)
     {
@@ -84,10 +95,24 @@ public static class ColourMetric
     private static double Decode(double v) => v <= .04045 ? v / 12.92 : Math.Pow((v + .055) / 1.055, 2.4);
     private static double Encode(double v) => v <= .0031308 ? v * 12.92 : 1.055 * Math.Pow(v, 1 / 2.4) - .055;
 
-    public static Rgb Simulate(Rgb c, string vision)
+    public static Rgb Simulate(Rgb c, string vision) => vision == "normal" ? c : Apply(c, Matrices[vision]);
+
+    // ADR-D02.47's held simulations: G4's three colour visions and a contrast view that keeps lightness only (the
+    // contrast rules judge luminance, so a pair they pass stays apart here). Each is one row-major 3x3 matrix on linear
+    // RGB, the same matrix the core's view style takes (B14) and the chrome's filter draws.
+    public static readonly IReadOnlyList<string> Simulations = Array.AsReadOnly(new[] { "protan", "deutan", "tritan", "contrast" });
+    private static readonly double[] Lightness = { .2126, .7152, .0722, .2126, .7152, .0722, .2126, .7152, .0722 };
+    public static double[] SimulationMatrix(string? simulation) => simulation switch
     {
-        if (vision == "normal") return c;
-        double[] m = Matrices[vision]; double r = Decode(c.R), g = Decode(c.G), b = Decode(c.B);
+        null or "normal" => new double[] { 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+        "contrast" => (double[])Lightness.Clone(),
+        _ when Matrices.TryGetValue(simulation, out double[]? m) => (double[])m.Clone(),
+        _ => throw new FormatException(simulation + ": the simulations are " + string.Join(", ", Simulations)),
+    };
+
+    public static Rgb Apply(Rgb c, IReadOnlyList<double> m)
+    {
+        double r = Decode(c.R), g = Decode(c.G), b = Decode(c.B);
         double F(int row) => Encode(Math.Clamp(m[row * 3] * r + m[row * 3 + 1] * g + m[row * 3 + 2] * b, 0, 1));
         return new Rgb(F(0), F(1), F(2));
     }
@@ -154,6 +179,9 @@ public sealed record StickerPalette(string Id, string Name, string Family, IRead
 // of a complete operation break through every layer (ADR-D01.4 item 8).
 public enum InactiveMode { Normal, Dimmed, Hidden }
 
+// A predicate focus layer: its id, its label, its count, and whether it applies here.
+public sealed record PredicateLayer(string Id, string Label, Numeral Count, bool Applies);
+
 public sealed class FocusLayers
 {
     public static readonly IReadOnlyList<(string Id, string Key, string Icon, string Name)> Layers = Array.AsReadOnly(new[]
@@ -175,6 +203,52 @@ public sealed class FocusLayers
         if (Layers.All(l => l.Id != layer) || !(value >= 0 && value <= 1)) return false;
         opacity[layer] = value; Safe.Raise(Changed); return true;
     }
+
+    // Predicate focus layers (ADR-D01.46 as revision 4 reads it; ADR-D02's B11): a predicate with its count beside it,
+    // on the same cycling key. One predicate is focused at a time, and none by default; while one is focused and the
+    // cycle is not Normal, its members show and the rest take the cycle's mode. A predicate that does not apply here
+    // (the straddlers at an unblocked cap) dims nothing.
+    private readonly List<PredicateLayer> predicates = new();
+    public IReadOnlyList<PredicateLayer> Predicates => predicates;
+    public string? Focused { get; private set; }
+
+    // Adds a predicate, or updates its label and count in place; the focus stays where it was.
+    public void AddPredicate(string id, string label, Numeral count, bool applies = true)
+    {
+        if (string.IsNullOrEmpty(id) || Layers.Any(l => l.Id == id)) throw new ArgumentException("a predicate layer needs its own id: " + id);
+        var layer = new PredicateLayer(id, label, count, applies);
+        int at = predicates.FindIndex(p => p.Id == id);
+        if (at >= 0 && predicates[at] == layer) return;
+        if (at >= 0) predicates[at] = layer; else predicates.Add(layer);
+        Safe.Raise(Changed);
+    }
+
+    public void AddPredicate(PredicateLayer layer) => AddPredicate(layer.Id, layer.Label, layer.Count, layer.Applies);
+
+    // Takes a predicate away, and its focus with it.
+    public bool RemovePredicate(string id)
+    {
+        if (predicates.RemoveAll(p => p.Id == id) == 0) return false;
+        if (Focused == id) Focused = null;
+        Safe.Raise(Changed); return true;
+    }
+
+    // Focuses a predicate, or none; the focused predicate again un-focuses it.
+    public bool Focus(string? id)
+    {
+        if (id != null && predicates.All(p => p.Id != id)) return false;
+        Focused = Focused == id ? null : id; Safe.Raise(Changed); return true;
+    }
+
+    // Whether the focused predicate dims or hides its non-members now.
+    public bool Dimming => Inactive != InactiveMode.Normal && Focused is string f && predicates.First(p => p.Id == f).Applies;
+
+    // How strongly a piece shows under the focused predicate: a member or a breakthrough fully, the rest by the mode.
+    public double ShownPiece(bool member, bool breaksThrough = false) =>
+        breaksThrough || member || !Dimming ? 1 : Inactive == InactiveMode.Dimmed ? .25 : 0;
+
+    // A predicate's key text: its label and its count.
+    public static string KeyText(PredicateLayer layer) => layer.Label + " · " + (layer.Count.Kind == NumeralKind.Value ? layer.Count.Value.ToString("N0", CultureInfo.InvariantCulture) : layer.Count.Word);
 
     // How strongly an element shows: the active layer fully, the others by the inactive mode, a breakthrough always.
     public double Shown(string layer, bool breaksThrough = false) =>

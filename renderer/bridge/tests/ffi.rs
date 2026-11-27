@@ -3,7 +3,7 @@
 
 mod common;
 
-use c600_render::abi::{Sa2FrameInput, Status, PIECES, SLOTS};
+use c600_render::abi::{Sa2FrameInput, Sa2Pane, Sa2PaneRow, Status, PANES_MAX, PIECES, SLOTS};
 use c600_render::{CoreAbi, EngineImage, FakeCore, PoseArrays, PreparationInput};
 use c600_render_ffi::{CoreFunctions, DllCore};
 
@@ -92,4 +92,24 @@ fn rows_are_sized_and_errors_read_back() {
     core.fake().remove_device();
     assert_eq!(core.device_status().0, Status::DEVICE_REMOVED);
     assert_eq!(core.pick_request(1, 0, 0), Err(Status::DEVICE_REMOVED));
+}
+
+/// ABI 8 (ADR-D02 B18b): a composite frame's pane count is checked before the core is called, and its pane rows are
+/// sized and read back through the table.
+#[test]
+fn a_composite_frame_crosses_the_table_and_a_fifth_pane_never_reaches_the_core() {
+    let mut core = Shimmed::new(FakeCore::new((8, 8)), 0);
+    let input = Sa2FrameInput { viewport_width: 8, viewport_height: 8, ..Sa2FrameInput::new() };
+    let pane = |x: i32| Sa2Pane { x, width: 1, height: 1, ..Sa2Pane::default() };
+    let five: Vec<Sa2Pane> = (0..=PANES_MAX as i32).map(pane).collect();
+    assert_eq!(core.frame_submit_panes(&input, &five), Err(Status::INVALID_ARGUMENT));
+    assert_eq!(core.frame_submit_panes(&input, &[]), Err(Status::INVALID_ARGUMENT));
+    assert_eq!(core.last_error(), "", "neither call reached the core");
+    // Two panes reach the core, which refuses them for its state (no engine image is adopted), not their form.
+    assert_eq!(core.frame_submit_panes(&input, &five[..2]), Err(Status::WRONG_STATE));
+    assert!(core.last_error().contains("epoch or engine revision"), "{}", core.last_error());
+    let mut rows = [Sa2PaneRow::default(); 2];
+    assert_eq!(core.frame_panes(1, &mut rows), Err(Status::WRONG_STATE));
+    assert!(core.last_error().contains("composite"), "{}", core.last_error());
+    assert!(core.fake().submitted_panes.is_empty());
 }

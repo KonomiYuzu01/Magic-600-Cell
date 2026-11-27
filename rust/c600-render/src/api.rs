@@ -1,8 +1,11 @@
-//! The core's product calls as a safe Rust interface: one method per ABI 5 product call, with slices where the C
+//! The core's product calls as a safe Rust interface: one method per ABI 9 product call, with slices where the C
 //! structs carry pointers. `DllCore` in `renderer/bridge` (`c600-render-ffi`) implements it over the C functions;
 //! [`crate::fake::FakeCore`] implements it in Rust for headless tests.
 
-use crate::abi::{Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2PickRow, Sa2PollRow, Sa2PresentedRow, Status};
+use crate::abi::{
+    Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2Pane, Sa2PaneRow, Sa2PickRow, Sa2PollRow, Sa2PresentedRow,
+    Sa2SceneLook, Sa2StatusStyle, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, Status, StickerColours,
+};
 
 /// The pose path arrays of a posed engine state.
 #[derive(Clone, Copy, Debug)]
@@ -77,4 +80,66 @@ pub trait CoreAbi {
     fn device_status(&self) -> (Status, i32);
     /// `sa2_last_error` of the context.
     fn last_error(&self) -> String;
+    /// ABI 6's `sa2_view_shape_set`: the shape of `view`'s frames, or `None` for the defaults (ABI 5's constants).
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status>;
+    /// ABI 9's `sa2_view_focus_set`: the focus of `view`'s frames, or `None` for the defaults. A core without it
+    /// answers `UNSUPPORTED`.
+    fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
+        let _ = (view, focus);
+        Err(Status::UNSUPPORTED)
+    }
+    /// ABI 10's `sa2_view_layout_set`: the layout of `view`'s frames, or `None` for the chain. A core without it
+    /// answers `UNSUPPORTED`.
+    fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
+        let _ = (view, layout);
+        Err(Status::UNSUPPORTED)
+    }
+    /// ADR-D02 B18's `sa2_transform_set` (added to ABI 10 before any release): the adopted revision's transform, the
+    /// plane's rows u and v, the angle, the moving set (`PIECES` bytes of 0 or 1) and the phase, or `None` to clear
+    /// it. A core without it answers `UNSUPPORTED`.
+    fn transform_set(
+        &mut self,
+        revision: u64,
+        plane: &[[f32; 4]; 2],
+        angle: f32,
+        moving: Option<&[u8]>,
+        phase: f32,
+    ) -> Result<(), Status> {
+        let _ = (revision, plane, angle, moving, phase);
+        Err(Status::UNSUPPORTED)
+    }
+    /// ABI 7's `sa2_style_set`: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear
+    /// it.
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status>;
+    /// ABI 7's `sa2_view_style_set`: style slot 1 to 4, or `None` to clear it.
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status>;
+    /// ABI 8's `sa2_frame_submit_panes`: a composite frame of 1 to `PANES_MAX` panes; the frame ID.
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status>;
+    /// ABI 8's `sa2_frame_panes`: a produced composite frame's panes, the first `rows.len()` of them written; the
+    /// frame's pane count.
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status>;
+    /// ABI 10's `sa2_sticker_colours_set`: home-cell RGB triples, or `None` for the core's hues.
+    fn sticker_colours_set(&mut self, rgb: Option<&StickerColours>) -> Result<(), Status> {
+        let _ = rgb;
+        Err(Status::UNSUPPORTED)
+    }
+    /// ABI 10's `sa2_scene_look_set`: the scene's look, or `None` for the core's defaults.
+    fn scene_look_set(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        let _ = look;
+        Err(Status::UNSUPPORTED)
+    }
+    /// ADR-D02 B22 item 1's `sa2_charts_set`: the adopted revision's chart channel, one cell id (0..599) per slot, or
+    /// `None` to clear it.
+    fn charts_set(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Status> {
+        let _ = (revision, charts);
+        Err(Status::UNSUPPORTED)
+    }
+    /// ADR-D01.65's device-free status table.
+    fn status_style_set(&mut self, _style: Option<&Sa2StatusStyle>) -> Result<(), Status> {
+        Err(Status::UNSUPPORTED)
+    }
+    /// The last product frame's per-pane status coverage, when capture was requested.
+    fn status_drawn(&mut self, _pane: u32, _words: &mut [u32]) -> Result<(), Status> {
+        Err(Status::UNSUPPORTED)
+    }
 }

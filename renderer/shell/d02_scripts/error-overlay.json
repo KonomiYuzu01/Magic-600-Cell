@@ -1,0 +1,14 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "error-overlay",
+  "resolution": "1280x720",
+  "state": "wj-ia-300",
+  "note": "ADR-D01.25. One palette row from the opening: jumble.cap.name 0. The blocked certificate and refused analyses name cap 0, whose straddlers hatch in Global and Local. Unnaming the cap clears its diagnostics and the hatch. Every step keeps the session digest.",
+  "steps": [
+    {"wait_ms": 5001},
+    {"command": "jumble.cap.name", "argument": "0"},
+    {"wait_ms": 1501},
+    {"command": "jumble.cap.unname"},
+    {"wait_ms": 1502}
+  ]
+}

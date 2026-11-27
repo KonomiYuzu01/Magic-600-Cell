@@ -16,18 +16,22 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use c600_display::jumble;
-use c600_display::plan::{Publication, RevisionRef};
+use c600_display::plan::{Primitive, Publication, RevisionRef};
 use c600_display::produce::{self, GeometryInput};
 use c600_display::validate::{CheckedBundle, CheckedPublication, Context};
 
 use crate::turns::Head;
-use crate::{adoption, host_error, publication, Failure, M6H_E_HOST};
+use crate::{adoption, host_error, local_publication, publication, Failure, M6H_E_HOST};
 
 /// A head to build at an engine revision, with the host context the frame thread had when it asked.
 pub(crate) struct Job {
     pub revision: u64,
     pub head: Head,
     pub ctx: Context,
+    /// Whether Local is open (ADR-D02 B18b): its publication is checked too.
+    pub local: bool,
+    /// ADR-D02 B22 item 1: the chart assignment's model, when it loaded.
+    pub charts: Option<std::sync::Arc<crate::charts::ChartModel>>,
 }
 
 /// A head built and checked at its engine revision: what the host's frame thread adopts (`ShellHost::install`).
@@ -43,6 +47,10 @@ pub(crate) struct Built {
     /// The publication checked against the context it will be published under, or `None` when that check refused it:
     /// the frame thread then publishes it unchecked, and the display host refuses it there as before.
     pub checked: Option<CheckedPublication>,
+    /// Local's publication checked as `checked` is, when the job's Local was open (ADR-D02 B18b).
+    pub checked_local: Option<CheckedPublication>,
+    /// ADR-D02 B22 item 1: each slot's chart at this revision (its posed sticker's nearest cell, ties to the lowest id).
+    pub charts: Option<Vec<u32>>,
 }
 
 /// The host context for a head under `identity` that is not the current context's block: the puzzle's declared
@@ -61,24 +69,37 @@ pub(crate) fn context_for(geometry: &GeometryInput, head: &Head, base: &Revision
 /// publication and its check against the context it will be published under. A bundle that does not check, and a head
 /// that builds none, answer [`M6H_E_HOST`] as the display host's refusal did.
 pub(crate) fn build(geometry: &GeometryInput, job: Job) -> Result<Built, Failure> {
-    let Job { revision, head, ctx } = job;
+    let Job { revision, head, ctx, local, charts } = job;
     let (base, bundle, primitive) = adoption(geometry, &head, revision)?;
+    // ADR-D02 B22 item 1: the revision's chart channel, fixed here, off the frame thread.
+    let charts = charts.as_ref().map(|model| match &primitive {
+        Primitive::Posed(posed) => model.assign(Some((&posed.pose_index.as_i32(), &posed.poses.as_f32()))),
+        _ => model.assign(None),
+    });
     let new_ctx = (base.identity != ctx.identity).then(|| context_for(geometry, &head, &base, &ctx));
     let publication = publication(geometry, primitive, &base);
     let publish_ctx = new_ctx.as_ref().unwrap_or(&ctx);
-    // The two checks read nothing in common, so they run side by side; without a second thread they run in turn.
-    let (bundle, checked) = std::thread::scope(|scope| {
-        let check = || CheckedPublication::check(publication.clone(), publish_ctx).ok();
-        let side = std::thread::Builder::new().name("c600-shell-adoption-check".to_owned()).spawn_scoped(scope, check);
+    let local = local.then(|| local_publication(&publication));
+    // The checks read nothing in common, so they run side by side; without another thread they run in turn.
+    let (bundle, checked, checked_local) = std::thread::scope(|scope| {
+        let check = |publication: &Publication| CheckedPublication::check(publication.clone(), publish_ctx).ok();
+        let named = || std::thread::Builder::new().name("c600-shell-adoption-check".to_owned());
+        let view = &publication;
+        let side = named().spawn_scoped(scope, move || check(view));
+        let side_local = local.as_ref().map(|local| (local, named().spawn_scoped(scope, move || check(local))));
         let bundle = CheckedBundle::check(bundle);
         let checked = match side {
             Ok(side) => side.join().unwrap_or(None),
-            Err(_) => check(),
+            Err(_) => check(&publication),
         };
-        (bundle, checked)
+        let checked_local = side_local.and_then(|(local, side)| match side {
+            Ok(side) => side.join().unwrap_or(None),
+            Err(_) => check(local),
+        });
+        (bundle, checked, checked_local)
     });
     let bundle = bundle.map_err(host_error)?;
-    Ok(Built { revision, digest: head.digest(), ctx: new_ctx, bundle, publication, checked })
+    Ok(Built { revision, digest: head.digest(), ctx: new_ctx, bundle, publication, checked, checked_local, charts })
 }
 
 /// One built job: its engine revision and its outcome.
@@ -152,10 +173,42 @@ pub(crate) enum Wait {
     Done,
 }
 
-impl Wait {
-    /// A wait of at most `limit` from now.
-    pub(crate) fn at_most(limit: Duration) -> Wait {
-        Wait::Until(Instant::now() + limit)
+/// A submission that took less than this did not wait for the display (SF6): recording and presenting take well under
+/// a millisecond, and the core's wait for the display about one refresh less the caller's own work.
+pub(crate) const DISPLAY_WAITED: Duration = Duration::from_millis(2);
+
+/// SF6 (27 November 2026): whether a frame call that began at `entered` and submitted from `submitting` to `submitted`
+/// waits after its submission for a pending build, and until when. Only a submission that returned at once (the call
+/// came after the display was ready, as after a synchronous key call) waits, until `limit` after the call began; one
+/// that waited for the display adopts nothing after it, so the frame thread keeps its refresh.
+pub(crate) fn after_submission(
+    entered: Instant,
+    submitting: Instant,
+    submitted: Instant,
+    limit: Duration,
+) -> Option<Wait> {
+    (submitted.saturating_duration_since(submitting) < DISPLAY_WAITED).then(|| Wait::Until(entered + limit))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// SF6: a frame call whose submission waited for the display adopts nothing after it; one whose submission
+    /// returned at once waits for a pending build until the limit after the call began.
+    #[test]
+    fn only_a_submission_that_did_not_wait_for_the_display_waits_for_a_build() {
+        let entered = Instant::now();
+        let submitting = entered + Duration::from_millis(3);
+        let limit = Duration::from_millis(12);
+        assert!(after_submission(entered, submitting, submitting + Duration::from_millis(10), limit).is_none());
+        assert!(after_submission(entered, submitting, submitting + DISPLAY_WAITED, limit).is_none());
+        let Some(Wait::Until(until)) =
+            after_submission(entered, submitting, submitting + Duration::from_micros(300), limit)
+        else {
+            panic!("a wait until a deadline");
+        };
+        assert_eq!(until - entered, limit);
     }
 }
 

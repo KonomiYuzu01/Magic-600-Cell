@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 17] = [
+pub const SYMBOLS: [&str; 30] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -32,9 +32,22 @@ pub const SYMBOLS: [&str; 17] = [
     "sa2_recover",
     "sa2_counters",
     "sa2_device_status",
+    "sa2_view_shape_set",
+    "sa2_style_set",
+    "sa2_view_style_set",
+    "sa2_frame_submit_panes",
+    "sa2_frame_panes",
+    "sa2_view_focus_set",
+    "sa2_view_layout_set",
+    "sa2_transform_set",
+    "sa2_sticker_colours_set",
+    "sa2_scene_look_set",
+    "sa2_charts_set",
+    "sa2_status_style_set",
+    "sa2_status_drawn",
 ];
 
-/// The ABI 5 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
+/// The ABI 10 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
 /// language can fill it.
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -56,6 +69,29 @@ pub struct CoreFunctions {
     pub recover: unsafe extern "C" fn(*mut c_void, *mut c_char, u32, *mut u32) -> i32,
     pub counters: unsafe extern "C" fn(*mut c_void, *mut Sa2CounterValues) -> i32,
     pub device_status: unsafe extern "C" fn(*mut c_void, *mut i32) -> i32,
+    /// ABI 6: a view's shape.
+    pub view_shape_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewShape) -> i32,
+    /// ABI 7: one channel of the adopted revision's piece style.
+    pub style_set: unsafe extern "C" fn(*mut c_void, u64, *const u8, u32) -> i32,
+    /// ABI 7: a style slot.
+    pub view_style_set: unsafe extern "C" fn(*mut c_void, u32, *const Sa2ViewStyle) -> i32,
+    /// ABI 8: a composite frame.
+    pub frame_submit_panes:
+        unsafe extern "C" fn(*mut c_void, *const Sa2FrameInput, *const Sa2Pane, u32, *mut u64) -> i32,
+    /// ABI 8: a composite frame's pane rows.
+    pub frame_panes: unsafe extern "C" fn(*mut c_void, u64, *mut Sa2PaneRow, u32, *mut u32) -> i32,
+    /// ABI 9: a view's focus.
+    pub view_focus_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewFocus) -> i32,
+    /// ABI 10: a view's layout.
+    pub view_layout_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewLayout) -> i32,
+    /// ADR-D02 B18 (added to ABI 10 before any release): the adopted revision's transform.
+    pub transform_set: unsafe extern "C" fn(*mut c_void, u64, *const f32, *const f32, f32, *const u8, f32) -> i32,
+    pub sticker_colours_set: unsafe extern "C" fn(*mut c_void, *const f32, u32) -> i32,
+    pub scene_look_set: unsafe extern "C" fn(*mut c_void, *const Sa2SceneLook) -> i32,
+    /// ADR-D02 B22 item 1 (added to ABI 10 before any release): the adopted revision's chart channel.
+    pub charts_set: unsafe extern "C" fn(*mut c_void, u64, *const u32, u32) -> i32,
+    pub status_style_set: unsafe extern "C" fn(*mut c_void, *const Sa2StatusStyle) -> i32,
+    pub status_drawn: unsafe extern "C" fn(*mut c_void, u32, *mut u32, u32) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -72,7 +108,7 @@ pub const JSON_LIMIT: usize = 16 << 20;
 
 impl DllCore {
     /// Binds an attached context. Fails with `SA2_E_INVALID_ARGUMENT` for a null context and `SA2_E_UNSUPPORTED`
-    /// when the library is not ABI 5.
+    /// when the library is not ABI 8.
     ///
     /// # Safety
     ///
@@ -262,6 +298,117 @@ impl CoreAbi for DllCore {
         // SAFETY: `reason` is a live i32.
         let status = Status(unsafe { (self.functions.device_status)(self.context, &mut reason) });
         (status, reason)
+    }
+
+    fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
+        let row = focus.map(|f| Sa2ViewFocus { struct_size: size_of::<Sa2ViewFocus>() as u32, ..*f });
+        let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewFocus);
+        // SAFETY: `pointer` is null or a live, sized row.
+        Status(unsafe { (self.functions.view_focus_set)(self.context, view, pointer) }).check()
+    }
+
+    fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
+        let row = layout.map(|l| Sa2ViewLayout { struct_size: size_of::<Sa2ViewLayout>() as u32, ..*l });
+        let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewLayout);
+        // SAFETY: `pointer` is null or a live, sized row.
+        Status(unsafe { (self.functions.view_layout_set)(self.context, view, pointer) }).check()
+    }
+
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
+        let row = shape.map(|s| Sa2ViewShape { struct_size: size_of::<Sa2ViewShape>() as u32, ..*s });
+        let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewShape);
+        // SAFETY: `pointer` is null or a live, sized row.
+        Status(unsafe { (self.functions.view_shape_set)(self.context, view, pointer) }).check()
+    }
+
+    fn transform_set(
+        &mut self,
+        revision: u64,
+        plane: &[[f32; 4]; 2],
+        angle: f32,
+        moving: Option<&[u8]>,
+        phase: f32,
+    ) -> Result<(), Status> {
+        if moving.is_some_and(|bytes| bytes.len() != PIECES) {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        let pointer = moving.map_or(std::ptr::null(), <[u8]>::as_ptr);
+        let (u, v) = (plane[0].as_ptr(), plane[1].as_ptr());
+        // SAFETY: `pointer` is null or PIECES readable bytes; `u` and `v` are four readable floats each.
+        Status(unsafe { (self.functions.transform_set)(self.context, revision, u, v, angle, pointer, phase) }).check()
+    }
+
+    fn sticker_colours_set(&mut self, rgb: Option<&StickerColours>) -> Result<(), Status> {
+        let (pointer, count) = rgb.map_or((std::ptr::null(), 0), |table| (table.as_ptr().cast(), STICKER_CLASSES as u32));
+        // SAFETY: a null pointer with count zero, or exactly STICKER_CLASSES readable RGB triples.
+        Status(unsafe { (self.functions.sticker_colours_set)(self.context, pointer, count) }).check()
+    }
+
+    fn scene_look_set(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        let pointer = look.map_or(std::ptr::null(), std::ptr::from_ref);
+        // SAFETY: the pointer is null or points to a readable row.
+        Status(unsafe { (self.functions.scene_look_set)(self.context, pointer) }).check()
+    }
+
+    fn charts_set(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Status> {
+        if charts.is_some_and(|charts| charts.len() != SLOTS) {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        let (pointer, count) = charts.map_or((std::ptr::null(), 0), |charts| (charts.as_ptr(), SLOTS as u32));
+        // SAFETY: a null pointer with count zero, or exactly SLOTS readable cell ids.
+        Status(unsafe { (self.functions.charts_set)(self.context, revision, pointer, count) }).check()
+    }
+
+    fn status_style_set(&mut self, style: Option<&Sa2StatusStyle>) -> Result<(), Status> {
+        Status(unsafe { (self.functions.status_style_set)(self.context, style.map_or(std::ptr::null(), |s| s)) }).check()
+    }
+
+    fn status_drawn(&mut self, pane: u32, words: &mut [u32]) -> Result<(), Status> {
+        if words.len() != STATUS_WORDS {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        Status(unsafe { (self.functions.status_drawn)(self.context, pane, words.as_mut_ptr(), words.len() as u32) }).check()
+    }
+
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {
+        if piece_style.is_some_and(|bytes| bytes.len() != PIECES) {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        let pointer = piece_style.map_or(std::ptr::null(), <[u8]>::as_ptr);
+        // SAFETY: `pointer` is null or PIECES readable bytes.
+        Status(unsafe { (self.functions.style_set)(self.context, revision, pointer, channel) }).check()
+    }
+
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status> {
+        let row = style.map(|s| Sa2ViewStyle { struct_size: size_of::<Sa2ViewStyle>() as u32, ..*s });
+        let pointer = row.as_ref().map_or(std::ptr::null(), |r| r as *const Sa2ViewStyle);
+        // SAFETY: `pointer` is null or a live, sized row.
+        Status(unsafe { (self.functions.view_style_set)(self.context, slot, pointer) }).check()
+    }
+
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status> {
+        if panes.is_empty() || panes.len() > PANES_MAX as usize {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        let mut row = *input;
+        row.struct_size = size_of::<Sa2FrameInput>() as u32;
+        let mut frame = 0u64;
+        // SAFETY: `row` is a live, sized row and `panes` holds the 1 to SA2_PANES_MAX panes the count names.
+        Status(unsafe {
+            (self.functions.frame_submit_panes)(self.context, &row, panes.as_ptr(), panes.len() as u32, &mut frame)
+        })
+        .check()?;
+        Ok(frame)
+    }
+
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status> {
+        rows.iter_mut().for_each(|row| row.struct_size = size_of::<Sa2PaneRow>() as u32);
+        let n = capacity(rows.len());
+        let mut count = 0u32;
+        // SAFETY: `rows` holds `n` sized rows; the core writes at most `n` and names the frame's pane count.
+        Status(unsafe { (self.functions.frame_panes)(self.context, frame_id, rows.as_mut_ptr(), n, &mut count) })
+            .check()?;
+        Ok(count as usize)
     }
 
     fn last_error(&self) -> String {

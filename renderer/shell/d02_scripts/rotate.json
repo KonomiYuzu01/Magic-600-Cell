@@ -1,0 +1,28 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "rotate",
+  "note": "The view rotation the owner asked for on 26 November 2026: two left-button drags in the Global opening, one across and one down, each turning the camera as Look Lab's drag does; the foreground stays the owner's.",
+  "steps": [
+    {
+      "wait_ms": 2000
+    },
+    {
+      "drag": [
+        200,
+        0
+      ]
+    },
+    {
+      "wait_ms": 1000
+    },
+    {
+      "drag": [
+        0,
+        120
+      ]
+    },
+    {
+      "wait_ms": 1000
+    }
+  ]
+}

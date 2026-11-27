@@ -12,6 +12,9 @@
 #include <sstream>
 
 namespace sa2test {
+void run_colours(Suite& suite, const Options& options);
+void run_error(Suite& suite, const Options& options);
+
 void expect(bool condition, const char* reason) { if (!condition) throw std::runtime_error(reason); }
 void Suite::check(const std::string& name, const std::function<void()>& body) {
     try { body(); checks.push_back({name, "pass", "all assertions passed"}); }
@@ -146,7 +149,7 @@ std::pair<uint64_t, uint64_t> ready_set(sa2::Product& product, const sa2::Prepar
     return {ticket, row.resource_set};
 }
 void run_cpu(Suite& suite, const Options& options) {
-    suite.check("abi", [] { expect(sa2_abi_version() == 5, "ABI version mismatch"); });
+    suite.check("abi", [] { expect(sa2_abi_version() == 10, "ABI version mismatch"); });
     suite.check("exports", [] {
         const auto dll = executable_path().parent_path() / "sa2_interop.dll";
         HMODULE module = LoadLibraryW(dll.c_str());
@@ -159,7 +162,10 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_describe", "sa2_engine_adopt", "sa2_prepare", "sa2_poll", "sa2_activate", "sa2_cancel", "sa2_retire",
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
-            "sa2_surface_detach", "sa2_surface_swap_chain"};
+            "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes",
+            "sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set",
+            "sa2_charts_set", "sa2_preview_poses_set", "sa2_preview_transform_set",
+            "sa2_status_style_set", "sa2_status_drawn"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -204,6 +210,8 @@ void run_cpu(Suite& suite, const Options& options) {
         invalid(sa2_device_removed_reason(nullptr, &hr), "sa2_device_removed_reason");
         invalid(sa2_detach(nullptr), "sa2_detach");
         invalid(sa2_last_error(nullptr, nullptr, 0), "sa2_last_error");
+        invalid(sa2_preview_poses_set(nullptr, 1, nullptr, 0, nullptr, nullptr, 0, nullptr), "sa2_preview_poses_set");
+        invalid(sa2_preview_transform_set(nullptr, 1, nullptr, nullptr, 0, nullptr, 0, 0), "sa2_preview_transform_set");
     });
     suite.check("last error truncation", [] {
         invalid(sa2_detach(nullptr), "sa2_detach");
@@ -1021,7 +1029,7 @@ void run_cpu(Suite& suite, const Options& options) {
     });
     suite.check("product describe", [] {
         const auto json = Json::parse(sa2::describe("abc", 0).dump());
-        expect(json.at("interface_version").integer() == 5 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
+        expect(json.at("interface_version").integer() == 10 && json.at("backend_build").string() == "abc" && json.at("device_epoch").integer() == 1
             && json.at("device_removed").null() && json.at("evidence").array().empty(), "the SupportReport header is wrong");
         const auto& features = json.at("features");
         expect(features.object().size() == 8, "the SupportReport does not list eight rows");
@@ -1035,11 +1043,435 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(sa2::removed_text(int32_t(0x887A0005)) == "0x887a0005", "the removal text is not 0x%08x");
         // ABI 5, route B: F22 and F23 on a sa2_create context with a surface.
         const auto route_b = Json::parse(sa2::describe("abc", 0, 3, true).dump());
-        expect(route_b.at("interface_version").integer() == 5 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
+        expect(route_b.at("interface_version").integer() == 10 && route_b.at("device_epoch").integer() == 3, "the route B header is wrong");
         for (const char* row : {"F22", "F23"})
             expect(route_b.at("features").at(row).at("status").string() == "supported"
                 && route_b.at("features").at(row).at("layout_version").integer() == 1, "route B does not support F22 and F23");
         expect(route_b.at("features").at("J13").at("status").string() == "unsupported", "route B changed J13");
+    });
+    // ABI 6: a view's shape. Its checks, its defaults (ABI 5's constants), per view, recorded with each frame for its
+    // picks, and kept across a recovery.
+    // ADR-D02 B21: the raw view's focus, and the antipode chart's handedness, checked at build.
+    suite.check("raw view", [] {
+        sa2::ViewShape shape;
+        const sa2_view_focus raw{sizeof(sa2_view_focus), SA2_PROJECTION_STEREOGRAPHIC, 7, 121.0f / 125.0f, 1.0f, 0};
+        sa2::view_focus(&raw, shape);
+        expect(shape.projection == SA2_PROJECTION_STEREOGRAPHIC && shape.focus_cell == 7 && shape.focus_cos == 121.0f / 125.0f,
+            "a raw focus was not copied");
+        const auto refuses = [](sa2_view_focus f) { return rejects([&] { sa2::ViewShape s; sa2::view_focus(&f, s); }); };
+        auto no_pole = raw; no_pole.focus_cell = SA2_FOCUS_NONE;
+        auto past = raw; past.focus_cos = -0.25f;
+        auto unknown = raw; unknown.projection = 3;
+        auto at90 = raw; at90.focus_cos = 0.0f;
+        expect(refuses(no_pole) && refuses(past) && refuses(unknown) && !refuses(at90),
+            "a raw focus without a pole, past 90 degrees or of an unknown projection was taken, or h = 0 was refused");
+        // The antipode chart is the chart after -I (pole +w here): det(-I) = +1 in R4, and on positively oriented frames
+        // at their centres (det[c, t1, t2, t3] > 0) the two charts' Jacobians have the same determinant sign.
+        using M4 = std::array<std::array<double, 4>, 4>;
+        const auto det4 = [](const M4& m) {
+            double sum = 0;
+            int p[4] = {0, 1, 2, 3};
+            do {
+                int inversions = 0;
+                for (int i = 0; i < 4; ++i) for (int j = i + 1; j < 4; ++j) inversions += p[i] > p[j] ? 1 : 0;
+                sum += (inversions % 2 ? -1.0 : 1.0) * m[0][p[0]] * m[1][p[1]] * m[2][p[2]] * m[3][p[3]];
+            } while (std::next_permutation(p, p + 4));
+            return sum;
+        };
+        M4 minus{};
+        for (int i = 0; i < 4; ++i) minus[i][i] = -1;
+        expect(det4(minus) == 1.0, "-I is not a proper rotation of R4");
+        const auto chart = [](std::array<double, 4> x, double sign) {
+            double n = 0;
+            for (auto& v : x) { v *= sign; n += v * v; }
+            n = std::sqrt(n);
+            const double w = x[3] / n;
+            return std::array<double, 3>{2 * x[0] / n / (1 + w), 2 * x[1] / n / (1 + w), 2 * x[2] / n / (1 + w)};
+        };
+        const auto jacobian_sign = [&](double sign) {
+            const std::array<double, 4> centre{0, 0, 0, sign};
+            std::array<std::array<double, 4>, 3> frame{{{sign, 0, 0, 0}, {0, sign, 0, 0}, {0, 0, sign, 0}}};
+            const M4 oriented{centre, frame[0], frame[1], frame[2]};
+            if (det4(oriented) < 0) for (auto& v : frame[0]) v = -v;
+            std::array<std::array<double, 3>, 3> j{};
+            const double e = 1e-6;
+            for (int k = 0; k < 3; ++k) {
+                auto a = centre, b = centre;
+                for (int i = 0; i < 4; ++i) { a[i] += e * frame[k][i]; b[i] -= e * frame[k][i]; }
+                const auto fa = chart(a, sign), fb = chart(b, sign);
+                for (int i = 0; i < 3; ++i) j[i][k] = (fa[i] - fb[i]) / (2 * e);
+            }
+            const double d = j[0][0] * (j[1][1] * j[2][2] - j[1][2] * j[2][1]) - j[0][1] * (j[1][0] * j[2][2] - j[1][2] * j[2][0])
+                + j[0][2] * (j[1][0] * j[2][1] - j[1][1] * j[2][0]);
+            return d > 0 ? 1 : d < 0 ? -1 : 0;
+        };
+        expect(jacobian_sign(1) != 0 && jacobian_sign(1) == jacobian_sign(-1), "the antipode chart does not share the chart's handedness");
+    });
+    suite.check("view shape", [] {
+        const auto defaults = sa2::view_shape(nullptr);
+        expect(defaults.cell_shrink == 0.76f && defaults.sticker_shrink == 0.82f && defaults.d4 == 1.18f && defaults.zoom == 1.15f,
+            "the default shape is not ABI 5's constants");
+        sa2_view_shape shape{sizeof(sa2_view_shape), 0.7f, 0.55f, 1.18f, 1.15f, 0};
+        expect(sa2::view_shape(&shape) == sa2::ViewShape{0.7f, 0.55f, 1.18f, 1.15f}, "a valid shape was not copied");
+        const float nan = std::numeric_limits<float>::quiet_NaN(), inf = std::numeric_limits<float>::infinity();
+        const auto refused = [&](auto change) { auto bad = shape; change(bad); return rejects([&] { sa2::view_shape(&bad); }); };
+        expect(refused([](sa2_view_shape& s) { s.struct_size = 20; }) && refused([](sa2_view_shape& s) { s.reserved = 1; }),
+            "a wrong struct_size or a nonzero reserved was accepted");
+        expect(refused([&](sa2_view_shape& s) { s.cell_shrink = nan; }) && refused([&](sa2_view_shape& s) { s.sticker_shrink = inf; })
+            && refused([&](sa2_view_shape& s) { s.d4 = nan; }) && refused([&](sa2_view_shape& s) { s.zoom = -inf; }),
+            "a nonfinite value was accepted");
+        expect(refused([](sa2_view_shape& s) { s.cell_shrink = 0; }) && refused([](sa2_view_shape& s) { s.cell_shrink = 1.01f; })
+            && refused([](sa2_view_shape& s) { s.sticker_shrink = -0.5f; }) && refused([](sa2_view_shape& s) { s.sticker_shrink = 1.5f; })
+            && refused([](sa2_view_shape& s) { s.d4 = 1.0f; }) && refused([](sa2_view_shape& s) { s.d4 = SA2_SHAPE_D4_MAX * 2; })
+            && refused([](sa2_view_shape& s) { s.zoom = 0; }) && refused([](sa2_view_shape& s) { s.zoom = SA2_SHAPE_ZOOM_MAX * 2; }),
+            "a value out of its range was accepted");
+        shape.cell_shrink = 1; shape.sticker_shrink = 1; shape.d4 = SA2_SHAPE_D4_MAX; shape.zoom = SA2_SHAPE_ZOOM_MAX;
+        sa2::view_shape(&shape); // every upper bound is inside its range
+        sa2::Product product;
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        const sa2::ViewShape reduced{0.7f, 0.55f, 1.18f, 1.15f};
+        product.set_shape(2, reduced);
+        expect(product.shape(1) == sa2::ViewShape{} && product.shape(2) == reduced, "a shape is not per view");
+        auto input = frame_input(1, 1);
+        input.view = 2;
+        auto plan = product.plan(input, 256, 256);
+        expect(plan.shape == reduced, "a frame does not draw with its view's shape");
+        product.commit(input, plan, 1, 0);
+        product.produced(1, 100, 1);
+        product.set_shape(2, sa2::ViewShape{});
+        expect(product.shape(2) == sa2::ViewShape{}, "the defaults were not restored");
+        const auto pick = product.pick_plan(1, 10, 20);
+        expect(pick.state == SA2_PICK_READY && !pick.pass, "a frame without a set needs no ID pass");
+        input.sequence = 2;
+        expect(product.plan(input, 256, 256).shape == sa2::ViewShape{}, "a restored shape was not drawn");
+        // A pick draws with the shape of its frame, not the view's current one.
+        PreparationArrays arrays(2, 1, 1);
+        arrays.value.view = 2;
+        const auto readied = ready_set(product, sa2::preparation(&arrays.value), 0);
+        const uint8_t stamp[32]{};
+        product.activate(readied.second, stamp);
+        product.set_shape(2, reduced);
+        input.resource_set = readied.second;
+        plan = product.plan(input, 256, 256);
+        product.commit(input, plan, 2, 1);
+        product.produced(2, 100, 1);
+        product.set_shape(2, sa2::ViewShape{});
+        const auto pass = product.pick_plan(2, 10, 20);
+        expect(pass.pass && pass.input.shape == reduced, "an ID pass does not use its frame's shape");
+        // Device loss and recovery keep it.
+        product.set_shape(3, reduced);
+        product.observe_removal(int32_t(0x887A0005));
+        product.set_shape(4, reduced);
+        product.recovered(sa2::DeviceEpoch + 1);
+        expect(product.shape(3) == reduced && product.shape(4) == reduced, "a shape was lost across device loss and recovery");
+        // ADR-D02 B22: a Hopf layout draws from the Hopf table, so a view takes none before the table exists.
+        for (uint32_t kind : {uint32_t(SA2_LAYOUT_HOPF_RINGS), uint32_t(SA2_LAYOUT_RING_SHEET)}) {
+            auto laid = reduced; laid.layout = kind;
+            expect(rejects([&] { product.set_shape(5, laid); }) && product.shape(5) == sa2::ViewShape{},
+                "a Hopf layout was taken without the Hopf table");
+        }
+    });
+    // ABI 7 (ADR-D02 B14): the piece style and the style slots, without a device.
+    suite.check("piece style", [] {
+        static_assert(SA2_STYLE_SLOTS == 4u && SA2_STYLE_PALETTE == 16u && SA2_STYLE_INDEX == 0x0Fu && SA2_STYLE_DIM == 0x80u,
+            "the ABI 7 defines changed");
+        sa2_view_style style{};
+        style.struct_size = sizeof(style);
+        style.tint_mode = SA2_STYLE_TINT_FILL | SA2_STYLE_TINT_OUTLINE;
+        style.outline_width = 0.1f;
+        for (int i = 0; i < 64; ++i) style.palette[i] = (i % 4 == 3) ? 1.0f : 0.5f;
+        const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+        std::copy(std::begin(identity), std::end(identity), std::begin(style.matrix));
+        const auto copied = sa2::view_style(&style);
+        expect(copied.matrix_on == 0 && copied.rows[0] == 1 && copied.rows[5] == 1 && copied.rows[10] == 1 && copied.tint_mode == 3,
+            "a valid style was not copied");
+        const float nan = std::numeric_limits<float>::quiet_NaN();
+        const auto refused = [&](auto change) { auto bad = style; change(bad); return rejects([&] { sa2::view_style(&bad); }); };
+        expect(refused([](sa2_view_style& s) { s.struct_size = 312; }) && refused([](sa2_view_style& s) { s.reserved = 1; })
+            && refused([](sa2_view_style& s) { s.tint_mode = 4; }) && refused([](sa2_view_style& s) { s.dim_mode = 5; })
+            && refused([](sa2_view_style& s) { s.dim_amount = 1.5f; }) && refused([&](sa2_view_style& s) { s.dim_amount = nan; })
+            && refused([](sa2_view_style& s) { s.outline_width = 0.6f; }) && refused([](sa2_view_style& s) { s.palette[7] = 1.5f; })
+            && refused([&](sa2_view_style& s) { s.palette[0] = nan; }) && refused([](sa2_view_style& s) { s.matrix[4] = 9.0f; })
+            && rejects([] { sa2::view_style(nullptr); }), "an invalid style was accepted");
+        // ADR-D02 B17 (ABI 10): the two hide modes are valid dim modes.
+        for (uint32_t mode : {SA2_STYLE_HIDE_MARKED, SA2_STYLE_HIDE_UNMARKED}) {
+            auto hide = style; hide.dim_mode = mode;
+            expect(sa2::view_style(&hide).dim_mode == mode, "a hide mode was not copied");
+        }
+        // ADR-D02 B20: the slice's values, and its channel's bytes (0 or 1).
+        {
+            auto slice = style; slice.slice_mode = SA2_SLICE_BOTH; slice.slice_shrink = 0.6f; slice.shell_min = 0; slice.shell_max = 0.5f;
+            slice.ghost[3] = 0.5f;
+            const auto made = sa2::view_style(&slice);
+            expect(made.slice_mode == SA2_SLICE_BOTH && made.slice_shrink == 0.6f && made.shell_min_cos == 1.0f
+                && std::abs(made.shell_max_cos - std::cos(0.5f)) < 1e-6f && made.ghost[3] == 0.5f, "a slice was not copied");
+            expect(sa2::view_style(&style).slice_mode == SA2_SLICE_OFF && sa2::view_style(&style).shell_max_cos == -1.0f,
+                "a style without a slice changed the slice's defaults");
+            const auto slices = [&](auto change) { auto s = slice; change(s); return rejects([&] { sa2::view_style(&s); }); };
+            expect(slices([](sa2_view_style& s) { s.slice_mode = 4; }) && slices([](sa2_view_style& s) { s.slice_shrink = 0; })
+                && slices([](sa2_view_style& s) { s.slice_shrink = 1.5f; }) && slices([](sa2_view_style& s) { s.shell_min = 0.6f; })
+                && slices([](sa2_view_style& s) { s.shell_max = 4.0f; }) && slices([](sa2_view_style& s) { s.ghost[1] = 2.0f; }),
+                "an invalid slice was accepted");
+        }
+        std::vector<uint8_t> bytes(SA2_PIECES, 0);
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), 4); }), "a fifth channel was accepted");
+        for (uint32_t bad : {6u, 5u << 3, 0x40u, 0x80u}) {
+            bytes[5] = uint8_t(bad);
+            expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_STATUS); }),
+                "a reserved status byte was accepted");
+        }
+        bytes[5] = 1;
+        sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE);
+        bytes[5] = 2;
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE); }), "a slice byte of 2 was accepted");
+        bytes[5] = SA2_STYLE_ERROR;
+        sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_OUTLINE);
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_FILL); }), "an error bit on the fill was accepted");
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE); }), "an error bit on the slice was accepted");
+        bytes[5] = 0x80;
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_OUTLINE); }), "a dim bit on the outline was accepted");
+        sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_FILL);
+        sa2::Product product;
+        expect(wrong_state([&] { product.set_style(1, bytes.data(), 0); }), "a style was set without an adopted revision");
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        auto input = frame_input(1, 1);
+        auto plan = product.plan(input, 256, 256);
+        expect(!plan.style && plan.style_version == 0 && !plan.styled, "an unstyled frame plans a style");
+        // A status byte can draw on its own and occupies a different part of the word from the cut slice.
+        sa2_status_style status{};
+        status.struct_size = sizeof(status);
+        status.patterns[1] = {SA2_STATUS_HATCH, 6.0f, 0.4f, 0.0f, {1, 1, 1, 1}};
+        product.set_status_style(&status);
+        expect(!product.plan(input, 256, 256).status, "a status table draws without status bytes");
+        std::vector<uint8_t> status_bytes(SA2_PIECES, 0), inside(SA2_PIECES, 0);
+        status_bytes[5] = 1 | (4u << 3);
+        product.set_style(1, status_bytes.data(), SA2_STYLE_CHANNEL_STATUS);
+        plan = product.plan(input, 256, 256);
+        expect(plan.status && plan.style && (*plan.style)[5] == (uint32_t(status_bytes[5]) << 24)
+            && plan.pick_style_version == 0, "a status byte was lost, shifted or bound to the ID pass");
+        inside[5] = 1;
+        product.set_style(1, inside.data(), SA2_STYLE_CHANNEL_SLICE);
+        plan = product.plan(input, 256, 256);
+        expect((*plan.style)[5] == ((uint32_t(status_bytes[5]) << 24) | (1u << 17)), "the slice changed the status byte");
+        product.set_style(1, nullptr, SA2_STYLE_CHANNEL_SLICE);
+        product.set_style(1, nullptr, SA2_STYLE_CHANNEL_STATUS);
+        expect(!product.plan(input, 256, 256).status, "a cleared status byte draws");
+        // A slot alone, with the identity and nothing to tint, changes nothing: the frame stays on the product pipeline.
+        product.set_view_style(1, &style);
+        expect(!product.plan(input, 256, 256).styled, "a style that changes nothing draws styled");
+        std::vector<uint8_t> errors(SA2_PIECES, 0);
+        errors[5] = SA2_STYLE_ERROR;
+        product.set_style(1, errors.data(), SA2_STYLE_CHANNEL_OUTLINE);
+        auto error_view = style;
+        error_view.outline_width = 0;
+        error_view.palette[3] = 0;
+        product.set_view_style(1, &error_view);
+        expect(!product.plan(input, 256, 256).styled, "a transparent error overlay chose the styled pipeline");
+        error_view.palette[3] = 0.8f;
+        product.set_view_style(1, &error_view);
+        expect(product.plan(input, 256, 256).styled, "the error hatch without an outline band did not choose the styled pipeline");
+        error_view.tint_mode = SA2_STYLE_TINT_FILL;
+        product.set_view_style(1, &error_view);
+        expect(!product.plan(input, 256, 256).styled, "the error overlay drew in a fill-only slot");
+        product.set_style(1, nullptr, SA2_STYLE_CHANNEL_OUTLINE);
+        expect(!product.piece_style(), "clearing an error-only outline kept the piece style");
+        product.set_view_style(1, &style);
+        expect(rejects([&] { product.set_view_style(0, &style); }) && rejects([&] { product.set_view_style(5, &style); }),
+            "a style slot out of 1..4 was accepted");
+        // Another revision is refused; the adopted one is kept per channel.
+        std::fill(bytes.begin(), bytes.end(), uint8_t(0));
+        bytes[7] = 3; bytes[9] = 0x81;
+        expect(rejects([&] { product.set_style(2, bytes.data(), 0); }), "a style for another revision was accepted");
+        product.set_style(1, bytes.data(), SA2_STYLE_CHANNEL_FILL);
+        const auto* piece = product.piece_style();
+        expect(piece && piece->revision == 1 && piece->version != 0 && piece->packed[7] == 3 && piece->packed[9] == 0x81
+            && piece->any[0] && !piece->any[1] && piece->dim, "the fill channel was not kept");
+        std::vector<uint8_t> lines(SA2_PIECES, 0);
+        lines[9] = 2;
+        product.set_style(1, lines.data(), SA2_STYLE_CHANNEL_OUTLINE);
+        expect(piece->packed[9] == (0x81u | (2u << 8)) && piece->any[1], "the outline channel did not join the fill channel");
+        input.sequence = 2;
+        plan = product.plan(input, 256, 256);
+        expect(plan.style && plan.style_version == piece->version && plan.styled && plan.upload,
+            "a styled frame does not upload its style with the copy");
+        product.commit(input, plan, 1, 0);
+        input.sequence = 3;
+        expect(!product.plan(input, 256, 256).upload, "an unchanged style uploaded again");
+        // Clearing both channels leaves no style; an empty mask is no style.
+        product.set_style(1, nullptr, SA2_STYLE_CHANNEL_FILL);
+        product.set_style(1, nullptr, SA2_STYLE_CHANNEL_OUTLINE);
+        expect(product.piece_style() == nullptr && !product.plan(input, 256, 256).styled, "cleared channels left a style");
+        std::fill(bytes.begin(), bytes.end(), uint8_t(0));
+        product.set_style(1, bytes.data(), SA2_STYLE_CHANNEL_FILL);
+        expect(product.piece_style() == nullptr, "an empty mask was kept as a style");
+        // A matrix other than the identity, or a dim of every unmarked piece, draws styled without a piece style.
+        style.matrix[1] = 0.25f;
+        product.set_view_style(1, &style);
+        expect(product.plan(input, 256, 256).styled, "a colour matrix did not draw styled");
+        style.matrix[1] = 0;
+        style.dim_mode = SA2_STYLE_DIM_UNMARKED; style.dim_amount = 0.5f;
+        product.set_view_style(1, &style);
+        expect(product.plan(input, 256, 256).styled, "a focus dim did not draw styled");
+        product.set_view_style(1, nullptr);
+        expect(!product.plan(input, 256, 256).styled, "a cleared slot draws styled");
+        // Device loss and recovery keep both; an adoption drops the piece style.
+        product.set_view_style(1, &style);
+        bytes[11] = 4;
+        product.set_style(1, bytes.data(), SA2_STYLE_CHANNEL_FILL);
+        product.observe_removal(int32_t(0x887A0005));
+        product.recovered(sa2::DeviceEpoch + 1);
+        input.device_epoch = sa2::DeviceEpoch + 1;
+        expect(product.piece_style() != nullptr && product.plan(input, 256, 256).styled, "a style was lost across device loss and recovery");
+        EngineArrays next(2, 0);
+        product.adopt(sa2::engine_image(&next.image));
+        expect(product.piece_style() == nullptr, "an adoption kept the previous revision's piece style");
+    });
+    // ABI 8 (ADR-D02 B18a): the composite frame's checks, its pane rows and a pick that resolves its pane.
+    suite.check("pane arguments", [] {
+        static_assert(SA2_PANES_MAX == 4u, "the ABI 8 defines changed");
+        sa2::Product product;
+        EngineArrays engine(1, 0);
+        product.adopt(sa2::engine_image(&engine.image));
+        auto input = frame_input(1, 1);
+        const auto pane = [&](uint64_t view, int32_t x, int32_t y, uint32_t w, uint32_t h) {
+            sa2_pane out{};
+            out.view = view; out.view_generation = 1; out.x = x; out.y = y; out.width = w; out.height = h;
+            std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), std::begin(out.camera_matrix));
+            return out;
+        };
+        sa2_pane two[2] = {pane(1, 0, 0, 128, 256), pane(2, 128, 0, 128, 256)};
+        auto plan = product.plan_panes(input, two, 2, 256, 256);
+        expect(plan.panes.size() == 2 && plan.panes[1].pane.view == 2 && !plan.panes[0].styled && !plan.panes[1].set_ticket,
+            "two panes were not planned");
+        const auto refused = [&](auto change, uint32_t count = 2) {
+            sa2_pane copy[2] = {two[0], two[1]};
+            auto frame = input;
+            change(copy, frame);
+            return rejects([&] { product.plan_panes(frame, copy, count, 256, 256); });
+        };
+        expect(refused([](sa2_pane*, sa2_frame_input&) {}, 0) && rejects([&] { product.plan_panes(input, nullptr, 1, 256, 256); }),
+            "a composite frame without panes was accepted");
+        sa2_pane five[5] = {pane(1, 0, 0, 32, 32), pane(2, 32, 0, 32, 32), pane(3, 64, 0, 32, 32), pane(4, 96, 0, 32, 32), pane(5, 128, 0, 32, 32)};
+        expect(rejects([&] { product.plan_panes(input, five, 5, 256, 256); }), "a fifth pane was accepted");
+        expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].x = 127; }), "overlapping panes were accepted");
+        expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].x = 200; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[0].y = -1; })
+            && refused([](sa2_pane* p, sa2_frame_input&) { p[1].width = 0; }), "a pane outside the target or empty was accepted");
+        expect(refused([](sa2_pane* p, sa2_frame_input&) { p[1].flags = 2; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[1].flags = 1 | 4; }) && refused([](sa2_pane* p, sa2_frame_input&) { p[1].style = 5; })
+            && refused([](sa2_pane* p, sa2_frame_input&) { p[1].camera_matrix[3] = std::numeric_limits<float>::infinity(); }),
+            "a pane's flags, style or camera was accepted out of range");
+        expect(refused([](sa2_pane*, sa2_frame_input& f) { f.view = 2; }) && refused([](sa2_pane*, sa2_frame_input& f) { f.camera_matrix[1] = 0.5f; }),
+            "a frame input that is not the first pane's was accepted");
+        // A pane's set prepared at another engine revision refuses the whole frame.
+        PreparationArrays arrays(2, 1, 1);
+        arrays.value.base_revision = 2;
+        const auto readied = ready_set(product, sa2::preparation(&arrays.value), 0);
+        const uint8_t stamp[32]{};
+        product.activate(readied.second, stamp);
+        two[1].resource_set = readied.second;
+        expect(wrong_state([&] { product.plan_panes(input, two, 2, 256, 256); }), "a pane of another engine revision was accepted");
+        // Another view's set keeps its own publication generation (3 here, the frame's is 1).
+        PreparationArrays current(2, 1, 3);
+        current.value.base_revision = 1;
+        const auto good = ready_set(product, sa2::preparation(&current.value), 0);
+        product.activate(good.second, stamp);
+        two[1].resource_set = good.second;
+        plan = product.plan_panes(input, two, 2, 256, 256);
+        expect(plan.panes[1].set_ticket == good.first && plan.panes[1].publication_generation == 3
+            && plan.panes[0].publication_generation == input.publication_generation, "a pane's set was not planned");
+        product.commit(input, plan, 1, 0);
+        expect(wrong_state([&] { product.pane_rows(1, nullptr, 0); }), "pane rows were answered before the frame produced");
+        product.produced(1, 100, 7);
+        product.pane_evals(1, {3, 4});
+        sa2_pane_row rows[4]{};
+        for (auto& row : rows) row.struct_size = sizeof(row);
+        expect(product.pane_rows(1, rows, 4) == 2 && rows[0].view == 1 && rows[1].view == 2 && rows[0].vertex_evals == 3
+            && rows[1].vertex_evals == 4 && rows[1].pane == 1, "the pane rows are wrong");
+        // A pick resolves its pane: the right pane has a set (an ID pass), the left none, a point outside is refused.
+        auto pick = product.pick_plan(1, 200, 10);
+        expect(pick.pane == 1 && pick.pass && pick.input.origin_x == 128 && pick.input.view_width == 128 && pick.input.width == 256,
+            "a pick in the right pane did not plan that pane's ID pass");
+        pick = product.pick_plan(1, 10, 10);
+        expect(pick.pane == 0 && !pick.pass && pick.state == SA2_PICK_READY, "a pick in the left pane did not resolve it");
+        product.pick_commit(9, pick, 0);
+        bool release = false;
+        const auto row = product.pick_poll(9, 0, [] { return 0u; }, release);
+        expect(row.view == 1 && row.state == SA2_PICK_READY, "a pane pick did not name its view");
+        input.sequence = 2;
+        auto one = product.plan(input, 256, 256);
+        product.commit(input, one, 2, 1);
+        product.produced(2, 100, 7);
+        expect(wrong_state([&] { product.pane_rows(2, rows, 4); }), "a one-view frame answered pane rows");
+    });
+    suite.check("preview poses and panes", [] {
+        sa2::Product product;
+        EngineArrays engine(1, 1), preview(1, 2);
+        product.adopt(sa2::engine_image(&engine.image));
+        auto input = frame_input(1, 1);
+        sa2_pane panes[2]{};
+        for (uint32_t i = 0; i < 2; ++i) {
+            panes[i].view = i + 1; panes[i].view_generation = 1;
+            panes[i].x = int32_t(i * 128); panes[i].width = 128; panes[i].height = 256;
+            std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), std::begin(panes[i].camera_matrix));
+        }
+        panes[1].flags = SA2_PANE_PREVIEW;
+        const auto plan = [&] { return product.plan_panes(input, panes, 2, 256, 256); };
+        expect(rejects(plan), "a preview pane without a pose set was accepted");
+
+        preview.pose_index[0] = 1;
+        preview.poses[16] = preview.poses[21] = -1.0f;
+        std::vector<uint8_t> mask(SA2_PIECES, 0);
+        mask[0] = 1;
+        const auto set = [&](uint64_t revision, uint32_t pieces) {
+            product.set_preview_poses(revision, preview.pose_index.data(), pieces, preview.poses.data(), preview.lattice.data(), 2, mask.data());
+        };
+        expect(rejects([&] { set(2, SA2_PIECES); }) && rejects([&] { set(1, SA2_PIECES - 1); }),
+            "an invalid preview revision or piece count was accepted");
+        const float u[4]{1, 0, 0, 0}, v[4]{0, 1, 0, 0};
+        product.set_transform(1, u, v, 1.0f, mask.data(), 0.5f);
+        product.observe_removal(int32_t(0x887A0005));
+        set(1, SA2_PIECES);
+        product.set_preview_transform(1, u, v, 1.0f, mask.data(), SA2_PIECES, 0.25f);
+        product.recovered(sa2::DeviceEpoch + 1);
+        input.device_epoch = sa2::DeviceEpoch + 1;
+        expect(rejects([&] { product.set_preview_transform(1, u, v, 1.0f, mask.data(), SA2_PIECES, 1.25f); }),
+            "an invalid preview phase was accepted");
+        const auto drawn = plan();
+        expect(drawn.image->pose_index[0] == 0 && drawn.pose_count == 1
+            && drawn.preview && drawn.preview->poses.pose_index[0] == 1 && drawn.preview->poses.pose_count == 2
+            && drawn.panes[0].shape.turn == -0.5f && drawn.panes[1].shape.turn == 0.25f,
+            "the preview or the main pane lost its independent pose and transform across recovery");
+
+        panes[1].flags |= SA2_PANE_PREVIEW_BEFORE;
+        expect(plan().panes[1].shape.turn == 0, "the Before pane applied a transform");
+        panes[1].flags = SA2_PANE_PREVIEW;
+        PreparationArrays arrays(2, 1, 1);
+        arrays.value.device_epoch = input.device_epoch;
+        arrays.value.base_revision = input.engine_revision;
+        const auto prepared = ready_set(product, sa2::preparation(&arrays.value), 0);
+        const uint8_t stamp[32]{};
+        product.activate(prepared.second, stamp);
+        panes[1].resource_set = prepared.second;
+        product.commit(input, plan(), 1, 0);
+        product.produced(1, 100, 1);
+        const auto pick = product.pick_plan(1, 180, 10);
+        expect(!pick.pass && pick.state == SA2_PICK_READY && pick.pane == 1, "the preview pane could be picked");
+
+        input.sequence = 2;
+        panes[1].resource_set = 0;
+        panes[1].flags = 0;
+        const auto plain = plan();
+        expect(!plain.preview && plain.panes[0].shape.turn == -0.5f && plain.panes[1].shape.turn == -0.5f,
+            "a set without a flagged pane affected the frame");
+        panes[1].flags = SA2_PANE_PREVIEW;
+        product.set_preview_poses(1, nullptr, 0, nullptr, nullptr, 0, nullptr);
+        expect(rejects(plan), "clearing left a preview");
+        set(1, SA2_PIECES);
+        EngineArrays next(2, 1);
+        product.adopt(sa2::engine_image(&next.image));
+        input.engine_revision = 2;
+        expect(rejects(plan), "a new adoption kept the old preview");
     });
     // ABI 5, route B (accepted for now by the owner on 18 Nov 2026, pending
     // three owner-machine checks): the argument checks, the present ledger's
@@ -1417,7 +1849,7 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(partial, "a partial triangle was bounded");
     });
 }
-Options parse(int argc, char** argv) {
+Options parse(int argc, char** argv, bool& colours, bool& error_overlay) {
     Options options;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
@@ -1428,6 +1860,17 @@ Options parse(int argc, char** argv) {
         } else if (arg == "--debug") options.debug = true;
         else if (arg == "--stages") options.stages = true;
         else if (arg == "--poses") options.poses = true;
+        else if (arg == "--shape") options.shape = true;
+        else if (arg == "--style") options.style = true;
+        else if (arg == "--panes") options.panes = true;
+        else if (arg == "--focus") options.focus = true;
+        else if (arg == "--sweep") options.sweep = true;
+        else if (arg == "--slice") options.slice = true;
+        else if (arg == "--raw") options.raw = true;
+        else if (arg == "--colours") colours = true;
+        else if (arg == "--error") error_overlay = true;
+        else if (arg == "--hopf") options.hopf = value();
+        else if (arg == "--chart") { options.hopf = value(); options.chart = true; } // ADR-D02 B22 item 1
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
             const auto text = value();
@@ -1468,12 +1911,40 @@ Options parse(int argc, char** argv) {
     // C9 jumble-on: the product pose check runs on WARP only, alone.
     expect(!options.poses || (options.mode == "warp" && options.child.empty() && !options.stages && options.measure.empty()),
         "--poses requires --warp, without --stages or --measure-stages");
+    // ABI 6: the view shape check runs on WARP only, alone.
+    expect(!options.shape || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses
+        && options.measure.empty()), "--shape requires --warp, without --stages, --poses or --measure-stages");
+    // ABI 7: the piece style check runs on WARP only, alone.
+    expect(!options.style || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && options.measure.empty()), "--style requires --warp, without --stages, --poses, --shape or --measure-stages");
+    // ABI 8: the composite frame check runs on WARP only, alone.
+    expect(!options.panes || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && options.measure.empty()), "--panes requires --warp, alone");
+    // ABI 9: the view focus check runs on WARP only, alone.
+    expect(!options.focus || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && options.measure.empty()), "--focus requires --warp, alone");
+    // ABI 10: the view layout check runs on WARP only, alone.
+    expect(options.hopf.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.measure.empty()), "--hopf requires --warp, alone");
+    // ADR-D02 B18: the transform check runs on WARP only, alone.
+    expect(!options.sweep || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.hopf.empty() && options.measure.empty()), "--sweep requires --warp, alone");
+    // ADR-D02 B20: the slice check runs on WARP only, alone.
+    expect(!options.slice || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.hopf.empty() && !options.sweep && options.measure.empty()),
+        "--slice requires --warp, alone");
+    expect(!colours || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.hopf.empty() && !options.sweep && !options.slice
+        && options.measure.empty() && !options.prepares), "--colours requires --warp, alone");
+    expect(!error_overlay || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.hopf.empty() && !options.sweep && !options.slice
+        && !options.raw && !colours && options.measure.empty() && !options.prepares), "--error requires --warp, alone");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
     // C9 (26 Nov 2026): the preparation timing needs a device and runs alone.
     expect(!options.prepares || (options.mode != "cpu" && options.child.empty() && !options.stages && !options.poses
-        && options.measure.empty() && !options.out.empty()), "--measure-prepare requires --warp or --hardware and --out, alone");
+        && !options.shape && !options.style && !options.panes && options.measure.empty() && !options.out.empty()), "--measure-prepare requires --warp or --hardware and --out, alone");
     return options;
 }
 }
@@ -1481,7 +1952,8 @@ Options parse(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     try {
-        const auto options = sa2test::parse(argc, argv);
+        bool colours = false, error_overlay = false;
+        const auto options = sa2test::parse(argc, argv, colours, error_overlay);
         if (!options.child.empty()) return sa2test::run_child(options);
         if (!options.measure.empty()) {
             sa2test::run_measure(options);
@@ -1497,6 +1969,17 @@ int main(int argc, char** argv) {
         if (options.mode == "cpu") sa2test::run_cpu(suite, options);
         else if (options.stages) sa2test::run_stages(suite, options);
         else if (options.poses) sa2test::run_poses(suite, options);
+        else if (options.shape) sa2test::run_shape(suite, options);
+        else if (options.style) sa2test::run_style(suite, options);
+        else if (options.panes) sa2test::run_panes(suite, options);
+        else if (options.focus) sa2test::run_focus(suite, options);
+        else if (options.chart) sa2test::run_chart(suite, options);
+        else if (!options.hopf.empty()) sa2test::run_hopf(suite, options);
+        else if (options.sweep) sa2test::run_sweep(suite, options);
+        else if (options.slice) sa2test::run_slice(suite, options);
+        else if (options.raw) sa2test::run_raw(suite, options);
+        else if (colours) sa2test::run_colours(suite, options);
+        else if (error_overlay) sa2test::run_error(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

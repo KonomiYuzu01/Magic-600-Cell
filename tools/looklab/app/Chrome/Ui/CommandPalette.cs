@@ -12,6 +12,7 @@ public abstract partial class ChromeOverlay : Control
     protected PanelContainer Panel { get; } = new() { ThemeTypeVariation = "OverlayBox" };
     protected Func<TokenSet> Tokens { get; }
     public bool IsOpen => Visible;
+    public MotionTable? Motions { get; set; }
     public event Action? Closed;
     private Tween? fade;
 
@@ -29,14 +30,24 @@ public abstract partial class ChromeOverlay : Control
     // One overlay at a time: opening one closes the others.
     public virtual void Open()
     {
+        bool opening = !Visible;
         if (GetParent() is { } parent) foreach (ChromeOverlay other in parent.GetChildren().OfType<ChromeOverlay>()) if (other != this) other.Close();
         Visible = true; MoveToFront();
-        fade?.Kill(); Modulate = Modulate with { A = 1 };
-        if (!Tokens().ReducedMotion && IsInsideTree()) { Modulate = Modulate with { A = 0 }; fade = CreateTween(); fade.TweenProperty(this, "modulate:a", 1f, Tokens().Duration("fast") / 1000); }
+        if (!opening || !IsInsideTree()) return;
+        TokenSet t = Tokens();
+        double seconds = Motions?.Seconds(MotionUses.DockOpen, t.System, t.ReducedMotion)
+            ?? (t.ReducedMotion ? 0 : t.Duration("fast") / 1000);
+        if (seconds <= 0) return;
+        double[] curve = t.System.Curves[Motions?[MotionUses.DockOpen].Curve ?? "linear"];
+        Modulate = Modulate with { A = 0 };
+        fade = CreateTween();
+        fade.TweenMethod(Callable.From<float>(phase =>
+            Modulate = Modulate with { A = phase >= 1 ? 1 : (float)MotionTable.Ease(curve, phase) }), 0f, 1f, seconds);
     }
+    internal void FinishOpening() { fade?.Kill(); fade = null; Modulate = Modulate with { A = 1 }; }
     // A key pressed while the overlay is open and no text field holds the focus; true when the overlay used it.
     public virtual bool Key(string key) => false;
-    public void Close() { if (!Visible) return; Visible = false; Safe.Raise(Closed); }
+    public void Close() { if (!Visible) return; FinishOpening(); Visible = false; Safe.Raise(Closed); }
 }
 
 // The command palette (ADR-D01.18): every command of the registry, filtered by what is typed and ordered only
@@ -46,6 +57,8 @@ public abstract partial class ChromeOverlay : Control
 public sealed partial class CommandPalette : ChromeOverlay
 {
     public const int Shown = 12;
+    // A host's draft rows (ADR-D02's command-rows-d02.json): each row shows the words "draft row".
+    public ISet<string> DraftRows { get; } = new HashSet<string>(StringComparer.Ordinal);
     public PaletteModel Model { get; }
     public LineEdit Query { get; } = new() { PlaceholderText = "Search commands, or > to type one", ClearButtonEnabled = true, Name = "PaletteQuery" };
     public Label Help { get; } = new() { ThemeTypeVariation = "DimLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart, Name = "PaletteHelp" };
@@ -175,6 +188,7 @@ public sealed partial class CommandPalette : ChromeOverlay
             Label label = ChromeWidgets.Text(row.Label, row.Unavailable == null ? "" : "DimLabel", true); line.AddChild(label);
             if (row.Alias != null) { Label alias = ChromeWidgets.Text("= " + row.Alias, "AccentLabel"); alias.TooltipText = "Your alias for this row"; line.AddChild(alias); }
             if (row.Unavailable != null) { Label tag = ChromeWidgets.Text("unavailable", "MicroLabel"); tag.AddThemeColorOverride("font_color", tokens.C("severity.warning")); line.AddChild(tag); }
+            if (DraftRows.Contains(row.Command)) { Label draft = ChromeWidgets.Text("draft row", "MicroLabel"); draft.TooltipText = "Not in the command table yet: a row this build asks for"; line.AddChild(draft); }
             line.AddChild(ChromeWidgets.Text(row.Location, "MicroLabel"));
             if (row.Keys.Length > 0)
             {

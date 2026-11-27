@@ -56,6 +56,10 @@
       "glyph": "sliders-horizontal",
       "fallback": "~"
     },
+    "panel.tuning": {
+      "glyph": "sliders-vertical",
+      "fallback": "T"
+    },
     "panel.appearance": {
       "glyph": "palette",
       "fallback": "A"
@@ -160,6 +164,8 @@
       "glyph": "git-branch",
       "fallback": "Y"
     },
+    "mark.jumble": {"glyph": "square-dashed-bottom", "fallback": "J"},
+    "panel.capmap": {"glyph": "map", "fallback": "Cm"},
     "mark.pending": {
       "glyph": "hourglass",
       "fallback": "~"

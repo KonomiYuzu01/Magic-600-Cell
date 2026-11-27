@@ -2,6 +2,18 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-27] decision | The gate's p99 bar of 33.3 ms is two refreshes
+The owner read the renderer gate's 33.3 ms bar as 1/30 s, so a 99th-percentile frame time of two refreshes of a 60 Hz display passes ([decision](decisions/owner-decisions-2026-11-27-gate-reading.md)).
+
+## [2026-11-26] decision | ADR-D02's build: all of ADR-D01 as the base, one shared UI library, the order of work and the week's quota
+The owner made all of ADR-D01 the base of D02's build, put all UI and wiring in the shared library with reuse first, cancelled the evening's other runs so D02 builds through the night, set the order of work on parallel tracks with slow generation in Rust, and asked that the whole of D02 fit this week's quota ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), sections 14 to 18).
+
+## [2026-11-26] decision | ADR-D02's build: the owner's view in the product, no checkpoint stops, Fable then Astra
+Watching the product window, the owner asked that it turn with the mouse, open on the owner's view of 22 November with smaller stickers, and show only the turning cells in Local; that the build not stop at checkpoints and run as fast as possible, with the drawing as a second track; and that the finished build get one Fable refinement round, then two Astra rounds, then the freeze ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), sections 8 to 11).
+
+## [2026-11-26] decision | ADR-D01's frame in the product on sample data; B5 and B6 without a stop
+The owner asked for ADR-D01's whole frame in the product shell while ADR-D02 is built, and for B5 and B6 to follow without a stop for the owner's check ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), section 7). This pulls the frame on sample data, part of ADR-D03's scope, into ADR-D02's pull request; [the framework](../progress/1.0/adr-d02-build-framework.md) records it as step B4a.
+
 ## [2026-11-26] update | Codex CLI pinned to 0.171.0
 The server refused gpt-6.2-sol and gpt-6.2-astra to codex-cli 0.159.0 on a ChatGPT sign-in, so the pin moved to 0.171.0 at the owner's request. The [MCP isolation evidence](evidence/codex-mcp-isolation.md) records what was checked on 0.171.0 and that its harness rerun is still owed.
 
@@ -19,6 +31,9 @@ The owner added the log and document flow as the sixth flow of stage 2's usable 
 
 ## [2026-11-26] decision | LQ2's joint setting: BS2 and policy table version 1
 The owner took every recommended option at LQ2's joint setting ([decision](decisions/owner-decisions-2026-11-26-lq2.md)): BS2, the flow rule on with `own` and `forked_built_in` admitted, and the eight open questions of BND.74 answered. Overlay OV-5 in [the overlay register](../progress/1.0/language-overlays.md) records policy table version 1; LP6 implements it, and LP6's start conditions are met.
+
+## [2026-11-26] decision | ADR-D02's build framework: product shell, two views, researcher subagent, wait
+The owner answered five questions on ADR-D02's build framework, on two cards: build, watch and accept in the product shell with Look Lab dropped and Jumble drawing built now; add one lean researcher subagent to J0 and J1; draw two views, Global and Local, at once; build and measure the drawing before R5; and wait before B1. The owner also asked that the live-build window never sit on top or take focus ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md)). Fable's revision 2 of the framework, with the two-view steps, has 36 steps, six checkpoints and two gate sittings.
 
 ## [2026-11-26] decision | LP4 human tests: M24 counts, no rerun, the line ends
 The owner let the mathematician's post-run ruling M24 count, set no rerun after the fixes, and closed the human-test line with its results pull request ([decision](decisions/owner-decisions-2026-11-26-human-tests.md)). `jumble_checker` and `representations` take the record fixes M25 and M30.

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using Godot;
 
 namespace Magic600.Shell;
@@ -53,13 +55,45 @@ public partial class Shell : Control
     private bool _hadFocus;
     private bool _focused;
     private bool _session;
+    /// <summary>Brief SF2: posted keys waiting for their commit answer, by ticket.</summary>
+    private readonly Dictionary<ulong, PostedKey> _posted = new();
+
+    private sealed record PostedKey(string Chord, long Qpc, bool StaticMotion, long Arming, long Posted);
     /// <summary>The engine revision of the newest presentation the core confirmed.</summary>
     private ulong _shownRevision;
+    /// <summary>The shown revision at which ADR-D02 last bound a sample state to the session (B5).</summary>
+    private ulong? _boundRevision;
+    // The engine revision the last submitted frame drew: the adopted head, shown on screen or not.
+    private ulong _adoptedRevision;
     private Vector2I _size;
     /// <summary>The 3D frame submitted in this process frame, for the next ui_frame row.</summary>
     private ulong? _submittedThisFrame;
     private long _preDrawQpc;
     private bool _uiFrames;
+    // SF6 (27 Nov 2026): the frame thread's marks in one Godot frame, noted only while the event log is on. A frame whose
+    // post-draw follows the last one by over 25 ms writes them as a "hole" steps row (FrameHole): each part runs from
+    // the mark before it to its own, so the parts tile the frame thread's time between the two post-draws.
+    private enum Mark { Tree, First, Shell, Keys, Openings, Apply, Frame, Presented, Shown, Bind, Last, Deferred, Count }
+    private static readonly string[] MarkParts =
+        { "idle", "tree", "early", "keys", "openings", "apply", "m6h_frame", "presented", "shown", "bind", "late",
+          "deferred" };
+    private long _nodesAtShell, _nodesAtBind, _objectsAtShell;
+    // The deferred marks the bind queued (each after the deferred calls of its part), in queue order.
+    private readonly List<(string Name, long At)> _queued = new();
+    private void Queue(string name) => Callable.From(() => _queued.Add((name, EventLog.Now()))).CallDeferred();
+    private static long Count(Performance.Monitor monitor) => (long)Performance.GetMonitor(monitor);
+    private readonly long[] _marks = new long[(int)Mark.Count];
+    private long _lastDrawn;
+    private TimeSpan _gcPause;
+    private int _gcCount;
+    private SceneTree? _markedTree;
+    private void Note(Mark mark)
+    {
+        if (_uiFrames)
+        {
+            _marks[(int)mark] = EventLog.Now();
+        }
+    }
     private readonly List<IShellModule> _modules = new();
     /// <summary>LP4-3's editor panel, one of <see cref="_modules"/> when M600_EDITOR is 1.</summary>
     private Editor.EditorPanel? _editor;
@@ -74,14 +108,37 @@ public partial class Shell : Control
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
     /// <summary>The frame (A5): the chrome library over the window. Null unless M600_CHROME is 1.</summary>
     private ShellChrome? _chrome;
+    private bool _contextMenuPress;
+    /// <summary>True while the context menu holds the pointer: Turn and ViewAt then answer nothing.</summary>
+    private bool _menuPointer;
     /// <summary>The window rectangle the core's surface has, the one the frame's opening asks for, and for how many
     /// process steps it has asked for it.</summary>
     private Rect2I _area;
+    // ADR-D02 (owner, 26 November 2026): with --d02 a drag in the Global opening turns the camera as Look Lab's does.
+    private static D02.ShellCamera _camera => D02.ShellJumble.Camera;
     private Rect2I _wanted;
     private int _steady;
+    // ADR-D02 B18c: Local is open (with --d02), the cap it is focused on (-1 before the first step), and the two openings
+    // the pane table was last set for (both empty while one-view frames are drawn).
+    private bool _localOpen;
+    // ADR-D02 B23: Global is drawn as the Hopf rings, so its camera is the linked 3D spin (the ring sheet ignores it).
+    private bool _hopf;
+    private int? _localCap = -1;
+    private bool _localHidden;
+    private const string HiddenLocalWords = "Local is hidden (view.local shows it again on its cap, linked to Global).";
+    private (Rect2I Global, Rect2I Local) _paned;
+    private bool _panedSplit; // ADR-D02 B20: whether the pane table holds the held split's two copies
+    private (bool On, bool Antipode) _panedRaw; // ADR-D02 B21: the raw view the pane table holds
+    private double? _localRaw; // ADR-D02 B21: the raw view's clip Local's focus was sent with (null: no raw view)
+    private Magic600.Chrome.PaneLayout? _layout;
 
     public override void _Ready()
     {
+        // ADR-D02's watched start (B4): when Godot activated the window, the foreground goes straight back.
+        if (D02.ShellJumble.On)
+        {
+            D02.D02Window.Settle();
+        }
         GetViewport().TransparentBg = true;
         if (InputLog.Requested())
         {
@@ -127,7 +184,12 @@ public partial class Shell : Control
         }
         try
         {
-            _chrome = new ShellChrome(this, folder, _host != IntPtr.Zero);
+            _chrome = new ShellChrome(this, folder, _host != IntPtr.Zero, () => RotationLinked);
+            if (_chrome.Sample is { } sample && D02.ShellJumble.On)
+            {
+                WireSample(sample);
+            }
+            WireGrip();
             if (_echo is { } echo)
             {
                 MoveChild(echo, -1);
@@ -137,6 +199,110 @@ public partial class Shell : Control
         {
             GD.PushError($"the frame did not open: {error.Message}");
         }
+    }
+
+    /// <summary>ADR-D01.41: the rotation link the frames mark: none without Local, else whether Local is linked.</summary>
+    internal bool? RotationLinked => _localOpen ? D02.ShellLocal.Linked : null;
+
+    // ADR-D01.22 under --d02: Global's shape as last sent (cell shrink, sticker shrink, d4 and the opening's zoom, which
+    // the wheel scales) and its projection, or null while the core is not open; and each view's frame field as last seen.
+    private float[]? _globalShape;
+    private uint _globalProjection = HostLibrary.ProjectionPerspective;
+    private readonly Dictionary<string, double> _frameSeen = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Sample mode under --d02: the hooks of the shared library that the host sets. ADR-D01.62: the strip's anchors sit
+    /// where the core draws each view (its own projection, ported to Chrome/Model/CorePlaces.cs). ADR-D01.22: a View
+    /// edit in the inspector is drawn on the view it is written for, and Global's section starts from what is drawn.
+    /// </summary>
+    private void WireSample(LookLab.App.Live.SampleMount sample)
+    {
+        var opening = D02.ShellShape.Read(D02.ShellShape.OpeningPath());
+        if (sample.Places is { } places)
+        {
+            sample.GlobalView = () => _hopf || _chrome?.Opening() is not { Size.X: > 0, Size.Y: > 0 } g ? null
+                : GlobalProjection(opening, (double)g.Size.X / g.Size.Y);
+            sample.LocalView = () => _chrome?.LocalOpening() is { Size.X: > 0, Size.Y: > 0 } l
+                ? LocalProjection(places, (double)l.Size.X / l.Size.Y) : null;
+        }
+        if (_host == IntPtr.Zero || _hostLibrary is null)
+        {
+            return;
+        }
+        // Global's shape was set from opening.json when the core opened (Open): the section shows what is drawn.
+        _globalShape = opening;
+        sample.Views.Sync("Global", Magic600.Chrome.ViewFields.CellShrink, opening[0]);
+        sample.Views.Sync("Global", Magic600.Chrome.ViewFields.StickerShrink, opening[1]);
+        foreach (var view in Magic600.Chrome.ViewFields.Views)
+        {
+            _frameSeen[view] = sample.Views.Value(view, Magic600.Chrome.ViewFields.Frame);
+        }
+        sample.ApplyView = ApplyView;
+    }
+
+    /// <summary>
+    /// ADR-D01.22: draws a view's View fields on the core (cell shrink, sticker shrink and projection; 1 is
+    /// orthographic) and answers why it did not, or null. Global's shape keeps the wheel's zoom; Local's new shape and
+    /// focus are sent again by the follow code at the next step. The core draws no frame marks, so the frame field is
+    /// answered with a reason.
+    /// </summary>
+    private string? ApplyView(string view, Magic600.Chrome.ViewFields fields)
+    {
+        if (_host == IntPtr.Zero || _hostLibrary is not { } library)
+        {
+            return "the core is not open";
+        }
+        var cell = (float)fields.Value(view, Magic600.Chrome.ViewFields.CellShrink);
+        var sticker = (float)fields.Value(view, Magic600.Chrome.ViewFields.StickerShrink);
+        var projection = fields.Value(view, Magic600.Chrome.ViewFields.Projection) == 1
+            ? HostLibrary.ProjectionOrthographic : HostLibrary.ProjectionPerspective;
+        if (view == "Global" && _globalShape is { } global)
+        {
+            var shape = new[] { cell, sticker, global[2], global[3] };
+            var code = D02.ShellShape.Set(library, _host, HostLibrary.View, shape);
+            if (code == HostLibrary.Ok)
+            {
+                code = D02.ShellShape.ApplyZoom(library, _host, HostLibrary.View, D02.ShellJumble.Zoom.Factor(HostLibrary.View));
+            }
+            if (code == HostLibrary.Ok)
+            {
+                code = library.SetViewFocus(_host, HostLibrary.View, projection, HostLibrary.FocusNone, -1, 1);
+            }
+            if (code != HostLibrary.Ok)
+            {
+                return $"the core refused it ({code}: {library.LastError(_host)})";
+            }
+            _globalShape = shape;
+            _globalProjection = projection;
+        }
+        else if (view == "Local" && _localOpen && _localShape is { } local)
+        {
+            _localShape = local with { Projection = projection, Gap = 1 - cell, StickerShrink = sticker };
+            _localCap = -1;
+            _paned = default;
+        }
+        else
+        {
+            return $"{view} is not open";
+        }
+        var frame = fields.Value(view, Magic600.Chrome.ViewFields.Frame);
+        if (_frameSeen.TryGetValue(view, out var seen) && seen != frame)
+        {
+            _frameSeen[view] = frame;
+            return "the core draws no frame marks yet; the value is kept here";
+        }
+        return null;
+    }
+
+    /// <summary>A row-major 4×4 rotation from one sent column-major as it lies (see <see cref="SpinOf"/>).</summary>
+    private static double[] Transposed(double[] m)
+    {
+        var t = new double[16];
+        for (var i = 0; i < 16; i++)
+        {
+            t[i] = m[i % 4 * 4 + i / 4];
+        }
+        return t;
     }
 
     private void Open(string core, string host, string assets)
@@ -173,7 +339,34 @@ public partial class Shell : Control
             throw new InvalidOperationException(
                 $"m6h_create_preloaded answered {code}: {hostLibrary.LastError(IntPtr.Zero)}");
         }
+        if (D02.ShellJumble.On)
+        {
+            hostLibrary.BindPreviewCore(_host, core);
+        }
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
+        // ADR-D02 (owner, 26 November 2026: smaller stickers): with --d02 the view takes the owner's opening shape.
+        Require(hostLibrary, "m6h_set_view_shape", D02.ShellShape.Apply(hostLibrary, _host));
+        // ADR-D02 B23 and B22 (bare): with --d02 and an opening file that names the Hopf rings or the ring sheet, Global
+        // opens on it; the rings turn with the linked 3D spin, the sheet lies flat.
+        var layout = D02.ShellJumble.On ? D02.ShellHopf.Kind(D02.ShellShape.OpeningPath()) : D02.ShellHopf.Chain;
+        if (layout != D02.ShellHopf.Chain && !D02.ShellHopf.Opens(layout))
+        {
+            GD.PushWarning("ADR-D02 B22: the ring sheet is held back (it hangs the GPU); Global opens on the chain");
+            layout = D02.ShellHopf.Chain;
+        }
+        if (layout != D02.ShellHopf.Chain)
+        {
+            Require(hostLibrary, "m6h_set_view_layout", hostLibrary.SetViewLayout(_host, HostLibrary.View,
+                D02.ShellHopf.Layout(D02.ShellHopf.RingsPath(), layout)));
+            _hopf = layout == D02.ShellHopf.Rings;
+            _camera.Dirty = true; // the first step sends the spin as Global's camera
+            D02.ShellHopf.Took(layout);
+        }
+        // ADR-D02 B18c: with --d02 Local opens beside Global with its own shape, hidden until a cap is named.
+        if (D02.ShellJumble.On)
+        {
+            OpenLocal(hostLibrary);
+        }
         _log = EventLog.FromEnvironment();
         if (_log is { } log)
         {
@@ -182,6 +375,23 @@ public partial class Shell : Control
             RenderingServer.FramePreDraw += OnFramePreDraw;
             RenderingServer.FramePostDraw += OnFramePostDraw;
             _uiFrames = true;
+            // SF6: the start of the tree's process step, and the first and the last node's _Process.
+            _markedTree = GetTree();
+            _markedTree.ProcessFrame += OnTreeProcess;
+            AddChild(new FrameMark { ProcessPriority = int.MinValue, At = () => Note(Mark.First) }, false, InternalMode.Front);
+            // The last node also queues a deferred mark: the calls queued while the nodes processed run before it, and
+            // what they queue in turn (a container's sort, a minimum size, a redraw) after it, in "flush".
+            AddChild(new FrameMark
+            {
+                ProcessPriority = int.MaxValue,
+                At = () =>
+                {
+                    Note(Mark.Last);
+                    Callable.From(() => Note(Mark.Deferred)).CallDeferred();
+                },
+            }, false, InternalMode.Back);
+            _gcPause = GC.GetTotalPauseDuration();
+            _gcCount = GC.CollectionCount(0);
             _startup = StartupLog.FromEnvironment();
         }
         if (withSession)
@@ -239,34 +449,131 @@ public partial class Shell : Control
     /// <summary>Routes a key event to the session: a key-down's press goes to the log; a key-up releases it.</summary>
     private void Turn(InputEventKey key, long qpc)
     {
-        if (!_session || _hostLibrary is not { } library || KeyChord.Code(key.PhysicalKeycode) is not { } code)
+        if (!_session || KeyChord.Code(key.PhysicalKeycode) is not { } code)
         {
             return;
         }
+        var input = new Magic600.Chrome.MotionKey(code, KeyChord.Chord(key, code), key.Pressed, key.Echo, qpc);
+        if (!D02.ShellJumble.On || !D02.ShellMotion.TryQueue(input, SendTurn))
+        {
+            SendTurn(input, false);
+        }
+    }
+
+    private void SendTurn(Magic600.Chrome.MotionKey key, bool staticMotion)
+    {
+        if (!_session || _hostLibrary is not { } library) return;
         if (!key.Pressed)
         {
-            library.KeyUp(_host, code);
+            library.KeyUp(_host, key.Code);
             return;
         }
-        var chord = KeyChord.Chord(key, code);
-        var answer = library.KeyDown(_host, chord, key.Echo, out var result);
+        var (chord, qpc) = (key.Chord, key.Qpc);
+        if (D02.ShellExplore.State.On && Magic600.Chrome.MotionQueue.ChangesHead(chord))
+        {
+            if (!key.Echo)
+            {
+                _chrome?.Frame.Say(Magic600.Chrome.ExploreState.CommitRefusal, true);
+            }
+            return;
+        }
+        // Brief SF2: the key goes to the host's ordered key queue and the frame thread keeps drawing; its commit, the
+        // journal write and the digests run on the host's key worker. A twist key arms its certified row (ADR-D02 B18
+        // rest), which the worker reads just before the key, at the head the key will twist. Nothing of the key shows
+        // until its answer arrives (PollKeys).
+        var arming = EventLog.Now();
+        (uint Cap, ulong Item)? arm = null;
+        if (D02.ShellJumble.On && !key.Echo)
+        {
+            D02.ShellGrip.CancelGesture();
+            arm = D02.ShellTurn.ArmFor(chord);
+        }
+        var code = library.KeyPost(_host, chord, key.Echo, arm is not null, arm?.Cap ?? 0, arm?.Item ?? 0, out var ticket);
+        if (code != HostLibrary.Ok)
+        {
+            GD.PushWarning($"m6h_key_post {chord}: {code}: {library.LastError(_host)}");
+            return;
+        }
+        // Under reduced motion no twist sweeps (its rows are 0 s), so the key is static and holds no queue.
+        staticMotion |= !D02.ShellMotion.Sweeps;
+        _posted[ticket] = new PostedKey(chord, qpc, staticMotion, arming, EventLog.Now());
+        D02.ShellMotion.KeyPosted(staticMotion);
+    }
+
+    /// <summary>Brief SF2: applies every commit answer that is ready, in press order; then the host hands the keys still
+    /// waiting to its worker.</summary>
+    private void PollKeys(HostLibrary library)
+    {
+        while (_session)
+        {
+            if (library.KeyPoll(_host, out var answer) != HostLibrary.Ok)
+            {
+                GD.PushWarning($"m6h_key_poll: {library.LastError(_host)}");
+                return;
+            }
+            if (answer.Ticket == 0) break;
+            Answered(library, answer);
+        }
+        var waiting = false;
+        foreach (var posted in _posted.Values) waiting |= !posted.StaticMotion;
+        D02.ShellMotion.KeysAnswered(_posted.Count, waiting);
+    }
+
+    private void Answered(HostLibrary library, HostLibrary.KeyAnswer answer)
+    {
+        if (!_posted.Remove(answer.Ticket, out var posted))
+        {
+            // A queued key-up or focus loss is answered only when it failed.
+            if (answer.Code != HostLibrary.Ok) GD.PushWarning($"m6h_key_up {answer.Ticket}: {answer.Code}: {library.LastError(_host)}");
+            return;
+        }
+        var (chord, qpc) = (posted.Chord, posted.Qpc);
         var handled = EventLog.Now();
-        if (answer != HostLibrary.Ok)
+        if (answer.Code != HostLibrary.Ok)
         {
-            GD.PushWarning($"m6h_key_down {chord}: {answer}: {library.LastError(_host)}");
+            GD.PushWarning($"m6h_key_down {chord}: {answer.Code}: {library.LastError(_host)}");
             return;
         }
-        if (result.Press == HostLibrary.PressCommitted)
+        if (answer.Press == HostLibrary.PressCommitted)
         {
-            _log?.Press(qpc, handled, result.EngineRevision);
-            _chrome?.Committed(chord, result.EngineRevision);
+            D02.ShellTurn.Armed(answer.RowStatus == 1 ? library.KeyRow(_host, answer.Ticket, answer.RowRevision) : null);
+            var rowed = EventLog.Now();
+            _log?.Press(qpc, handled, answer.EngineRevision);
+            var chromeParts = _log != null ? new List<(string Name, long From, long To)>() : null;
+            D02.ShellJumble.BindParts = chromeParts;
+            try
+            {
+                _chrome?.Committed(chord, answer.EngineRevision);
+            }
+            finally
+            {
+                D02.ShellJumble.BindParts = null;
+            }
+            var chromed = EventLog.Now();
+            D02.ShellTurn.Committed(answer.EngineRevision, posted.StaticMotion);
+            var turned = EventLog.Now();
+            D02.ShellStyle.Committed(answer.EngineRevision);
+            // SF (27 Nov 2026), SF2: the steps of a committed key, only while the event log is on. "post" is the frame
+            // thread's at the press; "queued" runs on the host's key worker (the commit) while frames go on; the rest
+            // are the frame thread's at the answer.
+            if (_log is { } keyLog)
+            {
+                var keySteps = new List<(string Name, long From, long To)> { ("post", posted.Arming, posted.Posted), ("queued", posted.Posted, handled),
+                        ("row", handled, rowed), ("chrome", rowed, chromed), ("turn", chromed, turned), ("style", turned, EventLog.Now()) };
+                foreach (var group in (chromeParts ?? new()).GroupBy(p => p.Name))
+                {
+                    keySteps.Add(("chrome." + group.Key, 0, group.Sum(p => p.To - p.From)));
+                }
+                keyLog.Steps("key", qpc, keySteps.ToArray());
+            }
         }
-        else if (result.Press == HostLibrary.PressRefused)
+        else if (answer.Press == HostLibrary.PressRefused)
         {
             _log?.Press(qpc, handled, 0);
             _chrome?.Refused(chord);
+            D02.ShellTurn.Refused();
         }
-        else if (result.Press == HostLibrary.PressOther)
+        else if (answer.Press == HostLibrary.PressOther)
         {
             _chrome?.Stepped(chord);
         }
@@ -289,18 +596,64 @@ public partial class Shell : Control
     /// <summary>Echoes and logs each key press (not a repeat) and mouse click (not the wheel) the window receives.</summary>
     public override void _Input(InputEvent @event)
     {
+        if (@event is InputEventKey previewKey && _editor?.TextFocused != true && _chrome?.TakePreviewKey(previewKey) == true)
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         var qpc = EventLog.Now();
+        bool contextMenuOpen = _chrome?.Frame.OpenOverlay is Magic600.Chrome.ContextMenuOverlay;
+        bool menuPointer = _menuPointer = contextMenuOpen || _contextMenuPress;
+        // A click that closes the menu on press belongs to the menu through release as well.
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left } left)
+            _contextMenuPress = contextMenuOpen && left.Pressed;
+        FollowGripInput(@event, menuPointer);
+        var turned = D02.ShellJumble.On && Turn(@event);
+        if (turned)
+        {
+            GetViewport().SetInputAsHandled();
+        }
+        // ADR-D02 B17: a click (a release that did not turn the camera) picks in the view under it; the pointer hovers.
+        if (D02.ShellJumble.On && _session && !menuPointer)
+        {
+            switch (@event)
+            {
+                case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } up when !turned:
+                    if (SurfacePoint(up.Position) is { } at)
+                    {
+                        if (GripClick(up, at)) GetViewport().SetInputAsHandled();
+                        else D02.ShellPick.Click(at.X, at.Y, ViewAt(up.Position));
+                    }
+                    break;
+                case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false } right when !turned:
+                    if (_chrome is { } menuChrome && menuChrome.Frame.OpenOverlay == null && SurfacePoint(right.Position) != null)
+                    {
+                        menuChrome.OpenContextMenu(right.Position);
+                        GetViewport().SetInputAsHandled();
+                    }
+                    break;
+                case InputEventMouseMotion move:
+                    D02.ShellPick.Point(SurfacePoint(move.Position));
+                    break;
+            }
+        }
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false }) _gripPress = null;
+        // The wheel zooms the view under the pointer (owner, 26 November 2026); it takes no focus.
+        if (D02.ShellJumble.On && D02.ShellJumble.Zoom.Follow(@event, ViewAt))
+        {
+            GetViewport().SetInputAsHandled();
+        }
         if (@event is InputEventKey turn)
         {
             // One router decides (A5): a key the chrome takes never reaches the session, and a key that goes to the
             // session's router never reaches the chrome.
             if (_chrome is not { } chrome)
             {
-                Turn(turn, qpc);
+                if (Sliced(turn)) GetViewport().SetInputAsHandled(); else Turn(turn, qpc);
             }
             else if (!chrome.Takes(turn))
             {
-                Turn(turn, qpc);
+                if (Sliced(turn)) GetViewport().SetInputAsHandled(); else Turn(turn, qpc);
                 // The editor's code field keeps the keys its text focus takes (the router routes by that focus).
                 if (_session && KeyChord.Code(turn.PhysicalKeycode) is not null && _editor?.TextFocused != true)
                 {
@@ -338,6 +691,248 @@ public partial class Shell : Control
         echo.Text = EchoText();
     }
 
+    /// <summary>The Global opening, or the whole window without the frame, in the window's pixels.</summary>
+    private bool InOpening(Vector2 point) =>
+        (_chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize()))
+            .HasPoint(new Vector2I((int)point.X, (int)point.Y));
+
+    /// <summary>
+    /// ADR-D01.40/.41: a drag that starts in Global's opening or in Local's drawn opening turns the rotation that view
+    /// draws from. Linked (the default) both views draw from the one camera, so a drag in either turns both together;
+    /// unlinked, a drag in Local turns only Local's own rotation and a drag in Global only Global's. Each camera keeps
+    /// the three-pixel rule, so a click in either view still picks.
+    /// </summary>
+    private bool Turn(InputEvent input)
+    {
+        if (_menuPointer)
+        {
+            return false;
+        }
+        if (D02.ShellLocal.Linked)
+        {
+            return _camera.Follow(input, point => InOpening(point) || InLocal(point));
+        }
+        var global = _camera.Follow(input, InOpening);
+        var local = D02.ShellLocal.Own.Follow(input, InLocal);
+        return global || local;
+    }
+
+    /// <summary>A window point in Local's drawn opening (through the pane layout's hit), outside Global's.</summary>
+    // SA2_MIN_TEXTURE_PX of renderer/core/include/sa2_interop.h.
+    private const int CoreMinTexture = 128;
+
+    private bool InLocal(Vector2 point) => _localOpen && ViewAt(point) == HostLibrary.Local;
+
+    /// <summary>ADR-D02 B17: a window point in a drawn view as a pixel of the core's surface, or none.</summary>
+    private (uint X, uint Y)? SurfacePoint(Vector2 point)
+    {
+        if (ViewAt(point) is null)
+        {
+            return null;
+        }
+        var x = (int)point.X - _area.Position.X;
+        var y = (int)point.Y - _area.Position.Y;
+        return x >= 0 && y >= 0 && x < _area.Size.X && y < _area.Size.Y ? ((uint)x, (uint)y) : null;
+    }
+
+    /// <summary>
+    /// The drawn view under a window point: Global in its opening, Local in its drawn opening (B18c, through the pane
+    /// layout's hit), else none.
+    /// </summary>
+    private ulong? ViewAt(Vector2 point)
+    {
+        if (_menuPointer)
+        {
+            return null;
+        }
+        if (InOpening(point))
+        {
+            return HostLibrary.View;
+        }
+        if (_layout is { } layout && Magic600.Chrome.ViewPanes.Hit(layout, (int)point.X, (int)point.Y) is { View: "Local" })
+        {
+            return HostLibrary.Local;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// ADR-D02 B18c: opens Local with local-view.json's shape (through <see cref="D02.ShellShape.Set"/>, so the wheel
+    /// scales Local's own zoom), orthographic and spread, hidden until a cap is named.
+    /// </summary>
+    private void OpenLocal(HostLibrary library)
+    {
+        var shape = D02.ShellLocal.Read(D02.ShellLocal.ShapePath());
+        Require(library, "m6h_open_local", library.OpenLocal(_host));
+        _localOpen = true;
+        Require(library, "m6h_set_view_visible", library.SetViewVisible(_host, HostLibrary.Local, false));
+        Require(library, "m6h_set_view_shape", D02.ShellShape.Set(library, _host, HostLibrary.Local, D02.ShellLocal.ViewShape(shape, 1)));
+        Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local, shape.Projection, HostLibrary.FocusNone,
+            -1, shape.Spread));
+        _localShape = shape;
+    }
+
+    private D02.ShellLocal.Shape? _localShape;
+
+    /// <summary>
+    /// ADR-D02 B18c: follows the named cap. Local is focused on it (its pole centred, only its turning region drawn) and
+    /// shown, and the chrome opens Local's slot. Until a cap is named Local draws the default cap 0 (owner, 26 November
+    /// 2026: Local is never empty); only with no state bound is Local hidden behind its empty sentence.
+    /// B17 (ADR-D01.41): a later selection re-frames Local on its sticker's cell while auto-framing is on.
+    /// </summary>
+    private void FollowLocalCap(HostLibrary library)
+    {
+        if (!_localOpen || _localShape is not { } shape)
+        {
+            return;
+        }
+        int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);
+        // ADR-D01's view.local: a hidden Local keeps its cap and the shared camera; the host stops drawing it.
+        var hidden = _chrome?.Frame.LocalHide.Hidden == true;
+        _chrome?.LocalLine(hidden ? HiddenLocalWords : D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);
+        _chrome?.SliceLine(!hidden && _session && D02.ShellLocal.Plan.Jumble && !D02.ShellRaw.On ? D02.ShellSlice.Line(cap) : null);
+        if (cap == _localCap && _localRaw == D02.ShellRaw.Focus && hidden == _localHidden)
+        {
+            return;
+        }
+        _localCap = cap;
+        _localRaw = D02.ShellRaw.Focus;
+        _localHidden = hidden;
+        var cell = cap is int c and >= 0 and < 600 ? (uint)c : HostLibrary.FocusNone;
+        // ADR-D02 B21: the raw view draws Local's stereographic chart from the pole, clipped at its h.
+        var (projection, focusCos) = D02.ShellRaw.Focus is double h && cell != HostLibrary.FocusNone
+            ? (HostLibrary.ProjectionStereographic, (float)h)
+            : (shape.Projection, cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos);
+        Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local, projection, cell, focusCos, shape.Spread));
+        Require(library, "m6h_set_view_visible", library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone && !hidden));
+        if (_chrome is { } chrome)
+        {
+            chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;
+        }
+    }
+
+    /// <summary>
+    /// ADR-D02 B18c: the surface's window rectangle and the pane layout for the openings: Global's alone, or the
+    /// bounding box of Global's and Local's while Local is drawn.
+    /// </summary>
+    private (Rect2I Area, Magic600.Chrome.PaneLayout? Layout) Openings(Rect2I global)
+    {
+        if (!_localOpen || _chrome is not { } chrome || global.Size.X <= 0 || global.Size.Y <= 0)
+        {
+            return (global, null);
+        }
+        var local = chrome.LocalOpening();
+        if (local.Size.X <= 0 || local.Size.Y <= 0)
+        {
+            return (global, null);
+        }
+        try
+        {
+            var layout = Magic600.Chrome.ViewPanes.Layout(new[]
+            {
+                new Magic600.Chrome.PaneSpec("Global", new Magic600.Chrome.PaneRect(global.Position.X, global.Position.Y, global.Size.X, global.Size.Y)),
+                new Magic600.Chrome.PaneSpec("Local", new Magic600.Chrome.PaneRect(local.Position.X, local.Position.Y, local.Size.X, local.Size.Y)),
+            });
+            var s = layout.Surface;
+            return (new Rect2I(s.X, s.Y, s.Width, s.Height), layout);
+        }
+        catch (ArgumentException)
+        {
+            return (global, null);
+        }
+    }
+
+    /// <summary>
+    /// ADR-D02 B18c: sets the host's pane table for the layout the surface now has: Global in pane 0 and Local in pane
+    /// 1, or no pane (one-view frames) while Local is not drawn. Called once the surface has its new rectangle and
+    /// viewport, so the panes lie inside it.
+    /// </summary>
+    // ADR-D02 B20: the cut slice's held keys (the split, the turn preview), after the router gave the key to the
+    // session and never while the editor's text field has focus.
+    private bool Sliced(InputEventKey key) => D02.ShellJumble.On && _session && _hostLibrary is { } library
+        && (!key.Pressed || (_editor?.TextFocused != true && _chrome?.Frame.OpenOverlay == null
+            && GetViewport().GuiGetFocusOwner() is not (LineEdit or TextEdit)))
+        && (D02.ShellSlice.Follow(key, library, _host, _adoptedRevision) || D02.ShellRaw.Follow(key));
+
+    private void SetPanes(HostLibrary library, Rect2I global, Magic600.Chrome.PaneLayout? layout)
+    {
+        var local = layout is null ? default : _chrome!.LocalOpening();
+        var globalPane = layout is null && previewPanes.Length == 0 ? default : global;
+        if (_paned == (globalPane, local) && _panedSplit == D02.ShellSlice.Split && _panedRaw == D02.ShellRaw.PaneKey
+            && panedPreview.SequenceEqual(previewPanes))
+        {
+            return;
+        }
+        Require(library, "m6h_clear_pane", library.ClearPane(_host, 0));
+        Require(library, "m6h_clear_pane", library.ClearPane(_host, 1));
+        Require(library, "m6h_clear_pane", library.ClearPane(_host, 2));
+        if (previewPanes.Length > 0 || panedPreview.Length > 0)
+            Require(library, "m6h_clear_pane", library.ClearPane(_host, 3));
+        uint nextPane = 1;
+        if (layout is not null)
+        {
+            // B17: Global's pane draws with style slot 1. ADR-D02 B20: Local draws its cut slice with slot 2, or, while
+            // the split key is held, as two linked copies of the one view, the outside layer (slot 2) and the inside
+            // layer (slot 3) side by side (D02.ShellStyle sets the three slots).
+            var g = layout.Panes[0].Rect;
+            Require(library, "m6h_set_pane", library.SetPane(_host, 0, HostLibrary.View, g.X, g.Y, (uint)g.Width, (uint)g.Height, 1));
+            // ADR-D02 B21: the raw view draws Local's chart with slot 2 and, with the antipode, the antipode chart beside it.
+            var raw = D02.ShellRaw.On ? D02.ShellRaw.Panes(layout.Panes[1]) : null;
+            var copies = D02.ShellSlice.Panes(layout.Panes[1]);
+            if (raw is not null)
+            {
+                copies = Array.Empty<Magic600.Chrome.SlicePane>();
+            }
+            for (var i = 0; i < copies.Count; i++)
+            {
+                var r = copies[i].Pane.Rect;
+                var slot = copies[i].Layer == Magic600.Chrome.SliceLayer.Inside ? 3u : 2u;
+                Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i + 1, HostLibrary.Local, r.X, r.Y, (uint)r.Width, (uint)r.Height, slot));
+            }
+            for (var i = 0; raw is not null && i < raw.Count; i++)
+            {
+                var r = raw[i].Pane.Rect;
+                Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i + 1, HostLibrary.Local, r.X, r.Y, (uint)r.Width, (uint)r.Height, 2));
+                if (raw[i].Antipode)
+                {
+                    Require(library, "m6h_set_pane_flags", library.SetPaneFlags(_host, (uint)i + 1, HostLibrary.PaneAntipode));
+                }
+            }
+            var first = raw is null ? copies[0].Pane.Rect : raw[0].Pane.Rect;
+            nextPane += (uint)(raw?.Count ?? copies.Count);
+            var aspect = first.Height > 0 ? (double)first.Width / first.Height : 1;
+            if (_localShape is { } shape)
+            {
+                Require(library, "m6h_set_view_shape", D02.ShellShape.Set(library, _host, HostLibrary.Local, D02.ShellLocal.ViewShape(shape, aspect, raw != null)));
+                Require(library, "m6h_set_view_shape", D02.ShellShape.ApplyZoom(library, _host, HostLibrary.Local, D02.ShellJumble.Zoom.Factor(HostLibrary.Local)));
+            }
+        }
+        else if (previewPanes.Length > 0)
+        {
+            var g = global.Position - _area.Position;
+            Require(library, "m6h_set_pane", library.SetPane(_host, 0, HostLibrary.View, g.X, g.Y, (uint)global.Size.X, (uint)global.Size.Y, 1));
+        }
+        SetPreviewPanes(library, nextPane);
+        _paned = (globalPane, local);
+        _panedSplit = D02.ShellSlice.Split;
+        _panedRaw = D02.ShellRaw.PaneKey;
+        _layout = layout;
+    }
+
+    /// <summary>
+    /// A rotation's layout spin as a view camera, as Look Lab's LocalShape.Frame takes it (column-major as it lies):
+    /// Local's camera, and Global's on a Hopf layout.
+    /// </summary>
+    private static float[] SpinOf(D02.ShellCamera camera)
+    {
+        var m = new float[16];
+        for (var i = 0; i < 16; i++)
+        {
+            m[i] = (float)camera.Spin[i];
+        }
+        return m;
+    }
+
     /// <summary>
     /// Follows the foreground: the logs count it lost once the window had it and lost it, or if it never had it.
     /// </summary>
@@ -357,8 +952,123 @@ public partial class Shell : Control
         {
             // The router releases its held keys; their key-ups never arrive.
             library.FocusLost(_host);
+            D02.ShellGrip.FocusLost();
         }
         _focused = focused;
+    }
+
+    private int? _gripPress;
+
+    public override void _Notification(int what)
+    {
+        // ADR-D01.55: focus loss or closing settles the motion and releases held keys; then the grip's own handling.
+        if ((what == (int)NotificationWMWindowFocusOut || what == (int)NotificationWMCloseRequest) && D02.ShellJumble.On)
+        {
+            FlushMotion();
+            D02.ShellMotion.Keys.ReleaseHeldKeys();
+        }
+        if (!D02.ShellJumble.On || !_session) return;
+        if (what == NotificationWMWindowFocusOut) D02.ShellGrip.FocusLost();
+        if (what == NotificationWMWindowFocusOut) D02.ShellSlice.FocusLost();
+        if (what == NotificationWMMouseExit)
+        {
+            D02.ShellPick.Point(null);
+            D02.ShellGrip.CancelGesture();
+        }
+    }
+
+    private bool CanClickGrip() => _session && _chrome?.Frame.OpenOverlay == null && !_menuPointer &&
+        _editor?.TextFocused != true && !D02.ShellExplore.State.On;
+
+    private void FollowGripInput(InputEvent input, bool menuPointer)
+    {
+        if (!D02.ShellJumble.On || !D02.ShellGrip.Model.Ready) return;
+        if (input is InputEventKey key) D02.ShellGrip.Follow(key);
+        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } down)
+        {
+            D02.ShellGrip.CancelGesture();
+            _gripPress = down.CtrlPressed && D02.ShellGrip.Held && !menuPointer && CanClickGrip() &&
+                SurfacePoint(down.Position) != null ? D02.ShellGrip.Gesture : null;
+        }
+        if (input is InputEventMouseMotion && menuPointer) D02.ShellPick.Point(null);
+    }
+
+    private bool GripClick(InputEventMouseButton up, (uint X, uint Y) at)
+    {
+        if (_gripPress is not int press || press != D02.ShellGrip.Gesture || !up.CtrlPressed || !CanClickGrip()) return false;
+        var revision = _adoptedRevision;
+        var qpc = EventLog.Now();
+        var view = ViewAt(up.Position);
+        D02.ShellPick.GripClick(at.X, at.Y, pick =>
+        {
+            if (revision != _adoptedRevision || press != D02.ShellGrip.Gesture || !CanClickGrip()) return true;
+            if (!D02.ShellGrip.ClickHits(pick, revision)) return false;
+            Turn(new InputEventKey { Keycode = Key.J, PhysicalKeycode = Key.J, Pressed = true }, qpc);
+            _hostLibrary?.KeyUp(_host, "KeyJ");
+            return true;
+        }, view);
+        return true;
+    }
+
+    private Magic600.Chrome.CoreView GlobalProjection(float[] opening, double aspect)
+    {
+        var shape = _globalShape ?? opening;
+        return new(_camera.Q, shape[0], shape[1], shape[2], D02.ShellShape.SentZoom(HostLibrary.View) ?? shape[3],
+            aspect, _globalProjection == HostLibrary.ProjectionOrthographic);
+    }
+
+    private Magic600.Chrome.CoreView? LocalProjection(Magic600.Chrome.CorePlaces places, double aspect)
+    {
+        if (_localShape is not { } shape || _localCap is not int cap || cap is < 0 or >= 600) return null;
+        // Local's column-major spin is transposed for the row-major anchor path.
+        var (cell, sticker) = Magic600.Chrome.RawView.Shrinks(D02.ShellRaw.On, shape.Gap, shape.StickerShrink);
+        return new(Transposed(D02.ShellLocal.Camera(_camera).Spin), cell, sticker, shape.D4,
+            D02.ShellShape.SentZoom(HostLibrary.Local) ?? 1, aspect, shape.Projection == HostLibrary.ProjectionOrthographic,
+            places.CellCentre(cap), D02.ShellLocal.FocusCos, shape.Spread);
+    }
+
+    private void WireGrip()
+    {
+        if (!D02.ShellJumble.On || !D02.ShellLocal.Plan.Jumble || !_session || _hostLibrary is not { } library || _chrome == null) return;
+        var places = _chrome.Sample?.Places ?? Magic600.Chrome.CorePlaces.Load(System.Environment.GetEnvironmentVariable("M600_ASSETS")!);
+        _globalShape ??= D02.ShellShape.Read(D02.ShellShape.OpeningPath());
+        D02.ShellGrip.Connect(library, _host, places, () => _adoptedRevision, CanClickGrip, () => GripPanes(places));
+    }
+
+    private IEnumerable<D02.ShellGrip.GripPane> GripPanes(Magic600.Chrome.CorePlaces places)
+    {
+        Rect2 Rect(Magic600.Chrome.PaneRect pane) => new(pane.X + _area.Position.X, pane.Y + _area.Position.Y, pane.Width, pane.Height);
+        if (_chrome?.Opening() is { Size.X: > 0, Size.Y: > 0 } opening && _globalShape is { } shape)
+        {
+            var rect = _layout is { } panes ? Rect(panes.Panes[0].Rect) : new Rect2(opening.Position, opening.Size);
+            var view = GlobalProjection(shape, (double)rect.Size.X / rect.Size.Y);
+            if (D02.ShellHopf.Drawn != D02.ShellHopf.Chain)
+                view = view with { Chart = D02.ShellGrip.Chart(D02.ShellHopf.Drawn, places, Transposed(_camera.Spin)) };
+            yield return new("Global", rect, view);
+        }
+        if (_layout is not { } layout || !_localOpen || _chrome?.LocalOpening() is not { Size.X: > 0, Size.Y: > 0 }) yield break;
+        var local = layout.Panes[1];
+        if (D02.ShellRaw.On)
+        {
+            foreach (var raw in D02.ShellRaw.Panes(local))
+            {
+                var rect = Rect(raw.Pane.Rect);
+                if (LocalProjection(places, (double)rect.Size.X / rect.Size.Y) is { } view)
+                    yield return new(raw.Antipode ? "Local antipode" : "Local", rect,
+                        view with { RawSign = raw.Antipode ? -1 : 1, FocusCos = raw.H });
+            }
+        }
+        else
+        {
+            foreach (var slice in D02.ShellSlice.Panes(local))
+            {
+                var rect = Rect(slice.Pane.Rect);
+                if (LocalProjection(places, (double)rect.Size.X / rect.Size.Y) is not { } view) continue;
+                if (D02.ShellStyle.SliceSent)
+                    view = view with { FocusCos = Math.Cos(slice.Shell.Max) - 1e-5, FocusCosMax = Math.Cos(slice.Shell.Min) + 1e-5 };
+                yield return new(slice.Layer == Magic600.Chrome.SliceLayer.Inside ? "Local inside" : "Local", rect, view);
+            }
+        }
     }
 
     private void Require(HostLibrary library, string name, int code)
@@ -371,17 +1081,32 @@ public partial class Shell : Control
 
     public override void _Process(double delta)
     {
+        Note(Mark.Shell);
+        if (_uiFrames)
+        {
+            _nodesAtShell = Count(Performance.Monitor.ObjectNodeCount);
+            _objectsAtShell = Count(Performance.Monitor.ObjectCount);
+        }
         FollowFocus();
         if (_host == IntPtr.Zero || _hostLibrary is not { } library || _surface is not { } surface)
         {
             return;
         }
         // With the frame (A5) the core's surface lies under the Global view's opening and follows it once the opening
-        // has kept one place for a few steps; without the frame it lies under the whole window.
-        var area = _chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
+        // has kept one place for a few steps; without the frame it lies under the whole window. ADR-D02 B18c: while
+        // Local is drawn, the surface covers the bounding box of both openings, and each is a pane of the frame.
+        PollKeys(library);
+        FollowLocalCap(library);
+        Note(Mark.Keys);
+        var global = _chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
+        repairPreview?.Tick();
+        var (area, layout) = Openings(global);
+        (area, layout) = PreviewOpenings(global, area, layout);
         _steady = area == _wanted ? _steady + 1 : 0;
         _wanted = area;
-        if (area != _area && area.Size.X > 0 && area.Size.Y > 0 && (_chrome is null || _steady >= 6))
+        // The core refuses a surface under SA2_MIN_TEXTURE_PX (sa2_interop.h) on a side: a smaller opening (a frame
+        // still laying out) keeps the last surface instead of failing every frame.
+        if (area != _area && area.Size.X >= CoreMinTexture && area.Size.Y >= CoreMinTexture && (_chrome is null || _steady >= 6))
         {
             if (area.Position != _area.Position)
             {
@@ -392,11 +1117,96 @@ public partial class Shell : Control
             {
                 surface.Resize((uint)size.X, (uint)size.Y);
                 _log?.SwapChain(surface.SwapChain());
+                if (_log is { } sized)
+                {
+                    // SF5 (27 Nov 2026): a "surface" row at each resize of the core's surface, with the Global footer's
+                    // rows and their heights, so a resize a changing readout causes is counted and named (gate_row.py).
+                    var at = EventLog.Now();
+                    var rows = _chrome?.FooterRows() ?? new List<(string Name, float Height)>();
+                    sized.Append(json =>
+                    {
+                        json.WriteString("t", "surface");
+                        json.WriteNumber("qpc", at);
+                        json.WriteNumber("w", size.X);
+                        json.WriteNumber("h", size.Y);
+                        json.WriteStartObject("footer");
+                        foreach (var (name, height) in rows)
+                        {
+                            json.WriteNumber(name, Math.Round(height, 1));
+                        }
+                        json.WriteEndObject();
+                    });
+                }
                 Require(library, "m6h_set_viewport", library.SetViewport(_host, (uint)size.X, (uint)size.Y));
                 _size = size;
             }
             _area = area;
         }
+        if (_localOpen && area == _area)
+        {
+            SetPanes(library, global, layout);
+        }
+        Note(Mark.Openings);
+        // ADR-D02 B22 rest: a palette chart row switches Global's layout at the next step (ADR-D02.9).
+        if (D02.ShellJumble.On && D02.ShellHopf.TakeRequest() is uint wanted && wanted != D02.ShellHopf.Drawn)
+        {
+            var took = library.SetViewLayout(_host, HostLibrary.View,
+                wanted == D02.ShellHopf.Chain ? null : D02.ShellHopf.Layout(D02.ShellHopf.RingsPath(), wanted));
+            if (took == HostLibrary.Ok)
+            {
+                _hopf = wanted == D02.ShellHopf.Rings;
+                _camera.Dirty = true;
+                D02.ShellHopf.Took(wanted);
+            }
+            else
+            {
+                GD.PushWarning($"ADR-D02 B22: m6h_set_view_layout answered {took}: {library.LastError(_host)}");
+            }
+        }
+        var turning = D02.ShellLocal.Camera(_camera);
+        if (D02.ShellJumble.On && (_camera.Dirty || turning.Dirty))
+        {
+            if (_camera.Dirty)
+            {
+                var camera = _hopf ? SpinOf(_camera) : _camera.ColumnMajor();
+                Require(library, "m6h_set_camera", library.SetCamera(_host, camera));
+                D02.ShellLocal.Sent(HostLibrary.View, camera);
+            }
+            // B18c: Local turns with its 3D spin, as Look Lab's Local does, the linked one unless Local is unlinked
+            // (ADR-D01.41); the core turns the cap's pole to +w.
+            if (_localOpen)
+            {
+                var spin = SpinOf(turning);
+                Require(library, "m6h_set_view_camera", library.SetViewCamera(_host, HostLibrary.Local, spin));
+                D02.ShellLocal.Sent(HostLibrary.Local, spin);
+            }
+            _camera.Dirty = false;
+            turning.Dirty = false;
+        }
+        if (D02.ShellJumble.On)
+        {
+            var globalSize = _paned.Global.Size.X > 0 ? _paned.Global.Size : _size;
+            if (globalSize.X > 0 && globalSize.Y > 0)
+                Require(library, "m6h_set_view_shape", D02.ShellShape.RefitGlobal(library, _host,
+                    (double)globalSize.X / globalSize.Y, D02.ShellJumble.Zoom.Factor(HostLibrary.View)));
+            foreach (var view in D02.ShellJumble.Zoom.TakeDirty())
+            {
+                Require(library, "m6h_set_view_shape", D02.ShellShape.ApplyZoom(library, _host, view, D02.ShellJumble.Zoom.Factor(view)));
+            }
+        }
+        // ADR-D02 B17: the selection and hover outlines, sent again for each revision a frame draws; a refusal (before
+        // the first posed adoption) is retried at the next step.
+        if (D02.ShellJumble.On && _session)
+        {
+            D02.ShellStyle.Apply(library, _host, _adoptedRevision, _boundRevision);
+            D02.ShellStatus.Apply(library, _host, _adoptedRevision);
+        }
+        // ADR-D01.52 and .49/.5: the sticker colours and the scene look, sent again until the host takes them.
+        if (D02.ShellJumble.On)
+        {
+            D02.ShellScene.Apply(library, _host);
+        }
+        Note(Mark.Apply);
         _submittedThisFrame = null;
         var submitted = EventLog.Now();
         var code = library.Frame(_host, out var frame);
@@ -405,6 +1215,15 @@ public partial class Shell : Control
         {
             _log?.Frame(frame, submitted, returned);
             _submittedThisFrame = frame.Sequence;
+            _adoptedRevision = frame.EngineRevision;
+            repairPreview?.Follow();
+            D02.ShellTurn.Framed(frame.EngineRevision);
+            D02.ShellStatus.Framed(frame);
+            // ADR-D02 B17: the clicks and hovers of this step ask the ID pass on the frame just submitted.
+            if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))
+            {
+                D02.ShellStyle.Invalidate();
+            }
             if (_session && _firstSubmitted is null && frame.EngineRevision >= _openRevision
                 && frame.PublicationRevision >= _openRevision)
             {
@@ -427,6 +1246,7 @@ public partial class Shell : Control
         {
             GD.PushWarning($"frame: {code}: {library.LastError(_host)}");
         }
+        Note(Mark.Frame);
         int count;
         do
         {
@@ -453,7 +1273,142 @@ public partial class Shell : Control
                 }
             }
         } while (count == _presented.Length);
+        Note(Mark.Presented);
+        // SF3 (27 Nov 2026): the chrome's Describe at a newly shown revision, as a "steps" row when it took over 1 ms.
+        var describing = EventLog.Now();
         _chrome?.Shown(_shownRevision);
+        if (_log is { } shownLog && EventLog.Now() - describing > System.Diagnostics.Stopwatch.Frequency / 1000)
+        {
+            shownLog.Steps("shown", describing, ("describe", describing, EventLog.Now()));
+        }
+        Note(Mark.Shown);
+        // ADR-D02 B5: at each newly adopted revision, the sample state whose digests equal the head's binds. It follows
+        // the revision a submitted frame drew, not the one confirmed on screen: a window behind the owner's presents
+        // nothing, and the facts must still follow the session (checkpoint C1).
+        if (D02.ShellJumble.On && _session && _adoptedRevision != _boundRevision)
+        {
+            _boundRevision = _adoptedRevision;
+            var asking = EventLog.Now();
+            string? digests = library.StateDigest(_host) == HostLibrary.Ok ? library.Answer(_host) : null;
+            // StateDigest reads the engine head. A queued key may have advanced it past the just-adopted frame.
+            bool read = digests != null && library.PreviewReport(_host) == HostLibrary.Ok;
+            if (read)
+            {
+                using var report = JsonDocument.Parse(library.Answer(_host));
+                read = report.RootElement.GetProperty("head_revision").GetUInt64() == _adoptedRevision;
+            }
+            var digested = EventLog.Now();
+            var parts = _log != null ? new List<(string Name, long From, long To)>() : null;
+            D02.ShellJumble.BindParts = parts;
+            if (parts != null)
+            {
+                Queue("before");
+                D02.ShellJumble.PartEnded = Queue;
+            }
+            try
+            {
+                if (read)
+                {
+                    D02.ShellJumble.Bind(digests!, (long)_adoptedRevision);
+                }
+                else
+                {
+                    D02.ShellJumble.Unknown((long)_adoptedRevision);
+                }
+            }
+            finally
+            {
+                D02.ShellJumble.BindParts = null;
+                D02.ShellJumble.PartEnded = null;
+            }
+            // SF (27 Nov 2026): the bind's steps at a newly adopted revision, only while the event log is on; SF3: with
+            // its parts (feed, chip, totals, style, capmap, nu, tint, cards, inspect) between the two totals.
+            if (_log is { } log && parts != null)
+            {
+                var bound = EventLog.Now();
+                // A part that ran more than once in the bind is written once, with its summed time.
+                var summed = new List<(string Name, long From, long To)> { ("state_digest", asking, digested) };
+                foreach (var group in parts.GroupBy(p => p.Name))
+                {
+                    summed.Add((group.Key, 0, group.Sum(p => p.To - p.From)));
+                }
+                summed.Add(("bind", digested, bound));
+                log.Steps("bind", asking, summed.ToArray());
+            }
+        }
+        Note(Mark.Bind);
+        if (_uiFrames)
+        {
+            _nodesAtBind = Count(Performance.Monitor.ObjectNodeCount);
+        }
+    }
+
+    private void OnTreeProcess() => Note(Mark.Tree);
+
+    /// <summary>
+    /// SF6: one "hole" steps row for a frame whose post-draw came over 25 ms after the last: its parts from the last
+    /// post-draw (idle: input, physics, the loop's wait; tree: the tree's first message flush, timers and tweens;
+    /// early and late: the nodes that process before and after the shell; the shell's own parts; flush: the deferred
+    /// calls, layout and redraw callbacks before the draw; draw), the garbage collector's pause and its collections.
+    /// A mark this frame did not note merges into the next part.
+    /// </summary>
+    private void FrameHole(EventLog log, long drawn)
+    {
+        var from = _lastDrawn;
+        var parts = new List<(string Name, long From, long To)>();
+        var previous = from;
+        for (var i = 0; i < (int)Mark.Count; i++)
+        {
+            if (_marks[i] > previous && _marks[i] <= drawn)
+            {
+                parts.Add((MarkParts[i], previous, _marks[i]));
+                previous = _marks[i];
+            }
+        }
+        if (_preDrawQpc > previous)
+        {
+            parts.Add(("flush", previous, _preDrawQpc));
+            previous = _preDrawQpc;
+        }
+        parts.Add(("draw", previous, drawn));
+        // The deferred calls queued while the nodes processed, split at the bind's queued marks: "q.before" (queued
+        // before the bind), "q.<part>" (queued by that part of the bind), "q.after" (queued after it).
+        var deferred = parts.FindIndex(p => p.Name == "deferred");
+        var queued = _queued.Where(q => q.At > from && q.At <= drawn).ToList();
+        if (deferred >= 0 && queued.Count > 0)
+        {
+            var (_, start, end) = parts[deferred];
+            var split = new List<(string Name, long From, long To)>();
+            var at = start;
+            foreach (var (mark, time) in queued)
+            {
+                split.Add(("q." + mark, at, time));
+                at = time;
+            }
+            split.Add(("q.after", at, end));
+            parts.RemoveAt(deferred);
+            parts.InsertRange(deferred, split.GroupBy(p => p.Name).Select(g => (g.Key, 0L, g.Sum(p => p.To - p.From))));
+        }
+        _queued.Clear();
+        var pause = GC.GetTotalPauseDuration() - _gcPause;
+        var collections = GC.CollectionCount(0) - _gcCount;
+        log.Append(json =>
+        {
+            json.WriteString("t", "steps");
+            json.WriteString("what", "hole");
+            json.WriteNumber("qpc", from);
+            foreach (var (name, a, b) in parts)
+            {
+                json.WriteNumber(name + "_ms", Math.Round((b - a) * 1000.0 / System.Diagnostics.Stopwatch.Frequency, 3));
+            }
+            json.WriteNumber("gc_ms", Math.Round(pause.TotalMilliseconds, 3));
+            json.WriteNumber("gc_collections", collections);
+            // Nodes the shell's step added (a rebuilt row), and the objects the whole frame added.
+            json.WriteNumber("nodes_shell", _nodesAtBind - _nodesAtShell);
+            json.WriteNumber("nodes_frame", Count(Performance.Monitor.ObjectNodeCount) - _nodesAtShell);
+            json.WriteNumber("objects_frame", Count(Performance.Monitor.ObjectCount) - _objectsAtShell);
+            json.WriteNumber("total_ms", Math.Round((drawn - from) * 1000.0 / System.Diagnostics.Stopwatch.Frequency, 3));
+        });
     }
 
     /// <summary>Before Godot draws and presents its frame (RenderingServer's frame_pre_draw).</summary>
@@ -470,8 +1425,25 @@ public partial class Shell : Control
         {
             _log?.UiFrame(_preDrawQpc, frameId, drawn);
         }
+        if (_log is { } holes)
+        {
+            if (_lastDrawn != 0 && drawn - _lastDrawn > System.Diagnostics.Stopwatch.Frequency / 40)
+            {
+                FrameHole(holes, drawn);
+            }
+            _lastDrawn = drawn;
+            _gcPause = GC.GetTotalPauseDuration();
+            _gcCount = GC.CollectionCount(0);
+        }
         _submittedThisFrame = null;
         _preDrawQpc = 0;
+    }
+
+    /// <summary>SF6: a node whose _Process notes one mark, the first node to run (lowest priority) or the last.</summary>
+    private sealed partial class FrameMark : Node
+    {
+        public Action? At { get; set; }
+        public override void _Process(double delta) => At?.Invoke();
     }
 
     public override void _ExitTree()
@@ -493,8 +1465,8 @@ public partial class Shell : Control
     }
 
     /// <summary>
-    /// Closes the session: its correctness control runs once, and the run row carries its outcome; the startup log's
-    /// first correct frame carries it too (a control that did not run counts as a failure).
+    /// Drains posted keys before close. The measurement logs require the session's correctness control; otherwise
+    /// CloseCore releases the session with the host.
     /// </summary>
     private void CloseSession()
     {
@@ -502,7 +1474,11 @@ public partial class Shell : Control
         {
             return;
         }
+        // Brief SF2: every posted key is committed and answered before the session closes.
+        if (library.KeyDrain(_host) != HostLibrary.Ok) GD.PushWarning($"m6h_key_drain: {library.LastError(_host)}");
+        PollKeys(library);
         _session = false;
+        if (_log is null && _startup is null) return;
         var code = library.CloseSession(_host, _shownRevision, out var pass);
         if (code != HostLibrary.Ok)
         {
@@ -522,11 +1498,17 @@ public partial class Shell : Control
     /// <summary>Closes the event log, the host, the surface and the libraries; the input echo stays.</summary>
     private void CloseCore()
     {
+        if (D02.ShellJumble.On) D02.ShellGrip.Disconnect();
         if (_uiFrames)
         {
             RenderingServer.FramePreDraw -= OnFramePreDraw;
             RenderingServer.FramePostDraw -= OnFramePostDraw;
             _uiFrames = false;
+            if (_markedTree is { } tree)
+            {
+                tree.ProcessFrame -= OnTreeProcess;
+                _markedTree = null;
+            }
         }
         // The modules go before the log closes, so that their last rows reach it.
         WindowHook.Remove();
@@ -554,5 +1536,20 @@ public partial class Shell : Control
         _hostLibrary = null;
         _core?.Dispose();
         _core = null;
+    }
+
+    internal void FlushMotion(bool reduced = false)
+    {
+        if (!_session || _hostLibrary is not { } library || (!reduced && D02.ShellMotion.Keys.Count == 0)) return;
+        D02.ShellTurn.CutMotion(library, _host, reduced);
+        D02.ShellMotion.Flush();
+    }
+
+    internal void FollowRawClip()
+    {
+        if (!_localOpen || _localShape is not { } shape || _hostLibrary is not { } library) return;
+        if (D02.ShellMotion.StepRawClip(_localCap, _localRaw) is float h && _localCap is int cell)
+            Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local,
+                HostLibrary.ProjectionStereographic, (uint)cell, h, shape.Spread));
     }
 }

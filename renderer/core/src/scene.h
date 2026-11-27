@@ -40,7 +40,8 @@ public:
     // producer queue. A failure while creating resources leaves the scene
     // usable; a failure while recording or submitting poisons it.
     // ABI 5: a B8G8R8A8_UNORM format also builds the route-B surface pipeline.
-    void product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
+    void product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM, bool styled = false,
+                       bool panes = false); // ABI 7: styled; ABI 8: panes
     // Records the preparation's upload with its own list and signals the
     // product fence; returns the fence value.
     uint64_t product_prepare(uint64_t ticket, const PreparedData& data, ID3D12CommandQueue* queue, const std::function<void()>& submitting);
@@ -52,6 +53,12 @@ public:
                        D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
     // The ring's last frame results, read after that frame completed: GPU nanoseconds and VSInvocations.
     std::pair<uint64_t, uint64_t> product_results(uint32_t ring);
+    // ABI 8: the composite frame (sa2_frame_submit_panes) and its per-pane vertex evaluations.
+    void product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame_input& input, const FramePlan& plan,
+                             D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format);
+    std::vector<uint64_t> product_pane_evals(uint32_t ring);
+    bool has_status_capture(uint32_t pane) const;
+    void read_status_capture(uint32_t pane, uint32_t* words); // after the frame's ready fence
     // Records an ID pass and the texel copy with its own list and signals the product fence.
     uint64_t product_pick(uint64_t ticket, const PassInput& input, ID3D12CommandQueue* queue, const std::function<void()>& submitting);
     uint32_t product_pick_value(uint64_t ticket); // after the pick's fence completed
@@ -60,6 +67,7 @@ public:
     // C9 (26 Nov 2026): with `reuse` (a live device) the set's resources are kept for the next preparation.
     void product_release_set(uint64_t ticket, bool reuse);
     void product_release_spares(); // the device was removed: no kept set may be reused
+    std::array<float, 4> cell_centre(uint32_t cell) const; // ABI 10: a cell's unit centre in the world
     void product_collect(); // frees the staging of completed preparation uploads
     uint64_t product_completed() const; // the product fence's completed value; 0 before any product GPU work
     // Recreates the size-bound resources (depth and the ID target) at the new
@@ -77,4 +85,9 @@ public:
     // before the first.
     void stage_report(uint64_t completed, sa2_stage_frame& out);
 };
+// ADR-D02 B20: the pipeline statistics of the newest harvested product frame (a composite frame's panes summed): the
+// clipper's output primitives and the pixel-shader invocations, which bound a frame's raster work. The self-test reads
+// it after sa2_frame_reports; nothing on the product path does.
+struct FrameStatistics { uint64_t frame = 0, vertex_evals = 0, primitives = 0, pixels = 0; };
+FrameStatistics& newest_frame_statistics();
 }

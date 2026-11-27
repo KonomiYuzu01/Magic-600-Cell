@@ -64,17 +64,18 @@ internal static partial class Program
         // The hovered view's context wins, then the focused one, then global; an unbound key resolves to nothing.
         Equal(keys.Resolve("R", new[] { "global-view", "global" })!.Command, "view.reset");
         Equal(keys.Resolve("R", new[] { "local-view", "global-view", "global" })!.Command, "view.local.configure");
-        Check(keys.Resolve("R", new[] { "global" }) == null && keys.Resolve("F1", new[] { "local-view", "global" })!.Command == "command.find", "context fallback");
-        Equal(keys.KeysFor("command.find", null), "F1, Space"); Equal(keys.KeysFor("workspace.set", "layout:script"), "2"); Equal(Keymap.KeyName(true, true, false, "Z"), "Ctrl+Alt+Z");
+        Check(keys.Resolve("R", new[] { "global" }) == null && keys.Resolve("F1", new[] { "local-view", "global" }) is { Command: "help.open", Argument: null }, "context fallback");
+        Check(keys.Resolve("Shift+Slash", new[] { "global" }) is { Command: "help.open", Argument: HelpCatalog.Keys }, "shortcut sheet binding");
+        Equal(keys.KeysFor("command.find", null), "Space"); Equal(keys.KeysFor("workspace.set", "layout:script"), "2"); Equal(Keymap.KeyName(true, true, false, "Z"), "Ctrl+Alt+Z");
         // User overrides are a second file: rebind, add and remove without touching the defaults.
-        string overrides = "{\"format\":\"magic600-design-keymap\",\"version\":1,\"radials\":{},\"bindings\":[{\"key\":\"F1\",\"context\":\"global\",\"command\":\"help.open\"}," +
+        string overrides = "{\"format\":\"magic600-design-keymap\",\"version\":1,\"radials\":{},\"bindings\":[{\"key\":\"F1\",\"context\":\"global\",\"command\":\"command.find\"}," +
             "{\"key\":\"Space\",\"context\":\"global\",\"command\":\"\"},{\"key\":\"Ctrl+K\",\"context\":\"global\",\"command\":\"command.find\"}]}";
         Keymap mine = Keymap.Parse(overrides, registry, keys);
-        Equal(mine.KeysFor("command.find", null), "Ctrl+K"); Equal(mine.KeysFor("help.open", null), "Shift+Slash, F1"); Equal(keys.KeysFor("command.find", null), "F1, Space");
+        Equal(mine.KeysFor("command.find", null), "F1, Ctrl+K"); Equal(mine.KeysFor("help.open", HelpCatalog.Keys), "Shift+Slash"); Equal(keys.KeysFor("command.find", null), "Space");
         Check(mine.Resolve("Space", new[] { "global" }) == null && mine.Radials.Count == keys.Radials.Count, "override");
         foreach ((string from, string to, string name) in new[] {
             ("\"key\": \"Ctrl+Alt+Z\"", "\"key\": \"Alt+Ctrl+Z\"", "Alt+Ctrl+Z"), ("\"key\": \"Space\"", "\"key\": \"F1\"", "F1"),
-            ("\"command\": \"help.open\"", "\"command\": \"help.shut\"", "Shift+Slash"), ("\"context\": \"editor\"", "\"context\": \"dialog\"", "Ctrl+Enter"),
+            ("\"command\": \"help.open\"", "\"command\": \"help.shut\"", "F1"), ("\"context\": \"editor\"", "\"context\": \"dialog\"", "Ctrl+Enter"),
             ("\"radial.workspace\": {", "\"wheel.workspace\": {", "wheel.workspace"), ("\"argument\": \"next\",\n      \"label\": \"Next theme family\"", "\"argument\": \"next\"", "T") })
         {
             Check(text.Contains(from, StringComparison.Ordinal), "fixture lost " + from);
@@ -170,10 +171,10 @@ internal static partial class Program
         var effects = new[] { new OrbitEffect("a", 2, 10) }; string[] three = { "m1", "m2", "m3" };
         var preview = new PreviewModel(); int changes = 0; preview.Changed += () => changes++;
         Equal(preview.CommitRefusal(0), "there is no preview"); Check(preview.Take(0) == null && !preview.Discard(), "nothing to take");
-        Preview first = preview.Show("preview a", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 10);
+        Preview first = preview.Show(Origin.Solver, "preview a", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 10);
         Check(first.Id == 1 && preview.Scrub == 3 && !preview.Replaced && preview.CommitRefusal(10) == null, "a first preview commits at once");
         // A replacement takes a new id and cannot be committed inside the settle interval.
-        Preview second = preview.Show("preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 20);
+        Preview second = preview.Show(Origin.Solver, "preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 20);
         Check(second.Id == 2 && preview.Replaced && preview.CommitRefusal(20 + PreviewModel.Settle / 2) != null && preview.Take(20.1) == null && preview.Pending == second, "settle");
         Check(preview.CommitRefusal(20 + PreviewModel.Settle * 1.01) == null, "settle ends");
         preview.SetScrub(9); Equal(preview.Scrub, 3); preview.SetScrub(0); Check(preview.CommitRefusal(30) != null, "an empty prefix commits nothing");
@@ -182,16 +183,16 @@ internal static partial class Program
         preview.SetScrub(2);
         Check(preview.AtPrefix && preview.Take(30) == null && preview.Pending is { Id: 3, Status: PreviewStatus.Refused, Evaluated: false } && preview.Pending.Reason == PreviewModel.NoPrefixCheck && preview.Pending.Moves.Count == 2,
             "a prefix was taken without a check of its own");
-        preview.Show("preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 31);
+        preview.Show(Origin.Solver, "preview b", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 31);
         preview.Recheck = (_, m) => new PreviewCheck(PreviewStatus.Ready, null, new[] { new OrbitEffect("a", m.Count, 10) }, "prefix ok");
         preview.SetScrub(2); Preview prefix = preview.Take(32)!;
         Check(prefix.Id == 5 && prefix.Moves.Count == 2 && prefix.Statement.EndsWith("prefix(2)", StringComparison.Ordinal) && prefix.Effects.Single().Moved == 2 && prefix.Protection == "prefix ok" && preview.Pending == null,
             "the prefix is its own preview, with its own check");
         preview.Recheck = null;
-        Refuse(() => preview.Show("preview c", "x", three, PreviewStatus.Refused, " ", effects, "ok", 40), "preview");
-        preview.Show("preview c", "package", Array.Empty<string>(), PreviewStatus.Refused, "not yours", effects, "none", 40);
+        Refuse(() => preview.Show(Origin.Solver, "preview c", "x", three, PreviewStatus.Refused, " ", effects, "ok", 40), "preview");
+        preview.Show(Origin.Solver, "preview c", "package", Array.Empty<string>(), PreviewStatus.Refused, "not yours", effects, "none", 40);
         Check(preview.CommitRefusal(99) == "not yours" && preview.Take(99) == null, "a refused preview never commits");
-        preview.Show("preview d", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 50); preview.MarkStale("state moved");
+        preview.Show(Origin.Solver, "preview d", "own macro", three, PreviewStatus.Ready, null, effects, "ok", 50); preview.MarkStale("state moved");
         Check(preview.Pending!.Status == PreviewStatus.Stale && preview.Take(99) == null && preview.Discard() && preview.Pending == null && changes > 8, "stale");
 
         var moves = new MoveHistory();
@@ -252,7 +253,7 @@ internal static partial class Program
         Refuse(() => StatusLine.Compose("a", Array.Empty<string>(), null, 3), "cap");
         WorkspaceSet shipped = WorkspaceSet.Load(FileAt("data/design/workspaces.json"));
         Sequence(shipped.Order, new[] { "solve", "script", "analyse", "reference", "gallery" });
-        Sequence(shipped.Order.Select(id => shipped.Names[id]), new[] { "Solve", "Script", "Analyse", "Reference", "Gallery" });
+        Sequence(shipped.Order.Select(id => shipped.Names[id]), new[] { "Solve", "Script", "Analyse", "Learn", "Gallery" });
         foreach (string id in shipped.Order) { FrameModel f = Frame(); Check(f.Apply(shipped.Stored[id]) && f.IsOpen(FrameModel.Pair) && !f.FocusMode, id + " not applied"); }
         string text = Read("data/design/workspaces.json");
         Refuse(() => WorkspaceSet.Parse(text.Replace("\"id\": \"script\"", "\"id\": \"solve\"")), "solve");

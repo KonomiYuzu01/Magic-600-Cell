@@ -226,7 +226,121 @@ unsafe extern "C" fn device_status(ctx: *mut c_void, out: *mut i32) -> i32 {
     status.0
 }
 
+unsafe extern "C" fn view_shape_set(ctx: *mut c_void, view: u64, shape: *const Sa2ViewShape) -> i32 {
+    let shape = unsafe { shape.as_ref() };
+    if shape.is_some_and(|s| !sized::<Sa2ViewShape>(s.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_shape_set(view, shape), |()| ())
+}
+
+unsafe extern "C" fn view_focus_set(ctx: *mut c_void, view: u64, focus: *const Sa2ViewFocus) -> i32 {
+    let focus = unsafe { focus.as_ref() };
+    if focus.is_some_and(|f| !sized::<Sa2ViewFocus>(f.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_focus_set(view, focus), |()| ())
+}
+
+unsafe extern "C" fn view_layout_set(ctx: *mut c_void, view: u64, layout: *const Sa2ViewLayout) -> i32 {
+    let layout = unsafe { layout.as_ref() };
+    if layout.is_some_and(|l| !sized::<Sa2ViewLayout>(l.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_layout_set(view, layout), |()| ())
+}
+
+unsafe extern "C" fn transform_set(
+    ctx: *mut c_void,
+    revision: u64,
+    u: *const f32,
+    v: *const f32,
+    angle: f32,
+    moving: *const u8,
+    phase: f32,
+) -> i32 {
+    let moving = (!moving.is_null()).then(|| unsafe { std::slice::from_raw_parts(moving, PIECES) });
+    let row = |p: *const f32| if p.is_null() { [0.0; 4] } else { unsafe { *p.cast::<[f32; 4]>() } };
+    let plane = [row(u), row(v)];
+    code(unsafe { shim(ctx) }.fake.transform_set(revision, &plane, angle, moving, phase), |()| ())
+}
+
+unsafe extern "C" fn sticker_colours_set(ctx: *mut c_void, rgb: *const f32, count: u32) -> i32 {
+    if !rgb.is_null() && count != 0 && count as usize != STICKER_CLASSES {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let table = if count == 0 { None } else { unsafe { rgb.cast::<StickerColours>().as_ref() } };
+    code(unsafe { shim(ctx) }.fake.sticker_colours_set(table), |()| ())
+}
+
+unsafe extern "C" fn charts_set(ctx: *mut c_void, revision: u64, charts: *const u32, count: u32) -> i32 {
+    if charts.is_null() != (count == 0) || (count != 0 && count as usize != SLOTS) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let charts = (!charts.is_null()).then(|| unsafe { std::slice::from_raw_parts(charts, SLOTS) });
+    code(unsafe { shim(ctx) }.fake.charts_set(revision, charts), |()| ())
+}
+
+unsafe extern "C" fn scene_look_set(ctx: *mut c_void, look: *const Sa2SceneLook) -> i32 {
+    let look = unsafe { look.as_ref() };
+    code(unsafe { shim(ctx) }.fake.scene_look_set(look), |()| ())
+}
+
+unsafe extern "C" fn style_set(ctx: *mut c_void, revision: u64, bytes: *const u8, channel: u32) -> i32 {
+    let bytes = (!bytes.is_null()).then(|| unsafe { std::slice::from_raw_parts(bytes, PIECES) });
+    code(unsafe { shim(ctx) }.fake.style_set(revision, bytes, channel), |()| ())
+}
+
+unsafe extern "C" fn view_style_set(ctx: *mut c_void, slot: u32, style: *const Sa2ViewStyle) -> i32 {
+    let style = unsafe { style.as_ref() };
+    if style.is_some_and(|s| !sized::<Sa2ViewStyle>(s.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.view_style_set(slot, style), |()| ())
+}
+
+unsafe extern "C" fn frame_submit_panes(
+    ctx: *mut c_void,
+    input: *const Sa2FrameInput,
+    panes: *const Sa2Pane,
+    count: u32,
+    out: *mut u64,
+) -> i32 {
+    if panes.is_null() || count == 0 || count > PANES_MAX {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let panes = unsafe { slice::from_raw_parts(panes, count as usize) };
+    code(unsafe { shim(ctx) }.fake.frame_submit_panes(unsafe { &*input }, panes), |frame| unsafe { *out = frame })
+}
+
+unsafe extern "C" fn frame_panes(
+    ctx: *mut c_void,
+    frame: u64,
+    rows: *mut Sa2PaneRow,
+    capacity: u32,
+    out: *mut u32,
+) -> i32 {
+    let rows = unsafe { slice::from_raw_parts_mut(rows, capacity as usize) };
+    if rows.iter().any(|row| !sized::<Sa2PaneRow>(row.struct_size)) {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    code(unsafe { shim(ctx) }.fake.frame_panes(frame, rows), |n| unsafe { *out = n as u32 })
+}
+
 /// The shim's function table.
+unsafe extern "C" fn status_style_set(ctx: *mut c_void, style: *const Sa2StatusStyle) -> i32 {
+    let style = unsafe { style.as_ref() };
+    code(unsafe { shim(ctx) }.fake.status_style_set(style), |()| ())
+}
+
+unsafe extern "C" fn status_drawn(ctx: *mut c_void, pane: u32, words: *mut u32, count: u32) -> i32 {
+    if words.is_null() || count as usize != STATUS_WORDS {
+        return Status::INVALID_ARGUMENT.0;
+    }
+    let words = unsafe { std::slice::from_raw_parts_mut(words, count as usize) };
+    code(unsafe { shim(ctx) }.fake.status_drawn(pane, words), |()| ())
+}
+
 pub fn functions() -> CoreFunctions {
     CoreFunctions {
         abi_version,
@@ -246,6 +360,19 @@ pub fn functions() -> CoreFunctions {
         recover,
         counters,
         device_status,
+        view_shape_set,
+        style_set,
+        view_style_set,
+        frame_submit_panes,
+        frame_panes,
+        view_focus_set,
+        view_layout_set,
+        transform_set,
+        sticker_colours_set,
+        scene_look_set,
+        charts_set,
+        status_style_set,
+        status_drawn,
     }
 }
 
@@ -259,7 +386,7 @@ impl Shimmed {
     pub fn new(fake: FakeCore, pad: usize) -> Shimmed {
         let shim = Box::into_raw(Box::new(Shim { fake, pad }));
         // SAFETY: the table is the shim's and the context a live shim, which this value owns and frees last.
-        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 5");
+        let dll = unsafe { DllCore::new(functions(), shim.cast()) }.expect("the shim speaks ABI 10");
         Shimmed { dll, shim }
     }
 }
@@ -319,6 +446,36 @@ impl CoreAbi for Shimmed {
     }
     fn last_error(&self) -> String {
         self.dll.last_error()
+    }
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
+        self.dll.view_shape_set(view, shape)
+    }
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {
+        self.dll.style_set(revision, piece_style, channel)
+    }
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status> {
+        self.dll.view_style_set(slot, style)
+    }
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status> {
+        self.dll.frame_submit_panes(input, panes)
+    }
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status> {
+        self.dll.frame_panes(frame_id, rows)
+    }
+    fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
+        self.dll.view_focus_set(view, focus)
+    }
+    fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
+        self.dll.view_layout_set(view, layout)
+    }
+    fn sticker_colours_set(&mut self, rgb: Option<&StickerColours>) -> Result<(), Status> {
+        self.dll.sticker_colours_set(rgb)
+    }
+    fn scene_look_set(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        self.dll.scene_look_set(look)
+    }
+    fn charts_set(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Status> {
+        self.dll.charts_set(revision, charts)
     }
 }
 

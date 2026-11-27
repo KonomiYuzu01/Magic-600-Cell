@@ -1,7 +1,11 @@
 """Build the renderer core in a fresh ignored directory and run its CPU self-test; --gpu also runs the owner GPU checks.
 
 --stages DXC_DIR also runs C9 U5's user-stage check on WARP only (never a hardware adapter), with dxcompiler.dll and
-dxil.dll copied from DXC_DIR beside the built DLL. --poses also runs the product pose check on WARP only.
+dxil.dll copied from DXC_DIR beside the built DLL. --poses also runs the product pose check on WARP only, --shape
+(ABI 6) the view shape check on WARP only, --style (ABI 7) the piece style check on WARP only, --panes (ABI 8) the
+composite frame check on WARP only, --focus (ABI 9) the view focus check on WARP only, and --hopf (ABI 10) the view
+layout check on WARP only, on Look Lab's tools/looklab/fixtures/hopf-rings.json.
+--colours checks the sticker table and scene look on WARP only; --error checks ADR-D01.25's error hatch on WARP only.
 
 Derived from work/experiments/renderer-sa2/native/check_native.py (see PROVENANCE.md).
 """
@@ -42,6 +46,17 @@ CPU_CHECKS = {
     "preparation reuse",
     # C9 U5: user stages' compiler profile, source composition and compile record, and RPI.72's raster bound.
     "stage arguments", "raster bound",
+    # ABI 6: a view's shape: its checks, its defaults, per view, recorded with each frame and kept across a recovery.
+    "view shape",
+    # ABI 7: the piece style and the style slots: their checks, when a frame draws styled, the upload key, and an
+    # adoption dropping the style.
+    "piece style",
+    # ABI 8: the composite frame: its checks, its pane rows and a pick that resolves its pane.
+    "pane arguments",
+    # ADR-D01.10: independent preview poses and motion, validation, recovery, and no ID pass.
+    "preview poses and panes",
+    # ADR-D02 B21: the raw view's focus and the antipode chart's handedness.
+    "raw view",
 }
 DXC_LIBRARIES = ("dxcompiler.dll", "dxil.dll")
 BUILD_TEXT = {".make", ".cmake", ".d", ".rsp", ".ninja"}
@@ -68,16 +83,23 @@ def run_bounded(arguments, timeout, **kwargs):
     return stdout, stderr
 
 
-def check_result(executable, build, mode, vectors, stages=False, poses=False):
-    output = build / f"{mode}{'-stages' if stages else '-poses' if poses else ''}.json"
+def check_result(executable, build, mode, vectors, stages=False, poses=False, warp_mode=None):
+    """warp_mode names an alone WARP check by its self-test flag (shape: ABI 6's --shape; style: ABI 7's --style; panes: ABI 8's --panes)."""
+    poses = poses or warp_mode == "poses"
+    suffix = "-stages" if stages else "-poses" if poses else f"-{warp_mode}" if warp_mode else ""
+    output = build / f"{mode}{suffix}.json"
     arguments = [str(executable), f"--{mode}", "--vectors", vectors, "--out", str(output)]
     if stages:
         arguments.append("--stages")
     if poses:
         arguments.append("--poses")
+    if warp_mode and warp_mode != "poses":
+        arguments.append(f"--{warp_mode}")
+    if warp_mode in ("hopf", "chart"):
+        arguments.append(str(Path(__file__).resolve().parents[2] / "tools" / "looklab" / "fixtures" / "hopf-rings.json"))
     if mode != "cpu":
         arguments.append("--debug")
-    timeout = 300 if mode == "cpu" else 900 if stages or poses else 7200
+    timeout = 300 if mode == "cpu" else 900 if stages or poses or warp_mode else 7200
     stdout, _ = run_bounded(arguments, timeout, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print(stdout, end="")
     if not stdout.splitlines() or stdout.splitlines()[-1] != "selftest: ok":
@@ -94,6 +116,8 @@ def check_result(executable, build, mode, vectors, stages=False, poses=False):
             raise RuntimeError("the WARP stage check requires every check to pass")
         if poses and check["status"] != "pass":
             raise RuntimeError("the WARP pose check requires every check to pass")
+        if warp_mode and check["status"] != "pass":
+            raise RuntimeError(f"the WARP {warp_mode} check requires every check to pass")
     if mode == "cpu" and {check["name"] for check in report["checks"]} != CPU_CHECKS:
         raise RuntimeError("CPU check set is incomplete")
     if mode == "cpu":
@@ -128,13 +152,36 @@ def main():
                         help="also run the WARP user-stage check with dxcompiler.dll and dxil.dll from DXC_DIR")
     parser.add_argument("--poses", action="store_true",
                         help="also run the WARP check that the product draw applies an engine image's per-piece poses")
+    parser.add_argument("--shape", action="store_true",
+                        help="also run ABI 6's WARP check of a view's shape (sa2_view_shape)")
+    parser.add_argument("--style", action="store_true",
+                        help="also run ABI 7's WARP check of the piece style (sa2_style_set, sa2_view_style_set)")
+    parser.add_argument("--hopf", action="store_true",
+                        help="also run ABI 10's WARP check of a view's layout (sa2_view_layout_set) on Look Lab's Hopf rings")
+    parser.add_argument("--chart", action="store_true",
+                        help="also run ADR-D02 B22 item 1's WARP check of the chart channel (sa2_charts_set) on the ring sheet")
+    parser.add_argument("--focus", action="store_true",
+                        help="also run ABI 9's WARP check of a view's focus (sa2_view_focus)")
+    parser.add_argument("--sweep", action="store_true",
+                        help="also run ADR-D02 B18's WARP check of a twist's transform (sa2_transform_set)")
+    parser.add_argument("--slice", action="store_true",
+                        help="also run ADR-D02 B20's WARP check of the cut slice (a style slot's slice)")
+    parser.add_argument("--raw", action="store_true",
+                        help="also run ADR-D02 B21's WARP check of the raw view (the stereographic chart and its antipode)")
+    parser.add_argument("--colours", action="store_true",
+                        help="also run the WARP check of the sticker colours and scene look")
+    parser.add_argument("--panes", action="store_true",
+                        help="also run ABI 8's WARP check of the composite frame (sa2_frame_submit_panes)")
+    parser.add_argument("--error", action="store_true",
+                        help="also run ADR-D01.25's WARP check of the piece error overlay")
     options = parser.parse_args()
     source = Path(__file__).resolve().parent
     root = source.parent.parent
     # Application Control can refuse unsigned executables in system temp. Build
     # inside the repository's ignored work tree.
     parent = root / "work" / "build"
-    name = f"renderer-core-{os.getpid()}"
+    # NMake's compiler probe adds a long suffix to this path in nested worktrees.
+    name = f"rc-{os.getpid()}"
     build = parent / name
     created = False
     try:
@@ -166,8 +213,36 @@ def main():
             check_result(executable, build, "warp", vectors, stages=True)
         if options.poses:
             check_result(executable, build, "warp", vectors, poses=True)
+        if options.shape:
+            check_result(executable, build, "warp", vectors, warp_mode="shape")
+        if options.style:
+            check_result(executable, build, "warp", vectors, warp_mode="style")
+        if options.panes:
+            check_result(executable, build, "warp", vectors, warp_mode="panes")
+        if options.focus:
+            check_result(executable, build, "warp", vectors, warp_mode="focus")
+        if options.hopf:
+            check_result(executable, build, "warp", vectors, warp_mode="hopf")
+        if options.chart:
+            check_result(executable, build, "warp", vectors, warp_mode="chart")
+        if options.sweep:
+            check_result(executable, build, "warp", vectors, warp_mode="sweep")
+        if options.slice:
+            check_result(executable, build, "warp", vectors, warp_mode="slice")
+        if options.raw:
+            check_result(executable, build, "warp", vectors, warp_mode="raw")
+        if options.colours:
+            check_result(executable, build, "warp", vectors, warp_mode="colours")
+        if options.error:
+            check_result(executable, build, "warp", vectors, warp_mode="error")
         summary = " (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"
-        warp = " and ".join(name for name, run in (("stage", options.stages), ("pose", options.poses)) if run)
+        warp = " and ".join(name for name, run in (("stage", options.stages), ("pose", options.poses),
+                                                   ("shape", options.shape), ("style", options.style),
+                                                   ("panes", options.panes), ("focus", options.focus),
+                                                   ("hopf", options.hopf), ("sweep", options.sweep),
+                                                   ("slice", options.slice), ("raw", options.raw),
+                                                   ("colours", options.colours), ("error", options.error),
+                                                   ("chart", options.chart)) if run)
         if warp:
             summary = f" (CPU, WARP and hardware; WARP {warp} checks)" if options.gpu else f" (CPU and the WARP {warp} checks; no hardware run)"
         print("check_core: ok" + summary)

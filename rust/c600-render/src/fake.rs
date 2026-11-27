@@ -1,4 +1,4 @@
-//! A fake core for headless tests: ABI 5's product calls in Rust, following the header's rules for tickets, frames,
+//! A fake core for headless tests: ABI 5's product calls in Rust (and ABI 6 to 8's), following the header's rules for tickets, frames,
 //! reports, picks and device loss. Nothing runs on a GPU: uploads, frames and ID passes stay pending until
 //! [`FakeCore::complete`], and the ID pass reads the instance of the slot a test placed at a pixel
 //! ([`FakeCore::place`]). It does not model resize, trace windows, the 256-ticket and 1024-pick bounds or engine
@@ -18,6 +18,9 @@ use crate::api::{CoreAbi, EngineImage, PoseArrays, PreparationInput};
 
 /// `DXGI_ERROR_DEVICE_REMOVED`, the reason a removed fake device reports.
 pub const DEVICE_REMOVED_REASON: i32 = 0x887A_0005_u32 as i32;
+/// The vertex evaluations the fake reports for each pane of a frame (a one-view frame is one pane): 120 cells of
+/// 600 vertices, a fixed synthetic value.
+pub const PANE_EVALS: u64 = 120 * 600;
 /// The fake display clock's step per confirmed frame, in QPC ticks: one 60 Hz refresh at a 10 MHz counter.
 pub const DISPLAY_TICKS: u64 = 166_667;
 
@@ -26,6 +29,7 @@ struct Ticket {
     row: Sa2PollRow,
     view: u64,
     view_generation: u64,
+    base_revision: u64,
     visibility: Vec<u8>,
     instances: BTreeMap<usize, u32>,
 }
@@ -34,6 +38,7 @@ struct Ticket {
 struct Set {
     view: u64,
     view_generation: u64,
+    base_revision: u64,
     visibility: Vec<u8>,
     instances: BTreeMap<usize, u32>,
     active: bool,
@@ -44,6 +49,8 @@ struct Set {
 struct Frame {
     id: u64,
     input: Sa2FrameInput,
+    /// ABI 8: a composite frame's panes; empty for a one-view frame.
+    panes: Vec<Sa2Pane>,
     completed: bool,
     error: Status,
     reported: bool,
@@ -110,8 +117,24 @@ pub struct FakeCore {
     pub prepared: Vec<(u64, BTreeMap<usize, u32>, Vec<u8>)>,
     /// Every accepted frame input, in submission order.
     pub submitted: Vec<Sa2FrameInput>,
+    /// ABI 8: the panes of every accepted frame, in submission order; empty for a one-view frame.
+    pub submitted_panes: Vec<Vec<Sa2Pane>>,
+    /// A view whose preparations [`FakeCore::complete`] leaves pending, as an upload behind other work: a test of a
+    /// composite frame delays one view's activation with it.
+    pub hold_view: Option<u64>,
     /// Every adopted engine revision with its first label.
     pub adoptions: Vec<(u64, u32)>,
+    /// ABI 6: every view's shape that `sa2_view_shape_set` set and did not restore to the defaults.
+    pub shapes: BTreeMap<u64, Sa2ViewShape>,
+    /// ABI 9: every view's focus that `sa2_view_focus_set` set and did not restore to the defaults.
+    pub focuses: BTreeMap<u64, Sa2ViewFocus>,
+    /// ABI 10: every view's layout kind that `sa2_view_layout_set` set and did not restore to the chain.
+    pub layouts: BTreeMap<u64, u32>,
+    /// ABI 7: the adopted revision's piece style by channel (fill, outline), dropped by an adoption.
+    pub piece_styles: [Option<Vec<u8>>; 4], // fill, outline, slice and status
+    /// ABI 7: the style slots 1 to 4 (index 0 is slot 1).
+    pub view_styles: [Option<Sa2ViewStyle>; 4],
+    pub status_style: Option<Sa2StatusStyle>,
     /// Every posed adoption: its revision, its pose count and the SHA-256 (hexadecimal) of the little-endian bytes
     /// of its pose index, pose rows and lattice entries, as the bundle's array descriptors name them.
     pub posed: Vec<(u64, u32, [String; 3])>,
@@ -138,10 +161,18 @@ impl FakeCore {
             next_pick: 1,
             picks: BTreeMap::new(),
             placed: BTreeMap::new(),
+            shapes: BTreeMap::new(),
+            focuses: BTreeMap::new(),
+            layouts: BTreeMap::new(),
+            piece_styles: [None, None, None, None],
+            view_styles: [None; 4],
+            status_style: None,
             counters: Sa2CounterValues::new(),
             error: String::new(),
             prepared: Vec::new(),
             submitted: Vec::new(),
+            submitted_panes: Vec::new(),
+            hold_view: None,
             adoptions: Vec::new(),
             posed: Vec::new(),
         }
@@ -196,11 +227,11 @@ impl FakeCore {
         self.placed.insert((x, y), slot);
     }
 
-    /// The GPU reaches every fence: uploads become ready (a cancelled one stays cancelled, RM.17), frames complete
-    /// and ID passes answer.
+    /// The GPU reaches every fence: uploads become ready (a cancelled one stays cancelled, RM.17; one of
+    /// [`FakeCore::hold_view`] stays pending), frames complete and ID passes answer.
     pub fn complete(&mut self) {
         for ticket in self.tickets.values_mut() {
-            if ticket.row.state == TICKET_PENDING {
+            if ticket.row.state == TICKET_PENDING && Some(ticket.view) != self.hold_view {
                 ticket.row.state = TICKET_READY;
                 let set = ticket.row.resource_set;
                 self.sets.insert(
@@ -208,6 +239,7 @@ impl FakeCore {
                     Set {
                         view: ticket.view,
                         view_generation: ticket.view_generation,
+                        base_revision: ticket.base_revision,
                         visibility: ticket.visibility.clone(),
                         instances: ticket.instances.clone(),
                         active: false,
@@ -260,6 +292,67 @@ impl FakeCore {
             frame.completed = true;
             frame.error = Status::DEVICE_REMOVED;
         }
+    }
+
+    /// `sa2_frame_submit`'s checks of a frame input, shared by the composite frame.
+    fn admit(&mut self, input: &Sa2FrameInput) -> Result<(), Status> {
+        if input.struct_size as usize != std::mem::size_of::<Sa2FrameInput>() || input.reserved != 0 {
+            return self.fail(Status::INVALID_ARGUMENT, "struct_size or reserved");
+        }
+        if input.flags & !FRAME_PREVIEW != 0 || input.camera_matrix.iter().any(|v| !v.is_finite()) {
+            return self.fail(Status::INVALID_ARGUMENT, "unknown flags or a non-finite camera");
+        }
+        if input.target >= RING_SLOTS && input.target != TARGET_SURFACE {
+            return self.fail(Status::INVALID_ARGUMENT, "target must be a ring slot 0..2 or SA2_TARGET_SURFACE");
+        }
+        if self.surface != (input.target == TARGET_SURFACE) {
+            return self.fail(Status::WRONG_STATE, "the target is not this context's route");
+        }
+        self.alive()?;
+        if input.device_epoch != self.device_epoch || Some(input.engine_revision) != self.adopted {
+            return self.fail(Status::WRONG_STATE, "the frame names another epoch or engine revision");
+        }
+        if (input.viewport_width, input.viewport_height) != self.target_size {
+            return self.fail(Status::WRONG_STATE, "the viewport is not the target's size");
+        }
+        if let Some(&(generation, sequence)) = self.surfaces.get(&input.surface) {
+            if input.surface_generation < generation || input.sequence <= sequence {
+                return self.fail(Status::WRONG_STATE, "the surface generation or sequence goes back");
+            }
+        }
+        if self.views.get(&input.view).is_some_and(|&g| input.view_generation < g) {
+            return self.fail(Status::WRONG_STATE, "the view generation goes back");
+        }
+        if input.resource_set != 0 {
+            let fits = self
+                .sets
+                .get(&input.resource_set)
+                .is_some_and(|s| s.active && s.view == input.view && s.view_generation == input.view_generation);
+            if !fits {
+                return self.fail(Status::WRONG_STATE, "the set is not active for the frame's view generation");
+            }
+        }
+        Ok(())
+    }
+
+    /// Records an admitted frame: its surface and view bindings, its panes, and the next frame ID.
+    fn record(&mut self, input: &Sa2FrameInput, panes: Vec<Sa2Pane>) -> u64 {
+        self.surfaces.insert(input.surface, (input.surface_generation, input.sequence));
+        self.views.insert(input.view, input.view_generation);
+        let id = self.next_frame;
+        self.next_frame += 1;
+        self.frames.push_back(Frame {
+            id,
+            input: *input,
+            panes: panes.clone(),
+            completed: false,
+            error: Status::OK,
+            reported: false,
+        });
+        self.submitted.push(*input);
+        self.submitted_panes.push(panes);
+        self.counters.frames_submitted += 1;
+        id
     }
 
     fn fail<T>(&mut self, status: Status, message: &str) -> Result<T, Status> {
@@ -334,6 +427,7 @@ impl CoreAbi for FakeCore {
         }
         self.adopted = Some(image.revision);
         self.adoptions.push((image.revision, image.labels[0]));
+        self.piece_styles = [None, None, None, None]; // ABI 7: a piece style is bound to its revision
         self.counters.bytes_uploaded += (SLOTS * 4) as u64;
         if let Some(pose) = &image.pose {
             let count = pose.pose_lattice.len();
@@ -365,8 +459,14 @@ impl CoreAbi for FakeCore {
         }
         let ticket = self.next_ticket;
         self.next_ticket += 1;
-        let instances: BTreeMap<usize, u32> =
-            input.instances.iter().enumerate().filter(|(_, &i)| i != 0).map(|(s, &i)| (s, i)).collect();
+        // ADR-D02 B17: the fake's ID pass stamps an instance only where F02 allows the core to stamp it.
+        let instances: BTreeMap<usize, u32> = input
+            .instances
+            .iter()
+            .copied()
+            .enumerate()
+            .filter(|&(slot, id)| id != 0 && input.visibility[slot] == 1 && input.interaction[slot] == 1)
+            .collect();
         self.prepared.push((input.view, instances.clone(), input.visibility.to_vec()));
         self.tickets.insert(
             ticket,
@@ -374,6 +474,7 @@ impl CoreAbi for FakeCore {
                 row: Sa2PollRow { state: TICKET_PENDING, resource_set: 1000 + ticket, ..Sa2PollRow::new() },
                 view: input.view,
                 view_generation: input.view_generation,
+                base_revision: input.base_revision,
                 visibility: input.visibility.to_vec(),
                 instances,
             },
@@ -434,50 +535,73 @@ impl CoreAbi for FakeCore {
     }
 
     fn frame_submit(&mut self, input: &Sa2FrameInput) -> Result<u64, Status> {
-        if input.struct_size as usize != std::mem::size_of::<Sa2FrameInput>() || input.reserved != 0 {
-            return self.fail(Status::INVALID_ARGUMENT, "struct_size or reserved");
+        self.admit(input)?;
+        Ok(self.record(input, Vec::new()))
+    }
+
+    /// ABI 8: the header's pane checks, then the frame's; every pane's set must be active, stamped for its view and
+    /// view generation, and prepared at the frame's engine revision.
+    fn frame_submit_panes(&mut self, input: &Sa2FrameInput, panes: &[Sa2Pane]) -> Result<u64, Status> {
+        if panes.is_empty() || panes.len() > PANES_MAX as usize {
+            return self.fail(Status::INVALID_ARGUMENT, "a composite frame has 1..SA2_PANES_MAX panes");
         }
-        if input.flags & !FRAME_PREVIEW != 0 || input.camera_matrix.iter().any(|v| !v.is_finite()) {
-            return self.fail(Status::INVALID_ARGUMENT, "unknown flags or a non-finite camera");
+        let first = panes[0];
+        if (input.view, input.view_generation, input.resource_set, input.camera_matrix)
+            != (first.view, first.view_generation, first.resource_set, first.camera_matrix)
+        {
+            return self.fail(Status::INVALID_ARGUMENT, "the frame input is not the first pane's");
         }
-        if input.target >= RING_SLOTS && input.target != TARGET_SURFACE {
-            return self.fail(Status::INVALID_ARGUMENT, "target must be a ring slot 0..2 or SA2_TARGET_SURFACE");
-        }
-        if self.surface != (input.target == TARGET_SURFACE) {
-            return self.fail(Status::WRONG_STATE, "the target is not this context's route");
-        }
-        self.alive()?;
-        if input.device_epoch != self.device_epoch || Some(input.engine_revision) != self.adopted {
-            return self.fail(Status::WRONG_STATE, "the frame names another epoch or engine revision");
-        }
-        if (input.viewport_width, input.viewport_height) != self.target_size {
-            return self.fail(Status::WRONG_STATE, "the viewport is not the target's size");
-        }
-        if let Some(&(generation, sequence)) = self.surfaces.get(&input.surface) {
-            if input.surface_generation < generation || input.sequence <= sequence {
-                return self.fail(Status::WRONG_STATE, "the surface generation or sequence goes back");
+        for (i, pane) in panes.iter().enumerate() {
+            if pane.flags & !crate::abi::PANE_ANTIPODE != 0 || pane.style > STYLE_SLOTS || pane.camera_matrix.iter().any(|v| !v.is_finite()) {
+                return self.fail(Status::INVALID_ARGUMENT, "a pane's flags, style or camera");
+            }
+            if !pane.inside(self.target_size) || panes[..i].iter().any(|other| other.overlaps(pane)) {
+                return self.fail(Status::INVALID_ARGUMENT, "a pane lies outside the target or overlaps another");
             }
         }
-        if self.views.get(&input.view).is_some_and(|&g| input.view_generation < g) {
-            return self.fail(Status::WRONG_STATE, "the view generation goes back");
-        }
-        if input.resource_set != 0 {
+        self.admit(input)?;
+        for pane in panes {
+            if self.views.get(&pane.view).is_some_and(|&g| pane.view_generation < g) {
+                return self.fail(Status::WRONG_STATE, "a pane's view generation goes back");
+            }
+            if pane.resource_set == 0 {
+                continue;
+            }
             let fits = self
                 .sets
-                .get(&input.resource_set)
-                .is_some_and(|s| s.active && s.view == input.view && s.view_generation == input.view_generation);
+                .get(&pane.resource_set)
+                .is_some_and(|s| s.active && (s.view, s.view_generation) == (pane.view, pane.view_generation));
             if !fits {
-                return self.fail(Status::WRONG_STATE, "the set is not active for the frame's view generation");
+                return self.fail(Status::WRONG_STATE, "a pane's set is not active for its view generation");
+            }
+            if self.sets[&pane.resource_set].base_revision != input.engine_revision {
+                return self.fail(Status::WRONG_STATE, "a pane's set was prepared at another engine revision");
             }
         }
-        self.surfaces.insert(input.surface, (input.surface_generation, input.sequence));
-        self.views.insert(input.view, input.view_generation);
-        let id = self.next_frame;
-        self.next_frame += 1;
-        self.frames.push_back(Frame { id, input: *input, completed: false, error: Status::OK, reported: false });
-        self.submitted.push(*input);
-        self.counters.frames_submitted += 1;
-        Ok(id)
+        for pane in panes {
+            let generation = self.views.entry(pane.view).or_insert(pane.view_generation);
+            *generation = (*generation).max(pane.view_generation);
+        }
+        Ok(self.record(input, panes.to_vec()))
+    }
+
+    fn frame_panes(&mut self, frame_id: u64, rows: &mut [Sa2PaneRow]) -> Result<usize, Status> {
+        let Some(frame) = self.frames.iter().find(|f| f.id == frame_id && !f.panes.is_empty()) else {
+            return self.fail(Status::WRONG_STATE, "the frame is not a retained composite frame");
+        };
+        if !frame.completed || frame.error != Status::OK {
+            return self.fail(Status::WRONG_STATE, "the composite frame has not produced");
+        }
+        for (i, (row, pane)) in rows.iter_mut().zip(&frame.panes).enumerate() {
+            *row = Sa2PaneRow {
+                pane: i as u32,
+                view: pane.view,
+                view_generation: pane.view_generation,
+                vertex_evals: PANE_EVALS,
+                ..Sa2PaneRow::new()
+            };
+        }
+        Ok(frame.panes.len())
     }
 
     fn frame_reports(&mut self, rows: &mut [Sa2FrameReport]) -> Result<usize, Status> {
@@ -488,7 +612,7 @@ impl CoreAbi for FakeCore {
             }
             frame.reported = true;
             let i = frame.input;
-            let evals = if frame.error == Status::OK { 120 * 600 } else { 0 };
+            let evals = if frame.error == Status::OK { PANE_EVALS * frame.panes.len().max(1) as u64 } else { 0 };
             rows[n] = Sa2FrameReport {
                 error: frame.error.0,
                 frame_id: frame.id,
@@ -536,13 +660,24 @@ impl CoreAbi for FakeCore {
         if x >= i.viewport_width || y >= i.viewport_height {
             return self.fail(Status::INVALID_ARGUMENT, "the pixel is outside the viewport");
         }
+        // Checkpoint C3.9 (F2): a composite frame's pick answers the pane under the point, its view and its set, as
+        // the core's pick_pane does; a one-view frame (or a point between panes) answers the frame's input view.
+        let (px, py) = (i64::from(x), i64::from(y));
+        let (view, view_generation, set) = frame
+            .panes
+            .iter()
+            .find(|p| {
+                let (left, top) = (i64::from(p.x), i64::from(p.y));
+                px >= left && py >= top && px < left + i64::from(p.width) && py < top + i64::from(p.height)
+            })
+            .map_or((i.view, i.view_generation, i.resource_set), |p| (p.view, p.view_generation, p.resource_set));
         let mut row = Sa2PickRow {
             frame_id,
             device_epoch: i.device_epoch,
             surface: i.surface,
             surface_generation: i.surface_generation,
-            view: i.view,
-            view_generation: i.view_generation,
+            view,
+            view_generation,
             publication_generation: i.publication_generation,
             camera: i.camera,
             visibility: i.visibility,
@@ -553,8 +688,8 @@ impl CoreAbi for FakeCore {
             y,
             ..Sa2PickRow::new()
         };
-        let done = i.resource_set == 0 || self.sets.get(&i.resource_set).is_none_or(|s| s.retired);
-        if i.resource_set != 0 && done {
+        let done = set == 0 || self.sets.get(&set).is_none_or(|s| s.retired);
+        if set != 0 && done {
             row.state = PICK_STALE;
             row.stale = PICK_STALE_PUBLICATION;
         } else if done {
@@ -564,7 +699,7 @@ impl CoreAbi for FakeCore {
         }
         let ticket = self.next_pick;
         self.next_pick += 1;
-        self.picks.insert(ticket, Pick { row, done, set: i.resource_set });
+        self.picks.insert(ticket, Pick { row, done, set });
         Ok(ticket)
     }
 
@@ -626,5 +761,123 @@ impl CoreAbi for FakeCore {
 
     fn last_error(&self) -> String {
         self.error.clone()
+    }
+
+    fn sticker_colours_set(&mut self, _rgb: Option<&StickerColours>) -> Result<(), Status> {
+        self.fail(Status::UNSUPPORTED, "the fake core does not draw sticker colours")
+    }
+
+    fn scene_look_set(&mut self, _look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        self.fail(Status::UNSUPPORTED, "the fake core does not draw scene looks")
+    }
+
+    /// The header's checks; device-free, so it works during device loss.
+    /// The header's struct checks; the fake has no cells, so it takes any Hopf rings in range.
+    fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
+        let kind = match layout {
+            None => LAYOUT_CHAIN,
+            Some(layout) => {
+                if layout.struct_size as usize != std::mem::size_of::<Sa2ViewLayout>() || !layout.in_range() {
+                    return self.fail(Status::INVALID_ARGUMENT, "invalid view_layout struct_size, kind or value");
+                }
+                layout.kind
+            }
+        };
+        if kind == LAYOUT_CHAIN {
+            self.layouts.remove(&view);
+        } else {
+            self.layouts.insert(view, kind);
+        }
+        Ok(())
+    }
+
+    fn view_focus_set(&mut self, view: u64, focus: Option<&Sa2ViewFocus>) -> Result<(), Status> {
+        let focus = match focus {
+            None => Sa2ViewFocus::defaults(),
+            Some(focus) => {
+                if focus.struct_size as usize != std::mem::size_of::<Sa2ViewFocus>() || focus.reserved != 0 {
+                    return self.fail(Status::INVALID_ARGUMENT, "invalid view_focus struct_size or reserved");
+                }
+                if !focus.in_range() {
+                    return self.fail(Status::INVALID_ARGUMENT, "a view focus value is not finite or out of its range");
+                }
+                *focus
+            }
+        };
+        if focus == Sa2ViewFocus::defaults() {
+            self.focuses.remove(&view);
+        } else {
+            self.focuses.insert(view, focus);
+        }
+        Ok(())
+    }
+
+    /// The header's checks; device-free, so it works during device loss.
+    fn view_shape_set(&mut self, view: u64, shape: Option<&Sa2ViewShape>) -> Result<(), Status> {
+        let shape = match shape {
+            None => Sa2ViewShape::defaults(),
+            Some(shape) => {
+                if shape.struct_size as usize != std::mem::size_of::<Sa2ViewShape>() || shape.reserved != 0 {
+                    return self.fail(Status::INVALID_ARGUMENT, "invalid view_shape struct_size or reserved");
+                }
+                if !shape.in_range() {
+                    return self.fail(Status::INVALID_ARGUMENT, "a view shape value is not finite or out of its range");
+                }
+                *shape
+            }
+        };
+        if shape == Sa2ViewShape::defaults() {
+            self.shapes.remove(&view);
+        } else {
+            self.shapes.insert(view, shape);
+        }
+        Ok(())
+    }
+
+    /// The header's checks: the adopted revision only, the channel's bits only.
+    fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {
+        if !matches!(channel, STYLE_CHANNEL_FILL | STYLE_CHANNEL_OUTLINE | STYLE_CHANNEL_SLICE | STYLE_CHANNEL_STATUS) {
+            return self.fail(Status::INVALID_ARGUMENT, "unknown piece style channel");
+        }
+        if piece_style.is_some_and(|bytes| !piece_style_valid(bytes, channel)) {
+            return self.fail(Status::INVALID_ARGUMENT, "a piece style byte sets a bit its channel does not have");
+        }
+        if self.adopted != Some(revision) {
+            return self.fail(Status::INVALID_ARGUMENT, "a piece style names a revision other than the adopted one");
+        }
+        self.piece_styles[channel as usize] = piece_style.map(<[u8]>::to_vec);
+        Ok(())
+    }
+
+    fn status_style_set(&mut self, style: Option<&Sa2StatusStyle>) -> Result<(), Status> {
+        if style.is_some_and(|s| !s.in_range()) {
+            return self.fail(Status::INVALID_ARGUMENT, "an invalid status style");
+        }
+        self.status_style = style.copied();
+        Ok(())
+    }
+
+    fn status_drawn(&mut self, pane: u32, words: &mut [u32]) -> Result<(), Status> {
+        if pane >= PANES_MAX || words.len() != STATUS_WORDS {
+            return self.fail(Status::INVALID_ARGUMENT, "invalid status coverage output");
+        }
+        words.fill(0);
+        Ok(())
+    }
+
+    fn view_style_set(&mut self, slot: u32, style: Option<&Sa2ViewStyle>) -> Result<(), Status> {
+        if !(1..=STYLE_SLOTS).contains(&slot) {
+            return self.fail(Status::INVALID_ARGUMENT, "a style slot is 1..SA2_STYLE_SLOTS");
+        }
+        if let Some(style) = style {
+            if style.struct_size as usize != std::mem::size_of::<Sa2ViewStyle>()
+                || style.reserved != 0
+                || !style.in_range()
+            {
+                return self.fail(Status::INVALID_ARGUMENT, "an invalid view style");
+            }
+        }
+        self.view_styles[slot as usize - 1] = style.copied();
+        Ok(())
     }
 }

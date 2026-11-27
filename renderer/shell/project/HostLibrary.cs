@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Magic600.Chrome;
 
 namespace Magic600.Shell;
 
@@ -14,12 +15,21 @@ namespace Magic600.Shell;
 /// and view-result rows against the Rust source. Version 7 (LP4-3) adds the write-check-run flow's calls, which the
 /// editor panel (<see cref="Editor.EditorPanel"/>) makes: <see cref="SetFocus"/>, <see cref="RegisterRow"/>,
 /// <see cref="Palette"/>, <see cref="Invoke"/>, <see cref="TakeJob"/>, <see cref="FinishJob"/>,
-/// <see cref="SetDraftWord"/> and <see cref="Answer"/>.
+/// <see cref="SetDraftWord"/> and <see cref="Answer"/>. Version 8 (ADR-D02 B5) adds <see cref="StateDigest"/>, the
+/// head's state digests, by which a D02 sample binds to the session. Version 9 (ADR-D02, over the core's ABI 6) adds
+/// <see cref="SetViewShape"/>, a view's cell gap, sticker shrink, d4 and zoom. Version 10 (ADR-D02 B14, over the core's
+/// ABI 7) adds <see cref="SetPieceStyle"/> and <see cref="SetViewStyle"/>, the per-piece style and the style slots.
+/// Version 11 (ADR-D02 B18b, over the core's ABI 8) adds Local and the composite frame: <see cref="OpenLocal"/>,
+/// <see cref="SetViewCamera"/>, <see cref="SetViewVisible"/>, <see cref="SetPane"/>, <see cref="ClearPane"/>, and
+/// <see cref="Submitted"/>'s pane count and held flag. Version 12 (ADR-D02 B18c, over the core's ABI 9) adds
+/// <see cref="SetViewFocus"/>, Local's own projection, focus cap and spread. Version 13 (ADR-D02 B23, over the core's
+/// ABI 10) adds <see cref="SetViewLayout"/>, the Hopf-ring opening. Version 14 (ADR-D02 B17) adds
+/// <see cref="PickRequest"/> and <see cref="PickPoll"/>, picks in Jumble.
 /// </summary>
 public sealed unsafe class HostLibrary : IDisposable
 {
     /// <summary>The C interface this shell speaks; the library's m6h_abi_version must answer it.</summary>
-    public const uint AbiVersion = 7;
+    public const uint AbiVersion = 15;
 
     /// <summary>The name of the correctness control that <see cref="CloseSession"/> runs (the run row's).</summary>
     public const string CorrectnessControl = "journal-reopen-and-kernel-replay";
@@ -83,6 +93,21 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_preload_free",
         "m6h_set_camera",
         "m6h_set_viewport",
+        "m6h_set_view_shape",
+        "m6h_set_view_focus",
+        "m6h_pick_request",
+        "m6h_pick_poll",
+        "m6h_set_view_layout",
+        "m6h_set_piece_style",
+        "m6h_set_transform",
+        "m6h_twist_transform",
+        "m6h_slice_check",
+        "m6h_set_view_style",
+        "m6h_open_local",
+        "m6h_set_view_camera",
+        "m6h_set_view_visible",
+        "m6h_set_pane",
+        "m6h_clear_pane",
         "m6h_pump",
         "m6h_frame",
         "m6h_read_presented",
@@ -102,11 +127,33 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_take_job",
         "m6h_finish_job",
         "m6h_set_draft_word",
+        "m6h_state_digest",
         "m6h_answer",
         "m6h_close_session",
         "m6h_check",
         "m6h_last_error",
         "m6h_destroy",
+        // ADR-D02 B21: the raw view's antipode pane.
+        "m6h_set_pane_flags",
+        "m6h_set_sticker_colours",
+        "m6h_set_scene_look",
+        "m6h_set_status_style",
+        "m6h_status_drawn",
+        "m6h_status_targets",
+        "m6h_grip_report",
+        "m6h_grip_set",
+        "m6h_key_post",
+        "m6h_key_poll",
+        "m6h_key_row",
+        "m6h_key_drain",
+        "m6h_preview_bind",
+        "m6h_preview_build",
+        "m6h_preview_scrub",
+        "m6h_preview_clear",
+        "m6h_preview_args",
+        "m6h_preview_moved",
+        "m6h_preview_prefix_moved",
+        "m6h_preview_report",
     };
 
     /// <summary>A submitted frame, as m6h_frame writes it (the Rust M6hFrame).</summary>
@@ -120,6 +167,11 @@ public sealed unsafe class HostLibrary : IDisposable
         public ulong EngineRevision;
         /// <summary>The engine revision of the publication the frame draws, or 0 for none.</summary>
         public ulong PublicationRevision;
+        /// <summary>The panes of a composite frame, or 0 for a one-view frame (version 11).</summary>
+        public uint Panes;
+        /// <summary>1 when nothing was submitted because a drawn pane's view did not show the adopted revision yet; the
+        /// other fields then name the last frame (version 11).</summary>
+        public uint Held;
     }
 
     /// <summary>What m6h_key_down did with one key-down (the Rust M6hKey).</summary>
@@ -130,6 +182,22 @@ public sealed unsafe class HostLibrary : IDisposable
         public uint Reserved;
         /// <summary>The adopted engine revision after the key; for a committed press, the one that shows it.</summary>
         public ulong EngineRevision;
+    }
+
+    /// <summary>Brief SF2 (version 15): what m6h_key_poll answers for one posted key (the Rust M6hKeyAnswer); Ticket 0
+    /// when none is ready.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KeyAnswer
+    {
+        public ulong Ticket;
+        /// <summary>What the synchronous m6h_key_down would have answered; LastError holds its text after the poll.</summary>
+        public int Code;
+        public uint Press;
+        public ulong EngineRevision;
+        /// <summary>1 when the key was armed and its row turns a plane: KeyRow reads it until the next poll.</summary>
+        public uint RowStatus;
+        public uint Reserved;
+        public ulong RowRevision;
     }
 
     /// <summary>One confirmed presentation, as m6h_read_presented writes it (the Rust M6hPresented).</summary>
@@ -308,6 +376,280 @@ public sealed unsafe class HostLibrary : IDisposable
     public int SetViewport(IntPtr host, uint width, uint height) =>
         ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, int>)_exports["m6h_set_viewport"])(host, width, height);
 
+    /// <summary>The view number of the host's one view (the Rust source's VIEW).</summary>
+    public const ulong View = 1;
+    /// <summary>Local's view number (the Rust source's LOCAL; version 11).</summary>
+    public const ulong Local = 2;
+    /// <summary>The panes of a composite frame (the Rust source's M6H_PANES_MAX).</summary>
+    public const uint PanesMax = 4;
+
+    /// <summary>Opens Local beside the view (version 11); each adoption then publishes both. Local is never closed.
+    /// </summary>
+    public int OpenLocal(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_open_local"])(host);
+
+    /// <summary>Sets a view's 4D rotation, 16 floats column-major (version 11; <see cref="SetCamera"/> for any view).
+    /// </summary>
+    public int SetViewCamera(IntPtr host, ulong view, ReadOnlySpan<float> matrix)
+    {
+        if (matrix.Length != 16)
+        {
+            throw new ArgumentException("a camera is 16 floats", nameof(matrix));
+        }
+        fixed (float* m = matrix)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, int>)_exports["m6h_set_view_camera"])(host, view, m);
+        }
+    }
+
+    /// <summary>Shows or hides an open Local (version 11): a hidden Local gets no pane and no draw.</summary>
+    public int SetViewVisible(IntPtr host, ulong view, bool visible) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, int>)_exports["m6h_set_view_visible"])(host, view, visible ? 1u : 0u);
+
+    /// <summary>
+    /// Sets pane 0 to 3 (version 11): a view drawn into a rectangle of the surface, in surface pixels, with style slot
+    /// 0 (none) to 4. While any pane is set, frames are composite frames; panes lie inside the viewport and never
+    /// overlap.
+    /// </summary>
+    public int SetPane(IntPtr host, uint pane, ulong view, int x, int y, uint width, uint height, uint style) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, ulong, int, int, uint, uint, uint, int>)_exports["m6h_set_pane"])(
+            host, pane, view, x, y, width, height, style);
+
+    /// <summary>Clears pane 0 to 3 (version 11); with every pane clear, frames are one-view frames again.</summary>
+    public int ClearPane(IntPtr host, uint pane) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, int>)_exports["m6h_clear_pane"])(host, pane);
+
+    /// <summary>ADR-D02 B21: a set pane's core flags, 0 or <see cref="PaneAntipode"/>; a later SetPane resets them.</summary>
+    public int SetPaneFlags(IntPtr host, uint pane, uint flags) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, int>)_exports["m6h_set_pane_flags"])(host, pane, flags);
+
+    /// <summary>ADR-D02 B21: the raw view's pane flag, its stereographic chart after -I (SA2_PANE_ANTIPODE).</summary>
+    public const uint PaneAntipode = 1;
+    public const uint PanePreview = 2, PanePreviewBefore = 4;
+
+    /// <summary>The focus's perspective projection (the shape's d4).</summary>
+    public const uint ProjectionPerspective = 0;
+    /// <summary>The focus's orthographic projection.</summary>
+    public const uint ProjectionOrthographic = 1;
+    /// <summary>No focus cell: every sticker is drawn.</summary>
+    public const uint FocusNone = uint.MaxValue;
+    /// <summary>ADR-D02 B21: the raw view's stereographic chart from the focus pole; it needs a focus cell and 0 &lt;= focus_cos.</summary>
+    public const uint ProjectionStereographic = 2;
+
+    /// <summary>
+    /// Sets the focus a view's frames draw with (version 12): the projection, the cell whose centre is the pole (turned
+    /// to +w before the view's camera) or <see cref="FocusNone"/>, the least dot product with the pole of a drawn
+    /// sticker's posed centre, and the spread (1 to 3) that pulls the cells apart. (perspective, none, -1, 1) is the
+    /// default. A view that is not open or a value out of range answers <see cref="InvalidArgument"/>.
+    /// </summary>
+    public int SetViewFocus(IntPtr host, ulong view, uint projection, uint focusCell, float focusCos, float spread) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, uint, float, float, int>)_exports["m6h_set_view_focus"])(
+            host, view, projection, focusCell, focusCos, spread);
+
+    /// <summary>A pick's states (the Rust M6H_PICK_*) and the host's "none" (M6H_NONE).</summary>
+    public const uint PickPending = 0, PickReady = 1, PickStale = 2, None = uint.MaxValue;
+
+    /// <summary>What m6h_pick_poll answers (the Rust M6hPick, version 14).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Pick
+    {
+        public uint State;
+        /// <summary>1 when a sticker of the view was under the point.</summary>
+        public uint Hit;
+        /// <summary>The view whose pane holds the point.</summary>
+        public ulong View;
+        /// <summary>The engine revision the picked frame drew.</summary>
+        public ulong EngineRevision;
+        /// <summary>The sticker hit, as its home slot; <see cref="None"/> without a hit.</summary>
+        public uint Sticker;
+        public uint Piece;
+        /// <summary>The slot the sticker occupies; <see cref="None"/> for a piece off the lattice.</summary>
+        public uint Slot;
+        /// <summary>1 when the piece's pose is on the lattice.</summary>
+        public uint Lattice;
+    }
+
+    /// <summary>
+    /// Asks the core's ID pass at surface pixel (x, y) of the newest frame (version 14, ADR-D02 B17); writes the ticket
+    /// <see cref="PickPoll"/> answers.
+    /// </summary>
+    public int PickRequest(IntPtr host, uint x, uint y, out ulong ticket)
+    {
+        ulong t = 0;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, ulong*, int>)_exports["m6h_pick_request"])(host, x, y, &t);
+        ticket = t;
+        return code;
+    }
+
+    /// <summary>Answers a pick without waiting (version 14): pending, ready (with or without a hit) or stale.</summary>
+    public int PickPoll(IntPtr host, ulong ticket, out Pick pick)
+    {
+        Pick p = default;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, ulong, Pick*, int>)_exports["m6h_pick_poll"])(host, ticket, &p);
+        pick = p;
+        return code;
+    }
+
+    /// <summary>The size of a view layout row (sa2_view_layout).</summary>
+    public const int LayoutBytes = 1560;
+
+    /// <summary>
+    /// Sets the layout a view's frames draw with (version 13): null for the projection chain, or a sa2_view_layout row of
+    /// <see cref="LayoutBytes"/> bytes (D02.ShellHopf builds it from Look Lab's hopf-rings.json). A view that is not
+    /// open, a row of another size or rings that do not fit the core's cells answer a refusal.
+    /// </summary>
+    public int SetViewLayout(IntPtr host, ulong view, byte[]? layout)
+    {
+        var call = (delegate* unmanaged[Cdecl]<IntPtr, ulong, byte*, int>)_exports["m6h_set_view_layout"];
+        if (layout is null)
+        {
+            return call(host, view, null);
+        }
+        if (layout.Length != LayoutBytes)
+        {
+            return InvalidArgument;
+        }
+        fixed (byte* row = layout)
+        {
+            return call(host, view, row);
+        }
+    }
+
+    /// <summary>
+    /// Sets the shape that a view's frames draw with (version 9): the cell shrink, the sticker shrink, d4 and the zoom,
+    /// or null for the core's defaults (0.76, 0.82, 1.18 and 1.15, the shape every view has until this call). A view
+    /// that is not open or a value out of the core's range answers <see cref="InvalidArgument"/> and changes nothing.
+    /// </summary>
+    public int SetViewShape(IntPtr host, ulong view, float[]? shape)
+    {
+        if (shape is not null && shape.Length != 4)
+        {
+            throw new ArgumentException("a view shape is 4 floats", nameof(shape));
+        }
+        fixed (float* s = shape)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, int>)_exports["m6h_set_view_shape"])(host, view, s);
+        }
+    }
+
+    /// <summary>A style slot as the core's sa2_view_style lays it out (348 bytes; version 10, with B20's slice).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ViewStyle
+    {
+        public uint StructSize, TintMode, DimMode;
+        public float DimAmount, OutlineWidth;
+        public fixed float Palette[64];
+        public fixed float Matrix[9];
+        /// <summary>ADR-D02 B20: the cut slice (<see cref="SliceOff"/> to <see cref="SliceInside"/>), its inside layer's
+        /// shrink factor, its radius shell about the focus pole (angles) and the turn preview's ghost colour.</summary>
+        public uint SliceMode;
+        public float SliceShrink, ShellMin, ShellMax;
+        public fixed float Ghost[4];
+        public uint Reserved;
+
+        /// <summary>A slot that changes nothing: no tint, no dim, an empty palette, the identity matrix.</summary>
+        public static ViewStyle Plain()
+        {
+            var style = new ViewStyle { StructSize = (uint)sizeof(ViewStyle) };
+            style.Matrix[0] = style.Matrix[4] = style.Matrix[8] = 1;
+            return style;
+        }
+    }
+
+    /// <summary>The piece style's channels and the tint and dim modes (the core's SA2_STYLE_* values).</summary>
+    public const uint StyleFill = 0, StyleOutline = 1, TintFill = 1, TintOutline = 2, DimMarked = 1, DimUnmarked = 2;
+
+    /// <summary>ADR-D02 B17 (the core's ABI 10): the dim modes that hide instead; a hidden piece is neither drawn nor picked.</summary>
+    public const uint HideMarked = 3, HideUnmarked = 4;
+
+    /// <summary>ADR-D02 B20: the piece style's slice channel (one byte per piece, 1 = the inside layer) and the slice
+    /// modes: off, both layers, the outside layer only (the split's left copy), the inside layer only (its right).</summary>
+    public const uint StyleSlice = 2, SliceOff = 0, SliceBoth = 1, SliceOutside = 2, SliceInside = 3;
+
+    /// <summary>A fill byte's dim-set bit (the core's SA2_STYLE_DIM): the pieces a dim or hide mode acts on.</summary>
+    public const byte DimSet = 0x80;
+    /// <summary>An outline byte's view-only error overlay bit (the core's SA2_STYLE_ERROR).</summary>
+    public const byte StyleError = 0x10;
+
+    /// <summary>
+    /// Sets one channel of the piece style of engine revision <paramref name="revision"/>, the one it was computed for
+    /// (version 10; checkpoint C3.2's revision binding): one byte per piece, or with <paramref name="byPose"/> one byte
+    /// per pose of the session's head, which the host expands with the head's own pose index; null clears the channel.
+    /// The adopted revision's style is set at once; one for a revision handed out but not adopted yet is held and set
+    /// with its adoption; an older one answers <see cref="Unavailable"/>. The core drops it at the next adoption, so it is
+    /// set again for each shown revision.
+    /// </summary>
+    public int SetPieceStyle(IntPtr host, ulong revision, uint channel, byte[]? styles, bool byPose)
+    {
+        fixed (byte* s = styles)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, byte*, uint, uint, int>)_exports["m6h_set_piece_style"])(
+                host, revision, channel, s, (uint)(styles?.Length ?? 0), byPose ? 1u : 0u);
+        }
+    }
+
+    /// <summary>
+    /// ADR-D02 B18 (for B20): sets the adopted revision's twist transform: the plane (u then v, 8 floats), the angle, one
+    /// byte per piece (1 moves) and the phase in 0..1; the moving pieces draw turned by R((phase - 1) angle) after their
+    /// pose, so phase 1 draws the revision as it is. Null clears it. The core drops it at the next adoption.
+    /// <paramref name="revision"/> is the row's (<see cref="TwistRow.Revision"/>): the host sets it only while that
+    /// revision is the adopted one (B18 review finding B18-04). A plane that is not 8 floats, or a moving set without
+    /// one, answers <see cref="InvalidArgument"/> before the host is called, so it never reads past a short array
+    /// (B18-01).
+    /// </summary>
+    public int SetTransform(IntPtr host, ulong revision, float[]? plane, float angle, byte[]? moving, float phase)
+    {
+        if (plane is { Length: not 8 } || (moving is not null && plane is null))
+        {
+            return InvalidArgument;
+        }
+        fixed (float* p = plane)
+        fixed (byte* m = moving)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, float, byte*, uint, float, int>)_exports["m6h_set_transform"])(
+                host, revision, p, angle, m, (uint)(moving?.Length ?? 0), phase);
+        }
+    }
+
+    /// <summary>
+    /// A twist's certified transform: its plane (u then v), its angle in (0, pi], its moving pieces and the engine
+    /// revision of the head it was read at, which <see cref="SetTransform"/> names.
+    /// </summary>
+    public sealed record TwistRow(float[] Plane, float Angle, byte[] Moving, ulong Revision);
+
+    /// <summary>
+    /// ADR-D02 B18: the certified transform of the session's twist at <paramref name="cap"/> with menu item
+    /// <paramref name="item"/>, not committed; null when the twist is not admissible or has no plane (the identity).
+    /// </summary>
+    public int TwistTransform(IntPtr host, uint cap, ulong item, out TwistRow? row, out ulong revision)
+    {
+        var plane = new float[8];
+        var moving = new byte[177_120];
+        float angle = 0;
+        uint status = 0;
+        ulong at = 0;
+        int code;
+        fixed (float* p = plane)
+        fixed (byte* m = moving)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, uint, ulong, float*, float*, byte*, uint*, ulong*, int>)_exports["m6h_twist_transform"])(
+                host, cap, item, p, &angle, m, &status, &at);
+        }
+        revision = at;
+        row = code == Ok && status == 1 ? new TwistRow(plane, angle, moving, at) : null;
+        return code;
+    }
+
+    /// <summary>Sets style slot 1 to 4 (a one-view frame uses slot 1), or clears it with null (version 10).</summary>
+    public int SetViewStyle(IntPtr host, uint slot, ViewStyle? style)
+    {
+        var call = (delegate* unmanaged[Cdecl]<IntPtr, uint, ViewStyle*, int>)_exports["m6h_set_view_style"];
+        if (style is not { } value)
+        {
+            return call(host, slot, null);
+        }
+        return call(host, slot, &value);
+    }
+
     public int Pump(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_pump"])(host);
 
     /// <summary>Submits a frame of the view to the surface; <paramref name="frame"/> names it.</summary>
@@ -446,6 +788,51 @@ public sealed unsafe class HostLibrary : IDisposable
         return code;
     }
 
+    /// <summary>Brief SF2: posts one key-down to the host's ordered key queue and returns at once with its ticket; with
+    /// <paramref name="arm"/> the host first reads the twist row (<paramref name="cap"/>, <paramref name="item"/>) at the
+    /// head the key will twist.</summary>
+    public int KeyPost(IntPtr host, string chord, bool repeat, bool arm, uint cap, ulong item, out ulong ticket)
+    {
+        var c = Encoding.UTF8.GetBytes(chord);
+        ulong t = 0;
+        int code;
+        fixed (byte* cb = c)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, byte*, nuint, uint, uint, uint, ulong, ulong*, int>)_exports["m6h_key_post"])(
+                host, cb, (nuint)c.Length, repeat ? 1u : 0u, arm ? 1u : 0u, cap, item, &t);
+        }
+        ticket = t;
+        return code;
+    }
+
+    /// <summary>Brief SF2: the oldest posted key whose commit answer is ready, in press order (Ticket 0: none).</summary>
+    public int KeyPoll(IntPtr host, out KeyAnswer answer)
+    {
+        KeyAnswer a = default;
+        var code = ((delegate* unmanaged[Cdecl]<IntPtr, KeyAnswer*, int>)_exports["m6h_key_poll"])(host, &a);
+        answer = a;
+        return code;
+    }
+
+    /// <summary>Brief SF2: the armed row of the key the newest poll answered, or null.</summary>
+    public TwistRow? KeyRow(IntPtr host, ulong ticket, ulong revision)
+    {
+        var plane = new float[8];
+        var moving = new byte[177_120];
+        float angle = 0;
+        int code;
+        fixed (float* p = plane)
+        fixed (byte* m = moving)
+        {
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, float*, byte*, int>)_exports["m6h_key_row"])(
+                host, ticket, p, &angle, m);
+        }
+        return code == Ok ? new TwistRow(plane, angle, moving, revision) : null;
+    }
+
+    /// <summary>Brief SF2: routes and answers every posted key before it returns (before a close).</summary>
+    public int KeyDrain(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_key_drain"])(host);
+
     /// <summary>Routes a key-up of <paramref name="chord"/>; its modifiers are ignored.</summary>
     public int KeyUp(IntPtr host, string chord)
     {
@@ -562,6 +949,72 @@ public sealed unsafe class HostLibrary : IDisposable
     public string Answer(IntPtr host) => Text(host, "m6h_answer");
 
     /// <summary>
+    /// Reads the head's state digests (ADR-D02 B5); <see cref="Answer"/> gives {"digest", "pose_ids_sha256",
+    /// "pose_lattice_sha256"}, the last two null with Jumble off.
+    /// </summary>
+    public int StateDigest(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_state_digest"])(host);
+
+    // The existing function table stays fixed. CoreLibrary holds the loaded module for these addresses' lifetime.
+    public int BindPreviewCore(IntPtr host, string corePath)
+    {
+        var core = NativeLibrary.Load(corePath);
+        try
+        {
+            NativeLibrary.TryGetExport(core, "sa2_preview_poses_set", out var poses);
+            NativeLibrary.TryGetExport(core, "sa2_preview_transform_set", out var transform);
+            return ((delegate* unmanaged[Cdecl]<IntPtr, IntPtr, IntPtr, int>)_exports["m6h_preview_bind"])(host, poses, transform);
+        }
+        finally { NativeLibrary.Free(core); }
+    }
+
+    public int BuildPreview(IntPtr host, IReadOnlyList<Letter> letters)
+    {
+        var pairs = new uint[letters.Count * 2];
+        for (int i = 0; i < letters.Count; i++)
+        {
+            pairs[2 * i] = (uint)letters[i].Cap;
+            pairs[2 * i + 1] = (uint)letters[i].Item;
+        }
+        fixed (uint* data = pairs)
+            return ((delegate* unmanaged[Cdecl]<IntPtr, uint*, uint, int>)_exports["m6h_preview_build"])(host, data, (uint)letters.Count);
+    }
+
+    public int ScrubPreview(IntPtr host, ulong id, int prefix, float phase) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, float, int>)_exports["m6h_preview_scrub"])(host, id, (uint)prefix, phase);
+
+    public int ClearPreview(IntPtr host) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_preview_clear"])(host);
+
+    public int PreviewArgs(IntPtr host, ulong id, int letter) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, int>)_exports["m6h_preview_args"])(host, id, (uint)letter);
+
+    public int PreviewMoved(IntPtr host, ulong id, byte[] moved)
+    {
+        fixed (byte* bytes = moved)
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, byte*, uint, int>)_exports["m6h_preview_moved"])(host, id, bytes, (uint)moved.Length);
+    }
+
+    public int PreviewPrefixMoved(IntPtr host, ulong id, int prefix, byte[] moved)
+    {
+        fixed (byte* bytes = moved)
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, byte*, uint, int>)_exports["m6h_preview_prefix_moved"])(
+                host, id, (uint)prefix, bytes, (uint)moved.Length);
+    }
+
+    public int PreviewReport(IntPtr host) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_preview_report"])(host);
+
+    public int SliceCheck(IntPtr host, ulong revision, int cap, int item) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, ulong, int>)_exports["m6h_slice_check"])(host, revision, (uint)cap, (ulong)item);
+
+    /// <summary>D02's exact cap, frames, key items and press summary. The JSON is read through <see cref="Answer"/>.</summary>
+    public int GripReport(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_grip_report"])(host);
+
+    /// <summary>Changes the view's grip frame and returns its new report through <see cref="Answer"/>.</summary>
+    public int GripSet(IntPtr host, uint cap, uint frame) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, int>)_exports["m6h_grip_set"])(host, cap, frame);
+
+    /// <summary>
     /// Closes the session and runs its correctness control once. <paramref name="shownRevision"/> is the engine
     /// revision of the newest presented frame (0 for none); <see cref="Check"/> gives the control's record.
     /// </summary>
@@ -602,6 +1055,109 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>Frees a host. The core's context stays the shell's to detach afterwards.</summary>
     public void Destroy(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, void>)_exports["m6h_destroy"])(host);
+
+    /// <summary>Sets one encoded RGB triple per home cell, or clears the table with null or an empty array.</summary>
+    public int SetStickerColours(IntPtr host, float[]? rgb)
+    {
+        const int count = StickerColouring.CellCount;
+        if (rgb is { Length: > 0 } && rgb.Length != 3 * count)
+        {
+            return InvalidArgument;
+        }
+        fixed (float* p = rgb)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, float*, uint, int>)_exports["m6h_set_sticker_colours"])(
+                host, p, p == null ? 0u : count);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SceneLook
+    {
+        public uint StructSize, Reserved;
+        public float Red, Green, Blue, Alpha;
+        public float Fog, Glow, EdgeBrightness, EdgeWeight;
+    }
+
+    /// <summary>Sets the clear colour and the four carried scene values. Null restores the core's defaults.</summary>
+    public int SetSceneLook(IntPtr host, SceneLookValues? look)
+    {
+        var call = (delegate* unmanaged[Cdecl]<IntPtr, SceneLook*, int>)_exports["m6h_set_scene_look"];
+        if (look is null)
+        {
+            return call(host, null);
+        }
+        var row = new SceneLook
+        {
+            StructSize = (uint)sizeof(SceneLook), Reserved = 0,
+            Red = (float)look.Background.R, Green = (float)look.Background.G, Blue = (float)look.Background.B, Alpha = 1,
+            Fog = (float)look.Fog, Glow = (float)look.Glow,
+            EdgeBrightness = (float)look.EdgeBrightness, EdgeWeight = (float)look.EdgeWeight,
+        };
+        return call(host, &row);
+    }
+
+    public const uint StyleStatus = 3;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct StatusEntry
+    {
+        public uint Shape;
+        public float Spacing, Width, Angle;
+        public float Red, Green, Blue, Alpha;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct StatusStyle
+    {
+        public uint StructSize, Flags;
+        public fixed uint Entries[128]; // eight 32-byte patterns, then eight 32-byte marks
+    }
+
+    public int SetStatusStyle(IntPtr host, StatusPatterns table, TokenSet tokens, bool capture)
+    {
+        var row = new StatusStyle { StructSize = (uint)sizeof(StatusStyle), Flags = capture ? 1u : 0u };
+        var entries = (StatusEntry*)row.Entries;
+        foreach (var entry in table.Patterns)
+        {
+            entries[entry.Code] = ResolveStatusEntry(entry, tokens);
+        }
+        foreach (var entry in table.Marks)
+        {
+            entries[8 + entry.Code] = ResolveStatusEntry(entry, tokens);
+        }
+        return ((delegate* unmanaged[Cdecl]<IntPtr, StatusStyle*, int>)_exports["m6h_set_status_style"])(host, &row);
+    }
+
+    private static StatusEntry ResolveStatusEntry(StatusPatterns.Entry entry, TokenSet tokens)
+    {
+        var colour = tokens.Colour(entry.Colour);
+        return new StatusEntry
+        {
+            Shape = entry.ShapeCode, Spacing = entry.Spacing, Width = entry.Width, Angle = entry.Angle,
+            Red = (float)colour.R, Green = (float)colour.G, Blue = (float)colour.B, Alpha = 1,
+        };
+    }
+
+    public int StatusDrawn(IntPtr host, uint pane, uint[] words)
+    {
+        fixed (uint* p = words)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint*, uint, int>)_exports["m6h_status_drawn"])(
+                host, pane, p, (uint)words.Length);
+        }
+    }
+
+    public int StatusTargets(IntPtr host, ulong revision, uint kind, uint[] targets, byte[] pieces)
+    {
+        if (pieces.Length != CorePlaces.Pieces) return InvalidArgument;
+        fixed (uint* input = targets)
+        fixed (byte* output = pieces)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, uint*, uint, byte*, int>)_exports["m6h_status_targets"])(
+                host, revision, kind, input, (uint)targets.Length, output);
+        }
+    }
 
     public void Dispose()
     {
