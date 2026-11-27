@@ -2537,9 +2537,10 @@ class Desktop:
 
 
 def run(script: str, out: Path, build: Path | None, state: str | None, desktop=None, launcher=launch.main,
-        clock=time.monotonic, sleep=time.sleep) -> tuple[int, dict]:
-    """Launches the run, watches the foreground, and compares the screens. Returns the exit code and the record."""
-    path = SCRIPTS / f"{script}.json"
+        clock=time.monotonic, sleep=time.sleep, path: Path | None = None) -> tuple[int, dict]:
+    """Launches the run, watches the foreground, and compares the screens. Returns the exit code and the record.
+    A driver that writes its own script (track_j.py, B32) passes its path; a script of d02_scripts/ is found by name."""
+    path = path or SCRIPTS / f"{script}.json"
     source = data()
     if script not in EXPECT or not path.is_file():
         raise ValueError(f"no D02 script named {script} (renderer/shell/d02_scripts/)")

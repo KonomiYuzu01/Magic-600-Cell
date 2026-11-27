@@ -70,7 +70,9 @@ class SampleTests(unittest.TestCase):
         self.assertEqual(set(self.index['not_built']), {'hidden-piece masks'})
 
     def test_every_file_listed_exists_and_nothing_else(self):
-        listed = {'states.json', 'corrections.json', 'cap-layout.json', 'meeting-caps.json', 'seed7001-words.json'}
+        # j1-session.json is the reduced Track J's session (B32), not adapter output.
+        listed = {'states.json', 'corrections.json', 'cap-layout.json', 'meeting-caps.json', 'seed7001-words.json',
+                  'j1-session.json'}
         for row in self.index['states']:
             listed |= {f"{row['state']}/{name}" for name in row['files']}
         present = {str(p.relative_to(SAMPLES)).replace('\\', '/') for p in SAMPLES.rglob('*') if p.is_file()}
