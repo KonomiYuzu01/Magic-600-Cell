@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Magic600.Chrome;
 
-// ADR-D01.51: the frame marks changes to the colours that carry state or encoding.
+// ADR-D01.51: the frame marks changes to the colours that carry state or encoding: the instruments of ADR-D01.77.
 public static class ColourMark
 {
     public const string Slot = "mark.colours";
@@ -14,12 +14,12 @@ public static class ColourMark
     public static IReadOnlyList<ViewMark> BorderMarks(TokenSet tokens, string view)
     {
         if (!tokens.NonStandardColours) return Array.Empty<ViewMark>();
-        string[] roles = tokens.Colours.Where(c => c.Value.Overridden && tokens.System.Roles[c.Key].Group is "state" or "encoding")
+        string[] roles = tokens.Colours.Where(c => c.Value.Overridden && tokens.System.Layers.Layer(c.Key) == FrameLayer.Instrument)
             .Select(c => c.Key).OrderBy(name => name, StringComparer.Ordinal).ToArray();
         string names = string.Join(", ", roles.Take(6));
         if (roles.Length > 6) names += FormattableString.Invariant($" and {roles.Length - 6} more");
         return new[] { new ViewMark("panel.appearance", "non-standard colours", "severity.warning",
-            $"Overridden roles: {names}\nReset colour token (palette) resets one\nToken set {Digest(tokens)}") };
+            $"Overridden instruments: {names}\nReset colour token (palette) resets one\nToken set {Digest(tokens)}") };
     }
 
     public static string Digest(TokenSet tokens)

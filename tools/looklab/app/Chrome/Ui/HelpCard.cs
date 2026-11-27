@@ -74,7 +74,7 @@ public sealed partial class HelpCard : ChromeOverlay
     }
 }
 
-internal sealed partial class HelpFigurePlate : VBoxContainer
+internal sealed partial class HelpFigurePlate : PanelContainer
 {
     private readonly HelpFigureDrawing drawing;
     private readonly Label caption = new() { ThemeTypeVariation = "DimLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
@@ -82,8 +82,11 @@ internal sealed partial class HelpFigurePlate : VBoxContainer
 
     internal HelpFigurePlate(Func<TokenSet> tokens)
     {
+        // ADR-D01.77: the figure plate is a surface the art line paints, with a style of its own.
+        ThemeTypeVariation = "HelpPlate";
         drawing = new HelpFigureDrawing(tokens);
-        AddChild(drawing); AddChild(caption); AddChild(basis);
+        var column = new VBoxContainer(); AddChild(column);
+        column.AddChild(drawing); column.AddChild(caption); column.AddChild(basis);
     }
 
     internal void Show(HelpFigure? figure, string line)

@@ -47,7 +47,7 @@ public sealed partial class KeyMapPanel : PanelContainer
 
     public KeyMapPanel(ChromeFrame frame, CommandRegistry registry)
     {
-        this.frame = frame; this.registry = registry; Name = "KeyMap"; ThemeTypeVariation = "OverlayBox"; Visible = false;
+        this.frame = frame; this.registry = registry; Name = "KeyMap"; ThemeTypeVariation = "KeyMapBody"; Visible = false;
         var column = new VBoxContainer(); AddChild(column);
         var top = new HBoxContainer(); column.AddChild(top);
         top.AddChild(ChromeWidgets.Text("Key map", "HeadingLabel"));

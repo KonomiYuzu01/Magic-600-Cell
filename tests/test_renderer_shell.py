@@ -1680,6 +1680,8 @@ class D02Host(unittest.TestCase):
         self.assertIs(run.EXPECT["signature"], run.expect_signature)  # ADR-D01.70
         self.assertIs(run.EXPECT["binding-chip"], run.expect_binding_chip)  # ADR-D01.42
         self.assertIs(run.EXPECT["rail-locks"], run.expect_rail_locks)  # ADR-D01.65
+        self.assertIs(run.EXPECT["frame-layers"], run.expect_frame_layers)  # ADR-D01.77
+        self.assertIn("frame-layers", run.ON_FIXTURE)
         self.assertIs(run.EXPECT["setup"], run.expect_setup)  # ADR-D01.68
         # CR-16's live selector and difference file: on a fixture as tuning-save is, the file read from the run folder.
         self.assertIs(run.EXPECT["tuning-revert"], run.expect_tuning_revert)
