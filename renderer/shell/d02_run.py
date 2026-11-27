@@ -2255,6 +2255,98 @@ def expect_tuning_save(dumps: list[dict], source: dict, state: str | None) -> li
 EXPECT["tuning-save"] = expect_tuning_save
 ON_FIXTURE.add("tuning-save")
 
+TUNING_PENDING = "Live change: Esc reverts it"
+TUNING_EXPORTED = "Exported tuning-diff.txt to the run folder"
+TUNING_NOTHING = "nothing to revert: no live change is pending"
+
+
+def expect_tuning_revert(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """CR-16's tuning-revert script: the open reveals the panel over the fold with nothing pending; a preset and a
+    theme.tune make a live change and the panel says Esc reverts it; the real Escape key reverts both to the open's
+    tuning and tint palette and the line goes; the revert row with nothing pending is refused, naming why; a new knob
+    change is exported, the panel saying so, and Escape reverts it too. The state digest and the tint bytes never
+    move."""
+    marks = [f"wait {n} ms" for n in range(701, 709)]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(mark not in by_step for mark in marks):
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    t = {mark: by_step[mark].get("tuning") for mark in marks}
+    tint = {mark: by_step[mark].get("tint") or {} for mark in marks}
+    if any(not isinstance(v, dict) for v in t.values()):
+        return ["a step's dump has no tuning (is D02 on and the panel built?)"]
+    texts = {mark: [text for _, text in map(tuple, by_step[mark].get("lines", []))] for mark in marks}
+    problems = []
+    first = t["wait 701 ms"]
+
+    def want(mark, ok, text):
+        if not ok:
+            problems.append(f"after '{mark}': {text}")
+
+    def pending(mark):
+        return any(TUNING_PENDING in text for text in texts[mark])
+
+    for mark in marks:
+        want(mark, t[mark].get("state_digest") == first.get("state_digest"), "the state digest moved")
+        want(mark, t[mark].get("shown") is True, "the panel is not shown")
+        want(mark, not t[mark].get("status"), f"the panel refused: {t[mark].get('status')!r}")
+        for key in ("outline_sha256", "fill_sha256"):
+            want(mark, tint[mark].get(key) == tint["wait 701 ms"].get(key), f"the tint's {key} moved")
+    want("wait 701 ms", first.get("revealed") is (first.get("folded") is True) and not pending("wait 701 ms"),
+         f"open: revealed {first.get('revealed')}, a pending line {pending('wait 701 ms')}")
+    preset, tuned = t["wait 702 ms"], t["wait 703 ms"]
+    want("wait 702 ms", preset.get("preset") == "graphite.inspecting" and preset.get("live") != first.get("live")
+         and pending("wait 702 ms"), f"the preset: {preset.get('preset')!r}, a pending line {pending('wait 702 ms')}")
+    tone, contrast = tuning_knob(tuned.get("live", ""), "tone"), tuning_knob(tuned.get("live", ""), "contrast")
+    want("wait 703 ms", tone is not None and abs(tone - 0.03) < 1e-6 and contrast is not None and abs(contrast - 1.1) < 1e-6
+         and pending("wait 703 ms"), f"theme.tune: tone {tone}, contrast {contrast}, a pending line {pending('wait 703 ms')}")
+    for mark in ("wait 704 ms", "wait 708 ms"):
+        back = t[mark]
+        want(mark, back.get("live") == first.get("live") and back.get("preset") == first.get("preset")
+             and back.get("presets") == first.get("presets") and back.get("slot") == first.get("slot")
+             and tint[mark].get("palette_sha256") == tint["wait 701 ms"].get("palette_sha256") and not pending(mark),
+             f"Escape did not revert to the open's tuning: {back.get('live')!r} (preset {back.get('preset')!r}), "
+             f"the palette {'back' if tint[mark].get('palette_sha256') == tint['wait 701 ms'].get('palette_sha256') else 'moved'}, "
+             f"a pending line {pending(mark)}")
+    refused = t["wait 705 ms"]
+    want("wait 705 ms", refused.get("live") == first.get("live") and any(TUNING_NOTHING in text for text in texts["wait 705 ms"]),
+         f"the revert with nothing pending was not refused with its reason: {texts['wait 705 ms'][-3:]}")
+    moved, exported = t["wait 706 ms"], t["wait 707 ms"]
+    tone = tuning_knob(moved.get("live", ""), "tone")
+    want("wait 706 ms", tone is not None and abs(tone - 0.05) < 1e-6 and pending("wait 706 ms"),
+         f"the second change: tone {tone}, a pending line {pending('wait 706 ms')}")
+    want("wait 707 ms", exported.get("live") == moved.get("live") and pending("wait 707 ms")
+         and any(text.startswith(TUNING_EXPORTED) for text in texts["wait 707 ms"]),
+         f"the export: {[text for text in texts['wait 707 ms'] if 'xport' in text]}, a pending line {pending('wait 707 ms')}")
+    if not problems:
+        print(f"tuning-revert: {len(marks)} steps at {first.get('window_width')} px; a preset and theme.tune reverted by "
+              f"Escape to {str(first.get('live'))[:40]}...; the empty revert refused; the difference exported; the state "
+              f"digest {str(first.get('state_digest'))[:16]} held")
+    return problems
+
+
+def check_tuning_diff(out: Path) -> list[str]:
+    """The difference file tuning.diff.export wrote into the run folder: the format line, the preset line, theme=
+    and scene=, and the exported tone of the family in force."""
+    path = out / "tuning-diff.txt"
+    if not path.is_file():
+        return ["tuning.diff.export wrote no tuning-diff.txt into the run folder"]
+    raw = path.read_bytes()
+    lines = raw.decode("utf-8").split("\n")
+    problems = [] if raw.endswith(b"\n") and b"\r" not in raw and not raw.startswith(b"\xef\xbb\xbf") else \
+        ["tuning-diff.txt is not LF text without a byte order mark"]
+    if len(lines) < 5 or lines[0] != "format=magic600-tuning-diff/1" or not lines[1].startswith("preset=") \
+            or not lines[2].startswith("theme=") or not lines[3].startswith("scene="):
+        return problems + [f"tuning-diff.txt starts {lines[:4]}"]
+    family = lines[2].split("=", 1)[1]
+    if f"knob.{family}.tone=0.05" not in lines:
+        problems.append(f"tuning-diff.txt has no knob.{family}.tone=0.05: {lines}")
+    return problems
+
+
+EXPECT["tuning-revert"] = expect_tuning_revert
+ON_FIXTURE.add("tuning-revert")
+FOLDER_CHECKS = {"tuning-revert": check_tuning_diff}
+
 
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
@@ -2390,6 +2482,8 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         problems += EXPECT[script](dumps, source, state)
     if script in EVENT_CHECKS:
         problems += EVENT_CHECKS[script](out / "events.jsonl")
+    if script in FOLDER_CHECKS:
+        problems += FOLDER_CHECKS[script](out)
     record = {"format": FORMAT, "script": script, "state": state, "steps": len(dumps), "mismatches": problems,
               "foreground_kept": after is not None and after == before, "topmost": bool(topmost), "windows": seen,
               "gave_back": max((dump.get("window", {}).get("gave_back", 0) for dump in dumps), default=0)}

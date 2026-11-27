@@ -82,6 +82,7 @@ public sealed record TuningStrip(string Name, IReadOnlyList<Rgb> Steps, int? Mar
 // held and puts the appearance back exactly on release. It holds no session and no puzzle state: a knob moves colours
 // only. B31 adds the presets (shipped read-only, forked on edit), Advanced (role overrides behind a switch, with
 // search), the held simulation (one 3x3 matrix for the core's view style and the chrome's filter) and Save's checks.
+// CR-16's last two rows add the live selector (ADR-D01.50: Esc reverts) and the difference file.
 public sealed class Tuning
 {
     public const string PanelId = "tuning", Glyph = "panel.tuning", Title = "Tuning";
@@ -116,15 +117,14 @@ public sealed class Tuning
     public string PresetLine => Current is not { } p ? "Preset: none" :
         $"Preset: {p.Name}" + (p.Shipped ? " (shipped, read-only)" : p.From != null ? $" (from {presets.First(s => s.Id == p.From).Name})" : "") + (Edited ? " · edited, not saved" : "");
 
-    public string? ApplyPreset(string? id)
+    public string? ApplyPreset(string? id) => Select(() =>
     {
-        if (Busy is { } why) return why;
         if (presets.FirstOrDefault(p => p.Id == id || string.Equals(p.Name, id, StringComparison.OrdinalIgnoreCase)) is not { } preset)
             return "the presets are " + string.Join(", ", presets.Select(p => p.Id));
         string? refused = Try(() => preset.Value.Apply(Look));
         if (refused == null) Preset = preset.Id;
         return refused;
-    }
+    });
 
     // An edit made: a shipped preset in force forks into a user preset (its base until saved).
     private string? Forked(string? refused)
@@ -146,6 +146,7 @@ public sealed class Tuning
 
     // tuning.preset.save: the Save checks first; a refusal names its failing pairs and stores nothing. A name saves
     // under that user preset (new or replaced); no name saves into the user preset in force, forking a shipped one.
+    // A save ends the live selection, keeping it.
     public IReadOnlyList<string> Issues { get; private set; } = Array.Empty<string>();
     public string? Save(string? name = null)
     {
@@ -167,6 +168,7 @@ public sealed class Tuning
             presets.Add(target = new TuningPreset(UniqueId((shipped?.Id ?? "user.tuning") + ".copy"), (shipped?.Name ?? "Tuning") + " copy", false, Live, shipped?.Id));
         }
         target.Value = Live; Preset = target.Id;
+        Forget();
         return null;
     }
 
@@ -209,9 +211,8 @@ public sealed class Tuning
 
     // The table's token.override.set (role=L C h) and token.override.reset (role=reset) for the family in force. It
     // switches Advanced on, so the panel shows what it changed.
-    public string? Override(string? argument)
+    public string? Override(string? argument) => Select(() =>
     {
-        if (Busy is { } why) return why;
         string[] kv = (argument ?? "").Split('=', 2, StringSplitOptions.TrimEntries);
         if (kv.Length != 2 || !Look.Family.Roles.ContainsKey(kv[0])) return "it needs role=L C h or role=reset, such as tint.jumble.height.4=0.5 0.02 250";
         Advanced = true;
@@ -221,7 +222,7 @@ public sealed class Tuning
         if (lch.Length != 3 || Enumerable.Range(0, 3).Any(i => !double.TryParse(lch[i], NumberStyles.Float, CultureInfo.InvariantCulture, out v[i])))
             return "the colour is L C h, such as 0.5 0.02 250";
         return Forked(Try(() => Look.SetOverride(kv[0], new Oklch(v[0], v[1], v[2]))));
-    }
+    });
 
     // B31: the held simulation. It changes no appearance: the host sends Matrix to the core's view style and draws it
     // over the chrome while held.
@@ -248,19 +249,17 @@ public sealed class Tuning
 
     private string? Busy => Holding ? "release the held compare first" : null;
 
-    public string? SetFamily(string id) => Busy ?? Forked(Try(() => Look.SetTheme(id)));
-    public string? SetLook(string id) => Busy ?? Forked(Try(() => Look.SetSceneLook(id)));
-    public string? SetKnob(string id, double value)
+    public string? SetFamily(string id) => Select(() => Forked(Try(() => Look.SetTheme(id))));
+    public string? SetLook(string id) => Select(() => Forked(Try(() => Look.SetSceneLook(id))));
+    public string? SetKnob(string id, double value) => Select(() =>
     {
-        if (Busy is { } why) return why;
         if (!Look.Family.Knobs.TryGetValue(id, out Knob? knob)) return id + " is not a seed knob";
         return Forked(Try(() => Look.SetKnob(id, Math.Clamp(value, knob.Min, knob.Max))));
-    }
+    });
 
     // theme.tune's argument: knob=value pairs, comma separated, for the family in force.
-    public string? Tune(string? argument)
+    public string? Tune(string? argument) => Select(() =>
     {
-        if (Busy is { } busy) return busy;
         var pairs = new List<(string, double)>();
         foreach (string part in (argument ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
@@ -273,27 +272,123 @@ public sealed class Tuning
         if (pairs.Count == 0) return "it needs knob=value, such as tone=0.03";
         foreach (var (id, v) in pairs) Look.SetKnob(id, v);
         return Forked(null);
-    }
+    });
 
     // Stores the live tuning in a slot; the shown slot is the live tuning already.
-    public string? SetSlot(string? slot)
+    public string? SetSlot(string? slot) => Select(() =>
     {
-        if (Busy is { } why) return why;
         if (slot == null || !Slots.Contains(slot)) return "it needs the slot A or B";
         if (slot != Shown) Other = Live;
         return null;
-    }
+    });
 
     // Shows the other slot; the live tuning goes into the slot it leaves. Twice is no change.
-    public string? Swap()
+    public string? Swap() => Select(() =>
     {
-        if (Busy is { } why) return why;
         TuningValue next = Other, now = Live;
         string? refused = Try(() => next.Apply(Look));
         if (refused != null) return refused;
         Other = now; Shown = Hidden;
         return null;
+    });
+
+    // ADR-D01.50's live selector (CR-16's tuning.selector.revert). The first tuning change made while no selection is
+    // pending remembers the panel as it was: the appearance's stored line (so the tuning in force), the two slots, the
+    // preset in force and the presets. Revert puts all of it back and drops a fork the selection made. A selection
+    // ends, kept, when Save succeeds, when the host calls Keep (the panel closed or out of view, the layout reset), and
+    // when the appearance is changed outside the tuning (the Appearance panel, the preset button, the layout history),
+    // which Revert would otherwise undo. Neither hold starts or ends one: the held compare puts the appearance back on
+    // release, and the held simulation changes no appearance.
+    private TuningValue? before, beforeOther;
+    private string? beforeStore, beforeShown, beforePreset, after;
+    private IReadOnlyList<string>? beforePresets;
+    public const string NothingPending = "nothing to revert: no live change is pending";
+    public const string PendingLine = "Live change: Esc reverts it; Save or closing the panel keeps it.";
+
+    // Whether a selection is pending: begun, the appearance as its last change left it, and something changed since it
+    // began. While the compare is held the drawn appearance is the other slot's, so a begun selection stays pending.
+    public bool Pending => before != null && (Holding || (Look.Store() == after
+        && (after != beforeStore || Shown != beforeShown || !Other.Same(beforeOther!))));
+    // The tuning Revert puts back, while a selection is pending.
+    public TuningValue? Before => Pending ? before : null;
+
+    // One tuning change as a step of the live selection: the first one remembers what Revert puts back.
+    private string? Select(Func<string?> change)
+    {
+        if (Busy is { } why) return why;
+        bool fresh = !Pending;
+        if (fresh)
+        {
+            before = Live; beforeStore = Look.Store(); beforeShown = Shown; beforeOther = Other; beforePreset = Preset;
+            beforePresets = presets.Select(p => p.Id).ToArray();
+        }
+        string? refused = change();
+        if (refused == null) after = Look.Store();
+        else if (fresh) Forget();
+        return refused;
     }
+
+    // tuning.selector.revert, and Esc: the panel as the selection found it, the appearance through Appearance.Restore
+    // as the held compare's release puts it back. Refused while the compare is held, as every edit is.
+    public string? Revert()
+    {
+        if (Busy is { } why) return why;
+        if (!Pending) return NothingPending;
+        string stored = beforeStore!;
+        string? refused = Try(() => Look.Restore(stored));
+        if (refused != null) return refused;
+        Shown = beforeShown!; Other = beforeOther!;
+        presets.RemoveAll(p => !beforePresets!.Contains(p.Id));
+        Preset = beforePreset;
+        Forget();
+        return null;
+    }
+
+    // Ends a pending selection and keeps it (the host: the panel closed or out of view).
+    public void Keep() => Forget();
+    private void Forget()
+    {
+        before = beforeOther = null; beforeStore = beforeShown = beforePreset = after = null; beforePresets = null;
+    }
+
+    // CR-16's tuning.diff.export: the difference of the tuning in force from its preset (TuningDiff), written as
+    // DiffFile into the host's place (the product shell's run folder); a host without one refuses with NoPlace.
+    public const string DiffFile = "tuning-diff.txt";
+    public const string NoPlace = "no place to write the file: this build was started without a run folder";
+    public string ExportLine { get; private set; } = "";
+
+    // The preset a difference is taken from: the shipped preset the tuning in force comes from (a fork or a user preset
+    // names it as From). User presets live in memory only, so the file names a preset every build has; with none,
+    // the family's shipped tuning (preset=none).
+    public TuningPreset? DifferenceBase => Current is not { } p ? null : p.Shipped ? p : presets.FirstOrDefault(s => s.Id == p.From);
+
+    // A difference file's preset as a tuning, for its parse-back: a preset by id, or none for the family's shipped tuning.
+    public TuningValue BaseOf(string preset, string family)
+    {
+        if (presets.FirstOrDefault(p => p.Id == preset) is { } found) return found.Value;
+        if (preset != TuningDiff.NoPreset) throw J.Error(preset, "no such preset");
+        var scratch = new Appearance(Look.System, Look.Themes);
+        scratch.SetTheme(family);
+        return TuningValue.Of(scratch);
+    }
+
+    public string Difference() => DifferenceBase is { } p ? TuningDiff.Write(Live, p.Id, p.Value)
+        : TuningDiff.Write(Live, TuningDiff.NoPreset, BaseOf(TuningDiff.NoPreset, Look.Theme));
+
+    public string? Export(string? folder)
+    {
+        if (Busy is { } why) return why;
+        if (string.IsNullOrWhiteSpace(folder) || !System.IO.Directory.Exists(folder)) return NoPlace;
+        string text = Difference();
+        try { System.IO.File.WriteAllText(System.IO.Path.Combine(folder, DiffFile), text, new System.Text.UTF8Encoding(false)); }
+        catch (Exception e) when (e is System.IO.IOException or UnauthorizedAccessException) { return "not written: " + e.Message; }
+        TuningDiff diff = TuningDiff.Parse(text);
+        ExportLine = $"Exported {DiffFile} to the run folder: the difference from {DifferenceBase?.Name ?? "the family's shipped tuning"} ("
+            + Count(diff.Knobs.Count, "knob") + ", " + Count(diff.Overrides.Count, "override") + ").";
+        return null;
+    }
+
+    private static string Count(int n, string what) => n == 0 ? "no " + what : n == 1 ? "1 " + what : $"{n} {what}s";
 
     // While held, the other slot is drawn; the release puts the appearance back as it was when the hold began.
     public string? Hold()
@@ -349,5 +444,69 @@ public sealed class Tuning
     {
         try { change(); return null; }
         catch (FormatException ex) { return ex.Message; }
+    }
+}
+
+// CR-16's difference file (ADR-D01.50: overrides kept as a difference file): the tuning in force over the preset it
+// comes from, one key=value line each, in the Appearance's line format: the format, the preset (or none), theme= and
+// scene= always, knob.<family>.<knob>= for each knob that differs from the preset, and override.<family>.<role>=L C h
+// for every override (the overrides are the whole set). An empty difference keeps its first four lines. Over() reads it
+// back as the preset's tuning with the file's lines over it; applying that to an appearance checks its ids and ranges.
+public sealed record TuningDiff(string Preset, string Family, string Look, IReadOnlyDictionary<string, double> Knobs, IReadOnlyDictionary<string, Oklch> Overrides)
+{
+    public const string Format = "magic600-tuning-diff/1", NoPreset = "none";
+    private static string N(double v) => v.ToString("R", CultureInfo.InvariantCulture);
+
+    public static string Write(TuningValue live, string preset, TuningValue from)
+    {
+        var lines = new List<string> { "format=" + Format, "preset=" + preset, "theme=" + live.Family, "scene=" + live.Look };
+        foreach (var knob in live.Knobs)
+            if (!from.Knobs.TryGetValue(knob.Key, out double was) || was != knob.Value) lines.Add($"knob.{live.Family}.{knob.Key}={N(knob.Value)}");
+        foreach (var o in live.Overrides) lines.Add($"override.{live.Family}.{o.Key}={N(o.Value.L)} {N(o.Value.C)} {N(o.Value.H)}");
+        return string.Join("\n", lines) + "\n";
+    }
+
+    // Read whole or refused whole: the format first, then the preset, each key once, theme= and scene= present, and
+    // knob and override lines after theme=, naming its family.
+    public static TuningDiff Parse(string text)
+    {
+        string[] lines = text.Replace("\r\n", "\n").TrimEnd('\n').Split('\n');
+        if (lines.Length < 2 || lines[0] != "format=" + Format) throw J.Error("tuning difference", "the first line is format=" + Format);
+        if (!lines[1].StartsWith("preset=", StringComparison.Ordinal) || lines[1].Length == "preset=".Length)
+            throw J.Error("tuning difference", "the second line is preset=<id> or preset=" + NoPreset);
+        string? family = null, look = null;
+        var knobs = new SortedDictionary<string, double>(StringComparer.Ordinal);
+        var overrides = new SortedDictionary<string, Oklch>(StringComparer.Ordinal);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string line in lines.Skip(2))
+        {
+            int cut = line.IndexOf('=');
+            if (cut <= 0) throw J.Error("tuning difference", "expected key=value lines");
+            string key = line.Substring(0, cut), value = line.Substring(cut + 1);
+            if (!seen.Add(key)) throw J.Error(key, "repeated line");
+            double Number(string s) => double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out double v) && double.IsFinite(v) ? v : throw J.Error(key, "expected a number");
+            string knob = "knob." + family + ".", role = "override." + family + ".";
+            if (key == "theme") family = value;
+            else if (key == "scene") look = value;
+            else if (family != null && key.StartsWith(knob, StringComparison.Ordinal) && key.Length > knob.Length) knobs[key.Substring(knob.Length)] = Number(value);
+            else if (family != null && key.StartsWith(role, StringComparison.Ordinal) && key.Length > role.Length)
+            {
+                string[] lch = value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (lch.Length != 3) throw J.Error(key, "expected L C h");
+                overrides[key.Substring(role.Length)] = new Oklch(Number(lch[0]), Number(lch[1]), Number(lch[2]));
+            }
+            else throw J.Error(key, "unknown line (knob and override lines follow theme= and name its family)");
+        }
+        if (family == null || look == null) throw J.Error("tuning difference", "it needs theme= and scene=");
+        return new TuningDiff(lines[1].Substring("preset=".Length), family, look, knobs, overrides);
+    }
+
+    // The preset's tuning with the file over it: the file's family and look, the preset's knobs with the file's over
+    // them, and the file's overrides as the whole set.
+    public TuningValue Over(TuningValue preset)
+    {
+        var knobs = preset.Knobs.ToDictionary(k => k.Key, k => k.Value);
+        foreach (var knob in Knobs) knobs[knob.Key] = knob.Value;
+        return new TuningValue(Family, Look, knobs, Overrides);
     }
 }

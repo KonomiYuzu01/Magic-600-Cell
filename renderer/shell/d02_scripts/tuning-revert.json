@@ -1,0 +1,25 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "tuning-revert",
+  "resolution": "1280x720",
+  "note": "CR-16's last two rows on a state's session fixture (wj-ia-300) at 1280x720: tuning.open reveals the panel over the folded right dock; a preset and a theme.tune make a live change, and the panel says Esc reverts it; the real Escape key (transient.close) reverts both to the tuning at the open, the tint palette included; tuning.selector.revert with nothing pending is refused, naming why; a new knob change is exported as tuning-diff.txt into the run folder, the panel saying so, and Escape reverts it too. After every step the head's state digest and the tint bytes are as they were.",
+  "steps": [
+    {"wait_ms": 5001},
+    {"command": "tuning.open"},
+    {"wait_ms": 701},
+    {"command": "tuning.preset.apply", "argument": "graphite.inspecting"},
+    {"wait_ms": 702},
+    {"command": "theme.tune", "argument": "tone=0.03,contrast=1.1"},
+    {"wait_ms": 703},
+    {"chord": "Escape"},
+    {"wait_ms": 704},
+    {"command": "tuning.selector.revert"},
+    {"wait_ms": 705},
+    {"command": "theme.tune", "argument": "tone=0.05"},
+    {"wait_ms": 706},
+    {"command": "tuning.diff.export"},
+    {"wait_ms": 707},
+    {"chord": "Escape"},
+    {"wait_ms": 708}
+  ]
+}

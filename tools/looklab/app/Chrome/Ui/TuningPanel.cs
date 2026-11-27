@@ -10,12 +10,14 @@ namespace Magic600.Chrome;
 // with Space or Enter while it has the focus). It edits the Appearance through the Appearance panel, which stays
 // beside it, so the frame recolours in place and the host's Recoloured follows (the shell sends the core the new
 // palette). Its rows: tuning.open, tuning.slot.set, tuning.slot.swap, tuning.compare.hold and the table's theme.tune.
-// It reuses the Appearance panel's knob slider and value, and the token specimen's swatches.
+// It reuses the Appearance panel's knob slider and value, and the token specimen's swatches. CR-16's last two rows:
+// tuning.selector.revert (the live selector's Revert, which the shell's Esc runs) and tuning.diff.export.
 public sealed partial class TuningPanel : ScrollContainer
 {
     public const string NodeName = "TuningPanel";
     public static readonly IReadOnlyList<string> Rows = Array.AsReadOnly(new[] { "tuning.open", "tuning.slot.set", "tuning.slot.swap", "tuning.compare.hold", "theme.tune",
-        "tuning.preset.apply", "tuning.preset.save", "tuning.simulate.hold", "token.override.set", "token.override.reset" });
+        "tuning.preset.apply", "tuning.preset.save", "tuning.simulate.hold", "token.override.set", "token.override.reset",
+        "tuning.selector.revert", "tuning.diff.export" });
     public Tuning Model { get; }
     public Label Compare { get; } = new() { Name = "TuningCompareLine", ThemeTypeVariation = "DimLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     public Label Status { get; } = new() { Name = "TuningStatus", ThemeTypeVariation = "MicroLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
@@ -37,6 +39,12 @@ public sealed partial class TuningPanel : ScrollContainer
     private readonly VBoxContainer roles = new() { Name = "TuningRoles" };
     private string search = "";
 
+    // ADR-D01.50's live selector: the line that says a change is pending (Esc reverts it), and the difference file's
+    // line. ExportFolder is the host's place for the file (the product shell's run folder), or null: then the row says why.
+    public Label Selection { get; } = new() { Name = "TuningSelectionLine", ThemeTypeVariation = "MicroLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    public Label ExportInfo { get; } = new() { Name = "TuningExportLine", ThemeTypeVariation = "MicroLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    public string? ExportFolder { get; set; }
+
     public TuningPanel(AppearancePanel appearance, ChromeFrame frame, IReadOnlyList<TuningPreset>? presets = null)
     {
         this.appearance = appearance; this.frame = frame; Model = new Tuning(appearance.Look, presets);
@@ -47,7 +55,31 @@ public sealed partial class TuningPanel : ScrollContainer
         margin.AddChild(column);
         // Knob ranges are the family's: the panel is built again only for another family, never under a held button.
         appearance.Changed += (_, _) => { if (Model.Look.Theme != built && !Model.Holding) Build(); else Sync(); };
+        // The panel closed, folded away, hidden by focus mode or the maximised pair, or the layout reset: a pending live
+        // change is kept, so Esc goes on to close the other transients.
+        frame.Model.Changed += () => { if (Model.Pending && !InView) Model.Keep(); SyncSelection(); };
         Build();
+    }
+
+    // Whether the panel is in view: the right dock's open panel, not folded to its rail (or revealed over the fold), and
+    // not hidden by focus mode or the maximised pair.
+    public bool InView
+    {
+        get
+        {
+            DockState dock = frame.Model.Docks[DockSide.Right];
+            return dock.Open == Tuning.PanelId && !frame.Model.OnlyPairShown && (!frame.Folds(DockSide.Right) || dock.Revealed == Tuning.PanelId);
+        }
+    }
+
+    // The shell's Esc (transient.close): true when it spent the key on the live change (reverted, or refused while the
+    // compare is held); false with nothing pending, and for a pending change out of view, which is kept.
+    public bool Escape()
+    {
+        if (!Model.Pending) return false;
+        if (!InView) { Model.Keep(); SyncSelection(); return false; }
+        Execute("tuning.selector.revert", null);
+        return true;
     }
 
     public bool Handles(string command) => Rows.Contains(command);
@@ -61,6 +93,9 @@ public sealed partial class TuningPanel : ScrollContainer
         "tuning.simulate.hold" when argument != null && argument != "off" && !ColourMetric.Simulations.Contains(argument) => "it takes " + string.Join(", ", ColourMetric.Simulations) + ", off, or nothing to switch",
         "token.override.set" when string.IsNullOrWhiteSpace(argument) => "it needs role=L C h, such as tint.jumble.height.4=0.5 0.02 250",
         "token.override.reset" when string.IsNullOrWhiteSpace(argument) => "it needs the role to reset",
+        "tuning.selector.revert" or "tuning.diff.export" when Model.Holding => "release the held compare first",
+        "tuning.selector.revert" when !Model.Pending => Tuning.NothingPending,
+        "tuning.diff.export" when string.IsNullOrWhiteSpace(ExportFolder) => Tuning.NoPlace,
         _ => null,
     };
 
@@ -84,6 +119,10 @@ public sealed partial class TuningPanel : ScrollContainer
             case "tuning.slot.swap": Edit(Model.Swap, Crosses, true); break;
             case "tuning.compare.hold": Edit(argument == "on" || argument == null && !Model.Holding ? Model.Hold : Model.Release, Crosses, true); break;
             case "theme.tune": Edit(() => Model.Tune(argument), false, false); break;
+            // ADR-D01.50's live selector: the revert goes the way every change goes, rebuilding the frame only when it
+            // returns to another family.
+            case "tuning.selector.revert": Edit(Model.Revert, Model.Before is { } back && back.Family != Model.Look.Theme, true); break;
+            case "tuning.diff.export": Export(); break;
         }
     }
 
@@ -100,6 +139,8 @@ public sealed partial class TuningPanel : ScrollContainer
         bool done = appearance.Edit(_ => { refused = change(); if (refused != null) throw new FormatException(refused); }, rebuild, scene);
         Say(done ? null : refused);
         if (done && !rebuild) appearance.Show(appearance.Look);
+        // A change made while the panel is out of view (a palette row) has no selector to revert: it is kept.
+        if (done && Model.Pending && !InView) Model.Keep();
         Sync();
         return done;
     }
@@ -135,7 +176,8 @@ public sealed partial class TuningPanel : ScrollContainer
         foreach (Node child in column.GetChildren())
         {
             column.RemoveChild(child);
-            if (child != Compare && child != Status && child != PresetInfo && child != Issues && child != SimulationInfo && child != roles) child.QueueFree();
+            if (child != Compare && child != Status && child != PresetInfo && child != Issues && child != SimulationInfo && child != roles
+                && child != Selection && child != ExportInfo) child.QueueFree();
         }
         knobs.Clear();
         Appearance look = Model.Look; built = look.Theme;
@@ -160,6 +202,10 @@ public sealed partial class TuningPanel : ScrollContainer
             column.AddChild(strip);
             knobs[id] = (slider, value, strip);
         }
+        // ADR-D01.50: the live selector's Revert (Esc runs it) and the line that says a change is pending.
+        var selecting = new HFlowContainer(); column.AddChild(selecting);
+        selecting.AddChild(Tool("TuningRevert", "Revert", "Revert the live change to the tuning before it (Esc)", () => Execute("tuning.selector.revert", null)));
+        column.AddChild(Selection);
         column.AddChild(new HSeparator());
         column.AddChild(ChromeWidgets.Text("COMPARE", "MicroLabel"));
         var tools = new HFlowContainer(); column.AddChild(tools);
@@ -184,8 +230,10 @@ public sealed partial class TuningPanel : ScrollContainer
         Row("Preset", presets);
         var saving = new HFlowContainer(); column.AddChild(saving);
         saving.AddChild(Tool("TuningSave", "Save", "Save the tuning into its preset after the checks (contrast, the height ramp, the contact classes under each simulation)", () => Save(null)));
+        saving.AddChild(Tool("TuningExport", "Export difference", "Write the tuning's difference from its preset as a file", () => Execute("tuning.diff.export", null)));
         column.AddChild(PresetInfo);
         column.AddChild(Issues);
+        column.AddChild(ExportInfo);
         // B31: the held simulation over the real frame: the chrome's filter now; the pieces when the host sends the core.
         column.AddChild(new HSeparator());
         column.AddChild(ChromeWidgets.Text("SIMULATION", "MicroLabel"));
@@ -218,6 +266,24 @@ public sealed partial class TuningPanel : ScrollContainer
         string? refused = Model.Save(name);
         Say(refused);
         Sync();
+    }
+
+    // tuning.diff.export: the difference file in the host's place, said under the Save button; a refusal says why.
+    private void Export()
+    {
+        string? refused = Model.Export(ExportFolder);
+        Say(refused);
+        ExportInfo.Text = refused == null ? Model.ExportLine : "";
+        Sync();
+    }
+
+    // The live selector's line and its Revert button, and the export line shown only when it says something.
+    private void SyncSelection()
+    {
+        Selection.Text = Model.Pending ? Tuning.PendingLine : "";
+        Selection.Visible = Selection.Text.Length > 0;
+        ExportInfo.Visible = ExportInfo.Text.Length > 0;
+        if (column.FindChild("TuningRevert", true, false) is Button revert && IsInstanceValid(revert)) revert.Disabled = !Model.Pending || Model.Holding;
     }
 
     // Holds (an id) or releases (null) the simulation; the filter draws it over the chrome, the host sends the core.
@@ -304,6 +370,7 @@ public sealed partial class TuningPanel : ScrollContainer
         PresetInfo.Text = Model.PresetLine;
         Issues.Text = Model.Issues.Count == 0 ? "" : "Save refused:\n" + string.Join("\n", Model.Issues.Select(i => "· " + i));
         SimulationInfo.Text = SimulationText;
+        SyncSelection();
         SyncAdvanced();
     }
 }
