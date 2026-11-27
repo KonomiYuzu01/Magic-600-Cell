@@ -1423,6 +1423,47 @@ relative path is from the repository root.
 - **Machine:** W.
 - **Checkpoint:** yes, C6.
 - **Depends:** B32. The ten sealed defects from C5.
+- **As built (C6 findings, 27 November 2026):**
+  - No fault switch was built: `Model/Jumble.cs` has no `M600_D02_FAULT`, which Files above and section 7 name. J0
+    plants each defect as data in its own copy of Look Lab's samples (`plant()` in `track_j.py`, read through
+    `launch.py --d02-data`), so the product's code is unchanged. Six of section 7's classes cannot be planted that way (`NOT_PLANTABLE` gives each
+    reason), and the result line says so: `not_planted=6`.
+  - A defect may name a rule outside the driver's seventeen. It counts as planted, and only the researcher subagent
+    can catch it, so the planted set can show the driver's blind spots. The same change under two ids, and an id whose
+    prefix is not its writer (`by`), are refused.
+  - The subagent catches a faulted run only when it says broken and names the defect's rule (for a rule outside the
+    driver's, in its own words, which the record keeps for the integrator). Its false alarms on the clean runs fail J0
+    like the driver's; an answer whose `broken` is not true or false is refused.
+  - The packet's draw is seeded by the defects' sha256 and a nonce that only the sealed key keeps. The leak test also
+    matches the out folder's path JSON-escaped and in any case.
+  - Scoring takes Opus's count of the subagent's effort (`--effort`: scripts, dumps, minutes, words) and checks
+    section 7's cap; each scoring keeps the answers' sha256, and earlier scorings stay in the record's history. The
+    subagent's reach half has no driver function yet, and the line prints `reach=not_run`.
+  - A check that throws is a run problem, not a catch. J1 counts the rules it observed, not the session's entries
+    (`observation=6/6`, was 9/9), names exposed faces under `not_run`, and treats a screen with no BoundaryLedger
+    count as a problem.
+
+### ADR-D01 ports (as built)
+
+**As built (ADR-D01.75 and ADR-D01.13's ghosting; 27 November 2026, branch `claude/d02-research`, gpt-6.2-sol call
+20261127T063126Z-e21b0212).** The grip's selection, its Grip frame marks and the modifier ghost, on B17's picks and B18's key route.
+- Host (version 14, no new number): `m6h_grip_report` and `m6h_grip_set(cap, frame)`, answered through `m6h_answer`
+  (`renderer/bridge/host/src/grip.rs`, `turns.rs`). The twelve proper ordered frames of the cap's cell port 0.4's
+  `grip_frames.py` corner order; under frame f a twist chord's item is the menu item equal to g_f M g_f^-1 by exact matrix
+  equality, and a frame without one is refused with its reason. Setting a grip re-binds only the Jumble twist row's chords in the
+  router (`Router::apply`), commits nothing and writes no record; cap 0 at frame 0 restores today's map (`GripCap`, J 1, K 2/5,
+  L 3/9). Jumble off answers "Grip frames need Jumble".
+- Shared chrome: `Model/GripFrame.cs` (cap, frame, admissible frames, ordered `Marks`, `KeyMeanings` with each chord's item and
+  its cycle over the marks; `Next`, `Set`, `Changed`, `Dump`) is the read ADR-D01.74's key map draws on its keycaps;
+  `Ui/GripMarks.cs` draws one mark for views and keycaps alike. `CorePlaces.PlaceCellPoint` places a cell point by the core's own
+  projection, including Global's charts and Local's raw and slice panes.
+- Shell: `D02/ShellGrip.cs`. `grip.select` (the picked cell at the current revision, or a named cap and frame) and
+  `grip.frame.next` are draft rows in the D02 table's `grip` section (`grip.select`'s id is the command table's; the D02 row
+  carries it). While Ctrl is held and the hover lies on the grip, the click twist (the frame's KeyJ item) outlines its moving set
+  in palette entry 2 in both panes, with its cycle drawn at the cap's centre; release, focus loss or leaving the window clears it
+  and nothing commits. Ctrl + click on the grip routes one KeyJ press (the key route, so the journal, the sweep and the
+  correctness control see a press); a plain click stays B17's pick. No core change.
+- Run: `d02_run.py --script grip-frame --state wj-ia-300`. J1 types both rows (cap 150, then the next frame).
 
 ## 3. Checkpoints
 

@@ -23,6 +23,11 @@ public sealed record CoreView(IReadOnlyList<double> Q, double CellShrink, double
 
     // The view the core draws with no camera and no shape set: Global in the product without --d02.
     public static CoreView Default(double aspect) => new(Identity, DefaultCellShrink, DefaultStickerShrink, DefaultD4, DefaultZoom, aspect);
+
+    // The cap's chart projection when Global uses a layout, and the sign of Local's raw chart when it draws one.
+    public Func<int, double[], (double X, double Y, double Z)>? Chart { get; init; }
+    public int RawSign { get; init; }
+    public double FocusCosMax { get; init; } = double.PositiveInfinity;
 }
 
 // Where the solving surface's anchors sit in a view the core draws (ADR-D01.62): the core's own projection of a
@@ -210,16 +215,47 @@ public sealed class CorePlaces
     public (double X, double Y)? Place(int slot, CoreView view)
     {
         int cell = slot / StickersPerCell, local = slot % StickersPerCell;
+        var anchor = new double[4];
+        for (int i = 0; i < 4; i++) anchor[i] = anchors[local * 4 + i] / radius;
+        return Project(cell, Home(slot, view.CellShrink), Framed(cell, anchor), view);
+    }
+
+    // The anchors' projection for a view the host describes (null: the view is not drawn).
+    public Func<int, int, (double X, double Y)?> Projector(Func<CoreView?> view) =>
+        (orbit, position) => Slot(orbit, position) is { } slot && view() is { } shown ? Place(slot, shown) : null;
+
+    // A retained corner in model units, or the cap centre when the point is null. The core's cell shrink and
+    // clip apply to these fixed positions, with no sticker shrink or piece pose.
+    public (double X, double Y)? PlaceCellPoint(int cell, IReadOnlyList<double>? point, CoreView view)
+    {
+        var centre = CellCentre(cell);
+        if (point == null) return Project(cell, centre, centre, view);
+        var anchor = point.Select(x => x / radius).ToArray();
+        var world = anchor.Select((x, i) => centre[i] + view.CellShrink * (x - centre[i])).ToArray();
+        return Project(cell, world, anchor, view);
+    }
+
+    private (double X, double Y)? Project(int cell, double[] world, double[] anchor, CoreView view)
+    {
+        if (view.Chart is { } chart)
+        {
+            var (x, y, z) = chart(cell, world);
+            return Clip(x, y, z, view);
+        }
         IReadOnlyList<double> q = view.Q;
         if (view.FocusPole is { } pole)
         {
-            var anchor = new double[4]; for (int i = 0; i < 4; i++) anchor[i] = anchors[local * 4 + i] / radius;
-            double[] centre = Framed(cell, anchor);
-            double dot = 0; for (int i = 0; i < 4; i++) dot += centre[i] * pole[i];
-            if (dot < view.FocusCos) return null;
+            double dot = 0; for (int i = 0; i < 4; i++) dot += anchor[i] * pole[i];
+            if (view.RawSign < 0 ? -dot <= view.FocusCos : dot < view.FocusCos || dot > view.FocusCosMax) return null;
             q = FocusedCamera(view.Q, pole);
         }
-        double[] w = Times(q, Home(slot, view.CellShrink));
+        double[] w = Times(q, world);
+        if (view.RawSign != 0)
+        {
+            double length = Math.Sqrt(w.Sum(x => x * x));
+            double factor = 2 * view.RawSign / Math.Max(length + view.RawSign * w[3], .0001 * length);
+            return Clip(w[0] * factor, w[1] * factor, w[2] * factor, view);
+        }
         double scale = view.Orthographic ? 1 : view.D4 / (view.D4 - w[3]);
         double px = w[0] * scale, py = w[1] * scale, pz = w[2] * scale;
         if (view.Spread > 1)
@@ -229,14 +265,16 @@ public sealed class CorePlaces
             double factor = (view.Orthographic ? 1 : view.D4 / (view.D4 - c[3])) * (view.Spread - 1);
             px += c[0] * factor; py += c[1] * factor; pz += c[2] * factor;
         }
+        return Clip(px, py, pz, view);
+    }
+
+    private static (double X, double Y)? Clip(double px, double py, double pz, CoreView view)
+    {
         double z = 5 - pz;
-        if (z < .05 || !(view.Aspect > 0)) return null;
+        if (z < .05 || z > 100 || !(view.Aspect > 0)) return null;
         double x = px * view.Zoom / view.Aspect / z, y = py * view.Zoom / z;
         if (Math.Abs(x) > 1 || Math.Abs(y) > 1 || !double.IsFinite(x) || !double.IsFinite(y)) return null;
         return ((x + 1) / 2, (1 - y) / 2);
     }
 
-    // The anchors' projection for a view the host describes (null: the view is not drawn).
-    public Func<int, int, (double X, double Y)?> Projector(Func<CoreView?> view) =>
-        (orbit, position) => Slot(orbit, position) is { } slot && view() is { } shown ? Place(slot, shown) : null;
 }

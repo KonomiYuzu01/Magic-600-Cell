@@ -320,6 +320,7 @@ public sealed class ShellChrome
         }
         void ExecuteAt(string command, string? argument, Vector2? pointer)
         {
+            if (ShellJumble.On) ShellGrip.CancelGesture();
             if (gated(command, argument) is { } why)
             {
                 frame.Say($"{registry.Commands[command].Label}: {why}", true);
@@ -569,6 +570,7 @@ public sealed class ShellChrome
             // B15: the tint channel and the focus layers, drawn by the core.
             ShellTint.Attach(host, frame);
             ShellError.Attach(host, frame);
+            ShellGrip.Attach(host, frame);
             cards = new ShellCards(frame, host, sentences["totals.unit"]);
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);

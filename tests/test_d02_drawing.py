@@ -15,9 +15,9 @@ import math
 import re
 import shutil
 import sys
-import tempfile
 import unittest
 from pathlib import Path
+from test_renderer_shell import fresh_test_folder
 
 ROOT = Path(__file__).resolve().parents[1]
 SHELL = ROOT / "renderer" / "shell"
@@ -203,7 +203,7 @@ class HopfRings(unittest.TestCase):
 
     def test_the_build_stages_the_ring_file(self):
         build_shell = shell_module("build_shell")
-        temp = Path(tempfile.mkdtemp(prefix="d02-hopf-"))
+        temp = fresh_test_folder("d02-hopf-")
         self.addCleanup(shutil.rmtree, temp, True)
         project = temp / "staged"
         build_shell.stage(project)
@@ -254,7 +254,7 @@ class LocalShape(unittest.TestCase):
 
     def test_the_build_stages_the_shape_file(self):
         build_shell = shell_module("build_shell")
-        temp = Path(tempfile.mkdtemp(prefix="d02-local-"))
+        temp = fresh_test_folder("d02-local-")
         self.addCleanup(shutil.rmtree, temp, True)
         project = temp / "staged"
         build_shell.stage(project)
@@ -487,7 +487,7 @@ class TwoViewsRun(unittest.TestCase):
 
     def check(self, rows):
         run = shell_module("d02_run")
-        temp = Path(tempfile.mkdtemp(prefix="d02-two-views-"))
+        temp = fresh_test_folder("d02-two-views-")
         self.addCleanup(shutil.rmtree, temp, True)
         events = temp / "events.jsonl"
         events.write_text("".join(json.dumps({"t": "frame", **row}) + "\n" for row in rows), encoding="utf-8")
@@ -815,7 +815,7 @@ class HopfRun(unittest.TestCase):
         self.assertIs(run.EXPECT["ring-sheet"], run.expect_ring_sheet)
         self.assertIn("ring-sheet", run.ON_FIXTURE)
         self.assertIs(run.DATA_FOR["ring-sheet"], run.ring_sheet_data)
-        temp = Path(tempfile.mkdtemp(prefix="d02-ring-sheet-"))
+        temp = fresh_test_folder("d02-ring-sheet-")
         self.addCleanup(shutil.rmtree, temp, True)
         folder = run.ring_sheet_data(temp / "run")
         self.assertEqual(folder, temp / "run-data")
@@ -856,13 +856,13 @@ class HopfRun(unittest.TestCase):
         self.assertIn('"the ring sheet drew a sweep"', text(CORE / "src" / "gpu_test.cpp"))
         turn = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellTurn.cs")
         self.assertIn('if (kind == "sweep" && ShellHopf.Drawn != ShellHopf.Chain)', turn)
-        self.assertIn("if (Cap is int drawn && drawn != GripCap)", turn)
+        self.assertIn("if (Cap is int drawn && drawn != ActiveGripCap)", turn)
         style = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellStyle.cs")
         self.assertIn("if (slot != 1 && ShellTurn.OutlineOnly)", style)
 
     def test_local_draws_the_default_cap(self):
         run = shell_module("d02_run")
-        temp = Path(tempfile.mkdtemp(prefix="d02-hopf-run-"))
+        temp = fresh_test_folder("d02-hopf-run-")
         self.addCleanup(shutil.rmtree, temp, True)
         events = temp / "events.jsonl"
 
@@ -953,6 +953,55 @@ class OverlaysRun(unittest.TestCase):
         self.assertIn("after 'wait 1504 ms' kept_dimmed", problems[0])
         dumps[2]["tint"]["fill_sha256"] = dumps[0]["tint"]["fill_sha256"]
         self.assertTrue(any("after 'wait 1502 ms' fill_sha256" in p for p in run.expect_overlays(dumps, {}, "wj-ia-300", tables)))
+
+
+class GripFrameRun(unittest.TestCase):
+    def test_the_grip_script_uses_the_real_fixture_and_registered_check(self):
+        run = shell_module("d02_run")
+        script = json.loads(text(SHELL / "d02_scripts" / "grip-frame.json"))
+        self.assertEqual((script["format"], script["resolution"], script["state"]),
+                         ("magic600-d02-script/1", "1280x720", "wj-ia-300"))
+        self.assertIn("grip-frame", run.ON_FIXTURE)
+        self.assertIs(run.EXPECT["grip-frame"], run.expect_grip_frame)
+        self.assertIn({"command": "grip.select"}, script["steps"])
+        self.assertIn({"grip_click": "Local"}, script["steps"])
+
+    def test_the_check_reads_the_chosen_item_ghost_and_head(self):
+        def grip(cap, frame, corners, items, committed=300, digest="opening", ghost=False):
+            chords = ("KeyJ", "Shift+KeyJ", "KeyK", "Shift+KeyK", "KeyL", "Shift+KeyL")
+            keys = [dict(chord=chord, item=i, meaning="(14)(23)") for chord, i in zip(chords, items)]
+            marks = [dict(index=i, corner=c, x=15 + i, y=20 + i) for i, c in enumerate(corners, 1)]
+            drawn = [dict(pane=pane, rect=[10, 10, 100, 100], marks=marks) for pane in ("Global", "Local")]
+            if ghost:
+                for pane in drawn:
+                    pane["direction"] = [30, 30]
+            return dict(cap=cap, frame=frame, keys=keys, marks=marks, drawn=drawn, committed=committed, refused=0,
+                        admissible_frames=[0, 1], state_digest=digest,
+                        host=dict(cap=cap, frame=frame, revision=committed + 2, frames=[dict(frame=frame, keys=keys)],
+                                  last=dict(cap=cap, item=items[0])),
+                        ghost=dict(on=ghost, cap=cap, item=items[0], modifier="Ctrl", moving=10 if ghost else 0,
+                                   outlined=9 if ghost else 0, palette=2, sha256="a" * 64 if ghost else None))
+
+        p, q = [1, 1, 2, 5, 3, 9], [4, 4, 2, 5, 3, 9]
+        a, b = [10, 20, 30, 40], [20, 30, 10, 40]
+        start = grip(0, 0, a, p)
+        turned = grip(150, 1, b, q, 301, "turned")
+        held = grip(150, 1, b, q, 301, "turned", True)
+        clicked = grip(150, 1, b, q, 302, "opening")
+        records = [("wait 2500 ms", start), ("wait 600 ms", start), ("command grip.select", grip(150, 0, a, p)),
+                   ("command grip.frame.next", grip(150, 1, b, q)), ("wait 1600 ms", turned), ("wait 601 ms", held),
+                   ("wait 602 ms", turned), ("wait 603 ms", held), ("wait 604 ms", turned), ("wait 1601 ms", clicked)]
+        dumps = [{"do": step, "grip": row, "pick": {"selection": {"slot": 150 * 433, "revision": 302}}}
+                 for step, row in records]
+        check = shell_module("d02_run").expect_grip_frame
+        self.assertEqual(check(dumps, {}, "wj-ia-300"), [])
+        held["state_digest"] = "ghost moved the head"
+        held["ghost"]["outlined"] = 0
+        clicked["host"]["last"]["item"] = 1
+        problems = check(dumps, {}, "wj-ia-300")
+        self.assertTrue(any("modifier release changed the head" in p for p in problems))
+        self.assertTrue(any("lack the hover outline" in p for p in problems))
+        self.assertTrue(any("Ctrl+click committed the wrong cap or item" in p for p in problems))
 
 
 if __name__ == "__main__":

@@ -15,8 +15,8 @@
 //! - Keys go through `c600_input::Router` on its draft default map (US QWERTY): `KeyJ`, `KeyK` and `KeyL`, with Shift
 //!   for the inverse, are its twist keys. With Jumble on the same keys bind `jumble.twist.menu` instead of
 //!   `twist.apply` ([`keymap`]): the same item of the pinned menu as the row's `letter`, with the grip's cap and the
-//!   layer's revision. c600-input binds no key to that row yet, so this map is the host's draft. The router's grip is
-//!   slot 0, cap 0 (draft: `grip.rebind` and `grip.select` are not built, so the cap never changes). Every other key
+//!   layer's revision. c600-input binds no key to that row yet, so this map is the host's draft. The default grip is
+//!   slot 0, cap 0. D02 can select a cap and a proper frame in the host's live twist bindings. Every other key
 //!   reaches the router too; the rows it names that the layer does not build are refused there and change nothing. A
 //!   key whose row the layer builds and that changes the head (`session.undo` and `session.redo` on Ctrl+KeyZ and
 //!   Ctrl+KeyY) is [`Press::Other`]: the host shows the new head, and the control fails, since its replay knows only
@@ -77,6 +77,7 @@ use c600_session::disk::FsDisk;
 use c600_session::JournalStore;
 
 use crate::fixture::Fixture;
+use crate::grip::Grip;
 use crate::preload::load_exact;
 use crate::ENGINE_REVISION;
 
@@ -86,7 +87,7 @@ const SECRET: [u8; 32] = [7; 32];
 const SESSION: &str = "c9-shell";
 /// The active keyboard layout of the router's draft default map.
 const LAYOUT: &str = "us-qwerty";
-/// The cap of the router's one grip slot.
+/// The default cap of the router's grip slot.
 const CAP: i64 = 0;
 /// The correctness control's name in the run row.
 pub const CONTROL: &str = "journal-reopen-and-kernel-replay";
@@ -188,6 +189,8 @@ pub struct Turns {
     pin: MenuPin,
     /// The router's specs: the puzzle's draft defaults and the keys of the rows registered since ([`specs`]).
     specs: Vec<BindingSpec>,
+    /// D02's view-only grip frame, built on first use.
+    grip: Option<Grip>,
     /// The arguments of every committed press, in order.
     committed: Vec<Value>,
     refused: u64,
@@ -276,6 +279,14 @@ fn binding(args: &Value, field: &str) -> Result<Binding, String> {
     let mut fields = args.get(field).and_then(Value::as_object).cloned().ok_or("a press without its binding")?;
     fields.insert("cap".to_owned(), args.get("cap").cloned().unwrap_or(Value::Null));
     Binding::from_json(&Value::Object(fields)).map_err(|refusal| format!("the press's binding: {refusal:?}"))
+}
+
+// The last committed press already carries the absolute cap and the canonical menu request.
+fn last_twist(args: &Value) -> Option<Value> {
+    let cap = args.get("cap")?.clone();
+    let request = args.get("letter")?.get("request")?.as_str()?.strip_suffix('\n')?;
+    let item = request.rsplit_once('|')?.1.parse().ok()?;
+    Some(json::object([("cap", cap), ("item", Value::Int(item))]))
 }
 
 /// The layer's head digest (KN0.2): the pose digest its revision names with Jumble on, the labels' with Jumble off.
@@ -406,6 +417,7 @@ impl Turns {
             router,
             pin,
             specs: specs(puzzle),
+            grip: None,
             committed,
             refused: 0,
             others: 0,
@@ -505,6 +517,70 @@ impl Turns {
     /// The arguments of every committed press, in order, a reopened fixture's first.
     pub fn committed(&self) -> &[Value] {
         &self.committed
+    }
+
+    fn build_grip(&self, cap: usize) -> Result<Grip, String> {
+        let menu = self.layer.as_ref().and_then(CommandLayer::jumbled)
+            .and_then(|jumbled| jumbled.state().menu()).ok_or("Grip frames need Jumble")?;
+        Grip::build(&self.exact, menu, cap)
+    }
+
+    /// Sets D02's grip and frame together. The default slot map and the journal are independent of this choice.
+    pub fn set_grip(&mut self, cap: usize, frame: usize) -> Result<(), String> {
+        let candidate = if self.grip.as_ref().is_some_and(|grip| grip.cap == cap) {
+            None
+        } else {
+            Some(self.build_grip(cap)?)
+        };
+        let grip = candidate.as_ref().or(self.grip.as_ref()).expect("a grip candidate");
+        let keys = &grip.at(frame)?.keys;
+        if candidate.is_none() && grip.selected == frame {
+            return Ok(());
+        }
+        let mut specs = self.specs.clone();
+        for spec in specs.iter_mut().filter(|spec| spec.command == JUMBLE_TWIST_ROW) {
+            let [ChordIntent::Physical(chord)] = spec.sequence.as_slice() else { continue };
+            let chord = chord.to_string();
+            if let Some(key) = keys.iter().find(|key| key.chord == chord) {
+                for (name, arg) in &mut spec.args {
+                    match name.as_str() {
+                        "cap" if cap == CAP as usize && frame == 0 => *arg = Arg::GripCap,
+                        "cap" => *arg = Arg::Fixed(Value::Int(cap as i64)),
+                        "letter" => *arg = Arg::MenuItem(key.item),
+                        _ => {}
+                    }
+                }
+            }
+        }
+        self.router.apply(&specs, &DECLARED, LAYOUT).map_err(|_| "The grip key map was refused")?;
+        self.shell.apply_keymap(self.router.keymap().clone());
+        self.specs = specs;
+        if let Some(grip) = candidate {
+            self.grip = Some(grip);
+        }
+        self.grip.as_mut().expect("a grip").selected = frame;
+        Ok(())
+    }
+
+    /// The exact mapping and the press summary shared with the product shell.
+    pub fn grip_report(&mut self) -> Result<Value, String> {
+        let layer = self.layer.as_ref().ok_or("The session is closed")?;
+        if self.grip.is_none() {
+            let grip = self.build_grip(CAP as usize)?;
+            grip.at(0)?;
+            self.grip = Some(grip);
+        }
+        let grip = self.grip.as_ref().expect("a grip");
+        let (committed, refused) = self.presses();
+        Ok(json::object([
+            ("cap", Value::Int(grip.cap as i64)),
+            ("frame", Value::Int(grip.selected as i64)),
+            ("frames", grip.frames_json()),
+            ("committed", Value::Int(committed as i64)),
+            ("refused", Value::Int(refused as i64)),
+            ("last", self.committed.last().and_then(last_twist).unwrap_or(Value::Null)),
+            ("state_digest", Value::String(head_digest(layer))),
+        ]))
     }
 
     /// Commits item `item` of the pinned menu at cap `cap` as `jumble.twist.menu` through the shell's route

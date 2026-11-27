@@ -20,7 +20,9 @@ import tempfile
 import unittest
 import unittest.mock
 import xml.etree.ElementTree as ET
+from contextlib import contextmanager
 from pathlib import Path
+from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 SHELL = ROOT / "renderer" / "shell"
@@ -29,6 +31,23 @@ PROJECT = SHELL / "project"
 
 def text(path: Path) -> str:
     return path.read_bytes().decode("utf-8")
+
+
+def fresh_test_folder(prefix: str) -> Path:
+    # Inherit the sandbox's temp-directory ACL. Python's private mkdtemp ACL on Windows excludes the sandbox.
+    path = Path(tempfile.gettempdir()).resolve() / (prefix + uuid4().hex)
+    path.mkdir()
+    return path
+
+
+@contextmanager
+def temporary_test_folder():
+    path = fresh_test_folder("c9-test-")
+    try:
+        yield path
+    finally:
+        if path.resolve() == path:
+            shutil.rmtree(path)
 
 
 def godot_settings(source: str) -> dict[str, str]:
@@ -126,6 +145,7 @@ class ShellProject(unittest.TestCase):
         csharp = text(PROJECT / "HostLibrary.cs")
         exports = re.findall(r'#\[no_mangle\]\s*pub (?:unsafe )?extern "C" fn (m6h_[a-z_]+)\(', source)
         self.assertIn("m6h_create", exports)
+        self.assertTrue({"m6h_grip_report", "m6h_grip_set"}.issubset(exports))
         self.assertEqual(csharp_list("Exports", "HostLibrary.cs"), exports)
         rust_version = re.search(r"pub const M6H_ABI_VERSION: u32 = (\d+);", source)
         csharp_version = re.search(r"public const uint AbiVersion = (\d+);", csharp)
@@ -523,7 +543,7 @@ class ProductBuild(unittest.TestCase):
     def setUp(self):
         self.build_product = shell_module("build_product")
         self.launch = shell_module("launch")
-        self.temp = Path(tempfile.mkdtemp(prefix="c9-product-"))
+        self.temp = fresh_test_folder("c9-product-")
         self.addCleanup(shutil.rmtree, self.temp, True)
         self.build = self.temp / "20261118T000000Z"
         files = {"native/sa2_interop.dll": b"core", "native/draw_vs.dxil": b"vs", "native/build.ninja": b"rules",
@@ -1409,7 +1429,7 @@ class D02Fixtures(unittest.TestCase):
 
     def setUp(self):
         self.fixtures = shell_module("build_d02_fixtures")
-        self.temp = Path(tempfile.mkdtemp(prefix="d02-fixtures-"))
+        self.temp = fresh_test_folder("d02-fixtures-")
         self.addCleanup(shutil.rmtree, self.temp, True)
 
     def test_the_words_rebuild_each_sample_from_its_records(self):
@@ -1582,7 +1602,7 @@ class D02Shape(unittest.TestCase):
 
     def test_the_build_stages_the_opening_file(self):
         build_shell = shell_module("build_shell")
-        temp = Path(tempfile.mkdtemp(prefix="c9-shape-"))
+        temp = fresh_test_folder("c9-shape-")
         self.addCleanup(shutil.rmtree, temp, True)
         project = temp / "staged"
         build_shell.stage(project)
@@ -1698,7 +1718,7 @@ class D02Host(unittest.TestCase):
         revert = json.loads(text(SHELL / "d02_scripts" / "tuning-revert.json"))
         self.assertEqual((revert["name"], revert["resolution"]), ("tuning-revert", "1280x720"))
         self.assertEqual(revert["steps"].count({"chord": "Escape"}), 2)
-        with tempfile.TemporaryDirectory() as folder:
+        with temporary_test_folder() as folder:
             self.assertEqual(run.check_tuning_diff(Path(folder)), ["tuning.diff.export wrote no tuning-diff.txt into the run folder"])
             (Path(folder) / "tuning-diff.txt").write_bytes(
                 b"format=magic600-tuning-diff/1\npreset=graphite\ntheme=graphite\nscene=solving\nknob.graphite.tone=0.05\n")
@@ -2523,7 +2543,7 @@ class D02TrackJ0(unittest.TestCase):
         self.assertLessEqual(set(track.NOT_PLANTABLE), set(track.CLASSES))
         self.assertTrue(all(track.NOT_PLANTABLE.values()), "each class J0 cannot plant names why")
         self.assertFalse({d["class"] for d in defects} & set(track.NOT_PLANTABLE))
-        with tempfile.TemporaryDirectory() as temp:
+        with temporary_test_folder() as temp:
             for defect in defects:
                 folder = Path(temp) / defect["id"]
                 files = track.plant(defect, folder)
@@ -2578,7 +2598,7 @@ class D02TrackJ0(unittest.TestCase):
                 (folder / state / "fixture.json").write_text(json.dumps({"digest": digest[state]}), encoding="utf-8")
             return write
 
-        with tempfile.TemporaryDirectory() as temp:
+        with temporary_test_folder() as temp:
             done = track.replay(Path(temp) / "a", Path("writer"), writer(lambda state, n: False))
             self.assertEqual((done["bound"], done["words"], done["problems"]), (9, 9, []))
             done = track.replay(Path(temp) / "c", Path("writer"), writer(lambda state, n: state == "s7001-4"))
@@ -2618,10 +2638,10 @@ class D02TrackJ0(unittest.TestCase):
         def replayer(root, writer):
             return {"bound": 9, "words": 9, "start": "s7001-0", "rows": [], "problems": []}
 
-        with tempfile.TemporaryDirectory() as temp, \
+        with temporary_test_folder() as temp, \
                 unittest.mock.patch.dict(track.J0_CHECKS, {"digest": checks("digest"), "covers": checks("covers")}):
             out = Path(temp)
-            code, record = track.j0(session, defects, out / "a", None, player=player, replayer=replayer)
+            code, record = track.j0(session, defects, out / "a", None, player=player, replayer=replayer, nonce="n1")
             self.assertEqual(code, 1, "three planted is under 20")
             self.assertEqual((record["planted"], record["caught_driver"], record["caught_any"]), (3, 1, 1))
             self.assertEqual([(r["id"], r["caught_driver"], r["flagged"]) for r in record["defects"]],
@@ -2636,19 +2656,104 @@ class D02TrackJ0(unittest.TestCase):
                 body = (root / "packet" / name).read_text(encoding="utf-8")
                 self.assertNotIn("window", body)
                 self.assertFalse([word for word in track.LEAKS if word in body.lower()], name)
-            self.assertTrue(track.line_j0(record).startswith(
-                "M600_D02_J0_FAIL planted=3 caught_driver=1 caught_subagent=not_run caught_any=1 replay=9/9"))
-            self.assertIn("| opus-01 | Opus |", (root / track.J0_REPORT).read_text(encoding="utf-8"))
-            answers = {run: {"broken": truth["label"] in ("opus-02", "clean-1"), "rules": ["digest"]}
-                       for run, truth in key["runs"].items()}
+            self.assertEqual(track.line_j0(record),
+                             "M600_D02_J0_FAIL planted=3 caught_driver=1 caught_subagent=not_run caught_any=1 replay=9/9 "
+                             "not_planted=14 reach=not_run", "F5, F7: the classes not planted and the reach half")
+            self.assertEqual(record["not_planted"], track.CLASSES[1:])
+            report = (root / track.J0_REPORT).read_text(encoding="utf-8")
+            self.assertIn("| opus-01 | Opus |", report)
+            self.assertIn("reach=not_run", report)
+
+            def light(defect, folder, source=None):
+                """The later runs plant nothing: the run above copied and changed the real samples."""
+                (folder / "samples" / "jumble").mkdir(parents=True)
+                (folder / "samples" / "jumble" / "states.json").write_text("{}", encoding="utf-8")
+                return sorted({change["file"] for change in defect["change"]})
+            self.enterContext(unittest.mock.patch.object(track, "plant", light))
+
+            # F3: the draw is seeded by the defects' digest and a nonce that only the sealed key keeps.
+            self.assertEqual((key["nonce"], key["defects_sha256"]), ("n1", track.defects_digest(defects)))
+            self.assertNotIn("seed", key)
+            self.assertNotIn("nonce", record["packet"])
+            labels = [truth["label"] for truth in key["runs"].values()]
+
+            def draw(name, nonce):
+                track.j0(session, defects, out / name, None, player=player, replayer=replayer, nonce=nonce)
+                sealed = json.loads((out / name / "j0" / "sealed" / "key.json").read_text(encoding="utf-8"))
+                return [truth["label"] for truth in sealed["runs"].values()]
+            self.assertEqual(draw("same", "n1"), labels, "the same nonce draws the same packet")
+            self.assertNotEqual(draw("other", "n2"), labels, "another nonce draws another packet")
+            self.assertNotEqual(track.packet_seed("d", "n1"), track.packet_seed("d", "n2"))
+
+            # F1, F7: a catch needs broken and the defect's rule; the answers' digest and the effort are recorded.
+            effort = out / "effort.json"
+            effort.write_text(json.dumps({"scripts": 2, "dumps": 10, "minutes": 60, "words": 1500}), encoding="utf-8")
+            label = {run: truth["label"] for run, truth in key["runs"].items()}
+            answers = {run: {"broken": label[run] in ("opus-02", "opus-03", "clean-1"),
+                             "rules": ["covers"] if label[run] == "opus-02" else ["digest"]} for run in key["runs"]}
             (out / "answers.json").write_text(json.dumps(answers), encoding="utf-8")
-            code, scored = track.score(out / "a", out / "answers.json")
-            self.assertEqual((scored["caught_subagent"], scored["caught_any"]), (1, 2))
-            self.assertEqual(scored["subagent"]["false_alarms"],
-                             [run for run, truth in key["runs"].items() if truth["label"] == "clean-1"])
+            code, scored = track.score(out / "a", out / "answers.json", effort)
+            self.assertEqual((code, scored["caught_subagent"], scored["caught_any"]), (1, 1, 2))
+            first = scored["subagent"]
+            self.assertEqual((first["wrong_rule"], first["missed"], first["over_cap"]), (1, 1, []),
+                             "opus-03 said broken under another rule; opus-01 was not said broken")
+            self.assertEqual(first["false_alarms"], [run for run in key["runs"] if label[run] == "clean-1"])
+            self.assertEqual(first["answers_sha256"], hashlib.sha256((out / "answers.json").read_bytes()).hexdigest())
+            self.assertEqual(first["effort"], {"scripts": 2, "dumps": 10, "minutes": 60, "words": 1500})
+            self.assertIn("Effort: 2 scripts, 10 dumps, 60 minutes, 1500 words, within section 7's cap",
+                          (root / track.J0_REPORT).read_text(encoding="utf-8"))
+            (out / "all.json").write_text(json.dumps({run: {"broken": True} for run in key["runs"]}), encoding="utf-8")
+            code, scored = track.score(out / "a", out / "all.json", effort)
+            self.assertEqual((code, scored["caught_subagent"], scored["caught_any"]), (1, 0, 1),
+                             "broken alone, naming no rule, catches nothing")
+            self.assertEqual((scored["subagent"]["wrong_rule"], len(scored["subagent"]["false_alarms"])), (3, 2))
+            self.assertEqual([old["answers_sha256"] for old in scored["history"]], [first["answers_sha256"]],
+                             "the earlier scoring is kept")
+            for bad in ({"broken": "no", "rules": []}, {"broken": 1}, {"rules": ["digest"]},
+                        {"broken": True, "rules": "digest"}, {"broken": True, "rules": [3]}):
+                (out / "bad.json").write_text(json.dumps({run: bad for run in key["runs"]}), encoding="utf-8")
+                with self.assertRaises(ValueError, msg=bad):
+                    track.score(out / "a", out / "bad.json", effort)
             (out / "short.json").write_text(json.dumps({"run-01": {}}), encoding="utf-8")
             with self.assertRaises(ValueError):
-                track.score(out / "a", out / "short.json")
+                track.score(out / "a", out / "short.json", effort)
+            (out / "over.json").write_text(json.dumps({"scripts": 3, "dumps": 12, "minutes": 95, "words": 900}),
+                                           encoding="utf-8")
+            code, scored = track.score(out / "a", out / "answers.json", out / "over.json")
+            self.assertEqual(scored["subagent"]["over_cap"], ["scripts 3 over 2", "minutes 95 over 90"])
+            for vague in ({"scripts": "two", "dumps": 1, "minutes": 1, "words": 1}, {"scripts": 1}, [1, 2, 3, 4],
+                          {"scripts": float("nan"), "dumps": 1, "minutes": 1, "words": 1}):
+                (out / "vague.json").write_text(json.dumps(vague), encoding="utf-8")
+                with self.assertRaises(ValueError, msg=vague):
+                    track.score(out / "a", out / "answers.json", out / "vague.json")
+
+            # F2: a defect whose rule is outside the driver's is planted; only the subagent catches it, in its words.
+            outside = dict(defects[0], id="opus-04", rule="orbit-name", note="a rule the driver does not check")
+            shows["opus-04"] = "digest"
+            code, record = track.j0(session, defects + [outside], out / "e", None, player=player, replayer=replayer)
+            row = record["defects"][-1]
+            self.assertEqual((record["planted"], row["outside"], row["caught_driver"], row["flagged"]),
+                             (4, True, False, ["digest"]))
+            self.assertIn("| orbit-name | outside its rules |", (out / "e" / "j0" / track.J0_REPORT).read_text(encoding="utf-8"))
+            sealed = json.loads((out / "e" / "j0" / "sealed" / "key.json").read_text(encoding="utf-8"))
+            run = next(r for r, truth in sealed["runs"].items() if truth["label"] == "opus-04")
+            words = "the orbit is named for another orbit"
+            (out / "outside.json").write_text(json.dumps({r: {"broken": r == run, "rules": [words] if r == run else []}
+                                                          for r in sealed["runs"]}), encoding="utf-8")
+            code, scored = track.score(out / "e", out / "outside.json", effort)
+            self.assertEqual((scored["caught_subagent"], scored["subagent"]["own_words"]), (1, {run: [words]}))
+
+            def defects_file(rows):
+                path = out / "defects-test.json"
+                path.write_text(json.dumps({"format": track.DEFECTS_FORMAT, "defects": rows}), encoding="utf-8")
+                return [path]
+            fable = dict(defects[0], id="fable-01", by="Fable", rule="orbit-name")
+            self.assertEqual([d["rule"] for d in track.load_defects(defects_file([fable]))], ["orbit-name"])
+            # F6: the same change under two ids, a fable- id written by Opus, and no rule are refused.
+            for rows in ([fable, dict(fable, id="fable-02")], [dict(fable, by="Opus")], [dict(fable, rule=" ")]):
+                with self.assertRaises(ValueError, msg=rows):
+                    track.load_defects(defects_file(rows))
+
             code, record = track.j0(session, defects, out / "b", None, replayer=replayer,
                                     player=lambda *a: player(*a, leak="read from plant/opus-01/samples"))
             self.assertEqual(len(record["packet"]["problems"]), 5)
@@ -2660,8 +2765,38 @@ class D02TrackJ0(unittest.TestCase):
             self.assertFalse(track.j0_passed(dict(many, caught_any=15)))
             self.assertFalse(track.j0_passed(dict(many, false_alarms=["clean-1: [digest] x"])))
             self.assertFalse(track.j0_passed(dict(many, replay={"bound": 8, "words": 9, "problems": []})))
+            self.assertFalse(track.j0_passed(dict(many, subagent={"false_alarms": ["run-04"], "over_cap": []})),
+                             "F1: the subagent's false alarms on the clean runs fail J0")
+            self.assertFalse(track.j0_passed(dict(many, subagent={"false_alarms": [], "over_cap": ["dumps 13 over 12"]})))
+            self.assertTrue(track.j0_passed(dict(many, subagent={"false_alarms": [], "over_cap": []})))
+
+            # F6: the out folder's path leaks also JSON-escaped (backslashes doubled) and in another case.
+            for name, spell in (("f", str), ("h", lambda path: str(path).upper())):
+                code, record = track.j0(session, defects, out / name, None, replayer=replayer,
+                                        player=lambda label, data, runs, *rest: player(label, data, runs, *rest,
+                                                                                       leak=f"wrote {spell(runs)}"))
+                self.assertEqual(len(record["packet"]["problems"]), 5, name)
+                self.assertFalse(list((out / name / "j0" / "packet").glob("run-*")))
+
+            # F6: a check that throws is a run problem, not a catch of its rule; a screen with no ledger count is a problem.
+            def boom(dumps, ops, entry, state):
+                return [dumps[0]["missing"]]
+            with unittest.mock.patch.dict(track.J0_CHECKS, {"covers": lambda dumps, ops, entry, state: [int("x")]}):
+                self.assertEqual(track.j0_problems([{"do": "start"}], [], session)[1],
+                                 ["[covers] the screens could not be read: ValueError(\"invalid literal for int() with "
+                                  "base 10: 'x'\")"], "any exception, not only a missing field")
+            with unittest.mock.patch.dict(track.J0_CHECKS, {"digest": boom}):
+                self.assertEqual(track.j0_problems([{"do": "start"}], [], session),
+                                 ([], ["[digest] the screens could not be read: KeyError('missing')"]))
+                code, record = track.j0(session, defects, out / "g", None, player=player, replayer=replayer)
+            self.assertEqual(sorted(record["run_problems"]), ["clean-1", "clean-2", "opus-01", "opus-02", "opus-03"])
+            self.assertEqual((record["caught_driver"], record["passed"]), (0, False))
+            self.assertEqual(track.j0_boundary([{"stage": {"unasked": 0}}, {"do": "x"}], [], {}, "wj-ia-300"),
+                             ["1 screens carry no BoundaryLedger count"])
             self.assertEqual(track.main(["--reduced", "--only", "j0", "--out", str(out / "a")]), 2)
             self.assertEqual(track.main(["--score", str(out / "a")]), 2)
+            self.assertEqual(track.main(["--score", str(out / "a"), "--subagent", str(out / "answers.json")]), 2,
+                             "F7: scoring needs the effort record")
 
 
 class D02SceneLook(unittest.TestCase):
@@ -2791,6 +2926,11 @@ class D02TrackJ(unittest.TestCase):
                     "jumble.repair.stage"):
             self.assertNotIn(row, session["not_run"], "B32's findings give these draft rows their handlers")
         self.assertIn("repair-keys", session["not_run"][track.REPAIR_PART]["why"])
+        self.assertIn("exposed-face geometry", session["not_run"]["exposed-faces"]["why"],
+                      "C6 F4: section 7's own example of a rule J1 cannot show")
+        checked = [rule["rule"] for rule in session["observation"] if rule["rule"] not in session["not_run"]]
+        self.assertEqual(list(dict.fromkeys(checked)), ["1", "2", "4", "5", "6", "cut-trace"],
+                         "J1 counts six rules, not its nine entries")
 
     def test_rule_one_admits_only_the_solvers_stage_row(self):
         """B32 findings: rule 1 counts a staged record against J1 unless the stage row the solver typed staged it."""
@@ -2821,7 +2961,7 @@ class D02TrackJ(unittest.TestCase):
             dumps[-1]["stage"] = {"unasked": unasked}
             return dumps, ops, []
 
-        with tempfile.TemporaryDirectory() as temp:
+        with temporary_test_folder() as temp:
             out = Path(temp)
             code, record = track.j1(session(rows, rows[1:]), out / "pass", None, player=player)
             self.assertEqual((code, record["operations"], record["reached"], record["boundary"], record["problems"]),
@@ -2841,7 +2981,26 @@ class D02TrackJ(unittest.TestCase):
                 track.j1(dict(session(rows, rows[1:]), not_run={"9": {"why": "no such rule"}}), out / "bad", None,
                          player=player)
             self.assertEqual(track.main(["--reduced", "--only", "j1", "--out", str(out / "pass")]), 2)
+            # C6 F4: a rule is observed once, however many entries check it, and only when all of them pass.
+            observation = [{"rule": "1", "part": "part", "check": "fake"}, {"rule": "1", "part": "part", "check": "fake"},
+                           {"rule": "2", "part": "part", "check": "fake", "fail": True}]
+            with unittest.mock.patch.dict(track.CHECKS, {"fake": lambda dumps, ops, rule, state:
+                                                         ["differs"] if rule.get("fail") else []}):
+                code, record = track.j1(dict(session(rows, rows[1:]), observation=observation), out / "rules", None,
+                                        player=player)
+            self.assertEqual((code, record["observation"]), (1, [1, 2]), "rule 1's two entries count once")
+            self.assertIn("observation=1/2", track.line(record, False))
+
+            # C6 F6: a screen without the BoundaryLedger's count is a problem, never a zero.
+            def unread(*a):
+                dumps, ops, problems = player(*a)
+                del dumps[1]["stage"]
+                return dumps, ops, problems
+            code, record = track.j1(session(rows, rows[1:]), out / "unread", None, player=unread)
+            self.assertEqual((code, record["problems"]), (1, ["part: boundary: 1 screens carry no BoundaryLedger count"]))
+            self.assertEqual(track.boundary([{"stage": {"unasked": 2}}, {"stage": {}}, {}]), (2, 2))
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
     unittest.main()
