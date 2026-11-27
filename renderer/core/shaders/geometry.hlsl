@@ -32,6 +32,8 @@ cbuffer Constants : register(b0) {
 #ifdef SA2_LAYOUT
 // ABI 10: the Hopf table (product passes only; product.hlsl defines SA2_LAYOUT). See product.h's HopfTable.
 StructuredBuffer<float4> hopfRows : register(t18);
+// ADR-D02 B22 item 1 (ADR-D02.9): the revision's chart channel, two slots to a word, chart + 1 per slot (0: none).
+StructuredBuffer<uint> slotCharts : register(t20);
 #endif
 struct Projection {
     float4 clip;
@@ -97,7 +99,11 @@ float4 qmul(float4 a, float4 b) {
 // in Hopf coordinates: the ring whose base point is nearest Im(p J p*), then the place whose phase along that ring is
 // nearest. The chart places the posed point; the camera's upper 3 x 3 turns it (the linked spin). With bit 4 (B22) the
 // chart is the cell's ring-sheet chart, from row 2611 on, and the camera does not turn it.
+// ADR-D02 B22 item 1: the chart the host fixed for the slot at this revision (its posed sticker's nearest cell, ties to
+// the lowest cell id), or 0 when the revision has no chart channel.
+uint hostChart(uint slot) { return (slotCharts[slot >> 1] >> ((slot & 1u) * 16u)) & 0xFFFFu; }
 Projection hopfVertex(float4 world, uint cell, uint slot) {
+    const uint fixed = hostChart(slot);
     float4 p = normalize(posedPoint(slot, framePoint(cell, N0 / radius)));
     float4 j = hopfRows[2460];
     float3 b = qmul(qmul(p, j), float4(p.x, -p.y, -p.z, -p.w)).yzw;
@@ -114,7 +120,7 @@ Projection hopfVertex(float4 world, uint cell, uint slot) {
     uint e = ring * 30 + uint(place);
     // B22: t18 is a root SRV, which nothing bounds; a chart index read from anything but the table must not send the
     // next reads past it (a sheet once drew without its table: DXGI_ERROR_DEVICE_HUNG).
-    uint chart = min(asuint(hopfRows[2461 + e / 4][e % 4]), 599u);
+    uint chart = min(fixed != 0 ? fixed - 1 : asuint(hopfRows[2461 + e / 4][e % 4]), 599u);
     bool sheet = (viewFlags & 16u) != 0;
     uint first = (sheet ? 2611u : 0u) + chart * 4;
     float3 placed = float3(dot(hopfRows[first], world), dot(hopfRows[first+1], world), dot(hopfRows[first+2], world))

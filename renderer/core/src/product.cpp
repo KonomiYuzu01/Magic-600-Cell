@@ -342,6 +342,7 @@ uint64_t Product::adopt(EngineImage image) {
     image_ = std::move(image);
     style_.reset(); // ABI 7: a piece style is bound to its revision
     transform_.reset(); // ADR-D02 B18: so is a transform
+    charts_.reset(); // ADR-D02 B22 item 1: and the chart channel
     return image_->revision;
 }
 
@@ -431,6 +432,20 @@ void Product::set_transform(uint64_t revision, const float* u, const float* v, f
 void Product::turn(ViewShape& shape) const {
     if (!transform_ || transform_->angle == 0.0f) return;
     shape.turn_u = transform_->u; shape.turn_v = transform_->v; shape.turn = transform_->angle;
+}
+// ADR-D02 B22 item 1 (ADR-D02.9): device-free, as the piece style; bound to the adopted revision.
+void Product::set_charts(uint64_t revision, const uint32_t* charts, uint32_t count) {
+    argument((charts == nullptr) == (count == 0), "charts is NULL with a nonzero count, or a table with count 0");
+    argument(charts == nullptr || count == SA2_SLOTS, "a chart channel has one cell id per slot (SA2_SLOTS)");
+    state(image_.has_value(), "no engine revision has been adopted");
+    argument(revision == image_->revision, "a chart channel names a revision other than the adopted one");
+    if (!charts) { charts_.reset(); return; }
+    std::vector<uint32_t> packed(SA2_SLOTS / 2, 0u);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) {
+        argument(charts[slot] < 600u, "a chart channel names a cell past 599");
+        packed[slot / 2] |= (charts[slot] + 1u) << ((slot & 1u) * 16u);
+    }
+    charts_ = Charts{revision, ++style_version_, std::move(packed)};
 }
 void Product::set_view_style(uint32_t slot, const sa2_view_style* style) {
     argument(slot >= 1 && slot <= SA2_STYLE_SLOTS, "a style slot is 1..SA2_STYLE_SLOTS");
@@ -594,6 +609,7 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
     turn(out.shape); // ADR-D02 B18
     if (style_) { out.style = &style_->packed; out.style_version = style_->version; }
     out.styled = styled(1, out.view_style); // ABI 7: a one-view frame uses style slot 1
+    if (charts_) { out.charts = &charts_->packed; out.charts_version = charts_->version; } // ADR-D02 B22 item 1
     if (input.resource_set) {
         const Entry* entry = set_entry(input.resource_set);
         state(entry && entry->active, "resource_set is not an active set");
@@ -603,7 +619,8 @@ FramePlan Product::plan(const sa2_frame_input& input, uint32_t width, uint32_t h
         out.set_ticket = sets_.at(input.resource_set);
     }
     for (uint32_t copy = 0; copy < EngineCopies; ++copy) {
-        if (copies_[copy].valid && copies_[copy].revision == image_->revision && copies_[copy].style == out.style_version) {
+        if (copies_[copy].valid && copies_[copy].revision == image_->revision && copies_[copy].style == out.style_version
+            && copies_[copy].charts == out.charts_version) {
             out.copy = copy;
             return out;
         }
@@ -709,8 +726,10 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
         if (pane.set_ticket) entries_.at(pane.set_ticket).last_frame = frame;
     }
     if (plan.upload) {
-        copies_[plan.copy] = {plan.image->revision, frame, ++copy_sequence_, plan.image->pose_count, true, plan.style_version};
-        counters_.bytes_uploaded += plan.image->bytes() + (plan.style ? uint64_t(SA2_PIECES) * 4 : 0);
+        copies_[plan.copy] = {plan.image->revision, frame, ++copy_sequence_, plan.image->pose_count, true, plan.style_version,
+                              plan.charts_version};
+        counters_.bytes_uploaded += plan.image->bytes() + (plan.style ? uint64_t(SA2_PIECES) * 4 : 0)
+                                  + (plan.charts ? uint64_t(SA2_SLOTS) * 2 : 0);
     }
     if (plan.set_ticket) entries_.at(plan.set_ticket).last_frame = frame;
     // The target's previous frame completed before this one was recorded, so
@@ -728,6 +747,7 @@ void Product::commit(const sa2_frame_input& input, const FramePlan& plan, uint64
     record.styled = plan.styled; // ADR-D02 B17 (ABI 10): its picks follow the style it drew with
     record.view_style = plan.view_style;
     record.style_version = plan.style_version;
+    record.charts_version = plan.charts_version; // ADR-D02 B22 item 1
     for (const auto& pane : plan.panes)
         record.panes.push_back(PaneRecord{pane.pane, pane.set_ticket, 0, pane.publication_generation, pane.shape, pane.styled, pane.view_style});
     frames_.push_back(record);
@@ -846,7 +866,8 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
     // ADR-D02 B17 (ABI 10): a styled frame's copy must still hold the piece style it drew with; so must a turning
     // frame's, styled or not, since its moving mask lives in the same words (B18 review finding B18-03).
     const bool bound = record->styled || record->shape.turn != 0.0f;
-    if (!copy.valid || copy.revision != record->input.engine_revision || (bound && copy.style != record->style_version)) {
+    if (!copy.valid || copy.revision != record->input.engine_revision || (bound && copy.style != record->style_version)
+        || copy.charts != record->charts_version) { // ADR-D02 B22 item 1: a chart view's pick reads the copy's charts
         out.state = SA2_PICK_STALE;
         out.stale = SA2_PICK_STALE_ENGINE;
         return out;

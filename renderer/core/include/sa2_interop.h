@@ -1393,6 +1393,16 @@ static_assert(sizeof(sa2_scene_look) == 40, "sa2_scene_look requires the x64 ABI
 
 SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look);
 
+/* ADR-D02 B22 item 1 (ADR-D02.9; added to ABI 10 before any release): the adopted revision's chart channel. charts
+ * holds one cell id (0..599) per slot (count SA2_SLOTS): the chart in which a view with a Hopf layout (the ring sheet
+ * or the Hopf rings) draws that slot's sticker. The host fixes it once per revision on the CPU (each posed sticker's
+ * nearest cell, ties to the lowest cell id). NULL with count 0 clears it; without a channel such a view chooses each
+ * sticker's chart from its Hopf coordinates, as before. Device-free product state, bound to its revision as the piece
+ * style is: a new adoption drops it, and a revision other than the adopted one is refused (SA2_E_INVALID_ARGUMENT), as
+ * are another count and a cell id past 599. Chain, focus, slice and raw views never read it.
+ */
+SA2_API int32_t sa2_charts_set(sa2_context* ctx, uint64_t revision, const uint32_t* charts, uint32_t count);
+
 #ifdef __cplusplus
 }
 #endif

@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 27] = [
+pub const SYMBOLS: [&str; 28] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -42,6 +42,7 @@ pub const SYMBOLS: [&str; 27] = [
     "sa2_transform_set",
     "sa2_sticker_colours_set",
     "sa2_scene_look_set",
+    "sa2_charts_set",
 ];
 
 /// The ABI 10 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
@@ -85,6 +86,8 @@ pub struct CoreFunctions {
     pub transform_set: unsafe extern "C" fn(*mut c_void, u64, *const f32, *const f32, f32, *const u8, f32) -> i32,
     pub sticker_colours_set: unsafe extern "C" fn(*mut c_void, *const f32, u32) -> i32,
     pub scene_look_set: unsafe extern "C" fn(*mut c_void, *const Sa2SceneLook) -> i32,
+    /// ADR-D02 B22 item 1 (added to ABI 10 before any release): the adopted revision's chart channel.
+    pub charts_set: unsafe extern "C" fn(*mut c_void, u64, *const u32, u32) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -341,6 +344,15 @@ impl CoreAbi for DllCore {
         let pointer = look.map_or(std::ptr::null(), std::ptr::from_ref);
         // SAFETY: the pointer is null or points to a readable row.
         Status(unsafe { (self.functions.scene_look_set)(self.context, pointer) }).check()
+    }
+
+    fn charts_set(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Status> {
+        if charts.is_some_and(|charts| charts.len() != SLOTS) {
+            return Err(Status::INVALID_ARGUMENT);
+        }
+        let (pointer, count) = charts.map_or((std::ptr::null(), 0), |charts| (charts.as_ptr(), SLOTS as u32));
+        // SAFETY: a null pointer with count zero, or exactly SLOTS readable cell ids.
+        Status(unsafe { (self.functions.charts_set)(self.context, revision, pointer, count) }).check()
     }
 
     fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {

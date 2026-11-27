@@ -331,6 +331,12 @@ impl<C: CoreAbi> RenderBackend<C> {
         self.core.scene_look_set(look).map_err(|status| self.error(status))
     }
 
+    /// ADR-D02 B22 item 1 (ADR-D02.9): the adopted revision's chart channel, one cell id (0..599) per slot (`SLOTS`),
+    /// or `None` to clear it. A new adoption drops it in the core, so the caller sets it again for each revision.
+    pub fn set_charts(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Error> {
+        self.core.charts_set(revision, charts).map_err(|status| self.error(status))
+    }
+
     /// ABI 7: one channel of the adopted revision's piece style (`PIECES` bytes), or `None` to clear it. A new
     /// adoption drops it in the core, so the caller sets it again for each revision. Bytes with bits outside the
     /// channel's are refused before the core is asked.

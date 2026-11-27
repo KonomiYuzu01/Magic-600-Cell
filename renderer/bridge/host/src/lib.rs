@@ -111,6 +111,7 @@ use c600_render::{DisplayTime, PaneSpec, RenderBackend};
 pub use c600_render_ffi::CoreFunctions;
 use c600_render_ffi::DllCore;
 
+pub mod charts;
 mod deferred;
 pub mod fixture;
 pub mod preload;
@@ -364,6 +365,9 @@ pub struct ShellHost {
     assets: PathBuf,
     /// The exact model's load that [`m6h_preload`] started for the session, until [`m6h_open_session`] takes it.
     exact: Option<ExactLoad>,
+    /// ADR-D02 B22 item 1: the cell centres and slot pieces of the per-revision chart assignment, or `None` when they
+    /// did not load (Global's charts then stay with the core's Hopf-coordinate choice).
+    charts: Option<Arc<charts::ChartModel>>,
     publication: Publication,
     next_command: u64,
     /// The adopted engine revision, and each adopted revision's state digest.
@@ -555,6 +559,7 @@ impl ShellHost {
         let mut shell = ShellHost {
             host,
             publication: publication(&geometry, primitive, &base),
+            charts: charts::ChartModel::load(&geometry, &assets).ok().map(Arc::new),
             kernel,
             geometry,
             assets,
@@ -591,7 +596,7 @@ impl ShellHost {
     /// Adopts `head` at engine revision `revision`, which must follow the adopted one, on the calling thread: builds
     /// and checks it as the adoption worker does ([`deferred::build`]), then installs it ([`ShellHost::install`]).
     fn adopt(&mut self, head: &Head, revision: u64) -> Result<u64, Failure> {
-        let job = deferred::Job { revision, head: head.clone(), ctx: self.host.ctx.clone(), local: self.local_open };
+        let job = deferred::Job { revision, head: head.clone(), ctx: self.host.ctx.clone(), local: self.local_open, charts: self.charts.clone() };
         let built = deferred::build(&self.geometry, job)?;
         self.install(built)
     }
@@ -604,7 +609,7 @@ impl ShellHost {
     /// `KN7:cancelled.revision_replaced` ([`ShellHost::replace_runs`]). While the device is lost the publication waits
     /// for [`m6h_recover`], which publishes it. A host or core that refuses the bundle changes nothing.
     fn install(&mut self, built: deferred::Built) -> Result<u64, Failure> {
-        let deferred::Built { revision, digest, ctx, bundle, publication, checked, checked_local } = built;
+        let deferred::Built { revision, digest, ctx, bundle, publication, checked, checked_local, charts } = built;
         if revision <= self.revision {
             return Err((M6H_E_HOST, format!("engine revision {revision} does not follow {}", self.revision)));
         }
@@ -622,6 +627,11 @@ impl ShellHost {
         self.revision = revision;
         self.assigned = self.assigned.max(revision);
         self.digests.insert(revision, digest);
+        // ADR-D02 B22 item 1: the revision's chart channel, fixed by the build. A refusal only leaves Global's charts
+        // to the core's Hopf-coordinate choice for this revision.
+        if let Some(charts) = &charts {
+            let _ = self.host.backend.set_charts(revision, Some(charts));
+        }
         // ADR-D02 B18 rest: a transform the shell named for this revision before its adoption is set with it, so the
         // revision's first frame draws the sweep's phase 0, never the end pose first. A failure only loses the sweep's
         // start: the shell sets the transform again at its next step. One for a later revision waits for that one.
@@ -655,7 +665,7 @@ impl ShellHost {
     /// this thread. Without a worker (its thread did not start or has ended) the head is built and installed here.
     fn defer(&mut self, head: Head) -> Result<u64, Failure> {
         let revision = self.assigned + 1;
-        let job = deferred::Job { revision, head, ctx: self.host.ctx.clone(), local: self.local_open };
+        let job = deferred::Job { revision, head, ctx: self.host.ctx.clone(), local: self.local_open, charts: self.charts.clone() };
         if self.adoptions.is_none() {
             self.adoptions = deferred::Worker::start(&self.geometry);
         }

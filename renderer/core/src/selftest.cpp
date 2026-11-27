@@ -163,7 +163,8 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
             "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes",
-            "sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set"};
+            "sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set",
+            "sa2_charts_set"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1773,6 +1774,7 @@ Options parse(int argc, char** argv, bool& colours, bool& error_overlay) {
         else if (arg == "--colours") colours = true;
         else if (arg == "--error") error_overlay = true;
         else if (arg == "--hopf") options.hopf = value();
+        else if (arg == "--chart") { options.hopf = value(); options.chart = true; } // ADR-D02 B22 item 1
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
             const auto text = value();
@@ -1875,6 +1877,7 @@ int main(int argc, char** argv) {
         else if (options.style) sa2test::run_style(suite, options);
         else if (options.panes) sa2test::run_panes(suite, options);
         else if (options.focus) sa2test::run_focus(suite, options);
+        else if (options.chart) sa2test::run_chart(suite, options);
         else if (!options.hopf.empty()) sa2test::run_hopf(suite, options);
         else if (options.sweep) sa2test::run_sweep(suite, options);
         else if (options.slice) sa2test::run_slice(suite, options);

@@ -18,6 +18,7 @@ struct Options {
     bool panes = false; // ABI 8: --warp --panes runs only the composite frame check (run_panes)
     bool focus = false; // ABI 9: --warp --focus runs only the view focus check (run_focus)
     std::filesystem::path hopf; // ABI 10: --warp --hopf FILE runs only the view layout check (run_hopf)
+    bool chart = false; // ADR-D02 B22 item 1: --warp --chart FILE (the Hopf file) runs only the chart channel check (run_chart)
     bool sweep = false; // ADR-D02 B18: --warp --sweep runs only the transform check (run_sweep)
     bool slice = false; // ADR-D02 B20: --warp --slice runs only the cut slice check (run_slice)
     bool raw = false; // ADR-D02 B21: --warp --raw runs only the raw view check (run_raw)
@@ -45,6 +46,7 @@ void run_style(Suite& suite, const Options& options);
 void run_panes(Suite& suite, const Options& options);
 void run_focus(Suite& suite, const Options& options);
 void run_hopf(Suite& suite, const Options& options);
+void run_chart(Suite& suite, const Options& options);
 void run_sweep(Suite& suite, const Options& options);
 void run_slice(Suite& suite, const Options& options);
 void run_raw(Suite& suite, const Options& options);
