@@ -1543,6 +1543,16 @@ def expect_sweep(dumps: list[dict], source: dict, state: str | None) -> list[str
     revisions = [m["revision"] for m in motions]
     if revisions != sorted(revisions) or len(set(revisions)) != 4:
         problems.append(f"the motions' revisions {revisions} are not four increasing ones")
+    # SF (27 Nov 2026): a twist, and the change of binding it brings (the sample state unbinds), rebuilds no chrome
+    # frame: from the dump before the first twist to the reduced-motion command, the frame's rebuild count stays.
+    dos = [dump["do"] for dump in dumps]
+    if "chord J" in dos and "chord Space" in dos[dos.index("chord J"):]:
+        first = dos.index("chord J")
+        rebuilds = [dump.get("rebuilds") for dump in dumps[first - 1:first + dos[first:].index("chord Space")]]
+        if None in rebuilds or len(set(rebuilds)) != 1:
+            problems.append(f"the chrome frame rebuilt across the twists: rebuild counts {rebuilds}")
+    else:
+        problems.append("the script has no twist before its reduced-motion command")
     return problems
 
 

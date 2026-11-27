@@ -2621,6 +2621,28 @@ class D02TrackJ0(unittest.TestCase):
             self.assertIn("not the word's output digest", done["rows"][1]["problem"])
             self.assertIn("input digest", done["rows"][2]["problem"])
 
+    def test_the_repair_list_reads_past_the_column_rows_state_glyph(self):
+        """J0's clean runs at a280229a: ADR-D01.25's check-state glyph ends the Repair list's column row, so the rows
+        start one cell later; read past it, and still read no rows behind anything else."""
+        track = shell_module("track_j")
+        want = track.repair_record("wj-ia-300", 150)
+
+        def dump(after_columns):
+            lines = ["▾ Repair list · %d" % len(want), "#", "x d", "y z", "ΔN", *after_columns]
+            for n, ((x, d), (y, z), dn) in enumerate(want, 1):
+                lines += [str(n), f"{x} {d}", f"{y} {z}", str(dn)]
+            return {"lines": [["view:Local", text] for text in lines], "repair": {"rows": len(want), "focused": 0}}
+
+        for glyph in ("", "ok", "~", "x", "r", None):
+            screen = dump([glyph] if glyph else [])
+            self.assertEqual(track.repair_shown(screen)[0], len(want))
+            self.assertEqual(len(track.repair_shown(screen)[1]), len(want), repr(glyph))
+            for check in ("repair-rows", "repair-order", "delta-n"):
+                self.assertEqual(track.J0_CHECKS[check]([screen] * 10, [], {"at": [["step 9", 150]]}, "wj-ia-300"),
+                                 [], (check, repr(glyph)))
+        self.assertEqual(track.repair_shown(dump(["?"]))[1], [], "only the state glyph is read past")
+        self.assertEqual(track.repair_shown(dump(["", ""]))[1], [], "and only one of it")
+
     def test_j0_scores_the_runs_and_seals_the_packet_key(self):
         track = shell_module("track_j")
         session = {"format": track.J0_FORMAT, "state": "wj-ia-300", "resolution": "1280x720",

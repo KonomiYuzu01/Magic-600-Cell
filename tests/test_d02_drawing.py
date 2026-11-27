@@ -411,7 +411,7 @@ class SweepShell(unittest.TestCase):
         self.assertIn("library.SetTransform(host, motion.Revision, row.Plane, row.Angle, row.Moving, phase)", self.turn)
         self.assertIn("var phase = t >= 1 ? 1f : (float)MotionTable.Ease(motion.Curve, t);", self.turn)
 
-    def run_dumps(self, kinds, refused, reduced_from=18, popped=False):
+    def run_dumps(self, kinds, refused, reduced_from=18, popped=False, rebuilt=False):
         motions = []
         for revision, kind in enumerate(kinds, 3):
             motion = {"kind": kind, "revision": revision, "angle": math.pi if kind == "flash" else 1.2566, "moving": 1909,
@@ -433,7 +433,8 @@ class SweepShell(unittest.TestCase):
             dumps.append({"step": step, "do": do, "local_plan": {"framed": framed, "by_selection": step >= 9},
                           "turn": {"cap": framed}, "pick": {"selection": {"slot": 7 * 433 + 5} if step >= 9 else None},
                           "sweep": {"refused": refused, "reduced": step >= reduced_from, "running": None,
-                                    "motions": motions if step == len(dos) - 1 else []}})
+                                    "motions": motions if step == len(dos) - 1 else []},
+                          "rebuilds": 41 + (rebuilt and step >= 13)})
         return dumps
 
     def test_the_sweep_run_passes_and_the_failures_are_named(self):
@@ -453,6 +454,10 @@ class SweepShell(unittest.TestCase):
         self.assertIn("not flash, sweep, static, static", moved[0])
         late = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, reduced_from=3), {}, None)
         self.assertIn("not off then on", late[0])
+        # SF (27 Nov 2026): a twist that rebuilds the chrome frame is named.
+        rebuilt = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, rebuilt=True), {}, None)
+        self.assertEqual(len(rebuilt), 1)
+        self.assertIn("rebuilt across the twists", rebuilt[0])
 
 
 class ChromeOpening(unittest.TestCase):

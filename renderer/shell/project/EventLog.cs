@@ -277,6 +277,22 @@ public sealed class EventLog : IDisposable
     /// </summary>
     public void Append(Action<Utf8JsonWriter> fields) => Write(fields);
 
+    /// <summary>
+    /// SF (27 Nov 2026): a "steps" row: the frame thread's steps of one <paramref name="what"/> ("key", a committed
+    /// twist key; "bind", the sample binding at a newly adopted revision) that began at <paramref name="qpc"/>, each
+    /// step's milliseconds from its two QPC readings. key_to_frame.py lists it among the other rows.
+    /// </summary>
+    public void Steps(string what, long qpc, params (string Name, long From, long To)[] steps) => Write(json =>
+    {
+        json.WriteString("t", "steps");
+        json.WriteString("what", what);
+        json.WriteNumber("qpc", qpc);
+        foreach (var (name, from, to) in steps)
+        {
+            json.WriteNumber(name + "_ms", Math.Round((to - from) * 1000.0 / Stopwatch.Frequency, 3));
+        }
+    });
+
     private void Write(Action<Utf8JsonWriter> fields)
     {
         if (_body is not { } body)

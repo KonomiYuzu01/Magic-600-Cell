@@ -942,6 +942,22 @@ relative path is from the repository root.
       `--foreground` (the owner's sitting only) activates the window once, never topmost. `gate.json` records both.
     - Dry runs at `wj-ia-300` (10 s, not evidence): G1 was valid with one pane and 7 twists, G9 valid with two panes and
       7 twists. The System log showed no GPU event after either.
+  - The twist stall (SF, 27 November 2026). The dry runs showed a 300-480 ms frame at each twist, all of it on the
+    frame thread. Per step, before and after (release host, `wj-ia-300`):
+    - `m6h_twist_transform`, called twice per twist (the press's row, the cut slice's row): 66-72 ms, of which
+      `Menu::from_record` was 58-64 ms, then 0.07-0.24 ms. The session keeps the layer's pinned menu, and its rows per
+      head and (cap, item), which a worker reads ahead after each commit. A row never asked before still costs
+      `State::apply`'s admissibility check (7-12 ms). Tests: `renderer/bridge/host/tests/key_timing.rs`.
+    - The binding change at a twist (13 of 20 presses): the bind chip's `frame.Invalidate()` (a full `ChromeFrame.Build`)
+      and the per-state JSON reads, 160-560 ms; now no rebuild (the sweep script checks the rebuild count) and each
+      state file parsed once. What is left is the bind's own in-place updates, p50 56 ms and p99 97 ms in G1
+      (`SetStyle`'s filter model, `SetCapMap`, `SetNu`).
+    - `m6h_key_down`, 39-48 ms: `Turns::key_down` is 34 ms in the bench (the command layer's commit, its journal write
+      and its digests, which stay as they are: ADR-D01.55, KN5), and the head's copy is 0.04 ms. In the product it is
+      p50 46 ms. After it, `ShellChrome.Committed` (the History row) is p50 25 ms and p99 38 ms.
+    - The shell writes these steps as `steps` rows while the event log is on (`EventLog.Steps`).
+    - Dry runs (10 s, not evidence): G1 p99 433 ms before and 117 ms after (fps_avg 39.4, then 48.7); G9 p99 300 ms
+      before and 217 ms after (fps_avg 39.0, then 46.4). The System log showed no GPU event after either.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
