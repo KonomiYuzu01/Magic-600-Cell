@@ -1727,6 +1727,11 @@ Each checkpoint is one read of the named diff range against the questions below,
     does. `ShellPick` keeps the clicked view and drops a reply that `ViewPanes.Takes` refuses (the dump's
     `pick.dropped`); the `pick` run clicks twice in Local (`"in": "local"`) and checks each selection's view.
   - F3 (minor): not done in this step (budget); the four-state console replay is still owed.
+    - LF1 (27 November 2026): no fault. `D02FourStateSessionAgainstRecords` replays wj-ia-300, wj-ia-end, deep-1 and
+      deep-2 with one memory (commits, undos back, redos, a reopen): the first state equals its class record, each
+      later state keeps every remembered class unless a touching domain kept it first, the colourings are proper, a
+      state seen again draws as before, and the memory holds each id's first class and never the overflow. `Assign`
+      is unchanged; the test is kept.
 
 **C4, after B24.**
 - Fable checks:
