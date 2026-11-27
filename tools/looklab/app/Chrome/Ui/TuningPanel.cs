@@ -19,6 +19,8 @@ public sealed partial class TuningPanel : ScrollContainer
         "tuning.preset.apply", "tuning.preset.save", "tuning.simulate.hold", "token.override.set", "token.override.reset",
         "tuning.selector.revert", "tuning.diff.export" });
     public Tuning Model { get; }
+    // ADR-D01.77: Advanced lists the roles in the frame's two layers, each under its heading.
+    public static readonly IReadOnlyList<string> LayerHeadings = Array.AsReadOnly(new[] { "Surfaces · free to repaint", "Instruments · meaning fixed by name; a change marks the views" });
     public Label Compare { get; } = new() { Name = "TuningCompareLine", ThemeTypeVariation = "DimLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     public Label Status { get; } = new() { Name = "TuningStatus", ThemeTypeVariation = "MicroLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly AppearancePanel appearance;
@@ -308,22 +310,36 @@ public sealed partial class TuningPanel : ScrollContainer
         roles.Visible = Model.Advanced;
         if (!Model.Advanced) return;
         TokenSet tokens = Model.Look.Resolve();
+        FrameLayers layers = tokens.System.Layers;
         IReadOnlyList<string> found = Model.AdvancedRoles(search);
-        foreach (string role in found.Take(12))
+        // ADR-D01.77: each layer under its heading, the changed roles first, so the panel shows what a change touched.
+        foreach ((FrameLayer layer, string heading) in new[] { (FrameLayer.Surface, LayerHeadings[0]), (FrameLayer.Instrument, LayerHeadings[1]) })
         {
-            var row = new HBoxContainer { Name = "TuningRole_" + role.Replace('.', '_') };
-            var swatch = new ColorRect { CustomMinimumSize = new Vector2(frame.Tokens.Px("icon.medium") / 2f, 0), Color = ChromeBody.Engine(tokens.Colour(role)), MouseFilter = MouseFilterEnum.Ignore };
-            row.AddChild(swatch);
-            bool overridden = Model.Look.Overrides.TryGetValue(role, out Oklch o);
-            row.AddChild(ChromeWidgets.Text(role + (overridden ? " *" : ""), "MicroLabel"));
-            var value = new LineEdit { SizeFlagsHorizontal = SizeFlags.ExpandFill, PlaceholderText = "L C h",
-                Text = overridden ? string.Join(" ", new[] { o.L, o.C, o.H }.Select(v => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))) : "" };
-            value.TextSubmitted += text => { if (string.IsNullOrWhiteSpace(text)) Execute("token.override.reset", role); else Execute("token.override.set", role + "=" + text); };
-            row.AddChild(value);
-            if (overridden) row.AddChild(Tool("TuningReset_" + role.Replace('.', '_'), "Reset", "Back to the family's colour", () => Execute("token.override.reset", role)));
-            roles.AddChild(row);
+            string[] these = found.Where(r => layers.Layer(r) == layer)
+                .OrderBy(r => Model.Look.Overrides.ContainsKey(r) ? 0 : 1).ThenBy(r => r, StringComparer.Ordinal).ToArray();
+            if (these.Length == 0) continue;
+            roles.AddChild(ChromeWidgets.Text(heading, "HeadingLabel"));
+            foreach (string role in these.Take(12)) roles.AddChild(RoleRow(role, tokens, layers));
+            if (these.Length > 12) roles.AddChild(ChromeWidgets.Text($"{these.Length - 12} more; search to narrow", "MicroLabel"));
         }
-        if (found.Count > 12) roles.AddChild(ChromeWidgets.Text($"{found.Count - 12} more; search to narrow", "MicroLabel"));
+    }
+
+    // One role's row: its colour, its name (the tooltip names its layer and part), the L C h field and its reset.
+    private HBoxContainer RoleRow(string role, TokenSet tokens, FrameLayers layers)
+    {
+        var row = new HBoxContainer { Name = "TuningRole_" + role.Replace('.', '_') };
+        var swatch = new ColorRect { CustomMinimumSize = new Vector2(frame.Tokens.Px("icon.medium") / 2f, 0), Color = ChromeBody.Engine(tokens.Colour(role)), MouseFilter = MouseFilterEnum.Ignore };
+        row.AddChild(swatch);
+        bool overridden = Model.Look.Overrides.TryGetValue(role, out Oklch o);
+        Label name = ChromeWidgets.Text(role + (overridden ? " *" : ""), "MicroLabel");
+        name.TooltipText = layers.Words(role); name.MouseFilter = MouseFilterEnum.Stop;
+        row.AddChild(name);
+        var value = new LineEdit { SizeFlagsHorizontal = SizeFlags.ExpandFill, PlaceholderText = "L C h",
+            Text = overridden ? string.Join(" ", new[] { o.L, o.C, o.H }.Select(v => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))) : "" };
+        value.TextSubmitted += text => { if (string.IsNullOrWhiteSpace(text)) Execute("token.override.reset", role); else Execute("token.override.set", role + "=" + text); };
+        row.AddChild(value);
+        if (overridden) row.AddChild(Tool("TuningReset_" + role.Replace('.', '_'), "Reset", "Back to the family's colour", () => Execute("token.override.reset", role)));
+        return row;
     }
 
     // The knob values and the live ramp strips, from the appearance in force; no control is replaced.

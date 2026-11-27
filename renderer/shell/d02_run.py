@@ -2972,6 +2972,88 @@ EXPECT["status-patterns"] = expect_status_patterns
 ON_FIXTURE.add("status-patterns")
 
 
+FRAME_LAYER_HEADINGS = ("Surfaces · free to repaint", "Instruments · meaning fixed by name; a change marks the views")
+
+
+def expect_frame_layers(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.77 on wj-ia-300's session fixture: the frame is a canvas in two layers. Recolouring an instrument (the
+    rail's whole-orbit lock) marks both views and lists the role under the Instruments heading; its reset clears the
+    mark. Recolouring two surfaces (the shell and the completion moment) repaints the window colour, lists both under
+    the Surfaces heading and marks no view. The resets bring the opening token digest back; the state digest holds."""
+    steps = ["start", "wait 5001 ms", "command tuning.open", "wait 701 ms",
+             "command token.override.set rail.lock.whole=0.62 0.16 40", "wait 702 ms",
+             "command token.override.reset rail.lock.whole=reset", "wait 703 ms",
+             "command token.override.set surface.window=0.2 0.01 250", "wait 704 ms",
+             "command token.override.set rail.moment.complete=0.6 0.15 140", "wait 705 ms",
+             "command token.override.reset surface.window=reset", "command token.override.reset rail.moment.complete=reset",
+             "wait 3000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    labels = {row["id"]: row["label"] for row in source["table"] + source["rows"]}
+    surfaces, instruments = FRAME_LAYER_HEADINGS
+
+    opening = dumps[0].get("colours", {}).get("digest")
+    if not re.fullmatch(r"[0-9a-f]{12}", str(opening)):
+        problems.append("step 0: the opening token digest is missing or malformed")
+    # (step, the views marked, the digest moved): only the instrument's override marks the views.
+    for i, marked, moved in ((3, False, False), (5, True, True), (7, False, False), (9, False, True), (11, False, True),
+                             (14, False, False)):
+        colours = dumps[i].get("colours", {})
+        if (colours.get("nonstandard"), colours.get("global"), colours.get("local")) != (marked, int(marked), int(marked)):
+            problems.append(f"step {i}: both view frames should carry {int(marked)} colour marks, not "
+                            f"{colours.get('global')} and {colours.get('local')} (non-standard {colours.get('nonstandard')})")
+        if (colours.get("digest") != opening) != moved:
+            problems.append(f"step {i}: the token digest {'did not move' if moved else 'moved'}")
+
+    def rows(i: int) -> list[str]:
+        return texts(dumps[i])
+
+    def under(lines: list[str], text: str, heading: str, before: str | None = None) -> bool:
+        if heading not in lines or text not in lines:
+            return False
+        at, start = lines.index(text), lines.index(heading)
+        return at > start and (before is None or before not in lines or at < lines.index(before))
+
+    if not under(rows(5), "rail.lock.whole *", instruments):
+        problems.append("step 5: the recoloured lock is not listed under the Instruments heading")
+    if not all(heading in rows(5) for heading in FRAME_LAYER_HEADINGS):
+        problems.append("step 5: the Advanced list does not show both layers' headings")
+    if "rail.lock.whole *" in rows(7):
+        problems.append("step 7: the lock's reset left it marked as changed")
+    for text in ("rail.moment.complete *", "surface.window *"):
+        if not under(rows(11), text, surfaces, instruments):
+            problems.append(f"step 11: '{text}' is not listed under the Surfaces heading, before the Instruments one")
+    if any(text in rows(14) for text in ("rail.moment.complete *", "surface.window *")):
+        problems.append("step 14: a surface's reset left it marked as changed")
+
+    tuning = {i: dumps[i].get("tuning") or {} for i in range(3, 15)}
+    if not tuning[3].get("window") or tuning[9].get("window") == tuning[7].get("window"):
+        problems.append("step 9: recolouring the shell did not repaint the frame's window colour")
+    if tuning[14].get("window") != tuning[7].get("window"):
+        problems.append("step 14: the shell's reset did not bring the window colour back")
+    digest = tuning[3].get("state_digest")
+    if not digest:
+        problems.append("the head's state digest is not read")
+    for i, t in tuning.items():
+        if t.get("state_digest") != digest:
+            problems.append(f"step {i}: the state digest moved")
+        if t.get("status"):
+            problems.append(f"step {i}: the tuning panel refused: {t.get('status')!r}")
+    for i in (4, 6, 8, 10, 12, 13):
+        command = dumps[i]["do"].split(" ")[1]
+        problems.extend(f"step {i}: {line}" for line in texts(dumps[i], "frame") if line.startswith(labels[command] + ": "))
+    if not problems:
+        print(f"frame-layers: the lock marked both views and sat under Instruments; the shell and the completion moment "
+              f"sat under Surfaces and marked nothing; the token digest {opening} came back; the state digest "
+              f"{str(digest)[:16]} held")
+    return problems
+
+
+EXPECT["frame-layers"] = expect_frame_layers
+ON_FIXTURE.add("frame-layers")
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

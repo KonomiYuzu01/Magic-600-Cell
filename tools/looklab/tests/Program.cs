@@ -134,6 +134,7 @@ internal static partial class Program
             ("D01RadialHeldReleaseRunsThePointedEntry", D01RadialHeldReleaseRunsThePointedEntry),
             ("D01FreeViewsNameTheirSource", D01FreeViewsNameTheirSource),
             ("D01RailLocksNameTheirKinds", D01RailLocksNameTheirKinds),
+            ("D01FrameHasTwoLayers", D01FrameHasTwoLayers),
             ("A5CommitBarInlineParameters", A5CommitBarInlineParameters),
             ("A5ScreenChecksKeyboardAndWords", A5ScreenChecksKeyboardAndWords),
             ("A5HistoryBranchesInFull", A5HistoryBranchesInFull),

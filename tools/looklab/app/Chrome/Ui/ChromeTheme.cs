@@ -79,6 +79,10 @@ public static class ChromeTheme
             theme.SetTypeVariation(open, "PanelContainer"); theme.SetStylebox("panel", open, box);
         }
         theme.SetTypeVariation("ViewFrameFocus", "PanelContainer"); theme.SetStylebox("panel", "ViewFrameFocus", Box(t, "window.background", "control.focus", "radius.panel", 0));
+        // ADR-D01.77: each surface the design system's layers name has a style of its own, so the art line repaints it alone.
+        // They draw as their parts drew before: the key map's body as an overlay, the others on their parents' ground.
+        theme.SetTypeVariation("KeyMapBody", "PanelContainer"); theme.SetStylebox("panel", "KeyMapBody", Box(t, "popup.background", "popup.border", "radius.control", s3));
+        foreach (string clear in new[] { "HelpPlate", "LearnGround", "EmptyState" }) { theme.SetTypeVariation(clear, "PanelContainer"); theme.SetStylebox("panel", clear, new StyleBoxEmpty()); }
         theme.SetTypeVariation("Chip", "PanelContainer"); theme.SetStylebox("panel", "Chip", Box(t, "panel.background", "panel.border", "radius.control", s1));
         var rowBox = Box(t, t.Lines ? "panel.background" : "popup.background", null, "radius.control", s1);
         if (t.Lines) { rowBox.BorderColor = t.C("separator"); rowBox.SetBorderWidth(Side.Bottom, t.Px("border.width")); }

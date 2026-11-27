@@ -2430,6 +2430,28 @@ void product_colours(const Options& options) {
     api(ctx, sa2_sticker_colours_set(ctx, table.data(), 0));
     api(ctx, sa2_scene_look_set(ctx, nullptr));
     expect(draw() == original_styled, "clearing both exports did not restore the styled frame bytes");
+
+    // ADR-D02 B33: the table and the scene look are scene state, not revision state. Every new head the shell adopts (a
+    // twist, a fixture load, jumble.on/off, a state switch) reaches the core as sa2_engine_adopt, which drops only the
+    // revision-bound piece style, transform and chart channel, so the next revision draws the same recoloured bytes on
+    // the same background without a resend. The tint and its piece style are cleared first: those are revision-bound.
+    api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+    api(ctx, sa2_style_set(ctx, 1, nullptr, SA2_STYLE_CHANNEL_FILL));
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    api(ctx, sa2_scene_look_set(ctx, &look));
+    const auto before = draw();
+    expect(before[0] == green_background && before != original, "the table and scene look did not draw before the adoption");
+    std::vector<uint32_t> labels(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) labels[slot] = slot;
+    sa2_engine_image next{};
+    next.struct_size = sizeof(next);
+    next.revision = 2; // the same labels, a new revision
+    next.labels = labels.data();
+    uint64_t adopted = 0;
+    api(ctx, sa2_engine_adopt(ctx, &next, &adopted));
+    expect(adopted == 2, "the next revision was not adopted");
+    expect(frames.draw(2, 1, set, q) == before, "an adoption dropped the sticker table or the scene look");
+    std::cout << "scene colours: kept across an adoption (revision 2 draws revision 1's recoloured, green-backed bytes)" << std::endl;
     std::cout << "scene colours: " << recoloured << " palette pixels (0 outside class " << home << "), " << cleared
               << " background pixels, " << pane_cleared << " pane background pixels, " << tinted << " tint pixels ("
               << tinted_red << " over the recoloured class)" << std::endl;

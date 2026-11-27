@@ -1157,5 +1157,215 @@
       "surface": "surface.panel",
       "minimum": 3
     }
-  ]
+  ],
+    "layers": {
+      "note": "ADR-D01.77: the frame is a canvas in two layers. Surfaces are for the design and art line to paint; each names the roles and the chrome styles (type variations) that paint it, one style per surface. Instruments keep a meaning fixed by name in every theme; each names its roles, exactly or by a prefix ending in a dot. The number of an instrument's values and its meaning are framework, its drawing is the art line's. An instrument with no roles is not drawn in this build yet. A role no part names is an instrument when it has a cue that is not colour, and a surface otherwise; recolouring an instrument marks the views (ADR-D01.51).",
+      "surfaces": [
+        {
+          "id": "shell",
+          "words": "the shell",
+          "roles": [
+            "surface.window"
+          ],
+          "styles": [
+            "FrameGround"
+          ]
+        },
+        {
+          "id": "strip",
+          "words": "the strip's ground",
+          "roles": [
+            "strip.ground"
+          ],
+          "styles": [
+            "StripGround"
+          ]
+        },
+        {
+          "id": "rail",
+          "words": "the rail's ground",
+          "roles": [
+            "rail.ground"
+          ],
+          "styles": [
+            "RailGround"
+          ]
+        },
+        {
+          "id": "top-bar",
+          "words": "the top bar's ground",
+          "roles": [],
+          "styles": [
+            "BarTop"
+          ]
+        },
+        {
+          "id": "docks",
+          "words": "the docks' grounds",
+          "roles": [],
+          "styles": [
+            "DockLeft",
+            "DockRight",
+            "DockBottom"
+          ]
+        },
+        {
+          "id": "view-border",
+          "words": "the view border material",
+          "roles": [],
+          "styles": [
+            "ViewFrame",
+            "ViewFrameFocus",
+            "ViewFrameOpen",
+            "ViewFrameOpenFocus"
+          ]
+        },
+        {
+          "id": "key-map",
+          "words": "the key map's body",
+          "roles": [],
+          "styles": [
+            "KeyMapBody"
+          ]
+        },
+        {
+          "id": "help-plate",
+          "words": "the figure plates of help cards",
+          "roles": [],
+          "styles": [
+            "HelpPlate"
+          ]
+        },
+        {
+          "id": "learn",
+          "words": "the Learn layout",
+          "roles": [],
+          "styles": [
+            "LearnGround"
+          ]
+        },
+        {
+          "id": "empty-state",
+          "words": "empty states",
+          "roles": [],
+          "styles": [
+            "EmptyState"
+          ]
+        },
+        {
+          "id": "completion",
+          "words": "the completion moment",
+          "roles": [
+            "rail.moment.complete"
+          ],
+          "styles": []
+        }
+      ],
+      "instruments": [
+        {
+          "id": "strip-cells",
+          "words": "strip cells and anchors",
+          "roles": [
+            "strip.cell.",
+            "anchor.",
+            "strip.next",
+            "strip.link"
+          ]
+        },
+        {
+          "id": "rail-cells",
+          "words": "rail cells",
+          "roles": [
+            "rail.cell.id",
+            "rail.cell.group",
+            "rail.cell.solved",
+            "rail.cell.lock",
+            "rail.cell.working",
+            "rail.cell.next"
+          ]
+        },
+        {
+          "id": "status-patterns",
+          "words": "status patterns",
+          "roles": [
+            "rail.status.",
+            "pattern."
+          ]
+        },
+        {
+          "id": "locks",
+          "words": "locks",
+          "roles": [
+            "rail.lock."
+          ]
+        },
+        {
+          "id": "lamps",
+          "words": "lamps",
+          "roles": [
+            "lamp."
+          ]
+        },
+        {
+          "id": "chips",
+          "words": "chips",
+          "roles": [
+            "chip."
+          ]
+        },
+        {
+          "id": "route-mark",
+          "words": "the Draft/Direct mark",
+          "roles": [
+            "mark.route."
+          ]
+        },
+        {
+          "id": "residual-level",
+          "words": "the residual level",
+          "roles": [
+            "rail.cell.residual_level"
+          ]
+        },
+        {
+          "id": "grip-marks",
+          "words": "Grip frame marks",
+          "roles": []
+        },
+        {
+          "id": "commit-status",
+          "words": "the commit status",
+          "roles": [
+            "commit."
+          ]
+        },
+        {
+          "id": "numerals",
+          "words": "numerals",
+          "roles": [
+            "numeral."
+          ]
+        },
+        {
+          "id": "arrows",
+          "words": "arrows",
+          "roles": []
+        },
+        {
+          "id": "orientation-glyphs",
+          "words": "orientation glyphs",
+          "roles": []
+        },
+        {
+          "id": "set-kind-glyphs",
+          "words": "set-kind glyphs",
+          "roles": []
+        },
+        {
+          "id": "block-marks",
+          "words": "block marks",
+          "roles": []
+        }
+      ]
+    }
 }

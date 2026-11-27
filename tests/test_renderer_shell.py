@@ -1688,6 +1688,8 @@ class D02Host(unittest.TestCase):
         self.assertIs(run.EXPECT["signature"], run.expect_signature)  # ADR-D01.70
         self.assertIs(run.EXPECT["binding-chip"], run.expect_binding_chip)  # ADR-D01.42
         self.assertIs(run.EXPECT["rail-locks"], run.expect_rail_locks)  # ADR-D01.65
+        self.assertIs(run.EXPECT["frame-layers"], run.expect_frame_layers)  # ADR-D01.77
+        self.assertIn("frame-layers", run.ON_FIXTURE)
         self.assertIs(run.EXPECT["setup"], run.expect_setup)  # ADR-D01.68
         # CR-16's live selector and difference file: on a fixture as tuning-save is, the file read from the run folder.
         self.assertIs(run.EXPECT["tuning-revert"], run.expect_tuning_revert)
@@ -1860,6 +1862,20 @@ class D02CapHover(unittest.TestCase):
         cells = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "CapMapControl.cs")
         self.assertIn("MouseDefaultCursorShape = cap == null ? CursorShape.Arrow : CursorShape.PointingHand;", cells)
         self.assertIn("CapNaming.Tip(Refusal?.Invoke(cap), Describe(cap))", cells)
+
+    def test_the_refusal_names_the_palettes_key_in_sample_mode(self):
+        """B32's leftover: in sample mode the key map holds F1, so the refusal's "F1 › jumble.cap.unname" is routed to
+        the palette's own key as Local's hint is (ShellJumble.PaletteRoute); outside sample mode it keeps F1."""
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn("public Func<string, string>? PaletteWords { get; set; }", host)
+        self.assertIn("CapNaming.Refusal(cap, Source.State.Mode, Naming.Named) is not { } why ? null : PaletteWords is { } route ? route(why) : why;", host)
+        chrome = text(PROJECT / "ShellChrome.cs")
+        self.assertIn("paletteWords = words => ShellJumble.PaletteRoute(words, taken, paletteKeys);", chrome)
+        self.assertIn("empty = paletteWords(empty);", chrome)
+        self.assertIn("Jumble.PaletteWords = paletteWords;", chrome)
+        route = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertIn('words.Replace(taken + " ›", key + " ›")', route)
+        self.assertIn("F1 › jumble.cap.unname", text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "CapThreshold.cs"))
 
     def test_the_cap_hover_expectation_sees_each_part(self):
         run = shell_module("d02_run")
