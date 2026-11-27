@@ -160,7 +160,9 @@ public sealed class ShellChrome
         frame.AddDockPanel(DockSide.Left, "tokens", "Tokens", "panel.tokens", specimen);
         foreach (var pane in Panes)
         {
-            frame.AddPane(pane.Id, pane.Title, ChromeBody.PaneState("notdrawn", pane.Title + ": " + NotHere));
+            // The preview view is a free view bound to the preview (ADR-D01.10, ADR-D01.42), drawn or not.
+            frame.AddPane(pane.Id, pane.Title, ChromeBody.PaneState("notdrawn", pane.Title + ": " + NotHere),
+                pane.Id == "preview" ? ViewBinding.Preview : null);
         }
         // The core draws one view, beneath the window: the Global view is an opening. The Local view is not drawn yet.
         Control global = live

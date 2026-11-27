@@ -2680,6 +2680,40 @@ def expect_radial_hold(dumps: list[dict], source: dict, state: str | None) -> li
 EXPECT["radial-hold"] = expect_radial_hold
 
 
+BINDING_STEPS = ["start", "wait 2000 ms", "command file.document.open mid.sample-log",
+                 "command file.document.open bad-hash.sample-log", "command file.document.open census.6cs",
+                 "command workspace.set layout:analyse", "wait 3000 ms"]
+
+
+def expect_binding_chip(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.42 in sample mode: Solve shows no free view, so no chip; the verified sample log opens as a free view
+    whose head names its source, saved, and its body no longer repeats it; the log with a bad hash and the census script
+    carry no chip; Analyse shows the preview view, whose head names its source, preview."""
+    if [dump["do"] for dump in dumps] != BINDING_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+
+    def chips(i: int) -> list[tuple[str, str]]:
+        return [(group, text) for group, text in map(tuple, dumps[i]["lines"]) if group.startswith("binding:")]
+
+    wanted = {0: [], 1: [], 2: [("binding:document:mid.sample-log", "saved")], 3: [], 4: [],
+              5: [("binding:preview", "preview")], 6: [("binding:preview", "preview")]}
+    for i, chip in wanted.items():
+        if chips(i) != chip:
+            problems.append(f"step {i}: the binding chips read {chips(i)!r}, not {chip!r}")
+    for i, active in ((2, "mid.sample-log"), (3, "bad-hash.sample-log"), (4, "census.6cs")):
+        if dumps[i].get("documents", {}).get("active") != active:
+            problems.append(f"step {i}: the active document is {dumps[i].get('documents', {}).get('active')!r}")
+    if "saved" in texts(dumps[2], "frame"):
+        problems.append("step 2: the log's body still repeats its binding")
+    print(f"binding-chip: {[chips(i) for i in range(len(dumps))]}")
+    return problems
+
+
+EXPECT["binding-chip"] = expect_binding_chip
+IN_SAMPLE_MODE.add("binding-chip")
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

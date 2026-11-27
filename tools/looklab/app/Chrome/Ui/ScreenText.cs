@@ -40,6 +40,8 @@ public static class ScreenText
         ChromeOverlay overlay => "overlay:" + overlay.Name,
         // ADR-D01.74: the key map is no overlay (it takes no key), but its words are its own.
         KeyMapPanel => "keymap",
+        // ADR-D01.42: a free view's binding chip, apart from the pane's own words.
+        BindingChip chip => "binding:" + chip.PaneId,
         _ => null,
     };
 }
