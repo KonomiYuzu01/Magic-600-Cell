@@ -238,6 +238,19 @@ public sealed partial class HistoryPanel : VBoxContainer
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer head = new();
     private readonly HashSet<string> open = new(StringComparer.Ordinal);
+    private CompletionLog? completions;
+    public CompletionLog? Completions
+    {
+        get => completions;
+        set
+        {
+            if (completions == value) return;
+            if (completions != null) completions.Changed -= Refresh;
+            completions = value;
+            if (completions != null) completions.Changed += Refresh;
+            Refresh();
+        }
+    }
     // The confirm gate of a branch switch is the move history's own (ADR-D01.16): the branch being asked about,
     // or -1. The panel only shows the question and sends the answer.
     public int Asking => Moves.Asking;
@@ -286,11 +299,20 @@ public sealed partial class HistoryPanel : VBoxContainer
         head.AddChild(SessionWidgets.Tool("history.partial", "Step back one move inside the last entry", t, () => Send("session.undo.partial")));
         head.AddChild(SessionWidgets.Tool("history.undo", "Undo the last entry (Ctrl+Z)", t, () => Send("session.undo")));
         head.AddChild(SessionWidgets.Tool("history.redo", "Redo (Ctrl+Y)", t, () => Send("session.redo")));
+        ILookup<string?, CompletionEntry>? completedAfter = null;
+        if (Completions is { Entries.Count: > 0 } log)
+        {
+            var moveIds = Moves.Entries.Select(entry => entry.Id).ToHashSet(StringComparer.Ordinal);
+            // Keep entries whose anchor is on a kept branch visible at the bottom of the move list.
+            completedAfter = log.Entries.Reverse().ToLookup(e => e.AfterEntry is { } id && moveIds.Contains(id) ? id : null);
+        }
         // Newest first; the rollback cursor sits between the applied entries and the undone ones.
         for (int i = Moves.Entries.Count - 1; i >= 0; i--)
         {
             HistoryEntry entry = Moves.Entries[i]; int index = i; bool undone = i >= Moves.Cursor;
             if (i == Moves.Cursor - 1) List.AddChild(CursorLine(t));
+            if (completedAfter != null)
+                foreach (CompletionEntry completion in completedAfter[entry.Id]) List.AddChild(CompletionRow(t, completion));
             bool partial = i == Moves.Cursor - 1 && Moves.Inner > 0;
             Control row = Row(t, false, undone, entry.Origin, entry.Name, $"{entry.Id}  {entry.Time}", PlainList ? null : () => Send("history.entry.toggle", entry.Id),
                 () => Send("session.rollback", (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)), IsOpen(entry.Id));
@@ -305,6 +327,8 @@ public sealed partial class HistoryPanel : VBoxContainer
             }
         }
         if (Moves.Cursor == 0 && Moves.Entries.Count > 0) List.AddChild(CursorLine(t));
+        if (completedAfter != null)
+            foreach (CompletionEntry completion in completedAfter[null]) List.AddChild(CompletionRow(t, completion));
         Control start = Row(t, false, false, null, "Start of the session", "", null, () => Send("session.rollback", "0")); List.AddChild(start);
         for (int b = 0; b < Moves.Branches.Count; b++)
         {
@@ -331,6 +355,36 @@ public sealed partial class HistoryPanel : VBoxContainer
             }
             List.AddChild(line); List.AddChild(tools);
         }
+    }
+
+    private Control CompletionRow(TokenSet t, CompletionEntry entry)
+    {
+        var row = new PanelContainer { ThemeTypeVariation = "Row", CustomMinimumSize = new Vector2(0, t.Px("row.height")) };
+        row.SetMeta("completion", entry.Name);
+        row.SetMeta("slot", "history.entry.completion");
+        var line = new HBoxContainer(); row.AddChild(line);
+        string text = CompletionLog.Line(entry) + (entry.Sample ? " · sample" : "");
+        Button read = ChromeWidgets.Tool(text, text + "\nRead recorded completion");
+        read.Alignment = HorizontalAlignment.Left;
+        read.ClipText = true;
+        read.Flat = true;
+        read.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        read.Pressed += () => Send("session.completion", entry.Name);
+        line.AddChild(read);
+        if (entry.Moment)
+        {
+            var moment = new Control
+            {
+                Name = "MomentSlot",
+                CustomMinimumSize = new Vector2(t.Px("icon.small"), 0),
+                TooltipText = "The first-completed-orbit moment",
+                MouseFilter = MouseFilterEnum.Pass,
+            };
+            moment.SetMeta("moment", "orbit.complete");
+            moment.SetMeta("cue", "cue.orbit");
+            line.AddChild(moment);
+        }
+        return row;
     }
 
     private static Control CursorLine(TokenSet t)
