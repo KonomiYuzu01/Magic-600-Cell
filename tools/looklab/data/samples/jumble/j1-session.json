@@ -82,18 +82,6 @@
       "palette": "not in this build yet",
       "why": "a K2 server row: the D02 shell has no handler for it yet"
     },
-    "view.mode.raw": {
-      "palette": "a draft row: this build does not carry it out yet",
-      "why": "B21, the raw view, is not built yet"
-    },
-    "view.mode.raw.clip": {
-      "palette": "a draft row: this build does not carry it out yet",
-      "why": "B21, the raw view, is not built yet"
-    },
-    "view.mode.raw.antipode": {
-      "palette": "a draft row: this build does not carry it out yet",
-      "why": "B21, the raw view, is not built yet"
-    },
     "view.preset.jumble_entry": {
       "palette": "a draft row: this build does not carry it out yet",
       "why": "the entry slot row has no handler yet"
@@ -632,7 +620,8 @@
         },
         {
           "op": "view.mode.raw.clip",
-          "wait_ms": 200
+          "wait_ms": 200,
+          "argument": "0.5"
         },
         {
           "op": "view.mode.raw.antipode",
