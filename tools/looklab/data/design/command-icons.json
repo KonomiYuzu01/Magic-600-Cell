@@ -262,6 +262,8 @@
     "view.mode.raw.clip",
     "view.open",
     "view.pin",
+    "view.preset.global.chain",
+    "view.preset.global.chart",
     "view.preset.global.hopf_rings",
     "view.preset.global.ring_sheet",
     "view.preset.jumble_entry",

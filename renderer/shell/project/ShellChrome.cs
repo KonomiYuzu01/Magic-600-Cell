@@ -468,6 +468,10 @@ public sealed class ShellChrome
             host.SetMeeting(ShellJumble.Meeting());
             // B10: the kept twist checks, from the cap record's release checks, on the sample jobs' tick clock.
             host.CheckSource = ShellJumble.TwistChecks;
+            // B22 rest: the palette's Global chart rows switch Global's layout; its border names the chart it draws.
+            host.ChartRow = ShellHopf.Request;
+            host.Chart = ShellHopf.ChartName;
+            ShellHopf.Applied += Describe;
             var jumbleClock = new Godot.Timer { Name = "JumbleClock", WaitTime = 0.15, Autostart = true };
             jumbleClock.Timeout += host.Tick;
             frame.AddChild(jumbleClock);

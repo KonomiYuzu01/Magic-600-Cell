@@ -47,7 +47,13 @@ public sealed partial class JumbleHost
           // The Focus layer, the 0.4 Piece Filter (owner, 26 November 2026), on the bound state's pose rows.
           "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose",
           // B26: the ν-corrections' set (CR-14's mark row) and its check.
-          "jumble.corrections.mark", "jumble.corrections.check" };
+          "jumble.corrections.mark", "jumble.corrections.check",
+          // B22 rest: Global's chart presets, the palette's chart row and the way back to the chain (CR-14's draft rows).
+          JumbleViews.SheetRow, JumbleViews.RingsRow, JumbleViews.ChartRow, JumbleViews.ChainRow };
+    // B22 rest: the shell's Global layout switch (answers why not, or null) and the chart Global draws (null: the chain).
+    public Func<string, string?>? ChartRow { get; set; }
+    public Func<string?>? Chart { get; set; }
+    public string? ChartRefused { get; private set; }
     public static readonly IReadOnlySet<string> FilterRows = new HashSet<string>(StringComparer.Ordinal)
         { "filter.open", "filter.preview", "filter.apply", "filter.edit", "filter.preset", "filter.save", "filter.load", "structure.filter.compose" };
     // The Focus layer: its model for the bound state (null while none is bound), and its editor in the right dock.
@@ -395,6 +401,8 @@ public sealed partial class JumbleHost
         "filter.save" when string.IsNullOrWhiteSpace(argument) => "it needs a name, as in > filter.save lattice",
         "filter.load" when string.IsNullOrWhiteSpace(argument) => "it needs a saved name",
         "structure.filter.compose" when !Enum.TryParse<FilterComposition>(argument, true, out _) => "it needs replace, intersect, union or subtract",
+        _ when JumbleViews.ChartRows.Contains(command) && ChartRow == null => "this build draws no Global chart",
+        _ when JumbleViews.ChartRows.Contains(command) => null,
         _ when FilterRows.Contains(command) => null,
         _ when !Source.State.Mode => "Jumble is off",
         // Without a number the row opens the cap prompt.
@@ -419,6 +427,7 @@ public sealed partial class JumbleHost
     {
         switch (command)
         {
+            case var row when JumbleViews.ChartRows.Contains(row): ChartRefused = ChartRow != null ? ChartRow(row) : null; break;
             case "filter.open": OpenFilter(); break;
             case "jumble.corrections.mark": if (MarkOf(argument) is (int id, int by)) Corrections.Model?.Mark(id, by); OpenCorrections(); break;
             case "jumble.corrections.check": Corrections.CheckSet(); OpenCorrections(); break;
@@ -623,6 +632,6 @@ public sealed partial class JumbleHost
     {
         if (JumbleChrome.Marked(Source.State, new[] { view.ViewName }).Count == 0) return;
         view.AddMark(JumbleChrome.Mark, JumbleChrome.MarkWords, "accent.strong", "Jumble is on: this view shows the jumbled puzzle");
-        foreach (ViewMark mark in JumbleViews.BorderMarks(Source.State, view.ViewName)) view.AddMark(mark.Glyph, mark.Words, mark.Colour, mark.Tooltip);
+        foreach (ViewMark mark in JumbleViews.BorderMarks(Source.State, view.ViewName, Chart != null ? Chart() : null)) view.AddMark(mark.Glyph, mark.Words, mark.Colour, mark.Tooltip);
     }
 }

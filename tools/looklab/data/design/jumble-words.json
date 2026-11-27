@@ -361,6 +361,24 @@
       "item": "ADR-D02.8",
       "text": "projection chain (600-cell-Full)",
       "note": "Global's border names its chain. The record says Global keeps 600-cell-Full's projection chain until R5 admits a chart; the border's words are built from it, not quoted."
+    },
+    {
+      "id": "global.ring_sheet",
+      "item": "ADR-D02.9",
+      "text": "ring sheet",
+      "note": "Global's border names the chart it draws (B22 rest), from the preset's record name Ring sheet."
+    },
+    {
+      "id": "global.hopf_rings",
+      "item": "ADR-D02.9",
+      "text": "Hopf rings",
+      "note": "Global's border names the chart it draws (B22 rest), the preset's record name."
+    },
+    {
+      "id": "global.wrap",
+      "item": "ADR-D02.9",
+      "text": "columns wrap",
+      "note": "The ring sheet's wrap mark (B22 rest): the record's cyclic columns, each row one ring whose last column meets its first."
     }
   ]
 }

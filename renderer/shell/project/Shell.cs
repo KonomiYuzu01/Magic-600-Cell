@@ -328,6 +328,7 @@ public partial class Shell : Control
                 D02.ShellHopf.Layout(D02.ShellHopf.RingsPath(), layout)));
             _hopf = layout == D02.ShellHopf.Rings;
             _camera.Dirty = true; // the first step sends the spin as Global's camera
+            D02.ShellHopf.Took(layout);
         }
         // ADR-D02 B18c: with --d02 Local opens beside Global with its own shape, hidden until a cap is named.
         if (D02.ShellJumble.On)
@@ -823,6 +824,22 @@ public partial class Shell : Control
         if (_localOpen && area == _area)
         {
             SetPanes(library, global, layout);
+        }
+        // ADR-D02 B22 rest: a palette chart row switches Global's layout at the next step (ADR-D02.9).
+        if (D02.ShellJumble.On && D02.ShellHopf.TakeRequest() is uint wanted && wanted != D02.ShellHopf.Drawn)
+        {
+            var took = library.SetViewLayout(_host, HostLibrary.View,
+                wanted == D02.ShellHopf.Chain ? null : D02.ShellHopf.Layout(D02.ShellHopf.RingsPath(), wanted));
+            if (took == HostLibrary.Ok)
+            {
+                _hopf = wanted == D02.ShellHopf.Rings;
+                _camera.Dirty = true;
+                D02.ShellHopf.Took(wanted);
+            }
+            else
+            {
+                GD.PushWarning($"ADR-D02 B22: m6h_set_view_layout answered {took}: {library.LastError(_host)}");
+            }
         }
         var turning = D02.ShellLocal.Camera(_camera);
         if (D02.ShellJumble.On && (_camera.Dirty || turning.Dirty))

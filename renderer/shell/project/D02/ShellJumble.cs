@@ -1249,6 +1249,14 @@ internal sealed partial class D02Driver : Node
                 json.WriteStringValue(line);
             }
             json.WriteEndArray();
+            // B22 rest: Global's border marks, each chip's label words and its tooltip (a hidden label's words lie there).
+            json.WriteStartArray("global_marks");
+            foreach (var chip in _frame.Global.Marks.GetChildren().OfType<Control>())
+            {
+                var words = chip.FindChildren("*", "Label", true, false).OfType<Label>().Select(label => label.Text);
+                json.WriteStringValue(string.Join(" ", words) + " | " + chip.TooltipText);
+            }
+            json.WriteEndArray();
             json.WriteStartArray("lines");
             foreach (var (group, text) in ScreenText.Of(_frame))
             {
