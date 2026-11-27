@@ -168,11 +168,6 @@ namespace Magic600.Shell.D02
             {
                 shownId = pending.Id; requested = Model.Scrub; sent = (requested, 0); turn = null;
                 moved = uncheckedPrefix = null;
-                if (pending.Status == PreviewStatus.Ready && preview.Facts is { } facts)
-                {
-                    var mask = new byte[ShellStyle.PieceCount];
-                    if (library.PreviewMoved(host, facts.Id, mask) == HostLibrary.Ok) moved = mask;
-                }
                 if (frame.Model.IsOpen(Pane)) frame.Bind(Pane, ViewBinding.PreviewOf(pending.Id));
                 else frame.AddPane(Pane, "Preview", panel, ViewBinding.PreviewOf(pending.Id), () => panel.DrawnOpenings().Select(p => p.Rect));
                 Open();
@@ -182,8 +177,10 @@ namespace Magic600.Shell.D02
             if (pending.Status != PreviewStatus.Ready)
             {
                 turn = null; SetOverlay(); Dress();
+                return;
             }
-            else if (Model.Scrub != requested)
+            if (moved == null) { SetOverlay(); Dress(); }
+            if (Model.Scrub != requested)
             {
                 int to = Model.Scrub, prefix = Math.Min(to, requested);
                 turn = Math.Abs(to - requested) == 1 && sweeps[prefix] && comparison != PreviewSide.Before
@@ -235,7 +232,15 @@ namespace Magic600.Shell.D02
 
         private void SetOverlay(bool movementChanged = true)
         {
-            if (movementChanged) ShellJumble.Host?.Filter?.RefreshFields();
+            if (movementChanged)
+            {
+                if (moved == null && Model.Pending is { Status: PreviewStatus.Ready } && preview.Facts is { } facts)
+                {
+                    var mask = new byte[ShellStyle.PieceCount];
+                    if (library.PreviewMoved(host, facts.Id, mask) == HostLibrary.Ok) moved = mask;
+                }
+                ShellJumble.Host?.Filter?.RefreshFields();
+            }
             ShellTint.RefreshFocus();
             ShellStyle.Invalidate();
         }

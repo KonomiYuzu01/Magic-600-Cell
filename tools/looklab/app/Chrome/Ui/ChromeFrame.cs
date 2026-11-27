@@ -447,6 +447,8 @@ public sealed partial class ChromeFrame : Control
 
     private void Build()
     {
+        var focusOwner = IsInsideTree() ? GetViewport().GuiGetFocusOwner() : null;
+        if (focusOwner != null && !dockPanels.Any(panel => panel.Content.IsAncestorOf(focusOwner))) focusOwner = null;
         dirty = false; HoveredView = null; builtFor = Window; badgeLabels.Clear();
         foreach (DockPanel panel in dockPanels) ChromeWidgets.Detach(panel.Content);
         foreach (Pane pane in panes.Values) ChromeWidgets.Detach(pane.Content);
@@ -476,9 +478,18 @@ public sealed partial class ChromeFrame : Control
         if (OpenGround) { Global.Open = true; Global.SetFocused(false); }
         if (localDrawn) { Local.Open = true; Local.SetFocused(false); }
         centre.AddChild(Model.OnlyPairShown ? PairControl() : Node(Model.Centre));
+        if (OpenGround && panes.Values.Any(pane => pane.Openings != null && pane.Content.IsInsideTree()))
+        {
+            // A drawn free pane narrows the pair. Reserve room for both openings when the readouts wrap.
+            var minimum = new Vector2(0, ViewPanes.MainSlotMinHeight);
+            Global.Slot.CustomMinimumSize = minimum;
+            if (localDrawn) Local.Slot.CustomMinimumSize = minimum;
+        }
         if (strip != null) centre.AddChild(strip);
         if (!focus) { centre.AddChild(BottomDock()); middle.AddChild(SideDock(DockSide.Right)); }
         Safe.Raise(Rebuilt);
+        if (focusOwner != null && IsInstanceValid(focusOwner) && focusOwner.IsVisibleInTree() && GetViewport().GuiGetFocusOwner() == null)
+            focusOwner.GrabFocus();
     }
 
     private Control TopBar()

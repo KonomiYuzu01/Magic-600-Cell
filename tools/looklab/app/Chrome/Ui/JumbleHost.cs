@@ -390,10 +390,11 @@ public sealed partial class JumbleHost
         Recount();
         // The repair list: the record's result for the named cap at this revision; no row is focused when it opens.
         string? record = cap is int c4 && RecordSource != null ? RecordSource(c4) : null;
+        // The old control is still mounted and follows its list's focus while the scrub changes.
+        Scrub.ClearFocus(Repair);
         Repair = record != null ? RepairListModel.From(record, revision, RepairVariant) : null;
         if (Repair != null) Repair.Ledger = Ledger;
         RepairSteps = record != null ? RepairSteps.From(record) : new RepairSteps();
-        Scrub.Show(null);
         Local.SetCount("repair_list", Repair?.Rows.Count ?? 0, unavailable ?? Repair?.SectionStatus);
         Surface.SetRepair(Repair, RepairSteps, Scrub);
         SetCap(readout);

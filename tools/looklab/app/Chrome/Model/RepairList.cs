@@ -228,7 +228,11 @@ public sealed class RepairScrub
 
     public void FollowSection(LocalAccordion accordion, RepairListModel? list)
     {
-        if (accordion.Open == "repair_list") return;
+        if (accordion.Open != "repair_list") ClearFocus(list);
+    }
+
+    public void ClearFocus(RepairListModel? list)
+    {
         list?.Unfocus();
         Show(null);
     }

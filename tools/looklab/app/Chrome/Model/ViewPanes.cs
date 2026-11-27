@@ -27,6 +27,7 @@ public sealed record PaneLayout(PaneRect Surface, IReadOnlyList<PaneSpec> Panes)
 public static class ViewPanes
 {
     public const int MaxPanes = 4;
+    public const int MainSlotMinHeight = 128;
 
     // A split Local leaves one opening for the preview. The chosen side returns when there is space again.
     public static PreviewSide Comparison(PreviewSide side, int mainPanes) =>
