@@ -53,7 +53,11 @@ public sealed partial class JumbleHost
           // B21: Local's raw view, its antipode chart and its clip (CR-14's draft rows).
           RawView.Row, RawView.AntipodeRow, RawView.ClipRow,
           // B32 findings: the entry slot, the cut slice's split and shell (B20), and the repair list's key route.
-          EntrySlot.Id, SplitRow, ShellRow, RepairFocusRow, RepairStageRow };
+          EntrySlot.Id, SplitRow, ShellRow, RepairFocusRow, RepairStageRow,
+          GripFrame.SelectRow, GripFrame.NextRow };
+    public GripFrame? Grip { get; set; }
+    // The product shell checks the arguments for the palette, then applies an explicit request at the host.
+    public Func<string, string?, bool, string?>? GripRow { get; set; }
     public const string SplitRow = "jumble.slice.split", ShellRow = "jumble.slice.shell",
         RepairFocusRow = "jumble.repair.focus", RepairStageRow = "jumble.repair.stage";
     // B32 findings: the shell's cut slice rows (answers why not, or null once carried out).
@@ -416,6 +420,7 @@ public sealed partial class JumbleHost
 
     public string? Unavailable(string command, string? argument) => command switch
     {
+        GripFrame.SelectRow or GripFrame.NextRow => GripRow == null ? "Grip needs a live Jumble session" : GripRow(command, argument, false),
         _ when FilterRows.Contains(command) && Filter == null => "no state is bound: the focus layer counts the bound sample state's pieces",
         "filter.preset" when PieceFilterModel.Presets.All(p => p.Name != argument) => "it needs a preset: " + string.Join(", ", PieceFilterModel.Presets.Select(p => p.Name)),
         "filter.save" when string.IsNullOrWhiteSpace(argument) => "it needs a name, as in > filter.save lattice",
@@ -492,6 +497,9 @@ public sealed partial class JumbleHost
                 domainShown = d; FocusOn(JumbleFocus.DomainOf(Style, d)); DimOthers();
                 break;
             case JumbleTint.Row: SetTint(argument); break;
+            case GripFrame.SelectRow or GripFrame.NextRow:
+                if (GripRow != null && GripRow(command, argument, true) is { } why) frame.Say(why, true);
+                break;
             case "jumble.focus.height" when Style != null && Whole(argument) is int k:
                 heightShown = k; FocusOn(JumbleFocus.HeightOf(Style, k));
                 break;

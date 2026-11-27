@@ -706,6 +706,15 @@
           "wait_ms": 1000
         },
         {
+          "op": "grip.select",
+          "argument": "150",
+          "wait_ms": 300
+        },
+        {
+          "op": "grip.frame.next",
+          "wait_ms": 300
+        },
+        {
           "wait_ms": 1000
         }
       ]

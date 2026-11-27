@@ -43,14 +43,14 @@ public static class ShellPick
     /// <summary>Clicks asked, answered with a hit, answered with none, and dropped as stale (for the run's dump).</summary>
     public static (int Asked, int Hits, int Misses, int Stale) Counts => (_asked, _hits, _misses, _stale);
 
-    private static readonly List<(ulong Ticket, bool Click)> Pending = new();
-    private static (uint X, uint Y)? _click;
+    private static readonly List<(ulong Ticket, (uint X, uint Y)? HoverAt, Func<Picked?, bool>? Take)> Pending = new();
+    private static (uint X, uint Y, Func<Picked?, bool>? Take)? _click;
     private static (uint X, uint Y)? _hover;
     private static DateTime _hoverAt = DateTime.MinValue;
     private static int _asked, _hits, _misses, _stale;
 
     /// <summary>A click at a surface pixel: the next frame asks the ID pass there.</summary>
-    public static void Click(uint x, uint y) => _click = (x, y);
+    public static void Click(uint x, uint y) => _click = (x, y, null);
 
     /// <summary>The pointer at a surface pixel, or off every view (null clears the hover).</summary>
     public static void Point((uint X, uint Y)? at)
@@ -58,6 +58,7 @@ public static class ShellPick
         if (at is null && Hover is not null)
         {
             Hover = null;
+            _pickedHoverAt = null;
             Changed?.Invoke();
         }
         _hover = at;
@@ -86,7 +87,7 @@ public static class ShellPick
             var code = library.PickRequest(host, click.X, click.Y, out var ticket);
             if (code == HostLibrary.Ok)
             {
-                Pending.Add((ticket, true));
+                Pending.Add((ticket, null, click.Take));
                 _asked++;
             }
             // ADR-D02 B17: keep the click until a current frame's ID resources are ready.
@@ -96,15 +97,16 @@ public static class ShellPick
             }
         }
         var now = DateTime.UtcNow;
-        if (_hover is { } hover && now - _hoverAt >= HoverEvery && !Pending.Exists(p => !p.Click)
+        if (_hover is { } hover && now - _hoverAt >= HoverEvery && !Pending.Exists(p => p.HoverAt != null)
             && library.PickRequest(host, hover.X, hover.Y, out var hoverTicket) == HostLibrary.Ok)
         {
-            Pending.Add((hoverTicket, false));
+            Pending.Add((hoverTicket, hover, null));
             _hoverAt = now;
         }
         for (var i = Pending.Count - 1; i >= 0; i--)
         {
-            var (t, isClick) = Pending[i];
+            var (t, hoverAt, take) = Pending[i];
+            bool isClick = hoverAt == null;
             if (library.PickPoll(host, t, out var pick) != HostLibrary.Ok)
             {
                 Pending.RemoveAt(i);
@@ -137,17 +139,21 @@ public static class ShellPick
                 {
                     _hits++;
                 }
-                if (Selection != picked)
+                if (take?.Invoke(picked) != true && Selection != picked)
                 {
                     Selection = picked;
                     SelectionChanged?.Invoke();
                     changed = true;
                 }
             }
-            else if (Hover?.Piece != picked?.Piece || (Hover is null) != (picked is null))
+            else if (hoverAt == _hover)
             {
-                Hover = picked;
-                changed = true;
+                _pickedHoverAt = hoverAt;
+                if (Hover != picked)
+                {
+                    Hover = picked;
+                    changed = true;
+                }
             }
         }
         if (changed)
@@ -156,6 +162,14 @@ public static class ShellPick
         }
         return changed;
     }
+
+    private static (uint X, uint Y)? _pickedHoverAt;
+
+    /// <summary>The hover ID at the pointer's current pixel, once its pick has returned.</summary>
+    public static Picked? HoverAtPointer => _pickedHoverAt == _hover ? Hover : null;
+
+    /// <summary>A click whose confirmed hit can take the direct-twist route before selection.</summary>
+    public static void GripClick(uint x, uint y, Func<Picked?, bool> take) => _click = (x, y, take);
 
     /// <summary>
     /// A D02 script's <c>click</c> step, <c>{"click": [fx, fy]}</c>: a left click at fractions fx, fy of the Global

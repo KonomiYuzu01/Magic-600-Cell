@@ -157,6 +157,7 @@ public partial class Shell : Control
             {
                 WireSample(sample);
             }
+            WireGrip();
             if (_echo is { } echo)
             {
                 MoveChild(echo, -1);
@@ -188,16 +189,9 @@ public partial class Shell : Control
         if (sample.Places is { } places)
         {
             sample.GlobalView = () => _hopf || _chrome?.Opening() is not { Size.X: > 0, Size.Y: > 0 } g ? null
-                : new Magic600.Chrome.CoreView(_camera.Q, (_globalShape ?? opening)[0], (_globalShape ?? opening)[1], opening[2],
-                    D02.ShellShape.SentZoom(HostLibrary.View) ?? opening[3], (double)g.Size.X / g.Size.Y,
-                    _globalProjection == HostLibrary.ProjectionOrthographic);
-            // Local draws from its own rotation while unlinked (ADR-D01.41). Its spin is sent column-major as it lies
-            // (SpinOf), so the row-major rotation the core draws Local with is the spin transposed.
-            sample.LocalView = () => _localShape is not { } shape || _localCap is not int cap || cap < 0 || cap >= 600
-                || _chrome?.LocalOpening() is not { Size.X: > 0, Size.Y: > 0 } l ? null
-                : new Magic600.Chrome.CoreView(Transposed(D02.ShellLocal.Camera(_camera).Spin), 1 - shape.Gap, shape.StickerShrink, shape.D4,
-                    D02.ShellShape.SentZoom(HostLibrary.Local) ?? 1, (double)l.Size.X / l.Size.Y, shape.Projection == HostLibrary.ProjectionOrthographic,
-                    places.CellCentre(cap), D02.ShellLocal.FocusCos, shape.Spread);
+                : GlobalProjection(opening, (double)g.Size.X / g.Size.Y);
+            sample.LocalView = () => _chrome?.LocalOpening() is { Size.X: > 0, Size.Y: > 0 } l
+                ? LocalProjection(places, (double)l.Size.X / l.Size.Y) : null;
         }
         if (_host == IntPtr.Zero || _hostLibrary is null)
         {
@@ -425,6 +419,7 @@ public partial class Shell : Control
         // ADR-D02 B18 rest: a twist key's certified row, read at the head it would twist, for its sweep or flash.
         if (D02.ShellJumble.On && !key.Echo)
         {
+            D02.ShellGrip.CancelGesture();
             D02.ShellTurn.Arm(library, _host, chord);
         }
         var answer = library.KeyDown(_host, chord, key.Echo, out var result);
@@ -475,6 +470,7 @@ public partial class Shell : Control
         // A click that closes the menu on press belongs to the menu through release as well.
         if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left } left)
             _contextMenuPress = contextMenuOpen && left.Pressed;
+        FollowGripInput(@event, menuPointer);
         var turned = D02.ShellJumble.On && Turn(@event);
         if (turned)
         {
@@ -488,7 +484,8 @@ public partial class Shell : Control
                 case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } up when !turned:
                     if (SurfacePoint(up.Position) is { } at)
                     {
-                        D02.ShellPick.Click(at.X, at.Y);
+                        if (GripClick(up, at)) GetViewport().SetInputAsHandled();
+                        else D02.ShellPick.Click(at.X, at.Y);
                     }
                     break;
                 case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false } right when !turned:
@@ -503,6 +500,7 @@ public partial class Shell : Control
                     break;
             }
         }
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false }) _gripPress = null;
         // The wheel zooms the view under the pointer (owner, 26 November 2026); it takes no focus.
         if (D02.ShellJumble.On && D02.ShellJumble.Zoom.Follow(@event, ViewAt))
         {
@@ -798,8 +796,114 @@ public partial class Shell : Control
         {
             // The router releases its held keys; their key-ups never arrive.
             library.FocusLost(_host);
+            D02.ShellGrip.FocusLost();
         }
         _focused = focused;
+    }
+
+    private int? _gripPress;
+
+    public override void _Notification(int what)
+    {
+        if (!D02.ShellJumble.On || !_session) return;
+        if (what == NotificationWMWindowFocusOut) D02.ShellGrip.FocusLost();
+        if (what == NotificationWMMouseExit)
+        {
+            D02.ShellPick.Point(null);
+            D02.ShellGrip.CancelGesture();
+        }
+    }
+
+    private bool CanClickGrip() => _session && _chrome?.Frame.OpenOverlay == null && !_menuPointer &&
+        _editor?.TextFocused != true && !D02.ShellExplore.State.On;
+
+    private void FollowGripInput(InputEvent input, bool menuPointer)
+    {
+        if (!D02.ShellJumble.On || !D02.ShellGrip.Model.Ready) return;
+        if (input is InputEventKey key) D02.ShellGrip.Follow(key);
+        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } down)
+        {
+            D02.ShellGrip.CancelGesture();
+            _gripPress = down.CtrlPressed && D02.ShellGrip.Held && !menuPointer && CanClickGrip() &&
+                SurfacePoint(down.Position) != null ? D02.ShellGrip.Gesture : null;
+        }
+        if (input is InputEventMouseMotion && menuPointer) D02.ShellPick.Point(null);
+    }
+
+    private bool GripClick(InputEventMouseButton up, (uint X, uint Y) at)
+    {
+        if (_gripPress is not int press || press != D02.ShellGrip.Gesture || !up.CtrlPressed || !CanClickGrip()) return false;
+        var revision = _adoptedRevision;
+        var qpc = EventLog.Now();
+        D02.ShellPick.GripClick(at.X, at.Y, pick =>
+        {
+            if (revision != _adoptedRevision || press != D02.ShellGrip.Gesture || !CanClickGrip()) return true;
+            if (!D02.ShellGrip.ClickHits(pick, revision)) return false;
+            Turn(new InputEventKey { Keycode = Key.J, PhysicalKeycode = Key.J, Pressed = true }, qpc);
+            _hostLibrary?.KeyUp(_host, "KeyJ");
+            return true;
+        });
+        return true;
+    }
+
+    private Magic600.Chrome.CoreView GlobalProjection(float[] opening, double aspect)
+    {
+        var shape = _globalShape ?? opening;
+        return new(_camera.Q, shape[0], shape[1], shape[2], D02.ShellShape.SentZoom(HostLibrary.View) ?? shape[3],
+            aspect, _globalProjection == HostLibrary.ProjectionOrthographic);
+    }
+
+    private Magic600.Chrome.CoreView? LocalProjection(Magic600.Chrome.CorePlaces places, double aspect)
+    {
+        if (_localShape is not { } shape || _localCap is not int cap || cap is < 0 or >= 600) return null;
+        // Local's column-major spin is transposed for the row-major anchor path.
+        return new(Transposed(D02.ShellLocal.Camera(_camera).Spin), 1 - shape.Gap, shape.StickerShrink, shape.D4,
+            D02.ShellShape.SentZoom(HostLibrary.Local) ?? 1, aspect, shape.Projection == HostLibrary.ProjectionOrthographic,
+            places.CellCentre(cap), D02.ShellLocal.FocusCos, shape.Spread);
+    }
+
+    private void WireGrip()
+    {
+        if (!D02.ShellJumble.On || !D02.ShellLocal.Plan.Jumble || !_session || _hostLibrary is not { } library || _chrome == null) return;
+        var places = _chrome.Sample?.Places ?? Magic600.Chrome.CorePlaces.Load(System.Environment.GetEnvironmentVariable("M600_ASSETS")!);
+        _globalShape ??= D02.ShellShape.Read(D02.ShellShape.OpeningPath());
+        D02.ShellGrip.Connect(library, _host, places, () => _adoptedRevision, CanClickGrip, () => GripPanes(places));
+    }
+
+    private IEnumerable<D02.ShellGrip.GripPane> GripPanes(Magic600.Chrome.CorePlaces places)
+    {
+        Rect2 Rect(Magic600.Chrome.PaneRect pane) => new(pane.X + _area.Position.X, pane.Y + _area.Position.Y, pane.Width, pane.Height);
+        if (_chrome?.Opening() is { Size.X: > 0, Size.Y: > 0 } opening && _globalShape is { } shape)
+        {
+            var rect = _layout is { } panes ? Rect(panes.Panes[0].Rect) : new Rect2(opening.Position, opening.Size);
+            var view = GlobalProjection(shape, (double)rect.Size.X / rect.Size.Y);
+            if (D02.ShellHopf.Drawn != D02.ShellHopf.Chain)
+                view = view with { Chart = D02.ShellGrip.Chart(D02.ShellHopf.Drawn, places, Transposed(_camera.Spin)) };
+            yield return new("Global", rect, view);
+        }
+        if (_layout is not { } layout || !_localOpen || _chrome?.LocalOpening() is not { Size.X: > 0, Size.Y: > 0 }) yield break;
+        var local = layout.Panes[1];
+        if (D02.ShellRaw.On)
+        {
+            foreach (var raw in D02.ShellRaw.Panes(local))
+            {
+                var rect = Rect(raw.Pane.Rect);
+                if (LocalProjection(places, (double)rect.Size.X / rect.Size.Y) is { } view)
+                    yield return new(raw.Antipode ? "Local antipode" : "Local", rect,
+                        view with { RawSign = raw.Antipode ? -1 : 1, FocusCos = raw.H });
+            }
+        }
+        else
+        {
+            foreach (var slice in D02.ShellSlice.Panes(local))
+            {
+                var rect = Rect(slice.Pane.Rect);
+                if (LocalProjection(places, (double)rect.Size.X / rect.Size.Y) is not { } view) continue;
+                if (D02.ShellStyle.SliceSent)
+                    view = view with { FocusCos = Math.Cos(slice.Shell.Max) - 1e-5, FocusCosMax = Math.Cos(slice.Shell.Min) + 1e-5 };
+                yield return new(slice.Layer == Magic600.Chrome.SliceLayer.Inside ? "Local inside" : "Local", rect, view);
+            }
+        }
     }
 
     private void Require(HostLibrary library, string name, int code)
@@ -1048,6 +1152,7 @@ public partial class Shell : Control
     /// <summary>Closes the event log, the host, the surface and the libraries; the input echo stays.</summary>
     private void CloseCore()
     {
+        if (D02.ShellJumble.On) D02.ShellGrip.Disconnect();
         if (_uiFrames)
         {
             RenderingServer.FramePreDraw -= OnFramePreDraw;
