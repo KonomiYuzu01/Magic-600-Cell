@@ -1287,6 +1287,82 @@ EXPECT["pick"] = expect_pick
 ON_FIXTURE.add("pick")
 
 
+def expect_sweep(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B18 rest. B18-05: after naming cap 1 and a click that selects a sticker in another cell, Local frames the
+    selection's cell (auto-framing on) and the turn row reads that cell. Without a state the grip cap's twists commit:
+    J (a half-turn) flashes its moved set for jumble.half_turn's time, K sweeps with phases from 0 to 1 over
+    jumble.sweep's time and never pops to its end pose first, and under reduced motion both are static. On wj-ia-300,
+    whose cap 0 is blocked, the four presses are refused and nothing sweeps or flashes."""
+    import math
+    dos = [dump.get("do", "") for dump in dumps]
+    if (len(dumps) != 24 or dos[12] != "chord J" or dos[14] != "chord K"
+            or not all(dos[k].startswith("click ") for k in (6, 8, 10))):
+        return [f"the steps written were {dos}"]
+    problems = []
+    named = dumps[5]
+    if (named.get("local_plan") or {}).get("framed") != 1 or (named.get("turn") or {}).get("cap") != 1:
+        problems.append(f"step 5: Local frames {(named.get('local_plan') or {}).get('framed')} and the turn reads "
+                        f"{(named.get('turn') or {}).get('cap')}, not the named cap 1")
+    hits = 0
+    for k in (7, 9, 11):
+        selection = (dumps[k].get("pick") or {}).get("selection")
+        plan, turn = dumps[k].get("local_plan") or {}, dumps[k].get("turn") or {}
+        if selection is None or selection.get("slot") is None:
+            # Nothing selected, or an off-lattice piece, which has no cell: Local keeps the named cap.
+            if plan.get("framed") != 1 or plan.get("by_selection") is not False or turn.get("cap") != 1:
+                problems.append(f"step {k}: with no selected cell Local frames {plan.get('framed')} and the turn "
+                                f"reads {turn.get('cap')}, not the named cap 1")
+            continue
+        hits += 1
+        cell = selection["slot"] // STICKERS_PER_CELL
+        if cell == 1:
+            problems.append(f"step {k}: the selected sticker lies in the named cell 1, so the check shows nothing")
+        if plan.get("framed") != cell or plan.get("by_selection") is not True or turn.get("cap") != cell:
+            problems.append(f"step {k}: Local frames {plan.get('framed')} (by selection: {plan.get('by_selection')}) and "
+                            f"the turn reads {turn.get('cap')}, not the selected sticker's cell {cell}")
+    if hits == 0 and state is not None:
+        problems.append("no click selected a sticker of a lattice piece")
+    sweeps = [dump.get("sweep") for dump in dumps[1:]]
+    if any(sweep is None for sweep in sweeps):
+        return problems + ["a dump has no sweep row"]
+    if [sweep["reduced"] for sweep in sweeps[:16]] != [False] * 16 or sweeps[-1]["reduced"] is not True:
+        problems.append(f"reduced motion read {[sweep['reduced'] for sweep in sweeps]}, not off then on")
+    final = sweeps[-1]
+    motions = final["motions"]
+    if state is not None:
+        if final["refused"] != 4 or motions or final["running"] is not None:
+            problems.append(f"on {state} the presses were refused {final['refused']} times and the motions were "
+                            f"{[m['kind'] for m in motions]}, not 4 refusals and none")
+        return problems
+    if final["refused"] != 0 or [m["kind"] for m in motions] != ["flash", "sweep", "static", "static"]:
+        return problems + [f"refused {final['refused']}, motions {[m['kind'] for m in motions]}, not flash, sweep, "
+                           "static, static"]
+    flash, sweep = motions[0], motions[1]
+    if abs(flash["angle"] - math.pi) > 1e-5 or flash["moving"] <= 0 or flash["phases"]:
+        problems.append(f"the flash turns {flash['angle']} with {flash['moving']} moving and phases {flash['phases']}")
+    if flash["duration_ms"] != 320 or flash["ended"] != "done" or not 320 <= flash["shown_ms"] < 900:
+        problems.append(f"the flash lasts {flash['duration_ms']} ms, ended {flash['ended']!r} after {flash['shown_ms']} ms")
+    phases, ms = sweep["phases"], sweep["ms"]
+    if abs(sweep["angle"] - math.pi) < 1e-3 or sweep["moving"] <= 0 or sweep["duration_ms"] != 220:
+        problems.append(f"the sweep turns {sweep['angle']} with {sweep['moving']} moving over {sweep['duration_ms']} ms")
+    if (sweep["ended"] != "done" or len(phases) < 3 or phases[0] > 0.05 or phases[-1] != 1
+            or any(b < a for a, b in zip(phases, phases[1:])) or any(not 0 <= p <= 1 for p in phases)
+            or not 0 < sum(0 < p < 1 for p in phases) or ms[-1] < 220 or ms[0] != 0):
+        problems.append(f"the sweep ended {sweep['ended']!r} with phases {phases} at {ms} ms")
+    if sweep["popped"]:
+        problems.append("a frame drew the sweep's revision at its end pose before phase 0 was set")
+    for static in motions[2:]:
+        if static["phases"] or static["shown_ms"] != 0 or static["ended"] != "static":
+            problems.append(f"a twist under reduced motion moved: {static}")
+    revisions = [m["revision"] for m in motions]
+    if revisions != sorted(revisions) or len(set(revisions)) != 4:
+        problems.append(f"the motions' revisions {revisions} are not four increasing ones")
+    return problems
+
+
+EXPECT["sweep"] = expect_sweep
+
+
 # The owner's bug report of 26 November 2026: jumble.cap.name without a number opens the cap prompt, every cap in
 # cap-id order with nothing highlighted (the human-solve boundary: the program never ranks or pre-selects a cap).
 CAP_PROMPT_STEPS = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name", "chord Enter", "text 15", "chord Down",

@@ -1,0 +1,85 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "sweep",
+  "note": "B18 rest. Space (the command find, not F1) names cap 1; three clicks on lattice pieces of wj-ia-300's Hopf rings opening at 1280x720 (found by a grid of 240 clicks on 27 Nov 2026: pick.json's three hits are off-lattice pieces, which have no cell) select a sticker in another cell, and with auto-framing on Local frames the selection's cell, which the turn row reads (B18-05). Then the router's twist keys at its grip cap 0: J is item 1, a half-turn, K item 2. Without a state (the solved jumbled puzzle) J commits and flashes the moved set for jumble.half_turn's time, K commits and sweeps it over jumble.sweep's time; after motion.reduced.set on, K and J commit with no sweep and no flash. On wj-ia-300's fixture cap 0 is blocked, so the four presses are refused and nothing sweeps or flashes.",
+  "steps": [
+    {
+      "wait_ms": 3000
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "text": "> jumble.cap.name 1"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 1500
+    },
+    {
+      "click": [
+        0.3789,
+        0.14
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.6211,
+        0.3
+      ]
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.3305,
+        0.7
+      ]
+    },
+    {
+      "wait_ms": 800
+    },
+    {
+      "chord": "J"
+    },
+    {
+      "wait_ms": 900
+    },
+    {
+      "chord": "K"
+    },
+    {
+      "wait_ms": 900
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "text": "> motion.reduced.set on"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 800
+    },
+    {
+      "chord": "K"
+    },
+    {
+      "wait_ms": 900
+    },
+    {
+      "chord": "J"
+    },
+    {
+      "wait_ms": 900
+    }
+  ]
+}

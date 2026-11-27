@@ -713,6 +713,25 @@ relative path is from the repository root.
   - B18-07 (minor), fixed in 1eec73b4: the host checks a moving byte, the plane (finite, unit and orthogonal to the core's 1e-3), the angle and the phase. Each answers `M6H_E_INVALID_ARGUMENT` before the core is asked.
   - B18-08 (minor), fixed in 1eec73b4: `expect_twist_row` pins cap 0's status to exactly 0 (blocked), cap 150's angle to pi and its plane's sha256 (`c7b19b2e…`), and the head digest before and after the query. The `turn` dump now writes `revision`, `read_at` and `plane_sha256`.
 
+**As built (B18 rest; 27 November 2026, branch `claude/d02-drawing`).** The sweep, the half-turn flash, reduced motion and the refused twist, on B18 part's transform.
+- Built:
+  - Shell (`D02/ShellTurn.cs`): before a key-down, a twist key's certified row is read at the router's grip cap with `TwistTransform`. The grip cap is cap 0, and the key table mirrors c600-command's draft `TWIST_KEYS`; a test pins both to `keymap.rs`. A committed press that entered the revision after the row's starts a motion. A half-turn (angle pi) flashes and any other twist sweeps. A refused press, a twist with no row and reduced motion start none.
+  - The sweep: `SetTransform` with the row's revision, plane, angle and moving set. Phase 0 shows on the revision's first frame. From the next step, the phase follows `MotionTable.Ease` of the `jumble.sweep` row's curve over its duration (token `twist`, 220 ms) and ends at 1. The next adoption drops the transform, as before.
+  - Host (`m6h_set_transform`, host 13, no new number): a revision handed out but not adopted yet is held and set when it is adopted. The first product run without this drew the end pose for one frame before phase 0 (the dump's `popped`). Host test `a_transform_named_for_a_pending_revision_is_held_until_its_adoption` (`tests/sweep.rs`) fails on the old setter. A revision not handed out is still refused (B18-04).
+  - The flash: the moved set is outlined in palette entry 15 (B16's overlay line, `JumbleOverlay.Entry`) on the outline channel, under the selection and the hover, for the `jumble.half_turn` row's time (token `flash`, 320 ms).
+  - Reduced motion: the existing setting (`Appearance.ReducedMotion`; the Appearance panel's check box, palette row `motion.reduced.set`), read through `MotionTable.Seconds`. Its 0 seconds make both motions static: no transform and no outline.
+  - Dump: a `sweep` row with the refused count, the reduced flag and each motion's kind, revision, angle, moving count, duration, end, `popped`, times and phases.
+  - `d02_run.py --script sweep` with `expect_sweep`. The script names cap 1 with Space, clicks three lattice pieces, then presses J, K, reduced motion on, K and J.
+- Readings:
+  - Twist keys turn only the grip cap 0, and wj-ia-300 blocks cap 0. On wj-ia-300 the four presses are refused and nothing moves. The committed sweep and flash run on the solved jumbled puzzle (`--script sweep` without a state). A twist at the named cap waits for `grip.select` (c600-command and c600-input; a row request).
+  - The motion table's static equivalent ("the moved set outlined") is read as no outline under reduced motion, as the brief says. A lasting static outline would be a new mark and is not built.
+  - The first step after the revision's first frame comes about 60 to 80 ms later in these runs. The sweep's time starts at that step, so the whole sweep is drawn rather than its first half skipped.
+- Review leftovers:
+  - B18-04, closed. `ShellTurn.SendInside(library, host, adopted, out count)` sends the row's moving set only while the row's revision is the adopted one. Otherwise it answers `Unavailable` and sends nothing. The slice keeps the layer sent for the adopted revision and tries again at the next step. Shell test `test_the_inside_set_is_bound_to_the_rows_revision` fails on the old `SendInside`.
+  - B18-05, closed. The product scenario is scripted in `sweep` on wj-ia-300: name cap 1, then three clicks on lattice pieces with auto-framing on. Local frames each selected sticker's cell (578, 94 and 149), and the `turn` row reads the same cell. pick.json's three hits are off-lattice pieces, which have no cell, so Local keeps the named cap there. The lattice points were found by a grid of 240 clicks at 1280x720.
+- Checks: listed in the commit message. Product runs at 1280x720 (two-views at its own 2000x1200): `sweep` with and without a state, `twist-row`, `slice`, `two-views` and `pick`, with no nvlddmkm or LiveKernelEvent event in the System log.
+- Owner sees: on the solved jumbled puzzle, K sweeps cap 0's inside set over 220 ms, and J flashes the moved set's outline for 320 ms. With Reduced motion on (Appearance, or `motion.reduced.set on` in the palette) both cut at once. On wj-ia-300, J, K and L are refused and nothing moves.
+
 **Two drawn views (B18a to B18c), added for the owner's answer of 26 November 2026.** Design: one surface, one present, several panes.
 - The core's surface covers the bounding rectangle of the drawn openings.
 - A composite frame clears once, draws each pane in its own rectangle and presents once.

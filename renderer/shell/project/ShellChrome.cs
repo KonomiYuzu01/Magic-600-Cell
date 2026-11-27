@@ -109,6 +109,8 @@ public sealed class ShellChrome
         var commandIcons = CommandIcons.Parse(File.ReadAllText(Path.Combine(folder, "command-icons.json")));
         ChromeBody.Commands = commandIcons;
         var look = new Appearance(design, themes);
+        // ADR-D02 B18 rest: the sweep and the half-turn read their rows' seconds (none under reduced motion) and curves.
+        D02.ShellTurn.MotionRow = id => (motions.Seconds(id, design, look.ReducedMotion), design.Curves[motions[id].Curve]);
         if (DisplayServer.IsDarkModeSupported())
         {
             look.FollowSystem(DisplayServer.IsDarkMode());

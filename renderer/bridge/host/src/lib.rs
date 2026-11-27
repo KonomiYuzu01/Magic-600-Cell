@@ -372,6 +372,9 @@ pub struct ShellHost {
     assigned: u64,
     /// The newest revision handed to the adoption worker whose build the host has not taken yet.
     awaited: Option<u64>,
+    /// ADR-D02 B18 rest: a transform named for a revision handed out but not adopted yet (a sweep's phase 0), set
+    /// with that revision's adoption ([`m6h_set_transform`]).
+    pending_transform: Option<PendingTransform>,
     /// The thread that builds twist adoptions off the frame thread ([`deferred`]), from the first twist on.
     adoptions: Option<deferred::Worker>,
     /// An adoption that failed after a frame was submitted, which the next call that adopts answers.
@@ -558,6 +561,7 @@ impl ShellHost {
             digests: BTreeMap::from([(ENGINE_REVISION, head.digest())]),
             assigned: ENGINE_REVISION,
             awaited: None,
+            pending_transform: None,
             adoptions: None,
             failed: None,
             turns: None,
@@ -615,6 +619,17 @@ impl ShellHost {
         self.revision = revision;
         self.assigned = self.assigned.max(revision);
         self.digests.insert(revision, digest);
+        // ADR-D02 B18 rest: a transform the shell named for this revision before its adoption is set with it, so the
+        // revision's first frame draws the sweep's phase 0, never the end pose first. A failure only loses the sweep's
+        // start: the shell sets the transform again at its next step. One for a later revision waits for that one.
+        if let Some(pending) = self.pending_transform.take() {
+            if pending.revision == revision {
+                let PendingTransform { plane, angle, moving, phase, .. } = pending;
+                let _ = self.host.backend.set_transform(revision, &plane, angle, Some(&moving), phase);
+            } else if pending.revision > revision {
+                self.pending_transform = Some(pending);
+            }
+        }
         self.publication = publication;
         self.replace_runs();
         let published = match checked {
@@ -1503,7 +1518,9 @@ pub unsafe extern "C" fn m6h_set_piece_style(
 /// twist not yet committed passes the negated angle at phase 0. A null `moving` with `count` 0 clears it. The core
 /// drops it at the next adoption. `revision` is the engine revision the row was read at ([`m6h_twist_transform`]'s
 /// `out_revision`): a transform is set only while that revision is the adopted one, so a row is never drawn on another
-/// revision (review finding B18-04); a clear ignores it. A wrong count, a byte other than 0 or 1, a plane that is not
+/// revision (review finding B18-04); a clear ignores it. A revision handed out but not adopted yet (after a committed
+/// twist, before its adoption) is held and set with that revision's adoption (ADR-D02 B18 rest: the sweep's phase 0 is
+/// drawn on the revision's first frame); a newer one replaces it, and a clear leaves it. A wrong count, a byte other than 0 or 1, a plane that is not
 /// finite or not two orthogonal unit vectors (the core's tolerance), an angle outside -pi..pi, a phase outside 0..1,
 /// or another revision answers [`M6H_E_INVALID_ARGUMENT`] and changes nothing (B18-07); the plane is read only once
 /// `moving` holds one byte per piece (B18-01).
@@ -1537,9 +1554,10 @@ pub unsafe extern "C" fn m6h_set_transform(
                 }
                 _ => return invalid("a transform is a plane with one byte per piece, or null with count 0"),
             };
+            let held = bytes.is_some() && revision > shell.revision && revision <= shell.assigned;
             if let Some(bytes) = bytes {
-                if revision != shell.revision {
-                    let detail = format!("the row's revision {revision} is not the adopted {}", shell.revision);
+                if revision != shell.revision && !held {
+                    let detail = format!("the row's revision {revision} is neither the adopted {} nor handed out", shell.revision);
                     return Err((M6H_E_INVALID_ARGUMENT, detail));
                 }
                 if bytes.iter().any(|&byte| byte > 1) {
@@ -1554,10 +1572,24 @@ pub unsafe extern "C" fn m6h_set_transform(
                     return invalid("a transform's angle is finite within -pi..pi and its phase within 0..1");
                 }
             }
+            if held {
+                let moving = bytes.unwrap_or_default().to_vec();
+                shell.pending_transform = Some(PendingTransform { revision, plane, angle, moving, phase });
+                return Ok(());
+            }
             let adopted = shell.revision;
             shell.host.backend.set_transform(adopted, &plane, angle, bytes, phase).map_err(host_error)
         })
     }
+}
+
+/// A transform [`m6h_set_transform`] holds for a revision handed out but not adopted yet.
+struct PendingTransform {
+    revision: u64,
+    plane: [[f32; 4]; 2],
+    angle: f32,
+    moving: Vec<u8>,
+    phase: f32,
 }
 
 /// The core's check of a transform's plane (`SA2_TRANSFORM_PLANE_TOLERANCE`, 1e-3): finite, unit, orthogonal rows.

@@ -79,13 +79,21 @@ public static class ShellSlice
         (int, ulong, bool)? inside = ShellTurn.Cap is int cap ? (cap, revision, ShellTurn.Row is not null) : null;
         if (inside != _inside)
         {
-            var code = ShellTurn.SendInside(library, host, out _insideCount);
-            if (code != HostLibrary.Ok)
+            var code = ShellTurn.SendInside(library, host, revision, out var count);
+            if (code == HostLibrary.Unavailable)
+            {
+                // B18-04: the row was read at a head the host has not adopted yet; the layer sent for the adopted
+                // revision stays, and the row's is sent once its revision is adopted.
+            }
+            else if (code != HostLibrary.Ok)
             {
                 return _code = code;
             }
-            _inside = inside;
-            Restyle = true;
+            else
+            {
+                (_insideCount, _inside) = (count, inside);
+                Restyle = true;
+            }
         }
         (int, ulong)? ghost = Model.Previewing is { } held && ShellTurn.Cap == held.Cap && ShellTurn.Row is not null
             ? (held.Cap, revision) : null;
