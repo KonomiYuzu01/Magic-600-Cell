@@ -1547,6 +1547,34 @@ IN_SAMPLE_MODE.add("timer")
 ON_FIXTURE.add("timer")
 
 
+# ADR-D01.70: the effect signature in the preview view and on History's entries, drawn with the Library rows' marks.
+# ScreenText reads a signature by its tooltip, so the screen's words carry it.
+def expect_signature(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.70 in sample mode: once the sample preview is staged, the preview view (in the frame) shows that
+    preview's signature (its sample effects on their rail orbits, unverified) and the sample History shows one on its
+    entry rows; no signature reads as certified; the error lamp counts no failure."""
+    problems = []
+    lines = dumps[-1].get("lines", []) if dumps else []
+    signatures = [(group, text) for group, text in lines if text.startswith("Effect signature")]
+    preview = [text for group, text in signatures if group == "frame"]
+    history = [text for group, text in signatures if group.startswith("panel:history")]
+    if not any(text.startswith("Effect signature, unverified: moves ") for text in preview):
+        problems.append(f"the preview view shows no measured signature: {preview!r}")
+    if not history:
+        problems.append("History's entries show no signature")
+    if any("certified" in text and "unverified" not in text for _, text in signatures):
+        problems.append("a sample signature reads as certified")
+    for i, dump in enumerate(dumps):
+        errors = dump.get("errors", {})
+        if errors.get("lamp") is not True or errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {i}: error lamp is {errors!r}")
+    return problems
+
+
+EXPECT["signature"] = expect_signature
+IN_SAMPLE_MODE.add("signature")
+
+
 # B29 (ADR-D02.4, .45, .46, .50, .52): the research pane's Runs tab. research.runs brings the pane from Solve; a start
 # before any declaration is refused; budget, seed and depth are declared; the sample's run stops at its budget as cut
 # off and reproduces with bytes equal; both CR-17 rows are refused with their reason; History gains no entry.

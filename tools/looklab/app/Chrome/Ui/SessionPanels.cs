@@ -30,6 +30,15 @@ internal static class SessionWidgets
     }
 
     public static void Clear(Node node) { foreach (Node child in node.GetChildren()) { node.RemoveChild(child); child.QueueFree(); } }
+
+    // ADR-D01.70: one effect signature, drawn with the Library rows' marks and its facts in the tooltip; `owner`
+    // names whose signature it is (the preview, or a History entry's id).
+    public static SignatureMarks Signature(TokenSet tokens, EffectSignature signature, string owner)
+    {
+        var marks = new SignatureMarks(signature, tokens) { TooltipText = LibraryModel.SignatureText(signature) };
+        marks.SetMeta("slot", "signature.slot"); marks.SetMeta("signature", owner);
+        return marks;
+    }
 }
 
 // The commit bar (ADR-D01.11): one slim bar that summarises the pending preview and carries commit, discard
@@ -136,6 +145,8 @@ public sealed partial class PreviewPanel : VBoxContainer
     // Every action the view offers is a command of the registry (ADR-D01.17): the side of the comparison and the
     // move steps. A click on a move line is direct manipulation of the scrub.
     public event Action<string, string?>? Command;
+    // ADR-D01.70: the rail order the effect signature is laid out in (the Library's), or null where no rail is shown.
+    public Func<IReadOnlyList<int>?>? RailOrder { get; set; }
 
     public PreviewPanel(PreviewModel model, Func<TokenSet> tokens)
     {
@@ -198,6 +209,9 @@ public sealed partial class PreviewPanel : VBoxContainer
             touched.TooltipText = "The range this preview touches over its whole sequence"; touched.MouseFilter = MouseFilterEnum.Pass; Effects.AddChild(touched);
         }
         Effects.AddChild(ChromeWidgets.Text("EFFECT ON EVERY ORBIT", "MicroLabel"));
+        // ADR-D01.70: the preview's complete effect as the one effect signature, in the rail's order; a preview that
+        // was not evaluated reads every orbit unknown, never untouched.
+        if (RailOrder?.Invoke() is { } order) Effects.AddChild(SessionWidgets.Signature(t, LibraryModel.Signature(p.Effects, order), "preview"));
         // Only evaluated effects may say an orbit is untouched: a preview refused before anything was prepared
         // says that nothing was evaluated, and lists no orbit.
         if (!p.Evaluated)
@@ -234,6 +248,8 @@ public sealed partial class HistoryPanel : VBoxContainer
     // The plain list of named transactions a script may switch the dock to (history.dock.mode).
     public bool PlainList { get; private set; }
     public VBoxContainer List { get; } = new() { Name = "HistoryRows", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+    // ADR-D01.70: the rail order of the entries' effect signatures (the Library's), or null where no rail is shown.
+    public Func<IReadOnlyList<int>?>? RailOrder { get; set; }
     public event Action<string, string?>? Command;
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer head = new();
@@ -306,6 +322,7 @@ public sealed partial class HistoryPanel : VBoxContainer
             // Keep entries whose anchor is on a kept branch visible at the bottom of the move list.
             completedAfter = log.Entries.Reverse().ToLookup(e => e.AfterEntry is { } id && moveIds.Contains(id) ? id : null);
         }
+        IReadOnlyList<int>? order = RailOrder?.Invoke();
         // Newest first; the rollback cursor sits between the applied entries and the undone ones.
         for (int i = Moves.Entries.Count - 1; i >= 0; i--)
         {
@@ -315,7 +332,8 @@ public sealed partial class HistoryPanel : VBoxContainer
                 foreach (CompletionEntry completion in completedAfter[entry.Id]) List.AddChild(CompletionRow(t, completion));
             bool partial = i == Moves.Cursor - 1 && Moves.Inner > 0;
             Control row = Row(t, false, undone, entry.Origin, entry.Name, $"{entry.Id}  {entry.Time}", PlainList ? null : () => Send("history.entry.toggle", entry.Id),
-                () => Send("session.rollback", (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)), IsOpen(entry.Id));
+                () => Send("session.rollback", (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)), IsOpen(entry.Id),
+                order == null ? null : SessionWidgets.Signature(t, LibraryModel.Signature(entry.Moves, order), entry.Id));
             row.SetMeta("entry", entry.Id); List.AddChild(row);
             if (PlainList || !(IsOpen(entry.Id) || partial)) continue;
             for (int m = 0; m < entry.Moves.Count; m++)
@@ -396,7 +414,7 @@ public sealed partial class HistoryPanel : VBoxContainer
         return line;
     }
 
-    private static Control Row(TokenSet t, bool selected, bool dim, string? origin, string name, string detail, Action? toggle, Action roll, bool opened = false)
+    private static Control Row(TokenSet t, bool selected, bool dim, string? origin, string name, string detail, Action? toggle, Action roll, bool opened = false, Control? signature = null)
     {
         var holder = new PanelContainer { ThemeTypeVariation = selected ? "RowSelected" : "Row", CustomMinimumSize = new Vector2(0, t.Px("row.height")) };
         var line = new HBoxContainer(); holder.AddChild(line);
@@ -405,6 +423,7 @@ public sealed partial class HistoryPanel : VBoxContainer
             Button fold = SessionWidgets.Tool(opened ? "fold.open" : "fold.closed", opened ? "Hide the moves" : "Show the moves", t, toggle); line.AddChild(fold);
         }
         if (origin != null) line.AddChild(SessionWidgets.Chip(origin, t.C(origin == "hand" ? "text.dim" : origin == "macro" ? "accent.strong" : "state.preview"), "Origin: " + origin));
+        if (signature != null) line.AddChild(signature);
         Label label = ChromeWidgets.Text(name, dim ? "DimLabel" : "", true); label.SizeFlagsHorizontal = SizeFlags.ExpandFill; label.TooltipText = name; line.AddChild(label);
         if (detail.Length > 0) line.AddChild(ChromeWidgets.Text(detail, "MicroLabel"));
         Button here = SessionWidgets.Tool("history.roll", "Roll to here", t, roll); here.SetMeta("roll", true); line.AddChild(here);

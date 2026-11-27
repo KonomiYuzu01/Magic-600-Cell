@@ -25,6 +25,8 @@ public static class ScreenText
             Button button => button.Text,
             LineEdit field => field.Text,
             RichTextLabel rich => rich.GetParsedText(),
+            // ADR-D01.70: an effect signature is drawn, not spelled; its words are its tooltip, as a view mark's are.
+            SignatureMarks marks => marks.TooltipText,
             _ => null,
         };
         if (!string.IsNullOrWhiteSpace(text)) lines.Add((group, text.Trim()));

@@ -223,7 +223,21 @@ public sealed class LibraryModel
     public static EffectSignature Signature(IReadOnlyList<string> word, IReadOnlyList<int> railOrder)
     {
         if (word.Count == 0 || SampleCheck.Effects(word) is not { } effects) return EffectSignature.Unknown(railOrder);
-        return EffectSignature.Of(effects.Select((e, i) => (Orbit: SampleCheck.RailOrbits[i], e.Moved)).ToDictionary(x => x.Orbit, x => x.Moved), railOrder, false);
+        return Signature(effects, railOrder);
+    }
+
+    // The same signature from a complete effect a check already measured (a preview's, ADR-D01.70): each sample
+    // orbit's effect stands on its rail orbit, an orbit the check did not measure is unknown, and no effect at all
+    // (a preview that was not evaluated) leaves every orbit unknown. Never certified here.
+    public static EffectSignature Signature(IReadOnlyList<OrbitEffect> effects, IReadOnlyList<int> railOrder)
+    {
+        var measured = new Dictionary<int, int>();
+        foreach (OrbitEffect effect in effects)
+        {
+            int sample = SampleCheck.Orbits.ToList().IndexOf(effect.Orbit);
+            if (sample >= 0) measured[SampleCheck.RailOrbits[sample]] = effect.Moved;
+        }
+        return EffectSignature.Of(measured, railOrder, false);
     }
 
     public static string SignatureText(EffectSignature signature)

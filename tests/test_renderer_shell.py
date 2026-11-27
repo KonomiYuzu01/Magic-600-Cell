@@ -1674,7 +1674,8 @@ class D02Host(unittest.TestCase):
     def test_the_host_expectation_sees_each_part(self):
         run = shell_module("d02_run")
         self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views",
-                                              "library-branch", "research-pane", "research", "documents", "timer"})
+                                              "library-branch", "research-pane", "research", "documents", "timer", "signature"})
+        self.assertIs(run.EXPECT["signature"], run.expect_signature)  # ADR-D01.70
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]

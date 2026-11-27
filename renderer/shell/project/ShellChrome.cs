@@ -228,6 +228,10 @@ public sealed class ShellChrome
                 id => motions.Seconds(id, design, look.ReducedMotion), Execute,
                 k => { keymap = k; frame.Keys = k; commands.Keymap = k; sheet.Keymap = k; }, palette, sheet, layouts);
             sample.Look = appearance;
+            // ADR-D01.70: the shell's History draws its entries' effect signatures in the sample rail's order.
+            history.RailOrder = sample.Solve.LibraryView.RailOrder;
+            sample.Solve.Rail.OrderChanged += history.Refresh;
+            history.Refresh();
         }
         ShellDocuments.Load(frame, registry, sample);
         ShellSession.Load(frame, registry, sample, history, Moves, Execute);
