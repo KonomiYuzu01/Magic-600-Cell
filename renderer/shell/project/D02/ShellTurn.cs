@@ -109,21 +109,24 @@ public static class ShellTurn
     /// <summary>A sweep, a flash or a static cut of one committed twist, as the dump reports it.</summary>
     private sealed class Motion
     {
-        public Motion(string kind, ulong revision, HostLibrary.TwistRow row, double seconds, double[] curve)
+        public Motion(string kind, ulong revision, HostLibrary.TwistRow row, SweepTiming timing, double[] curve, Outline? chartOutline)
         {
-            (Kind, Revision, Row, Seconds, Curve, Committed) = (kind, revision, row, seconds, curve, Stopwatch.GetTimestamp());
+            (Kind, Revision, Row, Timing, Curve, ChartOutline) = (kind, revision, row, timing, curve, chartOutline);
+            Committed = Stopwatch.GetTimestamp();
         }
 
         public string Kind { get; }
         public ulong Revision { get; }
         public HostLibrary.TwistRow Row { get; }
-        public double Seconds { get; }
-        public double[] Curve { get; }
+        public SweepTiming Timing { get; set; }
+        public double Seconds => Timing.Seconds;
+        public double[] Curve { get; set; }
+        public Outline? ChartOutline { get; }
         public long Committed { get; }
         public long? Started { get; set; }
         public bool Popped { get; set; }
         public bool Held { get; set; }
-        public bool Drawn { get; set; }
+        public ulong? FirstFrameRevision { get; set; }
         public string Ended { get; set; } = "";
         public double ShownMs { get; set; }
         public List<(double Ms, float Phase)> Phases { get; } = new();
@@ -163,7 +166,7 @@ public static class ShellTurn
     /// jumble.half_turn's fixed time and any other twist sweeps for jumble.sweep's; under reduced motion (0 seconds) both
     /// are static: the cut to the new poses, nothing drawn turning or outlined. A motion still running ends where it is.
     /// </summary>
-    public static void Committed(ulong revision)
+    public static void Committed(ulong revision, bool staticMotion)
     {
         var row = _armed;
         _armed = null;
@@ -174,24 +177,64 @@ public static class ShellTurn
             return;
         }
         var half = Math.Abs(row.Angle - MathF.PI) < 1e-4f;
-        var (seconds, curve) = MotionRow(half ? "jumble.half_turn" : "jumble.sweep");
+        var id = half ? MotionUses.HalfTurn : MotionUses.JumbleSweep;
+        var (seconds, curve) = MotionRow(id);
+        if (staticMotion) seconds = 0;
         var kind = seconds <= 0 ? "static" : half ? "flash" : "sweep";
         // B22 rest (ADR-D02.10): with a chart in Global (whose layout draws no turn, the core's viewFlags bit 3) a sweep
         // outlines the moved set for the half-turn's fixed time, in Global only; Local carries the motion. With the
         // slice in Local at another cap than the twisted one, no view sweeps it.
         if (kind == "sweep" && ShellHopf.Drawn != ShellHopf.Chain)
         {
-            var (outlineSeconds, _) = MotionRow("jumble.half_turn");
+            var (outlineSeconds, _) = MotionRow(MotionUses.HalfTurn);
             _outline = outlineSeconds > 0 ? new Outline(revision, row.Moving, outlineSeconds) : null;
-            if (Cap is int drawn && drawn != GripCap)
+            if (Cap != (int)GripCap)
             {
                 kind = "static";
             }
         }
-        _motion = new Motion(kind, revision, row, seconds, curve);
+        var timing = new SweepTiming(id, kind == "static" ? 0 : seconds);
+        if (kind == "sweep")
+        {
+            var queued = MotionRow(MotionUses.QueuedSweep);
+            timing = ShellMotion.Keys.StartSweep(seconds, queued.Seconds);
+            if (timing.RowId == MotionUses.QueuedSweep) curve = queued.Curve;
+        }
+        _motion = new Motion(kind, revision, row, timing, curve, _outline);
         if (_motion.Kind == "static")
         {
             End("static");
+        }
+    }
+
+    internal static bool Queue(MotionKey key)
+    {
+        var motion = _motion;
+        var queued = MotionRow?.Invoke(MotionUses.QueuedSweep);
+        double elapsed = motion?.Started is long since ? Stopwatch.GetElapsedTime(since, key.Qpc).TotalSeconds : 0;
+        float phase = motion is { Phases.Count: > 0 } ? motion.Phases[^1].Phase : 0;
+        if (!ShellMotion.Keys.TryQueue(key, queued?.Seconds ?? 0, elapsed, phase)) return false;
+        if (motion is { Kind: "sweep" } && ShellMotion.Keys.Active is { } timing && timing != motion.Timing)
+        {
+            motion.Timing = timing;
+            motion.Curve = queued!.Value.Curve;
+        }
+        return true;
+    }
+
+    internal static void CutMotion(HostLibrary library, IntPtr host, bool reduced)
+    {
+        if (_motion is { Kind: "sweep" } motion)
+        {
+            if (motion.Held)
+                library.SetTransform(host, motion.Revision, motion.Row.Plane, motion.Row.Angle, motion.Row.Moving, 1);
+            End(reduced ? "reduced" : "flushed");
+        }
+        else if (reduced && End("reduced")) ShellStyle.Invalidate();
+        if (reduced)
+        {
+            if (_outline?.Started is not null) ShellStyle.Invalidate();
+            _outline = null;
         }
     }
 
@@ -256,7 +299,11 @@ public static class ShellTurn
     /// then it sets the eased phase of its time, and 1 at its end. The next adoption drops it. A flash starts on the adopted revision and ends after its time. A newer
     /// adopted revision ends either. Answers true when the flash's outline must be sent again.
     /// </summary>
-    public static bool Step(HostLibrary library, IntPtr host, ulong adopted) => StepOutline(adopted) | StepMotion(library, host, adopted);
+    public static bool Step(HostLibrary library, IntPtr host, ulong adopted)
+    {
+        ShellMotion.ApplyRawClip?.Invoke();
+        return StepOutline(adopted) | StepMotion(library, host, adopted);
+    }
 
     private static bool StepMotion(HostLibrary library, IntPtr host, ulong adopted)
     {
@@ -284,7 +331,7 @@ public static class ShellTurn
             return motion.ShownMs >= motion.Seconds * 1000 && End("done");
         }
         var row = motion.Row;
-        if (motion.Started is null && motion.Drawn)
+        if (motion.Started is null && motion.FirstFrameRevision is not null)
         {
             motion.Started = now;
             motion.Phases.Add((0, motion.Popped ? 1f : 0f));
@@ -299,25 +346,24 @@ public static class ShellTurn
             // Never drawn: ended after two seconds.
             return Stopwatch.GetElapsedTime(motion.Committed, now).TotalSeconds > 2 && End(motion.Held ? "never drawn" : "refused by the host");
         }
-        var ms = Stopwatch.GetElapsedTime(since, now).TotalMilliseconds;
-        var t = Math.Min(1, ms / (motion.Seconds * 1000));
-        var phase = t >= 1 ? 1f : (float)MotionTable.Ease(motion.Curve, t);
+        var elapsed = Stopwatch.GetElapsedTime(since, now).TotalSeconds;
+        var phase = motion.Timing.Phase(elapsed, motion.Curve);
         if (library.SetTransform(host, motion.Revision, row.Plane, row.Angle, row.Moving, phase) != HostLibrary.Ok)
         {
             return End("refused by the host");
         }
-        motion.Phases.Add((ms, phase));
-        return t >= 1 && End("done");
+        motion.Phases.Add((elapsed * 1000, phase));
+        return elapsed >= motion.Seconds && End("done");
     }
 
     /// <summary>After a submitted frame: the first frame that drew the sweep's revision drew its phase 0; when no phase 0
     /// was held for it, that frame drew the end pose first (popped, the dump reports it).</summary>
     public static void Framed(ulong engineRevision)
     {
-        if (_motion is { Kind: "sweep", Started: null, Drawn: false } motion && engineRevision == motion.Revision)
+        if (_motion is { Kind: "sweep", FirstFrameRevision: null } motion && engineRevision == motion.Revision)
         {
             motion.Popped = !motion.Held;
-            motion.Drawn = true;
+            motion.FirstFrameRevision = engineRevision;
         }
     }
 
@@ -332,6 +378,7 @@ public static class ShellTurn
         _done.Add(motion);
         if (_done.Count > 16) _done.RemoveAt(0);
         _motion = null;
+        if (motion.Kind == "sweep") ShellMotion.SweepEnded();
         return motion.Kind == "flash" && motion.Started is not null;
     }
 
@@ -410,5 +457,38 @@ public static class ShellTurn
         }
         json.WriteEndObject();
         DumpSweep(json);
+    }
+
+    internal static void DumpMotion(Utf8JsonWriter json)
+    {
+        json.WriteNumber("queue_length", ShellMotion.Keys.Count);
+        json.WriteNumber("queued_events", ShellMotion.Keys.Enqueued);
+        json.WriteStartArray("turns");
+        foreach (var motion in _done) Write(motion);
+        if (_motion is { } running) Write(running);
+        json.WriteEndArray();
+
+        void Write(Motion motion)
+        {
+            json.WriteStartObject();
+            json.WriteString("kind", motion.Kind);
+            json.WriteString("row_id", motion.Timing.RowId);
+            json.WriteNumber("duration_ms", motion.Seconds * 1000);
+            json.WriteNumber("revision", motion.Revision);
+            json.WriteNumber("armed_revision", motion.Row.Revision);
+            if (motion.FirstFrameRevision is ulong revision) json.WriteNumber("first_frame_revision", revision);
+            else json.WriteNull("first_frame_revision");
+            json.WriteBoolean("popped", motion.Popped);
+            json.WriteString("ended", motion.Ended);
+            if (motion.ChartOutline is { } outline)
+            {
+                json.WriteStartObject("chart_outline");
+                json.WriteString("row_id", MotionUses.HalfTurn);
+                json.WriteNumber("duration_ms", outline.Seconds * 1000);
+                json.WriteNumber("revision", outline.Revision);
+                json.WriteEndObject();
+            }
+            json.WriteEndObject();
+        }
     }
 }

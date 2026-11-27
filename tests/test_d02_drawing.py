@@ -17,6 +17,7 @@ import shutil
 import sys
 import unittest
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,16 +40,25 @@ def shell_module(name: str):
         sys.path.remove(str(SHELL))
 
 
-def fixture_folder(test, prefix):
+@contextmanager
+def workspace_fixture(prefix):
     # Inherit the workspace's ACL. The 0o700 mode of mkdtemp restricts the Windows sandbox's test subprocesses.
     work = ROOT / "work"
     work.mkdir(exist_ok=True)
+    if work.resolve().parent != ROOT:
+        raise RuntimeError("test work folder escaped the checkout")
     folder = work / (prefix + uuid.uuid4().hex[:12])
     folder.mkdir()
     if folder.resolve().parent != work.resolve():
         raise RuntimeError("test fixture escaped work/")
-    test.addCleanup(shutil.rmtree, folder)
-    return folder
+    try:
+        yield folder
+    finally:
+        shutil.rmtree(folder)
+
+
+def fixture_folder(test, prefix):
+    return test.enterContext(workspace_fixture(prefix))
 
 
 class CoreFocus(unittest.TestCase):
@@ -399,17 +409,23 @@ class SweepShell(unittest.TestCase):
 
     def test_the_shell_arms_before_the_press_and_reports_its_answer(self):
         shell = text(PROJECT / "Shell.cs")
-        self.assertLess(shell.index("D02.ShellTurn.Arm(library, _host, chord);"), shell.index("library.KeyDown(_host, chord"))
-        self.assertIn("D02.ShellTurn.Committed(result.EngineRevision);", shell)
+        self.assertIn("ShellMotion.TryQueue(input, SendTurn)", shell)
+        arm = shell.index("D02.ShellTurn.Arm(library, _host, chord);")
+        key_down = shell.index("library.KeyDown(_host, chord")
+        committed = shell.index("D02.ShellTurn.Committed(result.EngineRevision, staticMotion);")
+        self.assertTrue(arm < key_down < committed)
         self.assertIn("D02.ShellTurn.Refused();", shell)
         self.assertIn("D02.ShellTurn.Framed(frame.EngineRevision);", shell)
         self.assertIn("if (row is null || revision != row.Revision + 1 || MotionRow is null)", self.turn)
+        self.assertIn("engineRevision == motion.Revision", self.turn)
+        self.assertIn("motion.FirstFrameRevision = engineRevision;", self.turn)
 
     def test_the_rows_and_reduced_motion_come_from_the_motion_table(self):
         chrome = text(PROJECT / "ShellChrome.cs")
         self.assertIn("D02.ShellTurn.MotionRow = id => (motions.Seconds(id, design, look.ReducedMotion), "
                       "design.Curves[motions[id].Curve]);", chrome)
-        self.assertIn('MotionRow(half ? "jumble.half_turn" : "jumble.sweep")', self.turn)
+        self.assertIn("half ? MotionUses.HalfTurn : MotionUses.JumbleSweep", self.turn)
+        self.assertIn("MotionRow(MotionUses.QueuedSweep)", self.turn)
         self.assertIn('seconds <= 0 ? "static" : half ? "flash" : "sweep"', self.turn)
         motion = json.loads(text(CHROME.parent.parent / "data" / "design" / "motion.json"))
         rows = {row["id"]: row for row in motion["motions"]}
@@ -420,7 +436,7 @@ class SweepShell(unittest.TestCase):
         self.assertIn("if (flash[piece] != 0) outline[piece] = JumbleOverlay.Entry;", style)
         self.assertLess(style.index("ShellTurn.Flash is { } flash"), style.index("outline[hover.Piece] = Hovered;"))
         self.assertIn("library.SetTransform(host, motion.Revision, row.Plane, row.Angle, row.Moving, phase)", self.turn)
-        self.assertIn("var phase = t >= 1 ? 1f : (float)MotionTable.Ease(motion.Curve, t);", self.turn)
+        self.assertIn("var phase = motion.Timing.Phase(elapsed, motion.Curve);", self.turn)
 
     def run_dumps(self, kinds, refused, reduced_from=18, popped=False):
         motions = []
@@ -464,6 +480,80 @@ class SweepShell(unittest.TestCase):
         self.assertIn("not flash, sweep, static, static", moved[0])
         late = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, reduced_from=3), {}, None)
         self.assertIn("not off then on", late[0])
+
+
+class D01MotionShell(unittest.TestCase):
+    def dumps(self, steps):
+        def twist(revision, duration=0):
+            return {"kind": "sweep" if duration else "static", "row_id": "twist.queued" if duration else "jumble.sweep",
+                    "duration_ms": duration, "revision": revision, "armed_revision": revision - 1,
+                    "first_frame_revision": revision if duration else None, "popped": False,
+                    "ended": "done" if duration else "static"}
+
+        animated = [twist(3, 110), twist(4, 91.333), twist(5, 76.4)]
+        rewind = [twist(6, 110), twist(7, 91.333), twist(8, 76.4)]
+        reduced = [twist(r) for r in (9, 10, 11)]
+        zooms = {8: (1, 1.05, 1.1), 9: (1.05, 1.18, 1.1 ** 2), 10: (1.05, 1.1 ** 2, 1.1 ** 2)}
+        dumps = []
+        for i, do in enumerate(steps):
+            turns = (animated[:0 if i < 4 else 1 if i < 7 else 3] + (rewind if i >= 14 else [])
+                     + reduced[:max(0, i - 15)])
+            start, drawn, target = zooms.get(i, (1, 1, 1))
+            motion = {"queue_length": {4: 1, 5: 3, 6: 5}.get(i, 0),
+                      "queued_events": 0 if i < 4 else {4: 1, 5: 3}.get(i, 5) if i < 11 else 10,
+                      "state_revision": turns[-1]["revision"] if turns else 2,
+                      "state_digest": "turned" if 7 <= i < 11 or i >= 18 else "solved",
+                      "reduced": 15 <= i < 20, "turns": turns,
+                      "zoom": {"row_id": "view.transition", "from": start, "drawn": drawn, "target": target,
+                               "duration_ms": 260 if i in zooms else 0}}
+            angle = 4.25 * .004 if i >= 3 else 0
+            camera = [math.cos(angle), 0, 0, -math.sin(angle), 0, 1, 0, 0, 0, 0, 1, 0, math.sin(angle), 0, 0, math.cos(angle)]
+            dumps.append({"do": do, "camera": camera, "motion": motion})
+        return dumps
+
+    def test_the_motion_script_checks_committed_revisions_and_retargeting(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["motion"], run.expect_motion)
+        self.assertNotIn("motion", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "motion.json"))
+        self.assertNotIn("state", script)
+        self.assertEqual(script["steps"][3:6], [{"chord": key, "quick": True} for key in ("K", "L", "K")])
+        self.assertEqual(script["steps"][7:9], [{"wheel": 1, "quick": True}] * 2)
+        self.assertEqual(run.expect_motion(self.dumps(run.MOTION_STEPS), {}, None), [])
+        for step, field, value, finding in (
+                (5, "queued_events", 1, "enter the twist queue"),
+                (7, "state_revision", 4, "three new revisions"),
+                (19, "state_digest", "different", "ended at different states"),
+                (16, "queued_events", 11, "queued under reduced motion")):
+            dumps = self.dumps(run.MOTION_STEPS)
+            dumps[step]["motion"][field] = value
+            self.assertTrue(any(finding in p for p in run.expect_motion(dumps, {}, None)))
+        dumps = self.dumps(run.MOTION_STEPS)
+        dumps[7]["motion"]["turns"][1]["first_frame_revision"] = 5
+        self.assertTrue(any("committed revision" in p for p in run.expect_motion(dumps, {}, None)))
+        dumps = self.dumps(run.MOTION_STEPS)
+        dumps[9]["motion"]["zoom"]["from"] = 1.1
+        self.assertTrue(any("second zoom notch" in p for p in run.expect_motion(dumps, {}, None)))
+
+    def test_only_key_release_names_a_slice_twist(self):
+        slice_shell = text(PROJECT / "D02" / "ShellSlice.cs")
+        self.assertRegex(slice_shell, r"else if \(key.Pressed\)\s*\{\s*Model.Press\(cap, ShellTurn.Row is \{ \} row \? row.Angle : null\);"
+                                      r"\s*\}\s*else\s*\{\s*Model.Release\(\);")
+        self.assertNotIn("InputEventMouse", slice_shell)
+        self.assertIn("Model.SetShell(max);", slice_shell)
+        camera = text(PROJECT / "D02" / "ShellCamera.cs")
+        self.assertIn("_pending += motion.Relative;", camera)
+        self.assertIn("Turn(_pending.X * RadiansPerPixel, _pending.Y * RadiansPerPixel);", camera)
+        self.assertNotIn("HostLibrary", camera)
+
+    def test_raw_clip_steps_use_the_view_transition_at_draw_time(self):
+        shell = text(PROJECT / "Shell.cs")
+        motion = text(PROJECT / "D02" / "ShellMotion.cs")
+        self.assertIn("StepRawClip(_localCap, _localRaw)", shell)
+        self.assertIn("MotionRow?.Invoke(MotionUses.ViewTransition)", motion)
+        self.assertIn("clip.Ease.Retarget(h, now, seconds, curve)", motion)
+        self.assertIn("clip.Ease.Step(now, seconds <= 0)", motion)
+        self.assertNotIn("ShellRaw.Model.SetClip", motion)
 
 
 class ChromeOpening(unittest.TestCase):
@@ -865,7 +955,7 @@ class HopfRun(unittest.TestCase):
         self.assertIn('"the ring sheet drew a sweep"', text(CORE / "src" / "gpu_test.cpp"))
         turn = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellTurn.cs")
         self.assertIn('if (kind == "sweep" && ShellHopf.Drawn != ShellHopf.Chain)', turn)
-        self.assertIn("if (Cap is int drawn && drawn != GripCap)", turn)
+        self.assertIn("if (Cap != (int)GripCap)", turn)
         style = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellStyle.cs")
         self.assertIn("if (slot != 1 && ShellTurn.OutlineOnly)", style)
 

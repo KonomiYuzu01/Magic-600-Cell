@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using Godot;
+using Magic600.Chrome;
 
 namespace Magic600.Shell.D02;
 
@@ -24,14 +26,16 @@ public sealed class ShellZoom
     /// <summary>The largest zoom, as a factor of the view's opening zoom.</summary>
     public const double MaxFactor = 4;
 
-    private readonly Dictionary<ulong, double> _factors = new();
+    private readonly Dictionary<ulong, ViewEase> _views = new();
     private readonly HashSet<ulong> _dirty = new();
+    private static (double Seconds, double[] Curve) Transition =>
+        ShellTurn.MotionRow?.Invoke(MotionUses.ViewTransition) ?? (0, Array.Empty<double>());
 
     /// <summary>How many wheel notches changed a view's zoom since the start.</summary>
     public int Notches { get; private set; }
 
     /// <summary>A view's zoom as a factor of its opening zoom (1 until the wheel moves it).</summary>
-    public double Factor(ulong view) => _factors.TryGetValue(view, out var factor) ? factor : 1;
+    public double Factor(ulong view) => _views.TryGetValue(view, out var ease) ? ease.Drawn : 1;
 
     /// <summary>
     /// Follows one input event: a wheel press over a drawn view zooms that view. <paramref name="viewAt"/> answers the
@@ -62,14 +66,16 @@ public sealed class ShellZoom
         {
             throw new ArgumentException("a finite number of notches required", nameof(notches));
         }
-        double before = Factor(view);
+        if (!_views.TryGetValue(view, out var ease)) _views.Add(view, ease = new ViewEase(1));
+        double before = ease.Target;
         double after = Math.Clamp(before * Math.Pow(Step, notches), MinFactor, MaxFactor);
         if (after == before)
         {
             return false;
         }
-        _factors[view] = after;
-        _dirty.Add(view);
+        var (seconds, curve) = Transition;
+        ease.Retarget(after, ShellMotion.Now, seconds, curve);
+        if (ease.Drawn != ease.From) _dirty.Add(view);
         Notches++;
         return true;
     }
@@ -77,8 +83,26 @@ public sealed class ShellZoom
     /// <summary>The views whose zoom changed since the shell last sent it; taking them clears the list.</summary>
     public IReadOnlyList<ulong> TakeDirty()
     {
+        var now = ShellMotion.Now;
+        bool reduced = Transition.Seconds <= 0;
+        foreach (var (view, ease) in _views)
+        {
+            if (ease.Step(now, reduced)) _dirty.Add(view);
+        }
         var views = new List<ulong>(_dirty);
         _dirty.Clear();
         return views;
+    }
+
+    internal void DumpMotion(Utf8JsonWriter json, ulong view)
+    {
+        _views.TryGetValue(view, out var ease);
+        json.WriteStartObject("zoom");
+        json.WriteString("row_id", MotionUses.ViewTransition);
+        json.WriteNumber("from", ease?.From ?? 1);
+        json.WriteNumber("drawn", ease?.Drawn ?? 1);
+        json.WriteNumber("target", ease?.Target ?? 1);
+        json.WriteNumber("duration_ms", (ease?.Seconds ?? 0) * 1000);
+        json.WriteEndObject();
     }
 }

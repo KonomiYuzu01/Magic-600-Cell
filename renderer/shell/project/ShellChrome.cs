@@ -112,12 +112,14 @@ public sealed class ShellChrome
         var look = new Appearance(design, themes);
         // ADR-D02 B18 rest: the sweep and the half-turn read their rows' seconds (none under reduced motion) and curves.
         D02.ShellTurn.MotionRow = id => (motions.Seconds(id, design, look.ReducedMotion), design.Curves[motions[id].Curve]);
+        if (ShellJumble.On && parent is Shell shell) ShellMotion.ApplyRawClip = shell.FollowRawClip;
         if (DisplayServer.IsDarkModeSupported())
         {
             look.FollowSystem(DisplayServer.IsDarkMode());
         }
         look.SetSystemScale(Math.Clamp(Math.Round(DisplayServer.ScreenGetDpi() / 96.0 * 4) / 4, 1, 3));
         var frame = Frame = new ChromeFrame(look.Resolve(), WorkspaceSet.Load(Path.Combine(folder, "workspaces.json"))) { OpenGround = live, LocalDrawn = live && ShellJumble.On };
+        frame.Overlays.ChildEnteredTree += child => { if (child is ChromeOverlay overlay) overlay.Motions = motions; };
         frame.Name = "ShellChrome";
         parent.AddChild(frame);
         // A check's aid: M600_FRAME_PICTURE names a file that gets the window's own picture (the frame without the
@@ -264,6 +266,7 @@ public sealed class ShellChrome
                 id => motions.Seconds(id, design, look.ReducedMotion), Execute,
                 TakeKeys, palette, sheet, layouts);
             sample.Look = appearance;
+            sample.Solve.Strip.Motions = motions;
             // ADR-D01.70: the shell's History draws its entries' effect signatures in the sample rail's order.
             history.RailOrder = sample.Solve.LibraryView.RailOrder;
             sample.Solve.Rail.OrderChanged += history.Refresh;
@@ -289,7 +292,21 @@ public sealed class ShellChrome
         ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
             System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } events ? Path.Combine(events, "errors.log") : null);
 
-        void ApplyLook(bool rebuild, bool scene) => frame.ApplyTokens(look.Resolve(), rebuild);
+        void ApplyLook(bool rebuild, bool scene)
+        {
+            if (look.ReducedMotion && !frame.Tokens.ReducedMotion)
+            {
+                (parent as Shell)?.FlushMotion(reduced: true);
+                foreach (var overlay in frame.Overlays.GetChildren().OfType<ChromeOverlay>()) overlay.FinishOpening();
+            }
+            gallery.Motion.Rewards = look.Rewards;
+            frame.ApplyTokens(look.Resolve(), rebuild);
+            if (history.Rewards != look.Rewards)
+            {
+                history.Rewards = look.Rewards;
+                history.Refresh();
+            }
+        }
         appearance.Changed += ApplyLook;
         ShellScene.Load(frame, palettes, () => (look.Family, look.SceneLook),
             name => appearance.Edit(a => a.SetSceneLook(name), true, true));
@@ -323,6 +340,8 @@ public sealed class ShellChrome
         }
         void ExecuteAt(string command, string? argument, Vector2? pointer)
         {
+            if (registry.Commands[command].Kind == "commit" || command is "session.resume" or "explore.set" or "operation.phase.append_twist")
+                (parent as Shell)?.FlushMotion();
             if (gated(command, argument) is { } why)
             {
                 frame.Say($"{registry.Commands[command].Label}: {why}", true);
@@ -441,7 +460,11 @@ public sealed class ShellChrome
             else NextDensity();
         };
         gallery.PaletteChosen += ShellScene.ChoosePalette;
-        gallery.MotionChanged += () => appearance.Edit(a => a.ReducedMotion = gallery.Motion.Reduced, true, false);
+        gallery.MotionChanged += () => appearance.Edit(a =>
+        {
+            a.ReducedMotion = gallery.Motion.Reduced;
+            a.Rewards = gallery.Motion.Rewards;
+        }, true, false);
 
         // The commit bar is the frame's own; the host stages no preview yet, so it stays empty.
         var bar = new CommitBar(new PreviewModel(), () => frame.Tokens) { CommitKeys = keymap.KeysFor("operation.preview.commit", null) };

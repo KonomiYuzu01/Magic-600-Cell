@@ -860,7 +860,8 @@ internal sealed partial class D02Driver : Node
         {
             throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a hover_control, a click_control, a command or a wait_ms");
         }
-        _wait = StepFrames;
+        _wait = step.TryGetProperty("quick", out var quick) && quick.GetBoolean() ? 0 : StepFrames;
+        if (_wait == 0) Input.FlushBufferedEvents();
     }
 
     /// <summary>A chord such as F1, Escape or Ctrl+Shift+P, pressed and released through the shell's input.</summary>
@@ -922,6 +923,7 @@ internal sealed partial class D02Driver : Node
         {
             at += by / 10;
             Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at, Relative = by / 10, ButtonMask = MouseButtonMask.Left });
+            Input.FlushBufferedEvents();
         }
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
     }
@@ -1302,10 +1304,23 @@ internal sealed partial class D02Driver : Node
                 json.WriteEndArray();
             }
             json.WriteEndObject();
+            DumpMotion(json);
             json.WriteEndObject();
         }
         using var stream = new FileStream(path, FileMode.Append, System.IO.FileAccess.Write);
         stream.Write(buffer.ToArray());
         stream.WriteByte((byte)'\n');
+    }
+
+    private void DumpMotion(Utf8JsonWriter json)
+    {
+        json.WriteStartObject("motion");
+        json.WriteBoolean("reduced", _frame.Tokens.ReducedMotion);
+        json.WriteNumber("state_revision", ShellJumble.StateRevision);
+        json.WriteString("state_digest", ShellJumble.StateDigest);
+        ShellTurn.DumpMotion(json);
+        ShellJumble.Zoom.DumpMotion(json, HostLibrary.View);
+        ShellMotion.DumpRawClip(json);
+        json.WriteEndObject();
     }
 }

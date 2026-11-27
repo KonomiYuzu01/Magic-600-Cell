@@ -545,7 +545,7 @@ ZOOM_STEPS = ["start", "wait 1500 ms", "wheel 3", "wait 800 ms", "wheel -5", "wa
 
 def expect_zoom(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """The zoom script: three notches up zoom in by 1.1 cubed, five down zoom out below that, forty up stop at four
-    times the opening zoom; a wait changes nothing, the zoom turns no camera, and the core is sent the zoom."""
+    times the opening zoom. The drawn zoom eases to each target and is sent to the core; no wheel turns the camera."""
     if [dump["do"] for dump in dumps] != ZOOM_STEPS:
         return [f"the steps written were {[dump['do'] for dump in dumps]}"]
     zooms = [dump.get("zoom") for dump in dumps]
@@ -555,24 +555,30 @@ def expect_zoom(dumps: list[dict], source: dict, state: str | None) -> list[str]
     base = zooms[1]["sent"]
     if zooms[1]["factor"] != 1 or zooms[1]["notches"] != 0:
         problems.append(f"the view was zoomed before any wheel ({zooms[1]})")
-    expected = {2: ZOOM_STEP ** 3, 3: ZOOM_STEP ** 3, 4: ZOOM_STEP ** -2, 5: ZOOM_STEP ** -2, 6: ZOOM_MAX, 7: ZOOM_MAX}
-    for index, factor in expected.items():
-        zoom = zooms[index]
-        if abs(zoom["factor"] - factor) > 1e-6:
-            problems.append(f"after '{ZOOM_STEPS[index]}' the zoom factor is {zoom['factor']:.4f}, not {factor:.4f}")
-        if abs(zoom["sent"] - base * factor) > 1e-4:
-            problems.append(f"after '{ZOOM_STEPS[index]}' the core was sent zoom {zoom['sent']:.4f}, not {base * factor:.4f}")
-    if not zooms[2]["sent"] > base:
+    for index, target in ((2, ZOOM_STEP ** 3), (4, ZOOM_STEP ** -2), (6, ZOOM_MAX)):
+        previous, wheel, settled = zooms[index - 1:index + 2]
+        asked = dumps[index].get("motion", {}).get("zoom", {}).get("target")
+        if asked is None or abs(asked - target) > 1e-6:
+            problems.append(f"after '{ZOOM_STEPS[index]}' the zoom target is {asked!r}, not {target:.4f}")
+        lo, hi = sorted((previous["factor"], target))
+        if not lo - 1e-6 <= wheel["factor"] <= hi + 1e-6:
+            problems.append(f"after '{ZOOM_STEPS[index]}' the drawn zoom overshot its target")
+        if abs(settled["factor"] - target) > 1e-6:
+            problems.append(f"after '{ZOOM_STEPS[index + 1]}' the zoom factor is {settled['factor']:.4f}, not {target:.4f}")
+        for zoom in (wheel, settled):
+            if abs(zoom["sent"] - base * zoom["factor"]) > 1e-4:
+                problems.append(f"after '{ZOOM_STEPS[index]}' the core was not sent the drawn zoom")
+        if settled["notches"] != wheel["notches"]:
+            problems.append("the wait added wheel notches")
+    if not zooms[3]["sent"] > base:
         problems.append("wheel up zoomed out; it must zoom in (a larger zoom draws a larger picture)")
-    if not zooms[4]["sent"] < zooms[3]["sent"]:
+    if not zooms[5]["sent"] < zooms[3]["sent"]:
         problems.append("wheel down zoomed in; it must zoom out")
-    if zooms[3] != zooms[2] or zooms[5] != zooms[4] or zooms[7] != zooms[6]:
-        problems.append("the zoom changed during a wait")
     if zooms[7]["notches"] - zooms[5]["notches"] >= 40:
         problems.append("notches past the largest zoom still changed it")
     if any(dump.get("camera_turns", 0) != 0 for dump in dumps):
         problems.append("the wheel turned the camera")
-    print(f"zoom: opening {base:.3f}; +3 notches {zooms[2]['sent']:.3f}; -5 {zooms[4]['sent']:.3f}; +40 {zooms[6]['sent']:.3f}")
+    print(f"zoom: opening {base:.3f}; +3 notches {zooms[3]['sent']:.3f}; -5 {zooms[5]['sent']:.3f}; +40 {zooms[7]['sent']:.3f}")
     return problems
 
 
@@ -1441,7 +1447,9 @@ def expect_sweep(dumps: list[dict], source: dict, state: str | None) -> list[str
     """B18 rest. B18-05: after naming cap 1 and a click that selects a sticker in another cell, Local frames the
     selection's cell (auto-framing on) and the turn row reads that cell. Without a state the grip cap's twists commit:
     J (a half-turn) flashes its moved set for jumble.half_turn's time, K sweeps with phases from 0 to 1 over
-    jumble.sweep's time and never pops to its end pose first, and under reduced motion both are static. On wj-ia-300,
+    jumble.sweep's time (its own release waits in the queue and never shortens it) and never pops to its end pose
+    first. Under reduced
+    motion both are static. On wj-ia-300,
     whose cap 0 is blocked, the four presses are refused and nothing sweeps or flashes."""
     import math
     dos = [dump.get("do", "") for dump in dumps]
@@ -1505,11 +1513,12 @@ def expect_sweep(dumps: list[dict], source: dict, state: str | None) -> list[str
                 problems.append(f"a twist swept by no view moved: {static}")
         return problems
     phases, ms = sweep["phases"], sweep["ms"]
-    if abs(sweep["angle"] - math.pi) < 1e-3 or sweep["moving"] <= 0 or sweep["duration_ms"] != 220:
+    sweep_ms = load(DESIGN / "system.json")["motion"]["durations"]["twist"]
+    if abs(sweep["angle"] - math.pi) < 1e-3 or sweep["moving"] <= 0 or sweep["duration_ms"] != sweep_ms:
         problems.append(f"the sweep turns {sweep['angle']} with {sweep['moving']} moving over {sweep['duration_ms']} ms")
     if (sweep["ended"] != "done" or len(phases) < 3 or phases[0] > 0.05 or phases[-1] != 1
             or any(b < a for a, b in zip(phases, phases[1:])) or any(not 0 <= p <= 1 for p in phases)
-            or not 0 < sum(0 < p < 1 for p in phases) or ms[-1] < 220 or ms[0] != 0):
+            or not 0 < sum(0 < p < 1 for p in phases) or ms[-1] < sweep_ms or ms[0] != 0):
         problems.append(f"the sweep ended {sweep['ended']!r} with phases {phases} at {ms} ms")
     if sweep["popped"]:
         problems.append("a frame drew the sweep's revision at its end pose before phase 0 was set")
@@ -1523,6 +1532,83 @@ def expect_sweep(dumps: list[dict], source: dict, state: str | None) -> list[str
 
 
 EXPECT["sweep"] = expect_sweep
+
+
+MOTION_STEPS = ["start", "wait 3000 ms", "command jumble.cap.name 0", "drag 4.25 0", "chord K", "chord L", "chord K",
+                "wait 1500 ms", "wheel 1", "wheel 1", "wait 800 ms", "chord Shift+K", "chord Shift+L", "chord Shift+K",
+                "wait 1500 ms", "command motion.reduced.set on", "chord K", "chord L", "chord K", "wait 800 ms",
+                "command motion.reduced.set off"]
+
+
+def expect_motion(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Three FIFO turns on the solved session, an additive eased zoom and equal states with or without motion."""
+    import math
+    if state is not None:
+        return ["the motion script uses the solved Jumble session without --state"]
+    steps = [d.get("do") for d in dumps]
+    if steps != MOTION_STEPS:
+        return [f"the steps written were {steps}"]
+    motions = [d.get("motion") for d in dumps]
+    if any(not isinstance(m, dict) for m in motions):
+        return ["a dump has no motion block"]
+    base, after_drag, animated, rewind, reduced, still = (motions[i] for i in (2, 3, 7, 14, 15, 19))
+    revision, digest = base.get("state_revision", -1), base.get("state_digest")
+    if revision < 0 or not digest:
+        return ["the solved session's head was not drawn"]
+    problems = []
+    if (after_drag.get("state_revision"), after_drag.get("state_digest")) != (revision, digest):
+        problems.append("the camera drag changed the session")
+    camera = [dumps[i].get("camera", []) for i in (2, 3)]
+    if any(len(matrix) != 16 for matrix in camera) or not math.isclose(
+            math.atan2(camera[1][12], camera[1][0]) - math.atan2(camera[0][12], camera[0][0]), 4.25 * .004, abs_tol=1e-7):
+        problems.append("the camera drag did not include all pointer increments")
+    if any(m.get("reduced") is not (15 <= i < 20) for i, m in enumerate(motions)):
+        problems.append("reduced motion did not start off, turn on, and finish off")
+    if [m.get("queued_events") for m in motions[4:7]] != [1, 3, 5] or motions[5].get("queue_length", 0) < 2:
+        problems.append("the quick presses and releases did not enter the twist queue")
+    if animated.get("queue_length") != 0 or animated.get("state_revision") != revision + 3:
+        problems.append("the burst did not finish at three new revisions with an empty queue")
+    sweeps = animated.get("turns", [])
+    expected = list(range(revision + 1, revision + 4))
+    if [m.get("revision") for m in sweeps] != expected:
+        problems.append("the burst did not record all three committed revisions in order")
+    else:
+        durations = [m.get("duration_ms", 0) for m in sweeps]
+        if (any(m.get("kind") != "sweep" or m.get("row_id") != "twist.queued" or m.get("ended") != "done" for m in sweeps)
+                or not durations[0] == 110 or not durations[0] > durations[1] > durations[2] >= 1000 / 60):
+            problems.append(f"the queued sweeps did not speed up within the burst ({durations} ms)")
+        if any(m.get("armed_revision") != r - 1 or m.get("first_frame_revision") != r or m.get("popped") is not False
+               for m, r in zip(sweeps, expected)):
+            problems.append("a sweep's first frame did not draw phase zero of its committed revision")
+
+    zooms = [motions[i].get("zoom", {}) for i in (8, 9, 10)]
+    first, second, settled = zooms
+    if (any(z.get("row_id") != "view.transition" or z.get("duration_ms") != 260 for z in zooms)
+            or first.get("target") != ZOOM_STEP or second.get("target") != ZOOM_STEP ** 2
+            or first.get("from") != 1 or not 1 < first.get("drawn", 0) < ZOOM_STEP
+            or second.get("from") != first.get("drawn")
+            or not first["drawn"] <= second.get("drawn", 0) <= second["target"]
+            or settled.get("drawn") != second["target"]):
+        problems.append("the second zoom notch did not continue from the drawn zoom to the combined target")
+
+    if rewind.get("state_revision") != revision + 6 or rewind.get("state_digest") != digest:
+        problems.append("the inverse keys did not return to the solved start")
+    queue_at_toggle = reduced.get("queued_events")
+    if any(m.get("queue_length") != 0 or m.get("queued_events") != queue_at_toggle for m in motions[15:]):
+        problems.append("a key queued under reduced motion")
+    static = still.get("turns", [])[-3:]
+    if ([m.get("revision") for m in static] != list(range(revision + 7, revision + 10))
+            or any(m.get("kind") != "static" or m.get("duration_ms") != 0 or m.get("first_frame_revision") is not None
+                   or m.get("chart_outline") is not None for m in static)
+            or any(len(m.get("turns", [])) != 7 + i for i, m in enumerate(motions[16:19]))):
+        problems.append("the reduced-motion keys did not commit immediately as three static turns")
+    if (still.get("state_revision") != revision + 9 or not animated.get("state_digest")
+            or animated.get("state_digest") == digest or still.get("state_digest") != animated.get("state_digest")):
+        problems.append("the full and reduced motion runs ended at different states")
+    return problems
+
+
+EXPECT["motion"] = expect_motion
 
 
 # The owner's bug report of 26 November 2026: jumble.cap.name without a number opens the cap prompt, every cap in
