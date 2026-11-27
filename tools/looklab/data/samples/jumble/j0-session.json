@@ -203,6 +203,13 @@
   {
    "rule": "cut-off",
    "at": "research.claims"
+  },
+  {
+   "rule": "total-n",
+   "at": [
+    "start",
+    "jumble.cap.name 150"
+   ]
   }
  ]
 }

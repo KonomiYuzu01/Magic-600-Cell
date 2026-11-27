@@ -2628,6 +2628,32 @@ class D02TrackJ0(unittest.TestCase):
             self.assertIn("not the word's output digest", done["rows"][1]["problem"])
             self.assertIn("input digest", done["rows"][2]["problem"])
 
+    def test_total_n_flags_globals_n_as_the_sum_of_the_caps(self):
+        """LF2: Global's total N is the state's own seam count, never the sum of the caps' N_c. A screen whose
+        Global border reads the caps' sum (where it differs from the seam count) is flagged; one reading the seam
+        count, with or without the change mark, is not."""
+        track = shell_module("track_j")
+        seams = track.sample("wj-ia-300", "totals.json")["N"]
+        caps = sum(row["N_c"] for row in track.sample("wj-ia-300", "rim.json")["rows"] if row["status"] == "admissible")
+        self.assertNotEqual(seams, caps, "the fixture must tell the two apart")
+
+        def screen(n, mark=False):
+            words = ["Global", "jumble", "N", *(["•"] if mark else []), str(n), "seam cells", "on grip", "84923"]
+            return {"lines": [["frame", "N"], ["frame", "0"]] + [["view:Global", word] for word in words]}
+
+        entry = {"at": ["step 1", "step 2"]}
+        for mark in (False, True):
+            self.assertEqual(track.J0_CHECKS["total-n"]([screen(seams, mark)] * 3, [], entry, "wj-ia-300"), [])
+        faulted = track.J0_CHECKS["total-n"]([screen(seams), screen(caps), screen(caps, True)], [], entry, "wj-ia-300")
+        self.assertEqual(len(faulted), 2)
+        self.assertTrue(all("the sum of the caps' N_c" in problem for problem in faulted), faulted)
+        other = track.J0_CHECKS["total-n"]([screen(seams), screen(seams + 1), screen(seams)], [], entry, "wj-ia-300")
+        self.assertEqual(len(other), 1)
+        self.assertNotIn("sum of the caps", other[0])
+        missing = {"lines": [["view:Local", "N"], ["view:Local", str(seams)]]}
+        self.assertEqual(track.J0_CHECKS["total-n"]([screen(seams), missing, missing], [], entry, "wj-ia-300"),
+                         ["step 1: Global's border shows no N", "step 2: Global's border shows no N"])
+
     def test_the_repair_list_reads_past_the_column_rows_state_glyph(self):
         """J0's clean runs at a280229a: ADR-D01.25's check-state glyph ends the Repair list's column row, so the rows
         start one cell later; read past it, and still read no rows behind anything else."""

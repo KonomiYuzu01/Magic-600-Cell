@@ -1551,6 +1551,11 @@ relative path is from the repository root.
   - A check that throws is a run problem, not a catch. J1 counts the rules it observed, not the session's entries
     (`observation=6/6`, was 9/9), names exposed faces under `not_run`, and treats a screen with no BoundaryLedger
     count as a problem.
+  - LF2 (27 November 2026): the driver's eighteenth rule, `total-n`: Global's total N is the state's own seam count
+    (its totals' `N`), never the sum of the caps' N_c. The J0 session reads Global's border N at `start` and after
+    `jumble.cap.name 150`; at wj-ia-300 the two differ (98048 against 26925). `tests/test_renderer_shell.py` flags a
+    faulted screen and passes a clean one. Not run over J0's clean runs: the driver has no no-defects mode
+    (`defects.json` is always read).
 
 ### ADR-D01 ports (as built)
 

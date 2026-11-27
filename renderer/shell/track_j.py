@@ -494,6 +494,7 @@ RULES = {
     "contact-classes": "the contact classes are the engine's, and no class is reused across a contact",
     "verdict": "each research claim shows its latest check's verdict, and the head counts them",
     "cut-off": "a check cut off by its budget reads 'not found within budget', never as finished",
+    "total-n": "Global's total N is the state's own seam count, never the sum of the caps' N_c",
 }
 # Section 7's defect classes.
 CLASSES = [
@@ -783,6 +784,37 @@ def j0_cap_readouts(dumps: list[dict], ops: list[dict], entry: dict, state: str)
                             f"({', '.join(str(row[key]) for key in missing)})")
         if "▸ Named cap · 1" not in local and "▾ Named cap · 1" not in local:
             problems.append(f"{ref}: Local's Named cap section does not count the named cap")
+    return problems
+
+
+# A readout slot's numeral as the screen reads it (Numeral.Word): its digits, or the state that is not a number.
+NUMERAL_WORD = re.compile(r"^(-?\d+|undefined|pending|incomplete)$")
+# ReadoutRow's change mark, read between a slot's label and its numeral.
+CHANGE_MARK = "•"
+
+
+def global_n(dump: dict) -> str | None:
+    """Global's border N as the screen reads it (the label N, the change mark if any, then the numeral), or None
+    where Global's border shows no N."""
+    words = [text for text in d02_run.texts(dump, "view:Global") if text != CHANGE_MARK]
+    return next((words[i + 1] for i in range(len(words) - 1) if words[i] == "N" and NUMERAL_WORD.match(words[i + 1])),
+                None)
+
+
+@j0_check("total-n")
+def j0_total_n(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    """Global's total N is the state's own seam count (its totals' N), never the sum of the caps' N_c (the
+    admissible caps' rim rows)."""
+    seams = sample(state, "totals.json")["N"]
+    caps = sum(row["N_c"] for row in sample(state, "rim.json")["rows"] if row["status"] == "admissible")
+    problems = []
+    for ref in entry["at"]:
+        shown = global_n(at(dumps, ops, ref))
+        if shown is None:
+            problems.append(f"{ref}: Global's border shows no N")
+        elif shown != str(seams):
+            sum_of_caps = ", the sum of the caps' N_c," if shown == str(caps) else ""
+            problems.append(f"{ref}: Global's N reads {shown}{sum_of_caps} not the state's seam count {seams}")
     return problems
 
 
