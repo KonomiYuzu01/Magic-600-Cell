@@ -1874,6 +1874,29 @@ Each checkpoint is one read of the named diff range against the questions below,
 - Proposal, not built: where D02 already shows a set's kind in words (the Focus layer editor's kind buttons in
   `PieceFilterUi.cs` and the focus layer's rows), the `set.kind` glyph could replace or join the word. This serves K2's
   fewer-words item.
+- Left to K2 (owner, 27 November 2026: "上面两个都可以留给K2吗？可以的话就记"):
+  - Script-driven view and render customisation in the product (ADR-D01.1 to ADR-D01.3). D02's shell runs the camera,
+    view, chart-preset, raw-view and tint rows from the palette, but no `.6cs` entry point runs in the product yet. K2
+    wires LP6's frozen language product in, so that an entry point runs view and workspace rows (route 1), a view
+    script publishes display plans and free-view content (route 2), and data files load themes, token overrides,
+    keymaps and layouts (route 3). The limits stay: shaders compile offline, so scripts compose the shipped encodings,
+    precompiled variants and token values, and ADR-D01.4 holds.
+  - Research-flow keys. ADR-D02.42's default bindings (held seat keys, repair digits, aids on chords) wait for CR-19
+    and XM1, and no default key sets up a research layout or flow. K2 binds them, lets a key, chord or held key run a
+    registered `.6cs` entry point through the keymap layer (`KeymapOverrides`, ADR-D01.3), and proposes a default
+    one-key research setup as a keymap and workspace preset that the researcher can change, checked in the product.
+  - How K2 keeps this bounded (owner, 27 November 2026, "就按你建议的来", taking the integrator's three proposals):
+    K2's greybox acceptance is the six flows end to end, and what the flows do not use stays on sample data or
+    recorded values; before K2 starts, a backend inventory lists each part as built, partly built or not built with
+    its measured cost (D02's part goes into these as-built notes); script customisation comes in two batches, first
+    entry points running view rows, then view scripts publishing display plans, and the second batch may move after
+    1.0 if K2 needs the time.
+  - K2's order (owner, 27 November 2026, final): the reduced Taste Lab and the owner's picks; A1 to A4 writes the art
+    work's script and the list of data still to wire (from the picks and the art hooks of ADR-D02 and ADR-D03); after
+    LP6's release, the complete greybox wiring; solver-agent run 1, smaller but an acceptance of the complete program
+    with its backend, which reports where the benchmark falls short and proposes refinements; the art in one round with
+    the refinement design and the new data wired in; solver-agent run 2 at full volume, until the whole benchmark
+    passes; the promotion scripts; then freeze 2.5 and stage 2. No solver run starts before ADR-D03 is complete.
 
 ## 4. Item map
 

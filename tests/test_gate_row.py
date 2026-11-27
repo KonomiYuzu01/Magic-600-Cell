@@ -243,14 +243,55 @@ class GateScriptTest(unittest.TestCase):
         native = self.gate_d02.window_size(None, read=lambda: "2560x1600")
         self.assertEqual(native["resolution"], "2560x1600")
         self.assertIn("native", native["source"])
-        dumps = [{"frame": {"global_opening": [10, 20, 100, 50]}}, {"frame": {"global_opening": [10, 20, 100, 50]}}]
-        with workspace_fixture("d02-gate-test-") as folder:
-            events = folder / "events.jsonl"
-            events.write_text("".join(json.dumps(r) + "\n" for r in (
-                {"t": "click", "x": 15, "y": 25}, {"t": "click", "x": 109, "y": 69}, {"t": "click", "x": 300, "y": 25})))
-            placed = self.gate_d02.opening_clicks(dumps, events)
+        # The dumps are the record (the shell writes no click row to events.jsonl): a click step is inside when its
+        # dump reports the opening, its fractions lie in [0, 1], the pick was asked once and a hit names Global.
+        frame = {"global_opening": [10, 20, 100, 50]}
+        dumps = [{"do": "start", "frame": frame, "pick": {"asked": 0}},
+                 {"do": "click 0.05 0.1", "frame": frame, "pick": {"asked": 0}},
+                 {"do": "wait 250 ms", "frame": frame, "pick": {"asked": 1, "selection": {"piece": 4, "view": 1}}},
+                 {"do": "click 0.5 0.5", "frame": frame, "pick": {"asked": 1}},
+                 {"do": "wait 250 ms", "frame": frame, "pick": {"asked": 2, "selection": None}},
+                 {"do": "click 1.5 0.5", "frame": frame, "pick": {"asked": 2}},
+                 {"do": "wait 250 ms", "frame": frame, "pick": {"asked": 3}},
+                 {"do": "click 0.5 0.5", "frame": frame, "pick": {"asked": 3}},
+                 {"do": "wait 250 ms", "frame": frame, "pick": {"asked": 3}},
+                 {"do": "click 0.5 0.5", "frame": frame, "pick": {"asked": 3}},
+                 {"do": "wait 250 ms", "frame": frame, "pick": {"asked": 4, "selection": {"piece": 7, "view": 2}}},
+                 {"do": "click 0.5 0.5 in local", "frame": frame, "pick": {"asked": 4}},
+                 {"do": "wait 250 ms", "frame": {"global_opening": [10, 20, 90, 50]}, "pick": {"asked": 5}}]
+        placed = self.gate_d02.opening_clicks(dumps)
         self.assertEqual((placed["global_opening"], placed["clicks"], placed["inside"], placed["moved"]),
-                         ([10, 20, 100, 50], 3, 2, False))
+                         ([10, 20, 90, 50], 5, 2, True))
+        self.assertEqual(self.gate_d02.opening_clicks([{"do": "click 0.5 0.5"}])["global_opening"], None)
+
+    def test_occlusion_rescore_keeps_the_first_record(self):
+        frame = {"global_opening": [10, 20, 100, 50]}
+        dumps = [{"do": "start", "frame": frame, "pick": {"asked": 0}}]
+        asked = 0
+        for preset in self.gate_d02.OCCLUSION_PRESETS:
+            dumps.append({"do": f"command view.preset.global.{preset}", "frame": frame, "pick": {"asked": asked}})
+            for _ in range(2):
+                dumps.append({"do": "click 0.25 0.5", "frame": frame, "pick": {"asked": asked}})
+                asked += 1
+                dumps.append({"do": "wait 250 ms", "frame": frame,
+                              "pick": {"asked": asked, "selection": {"piece": asked, "view": 1}}})
+        first = {"format": self.gate_d02.FORMAT, "state": "deep-2", "region": [0, 0, 1, 1], "window": {"resolution": "2x2"},
+                 "foreground": True, "run": {"code": 0, "mismatches": []}, "problems": ["0 of 0 clicks (of 4) landed"],
+                 "occlusion": [f"D02_OCCLUSION preset={p} grid=2x1 clicks=0" for p in self.gate_d02.OCCLUSION_PRESETS]}
+        with workspace_fixture("d02-gate-test-") as folder:
+            out = folder / "occlusion"
+            out.mkdir()
+            (out / self.d02_run.SCREEN).write_text("".join(json.dumps(d) + "\n" for d in dumps), encoding="utf-8")
+            (out / self.gate_d02.RECORD).write_text(json.dumps(first), encoding="utf-8")
+            shown = []
+            self.assertEqual(self.gate_d02.rescore_occlusion(out, (2, 1), shown.append), 0)
+            again = json.loads((out / self.gate_d02.RESCORED).read_text(encoding="utf-8"))
+            self.assertEqual(json.loads((out / self.gate_d02.RECORD).read_text(encoding="utf-8")), first)
+            self.assertEqual((again["problems"], again["placement"]["clicks"], again["placement"]["inside"]), ([], 4, 4))
+            self.assertEqual(again["rescored"]["from"], self.gate_d02.RECORD)
+            self.assertTrue(all("clicks=2 hits=2 distinct_pieces=2" in line for line in shown[:2]))
+            self.assertEqual(self.gate_d02.rescore_occlusion(out, (24, 14), shown.append), 2)
+            self.assertEqual(self.gate_d02.main(["--list", "--rescore", str(out)]), 2)
 
     def test_foreground_runs_drop_only_the_foreground_checks(self):
         dumps = [{"step": 1, "window": {"topmost": False, "foreground": True}}]

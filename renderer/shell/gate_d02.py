@@ -22,7 +22,10 @@ A failing row is recorded as it is and goes to the owner; it is never tuned away
 
 `--occlusion` (B24) opens the state at the default camera under both chart presets (ring sheet, then Hopf rings) and
 clicks a grid over Global's part of the window; each click is one pick pass, and the distinct pieces the picks select
-give a sampled count of the pieces each preset shows, printed as one D02_OCCLUSION line per preset.
+give a sampled count of the pieces each preset shows, printed as one D02_OCCLUSION line per preset. The run is valid
+only when every click step landed in Global's opening, which the run's dumps record (opening_clicks).
+`--occlusion --rescore <folder>` scores such a run folder again from its dumps into gate-rescored.json and keeps its
+first gate.json; it launches nothing.
 
 A sweeping row's script selects its grip cap (grip.select) before the repeat block; the run moves that selection and
 the cap naming to an admissible cap of the run's state (its sample rim.json) when the script's cap is not one, and
@@ -55,6 +58,7 @@ sys.path.insert(0, str(ROOT / "tools" / "perf" / "d02"))
 import gate_row  # noqa: E402
 
 RECORD = "gate.json"
+RESCORED = "gate-rescored.json"
 VRAM = "gate-vram.jsonl"
 FORMAT = "magic600-d02-gate-v1"
 # Row -> sitting, default state, panes the window must show, and whether its script sweeps (framework B19 and B24).
@@ -325,18 +329,39 @@ def run_row(row: str, out: Path, seconds: float, warmup: float, state: str | Non
     return 0 if gate["result"]["pass"] else 1
 
 
-def opening_clicks(dumps: list[dict], events: Path) -> dict:
-    """Where Global's opening sat, as the shell reports it (the dump's frame.global_opening, window pixels), and how
-    many of the run's clicks (events.jsonl) landed inside it."""
-    rects = [tuple(dump["frame"]["global_opening"]) for dump in dumps
-             if isinstance(dump.get("frame"), dict) and "global_opening" in dump["frame"]]
-    rows = gate_row.read_rows(events) if events.is_file() else []
-    clicks = [(row["x"], row["y"]) for row in rows if row.get("t") == "click" and "x" in row]
+GLOBAL_VIEW = 1  # HostLibrary.View: the view a pick reply names for Global
+
+
+def opening_clicks(dumps: list[dict]) -> dict:
+    """Where Global's opening sat, as the shell reports it (the dump's frame.global_opening, window pixels: the slot that
+    ShellPick.ScriptClick resolves a click step's fractions against), and how many of the run's click steps landed
+    inside it. The dumps are the record: the shell writes no click row to events.jsonl (its input echo writes
+    input.jsonl, and only under M600_INPUT_ECHO, with a panel over the view). A click step is inside when its dump
+    reports the opening with a positive size, its fractions lie in [0, 1], the click reached the pick in the view under
+    it (pick.asked one more in the next dump than in the dump before the step) and a hit names Global."""
+    rects = []
+    clicks = inside = 0
+    for index, dump in enumerate(dumps):
+        rect = dump["frame"].get("global_opening") if isinstance(dump.get("frame"), dict) else None
+        if rect is not None:
+            rects.append(tuple(rect))
+        do = dump.get("do", "")
+        if not do.startswith("click ") or do.endswith(" in local"):
+            continue
+        clicks += 1
+        try:
+            fx, fy = (float(v) for v in do.split()[1:3])
+        except ValueError:
+            continue
+        asked = ((dumps[index - 1].get("pick") or {}).get("asked", 0) if index else 0,
+                 ((dumps[index + 1] if index + 1 < len(dumps) else {}).get("pick") or {}).get("asked"))
+        hit = ((dumps[index + 1] if index + 1 < len(dumps) else {}).get("pick") or {}).get("selection")
+        if (rect is not None and rect[2] > 0 and rect[3] > 0 and 0 <= fx <= 1 and 0 <= fy <= 1
+                and asked[1] == asked[0] + 1 and (hit is None or hit.get("view") == GLOBAL_VIEW)):
+            inside += 1
     if not rects:
-        return {"global_opening": None, "clicks": len(clicks), "inside": 0}
-    x, y, w, h = rects[-1]
-    inside = sum(1 for cx, cy in clicks if x - 0.5 <= cx <= x + w + 0.5 and y - 0.5 <= cy <= y + h + 0.5)
-    return {"global_opening": list(rects[-1]), "moved": len(set(rects)) > 1, "clicks": len(clicks), "inside": inside}
+        return {"global_opening": None, "clicks": clicks, "inside": 0}
+    return {"global_opening": list(rects[-1]), "moved": len(set(rects)) > 1, "clicks": clicks, "inside": inside}
 
 
 def occlusion_script(state: str, grid: tuple[int, int], region: tuple[float, float, float, float],
@@ -388,6 +413,13 @@ def run_occlusion(out: Path, state: str, build: Path | None, grid: tuple[int, in
     clicks = grid[0] * grid[1] * len(OCCLUSION_PRESETS)
     code, record, _ = launch_run(d02_run.GATE_OCCLUSION, path, out, state, build, REOPEN_S.get(state, 120.0) + clicks + 120,
                                  foreground)
+    return score_occlusion(out, state, grid, region, window, foreground, code, record["mismatches"], show)
+
+
+def score_occlusion(out: Path, state: str, grid: tuple[int, int], region, window: dict, foreground: bool, code: int,
+                    mismatches: list, show=print, record_name: str = RECORD) -> int:
+    """Counts an occlusion run folder's picks and checks its click placement; writes the record and answers the code."""
+    clicks = grid[0] * grid[1] * len(OCCLUSION_PRESETS)
     screen = out / d02_run.SCREEN
     dumps = [json.loads(t) for t in screen.read_text(encoding="utf-8").splitlines() if t.strip()] if screen.is_file() else []
     pieces = len(set(d02_run.slot_pieces()))
@@ -398,7 +430,7 @@ def run_occlusion(out: Path, state: str, build: Path | None, grid: tuple[int, in
         seen = len(f["pieces"])
         lines.append(f"D02_OCCLUSION preset={preset} grid={grid[0]}x{grid[1]} clicks={f['clicks']} hits={f['hits']} "
                      f"distinct_pieces={seen} pieces={pieces} seen_fraction={seen / pieces:.4f}")
-    placed = opening_clicks(dumps, out / "events.jsonl")
+    placed = opening_clicks(dumps)
     problems = []
     if placed["global_opening"] is None:
         problems.append("the dumps report no Global opening")
@@ -407,15 +439,34 @@ def run_occlusion(out: Path, state: str, build: Path | None, grid: tuple[int, in
     record_out = {"format": FORMAT, "occlusion": lines, "state": state, "region": list(region),
                   "region_of": "fractions of Global's opening as the shell lays it out", "placement": placed,
                   "window": window, "foreground": foreground, "problems": problems,
-                  "run": {"code": code, "mismatches": record["mismatches"]},
+                  "run": {"code": code, "mismatches": mismatches},
                   "reading": "a sampled count: pieces no grid pick reached may still show between the grid points"}
+    if record_name != RECORD:
+        record_out["rescored"] = {"from": RECORD, "record": record_name,
+                                  "reading": "the same run's dumps scored again by gate_d02.py --rescore; the run itself "
+                                             "is unchanged and its first record is kept"}
     if out.is_dir():
-        (out / RECORD).write_text(json.dumps(record_out, indent=2) + "\n", encoding="utf-8", newline="\n")
+        (out / record_name).write_text(json.dumps(record_out, indent=2) + "\n", encoding="utf-8", newline="\n")
     for text in lines:
         show(text)
     for problem in problems:
         show("  not a valid run: " + problem)
     return 0 if code == 0 and not problems else 3
+
+
+def rescore_occlusion(out: Path, grid: tuple[int, int], show=print) -> int:
+    """Scores an occlusion run folder again from its dumps and its first record (state, region, window, foreground,
+    the run's code and mismatches), into RESCORED beside the kept first record."""
+    first = out / RECORD
+    if not first.is_file() or not (out / d02_run.SCREEN).is_file():
+        show(f"gate_d02: {out.name} has no {RECORD} or no {d02_run.SCREEN}")
+        return 2
+    record = json.loads(first.read_text(encoding="utf-8"))
+    if "occlusion" not in record or any(f"grid={grid[0]}x{grid[1]} " not in line for line in record["occlusion"]):
+        show(f"gate_d02: {out.name} is not an occlusion run on a {grid[0]}x{grid[1]} grid")
+        return 2
+    return score_occlusion(out, record["state"], grid, record["region"], record["window"], record["foreground"],
+                           record["run"]["code"], record["run"]["mismatches"], show, RESCORED)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -435,7 +486,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--grid", default="24x14", help="the occlusion grid, columns x rows")
     parser.add_argument("--region", default="0,0,1,1",
                         help="the occlusion grid's fractions of Global's opening as the shell lays it out (default: all of it)")
+    parser.add_argument("--rescore", type=Path,
+                        help="with --occlusion: score an existing occlusion run folder again from its dumps, into "
+                             f"{RESCORED}; its {RECORD} is kept; nothing is launched")
     args = parser.parse_args(argv)
+    if args.rescore is not None:
+        if not args.occlusion:
+            print("gate_d02: --rescore takes --occlusion")
+            return 2
+        return rescore_occlusion(args.rescore.resolve(), tuple(int(v) for v in args.grid.lower().split("x")))
     if args.list:
         for row in ORDER:
             spec = ROWS[row]
