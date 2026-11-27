@@ -154,6 +154,7 @@ public static class ShellStyle
 
     /// <summary>B20: whether the slice's inside layer was sent, so Local's slots may draw the slice.</summary>
     private static bool _sliceSent;
+    public static bool SliceSent => _sliceSent;
 
     /// <summary>
     /// Sends the piece style for the revision the next frame draws when it changed or the selection did; answers the
@@ -176,6 +177,7 @@ public static class ShellStyle
             _sliceSent = sliced == HostLibrary.Ok;
             _dirty = true;
         }
+        ShellGrip.StepGhost(revision);
         if (!_dirty && revision == _revision && !ShellSlice.Restyle)
         {
             return sliced;
@@ -190,6 +192,12 @@ public static class ShellStyle
             {
                 if (flash[piece] != 0) outline[piece] = JumbleOverlay.Entry;
             }
+        }
+        // ADR-D01.13: the grip's click ghost shares the hover palette entry in each view.
+        if (ShellGrip.Moving is { } moving)
+        {
+            for (var piece = 0; piece < PieceCount; piece++)
+                if (moving[piece] != 0) outline[piece] = Hovered;
         }
         int? hovered = null, selected = null;
         if (ShellPick.Hover is { } hover && hover.Piece < PieceCount)

@@ -398,6 +398,7 @@ public static class ShellJumble
         registry.AddRows(rows);
         DraftIds.Clear();
         DraftIds.UnionWith(drafts.Order);
+        DraftIds.UnionWith(GripFrame.AddDraftRows(registry, rows));
         registry.Relabel(File.ReadAllText(Path.Combine(folder, "command-labels.json")));
     }
 
@@ -652,7 +653,7 @@ internal sealed partial class D02Driver : Node
             // ADR-D02 B20: a held key, down at "hold" and up at "release", so frames are drawn while it is held.
             var down = step.TryGetProperty("hold", out _);
             _doing = (down ? "hold " : "release ") + hold.GetString();
-            var key = OS.FindKeycodeFromString(hold.GetString()!);
+            var key = hold.GetString() == GripFrame.Modifier ? Key.Ctrl : OS.FindKeycodeFromString(hold.GetString()!);
             if (key == Key.None)
             {
                 _doing += " (not pressed: no key is named " + hold.GetString() + ")";
@@ -851,6 +852,18 @@ internal sealed partial class D02Driver : Node
                 _doing += " (no Run)";
             }
         }
+        else if (step.TryGetProperty("click_local", out var clickLocal))
+        {
+            _doing = "local " + ShellPick.ScriptClick(_frame.LocalOpening, clickLocal);
+        }
+        else if (step.TryGetProperty("grip_hover", out var gripHover))
+        {
+            _doing = GripPointer("hover", gripHover.GetString()!);
+        }
+        else if (step.TryGetProperty("grip_click", out var gripClick))
+        {
+            _doing = GripPointer("click", gripClick.GetString()!);
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -858,9 +871,33 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a hover_control, a click_control, a command or a wait_ms");
+            throw new FormatException("Unknown D02 script step: " + step);
         }
         _wait = StepFrames;
+    }
+
+    private static string GripPointer(string action, string pane)
+    {
+        var name = "grip " + action + " " + pane;
+        Vector2? point = pane == "off" ? Vector2.Zero : ShellGrip.Centre(pane);
+        if (point is not { } at) return name + " (clipped)";
+        if (action == "hover")
+        {
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+        }
+        else
+        {
+            Input.ParseInputEvent(new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Pressed = true,
+                Position = at, GlobalPosition = at, CtrlPressed = true,
+            });
+            Input.ParseInputEvent(new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at, CtrlPressed = true,
+            });
+        }
+        return name;
     }
 
     /// <summary>A chord such as F1, Escape or Ctrl+Shift+P, pressed and released through the shell's input.</summary>
@@ -1072,6 +1109,7 @@ internal sealed partial class D02Driver : Node
             // B15: the tint channel as the core was sent it.
             ShellTint.Dump(json, _frame);
             ShellError.Dump(json);
+            ShellGrip.Dump(json);
             // B30: the tuning panel: whether the right dock shows it, the compare, the live tuning, the frame's window
             // colour, and the head's state digest (a knob must leave it as it was).
             if (ShellJumble.TuningHost is { } tuning && _frame != null && GodotObject.IsInstanceValid(_frame))

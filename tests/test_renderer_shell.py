@@ -20,7 +20,9 @@ import tempfile
 import unittest
 import unittest.mock
 import xml.etree.ElementTree as ET
+from contextlib import contextmanager
 from pathlib import Path
+from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 SHELL = ROOT / "renderer" / "shell"
@@ -29,6 +31,23 @@ PROJECT = SHELL / "project"
 
 def text(path: Path) -> str:
     return path.read_bytes().decode("utf-8")
+
+
+def fresh_test_folder(prefix: str) -> Path:
+    # Inherit the sandbox's temp-directory ACL. Python's private mkdtemp ACL on Windows excludes the sandbox.
+    path = Path(tempfile.gettempdir()).resolve() / (prefix + uuid4().hex)
+    path.mkdir()
+    return path
+
+
+@contextmanager
+def temporary_test_folder():
+    path = fresh_test_folder("c9-test-")
+    try:
+        yield path
+    finally:
+        if path.resolve() == path:
+            shutil.rmtree(path)
 
 
 def godot_settings(source: str) -> dict[str, str]:
@@ -126,6 +145,7 @@ class ShellProject(unittest.TestCase):
         csharp = text(PROJECT / "HostLibrary.cs")
         exports = re.findall(r'#\[no_mangle\]\s*pub (?:unsafe )?extern "C" fn (m6h_[a-z_]+)\(', source)
         self.assertIn("m6h_create", exports)
+        self.assertTrue({"m6h_grip_report", "m6h_grip_set"}.issubset(exports))
         self.assertEqual(csharp_list("Exports", "HostLibrary.cs"), exports)
         rust_version = re.search(r"pub const M6H_ABI_VERSION: u32 = (\d+);", source)
         csharp_version = re.search(r"public const uint AbiVersion = (\d+);", csharp)
@@ -523,7 +543,7 @@ class ProductBuild(unittest.TestCase):
     def setUp(self):
         self.build_product = shell_module("build_product")
         self.launch = shell_module("launch")
-        self.temp = Path(tempfile.mkdtemp(prefix="c9-product-"))
+        self.temp = fresh_test_folder("c9-product-")
         self.addCleanup(shutil.rmtree, self.temp, True)
         self.build = self.temp / "20261118T000000Z"
         files = {"native/sa2_interop.dll": b"core", "native/draw_vs.dxil": b"vs", "native/build.ninja": b"rules",
@@ -1409,7 +1429,7 @@ class D02Fixtures(unittest.TestCase):
 
     def setUp(self):
         self.fixtures = shell_module("build_d02_fixtures")
-        self.temp = Path(tempfile.mkdtemp(prefix="d02-fixtures-"))
+        self.temp = fresh_test_folder("d02-fixtures-")
         self.addCleanup(shutil.rmtree, self.temp, True)
 
     def test_the_words_rebuild_each_sample_from_its_records(self):
@@ -1582,7 +1602,7 @@ class D02Shape(unittest.TestCase):
 
     def test_the_build_stages_the_opening_file(self):
         build_shell = shell_module("build_shell")
-        temp = Path(tempfile.mkdtemp(prefix="c9-shape-"))
+        temp = fresh_test_folder("c9-shape-")
         self.addCleanup(shutil.rmtree, temp, True)
         project = temp / "staged"
         build_shell.stage(project)
@@ -1698,7 +1718,7 @@ class D02Host(unittest.TestCase):
         revert = json.loads(text(SHELL / "d02_scripts" / "tuning-revert.json"))
         self.assertEqual((revert["name"], revert["resolution"]), ("tuning-revert", "1280x720"))
         self.assertEqual(revert["steps"].count({"chord": "Escape"}), 2)
-        with tempfile.TemporaryDirectory() as folder:
+        with temporary_test_folder() as folder:
             self.assertEqual(run.check_tuning_diff(Path(folder)), ["tuning.diff.export wrote no tuning-diff.txt into the run folder"])
             (Path(folder) / "tuning-diff.txt").write_bytes(
                 b"format=magic600-tuning-diff/1\npreset=graphite\ntheme=graphite\nscene=solving\nknob.graphite.tone=0.05\n")
@@ -2523,7 +2543,7 @@ class D02TrackJ0(unittest.TestCase):
         self.assertLessEqual(set(track.NOT_PLANTABLE), set(track.CLASSES))
         self.assertTrue(all(track.NOT_PLANTABLE.values()), "each class J0 cannot plant names why")
         self.assertFalse({d["class"] for d in defects} & set(track.NOT_PLANTABLE))
-        with tempfile.TemporaryDirectory() as temp:
+        with temporary_test_folder() as temp:
             for defect in defects:
                 folder = Path(temp) / defect["id"]
                 files = track.plant(defect, folder)
@@ -2578,7 +2598,7 @@ class D02TrackJ0(unittest.TestCase):
                 (folder / state / "fixture.json").write_text(json.dumps({"digest": digest[state]}), encoding="utf-8")
             return write
 
-        with tempfile.TemporaryDirectory() as temp:
+        with temporary_test_folder() as temp:
             done = track.replay(Path(temp) / "a", Path("writer"), writer(lambda state, n: False))
             self.assertEqual((done["bound"], done["words"], done["problems"]), (9, 9, []))
             done = track.replay(Path(temp) / "c", Path("writer"), writer(lambda state, n: state == "s7001-4"))
@@ -2618,7 +2638,7 @@ class D02TrackJ0(unittest.TestCase):
         def replayer(root, writer):
             return {"bound": 9, "words": 9, "start": "s7001-0", "rows": [], "problems": []}
 
-        with tempfile.TemporaryDirectory() as temp, \
+        with temporary_test_folder() as temp, \
                 unittest.mock.patch.dict(track.J0_CHECKS, {"digest": checks("digest"), "covers": checks("covers")}):
             out = Path(temp)
             code, record = track.j0(session, defects, out / "a", None, player=player, replayer=replayer, nonce="n1")
@@ -2941,7 +2961,7 @@ class D02TrackJ(unittest.TestCase):
             dumps[-1]["stage"] = {"unasked": unasked}
             return dumps, ops, []
 
-        with tempfile.TemporaryDirectory() as temp:
+        with temporary_test_folder() as temp:
             out = Path(temp)
             code, record = track.j1(session(rows, rows[1:]), out / "pass", None, player=player)
             self.assertEqual((code, record["operations"], record["reached"], record["boundary"], record["problems"]),
@@ -2982,4 +3002,5 @@ class D02TrackJ(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
     unittest.main()

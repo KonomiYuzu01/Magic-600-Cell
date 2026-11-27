@@ -114,6 +114,7 @@ use c600_render_ffi::DllCore;
 pub mod charts;
 mod deferred;
 pub mod fixture;
+mod grip;
 pub mod preload;
 pub mod turns;
 pub mod view;
@@ -2550,7 +2551,7 @@ pub unsafe extern "C" fn m6h_state_digest(handle: *mut ShellHost) -> i32 {
 }
 
 /// The JSON answer of the last call of the write-check-run flow ([`m6h_register_row`], [`m6h_palette`],
-/// [`m6h_invoke`], [`m6h_take_job`], [`m6h_finish_job`]) or of [`m6h_state_digest`], NUL-terminated and sized as
+/// [`m6h_invoke`], [`m6h_take_job`], [`m6h_finish_job`]), [`m6h_state_digest`] or a grip call, NUL-terminated and sized as
 /// [`m6h_last_error`] sizes its text.
 ///
 /// # Safety
@@ -2755,6 +2756,45 @@ pub unsafe extern "C" fn m6h_set_scene_look(handle: *mut ShellHost, look: *const
                 return Err((M6H_E_INVALID_ARGUMENT, "invalid scene look reserved field or value".to_owned()));
             }
             shell.host.backend.set_scene_look(look).map_err(host_error)
+        })
+    }
+}
+
+fn answer_grip(shell: &mut ShellHost) -> Result<(), Failure> {
+    let mut report = shell.turns()?.grip_report().map_err(|e| (M6H_E_SESSION, e))?;
+    if let c600_kernel::json::Value::Object(fields) = &mut report {
+        fields.insert("revision".into(), c600_kernel::json::Value::Int(shell.assigned as i64));
+    }
+    shell.answer = report.canonical();
+    Ok(())
+}
+
+/// Read D02's current grip. [`m6h_answer`] gives the cap, frame, frames with marks and keys or refusal reasons,
+/// engine revision, committed and refused press counts, last committed cap/item, and state digest.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_grip_report(handle: *mut ShellHost) -> i32 {
+    // SAFETY: the contract.
+    unsafe { with_host(handle, answer_grip) }
+}
+
+/// Set D02's grip and proper frame in one step. On success, [`m6h_answer`] gives the same report as
+/// [`m6h_grip_report`]. An invalid cap or frame leaves the current grip in place and answers why via
+/// [`m6h_last_error`]. Neither call writes a workspace record or commits a turn.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_grip_set(handle: *mut ShellHost, cap: u32, frame: u32) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            shell.turns()?.set_grip(cap as usize, frame as usize).map_err(|e| (M6H_E_INVALID_ARGUMENT, e))?;
+            answer_grip(shell)
         })
     }
 }

@@ -475,5 +475,29 @@
       "note": "Takes a keymap preset's name (default, or a file under keymaps/), or none for the next one; the status line names every key that changed meaning, and the key map marks them. Key sets per orbit are such presets, not a mode.",
       "request": "ADR-D01.74"
     }
+  ],
+  "grip": [
+    {
+      "id": "grip.select",
+      "label": "Grip (cap and frame)",
+      "kind": "workspace",
+      "contexts": [
+        "puzzle",
+        "keyboard"
+      ],
+      "note": "Uses the picked cell or a named cap. Hold Ctrl for the direct twist preview (ADR-D01.13).",
+      "request": "ADR-D01.75"
+    },
+    {
+      "id": "grip.frame.next",
+      "label": "Next grip frame",
+      "kind": "workspace",
+      "contexts": [
+        "puzzle",
+        "keyboard"
+      ],
+      "note": "Changes the grip's marks and twist keys together.",
+      "request": "ADR-D01.75"
+    }
   ]
 }

@@ -68,7 +68,8 @@ def load(path: Path):
 
 def data() -> dict:
     """What the expectations are computed from: the draft rows, the table's rows and the sample states."""
-    return {"rows": load(DESIGN / "command-rows-d02.json")["commands"], "table": load(TABLE)["commands"],
+    drafts = load(DESIGN / "command-rows-d02.json")
+    return {"rows": drafts["commands"] + drafts.get("grip", []), "table": load(TABLE)["commands"],
             "states": [state["state"] for state in load(SAMPLES / "states.json")["states"]]}
 
 
@@ -77,7 +78,11 @@ def palette_matches(query: str, rows: list[dict], table: list[dict]) -> list[str
     label or the command id (PaletteModel.Rows). The labels shown are the D02 rows' own; table rows keep theirs."""
     terms = query.lower().split()
     found = []
+    seen = set()
     for row in table + rows:
+        if row["id"] in seen:
+            continue
+        seen.add(row["id"])
         if all(term in row["label"].lower() or term in row["id"].lower() for term in terms):
             found.append(row["label"])
     return found
@@ -159,8 +164,8 @@ def expect_bind(dumps: list[dict], source: dict, state: str | None) -> list[str]
         return ["the bind script needs a sample state"]
     problems = []
     if any("the session refused this twist" in text for group, text in map(tuple, dumps[3]["lines"])):
-        problems.append(f"step 2: the session refused the twist at {state}: the router turns cap 0 only (grip.select "
-                        "is not built), so the bind script needs a state where cap 0 admits a twist, such as on-zero")
+        problems.append(f"step 2: the session refused the twist at {state}: the default grip is cap 0, so "
+                        "the bind script needs a state where cap 0 admits a twist, such as on-zero")
     for index, wanted in ((1, BOUND + state), (3, UNBOUND), (5, BOUND + state)):
         shown = bind_chip(dumps[index])
         if shown != wanted:
@@ -2308,6 +2313,96 @@ def expect_error_overlay(dumps: list[dict], source: dict, state: str | None) -> 
 
 EXPECT["error-overlay"] = expect_error_overlay
 ON_FIXTURE.add("error-overlay")
+
+
+def expect_grip_frame(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The picked cap, its shared frame, the exact routed twists and both panes' modifier ghost."""
+    steps = ["wait 2500 ms", "wait 600 ms", "command grip.select", "command grip.frame.next", "wait 1600 ms",
+             "wait 601 ms", "wait 602 ms", "wait 603 ms", "wait 604 ms", "wait 1601 ms"]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(not by_step.get(step, {}).get("grip") for step in steps):
+        return ["the grip script is missing a grip checkpoint"]
+    start, plain, selected, framed, turned, held, away, again, released, clicked = (
+        by_step[step]["grip"] for step in steps)
+    problems = []
+
+    def require(condition, message):
+        if not condition:
+            problems.append(message)
+
+    def head(g):
+        return tuple(g.get(field) for field in ("state_digest", "committed", "refused"))
+
+    def keys(g):
+        return {row["chord"]: row["item"] for row in g.get("keys", [])}
+
+    require((start.get("cap"), start.get("frame")) == (0, 0), "the opening grip is not cap 0, frame 0")
+    require(keys(start) == {"KeyJ": 1, "Shift+KeyJ": 1, "KeyK": 2, "Shift+KeyK": 5, "KeyL": 3, "Shift+KeyL": 9},
+            "the default grip lost the pinned key items")
+    pick = by_step[steps[1]].get("pick", {}).get("selection") or {}
+    slot = pick.get("slot")
+    cap = selected.get("cap")
+    frame = framed.get("frame")
+    require(isinstance(slot, int) and slot // 433 == cap == 150, "grip.select did not take the picked cap 150")
+    require(pick.get("revision") == selected.get("host", {}).get("revision"), "grip.select used a stale pick")
+    require(all(head(g) == head(start) for g in (plain, selected, framed)), "picking or changing the grip changed the head")
+    require(selected.get("frame") == 0 and frame != selected.get("frame") and frame in framed.get("admissible_frames", []),
+            "grip.frame.next did not choose a new admissible frame")
+    old_marks = [mark["corner"] for mark in selected.get("marks", [])]
+    marks = {mark["index"]: mark["corner"] for mark in framed.get("marks", [])}
+    require(set(marks) == {1, 2, 3, 4} and len(set(marks.values())) == 4, "the frame needs four ordered marks")
+    require(list(marks.values()) != old_marks and set(marks.values()) == set(old_marks),
+            "the next frame did not reorder the same corners")
+    require(keys(selected) != keys(framed) and set(keys(framed)) == set(keys(start)), "the twist keys did not follow the frame")
+    host = framed.get("host", {})
+    require(host.get("cap") == cap and host.get("frame") == frame, "the shell and host grips disagree")
+    require(any(row.get("frame") == frame and row.get("keys") == framed.get("keys")
+                for row in host.get("frames", [])), "the visible key table differs from the host's exact map")
+
+    def panes(grip, expect_direction):
+        mark_by_index = {mark["index"]: mark["corner"] for mark in grip.get("marks", [])}
+        shown = {pane["pane"]: pane for pane in grip.get("drawn", [])}
+        for name in ("Global", "Local"):
+            pane = shown.get(name, {})
+            rect, drawn = pane.get("rect"), pane.get("marks", [])
+            if rect is None or not 1 <= len(drawn) <= 4:
+                problems.append(f"{name} drew no set of grip marks")
+                continue
+            x, y, w, h = rect
+            def inside(px, py):
+                return x <= px < x + w and y <= py < y + h
+            require(all(mark_by_index.get(mark["index"]) == mark["corner"] and inside(mark["x"], mark["y"])
+                        for mark in drawn), f"{name}'s grip marks differ from the frame or lie outside the pane")
+            direction = pane.get("direction")
+            require(inside(*direction) if direction and expect_direction else direction is None and not expect_direction,
+                    f"{name}'s direction glyph did not follow the ghost")
+
+    for grip in (start, selected, framed):
+        panes(grip, False)
+    item = keys(framed).get("KeyJ")
+    for before, after, action in ((framed, turned, "KeyJ"), (turned, clicked, "Ctrl+click")):
+        last = after.get("host", {}).get("last", {})
+        require(after.get("committed") == before.get("committed", -1) + 1 and after.get("refused") == before.get("refused"),
+                f"{action} did not commit exactly one twist")
+        require(last == {"cap": cap, "item": item}, f"{action} committed the wrong cap or item")
+        require(after.get("state_digest") != before.get("state_digest"), f"{action} did not move the head")
+    require(not turned.get("ghost", {}).get("on"), "hover without Ctrl showed a ghost")
+    for grip, on in ((held, True), (away, False), (again, True), (released, False)):
+        ghost = grip.get("ghost", {})
+        require(head(grip) == head(turned), "hover or modifier release changed the head")
+        require(ghost.get("on") == on and ghost.get("modifier") == "Ctrl", "the ghost did not follow Ctrl and the hover")
+        if on:
+            require(ghost.get("cap") == cap and ghost.get("item") == item and ghost.get("moving", 0) > 0
+                    and len(ghost.get("sha256") or "") == 64, "the ghost differs from the click twist")
+            require(ghost.get("palette") == 2 and ghost.get("outlined", 0) > 0, "the moving pieces lack the hover outline")
+        else:
+            require(ghost.get("moving") == 0, "the released ghost kept a moving set")
+        panes(grip, on)
+    return problems
+
+
+EXPECT["grip-frame"] = expect_grip_frame
+ON_FIXTURE.add("grip-frame")
 
 
 TUNING_KNOBS = [("wait 702 ms", "tone", 0.05, True), ("wait 703 ms", "contrast", 1.15, True),

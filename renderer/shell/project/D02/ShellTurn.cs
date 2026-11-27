@@ -93,14 +93,15 @@ public static class ShellTurn
     // ---- B18 rest: the timed sweep and the half-turn flash of a committed key twist (ADR-D02.37, row J03). ----
 
     /// <summary>
-    /// The router's twist keys (c600-command's draft TWIST_KEYS: the key, its menu item and Shift's inverse item) and its
-    /// one grip cap (slot 0, cap 0, while grip.select is not built). A key twist commits that item at that cap, so the
-    /// shell reads the twist's certified row before the press. test_d02_drawing.py pins this table to keymap.rs.
+    /// The router's default twist keys (c600-command's draft TWIST_KEYS: the key, its menu item and Shift's inverse item).
+    /// test_d02_drawing.py pins this table to keymap.rs.
     /// </summary>
     public static readonly (string Key, ulong Item, ulong Inverse)[] TwistKeys = { ("KeyJ", 1, 1), ("KeyK", 2, 5), ("KeyL", 3, 9) };
 
-    /// <summary>The router's grip cap, the cap every twist key turns.</summary>
+    /// <summary>The router's default grip cap.</summary>
     public const uint GripCap = 0;
+
+    private static uint ActiveGripCap => ShellGrip.Model.Ready ? (uint)ShellGrip.Model.Cap : GripCap;
 
     /// <summary>A motion row's seconds (0 under reduced motion: its static equivalent at once) and its curve, from the
     /// shell's motion table (ShellChrome sets it).</summary>
@@ -137,6 +138,7 @@ public static class ShellTurn
     /// <summary>The menu item a chord twists at the grip cap, or null for a key that is not a twist key.</summary>
     public static ulong? ItemOf(string chord)
     {
+        if (ShellGrip.Model.Ready) return ShellGrip.Model.Key(chord)?.Item;
         var shift = chord.StartsWith("Shift+", StringComparison.Ordinal);
         var key = shift ? chord.Substring(6) : chord;
         foreach (var (name, item, inverse) in TwistKeys)
@@ -151,7 +153,7 @@ public static class ShellTurn
     public static void Arm(HostLibrary library, IntPtr host, string chord)
     {
         _armed = null;
-        if (ItemOf(chord) is ulong item && library.TwistTransform(host, GripCap, item, out var row, out _) == HostLibrary.Ok)
+        if (ItemOf(chord) is ulong item && library.TwistTransform(host, ActiveGripCap, item, out var row, out _) == HostLibrary.Ok)
         {
             _armed = row;
         }
@@ -183,7 +185,7 @@ public static class ShellTurn
         {
             var (outlineSeconds, _) = MotionRow("jumble.half_turn");
             _outline = outlineSeconds > 0 ? new Outline(revision, row.Moving, outlineSeconds) : null;
-            if (Cap is int drawn && drawn != GripCap)
+            if (Cap is int drawn && drawn != ActiveGripCap)
             {
                 kind = "static";
             }
