@@ -4,9 +4,10 @@ The first of the two Astra rounds that come before D02's freeze. The owner asked
 "Refinement, after C6, then the freeze", in `docs/progress/1.0/adr-d02-build-framework.md`. Round 1 reviews the whole
 build. Round 2 re-checks the fixes.
 
-**Status (27 November 2026, 22:30 UTC): part 1 done, part 2 running. D02's freeze is held.** Part 1 found 5 blockers,
-16 majors and 4 minors. The fix round starts after the weekly quota reset (30 November 2026, 14:00 UTC), and round 2
-re-checks it.
+**Status (27 November 2026, 23:10 UTC): round 1 done. D02's freeze is held.**
+- Part 1 found 5 blockers, 16 majors and 4 minors.
+- Part 2 confirmed 7 of them in the product window and found 8 new majors.
+- The fix round starts after the weekly quota reset (30 November 2026, 14:00 UTC). Round 2 re-checks it.
 
 ## The calls
 - **Part 1, the static review.**
@@ -19,7 +20,16 @@ re-checks it.
   - The owner runs it in the Codex app: gpt-6.2-astra, Extra, Standard tier, "Ask for approval".
   - It runs in a throwaway clone at `10da864b`, with no remote, holding the gate sitting's product build
     `c9-product-1a6a967326354a35` and the session fixtures. Limits: 2 hours and 40 screenshots.
-  - The packet sends it the same forbidden reads as part 1. Its results are added here when it ends.
+  - The packet sends it the same forbidden reads as part 1, plus every file named `defects.json` in the clone. The
+    launch checks every file of the build, so the build's copy stayed in place unopened.
+  - It ran about 22:20 to 23:06 UTC: 39 minutes of product testing and 15 screenshots. Its result validates against
+    `schemas/review-result.schema.json`; verdict `findings`.
+  - It stopped early under the packet's safety rule. After Alt+F4, Windows reported the deep-2 window as not
+    responding (D02-CU-01); the process then exited with code 0, and no black screen was seen.
+  - The System log from 22:15 to 23:08 UTC holds no nvlddmkm, display or LiveKernelEvent entry. The Application log
+    holds no Windows Error Reporting hang report.
+  - The result and the run folders stay in the clone (`work/astra-d02/repo/work/astra-review/`, ignored by Git) until
+    the fix round has read them.
 
 ## Part 1's findings and their dispositions
 - Every finding is accepted on Astra's evidence. Astra marked each one verified: the source and an in-memory
@@ -55,6 +65,49 @@ re-checks it.
 | D02-23 | minor | The gate record omits the build identity. | Fix round: carry the build identity and run id; the rescorer checks them. |
 | D02-24 | minor | The window checks cannot show the shell was never topmost. | The results page's wording becomes "not topmost at any check". |
 | D02-25 | minor | A correction multiplicity can overflow. | Fix round: widen before the absolute value; validate the total. |
+
+## Part 2's verdicts on part 1's findings
+- **Confirmed in the window (7):**
+  - D02-01: the run's journal holds three separate transactions for one repair.
+  - D02-05: by path only.
+  - D02-06: 3,600 protected pieces, then 36 conflicting movers, and the preview still offered Commit.
+  - D02-07: a second pick grew the preview from three letters to six.
+  - D02-09: one seat hold made twelve trials.
+  - D02-16: G3's fallback counts certificates and defers the glyphs.
+  - D02-18: the contact tint is lost on adoption.
+- **Not observable in the window (18):** the other findings concern fixture writers, the gate scorers, Track J or
+  altered inputs. None was refuted.
+
+## Part 2's new findings
+
+| Id | Severity | Finding | Disposition |
+| --- | --- | --- | --- |
+| D02-CU-01 | major | The deep-2 window stopped responding after Close. | Fix round: reproduce the shutdown at a deep state with the host's own timing, then fix what blocks the close. |
+| D02-CU-02 | major | Solve staged an unrelated sample word, with Commit available, when given a copied research reference that Research says solving previews refuse. | Fix round: Solve refuses a research reference, as Research says; a sample word never stages from one. |
+| D02-CU-03 | major | A script's ring annotation draws over Local's controls. | Fix round: script annotations are clipped to the view they name. |
+| D02-CU-04 | major | Some listed repairs have no inspectable moving set for their second step. | Fix round: every listed row's steps carry their moving set. A row without one says why. |
+| D02-CU-05 | major | Opening Research at 1280×720 collapses Global to zero height. | Fix round: one layout pass for 1280×720 with minimum view sizes, together with D02-CU-06. |
+| D02-CU-06 | major | Staging a repair pushes an open filter dock past the right edge. | Fix round, in the same layout pass. |
+| D02-CU-07 | major | A research run cannot open its derived state in a free view (ADR-D02.45; CR-17 refusal). | The framework records this as deferred. The freeze card puts it before the owner: build it in the fix round, or carry it to K2 with the refusal. |
+| D02-CU-08 | major | The checker trace cannot be opened from Research (CR-17 refusal). | The framework records the debugger path as deferred. The freeze card handles it as D02-CU-07. |
+
+Part 2 found these clean, on the named fixtures and actions only:
+- cap naming and the repair list's neutral order (129 rows, ascending (x, d), unsorted ΔN, no preview until a pick);
+- the repair preview's scrub, overlay, Escape and settle controls;
+- the focus layer;
+- the view overlays under a filter;
+- the cut slice;
+- the raw and antipodal views;
+- the ν corrections;
+- research runs with a declared budget, and their obligations;
+- the research claims;
+- tuning save and reset;
+- the documents surface;
+- the cap map, threshold and prompt;
+- the cap covers;
+- the deep charts.
+
+Across every view-only replay, the revision and digest stayed put.
 
 ## What this changes elsewhere
 - **The gate results** (`docs/progress/1.0/adr-d02-gate-results.md`): D02-12 to D02-18, D02-23 and D02-24 question
