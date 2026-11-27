@@ -365,6 +365,8 @@ public sealed partial class JumbleHost
     public void SetDrawnWithoutCap(bool value)
     {
         drawnWithoutCap = value;
+        // B17: the base puzzle has no Jumble cap, covers, checks or repair rows, so Local hides those sections.
+        Surface.SetJumbleSections(!value);
         FollowLocal();
     }
 
