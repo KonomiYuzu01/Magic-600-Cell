@@ -64,6 +64,8 @@ internal static class ShellDocuments
 
     public static bool Handles(string command) => Rows.Contains(command);
 
+    internal static bool Recording => documents is { } set && set.Documents[0].Signature(null, false).Recording;
+
     public static string? Unavailable(string command, string? argument) =>
         sampleOn ? documents?.Unavailable(command, argument) : Waiting;
 

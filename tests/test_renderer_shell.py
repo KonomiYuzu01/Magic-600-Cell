@@ -1667,12 +1667,14 @@ class D02Host(unittest.TestCase):
         for view in ("Global", "Local"):
             clear = describe.index(f"Frame.{view}.ClearMarks();")
             self.assertLess(clear, describe.index(f"Jumble?.Marks(Frame.{view});"))
-            self.assertLess(clear, describe.index(f"Sample?.Marks(Frame.{view});"))
+            sample = describe.index(f"Sample?.Marks(Frame.{view});")
+            self.assertLess(clear, sample)
+            self.assertLess(sample, describe.index(f"ShellSession.Marks(Frame.{view});"))
 
     def test_the_host_expectation_sees_each_part(self):
         run = shell_module("d02_run")
         self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views",
-                                              "library-branch", "research-pane", "research", "documents"})
+                                              "library-branch", "research-pane", "research", "documents", "timer"})
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]
@@ -1936,6 +1938,46 @@ class D02Documents(unittest.TestCase):
             else:
                 written.append(f"wait {step['wait_ms']} ms")
         self.assertEqual(written, run.DOCUMENT_STEPS)
+
+
+class D02Session(unittest.TestCase):
+    def test_the_shell_mounts_and_routes_the_session_rows(self):
+        chrome = text(PROJECT / "ShellChrome.cs")
+        mount = chrome.index("ShellSession.Load(frame, registry, sample, history, Moves, Execute);")
+        self.assertLess(chrome.index("ShellDocuments.Load(frame, registry, sample);"), mount)
+        self.assertLess(mount, chrome.index("ChromeErrors.Mount(frame"))
+        self.assertIn("_ when ShellSession.Handles(command) => ShellSession.Unavailable(command)", chrome)
+        self.assertIn("case var session when ShellSession.Handles(session):", chrome)
+        self.assertIn("ShellSession.Execute(frame, command, argument);", chrome)
+        self.assertIn("ShellSession.Describe(_live && _shown <= int.MaxValue ? (int)_shown : null);", chrome)
+        history = chrome[chrome.index("history.Command += (command, argument)"):chrome.index("var find =")]
+        self.assertIn('command == "session.completion"', history)
+        self.assertIn("Execute(command, argument);", history)
+        session = text(PROJECT / "D02" / "ShellSession.cs")
+        rows = session[session.index("Rows.UnionWith"):session.index("ShellSession.frame = frame;")]
+        for row in ("session.timer.start", "session.timer.stop", "session.practice", "session.completion"):
+            self.assertIn(f'"{row}"', rows)
+        self.assertIn("timerView.Command += row => execute(row, null);", session)
+        self.assertIn("history.Completions = log;", session)
+        dump = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertLess(dump.index("ShellDocuments.Dump(json);"), dump.index("ShellSession.Dump(json);"))
+
+    def test_the_timer_run_uses_the_session_fixture_and_expectation(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["timer"], run.expect_timer)
+        self.assertIn("timer", run.IN_SAMPLE_MODE)
+        self.assertIn("timer", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "timer.json"))
+        self.assertEqual(script["resolution"], "1280x720")
+        written = ["start"]
+        for step in script["steps"]:
+            if "command" in step:
+                written.append(" ".join(["command", step["command"]] + ([step["argument"]] if "argument" in step else [])))
+            elif "click_control" in step:
+                written.append(f"click {step['click_control']}")
+            else:
+                written.append(f"wait {step['wait_ms']} ms")
+        self.assertEqual(written, run.TIMER_STEPS)
 
 
 class D02Q3b(unittest.TestCase):

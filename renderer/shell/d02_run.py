@@ -29,6 +29,7 @@ sys.dont_write_bytecode = True
 
 import argparse
 import json
+import re
 import subprocess
 import threading
 import time
@@ -1361,6 +1362,69 @@ def expect_documents(dumps: list[dict], source: dict, state: str | None) -> list
 
 EXPECT["documents"] = expect_documents
 IN_SAMPLE_MODE.add("documents")
+
+
+TIMER_STEPS = ["start", "wait 2000 ms", "click TimerKey", "wait 2500 ms", "click TimerKey", "command session.practice",
+               "click SessionCell", "command session.completion O06", "wait 2000 ms"]
+
+
+def expect_timer(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    steps = [dump["do"] for dump in dumps]
+    if steps != TIMER_STEPS:
+        return [f"the steps written were {steps}"]
+    problems = []
+    sessions = [dump.get("session", {}) for dump in dumps]
+    opening = sessions[0]
+    timer = opening.get("timer")
+    if timer != {"cell": True, "running": False, "text": "0:00", "row": "session.timer.start"}:
+        problems.append(f"opening timer is {timer!r}")
+    cell = opening.get("cell", {})
+    if cell.get("present") is not True or cell.get("expanded") is not False or len(cell.get("lamps", [])) != 3:
+        problems.append(f"opening session cell is {cell!r}")
+    completed = opening.get("completions", [])
+    if (len(completed) != 11 or completed[0].get("name") != "O06"
+            or any(set(entry) != {"name", "revision", "moment", "sample"} or entry["sample"] is not True
+                   or entry["moment"] is not (i == 0) for i, entry in enumerate(completed))):
+        problems.append(f"opening completions are {completed!r}")
+    if opening.get("historyRows") != 11 or opening.get("momentSlot") is not True:
+        problems.append(f"opening history has {opening.get('historyRows')!r} completion rows "
+                        f"and moment slot {opening.get('momentSlot')!r}")
+    if opening.get("practice") != {"on": False, "global": 0, "local": 0}:
+        problems.append(f"opening practice is {opening.get('practice')!r}")
+
+    for i in (2, 3):
+        running = sessions[i].get("timer", {})
+        if running.get("running") is not True or running.get("row") != "session.timer.stop":
+            problems.append(f"step {i}: running timer is {running!r}")
+    paused = sessions[4].get("timer", {})
+    elapsed = paused.get("text")
+    if (paused.get("running") is not False or paused.get("row") != "session.timer.start"
+            or not isinstance(elapsed, str) or not re.fullmatch(r"(?:\d+:)?\d+:[0-5]\d", elapsed)
+            or elapsed in ("0:00", "0:01")):
+        problems.append(f"the paused timer should show at least 0:02, got {paused!r}")
+    if sessions[5].get("practice") != {"on": True, "global": 1, "local": 1}:
+        problems.append(f"after session.practice, practice is {sessions[5].get('practice')!r}")
+    cell = sessions[6].get("cell", {})
+    facts = cell.get("facts", [])
+    names = ["entries", "moves", "completions", "log head", "revision", "state hash", "session", "model", "build"]
+    if cell.get("expanded") is not True or [fact.get("name") for fact in facts] != names or facts[5].get("waiting") is not True:
+        problems.append(f"the expanded session cell is {cell!r}")
+    if completed:
+        first = completed[0]
+        line = f"{first.get('name')} complete · exact check of every label · revision {first.get('revision')}"
+        lines = dumps[7].get("lines", [])
+        if ["frame", line] not in lines or ["panel:history", line + " · sample"] not in lines:
+            problems.append("reading the first completion did not give its line and show its History row")
+    for i, dump in enumerate(dumps):
+        errors = dump.get("errors", {})
+        if errors.get("lamp") is not True or errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {i}: error lamp is {errors!r}")
+    return problems
+
+
+EXPECT["timer"] = expect_timer
+IN_SAMPLE_MODE.add("timer")
+ON_FIXTURE.add("timer")
 
 
 # B29 (ADR-D02.4, .45, .46, .50, .52): the research pane's Runs tab. research.runs brings the pane from Solve; a start
