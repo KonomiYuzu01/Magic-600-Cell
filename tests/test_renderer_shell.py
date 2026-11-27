@@ -18,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -2478,6 +2479,172 @@ class D02Fit(unittest.TestCase):
         self.assertIn("public const float RightDockBelow = 1600, LeftDockBelow = 1440;", frame)
         readouts = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleReadouts.cs")
         self.assertIn("public sealed partial class ReadoutRow : HFlowContainer", readouts)
+
+class D02TrackJ0(unittest.TestCase):
+    """B33: J0 plants each defect in its own copy of the samples, replays seed 7001 through the host's fixture writer,
+    reads every run's screens against the repository's samples, and writes the researcher's packet with a sealed key."""
+
+    def test_the_session_and_the_defects_load_and_name_j0_rules(self):
+        track = shell_module("track_j")
+        session = track.load_j0_session()
+        defects = track.load_defects([track.DEFECTS])
+        self.assertEqual([d["id"] for d in defects], [f"opus-{n:02d}" for n in range(1, 11)])
+        self.assertEqual({d["by"] for d in defects}, {"Opus"})
+        self.assertEqual({entry["rule"] for entry in session["checks"]}, set(track.J0_CHECKS))
+        self.assertEqual(set(track.J0_CHECKS), set(track.RULES))
+        self.assertLessEqual({d["rule"] for d in defects}, set(track.J0_CHECKS))
+        script, ops = track.expand(session["steps"], {}, track.J0_KINDS)
+        self.assertTrue(all(set(step) <= {"chord", "text", "wait_ms", "open"} for step in script))
+        self.assertEqual([step["open"] for step in script if "open" in step], ["cap_covers", "repair_list"])
+        for entry in session["checks"]:
+            at = entry.get("at", [])
+            for ref in [r[0] if isinstance(r, list) else r for r in (at if isinstance(at, list) else [at])]:
+                if ref != "start" and not ref.startswith("step "):
+                    track.find(ops, ref)
+        self.assertEqual(len(track.CLASSES), 15)
+        self.assertLessEqual(set(track.NOT_PLANTABLE), set(track.CLASSES))
+        self.assertTrue(all(track.NOT_PLANTABLE.values()), "each class J0 cannot plant names why")
+        self.assertFalse({d["class"] for d in defects} & set(track.NOT_PLANTABLE))
+        with tempfile.TemporaryDirectory() as temp:
+            for defect in defects:
+                folder = Path(temp) / defect["id"]
+                files = track.plant(defect, folder)
+                self.assertEqual(files, sorted({change["file"] for change in defect["change"]}))
+                for name in files:
+                    self.assertNotEqual(json.loads((folder / "samples" / name).read_text(encoding="utf-8")),
+                                        json.loads((track.DATA / name).read_text(encoding="utf-8")), defect["id"])
+                copied = {p.name for p in (folder / "samples").rglob("*.json")}
+                self.assertFalse(copied & {"defects.json", "j0-session.json", "j1-session.json"})
+                shutil.rmtree(folder)
+
+    def test_a_change_must_change_its_value(self):
+        track = shell_module("track_j")
+        doc = {"rows": [{"n": -470, "s": "abc"}, {"n": 3, "s": "xyz"}]}
+        track.plant_change(doc, {"path": ["rows", 0, "n"], "op": "negate"})
+        track.plant_change(doc, {"path": ["rows"], "op": "swap", "i": 0, "j": 1})
+        track.plant_change(doc, {"path": ["rows", 0, "s"], "op": "char", "at": 1, "to": "0"})
+        track.plant_change(doc, {"path": ["rows", 1, "s"], "op": "set", "value": "new"})
+        self.assertEqual(doc, {"rows": [{"n": 3, "s": "x0z"}, {"n": 470, "s": "new"}]})
+        for change in ({"path": ["rows", 0, "s"], "op": "set", "value": "x0z"},
+                       {"path": ["rows", 0, "s"], "op": "negate"},
+                       {"path": ["rows", 0, "s"], "op": "char", "at": 1, "to": "0"},
+                       {"path": ["rows", 0, "s"], "op": "char", "at": 9, "to": "q"},
+                       {"path": ["rows", 0, "n"], "op": "grow"}):
+            with self.assertRaises(ValueError, msg=change):
+                track.plant_change(doc, change)
+        import base64
+        import zlib
+        mask = {"data": base64.b64encode(zlib.compress(bytes([0b00000101, 0]))).decode("ascii"), "count": 2}
+        flipped = track.flip_mask(mask, [0, 9])
+        self.assertEqual(zlib.decompress(base64.b64decode(flipped["data"])), bytes([0b00000100, 0b00000010]))
+        self.assertEqual(flipped["count"], 2)
+        self.assertEqual(flipped["sha256"], hashlib.sha256(bytes([4, 2])).hexdigest())
+        with self.assertRaises(ValueError):
+            track.flip_mask(mask, [16])
+
+    def test_the_replay_binds_each_word_and_checks_every_digest(self):
+        track = shell_module("track_j")
+        fixtures = shell_module("build_d02_fixtures")
+        words = json.loads(track.WORDS.read_text(encoding="utf-8"))
+        digest = {words["start"]: words["parts"][0]["input_digest"]}
+        digest.update({part["after"]: part["output_digest"] for part in words["parts"]})
+
+        def writer(fail):
+            calls = []
+
+            def write(path, state, letters, folder):
+                calls.append(state)
+                if fail(state, calls.count(state)):
+                    raise fixtures.FixtureError(f"{state}: the writer exited with 1: ... (os error 32)")
+                (folder / state).mkdir(parents=True, exist_ok=True)
+                (folder / state / "fixture.json").write_text(json.dumps({"digest": digest[state]}), encoding="utf-8")
+            return write
+
+        with tempfile.TemporaryDirectory() as temp:
+            done = track.replay(Path(temp) / "a", Path("writer"), writer(lambda state, n: False))
+            self.assertEqual((done["bound"], done["words"], done["problems"]), (9, 9, []))
+            done = track.replay(Path(temp) / "c", Path("writer"), writer(lambda state, n: state == "s7001-4"))
+            self.assertEqual(done["bound"], 8, "word 4 fails; word 5's input digest is then not checked")
+            self.assertIn("os error 32", done["rows"][3]["problem"])
+            done = track.replay(Path(temp) / "b", Path("writer"), writer(lambda state, n: state == words["start"]))
+            self.assertEqual(done["bound"], 9, "every word still binds")
+            self.assertIn("does not bind", done["problems"][0])
+            other = writer(lambda state, n: False)
+
+            def wrong(path, state, letters, folder):
+                other(path, state, letters, folder)
+                if state == "s7001-2":
+                    (folder / state / "fixture.json").write_text(json.dumps({"digest": "0" * 64}), encoding="utf-8")
+            done = track.replay(Path(temp) / "d", Path("writer"), wrong)
+            self.assertIn("not the word's output digest", done["rows"][1]["problem"])
+            self.assertIn("input digest", done["rows"][2]["problem"])
+
+    def test_j0_scores_the_runs_and_seals_the_packet_key(self):
+        track = shell_module("track_j")
+        session = {"format": track.J0_FORMAT, "state": "wj-ia-300", "resolution": "1280x720",
+                   "steps": [{"wait_ms": 10}], "checks": [{"rule": "digest"}, {"rule": "covers"}]}
+        defects = [{"id": f"opus-{n:02d}", "by": "Opus", "class": track.CLASSES[0], "rule": rule,
+                    "change": [{"file": "jumble/wj-ia-300/cap-150.json", "op": "swap", "i": 0, "j": 1,
+                                "path": ["repair_list", "completed", "rows"]}]}
+                   for n, rule in ((1, "digest"), (2, "covers"), (3, "repair-order"))]
+        shows = {"opus-01": "digest", "opus-02": "digest", "opus-03": None}
+
+        def checks(rule):
+            return lambda dumps, ops, entry, state: [f"{rule} differs"] if dumps[0].get("bad") == rule else []
+
+        def player(label, data, runs, build, session, script, leak=None):
+            self.assertTrue((data / "samples" / "jumble" / "states.json").is_file())
+            return [{"do": "start", "bad": shows.get(label), "window": label, "text": leak or "a screen"},
+                    {"do": "wait 10", "window": 1}], []
+
+        def replayer(root, writer):
+            return {"bound": 9, "words": 9, "start": "s7001-0", "rows": [], "problems": []}
+
+        with tempfile.TemporaryDirectory() as temp, \
+                unittest.mock.patch.dict(track.J0_CHECKS, {"digest": checks("digest"), "covers": checks("covers")}):
+            out = Path(temp)
+            code, record = track.j0(session, defects, out / "a", None, player=player, replayer=replayer)
+            self.assertEqual(code, 1, "three planted is under 20")
+            self.assertEqual((record["planted"], record["caught_driver"], record["caught_any"]), (3, 1, 1))
+            self.assertEqual([(r["id"], r["caught_driver"], r["flagged"]) for r in record["defects"]],
+                             [("opus-01", True, ["digest"]), ("opus-02", False, ["digest"]), ("opus-03", False, [])])
+            self.assertEqual((record["false_alarms"], record["run_problems"], record["packet"]["problems"]), ([], {}, []))
+            root = out / "a" / "j0"
+            key = json.loads((root / "sealed" / "key.json").read_text(encoding="utf-8"))
+            self.assertEqual((key["format"], len(key["runs"]), record["packet"]["faulted"]), (track.KEY_FORMAT, 5, 3))
+            packet = sorted(p.name for p in (root / "packet").iterdir())
+            self.assertEqual(packet, sorted([f"run-{n:02d}.jsonl" for n in range(1, 6)] + ["rules.json", "steps.json"]))
+            for name in packet:
+                body = (root / "packet" / name).read_text(encoding="utf-8")
+                self.assertNotIn("window", body)
+                self.assertFalse([word for word in track.LEAKS if word in body.lower()], name)
+            self.assertTrue(track.line_j0(record).startswith(
+                "M600_D02_J0_FAIL planted=3 caught_driver=1 caught_subagent=not_run caught_any=1 replay=9/9"))
+            self.assertIn("| opus-01 | Opus |", (root / track.J0_REPORT).read_text(encoding="utf-8"))
+            answers = {run: {"broken": truth["label"] in ("opus-02", "clean-1"), "rules": ["digest"]}
+                       for run, truth in key["runs"].items()}
+            (out / "answers.json").write_text(json.dumps(answers), encoding="utf-8")
+            code, scored = track.score(out / "a", out / "answers.json")
+            self.assertEqual((scored["caught_subagent"], scored["caught_any"]), (1, 2))
+            self.assertEqual(scored["subagent"]["false_alarms"],
+                             [run for run, truth in key["runs"].items() if truth["label"] == "clean-1"])
+            (out / "short.json").write_text(json.dumps({"run-01": {}}), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                track.score(out / "a", out / "short.json")
+            code, record = track.j0(session, defects, out / "b", None, replayer=replayer,
+                                    player=lambda *a: player(*a, leak="read from plant/opus-01/samples"))
+            self.assertEqual(len(record["packet"]["problems"]), 5)
+            self.assertFalse(list((out / "b" / "j0" / "packet").glob("run-*")))
+            self.assertTrue(record["false_alarms"] == [] and not record["passed"])
+            many = dict(record, planted=20, caught_any=16, packet={"problems": []},
+                        replay={"bound": 9, "words": 9, "problems": []})
+            self.assertTrue(track.j0_passed(many))
+            self.assertFalse(track.j0_passed(dict(many, caught_any=15)))
+            self.assertFalse(track.j0_passed(dict(many, false_alarms=["clean-1: [digest] x"])))
+            self.assertFalse(track.j0_passed(dict(many, replay={"bound": 8, "words": 9, "problems": []})))
+            self.assertEqual(track.main(["--reduced", "--only", "j0", "--out", str(out / "a")]), 2)
+            self.assertEqual(track.main(["--score", str(out / "a")]), 2)
+
 
 class D02SceneLook(unittest.TestCase):
     def test_the_scene_look_expectation_checks_changes_without_touching_state_or_style(self):

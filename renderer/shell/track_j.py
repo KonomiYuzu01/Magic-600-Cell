@@ -37,7 +37,9 @@ sys.dont_write_bytecode = True
 
 import argparse
 import json
+import random
 import re
+import shutil
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -56,6 +58,7 @@ OPEN = "Space"
 UNAVAILABLE = "Unavailable: "
 PIECES = 177_120
 STEP_KINDS = {"op", "chord", "text", "wait_ms", "hold", "release"}
+J0_KINDS = STEP_KINDS | {"open"}
 # J1's third part, the repair list's boundary, is named in not_run while it cannot run by keys.
 REPAIR_PART = "repair-boundary"
 OP_KEYS = {"op", "argument", "wait_ms", "refused", "close"}
@@ -81,15 +84,17 @@ def shown(label: str, argument: str | None) -> str:
     return label + (f": {argument}" if argument is not None else "")
 
 
-def expand(steps: list[dict], not_run: dict | None = None) -> tuple[list[dict], list[dict]]:
+def expand(steps: list[dict], not_run: dict | None = None,
+           kinds: set[str] = STEP_KINDS) -> tuple[list[dict], list[dict]]:
     """A part's steps as d02 script steps, and each op with the screen dumps of its typed line, its Enter and its last
-    step (step i of the script is screen dump i + 1: dump 0 is the shell's start)."""
+    step (step i of the script is screen dump i + 1: dump 0 is the shell's start). J0's session may also open one of
+    Local's sections (kinds=J0_KINDS), since the repair list has no key route yet."""
     not_run = not_run or {}
     script, ops = [], []
     for step in steps:
-        if set(step) - (OP_KEYS if "op" in step else STEP_KINDS) or ("op" not in step and len(step) != 1):
-            raise ValueError(f"a J1 step is an op (with optional argument, wait_ms, refused and close), a chord, a "
-                             f"hold, a release, a text or a wait_ms: {step}")
+        if set(step) - (OP_KEYS if "op" in step else kinds) or ("op" not in step and len(step) != 1):
+            raise ValueError(f"a session step is an op (with optional argument, wait_ms, refused and close) or one of "
+                             f"{sorted(kinds)}: {step}")
         if "op" not in step:
             script.append(dict(step))
             continue
@@ -115,7 +120,7 @@ def expand(steps: list[dict], not_run: dict | None = None) -> tuple[list[dict], 
 
 
 def expected_do(step: dict) -> str:
-    for kind in ("chord", "text", "hold", "release"):
+    for kind in ("chord", "text", "hold", "release", "open"):
         if kind in step:
             return f"{kind} {step[kind]}"
     return f"wait {step['wait_ms']} ms"
@@ -431,29 +436,919 @@ def load_session(path: Path = SESSION) -> dict:
     return session
 
 
+# J0 (B33): planted defects, the seed 7001 replay, and the packet the researcher subagent reads. Each defect is
+# planted in a copy of Look Lab's samples (launch.py --d02-data) and the fixed session in j0-session.json is played on
+# it; the checks read the screens against the repository's samples, never against the planted copy.
+J0_SESSION = d02_run.SAMPLES / "j0-session.json"
+DEFECTS = d02_run.SAMPLES / "defects.json"
+DATA = d02_run.SAMPLES.parent
+WORDS = d02_run.SAMPLES / "seed7001-words.json"
+PANEL = DATA / "research" / "panel.json"
+J0_FORMAT = "magic600-d02-j0-session/1"
+DEFECTS_FORMAT = "magic600-d02-defects/1"
+KEY_FORMAT = "magic600-d02-j0-key/1"
+J0_RECORD = "track-j0.json"
+J0_REPORT = "track-j0.md"
+LEAST, SHARE = 20, 0.8
+FAULTED, CLEAN_RUNS = 8, ("clean-1", "clean-2")
+PACKET_SEED = 33
+DEFECT_ID = re.compile(r"^(opus|fable)-\d{2}$")
+# Words that never reach the researcher's packet: they would name a planted copy, a defect or a run's label.
+LEAKS = ("plant", "defect", "opus-", "fable-", *CLEAN_RUNS)
+# A dump's fields that are the harness's (the window's foreground), not the screen's.
+HARNESS_KEYS = ("window",)
+LEGEND = (("blocked", "blocked"), ("closed", "closed"), ("at_floor", "at floor (N_c = F_c > 0)"),
+          ("above_floor", "above floor"), ("pending", "pending"))
+OFF_LATTICE_BAND = "ν band: undefined (pieces off the lattice)"
+PAIR = re.compile(r"^-?\d+ -?\d+$")
+SIGNED = re.compile(r"^[+\-−]?\d+$")
+# The rules a J0 problem names, and the researcher's answers name, each with the sentence the packet gives for it.
+RULES = {
+    "digest": "the shell binds the state by its digests and names it in every screen",
+    "state": "no view, tint or filter changes the state, and only a naming row changes the named cap",
+    "boundary": "the program never acts unasked",
+    "lattice": "off the lattice, the strip, the rail and the ν band read undefined",
+    "cap-readouts": "the named cap's N_c, floor and readout are the engine's record of that cap",
+    "cap-map": "the cap map's legend counts the caps of each class",
+    "threshold": "a threshold counts members, non-members, blocked and pending caps apart",
+    "blocked-undefined": "at a blocked cap, N_c, the floor, the covers and the repair rows are undefined, never a number",
+    "covers": "Cap covers lists each side as the record answers it, and a NotApplicable side is never a pass",
+    "repair-rows": "the repair list shows the record's rows, no more and no fewer",
+    "repair-order": "the repair rows keep the record's order, and no row is focused on open",
+    "delta-n": "each repair row's ΔN keeps the record's value and sign",
+    "never-hidden": "the cut trace and a blocked cap's straddlers are outlined and never hidden, piece by piece",
+    "style-bytes": "the tint's bytes are the engine's piece sets, piece by piece",
+    "contact-classes": "the contact classes are the engine's, and no class is reused across a contact",
+    "verdict": "each research claim shows its latest check's verdict, and the head counts them",
+    "cut-off": "a check cut off by its budget reads 'not found within budget', never as finished",
+}
+# Section 7's defect classes.
+CLASSES = [
+    "repair rows reordered or pre-focused",
+    "N_c at a blocked cap",
+    "total N as a sum of caps",
+    "pending shown as undefined",
+    "a late result overwriting a newer one",
+    "a result without coverage shown as ready",
+    "a folded row with a numeral",
+    "a class reused across a contact",
+    "a blocked cap counted as a non-member",
+    'a cut-off worded as "none"',
+    "NotApplicable counted as a pass",
+    "research output admitted to a solving preview",
+    "a digest changed by one character",
+    "a ΔN sign flipped",
+    "a style byte for the wrong piece",
+]
+# The classes a sample file cannot plant in this build, with the reason the report gives.
+NOT_PLANTABLE = {
+    "total N as a sum of caps": "J0's fixture state, wj-ia-300, is off the lattice, where the strip and the rail read "
+                                "undefined; adding the caps would be a change to the shell's code (ShellJumble.cs), "
+                                "not to a sample",
+    "pending shown as undefined": "wj-ia-300's rim is complete (pending 0), and the pending wording is the shell's "
+                                  "(ShellJumble.cs)",
+    "a late result overwriting a newer one": "an ordering fault between two jobs; sample mode answers from files, "
+                                             "with no job that can finish late",
+    "a result without coverage shown as ready": "the readiness test is the shell's: a sample with its coverage taken "
+                                                "out tests the shell, not a planted fault",
+    "a folded row with a numeral": "folded rows are written at run time from superseded releases (ADR-D02.35, .36); "
+                                   "no sample file holds one",
+    "research output admitted to a solving preview": "sample mode has no solving preview, and admission is the "
+                                                     "command layer's",
+}
+
+
+def load_j0_session(path: Path = J0_SESSION) -> dict:
+    session = json.loads(path.read_text(encoding="utf-8"))
+    if session.get("format") != J0_FORMAT:
+        raise ValueError(f"{path.name} is not a {J0_FORMAT} file")
+    unknown = sorted({entry["rule"] for entry in session["checks"]} - set(J0_CHECKS))
+    if unknown:
+        raise ValueError(f"{path.name} checks rules J0 does not know: {unknown}")
+    expand(session["steps"], {}, J0_KINDS)
+    return session
+
+
+def load_defects(paths: list[Path]) -> list[dict]:
+    """Every defect of the files named, in order; each is {id, by, class, rule, change[, note]}."""
+    defects, seen = [], set()
+    for path in paths:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        if doc.get("format") != DEFECTS_FORMAT:
+            raise ValueError(f"{path.name} is not a {DEFECTS_FORMAT} file")
+        for defect in doc["defects"]:
+            missing = sorted({"id", "by", "class", "rule", "change"} - set(defect))
+            if missing:
+                raise ValueError(f"{path.name}: a defect lacks {missing}")
+            if not DEFECT_ID.match(defect["id"]) or defect["id"] in seen:
+                raise ValueError(f"{path.name}: defect id {defect['id']!r} is not opus-NN or fable-NN, or repeats")
+            if defect["class"] not in CLASSES:
+                raise ValueError(f"{defect['id']}: {defect['class']!r} is not one of section 7's classes")
+            if defect["rule"] not in RULES:
+                raise ValueError(f"{defect['id']}: {defect['rule']!r} is not a J0 rule")
+            if not defect["change"]:
+                raise ValueError(f"{defect['id']}: the defect changes nothing")
+            seen.add(defect["id"])
+            defects.append(defect)
+    return defects
+
+
+def flip_mask(mask: dict, bits: list[int]) -> dict:
+    """A piece mask (bits-le-zlib-base64) with the bits named flipped, its count and digest written again."""
+    import base64
+    import hashlib
+    import zlib
+    raw = bytearray(zlib.decompress(base64.b64decode(mask["data"])))
+    for bit in bits:
+        if not 0 <= bit < len(raw) * 8:
+            raise ValueError(f"bit {bit} is outside the mask")
+        raw[bit >> 3] ^= 1 << (bit & 7)
+    return {**mask, "data": base64.b64encode(zlib.compress(bytes(raw), 9)).decode("ascii"),
+            "sha256": hashlib.sha256(raw).hexdigest(), "count": sum(bin(b).count("1") for b in raw)}
+
+
+def plant_change(doc, change: dict) -> None:
+    """Applies one change at its JSON path: set, negate (a number), swap (two items of a list), char (one character of
+    a string) or mask_flip (bits of a piece mask). A change that leaves its value as it was is refused."""
+    node = doc
+    path = change["path"]
+    for key in path[:-1]:
+        node = node[key]
+    key = path[-1]
+    before = json.dumps(node[key], sort_keys=True)
+    op = change["op"]
+    if op == "set":
+        node[key] = change["value"]
+    elif op == "negate":
+        if isinstance(node[key], bool) or not isinstance(node[key], (int, float)):
+            raise ValueError(f"negate needs a number at {path}")
+        node[key] = -node[key]
+    elif op == "swap":
+        items = node[key]
+        items[change["i"]], items[change["j"]] = items[change["j"]], items[change["i"]]
+    elif op == "char":
+        text, place, to = node[key], change["at"], change["to"]
+        if not isinstance(text, str) or len(to) != 1 or not 0 <= place < len(text):
+            raise ValueError(f"char needs a string and one character at {path}")
+        node[key] = text[:place] + to + text[place + 1:]
+    elif op == "mask_flip":
+        node[key] = flip_mask(node[key], change["bits"])
+    else:
+        raise ValueError(f"unknown change {op!r}")
+    if json.dumps(node[key], sort_keys=True) == before:
+        raise ValueError(f"the change at {path} leaves the value as it was")
+
+
+def plant(defect: dict, folder: Path, source: Path = DATA) -> list[str]:
+    """Copies the samples into folder/samples (without the defect lists and the sessions) and applies the defect's
+    changes; answers the sample files it changed. A clean run's defect has no change."""
+    samples = folder / "samples"
+    shutil.copytree(source, samples, ignore=shutil.ignore_patterns("defects*.json", "j0-session.json",
+                                                                   "j1-session.json"))
+    docs: dict[str, object] = {}
+    root = samples.resolve()
+    for change in defect["change"]:
+        name = change["file"]
+        target = (samples / name).resolve()
+        if root not in target.parents or not target.is_file() or target.suffix != ".json":
+            raise ValueError(f"{defect['id']}: {name} is not a sample JSON file")
+        if name not in docs:
+            docs[name] = json.loads(target.read_text(encoding="utf-8"))
+        try:
+            plant_change(docs[name], change)
+        except (KeyError, IndexError, TypeError, ValueError) as error:
+            raise ValueError(f"{defect['id']}: {name}: {error}") from None
+    for name, doc in docs.items():
+        (samples / name).write_text(json.dumps(doc, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    return sorted(docs)
+
+
+def replay(root: Path, writer: Path | None = None, write=None) -> dict:
+    """The seed 7001 replay (section 7): the host's own engine, the fixture writer, executes the start's word and then
+    each of the nine words in turn, and the state after each word must bind to the sample the word file names: the
+    head's digest equals the word's output digest and all three digests equal that sample's (build_d02_fixtures.write
+    refuses a fixture that differs). The words' letters must extend the start as the research word does; a write that
+    fails is the word's problem."""
+    import build_d02_fixtures as fixtures
+    write = write or fixtures.write
+    writer = writer or fixtures.WRITER
+
+    def bind(state: str, letters: list) -> str:
+        write(writer, state, fixtures.moving(letters, identity)[0], folder)
+        return json.loads((folder / state / "fixture.json").read_text(encoding="utf-8"))["digest"]
+
+    doc = json.loads(WORDS.read_text(encoding="utf-8"))
+    every, identity = fixtures.words(), fixtures.identity_items()
+    folder = root / "replay"
+    problems: list[str] = []
+    word = [list(letter) for letter in every[doc["start"]]]
+    before = None
+    try:
+        before = bind(doc["start"], word)
+    except fixtures.FixtureError as error:
+        problems.append(f"the start {doc['start']} does not bind: {error}")
+    rows = []
+    for part in doc["parts"]:
+        word += [list(letter) for letter in part["letters"]]
+        row = {"word": part["name"], "after": part["after"], "letters": part["letters"], "bound": False}
+        rows.append(row)
+        if word != every[part["after"]]:
+            row["problem"] = f"its letters do not extend {doc['start']} to {part['after']} as the research word does"
+            before = None
+            continue
+        if before is not None and part["input_digest"] != before:
+            row["problem"] = f"its input digest is not the state before it ({before[:12]})"
+        try:
+            digest = bind(part["after"], word)
+        except fixtures.FixtureError as error:
+            row["problem"] = str(error)
+            before = None
+            continue
+        row["digest"] = digest
+        if digest != part["output_digest"]:
+            row["problem"] = f"the state's digest {digest[:12]} is not the word's output digest {part['output_digest'][:12]}"
+        row["bound"] = "problem" not in row
+        before = digest
+    if doc["parts"] and doc["parts"][-1]["output_digest"] != doc["solved_digest"]:
+        problems.append("the last word does not end at the solved digest")
+    return {"bound": sum(1 for row in rows if row["bound"]), "words": len(rows), "start": doc["start"],
+            "rows": rows, "problems": problems}
+
+
+# J0's checks: each takes a run's dumps, the session's ops, the session's check entry and the sample state, and
+# returns its problems; the rule a problem names is the entry's.
+J0_CHECKS: dict = {}
+
+
+def j0_check(rule: str):
+    def register(function):
+        J0_CHECKS[rule] = function
+        return function
+    return register
+
+
+def sample(state: str, name: str):
+    return d02_run.load(d02_run.SAMPLES / state / name)
+
+
+def tier1(row: dict) -> str:
+    """The cap map panel's line for a named cap (as expect_name_cap reads it)."""
+    if row["status"] == "admissible":
+        return f"cap {row['cap']} · N_c {row['N_c']} · floor {row['F_c']} · u 0 · 80 meeting caps"
+    return f"cap {row['cap']} · N_c undefined · floor undefined"
+
+
+def said(lines: list[str], head: str) -> list[str]:
+    return [text for text in lines if text.startswith(head)][:2]
+
+
+@j0_check("digest")
+def j0_digest(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    """From the first step on, every screen's top bar reads `bound · <state>` and the tint is bound to the state."""
+    want = f"bound · {state}"
+    bad = [i for i in range(1, len(dumps)) if want not in d02_run.texts(dumps[i], "frame")
+           or (dumps[i].get("tint") or {}).get("bound") != state]
+    if not bad:
+        return []
+    shown = said(d02_run.texts(dumps[bad[0]], "frame"), "bound") + said(d02_run.texts(dumps[bad[0]], "frame"), "unbound")
+    return [f"{len(bad)} screens from screen {bad[0]} do not read {want!r} with the tint bound (screen {bad[0]} reads "
+            f"{shown})"]
+
+
+@j0_check("state")
+def j0_state(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    return state_unchanged(dumps, ops, entry, state)
+
+
+@j0_check("boundary")
+def j0_boundary(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    unasked = boundary(dumps)
+    return [f"the Jumble host's BoundaryLedger counted {unasked} unasked acts"] if unasked else []
+
+
+@j0_check("lattice")
+def j0_lattice(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    off = sample(state, "totals.json")["off_lattice"] > 0
+    cell = "Jumble · " + ("off the lattice" if off else "on the lattice")
+    band = OFF_LATTICE_BAND if off else d02_run.nu_words(state)["band"]
+    problems = []
+    for ref in entry["at"]:
+        dump = at(dumps, ops, ref)
+        frame = d02_run.texts(dump, "frame")
+        if cell not in frame:
+            problems.append(f"{ref}: the top bar does not read {cell!r}")
+        if off and frame.count("undefined") < 2:
+            problems.append(f"{ref}: the strip and the rail are not undefined off the lattice")
+        if (dump.get("nu") or {}).get("band") != band:
+            problems.append(f"{ref}: the ν band reads {(dump.get('nu') or {}).get('band')!r}, not {band!r}")
+    return problems
+
+
+@j0_check("cap-readouts")
+def j0_cap_readouts(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    rows, problems = sample(state, "rim.json")["rows"], []
+    for ref, cap in entry["at"]:
+        row, dump = rows[cap], at(dumps, ops, ref)
+        if row["status"] != "admissible":
+            raise ValueError(f"j0-session.json reads cap {cap}'s readouts, but the sample does not admit it")
+        panel, local = d02_run.texts(dump, "panel:jumble.cap_map"), d02_run.texts(dump, "view:Local")
+        if not any(text.startswith(tier1(row)) for text in panel):
+            problems.append(f"{ref}: the cap map's panel reads {said(panel, f'cap {cap} ·')}, not {tier1(row)!r}")
+        missing = [key for key in ("In_c", "Out_c", "A_c", "N_c") if str(row[key]) not in local]
+        if missing:
+            problems.append(f"{ref}: Local's readout does not show cap {cap}'s {', '.join(missing)} "
+                            f"({', '.join(str(row[key]) for key in missing)})")
+        if "▸ Named cap · 1" not in local and "▾ Named cap · 1" not in local:
+            problems.append(f"{ref}: Local's Named cap section does not count the named cap")
+    return problems
+
+
+@j0_check("cap-map")
+def j0_cap_map(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    classes, problems = sample(state, "totals.json")["cap_classes"], []
+    for ref in entry["at"]:
+        panel = d02_run.texts(at(dumps, ops, ref), "panel:jumble.cap_map")
+        for key, word in LEGEND:
+            if f"{word} · {classes[key]}" not in panel:
+                problems.append(f"{ref}: the legend reads {said(panel, word + ' ·')}, not {word} · {classes[key]}")
+    return problems
+
+
+@j0_check("threshold")
+def j0_threshold(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    rows, k = sample(state, "rim.json")["rows"], entry["n_c"]
+    admissible = [row for row in rows if row["status"] == "admissible"]
+    members = sum(1 for row in admissible if row["N_c"] >= k)
+    blocked = sum(1 for row in rows if row["status"] == "blocked")
+    line = (f"members {members} · non-members {len(admissible) - members} · blocked {blocked} · "
+            f"pending {600 - len(admissible) - blocked}")
+    panel = d02_run.texts(at(dumps, ops, entry["at"]), "panel:jumble.cap_map")
+    problems = []
+    if line not in panel:
+        problems.append(f"{entry['at']}: the threshold counts read {said(panel, 'members')}, not {line!r}")
+    if f"N_c ≥ {k}" not in panel:
+        problems.append(f"{entry['at']}: the threshold field does not read N_c ≥ {k}")
+    return problems
+
+
+@j0_check("blocked-undefined")
+def j0_blocked(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    rows, problems = sample(state, "rim.json")["rows"], []
+    for ref, cap in entry["at"]:
+        row, dump = rows[cap], at(dumps, ops, ref)
+        if row["status"] == "admissible":
+            raise ValueError(f"j0-session.json names cap {cap} as blocked, but the sample admits it")
+        panel, local = d02_run.texts(dump, "panel:jumble.cap_map"), d02_run.texts(dump, "view:Local")
+        if not any(text.startswith(tier1(row)) for text in panel):
+            problems.append(f"{ref}: the cap map's panel reads {said(panel, f'cap {cap} ·')}, not {tier1(row)!r}")
+        if f"cap {cap} is blocked or uncertain" not in local:
+            problems.append(f"{ref}: Local does not say that cap {cap} is blocked or uncertain")
+        repair = dump.get("repair") or {}
+        if repair.get("rows") != 0 or not any(text in local for text in ("▾ Repair list · 0", "▸ Repair list · 0")):
+            problems.append(f"{ref}: the repair list counts {repair.get('rows')} rows at the blocked cap "
+                            f"({said(local, '▾ Repair list') + said(local, '▸ Repair list')})")
+        if dump.get("covers") or not any(text in local for text in ("▾ Cap covers · 0", "▸ Cap covers · 0")):
+            problems.append(f"{ref}: Cap covers answers at the blocked cap ({said(local, '▸ Cap covers')} "
+                            f"{(dump.get('covers') or [''])[0][:80]!r})")
+    return problems
+
+
+@j0_check("covers")
+def j0_covers(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    problems = []
+    for ref, cap in entry["at"]:
+        record, dump = sample(state, f"cap-{cap}.json"), at(dumps, ops, ref)
+        want, got = d02_run.covers_lines(record), dump.get("covers") or []
+        for i, line in enumerate(want):
+            if i >= len(got) or got[i] != line:
+                problems.append(f"{ref}: Cap covers line {i + 1} reads {(got[i] if i < len(got) else None)!r:.160}, "
+                                f"the record gives {line!r:.160}")
+                break
+        if len(got) > len(want):
+            problems.append(f"{ref}: Cap covers shows {len(got) - len(want)} lines more than the record gives")
+        count = len(record["covers"]["domain"])
+        if f"▾ Cap covers · {count}" not in d02_run.texts(dump, "view:Local"):
+            problems.append(f"{ref}: Local's open Cap covers section does not count {count} meeting caps")
+    return problems
+
+
+def repair_shown(dump: dict) -> tuple[int | None, list[tuple]]:
+    """Local's open Repair list: its header's count and its rows (#, (x, d), (y, z), ΔN) as the screen lists them."""
+    local = d02_run.texts(dump, "view:Local")
+    head = next((i for i, text in enumerate(local) if text.startswith("▾ Repair list · ")), None)
+    if head is None:
+        return None, []
+    count = int(local[head].rsplit(" ", 1)[1].replace(",", ""))
+    i, rows = head + 5, []
+    if local[head + 1:head + 5] != ["#", "x d", "y z", "ΔN"]:
+        return count, rows
+    while i + 3 < len(local) and local[i].isdigit() and PAIR.match(local[i + 1]) and PAIR.match(local[i + 2]) \
+            and SIGNED.match(local[i + 3]):
+        rows.append((int(local[i]), tuple(map(int, local[i + 1].split())), tuple(map(int, local[i + 2].split())),
+                     int(local[i + 3].replace("−", "-"))))
+        i += 4
+    return count, rows
+
+
+def repair_record(state: str, cap: int) -> list[tuple]:
+    return [((x, d), (y, z), dn) for x, d, y, z, dn in sample(state, f"cap-{cap}.json")["repair_list"]["completed"]["rows"]]
+
+
+@j0_check("repair-rows")
+def j0_repair_rows(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    problems = []
+    for ref, cap in entry["at"]:
+        want, dump = repair_record(state, cap), at(dumps, ops, ref)
+        count, shown = repair_shown(dump)
+        if count != len(want) or (dump.get("repair") or {}).get("rows") != len(want):
+            problems.append(f"{ref}: the repair list counts {count} rows ({(dump.get('repair') or {}).get('rows')} in "
+                            f"the list), the record {len(want)}")
+        got = sorted((xd, yz) for _, xd, yz, _ in shown)
+        if got != sorted((xd, yz) for xd, yz, _ in want):
+            extra = sorted(set(got) - {(xd, yz) for xd, yz, _ in want})[:3]
+            lost = sorted({(xd, yz) for xd, yz, _ in want} - set(got))[:3]
+            problems.append(f"{ref}: the list shows {len(got)} rows, not the record's {len(want)} (not in the record: "
+                            f"{extra}; not shown: {lost})")
+    return problems
+
+
+@j0_check("repair-order")
+def j0_repair_order(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    problems = []
+    for ref, cap in entry["at"]:
+        want, dump = repair_record(state, cap), at(dumps, ops, ref)
+        _, shown = repair_shown(dump)
+        # The shell refuses a list whose rows break the (x, d) order (RepairListModel.Read) and says so on its lamp.
+        refused = str((dump.get("errors") or {}).get("last") or "")
+        if "(x, d) order" in refused:
+            problems.append(f"{ref}: the shell refused the repair list: {refused[:160]}")
+        if (dump.get("repair") or {}).get("focused") != 0:
+            problems.append(f"{ref}: row {(dump.get('repair') or {}).get('focused')} is focused on open")
+        if [n for n, _, _, _ in shown] != list(range(1, len(shown) + 1)):
+            problems.append(f"{ref}: the # column does not count 1 to {len(shown)}")
+        got, order = [(xd, yz) for _, xd, yz, _ in shown], [(xd, yz) for xd, yz, _ in want]
+        if sorted(got) == sorted(order) and got != order:
+            first = next(i for i, (a, b) in enumerate(zip(got, order)) if a != b)
+            problems.append(f"{ref}: row {first + 1} shows {got[first]}, the record's row {first + 1} is {order[first]}")
+    return problems
+
+
+@j0_check("delta-n")
+def j0_delta_n(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    problems = []
+    for ref, cap in entry["at"]:
+        want = {(xd, yz): dn for xd, yz, dn in repair_record(state, cap)}
+        _, shown = repair_shown(at(dumps, ops, ref))
+        wrong = [(n, xd, yz, dn, want[(xd, yz)]) for n, xd, yz, dn in shown if (xd, yz) in want and want[(xd, yz)] != dn]
+        if wrong:
+            n, xd, yz, dn, value = wrong[0]
+            problems.append(f"{ref}: {len(wrong)} rows show another ΔN (row {n}, x d {xd}, y z {yz}: {dn}, the record "
+                            f"{value})")
+    return problems
+
+
+@j0_check("never-hidden")
+def j0_never_hidden(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    """Rule 5 as J1 reads it (never_hidden), with the bytes composed for the screen's tint mode (style_expected)."""
+    tables = d02_run.tint_tables(state)
+    problems = []
+    for ref, cap, focus in entry["at"]:
+        dump = at(dumps, ops, ref)
+        overlay, tint = dump.get("overlay"), dump.get("tint")
+        if not isinstance(overlay, dict) or not isinstance(tint, dict):
+            problems.append(f"{ref}: the screen has no overlay or tint")
+            continue
+        want = d02_run.overlay_expected(tables, state, cap, None, focus, tint.get("hover"), tint.get("selection"))
+        line = d02_run.overlay_words(want)
+        want["outline_sha256"], want["fill_sha256"] = style_expected(tables, state, tint.get("mode"), cap, focus,
+                                                                     tint.get("hover"), tint.get("selection"))
+        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", line)]:
+            shown = overlay if key not in ("outline_sha256", "fill_sha256", "focus") else tint
+            if shown.get(key) != value:
+                problems.append(f"{ref}: {key} is {str(shown.get(key))[:100]!r}, not {str(value)[:100]!r}")
+        if want["never_hidden"] and overlay.get("kept_dimmed"):
+            problems.append(f"{ref}: {overlay['kept_dimmed']} never-hidden pieces carry the dim bit")
+    return problems
+
+
+def style_expected(tables: dict, state: str, mode: str, cap: int | None, focus: str | None = None,
+                   hover: int | None = None, selection: int | None = None) -> tuple[str, str]:
+    """The sha256 of the outline and fill bytes sent to the core at a tint screen, tint_expected and overlay_expected
+    composed: the mode's outline (the contact classes, or none for the height ramp) with the named cap's lines as entry
+    15, then the hover's and the selection's outlines; the mode's fill (the height ramp, or none) with the dim bit on
+    every piece outside the focused domain that is neither a line nor never hidden."""
+    import hashlib
+    ids, domain = tables["ids"], tables["domain"]
+    pieces, rows = len(ids), range(len(domain))
+    outline_row, fill_row = [0] * len(rows), [0] * len(rows)
+    if mode == "contact":
+        outline_row = [d02_run.class_entry(tables["classes"][domain[r]]) for r in rows]
+    elif mode == "height":
+        fill_row = [d02_run.height_entry(tables["height"][r]) for r in rows]
+    elif mode == "off-lattice":
+        outline_row = [0 if tables["lattice"][r] else 14 for r in rows]
+    lines = never = None
+    if cap is not None:
+        masks = sample(state, f"cap-{cap}.json").get("masks", {})
+        never = d02_run.overlay_mask(masks["straddlers"], pieces) if "straddlers" in masks else None
+        lines = never or (d02_run.overlay_mask(masks["inside"], pieces) if "inside" in masks else None)
+    outline = bytearray(outline_row[p] for p in ids)
+    fill = bytearray(fill_row[p] for p in ids)
+    for p in range(pieces):
+        if lines and lines[p]:
+            outline[p] = 15
+        if focus is not None and domain[ids[p]] != d02_run.OVERLAY_DOMAIN and not (lines and lines[p])                 and not (never and never[p]):
+            fill[p] |= 0x80
+    if hover is not None:
+        outline[hover] = 2
+    if selection is not None:
+        outline[selection] = 1
+    return hashlib.sha256(bytes(outline)).hexdigest(), hashlib.sha256(bytes(fill)).hexdigest() if any(fill) else ""
+
+
+@j0_check("style-bytes")
+def j0_style_bytes(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    """At each tint screen, with the cap named there: the outline and fill bytes piece by piece (style_expected), and
+    the mode, the legend on both borders and the focus as tint_expected gives them (the contact-classes check reads
+    the classes)."""
+    tables = d02_run.tint_tables(state)
+    problems = []
+    for ref, mode, cap in entry["at"]:
+        tint = at(dumps, ops, ref).get("tint")
+        if not isinstance(tint, dict):
+            problems.append(f"{ref}: the screen has no tint")
+            continue
+        want = d02_run.tint_expected(tables, mode, None, tint.get("hover"), tint.get("selection"))
+        want["outline_sha256"], want["fill_sha256"] = style_expected(tables, state, mode, cap, None, tint.get("hover"),
+                                                                     tint.get("selection"))
+        for key, value in want.items():
+            if key != "classes" and tint.get(key) != value:
+                problems.append(f"{ref} ({mode}): {key} is {str(tint.get(key))[:100]!r}, not {str(value)[:100]!r}")
+    return problems
+
+
+@j0_check("contact-classes")
+def j0_contact_classes(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    contact, problems = sample(state, "contact.json"), []
+    for ref in entry["at"]:
+        classes = (at(dumps, ops, ref).get("tint") or {}).get("classes")
+        if not isinstance(classes, list) or len(classes) != len(contact["classes"]):
+            problems.append(f"{ref}: the tint shows {str(classes)[:80]!r} as the contact classes")
+            continue
+        reused = [(a, b) for a, b, *_ in contact["edges"] if classes[a] and classes[a] == classes[b]]
+        if reused:
+            a, b = reused[0]
+            problems.append(f"{ref}: domains {a} and {b} touch and both show class {classes[a]} ({len(reused)} contacts)")
+        differ = [d for d, (got, want) in enumerate(zip(classes, contact["classes"])) if got != want]
+        if differ:
+            problems.append(f"{ref}: {len(differ)} domains show another class than the engine's (domain {differ[0]}: "
+                            f"{classes[differ[0]]}, the engine {contact['classes'][differ[0]]})")
+    return problems
+
+
+def claim_verdict(row: dict) -> tuple[str, str]:
+    """A research claim's verdict words and count from its latest check, as the Claims tab writes them."""
+    check = row.get("latest_check")
+    if check is None:
+        return "not checked", "no_check"
+    if check.get("outcome") == "cut_off" or (check.get("reading") or {}).get("kind") == "cut_off":
+        return "not found within budget", "no_check"
+    kinds = {verdict.get("kind") for verdict in check.get("verdicts", [])}
+    if "fail" in kinds:
+        return f"fails within {row['scope_phrase']}", "fails"
+    if kinds == {"not_applicable"}:
+        return "not applicable (scope only)", "no_check"
+    if kinds == {"pass"}:
+        return f"holds within {row['scope_phrase']}", "holds"
+    raise ValueError(f"no verdict word for {row['group']}'s latest check")
+
+
+def claims_problems(dump: dict, ref: str, cut_off: bool) -> list[str]:
+    """The Claims tab against the research sample: with `cut_off`, the rows whose latest check was cut off; without,
+    the other rows, the counts and the head."""
+    panel = d02_run.load(PANEL)
+    rows = panel["answers"]["research.claims"]["answer"]["rows"]
+    research = dump.get("research") or {}
+    shown = {line.get("ref"): line.get("verdict") for line in research.get("lines", []) if line.get("kind") == "Row"}
+    problems = []
+    counts = {"groups": len(rows), "holds": 0, "fails": 0, "no_check": 0}
+    for row in rows:
+        words, count = claim_verdict(row)
+        counts[count] += 1
+        is_cut = words == "not found within budget"
+        got = shown.get("research.claim/" + row["group"])
+        if is_cut == cut_off and got != words:
+            problems.append(f"{ref}: {row['group'].split(':')[-1]} reads {got!r}, its latest check {words!r}")
+    if not cut_off:
+        head = (f"{counts['groups']} claim groups: holds {counts['holds']} · fails {counts['fails']} · "
+                f"no check {counts['no_check']} · evidence: {panel['evidence']} · current")
+        if research.get("counts") != counts or research.get("head") != head:
+            problems.append(f"{ref}: the head reads {research.get('head')!r}, not {head!r}")
+    return problems
+
+
+@j0_check("verdict")
+def j0_verdict(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    return claims_problems(at(dumps, ops, entry["at"]), entry["at"], cut_off=False)
+
+
+@j0_check("cut-off")
+def j0_cut_off(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
+    return claims_problems(at(dumps, ops, entry["at"]), entry["at"], cut_off=True)
+
+
+def j0_problems(dumps: list[dict], ops: list[dict], session: dict) -> list[tuple[str, str]]:
+    """Every check's problems on one run's screens, each with its rule. A check that cannot read the screens (a field
+    missing under a fault) reports that as its problem."""
+    found = []
+    for entry in session["checks"]:
+        try:
+            problems = J0_CHECKS[entry["rule"]](dumps, ops, entry, session["state"])
+        except (KeyError, IndexError, TypeError, AttributeError) as error:
+            problems = [f"the screens could not be read: {error!r}"[:200]]
+        found += [(entry["rule"], problem) for problem in problems]
+    return found
+
+
+def stable(first: list[dict], second: list[dict]) -> set[tuple[int, str]]:
+    """The (screen, field) pairs that read the same in both clean runs."""
+    return {(i, key) for i, (a, b) in enumerate(zip(first, second)) for key in a.keys() & b.keys()
+            if key not in HARNESS_KEYS and a[key] == b[key]}
+
+
+def visible(dumps: list[dict], clean: list[dict], keys: set[tuple[int, str]]) -> list[str]:
+    """The fields a faulted run shows otherwise than the clean runs, where the two clean runs agree (a diagnostic: a
+    defect the screen never shows cannot be caught from it)."""
+    return sorted({key for i, key in keys if i < len(dumps) and dumps[i].get(key) != clean[i].get(key)})
+
+
+def play_j0(label: str, data: Path, runs: Path, build: Path | None, session: dict,
+            script: Path) -> tuple[list[dict], list[str]]:
+    """Plays the J0 session in a fresh product shell on its state's fixture, in sample mode, reading data/samples;
+    answers its dumps and the run's problems (the window's checks, the steps written)."""
+    d02_run.DATA_FOR["j0"] = lambda out, folder=data: folder
+    code, record = d02_run.run("j0", runs / label, build, session["state"], path=script)
+    screen_file = runs / label / d02_run.SCREEN
+    dumps = [json.loads(line) for line in screen_file.read_text(encoding="utf-8").splitlines() if line.strip()] \
+        if screen_file.is_file() else []
+    problems = list(record["mismatches"])
+    steps, _ = expand(session["steps"], {}, J0_KINDS)
+    wanted = ["start"] + [expected_do(step) for step in steps]
+    if dumps and [dump["do"] for dump in dumps] != wanted:
+        problems.append(f"the shell wrote {len(dumps)} steps, not the session's {len(wanted)}")
+        dumps = []
+    if not dumps and not problems:
+        problems.append("the shell wrote no screens")
+    return dumps, problems
+
+
+def write_packet(root: Path, runs: dict[str, list[dict]], defects: list[dict], script: list[dict], state: str,
+                 seed: int = PACKET_SEED) -> dict:
+    """The researcher's packet (section 7): the screens of 10 runs of the fixed session, 8 faulted and 2 clean, chosen
+    and ordered by a seeded draw and named run-01 to run-10, with the session's steps and the rules an answer names;
+    the key goes to sealed/key.json. A packet file that would name a planted copy, a defect or a run's label is not
+    written, and the packet fails."""
+    rng = random.Random(seed)
+    by_id = {defect["id"]: defect for defect in defects}
+    ready = [defect["id"] for defect in defects if runs.get(defect["id"])]
+    chosen = rng.sample(ready, min(FAULTED, len(ready))) + [label for label in CLEAN_RUNS if runs.get(label)]
+    rng.shuffle(chosen)
+    packet, problems, key = root / "packet", [], {}
+    files = {"steps.json": json.dumps({"state": state, "steps": script}, indent=1, ensure_ascii=False) + "\n",
+             "rules.json": json.dumps(RULES, indent=1, ensure_ascii=False) + "\n"}
+    for n, label in enumerate(chosen, 1):
+        name = f"run-{n:02d}"
+        files[f"{name}.jsonl"] = "".join(json.dumps({k: v for k, v in dump.items() if k not in HARNESS_KEYS},
+                                                    ensure_ascii=False) + "\n" for dump in runs[label])
+        key[name] = {"label": label, "broken": label in by_id, "rule": by_id[label]["rule"] if label in by_id else None}
+    for name, text in files.items():
+        leaks = [word for word in LEAKS if word in text.lower()] + [p for p in (str(root), root.as_posix()) if p in text]
+        if leaks:
+            problems.append(f"packet {name} would leak {leaks}; not written")
+            continue
+        (packet / name).write_text(text, encoding="utf-8", newline="\n")
+    (root / "sealed" / "key.json").write_text(json.dumps({"format": KEY_FORMAT, "seed": seed, "runs": key}, indent=2)
+                                              + "\n", encoding="utf-8", newline="\n")
+    return {"runs": len(chosen), "faulted": sum(1 for v in key.values() if v["broken"]),
+            "clean": sum(1 for v in key.values() if not v["broken"]), "seed": seed, "problems": problems}
+
+
+def j0_passed(record: dict) -> bool:
+    replayed = record["replay"]
+    return (record["planted"] >= LEAST and record["caught_any"] >= SHARE * record["planted"]
+            and replayed["words"] == 9 and replayed["bound"] == 9 and not replayed["problems"]
+            and not record["false_alarms"] and not record["run_problems"] and not record["packet"]["problems"])
+
+
+def j0(session: dict, defects: list[dict], out: Path, build: Path | None, player=play_j0, replayer=replay,
+       writer: Path | None = None) -> tuple[int, dict]:
+    """J0's run: the seed 7001 replay, then the session once on a clean copy, once per defect and once more clean;
+    the checks on every run, each defect caught by the driver when a problem names its rule; the packet; the record
+    (j0/track-j0.json) and the report (j0/track-j0.md)."""
+    root = out / "j0"
+    for name in ("plant", "runs", "scripts", "packet", "sealed"):
+        (root / name).mkdir(parents=True)
+    replayed = replayer(root, writer)
+    script, ops = expand(session["steps"], {}, J0_KINDS)
+    path = root / "scripts" / "j0.json"
+    path.write_text(json.dumps({"format": "magic600-d02-script/1", "name": "j0", "resolution": session["resolution"],
+                                "note": "J0's fixed session", "steps": script}, indent=2) + "\n",
+                    encoding="utf-8", newline="\n")
+    by_id = {defect["id"]: defect for defect in defects}
+    runs: dict[str, list[dict]] = {}
+    run_problems: dict[str, list[str]] = {}
+    changed: dict[str, list[str]] = {}
+    for label in [CLEAN_RUNS[0], *by_id, CLEAN_RUNS[1]]:
+        folder = root / "plant" / label
+        changed[label] = plant(by_id.get(label, {"id": label, "change": []}), folder)
+        runs[label], problems = player(label, folder, root / "runs", build, session, path)
+        if problems:
+            run_problems[label] = problems
+    found = {label: j0_problems(dumps, ops, session) if dumps else [] for label, dumps in runs.items()}
+    false_alarms = [f"{label}: [{rule}] {problem}" for label in CLEAN_RUNS for rule, problem in found[label]]
+    clean = runs[CLEAN_RUNS[0]]
+    keys = stable(clean, runs[CLEAN_RUNS[1]]) if clean and runs[CLEAN_RUNS[1]] else set()
+    rows = []
+    for defect in defects:
+        dumps = runs[defect["id"]]
+        rules = sorted({rule for rule, _ in found[defect["id"]]})
+        rows.append({"id": defect["id"], "by": defect["by"], "class": defect["class"], "rule": defect["rule"],
+                     "files": changed[defect["id"]], "note": defect.get("note", ""), "screens": bool(dumps),
+                     "caught_driver": defect["rule"] in rules, "caught_subagent": None,
+                     "flagged": rules, "problems": [f"[{rule}] {problem}" for rule, problem in found[defect["id"]]][:8],
+                     "visible": visible(dumps, clean, keys) if dumps and keys else None})
+    packet = write_packet(root, runs, defects, script, session["state"])
+    caught = sum(1 for row in rows if row["caught_driver"])
+    record = {"format": "magic600-d02-track-j0-v1", "bar": "j0", "planted": len(rows), "caught_driver": caught,
+              "caught_subagent": None, "caught_any": caught, "least": LEAST, "share": SHARE,
+              "by": {who: sum(1 for row in rows if row["by"] == who) for who in sorted({row["by"] for row in rows})},
+              "replay": replayed, "defects": rows,
+              "classes": {name: sum(1 for row in rows if row["class"] == name) for name in CLASSES},
+              "not_plantable": NOT_PLANTABLE, "false_alarms": false_alarms, "run_problems": run_problems,
+              "packet": packet, "subagent": None}
+    record["passed"] = j0_passed(record)
+    write_j0(root, record)
+    return (0 if record["passed"] else 1), record
+
+
+def score(out: Path, answers_path: Path) -> tuple[int, dict]:
+    """Scores the researcher subagent's answers ({"run-NN": {"broken": bool, "rules": [...]}}, one per packet run)
+    against the sealed key, and writes J0's record and report again with caught_subagent and caught_any."""
+    root = out / "j0"
+    record = json.loads((root / J0_RECORD).read_text(encoding="utf-8"))
+    key = json.loads((root / "sealed" / "key.json").read_text(encoding="utf-8"))
+    if key.get("format") != KEY_FORMAT:
+        raise ValueError(f"{root / 'sealed' / 'key.json'} is not a {KEY_FORMAT} file")
+    answers = json.loads(answers_path.read_text(encoding="utf-8"))
+    if set(answers) != set(key["runs"]):
+        raise ValueError(f"the answers name {sorted(answers)}, the packet {sorted(key['runs'])}")
+    judged, false_alarms = {}, []
+    for run, truth in key["runs"].items():
+        broken, rules = bool(answers[run].get("broken")), list(answers[run].get("rules", []))
+        if truth["broken"]:
+            judged[truth["label"]] = {"caught": broken, "rule_named": truth["rule"] in rules, "run": run}
+        elif broken:
+            false_alarms.append(run)
+    for row in record["defects"]:
+        row["caught_subagent"] = judged[row["id"]]["caught"] if row["id"] in judged else None
+    record["caught_subagent"] = sum(1 for row in record["defects"] if row["caught_subagent"])
+    record["caught_any"] = sum(1 for row in record["defects"] if row["caught_driver"] or row["caught_subagent"])
+    record["subagent"] = {"answers": answers_path.name, "faulted": len(judged), "caught": record["caught_subagent"],
+                          "rule_named": sum(1 for v in judged.values() if v["caught"] and v["rule_named"]),
+                          "false_alarms": false_alarms}
+    record["passed"] = j0_passed(record)
+    write_j0(root, record)
+    return (0 if record["passed"] else 1), record
+
+
+def line_j0(record: dict) -> str:
+    sub = record["caught_subagent"]
+    return (f"M600_D02_J0_{'PASS' if record['passed'] else 'FAIL'} planted={record['planted']} "
+            f"caught_driver={record['caught_driver']} caught_subagent={'not_run' if sub is None else sub} "
+            f"caught_any={record['caught_any']} replay={record['replay']['bound']}/{record['replay']['words']}")
+
+
+def cell(text) -> str:
+    return str(text).replace("|", "\\|").replace("\n", " ")
+
+
+def write_j0(root: Path, record: dict) -> None:
+    """J0's record and its report: the result line, the replay, each defect, the classes, the false alarms, the run
+    problems and the packet. Paths in the report are relative to the out folder."""
+    (root / J0_RECORD).write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8",
+                                  newline="\n")
+    replayed, sub = record["replay"], record["subagent"]
+    lines = ["# Track J0, reduced run", "", "```", line_j0(record), "```", "",
+             f"Planted {record['planted']} defects ({', '.join(f'{who} {n}' for who, n in record['by'].items()) or 'none'}). "
+             f"J0 passes with at least {record['least']} planted, caught_any at least {record['share']:.0%} of them, "
+             "all nine seed 7001 words bound, no problem on the two clean runs and no run problem. A defect is caught "
+             "by the driver when one of its run's problems names the defect's rule; caught_any counts a defect the "
+             "driver or the researcher subagent caught.", "",
+             "## Seed 7001 replay", "",
+             f"The host's fixture writer executes {replayed['start']}'s word and each word after it; the state after "
+             "each word binds to the sample the word file names (all three digests).", "",
+             "| Word | State after | Letters | Bound | Digest | Problem |",
+             "| --- | --- | --- | --- | --- | --- |"]
+    lines += [f"| {r['word']} | {r['after']} | {len(r['letters'])} | {'yes' if r['bound'] else 'no'} | "
+              f"{r.get('digest', '')[:12]} | {cell(r.get('problem', ''))} |"
+              for r in replayed["rows"]]
+    lines += [f"- {cell(problem)}" for problem in replayed["problems"]]
+    lines += ["", "## Defects", "",
+              "| Id | By | Class | Rule | Driver | Other rules flagged | Subagent | Shown on screen |",
+              "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+    for row in record["defects"]:
+        others = [rule for rule in row["flagged"] if rule != row["rule"]]
+        subagent = "not in packet" if row["caught_subagent"] is None else "yes" if row["caught_subagent"] else "no"
+        if sub is None:
+            subagent = "not run"
+        shown = "no screens" if not row["screens"] else "unknown" if row["visible"] is None else \
+            (", ".join(row["visible"][:4]) or "no change")
+        lines.append(f"| {row['id']} | {row['by']} | {cell(row['class'])} | {row['rule']} | "
+                     f"{'caught' if row['caught_driver'] else 'missed'} | {', '.join(others) or '-'} | {subagent} | "
+                     f"{cell(shown)} |")
+    lines += ["", "First problems of each defect's run:", ""]
+    for row in record["defects"]:
+        lines.append(f"- {row['id']} ({', '.join(row['files'])}): " +
+                     ("; ".join(cell(p) for p in row["problems"][:3]) or "no problem"))
+    lines += ["", "## Classes", "", "| Class | Planted | Not planted because |", "| --- | --- | --- |"]
+    lines += [f"| {cell(name)} | {count} | {cell(record['not_plantable'].get(name, '') if not count else '')} |"
+              for name, count in record["classes"].items()]
+    lines += ["", "## False alarms on the clean runs", ""]
+    lines += [f"- {cell(alarm)}" for alarm in record["false_alarms"]] or ["None."]
+    lines += ["", "## Run problems", ""]
+    lines += [f"- {label}: {cell(problem)}" for label, problems in record["run_problems"].items()
+              for problem in problems] or ["None."]
+    packet = record["packet"]
+    lines += ["", "## The researcher's packet", "",
+              f"`j0/packet/` holds {packet['runs']} runs ({packet['faulted']} faulted, {packet['clean']} clean, drawn "
+              f"and ordered with seed {packet['seed']}), named run-01 onwards, with the session's steps and the rules "
+              "an answer names; the key is in `j0/sealed/key.json`. The subagent reads only the packet, the palette's "
+              "rows, the key map sheet and jumbling-observation.md, never the samples, the planted copies, the defect "
+              "lists, the run folders or the key. Its answers ({\"run-01\": {\"broken\": true, \"rules\": [...]}, ...}) "
+              "are scored with `python renderer/shell/track_j.py --score OUT --subagent ANSWERS`."]
+    lines += [f"- {cell(problem)}" for problem in packet["problems"]]
+    if sub is not None:
+        lines += ["", f"Subagent: caught {sub['caught']} of {sub['faulted']} faulted runs, naming the defect's rule for "
+                      f"{sub['rule_named']}; said a clean run was broken for {', '.join(sub['false_alarms']) or 'none'}."]
+    (root / J0_REPORT).write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--reduced", action="store_true", required=True, help="the reduced Track J run (section 7)")
-    parser.add_argument("--only", choices=["j1"], required=True, help="the bar to run; J0 comes with B33")
-    parser.add_argument("--out", type=Path, required=True, help="the out folder, which must not exist yet")
+    parser.add_argument("--reduced", action="store_true", help="the reduced Track J run (section 7)")
+    parser.add_argument("--only", choices=["j0", "j1"], help="one bar (default: J1, then J0)")
+    parser.add_argument("--out", type=Path, help="the out folder, which must not exist yet")
     parser.add_argument("--build", type=Path, help="the product build (default: the newest)")
+    parser.add_argument("--defects", type=Path, action="append", default=[],
+                        help="a further defects file, such as Fable's sealed ten (defects.json is always read)")
+    parser.add_argument("--writer", type=Path, help="the host's fixture writer for the seed 7001 replay")
+    parser.add_argument("--score", type=Path, help="a J0 out folder to score with the researcher subagent's answers")
+    parser.add_argument("--subagent", type=Path, help="the researcher subagent's answers (with --score)")
     args = parser.parse_args(argv)
-    out = args.out.resolve()
-    if out.exists():
-        print(f"track_j: {out} exists; name a new folder")
-        return 2
     try:
-        d02_run.EXPECT["j1"] = lambda dumps, source, state: []  # J1 reads the screens itself, below
-        d02_run.ON_FIXTURE.add("j1")
-        d02_run.IN_SAMPLE_MODE.add("j1")
-        code, record = j1(load_session(), out, args.build)
+        if args.score is not None:
+            if args.subagent is None:
+                print("track_j: --score needs --subagent")
+                return 2
+            code, record = score(args.score.resolve(), args.subagent)
+            print(line_j0(record))
+            return code
+        if not args.reduced or args.out is None:
+            print("track_j: name --reduced and --out (or --score OUT --subagent ANSWERS)")
+            return 2
+        out = args.out.resolve()
+        if out.exists():
+            print(f"track_j: {out} exists; name a new folder")
+            return 2
+        bars = [args.only] if args.only else ["j1", "j0"]
+        for bar in bars:  # J0 and J1 read the screens themselves, below
+            d02_run.EXPECT[bar] = lambda dumps, source, state: []
+            d02_run.ON_FIXTURE.add(bar)
+            d02_run.IN_SAMPLE_MODE.add(bar)
+        session = load_session() if "j1" in bars else None
+        j0_session = load_j0_session() if "j0" in bars else None
+        defects = load_defects([DEFECTS, *args.defects]) if "j0" in bars else []
+        codes = []
+        if "j1" in bars:
+            code, record = j1(session, out, args.build)
+            codes.append(code)
+            print(line(record, code == 0))
+            for problem in record["problems"]:
+                print("  " + problem)
+        if "j0" in bars:
+            code, record = j0(j0_session, defects, out, args.build, writer=args.writer)
+            codes.append(code)
+            print(line_j0(record))
+            problems = record["false_alarms"] + record["replay"]["problems"]
+            problems += [f"replay {row['word']}: {row['problem']}" for row in record["replay"]["rows"] if "problem" in row]
+            problems += record["packet"]["problems"]
+            problems += [f"{label}: {p}" for label, found in record["run_problems"].items() for p in found]
+            for problem in problems:
+                print("  " + problem[:300])
     except (ValueError, OSError) as error:
         print(f"track_j: {error}")
         return 2
-    print(line(record, code == 0))
-    for problem in record["problems"]:
-        print("  " + problem)
-    return code
+    return max(codes)
 
 
 if __name__ == "__main__":
