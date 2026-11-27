@@ -658,13 +658,24 @@ impl CoreAbi for FakeCore {
         if x >= i.viewport_width || y >= i.viewport_height {
             return self.fail(Status::INVALID_ARGUMENT, "the pixel is outside the viewport");
         }
+        // Checkpoint C3.9 (F2): a composite frame's pick answers the pane under the point, its view and its set, as
+        // the core's pick_pane does; a one-view frame (or a point between panes) answers the frame's input view.
+        let (px, py) = (i64::from(x), i64::from(y));
+        let (view, view_generation, set) = frame
+            .panes
+            .iter()
+            .find(|p| {
+                let (left, top) = (i64::from(p.x), i64::from(p.y));
+                px >= left && py >= top && px < left + i64::from(p.width) && py < top + i64::from(p.height)
+            })
+            .map_or((i.view, i.view_generation, i.resource_set), |p| (p.view, p.view_generation, p.resource_set));
         let mut row = Sa2PickRow {
             frame_id,
             device_epoch: i.device_epoch,
             surface: i.surface,
             surface_generation: i.surface_generation,
-            view: i.view,
-            view_generation: i.view_generation,
+            view,
+            view_generation,
             publication_generation: i.publication_generation,
             camera: i.camera,
             visibility: i.visibility,
@@ -675,8 +686,8 @@ impl CoreAbi for FakeCore {
             y,
             ..Sa2PickRow::new()
         };
-        let done = i.resource_set == 0 || self.sets.get(&i.resource_set).is_none_or(|s| s.retired);
-        if i.resource_set != 0 && done {
+        let done = set == 0 || self.sets.get(&set).is_none_or(|s| s.retired);
+        if set != 0 && done {
             row.state = PICK_STALE;
             row.stale = PICK_STALE_PUBLICATION;
         } else if done {
@@ -686,7 +697,7 @@ impl CoreAbi for FakeCore {
         }
         let ticket = self.next_pick;
         self.next_pick += 1;
-        self.picks.insert(ticket, Pick { row, done, set: i.resource_set });
+        self.picks.insert(ticket, Pick { row, done, set });
         Ok(ticket)
     }
 

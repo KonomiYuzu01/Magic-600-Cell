@@ -439,6 +439,7 @@ public partial class Shell : Control
             _log?.Press(qpc, handled, result.EngineRevision);
             _chrome?.Committed(chord, result.EngineRevision);
             D02.ShellTurn.Committed(result.EngineRevision);
+            D02.ShellStyle.Committed(result.EngineRevision);
         }
         else if (result.Press == HostLibrary.PressRefused)
         {
@@ -488,7 +489,7 @@ public partial class Shell : Control
                 case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } up when !turned:
                     if (SurfacePoint(up.Position) is { } at)
                     {
-                        D02.ShellPick.Click(at.X, at.Y);
+                        D02.ShellPick.Click(at.X, at.Y, ViewAt(up.Position));
                     }
                     break;
                 case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false } right when !turned:

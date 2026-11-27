@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "pick",
-  "note": "B17 on wj-ia-300's session fixture: clicks at fixed points of the Global opening, each answered by the core's ID pass through the host. A hit selects and inspects the sticker's piece. E names the selected sticker's cell as the Target, or says why it has no cell. A click in the opening's corner clears the selection. Global opens on the Hopf rings layout, whose stickers cover about 6% of the opening (the core ID pass, 27 Nov 2026), so the first seven points mostly fall between stickers; the three after them lie on sticker blocks of that layout at the run's 582x203 opening, the last on a lattice piece, so E names its cell. No twist happens.",
+  "note": "B17 on wj-ia-300's session fixture: clicks at fixed points of the Global opening, each answered by the core's ID pass through the host. A hit selects and inspects the sticker's piece. E names the selected sticker's cell as the Target, or says why it has no cell. A click in the opening's corner clears the selection. Global opens on the Hopf rings layout, whose stickers cover about 6% of the opening (the core ID pass, 27 Nov 2026), so the first seven points mostly fall between stickers; the three after them lie on sticker blocks of that layout at the run's 582x203 opening, the last on a lattice piece, so E names its cell. No twist happens. Two clicks in Local's drawn opening (checkpoint C3.9, F2) must select only in Local: the dump's selection names view 2.",
   "steps": [
     {
       "wait_ms": 2500
@@ -98,6 +98,26 @@
     },
     {
       "chord": "E"
+    },
+    {
+      "click": [
+        0.5,
+        0.5
+      ],
+      "in": "local"
+    },
+    {
+      "wait_ms": 600
+    },
+    {
+      "click": [
+        0.42,
+        0.58
+      ],
+      "in": "local"
+    },
+    {
+      "wait_ms": 600
     },
     {
       "click": [

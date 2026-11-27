@@ -701,8 +701,10 @@ internal sealed partial class D02Driver : Node
         }
         else if (step.TryGetProperty("click", out var click))
         {
-            // ADR-D02 B17: a left click at fractions of the Global opening (D02/ShellPick.cs).
-            _doing = ShellPick.ScriptClick(_frame.Opening, click);
+            // ADR-D02 B17: a left click at fractions of the Global opening (D02/ShellPick.cs); "in": "local" clicks in
+            // Local's drawn opening instead (checkpoint C3.9, F2).
+            var inLocal = step.TryGetProperty("in", out var view) && view.GetString() == "local";
+            _doing = ShellPick.ScriptClick(inLocal ? _frame.LocalOpening : _frame.Opening, click, inLocal);
         }
         else if (step.TryGetProperty("cancel_older", out _))
         {
@@ -1247,6 +1249,12 @@ internal sealed partial class D02Driver : Node
                 json.WriteEndObject();
             }
             json.WriteNumber("cancels", _cancels);
+            // C3/C4 finding F5: the bound state's digest and revision at every step, so a view-only run can show that
+            // no step changed the session.
+            json.WriteStartObject("bound");
+            json.WriteString("digest", ShellJumble.StateDigest);
+            json.WriteNumber("revision", ShellJumble.StateRevision);
+            json.WriteEndObject();
             if (_screenBefore is { } before)
             {
                 // The whole screen as it read before this step's cancel or control, beside "lines" read after it.
@@ -1269,6 +1277,14 @@ internal sealed partial class D02Driver : Node
             // B22 rest: Global's border marks, each chip's label words and its tooltip (a hidden label's words lie there).
             json.WriteStartArray("global_marks");
             foreach (var chip in _frame.Global.Marks.GetChildren().OfType<Control>())
+            {
+                var words = chip.FindChildren("*", "Label", true, false).OfType<Label>().Select(label => label.Text);
+                json.WriteStringValue(string.Join(" ", words) + " | " + chip.TooltipText);
+            }
+            json.WriteEndArray();
+            // C3/C4 finding F6: Local's border marks as drawn (the raw view's caption is read from here).
+            json.WriteStartArray("local_marks");
+            foreach (var chip in _frame.Local.Marks.GetChildren().OfType<Control>())
             {
                 var words = chip.FindChildren("*", "Label", true, false).OfType<Label>().Select(label => label.Text);
                 json.WriteStringValue(string.Join(" ", words) + " | " + chip.TooltipText);
