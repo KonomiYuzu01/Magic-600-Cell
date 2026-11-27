@@ -240,6 +240,7 @@ internal sealed class SampleMount
             case "panel.unmount": if (!Scripts.Slots.Unmount(argument!)) frame.Say("No script panel is named " + argument, true); break;
             case var entry when entry.StartsWith("script.", StringComparison.Ordinal): Scripts.Start(entry); break;
             case "operation.preview" when argument != null && argument.StartsWith(LabSolve.MacroPreview, StringComparison.Ordinal): Solve.PreviewMacro(argument.Substring(LabSolve.MacroPreview.Length)); break;
+            case "operation.preview" when argument != null && argument.StartsWith(SetupSearch.PreviewArgument, StringComparison.Ordinal): Solve.PreviewSetup(argument.Substring(SetupSearch.PreviewArgument.Length)); break;
             case var sample when LabDemo.Handles(sample): Demo.Execute(command, argument); break;
             case var solving when LabSolve.Handles(solving): Solve.Execute(command, argument, registry.Commands[command].Label); break;
         }

@@ -6,15 +6,17 @@ namespace Magic600.Chrome;
 // One tool slot drawn (ADR-D02.7, .40): its display name, its state's glyph and its word. Each of the seven states
 // has one glyph told apart by shape and none from the ring family: a dash, an hourglass, a left bar, a dashed
 // frame, a stop square, a stop bar at the line's end and a cross. A result appears in place: nothing here moves.
+// A tool with words of its own (the setup slot, ADR-D01.68) passes them instead of the Jumble slot words.
 public sealed partial class ToolSlotBox : HBoxContainer
 {
     public ToolSlot Slot { get; }
-    private readonly SlotWords words; private readonly Func<TokenSet> tokens;
+    private readonly SlotWords? words; private readonly Func<(string Text, string Mark)>? own; private readonly Func<TokenSet> tokens;
     private readonly Control glyph; private readonly Label name, word;
 
-    public ToolSlotBox(ToolSlot slot, string displayName, SlotWords words, Func<TokenSet> tokens)
+    public ToolSlotBox(ToolSlot slot, string displayName, SlotWords? words, Func<TokenSet> tokens, Func<(string Text, string Mark)>? own = null)
     {
-        Slot = slot; this.words = words; this.tokens = tokens; Name = "ToolSlot_" + slot.Id;
+        if (words == null && own == null) throw new ArgumentException("a slot box needs its words");
+        Slot = slot; this.words = words; this.own = own; this.tokens = tokens; Name = "ToolSlot_" + slot.Id;
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         glyph = new Control { CustomMinimumSize = new Vector2(16, 16), SizeFlagsVertical = SizeFlags.ShrinkCenter }; glyph.Draw += DrawGlyph;
         name = ChromeWidgets.Text(displayName, "AccentLabel"); word = ChromeWidgets.Text("", "DimLabel", true);
@@ -25,7 +27,7 @@ public sealed partial class ToolSlotBox : HBoxContainer
 
     public void Refresh()
     {
-        (string text, string mark) = Slot.Word(words);
+        (string text, string mark) = own?.Invoke() ?? Slot.Word(words!);
         word.Text = text; word.TooltipText = text + " (" + mark + ")";
         glyph.QueueRedraw();
     }

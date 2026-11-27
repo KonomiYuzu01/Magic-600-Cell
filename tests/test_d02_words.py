@@ -73,9 +73,9 @@ PLAIN_WORDS = {
     "marks", "mode", "model", "name", "need", "needs", "neighbours", "no", "none", "not", "numbered", "of", "on", "one",
     "only", "or", "output", "pairs", "part", "pass", "pin", "pinned", "predicted", "preset", "radius", "raw", "read",
     "re-executed", "record", "reference", "refuse", "refused", "release", "replayed", "reproduced", "research", "revert", "reviewed",
-    "ring", "rings", "row", "run", "save", "set", "sheet", "shell", "simulation", "slice", "slot", "slots", "solving",
+    "ring", "rings", "row", "run", "save", "search", "set", "sheet", "shell", "simulation", "slice", "slot", "slots", "solving",
     "split", "stage", "start", "state", "step", "swap", "the", "this", "tint", "to", "tried", "try", "tuning",
-    "un-name", "unavailable", "unpin", "uses", "whole", "within", "selector",
+    "un-name", "unavailable", "unpin", "use", "uses", "whole", "within", "selector",
 }
 
 TOKEN = re.compile(r"[\w]+(?:[-'’][\w]+)*")

@@ -163,6 +163,15 @@ internal sealed class LabDemo
         frame.Say($"Library: {name} alone is preview #{shown.Id}", shown.Status != PreviewStatus.Ready);
     }
 
+    // A setup row alone, as the preview (ADR-D01.68). The solver picked the row, so its commit is the solver's own
+    // word (BND.55); its effects are evaluated like any other's.
+    public void StageSetup(int row, IReadOnlyList<string> word)
+    {
+        string name = "setup row " + row;
+        Preview shown = ShowChecked("preview " + name, "setup search", word, SampleCheck.Check(word), "hand", name);
+        frame.Say($"Setup: row {row} alone is preview #{shown.Id}", shown.Status != PreviewStatus.Ready);
+    }
+
     // A twist key or a pointer in Direct commits its twist after the same check as any preview: a twist that names
     // no cell or axis of the puzzle, or moves a protected orbit, is not committed.
     public void CommitDirect(string twist)

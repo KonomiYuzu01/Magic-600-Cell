@@ -1597,6 +1597,54 @@ EXPECT["signature"] = expect_signature
 IN_SAMPLE_MODE.add("signature")
 
 
+# ADR-D01.68: the setup slot under the Target cell. The sample's setup search is demo data (SetupSearch.Sample), so its
+# rows for the mid demo state are pinned here; the console tests (D02PortSetupTests.cs) check the rule itself.
+SETUP_STEPS = ["start", "wait 2000 ms", "command setup.search", "wait 1000 ms", "command operation.phase.append_twist",
+               "command setup.row.use 1", "wait 1000 ms", "command operation.preview setup:1", "wait 2500 ms"]
+SETUP_DECLARATION = "Boundary class: setup_search_named_target · Principle record: sample (demo data)"
+SETUP_ROWS = ["1  len 2  c517.3+ c292.0+", "2  len 3  c142.4- c517.3+ c292.0+", "3  len 3  c292.0+ c142.4+ c292.0+",
+              "4  len 3  c517.3+ c292.0- c517.3+"]
+SETUP_RESULT = ["for p0334, the Target", "Length 2 is minimal within the guarded alphabet.",
+                "Guarded alphabet: 3 of 6 caps; excluded c217 (moves Buffer A), c442 (moves Buffer A), c367 (moves "
+                "Buffer B). Length bound 3; 126 of 126 words tried; order: length, then menu order (demo data)."]
+
+
+def expect_setup(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.68 in sample mode: before a run the slot says not run and shows the tool's BoundaryClass and
+    PrincipleRecord; setup.search for the named Target lists the rows in their neutral order with their lengths, the
+    minimal line and the coverage; row 1 fills Prepare and Cleanup around the twist in Core; row 1 alone is staged as
+    the preview; the error lamp counts no failure."""
+    if [dump["do"] for dump in dumps] != SETUP_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    words = [[text for _, text in dump.get("lines", [])] for dump in dumps]
+    for i in (0, 1):
+        if "not run" not in words[i] or SETUP_DECLARATION not in words[i]:
+            problems.append(f"step {i}: the setup slot does not say not run with its declaration")
+        if any(text in words[i] for text in SETUP_ROWS + SETUP_RESULT):
+            problems.append(f"step {i}: the setup slot shows a result before any run")
+    for i in range(2, len(dumps)):
+        missing = [text for text in ["4 rows", SETUP_DECLARATION] + SETUP_ROWS + SETUP_RESULT if text not in words[i]]
+        if missing:
+            problems.append(f"step {i}: the setup slot lacks {missing}")
+        if any(text.startswith("No setup found") for text in words[i]):
+            problems.append(f"step {i}: the setup slot says no setup was found")
+    filled = "Setup row 1: Prepare and Cleanup set around Core (5 twists in the draft)"
+    if not any(filled in text for text in words[5]):
+        problems.append("step 5: row 1 did not fill Prepare and Cleanup around the twist in Core")
+    if not any(re.search(r"Setup: row 1 alone is preview #\d+", text) for text in words[7] + words[8]):
+        problems.append("row 1 alone was not staged as the preview")
+    for i, dump in enumerate(dumps):
+        errors = dump.get("errors", {})
+        if errors.get("lamp") is not True or errors.get("count") != 0 or errors.get("failures") != 0:
+            problems.append(f"step {i}: error lamp is {errors!r}")
+    return problems
+
+
+EXPECT["setup"] = expect_setup
+IN_SAMPLE_MODE.add("setup")
+
+
 # B29 (ADR-D02.4, .45, .46, .50, .52): the research pane's Runs tab. research.runs brings the pane from Solve; a start
 # before any declaration is refused; budget, seed and depth are declared; the sample's run stops at its budget as cut
 # off and reproduces with bytes equal; both CR-17 rows are refused with their reason; History gains no entry.
