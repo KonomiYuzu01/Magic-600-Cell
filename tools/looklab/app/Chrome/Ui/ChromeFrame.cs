@@ -348,8 +348,11 @@ public sealed partial class ChromeFrame : Control
         get => localOpeningShown;
         set { if (value == localOpeningShown) return; localOpeningShown = value; if (localLayout != null && IsInstanceValid(localLayout)) localLayout.QueueSort(); }
     }
+    // ADR-D01's view.local: while Local is hidden its opening stays closed whatever cap it frames (ViewPanes.LocalOpen).
+    public LocalHide LocalHide { get; } = new();
+    public bool LocalOpen => ViewPanes.LocalOpen(localOpeningShown, LocalHide.Hidden);
     private LocalOpeningLayout? localLayout;
-    public Rect2 LocalOpening => OpenGround && LocalDrawn && LocalOpeningShown && localLayout != null && IsInstanceValid(localLayout) && localLayout.IsVisibleInTree()
+    public Rect2 LocalOpening => OpenGround && LocalDrawn && LocalOpen && localLayout != null && IsInstanceValid(localLayout) && localLayout.IsVisibleInTree()
         ? localLayout.Opening.GetGlobalRect() : default;
 
     // Whether the chrome takes this key. A host that also routes keys elsewhere asks first, so that no key does both.
@@ -580,6 +583,7 @@ public sealed partial class ChromeFrame : Control
     private Control LocalWrap(Control? content)
     {
         var layout = localLayout = new LocalOpeningLayout(this) { Name = "LocalDrawn" };
+        LocalHide.Changed += () => { if (IsInstanceValid(layout)) layout.QueueSort(); };
         var scroll = new ScrollContainer { Name = "LocalScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         layout.AddChild(layout.Opening); layout.AddChild(scroll);
         if (content != null) { content.SizeFlagsHorizontal = SizeFlags.ExpandFill; scroll.AddChild(content); }
@@ -721,7 +725,7 @@ internal sealed partial class LocalOpeningLayout : Container
     public override void _Notification(int what)
     {
         if (what != NotificationSortChildren || GetChildCount() < 2) return;
-        int height = ViewPanes.OpeningHeight((int)Size.X, (int)Size.Y, frame.LocalOpeningShown);
+        int height = ViewPanes.OpeningHeight((int)Size.X, (int)Size.Y, frame.LocalOpen);
         FitChildInRect(GetChild<Control>(0), new Rect2(0, 0, Size.X, height));
         FitChildInRect(GetChild<Control>(1), new Rect2(0, height, Size.X, Math.Max(0, Size.Y - height)));
     }

@@ -284,7 +284,7 @@ class ShellPanes(unittest.TestCase):
         # B17 (ADR-D01.41): the named cap, or a newer selection while auto-framing is on.
         self.assertIn("int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);", body)
         self.assertIn("cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos", body)
-        self.assertIn("library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone)", body)
+        self.assertIn("library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone && !hidden)", body)
         self.assertIn("chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;", body)
 
     def test_the_panes_are_global_then_local_inside_the_surface(self):
@@ -469,7 +469,7 @@ class ChromeOpening(unittest.TestCase):
         self.assertIn('Local = View("Local", localDrawn ? LocalWrap(localContent) : localContent);', frame)
         self.assertIn('var scroll = new ScrollContainer { Name = "LocalScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };',
                       frame)
-        self.assertIn("int height = ViewPanes.OpeningHeight((int)Size.X, (int)Size.Y, frame.LocalOpeningShown);", frame)
+        self.assertIn("int height = ViewPanes.OpeningHeight((int)Size.X, (int)Size.Y, frame.LocalOpen);", frame)
         self.assertIn("foreach (Rect2 open in new[] { last, lastLocal })", frame)
         self.assertIn("foreach (PaneRect piece in ViewPanes.Ground(all, holes))", frame)
         chrome = text(PROJECT / "ShellChrome.cs")
@@ -693,7 +693,7 @@ class LocalOnTheBasePuzzle(unittest.TestCase):
         self.assertIn("host.SetDrawnWithoutCap(live && !ShellLocal.Plan.Jumble);", chrome)
         self.assertIn('ViewLine.Set(Frame.Local, "LocalPlanLine", words, LocalPlan.Hint, Frame.Tokens.C("text.dim"));', chrome)
         # ADR-D02 B21: the raw view's line takes Local's line while the raw view is on.
-        self.assertIn("_chrome?.LocalLine(D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
+        self.assertIn("_chrome?.LocalLine(hidden ? HiddenLocalWords : D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
         host = text(CHROME / "Ui" / "JumbleHost.cs")
         self.assertIn("Surface.SetDrawn(LocalCap.Shown != null || drawnWithoutCap);", host)
         self.assertIn('ViewLine.Set(view, "JumbleLocalDefault", LocalWords, hint, frame.Tokens.C("text.dim"));', host)

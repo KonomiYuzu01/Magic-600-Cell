@@ -1,0 +1,33 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "gate-g3",
+  "state": "wj-ia-300",
+  "resolution": "2000x1200",
+  "note": "A gate row of renderer/shell/gate_d02.py: the steps before the repeat block set the views; the block runs for warm-up plus window seconds as quiet steps (d02_run.expand_repeat), and tools/perf/d02/gate_row.py times the last window seconds. No step follows the block, so the window holds only the row's views. B19 G3: S1 of research/jumbling/witness.py (one jumble twist of 9.99987 degrees, s = 15/961, not in A4(c)) is no letter of the pinned I_a menu, so the fixture writer cannot reach it and section 6's fallback applies: the recorded blocked grip with the most certificate points, wj-ia-300's cap 0 (462 points, beside the 1,654 of S1). The certificate glyphs stay a count until this row and the owner's acceptance (ADR-D02.26); held for the window.",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "text": "> jumble.cap.name 0"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 1200
+    },
+    {
+      "repeat": {
+        "steps": [
+          {
+            "wait_ms": 1000
+          }
+        ]
+      }
+    }
+  ]
+}

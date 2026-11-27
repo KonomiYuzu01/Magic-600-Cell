@@ -94,6 +94,8 @@ public partial class Shell : Control
     // ADR-D02 B23: Global is drawn as the Hopf rings, so its camera is the linked 3D spin (the ring sheet ignores it).
     private bool _hopf;
     private int? _localCap = -1;
+    private bool _localHidden;
+    private const string HiddenLocalWords = "Local is hidden (view.local shows it again on its cap, linked to Global).";
     private (Rect2I Global, Rect2I Local) _paned;
     private bool _panedSplit; // ADR-D02 B20: whether the pane table holds the held split's two copies
     private (bool On, bool Antipode) _panedRaw; // ADR-D02 B21: the raw view the pane table holds
@@ -651,20 +653,23 @@ public partial class Shell : Control
             return;
         }
         int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);
-        _chrome?.LocalLine(D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);
-        if (cap == _localCap && _localRaw == D02.ShellRaw.Focus)
+        // ADR-D01's view.local: a hidden Local keeps its cap and the shared camera; the host stops drawing it.
+        var hidden = _chrome?.Frame.LocalHide.Hidden == true;
+        _chrome?.LocalLine(hidden ? HiddenLocalWords : D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);
+        if (cap == _localCap && _localRaw == D02.ShellRaw.Focus && hidden == _localHidden)
         {
             return;
         }
         _localCap = cap;
         _localRaw = D02.ShellRaw.Focus;
+        _localHidden = hidden;
         var cell = cap is int c and >= 0 and < 600 ? (uint)c : HostLibrary.FocusNone;
         // ADR-D02 B21: the raw view draws Local's stereographic chart from the pole, clipped at its h.
         var (projection, focusCos) = D02.ShellRaw.Focus is double h && cell != HostLibrary.FocusNone
             ? (HostLibrary.ProjectionStereographic, (float)h)
             : (shape.Projection, cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos);
         Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local, projection, cell, focusCos, shape.Spread));
-        Require(library, "m6h_set_view_visible", library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone));
+        Require(library, "m6h_set_view_visible", library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone && !hidden));
         if (_chrome is { } chrome)
         {
             chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;

@@ -910,6 +910,38 @@ relative path is from the repository root.
 - **Machine:** G. About 35 minutes with the owner at the start.
 - **Checkpoint:** yes, C3.
 - **Depends:** B15 to B18c.
+- **As built, gate tools (B19, 27 November 2026): tools built, sittings not run.**
+  - `tools/perf/d02/gate_row.py` prints the `D02_GATE` line from `events.jsonl`. It times the gaps between the confirmed
+    presentations (`presented` rows, `display_qpc`) over the last 60 s and drops everything before them as warm-up (the
+    launch, the open, the view setup and the first 10 s of motion). A missing required field refuses the row, and the
+    tests are in `tests/test_gate_row.py`.
+  - `view_vertex_evals` is the core's own count: on a gate run (`M600_D02_GATE=1`), every frame row carries
+    `sa2_counters` (`CoreSurface.GateFields`, called from `EventLog.Frame`).
+  - VRAM is the shell process's dedicated GPU memory, sampled from outside through PDH's GPU Process Memory counters.
+  - `renderer/shell/gate_d02.py --row <id>` runs a row through `d02_run.py`'s launcher and player, with the scripts
+    `d02_scripts/gate-g*.json`. Their one repeat block is unrolled by `d02_run.expand_repeat` as quiet steps, and the
+    player writes no screen dump after a quiet step (`ShellJumble.cs`).
+  - The page is `docs/progress/1.0/adr-d02-gate-results.md`, with the rows, the commands and empty result cells.
+  - Found while building, and on that page:
+    - G3's S1 is no menu letter, so the fallback is `wj-ia-300`'s cap 0 with 462 certificate points.
+    - The twist keys turn the constant grip cap 0, which is blocked at `deep-2`, so the sweeping rows need
+      `grip.select` or a twist at the named cap.
+    - Local cannot be hidden while a state is bound, so G1 has no one-view case yet.
+    - The never-foreground window presented at a median 33.3 ms in the dry run.
+  - The dry run (G1 at `wj-ia-300`, 10 s) printed a well-formed line and was invalid, as expected: two panes and no
+    committed twist. It is not gate evidence.
+  - Fixed the same day (gate track):
+    - The sweeping rows select cap 2 with `grip.select` before the repeat block, and the router's twist keys turn the
+      selected cap (`set_grip`, `ShellTurn`'s active grip cap). `gate_d02.py` moves the cap to an admissible one of a
+      dry run's state from its sample `rim.json` (cap 91 at `wj-ia-300`) and records it.
+    - `view.local` hides and shows Local (`ViewPanes.LocalOpen`, `LocalHide`): Local's opening closes, the pane drops,
+      the host stops drawing Local, and Local returns on its cap with the camera shared. The key L stays the router's
+      twist key in a live session. Tests: the console test `D02LocalHideDropsAndRestoresLocalPane` and the product
+      script `local-hide`.
+    - The window is the display's native size read at run time (2560x1600 here); `--resolution` overrides it, and
+      `--foreground` (the owner's sitting only) activates the window once, never topmost. `gate.json` records both.
+    - Dry runs at `wj-ia-300` (10 s, not evidence): G1 was valid with one pane and 7 twists, G9 valid with two panes and
+      7 twists. The System log showed no GPU event after either.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
@@ -1117,6 +1149,17 @@ relative path is from the repository root.
 - **Machine:** G. About 45 minutes with the owner at the start.
 - **Checkpoint:** yes, C4. After it the integrator can put R5 to the owner with both sittings' numbers.
 - **Depends:** B20 to B23.
+- **As built, gate tools (B24, 27 November 2026): tools built, sittings not run.**
+  - Rows G4 to G11 are `gate_d02.py --row <id>` with the scripts `d02_scripts/gate-g4.json` and onwards.
+  - `gate_d02.py --occlusion` measures occlusion: both chart presets at the default camera, a grid of picks over Global
+    (one pick pass per point), and the distinct selected pieces per preset. It is a sampled count, not a full ID-pass
+    count.
+  - The prerequisites (twist sweeps on `deep-2`, the foreground question) are those of B19. Results go on
+    `docs/progress/1.0/adr-d02-gate-results.md`.
+  - Fixed on 27 November 2026 (gate track): G4, G6 and G8 select their grip cap as B19's rows do. The occlusion grid
+    lies over Global's opening as the shell lays it out (a click step's fractions are of that opening; the default
+    region is all of it). The record holds the opening the dumps report (`frame.global_opening`) and checks that every
+    click landed in it. Not yet run.
 
 ### B25. Word flows and signatures
 - **Goal:** the word line, counters, the folded tree, signatures.

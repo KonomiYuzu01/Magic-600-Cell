@@ -283,6 +283,7 @@ internal static partial class Program
             ("D02GripRowsCarryTheExistingCommand", D02GripRowsCarryTheExistingCommand),
             ("D02GripPointsFollowTheCoreClip", D02GripPointsFollowTheCoreClip),
             ("D02GripKeycapsShareTheMarks", D02GripKeycapsShareTheMarks),
+            ("D02LocalHideDropsAndRestoresLocalPane", D02LocalHideDropsAndRestoresLocalPane),
             ("D02PortLayoutTrackerNamesAndRestoresSteps", D02PortLayoutTrackerNamesAndRestoresSteps),
             ("D02PortAppearanceRestoresInPlace", D02PortAppearanceRestoresInPlace),
             ("D02PortViewFieldsKeepEachViewAndWriteTheScope", D02PortViewFieldsKeepEachViewAndWriteTheScope),
