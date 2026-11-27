@@ -1,0 +1,48 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "gate-g9",
+  "state": "deep-2",
+  "resolution": "2000x1200",
+  "note": "A gate row of renderer/shell/gate_d02.py: the steps before the repeat block set the views; the block runs for warm-up plus window seconds as quiet steps (d02_run.expand_repeat), and tools/perf/d02/gate_row.py times the last window seconds. No step follows the block, so the window holds only the row's views. B19 G9: G1's script with Local shown, the second view's cost. Cap 2 is named because its twelve menu items are admissible at deep-2 and wj-ia-end (the samples' cap-2 release checks); K, the router's item 2, commits and sweeps over jumble.sweep's time, and repeats cycle through the twist's powers. A refused press sweeps nothing, which gate_d02 reports as an invalid run. ",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "text": "> jumble.tint.mode contact"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 1200
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "text": "> jumble.cap.name 2"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 1200
+    },
+    {
+      "repeat": {
+        "steps": [
+          {
+            "chord": "K"
+          },
+          {
+            "wait_ms": 1000
+          }
+        ]
+      }
+    }
+  ]
+}

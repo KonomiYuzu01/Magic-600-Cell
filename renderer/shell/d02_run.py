@@ -3111,5 +3111,55 @@ def main(argv: list[str] | None = None) -> int:
     return code
 
 
+
+# ---- ADR-D02 B19 and B24: the gate rows' scripts (renderer/shell/gate_d02.py) ------------------------------------------
+# A gate script holds its views and repeats its motion for the row's time. The player (ShellJumble.cs) plays a flat list
+# of steps, so the one step {"repeat": {"steps": [...]}} of a gate script is expanded here before the launch: its steps,
+# copied until their waits add up to the asked seconds, each marked "quiet" (the player writes no screen dump after a
+# quiet step, so the timed frames carry no dump's work); the last copy is not quiet, so the run still ends on a dump.
+# A hold-for is a repeat of one wait (a held key: "hold" before the block, "release" after it).
+GATE_PREFIX = "gate-"
+GATE_OCCLUSION = "gate-occlusion"
+
+
+def expand_repeat(script: dict, seconds: float) -> dict:
+    """The script with its one repeat block unrolled for `seconds` of written waits (at least one copy)."""
+    import math
+    if seconds <= 0:
+        raise ValueError("a repeat block needs a positive number of seconds")
+    steps: list[dict] = []
+    blocks = 0
+    for step in script["steps"]:
+        if "repeat" not in step:
+            steps.append(step)
+            continue
+        blocks += 1
+        body = step["repeat"].get("steps") or []
+        if any("repeat" in inner for inner in body):
+            raise ValueError("a repeat block cannot hold another")
+        period = sum(int(inner.get("wait_ms", 0)) for inner in body)
+        if period <= 0:
+            raise ValueError("a repeat block needs a wait_ms step")
+        for _ in range(max(1, math.ceil(seconds * 1000.0 / period))):
+            steps += [{**inner, "quiet": True} for inner in body]
+        steps[-1] = {key: value for key, value in steps[-1].items() if key != "quiet"}
+    if blocks != 1:
+        raise ValueError(f"a gate script holds exactly one repeat block, not {blocks}")
+    return {**script, "steps": steps, "expanded_seconds": seconds}
+
+
+def expect_gate(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """A gate row compares no screen text: its numbers come from the event log (tools/perf/d02/gate_row.py), and the
+    owner's window rule is checked for every run. It asks only that the run reached a dump after its first step."""
+    return [] if any(dump.get("step", 0) > 0 for dump in dumps) else ["the gate run wrote no dump after its first step"]
+
+
+for _gate in sorted(SCRIPTS.glob(GATE_PREFIX + "*.json")):
+    EXPECT[_gate.stem] = expect_gate
+    ON_FIXTURE.add(_gate.stem)
+EXPECT[GATE_OCCLUSION] = expect_gate
+ON_FIXTURE.add(GATE_OCCLUSION)
+
+
 if __name__ == "__main__":
     sys.exit(main())

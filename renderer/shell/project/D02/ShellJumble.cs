@@ -860,7 +860,9 @@ internal sealed partial class D02Driver : Node
         {
             throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a hover_control, a click_control, a command or a wait_ms");
         }
-        _wait = StepFrames;
+        // ADR-D02 B19/B24: a step marked "quiet" writes no screen dump, so a gate row's repeated motion is timed
+        // without the dump's work in its frames (d02_run.py expand_repeat marks them).
+        _wait = step.TryGetProperty("quiet", out var quietStep) && quietStep.ValueKind == JsonValueKind.True ? -1 : StepFrames;
     }
 
     /// <summary>A chord such as F1, Escape or Ctrl+Shift+P, pressed and released through the shell's input.</summary>

@@ -1,0 +1,33 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "gate-g2",
+  "state": "wj-ia-end",
+  "resolution": "2000x1200",
+  "note": "A gate row of renderer/shell/gate_d02.py: the steps before the repeat block set the views; the block runs for warm-up plus window seconds as quiet steps (d02_run.expand_repeat), and tools/perf/d02/gate_row.py times the last window seconds. No step follows the block, so the window holds only the row's views. B19 G2: two views at wj-ia-end with a blocked cap named (cap 0: 195 straddlers, 390 certificate points), so every line layer the overlay has is drawn (B16: the blocked cap's straddlers across its cut, the never-hidden set); held for the window.",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "text": "> jumble.cap.name 0"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 1200
+    },
+    {
+      "repeat": {
+        "steps": [
+          {
+            "wait_ms": 1000
+          }
+        ]
+      }
+    }
+  ]
+}
