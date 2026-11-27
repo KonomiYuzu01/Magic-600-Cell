@@ -398,7 +398,8 @@ internal static partial class Program
             ("D02StickerPaletteChoice", D02StickerPaletteChoice),
             ("D02StickerColouring", D02StickerColouring),
             ("D02SceneLookDraftRequests", D02SceneLookDraftRequests),
-            ("D02StatusPatterns", D02StatusPatterns)
+            ("D02StatusPatterns", D02StatusPatterns),
+            ("D02InstrumentPlaceholders", D02InstrumentPlaceholders)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

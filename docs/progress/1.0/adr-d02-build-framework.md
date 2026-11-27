@@ -1807,6 +1807,13 @@ Each checkpoint is one read of the named diff range against the questions below,
   switch, `jumble.seat.hold`, XM1 and G6, `research.record.read`, the researcher-name write, `tuning.open` and the rest of
   `command-rows-d02.json`), the design slots `tint.jumble.off_lattice` and `line.jumble.overlay` (each adds a name to ADR-D01's
   frozen round-1 slot list), and the eleven glossary additions of ADR-D02 section 15. Until then the draft rows and fallbacks stay.
+- The freeze card also says that ADR-D01.77's instruments without roles until now (arrows, orientation glyphs, set-kind glyphs
+  and block marks) are registered with revision 4's values and neutral placeholder drawings (`InstrumentPlaceholders`,
+  `InstrumentGlyphs`): `arrow.*`, `orientation.glyph.*`, `set.kind.*`, `block.mark.*` and `block.outline.*`, the last under
+  block marks. D02 places none of them; ADR-D03's canvas places them, and the art line draws them.
+- Proposal, not built: where D02 already shows a set's kind in words (the Focus layer editor's kind buttons in
+  `PieceFilterUi.cs` and the focus layer's rows), the `set.kind` glyph could replace or join the word. This serves K2's
+  fewer-words item.
 
 ## 4. Item map
 

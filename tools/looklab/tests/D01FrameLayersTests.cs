@@ -30,10 +30,12 @@ internal static partial class Program
         Equal(layers.Layer("state.committed"), FrameLayer.Instrument, "a cued state role outside the named instruments");
 
         var values = layers.Instruments.ToDictionary(p => p.Id, p => p.Roles.Count);
-        foreach ((string id, int count) in new[] { ("locks", 3), ("lamps", 3), ("chips", 2), ("route-mark", 2), ("residual-level", 1), ("commit-status", 6), ("numerals", 1) })
+        foreach ((string id, int count) in new[] { ("locks", 3), ("lamps", 3), ("chips", 2), ("route-mark", 2), ("residual-level", 1), ("commit-status", 6), ("numerals", 1),
+            ("arrows", 2), ("orientation-glyphs", 5), ("set-kind-glyphs", 3), ("block-marks", 5) })
             Equal(values[id], count, id + "'s values");
-        Equal(string.Join(" ", layers.Instruments.Where(p => p.Roles.Count == 0).Select(p => p.Id)), "grip-marks arrows orientation-glyphs set-kind-glyphs block-marks",
+        Equal(string.Join(" ", layers.Instruments.Where(p => p.Roles.Count == 0).Select(p => p.Id)), "grip-marks",
             "the instruments not drawn in this build yet");
+        Equal(layers.Part("block.outline.home")?.Id, "block-marks", "a block's outline is part of the block marks (revision 4's token list)");
         Equal(layers.Part("numeral.undefined")?.Id, "numerals", "revision 6's undefined pattern (J-3)");
         Equal(layers.Part("rail.cell.residual_level")?.Id, "residual-level", "the residual level is its own instrument, not a rail cell");
 

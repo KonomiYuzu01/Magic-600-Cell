@@ -213,7 +213,22 @@
     "tint.jumble.height.above": "neutral.11",
     "material.exposed_face": "neutral.4",
     "material.exposed_face.tinted": "neutral.5",
-    "state.exposed_face.unavailable": "neutral.9"
+    "state.exposed_face.unavailable": "neutral.9",
+    "arrow.state": "neutral.9",
+    "arrow.operation": "neutral.9",
+    "orientation.glyph.trivial": "neutral.9",
+    "orientation.glyph.c2": "neutral.9",
+    "orientation.glyph.c5": "neutral.9",
+    "orientation.glyph.d5": "neutral.9",
+    "orientation.glyph.a5": "neutral.9",
+    "set.kind.query": "neutral.9",
+    "set.kind.piece": "neutral.9",
+    "set.kind.position": "neutral.9",
+    "block.mark.attained": "neutral.9",
+    "block.mark.protected": "neutral.9",
+    "block.mark.selected": "neutral.9",
+    "block.outline.home": "neutral.9",
+    "block.outline.referenced": "neutral.9"
   },
   "sceneLooks": {
     "solving": {

@@ -805,6 +805,81 @@
       "group": "state",
       "meaning": "The exposed-face geometry does not exist yet: nothing is drawn in the hole.",
       "cue": "the words \"exposed faces unavailable\" on the view border and in Tier 1"
+    },
+    "arrow.state": {
+      "group": "encoding",
+      "meaning": "An arrow between states: its tail is the source and its head the destination (ADR-D01.77).",
+      "cue": "placeholder until the art line draws it: a straight line from source to destination, at its head a plain square with S and one tick"
+    },
+    "arrow.operation": {
+      "group": "encoding",
+      "meaning": "An arrow of an operation: its tail is the source and its head the destination; it differs from a state arrow (ADR-D01.77).",
+      "cue": "placeholder until the art line draws it: a straight line from source to destination, at its head a plain square with O and 2 ticks"
+    },
+    "orientation.glyph.trivial": {
+      "group": "encoding",
+      "meaning": "Orientation glyph: the trivial group, one kind per group type (ADR-D01.77).",
+      "cue": "placeholder until the art line draws it: a plain square with T and one tick"
+    },
+    "orientation.glyph.c2": {
+      "group": "encoding",
+      "meaning": "Orientation glyph: the group C2 (ADR-D01.77).",
+      "cue": "placeholder until the art line draws it: a plain square with C2 and 2 ticks"
+    },
+    "orientation.glyph.c5": {
+      "group": "encoding",
+      "meaning": "Orientation glyph: the group C5 (ADR-D01.77).",
+      "cue": "placeholder until the art line draws it: a plain square with C5 and 3 ticks"
+    },
+    "orientation.glyph.d5": {
+      "group": "encoding",
+      "meaning": "Orientation glyph: the group D5 (ADR-D01.77).",
+      "cue": "placeholder until the art line draws it: a plain square with D5 and 4 ticks"
+    },
+    "orientation.glyph.a5": {
+      "group": "encoding",
+      "meaning": "Orientation glyph: the group A5 (ADR-D01.77).",
+      "cue": "placeholder until the art line draws it: a plain square with A5 and 5 ticks"
+    },
+    "set.kind.query": {
+      "group": "encoding",
+      "meaning": "Set kind: Query set, one glyph per kind (ADR-D01.69).",
+      "cue": "placeholder until the art line draws it: a plain square with Q and one tick"
+    },
+    "set.kind.piece": {
+      "group": "encoding",
+      "meaning": "Set kind: Piece set (ADR-D01.69).",
+      "cue": "placeholder until the art line draws it: a plain square with P and 2 ticks"
+    },
+    "set.kind.position": {
+      "group": "encoding",
+      "meaning": "Set kind: Position set (ADR-D01.69).",
+      "cue": "placeholder until the art line draws it: a plain square with O and 3 ticks"
+    },
+    "block.mark.attained": {
+      "group": "encoding",
+      "meaning": "Block mark: the block is attained, a mark separate from its outline (ADR-D01.69).",
+      "cue": "placeholder until the art line draws it: a plain square with A and one tick"
+    },
+    "block.mark.protected": {
+      "group": "encoding",
+      "meaning": "Block mark: the block is protected (ADR-D01.69).",
+      "cue": "placeholder until the art line draws it: a plain square with P and 2 ticks"
+    },
+    "block.mark.selected": {
+      "group": "encoding",
+      "meaning": "Block mark: the block is selected (ADR-D01.69).",
+      "cue": "placeholder until the art line draws it: a plain square with S and 3 ticks"
+    },
+    "block.outline.home": {
+      "group": "encoding",
+      "meaning": "Block outline in the views: the block at Home (ADR-D01.69).",
+      "cue": "placeholder until the art line draws it: a plain rectangle round the block, at its top-left corner a plain square with H and one tick"
+    },
+    "block.outline.referenced": {
+      "group": "encoding",
+      "meaning": "Block outline in the views: a referenced block (ADR-D01.69).",
+      "cue": "placeholder until the art line draws it: a plain rectangle round the block, at its top-left corner a plain square with R and 2 ticks"
     }
   },
   "components": {
@@ -1349,22 +1424,31 @@
         {
           "id": "arrows",
           "words": "arrows",
-          "roles": []
+          "roles": [
+            "arrow."
+          ]
         },
         {
           "id": "orientation-glyphs",
           "words": "orientation glyphs",
-          "roles": []
+          "roles": [
+            "orientation.glyph."
+          ]
         },
         {
           "id": "set-kind-glyphs",
           "words": "set-kind glyphs",
-          "roles": []
+          "roles": [
+            "set.kind."
+          ]
         },
         {
           "id": "block-marks",
           "words": "block marks",
-          "roles": []
+          "roles": [
+            "block.mark.",
+            "block.outline."
+          ]
         }
       ]
     }
