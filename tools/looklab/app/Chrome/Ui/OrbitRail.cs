@@ -23,6 +23,7 @@ public sealed partial class OrbitRail : PanelContainer
     public OrbitRail(SolvingDemo demo, Func<TokenSet> tokens)
     {
         Demo = demo; this.tokens = tokens; Name = "OrbitRail"; ThemeTypeVariation = "RailGround";
+        HelpTopics.Mark(this, "orbit");
         column = new VBoxContainer(); column.AddThemeConstantOverride("separation", 0); AddChild(column);
         var top = new HBoxContainer(); column.AddChild(top);
         head = ChromeWidgets.Text("", "MicroLabel", true); head.SizeFlagsHorizontal = SizeFlags.ExpandFill; top.AddChild(head);

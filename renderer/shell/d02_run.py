@@ -113,6 +113,30 @@ def expect_smoke(dumps: list[dict], source: dict, state: str | None) -> list[str
     return problems
 
 
+def expect_help_card(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    steps = ["start", "wait 2000 ms", "hover CapMapCells", "chord F1", "chord Escape",
+             "command help.open cell", "click HelpCardLearn", "wait 6000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    cap = overlay(dumps[3])
+    if "Cap" not in cap or "Open in Learn" not in cap:
+        problems.append("step 3: F1 over the cap map did not open Cap help with its Learn link")
+    words = sum(len(line.split()) for line in cap)
+    if words > 50:
+        problems.append(f"step 3: the Cap card shows {words} words")
+    if overlay(dumps[4]):
+        problems.append("step 4: Escape left an overlay open")
+    caption = "One of the 600 cells (bold) and its four neighbours."
+    cell = overlay(dumps[5])
+    if "Cell" not in cell or caption not in cell:
+        problems.append("step 5: help.open cell did not show Cell and its figure caption")
+    learn = texts(dumps[6], "frame")
+    if "Cell" not in learn or caption not in learn or overlay(dumps[6]):
+        problems.append("step 6: the link did not show Cell and its figure in Learn")
+    return problems
+
+
 def bind_chip(dump: dict) -> str | None:
     """The binding chip's words in a dump (B5): `bound · <state>` or `unbound · stale`."""
     for group, text in map(tuple, dump["lines"]):
@@ -788,14 +812,14 @@ def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list
     return problems
 
 
-EXPECT = {"twist-row": expect_twist_row, "smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
+EXPECT = {"twist-row": expect_twist_row, "smoke": expect_smoke, "help-card": expect_help_card, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
           "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
           "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band,
           "fit-2000": expect_fit, "fit-1280": lambda dumps, source, state: expect_fit(dumps, source, state, vertical=False)}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are. The twist scripts (bind and
 # two-views) run in sample mode as well, so they show that J reaches the session's router there too.
-ON_FIXTURE = {"twist-row", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
+ON_FIXTURE = {"twist-row", "help-card", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
 IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"}
 
 
