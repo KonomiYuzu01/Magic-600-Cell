@@ -751,6 +751,9 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
     return problems
 
 
+TWIST_ROW_150_PLANE = "c7b19b2e60a26fcdc234491d6f51139751e06e49ddb66fdb8d0528602e445f70"
+
+
 def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """B18's part for B20: the default cap 0 (blocked in wj-ia-300) has no twist row; after `> jumble.cap.name 150`
     the row of item 1 has a unit orthogonal plane, an angle in (0, pi] and moves exactly cap 150's inside set."""
@@ -768,10 +771,21 @@ def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list
         return ["a dump has no turn row"]
     if before.get("cap") != 0 or before.get("code") != 0:
         problems.append(f"step 1: the turn row reads cap {before.get('cap')} with code {before.get('code')}, not cap 0")
-    if (rows[0]["status"] == "admissible") != (before.get("status") == 1):
-        problems.append(f"step 1: cap 0 is {rows[0]['status']} but the turn row's status is {before.get('status')}")
+    # B18-08 (review call 20261126T225307Z-e6ce1514): the blocked cap's status is exactly 0, and the head is the same
+    # before and after the query (the row commits nothing).
+    if rows[0]["status"] != "blocked" or before.get("status") != 0:
+        problems.append(f"step 1: cap 0 is {rows[0]['status']} and the turn row's status is {before.get('status')}, not blocked and 0")
+    heads = [dumps[k].get("word", {}).get("digest") for k in (1, 5, len(dumps) - 1)]
+    if heads[0] is None or len(set(heads)) != 1 or before.get("read_at") != named.get("read_at"):
+        problems.append(f"the head moved across the query: digests {heads}, read at {before.get('read_at')} and {named.get('read_at')}")
     if named.get("cap") != 150 or named.get("code") != 0 or named.get("status") != 1:
         return problems + [f"step 5: the turn row is {named}"]
+    if named.get("revision") != named.get("read_at"):
+        problems.append(f"step 5: the row's revision {named.get('revision')} is not the head's {named.get('read_at')}")
+    # Cap 150's twist in wj-ia-300 is a half turn in the engine's plane u = (-cos 36, -sin 18, 0, 1/2), v = (0, -1/2,
+    # -cos 36, -sin 18) (single floats, little-endian, as the host writes them).
+    if abs(named["angle"] - math.pi) > 1e-6 or named.get("plane_sha256") != TWIST_ROW_150_PLANE:
+        problems.append(f"step 5: the angle {named['angle']} or the plane digest {named.get('plane_sha256')} is not cap 150's")
     inside = overlay_mask(load(SAMPLES / state / "cap-150.json")["masks"]["inside"], 177_120)
     packed = bytearray((len(inside) + 7) // 8)
     for piece, bit in enumerate(inside):

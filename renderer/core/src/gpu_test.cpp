@@ -1643,6 +1643,44 @@ void product_focus_layers(const Options& options) {
     harness.finish(options.debug);
 }
 
+// B18 review finding B18-03 (--warp --sweep): an unstyled turning frame's pick follows the moving mask it drew with.
+// Four unstyled frames of one revision, each turning a different mask, take every engine copy, so the first frame's
+// copy holds another frame's mask: a pick on it answers SA2_PICK_STALE_ENGINE instead of picking through that mask,
+// and a pick on the newest frame is not stale.
+void product_sweep_picks(const Options& options) {
+    using panes_check::pick;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    harness.make_ring(640, 360);
+    sa2_scene_config config{sizeof(sa2_scene_config), 1, 0, nullptr, SA2_SCENE_NO_VRAM, 1000};
+    api(harness.ctx, sa2_scene_load(harness.ctx, &config));
+    auto* ctx = harness.ctx;
+    std::vector<float> identity(16, 0.0f);
+    for (int i = 0; i < 4; ++i) identity[i * 5] = 1.0f;
+    adopt_poses(harness, 1, std::vector<int32_t>(SA2_PIECES, 0), identity, {0});
+    const auto set = panes_check::pickable_set(harness, 1, 1);
+    PoseFrames frames{harness};
+    const Rows Q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    const float u[4] = {1, 0, 0, 0}, v[4] = {0, 1, 0, 0};
+    std::vector<uint64_t> ids;
+    for (uint32_t k = 0; k < 4; ++k) {
+        std::vector<uint8_t> mask(SA2_PIECES);
+        for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) mask[piece] = uint8_t(piece % 4 == k);
+        api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, mask.data(), 0.0f));
+        frames.draw(1, 1, set, Q);
+        ids.push_back(frames.frame);
+    }
+    const uint32_t x = harness.width / 2, y = harness.height / 2;
+    const auto first = pick(harness, ids[0], x, y), last = pick(harness, ids[3], x, y);
+    std::cout << "transform picks: the first turning frame's pick state " << first.state << " (stale " << first.stale
+              << "), the newest's " << last.state << std::endl;
+    expect(first.state == SA2_PICK_STALE && first.stale == SA2_PICK_STALE_ENGINE,
+           "a pick on an unstyled turning frame whose copy took another moving mask was not stale");
+    expect(last.state != SA2_PICK_STALE, "a pick on the newest turning frame was stale");
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
 void product_panes(const Options& options) {
     using namespace panes_check;
     const Rows Q1 = double_rotation(0, 3, 0.35, 1, 2, 0.2), Q2 = double_rotation(0, 2, 0.9, 1, 3, 0.4);
@@ -2249,6 +2287,7 @@ void product_slice(const Options& options) {
 void run_sweep(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the transform check runs on WARP only");
     suite.check("transform warp", [&] { product_sweep(options); });
+    suite.check("transform picks warp", [&] { product_sweep_picks(options); });
 }
 // ADR-D02 B20: --warp --slice. Only WARP; parse refuses any other mode.
 void run_slice(Suite& suite, const Options& options) {

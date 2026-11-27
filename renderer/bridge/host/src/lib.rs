@@ -1489,8 +1489,12 @@ pub unsafe extern "C" fn m6h_set_piece_style(
 /// moving pieces draw turned by R((phase - 1) * angle): phase 1 draws the revision's own poses and phase 0 the poses
 /// before the twist that entered it, so a sweep runs the phase from 0 to 1 after a commit, and a turn preview of a
 /// twist not yet committed passes the negated angle at phase 0. A null `moving` with `count` 0 clears it. The core
-/// drops it at the next adoption. A wrong count, a byte other than 0 or 1, or a value out of range answers
-/// [`M6H_E_INVALID_ARGUMENT`] and changes nothing.
+/// drops it at the next adoption. `revision` is the engine revision the row was read at ([`m6h_twist_transform`]'s
+/// `out_revision`): a transform is set only while that revision is the adopted one, so a row is never drawn on another
+/// revision (review finding B18-04); a clear ignores it. A wrong count, a byte other than 0 or 1, a plane that is not
+/// finite or not two orthogonal unit vectors (the core's tolerance), an angle outside -pi..pi, a phase outside 0..1,
+/// or another revision answers [`M6H_E_INVALID_ARGUMENT`] and changes nothing (B18-07); the plane is read only once
+/// `moving` holds one byte per piece (B18-01).
 ///
 /// # Safety
 ///
@@ -1499,48 +1503,75 @@ pub unsafe extern "C" fn m6h_set_piece_style(
 #[no_mangle]
 pub unsafe extern "C" fn m6h_set_transform(
     handle: *mut ShellHost,
+    revision: u64,
     plane: *const f32,
     angle: f32,
     moving: *const u8,
     count: u32,
     phase: f32,
 ) -> i32 {
-    // SAFETY: `count` readable bytes and 8 readable floats (the contract).
+    // SAFETY: `count` readable bytes (the contract).
     let bytes = (!moving.is_null()).then(|| unsafe { std::slice::from_raw_parts(moving, count as usize) });
-    // SAFETY: the contract.
-    let rows = (!plane.is_null()).then(|| unsafe { std::slice::from_raw_parts(plane, 8) });
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            let revision = shell.revision;
-            let plane = match (bytes, rows) {
-                (None, _) if count == 0 => [[0.0; 4]; 2],
-                (Some(bytes), Some(rows)) if bytes.len() == PIECES => {
+            let invalid = |detail: &str| Err((M6H_E_INVALID_ARGUMENT, detail.to_owned()));
+            let plane = match bytes {
+                None if count == 0 => [[0.0; 4]; 2],
+                Some(bytes) if bytes.len() == PIECES && !plane.is_null() => {
+                    // SAFETY: 8 readable floats (the contract), read only for a full moving set.
+                    let rows = std::slice::from_raw_parts(plane, 8);
                     [[rows[0], rows[1], rows[2], rows[3]], [rows[4], rows[5], rows[6], rows[7]]]
                 }
-                _ => {
-                    return Err((
-                        M6H_E_INVALID_ARGUMENT,
-                        "a transform is a plane with one byte per piece, or null with count 0".to_owned(),
-                    ))
-                }
+                _ => return invalid("a transform is a plane with one byte per piece, or null with count 0"),
             };
-            shell.host.backend.set_transform(revision, &plane, angle, bytes, phase).map_err(host_error)
+            if let Some(bytes) = bytes {
+                if revision != shell.revision {
+                    let detail = format!("the row's revision {revision} is not the adopted {}", shell.revision);
+                    return Err((M6H_E_INVALID_ARGUMENT, detail));
+                }
+                if bytes.iter().any(|&byte| byte > 1) {
+                    return invalid("a moving byte is not 0 or 1");
+                }
+                if !transform_plane_valid(&plane) {
+                    return invalid("a transform's plane is not two finite orthogonal unit vectors");
+                }
+                let pi = std::f32::consts::PI;
+                let angle_ok = angle.is_finite() && (-pi..=pi).contains(&angle);
+                if !angle_ok || !(phase.is_finite() && (0.0..=1.0).contains(&phase)) {
+                    return invalid("a transform's angle is finite within -pi..pi and its phase within 0..1");
+                }
+            }
+            let adopted = shell.revision;
+            shell.host.backend.set_transform(adopted, &plane, angle, bytes, phase).map_err(host_error)
         })
     }
 }
 
+/// The core's check of a transform's plane (`SA2_TRANSFORM_PLANE_TOLERANCE`, 1e-3): finite, unit, orthogonal rows.
+fn transform_plane_valid(plane: &[[f32; 4]; 2]) -> bool {
+    let dot = |a: &[f32; 4], b: &[f32; 4]| a.iter().zip(b).map(|(x, y)| f64::from(*x) * f64::from(*y)).sum::<f64>();
+    let [u, v] = plane;
+    u.iter().chain(v).all(|x| x.is_finite())
+        && (dot(u, u) - 1.0).abs() <= 1e-3
+        && (dot(v, v) - 1.0).abs() <= 1e-3
+        && dot(u, v).abs() <= 1e-3
+}
+
 /// The certified transform row (ADR-D02 B18, row J03) of item `item` of the pinned menu at cap `cap` at the session's
-/// head, without committing it ([`turns::Turns::twist_transform`]). On [`M6H_OK`] `out_status` is 1 and the row is
-/// written: `out_plane` (8 floats, u then v), `out_angle` (in (0, pi]) and `out_moving` (177,120 bytes, 1 for a moving
-/// piece); or it is 0 and nothing else is written, when the twist is not admissible there (blocked, uncertain, refused
-/// or protected) or turns no plane: no moving set is guessed, so a caller draws no sweep and no preview. A session
-/// without Jumble answers [`M6H_E_SESSION`].
+/// head, without committing it ([`turns::Turns::twist_transform`]). On [`M6H_OK`] `out_revision` is the engine
+/// revision handed to that head, the row's revision, which [`m6h_set_transform`] names (B18-04); and `out_status` is 1
+/// and the row is written: `out_plane` (8 floats, u then v), `out_angle` (in (0, pi]) and `out_moving` (177,120 bytes,
+/// 1 for a moving piece); or it is 0 and nothing else is written, when the twist is not admissible there (blocked,
+/// uncertain, off the menu, or moving a piece that carries a protected orbit, as the command layer judges a press:
+/// B18-02) or turns no plane: no moving set is guessed, so a caller draws no sweep and no preview. A session without
+/// Jumble answers [`M6H_E_SESSION`].
 ///
 /// # Safety
 ///
-/// `handle` is a live handle that no other thread is using; `out_plane` points to 8 writable floats, `out_angle` and
-/// `out_status` to one writable value each and `out_moving` to 177,120 writable bytes.
+/// `handle` is a live handle that no other thread is using; `out_plane` points to 8 writable floats, `out_angle`,
+/// `out_status` and `out_revision` to one writable value each and `out_moving` to 177,120 writable bytes.
+#[allow(clippy::too_many_arguments)]
 #[no_mangle]
 pub unsafe extern "C" fn m6h_twist_transform(
     handle: *mut ShellHost,
@@ -1550,14 +1581,17 @@ pub unsafe extern "C" fn m6h_twist_transform(
     out_angle: *mut f32,
     out_moving: *mut u8,
     out_status: *mut u32,
+    out_revision: *mut u64,
 ) -> i32 {
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            if out_plane.is_null() || out_angle.is_null() || out_moving.is_null() || out_status.is_null() {
+            let outputs = [out_plane.is_null(), out_angle.is_null(), out_moving.is_null(), out_status.is_null()];
+            if outputs.contains(&true) || out_revision.is_null() {
                 return Err((M6H_E_INVALID_ARGUMENT, "an output is null".to_owned()));
             }
             let row = shell.turns()?.twist_transform(cap, item).map_err(|e| (M6H_E_SESSION, e))?;
+            out_revision.write(shell.assigned);
             let Some((row, plane)) = row.and_then(|row| row.plane.as_ref().map(|p| p.as_f32()).map(|p| (row, p)))
             else {
                 out_status.write(0);

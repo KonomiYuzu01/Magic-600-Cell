@@ -380,6 +380,29 @@ fn the_host_sets_the_piece_style_and_the_style_slots() {
         assert!(fake().view_styles[1..].iter().all(Option::is_none));
         assert_eq!(m6h_set_view_style(host, 1, ptr::null()), M6H_OK);
         assert!(fake().view_styles[0].is_none());
+        // ADR-D02 B18 review findings B18-04 and B18-07: a transform names the adopted revision, and a bad byte,
+        // plane, angle or phase answers M6H_E_INVALID_ARGUMENT in the host before the core is asked (the fake core
+        // has no `sa2_transform_set`, so a transform that reaches it answers M6H_E_HOST); a clear needs no revision.
+        let plane = [1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+        let moving = vec![0u8; PIECES];
+        let adopted = ENGINE_REVISION;
+        let set = |revision: u64, plane: &[f32; 8], angle: f32, moving: &[u8], phase: f32| {
+            m6h_set_transform(host, revision, plane.as_ptr(), angle, moving.as_ptr(), moving.len() as u32, phase)
+        };
+        assert_eq!(set(adopted + 1, &plane, 1.0, &moving, 0.0), M6H_E_INVALID_ARGUMENT, "another revision");
+        let mut two = moving.clone();
+        two[5] = 2;
+        assert_eq!(set(adopted, &plane, 1.0, &two, 0.0), M6H_E_INVALID_ARGUMENT, "a moving byte of 2");
+        assert_eq!(set(adopted, &plane, 1.0, &moving, 1.5), M6H_E_INVALID_ARGUMENT, "a phase above 1");
+        assert_eq!(set(adopted, &plane, f32::NAN, &moving, 0.0), M6H_E_INVALID_ARGUMENT, "a NaN angle");
+        assert_eq!(set(adopted, &plane, 4.0, &moving, 0.0), M6H_E_INVALID_ARGUMENT, "an angle above pi");
+        let flat = [1.0f32, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0];
+        assert_eq!(set(adopted, &flat, 1.0, &moving, 0.0), M6H_E_INVALID_ARGUMENT, "a degenerate plane");
+        assert_eq!(set(adopted, &plane, 1.0, &moving[..10], 0.0), M6H_E_INVALID_ARGUMENT, "a short moving set");
+        let no_plane = m6h_set_transform(host, adopted, ptr::null(), 1.0, moving.as_ptr(), PIECES as u32, 0.0);
+        assert_eq!(no_plane, M6H_E_INVALID_ARGUMENT, "a moving set without a plane");
+        assert_eq!(set(adopted, &plane, 1.0, &moving, 0.0), M6H_E_HOST, "a valid transform reaches the core");
+        assert_eq!(m6h_set_transform(host, 0, ptr::null(), 0.0, ptr::null(), 0, 0.0), M6H_E_HOST, "a clear reaches it");
         m6h_destroy(host);
         drop(Box::from_raw(shim));
     }

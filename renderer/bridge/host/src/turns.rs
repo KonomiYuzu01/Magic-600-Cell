@@ -540,7 +540,8 @@ impl Turns {
     /// ADR-D02 B18 (row J03): the certified transform row of item `item` of the pinned menu at cap `cap` at the head,
     /// without committing it: `c600_display::jumble::transform` of the outcome the jumbling engine gives that twist on
     /// a copy of the head's poses, the letter resolved as [`Turns::twist_letter`] sends it and as the control's replay
-    /// resolves a press. `None` when the outcome is not admissible (blocked, uncertain, refused or protected): no moving
+    /// resolves a press. `None` when the outcome is not admissible (blocked, uncertain, refused, or moving a piece that
+    /// carries a protected orbit, which the command layer refuses with `KN2:protection.piece_would_move`): no moving
     /// set is guessed. The row's endpoints are left 0. Jumble on only.
     pub fn twist_transform(&mut self, cap: u32, item: u64) -> Result<Option<TransformInput>, String> {
         if self.puzzle != Puzzle::JumbleOn {
@@ -558,13 +559,22 @@ impl Turns {
         let pinned = menu(&self.exact, &self.record)?;
         let resolution = rotation::resolve(&self.exact, Some(&pinned), &binding(&args, self.puzzle.binding_field())?)
             .map_err(|refusal| format!("the letter [{cap}, {item}] does not resolve: {refusal:?}"))?;
-        let mut state = {
+        // Review finding B18-02: the pieces that carry the protected orbits are pose-protected, as the command layer
+        // judges a pose move (`jumble::protected_pieces`, read only: the jumbling model's `orbit_id`, a centre piece in
+        // no orbit). For one twist Net and Strict agree (KN2.7): the word's only letter changes a protected piece's
+        // pose exactly when its end pose differs from the base's, which is `State::apply`'s test.
+        let (mut state, orbits) = {
             let layer = self.layer()?;
+            let orbits = layer.protected().orbits().to_vec();
             let jumbled = layer.jumbled().ok_or_else(|| "the head has no poses".to_owned())?;
-            jumbled.state().clone()
+            (jumbled.state().clone(), orbits)
         };
+        let orbit_id = &self.exact.model.orbit_id;
+        let protect: Vec<u32> = (0..orbit_id.len() as u32)
+            .filter(|&piece| usize::try_from(orbit_id[piece as usize]).is_ok_and(|orbit| orbits.contains(&orbit)))
+            .collect();
         let outcome = state
-            .apply(&self.exact, &resolution.twist, None, &[])
+            .apply(&self.exact, &resolution.twist, None, &protect)
             .map_err(|error| format!("the jumbling engine failed: {error:?}"))?;
         certified_transform(&outcome, &resolution.twist, (0, 0)).map_err(|missing| format!("{missing:?}"))
     }

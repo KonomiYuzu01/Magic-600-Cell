@@ -22,10 +22,19 @@ public static class ShellTurn
     /// <summary>The host's code for the last read.</summary>
     public static int Code { get; private set; } = HostLibrary.Ok;
 
-    /// <summary>Reads the row when the cap Local draws or the revision changed; a refusal is read again next frame.</summary>
+    /// <summary>The engine revision the host read the last row at (the head's), which the transform setter names.</summary>
+    public static ulong RowRevision { get; private set; }
+
+    /// <summary>
+    /// Reads the row when the cap Local draws or the revision changed. The cap is the one the frame loop's framing
+    /// call left (<see cref="ShellLocal.Plan"/>'s Framed, set by the shell's FollowLocalCap before the style is sent),
+    /// never a second stateful framing call, so naming and selection precedence stay the renderer's (B18 review finding
+    /// B18-05). A refusal, a session without Jumble included, is kept for its cap and revision like a row, so it is not
+    /// asked again every frame (B18-06).
+    /// </summary>
     public static void Note(HostLibrary library, IntPtr host, ulong revision)
     {
-        if (ShellLocal.Frame(ShellJumble.Host?.Overlay.Cap) is not int cap)
+        if (ShellLocal.Plan.Framed is not int cap)
         {
             (Cap, Row, _read) = (null, null, null);
             return;
@@ -34,9 +43,8 @@ public static class ShellTurn
         {
             return;
         }
-        Code = library.TwistTransform(host, (uint)cap, 1, out var row);
-        (Cap, Row) = (cap, row);
-        _read = Code == HostLibrary.Ok ? (cap, revision) : null;
+        Code = library.TwistTransform(host, (uint)cap, 1, out var row, out var at);
+        (Cap, Row, RowRevision, _read) = (cap, row, at, (cap, revision));
     }
 
     /// <summary>
@@ -61,9 +69,11 @@ public static class ShellTurn
     {
         if (on && Row is { Plane.Length: 8 } row)
         {
-            return library.SetTransform(host, row.Plane, -row.Angle, row.Moving, 0);
+            // B18-04: the row names the revision it was read at; the host refuses it on any other adopted revision,
+            // and the slice sends it again at the next step.
+            return library.SetTransform(host, row.Revision, row.Plane, -row.Angle, row.Moving, 0);
         }
-        return library.SetTransform(host, null, 0, null, 0);
+        return library.SetTransform(host, 0, null, 0, null, 0);
     }
 
     /// <summary>The dump's turn row: the cap, the host's code, the status and, for a row, its moving count, the sha256
@@ -74,6 +84,7 @@ public static class ShellTurn
         if (Cap is int cap) json.WriteNumber("cap", cap); else json.WriteNull("cap");
         json.WriteNumber("code", Code);
         json.WriteNumber("status", Row is null ? 0 : 1);
+        json.WriteNumber("read_at", RowRevision);
         if (Row is { } row)
         {
             long moving = 0;
@@ -86,6 +97,11 @@ public static class ShellTurn
             }
             json.WriteNumber("moving", moving);
             json.WriteString("moving_sha256", Convert.ToHexString(SHA256.HashData(bits)).ToLowerInvariant());
+            // B18-08: the row's revision and the sha256 of its eight plane floats (IEEE single, little-endian).
+            json.WriteNumber("revision", row.Revision);
+            var plane = new byte[row.Plane.Length * 4];
+            Buffer.BlockCopy(row.Plane, 0, plane, 0, plane.Length);
+            json.WriteString("plane_sha256", Convert.ToHexString(SHA256.HashData(plane)).ToLowerInvariant());
             json.WriteNumber("angle", row.Angle);
             json.WriteStartArray("plane");
             foreach (var value in row.Plane)
