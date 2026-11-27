@@ -434,6 +434,7 @@ public partial class Shell : Control
             _log?.Press(qpc, handled, result.EngineRevision);
             _chrome?.Committed(chord, result.EngineRevision);
             D02.ShellTurn.Committed(result.EngineRevision);
+            D02.ShellStyle.Committed(result.EngineRevision);
         }
         else if (result.Press == HostLibrary.PressRefused)
         {
@@ -485,7 +486,7 @@ public partial class Shell : Control
                     if (SurfacePoint(up.Position) is { } at)
                     {
                         if (GripClick(up, at)) GetViewport().SetInputAsHandled();
-                        else D02.ShellPick.Click(at.X, at.Y);
+                        else D02.ShellPick.Click(at.X, at.Y, ViewAt(up.Position));
                     }
                     break;
                 case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false } right when !turned:
@@ -835,6 +836,7 @@ public partial class Shell : Control
         if (_gripPress is not int press || press != D02.ShellGrip.Gesture || !up.CtrlPressed || !CanClickGrip()) return false;
         var revision = _adoptedRevision;
         var qpc = EventLog.Now();
+        var view = ViewAt(up.Position);
         D02.ShellPick.GripClick(at.X, at.Y, pick =>
         {
             if (revision != _adoptedRevision || press != D02.ShellGrip.Gesture || !CanClickGrip()) return true;
@@ -842,7 +844,7 @@ public partial class Shell : Control
             Turn(new InputEventKey { Keycode = Key.J, PhysicalKeycode = Key.J, Pressed = true }, qpc);
             _hostLibrary?.KeyUp(_host, "KeyJ");
             return true;
-        });
+        }, view);
         return true;
     }
 

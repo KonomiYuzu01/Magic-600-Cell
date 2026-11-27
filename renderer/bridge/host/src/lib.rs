@@ -381,6 +381,9 @@ pub struct ShellHost {
     /// ADR-D02 B18 rest: a transform named for a revision handed out but not adopted yet (a sweep's phase 0), set
     /// with that revision's adoption ([`m6h_set_transform`]).
     pending_transform: Option<PendingTransform>,
+    /// Checkpoint C3.2 (finding F1, 27 November 2026): a piece style named for a revision handed out but not adopted
+    /// yet, by channel (fill, outline, slice), set with that revision's adoption ([`m6h_set_piece_style`]).
+    pending_styles: [Option<(u64, Option<Vec<u8>>)>; 3],
     /// The thread that builds twist adoptions off the frame thread ([`deferred`]), from the first twist on.
     adoptions: Option<deferred::Worker>,
     /// An adoption that failed after a frame was submitted, which the next call that adopts answers.
@@ -571,6 +574,7 @@ impl ShellHost {
             assigned: ENGINE_REVISION,
             awaited: None,
             pending_transform: None,
+            pending_styles: [None, None, None],
             adoptions: None,
             failed: None,
             turns: None,
@@ -642,6 +646,20 @@ impl ShellHost {
                 let _ = self.host.backend.set_transform(revision, &plane, angle, Some(&moving), phase);
             } else if pending.revision > revision {
                 self.pending_transform = Some(pending);
+            }
+        }
+        // Checkpoint C3.2 (F1): a piece style the shell named for this revision before its adoption is set with it, so
+        // the revision's first frame draws it (the core dropped the old revision's style at the adoption). A failure
+        // only loses that first frame's style: the shell sends it again for the adopted revision at its next step.
+        for (channel, slot) in self.pending_styles.iter_mut().enumerate() {
+            match slot.take() {
+                Some((at, bytes)) if at == revision => {
+                    if let Some(bytes) = bytes {
+                        let _ = self.host.backend.set_piece_style(revision, Some(&bytes), channel as u32);
+                    }
+                }
+                Some(later) if later.0 > revision => *slot = Some(later),
+                _ => {}
             }
         }
         self.publication = publication;
@@ -1460,12 +1478,17 @@ pub unsafe extern "C" fn m6h_set_view_layout(handle: *mut ShellHost, view: u64, 
     }
 }
 
-/// Sets one channel of the adopted revision's piece style (version 10, ADR-D02 B14; the core's ABI 7 `sa2_style_set`):
-/// `channel` 0 is the fill (a palette entry in the low four bits, bit 7 the dim set) and 1 the outline (a palette
+/// Sets one channel of a revision's piece style (version 10, ADR-D02 B14; the core's ABI 7 `sa2_style_set`):
+/// `revision` is the engine revision the shell computed the style for (checkpoint C3.2, finding F1: added to ABI 10
+/// before any release, no new number, as [`m6h_set_transform`]'s). The adopted revision's style is set at once; one
+/// for a revision handed out but not adopted yet (after a committed twist) is held and set with that revision's
+/// adoption, so its first frame draws it, and a newer one for the same channel replaces it. An older revision than
+/// the adopted one answers [`M6H_E_UNAVAILABLE`] (send it again for the shown revision) and one never handed out
+/// [`M6H_E_INVALID_ARGUMENT`]; neither changes anything. `channel` 0 is the fill (a palette entry in the low four bits, bit 7 the dim set) and 1 the outline (a palette
 /// entry). With `by_pose` 0, `styles` holds one byte per piece (`count` = 177,120). With `by_pose` 1 it holds one byte
 /// per pose of the session's head, which must be the adopted revision, and the host expands it to pieces with the
-/// head's own pose index; a head that is not adopted yet answers [`M6H_E_UNAVAILABLE`] (set it again once the
-/// revision is shown), and a session without Jumble [`M6H_E_SESSION`]. A null `styles` with `count` 0 clears the
+/// head's own pose index; a head or a `revision` that is not adopted yet answers [`M6H_E_UNAVAILABLE`] (set it again
+/// once the revision is shown), and a session without Jumble [`M6H_E_SESSION`]. A null `styles` with `count` 0 clears the
 /// channel. The core drops the style at the next adoption, so the shell sets it again for each revision. A wrong
 /// count or a byte with bits outside the channel's answers [`M6H_E_INVALID_ARGUMENT`] and changes nothing.
 ///
@@ -1475,6 +1498,7 @@ pub unsafe extern "C" fn m6h_set_view_layout(handle: *mut ShellHost, view: u64, 
 #[no_mangle]
 pub unsafe extern "C" fn m6h_set_piece_style(
     handle: *mut ShellHost,
+    revision: u64,
     channel: u32,
     styles: *const u8,
     count: u32,
@@ -1485,12 +1509,20 @@ pub unsafe extern "C" fn m6h_set_piece_style(
     // SAFETY: the contract.
     unsafe {
         with_host(handle, |shell| {
-            let revision = shell.revision;
+            let adopted = shell.revision;
+            let held = revision > adopted && revision <= shell.assigned;
+            if revision != adopted && !held {
+                let code = if revision < adopted { M6H_E_UNAVAILABLE } else { M6H_E_INVALID_ARGUMENT };
+                return Err((code, format!("the style's revision {revision} is neither the adopted {adopted} nor handed out")));
+            }
             let pieces = match (bytes, by_pose) {
                 (None, 0 | 1) if count == 0 => None,
                 (Some(bytes), 0) if bytes.len() == PIECES => Some(bytes.to_vec()),
+                (Some(_), 1) if held => {
+                    return Err((M6H_E_UNAVAILABLE, "a per-pose style is set for the adopted revision only".to_owned()))
+                }
                 (Some(bytes), 1) => {
-                    let adopted = shell.digests.get(&revision).cloned().unwrap_or_default();
+                    let adopted = shell.digests.get(&adopted).cloned().unwrap_or_default();
                     let (digest, index) = shell.turns()?.pose_index().map_err(|e| (M6H_E_SESSION, e))?;
                     let (ids, poses) = index
                         .ok_or_else(|| (M6H_E_SESSION, "a per-pose style needs a session with Jumble on".to_owned()))?;
@@ -1519,6 +1551,10 @@ pub unsafe extern "C" fn m6h_set_piece_style(
                     M6H_E_INVALID_ARGUMENT,
                     "a channel is 0, 1 or 2 (B20's slice), and its bytes use only its bits".to_owned(),
                 ));
+            }
+            if held {
+                shell.pending_styles[channel as usize] = Some((revision, pieces));
+                return Ok(());
             }
             shell.host.backend.set_piece_style(revision, pieces.as_deref(), channel).map_err(host_error)
         })

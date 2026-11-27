@@ -762,7 +762,7 @@ class PickRun(unittest.TestCase):
         self.assertIn("pick", run.ON_FIXTURE)
         script = json.loads(text(SHELL / "d02_scripts" / "pick.json"))
         self.assertEqual(script["steps"][-2], {"click": [0.02, 0.02]})
-        self.assertIn("public static string ScriptClick(Rect2 opening, JsonElement click)",
+        self.assertIn("public static string ScriptClick(Rect2 opening, JsonElement click, bool local = false)",
                       text(PROJECT / "D02" / "ShellPick.cs"))
 
     def test_the_model_pieces_are_read(self):
@@ -796,7 +796,7 @@ class HopfRun(unittest.TestCase):
 
     def test_the_script_and_the_checks_exist(self):
         run = shell_module("d02_run")
-        self.assertIs(run.EXPECT["hopf"], run.expect_hopf)
+        self.assertIs(run.EXPECT["hopf"].__wrapped__, run.expect_hopf)  # C3/C4 F5: under the steady-state check
         self.assertIn("hopf", run.ON_FIXTURE)
         self.assertIs(run.EVENT_CHECKS["hopf"], run.check_hopf_events)
         script = json.loads(text(SHELL / "d02_scripts" / "hopf.json"))
@@ -812,7 +812,7 @@ class HopfRun(unittest.TestCase):
 
     def test_the_ring_sheet_run_reads_its_own_opening(self):
         run = shell_module("d02_run")
-        self.assertIs(run.EXPECT["ring-sheet"], run.expect_ring_sheet)
+        self.assertIs(run.EXPECT["ring-sheet"].__wrapped__, run.expect_ring_sheet)  # C3/C4 F5
         self.assertIn("ring-sheet", run.ON_FIXTURE)
         self.assertIs(run.DATA_FOR["ring-sheet"], run.ring_sheet_data)
         temp = fresh_test_folder("d02-ring-sheet-")

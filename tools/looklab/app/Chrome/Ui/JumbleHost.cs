@@ -704,10 +704,13 @@ public sealed partial class JumbleHost
     // B27: then Global's projection chain (ADR-D02.8) and the exposed faces' unavailable state (ADR-D02.25).
     public void Marks(ViewFrame view)
     {
-        if (JumbleChrome.Marked(Source.State, new[] { view.ViewName }).Count == 0) return;
-        view.AddMark(JumbleChrome.Mark, JumbleChrome.MarkWords, "accent.strong", "Jumble is on: this view shows the jumbled puzzle");
-        foreach (ViewMark mark in JumbleViews.BorderMarks(Source.State, view.ViewName, Chart != null ? Chart() : null)) view.AddMark(mark.Glyph, mark.Words, mark.Colour, mark.Tooltip);
-        // B21: Local's raw view names its caption and the antipode chart.
+        if (JumbleChrome.Marked(Source.State, new[] { view.ViewName }).Count != 0)
+        {
+            view.AddMark(JumbleChrome.Mark, JumbleChrome.MarkWords, "accent.strong", "Jumble is on: this view shows the jumbled puzzle");
+            foreach (ViewMark mark in JumbleViews.BorderMarks(Source.State, view.ViewName, Chart != null ? Chart() : null)) view.AddMark(mark.Glyph, mark.Words, mark.Colour, mark.Tooltip);
+        }
+        // B21: Local's raw view names its caption and the antipode chart; C3/C4 finding F6: whenever Local draws the raw
+        // view, Jumble's mode on or off (the raw view's Home acts at any cap Local draws).
         if (view.ViewName == "Local" && Raw != null && Raw() is { } raw)
             foreach (ViewMark mark in raw.Marks()) view.AddMark(mark.Glyph, mark.Words, mark.Colour, mark.Tooltip);
     }

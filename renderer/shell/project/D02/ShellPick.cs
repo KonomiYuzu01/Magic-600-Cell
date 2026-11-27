@@ -43,14 +43,14 @@ public static class ShellPick
     /// <summary>Clicks asked, answered with a hit, answered with none, and dropped as stale (for the run's dump).</summary>
     public static (int Asked, int Hits, int Misses, int Stale) Counts => (_asked, _hits, _misses, _stale);
 
-    private static readonly List<(ulong Ticket, (uint X, uint Y)? HoverAt, Func<Picked?, bool>? Take)> Pending = new();
-    private static (uint X, uint Y, Func<Picked?, bool>? Take)? _click;
+    private static readonly List<(ulong Ticket, (uint X, uint Y)? HoverAt, Func<Picked?, bool>? Take, ulong? View)> Pending = new();
+    private static (uint X, uint Y, Func<Picked?, bool>? Take, ulong? View)? _click;
     private static (uint X, uint Y)? _hover;
     private static DateTime _hoverAt = DateTime.MinValue;
-    private static int _asked, _hits, _misses, _stale;
+    private static int _asked, _hits, _misses, _stale, _dropped;
 
     /// <summary>A click at a surface pixel: the next frame asks the ID pass there.</summary>
-    public static void Click(uint x, uint y) => _click = (x, y, null);
+    public static void Click(uint x, uint y, ulong? view = null) => _click = (x, y, null, view);
 
     /// <summary>The pointer at a surface pixel, or off every view (null clears the hover).</summary>
     public static void Point((uint X, uint Y)? at)
@@ -87,7 +87,7 @@ public static class ShellPick
             var code = library.PickRequest(host, click.X, click.Y, out var ticket);
             if (code == HostLibrary.Ok)
             {
-                Pending.Add((ticket, null, click.Take));
+                Pending.Add((ticket, null, click.Take, click.View));
                 _asked++;
             }
             // ADR-D02 B17: keep the click until a current frame's ID resources are ready.
@@ -100,12 +100,12 @@ public static class ShellPick
         if (_hover is { } hover && now - _hoverAt >= HoverEvery && !Pending.Exists(p => p.HoverAt != null)
             && library.PickRequest(host, hover.X, hover.Y, out var hoverTicket) == HostLibrary.Ok)
         {
-            Pending.Add((hoverTicket, hover, null));
+            Pending.Add((hoverTicket, hover, null, null));
             _hoverAt = now;
         }
         for (var i = Pending.Count - 1; i >= 0; i--)
         {
-            var (t, hoverAt, take) = Pending[i];
+            var (t, hoverAt, take, clicked) = Pending[i];
             bool isClick = hoverAt == null;
             if (library.PickPoll(host, t, out var pick) != HostLibrary.Ok)
             {
@@ -123,6 +123,13 @@ public static class ShellPick
                 {
                     _stale++;
                 }
+                continue;
+            }
+            // Checkpoint C3.9 (F2): a click's reply is taken only from the view the click resolved to (B18c,
+            // ViewPanes.Takes): while the surface lags a layout change, a reply naming another view is dropped.
+            if (isClick && clicked is { } view && !Magic600.Chrome.ViewPanes.Takes(Name(view), Name(pick.View)))
+            {
+                _dropped++;
                 continue;
             }
             var picked = pick.Hit == 1
@@ -169,21 +176,25 @@ public static class ShellPick
     public static Picked? HoverAtPointer => _pickedHoverAt == _hover ? Hover : null;
 
     /// <summary>A click whose confirmed hit can take the direct-twist route before selection.</summary>
-    public static void GripClick(uint x, uint y, Func<Picked?, bool> take) => _click = (x, y, take);
+    public static void GripClick(uint x, uint y, Func<Picked?, bool> take, ulong? view = null) => _click = (x, y, take, view);
 
     /// <summary>
     /// A D02 script's <c>click</c> step, <c>{"click": [fx, fy]}</c>: a left click at fractions fx, fy of the Global
     /// opening's width and height, through the shell's input. Answers the step's name for the run's dump.
     /// </summary>
-    public static string ScriptClick(Rect2 opening, JsonElement click)
+    public static string ScriptClick(Rect2 opening, JsonElement click, bool local = false)
     {
         var fx = click[0].GetSingle();
         var fy = click[1].GetSingle();
         var at = opening.Position + new Vector2(opening.Size.X * fx, opening.Size.Y * fy);
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at, ButtonMask = MouseButtonMask.Left });
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
-        return "click " + fx.ToString(CultureInfo.InvariantCulture) + " " + fy.ToString(CultureInfo.InvariantCulture);
+        return "click " + fx.ToString(CultureInfo.InvariantCulture) + " " + fy.ToString(CultureInfo.InvariantCulture)
+            + (local ? " in local" : "");
     }
+
+    // F2: the pane layout's name of a host view (ViewPanes' "Global" and "Local").
+    private static string Name(ulong view) => view == HostLibrary.Local ? "Local" : view == HostLibrary.View ? "Global" : $"view {view}";
 
     /// <summary>Writes the pick context into a D02 run's screen dump (the d02_run.py pick check reads it).</summary>
     public static void Dump(Utf8JsonWriter json)
@@ -195,6 +206,7 @@ public static class ShellPick
         json.WriteNumber("hits", _hits);
         json.WriteNumber("misses", _misses);
         json.WriteNumber("stale", _stale);
+        json.WriteNumber("dropped", _dropped);
         json.WriteEndObject();
     }
 

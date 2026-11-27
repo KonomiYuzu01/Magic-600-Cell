@@ -1104,6 +1104,10 @@ def expect_raw(dumps: list[dict], source: dict, state: str | None) -> list[str]:
             problems.append(f"step {step}: Local's charts are {row['charts']} labelled {row['label']!r}")
         if (row["caption"] == caption) != on or on and not row["line"].endswith(caption):
             problems.append(f"step {step}: the caption is {row['caption']!r} and Local's line {row['line']!r}")
+        # C3/C4 finding F6: the caption as drawn on Local's border, not the model's constant.
+        marks = dumps[step].get("local_marks")
+        if marks is None or any(caption in mark for mark in marks) != on:
+            problems.append(f"step {step}: Local's border marks are {marks!r}; the caption shows exactly while raw is on")
     if not raws[7]["line"].startswith("Raw view at cap 150"):
         problems.append(f"Local's line at step 7 reads {raws[7]['line']!r}")
     if "all 80 meeting poles inside" not in raws[15]["line"]:
@@ -1432,6 +1436,21 @@ def expect_pick(dumps: list[dict], source: dict, state: str | None, pieces: list
                 problems.append(f"E without a selected cell must keep the Target and say {reason!r}")
     if final["hits"] == 0:
         problems.append("no click hit a sticker")
+    # Checkpoint C3.9 (F2): a click selects only in the view it was made in (Global is view 1, Local view 2), and no
+    # reply is dropped in a still layout.
+    local_hits = 0
+    for i in clicks:
+        if i + 1 >= len(dumps):
+            break
+        selection = dumps[i + 1]["pick"]["selection"]
+        want = 2 if dumps[i]["do"].endswith(" in local") else 1
+        if selection is not None and selection.get("view") != want:
+            problems.append(f"after '{dumps[i]['do']}' the selection names view {selection.get('view')}, not {want}")
+        local_hits += want == 2 and selection is not None
+    if any(dumps[i]["do"].endswith(" in local") for i in clicks) and local_hits == 0:
+        problems.append("no click in Local selected a sticker in Local")
+    if final.get("dropped", 0) != 0:
+        problems.append(f"{final['dropped']} pick replies named another view than the clicked one")
     if final["selection"] is not None:
         problems.append("the click in the opening's corner did not clear the selection")
     print(f"pick: {len(clicks)} clicks, {final['hits']} hits, {final['misses']} misses, {final['stale']} stale")
@@ -3183,6 +3202,34 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     if out.is_dir():
         (out / RECORD).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8", newline="\n")
     return (0 if not problems else 1), record
+
+
+def steady_state(dumps: list[dict], name: str) -> list[str]:
+    """C3/C4 finding F5 (B23's check): a view-only run changes the session at no step: the bound state's digest and
+    revision, and the Word panel's digest line, are the same in every dump that carries them."""
+    bound = [dump["bound"] for dump in dumps if isinstance(dump.get("bound"), dict)]
+    if len(bound) != len(dumps):
+        return [f"{name}: {len(dumps) - len(bound)} of {len(dumps)} dumps carry no bound state"]
+    problems = []
+    pairs = {(row["digest"], row["revision"]) for row in bound}
+    if len(pairs) != 1 or any(revision < 0 or not digest for digest, revision in pairs):
+        problems.append(f"{name}: the bound state changed or was never bound: {sorted(pairs)}")
+    words = {dump["word"]["digest"] for dump in dumps if isinstance(dump.get("word"), dict) and "digest" in dump["word"]}
+    if len(words) > 1:
+        problems.append(f"{name}: the Word panel's digest changed: {sorted(words)}")
+    print(f"{name}: steady state {sorted(pairs)}, Word digests {len(words)}")
+    return problems
+
+
+def with_steady_state(name: str, expect):
+    def run(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+        return steady_state(dumps, name) + expect(dumps, source, state)
+    run.__wrapped__ = expect
+    return run
+
+
+for _name in ("hopf", "ring-sheet", "slice", "raw"):
+    EXPECT[_name] = with_steady_state(_name, EXPECT[_name])
 
 
 def main(argv: list[str] | None = None) -> int:

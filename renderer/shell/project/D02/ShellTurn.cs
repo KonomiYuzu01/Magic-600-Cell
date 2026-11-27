@@ -69,7 +69,7 @@ public static class ShellTurn
         {
             foreach (var bit in moving) count += bit;
         }
-        return library.SetPieceStyle(host, HostLibrary.StyleSlice, moving, false);
+        return library.SetPieceStyle(host, adopted, HostLibrary.StyleSlice, moving, false);
     }
 
     /// <summary>B18-04: the row's moving set on the revision it was read at, else none.</summary>

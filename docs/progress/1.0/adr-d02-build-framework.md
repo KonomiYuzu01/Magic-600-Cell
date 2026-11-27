@@ -1515,6 +1515,19 @@ Each checkpoint is one read of the named diff range against the questions below,
   - a pick reply comes from the view clicked;
   - G9's line comes from the event log.
 - Owner is shown: gate sitting 1, Global and Local drawn at once, and the certificate glyphs to accept or refuse. About 90 minutes of Fable's reading.
+- C3/C4 findings (27 November 2026), Fable's read at b1c0cf9b; each lead got its test first:
+  - F1 (major, C3.2), confirmed: host test `style_held` failed first (the new revision's first frame had no fill).
+    `m6h_set_piece_style` now takes the revision (ABI 10, before any release, no new number); the host holds a style
+    for a revision handed out but not adopted yet and sets it at that adoption; an older revision answers
+    unavailable, one never handed out invalid argument. The shell sends the outline and the fill for the adopted
+    revision and, after a committed press, for the pending one. Left: the slice channel is still sent only for the
+    adopted revision (its row is read per adopted revision), and presses committed outside `m6h_key_down` do not
+    name a pending revision.
+  - F2 (major as a checkpoint item, C3.9), confirmed: host test `a_pick_names_the_view_it_hit` failed first (the fake
+    core answered the frame's first pane for a pick in Local); the fake now picks per pane, as the core's `pick_pane`
+    does. `ShellPick` keeps the clicked view and drops a reply that `ViewPanes.Takes` refuses (the dump's
+    `pick.dropped`); the `pick` run clicks twice in Local (`"in": "local"`) and checks each selection's view.
+  - F3 (minor): not done in this step (budget); the four-state console replay is still owed.
 
 **C4, after B24.**
 - Fable checks:
@@ -1527,6 +1540,15 @@ Each checkpoint is one read of the named diff range against the questions below,
   - no view mode changes a state digest;
   - the three-pane gate lines come from the event log.
 - Owner is shown: gate sitting 2, both presets beside a drawn Local, the split and the antipode.
+- C3/C4 findings (27 November 2026), Fable's read at b1c0cf9b:
+  - F4 (minor), confirmed: `check_core.py --chart` on WARP failed first (after three channel changes evicted the
+    frame's copy, the one-view pick was stale and the pane pick read the new channel). `pick_pane` now checks the
+    copy's chart version, as `pick_plan` does.
+  - F5 (minor): `hopf`, `ring-sheet`, `slice` and `raw` now also require one bound digest and revision (the dump's
+    `bound`) and one Word panel digest across all their steps.
+  - F6 (minor): by reading, not reproduced in a run (no script turns Jumble's mode off): `JumbleHost.Marks` returned
+    before Local's raw caption while Jumble's mode was off. The caption is now added whenever Local draws the raw
+    view, and `raw` reads it from Local's drawn border (the dump's `local_marks`), not from the model's constant.
 
 **C5, after B29.**
 - Fable checks:

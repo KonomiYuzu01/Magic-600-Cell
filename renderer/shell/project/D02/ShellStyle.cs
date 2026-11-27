@@ -149,6 +149,29 @@ public static class ShellStyle
 
     static ShellStyle() => ShellPick.Changed += Invalidate;
 
+    /// <summary>Checkpoint C3.2 (F1): the revision a committed press handed out, and the one the style was last held for.</summary>
+    private static ulong _pending, _held;
+
+    /// <summary>
+    /// Checkpoint C3.2 (F1): a committed press handed out <paramref name="revision"/>; until a frame shows it, the
+    /// outline and fill are sent for it too, and the host holds them for its adoption, so its first frame draws them.
+    /// </summary>
+    public static void Committed(ulong revision) => _pending = Math.Max(_pending, revision);
+
+    // F1: one channel for the adopted revision and, while one is handed out, for the pending revision (held by the
+    // host). A stale adopted revision (the host adopted after the last frame) is not an error when the pending send
+    // reaches it; any other refusal is answered, so the style is sent again at the next step.
+    private static int Send(HostLibrary library, IntPtr host, ulong revision, ulong pending, uint channel, byte[]? bytes)
+    {
+        var code = library.SetPieceStyle(host, revision, channel, bytes, false);
+        if (pending == 0)
+        {
+            return code;
+        }
+        var held = library.SetPieceStyle(host, pending, channel, bytes, false);
+        return code == HostLibrary.Ok || code == HostLibrary.Unavailable ? held : code;
+    }
+
     /// <summary>Marks the style for sending again (the selection or hover changed).</summary>
     public static void Invalidate() => _dirty = true;
 
@@ -178,7 +201,8 @@ public static class ShellStyle
             _dirty = true;
         }
         ShellGrip.StepGhost(revision);
-        if (!_dirty && revision == _revision && !ShellSlice.Restyle)
+        var pending = _pending > revision ? _pending : 0;
+        if (!_dirty && revision == _revision && pending == _held && !ShellSlice.Restyle)
         {
             return sliced;
         }
@@ -214,7 +238,7 @@ public static class ShellStyle
         {
             outline[piece] |= HostLibrary.StyleError;
         }
-        var code = library.SetPieceStyle(host, HostLibrary.StyleOutline, outline, false);
+        var code = Send(library, host, revision, pending, HostLibrary.StyleOutline, outline);
         if (code != HostLibrary.Ok)
         {
             return code;
@@ -227,7 +251,7 @@ public static class ShellStyle
         var fill = Fill();
         if (fill is not null || _focusSent)
         {
-            code = library.SetPieceStyle(host, HostLibrary.StyleFill, fill, false);
+            code = Send(library, host, revision, pending, HostLibrary.StyleFill, fill);
             if (code != HostLibrary.Ok)
             {
                 return code;
@@ -258,6 +282,7 @@ public static class ShellStyle
         SentMatrix = sent;
         ShellSlice.Restyle = false;
         _revision = revision;
+        _held = pending;
         _dirty = false;
         return sliced;
     }
