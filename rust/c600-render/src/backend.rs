@@ -820,7 +820,9 @@ fn slot_rows(publication: &Publication) -> Result<SlotRows, Error> {
         if !plan.instances.is_empty() {
             return Err(Error::unsupported("J13", "the core's ID pass stamps no plan instance of a posed primitive"));
         }
+        // Every slot drawn and interactive: the core writes no instance for a slot that is not both (F02).
         rows.visibility.fill(1);
+        rows.interaction.fill(1);
         rows.instances.iter_mut().zip(1u32..).for_each(|(instance, id)| *instance = id);
         return Ok(rows);
     };
