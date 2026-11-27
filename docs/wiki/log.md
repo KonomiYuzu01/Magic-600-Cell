@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-27] decision | The gate's p99 bar of 33.3 ms is two refreshes
+The owner read the renderer gate's 33.3 ms bar as 1/30 s, so a 99th-percentile frame time of two refreshes of a 60 Hz display passes ([decision](decisions/owner-decisions-2026-11-27-gate-reading.md)).
+
 ## [2026-11-26] decision | ADR-D02's build: all of ADR-D01 as the base, one shared UI library, the order of work and the week's quota
 The owner made all of ADR-D01 the base of D02's build, put all UI and wiring in the shared library with reuse first, cancelled the evening's other runs so D02 builds through the night, set the order of work on parallel tracks with slow generation in Rust, and asked that the whole of D02 fit this week's quota ([decision](decisions/owner-decisions-2026-11-26-adr-d02-build.md), sections 14 to 18).
 

@@ -8,7 +8,7 @@ It prints exactly one line:
   D02_GATE row=<id> panes=<n> view_vertex_evals=<v> fps_avg=<x> p99_ms=<y> vram_gb=<z> pass=<bool>
 
 against the renderer selection gate (docs/wiki/decisions/renderer-candidates.md): an average of at least 30 fps, a
-99th-percentile frame time of at most 33.3 ms and a peak VRAM of at most about 7 GB (taken here as 7.0 GiB).
+99th-percentile frame time of at most 33.3 ms (read as 1/30 s, two 60 Hz refreshes: owner, 27 November 2026) and a peak VRAM of at most about 7 GB (taken here as 7.0 GiB).
 
 - Frames: the `presented` rows, the presentations the core confirmed, ordered by `display_qpc` (the confirming
   statistics row's SyncQPCTime), with the run row's `qpc_frequency`. A frame interval is the gap between two
@@ -44,7 +44,10 @@ import math
 from pathlib import Path
 
 FPS_MIN = 30.0
-P99_MAX_MS = 33.3
+# The bar of 33.3 ms is 1/30 s, two refreshes of a 60 Hz display (owner reading, 27 November 2026:
+# docs/wiki/decisions/owner-decisions-2026-11-27-gate-reading.md). Display timestamps put two refreshes at 33.334 to
+# 33.335 ms, so the bar is 33.4 ms: below a third 60 Hz refresh (50 ms) and a fifth 120 Hz refresh (41.67 ms).
+P99_MAX_MS = 33.4
 VRAM_MAX_GB = 7.0
 GIB = 1 << 30
 DEFAULT_SECONDS = 60.0
