@@ -1909,6 +1909,16 @@ Each checkpoint is one read of the named diff range against the questions below,
       subscription.
     - Fable writes the detailed hand-over packet that the API runs work from.
     - The budget reservation is still the owner's to confirm before run 1 (`AGENTS.md`, API-team runs).
+- Astra round 1 (27 November 2026; `docs/progress/1.0/adr-d02-astra-round-1.md`):
+  - It found 5 blockers, 16 majors and 4 minors in the static part, and 8 more majors in the product window. The
+    freeze is held.
+  - The fix round runs after the 30 November reset: about one working day, then one owner sitting for the gate rows
+    that rerun, then round 2.
+  - This card adds three items:
+    - D02-01's command-layer row request (a single-transaction commit of a whole-only word);
+    - the choice for D02-CU-07 and D02-CU-08: build the derived-state view and the checker trace in the fix round,
+      or carry both to K2 with the CR-17 refusal;
+    - a line on D02-05: whether any J0 run's agents could read the product folder, and if so J0's rerun.
 
 ## 4. Item map
 
