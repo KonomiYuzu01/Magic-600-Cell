@@ -1678,6 +1678,18 @@ class D02Host(unittest.TestCase):
                                               "setup"})
         self.assertIs(run.EXPECT["signature"], run.expect_signature)  # ADR-D01.70
         self.assertIs(run.EXPECT["setup"], run.expect_setup)  # ADR-D01.68
+        # CR-16's live selector and difference file: on a fixture as tuning-save is, the file read from the run folder.
+        self.assertIs(run.EXPECT["tuning-revert"], run.expect_tuning_revert)
+        self.assertIn("tuning-revert", run.ON_FIXTURE)
+        self.assertIs(run.FOLDER_CHECKS["tuning-revert"], run.check_tuning_diff)
+        revert = json.loads(text(SHELL / "d02_scripts" / "tuning-revert.json"))
+        self.assertEqual((revert["name"], revert["resolution"]), ("tuning-revert", "1280x720"))
+        self.assertEqual(revert["steps"].count({"chord": "Escape"}), 2)
+        with tempfile.TemporaryDirectory() as folder:
+            self.assertEqual(run.check_tuning_diff(Path(folder)), ["tuning.diff.export wrote no tuning-diff.txt into the run folder"])
+            (Path(folder) / "tuning-diff.txt").write_bytes(
+                b"format=magic600-tuning-diff/1\npreset=graphite\ntheme=graphite\nscene=solving\nknob.graphite.tone=0.05\n")
+            self.assertEqual(run.check_tuning_diff(Path(folder)), [])
         self.assertIn("host", run.ON_FIXTURE)
         self.assertTrue((SHELL / "d02_scripts" / "host.json").is_file())
         steps = ["start", "wait 3000 ms", "wait 3000 ms"]

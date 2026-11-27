@@ -141,7 +141,14 @@ public sealed class ShellChrome
             // switch on (the look-cost row), and over the chrome always.
             var presetFile = Path.Combine(folder, "tuning-presets.json");
             var presets = File.Exists(presetFile) ? TuningPreset.Parse(File.ReadAllText(presetFile), look) : null;
-            Tuning = ShellJumble.TuningHost = new TuningPanel(appearance, frame, presets) { CoreSimulation = ShellStyle.CoreSimulation };
+            // CR-16's tuning.diff.export writes into the run folder (M600_EVENTS_DIR), beside the run's other files; a build
+            // started without one has no place to write, and the row says so.
+            var runFolder = System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR");
+            Tuning = ShellJumble.TuningHost = new TuningPanel(appearance, frame, presets)
+            {
+                CoreSimulation = ShellStyle.CoreSimulation,
+                ExportFolder = !string.IsNullOrEmpty(runFolder) && Directory.Exists(runFolder) ? runFolder : null,
+            };
             var tuning = Tuning;
             tuning.Simulated += () => ShellStyle.SetSimulation(tuning.Model.Simulating == null ? null : tuning.Model.Matrix);
             frame.AddDockPanel(DockSide.Right, Magic600.Chrome.Tuning.PanelId, Magic600.Chrome.Tuning.Title, Magic600.Chrome.Tuning.Glyph, Tuning);
@@ -292,6 +299,9 @@ public sealed class ShellChrome
                 case "transient.close":
                     sample?.Keys.Shown.Pin(false);
                     if (frame.OpenOverlay is { } open) open.Close();
+                    // ADR-D01.50: Esc reverts the tuning panel's live change and is spent on it; the other transients
+                    // close only when no change is pending. An open overlay closes first: it holds the keys.
+                    else if (Tuning != null && Tuning.Escape()) { }
                     else if (sample != null && sample.Inspect.Feedback.CancelLatest()) { }
                     else if (frame.Model.FocusMode) frame.Model.SetFocusMode(false);
                     else if (frame.Model.PairMaximised) frame.Model.SetPairMaximised(false);
