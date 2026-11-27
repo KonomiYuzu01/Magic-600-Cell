@@ -1757,6 +1757,9 @@ Each checkpoint is one read of the named diff range against the questions below,
   - F6 (minor): by reading, not reproduced in a run (no script turns Jumble's mode off): `JumbleHost.Marks` returned
     before Local's raw caption while Jumble's mode was off. The caption is now added whenever Local draws the raw
     view, and `raw` reads it from Local's drawn border (the dump's `local_marks`), not from the model's constant.
+    - LF1 (27 November 2026), reproduced in a run: no fault. The new script `raw-off` (the base puzzle, Jumble's mode
+      off, no state) turns the raw view on and off with Home; `d02_run.py`'s check finds the caption on Local's
+      drawn border exactly while the raw view is on, and no Jumble mark. `d02_run.py --script raw-off` passed.
 
 **C5, after B29.**
 - Fable checks:

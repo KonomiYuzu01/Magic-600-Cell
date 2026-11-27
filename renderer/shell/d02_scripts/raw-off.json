@@ -1,0 +1,13 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "raw-off",
+  "puzzle": "jumble-off",
+  "note": "C3/C4 finding F6's repro (LF1): the base puzzle, Jumble's mode off, with no D02 state. Home turns Local's raw view on at the cap Local draws (the default, never empty), and its caption shows on Local's border as drawn although no Jumble mark does; Home turns it off and the caption goes. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 3000},
+    {"chord": "Home"},
+    {"wait_ms": 2000},
+    {"chord": "Home"},
+    {"wait_ms": 1500}
+  ]
+}
