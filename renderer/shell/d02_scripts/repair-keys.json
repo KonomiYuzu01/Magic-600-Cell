@@ -20,6 +20,10 @@
     {"chord": "F1"},
     {"text": "> jumble.repair.stage 1"},
     {"chord": "Enter"},
-    {"wait_ms": 1000}
+    {"wait_ms": 1000},
+    {"open": "cap_covers"},
+    {"wait_ms": 501},
+    {"command": "jumble.repair.focus"},
+    {"wait_ms": 502}
   ]
 }

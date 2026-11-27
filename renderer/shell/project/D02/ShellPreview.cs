@@ -34,13 +34,17 @@ namespace Magic600.Shell.D02
         private (int Prefix, float Phase) sent;
         private (int Prefix, bool AtEnd, double Started)? turn;
         private PreviewSide comparison = PreviewSide.After;
-        private byte[]? overlay;
+        private byte[]? moved;
+        private byte[]? overlay => preview.Overlay ? moved : null;
         private CommitResult? lastCommit;
         private sealed record CommitResult(int Letters, string Expected, string Actual, string? Error);
 
         private PreviewModel Model => preview.Model;
         internal bool Pending => Model.Pending != null;
         internal static byte[]? Overlay => active?.overlay;
+        internal static byte[]? MovingAt(ulong revision) =>
+            active is { } current && current.Model.Pending is { Status: PreviewStatus.Ready } pending &&
+            (ulong)pending.Head == revision ? current.moved : null;
         internal static Rgb? OverlayColour => active?.frame.Tokens.Colour("pattern.preview");
         internal static Rgb? PreviewColour => active is { Pending: true } current ? current.frame.Tokens.Colour("state.preview") : null;
         private static double Now() => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
@@ -214,12 +218,13 @@ namespace Magic600.Shell.D02
 
         private void SetOverlay()
         {
-            overlay = null;
-            if (preview.Overlay && Model.Pending is { Status: PreviewStatus.Ready } && preview.Facts is { } facts)
+            moved = null;
+            if (Model.Pending is { Status: PreviewStatus.Ready } && preview.Facts is { } facts)
             {
-                var moved = new byte[ShellStyle.PieceCount];
-                if (library.PreviewMoved(host, facts.Id, moved) == HostLibrary.Ok) overlay = moved;
+                var mask = new byte[ShellStyle.PieceCount];
+                if (library.PreviewMoved(host, facts.Id, mask) == HostLibrary.Ok) moved = mask;
             }
+            ShellTint.RefreshFocus();
             ShellStyle.Invalidate();
         }
 

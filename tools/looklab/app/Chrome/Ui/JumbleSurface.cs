@@ -49,7 +49,11 @@ public sealed partial class JumbleSurface : VBoxContainer
         sentence.AutowrapMode = TextServer.AutowrapMode.WordSmart; sentence.HorizontalAlignment = HorizontalAlignment.Center;
         AddChild(gap); AddChild(sentence); AddChild(sections);
         // A section's count changes in a bind too (SF3): it refreshes with the rest, once, at Release.
-        accordion.Changed += () => RefreshOrHold();
+        accordion.Changed += () =>
+        {
+            scrub?.FollowSection(accordion, repair);
+            RefreshOrHold();
+        };
         Refresh();
     }
 

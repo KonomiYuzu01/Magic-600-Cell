@@ -1567,6 +1567,11 @@ class D02Fixtures(unittest.TestCase):
         self.assertEqual(jumble.count("Bound = "), 1)
         shell = text(PROJECT / "Shell.cs")
         self.assertIn("if (D02.ShellJumble.On && _session && _adoptedRevision != _boundRevision)", shell)
+        self.assertIn("ShellStyle.Apply(library, _host, _adoptedRevision, _boundRevision);", shell)
+        self.assertIn('read = report.RootElement.GetProperty("head_revision").GetUInt64() == _adoptedRevision;', shell)
+        style = text(PROJECT / "D02" / "ShellStyle.cs")
+        self.assertIn("bool stateStyle = JumbleStyle.BoundFor(bound, revision);", style)
+        self.assertEqual(re.findall(r"library\.SetPieceStyle\(host, (\w+),", style), ["revision", "revision"])
         self.assertIn("_adoptedRevision = frame.EngineRevision;", shell)
         self.assertEqual(shell.count("StateDigest("), 1)
 
@@ -1676,7 +1681,7 @@ class D02Host(unittest.TestCase):
         self.assertIn("Feed.Adopt(Feed.State with { LatticeFlag = false, Revision = revision });", jumble)
         self.assertEqual(jumble.count("Feed.Adopt("), 2)
         self.assertIn("D02.ShellJumble.Unknown((long)_adoptedRevision);", text(PROJECT / "Shell.cs"))
-        self.assertIn("D02.ShellJumble.Bind(library.Answer(_host), (long)_adoptedRevision);", text(PROJECT / "Shell.cs"))
+        self.assertIn("D02.ShellJumble.Bind(digests!, (long)_adoptedRevision);", text(PROJECT / "Shell.cs"))
 
     def test_the_numerals_switch_on_the_lattice_flag_and_the_entry_is_chrome_only(self):
         model = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "Jumble.cs")
@@ -1929,13 +1934,19 @@ class D02CapHover(unittest.TestCase):
                 lines = [[panel, "no cap named"]] if named < 0 else [[panel, f"cap {named} · N_c 0"]]
                 if index == 4 and said:
                     lines.append(["frame", refused])
-                out.append({"do": do, "lines": lines, "cap_map": cell, "named": named})
+                straddlers = 231 if index in (5, 6) else 0
+                out.append({"do": do, "lines": lines, "cap_map": cell, "named": named,
+                            "overlay": {"never_hidden": straddlers, "kept": straddlers}})
             return out
-        self.assertEqual(run.expect_cap_hover(dumps(), {}, "ia-40"), [])
-        self.assertEqual(len(run.expect_cap_hover(dumps(cursor="Arrow"), {}, "ia-40")), 2)
-        self.assertEqual(len(run.expect_cap_hover(dumps(said=False), {}, "ia-40")), 1)
-        self.assertEqual(len(run.expect_cap_hover(dumps(tip="cap"), {}, "ia-40")), 2)
-        self.assertTrue(run.expect_cap_hover(dumps()[:5], {}, "ia-40"))
+        state = script["state"]
+        self.assertEqual(run.expect_cap_hover(dumps(), {}, state), [])
+        self.assertEqual(len(run.expect_cap_hover(dumps(cursor="Arrow"), {}, state)), 2)
+        self.assertEqual(len(run.expect_cap_hover(dumps(said=False), {}, state)), 1)
+        self.assertEqual(len(run.expect_cap_hover(dumps(tip="cap"), {}, state)), 2)
+        self.assertTrue(run.expect_cap_hover(dumps()[:5], {}, state))
+        wrong = dumps()
+        wrong[5]["overlay"]["kept"] = 0
+        self.assertEqual(len(run.expect_cap_hover(wrong, {}, state)), 1)
 
 
 class D02LibraryBranch(unittest.TestCase):
@@ -2182,12 +2193,17 @@ class D02Repair(unittest.TestCase):
             out[16]["repair"] = {"rows": len(rows), "focused": 2, "step": "Repair 2 of 3", "picks": list(picks)}
             out[16]["stage"] = {"word": staged, "bar": "Whole repair only", "spans": 1, "records": 1, "asked": 3, "unasked": unasked}
             out[16]["lines"] = [["view:Local", "Whole repair only"], ["view:Local", "Staged: " + staged]]
+            out[-1].update(repair={"focused": 10, "step": "Repair 2 of 3"}, overlay={"layer": "None", "outline_entries": 0},
+                           lines=[["view:Local", "Repair 2 of 3 · moving set unavailable"]])
             return out
         self.assertEqual(run.expect_repair(dumps(), {}, "wj-ia-300"), [])
         self.assertEqual(len(run.expect_repair(dumps(opened_focus=1), {}, "wj-ia-300")), 1)
         self.assertEqual(len(run.expect_repair(dumps(picks=()), {}, "wj-ia-300")), 1)
         # B13: an unasked act on the boundary ledger fails the run.
         self.assertEqual(len(run.expect_repair(dumps(unasked=1), {}, "wj-ia-300")), 1)
+        wrong = dumps()
+        wrong[-1]["overlay"]["trace_cap"] = 150
+        self.assertEqual(len(run.expect_repair(wrong, {}, "wj-ia-300")), 1)
         self.assertEqual(staged, "[150·1 215·21 150·1]")
 
     def test_the_repair_key_route_expectation(self):
@@ -2207,10 +2223,15 @@ class D02Repair(unittest.TestCase):
             out[at["arrowed"]]["repair"] = {"rows": len(rows), "focused": 2, "picks": []}
             out[at["digit"]].update(repair={"picks": [2]}, stage={"spans": 1, "unasked": 0})
             out[at["staged"]].update(repair={"picks": [2, 1]}, stage={"spans": 2, "unasked": 0})
+            for key in ("folded", "reopened"):
+                out[at[key]].update(repair={"focused": 0, "step": ""}, overlay={"layer": "CutTrace"})
             return out
         self.assertEqual(run.expect_repair_keys(dumps(), {}, "wj-ia-300"), [])
         self.assertEqual(len(run.expect_repair_keys(dumps(key_focus="Query"), {}, "wj-ia-300")), 1)
         self.assertEqual(len(run.expect_repair_keys(dumps(picks_early=(1,)), {}, "wj-ia-300")), 1)
+        wrong = dumps()
+        wrong[run.REPAIR_KEYS_AT["reopened"]]["repair"]["focused"] = 2
+        self.assertEqual(len(run.expect_repair_keys(wrong, {}, "wj-ia-300")), 1)
 
     def test_only_the_pick_handler_stages(self):
         host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
@@ -2423,15 +2444,19 @@ class D02FocusLayer(unittest.TestCase):
                 return {"entry": "Focus layer =", "dock": "focus_layer.editor", "line": line, "expression": "", "keys": list(keys)}
             palette = [["overlay:CommandPalette", label] for label in ("Open focus layer", "Preview focus layer counts", "Apply focus layer")]
             return [{"do": "start", "lines": []},
-                    {"do": "wait 801 ms", "lines": [], "focus_layer": layer(first_line)},
-                    {"do": "wait 802 ms", "lines": [], "focus_layer": layer(keys=[f"= not lattice · {off:,}"])},
+                    {"do": "wait 801 ms", "lines": [], "focus_layer": layer(first_line), "tint": {"modes": ["none", "none"]}},
+                    {"do": "wait 802 ms", "lines": [], "focus_layer": layer(keys=[f"= not lattice · {off:,}"]),
+                     "tint": {"modes": ["dimmed", "none"]}},
                     {"do": "wait 503 ms", "lines": [], "focus_layer": layer(keys=[f"= not lattice · {off:,}"])},
                     {"do": "wait 804 ms", "lines": [], "focus_layer": layer(f"{both:,} of {total:,} pieces · intersect · live query · rev 300")},
-                    {"do": "wait 805 ms", "lines": [], "focus_layer": layer(keys=[final])},
+                    {"do": "wait 805 ms", "lines": [], "focus_layer": layer(keys=[final]), "tint": {"modes": ["dimmed", "none"]}},
                     {"do": "wait 806 ms", "lines": palette, "focus_layer": layer()}]
         self.assertEqual(run.expect_focus_layer(dumps(), {}, "wj-ia-300"), [])
         self.assertEqual(len(run.expect_focus_layer(dumps(first_line="120,000 of 177,120 pieces"), {}, "wj-ia-300")), 1)
         self.assertEqual(len(run.expect_focus_layer(dumps(final="= height >= 4 · 3,128"), {}, "wj-ia-300")), 1)
+        wrong = dumps()
+        wrong[2]["tint"]["modes"] = ["none", "none"]
+        self.assertEqual(len(run.expect_focus_layer(wrong, {}, "wj-ia-300")), 1)
         self.assertTrue((SHELL / "d02_scripts" / "focus-layer.json").is_file())
 
 

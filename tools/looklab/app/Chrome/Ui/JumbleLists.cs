@@ -244,7 +244,7 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
             }
         scrub.Show(list.Focused is int f ? list.Rows[f - 1] : null);
         step.Text = scrub.Row is RepairRow row
-            ? scrub.Label + " · moving " + (steps.Moving(row, scrub.Step) is { Kind: NumeralKind.Value } n ? n.Value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) : "pending")
+            ? scrub.Label + " · " + steps.MovingWords(row, scrub.Step)
             : "";
     }
 

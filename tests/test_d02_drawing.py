@@ -629,13 +629,19 @@ class TwoViewsRun(unittest.TestCase):
                 words = "" if named or not default else run.LOCAL_DEFAULT
                 lines = [["view:Local", words or run.LOCAL_EMPTY]] if not named else []
                 local = {"cap": cap, "framed": kept if named else cap, "opening": cap >= 0, "words": words}
-                out.append({"step": index, "do": do, "lines": lines, "named": 150 if named else -1, "local": local})
+                out.append({"step": index, "do": do, "lines": lines, "named": 150 if named else -1, "local": local,
+                            "state_revision": 300, "tint": {"revision": 300},
+                            "overlay": {"trace_cap": 150 if named else None, "outline_entries": 0, "kept": 0}})
             return out
         self.assertEqual(run.expect_two_views(dumps(), {}, "wj-ia-300"), [])
         empty = run.expect_two_views(dumps(default=False), {}, "wj-ia-300")
         self.assertEqual(len(empty), 4, empty)
         self.assertTrue(empty[0].startswith("step 1: Local draws cap -1"), empty)
         self.assertEqual(len(run.expect_two_views(dumps(kept=0), {}, "wj-ia-300")), 7)
+        wrong = dumps()
+        wrong[5]["overlay"]["outline_entries"] = 1909
+        wrong[7]["tint"]["revision"] = 299
+        self.assertEqual(len(run.expect_two_views(wrong, {}, "wj-ia-300")), 2)
         self.assertTrue(run.expect_two_views(dumps()[:6], {}, "wj-ia-300"))
 
     def rotation(self, linked, turns, spin, sent_global, sent_local):
@@ -721,7 +727,7 @@ class Picks(unittest.TestCase):
         self.assertIn("case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } up when !turned:", shell)
         self.assertIn("D02.ShellPick.Point(SurfacePoint(move.Position));", shell)
         self.assertIn("if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))", shell)
-        self.assertIn("D02.ShellStyle.Apply(library, _host, _adoptedRevision);", shell)
+        self.assertIn("D02.ShellStyle.Apply(library, _host, _adoptedRevision, _boundRevision);", shell)
         # Global's pane draws with style slot 1 and Local's with slot 2 (B20: 3 for the split's inside copy), so both
         # views show the outlines.
         self.assertIn("g.X, g.Y, (uint)g.Width, (uint)g.Height, 1));", shell)
@@ -745,8 +751,11 @@ class FocusLayersInTheCore(unittest.TestCase):
         self.assertIn("#define SA2_STYLE_HIDE_UNMARKED 4u", header)
         self.assertIn("Picking follows visibility", header)
         styled = text(CORE / "shaders" / "styled.hlsl")
-        self.assertIn("if (!statusConflict(style) && ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet))) result.position = float4(0, 0, -1, 1);", styled)
+        self.assertIn("return !statusConflict(style) && ((dimMode == 3 && outside) || (dimMode == 4 && !outside));", styled)
+        self.assertIn("if (hides(style) && (style & ReferenceLine) == 0) result.position = float4(0, 0, -1, 1);", styled)
+        self.assertIn("if (referenceOnly && edge >= outlineWidth) discard;", styled)
         self.assertIn("uint styledIdPs(StyledOut input) : SV_Target {", styled)
+        self.assertIn("if (hides(input.style)) discard;", styled)
         scene = text(CORE / "src" / "scene.cpp")
         self.assertIn("auto* pipeline = input.styled ? g.styled_id_pipeline() : p.id_pso.Get();", scene)
         self.assertIn("compile_embedded_shader(styled_id_ps.dxil styled.hlsl styledIdPs ps_6_0)", text(CORE / "CMakeLists.txt"))
@@ -762,9 +771,10 @@ class FocusLayersInTheCore(unittest.TestCase):
 
     def test_the_shell_composes_the_focus_through_the_chrome_model(self):
         style = text(PROJECT / "D02" / "ShellStyle.cs")
-        self.assertIn("public static void SetFocus(FocusLayers? layers, Func<int, bool>? member, Func<int, bool>? breaksThrough = null)", style)
-        self.assertIn("if (layers.ShownPiece(member(piece), breaksThrough?.Invoke(piece) ?? false) < 1)", style)
-        self.assertIn("style.DimMode = _hide ? HostLibrary.HideMarked : HostLibrary.DimMarked;", style)
+        self.assertIn("var mode = JumbleStyle.FocusMode(layers, member);", style)
+        self.assertIn("outside[piece] = !member!(piece) && !conflict(piece);", style)
+        self.assertIn("View(slot, slot == 1 ? global.Mode : local.Mode,", style)
+        self.assertIn("style.DimMode = mode == InactiveMode.Hidden ? HostLibrary.HideMarked : HostLibrary.DimMarked;", style)
         self.assertIn("public const uint HideMarked = 3, HideUnmarked = 4;", text(PROJECT / "HostLibrary.cs"))
         # ShownPiece's quarter is the core's dim amount.
         self.assertIn("public const float DimAmount = 0.75f;", style)
@@ -1005,8 +1015,8 @@ class TintRun(unittest.TestCase):
         self.assertIn("ShellTint.Attach(host, frame);", text(PROJECT / "ShellChrome.cs"))
         self.assertIn("ShellTint.Dump(json, _frame);", text(PROJECT / "D02" / "ShellJumble.cs"))
         style = text(PROJECT / "D02" / "ShellStyle.cs")
-        self.assertIn("var outline = _tintOutline is null ? new byte[PieceCount] : (byte[])_tintOutline.Clone();", style)
-        self.assertIn("fill[piece] = (byte)(_tintFill[piece] | _focus[piece]);", style)
+        self.assertIn("var outline = tint is null ? new byte[PieceCount] : (byte[])tint.Clone();", style)
+        self.assertIn("JumbleStyle.Encode(outline[piece], height, heights != null, ink,", style)
 
     def test_a_good_run_passes_and_a_wrong_byte_is_named(self):
         run = shell_module("d02_run")
@@ -1038,31 +1048,37 @@ class OverlaysRun(unittest.TestCase):
         self.assertEqual(waits, [mark for mark, _, _, _ in run.OVERLAY_STEPS])
         tint = text(PROJECT / "D02" / "ShellTint.cs")
         self.assertIn("host.OverlayChanged += Draw;", tint)
-        self.assertIn("var overlay = JumbleOverlay.BreaksThrough(host.Overlay);", tint)
-        self.assertIn("piece => (overlay?.Invoke(piece) ?? false) || ShellStatus.Conflict(piece)", tint)
+        self.assertIn("ShellStyle.SetFocusViews(global, local, host.FocusMember, ShellStatus.Conflict);", tint)
+        style = text(PROJECT / "D02" / "ShellStyle.cs")
+        self.assertIn("var preview = ShellPreview.MovingAt(revision);", style)
+        shader = text(CORE / "shaders" / "styled.hlsl")
+        self.assertIn("result.cutDistance = dot(world, pole) - 121.0 / 125.0;", shader)
+        self.assertIn("abs(input.cutDistance) <= cutWidth", shader)
 
-    def test_a_good_run_passes_and_a_dimmed_never_hidden_piece_is_named(self):
+    def test_a_good_run_passes_and_a_missing_reference_outline_is_named(self):
         run = shell_module("d02_run")
         tables = run.tint_tables("wj-ia-300")
         dumps = []
         for mark, cap, step, focus in run.OVERLAY_STEPS:
             want = run.overlay_expected(tables, "wj-ia-300", cap, step, focus, None, None)
             line = run.overlay_words(want)
-            overlay = {k: v for k, v in want.items() if k not in ("outline_sha256", "fill_sha256", "focus")}
-            overlay.update(line=line, global_line=line, local_line=line)
-            dumps.append({"do": mark, "overlay": overlay, "tint": {"hover": None, "selection": None, "focus": want["focus"],
+            overlay = {k: v for k, v in want.items() if k not in ("outline_sha256", "fill_sha256", "modes")}
+            overlay.update(line=line, global_line=line, local_line=run.overlay_words(want, local=True))
+            dumps.append({"do": mark, "overlay": overlay, "tint": {"hover": None, "selection": None, "modes": want["modes"],
                                                                    "outline_sha256": want["outline_sha256"],
                                                                    "fill_sha256": want["fill_sha256"]}})
         self.assertEqual(run.expect_overlays(dumps, {}, "wj-ia-300", tables), [])
         self.assertEqual(dumps[0]["overlay"]["line"], "")
-        self.assertTrue(dumps[1]["overlay"]["line"].startswith("Cut of cap 150 · inside set outlined · "), dumps[1]["overlay"]["line"])
-        self.assertGreater(dumps[3]["overlay"]["hidden"], 0)
+        self.assertEqual(dumps[1]["overlay"]["line"], "Cut of cap 150 · surface trace")
+        self.assertEqual(dumps[3]["overlay"]["hidden"], 0)
+        self.assertEqual(dumps[3]["tint"]["modes"], ["hidden", "dimmed"])
+        self.assertGreater(dumps[4]["overlay"]["hidden"], 0)
         self.assertTrue(dumps[4]["overlay"]["line"].startswith("Repair 2 of "), dumps[4]["overlay"]["line"])
         self.assertEqual((dumps[5]["overlay"]["pieces"], dumps[5]["overlay"]["certificate_points"]), (231, 462))
-        dumps[4]["overlay"]["kept_dimmed"] = 1
+        dumps[4]["overlay"]["outline_only"] = [0, 0]
         problems = run.expect_overlays(dumps, {}, "wj-ia-300", tables)
         self.assertEqual(len(problems), 1)
-        self.assertIn("after 'wait 1504 ms' kept_dimmed", problems[0])
+        self.assertIn("after 'wait 1504 ms' outline_only", problems[0])
         dumps[2]["tint"]["fill_sha256"] = dumps[0]["tint"]["fill_sha256"]
         self.assertTrue(any("after 'wait 1502 ms' fill_sha256" in p for p in run.expect_overlays(dumps, {}, "wj-ia-300", tables)))
 

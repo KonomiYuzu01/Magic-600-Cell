@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "repair",
-  "note": "B12's run on wj-ia-300's session fixture: name cap 150, open Local's Repair list, give the list focus, press Down twice (row 2), Right once (its step 2 by the preview's step key), then type 2 in the list's context to pick row 2. No row is focused when the list opens; the step label reads Repair 2 of 3 with the step's moving-set count; the pick is the solver's and is recorded.",
+  "note": "At cap 150, open the Repair list with no row focused. Focus row 2 and check its second step's count before picking it. Cancel the preview and focus row 10 step 2, whose moving set is unavailable.",
   "steps": [
     {"wait_ms": 2000},
     {"chord": "F1"},
@@ -18,6 +18,9 @@
     {"chord": "Right"},
     {"wait_ms": 800},
     {"text": "2"},
-    {"wait_ms": 2000}
+    {"wait_ms": 2000},
+    {"command": "operation.preview.cancel"},
+    {"command": "jumble.repair.focus", "argument": "10 2"},
+    {"wait_ms": 801}
   ]
 }

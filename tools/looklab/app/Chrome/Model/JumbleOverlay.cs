@@ -6,19 +6,12 @@ using System.Text.Json;
 
 namespace Magic600.Chrome;
 
-// B16 (ADR-D02.26, .34; jumbling-observation.md rule 5): the Jumble overlays as lines. They reuse the core's one line
-// drawing, the outline channel of B14's style path, under the selection's and the hover's outlines and over the tint:
-// - while a cap is named, its cut as its trace at piece resolution: at an admissible cap the inside set's outline,
-//   whose border is the cut; at a blocked cap the straddlers, which lie across it;
-// - while a repair row is focused, its step k's moving set in place of the trace (ADR-D02.34: one step at a time);
-// - the never-hidden set (rule 5, items 1 and 2): a blocked named cap's straddlers and the focused step's moving set;
-//   every overlay piece a focus layer would hide shows instead, outlined, with its exact count (item 4);
-// - certificate-point glyphs stay off until their gate row and the owner's acceptance; their count shows in their place.
-// The default cap Local draws while none is named is not a named cap and draws no overlay (ADR-D02.12).
+// ADR-D02.26 and .34: the certified inside mask selects candidate stickers for the cut stripe. Only straddlers
+// and known moving sets are piece outlines and references. The certificate-point count stands in for the glyphs.
 public enum OverlayLayer { None, CutTrace, MovingSet }
 
 public sealed record OverlayView(OverlayLayer Layer, int? Cap, bool Blocked, string Step, bool[]? Lines, bool[]? NeverHidden,
-    long Pieces, long NeverHiddenCount, long? CertificatePoints)
+    long Pieces, long NeverHiddenCount, long? CertificatePoints, bool[]? CutCandidates = null)
 {
     public static readonly OverlayView Empty = new(OverlayLayer.None, null, false, "", null, null, 0, 0, null);
 }
@@ -31,19 +24,23 @@ public static class JumbleOverlay
     public const string Slot = "state.preview";
     public const string LineName = "JumbleOverlayLine";
 
-    // The overlay a named cap's record gives: the focused step's moving set (row and step from 1), else the cut trace.
-    // A record without masks, or a step the sample lacks, gives the trace or nothing.
-    public static OverlayView Of(int? cap, string? record, int pieces, int row = 0, int step = 0, string stepLabel = "")
+    public static OverlayView Of(int? cap, string? record, int pieces, int row = 0, int step = 0, string stepLabel = "",
+                                 string? hoveredRecord = null)
     {
-        if (cap is not int c || record == null || pieces <= 0) return OverlayView.Empty;
+        if (pieces <= 0) return OverlayView.Empty;
+        var named = ReadNamed(cap, record, pieces, row, step, stepLabel);
+        if (hoveredRecord == null) return named;
+        using var hovered = JsonDocument.Parse(hoveredRecord);
+        var lines = Union(named.Lines, Mask(hovered.RootElement, "straddlers", pieces));
+        return named with { Lines = lines, NeverHidden = lines, Pieces = Count(lines), NeverHiddenCount = Count(lines) };
+    }
+
+    private static OverlayView ReadNamed(int? cap, string? record, int pieces, int row, int step, string stepLabel)
+    {
+        if (cap is not int c || record == null) return OverlayView.Empty;
         using JsonDocument document = JsonDocument.Parse(record);
         JsonElement root = document.RootElement;
-        bool[]? straddlers = null, inside = null, moving = null;
-        if (root.TryGetProperty("masks", out JsonElement masks))
-        {
-            if (masks.TryGetProperty("straddlers", out JsonElement s)) straddlers = JumbleTint.Mask(s, pieces);
-            if (masks.TryGetProperty("inside", out JsonElement i)) inside = JumbleTint.Mask(i, pieces);
-        }
+        bool[]? straddlers = Mask(root, "straddlers", pieces), moving = null;
         long? points = root.TryGetProperty("straddlers", out JsonElement st) && st.TryGetProperty("certificate_points", out JsonElement cp)
             ? cp.GetInt64() : null;
         if (row > 0 && step > 0 && root.TryGetProperty("repair_steps", out JsonElement steps) && steps.ValueKind == JsonValueKind.Array)
@@ -54,15 +51,19 @@ public static class JumbleOverlay
                 if (sets.ValueKind == JsonValueKind.Array && step <= sets.GetArrayLength()) moving = JumbleTint.Mask(sets[step - 1], pieces);
             }
         }
-        bool[]? lines = moving ?? straddlers ?? inside;
-        if (lines == null) return OverlayView.Empty with { Cap = c, Blocked = straddlers != null, CertificatePoints = points };
-        bool[]? never = Union(straddlers, moving);
-        return new OverlayView(moving != null ? OverlayLayer.MovingSet : OverlayLayer.CutTrace, c, straddlers != null,
-            moving != null ? stepLabel : "", lines, never, Count(lines), Count(never), points);
+        bool[]? cut = row == 0 && straddlers == null ? Mask(root, "inside", pieces) : null;
+        bool[]? lines = Union(straddlers, moving);
+        var layer = moving != null ? OverlayLayer.MovingSet
+            : row == 0 && (straddlers != null || cut != null) ? OverlayLayer.CutTrace : OverlayLayer.None;
+        return new OverlayView(layer, c, straddlers != null, row > 0 ? stepLabel : "", lines, lines,
+            Count(lines), Count(lines), points, cut);
     }
 
-    // The outline channel's bytes: the overlay's entry on its pieces over the tint's (null for no tint); null when
-    // neither draws anything. The selection's and the hover's outlines go on top afterwards.
+    private static bool[]? Mask(JsonElement root, string set, int pieces) =>
+        root.TryGetProperty("masks", out var masks) && masks.TryGetProperty(set, out var mask)
+            ? JumbleTint.Mask(mask, pieces) : null;
+
+    // Builds the line mask in a separate array from the piece tint.
     public static byte[]? Outline(byte[]? tint, bool[]? lines)
     {
         if (lines == null) return tint;
@@ -74,42 +75,44 @@ public static class JumbleOverlay
     // The bound cap record supplies the straddlers of a blocked cut, or the inside set of an admissible one.
     public static IEnumerable<int> PiecesOfCap(int cap, string? record, int pieceCount)
     {
-        if (Of(cap, record, pieceCount).Lines is not { } mask) yield break;
+        var view = Of(cap, record, pieceCount);
+        if ((view.Lines ?? view.CutCandidates) is not { } mask) yield break;
         for (int piece = 0; piece < mask.Length; piece++) if (mask[piece]) yield return piece;
     }
 
-    // Rule 5: a piece no filter hides, the never-hidden set and the overlay's own pieces (which then show outlined);
-    // null when there is none.
+    // Rule 5 references. Cut candidates keep the pane's ordinary focus treatment.
     public static Func<int, bool>? BreaksThrough(OverlayView view)
     {
-        bool[]? lines = view.Lines, never = view.NeverHidden;
-        if (lines == null && never == null) return null;
-        return piece => (lines != null && piece < lines.Length && lines[piece]) || (never != null && piece < never.Length && never[piece]);
+        return view.NeverHidden is { } never ? piece => piece >= 0 && piece < never.Length && never[piece] : null;
     }
 
-    // The overlay pieces the focus layer would hide or dim without rule 5, counted exactly; 0 while it does not dim.
-    public static long Hidden(bool[]? lines, FocusLayers? layers, Func<int, bool>? member)
+    public static long Hidden(bool[]? lines, FocusLayers? layers, Func<int, bool>? member,
+                              byte[]? preview = null, Func<int, bool>? conflict = null)
     {
-        if (lines == null || layers is not { Dimming: true } || member == null) return 0;
+        if (layers is not { Dimming: true, Inactive: InactiveMode.Hidden } || member == null) return 0;
         long hidden = 0;
-        for (int p = 0; p < lines.Length; p++) if (lines[p] && layers.ShownPiece(member(p)) < 1) hidden++;
+        for (int p = 0; p < (lines?.Length ?? preview?.Length ?? 0); p++)
+            if ((lines?[p] == true || preview?[p] > 0) && !member(p) && conflict?.Invoke(p) != true) hidden++;
         return hidden;
     }
 
     // The overlay's line on both view borders, empty with no overlay.
     public static string Words(OverlayView view, long hidden)
     {
-        if (view.Cap is not int cap) return "";
         string glyphs = view.CertificatePoints is long n
             ? " · " + N(n) + " certificate points (glyphs wait for their gate row)" : "";
-        string kept = hidden > 0 ? " · " + N(hidden) + " kept from the filter, outlined" : "";
-        return view.Layer switch
+        string kept = hidden > 0 ? N(hidden) + " kept from the filter, outlined" : "";
+        string line = view.Layer switch
         {
-            OverlayLayer.MovingSet => view.Step + " · moving set outlined, never hidden · " + N(view.Pieces) + " pieces" + kept + glyphs,
-            OverlayLayer.CutTrace when view.Blocked => "Cut of cap " + N(cap) + " · straddlers outlined, never hidden · " + N(view.Pieces) + " pieces" + kept + glyphs,
-            OverlayLayer.CutTrace => "Cut of cap " + N(cap) + " · inside set outlined · " + N(view.Pieces) + " pieces" + kept + glyphs,
-            _ => glyphs.Length > 0 ? "Cut of cap " + N(cap) + glyphs : "",
+            OverlayLayer.MovingSet => view.Step + " · moving set outlined, never hidden · " + N(view.Pieces) + " pieces",
+            OverlayLayer.CutTrace when view.Blocked => "Cut of cap " + N(view.Cap!.Value) + " · straddlers outlined, never hidden · " + N(view.Pieces) + " pieces",
+            OverlayLayer.CutTrace => "Cut of cap " + N(view.Cap!.Value) + " · surface trace",
+            _ when view.Step.Length > 0 => view.Step + " · " + RepairSteps.MovingUnavailable,
+            _ when view.Pieces > 0 => N(view.Pieces) + " straddlers outlined, never hidden",
+            _ => "",
         };
+        if (kept.Length > 0) line = line.Length > 0 ? line + " · " + kept : kept;
+        return line + glyphs;
     }
 
     private static bool[]? Union(bool[]? a, bool[]? b)

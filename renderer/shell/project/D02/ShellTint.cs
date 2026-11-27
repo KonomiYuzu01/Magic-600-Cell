@@ -14,7 +14,7 @@ namespace Magic600.Shell.D02;
 /// <see cref="ShellStyle"/>. At each binding it gives the host the bound sample state's contact graph and pose ids;
 /// whenever the mode, the classes, the named cap, the theme or a view's focus layers change it sends the per-piece
 /// bytes again: the contact classes and the off-lattice mark on the outline channel, the height ramp on the fill with
-/// the focus layer's dim bit. Both views draw the same bytes (Global in style slot 1, Local in slot 2).
+/// each pane's focus membership and the overlay ink share the style bytes.
 /// </summary>
 public static class ShellTint
 {
@@ -29,6 +29,8 @@ public static class ShellTint
         ShellJumble.BindingChanged += () => ShellJumble.Timed("tint", Bind);
         host.TintChanged += Draw;
         host.OverlayChanged += Draw;
+        host.PreviewMoving = () => ShellPreview.MovingAt((ulong)host.Source.State.Revision);
+        host.FocusConflict = ShellStatus.Conflict;
         foreach (var layers in host.Layers)
         {
             layers.Changed += Draw;
@@ -69,10 +71,8 @@ public static class ShellTint
             return;
         }
         var (outline, fill) = host.TintBytes();
-        // B16 (ADR-D02.26): the overlay's lines on the outline channel over the tint, its hidden count with the focus.
-        host.OverlayWords();
-        ShellStyle.SetTint(JumbleOverlay.Outline(outline, host.Overlay.Lines), fill,
-                           _frame is { } frame && GodotObject.IsInstanceValid(frame) ? Palette(frame.Tokens) : null);
+        ShellStyle.SetTint(outline, fill,
+                           _frame is { } frame && GodotObject.IsInstanceValid(frame) ? Palette(frame.Tokens) : null, host.Overlay);
         RefreshFocus();
     }
 
@@ -81,8 +81,8 @@ public static class ShellTint
         if (_host is not { } host) return;
         var global = host.Layers.Count > 0 ? host.Layers[0] : null;
         var local = host.Layers.Count > 1 ? host.Layers[1] : null;
-        var overlay = JumbleOverlay.BreaksThrough(host.Overlay);
-        ShellStyle.SetFocusViews(global, local, host.FocusMember, piece => (overlay?.Invoke(piece) ?? false) || ShellStatus.Conflict(piece));
+        host.OverlayWords();
+        ShellStyle.SetFocusViews(global, local, host.FocusMember, ShellStatus.Conflict);
     }
 
     /// <summary>The core's 16-entry palette with the tint's entries 3 to 14 in the theme's colours.</summary>
@@ -137,10 +137,17 @@ public static class ShellTint
         json.WriteString("palette_sha256", ShellStyle.SentPalette is { } sent ? Sha(System.Runtime.InteropServices.MemoryMarshal.AsBytes(sent.AsSpan()).ToArray()) : "");
         Piece(json, "hover", ShellStyle.SentHover);
         Piece(json, "selection", ShellStyle.SentSelection);
-        json.WriteString("focus", ShellStyle.FocusMode);
+        var globalMode = ShellStyle.SentGlobalMode;
+        var localMode = ShellStyle.SentLocalMode;
+        json.WriteString("focus", Mode(globalMode != InactiveMode.Normal ? globalMode : localMode));
+        json.WriteNumber("revision", ShellStyle.SentRevision);
+        json.WriteStartArray("modes");
+        json.WriteStringValue(Mode(globalMode));
+        json.WriteStringValue(Mode(localMode));
+        json.WriteEndArray();
         json.WriteStartArray("dims");
-        json.WriteBooleanValue(ShellStyle.SlotDims(1));
-        json.WriteBooleanValue(ShellStyle.SlotDims(2));
+        json.WriteBooleanValue(globalMode != InactiveMode.Normal);
+        json.WriteBooleanValue(localMode != InactiveMode.Normal);
         json.WriteEndArray();
         foreach (var (name, view) in new[] { ("global_legend", frame?.Global), ("local_legend", frame?.Local) })
         {
@@ -155,9 +162,7 @@ public static class ShellTint
     }
 
     /// <summary>
-    /// B16's dump: the overlay's layer, cap and step, its pieces, never-hidden set and hidden count, the certificate
-    /// points, its line on each border, and what the bytes last sent carry: the pieces with the overlay's entry on the
-    /// outline channel, and the never-hidden or overlay pieces that a focus layer still dims or hides on the fill.
+    /// B16's dump: the overlay readouts and the reference and focus entries actually sent to the core.
     /// </summary>
     private static void Overlay(Utf8JsonWriter json, JumbleHost host, ChromeFrame? frame)
     {
@@ -171,22 +176,34 @@ public static class ShellTint
         json.WriteNumber("hidden", host.OverlayHidden);
         if (view.CertificatePoints is long points) json.WriteNumber("certificate_points", points); else json.WriteNull("certificate_points");
         json.WriteString("line", host.OverlayLine);
-        var outline = ShellStyle.SentOutline;
-        var fill = ShellStyle.SentFill;
-        var keep = JumbleOverlay.BreaksThrough(view);
-        long entries = 0, kept = 0, dimmed = 0;
-        for (var piece = 0; piece < ShellStyle.PieceCount; piece++)
+        if (ShellStyle.SentCutCap is int trace) json.WriteNumber("trace_cap", trace); else json.WriteNull("trace_cap");
+        var outline = ShellStyle.SentStyleOutline;
+        var fill = ShellStyle.SentStyleFill;
+        json.WriteString("fill_bytes_sha256", Sha(fill));
+        var preview = ShellPreview.MovingAt(ShellStyle.SentRevision);
+        long entries = 0, kept = 0, previewKept = 0, globalOnly = 0, localOnly = 0, candidates = 0;
+        if (outline != null && fill != null)
         {
-            if (outline is not null && (outline[piece] & 0x0F) == JumbleOverlay.Entry) entries++;
-            if (keep is not null && keep(piece))
+            for (var piece = 0; piece < fill.Length; piece++)
             {
+                var (_, _, ink) = JumbleStyle.Decode(outline[piece], fill[piece], ShellStyle.SentHeight);
+                if (ink == OverlayInk.Cut) candidates++;
+                if (ink == OverlayInk.Outline) entries++;
+                if (!JumbleStyle.Reference(ink)) continue;
                 kept++;
-                if (fill is not null && (fill[piece] & HostLibrary.DimSet) != 0) dimmed++;
+                if (preview?[piece] > 0) previewKept++;
+                if (JumbleStyle.OutlineOnly(ink, ShellStyle.SentGlobalMode, (fill[piece] & JumbleStyle.GlobalInactive) != 0)) globalOnly++;
+                if (JumbleStyle.OutlineOnly(ink, ShellStyle.SentLocalMode, (fill[piece] & JumbleStyle.LocalInactive) != 0)) localOnly++;
             }
         }
+        json.WriteNumber("trace_candidates", candidates);
         json.WriteNumber("outline_entries", entries);
         json.WriteNumber("kept", kept);
-        json.WriteNumber("kept_dimmed", dimmed);
+        json.WriteNumber("preview_kept", previewKept);
+        json.WriteStartArray("outline_only");
+        json.WriteNumberValue(globalOnly);
+        json.WriteNumberValue(localOnly);
+        json.WriteEndArray();
         foreach (var (name, v) in new[] { ("global_line", frame?.Global), ("local_line", frame?.Local) })
         {
             var label = v is not null && GodotObject.IsInstanceValid(v) ? v.Readouts.GetNodeOrNull<Label>(JumbleOverlay.LineName) : null;
@@ -194,6 +211,8 @@ public static class ShellTint
         }
         json.WriteEndObject();
     }
+
+    private static string Mode(InactiveMode mode) => mode == InactiveMode.Normal ? "none" : mode.ToString().ToLowerInvariant();
 
     private static void Piece(Utf8JsonWriter json, string name, int? piece)
     {

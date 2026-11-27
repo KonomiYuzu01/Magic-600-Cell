@@ -109,6 +109,7 @@ public sealed class CapNaming
     public int? Named { get; private set; }
     public int? Hovered { get; private set; }
     public event Action<int?>? Changed;
+    public event Action<int?>? HoveredChanged;
 
     public bool Name(int cap)
     {
@@ -125,7 +126,13 @@ public sealed class CapNaming
     }
 
     // Hovering inspects: it changes what the tooltip reads, never the named cap.
-    public void Hover(int? cap) => Hovered = cap is >= 0 and < CapLayout.Caps ? cap : null;
+    public void Hover(int? cap)
+    {
+        int? next = cap is >= 0 and < CapLayout.Caps ? cap : null;
+        if (Hovered == next) return;
+        Hovered = next;
+        Safe.Raise(HoveredChanged, Hovered);
+    }
 
     // What hovering a cell says first (owner's bug report, 26 November 2026: nothing said that a click names a cap).
     public const string Hint = "click to name this cap";

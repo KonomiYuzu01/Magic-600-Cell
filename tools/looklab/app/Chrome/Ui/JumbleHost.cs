@@ -218,9 +218,18 @@ public sealed partial class JumbleHost
         Style = value;
         // The Focus layer counts the bound state's pose rows; saved layers stay, and load only for their own state.
         var kept = Filter?.Saved ?? Array.Empty<SavedFilter>();
-        if (Filter != null) Filter.Changed -= SyncFilter;
+        if (Filter != null)
+        {
+            Filter.Changed -= SyncFilter;
+            Filter.AppliedChanged -= FocusAppliedFilter;
+        }
         Filter = value == null ? null : new PieceFilterModel(value.Rows, value.LatticeDomain, value.Domains.Count, () => Source.State.Revision, value.Digest);
-        if (Filter != null) { foreach (var s in kept) Filter.Keep(s); Filter.Changed += SyncFilter; }
+        if (Filter != null)
+        {
+            foreach (var s in kept) Filter.Keep(s);
+            Filter.Changed += SyncFilter;
+            Filter.AppliedChanged += FocusAppliedFilter;
+        }
         FilterEditor.Bind(Filter);
         SyncFilter();
         Recount();
@@ -253,6 +262,12 @@ public sealed partial class JumbleHost
             layers.AddPredicate(layer);
             if (fresh && layers.Focused != PieceFilterModel.LayerId) layers.Focus(PieceFilterModel.LayerId);
         }
+    }
+
+    private void FocusAppliedFilter()
+    {
+        if (Layers.ElementAtOrDefault(frame.Local.Focused ? 1 : 0) is { } layers)
+            Filter?.FocusApplied(layers);
     }
 
     // Every predicate a view already has, counted at the named cap and the bound state; a layer that no longer reads

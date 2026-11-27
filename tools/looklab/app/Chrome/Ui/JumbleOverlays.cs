@@ -6,22 +6,23 @@ using Godot;
 
 namespace Magic600.Chrome;
 
-// B16 (ADR-D02.26, .34; jumbling-observation.md rule 5): the host's overlays. While a cap is named it reads the cap's
-// record for the cut's trace, the focused repair step's moving set and the never-hidden set; the overlay's line, with
-// the exact count of its pieces a focus layer would hide, shows on Global's and Local's borders. The renderer draws
-// the lines on the outline channel and keeps the never-hidden set out of every focus layer (the shell's ShellTint).
+// B16 (ADR-D02.26, .34; jumbling-observation.md rule 5): named-cut and repair-step data, hover references and
+// each pane's count of pieces kept as outlines under Hide.
 public sealed partial class JumbleHost
 {
     public OverlayView Overlay { get; private set; } = OverlayView.Empty;
     public long OverlayHidden { get; private set; }
     public string OverlayLine { get; private set; } = "";
+    public Func<byte[]?>? PreviewMoving { private get; set; }
+    public Func<int, bool>? FocusConflict { private get; set; }
     // The overlay's pieces or its never-hidden set changed: the renderer sends the bytes again.
     public event Action? OverlayChanged;
-    private (int? Cap, int Row, int Step, string? Record, IReadOnlyList<int>? Poses) drawnOverlay;
+    private (int? Cap, int Row, int Step, string? Record, string? HoveredRecord, IReadOnlyList<int>? Poses) drawnOverlay;
 
     private void WireOverlay()
     {
         Naming.Changed += _ => Reoverlay();
+        Naming.HoveredChanged += _ => Reoverlay();
         Scrub.Changed += Reoverlay;
         Source.Changed += _ => Reoverlay();
     }
@@ -32,8 +33,9 @@ public sealed partial class JumbleHost
     {
         int? cap = Source.State.Mode ? Naming.Named : null;
         string? record = cap is int c && RecordSource != null && PosesFit ? RecordSource(c) : null;
+        string? hovered = Source.State.Mode && Naming.Hovered is int h && h != cap && PosesFit ? RecordSource?.Invoke(h) : null;
         int row = Scrub.Row?.Number ?? 0, step = Scrub.Row == null ? 0 : Scrub.Step;
-        var now = (cap, row, step, record, PoseOf);
+        var now = (cap, row, step, record, hovered, PoseOf);
         if (now == drawnOverlay)
         {
             OverlayWords();
@@ -42,7 +44,7 @@ public sealed partial class JumbleHost
         drawnOverlay = now;
         try
         {
-            Overlay = JumbleOverlay.Of(record == null ? null : cap, record, PoseOf?.Count ?? 0, row, step, Scrub.Label);
+            Overlay = JumbleOverlay.Of(cap, record, PoseOf?.Count ?? 0, row, step, Scrub.Label, hovered);
         }
         catch (Exception error) when (error is FormatException or JsonException or KeyNotFoundException or InvalidOperationException or InvalidDataException)
         {
@@ -53,20 +55,20 @@ public sealed partial class JumbleHost
         Safe.Raise(OverlayChanged);
     }
 
-    // The overlay's line with the exact count of its pieces the dimming view's focus layer would hide (Global's first,
-    // as the renderer's dim set), on both borders.
     public void OverlayWords()
     {
-        FocusLayers? source = Layers.Count > 0 && Layers[0].Dimming ? Layers[0] : Layers.Count > 1 ? Layers[1] : null;
-        OverlayHidden = source == null ? 0 : JumbleOverlay.Hidden(Overlay.Lines, source, FocusMember(source));
+        var moving = PreviewMoving?.Invoke();
+        long Hidden(int index) => index < Layers.Count
+            ? JumbleOverlay.Hidden(Overlay.NeverHidden, Layers[index], FocusMember(Layers[index]), moving, FocusConflict) : 0;
+        OverlayHidden = Hidden(0);
         OverlayLine = JumbleOverlay.Words(Overlay, OverlayHidden);
         if (!GodotObject.IsInstanceValid(frame)) return;
         // SF5: while a cap stays named the line keeps its place, blank where the bound state has no record.
         bool named = Source.State.Mode && Naming.Named != null;
-        foreach (ViewFrame? view in new[] { frame.Global, frame.Local })
+        foreach (var (view, line) in new[] { (frame.Global, OverlayLine), (frame.Local, JumbleOverlay.Words(Overlay, Hidden(1))) })
         {
             if (view == null || !GodotObject.IsInstanceValid(view)) continue;
-            ViewLine.Set(view, JumbleOverlay.LineName, OverlayLine.Length == 0 ? null : OverlayLine,
+            ViewLine.Set(view, JumbleOverlay.LineName, line.Length == 0 ? null : line,
                 "Overlays are lines: the named cap's cut, a focused repair step's moving set, the never-hidden set.",
                 frame.Tokens.C(JumbleOverlay.Slot), named);
         }

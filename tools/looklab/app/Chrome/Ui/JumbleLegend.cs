@@ -46,6 +46,7 @@ public sealed partial class JumbleHost
         Contact = contact; PoseOf = poses; poseDigest = posesDigest;
         straddlerSet = null;
         Reclass();
+        Reoverlay();
     }
 
     // A reopen: the view state's class memory, then the bound state's classes from it.

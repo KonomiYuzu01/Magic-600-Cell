@@ -9,7 +9,7 @@ namespace Magic600.Shell.D02;
 /// The core drops a piece style at each adoption, so it is sent again for each revision a frame draws, and whenever the
 /// selection or hover changes. Slot 1 styles a one-view frame and Global's pane, slot 2 Local's pane. Later layers
 /// (B15's tints, B16's overlays) join here, so one place composes the per-piece bytes. ADR-D01.46's focus layer is
-/// drawn in the core (<see cref="SetFocus"/>): the pieces it leaves out are dimmed or hidden, and neither is picked.
+/// drawn in the core: each pane's work set and inactive mode apply to its own slot.
 /// </summary>
 public static class ShellStyle
 {
@@ -24,21 +24,27 @@ public static class ShellStyle
 
     private static ulong _revision;
     private static bool _dirty = true;
-    private static byte[]? _focus;
-    private static bool _focusSent, _hide;
+    private static (InactiveMode Mode, bool[]? Outside) _global, _local;
+    private static bool _fillSent;
 
     // B15 (ADR-D02.20): the tint channel's bytes per piece (the contact classes or the off-lattice mark on the outline,
-    // the height ramp on the fill), its palette (entries 3 to 14 read), and per style slot (1 Global, 2 Local) whether
-    // that view's own focus layers dim.
+    // the height ramp on the fill), its palette, and the line and candidate masks.
     private static byte[]? _tintOutline, _tintFill;
     private static float[]? _tintPalette;
-    private static readonly bool[] _slotDims = { true, true, true };
+    private static byte[]? _lines;
+    private static bool[]? _cut;
+    private static int? _cutCap;
 
     /// <summary>The bytes last sent on each channel (the fill null once cleared), for a D02 run's dump.</summary>
     public static byte[]? SentOutline { get; private set; }
 
     /// <summary>The fill channel's bytes last sent, or null when none are.</summary>
     public static byte[]? SentFill { get; private set; }
+    public static byte[]? SentStyleOutline { get; private set; }
+    public static byte[]? SentStyleFill { get; private set; }
+    public static bool SentHeight { get; private set; }
+    public static int? SentCutCap { get; private set; }
+    public static ulong SentRevision => _revision;
     /// <summary>B30: the tint palette last sent with the view styles (64 floats), or null.</summary>
     public static float[]? SentPalette { get; private set; }
 
@@ -48,54 +54,29 @@ public static class ShellStyle
     /// <summary>The selected piece the last sent outline marks.</summary>
     public static int? SentSelection { get; private set; }
 
-    /// <summary>
-    /// ADR-D01.46's focus layer in both views, through Look Lab's <see cref="FocusLayers"/> model: while it dims (a
-    /// focused predicate that applies, and a cycle that is not Normal), a piece shows fully when
-    /// <see cref="FocusLayers.ShownPiece"/> says so (a member of the predicate, or a breakthrough: a protection conflict
-    /// or a complete operation's effect, ADR-D01.4 item 8); every other piece takes the cycle's mode, dimmed to a quarter
-    /// or hidden, and the core picks neither (ABI 10's styled ID pass). Null layers, or a model that does not dim, clear
-    /// it. The chrome calls it from <see cref="FocusLayers.Changed"/> and whenever the predicate's members change.
-    /// </summary>
-    public static void SetFocus(FocusLayers? layers, Func<int, bool>? member, Func<int, bool>? breaksThrough = null)
+    private static (InactiveMode, bool[]?) Focus(FocusLayers? layers, Func<int, bool>? member, Func<int, bool> conflict)
     {
-        _focus = null;
-        _hide = false;
-        _slotDims[1] = _slotDims[2] = true;
-        if (layers is { Dimming: true } && member is not null)
-        {
-            _focus = new byte[PieceCount];
-            for (var piece = 0; piece < PieceCount; piece++)
-            {
-                if (layers.ShownPiece(member(piece), breaksThrough?.Invoke(piece) ?? false) < 1)
-                {
-                    _focus[piece] = HostLibrary.DimSet;
-                }
-            }
-            _hide = layers.Inactive == InactiveMode.Hidden;
-        }
+        var mode = JumbleStyle.FocusMode(layers, member);
+        if (mode == InactiveMode.Normal) return (mode, null);
+        var outside = new bool[PieceCount];
+        for (var piece = 0; piece < PieceCount; piece++)
+            outside[piece] = !member!(piece) && !conflict(piece);
+        return (mode, outside);
+    }
+
+    /// <summary>ADR-D01.46: each pane's mode and membership, with protection conflicts fully visible.</summary>
+    public static void SetFocusViews(FocusLayers? global, FocusLayers? local, Func<FocusLayers, Func<int, bool>?> member,
+                                     Func<int, bool> conflict)
+    {
+        _global = Focus(global, global is { Dimming: true } ? member(global) : null, conflict);
+        _local = _global.Outside != null && local is { Dimming: true } && global!.Focused == local.Focused
+            ? (local.Inactive, _global.Outside)
+            : Focus(local, local is { Dimming: true } ? member(local) : null, conflict);
         Invalidate();
     }
 
-    /// <summary>The focus layer's mode as the core draws it: none, dimmed or hidden (for a D02 run's dump).</summary>
-    public static string FocusMode => _focus is null ? "none" : _hide ? "hidden" : "dimmed";
-
-    /// <summary>
-    /// ADR-D01.46 per view: the dim set from the view whose layers dim (Global's first), and each style slot dims only
-    /// while its own view's layers dim with the same focused predicate. With both views dimming, Global's mode (dimmed or
-    /// hidden) serves both. <paramref name="member"/> gives a view's focused predicate's members, piece by piece.
-    /// B16: no focus layer dims or hides a piece <paramref name="breaksThrough"/> names (jumbling-observation.md rule 5).
-    /// </summary>
-    public static void SetFocusViews(FocusLayers? global, FocusLayers? local, Func<FocusLayers, Func<int, bool>?> member,
-                                     Func<int, bool>? breaksThrough = null)
-    {
-        var source = global is { Dimming: true } ? global : local;
-        SetFocus(source, source is null ? null : member(source), breaksThrough);
-        _slotDims[1] = _focus is not null && global is { Dimming: true } && global.Focused == source!.Focused;
-        _slotDims[2] = _focus is not null && local is { Dimming: true } && local.Focused == source!.Focused;
-    }
-
-    /// <summary>Whether a style slot dims the focus set now (for a D02 run's dump).</summary>
-    public static bool SlotDims(uint slot) => _focus is not null && _slotDims[slot is 1 or 2 ? slot : 1];
+    public static InactiveMode SentGlobalMode { get; private set; }
+    public static InactiveMode SentLocalMode { get; private set; }
 
     /// <summary>
     /// B15 (ADR-D02.20): the tint channel's bytes per piece on the outline and the fill (null where the mode draws
@@ -120,61 +101,27 @@ public static class ShellStyle
     /// <summary>B31: the matrix the last style sent carried (identity without a simulation or with the switch off).</summary>
     public static float[] SentMatrix { get; private set; } = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
 
-    public static void SetTint(byte[]? outline, byte[]? fill, float[]? palette)
+    public static void SetTint(byte[]? outline, byte[]? fill, float[]? palette, OverlayView overlay)
     {
         _tintOutline = outline?.Length == PieceCount ? outline : null;
         _tintFill = fill?.Length == PieceCount ? fill : null;
         _tintPalette = palette?.Length == 64 ? palette : null;
+        _lines = JumbleOverlay.Outline(null, overlay.Lines);
+        _cut = overlay.CutCandidates;
+        _cutCap = _cut == null ? null : overlay.Cap;
         Invalidate();
-    }
-
-    // The fill channel: the height ramp's palette index with the focus layer's dim bit, or null when neither is set.
-    private static byte[]? Fill()
-    {
-        if (_tintFill is null)
-        {
-            return _focus;
-        }
-        if (_focus is null)
-        {
-            return _tintFill;
-        }
-        var fill = new byte[PieceCount];
-        for (var piece = 0; piece < PieceCount; piece++)
-        {
-            fill[piece] = (byte)(_tintFill[piece] | _focus[piece]);
-        }
-        return fill;
     }
 
     static ShellStyle() => ShellPick.Changed += Invalidate;
 
-    /// <summary>Checkpoint C3.2 (F1): the revision a committed press handed out, and the one the style was last held for.</summary>
-    private static ulong _pending, _held;
+    private static ulong _pending;
 
-    /// <summary>
-    /// Checkpoint C3.2 (F1): a committed press handed out <paramref name="revision"/>; until a frame shows it, the
-    /// outline and fill are sent for it too, and the host holds them for its adoption, so its first frame draws them.
-    /// </summary>
+    /// <summary>The revision handed out by a committed press, for the slice and status paths.</summary>
     public static void Committed(ulong revision) => _pending = Math.Max(_pending, revision);
 
     /// <summary>LF1: the revision a committed press handed out that a frame has not shown yet, else 0; the slice and
     /// status channels are sent for it too.</summary>
     public static ulong PendingAfter(ulong revision) => _pending > revision ? _pending : 0;
-
-    // F1: one channel for the adopted revision and, while one is handed out, for the pending revision (held by the
-    // host). A stale adopted revision (the host adopted after the last frame) is not an error when the pending send
-    // reaches it; any other refusal is answered, so the style is sent again at the next step.
-    private static int Send(HostLibrary library, IntPtr host, ulong revision, ulong pending, uint channel, byte[]? bytes)
-    {
-        var code = library.SetPieceStyle(host, revision, channel, bytes, false);
-        if (pending == 0)
-        {
-            return code;
-        }
-        var held = library.SetPieceStyle(host, pending, channel, bytes, false);
-        return code == HostLibrary.Ok || code == HostLibrary.Unavailable ? held : code;
-    }
 
     /// <summary>Marks the style for sending again (the selection or hover changed).</summary>
     public static void Invalidate() => _dirty = true;
@@ -187,7 +134,7 @@ public static class ShellStyle
     /// Sends the piece style for the revision the next frame draws when it changed or the selection did; answers the
     /// first refusal's code, else <see cref="HostLibrary.Ok"/>.
     /// </summary>
-    public static int Apply(HostLibrary library, IntPtr host, ulong revision)
+    public static int Apply(HostLibrary library, IntPtr host, ulong revision, ulong? bound)
     {
         // B18 (for B20): the certified transform of the twist at the cap Local draws, read once per cap and revision.
         ShellTurn.Note(library, host, revision);
@@ -206,13 +153,14 @@ public static class ShellStyle
             _dirty = true;
         }
         ShellGrip.StepGhost(revision);
-        var pending = _pending > revision ? _pending : 0;
-        if (!_dirty && revision == _revision && pending == _held && !ShellSlice.Restyle)
+        if (!_dirty && revision == _revision && !ShellSlice.Restyle)
         {
             return sliced;
         }
         // B15: the tint's outline bytes under the selection's and the hover's outlines.
-        var outline = _tintOutline is null ? new byte[PieceCount] : (byte[])_tintOutline.Clone();
+        bool stateStyle = JumbleStyle.BoundFor(bound, revision);
+        byte[]? tint = stateStyle ? _tintOutline : null;
+        var outline = tint is null ? new byte[PieceCount] : (byte[])tint.Clone();
         // B18 rest: a half-turn's flash outlines the moved set in palette entry 15 (B16's overlay line) for
         // jumble.half_turn's fixed time, under the selection's and the hover's outlines.
         if (ShellTurn.Flash is { } flash)
@@ -227,11 +175,6 @@ public static class ShellStyle
         {
             for (var piece = 0; piece < PieceCount; piece++)
                 if (moving[piece] != 0) outline[piece] = Hovered;
-        }
-        if (ShellPreview.Overlay is { } preview)
-        {
-            for (var piece = 0; piece < PieceCount; piece++)
-                if (preview[piece] != 0) outline[piece] = JumbleOverlay.Entry;
         }
         int? hovered = null, selected = null;
         if (ShellPick.Hover is { } hover && hover.Piece < PieceCount)
@@ -248,30 +191,48 @@ public static class ShellStyle
         {
             outline[piece] |= HostLibrary.StyleError;
         }
-        var code = Send(library, host, revision, pending, HostLibrary.StyleOutline, outline);
+        var heights = stateStyle ? _tintFill : null;
+        var lines = stateStyle ? _lines : null;
+        var cut = stateStyle ? _cut : null;
+        var preview = ShellPreview.MovingAt(revision);
+        bool markedPreview = ShellPreview.Overlay != null;
+        var global = stateStyle ? _global : default;
+        var local = stateStyle ? _local : default;
+        var styleOutline = outline;
+        byte[]? fill = null, styleFill = null;
+        if (heights != null || lines != null || cut != null || preview != null || global.Outside != null || local.Outside != null)
+        {
+            styleFill = new byte[PieceCount];
+            if (heights != null) styleOutline = new byte[PieceCount];
+            if (heights != null || global.Outside != null) fill = new byte[PieceCount];
+            for (var piece = 0; piece < PieceCount; piece++)
+            {
+                var ink = JumbleStyle.Ink(lines?[piece] > 0, cut?[piece] == true, preview?[piece] > 0, markedPreview);
+                var height = heights?[piece] ?? 0;
+                bool outside = global.Outside?[piece] == true;
+                (styleOutline[piece], styleFill[piece]) = JumbleStyle.Encode(outline[piece], height, heights != null, ink,
+                    outside, local.Outside?[piece] == true);
+                if (fill != null) fill[piece] = (byte)(height | (outside && !JumbleStyle.Reference(ink) ? HostLibrary.DimSet : 0));
+            }
+        }
+        // Only the adopted revision gets these bytes. Core adoption clears both channels before a new state binds.
+        var code = library.SetPieceStyle(host, revision, HostLibrary.StyleOutline, styleOutline, false);
         if (code != HostLibrary.Ok)
         {
             return code;
         }
-        SentOutline = outline;
-        SentHover = hovered;
-        SentSelection = selected;
-        // ADR-D01.46 and B15: the fill bytes, the height ramp with the focus layer's dim bit; once sent, a cleared fill
-        // clears the channel.
-        var fill = Fill();
-        if (fill is not null || _focusSent)
+        if (styleFill is not null || _fillSent)
         {
-            code = Send(library, host, revision, pending, HostLibrary.StyleFill, fill);
+            code = library.SetPieceStyle(host, revision, HostLibrary.StyleFill, styleFill, false);
             if (code != HostLibrary.Ok)
             {
                 return code;
             }
-            _focusSent = fill is not null;
+            _fillSent = styleFill is not null;
         }
-        SentFill = fill;
         foreach (var slot in new uint[] { 1, 2, 3 })
         {
-            var slotStyle = View(slot);
+            var slotStyle = View(slot, slot == 1 ? global.Mode : local.Mode, heights != null, stateStyle ? _cutCap : null);
             code = library.SetViewStyle(host, slot, slotStyle);
             if (code != HostLibrary.Ok)
             {
@@ -279,13 +240,23 @@ public static class ShellStyle
             }
             ShellError.Sent(slot, slotStyle);
         }
-        if (ShellPreview.PreviewColour is { } ink)
+        if (ShellPreview.PreviewColour is { } previewInk)
         {
-            code = library.SetViewStyle(host, 4, PreviewStyle(ink));
+            code = library.SetViewStyle(host, 4, PreviewStyle(previewInk));
             if (code != HostLibrary.Ok) return code;
         }
+        SentOutline = outline;
+        SentFill = fill;
+        SentStyleOutline = styleOutline;
+        SentStyleFill = styleFill;
+        SentHeight = heights != null;
+        SentCutCap = stateStyle ? _cutCap : null;
+        SentGlobalMode = global.Mode;
+        SentLocalMode = local.Mode;
+        SentHover = hovered;
+        SentSelection = selected;
         SentPalette = _tintPalette;
-        var view = View(1);
+        var view = View(1, global.Mode, heights != null, SentCutCap);
         var sent = new float[9];
         unsafe
         {
@@ -297,7 +268,6 @@ public static class ShellStyle
         SentMatrix = sent;
         ShellSlice.Restyle = false;
         _revision = revision;
-        _held = pending;
         _dirty = false;
         return sliced;
     }
@@ -309,15 +279,15 @@ public static class ShellStyle
     /// The style slots' style: outlines and the fill tint drawn, the focus layer's pieces dimmed or hidden where the
     /// slot's view dims (none without a focus), the selection, hover and tint palette entries, the identity matrix.
     /// </summary>
-    public static unsafe HostLibrary.ViewStyle View(uint slot = 1)
+    private static unsafe HostLibrary.ViewStyle View(uint slot, InactiveMode mode, bool height, int? cut)
     {
         var style = HostLibrary.ViewStyle.Plain();
         style.TintMode = HostLibrary.TintOutline | HostLibrary.TintFill;
         style.OutlineWidth = OutlineWidth;
-        if (_focus is not null && _slotDims[slot is 1 or 2 ? slot : slot == 3 ? 2 : 1])
+        if (mode != InactiveMode.Normal)
         {
-            style.DimMode = _hide ? HostLibrary.HideMarked : HostLibrary.DimMarked;
-            style.DimAmount = _hide ? 0 : DimAmount;
+            style.DimMode = mode == InactiveMode.Hidden ? HostLibrary.HideMarked : HostLibrary.DimMarked;
+            style.DimAmount = mode == InactiveMode.Hidden ? 0 : DimAmount;
         }
         // The selection's outline: the core's marked colour (draw.hlsl's straddler mark); the hover's: a light,
         // half-strong outline.
@@ -376,6 +346,12 @@ public static class ShellStyle
         }
         if (ShellPreview.Overlay != null && ShellPreview.OverlayColour is { } preview)
             SetPreviewInk(ref style, preview, .65f);
+        // styled.hlsl's D02 options occupy an unused colour entry. Blue 0.5 and signed zero alpha tag it as data.
+        int options = 4 * (height ? JumbleTint.FirstClass : JumbleTint.FirstHeight);
+        style.Palette[options] = cut is int cap ? (cap + 1) / 1024f : 0;
+        style.Palette[options + 1] = slot == 1 ? 0 : 1;
+        style.Palette[options + 2] = 0.5f;
+        style.Palette[options + 3] = BitConverter.Int32BitsToSingle(int.MinValue);
         return style;
     }
 

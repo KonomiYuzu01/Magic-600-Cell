@@ -1,7 +1,8 @@
 {
   "format": "magic600-d02-script/1",
   "name": "cap-hover",
-  "note": "The owner's bug report of 26 November 2026, on ia-40's session fixture, with the pointer through the shell's input: hovering cap 1's cell on the cap map highlights it with a pointing hand and the tooltip \"click to name this cap\"; a click names cap 1; a second click on it says in the status line why it names nothing (cap 1 is already named); hovering and clicking the blocked cap 0 names it, as ADR-D02.30's named blocked cap. The last wait keeps the window open for the foreground check.",
+  "state": "wj-ia-300",
+  "note": "Hover cap 1 and check its tooltip, then name it and check the explanation on a repeat click. Hovering blocked cap 0 keeps its straddlers while cap 1 stays named. Clicking cap 0 names it and keeps those same pieces.",
   "steps": [
     {"wait_ms": 2000},
     {"cap_hover": 1},

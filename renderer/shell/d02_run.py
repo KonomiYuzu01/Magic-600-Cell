@@ -400,6 +400,10 @@ def expect_focus_layer(dumps: list[dict], source: dict, state: str | None) -> li
         problems.append(f"the preview reads {first['line']!r}, not {off:,} of {total:,} pieces")
     if any(key.startswith("= ") for key in first["keys"]):
         problems.append("the layer applied at its preview")
+    for mark, modes in (("wait 801 ms", ["none", "none"]), ("wait 802 ms", ["dimmed", "none"]),
+                        ("wait 805 ms", ["dimmed", "none"])):
+        if by_step[mark].get("tint", {}).get("modes") != modes:
+            problems.append(f"{mark}: the renderer's focus modes should be {modes}")
     if f"= not lattice · {off:,}" not in applied["keys"]:
         problems.append(f"the applied layer is not on Global's keys: {applied['keys']}")
     if not second["line"].startswith(f"{both:,} of {total:,} pieces · intersect · live query"):
@@ -807,7 +811,8 @@ def expect_covers(dumps: list[dict], source: dict, state: str | None) -> list[st
 # B12: the repair script's steps.
 REPAIR_STEPS = ["start", "wait 2000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 1500 ms",
                 "open repair_list", "wait 1000 ms", "focus LocalBody_repair_list", "wait 500 ms", "chord Down", "chord Down",
-                "wait 500 ms", "chord Right", "wait 800 ms", "text 2", "wait 2000 ms"]
+                "wait 500 ms", "chord Right", "wait 800 ms", "text 2", "wait 2000 ms",
+                "command operation.preview.cancel", "command jumble.repair.focus 10 2", "wait 801 ms"]
 
 
 def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[str]:
@@ -839,6 +844,13 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
     label = f"Repair 2 of 3 · moving {moving:,}"
     if (stepped.get("repair") or {}).get("step") != "Repair 2 of 3" or label not in texts(stepped, "view:Local"):
         problems.append(f"step 14: the step label is {(stepped.get('repair') or {}).get('step')!r}, not {label!r} on screen")
+    unavailable = dumps[-1]
+    overlay = unavailable.get("overlay", {})
+    if (unavailable.get("repair", {}).get("focused") != 10
+            or "Repair 2 of 3 · moving set unavailable" not in texts(unavailable, "view:Local")
+            or overlay.get("layer") != "None" or overlay.get("trace_cap") is not None
+            or overlay.get("outline_entries") != 0):
+        problems.append("row 10 step 2 must show an unavailable moving set without an overlay")
     if (picked.get("repair") or {}).get("picks") != [2]:
         problems.append(f"step 16: the picks are {(picked.get('repair') or {}).get('picks')}, not [2]")
     # B13: the pick staged row 2 as one sealed span with the whole-only bar, wrote one repair-pair record, and every
@@ -939,6 +951,15 @@ def expect_two_views(dumps: list[dict], source: dict, state: str | None) -> list
     problems = local_problems(dumps[1], 1, 0, named=False)
     for index in range(5, len(TWO_VIEWS_STEPS)):
         problems += local_problems(dumps[index], index, 150, named=True)
+    if state == "wj-ia-300":
+        for index, cap in ((1, None), (5, 150)):
+            overlay = dumps[index].get("overlay", {})
+            if overlay.get("trace_cap") != cap or overlay.get("outline_entries") != 0 or overlay.get("kept") != 0:
+                problems.append(f"step {index}: expected surface trace cap {cap} and no whole-piece overlay")
+        for index in (5, 7, 9, 11):
+            dump = dumps[index]
+            if dump.get("tint", {}).get("revision") != dump.get("state_revision"):
+                problems.append(f"step {index}: the style revision differs from the bound facts")
     # The script's drags follow its base steps (the player checks that every step ran); a dump list of only the base
     # steps is the Local check alone.
     return problems + (check_local_drag(dumps) if len(dumps) > len(TWO_VIEWS_STEPS) else [])
@@ -1180,13 +1201,18 @@ def expect_repair_keys(dumps: list[dict], source: dict, state: str | None) -> li
         problems.append(f"the digit 2 gave picks {repair(digit).get('picks')} and {stage(digit).get('spans')} spans")
     if repair(staged).get("picks") != [2, 1] or stage(staged).get("spans") != 2:
         problems.append(f"jumble.repair.stage 1 gave picks {repair(staged).get('picks')} and {stage(staged).get('spans')} spans")
+    for name in ("folded", "reopened"):
+        dump = dumps[REPAIR_KEYS_AT[name]]
+        if (repair(dump).get("focused") != 0 or repair(dump).get("step") != ""
+                or dump.get("overlay", {}).get("layer") != "CutTrace"):
+            problems.append(f"{name}: the repair row or scrub remained focused, or the cut trace did not return")
     if max((stage(dump).get("unasked", 0) for dump in dumps), default=0):
         problems.append("the boundary ledger counted an unasked act")
     return problems
 
 
 # The screens repair-keys reads (dump i follows script step i - 1): after the focus row, the arrows, the digit, the stage row.
-REPAIR_KEYS_AT = {"opened": 9, "arrowed": 12, "digit": 14, "staged": 18}
+REPAIR_KEYS_AT = {"opened": 9, "arrowed": 12, "digit": 14, "staged": 18, "folded": 20, "reopened": 22}
 EXPECT["repair-keys"] = expect_repair_keys
 ON_FIXTURE.add("repair-keys")
 ON_FIXTURE.add("two-views")
@@ -1781,6 +1807,13 @@ def expect_cap_hover(dumps: list[dict], source: dict, state: str | None) -> list
         problems.append(f"step 4: the named cap's tooltip reads {cell(4).get('tooltip')!r}")
     if refused in texts(dumps[3], "frame"):
         problems.append("step 3: the first click was refused")
+    record = SAMPLES / state / "cap-0.json"
+    if record.is_file() and "straddlers" in (masks := load(record).get("masks", {})):
+        count = masks["straddlers"]["count"]
+        for index, expected in ((4, 0), (5, count), (6, count)):
+            overlay = dumps[index].get("overlay", {})
+            if overlay.get("never_hidden") != expected or overlay.get("kept") != expected:
+                problems.append(f"step {index}: expected {expected} straddlers in the never-hidden set")
     return problems
 
 
@@ -2293,11 +2326,8 @@ EXPECT["tint"] = expect_tint
 ON_FIXTURE.add("tint")
 
 
-# B16 (ADR-D02.26, .34; jumbling-observation.md rule 5): the overlays as lines on the outline channel. No overlay while
-# no cap is named; cap 150's trace (its inside set); a domain focus dimmed, then hidden by F10, with every overlay piece
-# kept out of the dim set and counted; a focused repair row's step 2 outlines its moving set in place of the trace; the
-# blocked cap 0 outlines its straddlers with the certificate points counted. After each step the expectation recomputes
-# the outline and fill bytes sent to the core from the sample's masks, pose ids and contact classes, piece by piece.
+# B16 (ADR-D02.26, .34; observation rule 5): the admissible cut uses a surface stripe. Its inside mask only selects
+# candidates. Repair steps and blocked caps supply outline references, and Global's Hide leaves Local's Dim active.
 OVERLAY_DOMAIN = 5
 OVERLAY_STEPS = [("wait 5001 ms", None, None, None), ("wait 1501 ms", 150, None, None),
                  ("wait 1502 ms", 150, None, "dimmed"), ("wait 1503 ms", 150, None, "hidden"),
@@ -2320,67 +2350,66 @@ def overlay_mask(mask: dict, pieces: int) -> list[bool]:
 
 def overlay_expected(tables: dict, state: str, cap: int | None, step: int | None, focus: str | None,
                      hover: int | None, selection: int | None) -> dict:
-    """What a step's dump must say: the layer and its pieces, the never-hidden count, the exact hidden count under the
-    domain focus, and the sha256 of the outline bytes (the contact classes, the overlay's entry 15 on its pieces, then
-    the hover's and the selection's outlines) and of the fill bytes (the dim bit on every piece outside the focused
-    domain that is neither an overlay piece nor never-hidden)."""
+    """Recompute the focus and overlay bytes from the exact sample masks and the original outline tint."""
     import hashlib
     ids, domain = tables["ids"], tables["domain"]
     pieces = len(ids)
-    lines, never, points, label = None, None, None, ""
+    cut, lines, points, label = None, None, None, ""
     if cap is not None:
         record = load(SAMPLES / state / f"cap-{cap}.json")
         masks = record.get("masks", {})
         straddlers = overlay_mask(masks["straddlers"], pieces) if "straddlers" in masks else None
-        inside = overlay_mask(masks["inside"], pieces) if "inside" in masks else None
         moving = None
         if step is not None:
             row = next(r for r in record["repair_steps"] if r["row"] == 1)
             moving = overlay_mask(row["moving_sets"][step - 1], pieces)
             label = f"Repair {step} of {len(row['letters'])}"
+        elif "inside" in masks:
+            cut = overlay_mask(masks["inside"], pieces)
         points = record.get("straddlers", {}).get("certificate_points")
-        lines = moving or straddlers or inside
-        never = moving or straddlers
-    keep = [bool((lines and lines[p]) or (never and never[p])) for p in range(pieces)]
+        lines = moving or straddlers
     outline = bytearray(class_entry(tables["classes"][domain[ids[p]]]) for p in range(pieces))
-    for p in range(pieces):
-        if lines and lines[p]:
-            outline[p] = 15
     if hover is not None:
         outline[hover] = 2
     if selection is not None:
         outline[selection] = 1
-    fill = None
-    if focus is not None:
-        fill = bytes(0x80 if domain[ids[p]] != OVERLAY_DOMAIN and not keep[p] else 0 for p in range(pieces))
+    outside = [focus is not None and domain[row] != OVERLAY_DOMAIN for row in ids]
+    raw = None
+    if focus or cut is not None or lines is not None:
+        raw = bytes((0x88 if outside[p] else 0) | (2 if lines and lines[p] else 1 if cut and cut[p] else 0)
+                    for p in range(pieces))
+    fill = bytes(0x80 if outside[p] and not (lines and lines[p]) else 0 for p in range(pieces)) if focus else None
     count = sum(lines) if lines else 0
-    hidden = sum(1 for p in range(pieces) if lines and lines[p] and domain[ids[p]] != OVERLAY_DOMAIN) if focus else 0
-    layer = "None" if not lines else "MovingSet" if step is not None else "CutTrace"
-    return {"layer": layer, "cap": cap, "step": label, "pieces": count, "never_hidden": sum(never) if never else 0,
-            "hidden": hidden, "certificate_points": points, "outline_entries": sum(1 for b in outline if b == 15),
-            "kept": sum(keep), "kept_dimmed": 0,
+    hidden = sum(1 for p in range(pieces) if lines and lines[p] and outside[p]) if focus == "hidden" else 0
+    layer = "MovingSet" if step is not None else "CutTrace" if cut is not None or lines is not None else "None"
+    return {"layer": layer, "cap": cap, "step": label, "pieces": count, "never_hidden": count,
+             "hidden": hidden, "certificate_points": points, "outline_entries": count, "kept": count,
+             "outline_only": [hidden, 0], "preview_kept": 0,
+             "trace_cap": cap if cut is not None else None, "trace_candidates": sum(cut) if cut else 0,
+             "fill_bytes_sha256": hashlib.sha256(raw).hexdigest() if raw is not None else "",
             "outline_sha256": hashlib.sha256(bytes(outline)).hexdigest(),
-            "fill_sha256": hashlib.sha256(fill).hexdigest() if fill is not None else "", "focus": focus or "none"}
+             "fill_sha256": hashlib.sha256(fill).hexdigest() if fill is not None else "",
+             "modes": [focus or "none", "dimmed" if focus else "none"]}
 
 
-def overlay_words(want: dict) -> str:
+def overlay_words(want: dict, local=False) -> str:
     """JumbleOverlay.Words for an expectation."""
     if want["cap"] is None:
         return ""
     glyphs = f" · {want['certificate_points']:,} certificate points (glyphs wait for their gate row)" if want["certificate_points"] is not None else ""
-    kept = f" · {want['hidden']:,} kept from the filter, outlined" if want["hidden"] else ""
+    kept = f" · {want['hidden']:,} kept from the filter, outlined" if want["hidden"] and not local else ""
     if want["layer"] == "MovingSet":
         head = f"{want['step']} · moving set outlined, never hidden"
     elif want["certificate_points"] is not None:
         head = f"Cut of cap {want['cap']:,} · straddlers outlined, never hidden"
     else:
-        head = f"Cut of cap {want['cap']:,} · inside set outlined"
+        return f"Cut of cap {want['cap']:,} · surface trace"
     return f"{head} · {want['pieces']:,} pieces{kept}{glyphs}"
 
 
 def expect_overlays(dumps: list[dict], source: dict, state: str | None, tables: dict | None = None) -> list[str]:
     """The overlays script: after each step the overlay's counts, its line on both borders and the bytes sent to the
-    core equal the sample's, piece by piece; no never-hidden or overlay piece carries the dim bit."""
+    core equal the sample's, piece by piece. Only the references excluded by Hide draw as outline only."""
     if state is None or not (SAMPLES / state / "cap-150.json").is_file() or not (SAMPLES / state / "cap-0.json").is_file():
         return ["the overlays script needs a sample state with records of caps 150 and 0"]
     by_step = {dump["do"]: dump for dump in dumps}
@@ -2395,8 +2424,8 @@ def expect_overlays(dumps: list[dict], source: dict, state: str | None, tables: 
             continue
         want = overlay_expected(tables, state, cap, step, focus, tint.get("hover"), tint.get("selection"))
         line = overlay_words(want)
-        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", line)]:
-            said = overlay if key not in ("outline_sha256", "fill_sha256", "focus") else tint
+        for key, value in [*want.items(), ("line", line), ("global_line", line), ("local_line", overlay_words(want, local=True))]:
+            said = tint if key in ("outline_sha256", "fill_sha256", "modes") else overlay
             if said.get(key) != value:
                 problems.append(f"after '{mark}' {key} is {str(said.get(key))[:120]!r}, not {str(value)[:120]!r}")
     if not problems:
@@ -3674,8 +3703,8 @@ ON_FIXTURE.add(GATE_OCCLUSION)
 
 # The restage writes no screen ("quiet"), so the Ctrl+Enter pressed one frame later lands inside the settle interval;
 # its screen is written at once ("quick").
-PREVIEW_AT = {"base": 9, "staged": 11, "back": 13, "forward": 15, "overlay": 19, "overlay_off": 23,
-              "start": 27, "cancel": 29, "refused": 34, "again": 35, "partial": 37, "commit": 39}
+PREVIEW_AT = {"base": 12, "staged": 14, "back": 16, "forward": 18, "overlay": 22, "overlay_off": 26,
+              "start": 30, "cancel": 32, "refused": 37, "again": 38, "partial": 40, "commit": 42}
 SETTLE_REFUSAL = "the preview has just changed"
 
 
@@ -3721,6 +3750,14 @@ def expect_preview(dumps: list[dict], source: dict, state: str | None) -> list[s
             check(("Preview pending" in words) == bool(preview.get("id")), f"{name}: the pending chip is wrong in {view}")
             check(("script" in words) == (name == "overlay"), f"{name}: the overlay's script frame is wrong in {view}")
     staged, again = previews["staged"], previews["again"]
+    for name in ("staged", "overlay", "overlay_off"):
+        overlay = screens[name].get("overlay", {})
+        moved = staged.get("moved", 0)
+        check(isinstance(moved, int) and moved > 0 and overlay.get("preview_kept") == moved
+              and overlay.get("outline_only") == [moved, 0],
+              f"{name}: the hiding filter must retain all {moved} collateral pieces as outlines")
+        check(overlay.get("outline_entries") == (moved if name == "overlay" else 0),
+              f"{name}: the explicit preview outline is inconsistent with its toggle")
     letters = staged.get("letters") or 0
     check(letters == 3 and staged.get("whole_only") and screens["staged"].get("stage", {}).get("spans") == 1,
           "digit 2 did not stage one whole repair with three letters")

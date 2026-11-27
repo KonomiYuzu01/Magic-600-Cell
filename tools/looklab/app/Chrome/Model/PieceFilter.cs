@@ -181,6 +181,7 @@ public sealed class PieceFilterModel
     public IReadOnlyList<SavedFilter> Saved => saved;
     public long Pieces { get; }
     public event Action? Changed;
+    public event Action? AppliedChanged;
 
     // `compatibility` names the state the counts are for (the bound sample's state digest).
     public PieceFilterModel(IReadOnlyList<PoseRow> rows, int lattice, int domains, Func<long> revision, string compatibility)
@@ -248,7 +249,16 @@ public sealed class PieceFilterModel
         Applied = new AppliedFilter(p.Combined, p.Kind, p.Revision, p.Count, p.Of);
         Preview = null;
         Safe.Raise(Changed);
+        Safe.Raise(AppliedChanged);
         return null;
+    }
+
+    public void FocusApplied(FocusLayers layers)
+    {
+        if (Layer() is not { } layer) return;
+        layers.AddPredicate(layer);
+        if (layers.Focused != LayerId) layers.Focus(LayerId);
+        if (layers.Inactive == InactiveMode.Normal) layers.Cycle();
     }
 
     // Clears the applied filter: the focus layer goes, nothing else changes.

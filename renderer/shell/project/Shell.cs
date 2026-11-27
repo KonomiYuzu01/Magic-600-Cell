@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Godot;
 
 namespace Magic600.Shell;
@@ -61,7 +62,7 @@ public partial class Shell : Control
     /// <summary>The engine revision of the newest presentation the core confirmed.</summary>
     private ulong _shownRevision;
     /// <summary>The shown revision at which ADR-D02 last bound a sample state to the session (B5).</summary>
-    private ulong _boundRevision;
+    private ulong? _boundRevision;
     // The engine revision the last submitted frame drew: the adopted head, shown on screen or not.
     private ulong _adoptedRevision;
     private Vector2I _size;
@@ -1187,7 +1188,7 @@ public partial class Shell : Control
         // the first posed adoption) is retried at the next step.
         if (D02.ShellJumble.On && _session)
         {
-            D02.ShellStyle.Apply(library, _host, _adoptedRevision);
+            D02.ShellStyle.Apply(library, _host, _adoptedRevision, _boundRevision);
             D02.ShellStatus.Apply(library, _host, _adoptedRevision);
         }
         // ADR-D01.52 and .49/.5: the sticker colours and the scene look, sent again until the host takes them.
@@ -1278,7 +1279,14 @@ public partial class Shell : Control
         {
             _boundRevision = _adoptedRevision;
             var asking = EventLog.Now();
-            var read = library.StateDigest(_host) == HostLibrary.Ok;
+            string? digests = library.StateDigest(_host) == HostLibrary.Ok ? library.Answer(_host) : null;
+            // StateDigest reads the engine head. A queued key may have advanced it past the just-adopted frame.
+            bool read = digests != null && library.PreviewReport(_host) == HostLibrary.Ok;
+            if (read)
+            {
+                using var report = JsonDocument.Parse(library.Answer(_host));
+                read = report.RootElement.GetProperty("head_revision").GetUInt64() == _adoptedRevision;
+            }
             var digested = EventLog.Now();
             var parts = _log != null ? new List<(string Name, long From, long To)>() : null;
             D02.ShellJumble.BindParts = parts;
@@ -1291,7 +1299,7 @@ public partial class Shell : Control
             {
                 if (read)
                 {
-                    D02.ShellJumble.Bind(library.Answer(_host), (long)_adoptedRevision);
+                    D02.ShellJumble.Bind(digests!, (long)_adoptedRevision);
                 }
                 else
                 {

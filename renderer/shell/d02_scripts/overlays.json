@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "overlays",
-  "note": "B16's run on a state's session fixture (wj-ia-300): no overlay while no cap is named; naming cap 150 outlines its cut's trace (the inside set) on the outline channel; jumble.focus.domain 5 dims the other domains and F10 hides them, while every overlay piece stays shown, outlined and counted; a focused repair row's step 2 outlines its moving set in place of the trace, never hidden; naming the blocked cap 0 outlines its straddlers, never hidden, with its certificate points counted in place of their glyphs. Each step's dump names the bytes sent to the core, which the run recomputes from the sample piece by piece.",
+  "note": "On wj-ia-300, naming cap 150 draws a surface trace and preserves the tint and focus of its inside pieces. Domain 5 dims both panes. F10 switches Global to Hide while Local stays Dimmed. A repair step and a blocked cap supply exact references, with outline-only counts in Global.",
   "steps": [
     {"wait_ms": 5001},
     {"chord": "F1"},

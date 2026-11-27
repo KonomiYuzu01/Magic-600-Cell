@@ -28,6 +28,8 @@ cbuffer ViewStyle : register(b1) {
 };
 static const uint SliceInside = 0x20000u; // the piece style word's bit 17: the slice's inside layer
 static const uint Moving = 0x10000u; // bit 16: a moving piece of the transform (B18)
+static const uint ReferenceLine = 0x40000u;
+static const uint AlwaysOutline = 0x80000u;
 // ADR-D02 B20: a slice draws each sticker with the radius shell in place of the view's focus test, the inside layer
 // at the slice's smaller shrink, and only the layers its mode names.
 ProductOut sliceVs(uint vi, uint cell, uint style) {
@@ -60,10 +62,40 @@ struct StyledOut {
     float3 corner : TEXCOORD4;
     nointerpolation uint instance : TEXCOORD5; // ADR-D02 B17: the ID pass's value
     nointerpolation uint piece : TEXCOORD6;
+    float cutDistance : TEXCOORD7;
 };
 bool statusConflict(uint style) {
     return statusOn != 0 && ((style >> 24) & 7u) == 2u;
 }
+bool hides(uint style) {
+    bool outside = (style & 0x80u) != 0;
+    return !statusConflict(style) && ((dimMode == 3 && outside) || (dimMode == 4 && !outside));
+}
+
+bool jumbleOptions(float4 entry) {
+    return entry.z == 0.5 && asuint(entry.a) == 0x80000000u;
+}
+
+// The shell tags one unused palette entry: class 1 during height tint, height 2 otherwise.
+// It carries the cap id (+1, in units of 1/1024) and which pane's focus bit to read. Ordinary style slots stay untagged.
+uint jumbleStyle(inout uint style, out float capCode) {
+    bool heightMode = jumbleOptions(palette[3]);
+    float4 options = heightMode ? palette[3] : palette[10];
+    capCode = 0;
+    if (!jumbleOptions(options)) return 0;
+    capCode = options.x;
+    uint fill = style & 15u, outline = (style >> 8) & 15u;
+    uint ink = heightMode ? outline >> 2 : fill & 3u;
+    bool outside = (style & (options.y == 0 ? 0x80u : 8u)) != 0;
+    uint height = fill & 7u;
+    fill = heightMode && height != 0 ? height + 9u : 0;
+    if (heightMode) outline = (outline & 3u) == 3u ? 15u : outline & 3u;
+    style = (style & ~0x0f8fu) | (outline << 8) | fill | (outside ? 0x80u : 0);
+    if (ink >= 2) style |= ReferenceLine;
+    if (ink == 2) style |= AlwaysOutline;
+    return ink;
+}
+
 StyledOut styledVs(uint vi : SV_VertexID, uint cell : SV_InstanceID) {
     uint slot = cell * 433 + stickerIds[vi];
     uint style = pieceStyle[slotPieces[slot]];
@@ -75,13 +107,21 @@ StyledOut styledVs(uint vi : SV_VertexID, uint cell : SV_InstanceID) {
     result.projected = p.projected;
     result.colourClass = p.colourClass;
     result.marked = p.marked;
+    float capCode;
+    uint ink = jumbleStyle(style, capCode);
     result.style = style;
     result.corner = float3(k == 0 ? 1 : 0, k == 1 ? 1 : 0, k == 2 ? 1 : 0);
     result.instance = p.instance;
     result.piece = slotPieces[slot];
-    // ADR-D02 B17: a hidden piece's stickers fall outside the clip volume, in the colour pass and the ID pass alike.
-    bool dimSet = (result.style & 0x80) != 0;
-    if (!statusConflict(style) && ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet))) result.position = float4(0, 0, -1, 1);
+    result.cutDistance = 1;
+    if (capCode >= 1.0 / 1024 && capCode <= 600.0 / 1024 && ink != 0) {
+        uint cap = (uint)(capCode * 1024) - 1;
+        float4 pole = normalize(framePoint(cap, N0));
+        // Measure against the unshrunk sticker face; draw the stripe on that face's rendered triangle.
+        float4 world = posedPoint(slot, framePoint(cell, vertices[vi] / radius));
+        result.cutDistance = dot(world, pole) - 121.0 / 125.0;
+    }
+    if (hides(style) && (style & ReferenceLine) == 0) result.position = float4(0, 0, -1, 1);
     return result;
 }
 float2 patternRotate(float2 p, float angle) {
@@ -113,6 +153,11 @@ bool markInk(StatusPattern entry, float3 corner) {
     return (abs(p.x) < w && p.y > 0) || abs(abs(p.x) + 1.732050808 * p.y) < w;
 }
 float4 styledPs(StyledOut input) : SV_Target {
+    float edge = min(input.corner.x, min(input.corner.y, input.corner.z));
+    float cutWidth = min(fwidth(input.cutDistance), 0.002);
+    bool reference = (input.style & ReferenceLine) != 0;
+    bool referenceOnly = reference && hides(input.style);
+    if (referenceOnly && edge >= outlineWidth) discard;
     uint status = statusOn != 0 ? (input.style >> 24) & 0x3fu : 0;
     uint markIndex = status >> 3;
     bool marked = markIndex != 0 && markInk(marks[markIndex], input.corner);
@@ -129,16 +174,22 @@ float4 styledPs(StyledOut input) : SV_Target {
         float4 tint = palette[fill & 15];
         colour.rgb = lerp(colour.rgb, tint.rgb * shade, tint.a);
     }
-    float edge = min(input.corner.x, min(input.corner.y, input.corner.z));
     if ((tintMode & 2) != 0 && (outline & 15) != 0 && edge < outlineWidth) {
         float4 stroke = palette[outline & 15];
         colour.rgb = lerp(colour.rgb, stroke.rgb, stroke.a);
     }
+    // Keep the tint in the outer half of the band. The overlay has a separate inner stroke.
+    bool drawLine = (input.style & AlwaysOutline) != 0 || referenceOnly;
+    if (drawLine && edge < outlineWidth && ((outline & 15) == 0 || edge >= outlineWidth * 0.5)) {
+        colour.rgb = referenceOnly ? palette[15].rgb : lerp(colour.rgb, palette[15].rgb, palette[15].a);
+    }
+    if (!referenceOnly && cutWidth > 0 && abs(input.cutDistance) <= cutWidth)
+        colour.rgb = lerp(colour.rgb, palette[15].rgb, palette[15].a);
     // ADR-D02 B20: the turn preview's ghost on the moving inside pieces.
     if (sliceMode != 0 && ghost.a > 0 && theta != 0 && (input.style & (SliceInside | Moving)) == (SliceInside | Moving))
         colour.rgb = lerp(colour.rgb, ghost.rgb, ghost.a);
     bool dimSet = (fill & 0x80) != 0;
-    if (!statusConflict(input.style) && ((dimMode == 1 && dimSet) || (dimMode == 2 && !dimSet))) colour.rgb *= 1 - dimAmount;
+    if (!reference && !statusConflict(input.style) && ((dimMode == 1 && dimSet) || (dimMode == 2 && !dimSet))) colour.rgb *= 1 - dimAmount;
     // ADR-D01.25: the hatch repeats about every 6 pixels across the diagonal; a regular band keeps its own colour.
     if ((tintMode & 2) != 0 && (outline & 0x10u) != 0 && palette[0].a > 0) {
         bool hatch = frac((input.position.x + input.position.y) / 8.0) < 0.5;
@@ -162,6 +213,7 @@ float4 styledPs(StyledOut input) : SV_Target {
 // ADR-D02 B17 (ADR-D01.46): picking follows visibility. A piece the slot dims answers no instance; a hidden one is not
 // drawn at all (styledVs); a tint, an outline or the matrix leaves the instance as the unstyled ID pass gives it.
 uint styledIdPs(StyledOut input) : SV_Target {
+    if (hides(input.style)) discard; // a kept reference outline never answers a pick
     if (sliceHole(input.style, input.corner)) discard; // ADR-D02 B20: an inside piece answers only on its band
     bool dimSet = (input.style & 0x80) != 0;
     bool dimmed = dimAmount > 0 && ((dimMode == 1 && dimSet) || (dimMode == 2 && !dimSet));

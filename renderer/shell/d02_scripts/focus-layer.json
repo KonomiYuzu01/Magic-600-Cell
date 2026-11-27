@@ -1,7 +1,7 @@
 {
   "format": "magic600-d02-script/1",
   "name": "focus-layer",
-  "note": "The Focus layer, the 0.4 Piece Filter in the default view (owner, 26 November 2026: \"Focus layer加别名就行\"), on wj-ia-300's session fixture: the entry on Global's border, a preview with its exact count before apply, an apply, an intersect composed with it, and the palette finding the rows by the alias \"piece filter\".",
+  "note": "On wj-ia-300, preview a Focus layer's exact count, apply it with Global focused, and check that Global dims. Intersect the applied layer and check the palette alias \"piece filter\".",
   "steps": [
     {
       "wait_ms": 25000

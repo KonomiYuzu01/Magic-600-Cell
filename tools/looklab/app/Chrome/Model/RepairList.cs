@@ -163,10 +163,10 @@ public sealed class RepairListModel
 }
 
 // A repair row's steps (ADR-D02.34): step k's moving set is the inside set at its prefix state, after steps 1 to k−1.
-// The sample records the letters and the moving sets of its first rows; a step whose set the sample lacks counts as
-// pending. The steps follow the preview's step keys (`view.preview.scrub`), with no new chord.
+// The sample records the letters and moving sets of its first rows. The steps follow the preview's step keys.
 public sealed class RepairSteps
 {
+    public const string MovingUnavailable = "moving set unavailable";
     private readonly Dictionary<int, (IReadOnlyList<(int Cap, int Item)> Letters, IReadOnlyList<long> Moving)> steps = new();
 
     public static RepairSteps From(string record)
@@ -183,12 +183,15 @@ public sealed class RepairSteps
         return result;
     }
 
-    // The moving-set count of step k of a row, or pending where the sample has none.
+    // The moving-set count of step k of a row; pending in the sample data means no set is available to draw.
     public Numeral Moving(RepairRow row, int k)
     {
         if (k < 1 || k > row.Steps) throw new ArgumentOutOfRangeException(nameof(k));
         return steps.TryGetValue(row.Number, out var s) && k <= s.Moving.Count ? Numeral.Of(s.Moving[k - 1]) : Numeral.Pending;
     }
+
+    public string MovingWords(RepairRow row, int k) => Moving(row, k) is { Kind: NumeralKind.Value } n
+        ? "moving " + n.Value.ToString("N0", CultureInfo.InvariantCulture) : MovingUnavailable;
 
     // The letters a row's steps play, as recorded; a two-twist row's identity z is not a step.
     public IReadOnlyList<(int Cap, int Item)> Letters(RepairRow row, int cap) =>
@@ -219,6 +222,13 @@ public sealed class RepairScrub
     }
 
     public string Label => Row == null ? "" : StepLabel(Step, Row.Steps);
+
+    public void FollowSection(LocalAccordion accordion, RepairListModel? list)
+    {
+        if (accordion.Open == "repair_list") return;
+        list?.Unfocus();
+        Show(null);
+    }
 
     public static string StepLabel(int k, int m) => "Repair " + k.ToString(CultureInfo.InvariantCulture) + " of " + m.ToString(CultureInfo.InvariantCulture);
 }
