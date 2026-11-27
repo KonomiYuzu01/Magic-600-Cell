@@ -12,6 +12,8 @@
 #include <sstream>
 
 namespace sa2test {
+void run_colours(Suite& suite, const Options& options);
+
 void expect(bool condition, const char* reason) { if (!condition) throw std::runtime_error(reason); }
 void Suite::check(const std::string& name, const std::function<void()>& body) {
     try { body(); checks.push_back({name, "pass", "all assertions passed"}); }
@@ -160,7 +162,7 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_frame_submit", "sa2_frame_reports", "sa2_presented", "sa2_pick_request", "sa2_pick_poll", "sa2_recover",
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
             "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes",
-            "sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set"};
+            "sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1675,7 +1677,7 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(partial, "a partial triangle was bounded");
     });
 }
-Options parse(int argc, char** argv) {
+Options parse(int argc, char** argv, bool& colours) {
     Options options;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
@@ -1692,6 +1694,7 @@ Options parse(int argc, char** argv) {
         else if (arg == "--focus") options.focus = true;
         else if (arg == "--sweep") options.sweep = true;
         else if (arg == "--slice") options.slice = true;
+        else if (arg == "--colours") colours = true;
         else if (arg == "--hopf") options.hopf = value();
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
@@ -1755,6 +1758,9 @@ Options parse(int argc, char** argv) {
     expect(!options.slice || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
         && !options.style && !options.panes && !options.focus && options.hopf.empty() && !options.sweep && options.measure.empty()),
         "--slice requires --warp, alone");
+    expect(!colours || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.hopf.empty() && !options.sweep && !options.slice
+        && options.measure.empty() && !options.prepares), "--colours requires --warp, alone");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
@@ -1768,7 +1774,8 @@ Options parse(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     try {
-        const auto options = sa2test::parse(argc, argv);
+        bool colours = false;
+        const auto options = sa2test::parse(argc, argv, colours);
         if (!options.child.empty()) return sa2test::run_child(options);
         if (!options.measure.empty()) {
             sa2test::run_measure(options);
@@ -1791,6 +1798,7 @@ int main(int argc, char** argv) {
         else if (!options.hopf.empty()) sa2test::run_hopf(suite, options);
         else if (options.sweep) sa2test::run_sweep(suite, options);
         else if (options.slice) sa2test::run_slice(suite, options);
+        else if (colours) sa2test::run_colours(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

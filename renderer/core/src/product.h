@@ -30,6 +30,8 @@ static_assert(sizeof(sa2_view_focus) == 24);
 
 namespace sa2 {
 using Digest = std::array<uint8_t, 32>;
+using StickerColours = std::array<std::array<float, 4>, SA2_STICKER_CLASSES>;
+constexpr sa2_scene_look DefaultSceneLook{sizeof(sa2_scene_look), 0, {0.13f, 0.145f, 0.16f, 1}, 0, 0, 0, 0};
 constexpr uint64_t DeviceEpoch = 1; // a context's first device epoch; only an ABI 5 recovery increases it
 constexpr size_t MaxPresents = 1024; // ABI 5: frames awaiting a statistics row, and confirmed rows not yet read
 constexpr uint32_t EngineCopies = 3; // GPU ring copies of the adopted engine image
@@ -362,6 +364,11 @@ public:
     size_t held_tickets() const; // tickets whose GPU resources are not yet released
     size_t retained_frames() const { return frames_.size(); }
 
+    void set_sticker_colours(const float* rgb, uint32_t count);
+    void set_scene_look(const sa2_scene_look* look);
+    const StickerColours& sticker_colours() const { return sticker_colours_; }
+    const sa2_scene_look& scene_look() const { return scene_look_; }
+
 private:
     struct Entry {
         PublicationStamp stamp;
@@ -428,6 +435,8 @@ private:
     std::array<std::optional<ViewStyle>, SA2_STYLE_SLOTS> view_styles_; // ABI 7: slots 1..4
     std::map<uint64_t, Pick> picks_;
     Counters counters_;
+    StickerColours sticker_colours_{}; // alpha 0 selects the built-in hue
+    sa2_scene_look scene_look_ = DefaultSceneLook;
 };
 
 // describe_backend's SupportReport and recover's refusal, as JSON. route_b:

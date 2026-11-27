@@ -10,6 +10,7 @@ mod common;
 use std::path::Path;
 use std::ptr;
 
+use c600_render::abi::{Sa2SceneLook, StickerColours, STICKER_CLASSES};
 use c600_render::fake::DISPLAY_TICKS;
 use c600_render::FakeCore;
 use c600_shell_host::*;
@@ -432,6 +433,36 @@ fn two_view_host(local: bool) -> (*mut Shim, *mut ShellHost) {
 /// The left and right halves of the surface.
 const LEFT: (i32, i32, u32, u32) = (0, 0, SIZE.0 / 2, SIZE.1);
 const RIGHT: (i32, i32, u32, u32) = ((SIZE.0 / 2) as i32, 0, SIZE.0 / 2, SIZE.1);
+
+#[test]
+fn scene_colours_validate_before_calling_the_core() {
+    let (shim, host) = two_view_host(false);
+    let mut colours: StickerColours = [[0.2, 0.4, 0.6]; STICKER_CLASSES];
+    let count = STICKER_CLASSES as u32;
+    let mut look = Sa2SceneLook::default();
+    // SAFETY: the handle, table and look are live; the handle is destroyed before the shim.
+    unsafe {
+        assert_eq!(m6h_set_sticker_colours(host, colours.as_ptr().cast(), count - 1), M6H_E_INVALID_ARGUMENT);
+        colours[STICKER_CLASSES - 1][2] = f32::NAN;
+        assert_eq!(m6h_set_sticker_colours(host, colours.as_ptr().cast(), count), M6H_E_INVALID_ARGUMENT);
+        colours[STICKER_CLASSES - 1][2] = 0.6;
+        assert_eq!(m6h_set_sticker_colours(host, colours.as_ptr().cast(), count), M6H_E_HOST);
+        assert!(last_error(host).contains("the fake core does not draw sticker colours"));
+        assert_eq!(m6h_set_sticker_colours(host, ptr::null(), count), M6H_E_HOST);
+        assert_eq!(m6h_set_sticker_colours(host, colours.as_ptr().cast(), 0), M6H_E_HOST);
+
+        assert_eq!(m6h_set_scene_look(host, &look), M6H_E_HOST);
+        assert!(last_error(host).contains("the fake core does not draw scene looks"));
+        look.fog = 1.5;
+        assert_eq!(m6h_set_scene_look(host, &look), M6H_E_INVALID_ARGUMENT);
+        look.struct_size -= 4;
+        assert_eq!(m6h_set_scene_look(host, &look), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_scene_look(host, ptr::null()), M6H_E_HOST);
+
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
+    }
+}
 
 fn set_pane(host: *mut ShellHost, pane: u32, view: u64, rect: (i32, i32, u32, u32), style: u32) -> i32 {
     // SAFETY: a live handle.

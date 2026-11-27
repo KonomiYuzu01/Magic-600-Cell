@@ -2460,14 +2460,17 @@ class D02SceneLook(unittest.TestCase):
             lines = []
             if step == "chord Enter" or step.startswith("command look.scene.set "):
                 name, export = ("Graphite B sticker palette", palette_export) if step == "chord Enter" else ("Scene look " + look, scene_export)
-                lines.append(["frame", f"{name} chosen; the drawn scene keeps the core's fixed colours until the core takes {export} (requested)"])
+                lines.append(["frame", f"{name} sent through {export}"])
             if step == "command look.sticker_palette.set nosuch":
                 lines.append(["frame", "Unknown sticker palette 'nosuch'. Choose graphite.a, graphite.b."])
             scene = {key: looks[look][key] for key in ("fog", "glow", "edgeBrightness", "edgeWeight")}
             dumps.append({"do": step, "lines": lines,
                           "scene_look": dict(scene, theme="graphite", look=look, background=backgrounds[look],
-                                             sent=False, waits_for=scene_export),
-                          "sticker_palette": {"id": palette, "passes": True, "sent": False, "waits_for": palette_export},
+                                             sent=True, export=scene_export, status=0, drawn=["background"],
+                                             held=["fog", "glow", "edgeBrightness", "edgeWeight"]),
+                          "sticker_palette": dict({"id": palette, "passes": True, "sent": True, "export": palette_export, "status": 0,
+                                                   "table": "core default" if palette == "graphite.a" else palette},
+                                                  **({} if palette == "graphite.a" else {"table_sha256": "e" * 64})),
                           "tuning": {"state_digest": "a" * 64, "revision": 4},
                           "tint": {"outline_sha256": "b" * 64, "fill_sha256": "", "palette_sha256": "c" * 64}})
         self.assertEqual(run.expect_scene_look(dumps, {}, None), [])

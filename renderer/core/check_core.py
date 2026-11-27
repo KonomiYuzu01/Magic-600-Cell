@@ -5,6 +5,7 @@ dxil.dll copied from DXC_DIR beside the built DLL. --poses also runs the product
 (ABI 6) the view shape check on WARP only, --style (ABI 7) the piece style check on WARP only, --panes (ABI 8) the
 composite frame check on WARP only, --focus (ABI 9) the view focus check on WARP only, and --hopf (ABI 10) the view
 layout check on WARP only, on Look Lab's tools/looklab/fixtures/hopf-rings.json.
+--colours checks the sticker table and scene look on WARP only.
 
 Derived from work/experiments/renderer-sa2/native/check_native.py (see PROVENANCE.md).
 """
@@ -159,6 +160,8 @@ def main():
                         help="also run ADR-D02 B18's WARP check of a twist's transform (sa2_transform_set)")
     parser.add_argument("--slice", action="store_true",
                         help="also run ADR-D02 B20's WARP check of the cut slice (a style slot's slice)")
+    parser.add_argument("--colours", action="store_true",
+                        help="also run the WARP check of the sticker colours and scene look")
     parser.add_argument("--panes", action="store_true",
                         help="also run ABI 8's WARP check of the composite frame (sa2_frame_submit_panes)")
     options = parser.parse_args()
@@ -167,7 +170,8 @@ def main():
     # Application Control can refuse unsigned executables in system temp. Build
     # inside the repository's ignored work tree.
     parent = root / "work" / "build"
-    name = f"renderer-core-{os.getpid()}"
+    # NMake's compiler probe adds a long suffix to this path in nested worktrees.
+    name = f"rc-{os.getpid()}"
     build = parent / name
     created = False
     try:
@@ -213,12 +217,14 @@ def main():
             check_result(executable, build, "warp", vectors, warp_mode="sweep")
         if options.slice:
             check_result(executable, build, "warp", vectors, warp_mode="slice")
+        if options.colours:
+            check_result(executable, build, "warp", vectors, warp_mode="colours")
         summary = " (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"
         warp = " and ".join(name for name, run in (("stage", options.stages), ("pose", options.poses),
                                                    ("shape", options.shape), ("style", options.style),
                                                    ("panes", options.panes), ("focus", options.focus),
                                                    ("hopf", options.hopf), ("sweep", options.sweep),
-                                                   ("slice", options.slice)) if run)
+                                                   ("slice", options.slice), ("colours", options.colours)) if run)
         if warp:
             summary = f" (CPU, WARP and hardware; WARP {warp} checks)" if options.gpu else f" (CPU and the WARP {warp} checks; no hardware run)"
         print("check_core: ok" + summary)

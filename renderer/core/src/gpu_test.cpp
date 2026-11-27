@@ -2283,6 +2283,152 @@ void product_slice(const Options& options) {
     harness.finish(options.debug);
 }
 
+// ADR-D01.49/.52: the colour and background exports, with the product fixture on WARP.
+void product_colours(const Options& options) {
+    using namespace panes_check;
+    Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+    load(harness, Side, Side);
+    auto* ctx = harness.ctx;
+    const auto set = pickable_set(harness, 1, 1);
+    const Rows q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+    PoseFrames frames{harness};
+    const auto draw = [&] { return frames.draw(1, 1, set, q); };
+
+    constexpr uint32_t default_background = 0xff292521, green_background = 0xff00ff00;
+    const auto original = draw();
+    expect(original[0] == default_background, "the no-call clear colour is not today's RGBA8 value");
+    const auto [x, y] = covered_point(original);
+    const auto ids = [&] {
+        const auto sticker = pick(harness, frames.frame, x, y), background = pick(harness, frames.frame, 0, 0);
+        expect(sticker.state == SA2_PICK_READY && background.state == SA2_PICK_READY, "a colour-check pick was not ready");
+        return std::array{sticker.instance, background.instance};
+    };
+    const auto original_ids = ids();
+    expect(original_ids[0] > 0 && original_ids[0] <= SA2_SLOTS && original_ids[1] == 0, "the fixture needs a sticker and background pick");
+    const uint32_t home = (original_ids[0] - 1) / sb::Stickers;
+
+    const std::vector<uint8_t> fill(SA2_PIECES, 1);
+    sa2_view_style tint{};
+    tint.struct_size = sizeof(tint);
+    tint.tint_mode = SA2_STYLE_TINT_FILL;
+    tint.matrix[0] = tint.matrix[4] = tint.matrix[8] = 1.0f;
+    tint.palette[6] = 1.0f; // index 1 is blue at half strength
+    tint.palette[7] = 0.5f;
+    api(ctx, sa2_style_set(ctx, 1, fill.data(), SA2_STYLE_CHANNEL_FILL));
+    api(ctx, sa2_view_style_set(ctx, 1, &tint));
+    const auto original_styled = draw();
+    expect(original_styled != original && ids() == original_ids, "the tint fixture did not draw or changed the IDs");
+    api(ctx, sa2_view_style_set(ctx, 1, nullptr));
+
+    api(ctx, sa2_sticker_colours_set(ctx, nullptr, 0));
+    expect(draw() == original, "a NULL table changed the default frame");
+    api(ctx, sa2_scene_look_set(ctx, nullptr));
+    expect(draw() == original, "a NULL scene look changed the default frame");
+    sa2_scene_look look{sizeof(sa2_scene_look), 0, {0.13f, 0.145f, 0.16f, 1.0f}, 0.2f, 0.4f, 0.6f, 0.8f};
+    api(ctx, sa2_scene_look_set(ctx, &look));
+    expect(draw() == original, "today's background with carried values changed the default frame");
+
+    // Isolate the chosen home class in the left pane and put every other class in the right pane. Every changed
+    // pixel then has an independent class/coverage check, including when the two sets would occlude each other.
+    std::vector<uint8_t> chosen(SA2_SLOTS), rest(SA2_SLOTS);
+    for (uint32_t slot = 0; slot < SA2_SLOTS; ++slot) {
+        chosen[slot] = uint8_t(slot / sb::Stickers == home);
+        rest[slot] = uint8_t(!chosen[slot]);
+    }
+    const auto one = pose_set(harness, 2, chosen), other = pose_set(harness, 3, rest);
+    const std::vector<sa2_pane> panes{
+        make(2, one, 0, 0, Side / 2, Side, q), make(3, other, Side / 2, 0, Side / 2, Side, q),
+    };
+    std::array<float, SA2_STICKER_CLASSES * 3> table{};
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    const auto pane_base = frames.draw_panes(1, panes);
+    table[3 * home] = 1.0f;
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), SA2_STICKER_CLASSES));
+    const auto pane_colours = frames.draw_panes(1, panes);
+    size_t recoloured = 0, other_class = 0;
+    for (size_t i = 0; i < pane_base.size(); ++i) {
+        const bool left = i % Side < Side / 2;
+        const bool covered = pane_base[i] != default_background;
+        const bool changed = pane_base[i] != pane_colours[i];
+        expect(changed == (left && covered), "the palette changed a pixel outside its class or missed one inside it");
+        if (changed) expect((pane_colours[i] & 0xffffff) == (pane_colours[i] & 0xff) && (pane_colours[i] & 0xff) > 0,
+                           "a recoloured sticker did not draw red");
+        recoloured += changed;
+        other_class += covered && !left;
+    }
+    expect(recoloured > 0 && other_class > 0, "both panes must show stickers");
+
+    const auto colours = draw();
+    look.background[0] = look.background[2] = 0.0f;
+    look.background[1] = 1.0f;
+    api(ctx, sa2_scene_look_set(ctx, &look));
+    const auto backdrop = draw();
+    expect(ids() == original_ids, "the table and scene look changed the product IDs");
+    const auto compare_background = [&](const auto& from, const auto& to) {
+        size_t changed = 0;
+        for (size_t i = 0; i < from.size(); ++i) {
+            const bool clear = from[i] == default_background;
+            expect(to[i] == (clear ? green_background : from[i]), "only the old background pixels should change to the new clear");
+            changed += clear;
+        }
+        expect(changed > 0 && changed < from.size(), "the fixture needs background and sticker pixels");
+        return changed;
+    };
+    const auto cleared = compare_background(colours, backdrop);
+    const auto pane_cleared = compare_background(pane_colours, frames.draw_panes(1, panes));
+
+    const auto refused = [](int32_t code) { expect(code == SA2_E_INVALID_ARGUMENT, "an invalid colour or scene look was accepted"); };
+    auto bad_table = table;
+    bad_table[3 * home] = 0.25f;
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES - 1));
+    bad_table.back() = std::numeric_limits<float>::quiet_NaN();
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES));
+    bad_table.back() = 1.5f;
+    refused(sa2_sticker_colours_set(ctx, bad_table.data(), SA2_STICKER_CLASSES));
+    auto bad_look = look;
+    bad_look.background[0] = 1.0f;
+    bad_look.struct_size -= uint32_t(sizeof(float));
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    bad_look.struct_size = sizeof(bad_look);
+    bad_look.fog = std::numeric_limits<float>::quiet_NaN();
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    bad_look.fog = 1.5f;
+    refused(sa2_scene_look_set(ctx, &bad_look));
+    expect(draw() == backdrop, "an invalid argument changed the installed table or background");
+
+    api(ctx, sa2_view_style_set(ctx, 1, &tint));
+    const auto styled = draw();
+    expect(ids() == original_ids, "the table and scene look changed the styled IDs");
+    size_t tinted = 0, tinted_red = 0;
+    for (size_t i = 0; i < backdrop.size(); ++i) {
+        if (backdrop[i] == green_background) {
+            expect(styled[i] == green_background, "the tint changed the background");
+            continue;
+        }
+        const int base_red = int(backdrop[i] & 0xff), red = int(styled[i] & 0xff), blue = int(styled[i] >> 16 & 0xff);
+        expect(blue > 0 && !(styled[i] & 0xff00) && std::abs(2 * red - base_red) <= 1,
+               "the half-strength blue tint did not mix with the shaded base colour");
+        if (base_red > 0) expect(std::abs(red - blue) <= 1, "the tint and sticker colour are shaded differently");
+        tinted_red += base_red > 0;
+        tinted += styled[i] != backdrop[i];
+    }
+    expect(tinted > 0 && tinted_red > 0, "the styled frame needs tinted pixels in the recoloured class");
+    api(ctx, sa2_sticker_colours_set(ctx, table.data(), 0));
+    api(ctx, sa2_scene_look_set(ctx, nullptr));
+    expect(draw() == original_styled, "clearing both exports did not restore the styled frame bytes");
+    std::cout << "scene colours: " << recoloured << " palette pixels (0 outside class " << home << "), " << cleared
+              << " background pixels, " << pane_cleared << " pane background pixels, " << tinted << " tint pixels ("
+              << tinted_red << " over the recoloured class)" << std::endl;
+    api(ctx, sa2_drain(ctx, harness.wait));
+    api(ctx, sa2_scene_unload(ctx));
+    harness.finish(options.debug);
+}
+
+void run_colours(Suite& suite, const Options& options) {
+    expect(options.mode == "warp", "the scene colours check runs on WARP only");
+    suite.check("scene colours warp", [&] { product_colours(options); });
+}
+
 // ADR-D02 B18: --warp --sweep. Only WARP; parse refuses any other mode.
 void run_sweep(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the transform check runs on WARP only");

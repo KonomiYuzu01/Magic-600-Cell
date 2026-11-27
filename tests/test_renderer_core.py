@@ -276,9 +276,11 @@ ABI10 = {
     "SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_view_layout* layout);",
     # ADR-D02 B18 (added to ABI 10 before any release): a twist's transform, for its sweep and a turn preview.
     "SA2_API int32_t sa2_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle, const uint8_t* moving_mask, float phase);",
+    "SA2_API int32_t sa2_sticker_colours_set(sa2_context* ctx, const float* rgb, uint32_t count);",
+    "SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look);",
 }
 ABI10_DEFINES = {"SA2_LAYOUT_CHAIN": "0u", "SA2_LAYOUT_HOPF_RINGS": "1u", "SA2_LAYOUT_RING_SHEET": "2u", "SA2_HOPF_RINGS": "20u",
-                 "SA2_STYLE_HIDE_MARKED": "3u", "SA2_STYLE_HIDE_UNMARKED": "4u"}
+                 "SA2_STYLE_HIDE_MARKED": "3u", "SA2_STYLE_HIDE_UNMARKED": "4u", "SA2_STICKER_CLASSES": "600u"}
 
 
 class AbiTests(unittest.TestCase):

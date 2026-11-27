@@ -1337,6 +1337,35 @@ SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_v
 #define SA2_TRANSFORM_PLANE_TOLERANCE 1e-3f
 SA2_API int32_t sa2_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle, const uint8_t* moving_mask, float phase);
 
+/* ADR-D01.49/.5/.52 (added to ABI 10 before any release): the scene's sticker colours and look. Both are
+ * device-free product state for a loaded scene outside a trace, kept across recovery and used on the next draw.
+ * rgb is count triples of encoded RGB in home-cell order (labels[slot] / 433). A non-NULL table with a
+ * nonzero count must have SA2_STICKER_CLASSES entries. NULL or count 0 restores the built-in hues.
+ * The unmarked sticker's base colour is shaded before the piece style is applied.
+ */
+#define SA2_STICKER_CLASSES 600u
+SA2_API int32_t sa2_sticker_colours_set(sa2_context* ctx, const float* rgb, uint32_t count);
+
+/* Only background (encoded RGBA) changes the draw. Fog, glow, edge_brightness and edge_weight are
+ * carried, drawn by no pass yet. NULL restores the default background {0.13f, 0.145f, 0.16f, 1}.
+ * Both setters refuse non-finite or out-of-[0,1] components with SA2_E_INVALID_ARGUMENT and change nothing.
+ * The scene look also requires the struct size and a zero reserved field.
+ */
+typedef struct sa2_scene_look {
+    uint32_t struct_size;
+    uint32_t reserved;
+    float background[4];
+    float fog;
+    float glow;
+    float edge_brightness;
+    float edge_weight;
+} sa2_scene_look;
+#ifdef __cplusplus
+static_assert(sizeof(sa2_scene_look) == 40, "sa2_scene_look requires the x64 ABI");
+#endif
+
+SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look);
+
 #ifdef __cplusplus
 }
 #endif

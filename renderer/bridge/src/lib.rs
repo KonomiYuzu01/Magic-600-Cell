@@ -14,7 +14,7 @@ use c600_render::abi::*;
 use c600_render::api::{CoreAbi, EngineImage, PreparationInput};
 
 /// The exports [`CoreFunctions`] holds, in its field order.
-pub const SYMBOLS: [&str; 25] = [
+pub const SYMBOLS: [&str; 27] = [
     "sa2_abi_version",
     "sa2_last_error",
     "sa2_describe",
@@ -40,6 +40,8 @@ pub const SYMBOLS: [&str; 25] = [
     "sa2_view_focus_set",
     "sa2_view_layout_set",
     "sa2_transform_set",
+    "sa2_sticker_colours_set",
+    "sa2_scene_look_set",
 ];
 
 /// The ABI 10 product functions of one loaded core, in [`SYMBOLS`] order. `#[repr(C)]` so that a host in another
@@ -81,6 +83,8 @@ pub struct CoreFunctions {
     pub view_layout_set: unsafe extern "C" fn(*mut c_void, u64, *const Sa2ViewLayout) -> i32,
     /// ADR-D02 B18 (added to ABI 10 before any release): the adopted revision's transform.
     pub transform_set: unsafe extern "C" fn(*mut c_void, u64, *const f32, *const f32, f32, *const u8, f32) -> i32,
+    pub sticker_colours_set: unsafe extern "C" fn(*mut c_void, *const f32, u32) -> i32,
+    pub scene_look_set: unsafe extern "C" fn(*mut c_void, *const Sa2SceneLook) -> i32,
 }
 
 /// One attached core context. It holds a raw pointer, so it is neither `Send` nor `Sync`: it stays on the thread
@@ -325,6 +329,18 @@ impl CoreAbi for DllCore {
         let (u, v) = (plane[0].as_ptr(), plane[1].as_ptr());
         // SAFETY: `pointer` is null or PIECES readable bytes; `u` and `v` are four readable floats each.
         Status(unsafe { (self.functions.transform_set)(self.context, revision, u, v, angle, pointer, phase) }).check()
+    }
+
+    fn sticker_colours_set(&mut self, rgb: Option<&StickerColours>) -> Result<(), Status> {
+        let (pointer, count) = rgb.map_or((std::ptr::null(), 0), |table| (table.as_ptr().cast(), STICKER_CLASSES as u32));
+        // SAFETY: a null pointer with count zero, or exactly STICKER_CLASSES readable RGB triples.
+        Status(unsafe { (self.functions.sticker_colours_set)(self.context, pointer, count) }).check()
+    }
+
+    fn scene_look_set(&mut self, look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        let pointer = look.map_or(std::ptr::null(), std::ptr::from_ref);
+        // SAFETY: the pointer is null or points to a readable row.
+        Status(unsafe { (self.functions.scene_look_set)(self.context, pointer) }).check()
     }
 
     fn style_set(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Status> {

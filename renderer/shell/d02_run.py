@@ -2367,7 +2367,7 @@ SCENE_LOOK_STEPS = [
 
 
 def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> list[str]:
-    """Check the resolved choices, their notices and the state and style digests on every step."""
+    """Check the exports, their notices and the state and style digests on every step."""
     written = [dump.get("do") for dump in dumps]
     if written != [step for step, _, _ in SCENE_LOOK_STEPS]:
         return [f"the steps written were {written}"]
@@ -2387,6 +2387,7 @@ def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> lis
         problems.append("the opening tint style digests are missing")
 
     backgrounds = {}
+    table_digests = {}
     for dump, (step, look, palette_id) in zip(dumps, SCENE_LOOK_STEPS):
         scene, palette = dump.get("scene_look", {}), dump.get("sticker_palette", {})
         if (scene.get("theme"), scene.get("look")) != (theme, look):
@@ -2400,8 +2401,19 @@ def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> lis
         if not re.fullmatch(r"#[0-9a-f]{6}", str(background)) or backgrounds.setdefault(look, background) != background:
             problems.append(f"after {step!r} the {look} background is invalid or changed")
         for values, export in ((scene, scene_export), (palette, palette_export)):
-            if values.get("sent") is not False or values.get("waits_for") != export:
-                problems.append(f"after {step!r} the dump should report waiting for {export}")
+            if values.get("sent") is not True or values.get("export") != export or type(values.get("status")) is not int or values["status"] != 0:
+                problems.append(f"after {step!r} the dump should report a successful {export}")
+        if scene.get("drawn") != ["background"] or scene.get("held") != ["fog", "glow", "edgeBrightness", "edgeWeight"]:
+            problems.append(f"after {step!r} the dump should show the background drawn and the other scene values held")
+        table = "core default" if palette_id == "graphite.a" else palette_id
+        digest = palette.get("table_sha256")
+        if palette.get("table") != table:
+            problems.append(f"after {step!r} the exported sticker table should be {table}")
+        if table == "core default":
+            if "table_sha256" in palette:
+                problems.append(f"after {step!r} the default sticker colours should have no table digest")
+        elif not re.fullmatch(r"[0-9a-f]{64}", str(digest)) or table_digests.setdefault(table, digest) != digest:
+            problems.append(f"after {step!r} the sticker table digest is invalid or changed")
         if tuple(dump.get("tuning", {}).get(key) for key in head_keys) != head:
             problems.append(f"after {step!r} the state digest or revision changed")
         if tuple(dump.get("tint", {}).get(key) for key in style_keys) != style:
@@ -2412,9 +2424,9 @@ def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> lis
                 problems.append(f"after {step!r} the status line should explain the refusal")
         elif step == "chord Enter" or step.startswith("command look.scene.set "):
             what, export = ("Graphite B sticker palette", palette_export) if step == "chord Enter" else ("Scene look " + look, scene_export)
-            notice = f"{what} chosen; the drawn scene keeps the core's fixed colours until the core takes {export} (requested)"
+            notice = f"{what} sent through {export}"
             if notice not in texts(dump, "frame"):
-                problems.append(f"after {step!r} the status line should show the choice and its pending export")
+                problems.append(f"after {step!r} the status line should show the completed export")
     if len(set(backgrounds.values())) != 3:
         problems.append("the three scene looks should have distinct backgrounds")
     return problems

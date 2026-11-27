@@ -750,6 +750,14 @@ impl CoreAbi for FakeCore {
         self.error.clone()
     }
 
+    fn sticker_colours_set(&mut self, _rgb: Option<&StickerColours>) -> Result<(), Status> {
+        self.fail(Status::UNSUPPORTED, "the fake core does not draw sticker colours")
+    }
+
+    fn scene_look_set(&mut self, _look: Option<&Sa2SceneLook>) -> Result<(), Status> {
+        self.fail(Status::UNSUPPORTED, "the fake core does not draw scene looks")
+    }
+
     /// The header's checks; device-free, so it works during device loss.
     /// The header's struct checks; the fake has no cells, so it takes any Hopf rings in range.
     fn view_layout_set(&mut self, view: u64, layout: Option<&Sa2ViewLayout>) -> Result<(), Status> {
