@@ -392,7 +392,7 @@ public sealed partial class HistoryPanel : VBoxContainer
         AddChild(head); AddChild(new HSeparator());
         var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         List.AddThemeConstantOverride("separation", 0); scroll.AddChild(List); AddChild(scroll);
-        moves.Changed += Refresh; moves.Asked += Refresh; layout.Changed += Refresh; Refresh();
+        moves.Changed += Update; moves.Asked += Refresh; layout.Changed += Refresh; Refresh();
     }
 
     public void Show(bool layout) { ShowLayout = layout; Refresh(); }
@@ -424,6 +424,7 @@ public sealed partial class HistoryPanel : VBoxContainer
                 row.SetMeta("layout", i); List.AddChild(row);
             }
             if (Layout.Steps.Count == 0) List.AddChild(ChromeWidgets.Text("No layout change yet.", "DimLabel"));
+            shown = null;
             return;
         }
         head.AddChild(SessionWidgets.Tool("history.partial", "Step back one move inside the last entry", t, () => Send("session.undo.partial")));
@@ -440,15 +441,12 @@ public sealed partial class HistoryPanel : VBoxContainer
         // Newest first; the rollback cursor sits between the applied entries and the undone ones.
         for (int i = Moves.Entries.Count - 1; i >= 0; i--)
         {
-            HistoryEntry entry = Moves.Entries[i]; int index = i; bool undone = i >= Moves.Cursor;
+            HistoryEntry entry = Moves.Entries[i]; bool undone = i >= Moves.Cursor;
             if (i == Moves.Cursor - 1) List.AddChild(CursorLine(t));
             if (completedAfter != null)
                 foreach (CompletionEntry completion in completedAfter[entry.Id]) List.AddChild(CompletionRow(t, completion));
             bool partial = i == Moves.Cursor - 1 && Moves.Inner > 0;
-            Control row = Row(t, false, undone, entry.Origin, entry.Name, $"{entry.Id}  {entry.Time}", PlainList ? null : () => Send("history.entry.toggle", entry.Id),
-                () => Send("session.rollback", (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)), IsOpen(entry.Id),
-                order == null ? null : SessionWidgets.Signature(t, LibraryModel.Signature(entry.Moves, order), entry.Id));
-            row.SetMeta("entry", entry.Id); List.AddChild(row);
+            List.AddChild(EntryRow(t, i, undone, order));
             if (PlainList || !(IsOpen(entry.Id) || partial)) continue;
             for (int m = 0; m < entry.Moves.Count; m++)
             {
@@ -487,6 +485,57 @@ public sealed partial class HistoryPanel : VBoxContainer
             }
             List.AddChild(line); List.AddChild(tools);
         }
+        shown = Snapshot(t, order);
+    }
+
+    // An entry's row: its origin, name, id and time, its toggle and rollback, and its signature in the rail's order.
+    private Control EntryRow(TokenSet t, int index, bool undone, IReadOnlyList<int>? order)
+    {
+        HistoryEntry entry = Moves.Entries[index];
+        Control row = Row(t, false, undone, entry.Origin, entry.Name, $"{entry.Id}  {entry.Time}", PlainList ? null : () => Send("history.entry.toggle", entry.Id),
+            () => Send("session.rollback", (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)), IsOpen(entry.Id),
+            order == null ? null : SessionWidgets.Signature(t, LibraryModel.Signature(entry.Moves, order), entry.Id));
+        row.SetMeta("entry", entry.Id);
+        return row;
+    }
+
+    // SF3 (27 Nov 2026): what the moves list shows, as Refresh last built it or Update last changed it; null on the
+    // layout list.
+    private (int Revision, int Count, int Cursor, int Inner, int Branches, int Asking, int[]? Order, TokenSet Tokens, bool Plain)? shown;
+
+    private (int, int, int, int, int, int, int[]?, TokenSet, bool) Snapshot(TokenSet t, IReadOnlyList<int>? order) =>
+        (Moves.Revision, Moves.Entries.Count, Moves.Cursor, Moves.Inner, Moves.Branches.Count, Moves.Asking, order?.ToArray(), t, PlainList);
+
+    // A move history change (SF3, 27 Nov 2026). A commit at the end of an unbranched line with no question open (the
+    // one action since the list was shown) adds its row right below the cursor line, where Refresh would put it; the
+    // same history revision changes nothing; anything else rebuilds the list. The rebuild of the whole list cost 8-16 ms per twist, twice (the shell refreshed it again).
+    public void Update()
+    {
+        if (!IsInstanceValid(this)) return;
+        TokenSet t = tokens();
+        IReadOnlyList<int>? order = RailOrder?.Invoke();
+        if (ShowLayout || shown is not { } was || !ReferenceEquals(was.Tokens, t) || was.Plain != PlainList
+            || (was.Order == null) != (order == null) || (order != null && !order.SequenceEqual(was.Order!)))
+        {
+            Refresh();
+            return;
+        }
+        if (Moves.Revision == was.Revision) return;
+        int count = Moves.Entries.Count;
+        HistoryEntry? entry = count > 0 ? Moves.Entries[count - 1] : null;
+        bool appended = entry != null && Moves.Revision == was.Revision + 1 && Moves.Actions.Count > 0 && Moves.Actions[^1] == "commit " + entry.Id
+            && count == was.Count + 1 && was.Cursor == was.Count && Moves.Cursor == count
+            && Moves.Inner == 0 && was.Inner == 0 && Moves.Branches.Count == 0 && was.Branches == 0 && Moves.Asking == -1 && was.Asking == -1
+            && !IsOpen(entry.Id) && Completions?.Entries.Any(c => c.AfterEntry == entry.Id) != true;
+        if (!appended)
+        {
+            Refresh();
+            return;
+        }
+        if (was.Count == 0) { Control line = CursorLine(t); List.AddChild(line); List.MoveChild(line, 0); }
+        Control row = EntryRow(t, count - 1, false, order);
+        List.AddChild(row); List.MoveChild(row, 1);
+        shown = Snapshot(t, order);
     }
 
     private Control CompletionRow(TokenSet t, CompletionEntry entry)

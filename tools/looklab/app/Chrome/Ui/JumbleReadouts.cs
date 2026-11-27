@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace Magic600.Chrome;
@@ -20,10 +21,32 @@ public sealed partial class ReadoutRow : HFlowContainer
         Name = name; this.tokens = tokens; MouseFilter = MouseFilterEnum.Pass;
     }
 
+    // SF3 (27 Nov 2026): what the row shows. The same slots and marks again change nothing, and slots with the same
+    // labels and units change only their numerals and marks in place; a rebuild of both rows cost 5-6 ms, four times
+    // a bind. A new token set (a recolour) or another shape rebuilds the row.
+    private ReadoutSlot[] shownSlots = Array.Empty<ReadoutSlot>();
+    private readonly HashSet<int> shownMarked = new();
+    private TokenSet? shownTokens;
+
     // The slots, with the positions whose numeral changed at this revision marked (ReadoutChanges).
     public void Show(IReadOnlyList<ReadoutSlot> slots, IReadOnlySet<int> marked)
     {
         TokenSet t = tokens();
+        if (ReferenceEquals(t, shownTokens) && SameShape(slots))
+        {
+            for (int i = 0; i < slots.Count; i++)
+            {
+                if (slots[i] == shownSlots[i] && marked.Contains(i) == shownMarked.Contains(i)) continue;
+                Node group = GetChild(i);
+                group.GetNode<Label>("Changed" + i).Text = marked.Contains(i) ? ChangeMark : "";
+                Label numeral = group.GetNode<Label>("Slot" + i);
+                numeral.Text = slots[i].Value.Word;
+                numeral.AddThemeColorOverride("font_color", t.C(slots[i].Value.Role));
+                numeral.TooltipText = slots[i].Label + ": " + slots[i].Value.Word;
+            }
+            Remember(slots, marked, t);
+            return;
+        }
         // The row wraps by whole slots, so a view's footer never widens the frame past the window.
         AddThemeConstantOverride("h_separation", t.Px("space.1")); AddThemeConstantOverride("v_separation", 0);
         foreach (Node child in GetChildren()) { RemoveChild(child); child.QueueFree(); }
@@ -47,6 +70,20 @@ public sealed partial class ReadoutRow : HFlowContainer
             }
             if (i < slots.Count - 1) group.AddChild(new VSeparator());
         }
+        Remember(slots, marked, t);
+    }
+
+    private bool SameShape(IReadOnlyList<ReadoutSlot> slots)
+    {
+        if (slots.Count != shownSlots.Length || GetChildCount() != slots.Count) return false;
+        for (int i = 0; i < slots.Count; i++)
+            if (slots[i].Label != shownSlots[i].Label || slots[i].Unit != shownSlots[i].Unit) return false;
+        return true;
+    }
+
+    private void Remember(IReadOnlyList<ReadoutSlot> slots, IReadOnlySet<int> marked, TokenSet t)
+    {
+        shownSlots = slots.ToArray(); shownMarked.Clear(); shownMarked.UnionWith(marked); shownTokens = t;
     }
 
     private static float Width(Label label, string text)

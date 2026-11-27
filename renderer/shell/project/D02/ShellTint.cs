@@ -26,7 +26,7 @@ public static class ShellTint
     {
         _host = host;
         _frame = frame;
-        ShellJumble.BindingChanged += Bind;
+        ShellJumble.BindingChanged += () => ShellJumble.Timed("tint", Bind);
         host.TintChanged += Draw;
         host.OverlayChanged += Draw;
         foreach (var layers in host.Layers)
