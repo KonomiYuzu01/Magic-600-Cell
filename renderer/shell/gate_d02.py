@@ -86,6 +86,8 @@ ROWS = {
 ORDER = ["G1", "G9", "G2", "G3", "G4", "G5", "G6", "G7", "G10", "G11", "G8"]
 # A deep state reopens in about four minutes (B5's index); the run's limit leaves room for it.
 REOPEN_S = {"deep-1": 420.0, "deep-2": 420.0}
+# The measurement's close reopens the journal and replays the presses independently (about 400 s at deep-2).
+CLOSE_S = {"deep-1": 480.0, "deep-2": 480.0}
 OCCLUSION_PRESETS = ("ring_sheet", "hopf_rings")
 SAMPLES = ROOT / "tools" / "looklab" / "data" / "samples" / "jumble"
 
@@ -295,8 +297,8 @@ def run_row(row: str, out: Path, seconds: float, warmup: float, state: str | Non
     name = f"gate-{row.lower()}"
     window = window_size(resolution)
     script, path = prepare(name, out, seconds + warmup, window["resolution"], state, ROWS[row]["sweeps"])
-    code, record, memory = launch_run(name, path, out, state, build, REOPEN_S.get(state, 120.0) + seconds + warmup + 90,
-                                      foreground)
+    limit = REOPEN_S.get(state, 120.0) + seconds + warmup + CLOSE_S.get(state, 90.0)
+    code, record, memory = launch_run(name, path, out, state, build, limit, foreground)
     gate = {"format": FORMAT, "row": row, "state": state, "script": name, "seconds": seconds, "warmup": warmup,
             "window": window, "foreground": foreground, "grip_cap": script.get("grip_cap"),
             "views": ROWS[row]["views"], "run": {"code": code, "mismatches": record["mismatches"]},

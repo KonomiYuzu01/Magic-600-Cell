@@ -8,9 +8,11 @@ sys.dont_write_bytecode = True
 
 import json
 import re
-import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+
+from test_d02_drawing import workspace_fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools" / "perf" / "d02"))
@@ -115,17 +117,17 @@ class GateRowTest(unittest.TestCase):
         self.assertIn("view_vertex_evals=not_measured", gate_row.line("G1", result))
 
     def test_main_prints_one_line_or_refuses(self):
-        with tempfile.TemporaryDirectory() as folder:
-            path = Path(folder) / "events.jsonl"
+        with workspace_fixture("d02-gate-test-") as folder:
+            path = folder / "events.jsonl"
             path.write_text("".join(json.dumps(r) + "\n" for r in events([1000 / 60] * 1500)), encoding="utf-8")
             said: list[str] = []
             code = gate_row.main(["--events", str(path), "--row", "G2", "--seconds", "20", "--warmup", "2",
-                                  "--json", str(Path(folder) / "row.json")], out=said.append)
+                                  "--json", str(folder / "row.json")], out=said.append)
             self.assertEqual((code, len(said)), (0, 1))
             self.assertRegex(said[0], LINE)
-            self.assertEqual(json.loads((Path(folder) / "row.json").read_text(encoding="utf-8"))["line"], said[0])
+            self.assertEqual(json.loads((folder / "row.json").read_text(encoding="utf-8"))["line"], said[0])
             said.clear()
-            code = gate_row.main(["--events", str(Path(folder) / "none.jsonl"), "--row", "G2"], out=said.append)
+            code = gate_row.main(["--events", str(folder / "none.jsonl"), "--row", "G2"], out=said.append)
             self.assertEqual(code, 2)
             self.assertTrue(said[0].startswith("D02_GATE_REFUSED"))
 
@@ -163,6 +165,17 @@ class GateScriptTest(unittest.TestCase):
             steps = self.d02_run.expand_repeat(script, 70)["steps"]
             self.assertGreaterEqual(sum(s.get("wait_ms", 0) for s in steps if s.get("quiet")), 69_000)
             self.assertNotIn("quiet", steps[-1], f"{name}: no step may follow the repeat block")
+
+    def test_row_limit_includes_warmup_and_deep_close(self):
+        with workspace_fixture("d02-gate-test-") as folder:
+            for state, actual, expected in ((None, "deep-2", 920), ("deep-1", "deep-1", 920),
+                                            ("wj-ia-300", "wj-ia-300", 230)):
+                with self.subTest(state=state):
+                    with patch.object(self.gate_d02, "launch_run", side_effect=RuntimeError("stop at launch")) as launch:
+                        with self.assertRaisesRegex(RuntimeError, "stop at launch"):
+                            self.gate_d02.run_row("G1", folder / "g1", 10, 10, state, None, "2560x1600")
+                    self.assertEqual(launch.call_args.args[3:5], (actual, None))
+                    self.assertEqual(launch.call_args.args[5], expected)
 
     def test_rows_set_the_local_mode_they_name(self):
         # LF1: G4 names Local's slice and G6 Local's chain carrying the sweeps; LF2: G7 names Local's chain, with no
@@ -217,8 +230,8 @@ class GateScriptTest(unittest.TestCase):
         self.assertNotEqual(moved, 2)
         self.assertIn(moved, self.gate_d02.admissible_caps("wj-ia-300"))
         self.assertNotIn(0, self.gate_d02.admissible_caps("wj-ia-300"))
-        with tempfile.TemporaryDirectory() as folder:
-            out = Path(folder) / "g1"
+        with workspace_fixture("d02-gate-test-") as folder:
+            out = folder / "g1"
             script, path = self.gate_d02.prepare("gate-g1", out, 3, "2560x1600", "wj-ia-300", True)
             self.assertTrue(path.is_file())
             self.assertEqual((script["grip_cap"], script["resolution"]), (moved, "2560x1600"))
@@ -231,8 +244,8 @@ class GateScriptTest(unittest.TestCase):
         self.assertEqual(native["resolution"], "2560x1600")
         self.assertIn("native", native["source"])
         dumps = [{"frame": {"global_opening": [10, 20, 100, 50]}}, {"frame": {"global_opening": [10, 20, 100, 50]}}]
-        with tempfile.TemporaryDirectory() as folder:
-            events = Path(folder) / "events.jsonl"
+        with workspace_fixture("d02-gate-test-") as folder:
+            events = folder / "events.jsonl"
             events.write_text("".join(json.dumps(r) + "\n" for r in (
                 {"t": "click", "x": 15, "y": 25}, {"t": "click", "x": 109, "y": 69}, {"t": "click", "x": 300, "y": 25})))
             placed = self.gate_d02.opening_clicks(dumps, events)

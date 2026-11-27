@@ -1447,8 +1447,8 @@ public partial class Shell : Control
     }
 
     /// <summary>
-    /// Closes the session: its correctness control runs once, and the run row carries its outcome; the startup log's
-    /// first correct frame carries it too (a control that did not run counts as a failure).
+    /// Drains posted keys before close. The measurement logs require the session's correctness control; otherwise
+    /// CloseCore releases the session with the host.
     /// </summary>
     private void CloseSession()
     {
@@ -1460,6 +1460,7 @@ public partial class Shell : Control
         if (library.KeyDrain(_host) != HostLibrary.Ok) GD.PushWarning($"m6h_key_drain: {library.LastError(_host)}");
         PollKeys(library);
         _session = false;
+        if (_log is null && _startup is null) return;
         var code = library.CloseSession(_host, _shownRevision, out var pass);
         if (code != HostLibrary.Ok)
         {

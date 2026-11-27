@@ -552,6 +552,7 @@ impl Turns {
         let twist_row = self.puzzle.twist_row();
         let layer = self.layer.as_mut().ok_or("the session is closed")?;
         let before = head_digest(layer);
+        let previous = layer.revision().clone();
         let routed = self.router.key(&mut self.shell, layer, KeyEvent::Down { chord, repeat, text: None });
         let changed = head_digest(layer) != before;
         let press = match &routed {
@@ -571,7 +572,7 @@ impl Turns {
             Press::Refused => self.refused += 1,
             Press::Other => self.others += 1,
             Press::None => {}
-            Press::Committed => self.read_ahead(),
+            Press::Committed => self.read_ahead(&previous),
         }
         Ok(press)
     }
@@ -716,7 +717,7 @@ impl Turns {
         }
         let protect = protected_pieces(&self.exact, &head.1);
         let field = self.puzzle.binding_field();
-        let row = twist_row(&self.exact, &menu, &self.pin, field, head.0.to_json(), state, &protect, (cap, item))?;
+        let row = twist_row(&self.exact, &menu, &self.pin, field, head.0.to_json(), state.clone(), &protect, (cap, item))?;
         let mut rows = kept(&self.rows);
         rows.start(&head);
         rows.rows.insert((cap, item), row.clone());
@@ -733,7 +734,7 @@ impl Turns {
         let (head, state) = self.row_head()?;
         let protect = protected_pieces(&self.exact, &head.1);
         let field = self.puzzle.binding_field();
-        twist_row(&self.exact, &menu, &self.pin, field, head.0.to_json(), state, &protect, (cap, item))
+        twist_row(&self.exact, &menu, &self.pin, field, head.0.to_json(), state.clone(), &protect, (cap, item))
     }
 
     /// Whether the row `(cap, item)` is kept at the head (read by a call or ahead by the worker).
@@ -744,26 +745,42 @@ impl Turns {
         }
     }
 
-    /// The head a twist row is read at, and a copy of its poses.
-    fn row_head(&mut self) -> Result<(RowHead, State), String> {
-        let layer = self.layer()?;
+    /// The head a twist row is read at. Copy its poses only when a row actually needs to be built.
+    fn row_head(&self) -> Result<(RowHead, &State), String> {
+        let layer = self.layer.as_ref().ok_or("the session is closed")?;
         let orbits = layer.protected().orbits().to_vec();
         let jumbled = layer.jumbled().ok_or_else(|| "the head has no poses".to_owned())?;
-        Ok(((layer.revision().clone(), orbits), jumbled.state().clone()))
+        Ok(((layer.revision().clone(), orbits), jumbled.state()))
     }
 
-    /// SF (27 Nov 2026): after a commit, a worker thread reads the most asked rows ([`READ_AHEAD`]) at the new head,
-    /// so that the frame thread's next reads (the cut slice's row and the next press's) find them kept. It reads rows
-    /// only, on a copy of the head's poses, and stops when the head moves on. Nothing here touches the session.
-    fn read_ahead(&mut self) {
+    /// After a commit, keep certified rows at the twisted cap and read the most asked missing rows ahead on a copy of
+    /// the new head. The worker stops when the head moves on and never touches the session.
+    fn read_ahead(&mut self, previous: &Revision) {
         if self.puzzle != Puzzle::JumbleOn || self.asked.is_empty() {
             return;
         }
         let (Ok(menu), Ok((head, state))) = (self.pinned_menu(), self.row_head()) else { return };
         let mut wanted: Vec<_> = self.asked.iter().map(|(&key, &count)| (count, key)).collect();
         wanted.sort_unstable_by(|a, b| b.cmp(a));
-        let wanted: Vec<(u32, u64)> = wanted.into_iter().take(READ_AHEAD).map(|(_, key)| key).collect();
-        kept(&self.rows).start(&head);
+        let wanted = {
+            let mut rows = kept(&self.rows);
+            if rows.head.as_ref().is_some_and(|(revision, orbits)| revision == previous && *orbits == head.1) {
+                // A legal twist fixes its cap's pole and rotates only the pieces inside its cut. No piece crosses
+                // that cut, so the same menu row has the same plane, moving set and protection verdict at this head.
+                let cap = self.committed.last().and_then(|args| args.get("cap")).and_then(Value::as_i64);
+                rows.rows.retain(|&(at, _), row| Some(i64::from(at)) == cap && row.is_some());
+                rows.head = Some(head.clone());
+            } else {
+                rows.start(&head);
+            }
+            wanted.into_iter().take(READ_AHEAD).map(|(_, key)| key)
+                .filter(|key| !rows.rows.contains_key(key))
+                .collect::<Vec<_>>()
+        };
+        if wanted.is_empty() {
+            return;
+        }
+        let state = state.clone();
         let (rows, exact, pin) = (self.rows.clone(), self.exact.clone(), self.pin.clone());
         let field = self.puzzle.binding_field();
         let worker = move || {

@@ -26,6 +26,8 @@ public sealed partial class CapMapControl : Control, IOwnKeys
     private int size;
     private Vector2 cell;
     private float gutter;
+    private (int Width, int Height, int Line) ringSize;
+    private ImageTexture? pendingRing;
 
     public CapLayout? Layout { get; private set; }
     public CapMapModel Map { get; private set; } = CapMapModel.Pending();
@@ -114,6 +116,14 @@ public sealed partial class CapMapControl : Control, IOwnKeys
         size = (int)t.TypeSize("ui", "micro");
         int pad = Math.Max(2, t.Px("space.1"));
         cell = new Vector2(Mathf.Ceil(font.GetStringSize(WidestNumeral, HorizontalAlignment.Left, -1, size).X) + 2 * pad, size + 2);
+        var ring = (Width: (int)cell.X, Height: (int)cell.Y, Line: Math.Max(1, t.Px("border.width")));
+        if (Layout != null && ring != ringSize)
+        {
+            using var image = Image.CreateFromData(ring.Width, ring.Height, false, Image.Format.Rgba8,
+                CapMapPendingRing.Pixels(ring.Width, ring.Height, ring.Line));
+            pendingRing = ImageTexture.CreateFromImage(image);
+            ringSize = ring;
+        }
         gutter = Math.Max(6, t.Px("space.2"));
         CustomMinimumSize = Layout == null ? Vector2.Zero : new Vector2(2 * gutter + CapLayout.Columns * cell.X, CapLayout.Rows * cell.Y);
         QueueRedraw();
@@ -123,6 +133,7 @@ public sealed partial class CapMapControl : Control, IOwnKeys
     {
         if (Layout == null || font == null) return;
         TokenSet t = tokens();
+        Color pendingInk = t.C(CapMapModel.Pattern(CapClass.Pending));
         for (int r = 0; r < CapLayout.Rows; r++)
             for (int c = 0; c < CapLayout.Columns; c++)
             {
@@ -130,7 +141,9 @@ public sealed partial class CapMapControl : Control, IOwnKeys
                 var box = new Rect2(gutter + c * cell.X, r * cell.Y, cell.X, cell.Y);
                 bool hovered = Hovered == cap;
                 if (hovered) DrawRect(box, t.C("control.hover"));
-                Cell(this, t, font, size, box, Map.Class(cap), Map.Numeral(cap)?.ToString(CultureInfo.InvariantCulture));
+                CapClass kind = Map.Class(cap);
+                if (kind == CapClass.Pending && pendingRing != null) DrawTexture(pendingRing, box.Position, pendingInk);
+                else Cell(this, t, font, size, box, kind, Map.Numeral(cap)?.ToString(CultureInfo.InvariantCulture));
                 Over(this, t, box, members.Contains(cap), meeting.Contains(cap), Named == cap);
                 if (hovered) DrawRect(box, t.C("text"), false, Math.Max(1, t.Px("border.width")));
             }
@@ -167,7 +180,7 @@ public sealed partial class CapMapControl : Control, IOwnKeys
                 on.DrawLine(inner.Position, inner.Position + new Vector2(arm, 0), ink, w);
                 break;
             case CapClass.Pending:
-                on.DrawArc(centre, Math.Min(inner.Size.X, inner.Size.Y) * .3f, 0, Mathf.Tau, 16, ink, line, true);
+                on.DrawArc(centre, CapMapPendingRing.Radius(inner.Size.X, inner.Size.Y), 0, Mathf.Tau, 16, ink, line, true);
                 break;
         }
         if (numeral == null || k is not (CapClass.AtFloor or CapClass.AboveFloor)) return;
@@ -180,6 +193,7 @@ public sealed partial class CapMapControl : Control, IOwnKeys
     // brackets at the named cap.
     public static void Over(CanvasItem on, TokenSet t, Rect2 box, bool member, bool meets, bool named)
     {
+        if (!member && !meets && !named) return;
         float line = Math.Max(1, t.Px("border.width"));
         if (member) on.DrawRect(box.Grow(-line / 2), t.C("accent.strong"), false, Math.Max(1.5f, 1.5f * line));
         if (meets)

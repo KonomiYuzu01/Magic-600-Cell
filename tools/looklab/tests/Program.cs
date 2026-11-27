@@ -237,6 +237,7 @@ internal static partial class Program
             ("D02Above6MaxUndefinedAtZero", D02Above6MaxUndefinedAtZero),
             ("D02TotalsMatchSample", D02TotalsMatchSample),
             ("D02CapClassesExclusiveAndExhaustive", D02CapClassesExclusiveAndExhaustive),
+            ("D02PendingRingKeepsItsGeometry", D02PendingRingKeepsItsGeometry),
             ("D02NoNumeralAtBlockedCap", D02NoNumeralAtBlockedCap),
             ("D02UncertainRimRowIsPending", D02UncertainRimRowIsPending),
             ("D02CapMapMatchesRim", D02CapMapMatchesRim),

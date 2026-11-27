@@ -731,6 +731,30 @@ fn a_committed_jumble_twist_carries_its_certified_transform() {
     assert_eq!(row.moving.as_u32(), changed, "the certified moving set is the pieces the commit turned");
 }
 
+#[test]
+fn a_twist_keeps_the_certified_rows_at_its_own_cut() {
+    let (mut turns, folder) = jumble_on("keep-cut-rows");
+    turns.set_grip(2, 0).expect("the grip");
+    let Head::Jumbled(exact, state) = turns.head().expect("the head") else { panic!("Jumble on has poses") };
+    let items = state.menu().expect("the menu").for_cap(&exact, 2).expect("cap 2's menu");
+    let item = items.iter().position(|twist| twist.kidx.is_none()).expect("an off-lattice twist");
+    turns.twist_letter(2, item as u64).expect("a pose move");
+    assert!(matches!(turns.head().expect("the head"), Head::Jumbled(_, poses) if poses.off_lattice_count() > 0));
+    let row = turns.twist_transform(2, 1).expect("the slice row").expect("cap 2 is admissible");
+    turns.twist_transform(0, 1).expect("another cap's row");
+    // These eight rows rank ahead of the slice and other cap. Neither of those can be warmed by read-ahead.
+    for item in 2..=9 {
+        turns.twist_transform(2, item).expect("a row at the twisted cap");
+    }
+    assert_eq!(turns.key_down("KeyK", false), Ok(Press::Committed));
+    assert!(turns.twist_row_kept(2, 1), "the new head has the slice row before the shell reads it");
+    assert!(!turns.twist_row_kept(0, 1), "another cut needs its own certification");
+    assert_eq!(turns.twist_transform(2, 1).expect("the kept row"), Some(row.clone()));
+    assert_eq!(turns.fresh_twist_transform(2, 1).expect("an exact read of the new head"), Some(row));
+    drop(turns);
+    let _ = std::fs::remove_dir_all(&folder);
+}
+
 /// Review finding B18-02: the row judges protection as the command layer judges a press. From solved with Jumble on and
 /// orbit 0 protected, item 1 at cap 0 moves pieces that carry orbit 0, so the layer refuses the press
 /// (`KN2:protection.piece_would_move`) and the row is the refused one (`None`, the C interface's status 0).
