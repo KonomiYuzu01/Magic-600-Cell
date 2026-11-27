@@ -1,0 +1,21 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "signature",
+  "resolution": "1280x720",
+  "note": "ADR-D01.70 in sample mode at 1280x720: the preview view and History's entries draw the Library rows' effect signature. The sample History (its rail button, DockRail_history_sample) shows its sample entries; a sample preview is staged (operation.preview sample:0 opens the preview view). The screen's words then hold the preview's signature and each History entry's, read from their tooltips. The error lamp counts no failure.",
+  "steps": [
+    {
+      "wait_ms": 2000
+    },
+    {
+      "click_control": "DockRail_history_sample"
+    },
+    {
+      "command": "operation.preview",
+      "argument": "sample:0"
+    },
+    {
+      "wait_ms": 2500
+    }
+  ]
+}

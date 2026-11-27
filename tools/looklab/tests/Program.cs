@@ -281,6 +281,8 @@ internal static partial class Program
             ("D02PortSessionCellShowsFacts", D02PortSessionCellShowsFacts),
             ("D02PortPracticeMarkFollowsEachView", D02PortPracticeMarkFollowsEachView),
             ("D02PortCompletionLogChecksEveryLabel", D02PortCompletionLogChecksEveryLabel),
+            ("D02PortSignatureFromEffectsMatchesWord", D02PortSignatureFromEffectsMatchesWord),
+            ("D02PortSignatureMountedInPreviewAndHistory", D02PortSignatureMountedInPreviewAndHistory),
             ("D02HelpResolvesGlossaryAndCommands", D02HelpResolvesGlossaryAndCommands),
             ("D02HelpDrawsTheUnit600Cell", D02HelpDrawsTheUnit600Cell),
             ("D02HelpFigureMapUsesKnownTermsAndKinds", D02HelpFigureMapUsesKnownTermsAndKinds),

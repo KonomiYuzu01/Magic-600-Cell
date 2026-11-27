@@ -72,6 +72,9 @@ internal sealed class LabSolve
         Rail = new OrbitRail(Demo, () => frame.Tokens); Rail.Command += run;
         // The Library's signatures are laid out in the rail's order and follow its setting.
         LibraryView.RailOrder = () => OrbitRailModel.Order(Demo.Atlas, Rail.ByOrbitId); Rail.OrderChanged += LibraryView.Refresh; LibraryView.Refresh();
+        // ADR-D01.70: the preview view and History draw the same signature in the same order.
+        session.PreviewView.RailOrder = session.History.RailOrder = LibraryView.RailOrder;
+        Rail.OrderChanged += session.PreviewView.Refresh; Rail.OrderChanged += session.History.Refresh; session.PreviewView.Refresh(); session.History.Refresh();
         frame.SetSeam(Strip); frame.SetPairHead(Rail); frame.HostKeys["F11"] = Demo.NextState;
         frame.Rebuilt += Attach; frame.Recoloured += () => { Strip.Recolour(); Rail.Recolour(); };
     }

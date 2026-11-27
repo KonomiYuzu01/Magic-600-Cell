@@ -498,6 +498,7 @@ public sealed partial class ChromeFrame : Control
         {
             Button button = ChromeWidgets.Tool(panel.Glyph, panel.Title, true); ChromeIcons.Apply(button, panel.Glyph, Tokens.Px("icon.medium"));
             button.SetPressedNoSignal(state.Open == panel.Id); button.SetMeta("dock_panel", panel.Id);
+            button.Name = "DockRail_" + panel.Id.Replace('.', '_'); // a script's click_control finds the rail button by name
             button.Pressed += () => Model.PressRail(side, panel.Id, Folds(side));
             buttons.AddChild(button);
             if (badges.ContainsKey(panel.Id)) { Label badge = BadgeLabel(panel.Id); badge.MouseFilter = MouseFilterEnum.Ignore; badge.Position = new Vector2(Tokens.Px("rail.width") * .55f, 0); button.AddChild(badge); }
