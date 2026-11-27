@@ -164,7 +164,8 @@ void run_cpu(Suite& suite, const Options& options) {
             "sa2_resize", "sa2_counters", "sa2_device_status", "sa2_create", "sa2_surface_attach", "sa2_surface_move",
             "sa2_surface_detach", "sa2_surface_swap_chain", "sa2_view_shape_set", "sa2_style_set", "sa2_view_style_set", "sa2_frame_submit_panes", "sa2_frame_panes",
             "sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set",
-            "sa2_charts_set", "sa2_preview_poses_set", "sa2_preview_transform_set"};
+            "sa2_charts_set", "sa2_preview_poses_set", "sa2_preview_transform_set",
+            "sa2_status_style_set", "sa2_status_drawn"};
         // The header declares 19 functions (the packet's count of 21 is not
         // reflected in ABI v1). Test every declared name without inventing ABI.
         bool found = true;
@@ -1214,7 +1215,12 @@ void run_cpu(Suite& suite, const Options& options) {
                 "an invalid slice was accepted");
         }
         std::vector<uint8_t> bytes(SA2_PIECES, 0);
-        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), 3); }), "a fourth channel was accepted");
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), 4); }), "a fifth channel was accepted");
+        for (uint32_t bad : {6u, 5u << 3, 0x40u, 0x80u}) {
+            bytes[5] = uint8_t(bad);
+            expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_STATUS); }),
+                "a reserved status byte was accepted");
+        }
         bytes[5] = 1;
         sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE);
         bytes[5] = 2;
@@ -1233,6 +1239,25 @@ void run_cpu(Suite& suite, const Options& options) {
         auto input = frame_input(1, 1);
         auto plan = product.plan(input, 256, 256);
         expect(!plan.style && plan.style_version == 0 && !plan.styled, "an unstyled frame plans a style");
+        // A status byte can draw on its own and occupies a different part of the word from the cut slice.
+        sa2_status_style status{};
+        status.struct_size = sizeof(status);
+        status.patterns[1] = {SA2_STATUS_HATCH, 6.0f, 0.4f, 0.0f, {1, 1, 1, 1}};
+        product.set_status_style(&status);
+        expect(!product.plan(input, 256, 256).status, "a status table draws without status bytes");
+        std::vector<uint8_t> status_bytes(SA2_PIECES, 0), inside(SA2_PIECES, 0);
+        status_bytes[5] = 1 | (4u << 3);
+        product.set_style(1, status_bytes.data(), SA2_STYLE_CHANNEL_STATUS);
+        plan = product.plan(input, 256, 256);
+        expect(plan.status && plan.style && (*plan.style)[5] == (uint32_t(status_bytes[5]) << 24)
+            && plan.pick_style_version == 0, "a status byte was lost, shifted or bound to the ID pass");
+        inside[5] = 1;
+        product.set_style(1, inside.data(), SA2_STYLE_CHANNEL_SLICE);
+        plan = product.plan(input, 256, 256);
+        expect((*plan.style)[5] == ((uint32_t(status_bytes[5]) << 24) | (1u << 17)), "the slice changed the status byte");
+        product.set_style(1, nullptr, SA2_STYLE_CHANNEL_SLICE);
+        product.set_style(1, nullptr, SA2_STYLE_CHANNEL_STATUS);
+        expect(!product.plan(input, 256, 256).status, "a cleared status byte draws");
         // A slot alone, with the identity and nothing to tint, changes nothing: the frame stays on the product pipeline.
         product.set_view_style(1, &style);
         expect(!product.plan(input, 256, 256).styled, "a style that changes nothing draws styled");

@@ -54,6 +54,7 @@ internal sealed partial class StripCellView : PanelContainer
     public StripCell Cell { get; private set; }
     private readonly Func<TokenSet> tokens; private readonly Control glyph; private readonly Label word, value, detail;
     private float flash; private bool hovered;
+    private Tween? flashTween;
     public event Action<string, bool>? Hover;
     public event Action<string>? Chosen;
 
@@ -96,10 +97,18 @@ internal sealed partial class StripCellView : PanelContainer
     }
 
     // A strip change (motion row strip.change): the cell's edge shows once and settles. No motion when reduced.
-    public void Flash(double seconds)
+    public void Flash(double seconds, double[] curve)
     {
         if (seconds <= 0) return;
-        flash = 1; Tween tween = CreateTween(); tween.TweenMethod(Callable.From<float>(v => { flash = v; QueueRedraw(); }), 1f, 0f, seconds);
+        flashTween?.Kill();
+        flash = 1;
+        QueueRedraw();
+        flashTween = CreateTween();
+        flashTween.TweenMethod(Callable.From<float>(phase =>
+        {
+            flash = phase >= 1 || tokens().ReducedMotion ? 0 : (float)(1 - MotionTable.Ease(curve, phase));
+            QueueRedraw();
+        }), 0f, 1f, seconds);
     }
 
     public override void _Draw()
@@ -121,6 +130,7 @@ internal sealed partial class StripCellView : PanelContainer
 public sealed partial class RelationStrip : PanelContainer, IPairSeam
 {
     public SolvingDemo Demo { get; }
+    public MotionTable? Motions { get; set; }
     private readonly Func<TokenSet> tokens; private readonly Func<string, double> seconds;
     private readonly Dictionary<string, StripCellView> cells = new(StringComparer.Ordinal);
     private BoxContainer box = new VBoxContainer(); private bool vertical = true; private bool expanded; private string built = "";
@@ -158,7 +168,8 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
         foreach (StripCell cell in now)
         {
             cells[cell.Slot].Set(cell, Undefined);
-            if (changed && Demo.LastChanged.Contains(cell.Slot)) cells[cell.Slot].Flash(seconds("strip.change"));
+            if (changed && Demo.LastChanged.Contains(cell.Slot))
+                cells[cell.Slot].Flash(seconds(MotionUses.StripChange), t.System.Curves[Motions?[MotionUses.StripChange].Curve ?? "linear"]);
         }
         demoChip!.Text = vertical ? state.Name : SolvingDemo.Mark + " · " + state.Name;
         var bad = state.Problems();

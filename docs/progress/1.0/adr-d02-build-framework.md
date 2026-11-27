@@ -942,6 +942,22 @@ relative path is from the repository root.
       `--foreground` (the owner's sitting only) activates the window once, never topmost. `gate.json` records both.
     - Dry runs at `wj-ia-300` (10 s, not evidence): G1 was valid with one pane and 7 twists, G9 valid with two panes and
       7 twists. The System log showed no GPU event after either.
+  - The twist stall (SF, 27 November 2026). The dry runs showed a 300-480 ms frame at each twist, all of it on the
+    frame thread. Per step, before and after (release host, `wj-ia-300`):
+    - `m6h_twist_transform`, called twice per twist (the press's row, the cut slice's row): 66-72 ms, of which
+      `Menu::from_record` was 58-64 ms, then 0.07-0.24 ms. The session keeps the layer's pinned menu, and its rows per
+      head and (cap, item), which a worker reads ahead after each commit. A row never asked before still costs
+      `State::apply`'s admissibility check (7-12 ms). Tests: `renderer/bridge/host/tests/key_timing.rs`.
+    - The binding change at a twist (13 of 20 presses): the bind chip's `frame.Invalidate()` (a full `ChromeFrame.Build`)
+      and the per-state JSON reads, 160-560 ms; now no rebuild (the sweep script checks the rebuild count) and each
+      state file parsed once. What is left is the bind's own in-place updates, p50 56 ms and p99 97 ms in G1
+      (`SetStyle`'s filter model, `SetCapMap`, `SetNu`).
+    - `m6h_key_down`, 39-48 ms: `Turns::key_down` is 34 ms in the bench (the command layer's commit, its journal write
+      and its digests, which stay as they are: ADR-D01.55, KN5), and the head's copy is 0.04 ms. In the product it is
+      p50 46 ms. After it, `ShellChrome.Committed` (the History row) is p50 25 ms and p99 38 ms.
+    - The shell writes these steps as `steps` rows while the event log is on (`EventLog.Steps`).
+    - Dry runs (10 s, not evidence): G1 p99 433 ms before and 117 ms after (fps_avg 39.4, then 48.7); G9 p99 300 ms
+      before and 217 ms after (fps_avg 39.0, then 46.4). The System log showed no GPU event after either.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
@@ -1493,6 +1509,27 @@ same `GripFrame` as the views.
   chrome takes (L over Global) is not marked. A grip on another cap drops the marks.
 - Shell: `D02/ShellGripKeys.cs` hands `ShellGrip.Model` to the key map and dumps its grip caps and stamps (`keycaps`).
   Run: `d02_run.py --script grip-keycaps --state wj-ia-300`.
+
+### ADR-D01 ports
+
+ADR-D01 clauses ported into the D02 product shell outside the B steps. Each entry is its As-built note.
+
+- **As built, ADR-D01.65's scene part (status track, 27 November 2026; Codex call 20261127T053634Z-672d825e):**
+  - Core (ABI 10, no new number): style channel 3 (`SA2_STYLE_CHANNEL_STATUS`) carries one status byte per piece: bits 0 to 2 the status (1 protected, 2 conflict, 3 unchecked prefix, 4 preview, 5 stale), bits 3 to 5 the protection-kind mark (1 orbit, 2 position, 3 identity, 4 block), bits 6 and 7 reserved. `sa2_status_style_set` takes a 520-byte table: eight patterns and eight marks of shape, spacing, width, angle and RGBA. `sa2_status_drawn` reads back each pane's covered pieces. The shader draws the status after the user stages and the .25 error hatch, before the colour matrix; a conflict is never dimmed and breaks through focus, dim and hide. The host adds `m6h_set_status_style` and the status targets (orbit ids, slot occupants, a cell's 433 slots).
+  - Design data: `tools/looklab/data/design/status-patterns.json` keeps the five statuses and four marks as separate tunable entries. Each status reads by shape as well as colour: protected a 45-degree hatch, conflict a cross-hatch, unchecked prefix dots, preview a dashed edge, stale horizontal stripes (moved off the diagonal the .25 error hatch uses). Marks: ring (orbit), dot (position), cross (identity), corner ticks (block).
+  - Fed: protected and the four marks, from a B17 pick and the draft row `protection.pick.set orbit|position|identity|block|clear`. The marks name `ProtectionKinds` from the rail (`StatusPatterns.MarkCode` and `KindOf`); there is no second enum. Conflict and preview are fed from the held turn's moving set. With the sample on, a fed status with nothing to show (no protection, no held turn) draws the fixture's pieces instead.
+  - Drawn, not yet fed: unchecked prefix and stale come only from `tools/looklab/data/samples/jumble/status-fixture.json`, shown by the draft row `status.sample.show on|off`.
+  - Product script `status-patterns` (1280x720, wj-ia-300) checks the bytes sent, the table and both panes' coverage for each kind and the sample, and that clear and off leave no status byte. It picks sweep.json's first lattice hit, since pick.json's hits are off-lattice pieces with no slot.
+  - Left over: setting `OrbitResidual.Protection` from the scene's protection so the rail's locks show it. The rail's orbits are sample data with no piece-to-rail-orbit mapping yet, so this is not a small step.
+- **As built, ADR-D01.55's motion rules (status track, 27 November 2026; Codex call 20261127T073305Z-97697912, gpt-6.2-sol, effort max):**
+  - Motion uses: `MotionUses` (`tools/looklab/app/Chrome/Model/MotionUses.cs`) lists each motion the shell and the shared chrome draw against its H-03 row, with its trigger (state or view) and kind (animated, static or held). Animated: the committed sweep (`jumble.sweep`), the queued sweep (`twist.queued`), the half-turn flash and B22's chart outline (`jumble.half_turn`), the wheel zoom and the raw chart clip (`view.transition`), the palette and in-window overlays (`dock.open`) and the sample strip edge (`strip.change`). Overlays, tints, ADR-D01.25's overlay, ADR-D01.65's patterns, the rail locks, the Jumble marks, `repair.step`, `cap.name`, the pending glyph and every result are static; `slice.turn` and the product's `reward.mark` are held. Overlay fades now run only when an overlay opens.
+  - The engine commits before any motion: each sweep's dump row names its committed revision, the armed row's revision before it, and the first frame's revision, which equals the committed one with phase 0 drawn.
+  - Twist queue (`MotionQueue.cs`, fed by `Shell.cs`'s key path and `D02/ShellMotion.cs`): a key twist with no sweep running commits at once. While a sweep runs, every head-changing key event (twist keys, `Ctrl+Shift+Enter`, `Ctrl+KeyZ`, `Ctrl+KeyY`, with their releases and repeats) waits in order and is sent through the live path when the sweep ends. Only a new press speeds up: the running sweep ends within `twist.queued` of its start, and each later sweep of the burst is shorter (110, 91.3 and 76.4 ms in the run), never below one 60 Hz frame. A single tap's own release never shortens its sweep (integrator fix to the Codex patch). A commit command, a session resume, Explore, focus loss and switching reduced motion on flush the queue in order with static motion.
+  - Views: a wheel notch retargets the zoom, which eases over `view.transition` (260 ms) from the drawn value; a second notch multiplies the target (two notches reach 1.21). The raw chart clip eases the same way. The shell has no rotate click or view-reset step; rotation is the camera drag.
+  - Drags (revision 6): the camera drag now turns by every pointer increment, including the movement before the three-pixel threshold, with no snap; pane splitters keep the ratio measured on release; the tuning sliders' value steps are field quantisation, not alignment. The slice names its certified twist only on key release, which a test pins; no drag changes an exact state.
+  - Reduced motion stays off by default (`motion.reduced.set`, frozen row). Rewards: the appearance now stores `rewards=off`, set by the gallery's Milestone marks switch; it gates the gallery's rewards and the sample History's in-place first-orbit badge. Live D02 has no completion moment yet, and Jumble results appear in place for every outcome. No draft row was needed.
+  - Product script `motion` (no `--state`, the solved jumbled puzzle): three quick keys queue and commit three revisions with shorter sweeps; two quick notches add up; after rewinding, the same keys under reduced motion are static and reach the same state digest. `sweep`'s expect keeps jumble.sweep's 220 ms for a single press.
+  - The Python fixture suites now make their temporary folders under `work/` through one helper, which the Windows sandbox can reach.
 
 **As built (ADR-D01.10's preview view, with what ADR-D01.11's commit bar needs; 27 November 2026, branch
 `claude/d02-research`, gpt-6.2-sol call 20261127T084324Z-7bc36885).** A staged repair is a whole-only preview drawn in its

@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import importlib
 import re
-import shutil
 import sys
-import tempfile
 import unittest
 from pathlib import Path
+
+from test_d02_drawing import workspace_fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 SHELL = ROOT / "renderer" / "shell"
@@ -40,13 +40,8 @@ class Staged(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.temp = Path(tempfile.mkdtemp(prefix="shared-chrome-"))
-        cls.project = cls.temp / "staged"
+        cls.project = cls.enterClassContext(workspace_fixture("shared-chrome-")) / "staged"
         shell_module("build_shell").stage(cls.project)
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls.temp, True)
 
     def staged(self, relative: str) -> bytes:
         return (self.project / "Chrome" / relative).read_bytes()
@@ -54,7 +49,7 @@ class Staged(unittest.TestCase):
     def test_the_ported_files_are_staged_as_they_are(self):
         for relative in ("Ui/ChromeErrors.cs", "Model/ErrorLog.cs", "Model/CorePlaces.cs", "Model/LayoutTracker.cs", "Ui/FrameLayout.cs",
                          "Model/ViewFields.cs", "Model/Inspect.cs", "Ui/InspectorPanels.cs", "Model/ViewLink.cs", "Ui/ViewLinkMarks.cs",
-                         "Model/Documents.cs", "Ui/DocumentTabs.cs"):
+                         "Model/Documents.cs", "Ui/DocumentTabs.cs", "Model/MotionUses.cs", "Model/MotionQueue.cs", "Model/ViewEase.cs"):
             self.assertEqual(self.staged(relative), (CHROME / relative).read_bytes(), relative)
 
 
@@ -251,6 +246,44 @@ class SessionCells(unittest.TestCase):
             code = text(path)
             for word in ("TimerCell", "SessionCell", "CompletionLog", "cell.timer", "cell.session"):
                 self.assertNotIn(word, code, path.name)
+
+
+class MotionUses(unittest.TestCase):
+    def test_shared_motion_draws_only_for_named_events(self):
+        ui = CHROME / "Ui"
+        palette = text(ui / "CommandPalette.cs")
+        self.assertIn("bool opening = !Visible;", palette)
+        self.assertIn("Motions?.Seconds(MotionUses.DockOpen, t.System, t.ReducedMotion)", palette)
+        strip = text(ui / "SolvingSurface.cs")
+        self.assertIn("Demo.LastChanged.Contains(cell.Slot)", strip)
+        self.assertIn("seconds(MotionUses.StripChange)", strip)
+        for name in ("JumbleLists.cs", "JumbleOverlays.cs", "JumbleHost.cs"):
+            self.assertNotRegex(text(ui / name), r"CreateTween\(|Tween(Method|Property)\(|MotionTable.Ease\(")
+
+    def test_product_reward_switch_controls_the_shared_marks(self):
+        gallery = text(CHROME / "Ui" / "Gallery.cs")
+        self.assertIn('Switch("RewardSwitch"', gallery)
+        self.assertIn("MotionSettings.Shows(entry.Id, Motion.Rewards)", gallery)
+        history = text(CHROME / "Ui" / "SessionPanels.cs")
+        self.assertIn("entry.Moment && MotionSettings.Shows(MotionUses.OrbitComplete, Rewards)", history)
+        shell = text(SHELL / "project" / "ShellChrome.cs")
+        self.assertIn("a.Rewards = gallery.Motion.Rewards;", shell)
+        self.assertIn("gallery.Motion.Rewards = look.Rewards;", shell)
+        self.assertIn("history.Rewards = look.Rewards;", shell)
+        self.assertIn('case "motion.reduced.set": appearance.Edit', shell)
+
+    def test_splitters_and_tuning_take_the_pointer_value(self):
+        frame = text(CHROME / "Ui" / "ChromeFrame.cs")
+        self.assertIn("first / (first + second)", frame)
+        self.assertIn("Math.Clamp(Ratio(split), .2, .8)", frame)
+        self.assertIn("split.DragEnded += () => Model.Resize(node, Ratio(split));", frame)
+        appearance = text(CHROME / "Ui" / "AppearancePanel.cs")
+        self.assertIn("Step = (knob.Max - knob.Min) / 240, Value = value", appearance)
+        self.assertIn("Step = .25, Value = Look.DisplayScale", appearance)
+        tuning = text(CHROME / "Ui" / "TuningPanel.cs")
+        self.assertIn("slider.ValueChanged += v => { if (!syncing) Edit(() => Model.SetKnob(id, v)", tuning)
+        model = text(CHROME / "Model" / "Tuning.cs")
+        self.assertIn("Look.SetKnob(id, Math.Clamp(value, knob.Min, knob.Max))", model)
 
 
 if __name__ == "__main__":

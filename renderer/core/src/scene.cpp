@@ -140,6 +140,8 @@ struct ProductGpu {
     // t19 is shared by a frame's panes. Like its constants, the upload is reused only after that ring slot completes.
     std::array<Buffer, SA2_RING_SLOTS> sticker_colours;
     std::array<uint8_t*, SA2_RING_SLOTS> sticker_colours_data{};
+    Buffer status_drawn, status_zero, status_read;
+    uint32_t status_ring = 0, status_panes = 0;
     ~ProductGpu() {
         for (auto& copy : copies) if (copy.data) copy.staging.resource->Unmap(0, nullptr);
         for (size_t i = 0; i < cb.size(); ++i) if (cb_data[i]) cb[i].resource->Unmap(0, nullptr);
@@ -152,6 +154,10 @@ struct ProductGpu {
             if (sticker_colours_data[i]) sticker_colours[i].resource->Unmap(0, nullptr);
     }
 };
+constexpr uint64_t StatusBytes = SA2_STATUS_WORDS * sizeof(uint32_t);
+constexpr uint64_t StatusAlignment = D3D12_RAW_UAV_SRV_BYTE_ALIGNMENT;
+constexpr uint64_t StatusStride = (StatusBytes + StatusAlignment - 1) & ~(StatusAlignment - 1);
+constexpr uint64_t StatusFrameBytes = StatusStride * SA2_PANES_MAX;
 constexpr uint64_t QueryStride = 256, StatisticsOffset = 16;
 // C9 U5: one attached chain with its arrays (t20, t21) and their descriptors. A frame's report row holds the attach
 // it drew with, so a later attach never releases what a frame in flight reads.
@@ -949,8 +955,10 @@ struct Scene::Impl {
         if (p.styled_root) return;
         auto made = styled_signature();
         std::array<Buffer, SA2_RING_SLOTS> cbs; std::array<uint8_t*, SA2_RING_SLOTS> data{};
-        for (size_t i = 0; i < cbs.size(); ++i) cbs[i] = buffer(512, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        for (size_t i = 0; i < cbs.size(); ++i) cbs[i] = buffer(1024, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
         for (size_t i = 0; i < cbs.size(); ++i) data[i] = map(cbs[i]);
+        p.status_drawn = buffer(StatusFrameBytes, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON,
+                                D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
         p.styled_root = std::move(made); p.style_cb = std::move(cbs); p.style_cb_data = data;
     }
     // ADR-D02 B17 (ABI 10): the styled ID pass (styledVs, styledIdPs), from the embedded DXIL; built once.
@@ -984,7 +992,7 @@ struct Scene::Impl {
         std::array<Buffer, ProductGpu::PaneSlots> cbs, styles;
         for (size_t i = 0; i < cbs.size(); ++i) {
             cbs[i] = buffer(256, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
-            styles[i] = buffer(512, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+            styles[i] = buffer(1024, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
         }
         auto read = buffer(512 * SA2_RING_SLOTS, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
         D3D12_QUERY_HEAP_DESC query{}; query.Type = D3D12_QUERY_HEAP_TYPE_PIPELINE_STATISTICS; query.Count = UINT(ProductGpu::PaneSlots);
@@ -1004,18 +1012,47 @@ struct Scene::Impl {
     // The product draw and the ID pass: the W-J bindings with the engine copy's
     // labels and pose path, the set's t15 and t16, and one clear of the whole
     // target (no rects). The ID pass rasterizes only its pixel (scissor).
-    // ABI 7: with style and style_constants, the styled root signature and its two parameters.
+    // The optional capture is reset once per frame and copied into the frame's ring after its last pane.
+    void begin_status_capture(ID3D12GraphicsCommandList* list, uint32_t ring, uint32_t panes, const sa2_status_style* status) {
+        auto& p = product_gpu();
+        p.status_panes = 0;
+        if (!status || !(status->flags & SA2_STATUS_CAPTURE)) return;
+        if (!p.status_read.resource) {
+            auto zeros = buffer(StatusFrameBytes, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+            auto read = buffer(StatusFrameBytes * SA2_RING_SLOTS, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
+            std::memset(map(zeros), 0, StatusFrameBytes);
+            zeros.resource->Unmap(0, nullptr);
+            p.status_zero = std::move(zeros);
+            p.status_read = std::move(read);
+        }
+        p.status_ring = ring;
+        p.status_panes = panes;
+        p.status_drawn.state = D3D12_RESOURCE_STATE_COPY_DEST; // the buffer decays to COMMON between command lists
+        list->CopyBufferRegion(p.status_drawn.resource.Get(), 0, p.status_zero.resource.Get(), 0, StatusStride * panes);
+        transition(list, p.status_drawn, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    }
+    void end_status_capture(ID3D12GraphicsCommandList* list) {
+        auto& p = product_gpu();
+        if (!p.status_panes) return;
+        transition(list, p.status_drawn, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        list->CopyBufferRegion(p.status_read.resource.Get(), StatusFrameBytes * p.status_ring,
+                               p.status_drawn.resource.Get(), 0, StatusStride * p.status_panes);
+    }
+
+    // ABI 7: with style and style_constants, use the styled root signature.
     void product_draw(ID3D12GraphicsCommandList* list, ID3D12PipelineState* pipeline, Buffer& constants_buffer, ProductGpu::EngineCopy& copy,
                       uint64_t set_ticket, D3D12_CPU_DESCRIPTOR_HANDLE rtv, UINT width, UINT height, const float* colour, const D3D12_RECT* pixel,
                       const Buffer* style = nullptr, const Buffer* style_constants = nullptr, const D3D12_RECT* area = nullptr,
                       bool clear = true, bool turning = false, const Buffer* sticker_colours = nullptr,
-                      const ProductGpu::PreviewBinding* preview = nullptr, bool before = false) {
+                      const ProductGpu::PreviewBinding* preview = nullptr, bool before = false, size_t status_pane = 0) {
         auto& p = product_gpu();
         const auto [visible, instances] = product_set(set_ticket);
         list->SetPipelineState(pipeline); list->SetGraphicsRootSignature(style ? p.styled_root.Get() : p.root.Get());
         if (style) {
             list->SetGraphicsRootShaderResourceView(20, preview ? preview->style : style->resource->GetGPUVirtualAddress());
             list->SetGraphicsRootConstantBufferView(21, style_constants->resource->GetGPUVirtualAddress());
+            if (sticker_colours) list->SetGraphicsRootUnorderedAccessView(8,
+                p.status_drawn.resource->GetGPUVirtualAddress() + StatusStride * status_pane);
         }
         list->SetGraphicsRootConstantBufferView(0, constants_buffer.resource->GetGPUVirtualAddress());
         // ABI 10: the Hopf table, or any live buffer while no view names the rings (the shaders read it only then).
@@ -1458,6 +1495,17 @@ Json Scene::lattice_error(const std::string& error) const {
 }
 
 // ABI 4.
+// The two RGBA/geometry tables follow the original b1 constants, one entry per two registers.
+static void write_style(uint8_t* target, ViewStyle view, const sa2_status_style* status) {
+    static_assert(sizeof(view) + 2 * SA2_STATUS_ENTRIES * sizeof(sa2_status_pattern) <= 1024);
+    view.status_on = status ? (1u | (status->flags << 1)) : 0u;
+    std::memcpy(target, &view, sizeof(view));
+    if (status) {
+        std::memcpy(target + sizeof(view), status->patterns, sizeof(status->patterns));
+        std::memcpy(target + sizeof(view) + sizeof(status->patterns), status->marks, sizeof(status->marks));
+    }
+}
+
 void Scene::product_ready(ID3D12CommandQueue* queue, DXGI_FORMAT format, bool styled, bool panes) {
     if (!gpu->product) gpu->product = gpu->product_create(queue);
     if (format == DXGI_FORMAT_B8G8R8A8_UNORM && !gpu->product->surface_pso)
@@ -1511,7 +1559,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
                           D3D12_CPU_DESCRIPTOR_HANDLE target, uint32_t ring, DXGI_FORMAT format) {
     auto& g = *gpu; auto& p = g.product_gpu();
     scene_require(plan.image != nullptr && plan.copy < EngineCopies && ring < SA2_RING_SLOTS, "product frame without a plan", SA2_E_WRONG_STATE);
-    auto* pso = plan.styled ? (format == DXGI_FORMAT_B8G8R8A8_UNORM ? p.styled_surface_pso.Get() : p.styled_pso.Get())
+    auto* pso = (plan.styled || plan.status) ? (format == DXGI_FORMAT_B8G8R8A8_UNORM ? p.styled_surface_pso.Get() : p.styled_pso.Get())
                             : format == DXGI_FORMAT_B8G8R8A8_UNORM ? p.surface_pso.Get() : p.draw_pso.Get();
     scene_require(pso != nullptr && (format == DXGI_FORMAT_B8G8R8A8_UNORM || format == DXGI_FORMAT_R8G8B8A8_UNORM),
         "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
@@ -1520,6 +1568,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     auto& copy = p.copies[plan.copy];
     if (plan.upload) g.upload_engine(list, copy, *plan.image, plan.style, plan.charts);
     p.pane_count[ring] = 0; // ABI 8: a one-view frame
+    g.begin_status_capture(list, ring, 1, plan.status);
     std::array<float, 16> camera; std::copy(std::begin(input.camera_matrix), std::end(input.camera_matrix), camera.begin());
     const auto c = g.product_constants(camera, input.viewport_width, input.viewport_height, plan.pose_count, plan.shape);
     std::memcpy(p.cb_data[ring], &c, sizeof(c));
@@ -1528,18 +1577,34 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
     const float* background = product.scene_look().background;
     std::memcpy(p.sticker_colours_data[ring], &product.sticker_colours(), sizeof(StickerColours));
     const Buffer* style = nullptr;
-    if (plan.styled) { // ABI 7: the slot's style, and the copy's piece style or the zero buffer
-        std::memcpy(p.style_cb_data[ring], &plan.view_style, sizeof(plan.view_style));
+    if (plan.styled || plan.status) { // the slot's style, host patterns, and the copy's piece style or the zero buffer
+        write_style(p.style_cb_data[ring], plan.view_style, plan.status);
         style = plan.style ? &copy.style : &p.no_instances;
     }
     g.product_draw(list, pso, p.cb[ring], copy, plan.set_ticket, target, input.viewport_width, input.viewport_height, background, nullptr,
                    style, style ? &p.style_cb[ring] : nullptr, nullptr, true, plan.shape.turn != 0.0f, &p.sticker_colours[ring]);
+    g.end_status_capture(list);
     list->EndQuery(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring);
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring + 1);
     list->ResolveQueryData(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring, 2, p.query_read.resource.Get(), ring * QueryStride);
     list->ResolveQueryData(p.statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, ring, 1, p.query_read.resource.Get(),
                            ring * QueryStride + StatisticsOffset);
 }
+bool Scene::has_status_capture(uint32_t pane) const {
+    return gpu && gpu->product && pane < gpu->product->status_panes;
+}
+
+void Scene::read_status_capture(uint32_t pane, uint32_t* words) {
+    auto& p = gpu->product_gpu();
+    const SIZE_T begin = SIZE_T(StatusFrameBytes * p.status_ring + StatusStride * pane);
+    D3D12_RANGE range{begin, begin + StatusBytes};
+    void* data = nullptr;
+    hr(gpu->device, p.status_read.resource->Map(0, &range, &data), "Map(status capture)");
+    std::memcpy(words, static_cast<const uint8_t*>(data) + begin, StatusBytes);
+    D3D12_RANGE none{0, 0};
+    p.status_read.resource->Unmap(0, &none);
+}
+
 std::array<float, 4> Scene::cell_centre(uint32_t cell) const { return gpu->cell_centre(cell); }
 FrameStatistics& newest_frame_statistics() { static FrameStatistics value; return value; }
 std::pair<uint64_t, uint64_t> Scene::product_results(uint32_t ring) {
@@ -1601,6 +1666,7 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
     const float* background = product.scene_look().background;
     std::memcpy(p.sticker_colours_data[ring], &product.sticker_colours(), sizeof(StickerColours));
     const auto preview = plan.preview ? g.preview_binding(ring, *plan.preview) : ProductGpu::PreviewBinding{};
+    g.begin_status_capture(list, ring, uint32_t(plan.panes.size()), plan.status);
     for (size_t i = 0; i < plan.panes.size(); ++i) {
         const auto& pane = plan.panes[i];
         const bool preview_pane = (pane.pane.flags & SA2_PANE_PREVIEW) != 0;
@@ -1612,9 +1678,9 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
         std::memcpy(p.pane_cb_data[slot], &c, sizeof(c));
         ID3D12PipelineState* pso = surface ? p.surface_pso.Get() : p.draw_pso.Get();
         const Buffer* style = nullptr;
-        if (pane.styled) {
+        if (pane.styled || plan.status) {
             pso = g.styled_pipeline(format);
-            std::memcpy(p.pane_style_cb_data[slot], &pane.view_style, sizeof(pane.view_style));
+            write_style(p.pane_style_cb_data[slot], pane.view_style, plan.status);
             style = plan.style ? &copy.style : &p.no_instances;
         }
         scene_require(pso != nullptr, "no product pipeline for the frame target's format", SA2_E_WRONG_STATE);
@@ -1622,11 +1688,12 @@ void Scene::product_frame_panes(ID3D12GraphicsCommandList* list, const sa2_frame
         list->BeginQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
         g.product_draw(list, pso, p.pane_cb[slot], copy, preview_pane ? 0 : pane.set_ticket, target, input.viewport_width, input.viewport_height, background, nullptr,
                        style, style ? &p.pane_style_cb[slot] : nullptr, &area, i == 0, pane.shape.turn != 0.0f, &p.sticker_colours[ring],
-                       preview_pane ? &preview : nullptr, before);
+                       preview_pane ? &preview : nullptr, before, i);
         list->EndQuery(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot));
         list->ResolveQueryData(p.pane_statistics.Get(), D3D12_QUERY_TYPE_PIPELINE_STATISTICS, UINT(slot), 1, p.pane_read.resource.Get(),
                                uint64_t(ring) * 512 + i * 128);
     }
+    g.end_status_capture(list);
     list->EndQuery(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring + 1);
     list->ResolveQueryData(p.timestamps.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 2 * ring, 2, p.query_read.resource.Get(), ring * QueryStride);
     p.pane_count[ring] = uint32_t(plan.panes.size());

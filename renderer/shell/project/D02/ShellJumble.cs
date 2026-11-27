@@ -94,7 +94,23 @@ public static class ShellJumble
             return GlobalTotals.Pending;
         }
         var path = Path.Combine(JumbleFolder(), state, "totals.json");
-        return File.Exists(path) ? GlobalTotals.Read(File.ReadAllText(path), SeamCoverage.Complete) : GlobalTotals.Pending;
+        return Kept(path, text => GlobalTotals.Read(text, SeamCoverage.Complete)) ?? GlobalTotals.Pending;
+    }
+
+    // SF (27 Nov 2026): a sample state's files, parsed once per path while the samples stay loaded (each model read
+    // here is immutable); LoadSamples clears them. A binding that changes at a twist re-read them on the frame thread.
+    private static readonly Dictionary<string, object?> Reads = new();
+
+    private static T? Kept<T>(string path, Func<string, T> read, string tag = "") where T : class
+    {
+        var key = tag + "|" + path;
+        if (Reads.TryGetValue(key, out var kept))
+        {
+            return (T?)kept;
+        }
+        var value = File.Exists(path) ? read(File.ReadAllText(path)) : null;
+        Reads[key] = value;
+        return value;
     }
 
     /// <summary>
@@ -118,7 +134,7 @@ public static class ShellJumble
             return CapMapModel.Pending();
         }
         var path = Path.Combine(JumbleFolder(), state, "rim.json");
-        return File.Exists(path) ? CapMapModel.Read(File.ReadAllText(path)) : CapMapModel.Pending();
+        return Kept(path, CapMapModel.Read) ?? CapMapModel.Pending();
     }
 
     /// <summary>The Jumble host; set by the chrome. B25: setting it binds the seed 7001 restoration to its Word panel.</summary>
@@ -141,7 +157,7 @@ public static class ShellJumble
     public static NuCorrections? Corrections()
     {
         var path = Path.Combine(JumbleFolder(), "corrections.json");
-        return File.Exists(path) ? NuCorrections.Read(File.ReadAllText(path)) : null;
+        return Kept(path, NuCorrections.Read);
     }
 
     /// <summary>B25: the seed 7001 restoration's nine words (seed7001-words.json), or null where the samples lack it.</summary>
@@ -152,14 +168,14 @@ public static class ShellJumble
     }
 
     /// <summary>B25: a sample state's N, lattice and ν row from its totals, or null without them.</summary>
-    public static WordState? StateAfter(string state)
+    public static WordState? StateAfter(string state) =>
+        Kept(Path.Combine(JumbleFolder(), state, "totals.json"), text => new AfterRead(ReadStateAfter(text)), "after")?.State;
+
+    private sealed record AfterRead(WordState State);
+
+    private static WordState ReadStateAfter(string text)
     {
-        var path = Path.Combine(JumbleFolder(), state, "totals.json");
-        if (!File.Exists(path))
-        {
-            return null;
-        }
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        using var document = JsonDocument.Parse(text);
         var nu = document.RootElement.GetProperty("nu");
         var on = nu.GetProperty("result").GetString() != "undefined";
         return new WordState(document.RootElement.GetProperty("N").GetInt64(), on,
@@ -199,7 +215,7 @@ public static class ShellJumble
             return null;
         }
         var path = Path.Combine(JumbleFolder(), state, "style.json");
-        return File.Exists(path) ? PoseStyle.Read(File.ReadAllText(path)) : null;
+        return Kept(path, PoseStyle.Read);
     }
 
     /// <summary>B15: the bound state's domain contact graph (contact.json), or null.</summary>
@@ -210,7 +226,7 @@ public static class ShellJumble
             return null;
         }
         var path = Path.Combine(JumbleFolder(), state, "contact.json");
-        return File.Exists(path) ? ContactGraph.Read(File.ReadAllText(path)) : null;
+        return Kept(path, ContactGraph.Read);
     }
 
     /// <summary>
@@ -224,13 +240,17 @@ public static class ShellJumble
             return null;
         }
         var path = Path.Combine(JumbleFolder(), state, "poses.json");
-        if (!File.Exists(path))
-        {
-            return null;
-        }
-        var text = File.ReadAllText(path);
+        return Kept(path, text => ReadPoses(text, rows), rows.ToString(CultureInfo.InvariantCulture)) is { } read
+            ? (read.Poses, read.Digest)
+            : null;
+    }
+
+    private sealed record PoseRead(int[] Poses, string Digest);
+
+    private static PoseRead ReadPoses(string text, int rows)
+    {
         using var document = JsonDocument.Parse(text);
-        return (JumbleTint.Poses(text, rows), document.RootElement.GetProperty("digest").GetString() ?? "");
+        return new PoseRead(JumbleTint.Poses(text, rows), document.RootElement.GetProperty("digest").GetString() ?? "");
     }
 
     /// <summary>The 80 caps meeting each cap (B9), from the samples' meeting-caps.json; none when the build has none.</summary>
@@ -266,6 +286,7 @@ public static class ShellJumble
     public static int LoadSamples()
     {
         Samples.Clear();
+        Reads.Clear();
         var folder = JumbleFolder();
         using var index = JsonDocument.Parse(File.ReadAllText(Path.Combine(folder, "states.json")));
         var count = 0;
@@ -440,7 +461,7 @@ public static class ShellJumble
             binding.TooltipText = Bound is { } named
                 ? $"The session's poses are sample state {named}'s, by their two digests"
                 : "No sample state has this session's pose digests: every D02 slot is stale and its readouts pending";
-            frame.Invalidate();
+            // SF (27 Nov 2026): the label and tooltip change in place; a frame rebuild here cost 160-560 ms per twist.
         };
         try
         {
@@ -876,8 +897,11 @@ internal sealed partial class D02Driver : Node
             throw new FormatException("Unknown D02 script step: " + step);
         }
         // ADR-D02 B19/B24: a step marked "quiet" writes no screen dump, so a gate row's repeated motion is timed
-        // without the dump's work in its frames (d02_run.py expand_repeat marks them).
-        _wait = step.TryGetProperty("quiet", out var quietStep) && quietStep.ValueKind == JsonValueKind.True ? -1 : StepFrames;
+        // without the dump's work in its frames (d02_run.py expand_repeat marks them). A "quick" step (ADR-D01.55)
+        // dumps at once and flushes the buffered input.
+        _wait = step.TryGetProperty("quiet", out var quietStep) && quietStep.ValueKind == JsonValueKind.True ? -1
+            : step.TryGetProperty("quick", out var quick) && quick.GetBoolean() ? 0 : StepFrames;
+        if (_wait == 0) Input.FlushBufferedEvents();
     }
 
     private static string GripPointer(string action, string pane)
@@ -963,6 +987,7 @@ internal sealed partial class D02Driver : Node
         {
             at += by / 10;
             Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at, Relative = by / 10, ButtonMask = MouseButtonMask.Left });
+            Input.FlushBufferedEvents();
         }
         Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at });
     }
@@ -1363,10 +1388,23 @@ internal sealed partial class D02Driver : Node
             }
             json.WriteEndObject();
             ShellPreview.Dump(json);
+            DumpMotion(json);
             json.WriteEndObject();
         }
         using var stream = new FileStream(path, FileMode.Append, System.IO.FileAccess.Write);
         stream.Write(buffer.ToArray());
         stream.WriteByte((byte)'\n');
+    }
+
+    private void DumpMotion(Utf8JsonWriter json)
+    {
+        json.WriteStartObject("motion");
+        json.WriteBoolean("reduced", _frame.Tokens.ReducedMotion);
+        json.WriteNumber("state_revision", ShellJumble.StateRevision);
+        json.WriteString("state_digest", ShellJumble.StateDigest);
+        ShellTurn.DumpMotion(json);
+        ShellJumble.Zoom.DumpMotion(json, HostLibrary.View);
+        ShellMotion.DumpRawClip(json);
+        json.WriteEndObject();
     }
 }

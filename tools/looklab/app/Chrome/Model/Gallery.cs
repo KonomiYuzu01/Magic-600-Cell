@@ -69,6 +69,8 @@ public sealed class MotionSettings
     public bool Reduced { get; set; }
     public bool Muted { get; set; } = true;
     public bool Rewards { get; set; } = true;
+    public static bool IsReward(string id) => id is MotionUses.RewardMark or MotionUses.OrbitComplete;
+    public static bool Shows(string id, bool rewards) => rewards || !IsReward(id);
     public string Store() => $"{(Reduced ? "reduced" : "full")},{(Muted ? "muted" : "cues")},{(Rewards ? "rewards" : "plain")}";
     public void Restore(string stored)
     {

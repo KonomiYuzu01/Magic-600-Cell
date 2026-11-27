@@ -16,8 +16,9 @@ import re
 import shutil
 import sys
 import unittest
+import uuid
+from contextlib import contextmanager
 from pathlib import Path
-from test_renderer_shell import fresh_test_folder
 
 ROOT = Path(__file__).resolve().parents[1]
 SHELL = ROOT / "renderer" / "shell"
@@ -37,6 +38,27 @@ def shell_module(name: str):
         return importlib.import_module(name)
     finally:
         sys.path.remove(str(SHELL))
+
+
+@contextmanager
+def workspace_fixture(prefix):
+    # Inherit the workspace's ACL. The 0o700 mode of mkdtemp restricts the Windows sandbox's test subprocesses.
+    work = ROOT / "work"
+    work.mkdir(exist_ok=True)
+    if work.resolve().parent != ROOT:
+        raise RuntimeError("test work folder escaped the checkout")
+    folder = work / (prefix + uuid.uuid4().hex[:12])
+    folder.mkdir()
+    if folder.resolve().parent != work.resolve():
+        raise RuntimeError("test fixture escaped work/")
+    try:
+        yield folder
+    finally:
+        shutil.rmtree(folder)
+
+
+def fixture_folder(test, prefix):
+    return test.enterContext(workspace_fixture(prefix))
 
 
 class CoreFocus(unittest.TestCase):
@@ -76,17 +98,15 @@ class CoreFocus(unittest.TestCase):
         block = re.search(r"pub const SYMBOLS: \[&str; (\d+)\] = \[(.*?)\];", bridge, re.S)
         self.assertTrue(block)
         names = re.findall(r'"(sa2_[a-z_]+)"', block.group(2))
-        # B18's part (for B20) binds sa2_transform_set after B16's two functions; ADR-D01.52 and .49/.5 append the
-        # sticker colours and the scene look after it.
-        # B22 item 1 appends the chart channel after them.
-        last = ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set", "sa2_scene_look_set",
-                "sa2_charts_set"]
-        self.assertEqual(names[-6:], last)
+        # Each feature appends its exports after the previous ABI 10 rows.
+        last = ["sa2_view_focus_set", "sa2_view_layout_set", "sa2_transform_set", "sa2_sticker_colours_set",
+                "sa2_scene_look_set", "sa2_charts_set", "sa2_status_style_set", "sa2_status_drawn"]
+        self.assertEqual(names[-len(last):], last)
         self.assertEqual(len(names), int(block.group(1)))
         core = text(PROJECT / "CoreLibrary.cs")
         exports = re.findall(r'"(sa2_[a-z_]+)"', re.search(r"\bSymbols = new\[\]\s*\{(.*?)\};", core, re.S).group(1))
-        self.assertEqual(exports[-6:], last)
-        self.assertIn("view_focus_set,\n        view_layout_set,\n        transform_set,\n        sticker_colours_set,\n        scene_look_set,\n        charts_set,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
+        self.assertEqual(exports[-len(last):], last)
+        self.assertIn("view_focus_set,\n        view_layout_set,\n        transform_set,\n        sticker_colours_set,\n        scene_look_set,\n        charts_set,\n        status_style_set,\n        status_drawn,\n    }\n}", text(ROOT / "renderer" / "bridge" / "tests" / "common" / "mod.rs"))
 
 
 class HostFocus(unittest.TestCase):
@@ -203,13 +223,15 @@ class HopfRings(unittest.TestCase):
 
     def test_the_build_stages_the_ring_file(self):
         build_shell = shell_module("build_shell")
-        temp = fresh_test_folder("d02-hopf-")
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-hopf-")
         project = temp / "staged"
         build_shell.stage(project)
         self.assertEqual((project / "look" / "hopf-rings.json").read_bytes(),
                          (ROOT / "tools" / "looklab" / "fixtures" / "hopf-rings.json").read_bytes())
         self.assertTrue((project / "D02" / "ShellHopf.cs").is_file())
+        data = ROOT / "tools" / "looklab" / "data"
+        for path in ("design/status-patterns.json", "samples/jumble/status-fixture.json"):
+            self.assertEqual((project / path).read_bytes(), (data / path).read_bytes())
 
 
 class LocalShape(unittest.TestCase):
@@ -254,8 +276,7 @@ class LocalShape(unittest.TestCase):
 
     def test_the_build_stages_the_shape_file(self):
         build_shell = shell_module("build_shell")
-        temp = fresh_test_folder("d02-local-")
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-local-")
         project = temp / "staged"
         build_shell.stage(project)
         self.assertEqual((project / "look" / "local-view.json").read_bytes(), LOCAL_VIEW.read_bytes())
@@ -388,17 +409,23 @@ class SweepShell(unittest.TestCase):
 
     def test_the_shell_arms_before_the_press_and_reports_its_answer(self):
         shell = text(PROJECT / "Shell.cs")
-        self.assertLess(shell.index("D02.ShellTurn.Arm(library, _host, chord);"), shell.index("library.KeyDown(_host, chord"))
-        self.assertIn("D02.ShellTurn.Committed(result.EngineRevision);", shell)
+        self.assertIn("ShellMotion.TryQueue(input, SendTurn)", shell)
+        arm = shell.index("D02.ShellTurn.Arm(library, _host, chord);")
+        key_down = shell.index("library.KeyDown(_host, chord")
+        committed = shell.index("D02.ShellTurn.Committed(result.EngineRevision, staticMotion);")
+        self.assertTrue(arm < key_down < committed)
         self.assertIn("D02.ShellTurn.Refused();", shell)
         self.assertIn("D02.ShellTurn.Framed(frame.EngineRevision);", shell)
         self.assertIn("if (row is null || revision != row.Revision + 1 || MotionRow is null)", self.turn)
+        self.assertIn("engineRevision == motion.Revision", self.turn)
+        self.assertIn("motion.FirstFrameRevision = engineRevision;", self.turn)
 
     def test_the_rows_and_reduced_motion_come_from_the_motion_table(self):
         chrome = text(PROJECT / "ShellChrome.cs")
         self.assertIn("D02.ShellTurn.MotionRow = id => (motions.Seconds(id, design, look.ReducedMotion), "
                       "design.Curves[motions[id].Curve]);", chrome)
-        self.assertIn('MotionRow(half ? "jumble.half_turn" : "jumble.sweep")', self.turn)
+        self.assertIn("half ? MotionUses.HalfTurn : MotionUses.JumbleSweep", self.turn)
+        self.assertIn("MotionRow(MotionUses.QueuedSweep)", self.turn)
         self.assertIn('seconds <= 0 ? "static" : half ? "flash" : "sweep"', self.turn)
         motion = json.loads(text(CHROME.parent.parent / "data" / "design" / "motion.json"))
         rows = {row["id"]: row for row in motion["motions"]}
@@ -409,9 +436,9 @@ class SweepShell(unittest.TestCase):
         self.assertIn("if (flash[piece] != 0) outline[piece] = JumbleOverlay.Entry;", style)
         self.assertLess(style.index("ShellTurn.Flash is { } flash"), style.index("outline[hover.Piece] = Hovered;"))
         self.assertIn("library.SetTransform(host, motion.Revision, row.Plane, row.Angle, row.Moving, phase)", self.turn)
-        self.assertIn("var phase = t >= 1 ? 1f : (float)MotionTable.Ease(motion.Curve, t);", self.turn)
+        self.assertIn("var phase = motion.Timing.Phase(elapsed, motion.Curve);", self.turn)
 
-    def run_dumps(self, kinds, refused, reduced_from=18, popped=False):
+    def run_dumps(self, kinds, refused, reduced_from=18, popped=False, rebuilt=False):
         motions = []
         for revision, kind in enumerate(kinds, 3):
             motion = {"kind": kind, "revision": revision, "angle": math.pi if kind == "flash" else 1.2566, "moving": 1909,
@@ -433,7 +460,8 @@ class SweepShell(unittest.TestCase):
             dumps.append({"step": step, "do": do, "local_plan": {"framed": framed, "by_selection": step >= 9},
                           "turn": {"cap": framed}, "pick": {"selection": {"slot": 7 * 433 + 5} if step >= 9 else None},
                           "sweep": {"refused": refused, "reduced": step >= reduced_from, "running": None,
-                                    "motions": motions if step == len(dos) - 1 else []}})
+                                    "motions": motions if step == len(dos) - 1 else []},
+                          "rebuilds": 41 + (rebuilt and step >= 13)})
         return dumps
 
     def test_the_sweep_run_passes_and_the_failures_are_named(self):
@@ -453,6 +481,84 @@ class SweepShell(unittest.TestCase):
         self.assertIn("not flash, sweep, static, static", moved[0])
         late = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, reduced_from=3), {}, None)
         self.assertIn("not off then on", late[0])
+        # SF (27 Nov 2026): a twist that rebuilds the chrome frame is named.
+        rebuilt = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, rebuilt=True), {}, None)
+        self.assertEqual(len(rebuilt), 1)
+        self.assertIn("rebuilt across the twists", rebuilt[0])
+
+
+class D01MotionShell(unittest.TestCase):
+    def dumps(self, steps):
+        def twist(revision, duration=0):
+            return {"kind": "sweep" if duration else "static", "row_id": "twist.queued" if duration else "jumble.sweep",
+                    "duration_ms": duration, "revision": revision, "armed_revision": revision - 1,
+                    "first_frame_revision": revision if duration else None, "popped": False,
+                    "ended": "done" if duration else "static"}
+
+        animated = [twist(3, 110), twist(4, 91.333), twist(5, 76.4)]
+        rewind = [twist(6, 110), twist(7, 91.333), twist(8, 76.4)]
+        reduced = [twist(r) for r in (9, 10, 11)]
+        zooms = {8: (1, 1.05, 1.1), 9: (1.05, 1.18, 1.1 ** 2), 10: (1.05, 1.1 ** 2, 1.1 ** 2)}
+        dumps = []
+        for i, do in enumerate(steps):
+            turns = (animated[:0 if i < 4 else 1 if i < 7 else 3] + (rewind if i >= 14 else [])
+                     + reduced[:max(0, i - 15)])
+            start, drawn, target = zooms.get(i, (1, 1, 1))
+            motion = {"queue_length": {4: 1, 5: 3, 6: 5}.get(i, 0),
+                      "queued_events": 0 if i < 4 else {4: 1, 5: 3}.get(i, 5) if i < 11 else 10,
+                      "state_revision": turns[-1]["revision"] if turns else 2,
+                      "state_digest": "turned" if 7 <= i < 11 or i >= 18 else "solved",
+                      "reduced": 15 <= i < 20, "turns": turns,
+                      "zoom": {"row_id": "view.transition", "from": start, "drawn": drawn, "target": target,
+                               "duration_ms": 260 if i in zooms else 0}}
+            angle = 4.25 * .004 if i >= 3 else 0
+            camera = [math.cos(angle), 0, 0, -math.sin(angle), 0, 1, 0, 0, 0, 0, 1, 0, math.sin(angle), 0, 0, math.cos(angle)]
+            dumps.append({"do": do, "camera": camera, "motion": motion})
+        return dumps
+
+    def test_the_motion_script_checks_committed_revisions_and_retargeting(self):
+        run = shell_module("d02_run")
+        self.assertIs(run.EXPECT["motion"], run.expect_motion)
+        self.assertNotIn("motion", run.ON_FIXTURE)
+        script = json.loads(text(SHELL / "d02_scripts" / "motion.json"))
+        self.assertNotIn("state", script)
+        self.assertEqual(script["steps"][3:6], [{"chord": key, "quick": True} for key in ("K", "L", "K")])
+        self.assertEqual(script["steps"][7:9], [{"wheel": 1, "quick": True}] * 2)
+        self.assertEqual(run.expect_motion(self.dumps(run.MOTION_STEPS), {}, None), [])
+        for step, field, value, finding in (
+                (5, "queued_events", 1, "enter the twist queue"),
+                (7, "state_revision", 4, "three new revisions"),
+                (19, "state_digest", "different", "ended at different states"),
+                (16, "queued_events", 11, "queued under reduced motion")):
+            dumps = self.dumps(run.MOTION_STEPS)
+            dumps[step]["motion"][field] = value
+            self.assertTrue(any(finding in p for p in run.expect_motion(dumps, {}, None)))
+        dumps = self.dumps(run.MOTION_STEPS)
+        dumps[7]["motion"]["turns"][1]["first_frame_revision"] = 5
+        self.assertTrue(any("committed revision" in p for p in run.expect_motion(dumps, {}, None)))
+        dumps = self.dumps(run.MOTION_STEPS)
+        dumps[9]["motion"]["zoom"]["from"] = 1.1
+        self.assertTrue(any("second zoom notch" in p for p in run.expect_motion(dumps, {}, None)))
+
+    def test_only_key_release_names_a_slice_twist(self):
+        slice_shell = text(PROJECT / "D02" / "ShellSlice.cs")
+        self.assertRegex(slice_shell, r"else if \(key.Pressed\)\s*\{\s*Model.Press\(cap, ShellTurn.Row is \{ \} row \? row.Angle : null\);"
+                                      r"\s*\}\s*else\s*\{\s*Model.Release\(\);")
+        self.assertNotIn("InputEventMouse", slice_shell)
+        self.assertIn("Model.SetShell(max);", slice_shell)
+        camera = text(PROJECT / "D02" / "ShellCamera.cs")
+        self.assertIn("_pending += motion.Relative;", camera)
+        self.assertIn("Turn(_pending.X * RadiansPerPixel, _pending.Y * RadiansPerPixel);", camera)
+        self.assertNotIn("HostLibrary", camera)
+
+    def test_raw_clip_steps_use_the_view_transition_at_draw_time(self):
+        shell = text(PROJECT / "Shell.cs")
+        motion = text(PROJECT / "D02" / "ShellMotion.cs")
+        self.assertIn("StepRawClip(_localCap, _localRaw)", shell)
+        self.assertIn("MotionRow?.Invoke(MotionUses.ViewTransition)", motion)
+        self.assertIn("clip.Ease.Retarget(h, now, seconds, curve)", motion)
+        self.assertIn("clip.Ease.Step(now, seconds <= 0)", motion)
+        self.assertNotIn("ShellRaw.Model.SetClip", motion)
 
 
 class ChromeOpening(unittest.TestCase):
@@ -487,8 +593,7 @@ class TwoViewsRun(unittest.TestCase):
 
     def check(self, rows):
         run = shell_module("d02_run")
-        temp = fresh_test_folder("d02-two-views-")
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-two-views-")
         events = temp / "events.jsonl"
         events.write_text("".join(json.dumps({"t": "frame", **row}) + "\n" for row in rows), encoding="utf-8")
         return run.check_two_views_events(events)
@@ -632,7 +737,7 @@ class FocusLayersInTheCore(unittest.TestCase):
         self.assertIn("#define SA2_STYLE_HIDE_UNMARKED 4u", header)
         self.assertIn("Picking follows visibility", header)
         styled = text(CORE / "shaders" / "styled.hlsl")
-        self.assertIn("if ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet)) result.position = float4(0, 0, -1, 1);", styled)
+        self.assertIn("if (!statusConflict(style) && ((dimMode == 3 && dimSet) || (dimMode == 4 && !dimSet))) result.position = float4(0, 0, -1, 1);", styled)
         self.assertIn("uint styledIdPs(StyledOut input) : SV_Target {", styled)
         scene = text(CORE / "src" / "scene.cpp")
         self.assertIn("auto* pipeline = input.styled ? g.styled_id_pipeline() : p.id_pso.Get();", scene)
@@ -641,7 +746,7 @@ class FocusLayersInTheCore(unittest.TestCase):
         product = text(CORE / "src" / "product.cpp")
         # B18-03: a turning frame's moving mask lives in the same style words, so its pick checks the version too.
         self.assertIn("const bool bound = record->styled || record->shape.turn != 0.0f;", product)
-        self.assertIn("(bound && copy.style != record->style_version)", product)
+        self.assertIn("(bound && copy.pick_style != record->style_version)", product)
         self.assertIn('suite.check("focus layers warp", [&] { product_focus_layers(options); });', text(CORE / "src" / "gpu_test.cpp"))
         abi = text(ROOT / "rust" / "c600-render" / "src" / "abi.rs")
         self.assertIn("pub const STYLE_HIDE_MARKED: u32 = 3;", abi)
@@ -815,8 +920,7 @@ class HopfRun(unittest.TestCase):
         self.assertIs(run.EXPECT["ring-sheet"].__wrapped__, run.expect_ring_sheet)  # C3/C4 F5
         self.assertIn("ring-sheet", run.ON_FIXTURE)
         self.assertIs(run.DATA_FOR["ring-sheet"], run.ring_sheet_data)
-        temp = fresh_test_folder("d02-ring-sheet-")
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-ring-sheet-")
         folder = run.ring_sheet_data(temp / "run")
         self.assertEqual(folder, temp / "run-data")
         opening = json.loads(text(folder / "opening.json"))
@@ -856,14 +960,13 @@ class HopfRun(unittest.TestCase):
         self.assertIn('"the ring sheet drew a sweep"', text(CORE / "src" / "gpu_test.cpp"))
         turn = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellTurn.cs")
         self.assertIn('if (kind == "sweep" && ShellHopf.Drawn != ShellHopf.Chain)', turn)
-        self.assertIn("if (Cap is int drawn && drawn != ActiveGripCap)", turn)
+        self.assertIn("if (Cap != (int)ActiveGripCap)", turn)
         style = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellStyle.cs")
         self.assertIn("if (slot != 1 && ShellTurn.OutlineOnly)", style)
 
     def test_local_draws_the_default_cap(self):
         run = shell_module("d02_run")
-        temp = fresh_test_folder("d02-hopf-run-")
-        self.addCleanup(shutil.rmtree, temp, True)
+        temp = fixture_folder(self, "d02-hopf-run-")
         events = temp / "events.jsonl"
 
         def check(rows):
@@ -927,7 +1030,8 @@ class OverlaysRun(unittest.TestCase):
         self.assertEqual(waits, [mark for mark, _, _, _ in run.OVERLAY_STEPS])
         tint = text(PROJECT / "D02" / "ShellTint.cs")
         self.assertIn("host.OverlayChanged += Draw;", tint)
-        self.assertIn("ShellStyle.SetFocusViews(global, local, host.FocusMember, JumbleOverlay.BreaksThrough(host.Overlay));", tint)
+        self.assertIn("var overlay = JumbleOverlay.BreaksThrough(host.Overlay);", tint)
+        self.assertIn("piece => (overlay?.Invoke(piece) ?? false) || ShellStatus.Conflict(piece)", tint)
 
     def test_a_good_run_passes_and_a_dimmed_never_hidden_piece_is_named(self):
         run = shell_module("d02_run")

@@ -473,6 +473,8 @@ LEGEND = (("blocked", "blocked"), ("closed", "closed"), ("at_floor", "at floor (
 OFF_LATTICE_BAND = "ν band: undefined (pieces off the lattice)"
 PAIR = re.compile(r"^-?\d+ -?\d+$")
 SIGNED = re.compile(r"^[+\-−]?\d+$")
+# ScriptList.StateGlyph's icons for the pending, ok, failed and stale check states.
+STATE_ICONS = ("task.running", "task.ok", "severity.error", "script.rerun")
 # The rules a J0 problem names, and the researcher's answers name, each with the sentence the packet gives for it.
 RULES = {
     "digest": "the shell binds the state by its digests and names it in every screen",
@@ -853,8 +855,18 @@ def j0_covers(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> li
     return problems
 
 
+def state_glyph(text: str) -> bool:
+    """ADR-D01.25's check-state glyph (ScriptList.StateGlyph) that ends the Repair list's column row: the icon font's
+    private-use character, or the state icon's fallback word when the font is missing."""
+    if len(text) == 1 and 0xE000 <= ord(text) <= 0xF8FF:
+        return True
+    icons = d02_run.load(ROOT / "tools" / "looklab" / "data" / "design" / "icons.json")["icons"]
+    return text in {icons[name]["fallback"] for name in STATE_ICONS}
+
+
 def repair_shown(dump: dict) -> tuple[int | None, list[tuple]]:
-    """Local's open Repair list: its header's count and its rows (#, (x, d), (y, z), ΔN) as the screen lists them."""
+    """Local's open Repair list: its header's count and its rows (#, (x, d), (y, z), ΔN) as the screen lists them,
+    read past the column row's check-state glyph."""
     local = d02_run.texts(dump, "view:Local")
     head = next((i for i, text in enumerate(local) if text.startswith("▾ Repair list · ")), None)
     if head is None:
@@ -863,6 +875,8 @@ def repair_shown(dump: dict) -> tuple[int | None, list[tuple]]:
     i, rows = head + 5, []
     if local[head + 1:head + 5] != ["#", "x d", "y z", "ΔN"]:
         return count, rows
+    if i < len(local) and state_glyph(local[i]):
+        i += 1
     while i + 3 < len(local) and local[i].isdigit() and PAIR.match(local[i + 1]) and PAIR.match(local[i + 2]) \
             and SIGNED.match(local[i + 3]):
         rows.append((int(local[i]), tuple(map(int, local[i + 1].split())), tuple(map(int, local[i + 2].split())),

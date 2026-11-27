@@ -108,17 +108,20 @@ public sealed class ShellChrome
             .Select(p => ThemeFamily.Load(p, design)).ToArray();
         var motions = MotionTable.Parse(File.ReadAllText(Path.Combine(folder, "motion.json")), design);
         var palettes = StickerPalette.Parse(File.ReadAllText(Path.Combine(folder, "palettes.json")));
-        var commandIcons = CommandIcons.Parse(File.ReadAllText(Path.Combine(folder, "command-icons.json")));
+        string iconRows = File.ReadAllText(Path.Combine(folder, "command-icons.json"));
+        var commandIcons = CommandIcons.Parse(ShellJumble.On ? StatusPatterns.AddCommandLabels(iconRows) : iconRows);
         ChromeBody.Commands = commandIcons;
         var look = new Appearance(design, themes);
         // ADR-D02 B18 rest: the sweep and the half-turn read their rows' seconds (none under reduced motion) and curves.
         D02.ShellTurn.MotionRow = id => (motions.Seconds(id, design, look.ReducedMotion), design.Curves[motions[id].Curve]);
+        if (ShellJumble.On && parent is Shell shell) ShellMotion.ApplyRawClip = shell.FollowRawClip;
         if (DisplayServer.IsDarkModeSupported())
         {
             look.FollowSystem(DisplayServer.IsDarkMode());
         }
         look.SetSystemScale(Math.Clamp(Math.Round(DisplayServer.ScreenGetDpi() / 96.0 * 4) / 4, 1, 3));
         var frame = Frame = new ChromeFrame(look.Resolve(), WorkspaceSet.Load(Path.Combine(folder, "workspaces.json"))) { OpenGround = live, LocalDrawn = live && ShellJumble.On };
+        frame.Overlays.ChildEnteredTree += child => { if (child is ChromeOverlay overlay) overlay.Motions = motions; };
         frame.Name = "ShellChrome";
         parent.AddChild(frame);
         // A check's aid: M600_FRAME_PICTURE names a file that gets the window's own picture (the frame without the
@@ -227,6 +230,7 @@ public sealed class ShellChrome
             _ when ShellExplore.Handles(command) => ShellExplore.Unavailable(argument),
             _ when ShellScene.Handles(command) => null,
             _ when preview != null && ShellPreview.Handles(command) => preview.Unavailable(command),
+            _ when ShellStatus.Handles(command) => null,
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             "menu.context.open" when contextMenus != null => null,
             "target.current.set" when pickedTarget != null && argument == null => null,
@@ -275,6 +279,7 @@ public sealed class ShellChrome
                 id => motions.Seconds(id, design, look.ReducedMotion), Execute,
                 TakeKeys, palette, sheet, layouts);
             sample.Look = appearance;
+            sample.Solve.Strip.Motions = motions;
             // ADR-D01.70: the shell's History draws its entries' effect signatures in the sample rail's order.
             history.RailOrder = sample.Solve.LibraryView.RailOrder;
             sample.Solve.Rail.OrderChanged += history.Refresh;
@@ -300,11 +305,26 @@ public sealed class ShellChrome
         ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
             System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } events ? Path.Combine(events, "errors.log") : null);
 
-        void ApplyLook(bool rebuild, bool scene) => frame.ApplyTokens(look.Resolve(), rebuild);
+        void ApplyLook(bool rebuild, bool scene)
+        {
+            if (look.ReducedMotion && !frame.Tokens.ReducedMotion)
+            {
+                (parent as Shell)?.FlushMotion(reduced: true);
+                foreach (var overlay in frame.Overlays.GetChildren().OfType<ChromeOverlay>()) overlay.FinishOpening();
+            }
+            gallery.Motion.Rewards = look.Rewards;
+            frame.ApplyTokens(look.Resolve(), rebuild);
+            if (history.Rewards != look.Rewards)
+            {
+                history.Rewards = look.Rewards;
+                history.Refresh();
+            }
+        }
         appearance.Changed += ApplyLook;
         ShellScene.Load(frame, palettes, () => (look.Family, look.SceneLook),
             name => appearance.Edit(a => a.SetSceneLook(name), true, true));
         appearance.Changed += (rebuild, scene) => ShellScene.Refresh();
+        if (ShellJumble.On) ShellStatus.Load(frame, folder);
         void NextPreset()
         {
             var all = themes.SelectMany(t => ThemeFamily.SceneLooks.Select(l => (t.Id, Look: l))).ToArray();
@@ -333,6 +353,8 @@ public sealed class ShellChrome
         }
         void ExecuteAt(string command, string? argument, Vector2? pointer, UserEvent? asked = null)
         {
+            if (registry.Commands[command].Kind == "commit" || command is "session.resume" or "explore.set" or "operation.phase.append_twist")
+                (parent as Shell)?.FlushMotion();
             if (ShellJumble.On) ShellGrip.CancelGesture();
             if (gated(command, argument) is { } why)
             {
@@ -362,6 +384,7 @@ public sealed class ShellChrome
                     break;
                 case var explore when ShellExplore.Handles(explore): ShellExplore.Execute(frame, argument); break;
                 case var scene when ShellScene.Handles(scene): ShellScene.Execute(frame, command, argument); break;
+                case var status when ShellStatus.Handles(status): ShellStatus.Execute(command, argument); break;
                 case "command.find": palette.Open(); break;
                 case ViewPanes.LocalRow: frame.LocalHide.Toggle(); frame.Say(frame.LocalHide.Hidden ? "Local hidden" : "Local shown"); break;
                 case "keymap.preset.set": UseKeySet(argument); break;
@@ -456,7 +479,11 @@ public sealed class ShellChrome
             else NextDensity();
         };
         gallery.PaletteChosen += ShellScene.ChoosePalette;
-        gallery.MotionChanged += () => appearance.Edit(a => a.ReducedMotion = gallery.Motion.Reduced, true, false);
+        gallery.MotionChanged += () => appearance.Edit(a =>
+        {
+            a.ReducedMotion = gallery.Motion.Reduced;
+            a.Rewards = gallery.Motion.Rewards;
+        }, true, false);
 
         var bar = new CommitBar(new PreviewModel(), () => frame.Tokens) { CommitKeys = keymap.KeysFor("operation.preview.commit", null) };
         bar.Command += (row, argument) => ExecuteAt(row, argument, null, UserEvent.Click("commit bar"));
@@ -534,9 +561,9 @@ public sealed class ShellChrome
             Jumble.PaletteWords = paletteWords;
             // B7: Global's totals follow the bound state, pending while none is bound; B8: so does the cap map.
             var host = Jumble;
-            if (sample == null && parent is Shell shell)
+            if (sample == null && parent is Shell owner)
             {
-                _preview = preview = shell.AttachPreview(frame, host, bar,
+                _preview = preview = owner.AttachPreview(frame, host, bar,
                     () => (motions.Seconds("twist.preview", design, look.ReducedMotion), design.Curves[motions["twist.preview"].Curve]),
                     CommitPreviewLetter, (row, argument) => ExecuteAt(row, argument, null, UserEvent.Click("preview")));
             }

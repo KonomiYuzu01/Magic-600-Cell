@@ -136,6 +136,9 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_pane_flags",
         "m6h_set_sticker_colours",
         "m6h_set_scene_look",
+        "m6h_set_status_style",
+        "m6h_status_drawn",
+        "m6h_status_targets",
         "m6h_grip_report",
         "m6h_grip_set",
         "m6h_preview_bind",
@@ -1015,6 +1018,68 @@ public sealed unsafe class HostLibrary : IDisposable
             EdgeBrightness = (float)look.EdgeBrightness, EdgeWeight = (float)look.EdgeWeight,
         };
         return call(host, &row);
+    }
+
+    public const uint StyleStatus = 3;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct StatusEntry
+    {
+        public uint Shape;
+        public float Spacing, Width, Angle;
+        public float Red, Green, Blue, Alpha;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct StatusStyle
+    {
+        public uint StructSize, Flags;
+        public fixed uint Entries[128]; // eight 32-byte patterns, then eight 32-byte marks
+    }
+
+    public int SetStatusStyle(IntPtr host, StatusPatterns table, TokenSet tokens, bool capture)
+    {
+        var row = new StatusStyle { StructSize = (uint)sizeof(StatusStyle), Flags = capture ? 1u : 0u };
+        var entries = (StatusEntry*)row.Entries;
+        foreach (var entry in table.Patterns)
+        {
+            entries[entry.Code] = ResolveStatusEntry(entry, tokens);
+        }
+        foreach (var entry in table.Marks)
+        {
+            entries[8 + entry.Code] = ResolveStatusEntry(entry, tokens);
+        }
+        return ((delegate* unmanaged[Cdecl]<IntPtr, StatusStyle*, int>)_exports["m6h_set_status_style"])(host, &row);
+    }
+
+    private static StatusEntry ResolveStatusEntry(StatusPatterns.Entry entry, TokenSet tokens)
+    {
+        var colour = tokens.Colour(entry.Colour);
+        return new StatusEntry
+        {
+            Shape = entry.ShapeCode, Spacing = entry.Spacing, Width = entry.Width, Angle = entry.Angle,
+            Red = (float)colour.R, Green = (float)colour.G, Blue = (float)colour.B, Alpha = 1,
+        };
+    }
+
+    public int StatusDrawn(IntPtr host, uint pane, uint[] words)
+    {
+        fixed (uint* p = words)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint*, uint, int>)_exports["m6h_status_drawn"])(
+                host, pane, p, (uint)words.Length);
+        }
+    }
+
+    public int StatusTargets(IntPtr host, ulong revision, uint kind, uint[] targets, byte[] pieces)
+    {
+        if (pieces.Length != CorePlaces.Pieces) return InvalidArgument;
+        fixed (uint* input = targets)
+        fixed (byte* output = pieces)
+        {
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, uint*, uint, byte*, int>)_exports["m6h_status_targets"])(
+                host, revision, kind, input, (uint)targets.Length, output);
+        }
     }
 
     public void Dispose()

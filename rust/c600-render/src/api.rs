@@ -4,7 +4,7 @@
 
 use crate::abi::{
     Sa2CounterValues, Sa2FrameInput, Sa2FrameReport, Sa2Pane, Sa2PaneRow, Sa2PickRow, Sa2PollRow, Sa2PresentedRow,
-    Sa2SceneLook, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, Status, StickerColours,
+    Sa2SceneLook, Sa2StatusStyle, Sa2ViewFocus, Sa2ViewLayout, Sa2ViewShape, Sa2ViewStyle, Status, StickerColours,
 };
 
 /// The pose path arrays of a posed engine state.
@@ -132,6 +132,14 @@ pub trait CoreAbi {
     /// `None` to clear it.
     fn charts_set(&mut self, revision: u64, charts: Option<&[u32]>) -> Result<(), Status> {
         let _ = (revision, charts);
+        Err(Status::UNSUPPORTED)
+    }
+    /// ADR-D01.65's device-free status table.
+    fn status_style_set(&mut self, _style: Option<&Sa2StatusStyle>) -> Result<(), Status> {
+        Err(Status::UNSUPPORTED)
+    }
+    /// The last product frame's per-pane status coverage, when capture was requested.
+    fn status_drawn(&mut self, _pane: u32, _words: &mut [u32]) -> Result<(), Status> {
         Err(Status::UNSUPPORTED)
     }
 }

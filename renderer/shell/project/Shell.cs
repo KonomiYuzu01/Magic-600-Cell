@@ -403,19 +403,27 @@ public partial class Shell : Control
     /// <summary>Routes a key event to the session: a key-down's press goes to the log; a key-up releases it.</summary>
     private void Turn(InputEventKey key, long qpc)
     {
-        if (!_session || _hostLibrary is not { } library || KeyChord.Code(key.PhysicalKeycode) is not { } code)
+        if (!_session || KeyChord.Code(key.PhysicalKeycode) is not { } code)
         {
             return;
         }
+        var input = new Magic600.Chrome.MotionKey(code, KeyChord.Chord(key, code), key.Pressed, key.Echo, qpc);
+        if (!D02.ShellJumble.On || !D02.ShellMotion.TryQueue(input, SendTurn))
+        {
+            SendTurn(input, false);
+        }
+    }
+
+    private void SendTurn(Magic600.Chrome.MotionKey key, bool staticMotion)
+    {
+        if (!_session || _hostLibrary is not { } library) return;
         if (!key.Pressed)
         {
-            library.KeyUp(_host, code);
+            library.KeyUp(_host, key.Code);
             return;
         }
-        var chord = KeyChord.Chord(key, code);
-        // The host uses c600-command's draft US map: twists, execute, and session undo and redo can change the head.
-        if (D02.ShellExplore.State.On && chord is "KeyJ" or "KeyK" or "KeyL" or "Shift+KeyJ" or "Shift+KeyK" or "Shift+KeyL"
-            or "Ctrl+Shift+Enter" or "Ctrl+KeyZ" or "Ctrl+KeyY")
+        var (chord, qpc) = (key.Chord, key.Qpc);
+        if (D02.ShellExplore.State.On && Magic600.Chrome.MotionQueue.ChangesHead(chord))
         {
             if (!key.Echo)
             {
@@ -424,11 +432,13 @@ public partial class Shell : Control
             return;
         }
         // ADR-D02 B18 rest: a twist key's certified row, read at the head it would twist, for its sweep or flash.
+        var arming = EventLog.Now();
         if (D02.ShellJumble.On && !key.Echo)
         {
             D02.ShellGrip.CancelGesture();
             D02.ShellTurn.Arm(library, _host, chord);
         }
+        var armed = EventLog.Now();
         var answer = library.KeyDown(_host, chord, key.Echo, out var result);
         var handled = EventLog.Now();
         if (answer != HostLibrary.Ok)
@@ -440,8 +450,13 @@ public partial class Shell : Control
         {
             _log?.Press(qpc, handled, result.EngineRevision);
             _chrome?.Committed(chord, result.EngineRevision);
-            D02.ShellTurn.Committed(result.EngineRevision);
+            var chromed = EventLog.Now();
+            D02.ShellTurn.Committed(result.EngineRevision, staticMotion);
+            var turned = EventLog.Now();
             D02.ShellStyle.Committed(result.EngineRevision);
+            // SF (27 Nov 2026): the frame thread's steps of a committed key, only while the event log is on.
+            _log?.Steps("key", qpc, ("arm", arming, armed), ("key_down", armed, handled), ("chrome", handled, chromed),
+                        ("turn", chromed, turned), ("style", turned, EventLog.Now()));
         }
         else if (result.Press == HostLibrary.PressRefused)
         {
@@ -833,6 +848,12 @@ public partial class Shell : Control
 
     public override void _Notification(int what)
     {
+        // ADR-D01.55: focus loss or closing settles the motion and releases held keys; then the grip's own handling.
+        if ((what == (int)NotificationWMWindowFocusOut || what == (int)NotificationWMCloseRequest) && D02.ShellJumble.On)
+        {
+            FlushMotion();
+            D02.ShellMotion.Keys.ReleaseHeldKeys();
+        }
         if (!D02.ShellJumble.On || !_session) return;
         if (what == NotificationWMWindowFocusOut) D02.ShellGrip.FocusLost();
         if (what == NotificationWMMouseExit)
@@ -1030,6 +1051,7 @@ public partial class Shell : Control
         if (D02.ShellJumble.On && _session)
         {
             D02.ShellStyle.Apply(library, _host, _adoptedRevision);
+            D02.ShellStatus.Apply(library, _host, _adoptedRevision);
         }
         // ADR-D01.52 and .49/.5: the sticker colours and the scene look, sent again until the host takes them.
         if (D02.ShellJumble.On)
@@ -1047,6 +1069,7 @@ public partial class Shell : Control
             _adoptedRevision = frame.EngineRevision;
             repairPreview?.Follow();
             D02.ShellTurn.Framed(frame.EngineRevision);
+            D02.ShellStatus.Framed(frame);
             // ADR-D02 B17: the clicks and hovers of this step ask the ID pass on the frame just submitted.
             if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))
             {
@@ -1107,7 +1130,10 @@ public partial class Shell : Control
         if (D02.ShellJumble.On && _session && _adoptedRevision != _boundRevision)
         {
             _boundRevision = _adoptedRevision;
-            if (library.StateDigest(_host) == HostLibrary.Ok)
+            var asking = EventLog.Now();
+            var read = library.StateDigest(_host) == HostLibrary.Ok;
+            var digested = EventLog.Now();
+            if (read)
             {
                 D02.ShellJumble.Bind(library.Answer(_host), (long)_adoptedRevision);
             }
@@ -1115,6 +1141,8 @@ public partial class Shell : Control
             {
                 D02.ShellJumble.Unknown((long)_adoptedRevision);
             }
+            // SF (27 Nov 2026): the bind's steps at a newly adopted revision, only while the event log is on.
+            _log?.Steps("bind", asking, ("state_digest", asking, digested), ("bind", digested, EventLog.Now()));
         }
     }
 
@@ -1217,5 +1245,20 @@ public partial class Shell : Control
         _hostLibrary = null;
         _core?.Dispose();
         _core = null;
+    }
+
+    internal void FlushMotion(bool reduced = false)
+    {
+        if (!_session || _hostLibrary is not { } library || (!reduced && D02.ShellMotion.Keys.Count == 0)) return;
+        D02.ShellTurn.CutMotion(library, _host, reduced);
+        D02.ShellMotion.Flush();
+    }
+
+    internal void FollowRawClip()
+    {
+        if (!_localOpen || _localShape is not { } shape || _hostLibrary is not { } library) return;
+        if (D02.ShellMotion.StepRawClip(_localCap, _localRaw) is float h && _localCap is int cell)
+            Require(library, "m6h_set_view_focus", library.SetViewFocus(_host, HostLibrary.Local,
+                HostLibrary.ProjectionStereographic, (uint)cell, h, shape.Spread));
     }
 }
