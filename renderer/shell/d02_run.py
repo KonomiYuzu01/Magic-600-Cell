@@ -1201,6 +1201,32 @@ EXPECT["raw"] = expect_raw
 ON_FIXTURE.add("raw")
 EVENT_CHECKS["raw"] = check_raw_events
 
+RAW_OFF_STEPS = ["start", "wait 3000 ms", "chord Home", "wait 2000 ms", "chord Home", "wait 1500 ms"]
+
+
+def expect_raw_off(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """C3/C4 finding F6's repro (LF1): with Jumble's mode off (the base puzzle, no Jumble mark on Local's border), Home
+    turns Local's raw view on and its caption shows on Local's border as drawn; the second Home turns both off."""
+    if [dump["do"] for dump in dumps] != RAW_OFF_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    caption = "No raw view certifies no holes; N = 0 does."
+    problems = []
+    for step, on in {1: False, 3: True, 5: False}.items():
+        row, marks = dumps[step].get("raw"), dumps[step].get("local_marks")
+        if row is None or marks is None:
+            problems.append(f"step {step}: the dump has no raw row or no Local marks")
+            continue
+        if row["on"] != on:
+            problems.append(f"step {step}: the raw view is {row}, not on {on}")
+        if any("Jumble is on" in mark for mark in marks):
+            problems.append(f"step {step}: Local's border shows the Jumble mark {marks!r}; this run needs Jumble's mode off")
+        if any(caption in mark for mark in marks) != on:
+            problems.append(f"step {step}: Local's border marks are {marks!r}; the caption shows exactly while raw is on")
+    return problems
+
+
+EXPECT["raw-off"] = expect_raw_off
+
 
 # Step C-.40 (ADR-D01.40/.41): Local on the base puzzle (600-cell-Full, Jumble off), with no D02 state. The script
 # names its puzzle; the run uses the build's own base-puzzle session fixture.

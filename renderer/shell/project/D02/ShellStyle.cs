@@ -158,6 +158,10 @@ public static class ShellStyle
     /// </summary>
     public static void Committed(ulong revision) => _pending = Math.Max(_pending, revision);
 
+    /// <summary>LF1: the revision a committed press handed out that a frame has not shown yet, else 0; the slice and
+    /// status channels are sent for it too.</summary>
+    public static ulong PendingAfter(ulong revision) => _pending > revision ? _pending : 0;
+
     // F1: one channel for the adopted revision and, while one is handed out, for the pending revision (held by the
     // host). A stale adopted revision (the host adopted after the last frame) is not an error when the pending send
     // reaches it; any other refusal is answered, so the style is sent again at the next step.

@@ -3005,7 +3005,9 @@ pub unsafe extern "C" fn m6h_status_drawn(handle: *mut ShellHost, pane: u32, wor
     }
 }
 
-/// ADR-D01.65: read the piece mask of the given protection targets on the adopted revision. Kind 1 names pieces'
+/// ADR-D01.65: read the piece mask of the given protection targets on the session's head: the adopted revision, or
+/// (LF1) the revision a committed press handed out before its adoption; any other revision answers
+/// [`M6H_E_UNAVAILABLE`]. Kind 1 names pieces'
 /// orbits (the exact model's `orbit_id`), kind 2 names occupied lattice slots, and kind 4 names cells (the verified
 /// home slot-to-piece map for their 433 slots). Identity, kind 3, already has its piece ID from the pick.
 ///
@@ -3032,14 +3034,21 @@ pub unsafe extern "C" fn m6h_status_targets(
             if targets.is_null() || out.is_null() || count == 0 || count as usize > limit {
                 return Err((M6H_E_INVALID_ARGUMENT, "invalid protection target list".to_owned()));
             }
-            if revision != shell.revision || revision != shell.assigned {
-                return Err((M6H_E_UNAVAILABLE, "the requested revision is not the adopted head".to_owned()));
+            // LF1: the head a committed press handed out is read before its adoption too, so the shell can name the
+            // status channel for that revision and the host hold it ([`m6h_set_piece_style`]). No new ABI number: the
+            // signature is unchanged and a call that names the adopted head answers as before.
+            if revision != shell.assigned {
+                return Err((M6H_E_UNAVAILABLE, "the requested revision is not the head".to_owned()));
             }
             let targets = std::slice::from_raw_parts(targets, count as usize);
             if targets.iter().any(|&t| t as usize >= limit) {
                 return Err((M6H_E_INVALID_ARGUMENT, "a protection target is out of range".to_owned()));
             }
             let found = shell.status_targets(kind, targets)?;
+            // The key batch the read settled may have handed out a newer head: then the mask is not this revision's.
+            if revision != shell.assigned {
+                return Err((M6H_E_UNAVAILABLE, "the head moved past the requested revision".to_owned()));
+            }
             std::slice::from_raw_parts_mut(out, PIECES).copy_from_slice(&found);
             Ok(())
         })

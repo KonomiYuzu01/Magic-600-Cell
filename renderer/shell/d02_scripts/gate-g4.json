@@ -3,7 +3,7 @@
   "name": "gate-g4",
   "state": "deep-2",
   "resolution": "2000x1200",
-  "note": "A gate row of renderer/shell/gate_d02.py: the steps before the repeat block set the views; the block runs for warm-up plus window seconds as quiet steps (d02_run.expand_repeat), and tools/perf/d02/gate_row.py times the last window seconds. No step follows the block, so the window holds only the row's views. B24 G4: Global's projection chain, Local's cut slice of the named cap (B20), twists of the named cap. Cap 2 is named because its twelve menu items are admissible at deep-2 and wj-ia-end (the samples' cap-2 release checks); K, the router's item 2, commits and sweeps over jumble.sweep's time, and repeats cycle through the twist's powers. A refused press sweeps nothing, which gate_d02 reports as an invalid run. The sweeps turn the grip's cap: grip.select names cap 2 (its frame 0) before the repeat block, so the router's twist keys turn cap 2, not the default grip cap 0 (blocked at deep-2, wj-ia-end and wj-ia-300); gate_d02.py moves the selection and the naming to an admissible cap of a run's state from its sample rim.json when cap 2 is not one.",
+  "note": "A gate row of renderer/shell/gate_d02.py: the steps before the repeat block set the views; the block runs for warm-up plus window seconds as quiet steps (d02_run.expand_repeat), and tools/perf/d02/gate_row.py times the last window seconds. No step follows the block, so the window holds only the row's views. B24 G4: Global's projection chain, Local's cut slice of the named cap (B20), twists of the named cap. Cap 2 is named because its twelve menu items are admissible at deep-2 and wj-ia-end (the samples' cap-2 release checks); K, the router's item 2, commits and sweeps over jumble.sweep's time, and repeats cycle through the twist's powers. A refused press sweeps nothing, which gate_d02 reports as an invalid run. The sweeps turn the grip's cap: grip.select names cap 2 (its frame 0) before the repeat block, so the router's twist keys turn cap 2, not the default grip cap 0 (blocked at deep-2, wj-ia-end and wj-ia-300); gate_d02.py moves the selection and the naming to an admissible cap of a run's state from its sample rim.json when cap 2 is not one. Local's slice at its default shell, set before the repeat block (LF1).",
   "steps": [
     {
       "wait_ms": 4000
@@ -22,6 +22,10 @@
     },
     {
       "chord": "Enter"
+    },
+    {
+      "command": "jumble.slice.shell",
+      "argument": "default"
     },
     {
       "wait_ms": 1200

@@ -1249,6 +1249,10 @@ relative path is from the repository root.
     lies over Global's opening as the shell lays it out (a click step's fractions are of that opening; the default
     region is all of it). The record holds the opening the dumps report (`frame.global_opening`) and checks that every
     click landed in it. Not yet run.
+  - LF1 (27 November 2026): G4 and G6 set the Local mode their rows name, after naming the cap and before the repeat
+    block: G4 `jumble.slice.shell default` (Local's slice), G6 `jumble.slice.shell 3.14` (the shell at its limit, so
+    Local draws its whole chain and carries the sweeps). `ROWS` holds the argument as `local`;
+    `tests/test_gate_row.py` checks both scripts, also after the sweep cap moves. No dry run.
 
 ### B25. Word flows and signatures
 - **Goal:** the word line, counters, the folded tree, signatures.
@@ -1716,11 +1720,22 @@ Each checkpoint is one read of the named diff range against the questions below,
     revision and, after a committed press, for the pending one. Left: the slice channel is still sent only for the
     adopted revision (its row is read per adopted revision), and presses committed outside `m6h_key_down` do not
     name a pending revision.
+    - LF1 (27 November 2026), the slice and status channels: both are now also sent for the pending revision.
+      `ShellTurn.NotePending` reads item 1's row at the head a committed press handed out (`Note` reuses that read at
+      the adoption, so a twist still reads its row once); `ShellSlice` sends its inside set and `ShellStatus` its bytes
+      for that revision, and the host holds them. `m6h_status_targets` also reads the handed-out head (ABI 15, no new
+      number: the signature is unchanged). Host test `style_held`'s second case checks the core's slice and status
+      against its adopted revision at every frame of a twist.
   - F2 (major as a checkpoint item, C3.9), confirmed: host test `a_pick_names_the_view_it_hit` failed first (the fake
     core answered the frame's first pane for a pick in Local); the fake now picks per pane, as the core's `pick_pane`
     does. `ShellPick` keeps the clicked view and drops a reply that `ViewPanes.Takes` refuses (the dump's
     `pick.dropped`); the `pick` run clicks twice in Local (`"in": "local"`) and checks each selection's view.
   - F3 (minor): not done in this step (budget); the four-state console replay is still owed.
+    - LF1 (27 November 2026): no fault. `D02FourStateSessionAgainstRecords` replays wj-ia-300, wj-ia-end, deep-1 and
+      deep-2 with one memory (commits, undos back, redos, a reopen): the first state equals its class record, each
+      later state keeps every remembered class unless a touching domain kept it first, the colourings are proper, a
+      state seen again draws as before, and the memory holds each id's first class and never the overflow. `Assign`
+      is unchanged; the test is kept.
 
 **C4, after B24.**
 - Fable checks:
@@ -1742,6 +1757,9 @@ Each checkpoint is one read of the named diff range against the questions below,
   - F6 (minor): by reading, not reproduced in a run (no script turns Jumble's mode off): `JumbleHost.Marks` returned
     before Local's raw caption while Jumble's mode was off. The caption is now added whenever Local draws the raw
     view, and `raw` reads it from Local's drawn border (the dump's `local_marks`), not from the model's constant.
+    - LF1 (27 November 2026), reproduced in a run: no fault. The new script `raw-off` (the base puzzle, Jumble's mode
+      off, no state) turns the raw view on and off with Home; `d02_run.py`'s check finds the caption on Local's
+      drawn border exactly while the raw view is on, and no Jumble mark. `d02_run.py --script raw-off` passed.
 
 **C5, after B29.**
 - Fable checks:

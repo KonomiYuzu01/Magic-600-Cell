@@ -46,9 +46,53 @@ public static class ShellTurn
         {
             return;
         }
+        // LF1: the row read for this revision before its adoption is the same row; a twist reads its row once.
+        if (_pendingRead is { } early && early.Cap == cap && PendingRevision == revision)
+        {
+            (Cap, Row, RowRevision, Code, _read) = (cap, PendingRow, revision, HostLibrary.Ok, (cap, revision));
+            return;
+        }
         Code = library.TwistTransform(host, (uint)cap, 1, out var row, out var at);
         (Cap, Row, RowRevision, _read) = (cap, row, at, (cap, revision));
     }
+
+    // ---- LF1: the pending revision's inside layer (checkpoint C3/C4's F1 for the slice channel). ----
+
+    private static (int Cap, ulong Pending)? _pendingRead;
+
+    /// <summary>LF1: the row of item 1's twist at the cap Local draws, read at the head a committed press handed out
+    /// (null when the twist is not admissible there).</summary>
+    public static HostLibrary.TwistRow? PendingRow { get; private set; }
+
+    /// <summary>LF1: the engine revision <see cref="PendingRow"/> was read at, or 0 with none read.</summary>
+    public static ulong PendingRevision { get; private set; }
+
+    /// <summary>
+    /// LF1: after a committed press (<paramref name="pending"/> handed out, not adopted yet), reads the row at the
+    /// session's head once per cap and pending revision, so the slice channel is sent for that revision before its
+    /// adoption and the host holds it as it holds the outline and fill. <see cref="Note"/> reuses the read once the
+    /// revision is adopted. A refusal leaves nothing pending: the adopted-only send stays.
+    /// </summary>
+    public static void NotePending(HostLibrary library, IntPtr host, ulong pending)
+    {
+        if (pending == 0 || ShellLocal.Plan.Framed is not int cap)
+        {
+            (_pendingRead, PendingRow, PendingRevision) = (null, null, 0);
+            return;
+        }
+        if (_pendingRead is { } read && read.Cap == cap && read.Pending == pending)
+        {
+            return;
+        }
+        var code = library.TwistTransform(host, (uint)cap, 1, out var row, out var at);
+        (PendingRow, PendingRevision, _pendingRead) = code == HostLibrary.Ok ? (row, at, (cap, pending)) : (null, 0UL, (cap, pending));
+    }
+
+    /// <summary>LF1: the inside layer of <see cref="PendingRow"/> for its revision (cleared there when the twist is not
+    /// admissible), which the host holds until that revision's adoption; <see cref="HostLibrary.Ok"/> with none read.</summary>
+    public static int SendPendingInside(HostLibrary library, IntPtr host) => PendingRevision == 0
+        ? HostLibrary.Ok
+        : library.SetPieceStyle(host, PendingRevision, HostLibrary.StyleSlice, InsideFor(PendingRow, PendingRevision), false);
 
     /// <summary>
     /// B20: the cut slice's inside layer, the slice channel of the piece style: the row's moving set (at an admissible

@@ -18,6 +18,8 @@ namespace Magic600.Shell.D02;
 public static class ShellSlice
 {
     private static (int Cap, ulong Revision, bool Row)? _inside;
+    // LF1: the cap and pending revision whose inside layer the host holds.
+    private static (int Cap, ulong Revision, bool Row)? _early;
     private static (int Cap, ulong Revision)? _ghost;
     private static int _insideCount;
     private static int _code = HostLibrary.Ok;
@@ -121,6 +123,15 @@ public static class ShellSlice
                 (_insideCount, _inside) = (count, inside);
                 Restyle = true;
             }
+        }
+        // LF1: after a committed press, the inside layer for the revision handed out too, held by the host for that
+        // revision's adoption, so its first frame draws the new inside set, never the old one on the new poses.
+        ShellTurn.NotePending(library, host, ShellStyle.PendingAfter(revision));
+        (int, ulong, bool)? early = ShellTurn.Cap is int at && ShellTurn.PendingRevision != 0
+            ? (at, ShellTurn.PendingRevision, ShellTurn.PendingRow is not null) : null;
+        if (early is not null && early != _early && ShellTurn.SendPendingInside(library, host) == HostLibrary.Ok)
+        {
+            _early = early;
         }
         (int, ulong)? ghost = Model.Previewing is { } held && ShellTurn.Cap == held.Cap && ShellTurn.Row is not null
             ? (held.Cap, revision) : null;

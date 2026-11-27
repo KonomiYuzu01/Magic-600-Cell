@@ -188,6 +188,56 @@ internal static partial class Program
         Check(again.Assign(g300, s300.Domains).SequenceEqual(first) && again.Assign(gEnd, sEnd.Domains).SequenceEqual(later), "a sample state draws otherwise when seen again");
     }
 
+    // C3/C4 finding F3 (LF1): the four-state session of the samples, replayed with one memory as the shell does at each
+    // newly shown revision: commits through wj-ia-300, wj-ia-end, deep-1 and deep-2, undos back, redos, and a reopen.
+    // The first state, with an empty memory, is its class record; every later one keeps each remembered class unless
+    // a touching domain, in index order, kept it first (then the domain is moved), and colours the rest properly; a
+    // state seen again draws as it did; the memory holds each id's first class and never the overflow.
+    private static void D02FourStateSessionAgainstRecords()
+    {
+        string[] session = { "wj-ia-300", "wj-ia-end", "deep-1", "deep-2" };
+        var memory = new ContactClasses();
+        var firstClass = new Dictionary<string, int>(StringComparer.Ordinal);
+        var drawn = new Dictionary<string, int[]>();
+        foreach (string state in session)
+        {
+            var (style, contact) = TintAt(state);
+            var before = memory.Memory.ToDictionary(e => e.Key, e => e.Value, StringComparer.Ordinal);
+            int[] classes = memory.Assign(contact, style.Domains);
+            ProperColouring(contact, classes, state + " in the session");
+            if (before.Count == 0)
+                Check(classes.SequenceEqual(contact.SampleClasses), state + ": the session's first state is not its class record");
+            var moved = memory.Moved.ToHashSet();
+            for (int d = 0; d < classes.Length; d++)
+            {
+                if (d == contact.Lattice || !before.TryGetValue(style.Domains[d], out int kept)) continue;
+                bool touched = contact.Neighbours(d).Any(x => x != contact.Lattice && x < classes.Length && classes[x] == kept);
+                if (moved.Contains(d))
+                    Check(touched && classes[d] != kept, state + ": domain " + d + " moved from class " + kept + " with no touching domain keeping it");
+                else
+                    Equal(classes[d], kept, state + ": domain " + d + "'s remembered class");
+            }
+            Check(moved.All(d => before.ContainsKey(style.Domains[d])), state + ": a domain with no remembered class was moved");
+            for (int d = 0; d < classes.Length; d++)
+                if (classes[d] is >= 1 and <= ContactClasses.Count) firstClass.TryAdd(style.Domains[d], classes[d]);
+            Check(memory.Memory.Count == firstClass.Count && firstClass.All(e => memory.Memory.TryGetValue(e.Key, out int c) && c == e.Value),
+                state + ": the memory is not each id's first class");
+            drawn[state] = classes;
+        }
+        foreach (string state in session.Reverse().Concat(session))
+        {
+            var (style, contact) = TintAt(state);
+            Check(memory.Assign(contact, style.Domains).SequenceEqual(drawn[state]), state + ": an undo or a redo draws it otherwise");
+        }
+        ContactClasses reopened = ContactClasses.Load(memory.Save());
+        foreach (string state in session)
+        {
+            var (style, contact) = TintAt(state);
+            Check(reopened.Assign(contact, style.Domains).SequenceEqual(drawn[state]), state + ": a reopen draws it otherwise");
+        }
+        Check(!memory.Memory.Values.Contains(ContactClasses.Overflow), "the memory holds the overflow state");
+    }
+
     // Past six classes a domain takes the overflow state, which never stands for a class: no two touching domains
     // share a class, and the legend states the overflow's count.
     private static void D02OverflowNeverReusesAcrossContact()
