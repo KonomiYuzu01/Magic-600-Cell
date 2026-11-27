@@ -94,6 +94,12 @@ float4 styledPs(StyledOut input) : SV_Target {
         colour.rgb = lerp(colour.rgb, ghost.rgb, ghost.a);
     bool dimSet = (fill & 0x80) != 0;
     if ((dimMode == 1 && dimSet) || (dimMode == 2 && !dimSet)) colour.rgb *= 1 - dimAmount;
+    // ADR-D01.25: the hatch repeats about every 6 pixels across the diagonal; a regular band keeps its own colour.
+    if ((tintMode & 2) != 0 && (outline & 0x10u) != 0 && palette[0].a > 0) {
+        bool hatch = frac((input.position.x + input.position.y) / 8.0) < 0.5;
+        if (edge < outlineWidth ? (outline & 15) == 0 : hatch)
+            colour.rgb = lerp(colour.rgb, palette[0].rgb, palette[0].a);
+    }
     if (matrixOn != 0)
         colour.rgb = float3(dot(matrixRows[0].xyz, colour.rgb), dot(matrixRows[1].xyz, colour.rgb), dot(matrixRows[2].xyz, colour.rgb));
     return colour;

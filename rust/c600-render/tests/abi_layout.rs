@@ -315,6 +315,7 @@ fn every_constant_has_the_header_value() {
         ("STYLE_CHANNEL_OUTLINE".into(), i64::from(STYLE_CHANNEL_OUTLINE)),
         ("STYLE_INDEX".into(), i64::from(STYLE_INDEX)),
         ("STYLE_DIM".into(), i64::from(STYLE_DIM)),
+        ("STYLE_ERROR".into(), i64::from(STYLE_ERROR)),
         ("STYLE_SLOTS".into(), i64::from(STYLE_SLOTS)),
         ("STYLE_PALETTE".into(), i64::from(STYLE_PALETTE)),
         ("STYLE_TINT_FILL".into(), i64::from(STYLE_TINT_FILL)),

@@ -2438,6 +2438,74 @@ void product_colours(const Options& options) {
     harness.finish(options.debug);
 }
 
+void run_error(Suite& suite, const Options& options) {
+    suite.check("error overlay warp", [&] {
+        using namespace panes_check;
+        Harness harness(options, SA2_QUEUE_SAME, SA2_BARRIERS_LEGACY, false);
+        constexpr uint32_t side = SA2_MIN_TEXTURE_PX;
+        load(harness, side, side);
+        auto* ctx = harness.ctx;
+        const auto set = pickable_set(harness, 1, 1);
+        const auto pieces = sa2::scene_slot_pieces();
+        const auto q = double_rotation(0, 3, 0.35, 1, 2, 0.2);
+        PoseFrames frames{harness};
+        const auto draw = [&] { return frames.draw(1, 1, set, q); };
+        const auto base = draw();
+        const auto base_frame = frames.frame;
+        const auto instance = [&](uint64_t frame, size_t i) {
+            const auto row = pick(harness, frame, uint32_t(i % side), uint32_t(i / side));
+            expect(row.state == SA2_PICK_READY && row.instance <= SA2_SLOTS, "the error overlay pick did not answer");
+            return row.instance;
+        };
+        // SV_Position is at the pixel centre: (x + 0.5) + (y + 0.5).
+        const auto hatch = [](size_t i) { return ((i % side + i / side + 1) % 8) < 4; };
+        std::vector<uint8_t> outline(SA2_PIECES, 0);
+        std::array<size_t, 2> sample{base.size(), base.size()};
+        size_t named = 0;
+        for (size_t i = 0; i < base.size() && named < sample.size(); ++i) {
+            const size_t phase = hatch(i);
+            if (base[i] == base[0] || base[i] == 0xffffffff || sample[phase] != base.size()) continue;
+            const auto id = instance(base_frame, i);
+            if (id == 0 || outline[pieces[id - 1]] != 0) continue;
+            outline[pieces[id - 1]] = SA2_STYLE_ERROR;
+            sample[phase] = i;
+            ++named;
+        }
+        expect(named == sample.size(), "the fixture needs distinct visible pieces on both hatch phases");
+
+        sa2_view_style style{};
+        style.struct_size = sizeof(style);
+        style.tint_mode = SA2_STYLE_TINT_OUTLINE; // zero band width isolates the hatch
+        style.matrix[0] = style.matrix[4] = style.matrix[8] = 1;
+        style.palette[0] = style.palette[1] = style.palette[2] = style.palette[3] = 1;
+        api(ctx, sa2_view_style_set(ctx, 1, &style));
+        expect(draw() == base, "entry 0 changed the frame with no error bit");
+        style.palette[3] = 0;
+        api(ctx, sa2_view_style_set(ctx, 1, &style));
+        api(ctx, sa2_style_set(ctx, 1, outline.data(), SA2_STYLE_CHANNEL_OUTLINE));
+        expect(draw() == base, "an error bit with entry 0's alpha zero changed the frame");
+        style.palette[3] = 1;
+        api(ctx, sa2_view_style_set(ctx, 1, &style));
+        const auto painted = draw();
+        const auto painted_frame = frames.frame;
+        expect(painted[sample[0]] == base[sample[0]] && painted[sample[1]] == 0xffffffff,
+            "the named pieces did not have both hatch-on and hatch-off pixels");
+        size_t changed = 0;
+        for (size_t i = 0; i < base.size(); ++i) {
+            if (painted[i] == base[i]) continue;
+            ++changed;
+            const auto id = instance(painted_frame, i);
+            expect(id != 0 && outline[pieces[id - 1]] != 0, "the hatch changed a pixel outside its named pieces");
+            expect(id == instance(base_frame, i), "the hatch changed a pixel's ID");
+            expect(hatch(i), "the hatch painted a pixel in the gap between stripes");
+        }
+        std::cout << "error overlay: " << changed << " changed pixels on " << named << " named pieces" << std::endl;
+        api(ctx, sa2_drain(ctx, harness.wait));
+        api(ctx, sa2_scene_unload(ctx));
+        harness.finish(options.debug);
+    });
+}
+
 void run_colours(Suite& suite, const Options& options) {
     expect(options.mode == "warp", "the scene colours check runs on WARP only");
     suite.check("scene colours warp", [&] { product_colours(options); });

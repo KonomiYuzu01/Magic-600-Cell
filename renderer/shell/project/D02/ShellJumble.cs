@@ -1071,6 +1071,7 @@ internal sealed partial class D02Driver : Node
             }
             // B15: the tint channel as the core was sent it.
             ShellTint.Dump(json, _frame);
+            ShellError.Dump(json);
             // B30: the tuning panel: whether the right dock shows it, the compare, the live tuning, the frame's window
             // colour, and the head's state digest (a knob must leave it as it was).
             if (ShellJumble.TuningHost is { } tuning && _frame != null && GodotObject.IsInstanceValid(_frame))

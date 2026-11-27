@@ -1097,7 +1097,7 @@ SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_vi
  * to that revision as its pose arrays are. A revision other than the adopted one is refused (SA2_E_INVALID_ARGUMENT),
  * and adopting a newer revision drops both channels. A NULL piece_style clears the channel. A fill byte holds a
  * palette entry in SA2_STYLE_INDEX (0: the piece keeps its label colour) and may set SA2_STYLE_DIM; an outline byte
- * holds a palette entry only (0: no outline). Any other bit is refused and changes nothing.
+ * holds a palette entry (0: no regular outline). The flags below are channel-specific; any other bit is refused.
  *
  * sa2_view_style_set sets a style slot (1 to SA2_STYLE_SLOTS). A product frame drawn by sa2_frame_submit uses slot 1;
  * a composite frame's pane names its slot. A NULL style clears the slot. tint_mode says which channels draw;
@@ -1121,11 +1121,17 @@ SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_vi
  * frame or pane drew with, and a piece that slot hides or dims (dim_amount > 0) answers no instance; a tint, an
  * outline or a matrix leaves the answer as it was. A pick on a styled frame whose engine copy has since taken another
  * piece style answers SA2_PICK_STALE_ENGINE. A frame drawn without a style picks exactly as before.
+ *
+ * ADR-D01.25 (added to ABI 10 before any release): an outline byte may set SA2_STYLE_ERROR. A slot drawing outlines
+ * mixes palette entry 0 by its alpha on a screen-space diagonal hatch, and on the outline band where the byte's
+ * palette index is 0. The regular outline band keeps its colour. This overlay follows the dim and precedes the
+ * output matrix, respects visibility and leaves ID values unchanged. Zero alpha disables it.
  */
 #define SA2_STYLE_CHANNEL_FILL 0u
 #define SA2_STYLE_CHANNEL_OUTLINE 1u
 #define SA2_STYLE_INDEX 0x0Fu /* a byte's palette entry */
 #define SA2_STYLE_DIM 0x80u /* fill bytes only: the piece belongs to the dim set */
+#define SA2_STYLE_ERROR 0x10u /* outline bytes only: the ADR-D01.25 error overlay */
 #define SA2_STYLE_SLOTS 4u
 #define SA2_STYLE_PALETTE 16u
 #define SA2_STYLE_TINT_FILL 1u
@@ -1161,7 +1167,7 @@ typedef struct sa2_view_style {
     uint32_t dim_mode; /* SA2_STYLE_DIM_* or SA2_STYLE_HIDE_* */
     float dim_amount; /* 0 <= dim_amount <= 1 */
     float outline_width; /* 0 <= outline_width <= SA2_STYLE_OUTLINE_MAX */
-    float palette[64]; /* SA2_STYLE_PALETTE RGBA entries, each channel 0..1; entry 0 is never drawn */
+    float palette[64]; /* SA2_STYLE_PALETTE RGBA entries, each channel 0..1; entry 0 is reserved for SA2_STYLE_ERROR */
     float matrix[9]; /* row-major 3x3 output colour matrix; |entry| <= SA2_STYLE_MATRIX_MAX */
     uint32_t slice_mode; /* ADR-D02 B20: SA2_SLICE_* (0: no slice) */
     float slice_shrink; /* ADR-D02 B20: the inside layer's sticker shrink factor; 0 < slice_shrink <= 1 with a slice */

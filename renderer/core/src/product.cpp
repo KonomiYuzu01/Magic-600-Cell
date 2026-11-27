@@ -300,7 +300,7 @@ void validate_piece_style(const uint8_t* bytes, uint32_t channel) {
     argument(channel <= SA2_STYLE_CHANNEL_SLICE, "channel must be SA2_STYLE_CHANNEL_FILL, _OUTLINE or _SLICE");
     if (!bytes) return;
     const uint8_t allowed = uint8_t(channel == SA2_STYLE_CHANNEL_FILL ? (SA2_STYLE_INDEX | SA2_STYLE_DIM)
-        : channel == SA2_STYLE_CHANNEL_SLICE ? 1u : SA2_STYLE_INDEX); // ADR-D02 B20: a slice byte is 0 or 1
+        : channel == SA2_STYLE_CHANNEL_SLICE ? 1u : (SA2_STYLE_INDEX | SA2_STYLE_ERROR)); // B20: a slice byte is 0 or 1
     argument(std::all_of(bytes, bytes + SA2_PIECES, [&](uint8_t b) { return (b & ~allowed) == 0; }),
         "a piece style byte sets a bit its channel does not have");
 }
@@ -365,17 +365,21 @@ void Product::set_style(uint64_t revision, const uint8_t* bytes, uint32_t channe
     if (!bytes && !style_) return;
     if (!style_) style_ = PieceStyle{revision, 0, std::vector<uint32_t>(SA2_PIECES, 0u), {}, false};
     const uint32_t shift = channel == SA2_STYLE_CHANNEL_FILL ? 0 : channel == SA2_STYLE_CHANNEL_OUTLINE ? 8 : 17; // B20: bit 17
-    bool any = false, dim = false;
+    bool any = false, dim = false, error = false;
     for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
         const uint32_t value = bytes ? bytes[piece] : 0u;
         auto& packed = style_->packed[piece];
         packed = (packed & ~(0xFFu << shift)) | (value << shift);
         any = any || (value & SA2_STYLE_INDEX) != 0;
         dim = dim || (value & SA2_STYLE_DIM) != 0;
+        error = error || (value & SA2_STYLE_ERROR) != 0;
     }
     style_->any[channel] = any;
     if (channel == SA2_STYLE_CHANNEL_FILL) style_->dim = dim;
-    if (!style_->any[0] && !style_->any[1] && !style_->any[2] && !style_->dim && !style_->moving) { style_.reset(); return; }
+    if (channel == SA2_STYLE_CHANNEL_OUTLINE) style_->error = error;
+    if (!style_->any[0] && !style_->any[1] && !style_->any[2] && !style_->dim && !style_->moving && !style_->error) {
+        style_.reset(); return;
+    }
     style_->version = ++style_version_;
 }
 // ADR-D02 B18 (ABI 10): device-free, as the piece style. The moving bit shares the style's word per piece (bit 16), so
@@ -419,7 +423,9 @@ void Product::set_transform(uint64_t revision, const float* u, const float* v, f
     } else {
         transform_.reset();
     }
-    if (!style_->any[0] && !style_->any[1] && !style_->any[2] && !style_->dim && !style_->moving) { style_.reset(); return; }
+    if (!style_->any[0] && !style_->any[1] && !style_->any[2] && !style_->dim && !style_->moving && !style_->error) {
+        style_.reset(); return;
+    }
     if (changed || style_->version == 0) style_->version = ++style_version_;
 }
 void Product::turn(ViewShape& shape) const {
@@ -436,11 +442,12 @@ bool Product::styled(uint32_t slot, ViewStyle& out) const {
     const auto& view = *view_styles_[slot - 1];
     const bool fill = (view.tint_mode & SA2_STYLE_TINT_FILL) && style_ && style_->any[0];
     const bool outline = (view.tint_mode & SA2_STYLE_TINT_OUTLINE) && style_ && style_->any[1] && view.outline_width > 0;
+    const bool error = (view.tint_mode & SA2_STYLE_TINT_OUTLINE) && style_ && style_->error && view.palette[3] > 0;
     const bool dim = view.dim_amount > 0
         && ((view.dim_mode == SA2_STYLE_DIM_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_DIM_UNMARKED);
     // ADR-D02 B17 (ABI 10): a hide that applies.
     const bool hide = (view.dim_mode == SA2_STYLE_HIDE_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_HIDE_UNMARKED;
-    if (!fill && !outline && !dim && !hide && !view.matrix_on && view.slice_mode == SA2_SLICE_OFF) return false; // B20: a slice
+    if (!fill && !outline && !error && !dim && !hide && !view.matrix_on && view.slice_mode == SA2_SLICE_OFF) return false;
     out = view;
     return true;
 }

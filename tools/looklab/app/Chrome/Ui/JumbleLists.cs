@@ -28,9 +28,12 @@ public sealed partial class TwistCheckList : VBoxContainer
                 _ => new Control(),
             };
             row.TooltipText = entry is CheckRow ? "session release " + entry.Release : "not checked: superseded before its check completed";
+            if (entry is CheckRow && row is HBoxContainer check) check.AddChild(ScriptList.StateGlyph(t, DiagnosticState.Ok));
             AddChild(row);
             i++;
         }
+        if (checks.Pending is long release)
+            AddChild(ErrorOverlays.WithState(ChromeWidgets.Text($"Release {release}", "MicroLabel"), t, DiagnosticState.Pending));
     }
 
     private static HBoxContainer Line(IReadOnlyList<string> cells, string variation, Color colour, string name)
@@ -76,6 +79,7 @@ public sealed partial class CapCoversList : VBoxContainer
         Label domain = ChromeWidgets.Text(covers.DomainLine(), "MicroLabel"); domain.Name = "CoversDomain";
         domain.AddThemeColorOverride("font_color", t.C("text.dim")); domain.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         AddChild(domain);
+        ErrorOverlays.MarkLine(domain, t, DiagnosticState.Ok);
         AddChild(Ids("CoversCoveredBy", covers.CoveredByLine(), t));
         AddChild(Ids("CoversCovers", covers.CoversLine(), t));
         AddChild(Ids("CoversUndefined", covers.UndefinedLine(), t));
@@ -172,17 +176,21 @@ public sealed partial class RepairListControl : VBoxContainer, IOwnKeys
         if (list.Error is string error)
         {
             AddChild(Line(error, "state.invalid", "RepairError"));
+            ErrorOverlays.MarkLine(GetNode<Label>("RepairError"), t, list.CheckState);
             return;
         }
         if (list.CutOffLine() is string cut) AddChild(Line(cut, "text.dim", "RepairCutOff"));
+        if (GetNodeOrNull<Label>("RepairCutOff") is { } cutOff) ErrorOverlays.MarkLine(cutOff, t, list.CheckState);
         if (list.EmptyLine() is string empty)
         {
             AddChild(Line(empty, "text", "RepairEmpty"));
+            ErrorOverlays.MarkLine(GetNode<Label>("RepairEmpty"), t, list.CheckState);
             AddChild(Line(list.CoverageLine() ?? "", "text.dim", "RepairCoverage"));
         }
         if (list.Rows.Count > 0)
         {
             AddChild(Row(RepairListModel.Columns, "MicroLabel", t.C("text.dim"), "RepairColumns"));
+            GetNode<HBoxContainer>("RepairColumns").AddChild(ScriptList.StateGlyph(t, list.CheckState));
             foreach (RepairRow row in list.Rows) rows.AddChild(Row(RepairListModel.Cells(row), "ReadoutLabel", t.C("text"), "RepairRow" + row.Number));
             scroll.AddChild(rows);
             scroll.CustomMinimumSize = new Vector2(0, (float)(Math.Min(list.Rows.Count, 10) * (t.TypeSize("ui", "micro") + 6)));

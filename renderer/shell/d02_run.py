@@ -2260,6 +2260,56 @@ EXPECT["overlays"] = expect_overlays
 ON_FIXTURE.add("overlays")
 
 
+def expect_error_overlay(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The named cap's straddlers use the reserved outline bit in the shared style, and clearing preserves the head."""
+    import hashlib
+    import struct
+
+    if state != "wj-ia-300":
+        return ["the error-overlay script needs the wj-ia-300 fixture"]
+    record = load(SAMPLES / state / "cap-0.json")
+    pieces = [p for p, marked in enumerate(overlay_mask(record["masks"]["straddlers"], 177_120)) if marked]
+    sha = hashlib.sha256(struct.pack(f"<{len(pieces)}i", *pieces)).hexdigest()
+    by_step = {dump["do"]: dump for dump in dumps}
+    steps = {"wait 5001 ms": 0, "wait 1501 ms": len(pieces), "wait 1502 ms": 0}
+    if not by_step.keys() >= steps.keys() or not pieces:
+        return [f"missing fixture pieces or steps: {list(by_step)}"]
+    problems = []
+    for dump in dumps:
+        if dump.get("tuning", {}).get("state_digest") != record["digest"]:
+            problems.append(f"after '{dump['do']}' the session digest differed from the fixture")
+    for mark, count in steps.items():
+        dump = by_step[mark]
+        overlay = dump.get("error_overlay", {})
+        if overlay.get("pieces") != count or overlay.get("outline_bits") != count:
+            problems.append(f"after '{mark}' expected {count} pieces and sent bits, got "
+                            f"{overlay.get('pieces')} and {overlay.get('outline_bits')}")
+        if mark == "wait 1502 ms" and any(
+                d.get("source") in ("jumble.cap.certificate", "jumble.repair.list", "jumble.cap.covers")
+                for d in overlay.get("diagnostics", [])):
+            problems.append("unnaming the cap kept its diagnostics")
+        if count == 0:
+            continue
+        palette = overlay.get("palette", {})
+        global_rgba = palette.get("1", [])
+        if len(global_rgba) != 4 or global_rgba[3] <= 0 or any(palette.get(slot) != global_rgba for slot in ("2", "3")):
+            problems.append(f"after '{mark}' the slots did not share an active error palette: {palette}")
+        if overlay.get("sha256") != sha or overlay.get("first_ids") != pieces[:16]:
+            problems.append(f"after '{mark}' the error piece ids differed from cap 0's straddlers")
+        failed = {d["source"]: d for d in overlay.get("diagnostics", []) if d.get("state") == "failed"}
+        for diagnostic in ("jumble.cap.certificate", "jumble.repair.list", "jumble.cap.covers"):
+            item = failed.get(diagnostic, {})
+            if item.get("caps") != [0] or item.get("pieces") != count:
+                problems.append(f"after '{mark}' {diagnostic} did not name cap 0 and its {count} pieces")
+    if not problems:
+        print(f"error overlay: cap 0 named {len(pieces)} pieces in Global and Local; cleared with the same session digest")
+    return problems
+
+
+EXPECT["error-overlay"] = expect_error_overlay
+ON_FIXTURE.add("error-overlay")
+
+
 TUNING_KNOBS = [("wait 702 ms", "tone", 0.05, True), ("wait 703 ms", "contrast", 1.15, True),
                 ("wait 704 ms", "blackLevel", 0.08, True), ("wait 705 ms", "accentHue", 40.0, False),
                 ("wait 706 ms", "gridIntensity", 0.9, False)]
@@ -2665,6 +2715,9 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     source = data()
     if script not in EXPECT or not path.is_file():
         raise ValueError(f"no D02 script named {script} (renderer/shell/d02_scripts/)")
+    written = json.loads(path.read_text(encoding="utf-8"))
+    if state is None:
+        state = written.get("state")
     if state is not None and state not in source["states"]:
         raise ValueError(f"no sample state named {state}")
     fixture = FIXTURES / state if state else None
@@ -2680,7 +2733,6 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         started["process"], started["at"] = process, clock()
         return process
 
-    written = json.loads(path.read_text(encoding="utf-8"))
     # A script may name its puzzle (step C-.40: base-local runs the base puzzle, Jumble off); the default is Jumble on.
     arguments = ["--out", str(out), "--frame", "--puzzle", written.get("puzzle", "jumble-on"), "--d02", "--d02-script", str(path)]
     arguments += ["--sample"] if script in IN_SAMPLE_MODE else []

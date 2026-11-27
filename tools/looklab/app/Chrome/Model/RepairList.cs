@@ -157,6 +157,9 @@ public sealed class RepairListModel
 
     // Enter picks the focused row, in the same context.
     public RepairRow? Enter(IEnumerable<string> contexts) => Error == null && contexts.Contains(Context) && Focused is int f ? Rows[f - 1] : null;
+
+    public DiagnosticState CheckState => Error != null ? DiagnosticState.Failed
+        : End == JobEnd.Completed ? DiagnosticState.Ok : DiagnosticState.Pending;
 }
 
 // A repair row's steps (ADR-D02.34): step k's moving set is the inside set at its prefix state, after steps 1 to k−1.

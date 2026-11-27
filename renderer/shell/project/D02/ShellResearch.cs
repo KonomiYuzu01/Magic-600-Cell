@@ -155,6 +155,10 @@ public static class ShellResearch
                 {
                     json.WriteString("verdict", line.Verdict);
                 }
+                if (line.Status is { } status)
+                {
+                    json.WriteString("status", ErrorOverlay.StateName(status));
+                }
                 json.WriteEndObject();
             }
             json.WriteEndArray();

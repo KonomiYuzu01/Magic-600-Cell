@@ -506,6 +506,7 @@ public sealed class ShellChrome
             ShellJumble.Host = host;
             // B15: the tint channel and the focus layers, drawn by the core.
             ShellTint.Attach(host, frame);
+            ShellError.Attach(host, frame);
             cards = new ShellCards(frame, host, sentences["totals.unit"]);
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);

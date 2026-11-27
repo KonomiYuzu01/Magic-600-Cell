@@ -56,6 +56,13 @@ public sealed record GlobalTotals(Numeral N, Numeral OnGrip, Numeral OffGrip, Nu
 // (u = 0 exactly; u > 0 exactly when the cap is blocked). A cap with no certified rim row is pending throughout.
 public sealed record CapReadout(int Cap, Numeral In, Numeral Out, Numeral A, Numeral Nc, Numeral Floor, Numeral U)
 {
+    public DiagnosticState CertificateState => In.Kind switch
+    {
+        NumeralKind.Undefined => DiagnosticState.Failed,
+        NumeralKind.Value => DiagnosticState.Ok,
+        _ => DiagnosticState.Pending,
+    };
+
     // A named cap's record (`magic600-d02-sample/1` cap-<id>.json): its rim row and, at a blocked cap, its straddlers.
     public static CapReadout Read(string capRecord)
     {
