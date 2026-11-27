@@ -90,6 +90,9 @@ internal static partial class Program
     // The research pane's own row requests (C5-7): build steps B28 (research.record.read) and B29 (declare, start).
     private static readonly string[] D02StepRequests = { "B28", "B29" };
     private static readonly string[] D01CardRequests = { "ADR-D01.24" };
+    private static readonly string[] D01MenuRequests = { "ADR-D01.17" };
+    // ADR-D01.17's context menu row (its own list, so later design items add theirs beside it).
+    private static bool D01MenuRequest(string id, string request) => D01MenuRequests.Contains(request) && id == "menu.context.open";
 
     // Each draft row names its section 15 request, research build step or cards item. The test fails the day any
     // of them lands in the command table, so the draft row is deleted.
@@ -103,6 +106,7 @@ internal static partial class Program
         {
             string id = row.GetProperty("id").GetString()!;
             string? request = row.TryGetProperty("request", out JsonElement value) ? value.GetString() : null;
+            if (request != null && D01MenuRequest(id, request)) { requests.Add(id, request); continue; }
             Check(request != null && (D02Requests.Contains(request)
                 || D02StepRequests.Contains(request) && id.StartsWith("research.", StringComparison.Ordinal)
                 || D01CardRequests.Contains(request) && id.StartsWith("card.", StringComparison.Ordinal)),

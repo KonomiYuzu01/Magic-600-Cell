@@ -78,6 +78,9 @@ public partial class Shell : Control
     private readonly HostLibrary.Presented[] _presented = new HostLibrary.Presented[16];
     /// <summary>The frame (A5): the chrome library over the window. Null unless M600_CHROME is 1.</summary>
     private ShellChrome? _chrome;
+    private bool _contextMenuPress;
+    /// <summary>True while the context menu holds the pointer: Turn and ViewAt then answer nothing.</summary>
+    private bool _menuPointer;
     /// <summary>The window rectangle the core's surface has, the one the frame's opening asks for, and for how many
     /// process steps it has asked for it.</summary>
     private Rect2I _area;
@@ -406,6 +409,16 @@ public partial class Shell : Control
             return;
         }
         var chord = KeyChord.Chord(key, code);
+        // The host uses c600-command's draft US map: twists, execute, and session undo and redo can change the head.
+        if (D02.ShellExplore.State.On && chord is "KeyJ" or "KeyK" or "KeyL" or "Shift+KeyJ" or "Shift+KeyK" or "Shift+KeyL"
+            or "Ctrl+Shift+Enter" or "Ctrl+KeyZ" or "Ctrl+KeyY")
+        {
+            if (!key.Echo)
+            {
+                _chrome?.Frame.Say(Magic600.Chrome.ExploreState.CommitRefusal, true);
+            }
+            return;
+        }
         var answer = library.KeyDown(_host, chord, key.Echo, out var result);
         var handled = EventLog.Now();
         if (answer != HostLibrary.Ok)
@@ -447,13 +460,18 @@ public partial class Shell : Control
     public override void _Input(InputEvent @event)
     {
         var qpc = EventLog.Now();
+        bool contextMenuOpen = _chrome?.Frame.OpenOverlay is Magic600.Chrome.ContextMenuOverlay;
+        bool menuPointer = _menuPointer = contextMenuOpen || _contextMenuPress;
+        // A click that closes the menu on press belongs to the menu through release as well.
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left } left)
+            _contextMenuPress = contextMenuOpen && left.Pressed;
         var turned = D02.ShellJumble.On && Turn(@event);
         if (turned)
         {
             GetViewport().SetInputAsHandled();
         }
         // ADR-D02 B17: a click (a release that did not turn the camera) picks in the view under it; the pointer hovers.
-        if (D02.ShellJumble.On && _session)
+        if (D02.ShellJumble.On && _session && !menuPointer)
         {
             switch (@event)
             {
@@ -461,6 +479,13 @@ public partial class Shell : Control
                     if (SurfacePoint(up.Position) is { } at)
                     {
                         D02.ShellPick.Click(at.X, at.Y);
+                    }
+                    break;
+                case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false } right when !turned:
+                    if (_chrome is { } menuChrome && menuChrome.Frame.OpenOverlay == null && SurfacePoint(right.Position) != null)
+                    {
+                        menuChrome.OpenContextMenu(right.Position);
+                        GetViewport().SetInputAsHandled();
                     }
                     break;
                 case InputEventMouseMotion move:
@@ -534,6 +559,10 @@ public partial class Shell : Control
     /// </summary>
     private bool Turn(InputEvent input)
     {
+        if (_menuPointer)
+        {
+            return false;
+        }
         if (D02.ShellLocal.Linked)
         {
             return _camera.Follow(input, point => InOpening(point) || InLocal(point));
@@ -567,6 +596,10 @@ public partial class Shell : Control
     /// </summary>
     private ulong? ViewAt(Vector2 point)
     {
+        if (_menuPointer)
+        {
+            return null;
+        }
         if (InOpening(point))
         {
             return HostLibrary.View;

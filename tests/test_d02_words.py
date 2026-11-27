@@ -67,7 +67,7 @@ VARIABLES = set("dijkmnprxyz")
 
 PLAIN_WORDS = {
     "a", "above", "after", "and", "antipode", "applicable", "apply", "are", "at", "beside", "by", "byte", "bytes",
-    "card", "certifies", "chain", "checked", "checker", "clear", "click", "clip", "compare", "covered", "cut", "declare", "differs",
+    "card", "certifies", "chain", "checked", "checker", "clear", "click", "clip", "compare", "context", "covered", "cut", "declare", "differs",
     "does", "entry", "equal", "export", "exposed", "face", "faces", "fails", "file", "focus", "follow", "free", "from", "hold",
     "holds", "holes", "in", "input", "into", "it", "least", "live", "lowers", "map", "mark",
     "marks", "mode", "model", "name", "need", "needs", "neighbours", "no", "none", "not", "numbered", "of", "on", "one",

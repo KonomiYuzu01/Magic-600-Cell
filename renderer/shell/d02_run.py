@@ -196,6 +196,48 @@ def expect_pinned_cards(dumps: list[dict], source: dict, state: str | None) -> l
     return problems
 
 
+def expect_explore_menu(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The Global menu closes on Escape, explore pauses a commit, and both marks follow their state on both views."""
+    steps = ["start", "wait 2500 ms", "command menu.context.open global", "wait 600 ms", "chord Escape",
+             "command explore.set on", "wait 400 ms", "command operation.preview.commit",
+             "command token.override.set state.committed=0.6 0.15 30", "wait 600 ms",
+             "command token.override.reset state.committed=reset", "command explore.set off", "wait 6000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    labels = {row["id"]: row["label"] for row in source["table"] + source["rows"]}
+    if labels["explore.set"] not in texts(dumps[3], "overlay:ContextMenu"):
+        problems.append("step 3: the Global context menu did not show its explore entry")
+    if overlay(dumps[4]):
+        problems.append("step 4: Escape left an overlay open")
+
+    for i, on in ((0, False), (5, True), (6, True), (10, True), (11, False), (12, False)):
+        if dumps[i].get("explore") != {"on": on, "global": int(on), "local": int(on)}:
+            problems.append(f"step {i}: both view frames should carry {int(on)} explore marks")
+    refusal = labels["operation.preview.commit"] + ": explore state: commits are paused"
+    if refusal not in texts(dumps[7], "frame"):
+        problems.append("step 7: the commit was not refused by the explore state")
+
+    opening = dumps[0].get("colours", {}).get("digest")
+    if not re.fullmatch(r"[0-9a-f]{12}", str(opening)):
+        problems.append("step 0: the opening token digest is missing or malformed")
+    for i, marked in ((0, False), (8, True), (9, True), (10, False), (11, False), (12, False)):
+        colours = dumps[i].get("colours", {})
+        if (colours.get("nonstandard"), colours.get("global"), colours.get("local")) != (marked, int(marked), int(marked)):
+            problems.append(f"step {i}: both view frames should carry {int(marked)} colour marks")
+        digest = colours.get("digest")
+        if not re.fullmatch(r"[0-9a-f]{12}", str(digest)) or (digest != opening) != marked:
+            problems.append(f"step {i}: the token digest does not match the colour override state")
+
+    for i, command in ((2, "menu.context.open"), (5, "explore.set"), (8, "token.override.set"),
+                       (10, "token.override.reset"), (11, "explore.set")):
+        problems.extend(f"step {i}: {line}" for line in texts(dumps[i], "frame") if line.startswith(labels[command] + ": "))
+    for i in (8, 10):
+        if status := dumps[i].get("tuning", {}).get("status"):
+            problems.append(f"step {i}: the tuning panel refused the command: {status}")
+    return problems
+
+
 def local_problems(dump: dict, step: int, cap: int, named: bool, framed: bool = True) -> list[str]:
     """Local is never empty (owner, 26 November 2026): Local draws `cap`; its empty sentence never shows while it
     does; the default's readout (LOCAL_DEFAULT) shows while no cap is named, and the dump names no cap then; a named
@@ -1028,6 +1070,9 @@ def check_slice_events(events: Path) -> list[str]:
 
 EXPECT["two-views"] = expect_two_views
 ON_FIXTURE.add("two-views")
+# ADR-D01.17, .39 and .51: the context menu, the explore state and the non-standard colours mark.
+EXPECT["explore-menu"] = expect_explore_menu
+ON_FIXTURE.add("explore-menu")
 EXPECT["slice"] = expect_slice
 ON_FIXTURE.add("slice")
 EVENT_CHECKS = {"two-views": check_two_views_events, "slice": check_slice_events}

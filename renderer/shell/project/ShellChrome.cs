@@ -63,6 +63,7 @@ public sealed class ShellChrome
     private readonly Readout? _queue;
     private readonly HashSet<Key> _taken = new();
     private readonly Func<string, string?, string?> _unavailable;
+    private readonly Action<Vector2>? _openContextMenu;
     private ulong _shown;
 
     /// <summary>The folders installed font and icon packages are looked for in: tools/node of every folder above the
@@ -180,12 +181,14 @@ public sealed class ShellChrome
         // and in sample mode reads the synthetic sample.
         ShellResearch.Load(frame, registry, folder, SampleOn, () => Moves.Entries.Count);
         var keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
+        var contextMenus = ShellJumble.On ? ContextMenuSet.Parse(File.ReadAllText(Path.Combine(folder, "context-menus.json")), registry) : null;
         var helpCatalog = HelpCatalog.Load(Path.Combine(folder, "glossary-terms.json"), Path.Combine(folder, "help-figures.json"), registry);
         var learnPane = new LearnPane(new LearnModel(helpCatalog), () => frame.Tokens);
         frame.AddPane("reference", "Learn", learnPane);
         SampleMount? sample = null;
         LayoutTracker? layoutTracker = null;
         ShellCards? cards = null;
+        Action? pickedTarget = null;
         var gallery = new ComponentGallery(() => frame.Tokens, motions, palettes, iconSet, commandIcons, registry.Order.ToArray());
         frame.AddPane("gallery", "Gallery", gallery);
         string? Unavailable(string command, string? argument) => command switch
@@ -195,7 +198,10 @@ public sealed class ShellChrome
             _ when ShellResearch.Model is { } research && ResearchModel.Handles(command, argument) => research.Unavailable(command, argument),
             _ when ShellDocuments.Handles(command) => ShellDocuments.Unavailable(command, argument),
             _ when ShellSession.Handles(command) => ShellSession.Unavailable(command),
+            _ when ShellExplore.Handles(command) => ShellExplore.Unavailable(argument),
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
+            "menu.context.open" when contextMenus != null => null,
+            "target.current.set" when pickedTarget != null && argument == null => null,
             _ when layoutTracker != null && LayoutTracker.Handles(command) => null,
             _ when command.StartsWith("radial.", StringComparison.Ordinal) => null,
             "workspace.set" or "theme.select" or "density.preset.set" => argument != null ? null : "it needs an argument; choose one of its rows",
@@ -207,8 +213,10 @@ public sealed class ShellChrome
             _ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),
             _ => NotHere,
         };
+        // ADR-D01.39: the explore state's gate runs first for every caller; it adds a refusal, never removes one.
         _unavailable = Unavailable;
-        var commands = new PaletteModel(registry, keymap, Unavailable);
+        var gated = ShellExplore.State.Compose(Unavailable, registry);
+        var commands = new PaletteModel(registry, keymap, gated);
         var palette = new CommandPalette(commands, () => frame.Tokens);
         palette.DraftRows.UnionWith(sampleDrafts);
         palette.DraftRows.UnionWith(ShellResearch.DraftIds);
@@ -217,8 +225,10 @@ public sealed class ShellChrome
         frame.Overlays.AddChild(sheet);
         var helpCard = new HelpCard(() => frame.Tokens);
         frame.Overlays.AddChild(helpCard);
-        var radial = new RadialOverlay(registry, Unavailable, () => frame.Tokens);
+        var radial = new RadialOverlay(registry, gated, () => frame.Tokens);
         frame.Overlays.AddChild(radial);
+        var contextMenu = contextMenus == null ? null : new ContextMenuOverlay(registry, gated, () => frame.Tokens);
+        if (contextMenu != null) frame.Overlays.AddChild(contextMenu);
         frame.OverlayCommands.Add("transient.close");
         frame.OverlayCommands.Add("help.open");
         frame.OverlayCommands.Add("command.find");
@@ -235,6 +245,7 @@ public sealed class ShellChrome
         }
         ShellDocuments.Load(frame, registry, sample);
         ShellSession.Load(frame, registry, sample, history, Moves, Execute);
+        ShellExplore.Load(frame);
         // Failures show in Problems with the error lamp, in every mode, and go to the run's errors.log.
         ChromeErrors.Mount(frame, sample?.Inspect.Feedback, "shell",
             System.Environment.GetEnvironmentVariable("M600_EVENTS_DIR") is { Length: > 0 } events ? Path.Combine(events, "errors.log") : null);
@@ -249,9 +260,10 @@ public sealed class ShellChrome
             frame.Say($"preset {at + 1}/{all.Length}: {look.Family.Name} · {look.SceneLook}");
         }
         void NextDensity() => appearance.Edit(a => a.SetDensity(design.Densities[(design.Densities.ToList().IndexOf(a.Density) + 1) % design.Densities.Count]), true, false);
-        void Execute(string command, string? argument)
+        void Execute(string command, string? argument) => ExecuteAt(command, argument, null);
+        void ExecuteAt(string command, string? argument, Vector2? pointer)
         {
-            if (Unavailable(command, argument) is { } why)
+            if (gated(command, argument) is { } why)
             {
                 frame.Say($"{registry.Commands[command].Label}: {why}", true);
                 return;
@@ -274,7 +286,18 @@ public sealed class ShellChrome
                 case var session when ShellSession.Handles(session):
                     ShellSession.Execute(frame, command, argument);
                     break;
+                case var explore when ShellExplore.Handles(explore): ShellExplore.Execute(frame, argument); break;
                 case "command.find": palette.Open(); break;
+                case "menu.context.open" when contextMenu != null && contextMenus != null:
+                    Vector2 at = argument switch
+                    {
+                        "global" => frame.Global.GetGlobalRect().GetCenter() - frame.GlobalPosition,
+                        "local" => frame.Local.GetGlobalRect().GetCenter() - frame.GlobalPosition,
+                        _ => pointer is { } point ? point - frame.GlobalPosition : frame.GetLocalMousePosition(),
+                    };
+                    contextMenu.Open(ShellPick.Selection == null ? contextMenus.View : contextMenus.Pick, keymap, at);
+                    break;
+                case "target.current.set" when pickedTarget != null && argument == null: pickedTarget(); break;
                 case "help.open":
                     var topic = argument ?? HelpTopics.At(frame.GetViewport());
                     if (topic == HelpCatalog.Keys) { if (sheet.IsOpen) sheet.Close(); else sheet.Open(); }
@@ -306,6 +329,9 @@ public sealed class ShellChrome
                 case "theme.select" when argument == "preset.next": NextPreset(); break;
                 case "theme.select": appearance.Edit(a => a.SetTheme(themes[(Array.FindIndex(themes, t => t.Id == a.Theme) + 1) % themes.Length].Id), true, true); break;
                 case "density.preset.set": NextDensity(); break;
+                // The reset row also takes role=reset. The tuning panel appends =reset to the role it receives.
+                case "token.override.reset" when Tuning != null && argument?.Trim() is { } reset && reset.EndsWith("=reset", StringComparison.Ordinal):
+                    Tuning.Execute(command, reset[..^"=reset".Length]); break;
                 case var tuned when Tuning != null && Tuning.Handles(tuned): Tuning.Execute(command, argument); break;
                 case var jumble when Jumble != null && Jumble.Handles(jumble): Jumble.Execute(command, argument); break;
                 case var card when cards != null && ShellCards.Handles(card): cards.Execute(command, argument); break;
@@ -313,6 +339,7 @@ public sealed class ShellChrome
             }
         }
         Run = Execute;
+        _openContextMenu = contextMenu == null ? null : at => ExecuteAt("menu.context.open", null, at);
         if (ShellResearch.Pane is { } researchPane)
         {
             researchPane.Command += Execute;
@@ -320,6 +347,7 @@ public sealed class ShellChrome
         palette.Run += row => Execute(row.Command, row.Argument);
         helpCard.Learn += link => { Execute(link.Command, link.Argument); learnPane.Select(link.TopicId); };
         radial.Chosen += entry => Execute(entry.Command, entry.Argument);
+        if (contextMenu != null) contextMenu.Chosen += entry => Execute(entry.Command, entry.Argument);
         frame.Keys = keymap;
         frame.KeyCommand += binding => Execute(binding.Command, binding.Argument);
         frame.RowCommand += Execute;
@@ -394,6 +422,9 @@ public sealed class ShellChrome
         if (ShellJumble.On)
         {
             ShellJumble.Attach(parent, frame, palette, () => cards?.ObservePicks());
+            // The live Target key and the menu share the shell's existing picked-cell action.
+            if (frame.HostKeys.TryGetValue("E", out pickedTarget))
+                frame.HostKeys["E"] = () => Execute("target.current.set", null);
             // B6: the Jumble host in Solve, fed at each shown revision; Local shows its sections.
             var (names, empty, nothing) = ShellJumble.Words(folder);
             var sentences = ShellJumble.Sentences(folder);
@@ -461,6 +492,8 @@ public sealed class ShellChrome
         }
         frame.Rebuilt += () => { Icons(); Dress(); };
         frame.Recoloured += Dress;
+        ShellExplore.Changed += Describe;
+        frame.TreeExiting += () => ShellExplore.Changed -= Describe;
         Moves.Changed += () => { if (GodotObject.IsInstanceValid(history)) history.Refresh(); Describe(); ShellResearch.Model?.Committed(); };
         frame.SelectWorkspace(frame.Workspaces.Order[0]);
         frame.MarkBaseline();
@@ -496,6 +529,12 @@ public sealed class ShellChrome
         Sample?.Marks(Frame.Local);
         ShellSession.Marks(Frame.Global);
         ShellSession.Marks(Frame.Local);
+        foreach (ViewFrame view in new[] { Frame.Global, Frame.Local })
+        {
+            ShellExplore.Marks(view);
+            foreach (ViewMark mark in ColourMark.BorderMarks(Frame.Tokens, view.ViewName))
+                view.AddMark(mark.Glyph, mark.Words, mark.Colour, mark.Tooltip).SetMeta("slot", ColourMark.Slot);
+        }
     }
 
     private string? _localWords;
@@ -520,6 +559,8 @@ public sealed class ShellChrome
     /// without --d02, while no cap is named, or while Local is not on screen.
     /// </summary>
     public Rect2I LocalOpening() => Pixels(Frame.LocalOpening);
+
+    internal void OpenContextMenu(Vector2 at) => _openContextMenu?.Invoke(at);
 
     private static Rect2I Pixels(Rect2 area) =>
         new((int)Math.Round(area.Position.X), (int)Math.Round(area.Position.Y), (int)Math.Floor(area.Size.X), (int)Math.Floor(area.Size.Y));

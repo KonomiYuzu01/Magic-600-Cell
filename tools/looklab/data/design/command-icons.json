@@ -151,6 +151,7 @@
     "macro.replace",
     "macro.select",
     "macro.variant.create",
+    "menu.context.open",
     "motion.preset.set",
     "motion.reduced.set",
     "object.actions",
