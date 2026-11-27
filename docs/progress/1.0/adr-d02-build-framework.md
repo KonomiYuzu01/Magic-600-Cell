@@ -991,6 +991,28 @@ relative path is from the repository root.
       interval (11-15 over 33.4 ms in the window), also where the bind is only `state_digest` (2-4 ms); through it the
       frame thread keeps its 16 ms cadence (C# steps under 4 ms, `m6h_frame` about 14 ms) while four submitted
       frames get no `presented` row.
+    - SF4 (27 November 2026), the dropped presentations. A core trace (`core-frames.jsonl` beside `events.jsonl`,
+      written only while the event log is on: each frame's parts and each statistics sample with the present
+      ledger's state) ranks the hypotheses. 1, confirmed: the core's surface is resized at most twists. The Global
+      opening's height alternates between 1093 and 1116 px, so the shell's surface follow (`Shell.cs`, the
+      `surface.Resize` branch of the frame loop) drains and calls `sa2_resize` (`CoreSurface.Resize`), and the core's
+      `resize_surface` (`renderer/core/src/interop.cpp`) calls `ResizeBuffers` and raises the surface generation. In
+      one G1 run every one of the six 83.3 ms gaps in the window begins 23-24 ms before one of the window's six
+      resizes, and the 50 ms gaps (frame-thread holes) have none. 2, a consequence: after the resize DXGI's
+      statistics are disjoint and stay at one present count for five refreshes, then advance five presents in five
+      refreshes, so no present was dropped or repeated; but the present ledger's exact rule (`present_match`,
+      `renderer/core/src/product.cpp`) supersedes the four frames of the old generation, and they get no
+      `presented` row. 3, ruled out: a slow core frame (G1: ready and upload waits 0.00 ms; the frame-latency wait
+      p50 13.0, p99 13.8; recording 0.04 (0.25); present 0.26 (0.39)), and a frame-thread stall longer than the
+      queue. The likely source of the height change is a border readout that rewraps when its numbers change at a
+      twist (`TintLegendRow`'s `N0` counts or a `ReadoutRow`, in `tools/looklab/app/Chrome/Ui/`); not yet pinned.
+      A reading fix was tried and is not committed: a ledger that confirms the frames between two statistics
+      anchors n presents and n refreshes apart at a steady rate (core ABI 11) confirmed 7-14 frames per window but
+      none across a resize, and the dry runs stayed at p99 83.33 (G1 83.33 and 83.33, fps_avg 57.0 and 57.2; G9
+      83.33 and 83.33, 56.6 and 56.7; before it, G1 83.33, fps_avg 56.4); no GPU event in the System log after any
+      run. Left: stop the per-twist resize where the opening's height changes (a readout's changing numbers must
+      not change the opening, which also stops the view from moving 23 px at a twist), then rerun G1 and G9; the
+      trace and the tried reading are kept outside the repository for that step.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
