@@ -487,6 +487,10 @@ public sealed class ShellChrome
             host.ChartRow = ShellHopf.Request;
             host.Chart = ShellHopf.ChartName;
             ShellHopf.Applied += Describe;
+            // B21: the palette's raw view rows and Local's raw view marks.
+            host.RawRow = ShellRaw.Request;
+            host.Raw = () => ShellRaw.Shown;
+            ShellRaw.Applied += Describe;
             var jumbleClock = new Godot.Timer { Name = "JumbleClock", WaitTime = 0.15, Autostart = true };
             jumbleClock.Timeout += host.Tick;
             frame.AddChild(jumbleClock);

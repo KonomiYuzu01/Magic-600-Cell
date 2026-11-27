@@ -143,6 +143,7 @@ public static class ShellTint
         Overlay(json, host, frame);
         ShellTurn.Dump(json);
         ShellSlice.Dump(json);
+        ShellRaw.Dump(json);
     }
 
     /// <summary>

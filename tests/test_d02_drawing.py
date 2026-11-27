@@ -688,7 +688,8 @@ class LocalOnTheBasePuzzle(unittest.TestCase):
         chrome = text(PROJECT / "ShellChrome.cs")
         self.assertIn("host.SetDrawnWithoutCap(live && !ShellLocal.Plan.Jumble);", chrome)
         self.assertIn('ViewLine.Set(Frame.Local, "LocalPlanLine", words, LocalPlan.Hint, Frame.Tokens.C("text.dim"));', chrome)
-        self.assertIn("_chrome?.LocalLine(D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
+        # ADR-D02 B21: the raw view's line takes Local's line while the raw view is on.
+        self.assertIn("_chrome?.LocalLine(D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
         host = text(CHROME / "Ui" / "JumbleHost.cs")
         self.assertIn("Surface.SetDrawn(LocalCap.Shown != null || drawnWithoutCap);", host)
         self.assertIn('ViewLine.Set(view, "JumbleLocalDefault", LocalWords, hint, frame.Tokens.C("text.dim"));', host)

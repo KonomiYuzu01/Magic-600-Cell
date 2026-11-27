@@ -425,6 +425,8 @@ struct Pane {
     width: u32,
     height: u32,
     style: u32,
+    /// ADR-D02 B21: the core's pane flags (`m6h_set_pane_flags`); a new pane starts at 0.
+    flags: u32,
 }
 
 impl Pane {
@@ -865,6 +867,7 @@ impl ShellHost {
                     width: pane.width,
                     height: pane.height,
                     style: pane.style,
+                    flags: pane.flags,
                 }),
                 _ => break,
             }
@@ -1796,7 +1799,7 @@ pub unsafe extern "C" fn m6h_set_pane(
             if style > STYLE_SLOTS {
                 return invalid("a pane's style is 0 or a style slot 1..4");
             }
-            let set = Pane { view: id, x, y, width, height, style };
+            let set = Pane { view: id, x, y, width, height, style, flags: 0 };
             let viewport = shell.host.view(VIEW).map_or((0, 0), |v| v.viewport);
             if !set.rect().inside(viewport) {
                 return invalid("a pane's rectangle is empty or lies outside the viewport");
@@ -2663,5 +2666,33 @@ pub unsafe extern "C" fn m6h_destroy(handle: *mut ShellHost) {
     if !handle.is_null() {
         // SAFETY: the contract; a panic in a destructor is not carried across the C boundary.
         let _ = catch_unwind(AssertUnwindSafe(|| drop(unsafe { Box::from_raw(handle) })));
+    }
+}
+
+/// ADR-D02 B21 (ADR-D02.18): sets the core's flags of pane `pane` (0 to 3), which must be set: 0, or
+/// `SA2_PANE_ANTIPODE` (1) for the raw view's antipode chart, the view's stereographic chart after -I. A later
+/// [`m6h_set_pane`] of that pane resets them to 0. An unset pane, another index or another flag answers
+/// [`M6H_E_INVALID_ARGUMENT`] and changes nothing.
+///
+/// # Safety
+///
+/// `handle` is a live handle that no other thread is using.
+#[no_mangle]
+pub unsafe extern "C" fn m6h_set_pane_flags(handle: *mut ShellHost, pane: u32, flags: u32) -> i32 {
+    // SAFETY: the contract.
+    unsafe {
+        with_host(handle, |shell| {
+            let invalid = |why: &str| Err((M6H_E_INVALID_ARGUMENT, why.to_owned()));
+            if flags & !c600_render::abi::PANE_ANTIPODE != 0 {
+                return invalid("a pane's flags are 0 or SA2_PANE_ANTIPODE");
+            }
+            match shell.panes.get_mut(pane as usize).and_then(Option::as_mut) {
+                Some(set) => {
+                    set.flags = flags;
+                    Ok(())
+                }
+                None => invalid("pane flags name a set pane 0..3"),
+            }
+        })
     }
 }

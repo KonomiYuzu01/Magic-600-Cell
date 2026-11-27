@@ -308,6 +308,11 @@ public static class ShellStyle
         {
             ShellSlice.Style(ref style, slot, _tintPalette);
         }
+        // B21: while the raw view is on, Local's slot draws no slice.
+        if (slot is 2 or 3)
+        {
+            ShellRaw.Style(ref style);
+        }
         return style;
     }
 }

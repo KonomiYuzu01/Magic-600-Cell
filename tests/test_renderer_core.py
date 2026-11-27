@@ -158,7 +158,8 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(values["SHADERS"], built)
         self.assertEqual(len(built), 8)
         self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
-        self.assertEqual(len(values["CPU_CHECKS"]), 40)
+        self.assertEqual(len(values["CPU_CHECKS"]), 41)
+        self.assertIn("raw view", values["CPU_CHECKS"])  # ADR-D02 B21, the stereographic projection and the antipode pane
         self.assertIn("pane arguments", values["CPU_CHECKS"])  # ADR-D02 B18a, ABI 8
         self.assertIn("piece style", values["CPU_CHECKS"])  # ADR-D02 B14, ABI 7
         self.assertIn("view shape", values["CPU_CHECKS"])  # ADR-D02, ABI 6

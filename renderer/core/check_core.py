@@ -52,6 +52,8 @@ CPU_CHECKS = {
     "piece style",
     # ABI 8: the composite frame: its checks, its pane rows and a pick that resolves its pane.
     "pane arguments",
+    # ADR-D02 B21: the raw view's focus and the antipode chart's handedness.
+    "raw view",
 }
 DXC_LIBRARIES = ("dxcompiler.dll", "dxil.dll")
 BUILD_TEXT = {".make", ".cmake", ".d", ".rsp", ".ninja"}
@@ -159,6 +161,8 @@ def main():
                         help="also run ADR-D02 B18's WARP check of a twist's transform (sa2_transform_set)")
     parser.add_argument("--slice", action="store_true",
                         help="also run ADR-D02 B20's WARP check of the cut slice (a style slot's slice)")
+    parser.add_argument("--raw", action="store_true",
+                        help="also run ADR-D02 B21's WARP check of the raw view (the stereographic chart and its antipode)")
     parser.add_argument("--panes", action="store_true",
                         help="also run ABI 8's WARP check of the composite frame (sa2_frame_submit_panes)")
     options = parser.parse_args()
@@ -213,12 +217,14 @@ def main():
             check_result(executable, build, "warp", vectors, warp_mode="sweep")
         if options.slice:
             check_result(executable, build, "warp", vectors, warp_mode="slice")
+        if options.raw:
+            check_result(executable, build, "warp", vectors, warp_mode="raw")
         summary = " (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"
         warp = " and ".join(name for name, run in (("stage", options.stages), ("pose", options.poses),
                                                    ("shape", options.shape), ("style", options.style),
                                                    ("panes", options.panes), ("focus", options.focus),
                                                    ("hopf", options.hopf), ("sweep", options.sweep),
-                                                   ("slice", options.slice)) if run)
+                                                   ("slice", options.slice), ("raw", options.raw)) if run)
         if warp:
             summary = f" (CPU, WARP and hardware; WARP {warp} checks)" if options.gpu else f" (CPU and the WARP {warp} checks; no hardware run)"
         print("check_core: ok" + summary)
