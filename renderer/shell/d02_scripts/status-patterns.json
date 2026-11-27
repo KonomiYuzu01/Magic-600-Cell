@@ -53,7 +53,9 @@
     {"chord": "F10"},
     {"command": "jumble.repair.stage", "argument": "2"},
     {"wait_ms": 709},
-    {"command": "view.preview.scrub", "argument": "back"},
+    {"command": "command.find"},
+    {"text": "> view.preview.scrub back"},
+    {"chord": "Enter"},
     {"wait_ms": 710},
     {"chord": "Ctrl+Z"},
     {"wait_ms": 2500}

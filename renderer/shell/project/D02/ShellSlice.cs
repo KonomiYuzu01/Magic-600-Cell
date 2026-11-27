@@ -231,7 +231,7 @@ public static class ShellSlice
         if (_ghost is { } ghost && _previewRow is { } row)
         {
             json.WriteNumber("ghost_item", ghost.Item);
-            json.WriteNumber("ghost_angle", row.Angle);
+            json.WriteNumber("ghost_angle", (double)row.Angle);
         }
         json.WriteNumber("shell_min", Model.Shell.Min);
         json.WriteNumber("shell_max", Model.Shell.Max);

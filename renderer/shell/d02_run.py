@@ -992,7 +992,8 @@ def expect_two_views(dumps: list[dict], source: dict, state: str | None) -> list
                 problems.append(f"step {index}: expected surface trace cap {cap} and no whole-piece overlay")
         for index in (5, 7, 9, 11):
             dump = dumps[index]
-            if dump.get("tint", {}).get("revision") != dump.get("state_revision"):
+            revision = dump.get("bound", {}).get("revision")
+            if type(revision) is not int or revision < 0 or dump.get("tint", {}).get("revision") != revision:
                 problems.append(f"step {index}: the style revision differs from the bound facts")
     # The script's drags follow its base steps (the player checks that every step ran); a dump list of only the base
     # steps is the Local check alone.
@@ -3319,9 +3320,11 @@ def expect_status_patterns(dumps: list[dict], source: dict, state: str | None) -
         undo |= step == "chord Ctrl+Z"
         if not undo and (not digest or status.get("state_digest") != digest or dump.get("tuning", {}).get("state_digest") != digest):
             problems.append(f"{step}: state digest missing or changed")
-        wanted_panes = (2, 3, 4) if dump.get("preview", {}).get("id") else (2,)
+        preview = dump.get("preview", {})
+        wanted_panes = (2, 3, 4) if preview.get("id") else (2,)
+        drawn = (preview.get("host", {}).get("drawn") or {}).get("panes", [])
         if (not status.get("sent") or status.get("channel") != 3 or status.get("panes") not in wanted_panes
-                or not dump.get("local", {}).get("opening")):
+                or not dump.get("local", {}).get("opening") or not {"Global", "Local"}.issubset(p["view"] for p in drawn)):
             problems.append(f"{step}: status table/bytes or the main panes were not submitted")
         if status.get("draw_code") != 0:
             problems.append(f"{step}: no raster coverage readback")
@@ -3570,7 +3573,11 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     if script not in EXPECT or not path.is_file():
         raise ValueError(f"no D02 script named {script} (renderer/shell/d02_scripts/)")
     written = json.loads(path.read_text(encoding="utf-8"))
-    if state is None:
+    puzzle = written.get("puzzle", "jumble-on")
+    # Base-puzzle scripts use the build's base session fixture, including in a batch that supplies a Jumble state.
+    if puzzle == "jumble-off":
+        state = None
+    elif state is None:
         state = written.get("state")
     if state is not None and state not in source["states"]:
         raise ValueError(f"no sample state named {state}")
@@ -3589,8 +3596,7 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         started["process"], started["at"] = process, clock()
         return process
 
-    # A script may name its puzzle (step C-.40: base-local runs the base puzzle, Jumble off); the default is Jumble on.
-    arguments = ["--out", str(out), "--frame", "--puzzle", written.get("puzzle", "jumble-on"), "--d02", "--d02-script", str(path)]
+    arguments = ["--out", str(out), "--frame", "--puzzle", puzzle, "--d02", "--d02-script", str(path)]
     arguments += ["--sample"] if script in IN_SAMPLE_MODE else []
     # A script may name the window's size (the fit scripts: the owner's 2000x1200 and a smaller 1280x720).
     resolution = written.get("resolution")
@@ -3696,7 +3702,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--script", required=True, help="a script of renderer/shell/d02_scripts/, without .json")
     parser.add_argument("--out", type=Path, required=True, help="the run folder, which must not exist yet")
     parser.add_argument("--build", type=Path, help="the product build (default: the newest)")
-    parser.add_argument("--state", help="the sample state the D02 surfaces read")
+    parser.add_argument("--state", help="the sample state for Jumble-on scripts")
     args = parser.parse_args(argv)
     try:
         code, record = run(args.script, args.out.resolve(), args.build, args.state)

@@ -19,6 +19,7 @@ import unittest
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SHELL = ROOT / "renderer" / "shell"
@@ -638,8 +639,9 @@ class TwoViewsRun(unittest.TestCase):
                 words = "" if named or not default else run.LOCAL_DEFAULT
                 lines = [["view:Local", words or run.LOCAL_EMPTY]] if not named else []
                 local = {"cap": cap, "framed": kept if named else cap, "opening": cap >= 0, "words": words}
+                revision = 303 if index == 11 else 302
                 out.append({"step": index, "do": do, "lines": lines, "named": 150 if named else -1, "local": local,
-                            "state_revision": 300, "tint": {"revision": 300},
+                            "bound": {"revision": revision}, "tint": {"revision": revision},
                             "overlay": {"trace_cap": 150 if named else None, "outline_entries": 0, "kept": 0}})
             return out
         self.assertEqual(run.expect_two_views(dumps(), {}, "wj-ia-300"), [])
@@ -651,6 +653,10 @@ class TwoViewsRun(unittest.TestCase):
         wrong[5]["overlay"]["outline_entries"] = 1909
         wrong[7]["tint"]["revision"] = 299
         self.assertEqual(len(run.expect_two_views(wrong, {}, "wj-ia-300")), 2)
+        missing = dumps()
+        del missing[11]["bound"], missing[11]["tint"]
+        self.assertEqual(run.expect_two_views(missing, {}, "wj-ia-300"),
+                         ["step 11: the style revision differs from the bound facts"])
         self.assertTrue(run.expect_two_views(dumps()[:6], {}, "wj-ia-300"))
 
     def rotation(self, linked, turns, spin, sent_global, sent_local):
@@ -837,6 +843,21 @@ class LocalOnTheBasePuzzle(unittest.TestCase):
         self.assertIn("base-local", d02_run.EXPECT)
         self.assertNotIn("base-local", d02_run.ON_FIXTURE)
         self.assertNotIn("base-local", d02_run.IN_SAMPLE_MODE)
+
+    def test_base_local_uses_the_base_fixture_in_a_batch(self):
+        run = shell_module("d02_run")
+        temp = fixture_folder(self, "d02-base-local-")
+        sample = temp / "wj-ia-300"
+        sample.mkdir()
+        (sample / "fixture.json").write_text("{}", encoding="utf-8")
+        launcher = Mock(return_value=0)
+        with patch.object(run, "FIXTURES", temp):
+            _, record = run.run("base-local", temp, None, "wj-ia-300", desktop=Mock(), launcher=launcher)
+        arguments = launcher.call_args.args[0]
+        self.assertEqual(arguments[arguments.index("--puzzle") + 1], "jumble-off")
+        self.assertNotIn("--d02-state", arguments)
+        self.assertNotIn("--d02-fixture", arguments)
+        self.assertIsNone(record["state"])
 
     def plan(self, framed, by_selection=False, cap=0):
         words = (f"Local frames cell {framed}, the selected sticker's cell. Clear the selection to return to cell 0."
