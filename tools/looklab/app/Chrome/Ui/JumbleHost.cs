@@ -498,8 +498,8 @@ public sealed partial class JumbleHost
                 Pick(Repair.Rows[pick - 1], UserEvent.Key("palette Enter"));
                 break;
             case "filter.open": OpenFilter(); break;
-            case "jumble.corrections.mark": if (MarkOf(argument) is (int id, int by)) Corrections.Model?.Mark(id, by); OpenCorrections(); break;
-            case "jumble.corrections.check": Corrections.CheckSet(); OpenCorrections(); break;
+            case "jumble.corrections.mark": if (MarkOf(argument) is (int id, int by)) Corrections.Model?.Mark(id, by); RevealCorrections(); break;
+            case "jumble.corrections.check": Corrections.CheckSet(); RevealCorrections(); break;
             case "filter.preview": if (argument != null) Filter?.SetText(argument); Filter?.Run(); OpenFilter(); break;
             // The palette's Enter asked for it.
             case "filter.apply": Filter?.Apply(UserEvent.Key("palette Enter")); OpenFilter(); break;
@@ -700,6 +700,9 @@ public sealed partial class JumbleHost
         Nu = NuBand.ForState(nuConstants, order, Source.State, nuState?.N, nuState?.Nu);
         if (GodotObject.IsInstanceValid(NuStrip)) NuStrip.SetBand(Nu);
     }
+
+    // Mark and Check reveal their result. Only an explicit focus request gives the list its local Space binding.
+    private void RevealCorrections() => frame.Model.RevealDock(DockSide.Left, NuCorrectionsPanel.PanelId, frame.Folds(DockSide.Left));
 
     public void OpenCorrections() => frame.RevealAndFocus(DockSide.Left, NuCorrectionsPanel.PanelId, Corrections);
 

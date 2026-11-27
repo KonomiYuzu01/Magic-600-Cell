@@ -408,6 +408,7 @@ internal static partial class Program
             ("D02DrawnPreviewKeepsMainViewOpenings", D02DrawnPreviewKeepsMainViewOpenings),
             ("D02SliceDumpKeepsHeldAngle", D02SliceDumpKeepsHeldAngle),
             ("D02StatusScriptScrubsWithUserEvent", D02StatusScriptScrubsWithUserEvent),
+            ("D02CorrectionRowsRevealWithoutTakingFocus", D02CorrectionRowsRevealWithoutTakingFocus),
             ("D02StyleRequiresTheBoundRevision", D02StyleRequiresTheBoundRevision),
             ("D02TuningOpensInRightDockOfCurrentLayout", D02TuningOpensInRightDockOfCurrentLayout),
             ("D02KnobChangeTouchesNoState", D02KnobChangeTouchesNoState),
