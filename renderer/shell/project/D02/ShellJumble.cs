@@ -46,6 +46,8 @@ public static class ShellJumble
     /// <summary>The wheel zoom of the view under the pointer (owner, 26 November 2026).</summary>
     public static ShellZoom Zoom { get; } = new();
     private static JumbleHost? _host;
+    private static InspectorModel? _pickInspector;
+    internal static string PickInspectLine => _pickInspector?.Piece?.Line ?? "";
 
     /// <summary>The Jumble facts of each newly shown revision (B6), from the host's state digests.</summary>
     public static JumbleFeed Feed { get; } = new();
@@ -311,6 +313,7 @@ public static class ShellJumble
         }
         Feed.Adopt(JumbleFeed.Read(digests, revision));
         Rebind(bound);
+        InspectPicked();
     }
 
     /// <summary>
@@ -321,6 +324,7 @@ public static class ShellJumble
     {
         Feed.Adopt(Feed.State with { LatticeFlag = false, Revision = revision });
         Rebind(null);
+        InspectPicked();
     }
 
     private static void Rebind(string? bound)
@@ -329,6 +333,52 @@ public static class ShellJumble
         {
             Bound = bound;
             BindingChanged?.Invoke();
+        }
+    }
+
+    /// <summary>ADR-D02 B17: the selected sticker's session facts and any matching sample numerals.</summary>
+    private static void InspectPicked()
+    {
+        if (_pickInspector is not { } inspector)
+        {
+            return;
+        }
+        if (ShellPick.Selection is not { } picked || picked.Revision != (ulong)Feed.State.Revision)
+        {
+            inspector.SelectPiece(null);
+            return;
+        }
+        (int Domain, int Height)? sample = null;
+        try
+        {
+            if (Style() is { } style && style.Digest == StateDigest && Poses(style.RowCount) is { } poses
+                && poses.Digest == StateDigest && picked.Piece < poses.Poses.Length)
+            {
+                int row = poses.Poses[(int)picked.Piece];
+                sample = (style.RowDomain(row), style.RowHeight(row));
+            }
+        }
+        catch (Exception error) when (error is FormatException or JsonException or IOException or KeyNotFoundException or InvalidOperationException)
+        {
+            Safe.Report(error);
+        }
+        inspector.SelectPiece(new PieceInspection(picked.Piece, picked.Sticker, picked.Cell, Feed.State.Mode, sample));
+    }
+
+    /// <summary>ADR-D01.67: the Target key names the cell of the current selection.</summary>
+    private static void NamePickedTarget(ChromeFrame frame)
+    {
+        if (ShellPick.Selection is not { } picked || picked.Revision != (ulong)Feed.State.Revision)
+        {
+            frame.Say("Pick a sticker at the current revision to name the Target.", true);
+        }
+        else if (picked.Cell is not int cell)
+        {
+            frame.Say("The picked piece is off the lattice and has no cell.", true);
+        }
+        else if (Host?.Name(cell) == true)
+        {
+            frame.Say(FormattableString.Invariant($"Target · cap {cell}"));
         }
     }
 
@@ -348,6 +398,21 @@ public static class ShellJumble
     public static void Attach(Control parent, ChromeFrame frame, CommandPalette palette)
     {
         palette.DraftRows.UnionWith(DraftIds);
+        if (frame.OpenGround && !ShellChrome.SampleOn)
+        {
+            var inspector = _pickInspector = new InspectorModel();
+            var strip = new InspectorStrip(inspector, () => frame.Tokens, why => frame.Say(why, true));
+            frame.SetTopStrip(strip);
+            frame.Rebuilt += strip.Refresh;
+            ShellPick.SelectionChanged += InspectPicked;
+            frame.TreeExiting += () =>
+            {
+                ShellPick.SelectionChanged -= InspectPicked;
+                _pickInspector = null;
+            };
+            // ADR-D01.67: the command table's Set Target row already has E in the key map.
+            frame.HostKeys["E"] = () => NamePickedTarget(frame);
+        }
         var state = System.Environment.GetEnvironmentVariable("M600_D02_STATE") is { Length: > 0 } named ? named : "no state";
         var chip = SessionWidgets.Chip("D02 · " + state, frame.Tokens.C("accent.strong"),
             "ADR-D02's build: the Jumble and research surfaces; the palette marks the draft rows");
@@ -890,6 +955,7 @@ internal sealed partial class D02Driver : Node
             }
             json.WriteEndObject();
             ShellPick.Dump(json);
+            json.WriteString("piece_inspect", ShellJumble.PickInspectLine);
             ShellLocal.Dump(json);
             ShellResearch.Dump(json);
             ShellDocuments.Dump(json);

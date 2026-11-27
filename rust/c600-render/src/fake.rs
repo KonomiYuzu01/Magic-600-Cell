@@ -457,8 +457,14 @@ impl CoreAbi for FakeCore {
         }
         let ticket = self.next_ticket;
         self.next_ticket += 1;
-        let instances: BTreeMap<usize, u32> =
-            input.instances.iter().enumerate().filter(|(_, &i)| i != 0).map(|(s, &i)| (s, i)).collect();
+        // ADR-D02 B17: the fake's ID pass stamps an instance only where F02 allows the core to stamp it.
+        let instances: BTreeMap<usize, u32> = input
+            .instances
+            .iter()
+            .copied()
+            .enumerate()
+            .filter(|&(slot, id)| id != 0 && input.visibility[slot] == 1 && input.interaction[slot] == 1)
+            .collect();
         self.prepared.push((input.view, instances.clone(), input.visibility.to_vec()));
         self.tickets.insert(
             ticket,
