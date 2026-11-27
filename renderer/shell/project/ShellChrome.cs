@@ -500,6 +500,11 @@ public sealed class ShellChrome
                 frame.HostKeys["E"] = () => Execute("target.current.set", null);
             // B6: the Jumble host in Solve, fed at each shown revision; Local shows its sections.
             var (names, empty, nothing) = ShellJumble.Words(folder);
+            // B32 findings: in sample mode the key map holds the help key (ADR-D01.74), so Local's hint names the key
+            // that opens the palette there; outside sample mode F1 with no help topic opens the palette (PR 446's reading).
+            if (sample != null)
+                empty = ShellJumble.PaletteRoute(empty, sample.Keys.ShowKey ?? keymap.Bindings.FirstOrDefault(b => b.Command == "help.open")?.Key,
+                    keymap.KeysFor("command.find", null));
             var sentences = ShellJumble.Sentences(folder);
             Jumble = new JumbleHost(frame, ShellJumble.Feed, names, empty, nothing, sentences["totals.unit"], sentences["totals.above"]);
             // B7: Global's totals follow the bound state, pending while none is bound; B8: so does the cap map.
@@ -544,6 +549,8 @@ public sealed class ShellChrome
             ShellHopf.Applied += Describe;
             // B21: the palette's raw view rows and Local's raw view marks.
             host.RawRow = ShellRaw.Request;
+            // B32 findings: the palette's cut slice rows, beside the held split key.
+            host.SliceRow = ShellSlice.Request;
             host.Raw = () => ShellRaw.Shown;
             ShellRaw.Applied += Describe;
             var jumbleClock = new Godot.Timer { Name = "JumbleClock", WaitTime = 0.15, Autostart = true };

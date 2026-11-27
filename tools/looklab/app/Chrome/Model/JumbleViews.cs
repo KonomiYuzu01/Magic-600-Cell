@@ -110,6 +110,21 @@ public sealed class CutSlice
         return Shell;
     }
 
+    // `jumble.slice.split` (B32 findings): the palette latches the held split on or off; Backslash's release ends it.
+    public bool ToggleSplit() => Split = !Split;
+
+    // `jumble.slice.shell r` (B32 findings): the shell's outer radius in radians about the pole, or `default`.
+    public static double? ParseShell(string? argument) =>
+        argument?.Trim() == "default" ? DefaultShell.Max
+        : double.TryParse(argument, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double r)
+          && r >= ShellStep && r <= ShellLimit ? r : null;
+
+    public SliceShell SetShell(double max)
+    {
+        Shell = Shell with { Max = Math.Round(Math.Clamp(max, Shell.Min + ShellStep, ShellLimit), 6) };
+        return Shell;
+    }
+
     // Pressing the preview key at the cap Local draws: a twist row (an admissible cap) starts the ghost; a blocked cap
     // (no row) has none and says why. Nothing is named while the key is held.
     public bool Press(int cap, double? angle)
