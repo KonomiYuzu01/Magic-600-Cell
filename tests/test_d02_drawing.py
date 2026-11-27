@@ -305,7 +305,7 @@ class ShellPanes(unittest.TestCase):
         # B17 (ADR-D01.41): the named cap, or a newer selection while auto-framing is on.
         self.assertIn("int? cap = D02.ShellLocal.Frame(_chrome?.Jumble?.Naming.Named);", body)
         self.assertIn("cell == HostLibrary.FocusNone ? -1 : D02.ShellLocal.FocusCos", body)
-        self.assertIn("library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone)", body)
+        self.assertIn("library.SetViewVisible(_host, HostLibrary.Local, cell != HostLibrary.FocusNone && !hidden)", body)
         self.assertIn("chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;", body)
 
     def test_the_panes_are_global_then_local_inside_the_surface(self):
@@ -570,7 +570,7 @@ class ChromeOpening(unittest.TestCase):
         self.assertIn('Local = View("Local", localDrawn ? LocalWrap(localContent) : localContent);', frame)
         self.assertIn('var scroll = new ScrollContainer { Name = "LocalScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };',
                       frame)
-        self.assertIn("int height = ViewPanes.OpeningHeight((int)Size.X, (int)Size.Y, frame.LocalOpeningShown);", frame)
+        self.assertIn("int height = ViewPanes.OpeningHeight((int)Size.X, (int)Size.Y, frame.LocalOpen);", frame)
         self.assertIn("foreach (Rect2 open in new[] { last, lastLocal })", frame)
         self.assertIn("foreach (PaneRect piece in ViewPanes.Ground(all, holes))", frame)
         chrome = text(PROJECT / "ShellChrome.cs")
@@ -793,7 +793,7 @@ class LocalOnTheBasePuzzle(unittest.TestCase):
         self.assertIn("host.SetDrawnWithoutCap(live && !ShellLocal.Plan.Jumble);", chrome)
         self.assertIn('ViewLine.Set(Frame.Local, "LocalPlanLine", words, LocalPlan.Hint, Frame.Tokens.C("text.dim"));', chrome)
         # ADR-D02 B21: the raw view's line takes Local's line while the raw view is on.
-        self.assertIn("_chrome?.LocalLine(D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
+        self.assertIn("_chrome?.LocalLine(hidden ? HiddenLocalWords : D02.ShellRaw.Line(cap) ?? D02.ShellLocal.Plan.Words);", text(PROJECT / "Shell.cs"))
         host = text(CHROME / "Ui" / "JumbleHost.cs")
         self.assertIn("Surface.SetDrawn(LocalCap.Shown != null || drawnWithoutCap);", host)
         self.assertIn('ViewLine.Set(view, "JumbleLocalDefault", LocalWords, hint, frame.Tokens.C("text.dim"));', host)
@@ -862,7 +862,7 @@ class PickRun(unittest.TestCase):
         self.assertIn("pick", run.ON_FIXTURE)
         script = json.loads(text(SHELL / "d02_scripts" / "pick.json"))
         self.assertEqual(script["steps"][-2], {"click": [0.02, 0.02]})
-        self.assertIn("public static string ScriptClick(Rect2 opening, JsonElement click)",
+        self.assertIn("public static string ScriptClick(Rect2 opening, JsonElement click, bool local = false)",
                       text(PROJECT / "D02" / "ShellPick.cs"))
 
     def test_the_model_pieces_are_read(self):
@@ -896,7 +896,7 @@ class HopfRun(unittest.TestCase):
 
     def test_the_script_and_the_checks_exist(self):
         run = shell_module("d02_run")
-        self.assertIs(run.EXPECT["hopf"], run.expect_hopf)
+        self.assertIs(run.EXPECT["hopf"].__wrapped__, run.expect_hopf)  # C3/C4 F5: under the steady-state check
         self.assertIn("hopf", run.ON_FIXTURE)
         self.assertIs(run.EVENT_CHECKS["hopf"], run.check_hopf_events)
         script = json.loads(text(SHELL / "d02_scripts" / "hopf.json"))
@@ -912,7 +912,7 @@ class HopfRun(unittest.TestCase):
 
     def test_the_ring_sheet_run_reads_its_own_opening(self):
         run = shell_module("d02_run")
-        self.assertIs(run.EXPECT["ring-sheet"], run.expect_ring_sheet)
+        self.assertIs(run.EXPECT["ring-sheet"].__wrapped__, run.expect_ring_sheet)  # C3/C4 F5
         self.assertIn("ring-sheet", run.ON_FIXTURE)
         self.assertIs(run.DATA_FOR["ring-sheet"], run.ring_sheet_data)
         temp = fixture_folder(self, "d02-ring-sheet-")
@@ -955,7 +955,7 @@ class HopfRun(unittest.TestCase):
         self.assertIn('"the ring sheet drew a sweep"', text(CORE / "src" / "gpu_test.cpp"))
         turn = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellTurn.cs")
         self.assertIn('if (kind == "sweep" && ShellHopf.Drawn != ShellHopf.Chain)', turn)
-        self.assertIn("if (Cap != (int)GripCap)", turn)
+        self.assertIn("if (Cap != (int)ActiveGripCap)", turn)
         style = text(ROOT / "renderer" / "shell" / "project" / "D02" / "ShellStyle.cs")
         self.assertIn("if (slot != 1 && ShellTurn.OutlineOnly)", style)
 
@@ -1052,6 +1052,98 @@ class OverlaysRun(unittest.TestCase):
         self.assertIn("after 'wait 1504 ms' kept_dimmed", problems[0])
         dumps[2]["tint"]["fill_sha256"] = dumps[0]["tint"]["fill_sha256"]
         self.assertTrue(any("after 'wait 1502 ms' fill_sha256" in p for p in run.expect_overlays(dumps, {}, "wj-ia-300", tables)))
+
+
+class GripFrameRun(unittest.TestCase):
+    def test_the_grip_script_uses_the_real_fixture_and_registered_check(self):
+        run = shell_module("d02_run")
+        script = json.loads(text(SHELL / "d02_scripts" / "grip-frame.json"))
+        self.assertEqual((script["format"], script["resolution"], script["state"]),
+                         ("magic600-d02-script/1", "1280x720", "wj-ia-300"))
+        self.assertIn("grip-frame", run.ON_FIXTURE)
+        self.assertIs(run.EXPECT["grip-frame"], run.expect_grip_frame)
+        self.assertIn({"command": "grip.select"}, script["steps"])
+        self.assertIn({"grip_click": "Local"}, script["steps"])
+
+    def test_the_check_reads_the_chosen_item_ghost_and_head(self):
+        def grip(cap, frame, corners, items, committed=300, digest="opening", ghost=False):
+            chords = ("KeyJ", "Shift+KeyJ", "KeyK", "Shift+KeyK", "KeyL", "Shift+KeyL")
+            keys = [dict(chord=chord, item=i, meaning="(14)(23)") for chord, i in zip(chords, items)]
+            marks = [dict(index=i, corner=c, x=15 + i, y=20 + i) for i, c in enumerate(corners, 1)]
+            drawn = [dict(pane=pane, rect=[10, 10, 100, 100], marks=marks) for pane in ("Global", "Local")]
+            if ghost:
+                for pane in drawn:
+                    pane["direction"] = [30, 30]
+            return dict(cap=cap, frame=frame, keys=keys, marks=marks, drawn=drawn, committed=committed, refused=0,
+                        admissible_frames=[0, 1], state_digest=digest,
+                        host=dict(cap=cap, frame=frame, revision=committed + 2, frames=[dict(frame=frame, keys=keys)],
+                                  last=dict(cap=cap, item=items[0])),
+                        ghost=dict(on=ghost, cap=cap, item=items[0], modifier="Ctrl", moving=10 if ghost else 0,
+                                   outlined=9 if ghost else 0, palette=2, sha256="a" * 64 if ghost else None))
+
+        p, q = [1, 1, 2, 5, 3, 9], [4, 4, 2, 5, 3, 9]
+        a, b = [10, 20, 30, 40], [20, 30, 10, 40]
+        start = grip(0, 0, a, p)
+        turned = grip(150, 1, b, q, 301, "turned")
+        held = grip(150, 1, b, q, 301, "turned", True)
+        clicked = grip(150, 1, b, q, 302, "opening")
+        records = [("wait 2500 ms", start), ("wait 600 ms", start), ("command grip.select", grip(150, 0, a, p)),
+                   ("command grip.frame.next", grip(150, 1, b, q)), ("wait 1600 ms", turned), ("wait 601 ms", held),
+                   ("wait 602 ms", turned), ("wait 603 ms", held), ("wait 604 ms", turned), ("wait 1601 ms", clicked)]
+        dumps = [{"do": step, "grip": row, "pick": {"selection": {"slot": 150 * 433, "revision": 302}}}
+                 for step, row in records]
+        check = shell_module("d02_run").expect_grip_frame
+        self.assertEqual(check(dumps, {}, "wj-ia-300"), [])
+        held["state_digest"] = "ghost moved the head"
+        held["ghost"]["outlined"] = 0
+        clicked["host"]["last"]["item"] = 1
+        problems = check(dumps, {}, "wj-ia-300")
+        self.assertTrue(any("modifier release changed the head" in p for p in problems))
+        self.assertTrue(any("lack the hover outline" in p for p in problems))
+        self.assertTrue(any("Ctrl+click committed the wrong cap or item" in p for p in problems))
+
+
+class GripKeycapsRun(unittest.TestCase):
+    def test_the_keycaps_script_uses_the_real_fixture_and_registered_check(self):
+        run = shell_module("d02_run")
+        script = json.loads(text(SHELL / "d02_scripts" / "grip-keycaps.json"))
+        self.assertEqual((script["format"], script["resolution"], script["state"]),
+                         ("magic600-d02-script/1", "1280x720", "wj-ia-300"))
+        self.assertIn("grip-keycaps", run.ON_FIXTURE)
+        self.assertIs(run.EXPECT["grip-keycaps"], run.expect_grip_keycaps)
+        self.assertIn({"command": "grip.frame.next"}, script["steps"])
+        self.assertIn({"chord": "Shift+Slash"}, script["steps"])
+
+    def test_the_check_reads_the_caps_stamps_and_marks(self):
+        def dump(step, frame, items, changed=(), shown=True):
+            chords = ("KeyJ", "Shift+KeyJ", "KeyK", "Shift+KeyK", "KeyL", "Shift+KeyL")
+            meanings = ("(14)(23)", "(14)(23)", "(123)", "(132)", "(134)", "(143)")
+            keys = [dict(chord=c, item=i, meaning=m) for c, i, m in zip(chords, items, meanings)]
+            carried = [dict(key=c[3:], chord=c, item=i, meaning=m, label=m, context="grip", changed=c[3:] in changed)
+                       for c, i, m in zip(chords, items, meanings) if "+" not in c]
+            stamps = [dict(key=cap["key"], label=cap["meaning"], x=40 + 80 * n, y=30, box=[80 * n, 0, 80, 60])
+                      for n, cap in enumerate(carried)]
+            legend = "whole outline: bound here" + (" · corner mark: changed meaning since the grip frame changed"
+                                                    if changed else "")
+            keycaps = dict(shown=shown, header=f"Key set: default · pointer over Local · no modifier held · grip: cap 150, "
+                           f"frame {frame}", legend=legend, grip=carried, stamps=stamps)
+            return {"do": step, "grip": dict(cap=150, frame=frame, keys=keys), "keycaps": keycaps}
+
+        p, q = [1, 1, 2, 5, 3, 9], [1, 1, 4, 7, 6, 8]
+        dumps = [dump("wait 700 ms", 0, p), dump("command grip.frame.next", 2, q, "KL"), dump("wait 701 ms", 2, q, "KL"),
+                 dump("chord Escape", 2, q, shown=False), dump("wait 702 ms", 2, q)]
+        check = shell_module("d02_run").expect_grip_keycaps
+        self.assertEqual(check(dumps, {}, "wj-ia-300"), [])
+        dumps[2]["keycaps"]["grip"][0]["changed"] = True
+        dumps[2]["keycaps"]["stamps"][1]["x"] = 500
+        dumps[4]["keycaps"]["header"] = "Key set: default · pointer over Local · no modifier held"
+        dumps[3]["keycaps"]["shown"] = True
+        problems = check(dumps, {}, "wj-ia-300")
+        self.assertTrue(any("marks ['J', 'K', 'L'], not the re-bound keys ['K', 'L']" in p for p in problems))
+        self.assertTrue(any("K's stamp differs or lies outside its cap" in p for p in problems))
+        self.assertTrue(any("the map shown again's header reads" in p for p in problems))
+        self.assertTrue(any("Escape left the key map shown" in p for p in problems))
+        self.assertEqual(check(dumps[:2], {}, "wj-ia-300"), ["the grip keycaps script is missing a grip or keycaps checkpoint"])
 
 
 if __name__ == "__main__":

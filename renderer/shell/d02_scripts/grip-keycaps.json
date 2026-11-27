@@ -1,0 +1,19 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "grip-keycaps",
+  "resolution": "1280x720",
+  "state": "wj-ia-300",
+  "note": "ADR-D01.74 on ADR-D01.75's grip: grip cap 150 by name and pin the key map over Local (Shift+/ outside sample mode). J, K and L carry the frame's twists with their cycles over the grip's marks, and the header names the grip. The next frame re-binds keys, which the map marks until it has been closed; shown again, it marks none.",
+  "steps": [
+    {"wait_ms": 2500},
+    {"command": "grip.select", "argument": "150"},
+    {"hover_control": "LocalFrame"},
+    {"chord": "Shift+Slash"},
+    {"wait_ms": 700},
+    {"command": "grip.frame.next"},
+    {"wait_ms": 701},
+    {"chord": "Escape"},
+    {"chord": "Shift+Slash"},
+    {"wait_ms": 702}
+  ]
+}

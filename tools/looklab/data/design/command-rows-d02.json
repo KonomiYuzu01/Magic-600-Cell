@@ -495,5 +495,29 @@
       "note": "Draws the sample sticker statuses in Global and Local. Argument: on or off.",
       "request": "ADR-D01.65"
     }
+  ],
+  "grip": [
+    {
+      "id": "grip.select",
+      "label": "Grip (cap and frame)",
+      "kind": "workspace",
+      "contexts": [
+        "puzzle",
+        "keyboard"
+      ],
+      "note": "Uses the picked cell or a named cap. Hold Ctrl for the direct twist preview (ADR-D01.13).",
+      "request": "ADR-D01.75"
+    },
+    {
+      "id": "grip.frame.next",
+      "label": "Next grip frame",
+      "kind": "workspace",
+      "contexts": [
+        "puzzle",
+        "keyboard"
+      ],
+      "note": "Changes the grip's marks and twist keys together.",
+      "request": "ADR-D01.75"
+    }
   ]
 }

@@ -957,7 +957,8 @@ PickPlan Product::pick_pane(const Frame& record, PickPlan out) const {
         const Copy& copy = copies_[record.copy];
         const bool styled = record.panes[i].styled; // ADR-D02 B17 (ABI 10)
         const bool bound = styled || record.panes[i].shape.turn != 0.0f; // B18-03: a turning pane's moving mask
-        if (!copy.valid || copy.revision != record.input.engine_revision || (bound && copy.pick_style != record.style_version)) {
+        if (!copy.valid || copy.revision != record.input.engine_revision || (bound && copy.pick_style != record.style_version)
+            || copy.charts != record.charts_version) { // C3/C4 F4: a chart pane's pick reads the copy's charts, as pick_plan's
             out.state = SA2_PICK_STALE;
             out.stale = SA2_PICK_STALE_ENGINE;
             return out;

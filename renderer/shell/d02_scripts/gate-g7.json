@@ -1,0 +1,39 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "gate-g7",
+  "state": "deep-2",
+  "resolution": "2000x1200",
+  "note": "A gate row of renderer/shell/gate_d02.py: the steps before the repeat block set the views; the block runs for warm-up plus window seconds as quiet steps (d02_run.expand_repeat), and tools/perf/d02/gate_row.py times the last window seconds. No step follows the block, so the window holds only the row's views. B24 G7: Global on the 20 Hopf rings, Local on the named cap, held for the window.",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "command": "view.preset.global.hopf_rings"
+    },
+    {
+      "wait_ms": 1500
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "text": "> jumble.cap.name 2"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 1200
+    },
+    {
+      "repeat": {
+        "steps": [
+          {
+            "wait_ms": 1000
+          }
+        ]
+      }
+    }
+  ]
+}

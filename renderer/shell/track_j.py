@@ -36,9 +36,12 @@ import sys
 sys.dont_write_bytecode = True
 
 import argparse
+import hashlib
 import json
+import math
 import random
 import re
+import secrets
 import shutil
 from pathlib import Path
 
@@ -165,8 +168,12 @@ def reach(dumps: list[dict], op: dict, label: str, until: int) -> tuple[str, str
     return "refused", reason
 
 
-def boundary(dumps: list[dict]) -> int:
-    return max(((dump.get("stage") or {}).get("unasked", 0) for dump in dumps), default=0)
+def boundary(dumps: list[dict]) -> tuple[int, int]:
+    """The most unasked acts the Jumble host's BoundaryLedger counted, and how many screens carry no count: a screen
+    without the ledger's count is a problem, never a zero."""
+    counts = [(dump.get("stage") or {}).get("unasked") for dump in dumps]
+    known = [n for n in counts if isinstance(n, int) and not isinstance(n, bool)]
+    return max(known, default=0), len(counts) - len(known)
 
 
 def screen(dump: dict) -> list[str]:
@@ -377,7 +384,10 @@ def j1(session: dict, out: Path, build: Path | None, player=play) -> tuple[int, 
         played[part["name"]] = (dumps, ops, part["state"])
         if not dumps:
             continue
-        unasked = max(unasked, boundary(dumps))
+        counted, unread = boundary(dumps)
+        unasked = max(unasked, counted)
+        if unread:
+            problems.append(f"{part['name']}: boundary: {unread} screens carry no BoundaryLedger count")
         for i, op in enumerate(ops):
             until = ops[i + 1]["open"] - 1 if i + 1 < len(ops) else len(dumps) - 1
             outcome, why = reach(dumps, op, named.get(op["row"], op["row"]), until)
@@ -402,19 +412,19 @@ def j1(session: dict, out: Path, build: Path | None, player=play) -> tuple[int, 
             problems.append(f"reach: {row} is not_run but no step types it")
     if unasked:
         problems.append(f"boundary: the Jumble host's BoundaryLedger counted {unasked} unasked acts")
-    observed, results = 0, []
+    results = []
     checked = [rule for rule in session["observation"] if rule["rule"] not in not_run]
     for rule in checked:
         dumps, ops, state = played.get(rule["part"], ([], [], ""))
         found = CHECKS[rule["check"]](dumps, ops, rule, state) if dumps else [f"part {rule['part']} wrote no screens"]
         results.append({"rule": rule["rule"], "part": rule["part"], "check": rule["check"], "problems": found})
-        if found:
-            problems += [f"observation {rule['rule']} ({rule['part']}): {problem}" for problem in found]
-        else:
-            observed += 1
+        problems += [f"observation {rule['rule']} ({rule['part']}): {problem}" for problem in found]
+    # A rule is observed when each of its entries passes; a rule checked on two parts counts once.
+    names = list(dict.fromkeys(rule["rule"] for rule in checked))
+    observed = sum(1 for name in names if not any(r["problems"] for r in results if r["rule"] == name))
     record = {"format": "magic600-d02-track-j-v1", "bar": "j1", "operations": len(wanted),
               "reached": sum(1 for row in wanted if row in reached), "boundary": unasked,
-              "observation": [observed, len(checked)], "not_run": not_run, "rules": results,
+              "observation": [observed, len(names)], "not_run": not_run, "rules": results,
               "reached_in": reached, "refused": refused, "problems": problems}
     (out / RECORD).write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     return (0 if not problems else 1), record
@@ -451,7 +461,8 @@ J0_RECORD = "track-j0.json"
 J0_REPORT = "track-j0.md"
 LEAST, SHARE = 20, 0.8
 FAULTED, CLEAN_RUNS = 8, ("clean-1", "clean-2")
-PACKET_SEED = 33
+# Section 7's cap on the researcher subagent: scripts written, dumps read, minutes and words of output.
+CAP = {"scripts": 2, "dumps": 12, "minutes": 90, "words": 2000}
 DEFECT_ID = re.compile(r"^(opus|fable)-\d{2}$")
 # Words that never reach the researcher's packet: they would name a planted copy, a defect or a run's label.
 LEAKS = ("plant", "defect", "opus-", "fable-", *CLEAN_RUNS)
@@ -530,8 +541,10 @@ def load_j0_session(path: Path = J0_SESSION) -> dict:
 
 
 def load_defects(paths: list[Path]) -> list[dict]:
-    """Every defect of the files named, in order; each is {id, by, class, rule, change[, note]}."""
-    defects, seen = [], set()
+    """Every defect of the files named, in order; each is {id, by, class, rule, change[, note]}. A rule outside the
+    driver's (RULES) is allowed: the defect counts as planted and only the researcher subagent can catch it. The same
+    change under two ids, and an id whose prefix is not its writer, are refused (each would inflate the planted count)."""
+    defects, seen, changes = [], set(), {}
     for path in paths:
         doc = json.loads(path.read_text(encoding="utf-8"))
         if doc.get("format") != DEFECTS_FORMAT:
@@ -542,12 +555,19 @@ def load_defects(paths: list[Path]) -> list[dict]:
                 raise ValueError(f"{path.name}: a defect lacks {missing}")
             if not DEFECT_ID.match(defect["id"]) or defect["id"] in seen:
                 raise ValueError(f"{path.name}: defect id {defect['id']!r} is not opus-NN or fable-NN, or repeats")
+            writer = defect["id"].split("-")[0]
+            if not isinstance(defect["by"], str) or defect["by"].strip().lower() != writer:
+                raise ValueError(f"{defect['id']}: {writer}- ids are written by {writer.title()}, not {defect['by']!r}")
             if defect["class"] not in CLASSES:
                 raise ValueError(f"{defect['id']}: {defect['class']!r} is not one of section 7's classes")
-            if defect["rule"] not in RULES:
-                raise ValueError(f"{defect['id']}: {defect['rule']!r} is not a J0 rule")
+            if not isinstance(defect["rule"], str) or not defect["rule"].strip():
+                raise ValueError(f"{defect['id']}: the defect names no rule")
             if not defect["change"]:
                 raise ValueError(f"{defect['id']}: the defect changes nothing")
+            change = json.dumps(defect["change"], sort_keys=True, ensure_ascii=False)
+            if change in changes:
+                raise ValueError(f"{defect['id']}: the same change as {changes[change]}")
+            changes[change] = defect["id"]
             seen.add(defect["id"])
             defects.append(defect)
     return defects
@@ -722,8 +742,9 @@ def j0_state(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> lis
 
 @j0_check("boundary")
 def j0_boundary(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> list[str]:
-    unasked = boundary(dumps)
-    return [f"the Jumble host's BoundaryLedger counted {unasked} unasked acts"] if unasked else []
+    unasked, unread = boundary(dumps)
+    return ([f"the Jumble host's BoundaryLedger counted {unasked} unasked acts"] if unasked else []) + \
+        ([f"{unread} screens carry no BoundaryLedger count"] if unread else [])
 
 
 @j0_check("lattice")
@@ -1057,17 +1078,18 @@ def j0_cut_off(dumps: list[dict], ops: list[dict], entry: dict, state: str) -> l
     return claims_problems(at(dumps, ops, entry["at"]), entry["at"], cut_off=True)
 
 
-def j0_problems(dumps: list[dict], ops: list[dict], session: dict) -> list[tuple[str, str]]:
-    """Every check's problems on one run's screens, each with its rule. A check that cannot read the screens (a field
-    missing under a fault) reports that as its problem."""
-    found = []
+def j0_problems(dumps: list[dict], ops: list[dict], session: dict) -> tuple[list[tuple[str, str]], list[str]]:
+    """Every check's problems on one run's screens, each with its rule, and the checks that could not read the screens
+    (a field missing under a fault): those are run problems, never a catch of the check's rule."""
+    found, unread = [], []
     for entry in session["checks"]:
         try:
             problems = J0_CHECKS[entry["rule"]](dumps, ops, entry, session["state"])
-        except (KeyError, IndexError, TypeError, AttributeError) as error:
-            problems = [f"the screens could not be read: {error!r}"[:200]]
+        except Exception as error:  # any check that cannot read the screens: a run problem, and the run goes on
+            unread.append(f"[{entry['rule']}] the screens could not be read: {error!r}"[:200])
+            continue
         found += [(entry["rule"], problem) for problem in problems]
-    return found
+    return found, unread
 
 
 def stable(first: list[dict], second: list[dict]) -> set[tuple[int, str]]:
@@ -1102,13 +1124,36 @@ def play_j0(label: str, data: Path, runs: Path, build: Path | None, session: dic
     return dumps, problems
 
 
+def defects_digest(defects: list[dict]) -> str:
+    """The sha256 of the defects as loaded, in order (canonical JSON)."""
+    return hashlib.sha256(json.dumps(defects, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def packet_seed(digest: str, nonce: str) -> int:
+    """The packet's draw seed: the defects' digest with a nonce that only the sealed key keeps, so the draw cannot be
+    redone from the source."""
+    return int(hashlib.sha256(f"{digest}:{nonce}".encode("utf-8")).hexdigest()[:16], 16)
+
+
+def leaked(text: str, out: Path) -> list[str]:
+    """What a packet file must not hold: a word naming a planted copy, a defect or a run's label, or the out folder's
+    path as written, JSON-escaped or with forward slashes, in any case."""
+    low = text.lower()
+    paths = set()
+    for place in (out, out.resolve()):
+        paths |= {str(place), place.as_posix(), str(place).replace("\\", "\\\\")}
+    return [word for word in LEAKS if word in low] + sorted(p for p in paths if p.lower() in low)
+
+
 def write_packet(root: Path, runs: dict[str, list[dict]], defects: list[dict], script: list[dict], state: str,
-                 seed: int = PACKET_SEED) -> dict:
+                 nonce: str | None = None) -> dict:
     """The researcher's packet (section 7): the screens of 10 runs of the fixed session, 8 faulted and 2 clean, chosen
     and ordered by a seeded draw and named run-01 to run-10, with the session's steps and the rules an answer names;
-    the key goes to sealed/key.json. A packet file that would name a planted copy, a defect or a run's label is not
-    written, and the packet fails."""
-    rng = random.Random(seed)
+    the key, with the draw's nonce, goes to sealed/key.json. A packet file that would name a planted copy, a defect, a
+    run's label or the out folder is not written, and the packet fails."""
+    nonce = secrets.token_hex(16) if nonce is None else nonce
+    digest = defects_digest(defects)
+    rng = random.Random(packet_seed(digest, nonce))
     by_id = {defect["id"]: defect for defect in defects}
     ready = [defect["id"] for defect in defects if runs.get(defect["id"])]
     chosen = rng.sample(ready, min(FAULTED, len(ready))) + [label for label in CLEAN_RUNS if runs.get(label)]
@@ -1122,29 +1167,33 @@ def write_packet(root: Path, runs: dict[str, list[dict]], defects: list[dict], s
                                                     ensure_ascii=False) + "\n" for dump in runs[label])
         key[name] = {"label": label, "broken": label in by_id, "rule": by_id[label]["rule"] if label in by_id else None}
     for name, text in files.items():
-        leaks = [word for word in LEAKS if word in text.lower()] + [p for p in (str(root), root.as_posix()) if p in text]
+        leaks = leaked(text, root.parent)
         if leaks:
             problems.append(f"packet {name} would leak {leaks}; not written")
             continue
         (packet / name).write_text(text, encoding="utf-8", newline="\n")
-    (root / "sealed" / "key.json").write_text(json.dumps({"format": KEY_FORMAT, "seed": seed, "runs": key}, indent=2)
-                                              + "\n", encoding="utf-8", newline="\n")
+    (root / "sealed" / "key.json").write_text(json.dumps({"format": KEY_FORMAT, "nonce": nonce, "defects_sha256": digest,
+                                                          "runs": key}, indent=2) + "\n", encoding="utf-8", newline="\n")
     return {"runs": len(chosen), "faulted": sum(1 for v in key.values() if v["broken"]),
-            "clean": sum(1 for v in key.values() if not v["broken"]), "seed": seed, "problems": problems}
+            "clean": sum(1 for v in key.values() if not v["broken"]), "defects_sha256": digest, "problems": problems}
 
 
 def j0_passed(record: dict) -> bool:
-    replayed = record["replay"]
+    """J0's bar: enough planted and caught, the replay bound, and no false alarm (the driver's or the subagent's), run
+    problem, packet problem or subagent over section 7's cap."""
+    replayed, sub = record["replay"], record.get("subagent") or {}
     return (record["planted"] >= LEAST and record["caught_any"] >= SHARE * record["planted"]
             and replayed["words"] == 9 and replayed["bound"] == 9 and not replayed["problems"]
-            and not record["false_alarms"] and not record["run_problems"] and not record["packet"]["problems"])
+            and not record["false_alarms"] and not record["run_problems"] and not record["packet"]["problems"]
+            and not sub.get("false_alarms") and not sub.get("over_cap"))
 
 
 def j0(session: dict, defects: list[dict], out: Path, build: Path | None, player=play_j0, replayer=replay,
-       writer: Path | None = None) -> tuple[int, dict]:
+       writer: Path | None = None, nonce: str | None = None) -> tuple[int, dict]:
     """J0's run: the seed 7001 replay, then the session once on a clean copy, once per defect and once more clean;
-    the checks on every run, each defect caught by the driver when a problem names its rule; the packet; the record
-    (j0/track-j0.json) and the report (j0/track-j0.md)."""
+    the checks on every run, each defect caught by the driver when a problem names its rule (never a rule outside the
+    driver's); a check that cannot read a run's screens is a run problem; the packet; the record (j0/track-j0.json)
+    and the report (j0/track-j0.md)."""
     root = out / "j0"
     for name in ("plant", "runs", "scripts", "packet", "sealed"):
         (root / name).mkdir(parents=True)
@@ -1164,7 +1213,11 @@ def j0(session: dict, defects: list[dict], out: Path, build: Path | None, player
         runs[label], problems = player(label, folder, root / "runs", build, session, path)
         if problems:
             run_problems[label] = problems
-    found = {label: j0_problems(dumps, ops, session) if dumps else [] for label, dumps in runs.items()}
+    found: dict[str, list[tuple[str, str]]] = {}
+    for label, dumps in runs.items():
+        found[label], unread = j0_problems(dumps, ops, session) if dumps else ([], [])
+        if unread:
+            run_problems.setdefault(label, []).extend(unread)
     false_alarms = [f"{label}: [{rule}] {problem}" for label in CLEAN_RUNS for rule, problem in found[label]]
     clean = runs[CLEAN_RUNS[0]]
     keys = stable(clean, runs[CLEAN_RUNS[1]]) if clean and runs[CLEAN_RUNS[1]] else set()
@@ -1174,10 +1227,11 @@ def j0(session: dict, defects: list[dict], out: Path, build: Path | None, player
         rules = sorted({rule for rule, _ in found[defect["id"]]})
         rows.append({"id": defect["id"], "by": defect["by"], "class": defect["class"], "rule": defect["rule"],
                      "files": changed[defect["id"]], "note": defect.get("note", ""), "screens": bool(dumps),
-                     "caught_driver": defect["rule"] in rules, "caught_subagent": None,
+                     "outside": defect["rule"] not in RULES, "caught_subagent": None,
+                     "caught_driver": defect["rule"] in RULES and defect["rule"] in rules,
                      "flagged": rules, "problems": [f"[{rule}] {problem}" for rule, problem in found[defect["id"]]][:8],
                      "visible": visible(dumps, clean, keys) if dumps and keys else None})
-    packet = write_packet(root, runs, defects, script, session["state"])
+    packet = write_packet(root, runs, defects, script, session["state"], nonce)
     caught = sum(1 for row in rows if row["caught_driver"])
     record = {"format": "magic600-d02-track-j0-v1", "bar": "j0", "planted": len(rows), "caught_driver": caught,
               "caught_subagent": None, "caught_any": caught, "least": LEAST, "share": SHARE,
@@ -1185,36 +1239,78 @@ def j0(session: dict, defects: list[dict], out: Path, build: Path | None, player
               "replay": replayed, "defects": rows,
               "classes": {name: sum(1 for row in rows if row["class"] == name) for name in CLASSES},
               "not_plantable": NOT_PLANTABLE, "false_alarms": false_alarms, "run_problems": run_problems,
-              "packet": packet, "subagent": None}
+              "packet": packet, "subagent": None,
+              # The subagent's reach half (one key script over at most 30 display names) has no driver function yet.
+              "reach": None}
+    record["not_planted"] = [name for name, count in record["classes"].items() if not count]
     record["passed"] = j0_passed(record)
     write_j0(root, record)
     return (0 if record["passed"] else 1), record
 
 
-def score(out: Path, answers_path: Path) -> tuple[int, dict]:
-    """Scores the researcher subagent's answers ({"run-NN": {"broken": bool, "rules": [...]}}, one per packet run)
-    against the sealed key, and writes J0's record and report again with caught_subagent and caught_any."""
+def load_effort(path: Path) -> dict:
+    """The subagent's effort record, {"scripts", "dumps", "minutes", "words"}, each a number: the scripts it wrote, the
+    dumps it read, the minutes and the words of its output, as Opus counted them while running its pass."""
+    effort = json.loads(path.read_text(encoding="utf-8"))
+    bad = [name for name in CAP if not isinstance(effort, dict) or isinstance(effort.get(name), bool)
+           or not isinstance(effort.get(name), (int, float)) or not math.isfinite(effort[name]) or effort[name] < 0]
+    if bad:
+        raise ValueError(f"{path.name}: the effort record needs a number for {bad}")
+    return {name: effort[name] for name in CAP}
+
+
+def load_answers(path: Path, runs: dict) -> tuple[dict, str]:
+    """The subagent's answers, one per packet run, each {"broken": true or false, "rules": [rule names]}, and the
+    file's sha256. Anything else is refused, never read as broken."""
+    raw = path.read_bytes()
+    answers = json.loads(raw.decode("utf-8"))
+    if not isinstance(answers, dict) or set(answers) != set(runs):
+        named = sorted(answers) if isinstance(answers, dict) else type(answers).__name__
+        raise ValueError(f"the answers name {named}, the packet {sorted(runs)}")
+    for run, answer in answers.items():
+        if not isinstance(answer, dict) or not isinstance(answer.get("broken"), bool):
+            raise ValueError(f"{run}: broken must be true or false")
+        rules = answer.get("rules", [])
+        if not isinstance(rules, list) or not all(isinstance(rule, str) for rule in rules):
+            raise ValueError(f"{run}: rules must be a list of rule names")
+    return answers, hashlib.sha256(raw).hexdigest()
+
+
+def score(out: Path, answers_path: Path, effort_path: Path) -> tuple[int, dict]:
+    """Scores the researcher subagent's answers against the sealed key and its effort against section 7's cap, and
+    writes J0's record and report again. A faulted run is caught when the answer says broken and names the defect's
+    rule; for a rule outside the driver's, a rule in the subagent's own words, which the record keeps for the
+    integrator to read. A clean run said broken is a false alarm and fails J0, as does going over the cap. Each
+    earlier scoring stays in the record's history."""
     root = out / "j0"
     record = json.loads((root / J0_RECORD).read_text(encoding="utf-8"))
     key = json.loads((root / "sealed" / "key.json").read_text(encoding="utf-8"))
     if key.get("format") != KEY_FORMAT:
         raise ValueError(f"{root / 'sealed' / 'key.json'} is not a {KEY_FORMAT} file")
-    answers = json.loads(answers_path.read_text(encoding="utf-8"))
-    if set(answers) != set(key["runs"]):
-        raise ValueError(f"the answers name {sorted(answers)}, the packet {sorted(key['runs'])}")
+    answers, digest = load_answers(answers_path, key["runs"])
+    effort = load_effort(effort_path)
     judged, false_alarms = {}, []
     for run, truth in key["runs"].items():
-        broken, rules = bool(answers[run].get("broken")), list(answers[run].get("rules", []))
+        broken, rules = answers[run]["broken"], answers[run].get("rules", [])
         if truth["broken"]:
-            judged[truth["label"]] = {"caught": broken, "rule_named": truth["rule"] in rules, "run": run}
+            own = [rule for rule in rules if rule not in RULES]
+            named = truth["rule"] in rules if truth["rule"] in RULES else bool(own)
+            judged[truth["label"]] = {"run": run, "broken": broken, "caught": broken and named, "own_words": own}
         elif broken:
             false_alarms.append(run)
+    if record.get("subagent"):
+        record.setdefault("history", []).append(record["subagent"])
     for row in record["defects"]:
         row["caught_subagent"] = judged[row["id"]]["caught"] if row["id"] in judged else None
     record["caught_subagent"] = sum(1 for row in record["defects"] if row["caught_subagent"])
     record["caught_any"] = sum(1 for row in record["defects"] if row["caught_driver"] or row["caught_subagent"])
-    record["subagent"] = {"answers": answers_path.name, "faulted": len(judged), "caught": record["caught_subagent"],
-                          "rule_named": sum(1 for v in judged.values() if v["caught"] and v["rule_named"]),
+    record["subagent"] = {"answers": answers_path.name, "answers_sha256": digest, "effort": effort, "cap": CAP,
+                          "over_cap": [f"{name} {effort[name]} over {CAP[name]}" for name in CAP
+                                       if effort[name] > CAP[name]],
+                          "faulted": len(judged), "caught": record["caught_subagent"],
+                          "wrong_rule": sum(1 for v in judged.values() if v["broken"] and not v["caught"]),
+                          "missed": sum(1 for v in judged.values() if not v["broken"]),
+                          "own_words": {v["run"]: v["own_words"] for v in judged.values() if v["own_words"]},
                           "false_alarms": false_alarms}
     record["passed"] = j0_passed(record)
     write_j0(root, record)
@@ -1222,10 +1318,11 @@ def score(out: Path, answers_path: Path) -> tuple[int, dict]:
 
 
 def line_j0(record: dict) -> str:
-    sub = record["caught_subagent"]
+    sub, reach = record["caught_subagent"], record.get("reach")
     return (f"M600_D02_J0_{'PASS' if record['passed'] else 'FAIL'} planted={record['planted']} "
             f"caught_driver={record['caught_driver']} caught_subagent={'not_run' if sub is None else sub} "
-            f"caught_any={record['caught_any']} replay={record['replay']['bound']}/{record['replay']['words']}")
+            f"caught_any={record['caught_any']} replay={record['replay']['bound']}/{record['replay']['words']} "
+            f"not_planted={len(record['not_planted'])} reach={'not_run' if reach is None else reach}")
 
 
 def cell(text) -> str:
@@ -1242,8 +1339,11 @@ def write_j0(root: Path, record: dict) -> None:
              f"Planted {record['planted']} defects ({', '.join(f'{who} {n}' for who, n in record['by'].items()) or 'none'}). "
              f"J0 passes with at least {record['least']} planted, caught_any at least {record['share']:.0%} of them, "
              "all nine seed 7001 words bound, no problem on the two clean runs and no run problem. A defect is caught "
-             "by the driver when one of its run's problems names the defect's rule; caught_any counts a defect the "
-             "driver or the researcher subagent caught.", "",
+             "by the driver when one of its run's problems names the defect's rule; a defect whose rule is outside the "
+             "driver's counts as planted, and only the researcher subagent can catch it. The subagent catches a "
+             "faulted run when it says broken and names the defect's rule; its false alarms on the clean runs, and "
+             "going over section 7's cap, fail J0 too. caught_any counts a defect the driver or the subagent caught.",
+             "",
              "## Seed 7001 replay", "",
              f"The host's fixture writer executes {replayed['start']}'s word and each word after it; the state after "
              "each word binds to the sample the word file names (all three digests).", "",
@@ -1263,8 +1363,9 @@ def write_j0(root: Path, record: dict) -> None:
             subagent = "not run"
         shown = "no screens" if not row["screens"] else "unknown" if row["visible"] is None else \
             (", ".join(row["visible"][:4]) or "no change")
+        driver = "caught" if row["caught_driver"] else "outside its rules" if row.get("outside") else "missed"
         lines.append(f"| {row['id']} | {row['by']} | {cell(row['class'])} | {row['rule']} | "
-                     f"{'caught' if row['caught_driver'] else 'missed'} | {', '.join(others) or '-'} | {subagent} | "
+                     f"{driver} | {', '.join(others) or '-'} | {subagent} | "
                      f"{cell(shown)} |")
     lines += ["", "First problems of each defect's run:", ""]
     for row in record["defects"]:
@@ -1273,6 +1374,9 @@ def write_j0(root: Path, record: dict) -> None:
     lines += ["", "## Classes", "", "| Class | Planted | Not planted because |", "| --- | --- | --- |"]
     lines += [f"| {cell(name)} | {count} | {cell(record['not_plantable'].get(name, '') if not count else '')} |"
               for name, count in record["classes"].items()]
+    lines += ["", f"{len(record['not_planted'])} of {len(record['classes'])} classes are not planted. No fault switch "
+              "was built: each defect is data in its own copy of the samples, so a class that only the shell's code "
+              "could show is not planted; the table gives each reason J0 knows."]
     lines += ["", "## False alarms on the clean runs", ""]
     lines += [f"- {cell(alarm)}" for alarm in record["false_alarms"]] or ["None."]
     lines += ["", "## Run problems", ""]
@@ -1281,15 +1385,28 @@ def write_j0(root: Path, record: dict) -> None:
     packet = record["packet"]
     lines += ["", "## The researcher's packet", "",
               f"`j0/packet/` holds {packet['runs']} runs ({packet['faulted']} faulted, {packet['clean']} clean, drawn "
-              f"and ordered with seed {packet['seed']}), named run-01 onwards, with the session's steps and the rules "
-              "an answer names; the key is in `j0/sealed/key.json`. The subagent reads only the packet, the palette's "
-              "rows, the key map sheet and jumbling-observation.md, never the samples, the planted copies, the defect "
-              "lists, the run folders or the key. Its answers ({\"run-01\": {\"broken\": true, \"rules\": [...]}, ...}) "
-              "are scored with `python renderer/shell/track_j.py --score OUT --subagent ANSWERS`."]
+              f"and ordered by a seed from the defects' digest, {packet.get('defects_sha256', '')[:12]}, and a nonce "
+              "that only the key keeps), named run-01 onwards, with the session's steps and the rules an answer names; "
+              "the key is in `j0/sealed/key.json`. The subagent reads only the packet, the palette's rows, the key map "
+              "sheet and jumbling-observation.md, never the samples, the planted copies, the defect lists, the run "
+              "folders or the key. Its answers ({\"run-01\": {\"broken\": true, \"rules\": [...]}, ...}) and Opus's "
+              "count of its effort ({\"scripts\": n, \"dumps\": n, \"minutes\": n, \"words\": n}) are scored with "
+              "`python renderer/shell/track_j.py --score OUT --subagent ANSWERS --effort EFFORT`."]
     lines += [f"- {cell(problem)}" for problem in packet["problems"]]
+    if record.get("reach") is None:
+        lines += ["", "The subagent's reach half (one key script over at most 30 display names, one revision) has no "
+                      "driver function in this build: reach=not_run."]
     if sub is not None:
-        lines += ["", f"Subagent: caught {sub['caught']} of {sub['faulted']} faulted runs, naming the defect's rule for "
-                      f"{sub['rule_named']}; said a clean run was broken for {', '.join(sub['false_alarms']) or 'none'}."]
+        effort = sub["effort"]
+        cap = f"over section 7's cap ({'; '.join(sub['over_cap'])})" if sub["over_cap"] else "within section 7's cap"
+        lines += ["", f"Subagent: caught {sub['caught']} of {sub['faulted']} faulted runs; said broken but named another "
+                      f"rule for {sub['wrong_rule']}; missed {sub['missed']}; said a clean run was broken for "
+                      f"{', '.join(sub['false_alarms']) or 'none'}. Effort: {effort['scripts']} scripts, "
+                      f"{effort['dumps']} dumps, {effort['minutes']} minutes, {effort['words']} words, {cap}. "
+                      f"Answers sha256 {sub['answers_sha256'][:12]}."]
+        lines += [f"- {run}, in its own words: {cell('; '.join(words))}" for run, words in sub["own_words"].items()]
+        if record.get("history"):
+            lines += ["", f"Earlier scorings: {len(record['history'])}, kept in the record's history."]
     (root / J0_REPORT).write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
@@ -1304,17 +1421,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--writer", type=Path, help="the host's fixture writer for the seed 7001 replay")
     parser.add_argument("--score", type=Path, help="a J0 out folder to score with the researcher subagent's answers")
     parser.add_argument("--subagent", type=Path, help="the researcher subagent's answers (with --score)")
+    parser.add_argument("--effort", type=Path, help="Opus's count of the subagent's scripts, dumps, minutes and words "
+                                                     "(with --score)")
     args = parser.parse_args(argv)
     try:
         if args.score is not None:
-            if args.subagent is None:
-                print("track_j: --score needs --subagent")
+            if args.subagent is None or args.effort is None:
+                print("track_j: --score needs --subagent and --effort")
                 return 2
-            code, record = score(args.score.resolve(), args.subagent)
+            code, record = score(args.score.resolve(), args.subagent, args.effort)
             print(line_j0(record))
             return code
         if not args.reduced or args.out is None:
-            print("track_j: name --reduced and --out (or --score OUT --subagent ANSWERS)")
+            print("track_j: name --reduced and --out (or --score OUT --subagent ANSWERS --effort EFFORT)")
             return 2
         out = args.out.resolve()
         if out.exists():

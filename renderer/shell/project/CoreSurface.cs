@@ -132,6 +132,7 @@ public sealed unsafe class CoreSurface : IDisposable
             surface.Check("sa2_create",
                 ((delegate* unmanaged[Cdecl]<ulong, Config*, IntPtr*, int>)surface.Call("sa2_create"))(adapterLuid, &config, &context));
             surface.Context = context;
+            Live = surface;
             surface.Check("sa2_surface_attach",
                 ((delegate* unmanaged[Cdecl]<IntPtr, ulong, int, int, uint, uint, int>)surface.Call("sa2_surface_attach"))(
                     context, hwnd, x, y, width, height));
@@ -200,5 +201,68 @@ public sealed unsafe class CoreSurface : IDisposable
         }
         ((delegate* unmanaged[Cdecl]<IntPtr, int>)Call("sa2_detach"))(Context);
         Context = IntPtr.Zero;
+        if (Live == this)
+        {
+            Live = null;
+        }
+    }
+
+    // ADR-D02 B19 and B24 (the gate rows): with M600_D02_GATE=1 (renderer/shell/gate_d02.py sets it) every frame row of
+    // the event log carries the core's counters (sa2_counters), so tools/perf/d02/gate_row.py gives a row's
+    // view_vertex_evals from the core's own pipeline statistics. Off by default: a normal run's rows are unchanged.
+    private static readonly bool GateOn = System.Environment.GetEnvironmentVariable("M600_D02_GATE") == "1";
+
+    /// <summary>The open surface the gate fields read: set by <see cref="Open"/>, cleared by <see cref="Dispose"/>.</summary>
+    internal static CoreSurface? Live { get; private set; }
+
+    /// <summary>sa2_counter_values (64 bytes on x64).</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    private struct CounterValues
+    {
+        public uint StructSize;
+        public uint Reserved;
+        public ulong ViewVertexEvalsLast;
+        public ulong ViewVertexEvalsTotal;
+        public ulong BytesUploaded;
+        public ulong FramesSubmitted;
+        public ulong FramesReported;
+        public ulong IdPasses;
+        public ulong ReportsDropped;
+    }
+
+    /// <summary>
+    /// Writes the gate fields into a frame row: the core's reported frames, its view vertex evaluations (the newest
+    /// reported frame's and the total) and its dropped reports. Nothing unless M600_D02_GATE=1 and a surface is open.
+    /// </summary>
+    internal static void GateFields(System.Text.Json.Utf8JsonWriter json)
+    {
+        if (!GateOn || Live is not { } surface || surface.Context == IntPtr.Zero)
+        {
+            return;
+        }
+        var index = -1;
+        for (var i = 0; i < CoreLibrary.Symbols.Count; i++)
+        {
+            if (CoreLibrary.Symbols[i] == "sa2_counters")
+            {
+                index = i;
+                break;
+            }
+        }
+        if (index < 0)
+        {
+            return;
+        }
+        var values = new CounterValues { StructSize = (uint)sizeof(CounterValues) };
+        var status = ((delegate* unmanaged[Cdecl]<IntPtr, CounterValues*, int>)surface._core.Functions[index])(surface.Context, &values);
+        if (status != 0)
+        {
+            json.WriteNumber("core_counters_status", status);
+            return;
+        }
+        json.WriteNumber("core_frames_reported", values.FramesReported);
+        json.WriteNumber("core_view_vertex_evals_total", values.ViewVertexEvalsTotal);
+        json.WriteNumber("core_view_vertex_evals_last", values.ViewVertexEvalsLast);
+        json.WriteNumber("core_reports_dropped", values.ReportsDropped);
     }
 }

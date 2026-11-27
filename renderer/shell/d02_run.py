@@ -68,7 +68,8 @@ def load(path: Path):
 
 def data() -> dict:
     """What the expectations are computed from: the draft rows, the table's rows and the sample states."""
-    return {"rows": load(DESIGN / "command-rows-d02.json")["commands"], "table": load(TABLE)["commands"],
+    drafts = load(DESIGN / "command-rows-d02.json")
+    return {"rows": drafts["commands"] + drafts.get("grip", []), "table": load(TABLE)["commands"],
             "states": [state["state"] for state in load(SAMPLES / "states.json")["states"]]}
 
 
@@ -77,7 +78,11 @@ def palette_matches(query: str, rows: list[dict], table: list[dict]) -> list[str
     label or the command id (PaletteModel.Rows). The labels shown are the D02 rows' own; table rows keep theirs."""
     terms = query.lower().split()
     found = []
+    seen = set()
     for row in table + rows:
+        if row["id"] in seen:
+            continue
+        seen.add(row["id"])
         if all(term in row["label"].lower() or term in row["id"].lower() for term in terms):
             found.append(row["label"])
     return found
@@ -159,8 +164,8 @@ def expect_bind(dumps: list[dict], source: dict, state: str | None) -> list[str]
         return ["the bind script needs a sample state"]
     problems = []
     if any("the session refused this twist" in text for group, text in map(tuple, dumps[3]["lines"])):
-        problems.append(f"step 2: the session refused the twist at {state}: the router turns cap 0 only (grip.select "
-                        "is not built), so the bind script needs a state where cap 0 admits a twist, such as on-zero")
+        problems.append(f"step 2: the session refused the twist at {state}: the default grip is cap 0, so "
+                        "the bind script needs a state where cap 0 admits a twist, such as on-zero")
     for index, wanted in ((1, BOUND + state), (3, UNBOUND), (5, BOUND + state)):
         shown = bind_chip(dumps[index])
         if shown != wanted:
@@ -1105,6 +1110,10 @@ def expect_raw(dumps: list[dict], source: dict, state: str | None) -> list[str]:
             problems.append(f"step {step}: Local's charts are {row['charts']} labelled {row['label']!r}")
         if (row["caption"] == caption) != on or on and not row["line"].endswith(caption):
             problems.append(f"step {step}: the caption is {row['caption']!r} and Local's line {row['line']!r}")
+        # C3/C4 finding F6: the caption as drawn on Local's border, not the model's constant.
+        marks = dumps[step].get("local_marks")
+        if marks is None or any(caption in mark for mark in marks) != on:
+            problems.append(f"step {step}: Local's border marks are {marks!r}; the caption shows exactly while raw is on")
     if not raws[7]["line"].startswith("Raw view at cap 150"):
         problems.append(f"Local's line at step 7 reads {raws[7]['line']!r}")
     if "all 80 meeting poles inside" not in raws[15]["line"]:
@@ -1433,6 +1442,21 @@ def expect_pick(dumps: list[dict], source: dict, state: str | None, pieces: list
                 problems.append(f"E without a selected cell must keep the Target and say {reason!r}")
     if final["hits"] == 0:
         problems.append("no click hit a sticker")
+    # Checkpoint C3.9 (F2): a click selects only in the view it was made in (Global is view 1, Local view 2), and no
+    # reply is dropped in a still layout.
+    local_hits = 0
+    for i in clicks:
+        if i + 1 >= len(dumps):
+            break
+        selection = dumps[i + 1]["pick"]["selection"]
+        want = 2 if dumps[i]["do"].endswith(" in local") else 1
+        if selection is not None and selection.get("view") != want:
+            problems.append(f"after '{dumps[i]['do']}' the selection names view {selection.get('view')}, not {want}")
+        local_hits += want == 2 and selection is not None
+    if any(dumps[i]["do"].endswith(" in local") for i in clicks) and local_hits == 0:
+        problems.append("no click in Local selected a sticker in Local")
+    if final.get("dropped", 0) != 0:
+        problems.append(f"{final['dropped']} pick replies named another view than the clicked one")
     if final["selection"] is not None:
         problems.append("the click in the opening's corner did not clear the selection")
     print(f"pick: {len(clicks)} clicks, {final['hits']} hits, {final['misses']} misses, {final['stale']} stale")
@@ -2396,6 +2420,162 @@ EXPECT["error-overlay"] = expect_error_overlay
 ON_FIXTURE.add("error-overlay")
 
 
+def expect_grip_frame(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The picked cap, its shared frame, the exact routed twists and both panes' modifier ghost."""
+    steps = ["wait 2500 ms", "wait 600 ms", "command grip.select", "command grip.frame.next", "wait 1600 ms",
+             "wait 601 ms", "wait 602 ms", "wait 603 ms", "wait 604 ms", "wait 1601 ms"]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(not by_step.get(step, {}).get("grip") for step in steps):
+        return ["the grip script is missing a grip checkpoint"]
+    start, plain, selected, framed, turned, held, away, again, released, clicked = (
+        by_step[step]["grip"] for step in steps)
+    problems = []
+
+    def require(condition, message):
+        if not condition:
+            problems.append(message)
+
+    def head(g):
+        return tuple(g.get(field) for field in ("state_digest", "committed", "refused"))
+
+    def keys(g):
+        return {row["chord"]: row["item"] for row in g.get("keys", [])}
+
+    require((start.get("cap"), start.get("frame")) == (0, 0), "the opening grip is not cap 0, frame 0")
+    require(keys(start) == {"KeyJ": 1, "Shift+KeyJ": 1, "KeyK": 2, "Shift+KeyK": 5, "KeyL": 3, "Shift+KeyL": 9},
+            "the default grip lost the pinned key items")
+    pick = by_step[steps[1]].get("pick", {}).get("selection") or {}
+    slot = pick.get("slot")
+    cap = selected.get("cap")
+    frame = framed.get("frame")
+    require(isinstance(slot, int) and slot // 433 == cap == 150, "grip.select did not take the picked cap 150")
+    require(pick.get("revision") == selected.get("host", {}).get("revision"), "grip.select used a stale pick")
+    require(all(head(g) == head(start) for g in (plain, selected, framed)), "picking or changing the grip changed the head")
+    require(selected.get("frame") == 0 and frame != selected.get("frame") and frame in framed.get("admissible_frames", []),
+            "grip.frame.next did not choose a new admissible frame")
+    old_marks = [mark["corner"] for mark in selected.get("marks", [])]
+    marks = {mark["index"]: mark["corner"] for mark in framed.get("marks", [])}
+    require(set(marks) == {1, 2, 3, 4} and len(set(marks.values())) == 4, "the frame needs four ordered marks")
+    require(list(marks.values()) != old_marks and set(marks.values()) == set(old_marks),
+            "the next frame did not reorder the same corners")
+    require(keys(selected) != keys(framed) and set(keys(framed)) == set(keys(start)), "the twist keys did not follow the frame")
+    host = framed.get("host", {})
+    require(host.get("cap") == cap and host.get("frame") == frame, "the shell and host grips disagree")
+    require(any(row.get("frame") == frame and row.get("keys") == framed.get("keys")
+                for row in host.get("frames", [])), "the visible key table differs from the host's exact map")
+
+    def panes(grip, expect_direction):
+        mark_by_index = {mark["index"]: mark["corner"] for mark in grip.get("marks", [])}
+        shown = {pane["pane"]: pane for pane in grip.get("drawn", [])}
+        for name in ("Global", "Local"):
+            pane = shown.get(name, {})
+            rect, drawn = pane.get("rect"), pane.get("marks", [])
+            if rect is None or not 1 <= len(drawn) <= 4:
+                problems.append(f"{name} drew no set of grip marks")
+                continue
+            x, y, w, h = rect
+            def inside(px, py):
+                return x <= px < x + w and y <= py < y + h
+            require(all(mark_by_index.get(mark["index"]) == mark["corner"] and inside(mark["x"], mark["y"])
+                        for mark in drawn), f"{name}'s grip marks differ from the frame or lie outside the pane")
+            direction = pane.get("direction")
+            require(inside(*direction) if direction and expect_direction else direction is None and not expect_direction,
+                    f"{name}'s direction glyph did not follow the ghost")
+
+    for grip in (start, selected, framed):
+        panes(grip, False)
+    item = keys(framed).get("KeyJ")
+    for before, after, action in ((framed, turned, "KeyJ"), (turned, clicked, "Ctrl+click")):
+        last = after.get("host", {}).get("last", {})
+        require(after.get("committed") == before.get("committed", -1) + 1 and after.get("refused") == before.get("refused"),
+                f"{action} did not commit exactly one twist")
+        require(last == {"cap": cap, "item": item}, f"{action} committed the wrong cap or item")
+        require(after.get("state_digest") != before.get("state_digest"), f"{action} did not move the head")
+    require(not turned.get("ghost", {}).get("on"), "hover without Ctrl showed a ghost")
+    for grip, on in ((held, True), (away, False), (again, True), (released, False)):
+        ghost = grip.get("ghost", {})
+        require(head(grip) == head(turned), "hover or modifier release changed the head")
+        require(ghost.get("on") == on and ghost.get("modifier") == "Ctrl", "the ghost did not follow Ctrl and the hover")
+        if on:
+            require(ghost.get("cap") == cap and ghost.get("item") == item and ghost.get("moving", 0) > 0
+                    and len(ghost.get("sha256") or "") == 64, "the ghost differs from the click twist")
+            require(ghost.get("palette") == 2 and ghost.get("outlined", 0) > 0, "the moving pieces lack the hover outline")
+        else:
+            require(ghost.get("moving") == 0, "the released ghost kept a moving set")
+        panes(grip, on)
+    return problems
+
+
+EXPECT["grip-frame"] = expect_grip_frame
+ON_FIXTURE.add("grip-frame")
+
+
+def expect_grip_keycaps(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.74 on ADR-D01.75's grip: with the key map pinned over Local, J, K and L carry the grip's twists (each
+    chord's item and its cycle over the marks, stamped inside the cap) and the header names the grip's cap and frame;
+    the next frame re-binds keys, and the map marks exactly the plain keys whose item changed until it has been closed."""
+    steps = ["wait 700 ms", "wait 701 ms", "wait 702 ms"]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(not by_step.get(step, {}).get("grip") or not by_step[step].get("keycaps") for step in steps):
+        return ["the grip keycaps script is missing a grip or keycaps checkpoint"]
+    first, framed, again = (by_step[step] for step in steps)
+    problems = []
+
+    def require(condition, message):
+        if not condition:
+            problems.append(message)
+
+    def caps(dump):
+        return {cap["key"]: cap for cap in dump["keycaps"].get("grip", [])}
+
+    def keys(dump):
+        return {row["chord"]: row for row in dump["grip"].get("keys", [])}
+
+    for name, dump in (("the pinned map", first), ("the map after the next frame", framed), ("the map shown again", again)):
+        shown, grip, want = dump["keycaps"], dump["grip"], keys(dump)
+        require(shown.get("shown") is True, f"{name} is not shown")
+        require(grip.get("cap") == 150, f"{name}: the grip is not cap 150")
+        require(shown.get("header", "").endswith(f" · grip: cap 150, frame {grip.get('frame')}"),
+                f"{name}'s header reads {shown.get('header')!r}")
+        carried = caps(dump)
+        require(sorted(carried) == ["J", "K", "L"], f"{name}: the caps that carry the grip are {sorted(carried)}")
+        for key, cap in carried.items():
+            row = want.get("Key" + key, {})
+            require(cap.get("chord") == "Key" + key and cap.get("item") == row.get("item")
+                    and cap.get("meaning") == cap.get("label") == row.get("meaning") and cap.get("context") == "grip",
+                    f"{name}: {key}'s cap differs from the grip's key")
+        stamps = {stamp["key"]: stamp for stamp in shown.get("stamps", [])}
+        require(sorted(stamps) == ["J", "K", "L"], f"{name}: the stamped caps are {sorted(stamps)}")
+        for key, stamp in stamps.items():
+            x, y, w, h = stamp["box"]
+            require(stamp.get("label") == carried.get(key, {}).get("meaning")
+                    and x <= stamp["x"] < x + w and y <= stamp["y"] < y + h, f"{name}: {key}'s stamp differs or lies outside its cap")
+    require(first["grip"].get("frame") == 0 and framed["grip"].get("frame") not in (None, 0),
+            "grip.frame.next did not change the frame")
+    def twist(dump, key):
+        row = keys(dump).get("Key" + key, {})
+        return row.get("item"), row.get("meaning")
+
+    moved = sorted(key for key in "JKL" if twist(first, key) != twist(framed, key))
+    require(bool(moved), "the next frame re-bound no plain twist key")
+    require(not any(cap.get("changed") for cap in caps(first).values()), "the first pinned map marks a key")
+    marked = sorted(key for key, cap in caps(framed).items() if cap.get("changed"))
+    require(marked == moved, f"after the next frame the map marks {marked}, not the re-bound keys {moved}")
+    require(all(caps(framed).get(key, {}).get("meaning") == cap.get("meaning") for key, cap in caps(first).items()),
+            "a key's cycle over the marks changed with the frame")
+    mark = "corner mark: changed meaning since the grip frame changed"
+    require(mark in framed["keycaps"].get("legend", ""), "the legend does not name the grip frame change's mark")
+    require(by_step.get("chord Escape", {}).get("keycaps", {}).get("shown") is False, "Escape left the key map shown")
+    require(not any(cap.get("changed") for cap in caps(again).values()) and mark not in again["keycaps"].get("legend", ""),
+            "the map shown again still marks keys")
+    print(f"grip-keycaps: frame {framed['grip'].get('frame')} re-bound {moved}")
+    return problems
+
+
+EXPECT["grip-keycaps"] = expect_grip_keycaps
+ON_FIXTURE.add("grip-keycaps")
+
+
 TUNING_KNOBS = [("wait 702 ms", "tone", 0.05, True), ("wait 703 ms", "contrast", 1.15, True),
                 ("wait 704 ms", "blackLevel", 0.08, True), ("wait 705 ms", "accentHue", 40.0, False),
                 ("wait 706 ms", "gridIntensity", 0.9, False)]
@@ -3140,14 +3320,14 @@ EXPECT["frame-layers"] = expect_frame_layers
 ON_FIXTURE.add("frame-layers")
 
 
-def window_problems(dumps: list[dict]) -> list[str]:
-    """The owner's window rule as the shell itself reports it in every dump."""
+def window_problems(dumps: list[dict], foreground: bool = False) -> list[str]:
+    """The owner's window rule as the shell itself reports it in every dump (a --foreground run: never topmost)."""
     problems = []
     for dump in dumps:
         window = dump.get("window", {})
         if window.get("topmost") is not False:
             problems.append(f"step {dump['step']}: the shell's window is topmost")
-        if window.get("foreground") is not False:
+        if not foreground and window.get("foreground") is not False:
             problems.append(f"step {dump['step']}: the shell's window has the foreground")
     return problems
 
@@ -3200,9 +3380,12 @@ class Desktop:
 
 
 def run(script: str, out: Path, build: Path | None, state: str | None, desktop=None, launcher=launch.main,
-        clock=time.monotonic, sleep=time.sleep, path: Path | None = None) -> tuple[int, dict]:
+        clock=time.monotonic, sleep=time.sleep, path: Path | None = None, foreground=None) -> tuple[int, dict]:
     """Launches the run, watches the foreground, and compares the screens. Returns the exit code and the record.
-    A driver that writes its own script (track_j.py, B32) passes its path; a script of d02_scripts/ is found by name."""
+    A driver that writes its own script (track_j.py, B32) passes its path; a script of d02_scripts/ is found by name.
+    `foreground` (gate_d02.py's --foreground, the owner's sitting only) is the gate's own activation of a window
+    (tools/perf/d02/gate_row.py): the shell is not told to hand the foreground back, its window is activated once at
+    the start, and the foreground checks give way to that; the topmost checks stay. This file activates nothing."""
     path = path or SCRIPTS / f"{script}.json"
     source = data()
     if script not in EXPECT or not path.is_file():
@@ -3221,6 +3404,8 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     lines: list[str] = []
 
     def popen(arguments, cwd, env, **options):
+        if foreground:
+            env = {key: value for key, value in env.items() if key != "M600_D02_FOREGROUND"}
         process = subprocess.Popen(arguments, cwd=cwd, env=env, **options)
         started["process"], started["at"] = process, clock()
         return process
@@ -3244,7 +3429,14 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         sleep(0.1)
     after, topmost, seen = None, None, {}
     describe = getattr(desktop, "describe", lambda window, pid: {})
+    took = None
     if "at" in started:
+        while foreground and took is None and clock() - started["at"] < FOREGROUND_AFTER_S and thread.is_alive():
+            shown = desktop.windows_of(started["process"].pid)
+            if shown:
+                took = bool(foreground(shown[0]))
+            else:
+                sleep(0.1)
         while clock() - started["at"] < FOREGROUND_AFTER_S and thread.is_alive():
             sleep(0.1)
         after = desktop.foreground()
@@ -3261,7 +3453,11 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         thread.join(30)
     if result.get("code") != 0:
         problems.append(f"the launch ended with {result.get('code')}: {' | '.join(lines[-3:])}")
-    if after is None or after != before:
+    if foreground:
+        if not took:
+            problems.append("the shell's window did not take the foreground at the start (--foreground): start the "
+                            "run from a PowerShell in front on the desktop")
+    elif after is None or after != before:
         problems.append("the foreground changed during the first five seconds" if after is not None
                         else "the shell did not start")
     if topmost:
@@ -3273,7 +3469,7 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
     else:
         problems.append("the shell wrote no d02-screen.jsonl")
     if dumps:
-        problems += window_problems(dumps)
+        problems += window_problems(dumps, foreground is not None)
         problems += EXPECT[script](dumps, source, state)
     if script in EVENT_CHECKS:
         problems += EVENT_CHECKS[script](out / "events.jsonl")
@@ -3281,10 +3477,39 @@ def run(script: str, out: Path, build: Path | None, state: str | None, desktop=N
         problems += FOLDER_CHECKS[script](out)
     record = {"format": FORMAT, "script": script, "state": state, "steps": len(dumps), "mismatches": problems,
               "foreground_kept": after is not None and after == before, "topmost": bool(topmost), "windows": seen,
+              "foreground_taken": took if foreground is not None else None,
               "gave_back": max((dump.get("window", {}).get("gave_back", 0) for dump in dumps), default=0)}
     if out.is_dir():
         (out / RECORD).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8", newline="\n")
     return (0 if not problems else 1), record
+
+
+def steady_state(dumps: list[dict], name: str) -> list[str]:
+    """C3/C4 finding F5 (B23's check): a view-only run changes the session at no step: the bound state's digest and
+    revision, and the Word panel's digest line, are the same in every dump that carries them."""
+    bound = [dump["bound"] for dump in dumps if isinstance(dump.get("bound"), dict)]
+    if len(bound) != len(dumps):
+        return [f"{name}: {len(dumps) - len(bound)} of {len(dumps)} dumps carry no bound state"]
+    problems = []
+    pairs = {(row["digest"], row["revision"]) for row in bound}
+    if len(pairs) != 1 or any(revision < 0 or not digest for digest, revision in pairs):
+        problems.append(f"{name}: the bound state changed or was never bound: {sorted(pairs)}")
+    words = {dump["word"]["digest"] for dump in dumps if isinstance(dump.get("word"), dict) and "digest" in dump["word"]}
+    if len(words) > 1:
+        problems.append(f"{name}: the Word panel's digest changed: {sorted(words)}")
+    print(f"{name}: steady state {sorted(pairs)}, Word digests {len(words)}")
+    return problems
+
+
+def with_steady_state(name: str, expect):
+    def run(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+        return steady_state(dumps, name) + expect(dumps, source, state)
+    run.__wrapped__ = expect
+    return run
+
+
+for _name in ("hopf", "ring-sheet", "slice", "raw"):
+    EXPECT[_name] = with_steady_state(_name, EXPECT[_name])
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -3306,6 +3531,104 @@ def main(argv: list[str] | None = None) -> int:
         for problem in record["mismatches"]:
             print("  " + problem)
     return code
+
+
+
+# ---- ADR-D02 B19 and B24: the gate rows' scripts (renderer/shell/gate_d02.py) ------------------------------------------
+# A gate script holds its views and repeats its motion for the row's time. The player (ShellJumble.cs) plays a flat list
+# of steps, so the one step {"repeat": {"steps": [...]}} of a gate script is expanded here before the launch: its steps,
+# copied until their waits add up to the asked seconds, each marked "quiet" (the player writes no screen dump after a
+# quiet step, so the timed frames carry no dump's work); the last copy is not quiet, so the run still ends on a dump.
+# ADR-D01's Local row (view.local): the Local hide that the gate's G1 runs with (B19).
+LOCAL_HIDE_STEPS = ["start", "wait 4000 ms", "command view.local", "wait 1500 ms", "drag 160 0", "wait 701 ms",
+                    "command view.local", "wait 1502 ms"]
+
+
+def expect_local_hide(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """The row hides Local (its opening closed, the cap it frames kept), a drag in Global turns the camera while
+    Local is hidden, and the row shows Local again on the same cap, linked and sent the shared spin."""
+    steps = [dump["do"] for dump in dumps]
+    if steps != LOCAL_HIDE_STEPS:
+        return [f"the steps written were {steps}"]
+    before, hidden, dragged, shown = dumps[1], dumps[3], dumps[5], dumps[7]
+    local = [row.get("local") or {} for row in (before, hidden, shown)]
+    problems = []
+    if local[0].get("hidden") is not False or local[0].get("opening") is not True:
+        problems.append(f"Local was not shown with its opening before the row: {local[0]}")
+    if local[1].get("hidden") is not True:
+        problems.append(f"the row did not hide Local: {local[1]}")
+    if local[2].get("hidden") is not False or local[2].get("framed") != local[0].get("framed"):
+        problems.append(f"the row did not show Local again on its cap: {local[0]} then {local[2]}")
+    rotations = [row.get("rotation") for row in (hidden, dragged, shown)]
+    if any(not isinstance(r, dict) for r in rotations):
+        return problems + ["a step's dump has no rotation"]
+    if same(rotations[0]["sent_global"], rotations[1]["sent_global"]):
+        problems.append("the drag in Global while Local was hidden did not turn Global")
+    if not rotations[2]["linked"] or not same(rotations[2]["sent_local"], rotations[2]["global"]["spin"]):
+        problems.append("Local came back unlinked or without the shared spin")
+    print(f"local-hide: hidden {local[1].get('hidden')}, back on cap {local[2].get('framed')}, linked "
+          f"{rotations[2]['linked']}; {len(problems)} problems")
+    return problems
+
+
+def check_local_hide_events(events: Path) -> list[str]:
+    """Two drawn panes, then one-view frames while Local is hidden, then two drawn panes again once it is shown."""
+    frames = frame_rows(events)
+    kinds = [2 if row.get("panes") == 2 and row.get("held") == 0 else 1 if not row.get("panes") else 0 for row in frames]
+    runs = [kind for i, kind in enumerate(kinds) if kind and (i == 0 or kind != kinds[i - 1])]
+    joined = "".join(str(kind) for kind in runs)
+    print(f"local-hide: {len(frames)} frames, pane runs {joined[:40]}")
+    return [] if "212" in joined else [f"no two-pane, one-view, two-pane sequence in the frame rows ({joined[:40]})"]
+
+
+EXPECT["local-hide"] = expect_local_hide
+ON_FIXTURE.add("local-hide")
+IN_SAMPLE_MODE.add("local-hide")
+EVENT_CHECKS["local-hide"] = check_local_hide_events
+
+
+# A hold-for is a repeat of one wait (a held key: "hold" before the block, "release" after it).
+GATE_PREFIX = "gate-"
+GATE_OCCLUSION = "gate-occlusion"
+
+
+def expand_repeat(script: dict, seconds: float) -> dict:
+    """The script with its one repeat block unrolled for `seconds` of written waits (at least one copy)."""
+    import math
+    if seconds <= 0:
+        raise ValueError("a repeat block needs a positive number of seconds")
+    steps: list[dict] = []
+    blocks = 0
+    for step in script["steps"]:
+        if "repeat" not in step:
+            steps.append(step)
+            continue
+        blocks += 1
+        body = step["repeat"].get("steps") or []
+        if any("repeat" in inner for inner in body):
+            raise ValueError("a repeat block cannot hold another")
+        period = sum(int(inner.get("wait_ms", 0)) for inner in body)
+        if period <= 0:
+            raise ValueError("a repeat block needs a wait_ms step")
+        for _ in range(max(1, math.ceil(seconds * 1000.0 / period))):
+            steps += [{**inner, "quiet": True} for inner in body]
+        steps[-1] = {key: value for key, value in steps[-1].items() if key != "quiet"}
+    if blocks != 1:
+        raise ValueError(f"a gate script holds exactly one repeat block, not {blocks}")
+    return {**script, "steps": steps, "expanded_seconds": seconds}
+
+
+def expect_gate(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """A gate row compares no screen text: its numbers come from the event log (tools/perf/d02/gate_row.py), and the
+    owner's window rule is checked for every run. It asks only that the run reached a dump after its first step."""
+    return [] if any(dump.get("step", 0) > 0 for dump in dumps) else ["the gate run wrote no dump after its first step"]
+
+
+for _gate in sorted(SCRIPTS.glob(GATE_PREFIX + "*.json")):
+    EXPECT[_gate.stem] = expect_gate
+    ON_FIXTURE.add(_gate.stem)
+EXPECT[GATE_OCCLUSION] = expect_gate
+ON_FIXTURE.add(GATE_OCCLUSION)
 
 
 if __name__ == "__main__":

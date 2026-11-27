@@ -353,7 +353,7 @@ fn the_host_sets_the_piece_style_and_the_style_slots() {
     // SAFETY: a live handle and readable rows, or null.
     unsafe {
         assert_eq!(
-            m6h_set_piece_style(host, STYLE_CHANNEL_FILL, fill.as_ptr(), PIECES as u32, 0),
+            m6h_set_piece_style(host, ENGINE_REVISION, STYLE_CHANNEL_FILL, fill.as_ptr(), PIECES as u32, 0),
             M6H_OK,
             "{}",
             last_error(host)
@@ -361,15 +361,15 @@ fn the_host_sets_the_piece_style_and_the_style_slots() {
         assert_eq!(fake().piece_styles[0].as_deref(), Some(&fill[..]));
         // A short array, an outline byte with the dim bit, a third channel and a per-pose array without a session
         // change nothing.
-        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_FILL, fill.as_ptr(), 10, 0), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_piece_style(host, ENGINE_REVISION, STYLE_CHANNEL_FILL, fill.as_ptr(), 10, 0), M6H_E_INVALID_ARGUMENT);
         assert_eq!(
-            m6h_set_piece_style(host, STYLE_CHANNEL_OUTLINE, fill.as_ptr(), PIECES as u32, 0),
+            m6h_set_piece_style(host, ENGINE_REVISION, STYLE_CHANNEL_OUTLINE, fill.as_ptr(), PIECES as u32, 0),
             M6H_E_INVALID_ARGUMENT
         );
-        assert_eq!(m6h_set_piece_style(host, 2, fill.as_ptr(), PIECES as u32, 0), M6H_E_INVALID_ARGUMENT);
-        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_FILL, fill.as_ptr(), 4, 1), M6H_E_SESSION);
+        assert_eq!(m6h_set_piece_style(host, ENGINE_REVISION, 2, fill.as_ptr(), PIECES as u32, 0), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_piece_style(host, ENGINE_REVISION, STYLE_CHANNEL_FILL, fill.as_ptr(), 4, 1), M6H_E_SESSION);
         assert!(fake().piece_styles[1].is_none());
-        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_FILL, ptr::null(), 0, 0), M6H_OK);
+        assert_eq!(m6h_set_piece_style(host, ENGINE_REVISION, STYLE_CHANNEL_FILL, ptr::null(), 0, 0), M6H_OK);
         assert!(fake().piece_styles[0].is_none());
         // Style slots 1 to 4; null clears; a value out of range or slot 5 changes nothing.
         assert_eq!(m6h_set_view_style(host, 1, &style), M6H_OK, "{}", last_error(host));
@@ -480,10 +480,10 @@ fn status_patterns_validate_and_use_the_separate_channel() {
         assert_eq!((*shim).fake.status_style, Some(style));
         style.patterns[7] = style.patterns[1];
         assert_eq!(m6h_set_status_style(host, &style), M6H_E_INVALID_ARGUMENT);
-        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_STATUS, bytes.as_ptr(), PIECES as u32, 0), M6H_OK, "{}", last_error(host));
+        assert_eq!(m6h_set_piece_style(host, ENGINE_REVISION, STYLE_CHANNEL_STATUS, bytes.as_ptr(), PIECES as u32, 0), M6H_OK, "{}", last_error(host));
         assert_eq!((*shim).fake.piece_styles[STYLE_CHANNEL_STATUS as usize].as_deref(), Some(bytes.as_slice()));
         bytes[0] = 6;
-        assert_eq!(m6h_set_piece_style(host, STYLE_CHANNEL_STATUS, bytes.as_ptr(), PIECES as u32, 0), M6H_E_INVALID_ARGUMENT);
+        assert_eq!(m6h_set_piece_style(host, ENGINE_REVISION, STYLE_CHANNEL_STATUS, bytes.as_ptr(), PIECES as u32, 0), M6H_E_INVALID_ARGUMENT);
         assert_eq!(m6h_status_drawn(host, 0, drawn.as_mut_ptr(), STATUS_WORDS as u32), M6H_OK);
         assert!(drawn.iter().all(|&bits| bits == 0));
         assert_eq!(m6h_set_status_style(host, ptr::null()), M6H_OK);
@@ -642,5 +642,32 @@ fn pane_flags_reach_the_core() {
     unsafe {
         let panes = (*shim).fake.submitted_panes.last().cloned().expect("a frame");
         assert!(panes.iter().all(|p| p.flags == 0), "a set pane resets its flags");
+    }
+}
+
+/// Checkpoint C3.9 (finding F2, 27 November 2026): on a composite frame a pick answers the view whose pane holds the
+/// point (the core's pick_pane), so the shell can drop a reply that names another view than the one it clicked.
+#[test]
+fn a_pick_names_the_view_it_hit() {
+    let (shim, host) = two_view_host(true);
+    assert_eq!(set_pane(host, 0, VIEW.0, LEFT, 0), M6H_OK, "{}", last_error(host));
+    assert_eq!(set_pane(host, 1, LOCAL.0, RIGHT, 0), M6H_OK, "{}", last_error(host));
+    let submitted = frame(host);
+    assert_eq!((submitted.panes, submitted.held), (2, 0));
+    for (x, view) in [(10, VIEW.0), (SIZE.0 / 2 + 10, LOCAL.0)] {
+        // SAFETY: a live handle and writable rows; the shim is used only between the host's calls.
+        unsafe {
+            let mut ticket = 0u64;
+            assert_eq!(m6h_pick_request(host, x, 20, &mut ticket), M6H_OK, "{}", last_error(host));
+            (*shim).fake.complete();
+            let mut out = M6hPick::default();
+            assert_eq!(m6h_pick_poll(host, ticket, &mut out), M6H_OK, "{}", last_error(host));
+            assert_eq!((out.state, out.view), (M6H_PICK_READY, view), "the pick at x {x} names its pane's view");
+        }
+    }
+    // SAFETY: the handle is not used again.
+    unsafe {
+        m6h_destroy(host);
+        drop(Box::from_raw(shim));
     }
 }

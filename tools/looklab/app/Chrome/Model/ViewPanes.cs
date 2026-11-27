@@ -104,4 +104,27 @@ public static class ViewPanes
     public const double MaxOpeningShare = .6;
     public static int OpeningHeight(int width, int height, bool shown) =>
         shown && width > 0 && height > 0 ? (int)Math.Floor(Math.Min(width, height * MaxOpeningShare)) : 0;
+
+    // ADR-D01's Local row (view.local, L in Global): hides Local and shows it again. While hidden Local's opening is
+    // closed, so the composite frame drops Local's pane and Global draws alone; the cap Local frames and the shared
+    // camera are untouched, so Local returns on its cap and linked to Global's rotation.
+    public const string LocalRow = "view.local";
+    public static bool LocalOpen(bool capFramed, bool hidden) => capFramed && !hidden;
+    public static IReadOnlyList<PaneSpec> Shown(IReadOnlyList<PaneSpec> openings, bool localHidden) =>
+        localHidden ? openings.Where(o => o.View != "Local").ToArray() : openings;
+}
+
+// The Local hide's state (ADR-D01's view.local): one flag the frame and the host read; Changed after each change.
+public sealed class LocalHide
+{
+    public bool Hidden { get; private set; }
+    public event Action? Changed;
+    public void Toggle() => Set(!Hidden);
+    public bool Set(bool hidden)
+    {
+        if (hidden == Hidden) return false;
+        Hidden = hidden;
+        Changed?.Invoke();
+        return true;
+    }
 }

@@ -101,6 +101,9 @@
     "8": {
       "why": "J1 is keys only; hover is checked by the pick and cap-hover runs"
     },
+    "exposed-faces": {
+      "why": "jumbling-observation.md section 4, requirement 1: holes drawn as exposed faces in the raw view need the exposed-face geometry, which this build lacks (ADR-D02.25 waits for it); both borders and Tier 1 say \"exposed faces unavailable\" (B27), so there is no face to check"
+    },
     "repair-boundary": {
       "why": "Local's Repair list has a key route since B32's findings: J1 types it (jumble.repair.focus opens the list and gives it the keys, Down focuses row 1, jumble.repair.stage stages the focused row), but J1 reads no list screens; d02_run.py --script repair-keys checks the boundary by keys (the record's rows in order, no row focused on open, nothing staged before a digit or Enter)"
     }
@@ -218,6 +221,9 @@
     },
     {
       "rule": "8"
+    },
+    {
+      "rule": "exposed-faces"
     },
     {
       "rule": "cut-trace",
@@ -713,6 +719,15 @@
         {
           "op": "view.preset.global.chain",
           "wait_ms": 1000
+        },
+        {
+          "op": "grip.select",
+          "argument": "150",
+          "wait_ms": 300
+        },
+        {
+          "op": "grip.frame.next",
+          "wait_ms": 300
         },
         {
           "wait_ms": 1000

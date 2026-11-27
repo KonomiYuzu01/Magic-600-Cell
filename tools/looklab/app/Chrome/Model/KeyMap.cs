@@ -14,13 +14,17 @@ public sealed record KeyCap(string Key, string Legend, float Width, KeyCapState 
 {
     // The last keymap change gave this key, under the modifiers held, another meaning (ADR-D01.74).
     public bool Changed { get; init; }
+    // The selected grip's twist this key types: its chord's item and its cycle over the grip's numbered marks
+    // (ADR-D01.74/.75). Null for any other key.
+    public GripKey? Grip { get; init; }
 }
 
 // One key a keymap change gave another meaning in one context: what it did before and what it does now (null: unbound).
 public sealed record KeyChange(string Key, string Context, string? Before, string? After);
 
 // The key map (ADR-D01.74): the keymap in force drawn as a keyboard. What a key does depends only on the key set,
-// the contexts and the held modifiers, and the header names all three, so a key never changes meaning silently.
+// the contexts, the held modifiers and, for a twist key, the selected grip (ADR-D01.75); the header names them all, so
+// a key never changes meaning silently.
 public static class KeyMapModel
 {
     private static IReadOnlyList<(string Key, string Legend, float Width)> Row(string spec) => spec.Split(' ').Select(s =>
@@ -48,6 +52,40 @@ public static class KeyMapModel
     // Twist keys have their own mark: they change the puzzle or the draft, the others do not.
     public static bool IsTwist(string command) => command == "operation.phase.append_twist";
 
+    // The context a cap names when it carries the selected grip's twist (ADR-D01.75).
+    public const string GripContext = "grip";
+
+    // A key map name (Shift+J) as the host writes the chord (Shift+KeyJ): a letter key is KeyX there.
+    public static string GripChord(string name)
+    {
+        int at = name.LastIndexOf('+') + 1;
+        string key = name[at..];
+        return key.Length == 1 && key[0] is >= 'A' and <= 'Z' ? name[..at] + "Key" + key : name;
+    }
+
+    // The host's chord (Shift+KeyJ) as the key map names it (Shift+J).
+    public static string GripName(string chord)
+    {
+        int at = chord.LastIndexOf('+') + 1;
+        string key = chord[at..];
+        return key.Length == 4 && key.StartsWith("Key", StringComparison.Ordinal) ? chord[..at] + key[3..] : chord;
+    }
+
+    // ADR-D01.75: a frame change re-binds twist keys. Each chord whose item or cycle changed is a key that changed
+    // meaning; the cycle over the marks stays, since the marks turn with the frame, and the item says the new twist.
+    public static IReadOnlyList<KeyChange> GripChanges(IReadOnlyList<GripKey> before, IReadOnlyList<GripKey> after)
+    {
+        static string Typed(GripKey key) => $"menu item {key.Item}, {key.Meaning}";
+        var changes = new List<KeyChange>();
+        foreach (string chord in before.Select(k => k.Chord).Union(after.Select(k => k.Chord), StringComparer.Ordinal))
+        {
+            GripKey? was = before.FirstOrDefault(k => k.Chord == chord), now = after.FirstOrDefault(k => k.Chord == chord);
+            if (was?.Item == now?.Item && was?.Meaning == now?.Meaning) continue;
+            changes.Add(new KeyChange(GripName(chord), GripContext, was == null ? null : Typed(was), now == null ? null : Typed(now)));
+        }
+        return changes;
+    }
+
     public static string Label(Binding binding, CommandRegistry registry) =>
         binding.Label ?? (registry.Commands.TryGetValue(binding.Command, out ChromeCommand? c) ? c.Label : binding.Command);
 
@@ -59,7 +97,7 @@ public static class KeyMapModel
     }
 
     public static IReadOnlyList<IReadOnlyList<KeyCap>> Caps(Keymap keymap, CommandRegistry registry, IReadOnlyList<string> contexts, bool ctrl, bool alt, bool shift,
-        IReadOnlyCollection<string> down, IReadOnlyDictionary<string, string>? host = null, SeatKeys? seats = null)
+        IReadOnlyCollection<string> down, IReadOnlyDictionary<string, string>? host = null, SeatKeys? seats = null, GripFrame? grip = null)
     {
         // One held seat key with no modifier lights its seat's twelve twist keys with their orders (ADR-D02.42).
         bool plain = !ctrl && !alt && !shift;
@@ -73,7 +111,12 @@ public static class KeyMapModel
                 return k.Key == seat.Key
                     ? new KeyCap(k.Key, k.Legend + " " + seat.Glyph, k.Width, KeyCapState.Held, true, seat.Label + " · " + twist.Numeral, SeatKeys.Context)
                     : new KeyCap(k.Key, k.Legend, k.Width, KeyCapState.Twist, held, twist.Numeral, SeatKeys.Context);
-            if (keymap.Resolve(full, contexts) is { } binding) return Cap(IsTwist(binding.Command) ? KeyCapState.Twist : KeyCapState.Bound, Label(binding, registry), binding.Context);
+            Binding? here = keymap.Resolve(full, contexts);
+            // ADR-D01.75: the chrome leaves a twist chord to the live session where the key binds nothing here or binds
+            // a twist, and is no host key; there the cap carries the selected grip's twist over its marks.
+            if (grip is { Ready: true } && grip.Key(GripChord(full)) is { } turn && (here == null || IsTwist(here.Command)) && host?.ContainsKey(full) != true)
+                return Cap(KeyCapState.Twist, turn.Meaning, GripContext) with { Grip = turn };
+            if (here is { } binding) return Cap(IsTwist(binding.Command) ? KeyCapState.Twist : KeyCapState.Bound, Label(binding, registry), binding.Context);
             if (host != null && host.TryGetValue(full, out string? own)) return Cap(KeyCapState.Bound, own, Host);
             if (seats != null && plain && seats.OfKey(k.Key) is { } entry) return Cap(KeyCapState.Bound, entry.Label, SeatKeys.Context) with { Legend = k.Legend + " " + entry.Glyph };
             // Bound, but not where the pointer is: the cap says where it acts.
@@ -88,10 +131,11 @@ public static class KeyMapModel
         return named.Length == 0 ? "everywhere" : string.Join(", ", named);
     }
 
-    public static string Header(string keySet, IReadOnlyList<string> contexts, bool ctrl, bool alt, bool shift)
+    public static string Header(string keySet, IReadOnlyList<string> contexts, bool ctrl, bool alt, bool shift, GripFrame? grip = null)
     {
         string[] held = new[] { ctrl ? "Ctrl" : null, alt ? "Alt" : null, shift ? "Shift" : null }.Where(m => m != null).ToArray()!;
-        return $"Key set: {keySet} · {Place(contexts)} · " + (held.Length == 0 ? "no modifier held" : "with " + string.Join("+", held));
+        return $"Key set: {keySet} · {Place(contexts)} · " + (held.Length == 0 ? "no modifier held" : "with " + string.Join("+", held))
+            + (grip is { Ready: true } ? $" · grip: cap {grip.Cap.ToString(CultureInfo.InvariantCulture)}, frame {grip.Frame.ToString(CultureInfo.InvariantCulture)}" : "");
     }
 
     // ADR-D01.74's "never silently": every key a keymap change gave another meaning, in each context it changed in.
@@ -125,8 +169,14 @@ public static class KeyMapModel
     public static IReadOnlyList<IReadOnlyList<KeyCap>> Mark(IReadOnlyList<IReadOnlyList<KeyCap>> caps, IReadOnlyList<KeyChange> changes, bool ctrl, bool alt, bool shift)
     {
         if (changes.Count == 0) return caps;
-        var keys = changes.Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
-        return caps.Select(row => (IReadOnlyList<KeyCap>)row.Select(cap => keys.Contains(Keymap.KeyName(ctrl, alt, shift, cap.Key)) ? cap with { Changed = true } : cap).ToArray()).ToArray();
+        // A grip frame change marks only a cap that carries the grip's twist: elsewhere the key's meaning is the chrome's.
+        var keys = changes.Where(c => c.Context != GripContext).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
+        var turns = changes.Where(c => c.Context == GripContext).Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
+        return caps.Select(row => (IReadOnlyList<KeyCap>)row.Select(cap =>
+        {
+            string name = Keymap.KeyName(ctrl, alt, shift, cap.Key);
+            return keys.Contains(name) || (cap.Grip != null && turns.Contains(name)) ? cap with { Changed = true } : cap;
+        }).ToArray()).ToArray();
     }
 }
 

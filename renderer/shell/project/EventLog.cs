@@ -179,6 +179,8 @@ public sealed class EventLog : IDisposable
                 json.WriteNumber("panes", frame.Panes);
                 json.WriteNumber("held", frame.Held);
             }
+            // ADR-D02 B19/B24: the core's counters on a gate run (M600_D02_GATE=1); nothing otherwise.
+            CoreSurface.GateFields(json);
         });
         Drain(frame);
     }

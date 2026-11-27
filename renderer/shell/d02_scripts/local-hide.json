@@ -1,0 +1,16 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "local-hide",
+  "resolution": "2000x1200",
+  "state": "wj-ia-300",
+  "note": "ADR-D01's Local row (view.local, L in Global; in a live session the router's twist key KeyL keeps L, so the row runs here as a command, as the palette runs it). The row hides Local: its opening closes, the composite frame drops Local's pane and Global draws alone, the gate's G1. A drag in Global while Local is hidden turns the shared camera; the row again shows Local on the cap it framed, still linked, sent the shared spin the drag left.",
+  "steps": [
+    {"wait_ms": 4000},
+    {"command": "view.local"},
+    {"wait_ms": 1500},
+    {"drag": [160, 0]},
+    {"wait_ms": 701},
+    {"command": "view.local"},
+    {"wait_ms": 1502}
+  ]
+}

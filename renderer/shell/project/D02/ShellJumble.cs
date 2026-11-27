@@ -398,6 +398,7 @@ public static class ShellJumble
         registry.AddRows(rows);
         DraftIds.Clear();
         DraftIds.UnionWith(drafts.Order);
+        DraftIds.UnionWith(GripFrame.AddDraftRows(registry, rows));
         registry.Relabel(File.ReadAllText(Path.Combine(folder, "command-labels.json")));
     }
 
@@ -652,7 +653,7 @@ internal sealed partial class D02Driver : Node
             // ADR-D02 B20: a held key, down at "hold" and up at "release", so frames are drawn while it is held.
             var down = step.TryGetProperty("hold", out _);
             _doing = (down ? "hold " : "release ") + hold.GetString();
-            var key = OS.FindKeycodeFromString(hold.GetString()!);
+            var key = hold.GetString() == GripFrame.Modifier ? Key.Ctrl : OS.FindKeycodeFromString(hold.GetString()!);
             if (key == Key.None)
             {
                 _doing += " (not pressed: no key is named " + hold.GetString() + ")";
@@ -701,8 +702,10 @@ internal sealed partial class D02Driver : Node
         }
         else if (step.TryGetProperty("click", out var click))
         {
-            // ADR-D02 B17: a left click at fractions of the Global opening (D02/ShellPick.cs).
-            _doing = ShellPick.ScriptClick(_frame.Opening, click);
+            // ADR-D02 B17: a left click at fractions of the Global opening (D02/ShellPick.cs); "in": "local" clicks in
+            // Local's drawn opening instead (checkpoint C3.9, F2).
+            var inLocal = step.TryGetProperty("in", out var view) && view.GetString() == "local";
+            _doing = ShellPick.ScriptClick(inLocal ? _frame.LocalOpening : _frame.Opening, click, inLocal);
         }
         else if (step.TryGetProperty("cancel_older", out _))
         {
@@ -851,6 +854,18 @@ internal sealed partial class D02Driver : Node
                 _doing += " (no Run)";
             }
         }
+        else if (step.TryGetProperty("click_local", out var clickLocal))
+        {
+            _doing = "local " + ShellPick.ScriptClick(_frame.LocalOpening, clickLocal);
+        }
+        else if (step.TryGetProperty("grip_hover", out var gripHover))
+        {
+            _doing = GripPointer("hover", gripHover.GetString()!);
+        }
+        else if (step.TryGetProperty("grip_click", out var gripClick))
+        {
+            _doing = GripPointer("click", gripClick.GetString()!);
+        }
         else if (step.TryGetProperty("wait_ms", out var wait))
         {
             _doing = "wait " + wait.GetInt32().ToString(CultureInfo.InvariantCulture) + " ms";
@@ -858,10 +873,38 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a hover_control, a click_control, a command or a wait_ms");
+            throw new FormatException("Unknown D02 script step: " + step);
         }
-        _wait = step.TryGetProperty("quick", out var quick) && quick.GetBoolean() ? 0 : StepFrames;
+        // ADR-D02 B19/B24: a step marked "quiet" writes no screen dump, so a gate row's repeated motion is timed
+        // without the dump's work in its frames (d02_run.py expand_repeat marks them). A "quick" step (ADR-D01.55)
+        // dumps at once and flushes the buffered input.
+        _wait = step.TryGetProperty("quiet", out var quietStep) && quietStep.ValueKind == JsonValueKind.True ? -1
+            : step.TryGetProperty("quick", out var quick) && quick.GetBoolean() ? 0 : StepFrames;
         if (_wait == 0) Input.FlushBufferedEvents();
+    }
+
+    private static string GripPointer(string action, string pane)
+    {
+        var name = "grip " + action + " " + pane;
+        Vector2? point = pane == "off" ? Vector2.Zero : ShellGrip.Centre(pane);
+        if (point is not { } at) return name + " (clipped)";
+        if (action == "hover")
+        {
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+        }
+        else
+        {
+            Input.ParseInputEvent(new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Pressed = true,
+                Position = at, GlobalPosition = at, CtrlPressed = true,
+            });
+            Input.ParseInputEvent(new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Left, Pressed = false, Position = at, GlobalPosition = at, CtrlPressed = true,
+            });
+        }
+        return name;
     }
 
     /// <summary>A chord such as F1, Escape or Ctrl+Shift+P, pressed and released through the shell's input.</summary>
@@ -999,6 +1042,7 @@ internal sealed partial class D02Driver : Node
                 json.WriteNumber("cap", shown.LocalCap.Shown ?? -1);
                 json.WriteNumber("framed", ShellLocal.Cap ?? -1);
                 json.WriteBoolean("opening", _frame.LocalOpeningShown);
+                json.WriteBoolean("hidden", _frame.LocalHide.Hidden);
                 json.WriteString("words", shown.LocalWords ?? "");
                 json.WriteEndObject();
                 // The cap map's hovered cell, the pointer's shape over it and its tooltip.
@@ -1074,6 +1118,8 @@ internal sealed partial class D02Driver : Node
             // B15: the tint channel as the core was sent it.
             ShellTint.Dump(json, _frame);
             ShellError.Dump(json);
+            ShellGrip.Dump(json);
+            ShellGripKeys.Dump(json);
             // B30: the tuning panel: whether the right dock shows it, the compare, the live tuning, the frame's window
             // colour, and the head's state digest (a knob must leave it as it was).
             if (ShellJumble.TuningHost is { } tuning && _frame != null && GodotObject.IsInstanceValid(_frame))
@@ -1179,6 +1225,8 @@ internal sealed partial class D02Driver : Node
                     ("top_bar", _frame.FindChild("TopBar", true, false) as Control), ("left_dock", _frame.FindChild("LeftDock", true, false) as Control),
                     ("right_dock", _frame.FindChild("RightDock", true, false) as Control), ("bottom_dock", _frame.FindChild("BottomDock", true, false) as Control),
                     ("global", _frame.Global), ("local", _frame.Local),
+                    // B24: Global's opening, the rectangle a script's click fractions resolve against (the occlusion grid).
+                    ("global_opening", _frame.Global?.Slot),
                 })
                 {
                     if (node == null || !GodotObject.IsInstanceValid(node) || !node.IsVisibleInTree())
@@ -1249,6 +1297,12 @@ internal sealed partial class D02Driver : Node
                 json.WriteEndObject();
             }
             json.WriteNumber("cancels", _cancels);
+            // C3/C4 finding F5: the bound state's digest and revision at every step, so a view-only run can show that
+            // no step changed the session.
+            json.WriteStartObject("bound");
+            json.WriteString("digest", ShellJumble.StateDigest);
+            json.WriteNumber("revision", ShellJumble.StateRevision);
+            json.WriteEndObject();
             if (_screenBefore is { } before)
             {
                 // The whole screen as it read before this step's cancel or control, beside "lines" read after it.
@@ -1271,6 +1325,14 @@ internal sealed partial class D02Driver : Node
             // B22 rest: Global's border marks, each chip's label words and its tooltip (a hidden label's words lie there).
             json.WriteStartArray("global_marks");
             foreach (var chip in _frame.Global.Marks.GetChildren().OfType<Control>())
+            {
+                var words = chip.FindChildren("*", "Label", true, false).OfType<Label>().Select(label => label.Text);
+                json.WriteStringValue(string.Join(" ", words) + " | " + chip.TooltipText);
+            }
+            json.WriteEndArray();
+            // C3/C4 finding F6: Local's border marks as drawn (the raw view's caption is read from here).
+            json.WriteStartArray("local_marks");
+            foreach (var chip in _frame.Local.Marks.GetChildren().OfType<Control>())
             {
                 var words = chip.FindChildren("*", "Label", true, false).OfType<Label>().Select(label => label.Text);
                 json.WriteStringValue(string.Join(" ", words) + " | " + chip.TooltipText);

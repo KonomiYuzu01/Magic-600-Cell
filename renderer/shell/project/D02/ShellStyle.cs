@@ -149,11 +149,35 @@ public static class ShellStyle
 
     static ShellStyle() => ShellPick.Changed += Invalidate;
 
+    /// <summary>Checkpoint C3.2 (F1): the revision a committed press handed out, and the one the style was last held for.</summary>
+    private static ulong _pending, _held;
+
+    /// <summary>
+    /// Checkpoint C3.2 (F1): a committed press handed out <paramref name="revision"/>; until a frame shows it, the
+    /// outline and fill are sent for it too, and the host holds them for its adoption, so its first frame draws them.
+    /// </summary>
+    public static void Committed(ulong revision) => _pending = Math.Max(_pending, revision);
+
+    // F1: one channel for the adopted revision and, while one is handed out, for the pending revision (held by the
+    // host). A stale adopted revision (the host adopted after the last frame) is not an error when the pending send
+    // reaches it; any other refusal is answered, so the style is sent again at the next step.
+    private static int Send(HostLibrary library, IntPtr host, ulong revision, ulong pending, uint channel, byte[]? bytes)
+    {
+        var code = library.SetPieceStyle(host, revision, channel, bytes, false);
+        if (pending == 0)
+        {
+            return code;
+        }
+        var held = library.SetPieceStyle(host, pending, channel, bytes, false);
+        return code == HostLibrary.Ok || code == HostLibrary.Unavailable ? held : code;
+    }
+
     /// <summary>Marks the style for sending again (the selection or hover changed).</summary>
     public static void Invalidate() => _dirty = true;
 
     /// <summary>B20: whether the slice's inside layer was sent, so Local's slots may draw the slice.</summary>
     private static bool _sliceSent;
+    public static bool SliceSent => _sliceSent;
 
     /// <summary>
     /// Sends the piece style for the revision the next frame draws when it changed or the selection did; answers the
@@ -177,7 +201,9 @@ public static class ShellStyle
             _sliceSent = sliced == HostLibrary.Ok;
             _dirty = true;
         }
-        if (!_dirty && revision == _revision && !ShellSlice.Restyle)
+        ShellGrip.StepGhost(revision);
+        var pending = _pending > revision ? _pending : 0;
+        if (!_dirty && revision == _revision && pending == _held && !ShellSlice.Restyle)
         {
             return sliced;
         }
@@ -191,6 +217,12 @@ public static class ShellStyle
             {
                 if (flash[piece] != 0) outline[piece] = JumbleOverlay.Entry;
             }
+        }
+        // ADR-D01.13: the grip's click ghost shares the hover palette entry in each view.
+        if (ShellGrip.Moving is { } moving)
+        {
+            for (var piece = 0; piece < PieceCount; piece++)
+                if (moving[piece] != 0) outline[piece] = Hovered;
         }
         int? hovered = null, selected = null;
         if (ShellPick.Hover is { } hover && hover.Piece < PieceCount)
@@ -207,7 +239,7 @@ public static class ShellStyle
         {
             outline[piece] |= HostLibrary.StyleError;
         }
-        var code = library.SetPieceStyle(host, HostLibrary.StyleOutline, outline, false);
+        var code = Send(library, host, revision, pending, HostLibrary.StyleOutline, outline);
         if (code != HostLibrary.Ok)
         {
             return code;
@@ -220,7 +252,7 @@ public static class ShellStyle
         var fill = Fill();
         if (fill is not null || _focusSent)
         {
-            code = library.SetPieceStyle(host, HostLibrary.StyleFill, fill, false);
+            code = Send(library, host, revision, pending, HostLibrary.StyleFill, fill);
             if (code != HostLibrary.Ok)
             {
                 return code;
@@ -251,6 +283,7 @@ public static class ShellStyle
         SentMatrix = sent;
         ShellSlice.Restyle = false;
         _revision = revision;
+        _held = pending;
         _dirty = false;
         return sliced;
     }

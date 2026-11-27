@@ -139,6 +139,8 @@ public sealed unsafe class HostLibrary : IDisposable
         "m6h_set_status_style",
         "m6h_status_drawn",
         "m6h_status_targets",
+        "m6h_grip_report",
+        "m6h_grip_set",
     };
 
     /// <summary>A submitted frame, as m6h_frame writes it (the Rust M6hFrame).</summary>
@@ -539,16 +541,19 @@ public sealed unsafe class HostLibrary : IDisposable
     public const byte StyleError = 0x10;
 
     /// <summary>
-    /// Sets one channel of the adopted revision's piece style (version 10): one byte per piece, or with
-    /// <paramref name="byPose"/> one byte per pose of the session's head, which the host expands with the head's own pose
-    /// index; null clears the channel. The core drops it at the next adoption, so it is set again for each shown revision.
+    /// Sets one channel of the piece style of engine revision <paramref name="revision"/>, the one it was computed for
+    /// (version 10; checkpoint C3.2's revision binding): one byte per piece, or with <paramref name="byPose"/> one byte
+    /// per pose of the session's head, which the host expands with the head's own pose index; null clears the channel.
+    /// The adopted revision's style is set at once; one for a revision handed out but not adopted yet is held and set
+    /// with its adoption; an older one answers <see cref="Unavailable"/>. The core drops it at the next adoption, so it is
+    /// set again for each shown revision.
     /// </summary>
-    public int SetPieceStyle(IntPtr host, uint channel, byte[]? styles, bool byPose)
+    public int SetPieceStyle(IntPtr host, ulong revision, uint channel, byte[]? styles, bool byPose)
     {
         fixed (byte* s = styles)
         {
-            return ((delegate* unmanaged[Cdecl]<IntPtr, uint, byte*, uint, uint, int>)_exports["m6h_set_piece_style"])(
-                host, channel, s, (uint)(styles?.Length ?? 0), byPose ? 1u : 0u);
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, uint, byte*, uint, uint, int>)_exports["m6h_set_piece_style"])(
+                host, revision, channel, s, (uint)(styles?.Length ?? 0), byPose ? 1u : 0u);
         }
     }
 
@@ -873,6 +878,13 @@ public sealed unsafe class HostLibrary : IDisposable
     /// "pose_lattice_sha256"}, the last two null with Jumble off.
     /// </summary>
     public int StateDigest(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_state_digest"])(host);
+
+    /// <summary>D02's exact cap, frames, key items and press summary. The JSON is read through <see cref="Answer"/>.</summary>
+    public int GripReport(IntPtr host) => ((delegate* unmanaged[Cdecl]<IntPtr, int>)_exports["m6h_grip_report"])(host);
+
+    /// <summary>Changes the view's grip frame and returns its new report through <see cref="Answer"/>.</summary>
+    public int GripSet(IntPtr host, uint cap, uint frame) =>
+        ((delegate* unmanaged[Cdecl]<IntPtr, uint, uint, int>)_exports["m6h_grip_set"])(host, cap, frame);
 
     /// <summary>
     /// Closes the session and runs its correctness control once. <paramref name="shownRevision"/> is the engine

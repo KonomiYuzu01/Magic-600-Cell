@@ -910,6 +910,38 @@ relative path is from the repository root.
 - **Machine:** G. About 35 minutes with the owner at the start.
 - **Checkpoint:** yes, C3.
 - **Depends:** B15 to B18c.
+- **As built, gate tools (B19, 27 November 2026): tools built, sittings not run.**
+  - `tools/perf/d02/gate_row.py` prints the `D02_GATE` line from `events.jsonl`. It times the gaps between the confirmed
+    presentations (`presented` rows, `display_qpc`) over the last 60 s and drops everything before them as warm-up (the
+    launch, the open, the view setup and the first 10 s of motion). A missing required field refuses the row, and the
+    tests are in `tests/test_gate_row.py`.
+  - `view_vertex_evals` is the core's own count: on a gate run (`M600_D02_GATE=1`), every frame row carries
+    `sa2_counters` (`CoreSurface.GateFields`, called from `EventLog.Frame`).
+  - VRAM is the shell process's dedicated GPU memory, sampled from outside through PDH's GPU Process Memory counters.
+  - `renderer/shell/gate_d02.py --row <id>` runs a row through `d02_run.py`'s launcher and player, with the scripts
+    `d02_scripts/gate-g*.json`. Their one repeat block is unrolled by `d02_run.expand_repeat` as quiet steps, and the
+    player writes no screen dump after a quiet step (`ShellJumble.cs`).
+  - The page is `docs/progress/1.0/adr-d02-gate-results.md`, with the rows, the commands and empty result cells.
+  - Found while building, and on that page:
+    - G3's S1 is no menu letter, so the fallback is `wj-ia-300`'s cap 0 with 462 certificate points.
+    - The twist keys turn the constant grip cap 0, which is blocked at `deep-2`, so the sweeping rows need
+      `grip.select` or a twist at the named cap.
+    - Local cannot be hidden while a state is bound, so G1 has no one-view case yet.
+    - The never-foreground window presented at a median 33.3 ms in the dry run.
+  - The dry run (G1 at `wj-ia-300`, 10 s) printed a well-formed line and was invalid, as expected: two panes and no
+    committed twist. It is not gate evidence.
+  - Fixed the same day (gate track):
+    - The sweeping rows select cap 2 with `grip.select` before the repeat block, and the router's twist keys turn the
+      selected cap (`set_grip`, `ShellTurn`'s active grip cap). `gate_d02.py` moves the cap to an admissible one of a
+      dry run's state from its sample `rim.json` (cap 91 at `wj-ia-300`) and records it.
+    - `view.local` hides and shows Local (`ViewPanes.LocalOpen`, `LocalHide`): Local's opening closes, the pane drops,
+      the host stops drawing Local, and Local returns on its cap with the camera shared. The key L stays the router's
+      twist key in a live session. Tests: the console test `D02LocalHideDropsAndRestoresLocalPane` and the product
+      script `local-hide`.
+    - The window is the display's native size read at run time (2560x1600 here); `--resolution` overrides it, and
+      `--foreground` (the owner's sitting only) activates the window once, never topmost. `gate.json` records both.
+    - Dry runs at `wj-ia-300` (10 s, not evidence): G1 was valid with one pane and 7 twists, G9 valid with two panes and
+      7 twists. The System log showed no GPU event after either.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
@@ -1117,6 +1149,17 @@ relative path is from the repository root.
 - **Machine:** G. About 45 minutes with the owner at the start.
 - **Checkpoint:** yes, C4. After it the integrator can put R5 to the owner with both sittings' numbers.
 - **Depends:** B20 to B23.
+- **As built, gate tools (B24, 27 November 2026): tools built, sittings not run.**
+  - Rows G4 to G11 are `gate_d02.py --row <id>` with the scripts `d02_scripts/gate-g4.json` and onwards.
+  - `gate_d02.py --occlusion` measures occlusion: both chart presets at the default camera, a grid of picks over Global
+    (one pick pass per point), and the distinct selected pieces per preset. It is a sampled count, not a full ID-pass
+    count.
+  - The prerequisites (twist sweeps on `deep-2`, the foreground question) are those of B19. Results go on
+    `docs/progress/1.0/adr-d02-gate-results.md`.
+  - Fixed on 27 November 2026 (gate track): G4, G6 and G8 select their grip cap as B19's rows do. The occlusion grid
+    lies over Global's opening as the shell lays it out (a click step's fractions are of that opening; the default
+    region is all of it). The record holds the opening the dumps report (`frame.global_opening`) and checks that every
+    click landed in it. Not yet run.
 
 ### B25. Word flows and signatures
 - **Goal:** the word line, counters, the folded tree, signatures.
@@ -1396,6 +1439,60 @@ relative path is from the repository root.
 - **Machine:** W.
 - **Checkpoint:** yes, C6.
 - **Depends:** B32. The ten sealed defects from C5.
+- **As built (C6 findings, 27 November 2026):**
+  - No fault switch was built: `Model/Jumble.cs` has no `M600_D02_FAULT`, which Files above and section 7 name. J0
+    plants each defect as data in its own copy of Look Lab's samples (`plant()` in `track_j.py`, read through
+    `launch.py --d02-data`), so the product's code is unchanged. Six of section 7's classes cannot be planted that way (`NOT_PLANTABLE` gives each
+    reason), and the result line says so: `not_planted=6`.
+  - A defect may name a rule outside the driver's seventeen. It counts as planted, and only the researcher subagent
+    can catch it, so the planted set can show the driver's blind spots. The same change under two ids, and an id whose
+    prefix is not its writer (`by`), are refused.
+  - The subagent catches a faulted run only when it says broken and names the defect's rule (for a rule outside the
+    driver's, in its own words, which the record keeps for the integrator). Its false alarms on the clean runs fail J0
+    like the driver's; an answer whose `broken` is not true or false is refused.
+  - The packet's draw is seeded by the defects' sha256 and a nonce that only the sealed key keeps. The leak test also
+    matches the out folder's path JSON-escaped and in any case.
+  - Scoring takes Opus's count of the subagent's effort (`--effort`: scripts, dumps, minutes, words) and checks
+    section 7's cap; each scoring keeps the answers' sha256, and earlier scorings stay in the record's history. The
+    subagent's reach half has no driver function yet, and the line prints `reach=not_run`.
+  - A check that throws is a run problem, not a catch. J1 counts the rules it observed, not the session's entries
+    (`observation=6/6`, was 9/9), names exposed faces under `not_run`, and treats a screen with no BoundaryLedger
+    count as a problem.
+
+### ADR-D01 ports (as built)
+
+**As built (ADR-D01.75 and ADR-D01.13's ghosting; 27 November 2026, branch `claude/d02-research`, gpt-6.2-sol call
+20261127T063126Z-e21b0212).** The grip's selection, its Grip frame marks and the modifier ghost, on B17's picks and B18's key route.
+- Host (version 14, no new number): `m6h_grip_report` and `m6h_grip_set(cap, frame)`, answered through `m6h_answer`
+  (`renderer/bridge/host/src/grip.rs`, `turns.rs`). The twelve proper ordered frames of the cap's cell port 0.4's
+  `grip_frames.py` corner order; under frame f a twist chord's item is the menu item equal to g_f M g_f^-1 by exact matrix
+  equality, and a frame without one is refused with its reason. Setting a grip re-binds only the Jumble twist row's chords in the
+  router (`Router::apply`), commits nothing and writes no record; cap 0 at frame 0 restores today's map (`GripCap`, J 1, K 2/5,
+  L 3/9). Jumble off answers "Grip frames need Jumble".
+- Shared chrome: `Model/GripFrame.cs` (cap, frame, admissible frames, ordered `Marks`, `KeyMeanings` with each chord's item and
+  its cycle over the marks; `Next`, `Set`, `Changed`, `Dump`) is the read ADR-D01.74's key map draws on its keycaps;
+  `Ui/GripMarks.cs` draws one mark for views and keycaps alike. `CorePlaces.PlaceCellPoint` places a cell point by the core's own
+  projection, including Global's charts and Local's raw and slice panes.
+- Shell: `D02/ShellGrip.cs`. `grip.select` (the picked cell at the current revision, or a named cap and frame) and
+  `grip.frame.next` are draft rows in the D02 table's `grip` section (`grip.select`'s id is the command table's; the D02 row
+  carries it). While Ctrl is held and the hover lies on the grip, the click twist (the frame's KeyJ item) outlines its moving set
+  in palette entry 2 in both panes, with its cycle drawn at the cap's centre; release, focus loss or leaving the window clears it
+  and nothing commits. Ctrl + click on the grip routes one KeyJ press (the key route, so the journal, the sweep and the
+  correctness control see a press); a plain click stays B17's pick. No core change.
+- Run: `d02_run.py --script grip-frame --state wj-ia-300`. J1 types both rows (cap 150, then the next frame).
+
+**As built (ADR-D01.74's keycaps on the Grip frame; 27 November 2026, branch `claude/d02-port`).** The key map reads the
+same `GripFrame` as the views.
+- `KeyMapModel.Caps` takes the grip. Where the chrome leaves a twist chord to the live session (the key binds nothing in the
+  hovered context, or binds a twist, and is no host key), its cap carries the grip's `GripKey`: the chord's item and its
+  cycle over the numbered marks. The board stamps that cycle with `GripMarks.Direction`, the mark the views draw. Over
+  Global, L stays the chrome's Local view. The header names the grip (`grip: cap 150, frame 1`).
+- A frame change on the same cap marks each grip cap whose twist differs from the one the map last showed, with the
+  corner mark of a key set change (`KeyMapModel.GripChanges`, context `grip`), until the map has been shown and closed;
+  a mark not yet seen survives a second frame change. The cycles stay, since the marks turn with the frame. A cap the
+  chrome takes (L over Global) is not marked. A grip on another cap drops the marks.
+- Shell: `D02/ShellGripKeys.cs` hands `ShellGrip.Model` to the key map and dumps its grip caps and stamps (`keycaps`).
+  Run: `d02_run.py --script grip-keycaps --state wj-ia-300`.
 
 ### ADR-D01 ports
 
@@ -1495,6 +1592,19 @@ Each checkpoint is one read of the named diff range against the questions below,
   - a pick reply comes from the view clicked;
   - G9's line comes from the event log.
 - Owner is shown: gate sitting 1, Global and Local drawn at once, and the certificate glyphs to accept or refuse. About 90 minutes of Fable's reading.
+- C3/C4 findings (27 November 2026), Fable's read at b1c0cf9b; each lead got its test first:
+  - F1 (major, C3.2), confirmed: host test `style_held` failed first (the new revision's first frame had no fill).
+    `m6h_set_piece_style` now takes the revision (ABI 10, before any release, no new number); the host holds a style
+    for a revision handed out but not adopted yet and sets it at that adoption; an older revision answers
+    unavailable, one never handed out invalid argument. The shell sends the outline and the fill for the adopted
+    revision and, after a committed press, for the pending one. Left: the slice channel is still sent only for the
+    adopted revision (its row is read per adopted revision), and presses committed outside `m6h_key_down` do not
+    name a pending revision.
+  - F2 (major as a checkpoint item, C3.9), confirmed: host test `a_pick_names_the_view_it_hit` failed first (the fake
+    core answered the frame's first pane for a pick in Local); the fake now picks per pane, as the core's `pick_pane`
+    does. `ShellPick` keeps the clicked view and drops a reply that `ViewPanes.Takes` refuses (the dump's
+    `pick.dropped`); the `pick` run clicks twice in Local (`"in": "local"`) and checks each selection's view.
+  - F3 (minor): not done in this step (budget); the four-state console replay is still owed.
 
 **C4, after B24.**
 - Fable checks:
@@ -1507,6 +1617,15 @@ Each checkpoint is one read of the named diff range against the questions below,
   - no view mode changes a state digest;
   - the three-pane gate lines come from the event log.
 - Owner is shown: gate sitting 2, both presets beside a drawn Local, the split and the antipode.
+- C3/C4 findings (27 November 2026), Fable's read at b1c0cf9b:
+  - F4 (minor), confirmed: `check_core.py --chart` on WARP failed first (after three channel changes evicted the
+    frame's copy, the one-view pick was stale and the pane pick read the new channel). `pick_pane` now checks the
+    copy's chart version, as `pick_plan` does.
+  - F5 (minor): `hopf`, `ring-sheet`, `slice` and `raw` now also require one bound digest and revision (the dump's
+    `bound`) and one Word panel digest across all their steps.
+  - F6 (minor): by reading, not reproduced in a run (no script turns Jumble's mode off): `JumbleHost.Marks` returned
+    before Local's raw caption while Jumble's mode was off. The caption is now added whenever Local draws the raw
+    view, and `raw` reads it from Local's drawn border (the dump's `local_marks`), not from the model's constant.
 
 **C5, after B29.**
 - Fable checks:

@@ -1,0 +1,51 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "gate-g11",
+  "state": "deep-2",
+  "resolution": "2000x1200",
+  "note": "A gate row of renderer/shell/gate_d02.py: the steps before the repeat block set the views; the block runs for warm-up plus window seconds as quiet steps (d02_run.expand_repeat), and tools/perf/d02/gate_row.py times the last window seconds. No step follows the block, so the window holds only the row's views. B24 G11: Global on the ring sheet, Local's raw view (Home) with the antipode chart beside it (End): three panes, the heaviest case; held for the window.",
+  "steps": [
+    {
+      "wait_ms": 4000
+    },
+    {
+      "command": "view.preset.global.ring_sheet"
+    },
+    {
+      "wait_ms": 1500
+    },
+    {
+      "chord": "Space"
+    },
+    {
+      "text": "> jumble.cap.name 2"
+    },
+    {
+      "chord": "Enter"
+    },
+    {
+      "wait_ms": 1200
+    },
+    {
+      "chord": "Home"
+    },
+    {
+      "wait_ms": 1500
+    },
+    {
+      "chord": "End"
+    },
+    {
+      "wait_ms": 1500
+    },
+    {
+      "repeat": {
+        "steps": [
+          {
+            "wait_ms": 1000
+          }
+        ]
+      }
+    }
+  ]
+}

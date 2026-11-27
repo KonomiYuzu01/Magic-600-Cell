@@ -180,7 +180,7 @@ internal static class ShellStatus
         if (sentTokens != chrome.Tokens && bridge.SetStatusStyle(handle, table, chrome.Tokens, collect) == HostLibrary.Ok)
             sentTokens = chrome.Tokens;
         if (prepared is { } next && next.Revision == revision && next != sent
-            && bridge.SetPieceStyle(handle, HostLibrary.StyleStatus, next.Empty ? null : next.Bytes, false) == HostLibrary.Ok)
+            && bridge.SetPieceStyle(handle, revision, HostLibrary.StyleStatus, next.Empty ? null : next.Bytes, false) == HostLibrary.Ok)
             sent = next;
     }
 

@@ -2815,7 +2815,32 @@ void product_chart(const Options& options) {
     expect(sa2_charts_set(ctx, 2, nullptr, 5) == SA2_E_INVALID_ARGUMENT, "a NULL channel with a count was accepted");
     expect(sa2_charts_set(nullptr, 2, right.data(), SA2_SLOTS) == SA2_E_INVALID_ARGUMENT, "a channel was set without a context");
     expect(frames.draw(2, 1, 0, I) == good, "a refused chart channel changed the picture");
-    api(ctx, sa2_charts_set(ctx, 2, wrong.data(), SA2_SLOTS));
+    // C3/C4 finding F4 (27 November 2026): a pick on a composite frame reads the chart channel its pane drew with, as a
+    // one-view pick does (pick_plan): once the channel changes, a pane's pick on the older frame is stale.
+    {
+        const auto set = panes_check::pickable_set(harness, 1, 2);
+        sa2_pane pane{};
+        pane.view = 1; pane.view_generation = 1; pane.resource_set = set;
+        pane.width = 640; pane.height = 360;
+        for (int r = 0; r < 4; ++r) for (int c = 0; c < 4; ++c) pane.camera_matrix[c * 4 + r] = float(I[r * 4 + c]);
+        frames.draw(2, 1, set, I);
+        const auto one_view = frames.frame;
+        frames.draw_panes(2, {pane});
+        const auto composite = frames.frame;
+        const auto before = panes_check::pick(harness, composite, 320, 180);
+        expect(before.state == SA2_PICK_READY, "a pane pick under an unchanged chart channel was not ready");
+        // Each changed channel gets a fresh copy of the revision (EngineCopies = 3), so three changes, each drawn,
+        // overwrite the copy both older frames drew with: their picks must then be stale, never read the new channel.
+        for (int k = 0; k < 3; ++k) {
+            api(ctx, sa2_charts_set(ctx, 2, (k % 2 ? right : wrong).data(), SA2_SLOTS));
+            frames.draw(2, 1, 0, I);
+        }
+        const auto one = panes_check::pick(harness, one_view, 320, 180), panes = panes_check::pick(harness, composite, 320, 180);
+        std::cout << "chart channel: after a change the one-view pick is " << one.state << "/" << one.stale
+                  << " and the pane pick " << panes.state << "/" << panes.stale << " (state/stale)" << std::endl;
+        expect(one.state == SA2_PICK_STALE && one.stale == SA2_PICK_STALE_ENGINE, "a one-view pick read a changed chart channel");
+        expect(panes.state == SA2_PICK_STALE && panes.stale == SA2_PICK_STALE_ENGINE, "a pane pick read a changed chart channel");
+    }
     adopt_poses(harness, 3, index, both, lattice);
     expect(frames.draw(3, 1, 0, I) == unset, "an adoption kept the previous revision's chart channel");
     api(ctx, sa2_charts_set(ctx, 3, nullptr, 0));

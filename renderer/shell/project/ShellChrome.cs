@@ -237,6 +237,8 @@ public sealed class ShellChrome
             "keymap.preset.set" => KeySets.Unavailable(sample != null ? sample.Scripts.Presets : keySets?.Names, argument),
             _ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,
             _ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),
+            // ADR-D01's Local row: the Local hide, where the frame draws Local (the D02 product).
+            ViewPanes.LocalRow => frame.LocalDrawn ? null : "this build does not draw Local",
             _ => NotHere,
         };
         // ADR-D01.39: the explore state's gate runs first for every caller; it adds a refusal, never removes one.
@@ -342,6 +344,7 @@ public sealed class ShellChrome
         {
             if (registry.Commands[command].Kind == "commit" || command is "session.resume" or "explore.set" or "operation.phase.append_twist")
                 (parent as Shell)?.FlushMotion();
+            if (ShellJumble.On) ShellGrip.CancelGesture();
             if (gated(command, argument) is { } why)
             {
                 frame.Say($"{registry.Commands[command].Label}: {why}", true);
@@ -369,6 +372,7 @@ public sealed class ShellChrome
                 case var scene when ShellScene.Handles(scene): ShellScene.Execute(frame, command, argument); break;
                 case var status when ShellStatus.Handles(status): ShellStatus.Execute(command, argument); break;
                 case "command.find": palette.Open(); break;
+                case ViewPanes.LocalRow: frame.LocalHide.Toggle(); frame.Say(frame.LocalHide.Hidden ? "Local hidden" : "Local shown"); break;
                 case "keymap.preset.set": UseKeySet(argument); break;
                 case "menu.context.open" when contextMenu != null && contextMenus != null:
                     Vector2 at = argument switch
@@ -596,6 +600,9 @@ public sealed class ShellChrome
             // B15: the tint channel and the focus layers, drawn by the core.
             ShellTint.Attach(host, frame);
             ShellError.Attach(host, frame);
+            ShellGrip.Attach(host, frame);
+            // ADR-D01.74: the key map's twist keycaps read the same grip.
+            ShellGripKeys.Attach(keyMap);
             cards = new ShellCards(frame, host, sentences["totals.unit"]);
             frame.SetMainViews(global, Jumble.Surface);
             Jumble.Solving(sample?.Solve.Strip, sample?.Solve.Rail);
@@ -709,13 +716,23 @@ public sealed class ShellChrome
             return false;
         }
         var name = Keymap.KeyName(key.CtrlPressed, key.AltPressed, key.ShiftPressed, OS.GetKeycodeString(key.Keycode));
+        // The Local row's key (L in Global) is also the router's twist key KeyL: in a live session the twist keeps it,
+        // and the row runs from the palette or a script.
         var takes = Frame.Claims(name, binding => _unavailable(binding.Command, binding.Argument) == null &&
-            !(_live && KeyMapModel.IsTwist(binding.Command)));
+            !(_live && KeyMapModel.IsTwist(binding.Command)) &&
+            !(_live && binding.Command == ViewPanes.LocalRow && ShellTurn.ItemOf(PhysicalChord(name)) != null));
         if (takes)
         {
             _taken.Add(key.PhysicalKeycode);
         }
         return takes;
+    }
+
+    /// <summary>A key name of the key map ("L", "Shift+L") as the router's physical chord ("KeyL", "Shift+KeyL").</summary>
+    internal static string PhysicalChord(string name)
+    {
+        var at = name.LastIndexOf('+') + 1;
+        return name.Substring(0, at) + "Key" + name.Substring(at);
     }
 
     /// <summary>A twist the session committed: a History entry at the engine revision that shows it.</summary>
