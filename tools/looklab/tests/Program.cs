@@ -359,7 +359,10 @@ internal static partial class Program
             ("D02TuningRevertTouchesNoState", D02TuningRevertTouchesNoState),
             ("D02TuningDiffRoundTrips", D02TuningDiffRoundTrips),
             ("D02TuningExportPlace", D02TuningExportPlace),
-            ("D02TuningRevertRowsWired", D02TuningRevertRowsWired)
+            ("D02TuningRevertRowsWired", D02TuningRevertRowsWired),
+            ("D02SceneLookBackgrounds", D02SceneLookBackgrounds),
+            ("D02StickerPaletteChoice", D02StickerPaletteChoice),
+            ("D02SceneLookDraftRequests", D02SceneLookDraftRequests)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

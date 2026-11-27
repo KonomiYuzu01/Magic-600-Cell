@@ -193,6 +193,7 @@ internal static class ShellSession
         json.WriteBoolean("momentSlot", panel.List.FindChild("MomentSlot", true, false) is Control);
         json.WriteEndObject();
         ShellExplore.Dump(json);
+        ShellScene.Dump(json);
     }
 
     private static bool InTree(Control? control) => control != null && GodotObject.IsInstanceValid(control) && control.IsInsideTree();

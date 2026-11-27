@@ -2348,6 +2348,82 @@ ON_FIXTURE.add("tuning-revert")
 FOLDER_CHECKS = {"tuning-revert": check_tuning_diff}
 
 
+SCENE_LOOK_STEPS = [
+    ("start", "solving", "graphite.a"),
+    ("wait 2500 ms", "solving", "graphite.a"),
+    ("chord Space", "solving", "graphite.a"),
+    ("text > look.sticker_palette.set graphite.b", "solving", "graphite.a"),
+    ("chord Enter", "solving", "graphite.b"),
+    ("wait 650 ms", "solving", "graphite.b"),
+    ("command look.scene.set celebrating", "celebrating", "graphite.b"),
+    ("wait 651 ms", "celebrating", "graphite.b"),
+    ("command look.scene.set inspecting", "inspecting", "graphite.b"),
+    ("wait 652 ms", "inspecting", "graphite.b"),
+    ("command look.sticker_palette.set nosuch", "inspecting", "graphite.b"),
+    ("wait 653 ms", "inspecting", "graphite.b"),
+    ("command look.scene.set solving", "solving", "graphite.b"),
+    ("wait 654 ms", "solving", "graphite.b"),
+]
+
+
+def expect_scene_look(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """Check the resolved choices, their notices and the state and style digests on every step."""
+    written = [dump.get("do") for dump in dumps]
+    if written != [step for step, _, _ in SCENE_LOOK_STEPS]:
+        return [f"the steps written were {written}"]
+    theme = dumps[0].get("scene_look", {}).get("theme")
+    if theme not in ("graphite", "paper"):
+        return [f"unknown opening scene theme {theme!r}"]
+    looks = load(DESIGN / "themes" / f"{theme}.json")["sceneLooks"]
+    scene_export, palette_export = "m6h_set_scene_look", "m6h_set_sticker_colours"
+    head_keys = ("state_digest", "revision")
+    style_keys = ("outline_sha256", "fill_sha256", "palette_sha256")
+    head = tuple(dumps[0].get("tuning", {}).get(key) for key in head_keys)
+    style = tuple(dumps[0].get("tint", {}).get(key) for key in style_keys)
+    problems = []
+    if not head[0] or type(head[1]) is not int or head[1] < 0:
+        problems.append("the opening state digest or revision is missing")
+    if not style[0] or style[1] is None or not style[2]:
+        problems.append("the opening tint style digests are missing")
+
+    backgrounds = {}
+    for dump, (step, look, palette_id) in zip(dumps, SCENE_LOOK_STEPS):
+        scene, palette = dump.get("scene_look", {}), dump.get("sticker_palette", {})
+        if (scene.get("theme"), scene.get("look")) != (theme, look):
+            problems.append(f"after {step!r} the scene should show {theme} {look}")
+        if palette.get("id") != palette_id or palette.get("passes") is not True:
+            problems.append(f"after {step!r} the passing palette should be {palette_id}")
+        for key in ("fog", "glow", "edgeBrightness", "edgeWeight"):
+            if scene.get(key) != looks[look][key]:
+                problems.append(f"after {step!r} scene {key} differs from {theme} {look}")
+        background = scene.get("background")
+        if not re.fullmatch(r"#[0-9a-f]{6}", str(background)) or backgrounds.setdefault(look, background) != background:
+            problems.append(f"after {step!r} the {look} background is invalid or changed")
+        for values, export in ((scene, scene_export), (palette, palette_export)):
+            if values.get("sent") is not False or values.get("waits_for") != export:
+                problems.append(f"after {step!r} the dump should report waiting for {export}")
+        if tuple(dump.get("tuning", {}).get(key) for key in head_keys) != head:
+            problems.append(f"after {step!r} the state digest or revision changed")
+        if tuple(dump.get("tint", {}).get(key) for key in style_keys) != style:
+            problems.append(f"after {step!r} the tint style bytes changed")
+
+        if step == "command look.sticker_palette.set nosuch":
+            if not any(line.startswith("Unknown sticker palette 'nosuch'.") for line in texts(dump, "frame")):
+                problems.append(f"after {step!r} the status line should explain the refusal")
+        elif step == "chord Enter" or step.startswith("command look.scene.set "):
+            what, export = ("Graphite B sticker palette", palette_export) if step == "chord Enter" else ("Scene look " + look, scene_export)
+            notice = f"{what} chosen; the drawn scene keeps the core's fixed colours until the core takes {export} (requested)"
+            if notice not in texts(dump, "frame"):
+                problems.append(f"after {step!r} the status line should show the choice and its pending export")
+    if len(set(backgrounds.values())) != 3:
+        problems.append("the three scene looks should have distinct backgrounds")
+    return problems
+
+
+EXPECT["scene-look"] = expect_scene_look
+ON_FIXTURE.add("scene-look")
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

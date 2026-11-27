@@ -424,6 +424,26 @@
       ],
       "note": "Opens the context menu of the view under the pointer, or of the view named by the argument global or local, for the current selection.",
       "request": "ADR-D01.17"
+    },
+    {
+      "id": "look.sticker_palette.set",
+      "label": "Set sticker palette",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Takes the ID of a sticker palette that passes the G4 checks.",
+      "request": "ADR-D01.52"
+    },
+    {
+      "id": "look.scene.set",
+      "label": "Set scene look",
+      "kind": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "note": "Chooses solving, inspecting or celebrating from the current theme.",
+      "request": "ADR-D01.49"
     }
   ]
 }
