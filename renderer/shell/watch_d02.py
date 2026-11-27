@@ -1,6 +1,6 @@
 """The owner's one command to watch ADR-D02's build in the product shell.
 
-  python renderer/shell/watch_d02.py [--state ID] [--build DIR] [--follow] [--runs DIR]
+  python renderer/shell/watch_d02.py [--state ID] [--build DIR] [--follow] [--runs DIR] [--script NAME]
 
 Run it from a PowerShell on the desktop. It starts the newest product build (or --build) with the frame, Jumble on,
 sample mode (ADR-D01's whole frame on sample data, marked as such) and D02 on, in a fresh run folder under
@@ -21,6 +21,9 @@ sample's state and the sample binds to it by its digests (B5); otherwise the ses
 
 --runs puts the run folders in another folder than work/d02-watch/, for example outside the checkout while
 tools/looklab/check.py runs, which fails on any change in the checkout, ignored files included.
+
+--script NAME replays renderer/shell/d02_scripts/NAME.json in the window, the way `d02_run.py --script` plays it
+(B32 findings); the window quits after the script's last step.
 """
 from __future__ import annotations
 

@@ -1859,6 +1859,20 @@ class D02CapHover(unittest.TestCase):
         self.assertIn("MouseDefaultCursorShape = cap == null ? CursorShape.Arrow : CursorShape.PointingHand;", cells)
         self.assertIn("CapNaming.Tip(Refusal?.Invoke(cap), Describe(cap))", cells)
 
+    def test_the_refusal_names_the_palettes_key_in_sample_mode(self):
+        """B32's leftover: in sample mode the key map holds F1, so the refusal's "F1 › jumble.cap.unname" is routed to
+        the palette's own key as Local's hint is (ShellJumble.PaletteRoute); outside sample mode it keeps F1."""
+        host = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleHost.cs")
+        self.assertIn("public Func<string, string>? PaletteWords { get; set; }", host)
+        self.assertIn("CapNaming.Refusal(cap, Source.State.Mode, Naming.Named) is not { } why ? null : PaletteWords is { } route ? route(why) : why;", host)
+        chrome = text(PROJECT / "ShellChrome.cs")
+        self.assertIn("paletteWords = words => ShellJumble.PaletteRoute(words, taken, paletteKeys);", chrome)
+        self.assertIn("empty = paletteWords(empty);", chrome)
+        self.assertIn("Jumble.PaletteWords = paletteWords;", chrome)
+        route = text(PROJECT / "D02" / "ShellJumble.cs")
+        self.assertIn('words.Replace(taken + " ›", key + " ›")', route)
+        self.assertIn("F1 › jumble.cap.unname", text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Model" / "CapThreshold.cs"))
+
     def test_the_cap_hover_expectation_sees_each_part(self):
         run = shell_module("d02_run")
         self.assertIn("cap-hover", run.ON_FIXTURE)
