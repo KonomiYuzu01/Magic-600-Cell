@@ -2424,6 +2424,72 @@ EXPECT["grip-frame"] = expect_grip_frame
 ON_FIXTURE.add("grip-frame")
 
 
+def expect_grip_keycaps(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.74 on ADR-D01.75's grip: with the key map pinned over Local, J, K and L carry the grip's twists (each
+    chord's item and its cycle over the marks, stamped inside the cap) and the header names the grip's cap and frame;
+    the next frame re-binds keys, and the map marks exactly the plain keys whose item changed until it has been closed."""
+    steps = ["wait 700 ms", "wait 701 ms", "wait 702 ms"]
+    by_step = {dump["do"]: dump for dump in dumps}
+    if any(not by_step.get(step, {}).get("grip") or not by_step[step].get("keycaps") for step in steps):
+        return ["the grip keycaps script is missing a grip or keycaps checkpoint"]
+    first, framed, again = (by_step[step] for step in steps)
+    problems = []
+
+    def require(condition, message):
+        if not condition:
+            problems.append(message)
+
+    def caps(dump):
+        return {cap["key"]: cap for cap in dump["keycaps"].get("grip", [])}
+
+    def keys(dump):
+        return {row["chord"]: row for row in dump["grip"].get("keys", [])}
+
+    for name, dump in (("the pinned map", first), ("the map after the next frame", framed), ("the map shown again", again)):
+        shown, grip, want = dump["keycaps"], dump["grip"], keys(dump)
+        require(shown.get("shown") is True, f"{name} is not shown")
+        require(grip.get("cap") == 150, f"{name}: the grip is not cap 150")
+        require(shown.get("header", "").endswith(f" · grip: cap 150, frame {grip.get('frame')}"),
+                f"{name}'s header reads {shown.get('header')!r}")
+        carried = caps(dump)
+        require(sorted(carried) == ["J", "K", "L"], f"{name}: the caps that carry the grip are {sorted(carried)}")
+        for key, cap in carried.items():
+            row = want.get("Key" + key, {})
+            require(cap.get("chord") == "Key" + key and cap.get("item") == row.get("item")
+                    and cap.get("meaning") == cap.get("label") == row.get("meaning") and cap.get("context") == "grip",
+                    f"{name}: {key}'s cap differs from the grip's key")
+        stamps = {stamp["key"]: stamp for stamp in shown.get("stamps", [])}
+        require(sorted(stamps) == ["J", "K", "L"], f"{name}: the stamped caps are {sorted(stamps)}")
+        for key, stamp in stamps.items():
+            x, y, w, h = stamp["box"]
+            require(stamp.get("label") == carried.get(key, {}).get("meaning")
+                    and x <= stamp["x"] < x + w and y <= stamp["y"] < y + h, f"{name}: {key}'s stamp differs or lies outside its cap")
+    require(first["grip"].get("frame") == 0 and framed["grip"].get("frame") not in (None, 0),
+            "grip.frame.next did not change the frame")
+    def twist(dump, key):
+        row = keys(dump).get("Key" + key, {})
+        return row.get("item"), row.get("meaning")
+
+    moved = sorted(key for key in "JKL" if twist(first, key) != twist(framed, key))
+    require(bool(moved), "the next frame re-bound no plain twist key")
+    require(not any(cap.get("changed") for cap in caps(first).values()), "the first pinned map marks a key")
+    marked = sorted(key for key, cap in caps(framed).items() if cap.get("changed"))
+    require(marked == moved, f"after the next frame the map marks {marked}, not the re-bound keys {moved}")
+    require(all(caps(framed).get(key, {}).get("meaning") == cap.get("meaning") for key, cap in caps(first).items()),
+            "a key's cycle over the marks changed with the frame")
+    mark = "corner mark: changed meaning since the grip frame changed"
+    require(mark in framed["keycaps"].get("legend", ""), "the legend does not name the grip frame change's mark")
+    require(by_step.get("chord Escape", {}).get("keycaps", {}).get("shown") is False, "Escape left the key map shown")
+    require(not any(cap.get("changed") for cap in caps(again).values()) and mark not in again["keycaps"].get("legend", ""),
+            "the map shown again still marks keys")
+    print(f"grip-keycaps: frame {framed['grip'].get('frame')} re-bound {moved}")
+    return problems
+
+
+EXPECT["grip-keycaps"] = expect_grip_keycaps
+ON_FIXTURE.add("grip-keycaps")
+
+
 TUNING_KNOBS = [("wait 702 ms", "tone", 0.05, True), ("wait 703 ms", "contrast", 1.15, True),
                 ("wait 704 ms", "blackLevel", 0.08, True), ("wait 705 ms", "accentHue", 40.0, False),
                 ("wait 706 ms", "gridIntensity", 0.9, False)]

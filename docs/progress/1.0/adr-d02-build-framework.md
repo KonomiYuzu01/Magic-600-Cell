@@ -1438,6 +1438,19 @@ relative path is from the repository root.
   correctness control see a press); a plain click stays B17's pick. No core change.
 - Run: `d02_run.py --script grip-frame --state wj-ia-300`. J1 types both rows (cap 150, then the next frame).
 
+**As built (ADR-D01.74's keycaps on the Grip frame; 27 November 2026, branch `claude/d02-port`).** The key map reads the
+same `GripFrame` as the views.
+- `KeyMapModel.Caps` takes the grip. Where the chrome leaves a twist chord to the live session (the key binds nothing in the
+  hovered context, or binds a twist, and is no host key), its cap carries the grip's `GripKey`: the chord's item and its
+  cycle over the numbered marks. The board stamps that cycle with `GripMarks.Direction`, the mark the views draw. Over
+  Global, L stays the chrome's Local view. The header names the grip (`grip: cap 150, frame 1`).
+- A frame change on the same cap marks each grip cap whose twist differs from the one the map last showed, with the
+  corner mark of a key set change (`KeyMapModel.GripChanges`, context `grip`), until the map has been shown and closed;
+  a mark not yet seen survives a second frame change. The cycles stay, since the marks turn with the frame. A cap the
+  chrome takes (L over Global) is not marked. A grip on another cap drops the marks.
+- Shell: `D02/ShellGripKeys.cs` hands `ShellGrip.Model` to the key map and dumps its grip caps and stamps (`keycaps`).
+  Run: `d02_run.py --script grip-keycaps --state wj-ia-300`.
+
 ## 3. Checkpoints
 
 Each checkpoint is one read of the named diff range against the questions below, about an hour, plus what the owner is shown. Only blockers and majors stop the next block.
