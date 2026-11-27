@@ -2089,6 +2089,20 @@ void product_hopf(const Options& options) {
     expect(frames.draw(1, 1, 0, turned) == flat, "the camera turned the ring sheet");
     expect(frames.draw(1, 3, 0, I) == rings, "the ring sheet on view 1 changed view 3's rings");
     expect(flat == sheet_first, "the ring sheet named before any rings drew another picture");
+    // B22 rest (ADR-D02.10): under a chart Global draws no sweep. A transform at phase 0 turns the chain's moving
+    // pieces (view 2) but leaves the sheet (view 1) and the rings (view 3) as they were.
+    {
+        const float u[4] = {1, 0, 0, 0}, v[4] = {0, 1, 0, 0};
+        std::vector<uint8_t> mask(SA2_PIECES);
+        for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) mask[piece] = uint8_t(piece % 2 == 0);
+        api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, mask.data(), 0.0f));
+        expect(frames.draw(1, 1, 0, I) == flat, "the ring sheet drew a sweep");
+        expect(frames.draw(1, 3, 0, I) == rings, "the Hopf rings drew a sweep");
+        expect(frames.draw(1, 2, 0, I) != unset, "the chain did not draw the sweep");
+        api(ctx, sa2_transform_set(ctx, 1, u, v, 0.9f, nullptr, 0.0f));
+        expect(frames.draw(1, 2, 0, I) == unset, "a cleared transform still turned the chain");
+        std::cout << "ring sheet and rings: no sweep under a transform; the chain turned" << std::endl;
+    }
     if (!options.out.empty()) {
         std::ofstream file(options.out.parent_path() / "warp-sheet.ppm", std::ios::binary);
         file << "P6\n" << harness.width << " " << harness.height << "\n255\n";

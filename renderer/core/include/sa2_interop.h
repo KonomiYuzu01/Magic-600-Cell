@@ -1327,7 +1327,9 @@ SA2_API int32_t sa2_view_layout_set(sa2_context* ctx, uint64_t view, const sa2_v
  * the moving set as SA2_PIECES bytes (1: the piece turns, 0: it stays; any other value is refused) and a phase 0..1.
  * Every product frame, pane and ID pass of that revision draws each moving piece turned by R((phase - 1) * angle) after
  * its pose: phase 1 draws the revision's own poses, byte-identically to no transform, and phase 0 the poses before the
- * twist that entered the revision. A turn preview of a twist not yet committed passes the negated angle at phase 0. A
+ * twist that entered the revision. A turn preview of a twist not yet committed passes the negated angle at phase 0.
+ * ADR-D02 B22 rest (ADR-D02.10): a view whose layout is the Hopf rings or the ring sheet draws no turn; it draws the
+ * revision's own poses at every phase, so under a chart Global draws no sweep while a chain view sweeps. A
  * NULL moving_mask clears the transform (the other arguments are then unused). A revision other than the adopted one
  * or a value out of range is SA2_E_INVALID_ARGUMENT and changes nothing; adopting a newer revision drops the transform.
  * The moving set shares the piece style's upload, so a new moving set uploads once and a changed phase, plane or angle

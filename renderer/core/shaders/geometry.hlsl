@@ -134,7 +134,8 @@ Projection projectVertexShrunk(uint cell, uint vi, float factor, bool capTest) {
     float4 world = posedPoint(slot, homePointShrunk(cell, centers[local], vertices[vi], factor));
 #ifdef SA2_LAYOUT
     // ADR-D02 B18: in the product passes a turning frame binds the piece style at t4, whose bit 16 marks a moving piece.
-    const bool turns = theta != 0 && (animated[slotPieces[slot]] & 0x10000u) != 0;
+    // ADR-D02 B22 rest (ADR-D02.10): a view with a Hopf layout (viewFlags bit 3) draws no turn.
+    const bool turns = theta != 0 && (viewFlags & 8u) == 0 && (animated[slotPieces[slot]] & 0x10000u) != 0;
 #else
     const bool turns = theta != 0 && animated[slot] != 0;
 #endif
