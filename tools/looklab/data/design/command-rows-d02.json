@@ -394,6 +394,26 @@
       ],
       "note": "Clears the reference state for pinned cards.",
       "request": "ADR-D01.24"
+    },
+    {
+      "id": "setup.search",
+      "label": "Setup search",
+      "kind": "query",
+      "contexts": [
+        "solve"
+      ],
+      "note": "Runs the built-in setup search for a target the solver names (ADR-D01.68; LB1.5's one solving-side exception): the Target, or with the argument wanted the Wanted piece's present place. The alphabet excludes the caps that move the buffers. Rows come in a neutral order with their lengths; a completed result carries its coverage (revision 6, J-7). The tool ships only with its BoundaryClass and PrincipleRecord.",
+      "request": "ADR-D01.68"
+    },
+    {
+      "id": "setup.row.use",
+      "label": "Use setup row",
+      "kind": "workspace",
+      "contexts": [
+        "solve"
+      ],
+      "note": "Fills Prepare and Cleanup around the macro the solver placed in Core with the picked setup row and its inverse, as one draft change; never a whole placement (ADR-D01.68). Argument: the row. The row alone is previewed with operation.preview setup:<row>.",
+      "request": "ADR-D01.68"
     }
   ]
 }

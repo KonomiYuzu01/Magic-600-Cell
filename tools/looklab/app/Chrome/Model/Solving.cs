@@ -232,6 +232,8 @@ public sealed class SolvingDemo
     // The operation draft of the working orbit. Each orbit owns its draft (ADR-D01.63): leaving an orbit, by a
     // switch or by activating Next, saves the draft and its settings, and the orbit entered gets its own back.
     public OperationDraft? Draft { get; set; }
+    // The setup slot under the Target (ADR-D01.68), when the host mounts the built-in setup search.
+    public SetupSearch? Setup { get; set; }
     private readonly Dictionary<(string State, int Orbit), DraftSnapshot> drafts = new();
 
     public SolvingDemo(OrbitAtlas atlas) { Atlas = atlas; Reset(); }
@@ -555,6 +557,16 @@ public sealed class OperationDraft
         if (phase < 0) return "it needs a phase and its twists, such as core: twist; twist";
         twists[phase].Clear(); twists[phase].AddRange(argument.Substring(cut + 1).Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         Safe.Raise(Changed); return null;
+    }
+
+    // A setup row around the macro in Core (ADR-D01.68): Prepare and Cleanup are set as one change, so the draft stages
+    // once; Core is never touched, and an empty Core or Direct is refused (never a whole placement).
+    public bool Surround(IReadOnlyList<string> prepare, IReadOnlyList<string> cleanup)
+    {
+        if (Route == InputRoute.Direct || twists[1].Count == 0 || prepare.Concat(cleanup).Any(string.IsNullOrWhiteSpace)) return false;
+        twists[0].Clear(); twists[0].AddRange(prepare.Select(w => w.Trim()));
+        twists[2].Clear(); twists[2].AddRange(cleanup.Select(w => w.Trim()));
+        Safe.Raise(Changed); return true;
     }
 
     public const string SampleGoal = "Wanted in Target";

@@ -119,6 +119,8 @@ internal static class LabFrame
         var registry = CommandRegistry.FromTable(File.ReadAllText(Path.Combine(root, "docs/progress/1.0/command-table.json")));
         // The record's draft rows (replay a kept branch, the preview's sides) join the table at its freeze.
         registry.AddRows(File.ReadAllText(Path.Combine(folder, "command-rows-draft.json")));
+        // The setup slot's draft rows (ADR-D01.68), from ADR-D02's draft file.
+        SetupRows.AddDrafts(registry, File.ReadAllText(Path.Combine(folder, "command-rows-d02.json")));
         // The lab shows the solving commands in the owner's words; the table's ids and labels are not edited.
         registry.Relabel(File.ReadAllText(Path.Combine(folder, "command-labels.json")));
         Keymap keymap = Keymap.Load(Path.Combine(folder, "keymap.json"), registry);
@@ -213,6 +215,7 @@ internal static class LabFrame
                 case "theme.select": appearance.Edit(a => a.SetTheme(Next(themes.Select(t => t.Id).ToArray(), a.Theme)), true, true); break;
                 case "density.preset.set": appearance.Edit(a => a.SetDensity(Next(design.Densities, a.Density)), true, false); break;
                 case "operation.preview" when argument != null && argument.StartsWith(LabSolve.MacroPreview, StringComparison.Ordinal): solve.PreviewMacro(argument.Substring(LabSolve.MacroPreview.Length)); break;
+                case "operation.preview" when argument != null && argument.StartsWith(SetupSearch.PreviewArgument, StringComparison.Ordinal): solve.PreviewSetup(argument.Substring(SetupSearch.PreviewArgument.Length)); break;
                 case var sample when LabDemo.Handles(sample): demo.Execute(command, argument); break;
                 case var solving when LabSolve.Handles(solving): solve.Execute(command, argument, registry.Commands[command].Label); break;
                 default: frame.Say(registry.Commands[command].Label + ": nothing to do for " + argument, true); break;

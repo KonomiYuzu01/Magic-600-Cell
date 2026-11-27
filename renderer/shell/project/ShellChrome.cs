@@ -175,6 +175,8 @@ public sealed class ShellChrome
             drafts.AddRows(draftRows);
             registry.AddRows(draftRows);
             sampleDrafts = drafts.Order.ToArray();
+            // ADR-D01.68: the setup slot under the Target, on the sample's solving surface; its rows are ADR-D02 draft rows.
+            sampleDrafts = [.. sampleDrafts, .. SetupRows.AddDrafts(registry, File.ReadAllText(Path.Combine(folder, "command-rows-d02.json")))];
         }
         // B28: the research pane, a centre peer of the pair in Analyse; it registers its draft rows in either mode (C5-5),
         // and in sample mode reads the synthetic sample.
@@ -203,6 +205,8 @@ public sealed class ShellChrome
             _ when Tuning != null && Tuning.Handles(command) => Tuning.Unavailable(command, argument),
             _ when Jumble != null && Jumble.Handles(command) => Jumble.Unavailable(command, argument),
             _ when cards != null && ShellCards.Handles(command) => cards.Unavailable(command, argument),
+            // ADR-D01.68: the setup rows run on the sample's solving surface, D02 on or off.
+            _ when sample != null && SetupSearch.Ids.Contains(command) => sample.Unavailable(command, argument),
             _ when ShellJumble.On && ShellJumble.Drafts.Contains(command) => ShellJumble.DraftReason,
             _ when sample != null && sample.Handles(command) => sample.Unavailable(command, argument),
             _ => NotHere,

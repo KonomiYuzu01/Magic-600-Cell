@@ -211,6 +211,13 @@ public sealed partial class RelationStrip : PanelContainer, IPairSeam
             view.Hover += (slot, on) => { string? to = on ? slot : Linked == slot ? null : Linked; if (to != Linked) { Linked = to; Safe.Raise(LinkChanged); } };
             view.Chosen += Choose;
             cells[cell.Slot] = view; box.AddChild(view);
+            // ADR-D01.68: the setup slot sits under the Target cell; its buttons ask for their commands like the cells.
+            if (cell.Slot == "target" && Demo.Setup is { } setup)
+            {
+                var slot = new SetupSlotView(setup, tokens);
+                slot.Command += (command, argument) => Safe.Raise(Command, command, argument);
+                box.AddChild(slot);
+            }
             if (cell.Slot == "residual" && expanded)
             {
                 classes = new VBoxContainer { Name = "ResidualClasses" }; var inset = new MarginContainer();

@@ -214,6 +214,8 @@
     "session.timer.start",
     "session.timer.stop",
     "set.save",
+    "setup.row.use",
+    "setup.search",
     "solve.open",
     "structure.adjacency",
     "structure.compare",
