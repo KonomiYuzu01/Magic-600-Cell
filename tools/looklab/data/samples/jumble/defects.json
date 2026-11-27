@@ -1,0 +1,410 @@
+{
+ "format": "magic600-d02-defects/1",
+ "note": "Opus's ten J0 defects (B33, section 7 of docs/progress/1.0/adr-d02-build-framework.md). Each is planted in its own copy of Look Lab's samples (paths below are under tools/looklab/data/samples) and J0's session plays on it; the driver catches a defect when one of the run's problems names its rule. Fable's ten are sealed in a file of their own (track_j.py --defects). The researcher subagent never reads this file or anything planted from it.",
+ "defects": [
+  {
+   "id": "opus-01",
+   "by": "Opus",
+   "class": "repair rows reordered or pre-focused",
+   "rule": "repair-order",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/cap-150.json",
+     "path": [
+      "repair_list",
+      "completed",
+      "rows"
+     ],
+     "op": "swap",
+     "i": 0,
+     "j": 1
+    }
+   ],
+   "note": "cap 150's first two repair rows change places"
+  },
+  {
+   "id": "opus-02",
+   "by": "Opus",
+   "class": "a ΔN sign flipped",
+   "rule": "delta-n",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/cap-150.json",
+     "path": [
+      "repair_list",
+      "completed",
+      "rows",
+      5,
+      4
+     ],
+     "op": "negate"
+    }
+   ],
+   "note": "cap 150's sixth repair row's ΔN, -470, becomes 470"
+  },
+  {
+   "id": "opus-03",
+   "by": "Opus",
+   "class": "N_c at a blocked cap",
+   "rule": "blocked-undefined",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "status"
+     ],
+     "op": "set",
+     "value": "admissible"
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "blocked"
+     ],
+     "op": "set",
+     "value": false
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "undefined"
+     ],
+     "op": "set",
+     "value": null
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "N_c"
+     ],
+     "op": "set",
+     "value": 37
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "F_c"
+     ],
+     "op": "set",
+     "value": 30
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "In_c"
+     ],
+     "op": "set",
+     "value": 400
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "Out_c"
+     ],
+     "op": "set",
+     "value": 363
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "A_c"
+     ],
+     "op": "set",
+     "value": 363
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      0,
+      "at_floor"
+     ],
+     "op": "set",
+     "value": false
+    }
+   ],
+   "note": "the blocked cap 0 gets a rim row with N_c 37, as if admissible"
+  },
+  {
+   "id": "opus-04",
+   "by": "Opus",
+   "class": "a style byte for the wrong piece",
+   "rule": "never-hidden",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/cap-0.json",
+     "path": [
+      "masks",
+      "straddlers"
+     ],
+     "op": "mask_flip",
+     "bits": [
+      526,
+      527
+     ]
+    }
+   ],
+   "note": "one of cap 0's 231 straddlers moves to the next piece: piece 526 loses its never-hidden outline, 527 gains it"
+  },
+  {
+   "id": "opus-05",
+   "by": "Opus",
+   "class": "NotApplicable counted as a pass",
+   "rule": "covers",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/cap-150.json",
+     "path": [
+      "covers",
+      "answers",
+      0,
+      "c_covers_d"
+     ],
+     "op": "set",
+     "value": {
+      "counts": {
+       "aligned_inside": 28,
+       "aligned_outside": 28,
+       "inside": 28,
+       "outside": 28
+      },
+      "covers": true,
+      "straddlers": []
+     }
+    }
+   ],
+   "note": "cap 150 against cap 8: the side that does not apply (blocked) is answered as covering"
+  },
+  {
+   "id": "opus-06",
+   "by": "Opus",
+   "class": "a digest changed by one character",
+   "rule": "digest",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/state.json",
+     "path": [
+      "digests",
+      "pose_lattice_sha256"
+     ],
+     "op": "char",
+     "at": 10,
+     "to": "0"
+    }
+   ],
+   "note": "the sample's pose-lattice digest differs from the session's in its eleventh character"
+  },
+  {
+   "id": "opus-07",
+   "by": "Opus",
+   "class": "a blocked cap counted as a non-member",
+   "rule": "threshold",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "status"
+     ],
+     "op": "set",
+     "value": "admissible"
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "blocked"
+     ],
+     "op": "set",
+     "value": false
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "undefined"
+     ],
+     "op": "set",
+     "value": null
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "N_c"
+     ],
+     "op": "set",
+     "value": 12
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "F_c"
+     ],
+     "op": "set",
+     "value": 12
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "In_c"
+     ],
+     "op": "set",
+     "value": 300
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "Out_c"
+     ],
+     "op": "set",
+     "value": 288
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "A_c"
+     ],
+     "op": "set",
+     "value": 288
+    },
+    {
+     "file": "jumble/wj-ia-300/rim.json",
+     "path": [
+      "rows",
+      1,
+      "at_floor"
+     ],
+     "op": "set",
+     "value": true
+    }
+   ],
+   "note": "the blocked cap 1 gets a rim row with N_c 12, so N_c >= 50 counts it as a non-member"
+  },
+  {
+   "id": "opus-08",
+   "by": "Opus",
+   "class": "a cut-off worded as \"none\"",
+   "rule": "cut-off",
+   "change": [
+    {
+     "file": "research/panel.json",
+     "path": [
+      "answers",
+      "research.claims",
+      "answer",
+      "rows",
+      1,
+      "latest_check",
+      "outcome"
+     ],
+     "op": "set",
+     "value": "completed"
+    },
+    {
+     "file": "research/panel.json",
+     "path": [
+      "answers",
+      "research.claims",
+      "answer",
+      "rows",
+      1,
+      "latest_check",
+      "reading"
+     ],
+     "op": "set",
+     "value": {
+      "kind": "complete"
+     }
+    }
+   ],
+   "note": "finite-search-229's search, cut off after 4,096 items, is recorded as complete"
+  },
+  {
+   "id": "opus-09",
+   "by": "Opus",
+   "class": "a style byte for the wrong piece",
+   "rule": "style-bytes",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/style.json",
+     "path": [
+      "rows",
+      125,
+      "heights"
+     ],
+     "op": "set",
+     "value": [
+      4,
+      0
+     ]
+    },
+    {
+     "file": "jumble/wj-ia-300/style.json",
+     "path": [
+      "rows",
+      224,
+      "heights"
+     ],
+     "op": "set",
+     "value": [
+      2,
+      0
+     ]
+    }
+   ],
+   "note": "pose rows 125 (198 pieces, height 2) and 224 (87 pieces, height 4) swap their heights"
+  },
+  {
+   "id": "opus-10",
+   "by": "Opus",
+   "class": "a class reused across a contact",
+   "rule": "contact-classes",
+   "change": [
+    {
+     "file": "jumble/wj-ia-300/contact.json",
+     "path": [
+      "edges",
+      3
+     ],
+     "op": "set",
+     "value": [
+      1,
+      2,
+      true,
+      false
+     ]
+    }
+   ],
+   "note": "the contact of domains 1 and 35 becomes one of domains 1 and 2 (the shell colours the graph itself, ADR-D02.21), so domain 35 takes class 2, which domain 1, touching it, already has"
+  }
+ ]
+}
