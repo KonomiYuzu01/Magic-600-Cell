@@ -352,7 +352,10 @@ internal static partial class Program
             ("D02SaveFailsOnNonMonotoneHeightRamp", D02SaveFailsOnNonMonotoneHeightRamp),
             ("D02SaveFailsOnCollidingClassesUnderSimulation", D02SaveFailsOnCollidingClassesUnderSimulation),
             ("D02SaveFailsOnContrastRule", D02SaveFailsOnContrastRule),
-            ("D02SimulationAndRevealedDock", D02SimulationAndRevealedDock)
+            ("D02SimulationAndRevealedDock", D02SimulationAndRevealedDock),
+            ("D02SceneLookBackgrounds", D02SceneLookBackgrounds),
+            ("D02StickerPaletteChoice", D02StickerPaletteChoice),
+            ("D02SceneLookDraftRequests", D02SceneLookDraftRequests)
         };
         int passed = 0, failed = 0, skipped = 0;
         foreach (var (name, run) in tests)

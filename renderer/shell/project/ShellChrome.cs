@@ -201,6 +201,7 @@ public sealed class ShellChrome
             _ when ShellDocuments.Handles(command) => ShellDocuments.Unavailable(command, argument),
             _ when ShellSession.Handles(command) => ShellSession.Unavailable(command),
             _ when ShellExplore.Handles(command) => ShellExplore.Unavailable(argument),
+            _ when ShellScene.Handles(command) => null,
             "command.find" or "transient.close" or "help.open" or "motion.reduced.set" or "workspace.reset" => null,
             "menu.context.open" when contextMenus != null => null,
             "target.current.set" when pickedTarget != null && argument == null => null,
@@ -256,6 +257,9 @@ public sealed class ShellChrome
 
         void ApplyLook(bool rebuild, bool scene) => frame.ApplyTokens(look.Resolve(), rebuild);
         appearance.Changed += ApplyLook;
+        ShellScene.Load(frame, palettes, () => (look.Family, look.SceneLook),
+            name => appearance.Edit(a => a.SetSceneLook(name), true, true));
+        appearance.Changed += (rebuild, scene) => ShellScene.Refresh();
         void NextPreset()
         {
             var all = themes.SelectMany(t => ThemeFamily.SceneLooks.Select(l => (t.Id, Look: l))).ToArray();
@@ -291,6 +295,7 @@ public sealed class ShellChrome
                     ShellSession.Execute(frame, command, argument);
                     break;
                 case var explore when ShellExplore.Handles(explore): ShellExplore.Execute(frame, argument); break;
+                case var scene when ShellScene.Handles(scene): ShellScene.Execute(frame, command, argument); break;
                 case "command.find": palette.Open(); break;
                 case "menu.context.open" when contextMenu != null && contextMenus != null:
                     Vector2 at = argument switch
@@ -371,7 +376,7 @@ public sealed class ShellChrome
             else if (what == "character") appearance.Edit(a => a.OtherCharacter = !a.OtherCharacter, true, false);
             else NextDensity();
         };
-        gallery.PaletteChosen += chosen => frame.Say(chosen.Name + ": the core does not take a sticker palette yet", true);
+        gallery.PaletteChosen += ShellScene.ChoosePalette;
         gallery.MotionChanged += () => appearance.Edit(a => a.ReducedMotion = gallery.Motion.Reduced, true, false);
 
         // The commit bar is the frame's own; the host stages no preview yet, so it stays empty.

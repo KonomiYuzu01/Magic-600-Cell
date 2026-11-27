@@ -1,0 +1,21 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "scene-look",
+  "resolution": "1280x720",
+  "note": "On a D02 session fixture, choose Graphite B through the Space palette, cycle the scene looks and confirm that an unknown palette leaves the choice in place.",
+  "steps": [
+    { "wait_ms": 2500 },
+    { "chord": "Space" },
+    { "text": "> look.sticker_palette.set graphite.b" },
+    { "chord": "Enter" },
+    { "wait_ms": 650 },
+    { "command": "look.scene.set", "argument": "celebrating" },
+    { "wait_ms": 651 },
+    { "command": "look.scene.set", "argument": "inspecting" },
+    { "wait_ms": 652 },
+    { "command": "look.sticker_palette.set", "argument": "nosuch" },
+    { "wait_ms": 653 },
+    { "command": "look.scene.set", "argument": "solving" },
+    { "wait_ms": 654 }
+  ]
+}
