@@ -419,11 +419,13 @@ public partial class Shell : Control
             return;
         }
         // ADR-D02 B18 rest: a twist key's certified row, read at the head it would twist, for its sweep or flash.
+        var arming = EventLog.Now();
         if (D02.ShellJumble.On && !key.Echo)
         {
             D02.ShellGrip.CancelGesture();
             D02.ShellTurn.Arm(library, _host, chord);
         }
+        var armed = EventLog.Now();
         var answer = library.KeyDown(_host, chord, key.Echo, out var result);
         var handled = EventLog.Now();
         if (answer != HostLibrary.Ok)
@@ -435,8 +437,13 @@ public partial class Shell : Control
         {
             _log?.Press(qpc, handled, result.EngineRevision);
             _chrome?.Committed(chord, result.EngineRevision);
+            var chromed = EventLog.Now();
             D02.ShellTurn.Committed(result.EngineRevision);
+            var turned = EventLog.Now();
             D02.ShellStyle.Committed(result.EngineRevision);
+            // SF (27 Nov 2026): the frame thread's steps of a committed key, only while the event log is on.
+            _log?.Steps("key", qpc, ("arm", arming, armed), ("key_down", armed, handled), ("chrome", handled, chromed),
+                        ("turn", chromed, turned), ("style", turned, EventLog.Now()));
         }
         else if (result.Press == HostLibrary.PressRefused)
         {
@@ -1082,7 +1089,10 @@ public partial class Shell : Control
         if (D02.ShellJumble.On && _session && _adoptedRevision != _boundRevision)
         {
             _boundRevision = _adoptedRevision;
-            if (library.StateDigest(_host) == HostLibrary.Ok)
+            var asking = EventLog.Now();
+            var read = library.StateDigest(_host) == HostLibrary.Ok;
+            var digested = EventLog.Now();
+            if (read)
             {
                 D02.ShellJumble.Bind(library.Answer(_host), (long)_adoptedRevision);
             }
@@ -1090,6 +1100,8 @@ public partial class Shell : Control
             {
                 D02.ShellJumble.Unknown((long)_adoptedRevision);
             }
+            // SF (27 Nov 2026): the bind's steps at a newly adopted revision, only while the event log is on.
+            _log?.Steps("bind", asking, ("state_digest", asking, digested), ("bind", digested, EventLog.Now()));
         }
     }
 
