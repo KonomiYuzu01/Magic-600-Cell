@@ -1,0 +1,25 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "repair-keys",
+  "note": "B32 findings: the repair list's key route on wj-ia-300's session fixture. Name cap 150, then jumble.repair.focus in the palette opens Local's Repair list and gives it the keys (no click); Down twice focuses row 2, the digit 2 stages it, and jumble.repair.stage 1 in the palette stages row 1. No row is focused on open and nothing is staged before a digit or Enter.",
+  "steps": [
+    {"wait_ms": 2000},
+    {"chord": "F1"},
+    {"text": "> jumble.cap.name 150"},
+    {"chord": "Enter"},
+    {"wait_ms": 1500},
+    {"chord": "F1"},
+    {"text": "> jumble.repair.focus"},
+    {"chord": "Enter"},
+    {"wait_ms": 1000},
+    {"chord": "Down"},
+    {"chord": "Down"},
+    {"wait_ms": 500},
+    {"text": "2"},
+    {"wait_ms": 1500},
+    {"chord": "F1"},
+    {"text": "> jumble.repair.stage 1"},
+    {"chord": "Enter"},
+    {"wait_ms": 1000}
+  ]
+}

@@ -144,6 +144,25 @@ internal static class D02Window
     }
 
     /// <summary>
+    /// After the first seconds (B32 findings): notes the owner's acts on the shell's window for its life, and moves no
+    /// window. A move or resize of the window, or the window in front (the shell never activates itself after the
+    /// first seconds, so only the owner's switch or click puts it there), is the owner's act. A mouse button elsewhere
+    /// on the desktop is not: <see cref="Settle"/> counts it only while it may still hand the foreground back.
+    /// </summary>
+    public static void Watch()
+    {
+        var own = Own();
+        if (own == IntPtr.Zero || OwnerActed || !_checked)
+        {
+            return;
+        }
+        if (GetForegroundWindow() == own || DisplayServer.WindowGetPosition() != _position || DisplayServer.WindowGetSize() != _size)
+        {
+            OwnerActed = true;
+        }
+    }
+
+    /// <summary>
     /// Places the shell's window just behind <paramref name="other"/>, without activating it. Windows makes a window
     /// topmost when it lands among topmost windows, so behind a topmost window (the taskbar, for one) the shell goes
     /// behind the window the owner had in front at the launch, or behind every window when that one is gone; it never

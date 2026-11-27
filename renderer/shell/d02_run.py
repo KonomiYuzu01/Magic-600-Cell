@@ -53,6 +53,9 @@ LOCAL_EMPTY = "Name a cap: click a numbered cap on the cap map, or F1 › jumble
 # Local is never empty (owner, 26 November 2026): with a state bound and no cap named it draws the lowest cap, cap 0,
 # and its readout says so with the empty sentence as the hint (LocalCap.Words); the default is never named.
 LOCAL_DEFAULT = "Local shows cap 0 by default; no cap is named. " + LOCAL_EMPTY
+# B32 findings: in sample mode the key map holds F1 (ADR-D01.74), so the hint names the palette's Space there.
+LOCAL_EMPTY_SAMPLE = LOCAL_EMPTY.replace("F1 ›", "Space ›")
+LOCAL_DEFAULT_SAMPLE = "Local shows cap 0 by default; no cap is named. " + LOCAL_EMPTY_SAMPLE
 RECORD = "d02-run.json"
 FORMAT = "magic600-d02-run-v1"
 FOREGROUND_AFTER_S = 5.0
@@ -249,12 +252,13 @@ def local_problems(dump: dict, step: int, cap: int, named: bool, framed: bool = 
     if framed and (local.get("framed") != cap or local.get("opening") is not True):
         problems.append(f"step {step}: the shell frames cap {local.get('framed')} in Local with its opening "
                         f"{'shown' if local.get('opening') else 'hidden'}, not cap {cap} with it shown")
-    if LOCAL_EMPTY in lines:
+    default = LOCAL_DEFAULT_SAMPLE if dump.get("sample") else LOCAL_DEFAULT
+    if LOCAL_EMPTY in lines or LOCAL_EMPTY_SAMPLE in lines:
         problems.append(f"step {step}: Local shows its empty sentence while it draws a cap")
     if named and (dump.get("named") != cap or local.get("words") or any(line.startswith("Local shows cap") for line in lines)):
         problems.append(f"step {step}: cap {dump.get('named')} is named and Local's readout reads {local.get('words')!r}, "
                         f"expected cap {cap} named and no default")
-    if not named and (dump.get("named") != -1 or LOCAL_DEFAULT not in lines):
+    if not named and (dump.get("named") != -1 or default not in lines):
         problems.append(f"step {step}: cap {dump.get('named')} is named or Local's readout does not say that it shows the "
                         "default cap")
     return problems
@@ -1122,6 +1126,54 @@ def check_raw_events(events: Path) -> list[str]:
 
 
 EXPECT["two-views"] = expect_two_views
+
+
+def expect_repair_keys(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B32 findings: the repair list's key route on wj-ia-300's fixture. `jumble.repair.focus` opens Local's Repair list
+    and gives it the keys with the record's rows in its order, no row focused and nothing staged; two arrows down focus
+    row 2 and still stage nothing; the digit 2 stages row 2; `jumble.repair.stage 1` in the palette stages row 1. Every
+    act carries its key (no unasked act)."""
+    if len(dumps) < max(REPAIR_KEYS_AT.values()) + 1:
+        return [f"the shell wrote {len(dumps)} screens"]
+    if state is None or not (SAMPLES / state / "cap-150.json").is_file():
+        return ["the repair-keys script needs a sample state with a record of cap 150"]
+    rows = load(SAMPLES / state / "cap-150.json")["repair_list"]["completed"]["rows"]
+    problems = []
+    opened, arrowed, digit, staged = (dumps[REPAIR_KEYS_AT[k]] for k in ("opened", "arrowed", "digit", "staged"))
+
+    def repair(dump):
+        return dump.get("repair") or {}
+
+    def stage(dump):
+        return dump.get("stage") or {}
+
+    local = texts(opened, "view:Local")
+    if f"▾ Repair list · {len(rows)}" not in local:
+        problems.append(f"the key route did not open Local's Repair list with {len(rows)} rows")
+    at = [next((i for i, line in enumerate(local) if line == f"{row[0]} {row[1]}"), -1) for row in rows]
+    if -1 in at or at != sorted(at):
+        problems.append(f"Local does not show the record's rows in its order (x d at lines {at})")
+    if repair(opened).get("rows") != len(rows) or repair(opened).get("focused") != 0:
+        problems.append(f"the list opened with {repair(opened)}, not {len(rows)} rows and no row focused")
+    if repair(opened).get("key_focus") != "LocalBody_repair_list":
+        problems.append(f"the key route left the keys with {repair(opened).get('key_focus')!r}, not the list")
+    if stage(opened).get("spans") or repair(opened).get("picks"):
+        problems.append("something was staged when the list opened")
+    if repair(arrowed).get("focused") != 2 or stage(arrowed).get("spans") or repair(arrowed).get("picks"):
+        problems.append(f"two arrows down gave {repair(arrowed)} and {stage(arrowed)}, not row 2 focused and nothing staged")
+    if repair(digit).get("picks") != [2] or stage(digit).get("spans") != 1:
+        problems.append(f"the digit 2 gave picks {repair(digit).get('picks')} and {stage(digit).get('spans')} spans")
+    if repair(staged).get("picks") != [2, 1] or stage(staged).get("spans") != 2:
+        problems.append(f"jumble.repair.stage 1 gave picks {repair(staged).get('picks')} and {stage(staged).get('spans')} spans")
+    if max((stage(dump).get("unasked", 0) for dump in dumps), default=0):
+        problems.append("the boundary ledger counted an unasked act")
+    return problems
+
+
+# The screens repair-keys reads (dump i follows script step i - 1): after the focus row, the arrows, the digit, the stage row.
+REPAIR_KEYS_AT = {"opened": 9, "arrowed": 12, "digit": 14, "staged": 18}
+EXPECT["repair-keys"] = expect_repair_keys
+ON_FIXTURE.add("repair-keys")
 ON_FIXTURE.add("two-views")
 # ADR-D01.17, .39 and .51: the context menu, the explore state and the non-standard colours mark.
 EXPECT["explore-menu"] = expect_explore_menu

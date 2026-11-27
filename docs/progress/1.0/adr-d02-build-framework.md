@@ -1330,6 +1330,38 @@ relative path is from the repository root.
 - **Machine:** W.
 - **Checkpoint:** no.
 - **Depends:** B1 to B31.
+- **As built (B32 findings):** J1's gaps, closed at the narrowest layer (reused: B12's `RepairListControl` keys, B13's
+  stage, B20's `CutSlice`, B6's `EntrySlot`, d02_run's player).
+  - C5-8, the repair list's key route: `jumble.repair.focus` (CR-14's draft row) opens Local's Repair list and gives it
+    the keys with no row focused (ADR-D02.32); then the list's own keys work: arrows focus, 1 to 9 or Enter pick, Left
+    and Right walk the steps. With `k` it focuses row k, and with `k s` it shows step s (ADR-D02.34). ADR-D01.19's
+    palette route, no new key. `jumble.repair.stage [k]` (CR-15's draft row) stages the row the solver names, or the
+    focused one, as the solver's pick by the palette's Enter (ADR-D02.33); with neither it refuses. Both refuse without
+    a named cap, without a list, or on a list that shows no rows. `RepairListModel.Focus` records its focus act.
+  - The other draft rows: `view.preset.jumble_entry` applies the entry slot again (Jumble on only; a key changed since
+    is set again); `jumble.slice.split` latches the held split on or off (Backslash's release also ends it);
+    `jumble.slice.shell r` sets the shell's outer radius, 0.05 to π, or `default` (`CutSlice.SetShell`). No draft row of
+    the five waits for a K2 server.
+  - `watch_d02.py --script NAME` replays a d02_scripts/ script the way `d02_run.py --script` plays it (its puzzle, the
+    shell's player, sample mode only for d02_run's sample scripts, the fixture its script needs); the window opens
+    behind and quits after the last step. It refuses `--follow`.
+  - `D02Window.Watch`: past the first six seconds the shell reorders no window but keeps noting the owner's acts on its
+    own window (a move, a resize, the window in front) for the window's life. A mouse button elsewhere counts only in
+    the first seconds, where it stops the hand-back.
+  - F1 and Local's hint: in sample mode the key map holds F1 (ADR-D01.74), so the hint there names the palette's key,
+    "Space › jumble.cap.name <id>"; outside sample mode F1 with no help topic opens the palette and the hint keeps
+    ADR-D02.12's words. The open F1 question is not decided. The dump says `sample`; `d02_run.local_problems` reads the
+    words of the mode. The cap prompt's "F1 › jumble.cap.unname" refusal is unchanged (left open).
+  - J1: the five rows leave `not_run`; the session names cap 150 again, types `jumble.repair.focus`, Down and
+    `jumble.repair.stage`, and latches the split off again. `repair-boundary` stays under `not_run`: J1 reads no list
+    screens; the new `repair-keys` script checks the boundary by keys.
+    Rule 1's check (`state_unchanged`) now counts a staged record against J1 only when no `jumble.repair.stage` row
+    staged it: the stage row is the solver's pick, not a filter, view, tint or tool.
+  - Checks: `check.py` (326 of 326), `test_shared_chrome.py` (15 OK), `build_product.py` (PASS),
+    `test_renderer_shell.py` (106 OK), `test_d02_drawing.py` (63 OK), `test_d02_words.py` (6 OK),
+    `test_d02_samples.py` (14 OK), `tools/wiki/lint.py` (ok); product runs `slice`, `two-views` and `repair-keys` on
+    `wj-ia-300` PASS with no nvlddmkm or LiveKernelEvent entry; J1 (with `wj-ia-end`'s fixture written by the Rust
+    writer) prints `M600_D02_J1_PASS operations=51 reached=51 boundary=0 observation=9/9`, no GPU event.
 
 ### B33. J0, the researcher subagent, and the report
 - **Goal:** planted defects, the seed 7001 replay, the lean subagent pass, one report.

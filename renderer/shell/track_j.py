@@ -205,18 +205,21 @@ def check(name: str):
 @check("state_unchanged")
 def state_unchanged(dumps: list[dict], ops: list[dict], rule: dict, state: str) -> list[str]:
     """Rule 1: no filter, view, tint or tool changes the state. The head's state digest reads the same in every
-    screen, nothing is staged, and the named cap changes only when a naming row runs."""
+    screen, nothing is staged but by the stage row the solver types (B32 findings: jumble.repair.stage is the solver's
+    pick, not a tool), and the named cap changes only when a naming row runs."""
     problems = []
     digests = {(dump.get("tuning") or {}).get("state_digest") for dump in dumps}
     if len(digests) != 1 or not next(iter(digests)):
         problems.append(f"the head's state digest read {sorted(str(d) for d in digests)}")
-    staged = max((dump.get("stage") or {}).get("records", 0) for dump in dumps)
-    if staged:
-        problems.append(f"{staged} records were staged")
     owner = {}
     for op in ops:
         for i in range(op["open"], op["last"] + 1):
             owner[i] = op["row"]
+    records = [(dump.get("stage") or {}).get("records", 0) for dump in dumps]
+    staged = sum(records[i] - records[i - 1] for i in range(1, len(dumps))
+                 if records[i] > records[i - 1] and owner.get(i) != "jumble.repair.stage") + (records[0] if records else 0)
+    if staged:
+        problems.append(f"{staged} records were staged")
     for i in range(1, len(dumps)):
         if dumps[i].get("named") != dumps[i - 1].get("named") and \
                 owner.get(i) not in ("jumble.cap.name", "jumble.cap.unname"):
