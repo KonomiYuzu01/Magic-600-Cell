@@ -3641,5 +3641,83 @@ EXPECT[GATE_OCCLUSION] = expect_gate
 ON_FIXTURE.add(GATE_OCCLUSION)
 
 
+PREVIEW_AT = {"base": 9, "staged": 11, "back": 13, "forward": 15, "overlay": 19, "overlay_off": 23,
+              "start": 27, "cancel": 29, "again": 35, "partial": 37, "commit": 39}
+
+
+def expect_preview(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """A stage and a scrub draw a separate pose set. Cancelling keeps the head, and committing takes the whole word."""
+    if len(dumps) <= max(PREVIEW_AT.values()):
+        return [f"the preview script wrote {len(dumps)} screens"]
+    if state != "wj-ia-300":
+        return ["the preview script needs wj-ia-300"]
+    screens = {name: dumps[index] for name, index in PREVIEW_AT.items()}
+    previews = {name: dump.get("preview", {}) for name, dump in screens.items()}
+    problems = []
+
+    def check(condition, problem):
+        if not condition:
+            problems.append(problem)
+
+    def drawing(preview):
+        return (preview.get("host") or {}).get("drawn") or {}
+
+    def panes(preview):
+        return {pane["view"]: pane["vertex_evals"] for pane in drawing(preview).get("panes", [])}
+
+    base = previews["base"]
+    head = base.get("head", {})
+    revision = drawing(base).get("revision")
+    check(isinstance(revision, int) and bool(head.get("digest") and head.get("pose_ids_sha256")
+            and head.get("pose_lattice_sha256")), "the main pair has no committed state evidence")
+    check(not base.get("pane") and not screens["base"].get("stage", {}).get("spans"), "opening the list staged a repair")
+    for name, preview in previews.items():
+        if name == "commit":
+            continue
+        check(preview.get("head") == head and drawing(preview).get("revision") == revision
+              and preview.get("host", {}).get("head_revision") == revision, f"{name}: the committed revision or pieces changed")
+        check(all(panes(preview).get(view, 0) > 0 for view in ("Global", "Local")),
+              f"{name}: the host did not draw both main views")
+        check(bool(preview.get("overlay")) == (name == "overlay"), f"{name}: the script overlay did not follow its toggle")
+        for view in ("Global", "Local"):
+            words = texts(screens[name], f"view:{view}")
+            check(("Preview pending" in words) == bool(preview.get("id")), f"{name}: the pending chip is wrong in {view}")
+            check(("script" in words) == (name == "overlay"), f"{name}: the overlay's script frame is wrong in {view}")
+    staged, again = previews["staged"], previews["again"]
+    letters = staged.get("letters") or 0
+    check(letters == 3 and staged.get("whole_only") and screens["staged"].get("stage", {}).get("spans") == 1,
+          "digit 2 did not stage one whole repair with three letters")
+    check(bool(staged.get("after")) and staged.get("after") != head.get("digest")
+          and len(staged.get("prefix_digests", [])) == letters
+          and (staged.get("prefix_digests") or [None])[-1] == staged.get("after"), "the preview has no distinct after-state")
+    check(bool(staged.get("id")) and bool(again.get("id")) and again.get("id") != staged.get("id")
+          and again.get("after") == staged.get("after"), "restaging did not build a fresh preview of the same repair")
+    for name, step in (("staged", letters), ("back", letters - 1), ("forward", letters), ("start", 0),
+                       ("again", letters), ("partial", letters - 1)):
+        preview = previews[name]
+        check(preview.get("status") == "ready" and preview.get("pane")
+              and panes(preview).get("Preview after", 0) > 0
+              and drawing(preview).get("preview_id") == preview.get("host_id"), f"{name}: the preview pane was not drawn")
+        check(preview.get("scrub") == step and drawing(preview).get("prefix") == step,
+              f"{name}: the scrub did not draw prefix {step}")
+    for name in ("cancel", "commit"):
+        preview = previews[name]
+        check(not preview.get("pane") and not preview.get("id") and not screens[name].get("stage", {}).get("spans")
+              and not any(view.startswith("Preview ") for view in panes(preview)), f"{name}: a preview or a stage was left")
+    committed = previews["commit"]
+    check(isinstance(revision, int) and committed.get("host", {}).get("head_revision") == revision + letters
+          and drawing(committed).get("revision") == revision + letters, "commit did not advance one revision per letter")
+    record = committed.get("commit", {})
+    check(record.get("letters") == letters and record.get("error") is None
+          and committed.get("head", {}).get("digest") == record.get("actual") == record.get("expected") == again.get("after"),
+          "the commit's digest differs from the preview's after digest")
+    check(not any(dump.get("stage", {}).get("unasked") for dump in dumps), "the boundary ledger counted an unasked act")
+    return problems
+
+
+EXPECT["preview"] = expect_preview
+ON_FIXTURE.add("preview")
+
+
 if __name__ == "__main__":
     sys.exit(main())

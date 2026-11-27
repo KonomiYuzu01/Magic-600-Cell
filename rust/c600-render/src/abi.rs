@@ -120,6 +120,8 @@ pub const PROJECTION_ORTHOGRAPHIC: u32 = 1;
 pub const PROJECTION_STEREOGRAPHIC: u32 = 2;
 /// `SA2_PANE_ANTIPODE` (ADR-D02 B21): a pane that draws its view's raw chart after -I, the antipode chart.
 pub const PANE_ANTIPODE: u32 = 1;
+pub const PANE_PREVIEW: u32 = 2;
+pub const PANE_PREVIEW_BEFORE: u32 = 4;
 /// `SA2_FOCUS_NONE`.
 pub const FOCUS_NONE: u32 = 0xFFFF_FFFF;
 

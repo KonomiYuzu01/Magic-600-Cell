@@ -145,6 +145,11 @@ class ShellProject(unittest.TestCase):
         source = text(ROOT / "renderer" / "bridge" / "host" / "src" / "lib.rs")
         csharp = text(PROJECT / "HostLibrary.cs")
         exports = re.findall(r'#\[no_mangle\]\s*pub (?:unsafe )?extern "C" fn (m6h_[a-z_]+)\(', source)
+        preview = text(ROOT / "renderer" / "bridge" / "host" / "src" / "preview.rs")
+        preview_exports = re.findall(r'#\[no_mangle\]\s*pub unsafe extern "C" fn (m6h_preview_[a-z_]+)\(', preview)
+        self.assertEqual(preview_exports, ["m6h_preview_bind", "m6h_preview_build", "m6h_preview_scrub", "m6h_preview_clear",
+                                           "m6h_preview_args", "m6h_preview_moved", "m6h_preview_report"])
+        exports.extend(preview_exports)
         self.assertIn("m6h_create", exports)
         self.assertTrue({"m6h_grip_report", "m6h_grip_set"}.issubset(exports))
         self.assertEqual(csharp_list("Exports", "HostLibrary.cs"), exports)

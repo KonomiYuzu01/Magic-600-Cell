@@ -20,7 +20,7 @@ public sealed record UserEvent(string Kind, string Input)
 // for it; one without counts here. A scripted session ends with a count of zero.
 public sealed class BoundaryLedger
 {
-    public static readonly IReadOnlyList<string> Kinds = Array.AsReadOnly(new[] { "stage", "focus", "order", "apply" });
+    public static readonly IReadOnlyList<string> Kinds = Array.AsReadOnly(new[] { "stage", "focus", "order", "apply", "scrub" });
     private readonly List<(string Kind, string What)> unasked = new();
     public int Count => unasked.Count;
     public IReadOnlyList<(string Kind, string What)> Unasked => unasked;
@@ -73,6 +73,13 @@ public sealed class StagedWord
         var span = new SealedSpan(letters.Count, word.Count, row);
         letters.AddRange(word); spans.Add(span); Safe.Raise(Changed);
         return span;
+    }
+
+    public void Clear()
+    {
+        if (letters.Count == 0) return;
+        letters.Clear(); spans.Clear();
+        Safe.Raise(Changed);
     }
 
     public SealedSpan? SpanAt(int index) => spans.FirstOrDefault(s => index >= s.Start && index < s.Start + s.Length);

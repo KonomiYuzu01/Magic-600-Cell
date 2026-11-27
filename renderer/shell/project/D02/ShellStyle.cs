@@ -224,6 +224,11 @@ public static class ShellStyle
             for (var piece = 0; piece < PieceCount; piece++)
                 if (moving[piece] != 0) outline[piece] = Hovered;
         }
+        if (ShellPreview.Overlay is { } preview)
+        {
+            for (var piece = 0; piece < PieceCount; piece++)
+                if (preview[piece] != 0) outline[piece] = JumbleOverlay.Entry;
+        }
         int? hovered = null, selected = null;
         if (ShellPick.Hover is { } hover && hover.Piece < PieceCount)
         {
@@ -269,6 +274,11 @@ public static class ShellStyle
                 return code;
             }
             ShellError.Sent(slot, slotStyle);
+        }
+        if (ShellPreview.PreviewColour is { } ink)
+        {
+            code = library.SetViewStyle(host, 4, PreviewStyle(ink));
+            if (code != HostLibrary.Ok) return code;
         }
         SentPalette = _tintPalette;
         var view = View(1);
@@ -360,6 +370,29 @@ public static class ShellStyle
             style.Palette[2] = (float)error.B;
             style.Palette[3] = ShellError.Alpha;
         }
+        if (ShellPreview.Overlay != null && ShellPreview.OverlayColour is { } preview)
+            SetPreviewInk(ref style, preview, .65f);
         return style;
+    }
+
+    private static HostLibrary.ViewStyle PreviewStyle(Rgb ink)
+    {
+        var style = HostLibrary.ViewStyle.Plain();
+        style.TintMode = HostLibrary.TintOutline;
+        style.OutlineWidth = OutlineWidth;
+        SetPreviewInk(ref style, ink, 1);
+        return style;
+    }
+
+    private static unsafe void SetPreviewInk(ref HostLibrary.ViewStyle style, Rgb ink, float alpha)
+    {
+        fixed (float* palette = style.Palette)
+        {
+            int at = 4 * JumbleOverlay.Entry;
+            palette[at] = (float)ink.R;
+            palette[at + 1] = (float)ink.G;
+            palette[at + 2] = (float)ink.B;
+            palette[at + 3] = alpha;
+        }
     }
 }

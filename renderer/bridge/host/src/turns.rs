@@ -283,7 +283,7 @@ impl Pinned {
 
 /// KN3.7's binding from a committed press's arguments: the fields of `field` (`twist.apply`'s `rotation`,
 /// `jumble.twist.menu`'s `letter`) and the row's `cap`, as the layer reads them.
-fn binding(args: &Value, field: &str) -> Result<Binding, String> {
+pub(crate) fn binding(args: &Value, field: &str) -> Result<Binding, String> {
     let mut fields = args.get(field).and_then(Value::as_object).cloned().ok_or("a press without its binding")?;
     fields.insert("cap".to_owned(), args.get("cap").cloned().unwrap_or(Value::Null));
     Binding::from_json(&Value::Object(fields)).map_err(|refusal| format!("the press's binding: {refusal:?}"))
@@ -351,6 +351,19 @@ fn protected_pieces(exact: &Exact, orbits: &[usize]) -> Vec<u32> {
         .collect()
 }
 
+/// The absolute menu arguments of item `item` at cap `cap` at `revision`: the one builder the fixture's letters, a
+/// read-only preview, its explicit commit and the twist rows (read on the frame thread or ahead) all use.
+fn menu_args(pin: &MenuPin, cap: u32, item: u64, revision: Value) -> Value {
+    let text = |s: &str| Value::String(s.to_owned());
+    let request = String::from_utf8_lossy(&menu_request(&pin.set, &pin.order, item)).into_owned();
+    let letter = json::object([
+        ("request", Value::String(request)),
+        ("operation", json::object([("kind", text("menu_direct"))])),
+        ("menu", json::object([("set", text(&pin.set)), ("order", text(&pin.order))])),
+    ]);
+    json::object([("cap", Value::Int(i64::from(cap))), ("letter", letter), ("revision", revision)])
+}
+
 /// The certified transform row of item `item` of `menu` at cap `cap` on `state`, a copy of the head's poses at
 /// `revision` ([`Turns::twist_transform`]).
 #[allow(clippy::too_many_arguments)]
@@ -364,14 +377,7 @@ fn twist_row(
     protect: &[u32],
     (cap, item): (u32, u64),
 ) -> Result<Option<TransformInput>, String> {
-    let text = |s: &str| Value::String(s.to_owned());
-    let request = String::from_utf8_lossy(&menu_request(&pin.set, &pin.order, item)).into_owned();
-    let letter = json::object([
-        ("request", Value::String(request)),
-        ("operation", json::object([("kind", text("menu_direct"))])),
-        ("menu", json::object([("set", text(&pin.set)), ("order", text(&pin.order))])),
-    ]);
-    let args = json::object([("cap", Value::Int(i64::from(cap))), ("letter", letter), ("revision", revision)]);
+    let args = menu_args(pin, cap, item, revision);
     let resolution = rotation::resolve(exact, Some(menu), &binding(&args, field)?)
         .map_err(|refusal| format!("the letter [{cap}, {item}] does not resolve: {refusal:?}"))?;
     // Review finding B18-02: the pieces that carry the protected orbits are pose-protected, as the command layer
@@ -679,24 +685,10 @@ impl Turns {
     /// revision) at any cap and item: a letter of a session fixture's word (ADR-D02 B5). It must commit; its
     /// arguments join the committed presses, so the control replays it. Jumble on only.
     pub fn twist_letter(&mut self, cap: u32, item: u64) -> Result<(), String> {
-        if self.puzzle != Puzzle::JumbleOn {
-            return Err("a menu letter needs the jumbled puzzle".to_owned());
-        }
-        let text = |s: &str| Value::String(s.to_owned());
-        let request = String::from_utf8_lossy(&menu_request(&self.pin.set, &self.pin.order, item)).into_owned();
-        let letter = json::object([
-            ("request", Value::String(request)),
-            ("operation", json::object([("kind", text("menu_direct"))])),
-            ("menu", json::object([("set", text(&self.pin.set)), ("order", text(&self.pin.order))])),
-        ]);
-        let revision = self.layer()?.revision().to_json();
-        let args = json::object([("cap", Value::Int(i64::from(cap))), ("letter", letter), ("revision", revision)]);
-        let receipt = self.invoke(JUMBLE_TWIST_ROW, args.clone())?;
+        let args = self.twist_args(cap, item)?;
+        let receipt = self.invoke(JUMBLE_TWIST_ROW, args)?;
         match &receipt.status {
-            Status::Committed(_) => {
-                self.committed.push(args);
-                Ok(())
-            }
+            Status::Committed(_) => Ok(()),
             Status::Refused(error) | Status::Failed(error) => {
                 Err(format!("the letter [{cap}, {item}] did not commit: {}: {}", error.code, error.detail))
             }
@@ -935,7 +927,28 @@ impl Turns {
     /// ([`Turns::take_job`]).
     pub fn invoke(&mut self, row: &str, args: Value) -> Result<Receipt, String> {
         let layer = self.layer.as_mut().ok_or("the session is closed")?;
-        self.shell.invoke(layer, row, args).map_err(|error| format!("{}: {}", error.code, error.detail))
+        let press = (row == JUMBLE_TWIST_ROW).then(|| args.clone());
+        let receipt = self.shell.invoke(layer, row, args).map_err(|error| format!("{}: {}", error.code, error.detail))?;
+        if matches!(receipt.status, Status::Committed(_)) {
+            if let Some(press) = press {
+                self.committed.push(press);
+            }
+        }
+        Ok(receipt)
+    }
+
+    /// The fixture, a read-only preview and its explicit commit all use the same absolute menu arguments.
+    pub(crate) fn twist_args(&mut self, cap: u32, item: u64) -> Result<Value, String> {
+        if self.puzzle != Puzzle::JumbleOn {
+            return Err("a menu letter needs the jumbled puzzle".to_owned());
+        }
+        let revision = self.layer()?.revision().to_json();
+        Ok(menu_args(&self.pin, cap, item, revision))
+    }
+
+    pub(crate) fn preview_basis(&mut self) -> Result<(String, Vec<usize>), String> {
+        let layer = self.layer()?;
+        Ok((head_digest(layer), layer.protected().orbits().to_vec()))
     }
 
     /// Takes the next program job the layer admitted (a language row's), as the host takes it before it runs the job's

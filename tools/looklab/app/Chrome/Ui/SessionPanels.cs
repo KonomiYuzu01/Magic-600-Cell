@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Godot;
 
@@ -53,6 +54,7 @@ public sealed partial class CommitBar : PanelContainer
     // The host's own buttons, at the right end of the bar.
     public HBoxContainer Tools { get; } = new();
     public string CommitKeys { get; set; } = "";
+    public Func<double>? Clock { get; set; }
     public event Action<string, string?>? Command;
     // Inline parameters (ADR-D01.11): the numbers of the staged statement, edited in place. The host rebuilds the
     // preview when one changes; the bar never does.
@@ -61,11 +63,38 @@ public sealed partial class CommitBar : PanelContainer
     public HBoxContainer ParameterRow { get; private set; } = new();
     private readonly Func<TokenSet> tokens;
     private readonly HBoxContainer row = new();
+    private Preview? painted;
+    private Label? position;
 
     public CommitBar(PreviewModel model, Func<TokenSet> tokens)
     {
         Model = model; this.tokens = tokens; Name = "CommitBar"; ThemeTypeVariation = "BarBottom";
-        AddChild(row); model.Changed += Refresh; Refresh();
+        AddChild(row); model.Changed += Follow; Refresh();
+    }
+
+    private void Follow()
+    {
+        if (painted is { WholeOnly: true } && ReferenceEquals(painted, Model.Pending))
+        {
+            FollowPosition();
+            return;
+        }
+        Refresh();
+    }
+
+    private void FollowPosition()
+    {
+        if (Model.Pending is not { } p || position is null) return;
+        position.Text = $"{p.Source} · {Model.Scrub}/{p.Moves.Count} moves · #{p.Id}";
+        Scrub?.SetValueNoSignal(Model.Scrub);
+    }
+
+    public void FollowSettle()
+    {
+        if (Clock == null || Model.Pending is not { WholeOnly: true } || !IsInstanceValid(Commit)) return;
+        string? refusal = Model.CommitRefusal(Clock());
+        Commit.Disabled = refusal != null;
+        Commit.TooltipText = refusal ?? $"Commit whole repair ({CommitKeys})";
     }
 
     public void Refresh()
@@ -75,7 +104,8 @@ public sealed partial class CommitBar : PanelContainer
         TokenSet t = tokens();
         CustomMinimumSize = new Vector2(0, t.Px("bar.height"));
         row.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
-        Preview? p = Model.Pending;
+        Preview? p = painted = Model.Pending;
+        position = null;
         State = ChromeWidgets.Text("", "MicroLabel"); Reason = ChromeWidgets.Text("", "DimLabel", true);
         if (p == null)
         {
@@ -100,12 +130,20 @@ public sealed partial class CommitBar : PanelContainer
                 ParameterRow.AddChild(box);
             }
             if (Parameters.Count > InlineParameters.Shown) ParameterRow.AddChild(ChromeWidgets.Text($"+{Parameters.Count - InlineParameters.Shown}", "DimLabel"));
-            row.AddChild(ChromeWidgets.Text($"{p.Source} · {Model.Scrub}/{p.Moves.Count} moves · #{p.Id}", "DimLabel"));
+            position = ChromeWidgets.Text("", "DimLabel"); row.AddChild(position);
+            FollowPosition();
+            if (p.WholeOnly) row.AddChild(ChromeWidgets.Text(RepairListModel.WholeOnly, "DimLabel"));
             if (p.Moves.Count > 0)
             {
                 Scrub = new HSlider { MinValue = 0, MaxValue = p.Moves.Count, Step = 1, Value = Model.Scrub, CustomMinimumSize = new Vector2(t.Px("dock.width") * .5f, 0),
-                    SizeFlagsVertical = SizeFlags.ShrinkCenter, TooltipText = "Scrub from before to after; Commit takes the moves up to here", FocusMode = FocusModeEnum.None };
-                Scrub.ValueChanged += v => Model.SetScrub((int)v); row.AddChild(Scrub);
+                    SizeFlagsVertical = SizeFlags.ShrinkCenter,
+                    TooltipText = p.WholeOnly ? "Scrub from before to after" : "Scrub from before to after; Commit takes the moves up to here", FocusMode = FocusModeEnum.None };
+                Scrub.ValueChanged += v =>
+                {
+                    if (p.WholeOnly) Safe.Raise(Command, "view.preview.scrub", ((int)v).ToString(CultureInfo.InvariantCulture));
+                    else Model.SetScrub((int)v);
+                };
+                row.AddChild(Scrub);
             }
             if (p.Reason != null)
             {
@@ -113,12 +151,14 @@ public sealed partial class CommitBar : PanelContainer
                 Reason.AddThemeColorOverride("font_color", t.C(colour)); row.AddChild(Reason);
             }
             row.AddChild(SessionWidgets.Tool("preview.moves", "Open the preview view with the move strip", t, () => Safe.Raise(Command, "view.preview.open", null)));
-            row.AddChild(SessionWidgets.Tool("preview.promote", "Promote: save this preview as a macro", t, () => Safe.Raise(Command, "macro.save", null)));
+            if (!p.WholeOnly)
+                row.AddChild(SessionWidgets.Tool("preview.promote", "Promote: save this preview as a macro", t, () => Safe.Raise(Command, "macro.save", null)));
             row.AddChild(SessionWidgets.Tool("preview.discard", "Discard the preview (Esc)", t, () => Safe.Raise(Command, "operation.preview.cancel", null), "Discard"));
-            string label = Model.Scrub < p.Moves.Count && Model.Scrub > 0 ? $"Commit {Model.Scrub}" : "Commit";
+            string label = Model.AtPrefix && Model.Scrub > 0 ? $"Commit {Model.Scrub}" : "Commit";
             Commit = SessionWidgets.Tool("preview.commit", p.Status == PreviewStatus.Ready ? $"Commit one labelled entry ({CommitKeys})" : "Commit is off: " + p.Reason, t,
                 () => Safe.Raise(Command, "operation.preview.commit", null), label);
-            Commit.Disabled = p.Status != PreviewStatus.Ready || Model.Scrub == 0;
+            Commit.Disabled = p.Status != PreviewStatus.Ready || (!p.WholeOnly && Model.Scrub == 0);
+            FollowSettle();
             if (!Commit.Disabled) Commit.AddThemeColorOverride("font_color", t.C("accent.strong"));
         }
         Commit.Name = "CommitButton"; row.AddChild(Commit);
@@ -142,24 +182,82 @@ public sealed partial class PreviewPanel : VBoxContainer
     private readonly HBoxContainer head = new();
     private readonly HSplitContainer body = new() { SizeFlagsVertical = SizeFlags.ExpandFill };
     private readonly Label stageNote = ChromeWidgets.Text("", "DimLabel");
+    private readonly bool drawn;
+    private readonly Control? beforeOpening, afterOpening;
+    private PreviewSide comparison;
+    private string? comparisonNote;
     // Every action the view offers is a command of the registry (ADR-D01.17): the side of the comparison and the
     // move steps. A click on a move line is direct manipulation of the scrub.
     public event Action<string, string?>? Command;
     // ADR-D01.70: the rail order the effect signature is laid out in (the Library's), or null where no rail is shown.
     public Func<IReadOnlyList<int>?>? RailOrder { get; set; }
 
-    public PreviewPanel(PreviewModel model, Func<TokenSet> tokens)
+    public PreviewPanel(PreviewModel model, Func<TokenSet> tokens, bool drawn = false)
     {
-        Model = model; this.tokens = tokens; Name = "PreviewPanel";
-        AddChild(head); AddChild(new HSeparator()); AddChild(body);
+        Model = model; this.tokens = tokens; this.drawn = drawn; Name = "PreviewPanel";
+        AddChild(head); AddChild(new HSeparator());
         var left = new ScrollContainer { CustomMinimumSize = new Vector2(120, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         Moves.SizeFlagsHorizontal = SizeFlags.ExpandFill; Moves.AddThemeConstantOverride("separation", 0); left.AddChild(Moves);
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1.6f };
         stageNote.AutowrapMode = TextServer.AutowrapMode.WordSmart; stageNote.HorizontalAlignment = HorizontalAlignment.Center; stageNote.VerticalAlignment = VerticalAlignment.Center;
-        Compare = new PreviewCompare(model, tokens); var stageBox = new VBoxContainer(); stageBox.AddChild(Compare); stageBox.AddChild(stageNote);
-        Stage.AddChild(stageBox); right.AddChild(Stage); right.AddChild(Effects);
+        Compare = new PreviewCompare(model, tokens);
+        var stageBox = new VBoxContainer(); stageBox.AddChild(stageNote);
+        Stage.AddChild(stageBox);
+        if (drawn)
+        {
+            Stage.ThemeTypeVariation = "FrameOpen"; Stage.SizeFlagsStretchRatio = 2;
+            var openings = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+            stageBox.AddChild(openings);
+            beforeOpening = Opening(openings, "Before");
+            afterOpening = Opening(openings, "After");
+            AddChild(Stage);
+            var facts = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+            Effects.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            facts.AddChild(Effects); right.AddChild(facts);
+        }
+        else
+        {
+            stageBox.AddChild(Compare); stageBox.MoveChild(Compare, 0);
+            right.AddChild(Stage); right.AddChild(Effects);
+        }
+        AddChild(body);
         body.AddChild(left); body.AddChild(right);
         model.Changed += Refresh; Refresh();
+    }
+
+    private static Control Opening(HBoxContainer row, string side)
+    {
+        var column = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var label = ChromeWidgets.Text(side, "MicroLabel"); label.HorizontalAlignment = HorizontalAlignment.Center;
+        var hole = new Control { Name = "Preview" + side + "Opening", SizeFlagsVertical = SizeFlags.ExpandFill, MouseFilter = MouseFilterEnum.Ignore };
+        column.AddChild(label); column.AddChild(hole); row.AddChild(column);
+        return hole;
+    }
+
+    public IEnumerable<(bool Before, Rect2 Rect)> DrawnOpenings()
+    {
+        if (Model.Pending is not { Status: PreviewStatus.Ready }) yield break;
+        if (beforeOpening is { } before && before.IsVisibleInTree()) yield return (true, before.GetGlobalRect());
+        if (afterOpening is { } after && after.IsVisibleInTree()) yield return (false, after.GetGlobalRect());
+    }
+
+    public void SetComparison(PreviewSide side, string? note)
+    {
+        if (!drawn || (comparison == side && comparisonNote == note)) return;
+        comparison = side; comparisonNote = note;
+        StageStatus();
+    }
+
+    private void StageStatus()
+    {
+        var p = Model.Pending;
+        bool ready = p?.Status == PreviewStatus.Ready;
+        if (beforeOpening != null) ((Control)beforeOpening.GetParent()).Visible = ready && comparison != PreviewSide.After;
+        if (afterOpening != null) ((Control)afterOpening.GetParent()).Visible = ready && comparison != PreviewSide.Before;
+        stageNote.Text = p == null ? "no preview staged" : ready
+            ? (Model.Scrub == 0 ? "Before twist 1" : $"Twist {Model.Scrub} of {p.Moves.Count}")
+                + (comparisonNote == null ? "" : " · " + comparisonNote)
+            : p.Reason ?? "";
     }
 
     public void Refresh()
@@ -169,7 +267,8 @@ public sealed partial class PreviewPanel : VBoxContainer
         ChromeWidgets.Detach(Title); SessionWidgets.Clear(head); SessionWidgets.Clear(Moves); SessionWidgets.Clear(Effects);
         head.AddChild(new Control { CustomMinimumSize = new Vector2(t.Px("space.2"), 0) });
         Title.Text = p == null ? "No preview" : $"Preview #{p.Id}"; ChromeWidgets.Detach(Title); head.AddChild(Title);
-        Compare.Visible = p is { Status: PreviewStatus.Ready };
+        Compare.Visible = !drawn && p is { Status: PreviewStatus.Ready };
+        if (drawn) StageStatus();
         if (p == null)
         {
             stageNote.Text = "no preview staged";
@@ -187,9 +286,10 @@ public sealed partial class PreviewPanel : VBoxContainer
         head.AddChild(ChromeWidgets.Text($"{Model.Scrub} of {p.Moves.Count}", "DimLabel"));
         head.AddChild(SessionWidgets.Tool("step.back", "One move back (Left)", t, () => Safe.Raise(Command, "view.preview.scrub", "back")));
         head.AddChild(SessionWidgets.Tool("step.forward", "One move forward (Right)", t, () => Safe.Raise(Command, "view.preview.scrub", "forward")));
-        stageNote.Text = p.Status == PreviewStatus.Ready
-            ? $"after move {Model.Scrub} of {p.Moves.Count}"
-            : "Nothing to draw: " + p.Reason;
+        if (!drawn)
+            stageNote.Text = p.Status == PreviewStatus.Ready
+                ? $"after move {Model.Scrub} of {p.Moves.Count}"
+                : "Nothing to draw: " + p.Reason;
         for (int i = 0; i < p.Moves.Count; i++)
         {
             int index = i; bool done = i < Model.Scrub, at = i == Model.Scrub - 1;
@@ -200,12 +300,23 @@ public sealed partial class PreviewPanel : VBoxContainer
             Label move = ChromeWidgets.Text(p.Moves[i], "CodeLabel", true); move.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             if (!done) move.AddThemeColorOverride("font_color", t.C("text.off"));
             line.AddChild(move);
-            holder.GuiInput += e => { if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) Model.SetScrub(index + 1); };
+            if (drawn && i < p.MovedPerStep.Count)
+            {
+                var count = ChromeWidgets.Text($"{p.MovedPerStep[i]:N0}", "DimLabel");
+                count.TooltipText = "Pieces moved by this twist"; count.MouseFilter = MouseFilterEnum.Pass; line.AddChild(count);
+            }
+            holder.GuiInput += e =>
+            {
+                if (e is not InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) return;
+                if (drawn) Safe.Raise(Command, "view.preview.scrub", (index + 1).ToString(CultureInfo.InvariantCulture));
+                else Model.SetScrub(index + 1);
+            };
             Moves.AddChild(holder);
         }
         if (Model.Range() is { } range && p.Status == PreviewStatus.Ready)
         {
-            Label touched = ChromeWidgets.Text($"{range.Orbits} of {range.OrbitsTotal} orbits, {range.Moved:N0} of {range.Total:N0} pieces", "CodeLabel"); touched.Name = "PreviewRange"; touched.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            string summary = drawn && p.MovedTotal is int total ? $"{total:N0} pieces moved" : $"{range.Orbits} of {range.OrbitsTotal} orbits, {range.Moved:N0} of {range.Total:N0} pieces";
+            Label touched = ChromeWidgets.Text(summary, "CodeLabel"); touched.Name = "PreviewRange"; touched.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             touched.TooltipText = "The range this preview touches over its whole sequence"; touched.MouseFilter = MouseFilterEnum.Pass; Effects.AddChild(touched);
         }
         Effects.AddChild(ChromeWidgets.Text("EFFECT ON EVERY ORBIT", "MicroLabel"));
@@ -227,6 +338,7 @@ public sealed partial class PreviewPanel : VBoxContainer
                 SizeFlagsVertical = SizeFlags.ShrinkCenter, CustomMinimumSize = new Vector2(0, t.Px("space.2")) };
             line.AddChild(bar);
             Label count = ChromeWidgets.Text(effect.Moved == 0 ? "untouched" : $"{effect.Moved:N0} of {effect.Total:N0}", effect.Moved == 0 ? "DimLabel" : "CodeLabel");
+            if (effect.Net is int net) { count.TooltipText = $"{net:N0} pieces changed at the end"; count.MouseFilter = MouseFilterEnum.Pass; }
             count.CustomMinimumSize = new Vector2(t.Px("dock.width") * .5f, 0); count.HorizontalAlignment = HorizontalAlignment.Right; line.AddChild(count);
             Effects.AddChild(line);
         }
@@ -235,6 +347,7 @@ public sealed partial class PreviewPanel : VBoxContainer
         var guard = new HBoxContainer(); Label lockMark = ChromeWidgets.Text("", "MicroLabel"); ChromeIcons.Apply(lockMark, "mark.protected", t.Px("icon.small"));
         lockMark.AddThemeColorOverride("font_color", t.C("state.protected")); guard.AddChild(lockMark); guard.AddChild(protection);
         Effects.AddChild(guard);
+        if (drawn) Effects.MoveChild(guard, Math.Min(1, Effects.GetChildCount() - 1));
     }
 }
 

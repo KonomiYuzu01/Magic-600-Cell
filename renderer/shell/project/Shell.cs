@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace Magic600.Shell;
@@ -309,6 +310,10 @@ public partial class Shell : Control
             throw new InvalidOperationException(
                 $"m6h_create_preloaded answered {code}: {hostLibrary.LastError(IntPtr.Zero)}");
         }
+        if (D02.ShellJumble.On)
+        {
+            hostLibrary.BindPreviewCore(_host, core);
+        }
         Require(hostLibrary, "m6h_set_viewport", hostLibrary.SetViewport(_host, (uint)_size.X, (uint)_size.Y));
         // ADR-D02 (owner, 26 November 2026: smaller stickers): with --d02 the view takes the owner's opening shape.
         Require(hostLibrary, "m6h_set_view_shape", D02.ShellShape.Apply(hostLibrary, _host));
@@ -482,6 +487,11 @@ public partial class Shell : Control
     /// <summary>Echoes and logs each key press (not a repeat) and mouse click (not the wheel) the window receives.</summary>
     public override void _Input(InputEvent @event)
     {
+        if (@event is InputEventKey previewKey && _editor?.TextFocused != true && _chrome?.TakePreviewKey(previewKey) == true)
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
         var qpc = EventLog.Now();
         bool contextMenuOpen = _chrome?.Frame.OpenOverlay is Magic600.Chrome.ContextMenuOverlay;
         bool menuPointer = _menuPointer = contextMenuOpen || _contextMenuPress;
@@ -734,13 +744,18 @@ public partial class Shell : Control
     private void SetPanes(HostLibrary library, Rect2I global, Magic600.Chrome.PaneLayout? layout)
     {
         var local = layout is null ? default : _chrome!.LocalOpening();
-        if (_paned == (layout is null ? default : global, local) && _panedSplit == D02.ShellSlice.Split && _panedRaw == D02.ShellRaw.PaneKey)
+        var globalPane = layout is null && previewPanes.Length == 0 ? default : global;
+        if (_paned == (globalPane, local) && _panedSplit == D02.ShellSlice.Split && _panedRaw == D02.ShellRaw.PaneKey
+            && panedPreview.SequenceEqual(previewPanes))
         {
             return;
         }
         Require(library, "m6h_clear_pane", library.ClearPane(_host, 0));
         Require(library, "m6h_clear_pane", library.ClearPane(_host, 1));
         Require(library, "m6h_clear_pane", library.ClearPane(_host, 2));
+        if (previewPanes.Length > 0 || panedPreview.Length > 0)
+            Require(library, "m6h_clear_pane", library.ClearPane(_host, 3));
+        uint nextPane = 1;
         if (layout is not null)
         {
             // B17: Global's pane draws with style slot 1. ADR-D02 B20: Local draws its cut slice with slot 2, or, while
@@ -771,6 +786,7 @@ public partial class Shell : Control
                 }
             }
             var first = raw is null ? copies[0].Pane.Rect : raw[0].Pane.Rect;
+            nextPane += (uint)(raw?.Count ?? copies.Count);
             var aspect = first.Height > 0 ? (double)first.Width / first.Height : 1;
             if (_localShape is { } shape)
             {
@@ -778,7 +794,13 @@ public partial class Shell : Control
                 Require(library, "m6h_set_view_shape", D02.ShellShape.ApplyZoom(library, _host, HostLibrary.Local, D02.ShellJumble.Zoom.Factor(HostLibrary.Local)));
             }
         }
-        _paned = (layout is null ? default : global, local);
+        else if (previewPanes.Length > 0)
+        {
+            var g = global.Position - _area.Position;
+            Require(library, "m6h_set_pane", library.SetPane(_host, 0, HostLibrary.View, g.X, g.Y, (uint)global.Size.X, (uint)global.Size.Y, 1));
+        }
+        SetPreviewPanes(library, nextPane);
+        _paned = (globalPane, local);
         _panedSplit = D02.ShellSlice.Split;
         _panedRaw = D02.ShellRaw.PaneKey;
         _layout = layout;
@@ -954,7 +976,9 @@ public partial class Shell : Control
         // Local is drawn, the surface covers the bounding box of both openings, and each is a pane of the frame.
         FollowLocalCap(library);
         var global = _chrome is { } framed ? framed.Opening() : new Rect2I(Vector2I.Zero, DisplayServer.WindowGetSize());
+        repairPreview?.Tick();
         var (area, layout) = Openings(global);
+        (area, layout) = PreviewOpenings(global, area, layout);
         _steady = area == _wanted ? _steady + 1 : 0;
         _wanted = area;
         // The core refuses a surface under SA2_MIN_TEXTURE_PX (sa2_interop.h) on a side: a smaller opening (a frame
@@ -1043,6 +1067,7 @@ public partial class Shell : Control
             _log?.Frame(frame, submitted, returned);
             _submittedThisFrame = frame.Sequence;
             _adoptedRevision = frame.EngineRevision;
+            repairPreview?.Follow();
             D02.ShellTurn.Framed(frame.EngineRevision);
             D02.ShellStatus.Framed(frame);
             // ADR-D02 B17: the clicks and hovers of this step ask the ID pass on the frame just submitted.

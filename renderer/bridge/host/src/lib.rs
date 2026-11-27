@@ -115,6 +115,7 @@ mod deferred;
 pub mod fixture;
 mod grip;
 pub mod preload;
+pub mod preview;
 pub mod turns;
 pub mod view;
 use c600_run::meter::Amounts;
@@ -411,6 +412,7 @@ pub struct ShellHost {
     presented: VecDeque<M6hPresented>,
     /// The engine's pending preview the view shows ([`ShellHost::sync_preview`]).
     shown: Option<Shown>,
+    preview: preview::PreviewDrawing,
     /// The JSON answer of the last call of the write-check-run flow ([`m6h_answer`]).
     answer: String,
     error: String,
@@ -544,7 +546,7 @@ pub fn local_publication(publication: &Publication) -> Publication {
 }
 
 impl ShellHost {
-    fn create(core: DllCore, loads: Preload) -> Result<ShellHost, Failure> {
+    fn create(core: DllCore, loads: Preload, preview: preview::PreviewDrawing) -> Result<ShellHost, Failure> {
         let Preload { assets, kernel, geometry, exact } = loads;
         let kernel = Arc::new(kernel.join().map_err(model_error)?);
         let geometry = geometry.join().map_err(model_error)?;
@@ -590,6 +592,7 @@ impl ShellHost {
             views: view::Views::default(),
             presented: VecDeque::new(),
             shown: None,
+            preview,
             answer: String::new(),
             error: String::new(),
             poisoned: false,
@@ -860,6 +863,7 @@ impl ShellHost {
             held: 0,
         };
         self.last_frame = frame;
+        self.preview.submitted(frame.sequence, frame.engine_revision, &[]);
         Ok(frame)
     }
 
@@ -870,8 +874,11 @@ impl ShellHost {
     fn frame_panes(&mut self) -> Result<M6hFrame, Failure> {
         let viewport = self.host.view(VIEW).map_or((0, 0), |v| v.viewport);
         let local_visible = self.local_visible;
-        let drawn: Vec<Pane> =
-            self.panes.iter().flatten().copied().filter(|pane| pane.view == VIEW || local_visible).collect();
+        let preview_current = self.preview.current(self.revision, self.assigned);
+        let drawn: Vec<Pane> = self.panes.iter().flatten().copied()
+            .filter(|pane| pane.view == VIEW || local_visible)
+            .filter(|pane| pane.flags & c600_render::abi::PANE_PREVIEW == 0 || preview_current)
+            .collect();
         if drawn.iter().any(|pane| !pane.rect().inside(viewport)) {
             return Err((
                 M6H_E_INVALID_ARGUMENT,
@@ -927,6 +934,7 @@ impl ShellHost {
             held: 0,
         };
         self.last_frame = frame;
+        self.preview.submitted(frame.sequence, frame.engine_revision, &drawn);
         Ok(frame)
     }
 
@@ -1127,7 +1135,7 @@ pub unsafe extern "C" fn m6h_create(
         // SAFETY: the table and the context come from one loaded core and stay valid (the contract).
         let core = unsafe { DllCore::new(*functions, context) }
             .map_err(|status| (M6H_E_CORE, format!("the core context was not bound: {}", status.name())))?;
-        ShellHost::create(core, Preload::deferred(Path::new(path)))
+        ShellHost::create(core, Preload::deferred(Path::new(path)), preview::PreviewDrawing::new(context, unsafe { (*functions).last_error }))
     }));
     // SAFETY: as above.
     unsafe { created(attempt, out) }
@@ -1233,7 +1241,7 @@ pub unsafe extern "C" fn m6h_create_preloaded(
         // SAFETY: the table and the context come from one loaded core and stay valid (the contract).
         let core = unsafe { DllCore::new(*functions, context) }
             .map_err(|status| (M6H_E_CORE, format!("the core context was not bound: {}", status.name())))?;
-        ShellHost::create(core, *preload)
+        ShellHost::create(core, *preload, preview::PreviewDrawing::new(context, unsafe { (*functions).last_error }))
     }));
     // SAFETY: as above.
     unsafe { created(attempt, out) }
@@ -2461,6 +2469,10 @@ pub unsafe extern "C" fn m6h_invoke(
                 out_job.write(job);
             }
             shell.answer = receipt.to_json().canonical();
+            if row == c600_command::JUMBLE_TWIST_ROW && matches!(receipt.status, c600_command::Status::Committed(_)) {
+                let head = shell.turns()?.head().map_err(|e| (M6H_E_SESSION, e))?;
+                shell.defer(head)?;
+            }
             shell.sync_preview()
         })
     }
@@ -2731,8 +2743,13 @@ pub unsafe extern "C" fn m6h_set_pane_flags(handle: *mut ShellHost, pane: u32, f
     unsafe {
         with_host(handle, |shell| {
             let invalid = |why: &str| Err((M6H_E_INVALID_ARGUMENT, why.to_owned()));
-            if flags & !c600_render::abi::PANE_ANTIPODE != 0 {
-                return invalid("a pane's flags are 0 or SA2_PANE_ANTIPODE");
+            use c600_render::abi::{PANE_ANTIPODE, PANE_PREVIEW, PANE_PREVIEW_BEFORE};
+            if flags & !(PANE_ANTIPODE | PANE_PREVIEW | PANE_PREVIEW_BEFORE) != 0
+                || (flags & PANE_PREVIEW_BEFORE != 0 && flags & PANE_PREVIEW == 0) {
+                return invalid("invalid pane flags");
+            }
+            if flags & PANE_PREVIEW != 0 && !shell.preview.current(shell.revision, shell.assigned) {
+                return invalid("a preview pane needs a current preview pose set");
             }
             match shell.panes.get_mut(pane as usize).and_then(Option::as_mut) {
                 Some(set) => {

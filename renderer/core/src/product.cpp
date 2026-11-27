@@ -52,6 +52,22 @@ uint64_t EngineImage::bytes() const {
     return total;
 }
 
+static void copy_poses(EngineImage& out, const int32_t* index, const float* poses, const int32_t* lattice, uint32_t count) {
+    out.pose_count = count;
+    out.pose_index.assign(index, index + SA2_PIECES);
+    argument(std::all_of(out.pose_index.begin(), out.pose_index.end(),
+        [count](int32_t pose) { return pose >= 0 && uint32_t(pose) < count; }), "a pose index is not below pose_count");
+    out.poses.assign(poses, poses + size_t(count) * 16);
+    argument(std::all_of(out.poses.begin(), out.poses.end(), [](float value) { return std::isfinite(value); }),
+        "a pose entry is not finite");
+    for (size_t i = 0; i < 16; ++i)
+        argument(out.poses[i] == (i % 5 == 0 ? 1.0f : 0.0f), "pose 0 is not the identity");
+    out.lattice.assign(lattice, lattice + count);
+    argument(std::all_of(out.lattice.begin(), out.lattice.end(),
+        [](int32_t entry) { return entry >= -1 && entry < SA2_POSE_GROUP_ORDER; }), "a pose_lattice entry is not -1 or below SA2_POSE_GROUP_ORDER");
+    argument(out.lattice[0] == 0, "pose_lattice entry 0 is not 0");
+}
+
 EngineImage engine_image(const sa2_engine_image* image) {
     argument(image && image->struct_size == sizeof(*image), "invalid engine_image struct_size");
     argument(image->labels != nullptr, "engine_image labels is NULL");
@@ -65,25 +81,10 @@ EngineImage engine_image(const sa2_engine_image* image) {
     }
     EngineImage out;
     out.revision = image->revision;
-    out.pose_count = image->pose_count;
     out.labels.assign(image->labels, image->labels + SA2_SLOTS);
     argument(std::all_of(out.labels.begin(), out.labels.end(), [](uint32_t label) { return label < SA2_SLOTS; }),
         "a label is not below SA2_SLOTS");
-    if (posed) {
-        const uint32_t count = image->pose_count;
-        out.pose_index.assign(image->pose_index, image->pose_index + SA2_PIECES);
-        argument(std::all_of(out.pose_index.begin(), out.pose_index.end(),
-            [count](int32_t pose) { return pose >= 0 && uint32_t(pose) < count; }), "a pose index is not below pose_count");
-        out.poses.assign(image->poses, image->poses + size_t(count) * 16);
-        argument(std::all_of(out.poses.begin(), out.poses.end(), [](float value) { return std::isfinite(value); }),
-            "a pose entry is not finite");
-        for (size_t i = 0; i < 16; ++i)
-            argument(out.poses[i] == (i % 5 == 0 ? 1.0f : 0.0f), "pose 0 is not the identity");
-        out.lattice.assign(image->pose_lattice, image->pose_lattice + count);
-        argument(std::all_of(out.lattice.begin(), out.lattice.end(),
-            [](int32_t entry) { return entry >= -1 && entry < SA2_POSE_GROUP_ORDER; }), "a pose_lattice entry is not -1 or below SA2_POSE_GROUP_ORDER");
-        argument(out.lattice[0] == 0, "pose_lattice entry 0 is not 0");
-    }
+    if (posed) copy_poses(out, image->pose_index, image->poses, image->pose_lattice, image->pose_count);
     out.digest = digest(image->digest);
     return out;
 }
@@ -348,6 +349,8 @@ uint64_t Product::adopt(EngineImage image) {
     image_ = std::move(image);
     style_.reset(); // ABI 7: a piece style is bound to its revision
     transform_.reset(); // ADR-D02 B18: so is a transform
+    preview_.reset();
+    preview_turn_.reset();
     charts_.reset(); // ADR-D02 B22 item 1: and the chart channel
     return image_->revision;
 }
@@ -390,24 +393,26 @@ void Product::set_style(uint64_t revision, const uint8_t* bytes, uint32_t channe
     style_->version = ++style_version_;
     if (channel != SA2_STYLE_CHANNEL_STATUS) style_->pick_version = style_->original() ? style_->version : 0;
 }
+static void validate_transform(const float* u, const float* v, float angle, const uint8_t* mask, float phase) {
+    argument(u != nullptr && v != nullptr, "a transform's plane is NULL");
+    double uu = 0, vv = 0, uv = 0;
+    for (int i = 0; i < 4; ++i) {
+        argument(std::isfinite(u[i]) && std::isfinite(v[i]), "a transform's plane is not finite");
+        uu += double(u[i]) * u[i]; vv += double(v[i]) * v[i]; uv += double(u[i]) * v[i];
+    }
+    const double tolerance = SA2_TRANSFORM_PLANE_TOLERANCE;
+    argument(std::abs(uu - 1) <= tolerance && std::abs(vv - 1) <= tolerance && std::abs(uv) <= tolerance,
+             "a transform's plane is not two orthogonal unit vectors");
+    const auto within = [](float value, float low, float high) { return std::isfinite(value) && value >= low && value <= high; };
+    argument(within(angle, -3.14159274f, 3.14159274f), "a transform's angle must be finite and within -pi..pi");
+    argument(within(phase, 0.0f, 1.0f), "a transform's phase must be finite and within 0..1");
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) argument(mask[piece] <= 1, "a moving byte is not 0 or 1");
+}
+
 // ADR-D02 B18 (ABI 10): device-free, as the piece style. The moving bit shares the style's word per piece (bit 16), so
 // a new moving set uploads with the copy; a changed phase, plane or angle changes only the frame's constants.
 void Product::set_transform(uint64_t revision, const float* u, const float* v, float angle, const uint8_t* mask, float phase) {
-    if (mask) {
-        argument(u != nullptr && v != nullptr, "a transform's plane is NULL");
-        double uu = 0, vv = 0, uv = 0;
-        for (int i = 0; i < 4; ++i) {
-            argument(std::isfinite(u[i]) && std::isfinite(v[i]), "a transform's plane is not finite");
-            uu += double(u[i]) * u[i]; vv += double(v[i]) * v[i]; uv += double(u[i]) * v[i];
-        }
-        const double tolerance = SA2_TRANSFORM_PLANE_TOLERANCE;
-        argument(std::abs(uu - 1) <= tolerance && std::abs(vv - 1) <= tolerance && std::abs(uv) <= tolerance,
-                 "a transform's plane is not two orthogonal unit vectors");
-        const auto within = [](float value, float low, float high) { return std::isfinite(value) && value >= low && value <= high; };
-        argument(within(angle, -3.14159274f, 3.14159274f), "a transform's angle must be finite and within -pi..pi");
-        argument(within(phase, 0.0f, 1.0f), "a transform's phase must be finite and within 0..1");
-        for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) argument(mask[piece] <= 1, "a moving byte is not 0 or 1");
-    }
+    if (mask) validate_transform(u, v, angle, mask, phase);
     state(image_.has_value(), "no engine image adopted");
     argument(revision == image_->revision, "a transform names a revision other than the adopted one");
     if (!mask) {
@@ -440,6 +445,63 @@ void Product::set_transform(uint64_t revision, const float* u, const float* v, f
 void Product::turn(ViewShape& shape) const {
     if (!transform_ || transform_->angle == 0.0f) return;
     shape.turn_u = transform_->u; shape.turn_v = transform_->v; shape.turn = transform_->angle;
+}
+
+void Product::set_preview_poses(uint64_t revision, const int32_t* index, uint32_t pieces, const float* poses,
+                                const int32_t* lattice, uint32_t count, const uint8_t* outlined) {
+    state(image_.has_value(), "no engine image adopted");
+    argument(revision == image_->revision, "a preview names a revision other than the adopted one");
+    if (!index) {
+        argument(pieces == 0 && !poses && !lattice && count == 0 && !outlined, "clearing the preview requires null arrays and zero counts");
+        preview_.reset();
+        preview_turn_.reset();
+        return;
+    }
+    argument(pieces == SA2_PIECES, "a preview has one index per piece (SA2_PIECES)");
+    argument(poses && lattice && count >= 1 && count <= SA2_MAX_POSES, "a preview needs matrices and lattice entries for 1..SA2_MAX_POSES poses");
+    PreviewImage next;
+    copy_poses(next.poses, index, poses, lattice, count);
+    next.style.resize(SA2_PIECES);
+    if (outlined) {
+        for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+            argument(outlined[piece] <= 1, "an outline byte is not 0 or 1");
+            if (outlined[piece]) {
+                next.style[piece] = 15u << 8;
+                next.outlined = true;
+            }
+        }
+    }
+    next.version = ++style_version_;
+    preview_ = std::move(next);
+    preview_turn_.reset();
+}
+
+void Product::set_preview_transform(uint64_t revision, const float* u, const float* v, float angle,
+                                    const uint8_t* mask, uint32_t count, float phase) {
+    state(image_.has_value(), "no engine image adopted");
+    argument(revision == image_->revision, "a preview transform names a revision other than the adopted one");
+    state(preview_.has_value(), "no preview pose set");
+    if (mask) {
+        argument(count == SA2_PIECES, "a preview transform has one moving byte per piece (SA2_PIECES)");
+        validate_transform(u, v, angle, mask, phase);
+    } else {
+        argument(!u && !v && count == 0, "clearing the preview transform requires null arrays and zero counts");
+        if (!preview_turn_) return;
+    }
+    bool changed = false;
+    for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
+        const uint32_t bit = mask && mask[piece] ? 0x10000u : 0u;
+        auto& packed = preview_->style[piece];
+        changed = changed || (packed & 0x10000u) != bit;
+        packed = (packed & ~0x10000u) | bit;
+    }
+    if (changed) preview_->version = ++style_version_;
+    if (mask) {
+        Turn t; std::copy(u, u + 4, t.u.begin()); std::copy(v, v + 4, t.v.begin()); t.angle = phase * angle;
+        preview_turn_ = t;
+    } else {
+        preview_turn_.reset();
+    }
 }
 // ADR-D02 B22 item 1 (ADR-D02.9): device-free, as the piece style; bound to the adopted revision.
 void Product::set_charts(uint64_t revision, const uint32_t* charts, uint32_t count) {
@@ -678,7 +740,9 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         "the frame input's view, view generation, resource set and camera must be the first pane's");
     for (uint32_t i = 0; i < count; ++i) {
         const auto& pane = panes[i];
-        argument((pane.flags & ~SA2_PANE_ANTIPODE) == 0, "a pane's flags must be 0 or SA2_PANE_ANTIPODE");
+        argument((pane.flags & ~(SA2_PANE_ANTIPODE | SA2_PANE_PREVIEW | SA2_PANE_PREVIEW_BEFORE)) == 0, "unknown pane flags");
+        argument(!(pane.flags & SA2_PANE_PREVIEW_BEFORE) || (pane.flags & SA2_PANE_PREVIEW), "the before flag needs a preview pane");
+        argument(!(pane.flags & SA2_PANE_PREVIEW) || preview_.has_value(), "a preview pane needs a preview pose set");
         argument(pane.style <= SA2_STYLE_SLOTS, "a pane's style is 0 or a style slot 1..SA2_STYLE_SLOTS");
         argument(pane.width >= 1 && pane.height >= 1 && pane.x >= 0 && pane.y >= 0
             && uint64_t(pane.x) + pane.width <= width && uint64_t(pane.y) + pane.height <= height, "a pane's rectangle must lie inside the target");
@@ -699,7 +763,8 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         return view.slice_mode != SA2_SLICE_OFF && view.ghost[3] > 0.0f;
     };
     bool ghost_frame = false;
-    for (uint32_t i = 0; i < count; ++i) ghost_frame = ghost_frame || ghosts(panes[i].style);
+    for (uint32_t i = 0; i < count; ++i)
+        ghost_frame = ghost_frame || (!(panes[i].flags & SA2_PANE_PREVIEW) && ghosts(panes[i].style));
     for (uint32_t i = 0; i < count; ++i) {
         const auto& pane = panes[i];
         if (auto view = views_.find(pane.view); view != views_.end())
@@ -709,9 +774,25 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         made.publication_generation = i == 0 ? input.publication_generation : 0;
         made.shape = shape(pane.view);
         made.shape.antipode = pane.flags & SA2_PANE_ANTIPODE; // ADR-D02 B21
-        // ADR-D02 B18; B20: a frame with a ghost pane turns the pieces only in its ghost panes.
-        if (!ghost_frame || ghosts(pane.style)) turn(made.shape);
-        made.styled = pane.style != 0 && styled(pane.style, made.view_style);
+        if (pane.flags & SA2_PANE_PREVIEW) {
+            out.preview = &*preview_;
+            // The preview shows the whole state in the projection chain, including when Global uses a Hopf chart.
+            made.shape.layout = SA2_LAYOUT_CHAIN;
+            made.shape.focus_cell = SA2_FOCUS_NONE;
+            made.shape.spread = 1.0f;
+            if (made.shape.projection == SA2_PROJECTION_STEREOGRAPHIC) made.shape.projection = SA2_PROJECTION_PERSPECTIVE;
+            if (!(pane.flags & SA2_PANE_PREVIEW_BEFORE) && preview_turn_ && preview_turn_->angle != 0.0f) {
+                made.shape.turn_u = preview_turn_->u; made.shape.turn_v = preview_turn_->v; made.shape.turn = preview_turn_->angle;
+            }
+            if (preview_->outlined && pane.style && view_styles_[pane.style - 1]) {
+                made.view_style = *view_styles_[pane.style - 1];
+                made.styled = (made.view_style.tint_mode & SA2_STYLE_TINT_OUTLINE) != 0;
+            }
+        } else {
+            // ADR-D02 B18; B20: a frame with a ghost pane turns the pieces only in its ghost panes.
+            if (!ghost_frame || ghosts(pane.style)) turn(made.shape);
+            made.styled = pane.style != 0 && styled(pane.style, made.view_style);
+        }
         if (pane.resource_set) {
             const Entry* entry = set_entry(pane.resource_set);
             state(entry && entry->active, "a pane's resource_set is not an active set");
@@ -938,6 +1019,10 @@ PickPlan Product::pick_pane(const Frame& record, PickPlan out) const {
         const auto& pane = record.panes[i].pane;
         if (x < uint32_t(pane.x) || y < uint32_t(pane.y) || x >= uint32_t(pane.x) + pane.width || y >= uint32_t(pane.y) + pane.height) continue;
         out.pane = int32_t(i);
+        if (pane.flags & SA2_PANE_PREVIEW) {
+            out.state = SA2_PICK_READY;
+            return out;
+        }
         const auto binding = pane_binding(record, out.pane);
         if (const uint32_t reason = stale(binding, record.target_generation)) {
             out.state = SA2_PICK_STALE;

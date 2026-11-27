@@ -10,7 +10,10 @@ namespace Magic600.Chrome;
 
 public enum PreviewStatus { Ready, Impossible, Stale, Refused }
 
-public sealed record OrbitEffect(string Orbit, int Moved, int Total);
+public sealed record OrbitEffect(string Orbit, int Moved, int Total)
+{
+    public int? Net { get; init; }
+}
 
 // One built preview (ADR-D01.8): its staged .6cs statement, where it came from, the witness sequence, the
 // effect on every orbit and on protection.
@@ -30,6 +33,9 @@ public sealed record Preview(int Id, string Statement, string Source, IReadOnlyL
     public int Head { get; init; }
     // The preview's own check of a prefix, when its source has one: a draft's keeps the draft's protection policy.
     public Func<IReadOnlyList<string>, PreviewCheck>? PrefixCheck { get; init; }
+    public bool WholeOnly { get; init; }
+    public IReadOnlyList<int> MovedPerStep { get; init; } = Array.Empty<int>();
+    public int? MovedTotal { get; init; }
     public bool Evaluated => Effects.Count > 0;
 }
 
@@ -77,7 +83,8 @@ public sealed class PreviewModel
     private double shownAt = double.NegativeInfinity;
 
     public Preview Show(Origin origin, string statement, string source, IReadOnlyList<string> moves, PreviewStatus status, string? reason,
-        IReadOnlyList<OrbitEffect> effects, string protection, double now, Func<IReadOnlyList<string>, PreviewCheck>? prefixCheck = null)
+        IReadOnlyList<OrbitEffect> effects, string protection, double now, Func<IReadOnlyList<string>, PreviewCheck>? prefixCheck = null,
+        bool wholeOnly = false, IReadOnlyList<int>? movedPerStep = null, int? movedTotal = null)
     {
         // ADR-D02.40 (C2-6): the word's origin is admitted first; a refused word shows as a refused preview with its
         // sentence, and nothing of it can commit.
@@ -87,8 +94,12 @@ public sealed class PreviewModel
         }
         if (status != PreviewStatus.Ready && string.IsNullOrWhiteSpace(reason)) throw J.Error("preview", "a preview that cannot commit states its reason");
         if (status == PreviewStatus.Ready && (effects.Count == 0 || moves.Count == 0)) throw J.Error("preview", "a preview that can commit has moves and evaluated effects");
-        Replaced = Pending != null; if (Replaced) shownAt = now;
-        Pending = new Preview(next++, statement, source, moves.ToArray(), status, status == PreviewStatus.Ready ? null : reason, effects.ToArray(), protection) { Head = Now, PrefixCheck = prefixCheck };
+        Replaced = Pending != null; if (Replaced || wholeOnly) shownAt = now;
+        Pending = new Preview(next++, statement, source, moves.ToArray(), status, status == PreviewStatus.Ready ? null : reason, effects.ToArray(), protection)
+        {
+            Head = Now, PrefixCheck = prefixCheck, WholeOnly = wholeOnly,
+            MovedPerStep = movedPerStep ?? Array.Empty<int>(), MovedTotal = movedTotal,
+        };
         Scrub = Pending.Moves.Count;
         Safe.Raise(Changed);
         return Pending;
@@ -120,7 +131,7 @@ public sealed class PreviewModel
         if (Pending == null) return "there is no preview";
         if (Pending.Status != PreviewStatus.Ready) return Pending.Reason;
         if (Head != null && Pending.Head != Now) return HeadMoved;
-        if (Scrub == 0) return "the scrub is at the start; nothing would be committed";
+        if (Scrub == 0 && !Pending.WholeOnly) return "the scrub is at the start; nothing would be committed";
         if (now - shownAt < Settle) return "the preview has just changed";
         return null;
     }
@@ -134,7 +145,7 @@ public sealed class PreviewModel
 
     // A scrub short of the end commits the prefix: in the same action it is prepared and rechecked as its own
     // preview (ADR-D01.12), and only a passing recheck commits.
-    public bool AtPrefix => Pending != null && Scrub < Pending.Moves.Count;
+    public bool AtPrefix => Pending is { WholeOnly: false } && Scrub < Pending.Moves.Count;
 
     // Takes the preview for commit, or null. At a prefix the recheck decides: a prefix that fails it stays as the
     // pending preview, under its own id and with its own result, and nothing is taken.
@@ -142,7 +153,7 @@ public sealed class PreviewModel
     {
         if (CommitRefusal(now) != null) return null;
         Preview taken = Pending!;
-        if (Scrub < taken.Moves.Count)
+        if (AtPrefix)
         {
             IReadOnlyList<string> moves = taken.Moves.Take(Scrub).ToArray(); string statement = $"{taken.Statement} |> prefix({Scrub})";
             PreviewCheck check = taken.PrefixCheck?.Invoke(moves) ?? Recheck?.Invoke(statement, moves) ?? new PreviewCheck(PreviewStatus.Refused, NoPrefixCheck, Array.Empty<OrbitEffect>(), "Nothing was checked.");

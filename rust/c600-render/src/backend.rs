@@ -228,6 +228,13 @@ impl<C: CoreAbi> RenderBackend<C> {
         Ok(rows)
     }
 
+    /// The host names frames by its sequence; the core's frame ID is recorded at submission.
+    pub fn read_sequence_pane_rows(&mut self, sequence: u64) -> Result<Vec<Sa2PaneRow>, Error> {
+        let frame = self.frames.iter().rev().find(|record| record.input.stamp.sequence == sequence)
+            .map(|record| record.id).ok_or_else(|| Error::invalid("the frame sequence is no longer retained"))?;
+        self.read_pane_rows(frame)
+    }
+
     /// The camera matrix set for `view` at camera version `camera`.
     fn camera_matrix(&self, view: ViewId, camera: u64) -> Result<[f32; 16], Error> {
         self.cameras

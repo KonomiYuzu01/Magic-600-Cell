@@ -1387,6 +1387,7 @@ internal sealed partial class D02Driver : Node
                 json.WriteEndArray();
             }
             json.WriteEndObject();
+            ShellPreview.Dump(json);
             DumpMotion(json);
             json.WriteEndObject();
         }

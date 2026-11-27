@@ -158,7 +158,8 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(values["SHADERS"], built)
         self.assertEqual(len(built), 8)
         self.assertTrue({"id_ps.dxil", "lattice_cs.dxil", "product_ps.dxil", "product_vs.dxil"} <= set(built))
-        self.assertEqual(len(values["CPU_CHECKS"]), 41)
+        self.assertEqual(len(values["CPU_CHECKS"]), 42)
+        self.assertIn("preview poses and panes", values["CPU_CHECKS"])
         self.assertIn("raw view", values["CPU_CHECKS"])  # ADR-D02 B21, the stereographic projection and the antipode pane
         self.assertIn("pane arguments", values["CPU_CHECKS"])  # ADR-D02 B18a, ABI 8
         self.assertIn("piece style", values["CPU_CHECKS"])  # ADR-D02 B14, ABI 7
@@ -281,12 +282,14 @@ ABI10 = {
     "SA2_API int32_t sa2_scene_look_set(sa2_context* ctx, const sa2_scene_look* look);",
     # ADR-D02 B22 item 1: the per-revision chart channel, appended inside ABI 10.
     "SA2_API int32_t sa2_charts_set(sa2_context* ctx, uint64_t revision, const uint32_t* charts, uint32_t count);",
+    "SA2_API int32_t sa2_preview_poses_set(sa2_context* ctx, uint64_t revision, const int32_t* pose_index, uint32_t piece_count, const float* poses, const int32_t* pose_lattice, uint32_t pose_count, const uint8_t* outlined);",
+    "SA2_API int32_t sa2_preview_transform_set(sa2_context* ctx, uint64_t revision, const float plane_u[4], const float plane_v[4], float angle, const uint8_t* moving_mask, uint32_t moving_count, float phase);",
     "SA2_API int32_t sa2_status_style_set(sa2_context* ctx, const sa2_status_style* style);",
     "SA2_API int32_t sa2_status_drawn(sa2_context* ctx, uint32_t pane, uint32_t* words, uint32_t count);",
 }
 ABI10_DEFINES = {"SA2_LAYOUT_CHAIN": "0u", "SA2_LAYOUT_HOPF_RINGS": "1u", "SA2_LAYOUT_RING_SHEET": "2u", "SA2_HOPF_RINGS": "20u",
                  "SA2_STYLE_HIDE_MARKED": "3u", "SA2_STYLE_HIDE_UNMARKED": "4u", "SA2_STYLE_ERROR": "0x10u",
-                 "SA2_STICKER_CLASSES": "600u",
+                 "SA2_STICKER_CLASSES": "600u", "SA2_PANE_PREVIEW": "2u", "SA2_PANE_PREVIEW_BEFORE": "4u",
                  "SA2_STYLE_CHANNEL_STATUS": "3u"}
 
 
