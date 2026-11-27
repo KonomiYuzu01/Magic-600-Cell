@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 
@@ -9,7 +10,14 @@ namespace Magic600.Chrome;
 public enum KeyCapState { Bound, Unbound, Held, OutOfContext, Twist }
 
 // One keycap of the key map: what the key does now, in the contexts and with the modifiers given.
-public sealed record KeyCap(string Key, string Legend, float Width, KeyCapState State, bool Down, string? Label, string? Context);
+public sealed record KeyCap(string Key, string Legend, float Width, KeyCapState State, bool Down, string? Label, string? Context)
+{
+    // The last keymap change gave this key, under the modifiers held, another meaning (ADR-D01.74).
+    public bool Changed { get; init; }
+}
+
+// One key a keymap change gave another meaning in one context: what it did before and what it does now (null: unbound).
+public sealed record KeyChange(string Key, string Context, string? Before, string? After);
 
 // The key map (ADR-D01.74): the keymap in force drawn as a keyboard. What a key does depends only on the key set,
 // the contexts and the held modifiers, and the header names all three, so a key never changes meaning silently.
@@ -84,6 +92,41 @@ public static class KeyMapModel
     {
         string[] held = new[] { ctrl ? "Ctrl" : null, alt ? "Alt" : null, shift ? "Shift" : null }.Where(m => m != null).ToArray()!;
         return $"Key set: {keySet} · {Place(contexts)} · " + (held.Length == 0 ? "no modifier held" : "with " + string.Join("+", held));
+    }
+
+    // ADR-D01.74's "never silently": every key a keymap change gave another meaning, in each context it changed in.
+    // The same command with the same argument is the same meaning, whatever its label.
+    public static IReadOnlyList<KeyChange> Changes(Keymap before, Keymap after, CommandRegistry registry)
+    {
+        // Resolve takes a key's first binding in a context, so the first one is its meaning.
+        static Dictionary<(string Key, string Context), Binding> Of(Keymap keymap) =>
+            keymap.Bindings.GroupBy(b => (b.Key, b.Context)).ToDictionary(g => g.Key, g => g.First());
+        Dictionary<(string Key, string Context), Binding> was = Of(before), now = Of(after);
+        var changes = new List<KeyChange>();
+        foreach ((string key, string context) in was.Keys.Union(now.Keys).OrderBy(k => k.Key, StringComparer.Ordinal).ThenBy(k => Keymap.Contexts.ToList().IndexOf(k.Context)))
+        {
+            was.TryGetValue((key, context), out Binding? a); now.TryGetValue((key, context), out Binding? b);
+            if (a?.Command == b?.Command && a?.Argument == b?.Argument) continue;
+            changes.Add(new KeyChange(key, context, a == null ? null : Label(a, registry), b == null ? null : Label(b, registry)));
+        }
+        return changes;
+    }
+
+    // The line a key set change says: the set, how many keys changed meaning, and the first few with what each did.
+    public static string Said(string keySet, IReadOnlyList<KeyChange> changes, int named = 3)
+    {
+        if (changes.Count == 0) return $"Key set: {keySet} · no key changed meaning";
+        string One(KeyChange c) => $"{c.Key} was {c.Before ?? "unbound"}, now {c.After ?? "unbound"}" + (Where.TryGetValue(c.Context, out string? place) ? $" ({place})" : "");
+        string more = changes.Count > named ? $"; {changes.Count - named} more marked on the key map" : "";
+        return $"Key set: {keySet} · {changes.Count} {(changes.Count == 1 ? "key changed" : "keys changed")} meaning: {string.Join("; ", changes.Take(named).Select(One))}{more}";
+    }
+
+    // The caps a change marks under the held modifiers: each cap whose key, with them, changed meaning in any context.
+    public static IReadOnlyList<IReadOnlyList<KeyCap>> Mark(IReadOnlyList<IReadOnlyList<KeyCap>> caps, IReadOnlyList<KeyChange> changes, bool ctrl, bool alt, bool shift)
+    {
+        if (changes.Count == 0) return caps;
+        var keys = changes.Select(c => c.Key).ToHashSet(StringComparer.Ordinal);
+        return caps.Select(row => (IReadOnlyList<KeyCap>)row.Select(cap => keys.Contains(Keymap.KeyName(ctrl, alt, shift, cap.Key)) ? cap with { Changed = true } : cap).ToArray()).ToArray();
     }
 }
 
@@ -203,4 +246,46 @@ public sealed class KeyMapShow
     public void Press(double now) { if (Held) return; Held = true; since = now; Safe.Raise(Changed); }
     public void Release(double now) { if (!Held) return; Held = false; if (now - since < Tap) Pinned = !Pinned; Safe.Raise(Changed); }
     public void Pin(bool on) { if (Pinned == on) return; Pinned = on; Safe.Raise(Changed); }
+}
+
+// ADR-D01.74's key sets: the default keymap and the presets under keymaps/, each a set of bindings over the defaults.
+// One is chosen by name, or the next in order. Whoever chooses one says KeyMapModel.Said with the changes it made.
+public sealed class KeySets
+{
+    public const string Default = "default";
+    private readonly Keymap defaults; private readonly CommandRegistry registry;
+    private readonly SortedDictionary<string, string> presets = new(StringComparer.Ordinal);
+    public IReadOnlyList<string> Names => presets.Keys.Prepend(Default).ToArray();
+    public string Name { get; private set; } = Default;
+    public Keymap Keys { get; private set; }
+
+    public KeySets(Keymap defaults, IEnumerable<(string Name, string Text)> files, CommandRegistry registry)
+    {
+        this.defaults = defaults; this.registry = registry; Keys = defaults;
+        foreach ((string name, string text) in files)
+        {
+            if (name == Default) throw new FormatException("a keymap preset may not be named " + Default);
+            Keymap.Parse(text, registry, defaults); presets[name] = text;
+        }
+    }
+
+    public static KeySets Load(string folder, CommandRegistry registry, Keymap defaults) =>
+        new(defaults, Directory.Exists(folder)
+            ? Directory.GetFiles(folder, "*.json").OrderBy(p => p, StringComparer.Ordinal).Select(p => (Path.GetFileNameWithoutExtension(p), File.ReadAllText(p))).ToArray()
+            : Array.Empty<(string, string)>(), registry);
+
+    // Why the key set row cannot run here: no key sets, or none with that name. Null: it runs; no name takes the next.
+    public static string? Unavailable(IReadOnlyList<string>? names, string? argument) =>
+        names == null ? "no key sets are loaded here"
+        : argument == null || names.Contains(argument) ? null
+        : $"no key set is named {argument}; the key sets are {string.Join(", ", names)}";
+
+    public Keymap Choose(string? name)
+    {
+        IReadOnlyList<string> names = Names;
+        string next = name ?? names[(names.ToList().IndexOf(Name) + 1) % names.Count];
+        if (next != Default && !presets.ContainsKey(next)) throw new ArgumentException("no key set is named " + next);
+        Name = next; Keys = next == Default ? defaults : Keymap.Parse(presets[next], registry, defaults);
+        return Keys;
+    }
 }

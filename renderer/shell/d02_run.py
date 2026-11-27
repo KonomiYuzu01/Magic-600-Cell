@@ -2546,6 +2546,72 @@ EXPECT["scene-look"] = expect_scene_look
 ON_FIXTURE.add("scene-look")
 
 
+def key_set_changes(preset: str) -> int:
+    """How many keys a keymap preset gives another meaning: a preset binding replaces the default's first binding on
+    its key and context (Keymap.Parse), and the same command with the same argument is the same meaning."""
+    first: dict[tuple[str, str], dict] = {}
+    for binding in json.loads((DESIGN / "keymap.json").read_text(encoding="utf-8"))["bindings"]:
+        first.setdefault((binding["key"], binding["context"]), binding)
+    changed = 0
+    for binding in json.loads((DESIGN / "keymaps" / f"{preset}.json").read_text(encoding="utf-8"))["bindings"]:
+        was = first.get((binding["key"], binding["context"]))
+        now = None if binding.get("command") == "" else binding
+        meaning = [None if b is None else (b["command"], b.get("argument")) for b in (was, now)]
+        changed += meaning[0] != meaning[1]
+    return changed
+
+
+def expect_key_map(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.74 outside sample mode: F1 keeps ADR-D02.12's route (the palette) and leaves the key map hidden; Shift+/
+    over Local pins the key map, whose header names the key set and the place; the Key set row says how many keys it
+    gave another meaning, as many as the keymap files say, and the map marks them until it has been closed; an unknown
+    set is refused with every set's name; no name takes the next set; Escape lets the map go."""
+    steps = ["start", "wait 2500 ms", "chord F1", "chord Escape", "hover LocalFrame", "chord Shift+Slash",
+             "command keymap.preset.set left-hand", "chord Escape", "chord Shift+Slash", "command keymap.preset.set default",
+             "command keymap.preset.set right-hand", "command keymap.preset.set", "chord Escape", "wait 6000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    presets = sorted(path.stem for path in (DESIGN / "keymaps").glob("*.json"))
+    changed = key_set_changes("left-hand")
+    label = {row["id"]: row["label"] for row in source["table"] + source["rows"]}["keymap.preset.set"]
+    mark = "corner mark: changed meaning with the last key set change"
+
+    def shown(i: int) -> list[str]:
+        return texts(dumps[i], "keymap")
+
+    def header(i: int) -> str:
+        return next((line for line in shown(i) if line.startswith("Key set: ")), "")
+
+    for i in (0, 1, 2, 3, 4, 7, 12):
+        if shown(i):
+            problems.append(f"step {i}: the key map shows")
+    if not overlay(dumps[2]):
+        problems.append("step 2: F1 did not open the palette")
+    if overlay(dumps[3]):
+        problems.append("step 3: Escape left an overlay open")
+    if not header(5).startswith("Key set: default · ") or "pointer over Local" not in header(5):
+        problems.append(f"step 5: the pinned key map's header reads {header(5)!r}")
+    for i, key_set in ((6, "left-hand"), (9, "default"), (11, "left-hand")):
+        said = f"Key set: {key_set} · {changed} {'key changed' if changed == 1 else 'keys changed'} meaning: "
+        if not any(line.startswith(said) for line in texts(dumps[i], "frame")):
+            problems.append(f"step {i}: the status line does not begin {said!r}")
+        if not header(i).startswith(f"Key set: {key_set} · "):
+            problems.append(f"step {i}: the key map's header reads {header(i)!r}")
+        if not any(mark in line for line in shown(i)):
+            problems.append(f"step {i}: the key map's legend does not name the changed keys' mark")
+    if not header(8).startswith("Key set: left-hand · ") or any(mark in line for line in shown(8)):
+        problems.append("step 8: the key map shown again should name left-hand and mark no key")
+    refusal = f"{label}: no key set is named right-hand; the key sets are {', '.join(['default'] + presets)}"
+    if refusal not in texts(dumps[10], "frame"):
+        problems.append(f"step 10: the status line does not read {refusal!r}")
+    print(f"key-map: left-hand changes {changed} keys; sets {['default'] + presets}")
+    return problems
+
+
+EXPECT["key-map"] = expect_key_map
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

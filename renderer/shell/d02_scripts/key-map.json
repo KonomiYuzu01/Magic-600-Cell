@@ -1,0 +1,21 @@
+{
+  "format": "magic600-d02-script/1",
+  "name": "key-map",
+  "resolution": "1280x720",
+  "note": "ADR-D01.74 outside sample mode: F1 keeps the palette route and leaves the key map hidden; Shift+/ over Local pins the key map, whose header names the key set and the place; the Key set row names every key it gave another meaning and the map marks them until it is closed; an unknown set is refused with the sets' names; no name takes the next set. The last wait keeps the window open for the foreground check.",
+  "steps": [
+    {"wait_ms": 2500},
+    {"chord": "F1"},
+    {"chord": "Escape"},
+    {"hover_control": "LocalFrame"},
+    {"chord": "Shift+Slash"},
+    {"command": "keymap.preset.set", "argument": "left-hand"},
+    {"chord": "Escape"},
+    {"chord": "Shift+Slash"},
+    {"command": "keymap.preset.set", "argument": "default"},
+    {"command": "keymap.preset.set", "argument": "right-hand"},
+    {"command": "keymap.preset.set"},
+    {"chord": "Escape"},
+    {"wait_ms": 6000}
+  ]
+}
