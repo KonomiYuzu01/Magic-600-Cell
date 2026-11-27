@@ -141,7 +141,7 @@ public sealed partial class JumbleHost
         {
             if (view == null || !GodotObject.IsInstanceValid(view)) continue;
             TintLegendRow? row = view.Readouts.GetNodeOrNull<TintLegendRow>(TintLegendRow.NodeName);
-            if (TintLine.Length == 0)
+            if (!JumbleTint.LegendKept(Tint, row != null, TintLine))
             {
                 if (row != null) { view.Readouts.RemoveChild(row); row.QueueFree(); }
                 continue;
@@ -168,6 +168,9 @@ public sealed partial class TintLegendRow : HFlowContainer
     public void Show(TintMode mode, IReadOnlyList<TintLegendEntry> entries, string line)
     {
         Line = line; TooltipText = line;
+        // SF5 (27 Nov 2026): a row left blank (no state bound) keeps the height it had, so the view's opening keeps its
+        // size at a twist; a row with words lays out again from its parts.
+        CustomMinimumSize = new Vector2(0, line.Length == 0 ? Math.Max(CustomMinimumSize.Y, Size.Y) : 0);
         TokenSet t = tokens();
         AddThemeConstantOverride("h_separation", t.Px("space.2")); AddThemeConstantOverride("v_separation", 0);
         foreach (Node child in GetChildren()) { RemoveChild(child); child.QueueFree(); }
@@ -182,11 +185,18 @@ public sealed partial class TintLegendRow : HFlowContainer
             group.AddThemeConstantOverride("separation", t.Px("space.1"));
             Color colour = entry.Slot != null ? t.C(entry.Slot) : mode == TintMode.OffLattice ? Of(JumbleTint.OffLatticeColour(t)) : t.C("text.dim");
             group.AddChild(new TintSwatch(colour, mode != TintMode.Height, size));
-            string count = entry.Pieces.ToString("N0", CultureInfo.InvariantCulture);
-            string words = entry.Label == "overflow" ? "overflow · " + entry.Domains.ToString(CultureInfo.InvariantCulture) + " domains · " + count : entry.Label + " · " + count;
-            Label label = ChromeWidgets.Text(words, "MicroLabel");
-            label.AddThemeColorOverride("font_color", t.C("text.primary")); group.AddChild(label);
             AddChild(group);
+            // Each number sits right-aligned in a slot as wide as its widest form (JumbleTint.EntryParts).
+            foreach (LegendPart part in JumbleTint.EntryParts(entry))
+            {
+                Label label = ChromeWidgets.Text(part.Text, "MicroLabel");
+                label.AddThemeColorOverride("font_color", t.C("text.primary")); group.AddChild(label);
+                if (part.Widest is { } widest)
+                {
+                    label.HorizontalAlignment = HorizontalAlignment.Right;
+                    label.CustomMinimumSize = new Vector2(ReadoutRow.Width(label, widest), 0);
+                }
+            }
         }
     }
 

@@ -1062,6 +1062,26 @@ public partial class Shell : Control
             {
                 surface.Resize((uint)size.X, (uint)size.Y);
                 _log?.SwapChain(surface.SwapChain());
+                if (_log is { } sized)
+                {
+                    // SF5 (27 Nov 2026): a "surface" row at each resize of the core's surface, with the Global footer's
+                    // rows and their heights, so a resize a changing readout causes is counted and named (gate_row.py).
+                    var at = EventLog.Now();
+                    var rows = _chrome?.FooterRows() ?? new List<(string Name, float Height)>();
+                    sized.Append(json =>
+                    {
+                        json.WriteString("t", "surface");
+                        json.WriteNumber("qpc", at);
+                        json.WriteNumber("w", size.X);
+                        json.WriteNumber("h", size.Y);
+                        json.WriteStartObject("footer");
+                        foreach (var (name, height) in rows)
+                        {
+                            json.WriteNumber(name, Math.Round(height, 1));
+                        }
+                        json.WriteEndObject();
+                    });
+                }
                 Require(library, "m6h_set_viewport", library.SetViewport(_host, (uint)size.X, (uint)size.Y));
                 _size = size;
             }

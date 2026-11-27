@@ -86,7 +86,7 @@ public sealed partial class ReadoutRow : HFlowContainer
         shownSlots = slots.ToArray(); shownMarked.Clear(); shownMarked.UnionWith(marked); shownTokens = t;
     }
 
-    private static float Width(Label label, string text)
+    internal static float Width(Label label, string text)
     {
         Font font = label.GetThemeFont("font");
         int size = label.GetThemeFontSize("font_size");

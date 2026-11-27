@@ -118,6 +118,35 @@ internal static partial class Program
         }
     }
 
+    // SF5 (27 Nov 2026): at a twist the G1 dry run's legend row alternated between wj-ia-300's line and no line (the
+    // next state is one no sample holds), and the Global opening between 1093 and 1116 px. The row's height follows
+    // only its reserved form (each number in a slot as wide as its widest form), so other counts and a long count
+    // keep it; a shown row stays, blank, while the mode is on and no state is bound; only no mode removes it.
+    private static void D02LegendRowKeepsItsHeight()
+    {
+        var (style, contact) = TintAt("wj-ia-300");
+        int[] classes = ContactClasses.Assign(contact, style.Domains, null).Classes;
+        foreach (TintMode mode in new[] { TintMode.ContactClass, TintMode.Height, TintMode.OffLattice })
+        {
+            IReadOnlyList<TintLegendEntry> legend = JumbleTint.Legend(mode, style, classes);
+            string line = JumbleTint.Line(mode, legend);
+            string form = JumbleTint.ReservedForm(mode, legend);
+            var other = legend.Select((e, i) => e with { Pieces = (e.Pieces * 7 + i) % 10_000, Domains = e.Domains + 9 }).ToList();
+            var longest = legend.Select(e => e with { Pieces = 259_800, Domains = 600 }).ToList();
+            Equal(JumbleTint.ReservedForm(mode, other), form, mode + ": other counts change the row's reserved form");
+            Equal(JumbleTint.ReservedForm(mode, longest), form, mode + ": a long count changes the row's reserved form");
+            foreach (TintLegendEntry entry in longest)
+                Check(JumbleTint.EntryParts(entry).All(p => p.Widest == null || p.Text.Length <= p.Widest.Length), mode + ": a number outgrows its slot in " + entry.Label);
+            Check(line.Length > 0 && JumbleTint.LegendKept(mode, false, line), mode + ": the bound state's legend row is not shown");
+            Check(JumbleTint.LegendKept(mode, true, ""), mode + ": the shown row goes at a state with no legend line");
+        }
+        Check(!JumbleTint.LegendKept(TintMode.ContactClass, false, ""), "a blank legend row is made where none was shown");
+        Check(!JumbleTint.LegendKept(TintMode.None, true, ""), "the legend row stays with no mode");
+        var overflow = new TintLegendEntry("tint.overflow", "overflow", 1_234, 2);
+        Equal(string.Join("|", JumbleTint.EntryParts(overflow).Select(p => p.Text)), "overflow ·|2|domains ·|1,234", "the overflow entry's parts");
+        Check(JumbleTint.BorderRowKept(true, true, "") && !JumbleTint.BorderRowKept(false, true, "") && !JumbleTint.BorderRowKept(true, false, ""), "the border row rule");
+    }
+
     // ia-40's three contacts all touch the lattice domain: one class.
     private static void D02OneClassAtIa40()
     {

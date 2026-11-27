@@ -55,6 +55,17 @@ class GateRowTest(unittest.TestCase):
         self.assertIn("VRAM not measured", result["pass_basis"])
         self.assertRegex(gate_row.line("G9", result), LINE)
 
+    def test_surface_resizes_in_the_window_are_counted(self):
+        # SF5 (27 Nov 2026): the shell's `surface` rows, one per resize of the core's surface; only the window's count.
+        rows = events([1000 / 60] * 60 * 30)
+        first, last = rows[2]["display_qpc"], rows[-1]["display_qpc"]
+        rows += [{"t": "surface", "qpc": first + FREQ, "w": 946, "h": 1093},
+                 {"t": "surface", "qpc": last - FREQ, "w": 946, "h": 1116},
+                 {"t": "surface", "qpc": last - 2 * FREQ, "w": 946, "h": 1093}]
+        result = gate_row.measure(rows, seconds=20, warmup=5)
+        self.assertEqual(result["surface_resizes"], 2)
+        self.assertEqual(gate_row.measure(events([1000 / 60] * 60 * 30), seconds=20, warmup=5)["surface_resizes"], 0)
+
     def test_warmup_is_dropped(self):
         # Ten slow seconds at 10 fps, then 30 fast seconds: the last 20 s see only the fast frames.
         rows = events([100.0] * 100 + [1000 / 60] * 60 * 30)

@@ -441,7 +441,7 @@ class SweepShell(unittest.TestCase):
         self.assertIn("library.SetTransform(host, motion.Revision, row.Plane, row.Angle, row.Moving, phase)", self.turn)
         self.assertIn("var phase = motion.Timing.Phase(elapsed, motion.Curve);", self.turn)
 
-    def run_dumps(self, kinds, refused, reduced_from=18, popped=False, rebuilt=False):
+    def run_dumps(self, kinds, refused, reduced_from=18, popped=False, rebuilt=False, grown=False):
         motions = []
         for revision, kind in enumerate(kinds, 3):
             motion = {"kind": kind, "revision": revision, "angle": math.pi if kind == "flash" else 1.2566, "moving": 1909,
@@ -464,7 +464,8 @@ class SweepShell(unittest.TestCase):
                           "turn": {"cap": framed}, "pick": {"selection": {"slot": 7 * 433 + 5} if step >= 9 else None},
                           "sweep": {"refused": refused, "reduced": step >= reduced_from, "running": None,
                                     "motions": motions if step == len(dos) - 1 else []},
-                          "rebuilds": 41 + (rebuilt and step >= 13)})
+                          "rebuilds": 41 + (rebuilt and step >= 13),
+                          "global_opening": [946, 1093 + 23 * (grown and step == 13)]})
         return dumps
 
     def test_the_sweep_run_passes_and_the_failures_are_named(self):
@@ -488,6 +489,10 @@ class SweepShell(unittest.TestCase):
         rebuilt = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, rebuilt=True), {}, None)
         self.assertEqual(len(rebuilt), 1)
         self.assertIn("rebuilt across the twists", rebuilt[0])
+        # SF5 (27 Nov 2026): a twist that changes the Global opening's height (a border row going and coming back) is named.
+        grown = run.expect_sweep(self.run_dumps(["flash", "sweep", "static", "static"], 0, grown=True), {}, None)
+        self.assertEqual(len(grown), 1)
+        self.assertIn("the Global opening was", grown[0])
 
 
 class D01MotionShell(unittest.TestCase):

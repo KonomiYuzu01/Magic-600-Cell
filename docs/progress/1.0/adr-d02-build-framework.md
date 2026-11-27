@@ -1013,6 +1013,24 @@ relative path is from the repository root.
       run. Left: stop the per-twist resize where the opening's height changes (a readout's changing numbers must
       not change the opening, which also stops the view from moving 23 px at a twist), then rerun G1 and G9; the
       trace and the tried reading are kept outside the repository for that step.
+    - SF5 (27 November 2026), the opening's height. A `surface` row in the event log at each resize of the core's
+      surface, with the Global footer's rows and their heights (`Shell.cs`, `ShellChrome.FooterRows`), pinned the
+      rows: at a K twist of G1 the state alternates between a sample state (wj-ia-300's cap-2 powers) and one no
+      sample holds, where nothing is bound, so the tint legend (`JumbleLegend.cs` `Legends`, `TintLine` empty) and
+      the overlay line (`JumbleOverlays.cs` `OverlayWords`, no cap record) were removed and added again, 23 px each:
+      footer 134, 111 or 88 px, opening 1070, 1093 or 1116 px. It was not a rewrap. Now a shown legend row stays,
+      blank at its height, while a mode is on, and the overlay line while a cap is named (`JumbleTint.LegendKept`,
+      `BorderRowKept`, `ViewLine.Set(keep)`); only no mode or no named cap removes them. The legend's counts sit
+      in slots as wide as their widest form (`JumbleTint.EntryParts`, `WidestCount`), so a count never rewraps
+      the row. Tests: `D02LegendRowKeepsItsHeight` (console), `sweep`'s `global_opening` check (d02_run.py), and
+      `gate_row.py`'s `surface_resizes`. Dry runs (10 s, wj-ia-300, not evidence), before and after: G1 p99 83.33
+      and 83.33 ms, fps_avg 55.8 and 56.0, 6 and 6 resizes in the window, then p99 50.00 and 33.33, fps_avg 58.1
+      and 58.5, 0 and 0 resizes; G9 p99 83.33 and 83.33, fps_avg 56.0 and 56.1, 6 and 6 resizes, then p99 33.33
+      and 33.33, fps_avg 58.4 and 58.7, 0 and 0. Left, p99 still over 33.3 ms: 11-14 intervals of 2-3 refreshes
+      per window, two per twist. The first follows the bind's frame-thread hole of 31-32 ms (`bind` 13-19 ms:
+      `state_digest` 2.8-3.5, `feed` 1.8-6.4, `capmap` 2.5-6.7, `tint` 3.0-3.5 at a bound state, `flush` 2.8-6.1);
+      the second follows a hole of 40-55 ms about 50 ms later that no `steps` row covers (the nearest is `shown`,
+      `describe` 2.0-2.8 ms): the next step is to time that frame's parts.
 
 ### B20. The cut slice in Local
 - **Goal:** the slice as Local's overlay, with the held split as two linked copies.
