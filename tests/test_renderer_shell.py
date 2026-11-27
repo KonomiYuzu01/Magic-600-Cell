@@ -2447,5 +2447,137 @@ class D02Fit(unittest.TestCase):
         readouts = text(ROOT / "tools" / "looklab" / "app" / "Chrome" / "Ui" / "JumbleReadouts.cs")
         self.assertIn("public sealed partial class ReadoutRow : HFlowContainer", readouts)
 
+
+class D02TrackJ(unittest.TestCase):
+    """B32: the reduced Track J driver types every jumble., research. and evidence. row and every D02 draft row in the
+    palette by keys, and its session names the reason for each row and rule this build cannot carry out."""
+
+    @staticmethod
+    def screens(track, script, ops, outcome, named):
+        """Synthetic screens for a played script: each op's palette as the shell shows it for outcome[row] (a run when
+        the row is missing, else the refusal's reason, which keeps the palette open until Escape)."""
+        dumps = [{"do": "start", "lines": [], "errors": {"count": 0, "failures": 0}, "stage": {"unasked": 0}}]
+        dumps += [{"do": track.expected_do(step), "lines": [], "errors": {"count": 0, "failures": 0},
+                   "stage": {"unasked": 0}} for step in script]
+        for op in ops:
+            listed = ["> " + op["row"] + (f" {op['argument']}" if op["argument"] is not None else ""),
+                      track.shown(named.get(op["row"], op["row"]), op["argument"])]
+            reason = outcome.get(op["row"])
+            if reason is not None:
+                listed.append(track.UNAVAILABLE + reason + "\nthe row's help")
+            for i in range(op["text"], op["last"] if reason is not None else op["enter"]):
+                dumps[i]["lines"] = [[track.PALETTE, words] for words in listed]
+        return dumps
+
+    def test_an_op_is_typed_in_the_palette_and_a_refusal_is_closed(self):
+        track = shell_module("track_j")
+        script, ops = track.expand([{"wait_ms": 100}, {"op": "jumble.cap.name", "argument": "150", "wait_ms": 500},
+                                    {"op": "jumble.on"}], {"jumble.on": {"palette": "not in this build yet"}})
+        self.assertEqual(script, [{"wait_ms": 100}, {"chord": "Space"}, {"text": "> jumble.cap.name 150"},
+                                  {"chord": "Enter"}, {"wait_ms": 500}, {"chord": "Space"}, {"text": "> jumble.on"},
+                                  {"chord": "Enter"}, {"chord": "Escape"}])
+        self.assertEqual([(op["open"], op["text"], op["enter"], op["last"], op["refused"]) for op in ops],
+                         [(2, 3, 4, 5, None), (6, 7, 8, 9, "not in this build yet")])
+        for step in ({"click": [1, 2]}, {"op": "jumble.on", "hover": 1}, {"chord": "F1", "wait_ms": 5}):
+            with self.assertRaises(ValueError):
+                track.expand([step])
+
+    def test_reach_tells_a_run_from_a_refusal_and_a_miss(self):
+        track = shell_module("track_j")
+        named = {"jumble.cap.name": "Name a cap", "jumble.on": "Jumble on"}
+        script, ops = track.expand([{"op": "jumble.cap.name", "argument": "150"}, {"op": "jumble.on"}],
+                                   {"jumble.on": {"palette": "not in this build yet"}})
+        dumps = self.screens(track, script, ops, {"jumble.on": "not in this build yet"}, named)
+        until = ops[1]["open"] - 1
+        self.assertEqual(track.reach(dumps, ops[0], named["jumble.cap.name"], until), ("ran", None))
+        self.assertEqual(track.reach(dumps, ops[1], named["jumble.on"], len(dumps) - 1),
+                         ("refused", "not in this build yet"))
+        self.assertIn("does not list", track.reach(dumps, ops[0], "Another label", until)[1])
+        other = self.screens(track, script, ops, {"jumble.cap.name": "no cap is numbered 150", "jumble.on": "Jumble is off"},
+                             named)
+        self.assertEqual(track.reach(other, ops[0], named["jumble.cap.name"], until),
+                         ("missed", "the palette refuses it: no cap is numbered 150"))
+        self.assertIn("not 'not in this build yet'", track.reach(other, ops[1], named["jumble.on"], len(dumps) - 1)[1])
+        ran = self.screens(track, script, ops, {}, named)
+        self.assertEqual(track.reach(ran, ops[1], named["jumble.on"], len(dumps) - 1), ("ran", None),
+                         "a row that runs is reached, refusal expected or not; j1 names the expected refusal")
+        dumps[until]["errors"] = {"count": 1, "failures": 1, "last": "a row threw"}
+        self.assertIn("1 new failures", track.reach(dumps, ops[0], named["jumble.cap.name"], until)[1])
+        dumps[ops[1]["last"]]["lines"] = dumps[ops[1]["enter"]]["lines"]
+        self.assertEqual(track.reach(dumps, ops[1], named["jumble.on"], len(dumps) - 1),
+                         ("missed", "Escape left the palette open"))
+
+    def test_the_session_types_every_row_and_names_its_reasons(self):
+        track = shell_module("track_j")
+        source = shell_module("d02_run").data()
+        rows = track.operations(source["table"], source["rows"])
+        session = track.load_session()
+        rules = {rule["rule"] for rule in session["observation"]}
+        typed = set()
+        for part in session["parts"]:
+            script, ops = track.expand(part["steps"], session["not_run"])
+            typed |= {op["row"] for op in ops}
+            self.assertTrue(all(set(step) <= {"chord", "text", "wait_ms", "hold", "release"} for step in script))
+            for rule in (r for r in session["observation"] if r.get("part") == part["name"]):
+                at = rule.get("at", [])
+                refs = at if isinstance(at, list) else [at]
+                for ref in [ref[0] if isinstance(ref, list) else ref for ref in refs] + \
+                        [rule[key] for key in ("blocked", "named", "held", "released") if key in rule]:
+                    if ref != "start" and not ref.startswith("step "):
+                        track.find(ops, ref)
+                if rule["check"] == "cut_trace":
+                    step = {key: script[int(rule[key][5:]) - 2] for key in ("blocked", "held", "released")}
+                    self.assertEqual(step, {"blocked": {"release": "Down"}, "held": {"hold": "Backslash"},
+                                            "released": {"release": "Backslash"}})
+        self.assertEqual(set(rows) - typed, set())
+        for row, entry in session["not_run"].items():
+            self.assertTrue(entry["why"], row)
+            self.assertIn(row, set(rows) | rules | {track.REPAIR_PART})
+            self.assertEqual("palette" in entry, row in rows, row)
+        for row in ("view.mode.raw", "view.mode.raw.clip", "view.mode.raw.antipode", "view.preset.global.ring_sheet",
+                    "view.preset.global.hopf_rings"):
+            self.assertIn(row, session["not_run"], "B21 and B22's rest wait")
+
+    def test_j1_counts_reach_and_lists_what_it_does_not_run(self):
+        track = shell_module("track_j")
+        source = shell_module("d02_run").data()
+        rows = track.operations(source["table"], source["rows"])
+        named = track.labels(source["table"], source["rows"])
+        refusal = "not in this build yet"
+
+        def session(typed, not_run):
+            return {"format": track.FORMAT, "observation": [], "not_run": {row: {"palette": refusal, "why": "a test"}
+                                                                           for row in not_run},
+                    "parts": [{"name": "part", "state": "wj-ia-300", "resolution": "1280x720", "note": "a test",
+                               "steps": [{"op": row} for row in typed]}]}
+
+        def player(part, out, build, scripts, not_run, unasked=0, ran=()):
+            script, ops = track.expand(part["steps"], not_run)
+            dumps = self.screens(track, script, ops, {row: refusal for row in not_run if row not in ran}, named)
+            dumps[-1]["stage"] = {"unasked": unasked}
+            return dumps, ops, []
+
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp)
+            code, record = track.j1(session(rows, rows[1:]), out / "pass", None, player=player)
+            self.assertEqual((code, record["operations"], record["reached"], record["boundary"], record["problems"]),
+                             (0, 1, 1, 0, []))
+            self.assertTrue(track.line(record, True).startswith(
+                "M600_D02_J1_PASS operations=1 reached=1 boundary=0 observation=0/0 not_run="))
+            self.assertTrue((out / "pass" / track.RECORD).is_file())
+            code, record = track.j1(session(rows[1:-1], rows[1:]), out / "short", None,
+                                    player=lambda *a: player(*a, unasked=2, ran=(rows[1],)))
+            self.assertEqual(code, 1)
+            self.assertEqual(record["problems"], [
+                f"reach: {rows[0]} ({named[rows[0]]}): no step runs it",
+                f"reach: {rows[1]} is not_run but ran: take it off not_run",
+                f"reach: {rows[-1]} is not_run but no step types it",
+                "boundary: the Jumble host's BoundaryLedger counted 2 unasked acts"])
+            with self.assertRaises(ValueError):
+                track.j1(dict(session(rows, rows[1:]), not_run={"9": {"why": "no such rule"}}), out / "bad", None,
+                         player=player)
+            self.assertEqual(track.main(["--reduced", "--only", "j1", "--out", str(out / "pass")]), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
