@@ -2714,6 +2714,51 @@ EXPECT["binding-chip"] = expect_binding_chip
 IN_SAMPLE_MODE.add("binding-chip")
 
 
+RAIL_LOCK_STEPS = ["start", "wait 2000 ms", "click CheckChip", "wait 800 ms", "click CheckChip", "wait 3000 ms"]
+
+
+def expect_rail_locks(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """ADR-D01.65 in sample mode: the rail carries the locks, and each lock names its kind (whole orbit, positions,
+    identities, a block), never partial or safe; the check-mode chip shows Net or Strict with passed, failed or
+    unchecked, and a click on it changes the mode, a second click back."""
+    if [dump["do"] for dump in dumps] != RAIL_LOCK_STEPS:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    lock_line = re.compile(r"^O\d\d lock: (whole orbit|(positions|identities|a block)(, (identities|a block))*)$")
+    for i in (1, 5):
+        locks = [line for text in texts(dumps[i], "rail") for line in text.splitlines()]
+        if not locks:
+            problems.append(f"step {i}: the rail spells no lock")
+        bad = [line for line in locks if not lock_line.match(line)]
+        if bad:
+            problems.append(f"step {i}: lock lines that name no kind: {bad[:3]}")
+        words = " ".join(locks)
+        for kind in ("whole orbit", "positions", "identities", "a block"):
+            if kind not in words:
+                problems.append(f"step {i}: no lock names {kind!r}")
+        if "partial" in words or "safe" in words:
+            problems.append(f"step {i}: a lock reads partial or safe")
+    dot = " · "
+    chip = re.compile("^(Net|Strict)" + dot + "(passed|failed|unchecked)$")
+
+    def mode(i: int) -> str | None:
+        found = [text for text in texts(dumps[i], "frame") if chip.match(text)]
+        return found[0].split(" ")[0] if len(found) == 1 else None
+
+    modes = [mode(i) for i in (1, 3, 5)]
+    if None in modes:
+        shown = [[t for t in texts(dumps[i], "frame") if dot in t] for i in (1, 3, 5)]
+        problems.append(f"the check-mode chip reads {shown}")
+    elif not (modes[0] != modes[1] and modes[2] == modes[0]):
+        problems.append(f"the chip's mode went {modes}, not there and back")
+    print(f"rail-locks: modes {modes}; locks {[line for text in texts(dumps[1], 'rail') for line in text.splitlines()][:6]}")
+    return problems
+
+
+EXPECT["rail-locks"] = expect_rail_locks
+IN_SAMPLE_MODE.add("rail-locks")
+
+
 def window_problems(dumps: list[dict]) -> list[str]:
     """The owner's window rule as the shell itself reports it in every dump."""
     problems = []

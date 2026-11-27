@@ -1676,9 +1676,10 @@ class D02Host(unittest.TestCase):
         run = shell_module("d02_run")
         self.assertEqual(run.IN_SAMPLE_MODE, {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views",
                                               "library-branch", "research-pane", "research", "documents", "timer", "signature",
-                                              "setup", "binding-chip"})
+                                              "setup", "binding-chip", "rail-locks"})
         self.assertIs(run.EXPECT["signature"], run.expect_signature)  # ADR-D01.70
         self.assertIs(run.EXPECT["binding-chip"], run.expect_binding_chip)  # ADR-D01.42
+        self.assertIs(run.EXPECT["rail-locks"], run.expect_rail_locks)  # ADR-D01.65
         self.assertIs(run.EXPECT["setup"], run.expect_setup)  # ADR-D01.68
         # CR-16's live selector and difference file: on a fixture as tuning-save is, the file read from the run folder.
         self.assertIs(run.EXPECT["tuning-revert"], run.expect_tuning_revert)
