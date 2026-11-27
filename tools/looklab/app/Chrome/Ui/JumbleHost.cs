@@ -334,6 +334,7 @@ public sealed partial class JumbleHost
             Checks = cap is int named ? new KeptChecks(releases, named, revision) : null;
             seat.Clear();
             if (Checks != null) Checks.Changed += () => { Local.SetCount("twist_check", Checks?.Entries.Count ?? 0); Surface.SetChecks(Checks); };
+            if (Checks != null) Checks.Changed += MarkMissingChecks;
             Local.SetCount("twist_check", 0);
             Surface.SetChecks(Checks);
         }
@@ -360,6 +361,7 @@ public sealed partial class JumbleHost
         Surface.SetFacts(readout != null && layout != null ? CapFacts.Tier2(map, layout, readout) : null);
         FollowLocal();
         Remark();
+        PublishErrorReadouts(readout, record);
     }
 
     // The shell says whether a state is bound; Local draws the default cap while one is.
@@ -519,6 +521,7 @@ public sealed partial class JumbleHost
         if (!GodotObject.IsInstanceValid(frame) || frame.Global == null || frame.Local == null) return;
         Row(frame.Global, "JumbleTotals", totals, totalsMarked, Source.State.Mode);
         Row(frame.Local, "JumbleCap", cap ?? Array.Empty<ReadoutSlot>(), capMarked, Source.State.Mode && cap != null);
+        MarkCertificate();
         DefaultLine(frame.Local);
         Legends();
         Border(frame.Global, Source.State.Mode && Threshold.IsSet && CapThreshold.OnGlobalBorder(frame.Model.Docks[DockSide.Bottom].Open));
@@ -582,6 +585,7 @@ public sealed partial class JumbleHost
     {
         nuConstants = catalogue?.Constants; nuState = state;
         Corrections.Bind(catalogue, () => nuState is { OnLattice: true, Nu: { } nu } ? nu : null);
+        WatchCorrectionCheck();
         BandNu();
     }
 

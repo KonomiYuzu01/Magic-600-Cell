@@ -13,6 +13,7 @@
 
 namespace sa2test {
 void run_colours(Suite& suite, const Options& options);
+void run_error(Suite& suite, const Options& options);
 
 void expect(bool condition, const char* reason) { if (!condition) throw std::runtime_error(reason); }
 void Suite::check(const std::string& name, const std::function<void()>& body) {
@@ -1215,9 +1216,10 @@ void run_cpu(Suite& suite, const Options& options) {
         sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE);
         bytes[5] = 2;
         expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE); }), "a slice byte of 2 was accepted");
-        bytes[5] = 0;
-        bytes[5] = 0x10;
-        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_FILL); }), "an unknown fill bit was accepted");
+        bytes[5] = SA2_STYLE_ERROR;
+        sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_OUTLINE);
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_FILL); }), "an error bit on the fill was accepted");
+        expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_SLICE); }), "an error bit on the slice was accepted");
         bytes[5] = 0x80;
         expect(rejects([&] { sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_OUTLINE); }), "a dim bit on the outline was accepted");
         sa2::validate_piece_style(bytes.data(), SA2_STYLE_CHANNEL_FILL);
@@ -1231,6 +1233,23 @@ void run_cpu(Suite& suite, const Options& options) {
         // A slot alone, with the identity and nothing to tint, changes nothing: the frame stays on the product pipeline.
         product.set_view_style(1, &style);
         expect(!product.plan(input, 256, 256).styled, "a style that changes nothing draws styled");
+        std::vector<uint8_t> errors(SA2_PIECES, 0);
+        errors[5] = SA2_STYLE_ERROR;
+        product.set_style(1, errors.data(), SA2_STYLE_CHANNEL_OUTLINE);
+        auto error_view = style;
+        error_view.outline_width = 0;
+        error_view.palette[3] = 0;
+        product.set_view_style(1, &error_view);
+        expect(!product.plan(input, 256, 256).styled, "a transparent error overlay chose the styled pipeline");
+        error_view.palette[3] = 0.8f;
+        product.set_view_style(1, &error_view);
+        expect(product.plan(input, 256, 256).styled, "the error hatch without an outline band did not choose the styled pipeline");
+        error_view.tint_mode = SA2_STYLE_TINT_FILL;
+        product.set_view_style(1, &error_view);
+        expect(!product.plan(input, 256, 256).styled, "the error overlay drew in a fill-only slot");
+        product.set_style(1, nullptr, SA2_STYLE_CHANNEL_OUTLINE);
+        expect(!product.piece_style(), "clearing an error-only outline kept the piece style");
+        product.set_view_style(1, &style);
         expect(rejects([&] { product.set_view_style(0, &style); }) && rejects([&] { product.set_view_style(5, &style); }),
             "a style slot out of 1..4 was accepted");
         // Another revision is refused; the adopted one is kept per channel.
@@ -1733,7 +1752,7 @@ void run_cpu(Suite& suite, const Options& options) {
         expect(partial, "a partial triangle was bounded");
     });
 }
-Options parse(int argc, char** argv, bool& colours) {
+Options parse(int argc, char** argv, bool& colours, bool& error_overlay) {
     Options options;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
@@ -1752,6 +1771,7 @@ Options parse(int argc, char** argv, bool& colours) {
         else if (arg == "--slice") options.slice = true;
         else if (arg == "--raw") options.raw = true;
         else if (arg == "--colours") colours = true;
+        else if (arg == "--error") error_overlay = true;
         else if (arg == "--hopf") options.hopf = value();
         else if (arg == "--measure-stages") options.measure = value();
         else if (arg == "--measure-prepare") {
@@ -1818,6 +1838,9 @@ Options parse(int argc, char** argv, bool& colours) {
     expect(!colours || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
         && !options.style && !options.panes && !options.focus && options.hopf.empty() && !options.sweep && !options.slice
         && options.measure.empty() && !options.prepares), "--colours requires --warp, alone");
+    expect(!error_overlay || (options.mode == "warp" && options.child.empty() && !options.stages && !options.poses && !options.shape
+        && !options.style && !options.panes && !options.focus && options.hopf.empty() && !options.sweep && !options.slice
+        && !options.raw && !colours && options.measure.empty() && !options.prepares), "--error requires --warp, alone");
     // C9 U5c: the overdraw measurement also runs on WARP only, alone.
     expect(options.measure.empty() || (options.mode == "warp" && options.child.empty() && !options.stages && !options.out.empty()
         && options.frames + uint64_t(options.traced) > 0), "--measure-stages requires --warp, --out and frames, without --stages");
@@ -1831,8 +1854,8 @@ Options parse(int argc, char** argv, bool& colours) {
 
 int main(int argc, char** argv) {
     try {
-        bool colours = false;
-        const auto options = sa2test::parse(argc, argv, colours);
+        bool colours = false, error_overlay = false;
+        const auto options = sa2test::parse(argc, argv, colours, error_overlay);
         if (!options.child.empty()) return sa2test::run_child(options);
         if (!options.measure.empty()) {
             sa2test::run_measure(options);
@@ -1857,6 +1880,7 @@ int main(int argc, char** argv) {
         else if (options.slice) sa2test::run_slice(suite, options);
         else if (options.raw) sa2test::run_raw(suite, options);
         else if (colours) sa2test::run_colours(suite, options);
+        else if (error_overlay) sa2test::run_error(suite, options);
         else sa2test::run_gpu(suite, options);
         auto json = sa2::json_report(options.mode, suite.checks);
         if (options.mode == "cpu" && suite.passed()) {

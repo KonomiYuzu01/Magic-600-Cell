@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Magic600.Chrome;
 
@@ -121,6 +122,34 @@ public sealed record ResearchVerdict(VerdictKind Kind, string? Claim = null, str
 {
     public bool IsVerdict => Kind is VerdictKind.Pass or VerdictKind.Fail or VerdictKind.NotApplicable;
     public bool CountsAsCheck => Kind is VerdictKind.Pass or VerdictKind.Fail;
+
+    public DiagnosticState CheckState => Kind switch
+    {
+        VerdictKind.Fail or VerdictKind.Differs => DiagnosticState.Failed,
+        VerdictKind.Pass or VerdictKind.Reproduced => DiagnosticState.Ok,
+        _ => DiagnosticState.Pending,
+    };
+
+    // KN6's wire verdict names locations, if any, in the claim and reason. Only explicit ids are locations.
+    private static readonly Regex Location = new(@"\b(cap|cell|piece) ([0-9]+)\b", RegexOptions.CultureInvariant);
+
+    public IReadOnlyList<DiagnosticCell> NamedCells()
+    {
+        if (Kind != VerdictKind.Fail) return Array.Empty<DiagnosticCell>();
+        var names = new List<DiagnosticCell>();
+        foreach (Match match in Location.Matches(Claim + "\n" + Reason))
+        {
+            if (!int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out int id)) continue;
+            DiagnosticCellKind kind = match.Groups[1].Value switch
+            {
+                "cap" => DiagnosticCellKind.Cap,
+                "cell" => DiagnosticCellKind.Cell,
+                _ => DiagnosticCellKind.Piece,
+            };
+            names.Add(new DiagnosticCell(kind, id));
+        }
+        return names.Distinct().ToArray();
+    }
 }
 
 // ADR-D02.46's words, exact. A verdict line is one line with its scope; it wraps and is never cut, in one weight and
@@ -195,6 +224,7 @@ public static class ResearchRows
     // B29: the run's declaration and start (the sample's draft rows), reproduction (a table row) and the two CR-17 rows
     // (ADR-D02's draft rows in data/design/command-rows-d02.json).
     public const string Declare = "research.run.declare", Start = "research.run.start", Reproduce = "research.run.reproduce";
+    public const string CheckRun = "research.check.run", CheckReport = "research.check.report";
     public const string Trace = "research.check.trace", RunView = "research.run.view";
     public const string ExportObligation = "research.obligation.export";
     public static readonly IReadOnlyList<string> Cr17 = Array.AsReadOnly(new[] { RunView, Trace });
@@ -270,6 +300,15 @@ public sealed record ResearchRun(string Run, string? Group, string Level, string
     public SlotState State => Reading == "cut_off" || Budget is { } b && long.TryParse(Covered, NumberStyles.None, CultureInfo.InvariantCulture, out long c) && c >= b.Steps
         ? SlotState.BudgetStopped : Outcome == "completed" ? SlotState.Ready : SlotState.Error;
     public bool Started => Budget != null;
+    public IReadOnlyList<ResearchCheck> CheckItems { get; init; } = Array.Empty<ResearchCheck>();
+    public DiagnosticState CheckState => State == SlotState.Error ? DiagnosticState.Failed
+        : State == SlotState.Ready ? Verdict?.CheckState ?? DiagnosticState.Pending : DiagnosticState.Pending;
+}
+
+public sealed record ResearchCheck(string Checker, string Outcome, ResearchVerdict Verdict)
+{
+    public DiagnosticState State => Outcome == "completed" ? Verdict.CheckState
+        : Outcome == "error" ? DiagnosticState.Failed : DiagnosticState.Pending;
 }
 
 // A budget declared before a run starts (ADR-D02.4); the run records it, and a run that reaches it stops as cut off.
@@ -314,7 +353,8 @@ public sealed record ResearchObligation(string Group, string Family, int Stage, 
 public enum ResearchLineKind { Stage, Family, Row, Detail, Finding, Part, Actions, Note, Declare }
 
 // One line of the pane's flat list; the pane builds only the lines in view.
-public sealed record ResearchLine(ResearchLineKind Kind, string Text, string? Ref = null, int Depth = 0, string? Verdict = null);
+public sealed record ResearchLine(ResearchLineKind Kind, string Text, string? Ref = null, int Depth = 0, string? Verdict = null,
+    DiagnosticState? Status = null);
 
 // A control of a line: its words and the row it invokes. A control that takes text (a name, a declared field) appends
 // it to Argument. A control with a reason (Why) is drawn unavailable, its reason shown.
@@ -353,6 +393,7 @@ public sealed class ResearchModel
     public string? Open { get; private set; }
     public ResearchTransfer? Transfer { get; private set; }
     public event Action? Changed;
+    public event Action? DiagnosticsChanged;
     private readonly Dictionary<string, string> names = new(StringComparer.Ordinal);
     // The session's changes seen, and the change at which each row was last asked (ONE.12's current and stale).
     private long head;
@@ -385,6 +426,7 @@ public sealed class ResearchModel
             case ResearchRows.Obligations: Obligations = Answer(row, Source.Obligations()).GetProperty("rows").EnumerateArray().Select(ReadObligation).ToArray(); break;
         }
         asked[row] = head;
+        if (row is ResearchRows.Claims or ResearchRows.Runs) Safe.Raise(DiagnosticsChanged);
     }
 
     // The answer inside a row's envelope; every answer must come from the same research data.
@@ -432,14 +474,55 @@ public sealed class ResearchModel
     private static ResearchRun ReadRun(JsonElement row)
     {
         JsonElement branch = row.GetProperty("branch"), reading = row.GetProperty("reading");
-        JsonElement[] verdicts = row.TryGetProperty("checks", out JsonElement list)
-            ? list.EnumerateArray().Select(c => c.GetProperty("verdict")).ToArray() : Array.Empty<JsonElement>();
+        JsonElement[] checkRows = row.TryGetProperty("checks", out JsonElement list) ? list.EnumerateArray().ToArray() : Array.Empty<JsonElement>();
+        JsonElement[] verdicts = checkRows.Select(c => c.GetProperty("verdict")).ToArray();
         string[] checks = verdicts.Select(v => v.ValueKind == JsonValueKind.Object ? J.Text(v, "kind") : "none").ToArray();
         int? Number(string id) => row.TryGetProperty(id, out JsonElement n) && n.ValueKind == JsonValueKind.Number ? n.GetInt32() : null;
         RunBudget? budget = row.TryGetProperty("budget", out JsonElement b) && b.ValueKind == JsonValueKind.Number ? new RunBudget(b.GetInt64()) : null;
         return new ResearchRun(J.Text(row, "run"), Optional(row, "group"), J.Text(branch, "level"), J.Text(branch, "digest"), J.Text(branch, "identity"),
             J.Text(row, "outcome"), J.Text(reading, "kind"), Optional(row, "code"), Optional(reading, "covered"), checks, Number("seed"), Number("depth"), budget,
-            CheckVerdict(reading, verdicts));
+            CheckVerdict(reading, verdicts))
+        {
+            CheckItems = checkRows.Select((check, i) => new ResearchCheck(
+                check.TryGetProperty("checker", out JsonElement checker) ? J.Text(checker, "id") : Optional(check, "kind") ?? "Check",
+                Optional(check, "outcome") ?? "completed", ReadCheckVerdict(verdicts[i]))).ToArray(),
+        };
+    }
+
+    // research.check.run's children carry the same verdict object as research.check.report's report.
+    private static ResearchVerdict ReadCheckVerdict(JsonElement entry)
+    {
+        if (entry.ValueKind != JsonValueKind.Object) return new ResearchVerdict(VerdictKind.NotChecked);
+        return J.Text(entry, "kind") switch
+        {
+            "fail" => new ResearchVerdict(VerdictKind.Fail, J.Text(entry, "claim"), J.Text(entry, "code"), J.Text(entry, "reason")),
+            "pass" => new ResearchVerdict(VerdictKind.Pass),
+            "not_applicable" => new ResearchVerdict(VerdictKind.NotApplicable, Reason: J.Text(entry, "reason")),
+            _ => new ResearchVerdict(VerdictKind.NotChecked),
+        };
+    }
+
+    public IEnumerable<(string Source, string Label, DiagnosticState State, IReadOnlyList<DiagnosticCell> Names, string? PoseDigest)> Diagnostics()
+    {
+        var runs = Started.Concat(Runs).DistinctBy(r => r.Run).ToArray();
+        foreach (ResearchClaim claim in Claims)
+            yield return (Ref(claim), Shown(claim), claim.Verdict.CheckState, claim.Verdict.NamedCells(),
+                runs.FirstOrDefault(r => r.Run == claim.Run && r.Level == "poses")?.Digest);
+        foreach (ResearchRun run in runs)
+        {
+            string? digest = run.Level == "poses" ? run.Digest : null;
+            yield return (ResearchRows.CheckRun + "/" + run.Run, Shown(run), run.CheckState,
+                run.Verdict?.NamedCells() ?? Array.Empty<DiagnosticCell>(), digest);
+            for (int i = 0; i < run.CheckItems.Count; i++)
+            {
+                ResearchCheck check = run.CheckItems[i];
+                yield return (ResearchRows.CheckReport + "/" + run.Run + "/" + i.ToString(CultureInfo.InvariantCulture),
+                    check.Checker, check.State, check.Verdict.NamedCells(), digest);
+            }
+            if (reproductions.TryGetValue(run.Run, out var reproduced))
+                yield return (ResearchRows.Reproduce + "/" + run.Run, "Reproduce " + Shown(run), reproduced.CheckState,
+                    Array.Empty<DiagnosticCell>(), null);
+        }
     }
 
     private static ResearchObligation ReadObligation(JsonElement row) =>
@@ -494,7 +577,7 @@ public sealed class ResearchModel
         }
         JsonElement[] verdicts = entries.Where(v => v.ValueKind == JsonValueKind.Object).ToArray();
         if (verdicts.FirstOrDefault(v => J.Text(v, "kind") == "fail") is { ValueKind: JsonValueKind.Object } fail)
-            return new ResearchVerdict(VerdictKind.Fail, J.Text(fail, "claim"), J.Text(fail, "code"), J.Text(fail, "reason"));
+            return ReadCheckVerdict(fail);
         if (verdicts.Length != entries.Count) return new ResearchVerdict(VerdictKind.NotChecked, Reason: "a check reached no report");
         if (verdicts.FirstOrDefault(v => J.Text(v, "kind") == "not_applicable") is { ValueKind: JsonValueKind.Object } na)
             return new ResearchVerdict(VerdictKind.NotApplicable, Reason: J.Text(na, "reason"));
@@ -591,6 +674,7 @@ public sealed class ResearchModel
         if (J.Text(answer, "run") != run.Run) throw J.Error(ResearchRows.Reproduce, "the answer names another run");
         ResearchVerdict verdict = ReproductionOf(answer.GetProperty("answer"));
         reproductions[run.Run] = verdict;
+        Safe.Raise(DiagnosticsChanged);
         if (Open != reference) Open = reference;
         Raise();
         return (verdict.Kind is VerdictKind.Reproduced or VerdictKind.Differs, $"run {Short(run.Run)}: {ReproductionLine(verdict)}");
@@ -922,7 +1006,7 @@ public sealed class ResearchModel
     {
         string reference = Ref(run);
         bool open = Open == reference;
-        lines.Add(new ResearchLine(ResearchLineKind.Row, (open ? "▾ " : "▸ ") + Shown(run), reference, 0, RunLine(run)));
+        lines.Add(new ResearchLine(ResearchLineKind.Row, (open ? "▾ " : "▸ ") + Shown(run), reference, 0, RunLine(run), run.CheckState));
         if (!open) return;
         if (run.Seed is int seed) lines.Add(new ResearchLine(ResearchLineKind.Detail, SeedPool.Words(seed), reference, 1));
         if (run.Budget is { } budget)
@@ -935,9 +1019,12 @@ public sealed class ResearchModel
         if (run.Code != null) lines.Add(new ResearchLine(ResearchLineKind.Detail, "code: " + run.Code, reference, 1));
         if (run.Checks is { Count: > 0 } checks)
             lines.Add(new ResearchLine(ResearchLineKind.Detail, "checks: " + string.Join(", ", checks.GroupBy(c => c).Select(g => $"{g.Key} {g.Count()}")), reference, 1));
+        foreach (ResearchCheck check in run.CheckItems)
+            lines.Add(new ResearchLine(ResearchLineKind.Detail, check.Checker, reference, 1, Status: check.State));
         foreach (string line in PinnedLines(run.Run)) lines.Add(new ResearchLine(ResearchLineKind.Detail, line, reference, 1));
         lines.Add(new ResearchLine(ResearchLineKind.Detail, reproductions.TryGetValue(run.Run, out ResearchVerdict? again)
-            ? ReproductionLine(again) : "not reproduced yet: Reproduce asks " + ResearchRows.Reproduce, reference, 1));
+            ? ReproductionLine(again) : "not reproduced yet: Reproduce asks " + ResearchRows.Reproduce, reference, 1,
+            Status: again?.CheckState ?? DiagnosticState.Pending));
         lines.Add(new ResearchLine(ResearchLineKind.Detail, $"Open derived state in a free view (captioned \"{ResearchWords.DerivedCaption}\"), Step the checker: "
             + Unavailable(ResearchRows.RunView, reference), reference, 1));
         lines.Add(new ResearchLine(ResearchLineKind.Actions, "", reference, 1));
@@ -994,7 +1081,8 @@ public sealed class ResearchModel
             {
                 string reference = Ref(claim);
                 bool open = Open == reference;
-                lines.Add(new ResearchLine(ResearchLineKind.Row, (open ? "▾ " : "▸ ") + Shown(claim), reference, 0, ResearchWords.VerdictLine(claim.Verdict, claim.Scope)));
+                lines.Add(new ResearchLine(ResearchLineKind.Row, (open ? "▾ " : "▸ ") + Shown(claim), reference, 0,
+                    ResearchWords.VerdictLine(claim.Verdict, claim.Scope), claim.Verdict.CheckState));
                 if (!open) continue;
                 foreach (string line in ResearchWords.Expanded(claim.Verdict)) lines.Add(new ResearchLine(ResearchLineKind.Detail, line, reference, 1));
                 if (claim.Label != null) lines.Add(new ResearchLine(ResearchLineKind.Detail, "label: " + claim.Label, reference, 1));

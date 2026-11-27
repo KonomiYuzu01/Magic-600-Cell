@@ -145,9 +145,10 @@ ViewStyle view_style(const sa2_view_style* style); // validates (SA2_E_INVALID_A
 struct PieceStyle {
     uint64_t revision = 0, version = 0; // version: the style's upload key, never 0
     std::vector<uint32_t> packed; // SA2_PIECES
-    std::array<bool, 3> any{}; // per channel: a non-zero byte (ADR-D02 B20: channel 2, the slice's inside layer)
+    std::array<bool, 3> any{}; // a nonzero palette index, or a piece in channel 2's slice layer
     bool dim = false; // a fill byte has SA2_STYLE_DIM
     bool moving = false; // ADR-D02 B18: a piece has the moving bit
+    bool error = false; // an outline byte has SA2_STYLE_ERROR
 };
 void validate_piece_style(const uint8_t* bytes, uint32_t channel); // SA2_E_INVALID_ARGUMENT
 void validate_frame_input(const sa2_frame_input* input);

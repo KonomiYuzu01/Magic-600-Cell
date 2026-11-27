@@ -540,6 +540,18 @@ public sealed partial class ScriptList : VBoxContainer
         return mark;
     }
 
+    internal static Label? StateGlyph(TokenSet t, string state, string? tip = null) => state switch
+    {
+        "pending" => Glyph("task.running", t.C("state.pending"), tip ?? "Running", t),
+        "ok" => Glyph("task.ok", t.C("severity.ok"), tip ?? "Ran", t),
+        "failed" => Glyph("severity.error", t.C("severity.error"), tip ?? "Failed", t),
+        "stale" => Glyph("script.rerun", t.C("state.stale"), tip ?? "Stale: computed before the last commit", t),
+        _ => null,
+    };
+
+    internal static Label StateGlyph(TokenSet t, DiagnosticState state) =>
+        StateGlyph(t, ErrorOverlay.StateName(state), state.ToString())!;
+
     public void Refresh()
     {
         if (!IsInstanceValid(this)) return;
@@ -577,11 +589,7 @@ public sealed partial class ScriptList : VBoxContainer
                 name.SizeFlagsHorizontal = SizeFlags.ExpandFill; name.Pressed += () => Safe.Raise(Opened, program, entry.Line); row.AddChild(name);
                 int output = MarkOf(entry);
                 if (output >= 0) { (string colour, string shape) = OutputMarks.For(output); row.AddChild(new MarkGlyph(shape, () => tokens().C(colour), t.Px("icon.small"))); }
-                string state = StateOf(entry);
-                if (state == "pending") row.AddChild(Glyph("task.running", t.C("state.pending"), "Running", t));
-                else if (state == "ok") row.AddChild(Glyph("task.ok", t.C("severity.ok"), "Ran", t));
-                else if (state == "failed") row.AddChild(Glyph("severity.error", t.C("severity.error"), "Failed", t));
-                else if (state == "stale") row.AddChild(Glyph("script.rerun", t.C("state.stale"), "Stale: computed before the last commit", t));
+                if (StateGlyph(t, StateOf(entry)) is { } state) row.AddChild(state);
                 if (ConflictOf(entry) is { } clash) row.AddChild(Glyph("severity.warning", t.C("severity.warning"), clash, t));
                 bool waiting = Binding == entry.Command; string keys = KeysOf(entry);
                 Button bind = ChromeWidgets.Tool(waiting ? "…" : keys, waiting ? "Press the key to bind; Esc leaves it" : "Bind a key", true, "FieldValue");

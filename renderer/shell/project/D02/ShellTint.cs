@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Godot;
@@ -124,7 +125,7 @@ public static class ShellTint
         }
         json.WriteEndArray();
         json.WriteNumber("remembered", host.ClassMemory.Memory.Count);
-        json.WriteString("outline_sha256", Sha(ShellStyle.SentOutline));
+        json.WriteString("outline_sha256", Sha(ShellStyle.SentOutline?.Select(value => (byte)(value & 0x0F)).ToArray()));
         json.WriteString("fill_sha256", Sha(ShellStyle.SentFill));
         json.WriteString("palette_sha256", ShellStyle.SentPalette is { } sent ? Sha(System.Runtime.InteropServices.MemoryMarshal.AsBytes(sent.AsSpan()).ToArray()) : "");
         Piece(json, "hover", ShellStyle.SentHover);
@@ -169,7 +170,7 @@ public static class ShellTint
         long entries = 0, kept = 0, dimmed = 0;
         for (var piece = 0; piece < ShellStyle.PieceCount; piece++)
         {
-            if (outline is not null && outline[piece] == JumbleOverlay.Entry) entries++;
+            if (outline is not null && (outline[piece] & 0x0F) == JumbleOverlay.Entry) entries++;
             if (keep is not null && keep(piece))
             {
                 kept++;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
@@ -68,6 +69,13 @@ public static class JumbleOverlay
         byte[] outline = tint != null && tint.Length == lines.Length ? (byte[])tint.Clone() : new byte[lines.Length];
         for (int p = 0; p < lines.Length; p++) if (lines[p]) outline[p] = Entry;
         return outline;
+    }
+
+    // The bound cap record supplies the straddlers of a blocked cut, or the inside set of an admissible one.
+    public static IEnumerable<int> PiecesOfCap(int cap, string? record, int pieceCount)
+    {
+        if (Of(cap, record, pieceCount).Lines is not { } mask) yield break;
+        for (int piece = 0; piece < mask.Length; piece++) if (mask[piece]) yield return piece;
     }
 
     // Rule 5: a piece no filter hides, the never-hidden set and the overlay's own pieces (which then show outlined);

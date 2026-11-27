@@ -152,6 +152,8 @@ pub const SLICE_INSIDE: u32 = 3;
 pub const STYLE_INDEX: u8 = 0x0F;
 /// `SA2_STYLE_DIM`: a fill byte's dim-set bit.
 pub const STYLE_DIM: u8 = 0x80;
+/// `SA2_STYLE_ERROR`: an outline byte's view-only error overlay bit.
+pub const STYLE_ERROR: u8 = 0x10;
 /// `SA2_STYLE_SLOTS`: style slots 1 to 4.
 pub const STYLE_SLOTS: u32 = 4;
 /// `SA2_STYLE_PALETTE`.
@@ -522,7 +524,7 @@ impl Sa2ViewStyle {
 pub fn piece_style_valid(bytes: &[u8], channel: u32) -> bool {
     let allowed = match channel {
         STYLE_CHANNEL_FILL => STYLE_INDEX | STYLE_DIM,
-        STYLE_CHANNEL_OUTLINE => STYLE_INDEX,
+        STYLE_CHANNEL_OUTLINE => STYLE_INDEX | STYLE_ERROR,
         STYLE_CHANNEL_SLICE => 1,
         _ => return false,
     };

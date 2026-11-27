@@ -532,6 +532,8 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>A fill byte's dim-set bit (the core's SA2_STYLE_DIM): the pieces a dim or hide mode acts on.</summary>
     public const byte DimSet = 0x80;
+    /// <summary>An outline byte's view-only error overlay bit (the core's SA2_STYLE_ERROR).</summary>
+    public const byte StyleError = 0x10;
 
     /// <summary>
     /// Sets one channel of the adopted revision's piece style (version 10): one byte per piece, or with
