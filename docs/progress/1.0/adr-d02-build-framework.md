@@ -684,6 +684,15 @@ relative path is from the repository root.
   - Reduced motion and the refused twist.
   - `d02_run.py --script sweep`.
 - Owner sees: nothing new on screen yet. The run's `turn` dump shows the row that B20's ghost will draw.
+- Review (gpt-6.2-sol, call 20261126T225307Z-e6ce1514, of `git diff f9eb87a0 8654dbe2`; dispositions, 27 November 2026):
+  - B18-01 (blocker), fixed in 1eec73b4: `HostLibrary.SetTransform` refuses a plane that is not 8 floats before the native call. `m6h_set_transform` has no plane length in its ABI, so it reads the plane only once `moving` holds one byte per piece. Checked by `TwistRowShell` in `tests/test_d02_drawing.py` and the host test `the_host_sets_the_piece_style_and_the_style_slots`.
+  - B18-02 (major), fixed in 1eec73b4: the row protects the pieces that carry the protected orbits, as the command layer does for a pose move (read only). For one twist, Net and Strict give the same verdict. A twist the layer refuses now has status 0. Host test `a_twist_that_moves_a_protected_orbit_has_no_transform_row`; it fails on the old `turns.rs`.
+  - B18-03 (major), fixed in 1eec73b4: a pick on a turning frame, styled or not, checks its copy's style version. A frame whose copy now holds another mask answers `SA2_PICK_STALE_ENGINE` instead of picking through that mask. WARP check `transform picks warp` (four unstyled turning frames, four masks); it fails on the old `product.cpp`.
+  - B18-04 (major), fixed in 1eec73b4: `m6h_twist_transform` returns the row's revision, which is the engine revision handed to the head. `m6h_set_transform` takes that revision and refuses any revision but the adopted one. The host test covers the setter's refusal, not a held adoption in a live session. Still open: B20's `ShellTurn.SendInside` sends the row's moving set through `m6h_set_piece_style`, which carries no revision, so the slice's inside layer can still draw for one frame on the revision before the row's.
+  - B18-05 (major), fixed in 1eec73b4: `ShellTurn` reads `ShellLocal.Plan.Framed`, the result of the shell's one framing call per frame (FollowLocalCap). Only a source check covers it (one `ShellLocal.Frame(` call in the project). The product scenario (name cap 1, then select in another cell) was not scripted.
+  - B18-06 (minor), fixed in 1eec73b4: a refusal is kept for its cap and revision, like a row.
+  - B18-07 (minor), fixed in 1eec73b4: the host checks a moving byte, the plane (finite, unit and orthogonal to the core's 1e-3), the angle and the phase. Each answers `M6H_E_INVALID_ARGUMENT` before the core is asked.
+  - B18-08 (minor), fixed in 1eec73b4: `expect_twist_row` pins cap 0's status to exactly 0 (blocked), cap 150's angle to pi and its plane's sha256 (`c7b19b2e…`), and the head digest before and after the query. The `turn` dump now writes `revision`, `read_at` and `plane_sha256`.
 
 **Two drawn views (B18a to B18c), added for the owner's answer of 26 November 2026.** Design: one surface, one present, several panes.
 - The core's surface covers the bounding rectangle of the drawn openings.
@@ -885,6 +894,13 @@ relative path is from the repository root.
 - **Machine:** H, W.
 - **Checkpoint:** no.
 - **Depends:** B16, B18, B18c. CR-14.
+- **As built (partial, 26 November 2026):**
+  - Landed: the chrome model `CutSlice` in `Model/JumbleViews.cs`: the held split through `ViewPanes.Split`, the shell control, the preview that names the twist on release only, and the blocked cap's refusal. Its three console tests are in `tests/D02ViewTests.cs`.
+  - Held key placeholders, both row requests: `Backslash` for the split and `Down` for the preview. `S` is seat 4 in the keymap and `G` is `view.global`.
+  - Landed (27 November 2026): the core slice (ABI 10's `sa2_view_style` at 348 bytes, `SA2_STYLE_CHANNEL_SLICE`, `styled.hlsl`'s `sliceVs`), the host and `c600-render` rows, and the shell wiring (`D02/ShellSlice.cs`, the `slice` script). A failed slice no longer blocks the other styles: `ShellStyle` sends them and Local's slots go without the slice until its inside layer is sent.
+  - The GPU timeout of 26 November (nvlddmkm 14 and 153, LiveKernelEvent 0x117, 23:15:55 UTC) is not explained. The lead was refuted on WARP with the product's Local (orthographic, zoom 4.507, spread 1.7, cap 0): the cap test draws 105,216 triangles and 0.87 targets of pixel work, the slice's default shell 321,547 and 2.65, the whole shell 4,575,204 and 37.1, the whole shell in perspective at d4 1.02 3,590,931 and 46.3. `check_core.py --slice` asserts these bounds through the newest frame's pipeline statistics (`sa2_test_frame_statistics`, a self-test export outside the ABI header).
+  - `SA2_D3D12_DEBUG=1` (report file `SA2_D3D12_DEBUG_OUT`) turns on the debug layer and DRED for the core's own device; off by default. With it, the slice run passed with no debug-layer message and no device removal; then `slice`, `overlays` and `two-views` passed at 1280 x 720 (two reruns after foreground-only failures), each with no nvlddmkm or LiveKernelEvent entry. Findings: the shared note `d02-gpu-tdr.md`.
+  - Owner sees: Global whole and Local sliced side by side (the slice is on by default in Local); hold `Backslash` (placeholder) and Local parts into two linked copies.
 
 ### B21. The raw view
 - **Goal:** `view.mode.raw` in Local, with the antipode chart side by side.

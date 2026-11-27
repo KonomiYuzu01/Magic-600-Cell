@@ -69,6 +69,7 @@ def stage(project: Path) -> None:
     shutil.copytree(CHROME, project / "Chrome", ignore=shutil.ignore_patterns(*prepare_host.EXCLUDED))
     shutil.copytree(DESIGN, project / "design")
     shutil.copy2(COMMANDS, project / "design" / "command-table.json")
+    shutil.copy2(COMMANDS.parent / "glossary" / "terms.json", project / "design" / "glossary-terms.json")
     shutil.copytree(SAMPLES, project / "samples")
     (project / "look").mkdir()
     shutil.copy2(OPENING, project / "look" / "opening.json")

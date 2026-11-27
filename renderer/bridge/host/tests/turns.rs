@@ -731,6 +731,22 @@ fn a_committed_jumble_twist_carries_its_certified_transform() {
     assert_eq!(row.moving.as_u32(), changed, "the certified moving set is the pieces the commit turned");
 }
 
+/// Review finding B18-02: the row judges protection as the command layer judges a press. From solved with Jumble on and
+/// orbit 0 protected, item 1 at cap 0 moves pieces that carry orbit 0, so the layer refuses the press
+/// (`KN2:protection.piece_would_move`) and the row is the refused one (`None`, the C interface's status 0).
+#[test]
+fn a_twist_that_moves_a_protected_orbit_has_no_transform_row() {
+    let (mut turns, _folder) = jumble_on("jumble-transform-protected");
+    assert!(turns.twist_transform(0, 1).expect("a row").is_some(), "unprotected, item 1 is admissible");
+    let orbits = json::object([("orbits", Value::Array(vec![Value::Int(0)]))]);
+    let receipt = turns.invoke("protection.orbit.set", orbits).expect("the row is sent");
+    assert!(matches!(receipt.status.name(), "completed" | "committed"), "protecting orbit 0: {}", receipt.status.name());
+    assert!(turns.twist_transform(0, 1).expect("a row").is_none(), "a protected orbit's pieces would move: no row");
+    let refused = turns.twist_letter(0, 1).expect_err("the command layer refuses the press");
+    assert!(refused.contains("piece_would_move"), "{refused}");
+    assert!(turns.twist_transform(0, 0).expect("a row").is_some(), "the identity moves no piece and stays admissible");
+}
+
 /// LX-4, jumble-on half (a draft): a new jumble-on session commits `jumble.on` at once; the router's twist keys then
 /// commit `jumble.twist.menu` with the same menu item as the row's `letter`, its cap and the layer's revision; a
 /// repeat is no press; the retained state stays the one the crossing entered from; and the control at the close

@@ -1479,6 +1479,7 @@ void Scene::product_frame(ID3D12GraphicsCommandList* list, const sa2_frame_input
                            ring * QueryStride + StatisticsOffset);
 }
 std::array<float, 4> Scene::cell_centre(uint32_t cell) const { return gpu->cell_centre(cell); }
+FrameStatistics& newest_frame_statistics() { static FrameStatistics value; return value; }
 std::pair<uint64_t, uint64_t> Scene::product_results(uint32_t ring) {
     auto& g = *gpu; auto& p = g.product_gpu();
     scene_require(ring < SA2_RING_SLOTS, "ring slot out of range", SA2_E_INVALID_ARGUMENT);
@@ -1492,6 +1493,7 @@ std::pair<uint64_t, uint64_t> Scene::product_results(uint32_t ring) {
     D3D12_RANGE none{0, 0}; p.query_read.resource->Unmap(0, &none);
     const uint64_t elapsed = ticks[1] > ticks[0] ? ticks[1] - ticks[0] : 0;
     const auto ns = uint64_t(double(elapsed) * 1e9 / double(p.frequency));
+    newest_frame_statistics() = {0, statistics.VSInvocations, statistics.CPrimitives, statistics.PSInvocations}; // B20
     if (p.pane_count[ring]) { // ABI 8: a composite frame's evaluations are its panes' sum
         uint64_t sum = 0;
         for (const auto evals : product_pane_evals(ring)) sum += evals;
@@ -1509,10 +1511,13 @@ std::vector<uint64_t> Scene::product_pane_evals(uint32_t ring) {
     D3D12_RANGE range{begin, begin + 512};
     void* data = nullptr;
     hr(g.device, p.pane_read.resource->Map(0, &range, &data), "Map(pane queries)");
+    newest_frame_statistics() = {}; // ADR-D02 B20: the panes' sum
     for (uint32_t i = 0; i < p.pane_count[ring]; ++i) {
         D3D12_QUERY_DATA_PIPELINE_STATISTICS statistics{};
         std::memcpy(&statistics, static_cast<const uint8_t*>(data) + begin + i * 128, sizeof(statistics));
         out.push_back(statistics.VSInvocations);
+        auto& sum = newest_frame_statistics();
+        sum.vertex_evals += statistics.VSInvocations; sum.primitives += statistics.CPrimitives; sum.pixels += statistics.PSInvocations;
     }
     D3D12_RANGE none{0, 0}; p.pane_read.resource->Unmap(0, &none);
     return out;

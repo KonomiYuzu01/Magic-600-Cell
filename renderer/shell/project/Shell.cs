@@ -92,6 +92,7 @@ public partial class Shell : Control
     private bool _hopf;
     private int? _localCap = -1;
     private (Rect2I Global, Rect2I Local) _paned;
+    private bool _panedSplit; // ADR-D02 B20: whether the pane table holds the held split's two copies
     private Magic600.Chrome.PaneLayout? _layout;
 
     public override void _Ready()
@@ -478,11 +479,11 @@ public partial class Shell : Control
             // session's router never reaches the chrome.
             if (_chrome is not { } chrome)
             {
-                Turn(turn, qpc);
+                if (Sliced(turn)) GetViewport().SetInputAsHandled(); else Turn(turn, qpc);
             }
             else if (!chrome.Takes(turn))
             {
-                Turn(turn, qpc);
+                if (Sliced(turn)) GetViewport().SetInputAsHandled(); else Turn(turn, qpc);
                 // The editor's code field keeps the keys its text focus takes (the router routes by that focus).
                 if (_session && KeyChord.Code(turn.PhysicalKeycode) is not null && _editor?.TextFocused != true)
                 {
@@ -660,25 +661,36 @@ public partial class Shell : Control
     /// 1, or no pane (one-view frames) while Local is not drawn. Called once the surface has its new rectangle and
     /// viewport, so the panes lie inside it.
     /// </summary>
+    // ADR-D02 B20: the cut slice's held keys (the split, the turn preview), after the router gave the key to the
+    // session and never while the editor's text field has focus.
+    private bool Sliced(InputEventKey key) => D02.ShellJumble.On && _session && _editor?.TextFocused != true && D02.ShellSlice.Follow(key);
+
     private void SetPanes(HostLibrary library, Rect2I global, Magic600.Chrome.PaneLayout? layout)
     {
         var local = layout is null ? default : _chrome!.LocalOpening();
-        if (_paned == (layout is null ? default : global, local))
+        if (_paned == (layout is null ? default : global, local) && _panedSplit == D02.ShellSlice.Split)
         {
             return;
         }
         Require(library, "m6h_clear_pane", library.ClearPane(_host, 0));
         Require(library, "m6h_clear_pane", library.ClearPane(_host, 1));
+        Require(library, "m6h_clear_pane", library.ClearPane(_host, 2));
         if (layout is not null)
         {
-            var views = new[] { HostLibrary.View, HostLibrary.Local };
-            for (var i = 0; i < 2; i++)
+            // B17: Global's pane draws with style slot 1. ADR-D02 B20: Local draws its cut slice with slot 2, or, while
+            // the split key is held, as two linked copies of the one view, the outside layer (slot 2) and the inside
+            // layer (slot 3) side by side (D02.ShellStyle sets the three slots).
+            var g = layout.Panes[0].Rect;
+            Require(library, "m6h_set_pane", library.SetPane(_host, 0, HostLibrary.View, g.X, g.Y, (uint)g.Width, (uint)g.Height, 1));
+            var copies = D02.ShellSlice.Panes(layout.Panes[1]);
+            for (var i = 0; i < copies.Count; i++)
             {
-                var r = layout.Panes[i].Rect;
-                // B17: Global's pane draws with style slot 1, Local's with slot 2 (D02.ShellStyle sets both).
-                Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i, views[i], r.X, r.Y, (uint)r.Width, (uint)r.Height, (uint)i + 1));
+                var r = copies[i].Pane.Rect;
+                var slot = copies[i].Layer == Magic600.Chrome.SliceLayer.Inside ? 3u : 2u;
+                Require(library, "m6h_set_pane", library.SetPane(_host, (uint)i + 1, HostLibrary.Local, r.X, r.Y, (uint)r.Width, (uint)r.Height, slot));
             }
-            var aspect = layout.Panes[1].Rect.Height > 0 ? (double)layout.Panes[1].Rect.Width / layout.Panes[1].Rect.Height : 1;
+            var first = copies[0].Pane.Rect;
+            var aspect = first.Height > 0 ? (double)first.Width / first.Height : 1;
             if (_localShape is { } shape)
             {
                 Require(library, "m6h_set_view_shape", D02.ShellShape.Set(library, _host, HostLibrary.Local, D02.ShellLocal.ViewShape(shape, aspect)));
@@ -686,6 +698,7 @@ public partial class Shell : Control
             }
         }
         _paned = (layout is null ? default : global, local);
+        _panedSplit = D02.ShellSlice.Split;
         _layout = layout;
     }
 

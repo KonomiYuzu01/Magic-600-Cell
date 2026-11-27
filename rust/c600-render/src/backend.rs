@@ -315,7 +315,7 @@ impl<C: CoreAbi> RenderBackend<C> {
     /// channel's are refused before the core is asked.
     pub fn set_piece_style(&mut self, revision: u64, piece_style: Option<&[u8]>, channel: u32) -> Result<(), Error> {
         if piece_style.is_some_and(|bytes| !piece_style_valid(bytes, channel))
-            || (channel != STYLE_CHANNEL_FILL && channel != STYLE_CHANNEL_OUTLINE)
+            || !matches!(channel, STYLE_CHANNEL_FILL | STYLE_CHANNEL_OUTLINE | STYLE_CHANNEL_SLICE)
         {
             return Err(Error::invalid("a piece style is PIECES bytes with only its channel's bits"));
         }

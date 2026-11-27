@@ -64,17 +64,18 @@ internal static partial class Program
         // The hovered view's context wins, then the focused one, then global; an unbound key resolves to nothing.
         Equal(keys.Resolve("R", new[] { "global-view", "global" })!.Command, "view.reset");
         Equal(keys.Resolve("R", new[] { "local-view", "global-view", "global" })!.Command, "view.local.configure");
-        Check(keys.Resolve("R", new[] { "global" }) == null && keys.Resolve("F1", new[] { "local-view", "global" })!.Command == "command.find", "context fallback");
-        Equal(keys.KeysFor("command.find", null), "F1, Space"); Equal(keys.KeysFor("workspace.set", "layout:script"), "2"); Equal(Keymap.KeyName(true, true, false, "Z"), "Ctrl+Alt+Z");
+        Check(keys.Resolve("R", new[] { "global" }) == null && keys.Resolve("F1", new[] { "local-view", "global" }) is { Command: "help.open", Argument: null }, "context fallback");
+        Check(keys.Resolve("Shift+Slash", new[] { "global" }) is { Command: "help.open", Argument: HelpCatalog.Keys }, "shortcut sheet binding");
+        Equal(keys.KeysFor("command.find", null), "Space"); Equal(keys.KeysFor("workspace.set", "layout:script"), "2"); Equal(Keymap.KeyName(true, true, false, "Z"), "Ctrl+Alt+Z");
         // User overrides are a second file: rebind, add and remove without touching the defaults.
-        string overrides = "{\"format\":\"magic600-design-keymap\",\"version\":1,\"radials\":{},\"bindings\":[{\"key\":\"F1\",\"context\":\"global\",\"command\":\"help.open\"}," +
+        string overrides = "{\"format\":\"magic600-design-keymap\",\"version\":1,\"radials\":{},\"bindings\":[{\"key\":\"F1\",\"context\":\"global\",\"command\":\"command.find\"}," +
             "{\"key\":\"Space\",\"context\":\"global\",\"command\":\"\"},{\"key\":\"Ctrl+K\",\"context\":\"global\",\"command\":\"command.find\"}]}";
         Keymap mine = Keymap.Parse(overrides, registry, keys);
-        Equal(mine.KeysFor("command.find", null), "Ctrl+K"); Equal(mine.KeysFor("help.open", null), "Shift+Slash, F1"); Equal(keys.KeysFor("command.find", null), "F1, Space");
+        Equal(mine.KeysFor("command.find", null), "F1, Ctrl+K"); Equal(mine.KeysFor("help.open", HelpCatalog.Keys), "Shift+Slash"); Equal(keys.KeysFor("command.find", null), "Space");
         Check(mine.Resolve("Space", new[] { "global" }) == null && mine.Radials.Count == keys.Radials.Count, "override");
         foreach ((string from, string to, string name) in new[] {
             ("\"key\": \"Ctrl+Alt+Z\"", "\"key\": \"Alt+Ctrl+Z\"", "Alt+Ctrl+Z"), ("\"key\": \"Space\"", "\"key\": \"F1\"", "F1"),
-            ("\"command\": \"help.open\"", "\"command\": \"help.shut\"", "Shift+Slash"), ("\"context\": \"editor\"", "\"context\": \"dialog\"", "Ctrl+Enter"),
+            ("\"command\": \"help.open\"", "\"command\": \"help.shut\"", "F1"), ("\"context\": \"editor\"", "\"context\": \"dialog\"", "Ctrl+Enter"),
             ("\"radial.workspace\": {", "\"wheel.workspace\": {", "wheel.workspace"), ("\"argument\": \"next\",\n      \"label\": \"Next theme family\"", "\"argument\": \"next\"", "T") })
         {
             Check(text.Contains(from, StringComparison.Ordinal), "fixture lost " + from);

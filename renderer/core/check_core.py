@@ -157,6 +157,8 @@ def main():
                         help="also run ABI 9's WARP check of a view's focus (sa2_view_focus)")
     parser.add_argument("--sweep", action="store_true",
                         help="also run ADR-D02 B18's WARP check of a twist's transform (sa2_transform_set)")
+    parser.add_argument("--slice", action="store_true",
+                        help="also run ADR-D02 B20's WARP check of the cut slice (a style slot's slice)")
     parser.add_argument("--panes", action="store_true",
                         help="also run ABI 8's WARP check of the composite frame (sa2_frame_submit_panes)")
     options = parser.parse_args()
@@ -209,11 +211,14 @@ def main():
             check_result(executable, build, "warp", vectors, warp_mode="hopf")
         if options.sweep:
             check_result(executable, build, "warp", vectors, warp_mode="sweep")
+        if options.slice:
+            check_result(executable, build, "warp", vectors, warp_mode="slice")
         summary = " (CPU, WARP and hardware)" if options.gpu else " (source/fixture only; no GPU mode run)"
         warp = " and ".join(name for name, run in (("stage", options.stages), ("pose", options.poses),
                                                    ("shape", options.shape), ("style", options.style),
                                                    ("panes", options.panes), ("focus", options.focus),
-                                                   ("hopf", options.hopf), ("sweep", options.sweep)) if run)
+                                                   ("hopf", options.hopf), ("sweep", options.sweep),
+                                                   ("slice", options.slice)) if run)
         if warp:
             summary = f" (CPU, WARP and hardware; WARP {warp} checks)" if options.gpu else f" (CPU and the WARP {warp} checks; no hardware run)"
         print("check_core: ok" + summary)

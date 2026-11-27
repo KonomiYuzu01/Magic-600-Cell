@@ -540,6 +540,10 @@ internal sealed partial class D02Driver : Node
         {
             Dump();
             _doing = "";
+            // A run never inherits the real pointer: it starts with the pointer parked outside the window, so F1's
+            // help topic (ADR-D01.73's interim route) and the hover pick read only the script's own pointer steps.
+            var parked = new Vector2(-8, -8);
+            Input.ParseInputEvent(new InputEventMouseMotion { Position = parked, GlobalPosition = parked });
         }
         if (_next >= _steps.Count)
         {
@@ -559,6 +563,21 @@ internal sealed partial class D02Driver : Node
             {
                 // A key Godot does not name (KeyJ, not J) is written as such, so the run's expectation fails on it.
                 _doing += " (not pressed: " + error.Message + ")";
+            }
+        }
+        else if (step.TryGetProperty("hold", out var hold) || step.TryGetProperty("release", out hold))
+        {
+            // ADR-D02 B20: a held key, down at "hold" and up at "release", so frames are drawn while it is held.
+            var down = step.TryGetProperty("hold", out _);
+            _doing = (down ? "hold " : "release ") + hold.GetString();
+            var key = OS.FindKeycodeFromString(hold.GetString()!);
+            if (key == Key.None)
+            {
+                _doing += " (not pressed: no key is named " + hold.GetString() + ")";
+            }
+            else
+            {
+                Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = down });
             }
         }
         else if (step.TryGetProperty("text", out var text))
@@ -698,6 +717,27 @@ internal sealed partial class D02Driver : Node
             // A left click on a cap map cell, through the shell's input.
             _doing = "cap click " + capClick.GetInt32().ToString(CultureInfo.InvariantCulture) + CapPointer(capClick.GetInt32(), true);
         }
+        else if (step.TryGetProperty("hover_control", out var hovered))
+        {
+            var name = hovered.GetString()!;
+            _doing = "hover " + name;
+            if (_frame.FindChild(name, true, false) is Control control && control.IsVisibleInTree())
+            {
+                // The cap map extends below the dock's scroll area on a short window.
+                var bounds = control.GetGlobalRect();
+                var visible = bounds.Intersection(control.GetViewportRect());
+                for (Node? parent = control.GetParent(); parent != null; parent = parent.GetParent())
+                    if (parent is Control { ClipContents: true } clip) visible = visible.Intersection(clip.GetGlobalRect());
+                if (visible.HasArea())
+                {
+                    var centre = bounds.GetCenter();
+                    var at = visible.HasPoint(centre) ? centre : visible.GetCenter();
+                    Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+                }
+                else _doing += " (clipped)";
+            }
+            else _doing += " (not found)";
+        }
         else if (step.TryGetProperty("click_control", out var clicked))
         {
             // A left click at the centre of a control of the frame, found by its name (the cap prompt's rows), through
@@ -736,7 +776,7 @@ internal sealed partial class D02Driver : Node
         }
         else
         {
-            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a click_control, a command or a wait_ms");
+            throw new FormatException("a D02 script step is a chord, a text, a drag, a wheel, a cancel_older, a screen_control, an open, a hover_cover, a focus, a cap_hover, a cap_click, a hover_control, a click_control, a command or a wait_ms");
         }
         _wait = StepFrames;
     }

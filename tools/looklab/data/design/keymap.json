@@ -60,7 +60,7 @@
     {
       "key": "F1",
       "context": "global",
-      "command": "command.find"
+      "command": "help.open"
     },
     {
       "key": "Space",
@@ -70,7 +70,9 @@
     {
       "key": "Shift+Slash",
       "context": "global",
-      "command": "help.open"
+      "command": "help.open",
+      "argument": "keys",
+      "label": "Keyboard shortcuts"
     },
     {
       "key": "Escape",

@@ -114,6 +114,30 @@ def expect_smoke(dumps: list[dict], source: dict, state: str | None) -> list[str
     return problems
 
 
+def expect_help_card(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    steps = ["start", "wait 2000 ms", "hover CapMapCells", "chord F1", "chord Escape",
+             "command help.open cell", "click HelpCardLearn", "wait 6000 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    problems = []
+    cap = overlay(dumps[3])
+    if "Cap" not in cap or "Open in Learn" not in cap:
+        problems.append("step 3: F1 over the cap map did not open Cap help with its Learn link")
+    words = sum(len(line.split()) for line in cap)
+    if words > 50:
+        problems.append(f"step 3: the Cap card shows {words} words")
+    if overlay(dumps[4]):
+        problems.append("step 4: Escape left an overlay open")
+    caption = "One of the 600 cells (bold) and its four neighbours."
+    cell = overlay(dumps[5])
+    if "Cell" not in cell or caption not in cell:
+        problems.append("step 5: help.open cell did not show Cell and its figure caption")
+    learn = texts(dumps[6], "frame")
+    if "Cell" not in learn or caption not in learn or overlay(dumps[6]):
+        problems.append("step 6: the link did not show Cell and its figure in Learn")
+    return problems
+
+
 def bind_chip(dump: dict) -> str | None:
     """The binding chip's words in a dump (B5): `bound · <state>` or `unbound · stale`."""
     for group, text in map(tuple, dump["lines"]):
@@ -752,6 +776,9 @@ def expect_repair(dumps: list[dict], source: dict, state: str | None) -> list[st
     return problems
 
 
+TWIST_ROW_150_PLANE = "c7b19b2e60a26fcdc234491d6f51139751e06e49ddb66fdb8d0528602e445f70"
+
+
 def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list[str]:
     """B18's part for B20: the default cap 0 (blocked in wj-ia-300) has no twist row; after `> jumble.cap.name 150`
     the row of item 1 has a unit orthogonal plane, an angle in (0, pi] and moves exactly cap 150's inside set."""
@@ -769,10 +796,21 @@ def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list
         return ["a dump has no turn row"]
     if before.get("cap") != 0 or before.get("code") != 0:
         problems.append(f"step 1: the turn row reads cap {before.get('cap')} with code {before.get('code')}, not cap 0")
-    if (rows[0]["status"] == "admissible") != (before.get("status") == 1):
-        problems.append(f"step 1: cap 0 is {rows[0]['status']} but the turn row's status is {before.get('status')}")
+    # B18-08 (review call 20261126T225307Z-e6ce1514): the blocked cap's status is exactly 0, and the head is the same
+    # before and after the query (the row commits nothing).
+    if rows[0]["status"] != "blocked" or before.get("status") != 0:
+        problems.append(f"step 1: cap 0 is {rows[0]['status']} and the turn row's status is {before.get('status')}, not blocked and 0")
+    heads = [dumps[k].get("word", {}).get("digest") for k in (1, 5, len(dumps) - 1)]
+    if heads[0] is None or len(set(heads)) != 1 or before.get("read_at") != named.get("read_at"):
+        problems.append(f"the head moved across the query: digests {heads}, read at {before.get('read_at')} and {named.get('read_at')}")
     if named.get("cap") != 150 or named.get("code") != 0 or named.get("status") != 1:
         return problems + [f"step 5: the turn row is {named}"]
+    if named.get("revision") != named.get("read_at"):
+        problems.append(f"step 5: the row's revision {named.get('revision')} is not the head's {named.get('read_at')}")
+    # Cap 150's twist in wj-ia-300 is a half turn in the engine's plane u = (-cos 36, -sin 18, 0, 1/2), v = (0, -1/2,
+    # -cos 36, -sin 18) (single floats, little-endian, as the host writes them).
+    if abs(named["angle"] - math.pi) > 1e-6 or named.get("plane_sha256") != TWIST_ROW_150_PLANE:
+        problems.append(f"step 5: the angle {named['angle']} or the plane digest {named.get('plane_sha256')} is not cap 150's")
     inside = overlay_mask(load(SAMPLES / state / "cap-150.json")["masks"]["inside"], 177_120)
     packed = bytearray((len(inside) + 7) // 8)
     for piece, bit in enumerate(inside):
@@ -789,19 +827,19 @@ def expect_twist_row(dumps: list[dict], source: dict, state: str | None) -> list
     return problems
 
 
-EXPECT = {"twist-row": expect_twist_row, "smoke": expect_smoke, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
+EXPECT = {"twist-row": expect_twist_row, "smoke": expect_smoke, "help-card": expect_help_card, "bind": expect_bind, "host": expect_host, "rotate": expect_rotate, "name-cap": expect_name_cap,
           "q3b": expect_q3b, "covers": expect_covers, "repair": expect_repair, "zoom": expect_zoom,
           "focus-layer": expect_focus_layer, "seed7001": expect_seed7001, "nu-band": expect_nu_band,
           "fit-2000": expect_fit, "fit-1280": lambda dumps, source, state: expect_fit(dumps, source, state, vertical=False)}
 # Scripts that run on the named state's session fixture, which build_d02_fixtures.py writes, and scripts that run in
 # sample mode (ADR-D01's frame on sample data), where the strip and the rail are. The twist scripts (bind and
 # two-views) run in sample mode as well, so they show that J reaches the session's router there too.
-ON_FIXTURE = {"twist-row", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
+ON_FIXTURE = {"twist-row", "help-card", "bind", "host", "name-cap", "q3b", "covers", "repair", "focus-layer", "nu-band", "fit-2000", "fit-1280"}
 IN_SAMPLE_MODE = {"host", "nu-band", "fit-2000", "fit-1280", "bind", "two-views"}
 
 
 # The drawing track (ADR-D02 B18c onward): its scripts, and the event-log checks that read the run's frame rows.
-TWO_VIEWS_STEPS = ["start", "wait 2500 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 4000 ms",
+TWO_VIEWS_STEPS = ["start", "wait 4000 ms", "chord F1", "text > jumble.cap.name 150", "chord Enter", "wait 4000 ms",
                    "chord J", "wait 700 ms", "chord J", "wait 700 ms", "chord Ctrl+Z", "wait 4000 ms"]
 
 
@@ -908,9 +946,63 @@ def check_two_views_events(events: Path) -> list[str]:
     return problems
 
 
+def expect_slice(dumps: list[dict], source: dict, state: str | None) -> list[str]:
+    """B20 (ADR-D02.17, CR-14): at the default cap 0 (blocked in wj-ia-300) the held preview key draws no ghost and
+    names nothing; at cap 150 the held split key splits Local and its release joins it, and the held preview key draws
+    the ghost of the inside layer (cap 150's inside set) and names item 1's twist only on release."""
+    steps = ["start", "wait 3000 ms", "hold Down", "wait 800 ms", "release Down", "chord F1", "text > jumble.cap.name 150",
+             "chord Enter", "wait 2500 ms", "hold Backslash", "wait 1500 ms", "release Backslash", "wait 1500 ms",
+             "hold Down", "wait 1500 ms", "release Down", "wait 1500 ms"]
+    if [dump["do"] for dump in dumps] != steps:
+        return [f"the steps written were {[dump['do'] for dump in dumps]}"]
+    if state is None or not (SAMPLES / state / "cap-150.json").is_file():
+        return ["the slice script needs a sample state with cap 150's record"]
+    inside = sum(overlay_mask(load(SAMPLES / state / "cap-150.json")["masks"]["inside"], 177_120))
+    slices = [dump.get("slice") for dump in dumps]
+    if any(row is None for row in slices):
+        return ["a dump has no slice row"]
+    problems = []
+    blocked = slices[3]
+    if blocked["ghost"] or blocked["inside"] != 0 or not (blocked["refusal"] or "").startswith("Cap 0 is blocked"):
+        problems.append(f"step 3: the blocked cap's slice is {blocked}")
+    if slices[4]["named"] is not None or slices[8]["named"] is not None:
+        problems.append("a twist was named at the blocked cap")
+    if slices[8]["inside"] != inside or slices[8]["split"] or slices[8]["ghost"]:
+        problems.append(f"step 8: the slice at cap 150 is {slices[8]}, not its inside set of {inside} unsplit")
+    if not slices[10]["split"] or slices[12]["split"]:
+        problems.append(f"the split read {slices[10]['split']} while held and {slices[12]['split']} after")
+    held, after = slices[14], slices[16]
+    if not held["ghost"] or held["named"] is not None:
+        problems.append(f"step 14: while the preview key is held the slice is {held}")
+    named = after["named"] or {}
+    if after["ghost"] or named.get("cap") != 150 or named.get("item") != 1:
+        problems.append(f"step 16: after the release the slice is {after}")
+    if after["shell_min"] != 0 or not 0 < after["shell_max"] <= 3.1416:
+        problems.append(f"the shell {after['shell_min']}..{after['shell_max']} is not about the pole")
+    return problems
+
+
+def check_slice_events(events: Path) -> list[str]:
+    """B20: three drawn panes (Global and Local's two copies) while the split key is held, two after its release."""
+    frames = frame_rows(events)
+    drawn = [row for row in frames if row.get("panes") and row.get("held") == 0]
+    three = [row["frame_id"] for row in drawn if row["panes"] == 3]
+    problems = []
+    if not three:
+        problems.append("no drawn frame of three panes while the split key was held")
+    elif not any(row["panes"] == 2 for row in drawn if row["frame_id"] > three[-1]):
+        problems.append("no drawn frame of two panes after the split key's release")
+    if [row["panes"] for row in drawn if row["panes"] not in (2, 3)]:
+        problems.append("a drawn composite frame had neither two nor three panes")
+    print(f"slice: {len(drawn)} drawn composite frames, {len(three)} with three panes")
+    return problems
+
+
 EXPECT["two-views"] = expect_two_views
 ON_FIXTURE.add("two-views")
-EVENT_CHECKS = {"two-views": check_two_views_events}
+EXPECT["slice"] = expect_slice
+ON_FIXTURE.add("slice")
+EVENT_CHECKS = {"two-views": check_two_views_events, "slice": check_slice_events}
 
 
 # Step C-.40 (ADR-D01.40/.41): Local on the base puzzle (600-cell-Full, Jumble off), with no D02 state. The script

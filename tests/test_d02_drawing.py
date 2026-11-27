@@ -282,7 +282,7 @@ class ShellPanes(unittest.TestCase):
         self.assertIn("chrome.Frame.LocalOpeningShown = cell != HostLibrary.FocusNone;", body)
 
     def test_the_panes_are_global_then_local_inside_the_surface(self):
-        self.assertIn("var views = new[] { HostLibrary.View, HostLibrary.Local };", self.shell)
+        self.assertIn("var copies = D02.ShellSlice.Panes(layout.Panes[1]);", self.shell)
         self.assertIn('new Magic600.Chrome.PaneSpec("Global",', self.shell)
         self.assertIn('new Magic600.Chrome.PaneSpec("Local",', self.shell)
         # The panes are set after the surface's move and viewport, and only for the rectangle the surface has.
@@ -317,6 +317,39 @@ class ShellPanes(unittest.TestCase):
         log = text(PROJECT / "EventLog.cs")
         self.assertIn('if (frame.Panes > 0)\n            {\n                json.WriteNumber("panes", frame.Panes);\n'
                       '                json.WriteNumber("held", frame.Held);', log)
+
+
+class TwistRowShell(unittest.TestCase):
+    """B18's review (call 20261126T225307Z-e6ce1514) on the shell side of the twist row."""
+
+    def setUp(self):
+        self.library = text(PROJECT / "HostLibrary.cs")
+        self.turn = text(PROJECT / "D02" / "ShellTurn.cs")
+
+    def test_a_short_plane_is_refused_before_the_native_call(self):
+        # B18-01: a plane that is not 8 floats (or a moving set without one) never reaches m6h_set_transform.
+        body = self.library[self.library.index("public int SetTransform(IntPtr host, ulong revision, float[]? plane"):]
+        body = body[:body.index("\n    }\n")]
+        refuse = body.index("if (plane is { Length: not 8 } || (moving is not null && plane is null))")
+        self.assertLess(refuse, body.index("return InvalidArgument;"))
+        self.assertLess(body.index("return InvalidArgument;"), body.index('_exports["m6h_set_transform"]'))
+
+    def test_the_row_carries_its_revision_to_the_setter(self):
+        # B18-04: the query returns the row's revision and the preview names it.
+        self.assertIn("&status, &at);", self.library)
+        self.assertIn("new TwistRow(plane, angle, moving, at)", self.library)
+        self.assertIn("library.SetTransform(host, row.Revision, row.Plane, -row.Angle, row.Moving, 0)", self.turn)
+
+    def test_the_turn_reads_the_renderers_framing(self):
+        # B18-05: one stateful framing call per frame, the shell's FollowLocalCap; the turn reads what it left.
+        project = "".join(text(path) for path in sorted(PROJECT.rglob("*.cs")))
+        self.assertEqual(project.count("ShellLocal.Frame("), 1)
+        self.assertIn("if (ShellLocal.Plan.Framed is not int cap)", self.turn)
+
+    def test_a_refusal_is_kept_for_its_cap_and_revision(self):
+        # B18-06: no row query (and no 177,120-byte buffer) every frame while the host refuses.
+        self.assertIn("(Cap, Row, RowRevision, _read) = (cap, row, at, (cap, revision));", self.turn)
+        self.assertNotIn("_read = Code == HostLibrary.Ok", self.turn)
 
 
 class ChromeOpening(unittest.TestCase):
@@ -473,8 +506,10 @@ class Picks(unittest.TestCase):
         self.assertIn("D02.ShellPick.Point(SurfacePoint(move.Position));", shell)
         self.assertIn("if (D02.ShellJumble.On && _session && D02.ShellPick.Step(library, _host))", shell)
         self.assertIn("D02.ShellStyle.Apply(library, _host, _adoptedRevision);", shell)
-        # Global's pane draws with style slot 1 and Local's with slot 2, so both views show the outlines.
-        self.assertIn("(uint)r.Width, (uint)r.Height, (uint)i + 1));", shell)
+        # Global's pane draws with style slot 1 and Local's with slot 2 (B20: 3 for the split's inside copy), so both
+        # views show the outlines.
+        self.assertIn("g.X, g.Y, (uint)g.Width, (uint)g.Height, 1));", shell)
+        self.assertIn("r.X, r.Y, (uint)r.Width, (uint)r.Height, slot));", shell)
         pick = text(PROJECT / "D02" / "ShellPick.cs")
         self.assertIn("public static Picked? Selection { get; private set; }", pick)
         self.assertIn("public static Picked? Hover { get; private set; }", pick)
@@ -501,7 +536,9 @@ class FocusLayersInTheCore(unittest.TestCase):
         self.assertIn("compile_embedded_shader(styled_id_ps.dxil styled.hlsl styledIdPs ps_6_0)", text(CORE / "CMakeLists.txt"))
         self.assertIn("foreach(name styled_vs styled_ps styled_id_ps)", text(CORE / "embed_dxil.cmake"))
         product = text(CORE / "src" / "product.cpp")
-        self.assertIn("(record->styled && copy.style != record->style_version)", product)
+        # B18-03: a turning frame's moving mask lives in the same style words, so its pick checks the version too.
+        self.assertIn("const bool bound = record->styled || record->shape.turn != 0.0f;", product)
+        self.assertIn("(bound && copy.style != record->style_version)", product)
         self.assertIn('suite.check("focus layers warp", [&] { product_focus_layers(options); });', text(CORE / "src" / "gpu_test.cpp"))
         abi = text(ROOT / "rust" / "c600-render" / "src" / "abi.rs")
         self.assertIn("pub const STYLE_HIDE_MARKED: u32 = 3;", abi)

@@ -482,7 +482,7 @@ public sealed unsafe class HostLibrary : IDisposable
         }
     }
 
-    /// <summary>A style slot as the core's sa2_view_style lays it out (316 bytes; version 10).</summary>
+    /// <summary>A style slot as the core's sa2_view_style lays it out (348 bytes; version 10, with B20's slice).</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct ViewStyle
     {
@@ -490,6 +490,11 @@ public sealed unsafe class HostLibrary : IDisposable
         public float DimAmount, OutlineWidth;
         public fixed float Palette[64];
         public fixed float Matrix[9];
+        /// <summary>ADR-D02 B20: the cut slice (<see cref="SliceOff"/> to <see cref="SliceInside"/>), its inside layer's
+        /// shrink factor, its radius shell about the focus pole (angles) and the turn preview's ghost colour.</summary>
+        public uint SliceMode;
+        public float SliceShrink, ShellMin, ShellMax;
+        public fixed float Ghost[4];
         public uint Reserved;
 
         /// <summary>A slot that changes nothing: no tint, no dim, an empty palette, the identity matrix.</summary>
@@ -506,6 +511,10 @@ public sealed unsafe class HostLibrary : IDisposable
 
     /// <summary>ADR-D02 B17 (the core's ABI 10): the dim modes that hide instead; a hidden piece is neither drawn nor picked.</summary>
     public const uint HideMarked = 3, HideUnmarked = 4;
+
+    /// <summary>ADR-D02 B20: the piece style's slice channel (one byte per piece, 1 = the inside layer) and the slice
+    /// modes: off, both layers, the outside layer only (the split's left copy), the inside layer only (its right).</summary>
+    public const uint StyleSlice = 2, SliceOff = 0, SliceBoth = 1, SliceOutside = 2, SliceInside = 3;
 
     /// <summary>A fill byte's dim-set bit (the core's SA2_STYLE_DIM): the pieces a dim or hide mode acts on.</summary>
     public const byte DimSet = 0x80;
@@ -528,38 +537,51 @@ public sealed unsafe class HostLibrary : IDisposable
     /// ADR-D02 B18 (for B20): sets the adopted revision's twist transform: the plane (u then v, 8 floats), the angle, one
     /// byte per piece (1 moves) and the phase in 0..1; the moving pieces draw turned by R((phase - 1) angle) after their
     /// pose, so phase 1 draws the revision as it is. Null clears it. The core drops it at the next adoption.
+    /// <paramref name="revision"/> is the row's (<see cref="TwistRow.Revision"/>): the host sets it only while that
+    /// revision is the adopted one (B18 review finding B18-04). A plane that is not 8 floats, or a moving set without
+    /// one, answers <see cref="InvalidArgument"/> before the host is called, so it never reads past a short array
+    /// (B18-01).
     /// </summary>
-    public int SetTransform(IntPtr host, float[]? plane, float angle, byte[]? moving, float phase)
+    public int SetTransform(IntPtr host, ulong revision, float[]? plane, float angle, byte[]? moving, float phase)
     {
+        if (plane is { Length: not 8 } || (moving is not null && plane is null))
+        {
+            return InvalidArgument;
+        }
         fixed (float* p = plane)
         fixed (byte* m = moving)
         {
-            return ((delegate* unmanaged[Cdecl]<IntPtr, float*, float, byte*, uint, float, int>)_exports["m6h_set_transform"])(
-                host, p, angle, m, (uint)(moving?.Length ?? 0), phase);
+            return ((delegate* unmanaged[Cdecl]<IntPtr, ulong, float*, float, byte*, uint, float, int>)_exports["m6h_set_transform"])(
+                host, revision, p, angle, m, (uint)(moving?.Length ?? 0), phase);
         }
     }
 
-    /// <summary>A twist's certified transform: its plane (u then v), its angle in (0, pi] and its moving pieces.</summary>
-    public sealed record TwistRow(float[] Plane, float Angle, byte[] Moving);
+    /// <summary>
+    /// A twist's certified transform: its plane (u then v), its angle in (0, pi], its moving pieces and the engine
+    /// revision of the head it was read at, which <see cref="SetTransform"/> names.
+    /// </summary>
+    public sealed record TwistRow(float[] Plane, float Angle, byte[] Moving, ulong Revision);
 
     /// <summary>
     /// ADR-D02 B18: the certified transform of the session's twist at <paramref name="cap"/> with menu item
     /// <paramref name="item"/>, not committed; null when the twist is not admissible or has no plane (the identity).
     /// </summary>
-    public int TwistTransform(IntPtr host, uint cap, ulong item, out TwistRow? row)
+    public int TwistTransform(IntPtr host, uint cap, ulong item, out TwistRow? row, out ulong revision)
     {
         var plane = new float[8];
         var moving = new byte[177_120];
         float angle = 0;
         uint status = 0;
+        ulong at = 0;
         int code;
         fixed (float* p = plane)
         fixed (byte* m = moving)
         {
-            code = ((delegate* unmanaged[Cdecl]<IntPtr, uint, ulong, float*, float*, byte*, uint*, int>)_exports["m6h_twist_transform"])(
-                host, cap, item, p, &angle, m, &status);
+            code = ((delegate* unmanaged[Cdecl]<IntPtr, uint, ulong, float*, float*, byte*, uint*, ulong*, int>)_exports["m6h_twist_transform"])(
+                host, cap, item, p, &angle, m, &status, &at);
         }
-        row = code == Ok && status == 1 ? new TwistRow(plane, angle, moving) : null;
+        revision = at;
+        row = code == Ok && status == 1 ? new TwistRow(plane, angle, moving, at) : null;
         return code;
     }
 

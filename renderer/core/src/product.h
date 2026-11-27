@@ -23,7 +23,7 @@ static_assert(sizeof(sa2_presented_row) == 56);
 static_assert(sizeof(sa2_pick_row) == 112);
 static_assert(sizeof(sa2_counter_values) == 64);
 static_assert(sizeof(sa2_view_shape) == 24);
-static_assert(sizeof(sa2_view_style) == 316);
+static_assert(sizeof(sa2_view_style) == 348);
 static_assert(sizeof(sa2_pane) == 112);
 static_assert(sizeof(sa2_pane_row) == 32);
 static_assert(sizeof(sa2_view_focus) == 24);
@@ -122,23 +122,27 @@ uint32_t view_layout_kind(const sa2_view_layout* layout);
 // Builds the Hopf table from the rings and the core's own cell centres; rings that do not fit them are refused.
 HopfTable hopf_table(const sa2_view_layout& layout, const std::function<std::array<float, 4>(uint32_t)>& centre);
 // ABI 7: a style slot (sa2_view_style_set), as the styled pass reads it (register b1): 16 palette entries, the three
-// matrix rows (xyz), then the modes. 320 bytes, inside one 256-byte-aligned constant buffer.
+// matrix rows (xyz), then the modes; ADR-D02 B20: the slice's mode, shrink and shell (as cosines), then the ghost.
+// 368 bytes, inside one 512-byte constant buffer.
 struct ViewStyle {
     std::array<float, 64> palette{};
     std::array<float, 12> rows{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
     uint32_t tint_mode = 0, dim_mode = 0;
     float dim_amount = 0, outline_width = 0;
-    uint32_t matrix_on = 0, pad[3]{};
+    uint32_t matrix_on = 0, slice_mode = 0;
+    float slice_shrink = 1, shell_min_cos = 1;
+    float shell_max_cos = -1, pad[3]{};
+    std::array<float, 4> ghost{};
     bool operator==(const ViewStyle&) const = default;
 };
-static_assert(sizeof(ViewStyle) == 336);
+static_assert(sizeof(ViewStyle) == 368);
 ViewStyle view_style(const sa2_view_style* style); // validates (SA2_E_INVALID_ARGUMENT)
 // ABI 7: one revision's piece style, packed per piece as the styled pass reads it (register t17): the fill byte, then
 // the outline byte << 8; ADR-D02 B18: bit 16 marks a moving piece of the transform (t4 in the product passes).
 struct PieceStyle {
     uint64_t revision = 0, version = 0; // version: the style's upload key, never 0
     std::vector<uint32_t> packed; // SA2_PIECES
-    std::array<bool, 2> any{}; // per channel: a non-zero byte
+    std::array<bool, 3> any{}; // per channel: a non-zero byte (ADR-D02 B20: channel 2, the slice's inside layer)
     bool dim = false; // a fill byte has SA2_STYLE_DIM
     bool moving = false; // ADR-D02 B18: a piece has the moving bit
 };

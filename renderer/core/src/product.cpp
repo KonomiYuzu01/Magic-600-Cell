@@ -243,6 +243,15 @@ ViewStyle view_style(const sa2_view_style* style) {
         "every palette channel must be finite and within 0..1");
     argument(std::all_of(std::begin(style->matrix), std::end(style->matrix),
         [&](float v) { return within(v, -SA2_STYLE_MATRIX_MAX, SA2_STYLE_MATRIX_MAX); }), "every matrix entry must be finite and within the bound");
+    // ADR-D02 B20: the slice.
+    constexpr float pi = 3.14159265f;
+    argument(style->slice_mode <= SA2_SLICE_INSIDE, "view_style slice_mode must be a SA2_SLICE_* value");
+    argument(within(style->slice_shrink, 0.0f, 1.0f), "slice_shrink must be finite and within 0..1");
+    argument(within(style->shell_min, 0.0f, pi) && within(style->shell_max, 0.0f, pi), "the shell's angles must be finite and within 0..pi");
+    argument(std::all_of(std::begin(style->ghost), std::end(style->ghost), [&](float v) { return within(v, 0.0f, 1.0f); }),
+        "every ghost channel must be finite and within 0..1");
+    argument(style->slice_mode == SA2_SLICE_OFF || (style->slice_shrink > 0.0f && style->shell_min <= style->shell_max),
+        "a slice needs slice_shrink above 0 and shell_min <= shell_max");
     ViewStyle out;
     std::copy(std::begin(style->palette), std::end(style->palette), out.palette.begin());
     for (int r = 0; r < 3; ++r) for (int c = 0; c < 3; ++c) out.rows[size_t(r) * 4 + c] = style->matrix[r * 3 + c];
@@ -250,13 +259,20 @@ ViewStyle view_style(const sa2_view_style* style) {
     out.dim_amount = style->dim_amount; out.outline_width = style->outline_width;
     const float identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
     out.matrix_on = std::equal(std::begin(style->matrix), std::end(style->matrix), std::begin(identity)) ? 0u : 1u;
+    out.slice_mode = style->slice_mode;
+    if (out.slice_mode != SA2_SLICE_OFF) {
+        out.slice_shrink = style->slice_shrink;
+        out.shell_min_cos = std::cos(style->shell_min); out.shell_max_cos = std::cos(style->shell_max);
+        std::copy(std::begin(style->ghost), std::end(style->ghost), out.ghost.begin());
+    }
     return out;
 }
 
 void validate_piece_style(const uint8_t* bytes, uint32_t channel) {
-    argument(channel == SA2_STYLE_CHANNEL_FILL || channel == SA2_STYLE_CHANNEL_OUTLINE, "channel must be SA2_STYLE_CHANNEL_FILL or _OUTLINE");
+    argument(channel <= SA2_STYLE_CHANNEL_SLICE, "channel must be SA2_STYLE_CHANNEL_FILL, _OUTLINE or _SLICE");
     if (!bytes) return;
-    const uint8_t allowed = uint8_t(channel == SA2_STYLE_CHANNEL_FILL ? (SA2_STYLE_INDEX | SA2_STYLE_DIM) : SA2_STYLE_INDEX);
+    const uint8_t allowed = uint8_t(channel == SA2_STYLE_CHANNEL_FILL ? (SA2_STYLE_INDEX | SA2_STYLE_DIM)
+        : channel == SA2_STYLE_CHANNEL_SLICE ? 1u : SA2_STYLE_INDEX); // ADR-D02 B20: a slice byte is 0 or 1
     argument(std::all_of(bytes, bytes + SA2_PIECES, [&](uint8_t b) { return (b & ~allowed) == 0; }),
         "a piece style byte sets a bit its channel does not have");
 }
@@ -320,7 +336,7 @@ void Product::set_style(uint64_t revision, const uint8_t* bytes, uint32_t channe
     argument(revision == image_->revision, "a piece style names a revision other than the adopted one");
     if (!bytes && !style_) return;
     if (!style_) style_ = PieceStyle{revision, 0, std::vector<uint32_t>(SA2_PIECES, 0u), {}, false};
-    const uint32_t shift = channel == SA2_STYLE_CHANNEL_FILL ? 0 : 8;
+    const uint32_t shift = channel == SA2_STYLE_CHANNEL_FILL ? 0 : channel == SA2_STYLE_CHANNEL_OUTLINE ? 8 : 17; // B20: bit 17
     bool any = false, dim = false;
     for (uint32_t piece = 0; piece < SA2_PIECES; ++piece) {
         const uint32_t value = bytes ? bytes[piece] : 0u;
@@ -331,7 +347,7 @@ void Product::set_style(uint64_t revision, const uint8_t* bytes, uint32_t channe
     }
     style_->any[channel] = any;
     if (channel == SA2_STYLE_CHANNEL_FILL) style_->dim = dim;
-    if (!style_->any[0] && !style_->any[1] && !style_->dim && !style_->moving) { style_.reset(); return; }
+    if (!style_->any[0] && !style_->any[1] && !style_->any[2] && !style_->dim && !style_->moving) { style_.reset(); return; }
     style_->version = ++style_version_;
 }
 // ADR-D02 B18 (ABI 10): device-free, as the piece style. The moving bit shares the style's word per piece (bit 16), so
@@ -375,7 +391,7 @@ void Product::set_transform(uint64_t revision, const float* u, const float* v, f
     } else {
         transform_.reset();
     }
-    if (!style_->any[0] && !style_->any[1] && !style_->dim && !style_->moving) { style_.reset(); return; }
+    if (!style_->any[0] && !style_->any[1] && !style_->any[2] && !style_->dim && !style_->moving) { style_.reset(); return; }
     if (changed || style_->version == 0) style_->version = ++style_version_;
 }
 void Product::turn(ViewShape& shape) const {
@@ -396,7 +412,7 @@ bool Product::styled(uint32_t slot, ViewStyle& out) const {
         && ((view.dim_mode == SA2_STYLE_DIM_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_DIM_UNMARKED);
     // ADR-D02 B17 (ABI 10): a hide that applies.
     const bool hide = (view.dim_mode == SA2_STYLE_HIDE_MARKED && style_ && style_->dim) || view.dim_mode == SA2_STYLE_HIDE_UNMARKED;
-    if (!fill && !outline && !dim && !hide && !view.matrix_on) return false;
+    if (!fill && !outline && !dim && !hide && !view.matrix_on && view.slice_mode == SA2_SLICE_OFF) return false; // B20: a slice
     out = view;
     return true;
 }
@@ -590,6 +606,14 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         }
     }
     FramePlan out = plan(input, width, height);
+    // ADR-D02 B20: a slot with a slice and a ghost claims the transform for its panes.
+    const auto ghosts = [&](uint32_t slot) {
+        if (slot < 1 || slot > SA2_STYLE_SLOTS || !view_styles_[slot - 1]) return false;
+        const auto& view = *view_styles_[slot - 1];
+        return view.slice_mode != SA2_SLICE_OFF && view.ghost[3] > 0.0f;
+    };
+    bool ghost_frame = false;
+    for (uint32_t i = 0; i < count; ++i) ghost_frame = ghost_frame || ghosts(panes[i].style);
     for (uint32_t i = 0; i < count; ++i) {
         const auto& pane = panes[i];
         if (auto view = views_.find(pane.view); view != views_.end())
@@ -598,7 +622,8 @@ FramePlan Product::plan_panes(const sa2_frame_input& input, const sa2_pane* pane
         made.pane = pane;
         made.publication_generation = i == 0 ? input.publication_generation : 0;
         made.shape = shape(pane.view);
-        turn(made.shape); // ADR-D02 B18
+        // ADR-D02 B18; B20: a frame with a ghost pane turns the pieces only in its ghost panes.
+        if (!ghost_frame || ghosts(pane.style)) turn(made.shape);
         made.styled = pane.style != 0 && styled(pane.style, made.view_style);
         if (pane.resource_set) {
             const Entry* entry = set_entry(pane.resource_set);
@@ -782,8 +807,10 @@ PickPlan Product::pick_plan(uint64_t id, uint32_t x, uint32_t y) const {
         return out;
     }
     const Copy& copy = copies_[record->copy];
-    // ADR-D02 B17 (ABI 10): a styled frame's copy must still hold the piece style it drew with.
-    if (!copy.valid || copy.revision != record->input.engine_revision || (record->styled && copy.style != record->style_version)) {
+    // ADR-D02 B17 (ABI 10): a styled frame's copy must still hold the piece style it drew with; so must a turning
+    // frame's, styled or not, since its moving mask lives in the same words (B18 review finding B18-03).
+    const bool bound = record->styled || record->shape.turn != 0.0f;
+    if (!copy.valid || copy.revision != record->input.engine_revision || (bound && copy.style != record->style_version)) {
         out.state = SA2_PICK_STALE;
         out.stale = SA2_PICK_STALE_ENGINE;
         return out;
@@ -838,7 +865,8 @@ PickPlan Product::pick_pane(const Frame& record, PickPlan out) const {
         }
         const Copy& copy = copies_[record.copy];
         const bool styled = record.panes[i].styled; // ADR-D02 B17 (ABI 10)
-        if (!copy.valid || copy.revision != record.input.engine_revision || (styled && copy.style != record.style_version)) {
+        const bool bound = styled || record.panes[i].shape.turn != 0.0f; // B18-03: a turning pane's moving mask
+        if (!copy.valid || copy.revision != record.input.engine_revision || (bound && copy.style != record.style_version)) {
             out.state = SA2_PICK_STALE;
             out.stale = SA2_PICK_STALE_ENGINE;
             return out;

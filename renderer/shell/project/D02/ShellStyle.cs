@@ -152,6 +152,9 @@ public static class ShellStyle
     /// <summary>Marks the style for sending again (the selection or hover changed).</summary>
     public static void Invalidate() => _dirty = true;
 
+    /// <summary>B20: whether the slice's inside layer was sent, so Local's slots may draw the slice.</summary>
+    private static bool _sliceSent;
+
     /// <summary>
     /// Sends the piece style for the revision the next frame draws when it changed or the selection did; answers the
     /// first refusal's code, else <see cref="HostLibrary.Ok"/>.
@@ -160,9 +163,17 @@ public static class ShellStyle
     {
         // B18 (for B20): the certified transform of the twist at the cap Local draws, read once per cap and revision.
         ShellTurn.Note(library, host, revision);
-        if (!_dirty && revision == _revision)
+        // B20: the slice's inside layer and the turn preview's transform. A failed slice never blocks the other styles:
+        // they are sent as usual, Local's slots go without the slice while it fails, and its code is returned last.
+        var sliced = ShellSlice.Apply(library, host, revision);
+        if ((sliced == HostLibrary.Ok) != _sliceSent)
         {
-            return HostLibrary.Ok;
+            _sliceSent = sliced == HostLibrary.Ok;
+            _dirty = true;
+        }
+        if (!_dirty && revision == _revision && !ShellSlice.Restyle)
+        {
+            return sliced;
         }
         // B15: the tint's outline bytes under the selection's and the hover's outlines.
         var outline = _tintOutline is null ? new byte[PieceCount] : (byte[])_tintOutline.Clone();
@@ -198,7 +209,7 @@ public static class ShellStyle
             _focusSent = fill is not null;
         }
         SentFill = fill;
-        foreach (var slot in new uint[] { 1, 2 })
+        foreach (var slot in new uint[] { 1, 2, 3 })
         {
             code = library.SetViewStyle(host, slot, View(slot));
             if (code != HostLibrary.Ok)
@@ -217,9 +228,10 @@ public static class ShellStyle
             }
         }
         SentMatrix = sent;
+        ShellSlice.Restyle = false;
         _revision = revision;
         _dirty = false;
-        return HostLibrary.Ok;
+        return sliced;
     }
 
     /// <summary>The jumbled puzzle's pieces (the core's SA2_PIECES, the length of a pose index).</summary>
@@ -234,7 +246,7 @@ public static class ShellStyle
         var style = HostLibrary.ViewStyle.Plain();
         style.TintMode = HostLibrary.TintOutline | HostLibrary.TintFill;
         style.OutlineWidth = OutlineWidth;
-        if (_focus is not null && _slotDims[slot is 1 or 2 ? slot : 1])
+        if (_focus is not null && _slotDims[slot is 1 or 2 ? slot : slot == 3 ? 2 : 1])
         {
             style.DimMode = _hide ? HostLibrary.HideMarked : HostLibrary.DimMarked;
             style.DimAmount = _hide ? 0 : DimAmount;
@@ -262,6 +274,11 @@ public static class ShellStyle
             {
                 style.Matrix[i] = (float)matrix[i];
             }
+        }
+        // B20: Local's slots (2, and 3 for the split's inside copy) draw the cut slice once its inside layer is sent.
+        if (slot is 2 or 3 && _sliceSent)
+        {
+            ShellSlice.Style(ref style, slot, _tintPalette);
         }
         return style;
     }

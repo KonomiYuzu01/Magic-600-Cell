@@ -228,10 +228,15 @@ fn every_row_has_the_header_layout() {
         outline_width,
         palette,
         matrix,
+        slice_mode,
+        slice_shrink,
+        shell_min,
+        shell_max,
+        ghost,
         reserved
     });
     assert_eq!(c_struct(&h, "sa2_view_style"), style, "sa2_view_style");
-    assert_eq!(Sa2ViewStyle::new().struct_size, 316, "new() sets struct_size");
+    assert_eq!(Sa2ViewStyle::new().struct_size, 348, "new() sets struct_size");
     // ABI 8: a composite frame's pane and pane row.
     let pane =
         rust_struct!(Sa2Pane { view, view_generation, resource_set, x, y, width, height, camera_matrix, style, flags });

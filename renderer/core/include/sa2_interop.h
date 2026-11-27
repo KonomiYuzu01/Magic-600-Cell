@@ -1137,6 +1137,23 @@ SA2_API int32_t sa2_view_shape_set(sa2_context* ctx, uint64_t view, const sa2_vi
 #define SA2_STYLE_HIDE_UNMARKED 4u /* ADR-D02 B17 (ABI 10) */
 #define SA2_STYLE_OUTLINE_MAX 0.5f
 #define SA2_STYLE_MATRIX_MAX 8.0f
+/* ADR-D02 B20 (ADR-D02.17, added to ABI 10 before any release): the cut slice in a style slot. Channel
+ * SA2_STYLE_CHANNEL_SLICE holds one byte per piece, 1 for the inside layer (the named cap's inside set) and 0 for the
+ * outside layer. A slot whose slice_mode is not SA2_SLICE_OFF draws styled even with no piece style. Its vertex stage
+ * replaces the view's focus test by the radius shell: a sticker is drawn when the dot of its posed, unshrunk centre and
+ * the focus pole lies between cos(shell_max) and cos(shell_min). SA2_SLICE_BOTH draws the outside layer filled and the
+ * inside layer as outlines at slice_shrink times the sticker shrink; SA2_SLICE_OUTSIDE only the outside layer and
+ * SA2_SLICE_INSIDE only the inside layer (the held split's two copies). An inside piece covers only its outline band
+ * (at least SA2_SLICE_BAND barycentric units) in the colour and the ID pass. With a ghost (alpha > 0) and a transform,
+ * the moving inside pieces draw their band in the ghost colour, mixed by its alpha. In a composite frame whose panes
+ * name a slot with a ghost, the transform turns the pieces only in those panes; the other panes draw them unturned.
+ * With slice_mode 0 nothing changes, so every earlier caller draws byte-identically. */
+#define SA2_STYLE_CHANNEL_SLICE 2u
+#define SA2_SLICE_OFF 0u
+#define SA2_SLICE_BOTH 1u
+#define SA2_SLICE_OUTSIDE 2u
+#define SA2_SLICE_INSIDE 3u
+#define SA2_SLICE_BAND 0.08f
 
 typedef struct sa2_view_style {
     uint32_t struct_size; /* sizeof(sa2_view_style); 316 on x64 */
@@ -1146,10 +1163,15 @@ typedef struct sa2_view_style {
     float outline_width; /* 0 <= outline_width <= SA2_STYLE_OUTLINE_MAX */
     float palette[64]; /* SA2_STYLE_PALETTE RGBA entries, each channel 0..1; entry 0 is never drawn */
     float matrix[9]; /* row-major 3x3 output colour matrix; |entry| <= SA2_STYLE_MATRIX_MAX */
+    uint32_t slice_mode; /* ADR-D02 B20: SA2_SLICE_* (0: no slice) */
+    float slice_shrink; /* ADR-D02 B20: the inside layer's sticker shrink factor; 0 < slice_shrink <= 1 with a slice */
+    float shell_min; /* ADR-D02 B20: the radius shell about the focus pole, angles; 0 <= min <= max <= pi */
+    float shell_max;
+    float ghost[4]; /* ADR-D02 B20: the turn preview's ghost RGBA, each 0..1; alpha 0: no ghost */
     uint32_t reserved; /* must be 0 */
 } sa2_view_style;
 #ifdef __cplusplus
-static_assert(sizeof(sa2_view_style) == 316, "sa2_view_style requires the x64 ABI");
+static_assert(sizeof(sa2_view_style) == 348, "sa2_view_style requires the x64 ABI");
 #endif
 
 SA2_API int32_t sa2_style_set(sa2_context* ctx, uint64_t revision, const uint8_t* piece_style, uint32_t channel);
