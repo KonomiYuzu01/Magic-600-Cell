@@ -1,0 +1,92 @@
+{
+  "bucket_seconds": 300,
+  "evidence": "actual_windows_directx: what the shell's own logs show; nothing about what the screen showed",
+  "format": "magic600-owner-sitting-20261125-presented-share-v1",
+  "runs": [
+    {
+      "build_identity": "c9-product-a9d908ad262ee306",
+      "editor": false,
+      "frames": 35847,
+      "frames_without_presented_row": 4758,
+      "inputs": {
+        "events.jsonl": "764eb8c50d2e270e43f5aa9343b6746cd8fc6939b676e5db89faaf48929d4e76",
+        "launch.json": "45759f7ae0ca64f6da7a9ed7ceefe2eea8ed39b3673d605d35ec16ff8395e481"
+      },
+      "lx2_injection": false,
+      "lx4": true,
+      "per_five_minutes": [
+        0.142,
+        0.123
+      ],
+      "presented_rows": 31089,
+      "presented_sequence_steps": {
+        "1": 26361,
+        "2": 4701,
+        "3": 25,
+        "4": 1
+      },
+      "run_id": "20261128T045742Z",
+      "share_without_presented_row": 0.1327,
+      "started_utc": "2026-11-28T04:57:42Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-12d4a0923978eda1",
+      "editor": false,
+      "frames": 35893,
+      "frames_without_presented_row": 23,
+      "inputs": {
+        "events.jsonl": "e9a4089566bb8d6bdca7f9d8432efc764b139c5a3c5ea0e4d45d2eb232d279a6",
+        "launch.json": "e631edf7a02e1750696c44e93596837a94dae694128d3d75a56cacd611aa6f25"
+      },
+      "lx2_injection": false,
+      "lx4": true,
+      "per_five_minutes": [
+        0.0,
+        0.001
+      ],
+      "presented_rows": 35870,
+      "presented_sequence_steps": {
+        "1": 35850,
+        "2": 19
+      },
+      "run_id": "20261128T050951Z",
+      "share_without_presented_row": 0.0006,
+      "started_utc": "2026-11-28T05:09:51Z",
+      "window_arguments": [
+        "--windowed"
+      ]
+    },
+    {
+      "build_identity": "c9-product-12d4a0923978eda1",
+      "editor": false,
+      "frames": 35903,
+      "frames_without_presented_row": 24,
+      "inputs": {
+        "events.jsonl": "e3f6eb4b579be63bc1dbe50234884087b66437b07438621bf20240a0546cfb53",
+        "launch.json": "aec946d7d08c758b540e8f0161e0ef9b83a8ffa08cd461a4090be3a757d598e5"
+      },
+      "lx2_injection": false,
+      "lx4": true,
+      "per_five_minutes": [
+        0.0,
+        0.001
+      ],
+      "presented_rows": 35879,
+      "presented_sequence_steps": {
+        "1": 35858,
+        "2": 20
+      },
+      "run_id": "20261128T052200Z",
+      "share_without_presented_row": 0.0007,
+      "started_utc": "2026-11-28T05:22:00Z",
+      "window_arguments": [
+        "--windowed",
+        "--resolution",
+        "2400x1400"
+      ]
+    }
+  ]
+}
