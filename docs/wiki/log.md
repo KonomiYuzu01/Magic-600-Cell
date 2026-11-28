@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-28] decision | The chain's results count as passed; LP6 starts in parallel with the IR remainder
+The owner counted every result of the 28 November chain and the lattice replay as passed, recorded the rule that a test needing a fix and a rerun skips its dependents, and set LP6 to start in parallel with the IR line's remainder when ADR-D02 freezes ([decision](decisions/owner-decisions-2026-11-28.md)). The s1128 W3 summary entered `ACCEPTED_GATE_REFERENCES` in `tools/perf/c9/lx4.py`.
+
+## [2026-11-28] update | Owner-machine chain of 28 November 2026 and the lattice replay
+Recorded in [owner-sitting-2026-11-28-results](evidence/owner-sitting-2026-11-28-results.md): U4, U7 and U8 read met on the owner's RTX 4070 Laptop GPU, frames without a presented row fell from 13.3% to 0.07%, and CT-LB5-05's lattice replay passed in 28,802.7 s. The records are in `work/experiments/owner-sitting-20261128/`.
+
 ## [2026-11-26] update | Codex CLI pinned to 0.171.0
 The server refused gpt-6.2-sol and gpt-6.2-astra to codex-cli 0.159.0 on a ChatGPT sign-in, so the pin moved to 0.171.0 at the owner's request. The [MCP isolation evidence](evidence/codex-mcp-isolation.md) records what was checked on 0.171.0 and that its harness rerun is still owed.
 

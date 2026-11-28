@@ -1145,7 +1145,9 @@ class Lx4Tests(NoProcessCase):
         self.assertIsNone(record['result']['decision'])
         self.assertEqual(lx4.ACCEPTED_GATE_REFERENCES, {
             ('c7a43ae68505f1c4df5d59400189070346765dad5a119333533e6a2ac968a0ca', 'c9-product-2efda50d54592f20'):
-                'owner decision 2026-11-22 (LX bars), item 2: U4 W3 summary of the C9 sitting'})
+                'owner decision 2026-11-22 (LX bars), item 2: U4 W3 summary of the C9 sitting',
+            ('2d43c45ea82fe42118e585cdd6acbb5568b759d3069c6b14f934bbf90b02f0fa', 'c9-product-12d4a0923978eda1'):
+                'owner decision 2026-11-28, item 1: U4 W3 summary s1128 (owner-decisions-2026-11-28)'})
         with mock.patch.dict(lx4.ACCEPTED_GATE_REFERENCES, {(digest, BUILD): 'the owner'}):
             accepted = lx4.build(self.temp / 'fixtures', directories, ['analyze'], e2_path=e2,
                                  reference_path=reference)

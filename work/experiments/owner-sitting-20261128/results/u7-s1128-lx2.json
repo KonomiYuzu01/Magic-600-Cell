@@ -1,0 +1,761 @@
+{
+  "format": "magic600-c9-measure-record-v1",
+  "measurement": "lx2-fault-windows",
+  "evidence_kind": "performance",
+  "synthetic": false,
+  "created_utc": "2026-11-28T01:34:48Z",
+  "build_identity": "c9-product-12d4a0923978eda1",
+  "inputs": [
+    {
+      "role": "20261128T011937Z:events.jsonl",
+      "name": "events.jsonl",
+      "bytes": 21424743,
+      "sha256": "bd661ce69eb9c210cc42d2863ee1e66b3549674ae911418b4705c610ade6fc16"
+    },
+    {
+      "role": "20261128T011937Z:lx2-posts.jsonl",
+      "name": "lx2-posts.jsonl",
+      "bytes": 8917480,
+      "sha256": "8e061cc155e831d33c997737686acd6dd4d1199200bda8007bcb3fe891fd2992"
+    },
+    {
+      "role": "20261128T011937Z:launch.json",
+      "name": "launch.json",
+      "bytes": 797,
+      "sha256": "1bf1e4215bd90ca13ffefcc5350fabf6a940e986063225f88768fd9ee4d980ea"
+    },
+    {
+      "role": "20261128T011937Z:presentmon.csv",
+      "name": "presentmon.csv",
+      "bytes": 29510430,
+      "sha256": "ec418aca2c8259d356638c7bd7ffccce42fbdf8ba364029481582730bde166da"
+    },
+    {
+      "role": "faults",
+      "name": "u7-s1128-faults.json",
+      "bytes": 5980,
+      "sha256": "d22ccf55af11dcdbde872f94df82dabf72f838c8c1d61fc3907b9e98eaf60857"
+    }
+  ],
+  "tools": {
+    "python": "3.15.1",
+    "implementation": "CPython",
+    "tool": {
+      "name": "lx2.py",
+      "sha256": "1d93d292d7874a6d69231a38ec264f969eced28b0f3d7d0bba2b37559320fd30"
+    },
+    "helpers": {
+      "c9/evidence.py": "f24d58da56dc8e407c36f704cbc2ec3f33369165337af2745eed442bb52e29bf",
+      "b412_summary.py": "40015c19b73771181dac836f6aeb8979724a775cb239c20b9857aa23de936acc",
+      "c9/key_to_frame.py": "35fa0305d5f1d1f8c162e1913c7c20551c5573a2e25650f392d888be032611b7",
+      "c9/lx4.py": "a9c1466fd154010fa0038b429826fc5e5586724ac286ca21fd9bbca232d58434",
+      "renderer_gate.py": "46d28b14d318b0c297fa02b2fbe2472ceb327a2cc3d9b51338e20eff177b0a7e"
+    }
+  },
+  "command": [
+    "python",
+    "-B",
+    "tools/perf/c9/lx2.py",
+    "analyze",
+    "--fixtures",
+    "work/loop-memory/c9-acceptance/lx4-fixtures",
+    "work/c9-runs/u7-s1128",
+    "--faults",
+    "work/c9-runs/u7-s1128-faults.json",
+    "--out",
+    "work/c9-runs/u7-s1128-lx2.json"
+  ],
+  "bar": {
+    "text": "RTE.42: every fault meets (1) journal and state hash equal to a control run, (2) a typed outcome with the session open, (3) the renderer gate and the LX-4 echo bar during the fault window, (4) at least 100 commits during fault windows under charter E2",
+    "rule": "per fault, over its effective windows (start row to recovered row): E2 keys in turn windows confirmed, at least 100, nearest-rank p95 <= 100 ms with each unconfirmed key a failed key above 100 ms; in limit windows (a metered fault, its job run to its limit with no commit) or turn windows (the others), LX-4 echo samples with a confirmed frame at least 100 (or the count the owner accepted), none failed, p95 <= 100 ms and p99 <= 100 ms over them, each echo sample without a confirmed frame counted apart in the confirmation gap, a known limit; and the gate over at least 300 presents, fps >= 30 and p99 <= 33.3 ms, not required in the four faults that lose the runtime; conditions 1 and 2 from c600-lx2-faults with sessions",
+    "e2_p95_ms": 100.0,
+    "echo_bar_ms": [
+      100,
+      100
+    ],
+    "gate": {
+      "fps_min": 30.0,
+      "p99_max_ms": 33.3,
+      "presents_min": 300
+    },
+    "gate_not_required": [
+      "forced_kill",
+      "alloc_ceiling",
+      "recursion_native",
+      "loop_native"
+    ],
+    "accepted_echo_samples": [
+      {
+        "run_id": "20261121T131440Z",
+        "fault": "alloc_ceiling",
+        "samples": 84
+      }
+    ],
+    "observations_min": 100,
+    "faults": [
+      "alloc_metered",
+      "recursion_metered",
+      "loop_metered",
+      "forced_kill",
+      "alloc_ceiling",
+      "recursion_native",
+      "loop_native"
+    ],
+    "limit_ends": {
+      "alloc_metered": [
+        "KN7:budget.memory",
+        "KN7:resource_limit.safety_stop",
+        "KN7:budget.kernel_cost"
+      ],
+      "recursion_metered": [
+        "KN7:budget.memory",
+        "KN7:resource_limit.safety_stop"
+      ],
+      "loop_metered": [
+        "KN7:budget.steps",
+        "KN7:resource_limit.safety_stop"
+      ]
+    },
+    "source": [
+      "RTE.42",
+      "RTE.43",
+      "RTE.49",
+      "CT-RTE-10",
+      "charter E2",
+      "renderer gate",
+      "option (a), 18 November 2026",
+      "limit and turn windows, top integrator, 19 November 2026",
+      "owner decision 2026-11-20 (LP3 exit, item 2)",
+      "owner decision 2026-11-22 (LX bars), items 1, 3, 4, 5 and 10"
+    ]
+  },
+  "result": {
+    "fixtures": {
+      "manifest_sha256": "59fda7577046e47d90f46c2fa1fb29ed2227ebd01c1222892d002bd8d0eb7511",
+      "edits_sha256": "03f50471fcb0e3358ed884ec10b3b9a7cf4225cf287b874cee9435dfd173a88a",
+      "modules": 53,
+      "edits": 16
+    },
+    "run": {
+      "run_id": "20261128T011937Z",
+      "build_identity": "c9-product-12d4a0923978eda1",
+      "synthetic": false,
+      "status": "valid",
+      "reasons": [],
+      "module_errors": [],
+      "e2_run": {
+        "keys": 1544,
+        "confirmed": 1544,
+        "unconfirmed": 0,
+        "status": "valid"
+      },
+      "faults": {
+        "alloc_metered": {
+          "windows": {
+            "limit": {
+              "windows": 60,
+              "effective": 60,
+              "ineffective": {},
+              "ends": {
+                "KN7:budget.kernel_cost": 60
+              },
+              "seconds": 61.696
+            },
+            "turn": {
+              "windows": 110,
+              "effective": 110,
+              "ineffective": {},
+              "ends": {
+                "KN7:cancelled.revision_replaced": 110
+              },
+              "seconds": 41.545
+            }
+          },
+          "e2": {
+            "over": "turn",
+            "turns": 110,
+            "confirmed": 110,
+            "unconfirmed": 0,
+            "stats": {
+              "n": 110,
+              "confirmed": 110,
+              "failed_keys": 0,
+              "mean": 82.21425818181818,
+              "p50": 82.3041,
+              "p95": 82.5803,
+              "p99": 82.6089,
+              "max": 82.6132,
+              "p95_met": true
+            },
+            "state": "met"
+          },
+          "echo": {
+            "over": "limit",
+            "samples_in_windows": 111,
+            "timed": 111,
+            "unconfirmed": 0,
+            "failed": [],
+            "stats": {
+              "n": 111,
+              "mean": 73.8219009009009,
+              "p50": 73.841,
+              "p95": 76.8841,
+              "p99": 77.3003,
+              "max": 77.5917
+            },
+            "samples": "sufficient",
+            "state": "met"
+          },
+          "gate": {
+            "over": "limit",
+            "presents": 3702,
+            "required": true,
+            "result": {
+              "n": 3702,
+              "fps": 59.99856898064649,
+              "p99_ms": 16.832,
+              "max_ms": 20.7168,
+              "met": true
+            },
+            "state": "met"
+          }
+        },
+        "recursion_metered": {
+          "windows": {
+            "limit": {
+              "windows": 1,
+              "effective": 1,
+              "ineffective": {},
+              "ends": {
+                "KN7:resource_limit.safety_stop": 1
+              },
+              "seconds": 62.401
+            },
+            "turn": {
+              "windows": 110,
+              "effective": 110,
+              "ineffective": {},
+              "ends": {
+                "KN7:cancelled.revision_replaced": 110
+              },
+              "seconds": 57.114
+            }
+          },
+          "e2": {
+            "over": "turn",
+            "turns": 110,
+            "confirmed": 110,
+            "unconfirmed": 0,
+            "stats": {
+              "n": 110,
+              "confirmed": 110,
+              "failed_keys": 0,
+              "mean": 82.17228727272727,
+              "p50": 82.2491,
+              "p95": 82.5419,
+              "p99": 82.5674,
+              "max": 82.5751,
+              "p95_met": true
+            },
+            "state": "met"
+          },
+          "echo": {
+            "over": "limit",
+            "samples_in_windows": 115,
+            "timed": 115,
+            "unconfirmed": 0,
+            "failed": [],
+            "stats": {
+              "n": 115,
+              "mean": 73.80841304347827,
+              "p50": 73.7034,
+              "p95": 77.405,
+              "p99": 81.792,
+              "max": 82.5799
+            },
+            "samples": "sufficient",
+            "state": "met"
+          },
+          "gate": {
+            "over": "limit",
+            "presents": 3743,
+            "required": true,
+            "result": {
+              "n": 3743,
+              "fps": 59.98258187871619,
+              "p99_ms": 16.8532,
+              "max_ms": 47.4554,
+              "met": true
+            },
+            "state": "met"
+          }
+        },
+        "loop_metered": {
+          "windows": {
+            "limit": {
+              "windows": 1,
+              "effective": 1,
+              "ineffective": {},
+              "ends": {
+                "KN7:resource_limit.safety_stop": 1
+              },
+              "seconds": 60.068
+            },
+            "turn": {
+              "windows": 110,
+              "effective": 110,
+              "ineffective": {},
+              "ends": {
+                "KN7:cancelled.revision_replaced": 110
+              },
+              "seconds": 38.303
+            }
+          },
+          "e2": {
+            "over": "turn",
+            "turns": 110,
+            "confirmed": 110,
+            "unconfirmed": 0,
+            "stats": {
+              "n": 110,
+              "confirmed": 110,
+              "failed_keys": 0,
+              "mean": 82.27325818181818,
+              "p50": 82.2955,
+              "p95": 82.5906,
+              "p99": 82.6296,
+              "max": 82.6386,
+              "p95_met": true
+            },
+            "state": "met"
+          },
+          "echo": {
+            "over": "limit",
+            "samples_in_windows": 112,
+            "timed": 112,
+            "unconfirmed": 0,
+            "failed": [],
+            "stats": {
+              "n": 112,
+              "mean": 74.76718928571428,
+              "p50": 74.9114,
+              "p95": 77.4662,
+              "p99": 80.6268,
+              "max": 81.8487
+            },
+            "samples": "sufficient",
+            "state": "met"
+          },
+          "gate": {
+            "over": "limit",
+            "presents": 3604,
+            "required": true,
+            "result": {
+              "n": 3604,
+              "fps": 59.99852224505394,
+              "p99_ms": 16.8326,
+              "max_ms": 17.3576,
+              "met": true
+            },
+            "state": "met"
+          }
+        },
+        "forced_kill": {
+          "windows": {
+            "turn": {
+              "windows": 142,
+              "effective": 142,
+              "ineffective": {},
+              "ends": {
+                "KN7:resource_limit.runtime_lost": 142
+              },
+              "seconds": 56.222
+            }
+          },
+          "e2": {
+            "over": "turn",
+            "turns": 142,
+            "confirmed": 142,
+            "unconfirmed": 0,
+            "stats": {
+              "n": 142,
+              "confirmed": 142,
+              "failed_keys": 0,
+              "mean": 82.20255774647887,
+              "p50": 82.2708,
+              "p95": 82.5615,
+              "p99": 82.648,
+              "max": 82.648,
+              "p95_met": true
+            },
+            "state": "met"
+          },
+          "echo": {
+            "over": "turn",
+            "samples_in_windows": 110,
+            "timed": 109,
+            "unconfirmed": 1,
+            "failed": [],
+            "stats": {
+              "n": 109,
+              "mean": 74.52071926605504,
+              "p50": 74.6934,
+              "p95": 77.3411,
+              "p99": 78.9888,
+              "max": 81.9901
+            },
+            "samples": "sufficient",
+            "state": "met"
+          },
+          "gate": {
+            "over": "turn",
+            "presents": 3373,
+            "required": false,
+            "result": {
+              "n": 3373,
+              "fps": 59.991089660224624,
+              "p99_ms": 16.9302,
+              "max_ms": 23.5141,
+              "met": true
+            },
+            "state": "met"
+          }
+        },
+        "alloc_ceiling": {
+          "windows": {
+            "turn": {
+              "windows": 365,
+              "effective": 365,
+              "ineffective": {},
+              "ends": {
+                "KN7:resource_limit.runtime_lost": 365
+              },
+              "seconds": 50.639
+            }
+          },
+          "e2": {
+            "over": "turn",
+            "turns": 365,
+            "confirmed": 365,
+            "unconfirmed": 0,
+            "stats": {
+              "n": 365,
+              "confirmed": 365,
+              "failed_keys": 0,
+              "mean": 82.16024684931507,
+              "p50": 82.1931,
+              "p95": 82.5147,
+              "p99": 82.5533,
+              "max": 82.5729,
+              "p95_met": true
+            },
+            "state": "met"
+          },
+          "echo": {
+            "over": "turn",
+            "samples_in_windows": 110,
+            "timed": 109,
+            "unconfirmed": 1,
+            "failed": [],
+            "stats": {
+              "n": 109,
+              "mean": 72.59451376146788,
+              "p50": 72.6888,
+              "p95": 76.1835,
+              "p99": 76.5397,
+              "max": 80.948
+            },
+            "samples": "sufficient",
+            "state": "met"
+          },
+          "gate": {
+            "over": "turn",
+            "presents": 2978,
+            "required": false,
+            "result": {
+              "n": 2978,
+              "fps": 59.14921403197719,
+              "p99_ms": 24.5873,
+              "max_ms": 26.3735,
+              "met": true
+            },
+            "state": "met"
+          }
+        },
+        "recursion_native": {
+          "windows": {
+            "turn": {
+              "windows": 589,
+              "effective": 589,
+              "ineffective": {},
+              "ends": {
+                "KN7:resource_limit.runtime_lost": 589
+              },
+              "seconds": 41.928
+            }
+          },
+          "e2": {
+            "over": "turn",
+            "turns": 589,
+            "confirmed": 589,
+            "unconfirmed": 0,
+            "stats": {
+              "n": 589,
+              "confirmed": 589,
+              "failed_keys": 0,
+              "mean": 82.15314142614601,
+              "p50": 82.1794,
+              "p95": 82.5018,
+              "p99": 82.5608,
+              "max": 82.6029,
+              "p95_met": true
+            },
+            "state": "met"
+          },
+          "echo": {
+            "over": "turn",
+            "samples_in_windows": 110,
+            "timed": 110,
+            "unconfirmed": 0,
+            "failed": [],
+            "stats": {
+              "n": 110,
+              "mean": 72.77801909090908,
+              "p50": 73.2374,
+              "p95": 76.5498,
+              "p99": 76.7914,
+              "max": 77.533
+            },
+            "samples": "sufficient",
+            "state": "met"
+          },
+          "gate": {
+            "over": "turn",
+            "presents": 2511,
+            "required": false,
+            "result": {
+              "n": 2511,
+              "fps": 59.861832311230486,
+              "p99_ms": 17.7732,
+              "max_ms": 27.5058,
+              "met": true
+            },
+            "state": "met"
+          }
+        },
+        "loop_native": {
+          "windows": {
+            "turn": {
+              "windows": 1,
+              "effective": 1,
+              "ineffective": {},
+              "ends": {
+                "KN7:cancelled.revision_replaced": 1
+              },
+              "seconds": 60.051
+            }
+          },
+          "e2": {
+            "over": "turn",
+            "turns": 118,
+            "confirmed": 118,
+            "unconfirmed": 0,
+            "stats": {
+              "n": 118,
+              "confirmed": 118,
+              "failed_keys": 0,
+              "mean": 83.12511355932203,
+              "p50": 82.3212,
+              "p95": 98.8414,
+              "p99": 99.1947,
+              "max": 99.2333,
+              "p95_met": true
+            },
+            "state": "met"
+          },
+          "echo": {
+            "over": "turn",
+            "samples_in_windows": 114,
+            "timed": 114,
+            "unconfirmed": 0,
+            "failed": [],
+            "stats": {
+              "n": 114,
+              "mean": 74.80291578947369,
+              "p50": 75.0018,
+              "p95": 77.6627,
+              "p99": 82.2314,
+              "max": 82.4177
+            },
+            "samples": "sufficient",
+            "state": "met"
+          },
+          "gate": {
+            "over": "turn",
+            "presents": 3603,
+            "required": false,
+            "result": {
+              "n": 3603,
+              "fps": 59.99867663201999,
+              "p99_ms": 16.822,
+              "max_ms": 17.2705,
+              "met": true
+            },
+            "state": "met"
+          }
+        }
+      },
+      "conditions_1_2": {
+        "state": "met",
+        "reasons": []
+      }
+    },
+    "limitations": [
+      "the whole run uses the injection child (c600-lx2-child, never shipped) in place of the build's runtime; launch.json and the faults record name the same child",
+      "the view jobs read no host rows (NoHost), as LX-4's"
+    ],
+    "known_limits": [
+      {
+        "fault": "alloc_metered",
+        "condition": "confirmation-gap",
+        "over": "limit",
+        "samples": 111,
+        "unconfirmed": 0,
+        "judged": 111,
+        "source": "owner decision 2026-11-22 (LX bars), item 10"
+      },
+      {
+        "fault": "recursion_metered",
+        "condition": "confirmation-gap",
+        "over": "limit",
+        "samples": 115,
+        "unconfirmed": 0,
+        "judged": 115,
+        "source": "owner decision 2026-11-22 (LX bars), item 10"
+      },
+      {
+        "fault": "loop_metered",
+        "condition": "confirmation-gap",
+        "over": "limit",
+        "samples": 112,
+        "unconfirmed": 0,
+        "judged": 112,
+        "source": "owner decision 2026-11-22 (LX bars), item 10"
+      },
+      {
+        "fault": "forced_kill",
+        "condition": "confirmation-gap",
+        "over": "turn",
+        "samples": 110,
+        "unconfirmed": 1,
+        "judged": 109,
+        "source": "owner decision 2026-11-22 (LX bars), item 10"
+      },
+      {
+        "fault": "forced_kill",
+        "condition": "gate",
+        "state": "met",
+        "presents": 3373,
+        "fps": 59.991089660224624,
+        "p99_ms": 16.9302,
+        "required": false,
+        "source": "owner decision 2026-11-22 (LX bars), item 4"
+      },
+      {
+        "fault": "alloc_ceiling",
+        "condition": "confirmation-gap",
+        "over": "turn",
+        "samples": 110,
+        "unconfirmed": 1,
+        "judged": 109,
+        "source": "owner decision 2026-11-22 (LX bars), item 10"
+      },
+      {
+        "fault": "alloc_ceiling",
+        "condition": "gate",
+        "state": "met",
+        "presents": 2978,
+        "fps": 59.14921403197719,
+        "p99_ms": 24.5873,
+        "required": false,
+        "source": "owner decision 2026-11-22 (LX bars), item 4"
+      },
+      {
+        "fault": "recursion_native",
+        "condition": "confirmation-gap",
+        "over": "turn",
+        "samples": 110,
+        "unconfirmed": 0,
+        "judged": 110,
+        "source": "owner decision 2026-11-22 (LX bars), item 10"
+      },
+      {
+        "fault": "recursion_native",
+        "condition": "gate",
+        "state": "met",
+        "presents": 2511,
+        "fps": 59.861832311230486,
+        "p99_ms": 17.7732,
+        "required": false,
+        "source": "owner decision 2026-11-22 (LX bars), item 4"
+      },
+      {
+        "fault": "loop_native",
+        "condition": "confirmation-gap",
+        "over": "turn",
+        "samples": 114,
+        "unconfirmed": 0,
+        "judged": 114,
+        "source": "owner decision 2026-11-22 (LX bars), item 10"
+      },
+      {
+        "fault": "loop_native",
+        "condition": "gate",
+        "state": "met",
+        "presents": 3603,
+        "fps": 59.99867663201999,
+        "p99_ms": 16.822,
+        "required": false,
+        "source": "owner decision 2026-11-22 (LX bars), item 4"
+      }
+    ],
+    "limit_windows": {
+      "ends": {
+        "alloc_metered": [
+          "KN7:budget.memory",
+          "KN7:resource_limit.safety_stop",
+          "KN7:budget.kernel_cost"
+        ],
+        "recursion_metered": [
+          "KN7:budget.memory",
+          "KN7:resource_limit.safety_stop"
+        ],
+        "loop_metered": [
+          "KN7:budget.steps",
+          "KN7:resource_limit.safety_stop"
+        ]
+      },
+      "facts": [
+        "recursion_metered's and loop_metered's limit windows end at the host's 60 s view deadline (KN7:resource_limit.safety_stop), under the product's own view limits, with no commits",
+        "alloc_metered's limit windows end at the kernel-cost meter (KN7:budget.kernel_cost) under the product's own view limits, with no commits (C9 U7, 21 November 2026: all 61 windows); the owner counts that end (22 November 2026, item 3)",
+        "c600-lx2's view_limits_probe (in process, release build, 19 November 2026, the CPU shared with a build) shows that the 2^32 meter limits are not reachable within 60 s: the loop runs about 6 M steps/s (2^28 steps in 44 s); the recursion reached 2^30 bytes in 58 s; the allocation's push grows quadratically, 2^18 bytes in 37 s"
+      ]
+    }
+  },
+  "verdict": "met",
+  "reasons": [],
+  "passes_bar": true,
+  "drafts": [
+    "fault order, message Magic600.LX2.Phase and the lx2 rows",
+    "window = start row to recovered row",
+    "effective-window rules per fault",
+    "post targets 110 turns and echo samples per fault, time box 360 s",
+    "lead 0.3 s, native-loop pace 0.5 s, gap 0.2 s",
+    "gate over presents inside windows, at least 300",
+    "an in-window echo failure other than a missing confirmation fails the bar",
+    "one echo sample per fault every 0.25 s (S inside-body, first key)",
+    "limit windows: wParam len(FAULTS) plus the fault's number, before its turn windows; the ends that count (LIMIT_ENDS: the integrator's choice of the meter's limit or the view deadline; alloc_metered's kernel-cost end is the owner's, 22 November 2026)",
+    "a limit window's length: the host's view deadline (time estimate only)"
+  ],
+  "redactions": 0
+}

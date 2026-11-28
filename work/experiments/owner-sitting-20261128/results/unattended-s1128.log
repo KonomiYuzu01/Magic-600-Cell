@@ -1,0 +1,30 @@
+2026-11-28T00:28:48Z start exit=0 run=- | head 112a931a9a31; steps U4,U7,U8,GAP; suffix 's1128'; builds scene 'work\build\c9-acceptance\20261126T115036Z' stage '' product 'work\build\c9-product\20261126T114942Z'; compared builds: c9-product-a9d908ad262ee306 (bb416a2c8336)
+2026-11-28T00:37:44Z U4/S4.1 exit=0 run=work\loop-memory\c9-acceptance\20261128T003400213Z
+2026-11-28T00:41:31Z U4/S4.2 exit=0 run=work\loop-memory\c9-acceptance\20261128T003747723Z
+2026-11-28T00:45:18Z U4/S4.3 exit=0 run=work\loop-memory\c9-acceptance\20261128T004135093Z
+2026-11-28T00:45:19Z U4/S4/gate exit=0 run=work\loop-memory\c9-acceptance\S4-summary-s1128.json
+2026-11-28T00:49:06Z U4/I_a.1 exit=0 run=work\loop-memory\c9-acceptance\20261128T004522769Z
+2026-11-28T00:52:53Z U4/I_a.2 exit=0 run=work\loop-memory\c9-acceptance\20261128T004909794Z
+2026-11-28T00:56:40Z U4/I_a.3 exit=0 run=work\loop-memory\c9-acceptance\20261128T005256895Z
+2026-11-28T00:56:40Z U4/I_a/gate exit=0 run=work\loop-memory\c9-acceptance\I_a-summary-s1128.json
+2026-11-28T01:00:27Z U4/I_b.1 exit=0 run=work\loop-memory\c9-acceptance\20261128T005644556Z
+2026-11-28T01:04:14Z U4/I_b.2 exit=0 run=work\loop-memory\c9-acceptance\20261128T010031608Z
+2026-11-28T01:08:01Z U4/I_b.3 exit=0 run=work\loop-memory\c9-acceptance\20261128T010418552Z
+2026-11-28T01:08:02Z U4/I_b/gate exit=0 run=work\loop-memory\c9-acceptance\I_b-summary-s1128.json
+2026-11-28T01:11:48Z U4/w3.1 exit=0 run=work\loop-memory\c9-acceptance\20261128T010805940Z
+2026-11-28T01:15:34Z U4/w3.2 exit=0 run=work\loop-memory\c9-acceptance\20261128T011151793Z
+2026-11-28T01:19:20Z U4/w3.3 exit=0 run=work\loop-memory\c9-acceptance\20261128T011537655Z
+2026-11-28T01:19:20Z U4/w3/gate exit=0 run=work\loop-memory\c9-acceptance\w3-summary-s1128.json
+2026-11-28T01:19:20Z U7/error-mode exit=0 run=- | this process 32769 -> 32771 for U7 (SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX)
+2026-11-28T01:19:31Z U7/faults exit=0 run=work\c9-runs\u7-s1128-faults.json
+2026-11-28T01:34:43Z U7 exit=0 run=work\c9-runs\u7-s1128 | shell time 904 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-28T01:34:49Z U7/analyze exit=0 run=work\c9-runs\u7-s1128-lx2.json
+2026-11-28T03:15:59Z U8/jumble-off exit=0 run=work\c9-runs\u8-off-s1128 | closed after the poster exited 0; shell time 6062 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-28T04:57:08Z U8/jumble-on exit=0 run=work\c9-runs\u8-on-s1128 | closed after the poster exited 0; shell time 6061 s; poster exit 0; PresentMon stopped, exit 0; capture copied
+2026-11-28T04:57:24Z U8/key_to_frame exit=0 run=work\c9-runs\u8-s1128-e2.json
+2026-11-28T04:57:35Z U8/analyze exit=3 run=work\c9-runs\u8-s1128-lx4.json
+2026-11-28T05:09:45Z GAP/gap-s1128-1 exit=0 run=work\c9-runs\gap-s1128-1 | closed at 600 s; shell time 601 s; poster stopped 120 s after the shell; poster exit 1; PresentMon stopped, exit 0; capture copied
+2026-11-28T05:21:54Z GAP/gap-s1128-2 exit=0 run=work\c9-runs\gap-s1128-2 | closed at 600 s; shell time 601 s; poster stopped 120 s after the shell; poster exit 1; PresentMon stopped, exit 0; capture copied
+2026-11-28T05:34:03Z GAP/gap-s1128-3 exit=0 run=work\c9-runs\gap-s1128-3 | closed at 600 s; shell time 601 s; poster stopped 120 s after the shell; poster exit 1; PresentMon stopped, exit 0; capture copied
+2026-11-28T05:34:04Z GAP/share exit=0 run=work\c9-runs\gap-s1128-share.json
+2026-11-28T05:34:04Z end exit=0 run=- | steps U4,U7,U8,GAP
